@@ -959,6 +959,8 @@ const Input = (() => {
 let pointerDown = false, pointerGrab = false;
 
 /* ------------------------------------------------------------------ WORLD BUILD & BOOT */
+const debris = [];  // physics-ready asteroid meshes, aggregated after Havok loads
+
 function buildWorld() {
   Lighting.build();
   Cosmos.build();
@@ -977,10 +979,7 @@ function buildWorld() {
   rm.emissiveColor = new BABYLON.Color3(0.5,0.3,1); rm.disableLighting = true;
   ring.material = rm; ring.isPickable = false;
 
-  // HAVOK PHYSICS
-  setupPhysics();
-
-  // decorative physics debris asteroids
+  // decorative asteroid debris (meshes only; aggregates added after Havok enables)
   for (let i=0;i<12;i++) {
     const ast = BABYLON.MeshBuilder.CreateIcoSphere("ast"+i, { radius: 0.4+Math.random()*0.8, subdivisions: 2 }, scene);
     ast.position = new BABYLON.Vector3((Math.random()-0.5)*80, 5+Math.random()*10, (Math.random()-0.5)*80);
@@ -989,23 +988,25 @@ function buildWorld() {
     am.specularColor = new BABYLON.Color3(0.2,0.2,0.2);
     ast.material = am; ast.isPickable = false;
     ast.rotation.x = Math.random()*6; ast.rotation.y = Math.random()*6;
-    try {
-      new BABYLON.PhysicsAggregate(ast, BABYLON.PhysicsShapeType.SPHERE, { mass: 1, friction: 0.6, restitution: 0.3 }, scene);
-      ast.pDebris = true;
-    } catch(e) { console.warn("debris physics", e); }
+    ast.physicsDebris = true;
+    debris.push(ast);
   }
   Player.build();
   G.registerLensing();
 }
 
-function setupPhysics() {
+// Called only after the Havok plugin is enabled, so aggregates are valid.
+function enableDebrisPhysics() {
   try {
+    if (typeof BABYLON.PhysicsAggregate === "undefined") return;
     const floor = BABYLON.MeshBuilder.CreateGround("phfloor", 200, 200, 1, scene);
-    floor.position.y = -0.5;
-    const floorAgg = new BABYLON.PhysicsAggregate(floor, BABYLON.PhysicsShapeType.BOX, { mass: 0 }, scene);
-    floor.isPickable = false;
+    floor.position.y = -0.5; floor.isPickable = false;
+    new BABYLON.PhysicsAggregate(floor, BABYLON.PhysicsShapeType.BOX, { mass: 0 }, scene);
+    for (const ast of debris) {
+      new BABYLON.PhysicsAggregate(ast, BABYLON.PhysicsShapeType.SPHERE, { mass: 1, friction: 0.6, restitution: 0.3 }, scene);
+    }
     G.physicsReady = true;
-  } catch(e) { console.warn("havok floor", e); }
+  } catch(e) { console.warn("physics aggregates disabled", e); }
 }
 
 /* ------------------------------------------------------------------ MAIN LOOP */
@@ -1069,21 +1070,65 @@ function togglePause() {
   camera.attachControl(canvas, true);
 }
 
-/* ------------------------------------------------------------------ BOOT */
+/* ------------------------------------------------------------------ BOOT & DIAGNOSTICS */
+const Boot = (() => {
+  function showError(msg) {
+    const err = document.getElementById("booterr");
+    const actions = err && err.nextElementSibling;
+    if (err) { err.textContent = msg; err.style.display = "block"; }
+    if (actions) actions.style.display = "flex";
+    const sub = document.getElementById("bootsub");
+    if (sub) sub.textContent = "REALITY FAILED TO FORGE";
+  }
+  function hideError() {
+    const err = document.getElementById("booterr");
+    const actions = err && err.nextElementSibling;
+    if (err) err.style.display = "none";
+    if (actions) actions.style.display = "none";
+  }
+  return { showError, hideError };
+})();
+
+function bootFailed(msg) {
+  console.error("CROWN boot failed:", msg);
+  Boot.showError(msg);
+  try { engine && engine.dispose(); } catch(e) {}
+}
+
 async function boot() {
-  // verify Babylon
-  if (typeof BABYLON === "undefined") { document.getElementById("bootsub").textContent = "ERROR: Babylon.js CDN failed to load — check your connection."; return; }
-  createEngine();
-  createCamera();
-  buildWorld();
-  Input.bind();
-  UI.init();
-  UI.buildHUD();
-  // Havok async
+  Boot.hideError();
+  // verify Babylon CDN loaded
+  if (typeof BABYLON === "undefined") {
+    bootFailed("Babylon.js did not load from the CDN.\n\n" +
+      "Your browser or the preview network is blocking cdn.babylonjs.com.\n" +
+      "Make sure you have internet access, then press RETRY.");
+    return;
+  }
+  try {
+    createEngine();
+  } catch (e) {
+    bootFailed("WebGL could not be created: " + (e.message || e) + "\n\n" +
+      "This preview environment may not support WebGL. Try a desktop browser with hardware acceleration.");
+    return;
+  }
+  try {
+    createCamera();
+    buildWorld();
+    Input.bind();
+    UI.init();
+    UI.buildHUD();
+  } catch (e) {
+    bootFailed("Scene setup error: " + (e && e.stack || e));
+    return;
+  }
+  // Havok async (optional — game runs even without physics)
   try {
     if (typeof HavokPhysics !== "undefined") {
       const havok = await HavokPhysics();
-      scene.enablePhysics(new BABYLON.Vector3(0, gravityY, 0), new BABYLON.HavokPlugin(true, havok));
+      if (scene) scene.enablePhysics(new BABYLON.Vector3(0, gravityY, 0), new BABYLON.HavokPlugin(true, havok));
+      enableDebrisPhysics();
+    } else {
+      enableDebrisPhysics(); // no havok; still try aggregates (they may no-op safely)
     }
   } catch(e) { console.warn("havok", e); }
   Narrative.run();
@@ -1091,7 +1136,22 @@ async function boot() {
   UI.show("menu-main");
 }
 
-window.addEventListener("load", boot);
+// surface any uncaught runtime error on the boot screen so it never hangs silently
+window.addEventListener("error", (ev) => {
+  if (A.S.playing) return; // only surface pre-game crashes
+  Boot.showError("Runtime error: " + (ev.error ? (ev.error.stack || ev.error.message) : ev.message));
+});
+window.addEventListener("unhandledrejection", (ev) => {
+  if (A.S.playing) return;
+  const r = ev.reason;
+  Boot.showError("Async error: " + (r && (r.stack || r.message) || r));
+});
+
+window.addEventListener("load", () => { boot(); });
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("boot-retry");
+  if (btn) btn.addEventListener("click", () => location.reload());
+});
 
 /* Exposed for automated harness testing only. */
 window.__GAME = { startGame, togglePause, Player, Abilities, A };

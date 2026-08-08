@@ -13,6 +13,10 @@
 <div id="boot">
   <div class="boot-glow">CROWN OF THE UNMADE</div>
   <div class="boot-sub" id="bootsub">forging reality…</div>
+  <div class="boot-err" id="booterr" style="display:none"></div>
+  <div class="boot-actions" style="display:none">
+    <button id="boot-retry" class="mbtn primary">RETRY</button>
+  </div>
 </div>
 
 <!-- MAIN MENU -->
@@ -126,8 +130,8 @@
   <button class="mbtn back" data-action="main">MAIN MENU</button>
 </div>
 
-<script src="https://cdn.babylonjs.com/babylon.max.js"></script>
-<script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.max.js" onerror="window.__cdnFail='babylon'"></script>
+<script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js" onerror="window.__cdnFail='havok'"></script>
 <script src="game.js"></script>
 </body>
 </html>

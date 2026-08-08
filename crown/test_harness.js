@@ -93,7 +93,9 @@ function makeEl(id){
   elements[id]=el; return el;
 }
 ["game","boot","bootsub","menu-main","menu-controls","menu-abilities","menu-settings","menu-pause","menu-death","hud","ct","grabind","sc","cb","wv","reticle"].forEach(makeEl);
+const docListeners = {};
 const globalDocument = { getElementById:(id)=> elements[id]||makeEl(id), querySelectorAll:()=>[], body:{ appendChild:(el)=>{}, removeChild:()=>{} },
+  addEventListener(t,f){ (docListeners[t]=docListeners[t]||[]).push(f); },
   createElement:()=>({ getContext:()=>canvas2d(), width:256, height:256, style:{}, addEventListener(){}, _l:{}, remove(){}, classList:{add(){},remove(){},toggle(){}}, textContent:"" }) };
 const globalWindow = { addEventListener(t,f){ (listeners[t]=listeners[t]||[]).push(f); }, innerWidth:1200, innerHeight:800 };
 let raf = null; const globalRaf = (cb)=>{ raf=cb; };
