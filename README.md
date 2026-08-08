@@ -1,48 +1,54 @@
-# GRAVITON · a psychedelic odyssey
+# GRAVITON · a psychedelic odyssey — 3D Edition
 
-A fully self-contained, zero-dependency browser game built as a multi-agent-style
-"behemoth": real Newtonian gravity, black holes with gravitational lensing and
-time dilation, procedural music & synth SFX, generative nebula backdrops, and a
-gate system gated behind math **and** alien-language cipher puzzles.
+A fully self-contained 3D space game rendered in the browser with **Babylon.js**
+(WebGL) and **Havok physics** (WebAssembly), driven by a re-architected
+"swarm" of specialist modules. Real Newtonian gravity, black holes with
+volumetric particle accretion + gravitational lensing, temporal abilities,
+procedural WebAudio music, and gate puzzles of math and alien language.
 
 ## Play
 
-Run a static server in this folder and open the page:
-
 ```bash
 python3 -m http.server 8000
-# open http://localhost:8000
+# open http://localhost:8000  → 3D edition (index.html)
+# open http://localhost:8000/index2d.html → original 2D edition
 ```
 
-## How to play
+The 3D edition pulls Babylon.js + Havok from the Babylon CDN, so it needs a
+network connection on first load.
 
-- **Aim / move** — the ship always faces your cursor.
-- **`W` / `↑`** — thrust (burns energy).
-- **`Space`** — pulse boost.
-- **`G`** — toggle gravitational field lines.
-- **`P`** — pause.
+## Controls
 
-Fly around the sector collecting **prism shards** (restore energy + score).
-Reach the **jump gate**, solve its sigil (a math equation or an Ancient-language
-cipher) to unlock it, then fly through to warp to the next sector.
+- **Mouse** — aim (raycast to the flight plane)
+- **`W` / `↑`** — thrust
+- **`Space`** — pulse boost
+- **`1` / `2` / `3`** — abilities: **Singularity** · **Temporal Rift** · **Void Lash**
 
-Six sectors await — the last is **The Singularity**. Be careful:
+Collect prism shards to refuel and score. Reach the **jump gate**, solve its
+sigil (math or cipher) to unlock it, then fly through to warp to the next of
+**6 sectors** ending at **The Singularity**.
 
-- **Black holes** bend light and drag you in. Slingshot past them for a speed
-  bonus, but cross the event horizon and you'll be re-knitted from nothing.
-- **Planets** are impassable — hull breach on impact.
-- **Energy** drains constantly. Refuel on shards or slingshot off stars.
+- **Black holes** bend light, drag you into an accretion swirl, and slow time.
+  Cross the event horizon and you're re-knitted from nothing.
+- **Planets** are solid (Havok collision) — hull breach on impact.
+- **Energy** drains; refuel on shards or slingshot past stars.
 
-## Architecture
+## Architecture — the "swarm" of agents
 
-| module | role |
-|--------|------|
-| `js/config.js` | constants, palettes, shared utils |
-| `js/audio.js`  | procedural WebAudio ambient music + SFX |
-| `js/render.js` | canvas: nebula, starfield, bodies, lensing, ship |
-| `js/physics.js`| Newtonian gravity, ship integration, collisions |
-| `js/puzzles.js`| math gates & Caesar/substitution ciphers |
-| `js/ui.js`     | HUD + overlay puzzle forms |
-| `js/main.js`   | state machine, world gen, game loop |
+| agent | module | responsibility |
+|-------|--------|----------------|
+| Config | `js3d/config.js` | constants, palettes, ability specs |
+| Core | `js3d/core.js` | Babylon engine, scene, environment, procedural assets |
+| Camera | `js3d/camera.js` | chase cam, pointer aim, input |
+| Lighting | `js3d/lighting.js` | star lights, flicker |
+| Bodies | `js3d/bodies.js` | planets, black holes + volumetric particle accretion |
+| Ship | `js3d/ship.js` | player vessel mesh + state |
+| Abilities | `js3d/abilities.js` | Singularity, Temporal Rift, Void Lash, cooldowns |
+| FX | `js3d/fx.js` | particle bursts, engine trail, warp |
+| Physics | `js3d/physics.js` | Havok integration, gravity wells, collisions |
+| Puzzles | `js3d/puzzles.js` | math gates & Caesar/substitution ciphers |
+| Audio | `js3d/audio.js` | reuses the procedural WebAudio engine |
+| UI | `js3d/ui.js` | HUD, abilities bar, overlays |
+| Game | `js3d/game.js` | the crown orchestrator / swarm leader |
 
-Zero external libraries. Just HTML, CSS, and vanilla JS.
+Zero bundler, zero external game libraries except the Babylon + Havok CDNs.
