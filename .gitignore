@@ -1,0 +1,14 @@
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.rbxl.bak
+*.rbxlx.bak
+
+# tool caches
+node_modules/
+__pycache__/
+*.pyc
+
+# Roblox Studio autosave
+AutoSave/
+*.rbxl.*.rbxl

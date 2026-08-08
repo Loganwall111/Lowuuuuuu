@@ -1,0 +1,42 @@
+{
+  "name": "CLONE - Multi-Volume Agent Swarm",
+  "tree": {
+    "$className": "DataModel",
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "Swarm": {
+        "$path": "src/ServerScriptService/Swarm"
+      }
+    },
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Swarm": {
+        "$path": "src/ReplicatedStorage/Swarm"
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "SwarmClient": {
+          "$path": "src/StarterPlayer/StarterPlayerScripts/SwarmClient"
+        }
+      }
+    },
+    "Workspace": {
+      "$className": "Workspace"
+    },
+    "Lighting": {
+      "$className": "Lighting"
+    },
+    "SoundService": {
+      "$className": "SoundService"
+    },
+    "StarterGui": {
+      "$className": "StarterGui"
+    },
+    "ReplicatedFirst": {
+      "$className": "ReplicatedFirst"
+    }
+  }
+}
