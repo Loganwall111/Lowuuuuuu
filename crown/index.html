@@ -3,38 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CROWN OF THE UNMADE — a reality-warping god-arena</title>
+<title>CROWN OF THE UNMADE — a 3D reality-warping god-arena</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="boot"></div>
 <canvas id="game"></canvas>
-<div id="hud"></div>
-<div id="menu">
-  <div class="title-wrap">
-    <h1 id="bigtitle">CROWN OF THE <span>UNMADE</span></h1>
-    <p class="subtitle">you are the god who unmakes reality. hold on to it.</p>
+
+<!-- BOOT OVERLAY -->
+<div id="boot">
+  <div class="boot-glow">CROWN OF THE UNMADE</div>
+  <div class="boot-sub" id="bootsub">forging reality…</div>
+</div>
+
+<!-- MAIN MENU -->
+<div id="menu-main" class="panel">
+  <h1 class="maintitle">CROWN OF THE <span>UNMADE</span></h1>
+  <p class="subtitle">you are the god who unmakes reality. hold on to it.</p>
+  <div class="menu-btns">
+    <button class="mbtn primary" data-action="start">AWAKEN</button>
+    <button class="mbtn" data-action="controls">CONTROLS</button>
+    <button class="mbtn" data-action="abilities">ABILITIES</button>
+    <button class="mbtn" data-action="settings">SETTINGS</button>
   </div>
-  <div class="controls">
+  <p class="foot">3D · WebGL · Havok Physics · Gravitational Lensing</p>
+</div>
+
+<!-- CONTROLS MENU -->
+<div id="menu-controls" class="panel hidden">
+  <h2>CONTROLS</h2>
+  <div class="grid">
     <div class="row"><kbd>WASD</kbd><span>drift through the wound</span></div>
     <div class="row"><kbd>MOUSE</kbd><span>aim the omens</span></div>
+    <div class="row"><kbd>DRAG</kbd><span>orbit the camera</span></div>
+    <div class="row"><kbd>SCROLL</kbd><span>zoom the oculus</span></div>
     <div class="row"><kbd>LMB</kbd><span>unravel · fire astral bolts</span></div>
     <div class="row"><kbd>Q</kbd><span>Singularity — birth a black hole</span></div>
     <div class="row"><kbd>E</kbd><span>Temporal Rift — stop their time</span></div>
-    <div class="row"><kbd>R</kbd><span>Fractal Echo — split across timelines</span></div>
+    <div class="row"><kbd>R</kbd><span>Fractal Echo — split timelines</span></div>
+    <div class="row"><kbd>G</kbd><span>Tractor Grab — seize &amp; hurl a foe</span></div>
     <div class="row"><kbd>SPACE</kbd><span>Gravitic Inversion — flip the sky</span></div>
     <div class="row"><kbd>F</kbd><span>Void Lash — sever what is</span></div>
     <div class="row"><kbd>C</kbd><span>Prism Phase — be nowhere</span></div>
-    <div class="row"><kbd>X</kbd><span>GENESIS OVERDRIVE — unmake everything</span></div>
+    <div class="row"><kbd>X</kbd><span>GENESIS OVERDRIVE — unmake all</span></div>
+    <div class="row"><kbd>ESC</kbd><span>pause</span></div>
   </div>
-  <button id="begin">AWAKEN</button>
+  <button class="mbtn back" data-action="main">BACK</button>
 </div>
-<div id="dead" class="hidden">
-  <h2>THE REALITY IS MENDED</h2>
-  <p class="dead-sub">you have been unmade.</p>
+
+<!-- ABILITIES MENU -->
+<div id="menu-abilities" class="panel hidden">
+  <h2>THE OLD LAWS</h2>
+  <div class="abl-list">
+    <div class="abl"><b class="q">Q</b><i>◉</i><span><b>Singularity</b> — devour matter in a gravitational lens, then supernova.</span></div>
+    <div class="abl"><b class="e">E</b><i>⟲</i><span><b>Temporal Rift</b> — freeze their now; time whispers back.</span></div>
+    <div class="abl"><b class="r">R</b><i>❖</i><span><b>Fractal Echo</b> — split across timelines; they mirror your aim.</span></div>
+    <div class="abl"><b class="g">G</b><i>⌖</i><span><b>Tractor Grab</b> — seize a foe with a gravity tether and hurl it.</span></div>
+    <div class="abl"><b class="s">␣</b><i>⧉</i><span><b>Gravitic Inversion</b> — flip the sky, fling everything, then slam.</span></div>
+    <div class="abl"><b class="f">F</b><i>⌁</i><span><b>Void Lash</b> — a tendril that severs reality in a line.</span></div>
+    <div class="abl"><b class="c">C</b><i>◈</i><span><b>Prism Phase</b> — become nowhere, leaving a wound of light.</span></div>
+    <div class="abl"><b class="x">X</b><i>☀</i><span><b>Genesis Overdrive</b> — ultimate. unmake everything.</span></div>
+  </div>
+  <button class="mbtn back" data-action="main">BACK</button>
+</div>
+
+<!-- SETTINGS MENU -->
+<div id="menu-settings" class="panel hidden">
+  <h2>SETTINGS</h2>
+  <div class="setting">
+    <label>DIFFICULTY</label>
+    <select id="set-diff"><option value="1">Dream (easy)</option><option value="2" selected>Awake</option><option value="3">Madness</option></select>
+  </div>
+  <div class="setting">
+    <label>SOUND</label>
+    <input type="range" id="set-vol" min="0" max="1" step="0.05" value="0.7">
+  </div>
+  <div class="setting">
+    <label>CAMERA SENSITIVITY</label>
+    <input type="range" id="set-sens" min="0.3" max="2" step="0.05" value="1">
+  </div>
+  <div class="setting">
+    <label>VISUAL FIDELITY</label>
+    <select id="set-fx"><option value="high" selected>Bloom + lensing</option><option value="low">Lite (fast)</option></select>
+  </div>
+  <button class="mbtn back" data-action="main">BACK</button>
+</div>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-top">
+    <div class="vitals">
+      <div class="name">THE UNMADE</div>
+      <div class="bar hp"><i></i></div>
+      <div class="bar reality"><i></i></div>
+    </div>
+    <div class="hud-right">
+      <div class="wave">WAVE <span id="wv">0</span></div>
+      <div class="score" id="sc">0</div>
+      <div class="combo" id="cb"></div>
+    </div>
+  </div>
+  <div class="abilities"></div>
+  <div class="vignette"></div>
+  <div class="center-text" id="ct"></div>
+  <div class="reticle" id="reticle"></div>
+  <div class="grab-ind" id="grabind"></div>
+</div>
+
+<!-- PAUSE -->
+<div id="menu-pause" class="panel hidden">
+  <h2>SUSPENDED</h2>
+  <p class="subtitle">reality holds its breath.</p>
+  <button class="mbtn primary" data-action="resume">RESUME</button>
+  <button class="mbtn back" data-action="main">MAIN MENU</button>
+</div>
+
+<!-- DEATH -->
+<div id="menu-death" class="panel hidden">
+  <h2 class="death-title">THE REALITY IS MENDED</h2>
+  <p class="subtitle">you have been unmade.</p>
   <div class="dead-stats"></div>
-  <button id="again">BECOME AGAIN</button>
+  <button class="mbtn primary" data-action="retry">BECOME AGAIN</button>
+  <button class="mbtn back" data-action="main">MAIN MENU</button>
 </div>
+
+<script src="https://cdn.babylonjs.com/babylon.max.js"></script>
+<script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

@@ -1,1065 +1,936 @@
 /* ============================================================================
-   CROWN OF THE UNMADE
-   A reality-warping god-arena. You are the god who unmakes reality.
-   Assembled by a swarm of 15 sub-agents, each owning one module.
-   Sections tagged [AGENT] below.
+   CROWN OF THE UNMADE — 3D EDITION
+   A full WebGL reality-warping god-arena built with Babylon.js + Havok.
+   Assembled by a swarm of 15 sub-agents; sections tagged [AGENT].
    ========================================================================== */
 "use strict";
 
-/* ------------------------------------------------------------------ [AGENT 1: ARCHITECT] Core state, loop, orchestrator
-   Owns the frame clock, the state machine, the global time-warp that
-   every other system samples, and the main update/render dispatch.   */
+/* Global Babylon handles (set during boot). */
+let engine = null, scene = null, camera = null, canvas = null;
+let pointer = { x: 0, y: 0 };
+
+/* ------------------------------------------------------------------ [AGENT 1: ARCHITECT] Engine, camera, input, state machine */
 const A = (() => {
   const S = {
-    boot: true, playing: false, dead: false,
-    time: 0,          // accumulated unpaused world time
-    frame: 0,
-    timeScale: 1,     // global temporal warp (TEMPORALIST writes this)
-    targetTimeScale: 1,
-    shake: 0,
-    flash: 0,
-    gameTime: 0,      // elapsed in-play seconds
+    playing: false, booting: true, dead: false, paused: false,
+    timeScale: 1, targetTimeScale: 1,
+    shake: 0, flash: 0, gameTime: 0, frame: 0,
+    elapsed: 0,
   };
-  let last = performance.now();
-  const raw = { dt: 0 };
-
-  function tick(now) {
-    raw.dt = Math.min((now - last) / 1000, 0.05);
-    last = now;
-    // ease global time scale back toward 1
-    S.timeScale += (S.targetTimeScale - S.timeScale) * Math.min(1, raw.dt * 8);
-    if (Math.abs(S.targetTimeScale - S.timeScale) < 0.005) S.timeScale = S.targetTimeScale;
-    S.frame++;
-    return raw;
-  }
-
-  const dispatch = [];
-  function update(dt, t) { for (const f of dispatch) f(dt, t); }
-  function add(f) { dispatch.push(f); return f; }
-  function remove(f) { const i = dispatch.indexOf(f); if (i >= 0) dispatch.splice(i, 1); }
-
-  return { S, tick, update, add, remove };
+  const settings = { difficulty: 2, volume: 0.7, sensitivity: 1, fx: "high" };
+  return { S, settings };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 2: COSMOLOGY] The living nebula world field
-   Generates the ambient backdrop: a rotating starfield, drifting dust,
-   and a breathing nebula built from layered radial noise.        */
+const GRAVITY_BASE = -9.8;
+let gravityY = GRAVITY_BASE;   // flipped by Gravitic Inversion
+
+function createEngine() {
+  canvas = document.getElementById("game");
+  engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true });
+  engine.adaptToDeviceRatio = true;
+  scene = new BABYLON.Scene(engine);
+  scene.clearColor = new BABYLON.Color4(0.008, 0.004, 0.02, 1);
+  scene.ambientColor = new BABYLON.Color3(0.4, 0.35, 0.6);
+  window.addEventListener("resize", () => engine.resize());
+}
+
+function createCamera() {
+  camera = new BABYLON.ArcRotateCamera("cam", -0.4, 1.15, 46, new BABYLON.Vector3(0, 2, 0), scene);
+  camera.attachControl(canvas, true);
+  camera.lowerRadiusLimit = 10;
+  camera.upperRadiusLimit = 90;
+  camera.wheelDeltaPercentage = 0.02;
+  camera.panningSensibility = 50;
+  camera.inertia = 0.08;
+}
+
+/* ------------------------------------------------------------------ [AGENT 8: LIGHTING & RENDERER] lights, glow, materials */
+const Lighting = (() => {
+  let glowLayer = null;
+  function build() {
+    const hemi = new BABYLON.HemisphericLight("heli", new BABYLON.Vector3(0, 1, 0.2), scene);
+    hemi.intensity = 0.55;
+    const key = new BABYLON.DirectionalLight("key", new BABYLON.Vector3(0.4, -1, -0.3), scene);
+    key.intensity = 0.7; key.position = new BABYLON.Vector3(20, 30, 10);
+    const rim = new BABYLON.DirectionalLight("rim", new BABYLON.Vector3(-0.5, 0.2, 0.6), scene);
+    rim.intensity = 0.5; rim.diffuse = new BABYLON.Color3(0.6, 0.3, 1);
+    if (A.settings.fx === "high") {
+      try {
+        glowLayer = new BABYLON.GlowLayer("glow", scene, { mainTextureRatio: 0.5, blurKernelSize: 32 });
+        glowLayer.intensity = 0.9;
+      } catch (e) { console.warn("glow disabled", e); }
+    }
+  }
+  function setIntensity(v) { if (glowLayer) glowLayer.intensity = v; }
+  return { build, setIntensity };
+})();
+
+/* ------------------------------------------------------------------ [AGENT 2: COSMOLOGY] procedural skybox + star field */
 const Cosmos = (() => {
-  const stars = [];
-  for (let i = 0; i < 260; i++) stars.push({
-    x: Math.random() * 2 - 1, y: Math.random() * 2 - 1,
-    z: 0.25 + Math.random() * 0.75, tw: Math.random() * Math.PI * 2,
-  });
-  const dust = [];
-  for (let i = 0; i < 90; i++) dust.push({
-    x: Math.random(), y: Math.random(), r: 1 + Math.random() * 3,
-    h: Math.random() * 40 - 20, s: 0.2 + Math.random() * 0.5, ph: Math.random() * 6,
-  });
-
-  function draw(c, w, h, t) {
-    // deep space base with a breathing nebula
-    const neb = c.createRadialGradient(w/2, h*0.42, 40, w/2, h*0.42, Math.max(w,h)*0.75);
-    const pulse = 0.5 + 0.5 * Math.sin(t * 0.35);
-    neb.addColorStop(0, `rgba(${70+30*pulse},20,120,${0.5+0.2*pulse})`);
-    neb.addColorStop(0.45, `rgba(20,6,50,0.55)`);
-    neb.addColorStop(1, `rgba(3,1,10,1)`);
-    c.fillStyle = neb; c.fillRect(0, 0, w, h);
-
-    // second drifting nebula cloud
-    const cx = w * (0.5 + 0.25 * Math.sin(t * 0.12));
-    const cy = h * (0.35 + 0.3 * Math.cos(t * 0.09));
-    const cloud = c.createRadialGradient(cx, cy, 10, cx, cy, Math.max(w,h)*0.5);
-    cloud.addColorStop(0, `rgba(30,80,140,0.22)`);
-    cloud.addColorStop(0.6, `rgba(10,30,80,0.12)`);
-    cloud.addColorStop(1, `rgba(0,0,0,0)`);
-    c.fillStyle = cloud; c.fillRect(0, 0, w, h);
-
-    // stars
-    for (const s of stars) {
-      const tw = 0.5 + 0.5 * Math.sin(t * 2 + s.tw);
-      const px = (s.x * 0.5 + 0.5) * w, py = (s.y * 0.5 + 0.5) * h;
-      c.globalAlpha = tw * 0.8;
-      c.fillStyle = s.z > 0.75 ? "#cfe9ff" : "#ffffff";
-      const size = s.z * 1.6;
-      c.fillRect(px, py, size, size);
+  let skyMesh = null, starsPS = null;
+  function drawStars(ctx, w, h) {
+    ctx.fillStyle = "#05020f"; ctx.fillRect(0, 0, w, h);
+    const neb = ctx.createRadialGradient(w*0.7, h*0.35, 20, w*0.7, h*0.35, w*0.9);
+    neb.addColorStop(0, "rgba(90,40,160,.8)"); neb.addColorStop(0.5, "rgba(30,10,70,.5)"); neb.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = neb; ctx.fillRect(0,0,w,h);
+    const neb2 = ctx.createRadialGradient(w*0.2, h*0.7, 20, w*0.2, h*0.7, w*0.7);
+    neb2.addColorStop(0, "rgba(20,80,120,.6)"); neb2.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = neb2; ctx.fillRect(0,0,w,h);
+    for (let i = 0; i < 500; i++) {
+      const x = Math.random()*w, y = Math.random()*h, r = Math.random()*1.6+0.3;
+      ctx.fillStyle = `rgba(220,230,255,${0.3+Math.random()*0.7})`;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
     }
-    c.globalAlpha = 1;
-
-    // drifting dust motes
-    for (const d of dust) {
-      const dx = ((d.x + t * 0.005 * d.s) % 1 + 1) % 1 * w;
-      const dy = ((d.y - t * 0.002 * d.s) % 1 + 1) % 1 * h;
-      const a = 0.25 + 0.25 * Math.sin(t * 1.5 + d.ph);
-      c.globalAlpha = Math.max(0, a);
-      c.fillStyle = `hsl(${230+d.h},60%,80%)`;
-      c.beginPath(); c.arc(dx, dy, d.r, 0, 6.283); c.fill();
-    }
-    c.globalAlpha = 1;
   }
-  return { draw };
+  function build() {
+    // skybox from a canvas starfield
+    const size = 420;
+    const dt = new BABYLON.DynamicTexture("sky", { width: 1024, height: 1024 }, scene, true);
+    const ctx = dt.getContext();
+    drawStars(ctx, 1024, 1024);
+    dt.update();
+    skyMesh = BABYLON.MeshBuilder.CreateBox("sky", { size: size }, scene);
+    skyMesh.material = new BABYLON.StandardMaterial("skyMat", scene);
+    skyMesh.material.diffuseTexture = dt;
+    skyMesh.material.disableLighting = true;
+    skyMesh.material.backFaceCulling = false;
+    skyMesh.infiniteDistance = true;
+    skyMesh.isPickable = false;
+
+    // star particle field drifting around
+    starsPS = new BABYLON.ParticleSystem("stars", 400, scene);
+    starsPS.particleTexture = makeDotTexture();
+    starsPS.emitter = new BABYLON.Vector3(0, 0, 0);
+    starsPS.minEmitBox = new BABYLON.Vector3(-90, -60, -90);
+    starsPS.maxEmitBox = new BABYLON.Vector3(90, 60, 90);
+    starsPS.minSize = 0.4; starsPS.maxSize = 1.6;
+    starsPS.minLifeTime = 12; starsPS.maxLifeTime = 24;
+    starsPS.emitRate = 60;
+    starsPS.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+    starsPS.gravity = new BABYLON.Vector3(0, -0.4, 0);
+    starsPS.direction1 = new BABYLON.Vector3(-0.5,0,-0.5); starsPS.direction2 = new BABYLON.Vector3(0.5,0,0.5);
+    starsPS.color1 = new BABYLON.Color4(0.9,0.9,1,1); starsPS.color2 = new BABYLON.Color4(0.6,0.4,1,1);
+    starsPS.start();
+  }
+  let dotTex = null;
+  function makeDotTexture() {
+    if (dotTex) return dotTex;
+    const c = document.createElement("canvas"); c.width = c.height = 32;
+    const g = c.getContext("2d");
+    const grad = g.createRadialGradient(16,16,0,16,16,16);
+    grad.addColorStop(0,"rgba(255,255,255,1)"); grad.addColorStop(1,"rgba(255,255,255,0)");
+    g.fillStyle = grad; g.fillRect(0,0,32,32);
+    dotTex = new BABYLON.Texture(c, scene, true);
+    return dotTex;
+  }
+  return { build, makeDotTexture };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 3: ENTROPY] Enemy hive & wave genesis
-   Defines the enemy species, their behaviours, and the escalating
-   wave-birth algorithm that keeps reality collapsing inward.     */
+/* ------------------------------------------------------------------ [AGENT 5: PARTICLEFORGE] volumetric bursts & trails */
+const Particles = (() => {
+  const pool = [];
+  function burst(origin, count, color, power, size) {
+    const ps = new BABYLON.ParticleSystem("burst"+pool.length, count, scene);
+    ps.particleTexture = Cosmos.makeDotTexture();
+    ps.emitter = origin.clone();
+    ps.minEmitPower = 2; ps.maxEmitPower = 3 + power;
+    ps.direction1 = new BABYLON.Vector3(-1,-1,-1); ps.direction2 = new BABYLON.Vector3(1,1,1);
+    ps.minLifeTime = 0.4; ps.maxLifeTime = 0.9;
+    ps.minSize = 1; ps.maxSize = size || 5;
+    ps.emitRate = count * 4;
+    ps.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+    ps.color1 = color || new BABYLON.Color4(1,1,1,1);
+    ps.color2 = new BABYLON.Color4(1,0.7,0.3,1);
+    ps.gravity = new BABYLON.Vector3(0,-3,0);
+    ps.disposeOnStop = true;
+    ps.start(0.25);
+    // hold refs to avoid GC while alive
+    if (pool.length > 40) { const dead = pool.shift(); try { dead.dispose(); } catch(e){} }
+    pool.push(ps);
+    return ps;
+  }
+  function shockwave(origin, color) {
+    // expanding ring mesh
+    const ring = BABYLON.MeshBuilder.CreateTorus("sw", { diameter: 1, thickness: 0.4, tessellation: 40 }, scene);
+    ring.position = origin.clone();
+    ring.rotation.x = Math.PI / 2;
+    const mat = new BABYLON.StandardMaterial("swm", scene);
+    mat.emissiveColor = color || new BABYLON.Color3(0.6,1,1); mat.disableLighting = true;
+    mat.alpha = 0.9; mat.backFaceCulling = false;
+    ring.material = mat;
+    ring.isPickable = false;
+    const grow = (() => {
+      let t = 0;
+      return (dt) => {
+        t += dt; ring.scaling.x = ring.scaling.z = 1 + t * 30;
+        mat.alpha = Math.max(0, 0.9 - t * 1.4);
+        if (t > 0.8) { ring.dispose(); mat.dispose(); return false; }
+        return true;
+      };
+    })();
+    return grow;
+  }
+  function trail(emitter, color) {
+    const ps = new BABYLON.ParticleSystem("trail"+pool.length, 30, scene);
+    ps.particleTexture = Cosmos.makeDotTexture();
+    ps.emitter = emitter;
+    ps.minLifeTime = 0.4; ps.maxLifeTime = 0.8;
+    ps.minSize = 1.5; ps.maxSize = 3.5;
+    ps.emitRate = 80;
+    ps.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+    ps.color1 = color || new BABYLON.Color4(0.5,1,1,1);
+    ps.color2 = new BABYLON.Color4(0.5,1,1,0);
+    ps.gravity = new BABYLON.Vector3(0,-1,0);
+    ps.disposeOnStop = true;
+    ps.start();
+    pool.push(ps);
+    return ps;
+  }
+  return { burst, shockwave, trail };
+})();
+
+/* ------------------------------------------------------------------ [AGENT 3: ENTROPY] enemy 3D assets, spawn, behaviour */
 const Entropy = (() => {
+  const enemies = [];
+  let wave = 0, spawnAcc = 0, budget = 0;
   const SPECIES = {
-    drifter: { r: 15, hp: 34, speed: 70, color: "#ff6b8d", score: 10, dmg: 12 },
-    shard:   { r: 9,  hp: 14, speed: 165, color: "#7df9ff", score: 6,  dmg: 8, wob: true },
-    behemoth:{ r: 42, hp: 260, speed: 38, color: "#c084ff", score: 55, dmg: 30, splits: 3 },
-    wraith:  { r: 13, hp: 60, speed: 130, color: "#9dffd0", score: 30, dmg: 18, phase: true },
-    mine:    { r: 12, hp: 20, speed: 0, color: "#ffd166", score: 5, dmg: 22, boom: true },
-    sunmaw:  { r: 58, hp: 700, speed: 26, color: "#ff9d5c", score: 150, dmg: 26, maws: true },
+    drifter: { r: 1.6, hp: 40, speed: 7, color: [1,0.42,0.55], score: 10, dmg: 14, shape: "drifter" },
+    shard:   { r: 1.0, hp: 16, speed: 16, color: [0.49,1,1], score: 6, dmg: 9, shape: "shard", wob: true },
+    behemoth:{ r: 4.2, hp: 300, speed: 3.6, color: [0.75,0.52,1], score: 55, dmg: 30, shape: "behemoth", splits: 3 },
+    wraith:  { r: 1.5, hp: 70, speed: 12, color: [0.62,1,0.82], score: 30, dmg: 18, shape: "wraith", phase: true },
+    mine:    { r: 1.3, hp: 20, speed: 0, color: [1,0.82,0.4], score: 5, dmg: 22, shape: "mine", boom: true },
+    sunmaw:  { r: 6.0, hp: 900, speed: 2.6, color: [1,0.62,0.36], score: 150, dmg: 26, shape: "sunmaw" },
   };
-  let enemies = [];
-  const S = A.S;
-  let wave = 0;
-  let spawnAcc = 0;
-  let budget = 0;
+
+  function makeMesh(type, r, color, scene3) {
+    const c = new BABYLON.Color3(color[0], color[1], color[2]);
+    let mesh;
+    if (type === "shard") mesh = BABYLON.MeshBuilder.CreatePolyhedron("shard", { type: 1, size: r }, scene3);
+    else if (type === "behemoth") {
+      mesh = BABYLON.MeshBuilder.CreateIcoSphere("beh", { radius: r, subdivisions: 3 }, scene3);
+      for (let i = 0; i < 10; i++) {
+        const spike = BABYLON.MeshBuilder.CreateCone("spk", { height: r*0.9, diameter: r*0.16, tessellation: 5 }, scene3);
+        const dir = new BABYLON.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize();
+        spike.position = dir.scale(r*0.8);
+        spike.setParent(mesh);
+      }
+    }
+    else if (type === "wraith") mesh = BABYLON.MeshBuilder.CreateSphere("wra", { diameter: r*2, segments: 12 }, scene3);
+    else if (type === "mine") {
+      mesh = BABYLON.MeshBuilder.CreateIcoSphere("mine", { radius: r, subdivisions: 2 }, scene3);
+      const blink = BABYLON.MeshBuilder.CreateSphere("blk", { diameter: r*0.5 }, scene3);
+      blink.position.y = r*0.6; blink.setParent(mesh);
+    }
+    else if (type === "sunmaw") {
+      mesh = BABYLON.MeshBuilder.CreateSphere("sun", { diameter: r*2, segments: 24 }, scene3);
+      const mouth = BABYLON.MeshBuilder.CreateTorus("maw", { diameter: r*1.1, thickness: r*0.35, tessellation: 24 }, scene3);
+      mouth.rotation.x = Math.PI/2; mouth.position.z = r*0.8; mouth.setParent(mesh);
+    }
+    else mesh = BABYLON.MeshBuilder.CreateSphere("drif", { diameter: r*2, segments: 10 }, scene3);
+
+    const mat = new BABYLON.StandardMaterial("em"+Math.random(), scene3);
+    mat.diffuseColor = c; mat.specularColor = new BABYLON.Color3(0.4,0.4,0.4);
+    mat.emissiveColor = c.scale(0.6);
+    mat.specularPower = 24;
+    mesh.material = mat;
+    mesh.isPickable = false;
+    return mesh;
+  }
 
   function add(x, y, type) {
     const sp = SPECIES[type];
+    const mesh = makeMesh(sp.shape, sp.r, sp.color, scene);
+    mesh.position.set(x, sp.r * 0.7, y);
     enemies.push({
-      type, x, y, vx: 0, vy: 0, dead: false,
-      r: sp.r, hp: sp.hp, maxHp: sp.hp, speed: sp.speed,
+      type, mesh, r: sp.r, hp: sp.hp, maxHp: sp.hp, speed: sp.speed,
       color: sp.color, score: sp.score, dmg: sp.dmg,
-      wob: sp.wob, phase: sp.phase, boom: sp.boom, splits: sp.splits, maws: sp.maws,
-      phaseT: 0, birth: S.time, seed: Math.random() * 6.28, hit: 0,
+      vx: 0, vz: 0, dead: false, hit: 0, seed: Math.random()*6.28,
+      wob: sp.wob, phase: sp.phase, boom: sp.boom, splits: sp.splits, phaseT: 0,
       life: sp.boom ? 9 : 0,
     });
   }
 
   function newWave() {
-    wave++;
-    spawnAcc = 0;
-    budget = 8 + wave * 5 + wave * wave * 0.7;
-    UI.center(`WAVE ${wave}`);
+    wave++; spawnAcc = 0;
+    budget = (7 + wave*5 + wave*wave*0.6) * A.settings.difficulty;
+    UI.center("WAVE " + wave);
     if (wave > 1) Synth.bell();
   }
 
-  function update(dt, t) {
-    if (!S.playing) return;
-    // time-based wave escalation
-    if (S.gameTime > 2) { newWave(); S.gameTime = 0; }
-
-    spawnAcc += dt;
-    const interval = Math.max(0.18, 0.55 - wave * 0.012);
-    if (spawnAcc >= interval && budget > 0) {
-      spawnAcc = 0; budget--;
-      spawnOne();
-    }
-    // behaviour update (in the play loop via ENTROPY.update)
+  function spawnOne() {
+    const ang = Math.random()*Math.PI*2, dist = 46 + Math.random()*20;
+    const px = Player.x + Math.cos(ang)*dist, pz = Player.z + Math.sin(ang)*dist;
+    let type = "drifter"; const roll = Math.random();
+    if (wave>=2 && roll<0.3) type="shard";
+    if (wave>=3 && roll>0.8 && roll<0.86) type="behemoth";
+    if (wave>=4 && roll>0.6 && roll<0.66) type="wraith";
+    if (wave>=2 && roll>0.4 && roll<0.44) type="mine";
+    if (wave>=6 && roll>0.94) type="sunmaw";
+    const counts = {}; for (const e of enemies) counts[e.type]=(counts[e.type]||0)+1;
+    if (type==="behemoth" && counts.behemoth>=3) type="drifter";
+    if (type==="sunmaw" && counts.sunmaw>=1) type="drifter";
+    if (type==="wraith" && counts.wraith>=8) type="drifter";
+    add(px, pz, type);
   }
 
-  function spawnOne() {
-    const ang = Math.random() * Math.PI * 2;
-    const dist = 680 + Math.random() * 160;
-    const px = G.player.x + Math.cos(ang) * dist;
-    const py = G.player.y + Math.sin(ang) * dist;
-    const roll = Math.random();
-    const p = Player;
-    let type = "drifter";
-    if (wave >= 2 && roll < 0.3) type = "shard";
-    if (wave >= 3 && roll > 0.8 && roll < 0.86) type = "behemoth";
-    if (wave >= 4 && roll > 0.6 && roll < 0.66) type = "wraith";
-    if (wave >= 2 && roll > 0.4 && roll < 0.44) type = "mine";
-    if (wave >= 6 && roll > 0.94) type = "sunmaw";
-    // cap extreme species
-    const count = { behemoth:0, sunmaw:0, wraith:0 };
-    for (const e of enemies) if (count[e.type] !== undefined) count[e.type]++;
-    if (type === "behemoth" && count.behemoth >= 3) type = "drifter";
-    if (type === "sunmaw" && count.sunmaw >= 1) type = "drifter";
-    if (type === "wraith" && count.wraith >= 8) type = "drifter";
-    add(px, py, type);
+  function update(dt) {
+    if (!A.S.playing || A.S.paused) return;
+    if (A.S.gameTime > 2) { newWave(); A.S.gameTime = 0; }
+    spawnAcc += dt;
+    const interval = Math.max(0.18, 0.55 - wave*0.012);
+    if (spawnAcc >= interval && budget > 0) { spawnAcc = 0; budget--; spawnOne(); }
   }
 
   function behaviors(dt) {
+    if (!A.S.playing || A.S.paused) return;
     const pl = Player;
     for (const e of enemies) {
       if (e.dead) continue;
-      if (e.life > 0) { e.life -= dt; if (e.life <= 0) { kill(e, false, false); continue; } }
-      if (e.type === "mine") { if (G.dist(e, pl) < 130 && pl.alive) explodeMine(e); continue; }
-      const dx = pl.x - e.x, dy = pl.y - e.y;
-      const d = Math.hypot(dx, dy) || 1;
-      if (e.phase) {
-        e.phaseT += dt;
-        if (e.phaseT > 1.6) { // teleport
-          e.phaseT = 0;
-          const a = Math.random() * 6.28;
-          e.x = pl.x + Math.cos(a) * 120;
-          e.y = pl.y + Math.sin(a) * 120;
-        }
-      }
+      if (e.life > 0) { e.life -= dt; if (e.life<=0) { kill(e); continue; } }
+      const dx = pl.x - e.mesh.position.x, dz = pl.z - e.mesh.position.z;
+      const d = Math.hypot(dx, dz) || 1;
+      if (e.phase) { e.phaseT += dt; if (e.phaseT > 1.6) { e.phaseT = 0; const a = Math.random()*6.28; e.mesh.position.x = pl.x+Math.cos(a)*9; e.mesh.position.z = pl.z+Math.sin(a)*9; } }
       let sp = e.speed;
-      if (e.wob) { const w = Math.sin(S.time * 6 + e.seed) * 1.4; sp *= (1 + w); }
-      if (e.maws && d < 220) { // sunmaw lunges
-        sp *= 2.2;
-        if (d < 150) sp *= 2;
-      }
-      // separate soft from neighbours
-      for (const o of enemies) {
-        if (o === e) continue;
-        const ox = e.x - o.x, oy = e.y - o.y;
-        const od = Math.hypot(ox, oy);
-        const min = e.r + o.r;
-        if (od > 0.01 && od < min) { e.x += ox/od * (min-od) * 0.5; e.y += oy/od * (min-od) * 0.5; }
-      }
-      // flock toward player
-      const pull = (e.maws && d < 260) ? 1.6 : 1;
-      e.vx = (e.vx + (dx/d) * sp * pull * dt) * 0.9;
-      e.vy = (e.vy + (dy/d) * sp * pull * dt) * 0.9;
-      e.x += e.vx * dt;
-      e.y += e.vy * dt;
-      e.hit = Math.max(0, e.hit - dt);
-      // gravity fields from black holes pull enemies
+      if (e.wob) sp *= (1 + Math.sin(A.S.elapsed*6 + e.seed)*1.3);
+      if (e.type==="mine") { if (G.dist2D(e.mesh.position, pl) < 9 && pl.alive) explodeMine(e); continue; }
+      e.vx += (dx/d)*sp*2*dt; e.vz += (dz/d)*sp*2*dt;
+      e.vx *= (1-3*dt); e.vz *= (1-3*dt);
+      e.mesh.position.x += e.vx*dt; e.mesh.position.z += e.vz*dt;
       G.gravityPull(e, dt);
-      // arena bounds
-      const R = G.worldR;
-      if (e.x > R || e.x < -R || e.y > R || e.y < -R) {
-        const tx = Math.max(-R, Math.min(R, pl.x)), ty = Math.max(-R, Math.min(R, pl.y));
-        e.x = Math.max(-R, Math.min(R, e.x));
-        e.y = Math.max(-R, Math.min(R, e.y));
-        const n = Math.hypot(tx-e.x, ty-e.y)||1;
-        e.x += (tx-e.x)/n*4; e.y += (ty-e.y)/n*4;
+      e.mesh.rotation.y += dt*2; e.mesh.rotation.x = Math.sin(A.S.elapsed+e.seed)*0.3;
+      // keep on ground plane
+      e.mesh.position.y = e.r*0.7 + Math.abs(Math.sin(A.S.elapsed*3+e.seed))*0.4;
+      e.hit = Math.max(0, e.hit-dt);
+      if (e.hit > 0) e.mesh.material.emissiveColor = new BABYLON.Color3(1,1,1);
+      else e.mesh.material.emissiveColor = new BABYLON.Color3(e.color[0],e.color[1],e.color[2]).scale(0.6);
+      // bounds
+      const R = 58;
+      if (Math.abs(e.mesh.position.x) > R || Math.abs(e.mesh.position.z) > R) {
+        e.mesh.position.x = Math.max(-R, Math.min(R, e.mesh.position.x));
+        e.mesh.position.z = Math.max(-R, Math.min(R, e.mesh.position.z));
       }
     }
-    // collision vs player
-    if (pl.alive) {
-      for (const e of enemies) {
-        if (e.boom) continue;
-        if (G.dist(e, pl) < e.r + pl.r) {
-          const dmg = e.dmg;
-          if (Player.damage(dmg, e)) {
-            kill(e, false, false);
-          }
-          // knock player back
-          const dx = pl.x - e.x, dy = pl.y - e.y, d = Math.hypot(dx, dy)||1;
-          pl.vx += dx/d * 260; pl.vy += dy/d * 260;
-          if (!pl.alive) return;
-        }
+    // contact damage
+    if (pl.alive) for (const e of enemies) {
+      if (e.dead || e.boom) continue;
+      if (G.dist2D(e.mesh.position, pl) < e.r + pl.r) {
+        const hit = Player.damage(e.dmg, e);
+        if (hit) kill(e);
+        const dx = pl.x - e.mesh.position.x, dz = pl.z - e.mesh.position.z, d = Math.hypot(dx,dz)||1;
+        pl.vx += dx/d*20; pl.vz += dz/d*20;
+        if (!pl.alive) return;
       }
     }
+    sweep();
   }
 
   function explodeMine(e) {
-    e.hp = 0;
-    Synth.boom(60);
-    Particles.blast(e.x, e.y, 26, "#ffd166", 40, 300);
+    e.hp = 0; Synth.boom(60);
+    Particles.burst(e.mesh.position, 30, new BABYLON.Color4(1,0.82,0.4,1), 6, 3);
     A.S.shake = Math.max(A.S.shake, 6);
-    const pl = Player;
-    if (pl.alive && G.dist(e, pl) < 70) Player.damage(e.dmg, e);
+    if (Player.alive && G.dist2D(e.mesh.position, Player) < 7) Player.damage(e.dmg, e);
+    kill(e);
   }
 
-  function kill(e, byPlayer, grantVoid) {
+  function kill(e, byPlayer, grant) {
     if (!e || e.dead) return;
     e.dead = true;
-    Particles.blast(e.x, e.y, e.r * 1.2, e.color, 26, 260);
-    Synth.hit(e.type === "behemoth" || e.type === "sunmaw");
+    Particles.burst(e.mesh.position, 26, new BABYLON.Color4(e.color[0],e.color[1],e.color[2],1), 6, e.r);
+    Synth.hit(e.type==="behemoth"||e.type==="sunmaw");
     if (byPlayer) {
-      const pts = e.score * Player.comboMult();
+      const pts = Math.round(e.score * Player.comboMult());
       Player.addScore(pts);
-      Particles.text(e.x, e.y, `+${pts}`, e.color);
-      if (e.splits) for (let k = 0; k < e.splits; k++) add(e.x + (Math.random()*30-15), e.y + (Math.random()*30-15), "drifter");
-      if (grantVoid) Player.heal(3);
+      UI.flytext(e.mesh.position, "+"+pts);
+      if (e.splits) for (let k=0;k<e.splits;k++) add(e.mesh.position.x+(Math.random()*3-1.5), e.mesh.position.z+(Math.random()*3-1.5), "drifter");
+      if (grant) Player.heal(3);
     }
-    if (e.boom) Particles.blast(e.x, e.y, 30, "#fff", 20, 200);
   }
 
-  // sweep dead enemies at a safe point each frame
-  function sweep() {
-    for (let i = enemies.length - 1; i >= 0; i--) if (enemies[i].dead) enemies.splice(i, 1);
-  }
-
-  function clear() { enemies.length = 0; }
+  function sweep() { for (let i=enemies.length-1;i>=0;i--) if (enemies[i].dead) { enemies[i].mesh.dispose(); enemies.splice(i,1); } }
+  function clear() { for (const e of enemies) e.mesh.dispose(); enemies.length = 0; }
   function count() { return enemies.length; }
-  return {
-    add, update, behaviors, kill, clear, count, newWave, sweep, SPECIES,
-    get wave() { return wave; }, set wave(v) { wave = v; },
-    get enemies() { return enemies; },
-  };
+  function list() { return enemies; }
+  return { list, add, update, behaviors, kill, clear, count, newWave, SPECIES,
+    get wave(){ return wave; }, set wave(v){ wave=v; } };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 4: REALITY WEAVER] The seven abilities
-   Q/E/R/SPACE/F/C/X — each one bends a different law of reality.  */
+/* ------------------------------------------------------------------ [AGENT 4: REALITY WEAVER] the abilities */
 const Abilities = (() => {
-  const S = A.S;
   const defs = [
-    { key: "q", name: "SINGULARITY", ico: "◉", cd: 15, ult: false },
-    { key: "e", name: "TEMPORAL RIFT", ico: "⟲", cd: 11, ult: false },
-    { key: "r", name: "FRACTAL ECHO", ico: "❖", cd: 12, ult: false },
-    { key: " ", name: "GRAVINVERS", ico: "⧉", cd: 9, ult: false },
-    { key: "f", name: "VOID LASH", ico: "⌁", cd: 7, ult: false },
-    { key: "c", name: "PRISM PHASE", ico: "◈", cd: 6, ult: false },
-    { key: "x", name: "GENESIS", ico: "☀", cd: 32, ult: true },
+    { key:"q", name:"SINGULARITY", ico:"◉", cd:15 },
+    { key:"e", name:"TEMPORAL RIFT", ico:"⟲", cd:11 },
+    { key:"r", name:"FRACTAL ECHO", ico:"❖", cd:12 },
+    { key:"g", name:"TRACTOR GRAB", ico:"⌖", cd:6 },
+    { key:" ", name:"GRAVINVERS", ico:"⧉", cd:9 },
+    { key:"f", name:"VOID LASH", ico:"⌁", cd:7 },
+    { key:"c", name:"PRISM PHASE", ico:"◈", cd:6 },
+    { key:"x", name:"GENESIS", ico:"☀", cd:32, ult:true },
   ];
-  const state = defs.map(d => ({ cd: 0, dur: 0 }));
+  const state = defs.map(d => ({ cd: 0 }));
+  const fx = { echoes: [], prismTrail: [], riftActive: false, inversion: 0, grabTarget: null, prismPS: null };
+  const S = A.S;
 
-  // sub-fields for persistent effects
-  const fx = {
-    echoes: [],         // FRACTALIST echoes
-    prismTrail: [],     // prism phase trail
-    riftActive: false,
-    inversion: 0,       // remaining grav-inversion time
-  };
-
-  function canUse(i) { return state[i].cd <= 0 && state[i].dur <= 0 && Player.alive; }
-
+  function canUse(i) { return state[i].cd <= 0 && Player.alive && S.playing; }
   function tryCast(i) {
     if (!canUse(i)) return false;
-    const d = defs[i];
-    state[i].cd = d.cd;
-    state[i].dur = d.dur;
-    UI.announce(d.name);
-    const funcs = [singularity, temporalRift, fractalEcho, gravInverse, voidLash, prismPhase, genesis];
-    funcs[i]();
+    state[i].cd = defs[i].cd;
+    UI.announce(defs[i].name);
+    const fns = [singularity, temporalRift, fractalEcho, tractorGrab, gravInverse, voidLash, prismPhase, genesis];
+    fns[i]();
     return true;
   }
 
-  function useableCds(i) { return state[i].cd; }
-
-  /* Q — SINGULARITY: birth a black hole that devours matter, then implodes */
   function singularity() {
-    G.blackHoles.push({ x: Player.aimX, y: Player.aimY, r: 14, maxR: 190, t: 0, life: 2.6, pull: 900 });
+    const p = Player.aimPoint();
+    G.birthBlackHole(p, 16, 6.5);
     Synth.singularity();
-    Particles.blast(Player.aimX, Player.aimY, 20, "#6ff", 40, 420);
+    Particles.shockwave(p, new BABYLON.Color3(0.3,1,1));
   }
-  /* E — TEMPORAL RIFT: bullet time; enemy time slows to a crawl */
   function temporalRift() {
-    fx.riftActive = true;
-    A.S.targetTimeScale = 0.28;
-    Particles.blast(Player.x, Player.y, 30, "#9dffd0", 40, 260);
-  }
-  /* R — FRACTAL ECHO: split across timelines; echoes mirror your aim */
-  function fractalEcho() {
-    const ang = [0.6, Math.PI, -0.6];
-    fx.echoes = ang.map(a => ({
-      x: Player.x + Math.cos(Player.aimAngle + a) * 46,
-      y: Player.y + Math.sin(Player.aimAngle + a) * 46,
-      t: 5, angle: a,
-    }));
-    Synth.echo();
-  }
-  /* SPACE — GRAVITIC INVERSION: flip gravity, fling everything skyward */
-  function gravInverse() {
-    fx.inversion = 2.0;
-    Player.vy -= 900;
-    A.S.shake = Math.max(A.S.shake, 10);
-    for (const e of Entropy.enemies) { e.vy -= 520; e.vx += (Math.random()-0.5)*300; }
-    Particles.blast(Player.x, Player.y - 20, 24, "#c084ff", 30, 400);
+    fx.riftActive = true; S.targetTimeScale = 0.3;
+    Particles.burst(Player.position(), 26, new BABYLON.Color4(0.5,1,0.8,1), 4, 3);
     Synth.bell();
   }
-  /* F — VOID LASH: a searing tendril that severs reality in a line */
-  function voidLash() {
-    const px = Player.x, py = Player.y;
-    const ang = Player.aimAngle;
-    const reach = 760;
-    const hits = new Set();
-    for (const e of Entropy.enemies) {
-      // distance from segment (player -> player+dir*reach) to enemy
-      const ax = px, ay = py, bx = px + Math.cos(ang)*reach, by = py + Math.sin(ang)*reach;
-      const dx = bx-ax, dy = by-ay;
-      const len2 = dx*dx+dy*dy;
-      let tt = ((e.x-ax)*dx + (e.y-ay)*dy) / len2; tt = Math.max(0, Math.min(1, tt));
-      const nx = ax + dx*tt, ny = ay + dy*tt;
-      const d = Math.hypot(e.x-nx, e.y-ny);
-      if (d < e.r + 26) {
-        hits.add(e);
-        Entropy.kill(e, true, true);
-      }
-    }
-    G.beams.push({ x1:px, y1:py, x2:px+Math.cos(ang)*reach, y2:py+Math.sin(ang)*reach, t:0.28, color:"#c084ff", w:10 });
-    Particles.blast(px + Math.cos(ang)*reach, py + Math.sin(ang)*reach, 18, "#c084ff", 30, 380);
-    Synth.lash();
-    if (hits.size === 0) Player.heal(2);
+  function fractalEcho() {
+    const offs = [new BABYLON.Vector3(4,0,0), new BABYLON.Vector3(-4,0,0), new BABYLON.Vector3(0,0,4)];
+    fx.echoes = offs.map(o => {
+      const m = BABYLON.MeshBuilder.CreateSphere("ec", { diameter: 2 }, scene);
+      m.position = Player.position().add(o); m.position.y = 1;
+      const mat = new BABYLON.StandardMaterial("ecm", scene);
+      mat.emissiveColor = new BABYLON.Color3(0.78,0.65,1); mat.disableLighting = true; mat.alpha = 0.5;
+      m.material = mat; m.isPickable = false;
+      return { p: m.position, mesh: m, mat, t: 5 };
+    });
+    Synth.echo();
   }
-  /* C — PRISM PHASE: become nowhere; leave a damaging light trail */
+  function tractorGrab() {
+    let best = null, bd = 1e9;
+    for (const e of Entropy.list()) { if (e.dead) continue; const d = G.dist2D(e.mesh.position, Player); if (d < 26 && d < bd) { bd = d; best = e; } }
+    if (best) { fx.grabTarget = best; fx.grabT = 0; Synth.bell(); UI.grab(true); }
+    else { UI.announce("NO FOE TO SEIZE"); }
+  }
+  function gravInverse() {
+    fx.inversion = 2.0;
+    gravityY = 9.8;
+    Player.vy = 18;
+    for (const e of Entropy.list()) { e.mesh.position.y += 6; e.vy = 8; }
+    A.S.shake = Math.max(A.S.shake, 10);
+    Particles.burst(Player.position(), 30, new BABYLON.Color4(0.75,0.52,1,1), 8, 4);
+    Synth.bell();
+  }
+  function voidLash() {
+    const aim = Player.aimPoint();
+    const from = Player.position(); from.y += 1.2;
+    const dir = aim.subtract(from).normalize();
+    const reach = 40;
+    const end = from.add(dir.scale(reach));
+    G.beams.push({ from, end, t: 0.3, color: new BABYLON.Color3(0.75,0.52,1), w: 1.2 });
+    for (const e of Entropy.list()) {
+      if (e.dead) continue;
+      const q = e.mesh.position; q.y += 0.7;
+      const t = BABYLON.Vector3.Clamp(BABYLON.Vector3.Dot(q.subtract(from), dir), 0, reach);
+      const proj = from.add(dir.scale(t));
+      if (proj.subtract(q).length() < e.r + 2) { Entropy.kill(e, true, true); }
+    }
+    Particles.burst(end, 24, new BABYLON.Color4(0.75,0.52,1,1), 6, 3);
+    Synth.lash();
+  }
   function prismPhase() {
     fx.prismTrail = [];
-    Player.phase = 2.0;
-    Particles.blast(Player.x, Player.y, 20, "#ffd2ff", 30, 260);
+    Player.phase = 2.5;
+    if (!fx.prismPS) fx.prismPS = Particles.trail(Player.position(), new BABYLON.Color4(1,0.82,1,1));
+    Particles.burst(Player.position(), 24, new BABYLON.Color4(1,0.82,1,1), 5, 3);
     Synth.phase();
   }
-  /* X — GENESIS OVERDRIVE: ultimate. unmake everything. */
   function genesis() {
-    A.S.flash = 1;
-    A.S.shake = Math.max(A.S.shake, 22);
-    Player.overdrive = 4.0;
-    A.S.targetTimeScale = 0.12;
+    S.flash = 1; S.shake = Math.max(S.shake, 22);
+    Player.overdrive = 4.0; S.targetTimeScale = 0.15;
+    Particles.burst(Player.position(), 60, new BABYLON.Color4(1,1,1,1), 12, 5);
+    Particles.shockwave(Player.position(), new BABYLON.Color3(1,1,1));
     Synth.genesis();
-    Particles.blast(Player.x, Player.y, 60, "#fff", 80, 600);
   }
 
-  function update(dt, t) {
-    for (let i = 0; i < state.length; i++) {
-      if (state[i].cd > 0) state[i].cd = Math.max(0, state[i].cd - dt);
-    }
-    // overdrive and rift end restoring time
-    if (Player.overdrive <= 0 && !fx.riftActive) A.S.targetTimeScale = 1;
-    if (fx.riftActive && Player.overdrive <= 0) {
-      fx.riftActive = false;
-      A.S.targetTimeScale = 1;
-    }
-    // grav inversion timer
+  function update(dt) {
+    for (let i=0;i<state.length;i++) if (state[i].cd>0) state[i].cd = Math.max(0, state[i].cd-dt);
+    if (Player.overdrive<=0 && !fx.riftActive) S.targetTimeScale = 1;
+    if (fx.riftActive && Player.overdrive<=0) { fx.riftActive = false; S.targetTimeScale = 1; }
+    // grav inversion
     if (fx.inversion > 0) {
       fx.inversion -= dt;
-      for (const e of Entropy.enemies) e.vy -= 220 * dt;
-      Player.vy -= 140 * dt;
-      if (fx.inversion <= 0) {
-        // fall damage
-        for (const e of Entropy.enemies) {
-          if (Math.abs(e.vy) > 220) { e.hp -= 60; Particles.blast(e.x, e.y, e.r, "#fff", 12, 200); if (e.hp <= 0) Entropy.kill(e, true, true); }
-          e.vy = 0;
-        }
+      if (fx.inversion <= 0) gravityY = GRAVITY_BASE;
+    }
+    // prism trail damage
+    if (Player.phase>0 && Player.alive) fx.prismTrail.push(Player.position().clone());
+    for (let i=fx.prismTrail.length-1;i>=0;i--) {
+      for (const e of Entropy.list()) {
+        if (e.dead) continue;
+        if (G.dist2D(e.mesh.position, fx.prismTrail[i]) < e.r + 2.5) { e.hp -= 30*dt; e.hit = 0.1; if (e.hp<=0) Entropy.kill(e, true, true); }
       }
+      if (fx.prismTrail.length > 40) fx.prismTrail.shift();
     }
-    // prism trail emission
-    if (Player.phase > 0 && Player.alive) {
-      fx.prismTrail.push({ x: Player.x, y: Player.y, t: 1.2 });
-    }
-    for (let i = fx.prismTrail.length - 1; i >= 0; i--) {
-      fx.prismTrail[i].t -= dt;
-      // trail damages enemies
-      for (const e of Entropy.enemies) {
-        if (G.dist(e, fx.prismTrail[i]) < e.r + 26) { e.hp -= 30*dt; e.hit = 0.12; if (e.hp <= 0) Entropy.kill(e, true, true); }
-      }
-      if (fx.prismTrail[i].t <= 0) fx.prismTrail.splice(i, 1);
-    }
-    // echoes
-    for (let i = fx.echoes.length - 1; i >= 0; i--) {
+    // echoes (persistent meshes, fade + dispose)
+    for (let i=fx.echoes.length-1;i>=0;i--) {
       const ec = fx.echoes[i];
       ec.t -= dt;
-      ec.x += Math.cos(Player.aimAngle + ec.angle) * 0;
-      if (ec.t <= 0) fx.echoes.splice(i, 1);
+      if (ec.mat) ec.mat.alpha = Math.max(0, ec.t/5)*0.5;
+      if (ec.t<=0) { try { ec.mesh.dispose(); ec.mat.dispose(); } catch(e){} fx.echoes.splice(i,1); }
+      else if (Player.firing) Bolts.fire(ec.p, Player.aimPoint(), new BABYLON.Color3(0.78,0.65,1), 16);
+    }
+    // tractor grab update
+    if (fx.grabTarget) {
+      const tg = fx.grabTarget;
+      if (tg.dead) { fx.grabTarget = null; UI.grab(false); return; }
+      // pull toward a focal point ahead of player
+      const aim = Player.aimPoint(); aim.y = tg.mesh.position.y;
+      const toAim = aim.subtract(tg.mesh.position);
+      tg.mesh.position.addInPlace(toAim.scale(3*dt));
+      UI.grab(true);
+      if (tg.mesh.position.subtract(aim).length() < 1.2) { hurl(tg, aim); }
     }
   }
-
-  function drawEchoes(c) {
-    for (const ec of fx.echoes) {
-      c.globalAlpha = Math.min(1, ec.t) * 0.8;
-      c.fillStyle = "#c8a6ff";
-      c.shadowColor = "#c8a6ff"; c.shadowBlur = 18;
-      c.beginPath(); c.arc(ec.x, ec.y, Player.r, 0, 6.283); c.fill();
-      c.shadowBlur = 0; c.globalAlpha = 1;
-      // echo muzzle when firing
-      if (Player.firing) Particles.bolt(ec.x, ec.y, Player.aimAngle, "#c8a6ff", false);
-    }
+  function hurl(tg, from) {
+    const aim = Player.aimPoint();
+    const dir = aim.subtract(from).normalize().scale(30);
+    tg.vx += dir.x; tg.vz += dir.z; tg.hurt = 2;
+    tg.vx *= 0.2; tg.vz *= 0.2; // mostly clear existing velocity
+    fx.grabTarget = null; UI.grab(false);
+    Synth.lash();
   }
-
-  return { defs, state, fx, tryCast, useableCds, update, drawEchoes };
+  function drawEchoes() {} // echoes are persistent meshes managed in update()
+  return { defs, state, fx, tryCast, update, drawEchoes, useableCds: (i)=>state[i].cd };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 5: PARTICLEFORGE] Particle systems & shockwaves  */
-const Particles = (() => {
-  let parts = [];
-  const S = A.S;
-  const texts = [];
-
-  function spawn(p) { parts.push(p); if (parts.length > 1400) parts.splice(0, parts.length - 1400); }
-
-  function blast(x, y, r, color, n, speed) {
-    for (let i = 0; i < n; i++) {
-      const a = Math.random() * 6.28, sp = speed * (0.3 + Math.random() * 0.9);
-      spawn({ x, y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp, r: r * (0.4 + Math.random()*0.8), life: 0.5 + Math.random()*0.6, max: 1.1, color, add: true, glow: true });
-    }
-  }
-
-  function bolt(x, y, ang, color, live) {
-    const sp = 620;
-    spawn({ x, y: y, vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp, r: 3.5, life: 0.22, max: 0.22, color, add: true, glow: true, bolt: true, live });
-  }
-
-  function trail(x, y, color) {
-    spawn({ x, y, vx: (Math.random()-0.5)*30, vy: (Math.random()-0.5)*30, r: 3, life: 0.5, max: 0.5, color, add: true, glow: true });
-  }
-
-  function text(x, y, str, color) {
-    texts.push({ x, y, str, color, t: 1 });
-  }
-
-  function ring(x, y, r, color) {
-    spawn({ x, y, r: r, vx:0, vy:0, life: 0.5, max: 0.5, color, ring: true, add: true });
-  }
-
-  function update(dt, t) {
-    for (let i = parts.length - 1; i >= 0; i--) {
-      const p = parts[i];
-      p.life -= dt;
-      if (p.life <= 0) { parts.splice(i, 1); continue; }
-      if (!p.ring) { p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= (1 - 2*dt); p.vy *= (1 - 2*dt); }
-      else p.r += 640*dt;
-      if (p.glow) ParticlesF.trail(p.x, p.y, p.color);
-    }
-    for (let i = texts.length - 1; i >= 0; i--) { texts[i].t -= dt; texts[i].y -= 40*dt; if (texts[i].t <= 0) texts.splice(i,1); }
-  }
-
-  function draw(c) {
-    for (const p of parts) {
-      const a = Math.max(0, p.life / p.max);
-      c.globalAlpha = a;
-      if (p.ring) {
-        c.strokeStyle = p.color; c.lineWidth = 4*a;
-        c.shadowColor = p.color; c.shadowBlur = 16;
-        c.beginPath(); c.arc(p.x, p.y, p.r, 0, 6.283); c.stroke();
-        c.shadowBlur = 0;
-      } else if (p.bolt) {
-        c.strokeStyle = p.color; c.lineWidth = 2.5*a; c.shadowColor = p.color; c.shadowBlur = 14;
-        const tx = p.x - p.vx*0.03, ty = p.y - p.vy*0.03;
-        c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(tx, ty); c.stroke(); c.shadowBlur = 0;
-      } else {
-        c.fillStyle = p.color; c.shadowColor = p.color; c.shadowBlur = p.glow ? 12 : 0;
-        c.beginPath(); c.arc(p.x, p.y, p.r * a, 0, 6.283); c.fill(); c.shadowBlur = 0;
-      }
-    }
-    c.globalAlpha = 1;
-  }
-
-  function drawTexts(c) {
-    for (const tx of texts) {
-      c.globalAlpha = Math.max(0, tx.t);
-      c.font = "bold 15px system-ui"; c.fillStyle = tx.color; c.textAlign = "center";
-      c.shadowColor = "#000"; c.shadowBlur = 6;
-      c.fillText(tx.str, tx.x, tx.y); c.shadowBlur = 0;
-    }
-    c.globalAlpha = 1;
-  }
-  return { spawn, blast, bolt, trail, text, ring, update, draw, drawTexts };
-})();
-// helper alias used above
-const ParticlesF = Particles;
-
-/* ------------------------------------------------------------------ [AGENT 6: GRAVITON] Physics — black holes & fields       */
+/* ------------------------------------------------------------------ [AGENT 6: GRAVITON] black holes, lensing, gravity, beams */
 const G = (() => {
-  const worldR = 1400;
+  const worldR = 58;
   const blackHoles = [];
   const beams = [];
-  const S = A.S;
-  const player = { x:0, y:0 };
-  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  let lensPP = null, lensTarget = null, lensStrength = 0;
+  const dist = (a,b) => BABYLON.Vector3.Distance(a,b);
+  const dist2D = (a,b) => Math.hypot(a.x-b.x, a.z-b.z);
 
-  function gravityPull(e, dt) {
-    for (const bh of blackHoles) {
-      const dx = bh.x - e.x, dy = bh.y - e.y;
-      const d = Math.hypot(dx, dy) || 1;
-      if (d < bh.maxR) {
-        const f = bh.pull * (1 - d / bh.maxR) * dt;
-        e.vx += (dx/d) * f; e.vy += (dy/d) * f;
-        // damage inside
-        if (d < bh.r) { e.hp -= 90*dt; e.hit = 0.1; if (e.hp <= 0) Entropy.kill(e, true, true); }
-        Particles.trail(e.x, e.y, "#6ff");
-      }
-    }
+  function registerLensing() {
+    if (A.settings.fx !== "high") return;
+    try {
+      BABYLON.Effect.ShadersStore["lensVertexShader"] =
+        "precision highp float;\nattribute vec2 position;\nvarying vec2 vUV;\nvoid main(void){\ngl_Position=vec4(position,0.,1.);\nvUV=position*0.5+0.5;\n}";
+      BABYLON.Effect.ShadersStore["lensFragmentShader"] =
+        "precision highp float;\nvarying vec2 vUV;\nuniform sampler2D textureSampler;\nuniform vec2 bhPos;\nuniform float strength;\nuniform float aspect;\nvoid main(void){\nvec2 uv=vUV;\nvec2 d=uv-bhPos;\nd.x*=aspect;\nfloat dd=length(d);\nfloat w=strength/(0.25+dd*dd*5.0);\nvec2 n=normalize(d+vec2(0.0001));\nvec2 wuv=uv+n*w*(1.0-smoothstep(0.0,0.75,dd));\ngl_FragColor=texture2D(textureSampler,wuv);\n}";
+      lensPP = new BABYLON.PostProcess("lens", "lens", ["bhPos","strength","aspect"], null, 1.0, camera);
+      lensPP.onApply = (effect) => {
+        const v = new BABYLON.Vector2(0.5,0.5);
+        if (lensTarget) {
+          const proj = BABYLON.Vector3.Project(lensTarget, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+          v.x = proj.x / engine.getRenderWidth(); v.y = proj.y / engine.getRenderHeight();
+        }
+        effect.setVector2("bhPos", v);
+        effect.setFloat("strength", lensStrength);
+        effect.setFloat("aspect", engine.getAspectRatio(camera)||1);
+      };
+    } catch (e) { console.warn("lensing unavailable", e); }
+  }
+
+  function birthBlackHole(pos, r, life) {
+    const bh = {
+      pos: pos.clone(), r, life, t: 0, maxR: r, pull: 26,
+      sphere: null, disk: null, ps: null,
+    };
+    // dark event horizon
+    bh.sphere = BABYLON.MeshBuilder.CreateSphere("bh", { diameter: r*2, segments: 20 }, scene);
+    bh.sphere.position = pos.clone();
+    const sm = new BABYLON.StandardMaterial("bhm", scene);
+    sm.emissiveColor = new BABYLON.Color3(0,0,0); sm.diffuseColor = new BABYLON.Color3(0,0,0);
+    sm.specularColor = new BABYLON.Color3(0.1,0.1,0.1); sm.disableLighting = true;
+    bh.sphere.material = sm; bh.sphere.isPickable = false;
+    // glowing accretion disk
+    bh.disk = BABYLON.MeshBuilder.CreateTorus("disk", { diameter: r*4, thickness: r*0.6, tessellation: 40 }, scene);
+    bh.disk.position = pos.clone(); bh.disk.rotation.x = Math.PI/2.3;
+    const dm = new BABYLON.StandardMaterial("diskm", scene);
+    dm.emissiveColor = new BABYLON.Color3(0.3,1,1); dm.disableLighting = true;
+    bh.disk.material = dm; bh.disk.isPickable = false;
+    // accretion particles spiraling in
+    bh.ps = new BABYLON.ParticleSystem("bhps", 320, scene);
+    bh.ps.particleTexture = Cosmos.makeDotTexture();
+    bh.ps.emitter = pos.clone();
+    bh.ps.minEmitBox = new BABYLON.Vector3(-1,-1,-1); bh.ps.maxEmitBox = new BABYLON.Vector3(1,1,1);
+    bh.ps.minSize = 0.4; bh.ps.maxSize = 2.2;
+    bh.ps.minLifeTime = 1.2; bh.ps.maxLifeTime = 2.2;
+    bh.ps.emitRate = 220;
+    bh.ps.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+    bh.ps.color1 = new BABYLON.Color4(0.3,1,1,1); bh.ps.color2 = new BABYLON.Color4(0.6,0.4,1,1);
+    bh.ps.gravity = new BABYLON.Vector3(0,0,0);
+    bh.ps.direction1 = new BABYLON.Vector3(-1,-1,-1); bh.ps.direction2 = new BABYLON.Vector3(1,1,1);
+    bh.ps.start();
+    // aim lensing at it
+    lensTarget = pos.clone(); lensStrength = 0.6;
+    blackHoles.push(bh);
+    Synth.singularity();
   }
 
   function update(dt) {
-    for (let i = blackHoles.length - 1; i >= 0; i--) {
+    lensStrength = 0;
+    for (let i=blackHoles.length-1;i>=0;i--) {
       const bh = blackHoles[i];
-      bh.t += dt;
-      bh.r = Math.min(bh.maxR * 0.5, 14 + bh.t * 40);
-      // pull player slightly
-      const dx = bh.x - player.x, dy = bh.y - player.y, d = Math.hypot(dx,dy)||1;
-      if (d < bh.maxR) { const f = 220*(1-d/bh.maxR)*dt; player.vx += dx/d*f; player.vy += dy/d*f; }
+      bh.t += dt; bh.pos.y += gravityY*dt*0.4;
+      bh.r = Math.min(bh.maxR*1.6, bh.r + dt*bh.maxR*0.4);
+      lensTarget = bh.pos; lensStrength = 0.5;
+      // pull enemies
+      for (const e of Entropy.list()) {
+        if (e.dead) continue;
+        const dx = bh.pos.x - e.mesh.position.x, dz = bh.pos.z - e.mesh.position.z;
+        const d = Math.hypot(dx,dz)||1;
+        if (d < bh.r*4) { const f = bh.pull*(1-d/(bh.r*4))*dt; e.vx += dx/d*f*4; e.vz += dz/d*f*4; }
+        if (d < bh.r) { e.hp -= 90*dt; e.hit=0.1; if (e.hp<=0) Entropy.kill(e,true,true); }
+      }
+      // pull player
+      if (Player.alive) {
+        const dx = bh.pos.x - Player.x, dz = bh.pos.z - Player.z, d = Math.hypot(dx,dz)||1;
+        if (d < bh.r*4) { const f = 12*(1-d/(bh.r*4))*dt; Player.vx += dx/d*f*4; Player.vz += dz/d*f*4; }
+      }
+      bh.disk.rotation.z += dt*4; bh.disk.scaling.x = bh.disk.scaling.y = 1 + Math.sin(A.S.elapsed*8)*0.06;
+      bh.sphere.scaling.x = bh.sphere.scaling.y = bh.sphere.scaling.z = 1 + bh.r*0.01;
       if (bh.t >= bh.life) {
-        blackHoles.splice(i, 1);
-        // SUPERNOVA: enormous blast
-        const bx = bh.x, by = bh.y;
-        Particles.blast(bx, by, 34, "#6ff", 90, 620);
-        Particles.ring(bx, by, 10, "#9dffd0");
+        // SUPERNOVA
+        blackHoles.splice(i,1);
+        Particles.burst(bh.pos, 90, new BABYLON.Color4(0.3,1,1,1), 14, 6);
+        Particles.shockwave(bh.pos, new BABYLON.Color3(0.5,1,1));
         A.S.shake = Math.max(A.S.shake, 18);
         Synth.boom(160);
-        for (const e of Entropy.enemies) if (dist(e, bh) < 300) Entropy.kill(e, true, true);
-        if (Player.alive && dist(Player, bh) < 120) Player.damage(30, null);
+        for (const e of Entropy.list()) if (dist2D(e.mesh.position, bh.pos) < 24) Entropy.kill(e,true,true);
+        if (Player.alive && dist2D(Player, bh.pos) < 10) Player.damage(30);
+        bh.sphere.dispose(); bh.disk.dispose(); bh.ps.dispose();
+        lensStrength = 0;
       }
     }
-    for (let i = beams.length - 1; i >= 0; i--) { beams[i].t -= dt; if (beams[i].t <= 0) beams.splice(i, 1); }
-  }
-
-  function drawBlackHoles(c) {
-    for (const bh of blackHoles) {
-      // accretion ring
-      const a = 0.5 + 0.5 * Math.sin(S.time * 10 + bh.t * 4);
-      c.strokeStyle = "#6ff"; c.globalAlpha = 0.7; c.lineWidth = 3;
-      c.shadowColor = "#6ff"; c.shadowBlur = 22;
-      c.beginPath(); c.arc(bh.x, bh.y, bh.r * 0.7, 0, 6.283); c.stroke();
-      c.strokeStyle = "#c8a6ff"; c.lineWidth = 2; c.globalAlpha = 0.4;
-      c.beginPath(); c.arc(bh.x, bh.y, bh.r * 0.9 + a*6, 0, 6.283); c.stroke();
-      c.shadowBlur = 0;
-      // event horizon
-      const g = c.createRadialGradient(bh.x, bh.y, 1, bh.x, bh.y, bh.r);
-      g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(0.8, "rgba(0,10,30,0.9)"); g.addColorStop(1, "rgba(60,255,255,0.3)");
-      c.fillStyle = g; c.globalAlpha = 1;
-      c.beginPath(); c.arc(bh.x, bh.y, bh.r, 0, 6.283); c.fill();
+    for (let i=beams.length-1;i>=0;i--) {
+      beams[i].t -= dt;
+      if (beams[i].t<=0) { try { beams[i].mesh && beams[i].mesh.dispose(); beams[i].mat && beams[i].mat.dispose(); } catch(e){} beams.splice(i,1); }
     }
   }
 
-  function drawBeams(c) {
+  function gravityPull(e, dt) {
+    // fall under current gravity
+    e.mesh.position.y += gravityY * dt * dt * 6;
+    if (e.mesh.position.y < e.r*0.7) e.mesh.position.y = e.r*0.7;
+    if (gravityY > 0) { // inverted: pushed up, then damage on flip end
+      e.mesh.position.y += 2*dt;
+      if (Math.abs(e.vy)>6) { e.hp -= 60; if (e.hp<=0) Entropy.kill(e,true,true); }
+      e.vy = Math.max(0, (e.vy||0) - 4*dt);
+    }
+  }
+
+  function drawBeams() {
     for (const b of beams) {
-      c.globalAlpha = Math.max(0, b.t / 0.28);
-      c.strokeStyle = b.color; c.lineWidth = b.w; c.shadowColor = b.color; c.shadowBlur = 26;
-      c.beginPath(); c.moveTo(b.x1, b.y1); c.lineTo(b.x2, b.y2); c.stroke();
-      c.lineWidth = b.w*0.4; c.strokeStyle = "#fff";
-      c.beginPath(); c.moveTo(b.x1, b.y1); c.lineTo(b.x2, b.y2); c.stroke();
-      c.shadowBlur = 0; c.globalAlpha = 1;
-    }
-  }
-
-  function drawBounds(c) {
-    c.strokeStyle = "rgba(160,120,255,0.18)"; c.lineWidth = 2;
-    c.strokeRect(-worldR, -worldR, worldR*2, worldR*2);
-  }
-  return { worldR, blackHoles, beams, dist, gravityPull, update, drawBlackHoles, drawBeams, drawBounds, player };
-})();
-
-/* ------------------------------------------------------------------ [AGENT 7: TEMPORALIST] bullet-time, rewind ghosts, time warps
-   Renders time-rift ghosts of enemies when the rift is active, and
-   owns the global timeScale.                                        */
-const Temporalist = (() => {
-  // enemy ghost history sampled while rift is active
-  let history = [];
-  const S = A.S;
-
-  function sample() {
-    if (S.targetTimeScale < 0.5) {
-      history.push(Entropy.enemies.map(e => ({ x: e.x, y: e.y, color: e.color, r: e.r })));
-      if (history.length > 40) history.shift();
-    }
-  }
-
-  function draw(c) {
-    if (S.targetTimeScale >= 0.5) { history.length = 0; return; }
-    for (let i = 0; i < history.length; i++) {
-      const frame = history[i];
-      const a = (i / history.length) * 0.35;
-      c.globalAlpha = a;
-      for (const e of frame) {
-        c.fillStyle = "#9dffd0";
-        c.beginPath(); c.arc(e.x, e.y, e.r * 0.7, 0, 6.283); c.fill();
+      if (!b.mesh) {
+        const cyl = BABYLON.MeshBuilder.CreateCylinder("beam", { height: b.from.subtract(b.end).length(), diameter: b.w, tessellation: 12 }, scene);
+        const mid = b.from.add(b.end).scale(0.5);
+        cyl.position = mid;
+        cyl.lookAt(b.end);
+        cyl.rotation.x += Math.PI/2;
+        const mat = new BABYLON.StandardMaterial("beamm", scene);
+        mat.emissiveColor = b.color; mat.disableLighting = true; mat.alpha = 1;
+        cyl.material = mat; cyl.isPickable = false;
+        b.mesh = cyl; b.mat = mat;
       }
+      const t = Math.max(0, b.t/0.3);
+      if (b.mat) { b.mat.alpha = t; b.mat.emissiveColor = b.color.scale(0.5+t*0.5); }
     }
-    c.globalAlpha = 1;
-    // cyan time-flare
-    const g = c.createRadialGradient(Player.x, Player.y, 20, Player.x, Player.y, 260);
-    g.addColorStop(0, "rgba(60,255,200,0.14)"); g.addColorStop(1, "rgba(60,255,200,0)");
-    c.fillStyle = g; c.fillRect(Player.x-280, Player.y-280, 560, 560);
   }
 
-  return { sample, draw };
+  return { worldR, blackHoles, beams, dist, dist2D, gravityPull, update, drawBeams, registerLensing, birthBlackHole };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 9: FRACTALIST] recursion & duplication hooks
-   Mostly folded into Abilities.fx.echoes; this agent owns the bolt
-   recursion (overdrive cascade) and echo firing.                 */
+/* ------------------------------------------------------------------ [AGENT 9: FRACTALIST] recursion & echo cascade */
 const Fractalist = (() => {
-  const overBoltAcc = { t: 0 };
+  let acc = 0;
   function update(dt) {
     if (Player.overdrive > 0) {
-      overBoltAcc.t -= dt;
-      if (overBoltAcc.t <= 0) {
-        overBoltAcc.t = 0.08;
-        // cascade of starfire in all directions
-        for (let k = 0; k < 6; k++) {
-          const a = Math.random() * 6.28;
-          const ex = Player.x + Math.cos(a) * 60, ey = Player.y + Math.sin(a) * 60;
-          Bolts.fire(ex, ey, a, "#ffd2ff", { dmg: 40, speed: 800 });
+      acc -= dt;
+      if (acc <= 0) {
+        acc = 0.07;
+        for (let k=0;k<6;k++) {
+          const a = Math.random()*Math.PI*2;
+          const from = Player.position().add(new BABYLON.Vector3(Math.cos(a)*6, 0, Math.sin(a)*6));
+          const to = Player.position().add(new BABYLON.Vector3(Math.cos(a)*40, 0, Math.sin(a)*40));
+          Bolts.fire(from, to, new BABYLON.Color3(1,0.82,1), 45);
         }
       }
     }
-    // echo firing
-    for (const ec of Abilities.fx.echoes) {
-      if (Player.firing) Bolts.fire(ec.x, ec.y, Player.aimAngle, "#c8a6ff", { dmg: 18, speed: 640 });
-    }
+    // echo firing handled in drawEchoes when Player.firing
   }
   return { update };
 })();
 
-/* ------------------------------------------------------------------ [GRAVITON/PARTICLEFORGE] Bolts — real damaging projectiles */
+/* ------------------------------------------------------------------ [GRAVITON/PARTICLEFORGE] Bolts — damaging projectiles */
 const Bolts = (() => {
   const bolts = [];
-  const S = A.S;
   const BOLT_DMG = 26;
-
-  function fire(x, y, ang, color, opts) {
-    opts = opts || {};
-    bolts.push({
-      x, y,
-      vx: Math.cos(ang) * (opts.speed || 660),
-      vy: Math.sin(ang) * (opts.speed || 660),
-      r: 4, dmg: opts.dmg || BOLT_DMG,
-      life: opts.life || 0.9, color: color || "#8ff",
-      pierce: opts.pierce || 0, dead: false,
-    });
+  function fire(from, to, color, dmg) {
+    bolts.push({ pos: from.clone(), dir: to.subtract(from).normalize(), speed: 46, dmg: dmg||BOLT_DMG, color, life: 1.4, mesh: null });
   }
-
   function update(dt) {
     for (const b of bolts) {
-      if (b.dead) continue;
-      b.x += b.vx * dt; b.y += b.vy * dt;
+      if (!b.mesh) {
+        b.mesh = BABYLON.MeshBuilder.CreateSphere("bolt", { diameter: 0.5 }, scene);
+        const m = new BABYLON.StandardMaterial("boltm", scene);
+        m.emissiveColor = b.color; m.disableLighting = true;
+        b.mesh.material = m; b.mesh.isPickable = false;
+        b.trailPS = Particles.trail(b.mesh.position, new BABYLON.Color4(b.color.r,b.color.g,b.color.b,1));
+      }
+      b.pos.addInPlace(b.dir.scale(b.speed*dt));
+      b.mesh.position.copyFrom(b.pos);
       b.life -= dt;
-      Particles.trail(b.x, b.y, b.color);
-      if (b.life <= 0) { b.dead = true; continue; }
-      // world bounds
-      if (Math.abs(b.x) > G.worldR || Math.abs(b.y) > G.worldR) { b.dead = true; continue; }
-      // hit enemies
-      for (const e of Entropy.enemies) {
+      if (b.life<=0 || Math.abs(b.pos.x)>G.worldR || Math.abs(b.pos.z)>G.worldR) { b.dead = true; continue; }
+      for (const e of Entropy.list()) {
         if (e.dead) continue;
-        if (G.dist(b, e) < b.r + e.r) {
+        if (G.dist2D(b.pos, e.mesh.position) < e.r + 0.6) {
           e.hp -= b.dmg; e.hit = 0.1;
-          Particles.blast(b.x, b.y, 8, b.color, 6, 160);
-          if (e.hp <= 0) Entropy.kill(e, true, true);
-          if (b.pierce > 0) { b.pierce--; continue; }
+          Particles.burst(b.pos, 8, new BABYLON.Color4(b.color.r,b.color.g,b.color.b,1), 4, 1.5);
+          if (e.hp<=0) Entropy.kill(e,true,true);
           b.dead = true; break;
         }
       }
     }
-    for (let i = bolts.length - 1; i >= 0; i--) if (bolts[i].dead) bolts.splice(i, 1);
+    for (let i=bolts.length-1;i>=0;i--) if (bolts[i].dead) { try { bolts[i].mesh.dispose(); bolts[i].trailPS.dispose(); } catch(e){} bolts.splice(i,1); }
   }
-
-  function draw(c) {
-    for (const b of bolts) {
-      if (b.dead) continue;
-      c.strokeStyle = b.color; c.lineWidth = 3; c.shadowColor = b.color; c.shadowBlur = 14;
-      const tx = b.x - b.vx * 0.03, ty = b.y - b.vy * 0.03;
-      c.beginPath(); c.moveTo(b.x, b.y); c.lineTo(tx, ty); c.stroke();
-      c.lineWidth = 1.5; c.strokeStyle = "#fff";
-      c.beginPath(); c.moveTo(b.x, b.y); c.lineTo(tx, ty); c.stroke();
-      c.shadowBlur = 0;
-    }
-  }
+  function draw() {}
   return { fire, update, draw };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 8-merged + GRAVITON] The Player
-   Movement, vitals, firing, phase, overdrive, combos.           */
+/* ------------------------------------------------------------------ [GRAVITON + Player] the Unmade */
 const Player = {
-  x: 0, y: 0, vx: 0, vy: 0, r: 15,
-  maxHp: 120, hp: 120,
-  maxReality: 100, reality: 100,
-  aimX: 0, aimY: 0, aimAngle: 0,
-  firing: false, alive: true,
-  phase: 0, overdrive: 0,
-  fireAcc: 0, score: 0, combo: 0, comboT: 0, kills: 0,
-  fireRate: 0.16,
-
-  comboMult() { return 1 + Math.min(9, Math.floor(this.combo / 8)) * 0.5; },
-
-  addScore(p) { this.score += Math.round(p); this.combo++; this.comboT = 2.5; this.kills++; },
-
-  heal(n) { this.hp = Math.min(this.maxHp, this.hp + n); },
-
-  damage(dmg, src) {
-    if (!this.alive || this.phase > 0 || A.S.targetTimeScale < 0.3) return false;
-    this.hp -= dmg;
-    A.S.shake = Math.max(A.S.shake, 8);
-    Synth.ouch();
-    Particles.blast(this.x, this.y, 16, "#ff4d6d", 14, 240);
-    if (this.hp <= 0) { this.alive = false; A.S.playing = false; UI.die(); }
+  x:0, z:0, vx:0, vz:0, vy:0, r:1.4,
+  maxHp:120, hp:120, reality:100, maxReality:100,
+  alive:true, phase:0, overdrive:0, firing:false, fireAcc:0, fireRate:0.13,
+  score:0, combo:0, comboT:0, kills:0, mesh:null, auraPS:null, handMat:null,
+  position() { return new BABYLON.Vector3(this.x, 1.4, this.z); },
+  aimPoint() {
+    const r = scene.createPickingRay(pointer.x, pointer.y, camera);
+    const o = r.origin, d = r.direction;
+    const t = (0.9 - o.y) / (d.y||0.0001);
+    if (!isFinite(t) || t < 0) return o.add(d.scale(20));
+    return o.add(d.scale(Math.max(0,t)));
+  },
+  comboMult() { return 1 + Math.min(9, Math.floor(this.combo/8))*0.5; },
+  addScore(p){ this.score += p; this.combo++; this.comboT=2.5; this.kills++; },
+  heal(n){ this.hp = Math.min(this.maxHp, this.hp+n); },
+  damage(dmg, src){
+    if (!this.alive || this.phase>0 || A.S.targetTimeScale<0.3) return false;
+    this.hp -= dmg; A.S.shake = Math.max(A.S.shake, 8);
+    Synth.ouch(); Particles.burst(this.position(), 14, new BABYLON.Color4(1,0.3,0.42,1), 4, 2);
+    if (this.hp<=0){ this.alive=false; A.S.playing=false; UI.die(); }
     return true;
   },
-
-  update(dt, t) {
-    if (!this.alive) return;
-    this.firing = Input.mouse.down;
-    // movement
+  build() {
+    // a glowing crown ring
+    this.mesh = BABYLON.MeshBuilder.CreateTorus("crown", { diameter: 2.4, thickness: 0.5, tessellation: 20 }, scene);
+    this.mesh.rotation.x = Math.PI/2;
+    this.handMat = new BABYLON.StandardMaterial("crownm", scene);
+    this.handMat.emissiveColor = new BABYLON.Color3(0.5,0.7,1); this.handMat.disableLighting = true;
+    this.handMat.specularColor = new BABYLON.Color3(0.8,0.8,1);
+    this.mesh.material = this.handMat; this.mesh.isPickable = false;
+    // inner core
+    const core = BABYLON.MeshBuilder.CreateSphere("core", { diameter: 1.1 }, scene);
+    const cm = new BABYLON.StandardMaterial("corem", scene);
+    cm.emissiveColor = new BABYLON.Color3(1,1,1); cm.disableLighting = true;
+    core.material = cm; core.setParent(this.mesh); core.position.y = 0.9; core.rotation.x = -Math.PI/2;
+    this.auraPS = Particles.trail(this.mesh.position, new BABYLON.Color4(0.5,0.7,1,1));
+    this.auraPS.emitRate = 40;
+    // hoversphere for physics debris collision (visual)
+  },
+  update(dt) {
+    if (!this.alive || A.S.paused) return;
+    this.firing = (pointerDown && !pointerGrab);
     const k = Input.keys;
-    let mx = (k["d"]?1:0) - (k["a"]?1:0);
-    let my = (k["s"]?1:0) - (k["w"]?1:0);
-    const len = Math.hypot(mx, my) || 1;
-    const speed = this.phase > 0 ? 360 : 250;
-    this.vx += (mx/len) * speed * 4 * dt;
-    this.vy += (my/len) * speed * 4 * dt;
-    this.vx *= (1 - 10*dt); this.vy *= (1 - 10*dt);
-    // overdrive magnet
-    if (this.overdrive > 0) { this.overdrive -= dt; }
+    let mx = (k.d?1:0)-(k.a?1:0), mz = (k.s?1:0)-(k.w?1:0);
+    // camera-relative movement
+    const fwd = camera.getTarget().subtract(camera.position); fwd.y = 0; fwd.normalize();
+    const right = BABYLON.Vector3.Cross(fwd, BABYLON.Vector3.Up()).normalize();
+    const acc = right.scale(mx).add(fwd.scale(-mz)).normalize().scale(this.phase>0?26:18);
+    this.vx += acc.x*dt; this.vz += acc.z*dt;
+    this.vx *= (1-8*dt); this.vz *= (1-8*dt);
+    this.overdrive = Math.max(0, this.overdrive - dt);
     this.phase = Math.max(0, this.phase - dt);
-    this.x += this.vx * dt; this.y += this.vy * dt;
-    // clamp to world
-    const R = G.worldR - 20;
-    this.x = Math.max(-R, Math.min(R, this.x));
-    this.y = Math.max(-R, Math.min(R, this.y));
-    // aim
-    const worldAim = Input.toWorld(Input.mouse.x, Input.mouse.y);
-    this.aimX = Input.mouse.x; this.aimY = Input.mouse.y;
-    this.aimAngle = Math.atan2(worldAim.y - this.y, worldAim.x - this.x);
-    // reality regen
-    this.reality = Math.min(this.maxReality, this.reality + dt * 6);
-    // combo decay
-    if (this.comboT > 0) { this.comboT -= dt; if (this.comboT <= 0) this.combo = 0; }
+    this.x += this.vx*dt; this.z += this.vz*dt;
+    const R = G.worldR - 2;
+    this.x = Math.max(-R, Math.min(R, this.x)); this.z = Math.max(-R, Math.min(R, this.z));
+    this.reality = Math.min(this.maxReality, this.reality + dt*6);
+    if (this.comboT>0){ this.comboT-=dt; if(this.comboT<=0) this.combo=0; }
     // firing
     if (this.firing) {
       this.fireAcc -= dt;
-      const rate = this.fireRate / (this.overdrive > 0 ? 6 : (Abilities.fx.riftActive ? 2.5 : (Abilities.fx.echoes.length ? 1.6 : 1)));
-      if (this.fireAcc <= 0) {
+      const rate = this.fireRate / (this.overdrive>0?6:(Abilities.fx.riftActive?2.5:(Abilities.fx.echoes.length?1.6:1)));
+      if (this.fireAcc<=0) {
         this.fireAcc = rate;
-        const boltColor = this.overdrive > 0 ? "#ffd2ff" : "#8ff";
-        Bolts.fire(this.x + Math.cos(this.aimAngle)*20, this.y + Math.sin(this.aimAngle)*20, this.aimAngle, boltColor,
-          { dmg: this.overdrive > 0 ? 60 : 26, speed: this.overdrive > 0 ? 900 : 660, pierce: this.overdrive > 0 ? 3 : 0 });
-        Synth.shoot(this.overdrive > 0);
+        const from = this.position().add(new BABYLON.Vector3(0,0.8,0));
+        Bolts.fire(from, this.aimPoint(), this.overdrive>0?new BABYLON.Color3(1,0.82,1):new BABYLON.Color3(0.5,1,1), this.overdrive>0?60:26);
+        Synth.shoot(this.overdrive>0);
       }
     }
-    // trail
-    Particles.trail(this.x, this.y, this.phase > 0 ? "#ffd2ff" : "#8ff");
-    // keep graviton player ref
-    G.player.x = this.x; G.player.y = this.y;
-  },
-
-  render(c) {
-    c.save();
-    c.translate(this.x, this.y);
-    c.rotate(this.aimAngle);
-    // aura
-    const aura = c.createRadialGradient(0,0,4,0,0,40);
-    aura.addColorStop(0, this.overdrive>0 ? "rgba(255,255,255,.7)" : "rgba(140,160,255,.35)");
-    aura.addColorStop(1, "rgba(140,160,255,0)");
-    c.fillStyle = aura; c.beginPath(); c.arc(0,0,40,0,6.283); c.fill();
-    // body
-    c.shadowColor = "#8ff"; c.shadowBlur = 18;
-    c.fillStyle = this.phase > 0 ? "rgba(255,210,255,0.5)" : "#cfd8ff";
-    c.beginPath();
-    c.moveTo(24, 0); c.lineTo(-14, -13); c.lineTo(-8, 0); c.lineTo(-14, 13); c.closePath();
-    c.fill();
-    c.shadowBlur = 0;
-    // core
-    c.fillStyle = "#fff";
-    c.beginPath(); c.arc(4, 0, 5, 0, 6.283); c.fill();
-    c.restore();
+    // hover bob + orientation
+    this.mesh.position.set(this.x, 1.4 + Math.sin(A.S.elapsed*2)*0.15, this.z);
+    this.mesh.rotation.y += dt*1.5;
+    this.auraPS.emitter = this.mesh.position;
+    // prism phase tint
+    this.handMat.emissiveColor = this.phase>0 ? new BABYLON.Color3(1,0.82,1) : (this.overdrive>0?new BABYLON.Color3(1,1,1):new BABYLON.Color3(0.5,0.7,1));
+    // camera target follows player
+    camera.target = BABYLON.Vector3.Lerp(camera.target, new BABYLON.Vector3(this.x,1,this.z), Math.min(1, dt*3));
   }
 };
 
-/* ------------------------------------------------------------------ [AGENT 10: SYNTHESIZER] procedural WebAudio score & sfx   */
+/* ------------------------------------------------------------------ [AGENT 7: TEMPORALIST] bullet-time + rewind ghosts */
+const Temporalist = (() => {
+  let history = [];
+  let ghostPS = null;
+  function sample() {
+    if (A.S.targetTimeScale < 0.5) {
+      if (!ghostPS) ghostPS = Particles.trail(new BABYLON.Vector3(0,0,0), new BABYLON.Color4(0.5,1,0.8,1));
+      for (const e of Entropy.list()) { if (e.dead) continue; Particles.burst(e.mesh.position, 2, new BABYLON.Color4(0.5,1,0.8,0.6), 1, 1); }
+    } else if (ghostPS) { ghostPS.dispose(); ghostPS = null; }
+  }
+  return { sample };
+})();
+
+/* ------------------------------------------------------------------ [AGENT 10: SYNTHESIZER] procedural WebAudio */
 const Synth = (() => {
-  let ctx = null, master = null, musicOn = false, seqTimer = null;
-  function ensure() {
+  let ctx = null, master = null, musicOn = false;
+  function ensure(){
     if (ctx) return;
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     ctx = new AC();
-    master = ctx.createGain(); master.gain.value = 0.7; master.connect(ctx.destination);
+    master = ctx.createGain(); master.gain.value = A.settings.volume; master.connect(ctx.destination);
     startMusic();
   }
-  function env(freq, dur, type, vol, slideTo, delay) {
+  function env(f, dur, type, vol, slide, delay){
     if (!ctx) return;
     const t = ctx.currentTime + (delay||0);
     const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = type; o.frequency.setValueAtTime(freq, t);
-    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+    o.type = type; o.frequency.setValueAtTime(f,t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(slide, t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.02);
   }
-  function noise(dur, vol, hp, delay) {
-    if (!ctx) return;
-    const t = ctx.currentTime + (delay||0);
-    const len = Math.floor(ctx.sampleRate * dur);
-    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i=0;i<len;i++) d[i] = Math.random()*2-1;
+  function noise(dur,vol,hp){
+    if (!ctx) return; const t = ctx.currentTime;
+    const len = Math.floor(ctx.sampleRate*dur); const buf = ctx.createBuffer(1,len,ctx.sampleRate);
+    const d = buf.getChannelData(0); for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
     const src = ctx.createBufferSource(); src.buffer = buf;
-    const f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = hp;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(vol, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const f = ctx.createBiquadFilter(); f.type="highpass"; f.frequency.value=hp;
+    const g = ctx.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     src.connect(f); f.connect(g); g.connect(master); src.start(t); src.stop(t+dur);
   }
-  // ---- SFX ----
-  const shoot = (big) => env(big ? 900 : 620, 0.08, "square", 0.05, big?200:380);
-  const hit = (big) => { if(big) noise(0.3,0.5,120); else noise(0.12,0.25,400); env(big?90:160, 0.2, "sawtooth", 0.2, 40); };
-  const ouch = () => { env(300,0.2,"sawtooth",0.3,80); noise(0.2,0.3,200); };
-  const bell = () => [523,659,784,1046].forEach((f,i)=>env(f,0.6,"sine",0.18, null, i*0.06));
-  const boom = (f) => { env(f||120, 0.7, "sine", 0.5, 30); noise(0.5,0.5,60); };
-  const singularity = () => { env(80,1.2,"sine",0.4,24); noise(0.8,0.3,80); };
-  const echo = () => [880,1320].forEach((f,i)=>env(f,0.4,"triangle",0.2,null,i*0.09));
-  const lash = () => { env(1400,0.15,"sawtooth",0.3,200); noise(0.15,0.3,1000); };
-  const phase = () => env(500,0.3,"sine",0.25,1000);
-  const genesis = () => { env(60,1.8,"sawtooth",0.5,30); noise(1.2,0.5,80); [220,330,440,660].forEach((f,i)=>env(f,1.4,"sine",0.15,null,i*0.15)); };
-
-  // ---- Music ----
-  const SCALE = [0,2,4,7,9]; const ROOT = 55;
-  function note(step, dur, oct) {
-    const idx = step % SCALE.length, octOff = Math.floor(step/SCALE.length);
-    const f = ROOT * Math.pow(2, (SCALE[idx] + 12*octOff + (oct||0)*12)/12);
-    env(f, dur*0.9, "triangle", 0.12);
-    env(f*0.5, dur*0.9, "sine", 0.14);
+  const shoot = (big)=>env(big?900:620,0.08,"square",0.05,big?200:380);
+  const hit = (big)=>{ if(big) noise(0.3,0.5,120); else noise(0.12,0.25,400); env(big?90:160,0.2,"sawtooth",0.2,40); };
+  const ouch = ()=>{ env(300,0.2,"sawtooth",0.3,80); noise(0.2,0.3,200); };
+  const bell = ()=>[523,659,784,1046].forEach((f,i)=>env(f,0.6,"sine",0.18,null,i*0.06));
+  const boom = (f)=>{ env(f||120,0.7,"sine",0.5,30); noise(0.5,0.5,60); };
+  const singularity = ()=>{ env(80,1.2,"sine",0.4,24); noise(0.8,0.3,80); };
+  const echo = ()=>[880,1320].forEach((f,i)=>env(f,0.4,"triangle",0.2,null,i*0.09));
+  const lash = ()=>{ env(1400,0.15,"sawtooth",0.3,200); noise(0.15,0.3,1000); };
+  const phase = ()=>env(500,0.3,"sine",0.25,1000);
+  const genesis = ()=>{ env(60,1.8,"sawtooth",0.5,30); noise(1.2,0.5,80); [220,330,440,660].forEach((f,i)=>env(f,1.4,"sine",0.15,null,i*0.15)); };
+  const SCALE=[0,2,4,7,9], ROOT=55;
+  function note(step,dur,oct){ const idx=step%SCALE.length, oo=Math.floor(step/SCALE.length); const f=ROOT*Math.pow(2,(SCALE[idx]+12*oo+(oct||0)*12)/12); env(f,dur*0.9,"triangle",0.12); env(f*0.5,dur*0.9,"sine",0.14); }
+  function drum(step){ if(step%2===0){noise(0.12,0.16,400);env(110,0.2,"sine",0.3,40);} if(step%4===2) noise(0.05,0.06,6000); }
+  function startMusic(){
+    if (musicOn || !ctx) return; musicOn = true; let step=0;
+    setInterval(()=>{ if(!A.S.playing||A.S.paused) return; const beat = A.S.targetTimeScale<0.5?0.42:0.16; note(step*3,beat*2,2); if(step%2===0) note(step*5+1,beat*2,1); drum(step); if(A.S.targetTimeScale<0.5 && Math.random()<0.3) env(1500+Math.random()*800,0.3,"sine",0.05,null,Math.random()*0.2); step++; },150);
   }
-  function drum(step) {
-    if (step % 2 === 0) { noise(0.12,0.16,400); env(110,0.2,"sine",0.3,40); }
-    if (step % 4 === 2) noise(0.05,0.06,6000);
-  }
-  function startMusic() {
-    if (musicOn || !ctx) return;
-    musicOn = true;
-    let step = 0;
-    seqTimer = setInterval(() => {
-      if (!A.S.playing) return;
-      const beat = A.S.targetTimeScale < 0.5 ? 0.42 : 0.16; // tempo warps with time!
-      note(step * 3, beat * 2, 2);
-      if (step % 2 === 0) note(step * 5 + 1, beat*2, 1);
-      drum(step);
-      if (A.S.targetTimeScale < 0.5) bellDrip();
-      step++;
-    }, 150);
-  }
-  function bellDrip() { if (Math.random() < 0.3) env(1500 + Math.random()*800, 0.3, "sine", 0.05, null, Math.random()*0.2); }
-  function start() { ensure(); if (ctx && ctx.state === "suspended") ctx.resume(); }
-
-  return { ensure, start, shoot, hit, ouch, bell, boom, singularity, echo, lash, phase, genesis };
+  function start(){ ensure(); if(ctx && ctx.state==="suspended") ctx.resume(); }
+  function setVol(v){ if(master) master.gain.value=v; }
+  return { start, setVol, shoot, hit, ouch, bell, boom, singularity, echo, lash, phase, genesis };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 11: UMBRA] post-fx, vignette, chromatic, shake     */
-const Umbra = (() => {
-  let grainCanvas = null;
-  function ensureGrain(w, h) {
-    if (grainCanvas && grainCanvas.width === w && grainCanvas.height === h) return;
-    grainCanvas = document.createElement("canvas");
-    grainCanvas.width = w; grainCanvas.height = h;
-    const g = grainCanvas.getContext("2d");
-    const img = g.createImageData(w, h);
-    for (let i=0;i<img.data.length;i+=4){ const v=Math.random()*255|0; img.data[i]=img.data[i+1]=img.data[i+2]=v; img.data[i+3]=40; }
-    g.putImageData(img,0,0);
-  }
-  function post(c, w, h) {
-    const S = A.S;
-    // vignette
-    const v = c.createRadialGradient(w/2,h/2,Math.min(w,h)*0.35, w/2,h/2,Math.max(w,h)*0.72);
-    v.addColorStop(0,"rgba(0,0,0,0)"); v.addColorStop(1,`rgba(0,0,0,${0.35+S.shake*0.01})`);
-    c.fillStyle = v; c.fillRect(0,0,w,h);
-    // chromatic aberration edges
-    if (S.flash > 0.02) {
-      c.globalCompositeOperation = "lighter";
-      c.globalAlpha = S.flash;
-      c.fillStyle = "#fff"; c.fillRect(0,0,w,h);
-      c.globalAlpha = 1; c.globalCompositeOperation = "source-over";
-    }
-    // grain
-    ensureGrain(Math.floor(w/4), Math.floor(h/4));
-    c.globalAlpha = 0.06;
-    c.drawImage(grainCanvas, 0, 0, w, h);
-    c.globalAlpha = 1;
-  }
-  return { post };
-})();
-
-/* ------------------------------------------------------------------ [AGENT 12: HUDMIND] interface, ability deck, vitals        */
+/* ------------------------------------------------------------------ [AGENT 12: HUDMIND] menus & HUD */
 const UI = (() => {
-  const hud = document.getElementById("hud");
-  const menu = document.getElementById("menu");
-  const dead = document.getElementById("dead");
-  let announceT = null;
-  let centerEl = null;
-
-  function buildHUD() {
-    hud.innerHTML = `
-      <div class="hud-top">
-        <div class="vitals">
-          <div class="name">THE UNMADE</div>
-          <div class="bar hp"><i></i></div>
-          <div class="bar reality"><i></i></div>
-        </div>
-        <div class="hud-right">
-          <div class="wave">WAVE <span id="wv">0</span></div>
-          <div class="score" id="sc">0</div>
-          <div class="combo" id="cb"></div>
-        </div>
-      </div>
-      <div class="abilities"></div>
-      <div class="vignette"></div>
-      <div class="center-text" id="ct"></div>`;
+  const panels = {};
+  function $(id){ return document.getElementById(id); }
+  function init() {
+    ["menu-main","menu-controls","menu-abilities","menu-settings","menu-pause","menu-death"].forEach(id => panels[id] = $(id));
+    const btns = document.querySelectorAll("[data-action]");
+    btns.forEach(b => b.addEventListener("click", () => {
+      const a = b.getAttribute("data-action");
+      if (a==="start") startGame();
+      else if (a==="resume") togglePause();
+      else if (a==="retry") startGame();
+      else if (a==="main") gotoMain();
+      else if (a==="controls") show("menu-controls");
+      else if (a==="abilities") show("menu-abilities");
+      else if (a==="settings") show("menu-settings");
+    }));
+    $("set-vol").addEventListener("input", e => { A.settings.volume = parseFloat(e.target.value); Synth.setVol(A.settings.volume); });
+    $("set-sens").addEventListener("input", e => { A.settings.sensitivity = parseFloat(e.target.value); if(camera){ camera.wheelDeltaPercentage = 0.02*A.settings.sensitivity; camera.angularSensibilityX = 800/A.settings.sensitivity; camera.angularSensibilityY = 800/A.settings.sensitivity; } });
+    $("set-diff").addEventListener("change", e => A.settings.difficulty = parseInt(e.target.value));
+    $("set-fx").addEventListener("change", e => A.settings.fx = e.target.value);
+  }
+  function hideAll(){ Object.values(panels).forEach(p => p.classList.add("hidden")); }
+  function show(name){ hideAll(); panels[name].classList.remove("hidden"); }
+  function gotoMain(){ hideAll(); show("menu-main"); if (A.S.playing) A.S.playing = false; $("hud").classList.add("hidden"); }
+  function buildHUD(){
+    const hud = $("hud");
     const abWrap = hud.querySelector(".abilities");
-    abWrap.innerHTML = Abilities.defs.map((d,i) =>
-      `<div class="ab ${d.ult?'ult':''}" data-i="${i}">
-         <span class="k">${d.key.toUpperCase()}</span>
-         <span class="ico">${d.ico}</span>
-         <span class="nm">${d.name}</span>
-         <div class="cd" style="display:none"></div>
-       </div>`).join("");
+    abWrap.innerHTML = Abilities.defs.map((d,i)=>`<div class="ab ${d.ult?'ult':''}"><span class="k">${d.key.toUpperCase()}</span><span class="ico">${d.ico}</span><span class="nm">${d.name}</span><div class="cd" style="display:none"></div></div>`).join("");
   }
-
-  function center(str) {
-    const el = hud.querySelector("#ct");
-    el.textContent = str;
-    el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  function center(str){
+    const el = $("ct"); el.textContent = str; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
   }
-
-  function announce(name) { center(name); }
-
-  function die() {
-    const stats = dead.querySelector(".dead-stats");
-    stats.innerHTML = `<div><b>${Player.score.toLocaleString()}</b>REALITY SEVERED</div>
-      <div><b>${Entropy.wave}</b>WAVES SURVIVED</div>
-      <div><b>${Player.kills}</b>SHARDS UNMADE</div>
-      <div><b>${Math.floor(A.S.gameTime + (Entropy.wave)* 8)}s</b>SECONDS BORROWED</div>`;
-    dead.classList.remove("hidden");
-    Synth.boom(70); Synth.ouch();
+  const announce = center;
+  function flytext(pos, str){
+    const el = document.createElement("div"); el.className="dmg"; el.textContent=str;
+    document.body.appendChild(el);
+    const proj = BABYLON.Vector3.Project(pos, BABYLON.Matrix.Identity(), scene.getTransformMatrix(), camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight()));
+    el.style.left = (proj.x - 20) + "px"; el.style.top = (proj.y - 20) + "px";
+    setTimeout(()=>el.remove(), 900);
   }
-
-  function tickHUD() {
-    const hp = hud.querySelector(".hp i");
-    const re = hud.querySelector(".reality i");
-    const sc = hud.querySelector("#sc");
-    const cb = hud.querySelector("#cb");
-    const wv = hud.querySelector("#wv");
-    if (hp) { hp.style.width = (Player.hp/Player.maxHp*100)+"%"; }
-    if (re) { re.style.width = (Player.reality/Player.maxReality*100)+"%"; }
-    if (sc) sc.textContent = Player.score.toLocaleString();
-    if (cb) cb.textContent = Player.combo > 1 ? `COMBO ×${Player.comboMult().toFixed(1)}  (${Player.combo})` : "";
-    if (wv) wv.textContent = Entropy.wave;
-    const abEls = hud.querySelectorAll(".ab");
-    abEls.forEach((el, i) => {
-      const st = Abilities.state[i];
-      const cd = el.querySelector(".cd");
-      if (st.cd > 0) { cd.style.display = "flex"; cd.textContent = Math.ceil(st.cd); }
-      else { cd.style.display = "none"; }
-      el.classList.toggle("active", st.dur > 0 || (i===6 && Player.overdrive>0));
-    });
+  function grab(active){ const g = $("grabind"); g.style.opacity = active?1:0; }
+  function die(){
+    const stats = $("menu-death").querySelector(".dead-stats");
+    stats.innerHTML = `<div><b>${Player.score.toLocaleString()}</b>REALITY SEVERED</div><div><b>${Entropy.wave}</b>WAVES SURVIVED</div><div><b>${Player.kills}</b>SHARDS UNMADE</div><div><b>${Math.floor(A.S.elapsed)}s</b>BORROWED</div>`;
+    show("menu-death"); Synth.boom(70); Synth.ouch();
   }
-
-  function showMenu() { menu.classList.remove("hidden"); }
-  function hideMenu() { menu.classList.add("hidden"); }
-  function hideDead() { dead.classList.add("hidden"); }
-
-  return { buildHUD, center, announce, die, tickHUD, showMenu, hideMenu, hideDead };
+  function tickHUD(){
+    const hp = $("hud").querySelector(".hp i"), re = $("hud").querySelector(".reality i");
+    if(hp) hp.style.width = (Player.hp/Player.maxHp*100)+"%";
+    if(re) re.style.width = (Player.reality/Player.maxReality*100)+"%";
+    $("sc").textContent = Player.score.toLocaleString();
+    $("cb").textContent = Player.combo>1?`COMBO ×${Player.comboMult().toFixed(1)} (${Player.combo})`:"";
+    $("wv").textContent = Entropy.wave;
+    const abEls = $("hud").querySelectorAll(".ab");
+    abEls.forEach((el,i)=>{ const st=Abilities.state[i]; const cd=el.querySelector(".cd"); if(st.cd>0){cd.style.display="flex";cd.textContent=Math.ceil(st.cd);} else cd.style.display="none"; el.classList.toggle("active", (i===7&&Player.overdrive>0)||(Abilities.fx.riftActive&&i===1)||(Abilities.fx.grabTarget&&i===3)); });
+  }
+  return { init, buildHUD, center, announce, flytext, die, grab, tickHUD, gotoMain, hideAll, show };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 13: NARRATIVE] title, lore, awakening                */
+/* ------------------------------------------------------------------ [AGENT 13: NARRATIVE] lore boot */
 const Narrative = (() => {
-  const boot = document.getElementById("boot");
-  const lines = [
-    "before light, there was a wound.",
-    "the wound dreamed, and the dream opened its eye.",
-    "you are that eye. you are the crown of the unmaking.",
-    "hold the shards of the dying star at bay.",
-    "do not let the wound close.",
-  ];
+  const lines = ["forging reality…","binding the wound…","awakening the crown…"];
   let i = 0;
-  function startBoot() {
-    boot.textContent = "";
-    const print = () => {
-      if (i >= lines.length) { boot.classList.add("hide"); setTimeout(()=>{ boot.style.display="none"; }, 600); return; }
-      boot.textContent = lines[i]; i++;
-      setTimeout(print, 1400);
-    };
+  function run(){
+    const boot = document.getElementById("boot"); const sub = document.getElementById("bootsub");
+    const print = ()=>{ if(i>=lines.length){ boot.classList.add("hide"); setTimeout(()=>boot.style.display="none", 900); return; } sub.textContent=lines[i++]; setTimeout(print, 900); };
     print();
   }
-  return { startBoot };
+  return { run };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 14: BALANCER] tuning knobs & difficulty scaling      */
+/* ------------------------------------------------------------------ [AGENT 14: BALANCER] */
 const Balance = (() => {
   function adjust() {
-    // scale enemy HP slightly with wave
-    const mult = 1 + (Entropy.wave - 1) * 0.06;
-    // ENTROPY.SPECIES hp is base; we don't mutate live but difficulty via spawn budget already scales.
-    return mult;
+    // difficulty already scales budget in Entropy
+    return 1 + (Entropy.wave-1)*0.06;
   }
   return { adjust };
 })();
 
-/* ------------------------------------------------------------------ [AGENT 15: POLISHER] game-feel & final integration           */
+/* ------------------------------------------------------------------ [AGENT 15: POLISHER] shake, flash, juice */
 const Polish = (() => {
-  let lastShot = 0;
-  function update(dt) {
-    const S = A.S;
-    S.shake = Math.max(0, S.shake - dt * 40);
-    S.flash = Math.max(0, S.flash - dt * 1.6);
+  function update(dt){
+    A.S.shake = Math.max(0, A.S.shake - dt*40);
+    A.S.flash = Math.max(0, A.S.flash - dt*1.6);
+    // camera shake
+    if (A.S.shake > 0) {
+      camera.target = camera.target.add(new BABYLON.Vector3((Math.random()-0.5)*A.S.shake*0.06, 0, (Math.random()-0.5)*A.S.shake*0.06));
+    }
   }
   return { update };
 })();
@@ -1067,204 +938,160 @@ const Polish = (() => {
 /* ------------------------------------------------------------------ INPUT */
 const Input = (() => {
   const keys = {};
-  const mouse = { x: innerWidth/2, y: innerHeight/2, down: false };
-  const canvas = document.getElementById("game");
-  const cam = { x: 0, y: 0 };
-
-  function toWorld(sx, sy) {
-    return { x: cam.x + (sx - innerWidth/2), y: cam.y + (sy - innerHeight/2) };
-  }
-  function bind() {
+  function bind(){
     window.addEventListener("keydown", e => {
       const k = e.key.toLowerCase();
-      if (k === " ") e.preventDefault();
+      if (k===" ") e.preventDefault();
+      if (k==="escape") { togglePause(); return; }
       if (keys[k]) return;
       keys[k] = true;
-      // abilities
-      const idx = Abilities.defs.findIndex(d => d.key === e.key.toLowerCase());
-      if (idx >= 0) Abilities.tryCast(idx);
+      const idx = Abilities.defs.findIndex(d => d.key===e.key.toLowerCase());
+      if (idx>=0) Abilities.tryCast(idx);
     });
-    window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
-    window.addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-    window.addEventListener("mousedown", e => { if (e.button === 0) mouse.down = true; });
-    window.addEventListener("mouseup", e => { if (e.button === 0) mouse.down = false; });
+    window.addEventListener("keyup", e => keys[e.key.toLowerCase()]=false);
+    canvas.addEventListener("pointermove", e => { pointer.x=e.clientX; pointer.y=e.clientY; });
+    canvas.addEventListener("pointerdown", e => { if (e.button===0) pointerDown = true; if (e.button===2) pointerGrab = true; });
+    canvas.addEventListener("pointerup", e => { if (e.button===0) pointerDown = false; if (e.button===2) pointerGrab = false; });
     canvas.addEventListener("contextmenu", e => e.preventDefault());
   }
-  return { keys, mouse, toWorld, bind, cam };
+  return { keys, bind };
 })();
+let pointerDown = false, pointerGrab = false;
 
-/* ------------------------------------------------------------------ RENDER ORCHESTRATOR (part of ARCHITECT/RENDERER)            */
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-let W = 0, H = 0, DPR = 1;
+/* ------------------------------------------------------------------ WORLD BUILD & BOOT */
+function buildWorld() {
+  Lighting.build();
+  Cosmos.build();
+  // arena floor
+  const floor = BABYLON.MeshBuilder.CreateDisc("floor", { radius: G.worldR, tessellation: 64 }, scene);
+  floor.rotation.x = Math.PI/2;
+  const fm = new BABYLON.StandardMaterial("floorm", scene);
+  fm.diffuseColor = new BABYLON.Color3(0.05,0.03,0.12);
+  fm.specularColor = new BABYLON.Color3(0.1,0.1,0.2);
+  fm.emissiveColor = new BABYLON.Color3(0.02,0.01,0.05);
+  floor.material = fm; floor.isPickable = false;
+  // glow ring boundary
+  const ring = BABYLON.MeshBuilder.CreateTorus("arena", { diameter: G.worldR*2, thickness: 0.5, tessellation: 64 }, scene);
+  ring.rotation.x = Math.PI/2; ring.position.y = 0.25;
+  const rm = new BABYLON.StandardMaterial("arenaRing", scene);
+  rm.emissiveColor = new BABYLON.Color3(0.5,0.3,1); rm.disableLighting = true;
+  ring.material = rm; ring.isPickable = false;
 
-function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
-  W = innerWidth; H = innerHeight;
-  canvas.width = W * DPR; canvas.height = H * DPR;
-  canvas.style.width = W + "px"; canvas.style.height = H + "px";
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-}
-window.addEventListener("resize", resize);
+  // HAVOK PHYSICS
+  setupPhysics();
 
-function render() {
-  const S = A.S;
-  ctx.save();
-  // camera
-  const shakeX = (Math.random()-0.5) * S.shake;
-  const shakeY = (Math.random()-0.5) * S.shake;
-  const camX = Player.x + shakeX, camY = Player.y + shakeY;
-  Input.cam.x = camX; Input.cam.y = camY;
-  ctx.translate(W/2 - camX, H/2 - camY);
-
-  // background (screen-space, drawn in world coords origin)
-  ctx.save();
-  ctx.translate(camX - W/2, camY - H/2);
-  Cosmos.draw(ctx, W, H, S.time);
-  ctx.restore();
-
-  G.drawBounds(ctx);
-
-  // gravity field subtle grid / pulse lines at edges during danger
-  if (Entropy.count() > 0) {
-    ctx.strokeStyle = `rgba(255,80,120,${0.06 + Math.min(0.15, Entropy.count()*0.004)})`;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(Player.x - W*0.6, Player.y - H*0.6, W*1.2, H*1.2);
+  // decorative physics debris asteroids
+  for (let i=0;i<12;i++) {
+    const ast = BABYLON.MeshBuilder.CreateIcoSphere("ast"+i, { radius: 0.4+Math.random()*0.8, subdivisions: 2 }, scene);
+    ast.position = new BABYLON.Vector3((Math.random()-0.5)*80, 5+Math.random()*10, (Math.random()-0.5)*80);
+    const am = new BABYLON.StandardMaterial("astm"+i, scene);
+    const g = 0.2+Math.random()*0.3; am.diffuseColor = new BABYLON.Color3(g,g,g+0.1);
+    am.specularColor = new BABYLON.Color3(0.2,0.2,0.2);
+    ast.material = am; ast.isPickable = false;
+    ast.rotation.x = Math.random()*6; ast.rotation.y = Math.random()*6;
+    try {
+      new BABYLON.PhysicsAggregate(ast, BABYLON.PhysicsShapeType.SPHERE, { mass: 1, friction: 0.6, restitution: 0.3 }, scene);
+      ast.pDebris = true;
+    } catch(e) { console.warn("debris physics", e); }
   }
-
-  // temporal ghosts behind
-  Temporalist.draw(ctx);
-  // beams behind entities
-  G.drawBeams(ctx);
-  // black holes behind enemies
-  G.drawBlackHoles(ctx);
-
-  // prism trail
-  for (const p of Abilities.fx.prismTrail) {
-    ctx.globalAlpha = p.t * 0.6;
-    ctx.fillStyle = "#ffd2ff"; ctx.shadowColor = "#ffd2ff"; ctx.shadowBlur = 16;
-    ctx.beginPath(); ctx.arc(p.x, p.y, 16, 0, 6.283); ctx.fill();
-    ctx.shadowBlur = 0;
-  }
-  ctx.globalAlpha = 1;
-
-  // enemies
-  for (const e of Entropy.enemies) {
-    const bob = Math.sin(S.time * 4 + e.seed) * 2;
-    ctx.save(); ctx.translate(e.x, e.y + bob);
-    if (e.hit > 0) { ctx.globalAlpha = 0.7; ctx.fillStyle = "#fff"; }
-    else {
-      const grad = ctx.createRadialGradient(-e.r*0.3,-e.r*0.3,2, 0,0,e.r);
-      grad.addColorStop(0, "#fff"); grad.addColorStop(0.35, e.color); grad.addColorStop(1, "#1a0530");
-      ctx.fillStyle = grad;
-    }
-    ctx.shadowColor = e.color; ctx.shadowBlur = e.hit > 0 ? 6 : 14;
-    ctx.beginPath();
-    if (e.type === "shard" || e.type === "wraith") {
-      ctx.moveTo(e.r, 0); ctx.lineTo(-e.r*0.6, e.r*0.7); ctx.lineTo(-e.r*0.6, -e.r*0.7); ctx.closePath();
-    } else if (e.type === "behemoth" || e.type === "sunmaw") {
-      ctx.arc(0,0,e.r,0,6.283);
-    } else {
-      ctx.arc(0,0,e.r,0,6.283);
-    }
-    ctx.fill();
-    // eye for living ones
-    if (e.type !== "mine") {
-      ctx.shadowBlur = 0; ctx.fillStyle = "#fff";
-      const dx = Player.x - e.x, dy = Player.y - e.y, d = Math.hypot(dx,dy)||1;
-      ctx.beginPath(); ctx.arc((dx/d)*e.r*0.35, (dy/d)*e.r*0.35, e.r*0.22, 0, 6.283); ctx.fill();
-    }
-    // hp bar for big
-    if (e.type === "behemoth" || e.type === "sunmaw") {
-      ctx.fillStyle = "rgba(0,0,0,.5)"; ctx.fillRect(-e.r, -e.r-10, e.r*2, 4);
-      ctx.fillStyle = e.color; ctx.fillRect(-e.r, -e.r-10, e.r*2*(e.hp/e.maxHp), 4);
-    }
-    ctx.restore();
-  }
-
-  // echoes
-  Abilities.drawEchoes(ctx);
-
-  // player
-  Player.render(ctx);
-
-  // particles
-  Particles.draw(ctx);
-  G.drawBeams(ctx); // bright beams on top
-  Bolts.draw(ctx);  // live projectiles above everything in-world
-
-  ctx.restore();
-
-  // screen-space particles/texts
-  Particles.drawTexts(ctx);
-  Umbra.post(ctx, W, H);
-
-  A.S.time += A.S.gameDt; // (set below each frame)
+  Player.build();
+  G.registerLensing();
 }
 
-/* ------------------------------------------------------------------ MAIN LOOP  (ARCHITECT)                                      */
-function main(now) {
-  const raw = A.tick(now);
-  const dt = raw.dt * A.S.timeScale;
-  A.S.gameDt = dt;
-  A.S.gameTime += dt;
-  if (A.S.playing) {
-    // sub-systems ordered: temporal sample -> balancer -> entropy spawn -> behaviors -> particles -> abilities -> player
-    Temporalist.sample();
-    Balance.adjust();
-    Entropy.update(dt, A.S.time);
-    Player.update(dt, A.S.time);
-    Entropy.behaviors(dt);
-    Entropy.sweep();
-    Bolts.update(dt);
-    Abilities.update(dt, A.S.time);
-    Fractalist.update(dt);
-    G.update(dt);
-    Particles.update(dt, A.S.time);
-    Polish.update(dt);
-    UI.tickHUD();
-  } else {
-    Polish.update(dt);
-  }
-  render();
-  requestAnimationFrame(main);
+function setupPhysics() {
+  try {
+    const floor = BABYLON.MeshBuilder.CreateGround("phfloor", 200, 200, 1, scene);
+    floor.position.y = -0.5;
+    const floorAgg = new BABYLON.PhysicsAggregate(floor, BABYLON.PhysicsShapeType.BOX, { mass: 0 }, scene);
+    floor.isPickable = false;
+    G.physicsReady = true;
+  } catch(e) { console.warn("havok floor", e); }
 }
 
-/* ------------------------------------------------------------------ BOOT & EVENTS (NARRATIVE + ARCHITECT)                       */
-window.addEventListener("load", () => {
-  resize();
-  Input.bind();
-  UI.buildHUD();
-  Narrative.startBoot();
-  requestAnimationFrame(main);
-});
+/* ------------------------------------------------------------------ MAIN LOOP */
+function startLoop() {
+  engine.runRenderLoop(() => {
+    const dt = Math.min(engine.getDeltaTime()/1000, 0.05);
+    A.S.timeScale += (A.S.targetTimeScale - A.S.timeScale) * Math.min(1, dt*8);
+    if (Math.abs(A.S.targetTimeScale-A.S.timeScale) < 0.005) A.S.timeScale = A.S.targetTimeScale;
+    const sdt = dt * A.S.timeScale;
+    A.S.elapsed += sdt; A.S.frame++;
+    A.S.gameDt = sdt;
+    if (A.S.playing && !A.S.paused) {
+      A.S.gameTime += sdt;
+      Temporalist.sample();
+      Balance.adjust();
+      Entropy.update(sdt);
+      Player.update(sdt);
+      Entropy.behaviors(sdt);
+      Bolts.update(sdt);
+      Abilities.update(sdt);
+      Fractalist.update(sdt);
+      G.update(sdt);
+      G.drawBeams();
+      Polish.update(dt);
+      UI.tickHUD();
+    } else if (A.S.playing && A.S.paused) {
+      // still render
+    }
+    scene.render();
+  });
+}
 
-document.getElementById("begin").addEventListener("click", () => {
-  Synth.start();
-  startGame();
-});
-document.getElementById("again").addEventListener("click", () => {
-  Synth.start();
-  startGame();
-});
-
+/* ------------------------------------------------------------------ GAME CONTROL */
 function startGame() {
-  Entropy.clear();
-  Entropy.wave = 0;
-  G.blackHoles.length = 0;
-  G.beams.length = 0;
-  Abilities.fx.echoes = [];
-  Abilities.fx.prismTrail = [];
-  Abilities.fx.inversion = 0;
-  Abilities.fx.riftActive = false;
-  for (const st of Abilities.state) { st.cd = 0; st.dur = 0; }
-  Player.x = 0; Player.y = 0; Player.vx = 0; Player.vy = 0;
+  A.S.playing = true; A.S.dead = false; A.S.paused = false;
+  A.S.timeScale = 1; A.S.targetTimeScale = 1;
+  A.S.shake = 0; A.S.flash = 0; A.S.gameTime = 0;
+  gravityY = GRAVITY_BASE;
+  Entropy.clear(); Entropy.wave = 0;
+  for (const bh of G.blackHoles) { try{bh.sphere.dispose();bh.disk.dispose();bh.ps.dispose();}catch(e){} }
+  G.blackHoles.length = 0; G.beams.length = 0;
+  Abilities.fx.echoes = []; Abilities.fx.prismTrail = [];
+  Abilities.fx.riftActive = false; Abilities.fx.inversion = 0; Abilities.fx.grabTarget = null;
+  for (const st of Abilities.state) st.cd = 0;
+  Player.x = 0; Player.z = 0; Player.vx = 0; Player.vz = 0;
   Player.hp = Player.maxHp; Player.reality = Player.maxReality;
   Player.alive = true; Player.phase = 0; Player.overdrive = 0;
   Player.score = 0; Player.combo = 0; Player.kills = 0;
-  A.S.timeScale = 1; A.S.targetTimeScale = 1;
-  A.S.shake = 0; A.S.flash = 0; A.S.gameTime = 0;
-  A.S.playing = true; A.S.dead = false;
   Entropy.newWave();
-  UI.hideMenu(); UI.hideDead();
+  UI.hideAll();
+  document.getElementById("hud").classList.remove("hidden");
+  Synth.start();
 }
+
+function togglePause() {
+  if (!A.S.playing) return;
+  A.S.paused = !A.S.paused;
+  const p = document.getElementById("menu-pause");
+  p.classList.toggle("hidden", !A.S.paused);
+  camera.detachControl(canvas);
+  camera.attachControl(canvas, true);
+}
+
+/* ------------------------------------------------------------------ BOOT */
+async function boot() {
+  // verify Babylon
+  if (typeof BABYLON === "undefined") { document.getElementById("bootsub").textContent = "ERROR: Babylon.js CDN failed to load — check your connection."; return; }
+  createEngine();
+  createCamera();
+  buildWorld();
+  Input.bind();
+  UI.init();
+  UI.buildHUD();
+  // Havok async
+  try {
+    if (typeof HavokPhysics !== "undefined") {
+      const havok = await HavokPhysics();
+      scene.enablePhysics(new BABYLON.Vector3(0, gravityY, 0), new BABYLON.HavokPlugin(true, havok));
+    }
+  } catch(e) { console.warn("havok", e); }
+  Narrative.run();
+  startLoop();
+  UI.show("menu-main");
+}
+
+window.addEventListener("load", boot);
+
+/* Exposed for automated harness testing only. */
+window.__GAME = { startGame, togglePause, Player, Abilities, A };

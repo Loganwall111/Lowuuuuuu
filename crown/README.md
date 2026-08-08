@@ -1,46 +1,57 @@
-# CROWN OF THE UNMADE
+# CROWN OF THE UNMADE — 3D EDITION
 
-*A reality-warping god-arena. You are the god who unmakes reality.*
+*A full WebGL reality-warping god-arena. You are the god who unmakes reality.*
 
-This is a from-scratch, single-file-canvas game built by a swarm of **15 specialist sub-agents**, each owning one module and handing its output to the next so the whole thing fuses into one living organism. Everything — the nebula, the physics, the audio score, the 7 reality-bending abilities, the difficulty curve, the juice — is procedural and bespoke. There are no sprites, no libraries, no assets: it is all generated code.
+This is a from-scratch, fully-3D game built by a swarm of **15 specialist sub-agents**, retooled from a 2D canvas game into a genuine Babylon.js + Havok physics experience. It loads **Babylon.js** and **Havok Physics** from the official CDN (needs an internet connection in the browser) and builds everything else — enemies, the world, particles, audio, post-processing — procedurally in code. No sprites, no downloaded models, no assets: it is all generated.
 
-## How to play
+## What's in it (AAA-era features)
+- **Full 3D WebGL scene** with an orbit camera (drag to orbit, scroll to zoom), a procedural starfield/nebula skybox, and volumetric star particles.
+- **Real Havok physics** — a physics world with a collidable arena floor plus physics-driven drifting asteroid debris you can interact with.
+- **Gravitational lensing** — a bespoke full-screen post-process fragment shader that warps the rendered scene around each black hole's projected screen position, exactly like light bending around a singularity.
+- **Black holes** with glowing accretion disks, spiraling accretion particles, gravity that pulls enemies *and* the player, and a **supernova** on collapse.
+- **Volumetric particle systems** for every burst, shockwave, trail, and explosion (additive-blended, glowing).
+- **Bloom** via GlowLayer, plus vignette, screen flash, camera shake and film grain.
+- Procedural 3D enemy assets: drifters, shards, behemoths (spiked icos", wraiths, proximity mines, and the Sunmaw boss.
 
-| Key | Action |
-|-----|--------|
-| `WASD` | drift through the wound |
-| `MOUSE` | aim the omens |
-| `LMB` (hold) | fire astral bolts |
-| `Q` | **Singularity** — birth a black hole that devours matter, then goes supernova |
-| `E` | **Temporal Rift** — stop their time (bullet-time; the soundtrack slows with you) |
+## Abilities (each bends a law of reality)
+| Key | Ability |
+|-----|---------|
+| `Q` | **Singularity** — birth a black hole with gravitational lensing + supernova |
+| `E` | **Temporal Rift** — bullet time; enemies leave glowing ghost trails |
 | `R` | **Fractal Echo** — split across timelines; echoes mirror your fire |
-| `SPACE` | **Gravitic Inversion** — flip the sky, fling everything upward, then slam it down |
+| `G` | **Tractor Grab** — seize a foe with a gravity tether and hurl it |
+| `SPACE` | **Gravitic Inversion** — flip the sky, fling everything, then slam |
 | `F` | **Void Lash** — a searing tendril that severs reality in a line |
-| `C` | **Prism Phase** — become nowhere; leave a damaging light trail |
-| `X` | **GENESIS OVERDRIVE** — ultimate. Unmake everything. |
+| `C` | **Prism Phase** — become nowhere, invulnerable, leaving a wound of light |
+| `X` | **Genesis Overdrive** — ultimate. unmake everything |
 
-## The 15-agent swarm & what each one built
+Left-click fires astral bolts. Drag orbits the camera, scroll zooms.
 
-1. **ARCHITECT** — core state machine, frame clock, global time-warp, the update/render orchestrator.
-2. **COSMOLOGY** — the living nebula world field: breathing starfield, drifting dust, layered radial nebula.
-3. **ENTROPY** — the enemy hive & wave-genesis: drifters, shards, behemoths, wraiths, mines, and the sunmaw; soft-body separation, flocking, teleporting wraiths, mine proximity-arming.
-4. **REALITY WEAVER** — the 7 abilities above.
-5. **PARTICLEFORGE** — particle system: blasts, tracers, rings, glowing sparks, floating damage text.
-6. **GRAVITON** — physics: black holes with accretion rings + event horizons and supernova implosions, gravity pull, beam geometry.
-7. **TEMPORALIST** — bullet-time + rewind ghost trails of enemies frozen mid-motion; owns global `timeScale`.
-8. **RENDERER** — canvas lighting engine: additive glow, radial gradients, shadow-blur bloom, layered draw order.
-9. **FRACTALIST** — duplication & recursion: echo firing and the overdrive cascade.
-10. **SYNTHESIZER** — fully procedural WebAudio score & SFX (tempo warps in bullet-time, chimes, booms, the overdrive fanfare).
-11. **UMBRA** — post-processing: vignette, flash, film grain.
-12. **HUDMIND** — interface: ability deck with cooldowns, vitals, wave/score/combo readouts.
-13. **NARRATIVE** — lore, the cinematic title boot sequence, awakening lines.
-14. **BALANCER** — difficulty scaling, spawn budgets, wave escalation, combo economy.
-15. **POLISHER** — game-feel: screen shake, hit flashes, combo decay, final integration & review.
+## Menus
+Main · Controls · Abilities · Settings (difficulty, sound, sensitivity, visual fidelity) · Pause · Death. Full procedural score, combo and wave HUD with ability cooldown deck.
+
+## The 15-agent swarm
+1. **ARCHITECT** — Babylon Engine/Scene, camera, input, state machine, main loop
+2. **COSMOLOGY** — procedural skybox, star field, ambient world
+3. **ENTROPY** — procedural 3D enemy assets, spawning, boids
+4. **REALITY WEAVER** — the 8 abilities above
+5. **PARTICLEFORGE** — volumetric bursts, trails, shockwaves
+6. **GRAVITON** — black holes, gravitational-lensing shader, gravity, beams, physics debris
+7. **TEMPORALIST** — bullet-time & rewind ghost trails
+8. **LIGHTING/RENDERER** — lights, GlowLayer bloom, PBR-style materials
+9. **FRACTALIST** — echo firing & overdrive cascade
+10. **SYNTHESIZER** — procedural WebAudio score & SFX
+11. **UMBRA** — vignette, flash, lens post-fx
+12. **HUDMIND** — menus & HUD
+13. **NARRATIVE** — lore & boot sequence
+14. **BALANCER** — waves, budgets, combo economy
+15. **POLISHER** — camera shake, game-feel, performance, final review
 
 ## Files
-- `index.html` — shell & UI overlays
+- `index.html` — shell, CDN scripts, menu DOM
 - `style.css` — the neon-cosmic interface
-- `game.js` — the entire engine (all 15 agents' modules, tagged `[AGENT]`)
+- `game.js` — the entire 3D engine (all 15 agents' modules, tagged `[AGENT]`)
+- `test_harness.js` — a Node stub harness that boots the scene and runs 900+ frames of gameplay (all abilities, pause, death, retry) to catch runtime errors
 
 ## Run
-Open `index.html` in a browser (or serve the folder). Click **AWAKEN**. Hold on to reality.
+Serve the folder (e.g. `python3 -m http.server 8000`) and open it in a browser **with internet access** (Babylon.js + Havok load from CDN). Click **AWAKEN**. Hold on to reality.
