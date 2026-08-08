@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GRAVITON · a psychedelic odyssey</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="hud-top">
+      <div class="hud-block">
+        <span class="hud-label">SECTOR</span>
+        <span id="hud-sector" class="hud-value">I</span>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">ENERGY</span>
+        <div id="energy-bar"><div id="energy-fill"></div></div>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">SHARDS</span>
+        <span id="hud-shards" class="hud-value">0</span>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">SCORE</span>
+        <span id="hud-score" class="hud-value">0</span>
+      </div>
+    </div>
+    <div id="hud-bottom">
+      <span id="hud-msg"></span>
+      <span id="hud-keys">WASD / Arrows = thrust · SPACE = pulse boost · G = toggle gravity lines · P = pause</span>
+    </div>
+    <div id="time-dilation" class="hidden">⏳ TIME DILATION</div>
+  </div>
+
+  <!-- Title screen -->
+  <div id="title">
+    <h1 class="glow">GRAVITON</h1>
+    <p class="tagline">a psychedelic odyssey through gravity &amp; the void</p>
+    <div class="title-body">
+      <p>Pilot a lone probe across a fractal cosmos. Bend light around <b>black holes</b>, ride the
+         gravity wells of dying stars, harvest <b>prism shards</b>, and decode the <b>Sigils of the
+         Ancients</b> — every sector holds a puzzle of math and language that unlocks its jump gate.</p>
+      <p class="small">Brains and thrust. Survive the event horizon. Reach the Singularity.</p>
+    </div>
+    <button id="btn-start">✦ IGNITE THE DRIVE ✦</button>
+    <p class="hint">tip: energy drains as you fly — collect shards or slingshot past stars to refuel</p>
+  </div>
+
+  <!-- Overlay used for puzzles / pause / game-over -->
+  <div id="overlay" class="hidden">
+    <div id="overlay-card">
+      <h2 id="overlay-title"></h2>
+      <div id="overlay-content"></div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/physics.js"></script>
+  <script src="js/puzzles.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
