@@ -1,0 +1,256 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.monstrosity",
+        "texture_width": 96,
+        "texture_height": 64
+      },
+      "bones": [
+        {
+          "name": "body",
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -5,
+                0,
+                -3
+              ],
+              "size": [
+                10,
+                14,
+                6
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "parent": "body",
+          "pivot": [
+            0,
+            14,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                14,
+                -3
+              ],
+              "size": [
+                8,
+                8,
+                6
+              ],
+              "uv": [
+                32,
+                20
+              ]
+            }
+          ]
+        },
+        {
+          "name": "moustache",
+          "parent": "head",
+          "pivot": [
+            0,
+            17,
+            -3
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                16,
+                -3.5
+              ],
+              "size": [
+                8,
+                2,
+                1
+              ],
+              "uv": [
+                34,
+                24
+              ]
+            }
+          ]
+        },
+        {
+          "name": "antenna_l",
+          "parent": "head",
+          "pivot": [
+            3,
+            22,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                3,
+                22,
+                -1
+              ],
+              "size": [
+                1,
+                6,
+                1
+              ],
+              "uv": [
+                48,
+                30
+              ]
+            }
+          ]
+        },
+        {
+          "name": "antenna_r",
+          "parent": "head",
+          "pivot": [
+            -3,
+            22,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                22,
+                -1
+              ],
+              "size": [
+                1,
+                6,
+                1
+              ],
+              "uv": [
+                40,
+                40
+              ]
+            }
+          ]
+        },
+        {
+          "name": "arm_l",
+          "parent": "body",
+          "pivot": [
+            5,
+            10,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                5,
+                2,
+                -1.5
+              ],
+              "size": [
+                3,
+                9,
+                3
+              ],
+              "uv": [
+                0,
+                21
+              ]
+            }
+          ]
+        },
+        {
+          "name": "arm_r",
+          "parent": "body",
+          "pivot": [
+            -5,
+            10,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -8,
+                2,
+                -1.5
+              ],
+              "size": [
+                3,
+                9,
+                3
+              ],
+              "uv": [
+                0,
+                40
+              ]
+            }
+          ]
+        },
+        {
+          "name": "leg_l",
+          "parent": "body",
+          "pivot": [
+            2.5,
+            2,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                1,
+                0,
+                -1.5
+              ],
+              "size": [
+                3,
+                2,
+                3
+              ],
+              "uv": [
+                20,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "leg_r",
+          "parent": "body",
+          "pivot": [
+            -2.5,
+            2,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                0,
+                -1.5
+              ],
+              "size": [
+                3,
+                2,
+                3
+              ],
+              "uv": [
+                26,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

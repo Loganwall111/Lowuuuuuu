@@ -1,0 +1,15 @@
+{
+  "name": "devouring_storms:mainframe_ruin",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "devouring_storms:mainframe_ruin",
+        "projection": "rigid",
+        "processors": "devouring_storms:mainframe_rot"
+      }
+    }
+  ]
+}

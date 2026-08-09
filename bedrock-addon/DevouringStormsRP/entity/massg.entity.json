@@ -1,0 +1,27 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:massg",
+      "materials": {
+        "default": "entity_alphatest",
+        "glow": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/massg",
+        "glow": "textures/entity/massg_glow"
+      },
+      "geometry": {
+        "default": "geometry.ds.massg"
+      },
+      "animations": { "idle": "animation.ds.massg" },
+      "scripts": { "animate": [ "idle" ] },
+      "render_controllers": [
+        "controller.render.ds.basic",
+        "controller.render.ds.massg_glow"
+      ],
+      "spawn_egg": { "base_color": "#2a0f3a", "overlay_color": "#dc64ff" },
+      "enable_attachables": false
+    }
+  }
+}

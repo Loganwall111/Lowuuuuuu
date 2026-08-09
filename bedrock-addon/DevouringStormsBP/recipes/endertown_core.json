@@ -1,0 +1,14 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shaped": {
+    "description": { "identifier": "ds:endertown_core" },
+    "tags": [ "crafting_table" ],
+    "pattern": [ "EPE", "PCP", "EPE" ],
+    "key": {
+      "E": { "item": "minecraft:end_stone" },
+      "P": { "item": "minecraft:purpur_block" },
+      "C": { "item": "ds:commanded_star" }
+    },
+    "result": { "item": "ds:endertown_core", "count": 1 }
+  }
+}

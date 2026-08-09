@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SDS",
+    "DAD",
+    " D "
+  ],
+  "key": {
+    "S": { "item": "minecraft:string" },
+    "D": { "item": "devouring_storms:storm_dust" },
+    "A": { "item": "minecraft:amethyst_shard" }
+  },
+  "result": { "count": 1, "id": "devouring_storms:amulet_of_decay" },
+  "show_notification": true
+}

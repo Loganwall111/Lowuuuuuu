@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "devouring_storms:event_horizon",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 80,
+    "separation": 40,
+    "salt": 841236,
+    "spread_type": "linear"
+  }
+}

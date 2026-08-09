@@ -1,0 +1,25 @@
+{
+  "biomes": {
+    "the_end": {
+      "fog_identifier": "ds:fog_decayed_reality",
+      "water_ambience": {
+        "ambient_sound": "ds.ambient.decayed_loop"
+      }
+    },
+    "the_end_basalt": {
+      "fog_identifier": "ds:fog_decayed_reality"
+    },
+    "the_end_islands": {
+      "fog_identifier": "ds:fog_decayed_reality"
+    },
+    "the_end_midlands": {
+      "fog_identifier": "ds:fog_decayed_reality"
+    },
+    "the_end_highlands": {
+      "fog_identifier": "ds:fog_decayed_reality"
+    },
+    "the_end_barrens": {
+      "fog_identifier": "ds:fog_decayed_reality"
+    }
+  }
+}

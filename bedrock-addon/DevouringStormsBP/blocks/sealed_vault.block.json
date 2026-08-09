@@ -1,0 +1,33 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ds:sealed_vault",
+      "menu_category": { "category": "construction" },
+      "states": {
+        "ds:open": { "values": [ false, true ] }
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": { "texture": "ds_sealed_vault", "render_method": "opaque" }
+      },
+      "minecraft:map_color": "#161222",
+      "minecraft:block_light_emission": 3,
+      "minecraft:destructible_by_mining": { "seconds_to_destroy": 40.0 },
+      "minecraft:destructible_by_explosion": { "explosion_resistance": 3600000.0 }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('ds:open')",
+        "components": {
+          "minecraft:material_instances": {
+            "*": { "texture": "ds_sealed_vault_open", "render_method": "opaque" }
+          },
+          "minecraft:block_light_emission": 10
+        }
+      }
+    ]
+  }
+}

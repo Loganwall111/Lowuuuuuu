@@ -1,0 +1,12 @@
+{
+  "structures": [
+    { "structure": "devouring_storms:endertown", "weight": 1 }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 92812372,
+    "spacing": 30,
+    "separation": 10,
+    "spread_type": "triangular"
+  }
+}

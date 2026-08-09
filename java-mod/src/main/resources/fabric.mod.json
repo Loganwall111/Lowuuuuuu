@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "devouring_storms",
+  "version": "${version}",
+  "name": "Devouring Storms",
+  "description": "WITHERING REWRITE: AWAKENING. MASSG — the Massive Abomination Sundering Storm Genesis — is waking up. Face the storm, the Watcher, and the quarantined Decayed Reality. Based on the DEVOURING STORMS series.",
+  "authors": [
+    "REWRITTEN team"
+  ],
+  "contributors": [
+    "Original series by Logan Wall / REWRITTEN",
+    "Concepts inspired by Decayed Reality V2 (Tazo & ArtherTheBg) — no assets reused"
+  ],
+  "contact": {
+    "sources": "https://github.com/Loganwall111/Low"
+  },
+  "license": "LGPL-3.0-or-later",
+  "icon": "assets/devouring_storms/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.rewritten.devouringstorms.DevouringStorms"
+    ],
+    "client": [
+      "com.rewritten.devouringstorms.DevouringStormsClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "iris": "*"
+  }
+}

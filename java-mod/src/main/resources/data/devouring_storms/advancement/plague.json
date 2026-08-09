@@ -1,0 +1,21 @@
+{
+  "parent": "devouring_storms:root",
+  "display": {
+    "icon": { "id": "devouring_storms:storm_flesh" },
+    "title": { "translate": "advancements.devouring_storms.plague.title" },
+    "description": { "translate": "advancements.devouring_storms.plague.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "decayed": {
+      "trigger": "minecraft:effects_changed",
+      "conditions": {
+        "effects": {
+          "devouring_storms:decay": {}
+        }
+      }
+    }
+  }
+}

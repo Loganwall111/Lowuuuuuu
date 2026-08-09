@@ -1,0 +1,16 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:anna_apparition",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/anna" },
+      "geometry": { "default": "geometry.ds.anna" },
+      "animations": { "idle": "animation.ds.anna" },
+      "scripts": { "animate": [ "idle" ] },
+      "render_controllers": [ "controller.render.ds.basic" ],
+      "spawn_egg": { "base_color": "#dcd4e4", "overlay_color": "#785a96" },
+      "enable_attachables": false
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "structures": [
+    { "structure": "devouring_storms:rift_obelisk", "weight": 1 }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 77420131,
+    "spacing": 14,
+    "separation": 5,
+    "spread_type": "triangular"
+  }
+}

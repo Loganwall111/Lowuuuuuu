@@ -1,0 +1,530 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ds:massg",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "ds_sleeping": {
+        "minecraft:scale": {
+          "value": 0.6
+        },
+        "minecraft:movement": {
+          "max": 0.02
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 300.0
+        }
+      },
+      "ds_signal": {
+        "minecraft:scale": {
+          "value": 0.85
+        },
+        "minecraft:movement": {
+          "max": 0.08
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 220.0
+        }
+      },
+      "ds_hunger": {
+        "minecraft:scale": {
+          "value": 1.1
+        },
+        "minecraft:movement": {
+          "max": 0.14
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 160.0
+        }
+      },
+      "ds_devourer": {
+        "minecraft:scale": {
+          "value": 1.45
+        },
+        "minecraft:movement": {
+          "max": 0.18
+        },
+        "minecraft:shooter": {
+          "def": "ds:storm_skull"
+        },
+        "minecraft:behavior.ranged_attack": {
+          "priority": 2,
+          "burst_shots": 1,
+          "burst_interval": 0.4,
+          "attack_interval_min": 4.0,
+          "attack_interval_max": 6.0,
+          "attack_radius": 64.0
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 130.0
+        }
+      },
+      "ds_sunderer": {
+        "minecraft:scale": {
+          "value": 1.85
+        },
+        "minecraft:movement": {
+          "max": 0.2
+        },
+        "minecraft:shooter": {
+          "def": "ds:storm_skull"
+        },
+        "minecraft:behavior.ranged_attack": {
+          "priority": 2,
+          "burst_shots": 2,
+          "burst_interval": 0.3,
+          "attack_interval_min": 3.0,
+          "attack_interval_max": 4.5,
+          "attack_radius": 80.0
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 110.0
+        }
+      },
+      "ds_bowels": {
+        "minecraft:scale": {
+          "value": 2.2
+        },
+        "minecraft:movement": {
+          "max": 0.2
+        },
+        "minecraft:shooter": {
+          "def": "ds:storm_skull"
+        },
+        "minecraft:behavior.ranged_attack": {
+          "priority": 2,
+          "burst_shots": 2,
+          "burst_interval": 0.3,
+          "attack_interval_min": 3.0,
+          "attack_interval_max": 4.5,
+          "attack_radius": 80.0
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 110.0
+        }
+      },
+      "ds_genesis": {
+        "minecraft:scale": {
+          "value": 2.6
+        },
+        "minecraft:movement": {
+          "max": 0.24
+        },
+        "minecraft:shooter": {
+          "def": "ds:storm_skull"
+        },
+        "minecraft:behavior.ranged_attack": {
+          "priority": 2,
+          "burst_shots": 3,
+          "burst_interval": 0.25,
+          "attack_interval_min": 2.6,
+          "attack_interval_max": 4.0,
+          "attack_radius": 96.0
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 90.0
+        }
+      },
+      "ds_play_dead": {
+        "minecraft:scale": {
+          "value": 2.6
+        },
+        "minecraft:movement": {
+          "max": 0.0
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 400.0
+        }
+      },
+      "ds_critical": {
+        "minecraft:movement": {
+          "max": 0.26
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 60.0
+        }
+      },
+      "ds_husk": {
+        "minecraft:scale": {
+          "value": 2.2
+        },
+        "minecraft:movement": {
+          "value": 0.03
+        },
+        "minecraft:damage_sensor": {
+          "triggers": [
+            {
+              "cause": "all",
+              "deals_damage": false
+            }
+          ]
+        },
+        "minecraft:ambient_sound_interval": {
+          "value": 160.0,
+          "event_name": "ambient.in.wither",
+          "range": 24.0
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "ds_massg",
+          "main_wither_storm",
+          "monster"
+        ]
+      },
+      "minecraft:boss": {
+        "should_darken_sky": true,
+        "hud_range": 320
+      },
+      "minecraft:health": {
+        "value": 700,
+        "max": 700
+      },
+      "minecraft:attack": {
+        "damage": 14
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:physics": {
+        "has_gravity": false,
+        "has_collision": true,
+        "push_back_by_projectile": false
+      },
+      "minecraft:can_fly": {
+        "value": true
+      },
+      "minecraft:collision_box": {
+        "width": 8.0,
+        "height": 5.0
+      },
+      "minecraft:follow_range": {
+        "value": 256
+      },
+      "minecraft:navigation.fly": {
+        "can_path_over_water": true,
+        "can_path_from_air": true,
+        "avoid_damage_blocks": false
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "lava"
+              },
+              "event": ""
+            },
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:fire_immune": true,
+      "minecraft:nameable": {
+        "always_show": true,
+        "allow_name_tag_renaming": false
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 1,
+        "entity_types": [
+          {
+            "filters": {
+              "test": "is_family",
+              "subject": "other",
+              "value": "player"
+            },
+            "max_dist": 192
+          }
+        ],
+        "must_see": false
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 3,
+        "look_distance": 160.0,
+        "probability": 0.1
+      },
+      "minecraft:behavior.random_fly": {
+        "priority": 4,
+        "xz_dist": 40,
+        "y_dist": 12,
+        "speed_multiplier": 1.2
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/massg.json"
+      },
+      "minecraft:ambient_sound_interval": {
+        "value": 300.0
+      }
+    },
+    "events": {
+      "ds:sleeping": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "ds_signal",
+                "ds_hunger",
+                "ds_devourer",
+                "ds_sunderer",
+                "ds_bowels",
+                "ds_genesis",
+                "ds_play_dead",
+                "ds_critical",
+                "ds_husk"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "ds_sleeping"
+              ]
+            }
+          }
+        ]
+      },
+      "ds:signal": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "ds_sleeping",
+                "ds_hunger",
+                "ds_devourer",
+                "ds_sunderer",
+                "ds_bowels",
+                "ds_genesis",
+                "ds_play_dead",
+                "ds_husk"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "ds_signal"
+              ]
+            }
+          }
+        ]
+      },
+      "ds:hunger": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "ds_sleeping",
+                "ds_signal",
+                "ds_devourer",
+                "ds_sunderer",
+                "ds_bowels",
+                "ds_genesis",
+                "ds_play_dead",
+                "ds_husk"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "ds_hunger"
+              ]
+            }
+          }
+        ]
+      },
+      "ds:devourer": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "ds_sleeping",
+                "ds_signal",
+                "ds_hunger",
+                "ds_sunderer",
+                "ds_bowels",
+                "ds_genesis",
+                "ds_play_dead",
+                "ds_husk"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "ds_devourer"
+              ]
+            }
+          }
+        ]
+      },
+      "ds:sunderer": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "ds_sleeping",
+                "ds_signal",
+                "ds_hunger",
+                "ds_devourer",
+                "ds_genesis",
+                "ds_play_dead"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "ds_sunderer"
+              ]
+            }
+          }
+        ]
+      },
+      "ds:genesis": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "ds_sleeping",
+                "ds_signal",
+                "ds_hunger",
+                "ds_devourer",
+                "ds_sunderer",
+                "ds_bowels",
+                "ds_play_dead",
+                "ds_husk"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "ds_genesis"
+              ]
+            }
+          }
+        ]
+      },
+      "ds:play_dead": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "ds_sleeping",
+                "ds_signal",
+                "ds_hunger",
+                "ds_devourer",
+                "ds_sunderer",
+                "ds_bowels",
+                "ds_genesis",
+                "ds_critical",
+                "ds_husk"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "ds_play_dead"
+              ]
+            }
+          }
+        ]
+      },
+      "ds:true_dead": {
+        "trigger": "minecraft:instant_despawn"
+      },
+      "ds:devolve": {
+        "add": {
+          "component_groups": [
+            "ds_critical"
+          ]
+        }
+      },
+      "ds:phase_signal": {
+        "trigger": "ds:signal"
+      },
+      "ds:phase_hunger": {
+        "trigger": "ds:hunger"
+      },
+      "ds:phase_devourer": {
+        "trigger": "ds:devourer"
+      },
+      "ds:devour_phase1": {
+        "trigger": "ds:devourer"
+      },
+      "ds:devour_phase2": {
+        "trigger": "ds:sunderer"
+      },
+      "ds:devour_phase3": {
+        "trigger": "ds:genesis"
+      },
+      "ds:stage_sleeping": {
+        "trigger": "ds:sleeping"
+      },
+      "ds:bowels": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "ds_sleeping",
+                "ds_signal",
+                "ds_hunger",
+                "ds_devourer",
+                "ds_sunderer",
+                "ds_genesis",
+                "ds_play_dead",
+                "ds_husk"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "ds_bowels"
+              ]
+            }
+          }
+        ]
+      },
+      "ds:husk": {
+        "sequence": [
+          {
+            "remove": {
+              "component_groups": [
+                "ds_sleeping",
+                "ds_signal",
+                "ds_hunger",
+                "ds_devourer",
+                "ds_sunderer",
+                "ds_genesis",
+                "ds_play_dead",
+                "ds_bowels"
+              ]
+            }
+          },
+          {
+            "add": {
+              "component_groups": [
+                "ds_husk"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

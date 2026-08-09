@@ -1,0 +1,12 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shapeless": {
+    "description": { "identifier": "ds:decayed_stone" },
+    "tags": [ "crafting_table" ],
+    "ingredients": [
+      { "item": "minecraft:stone" },
+      { "item": "ds:storm_dust" }
+    ],
+    "result": { "item": "ds:decayed_stone", "count": 4 }
+  }
+}

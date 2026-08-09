@@ -1,0 +1,25 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:storm_mite",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/storm_mite"
+      },
+      "geometry": {
+        "default": "geometry.ds.storm_mite"
+      },
+      "render_controllers": [
+        "controller.render.ds.basic"
+      ],
+      "spawn_egg": {
+        "base_color": "#3a0f5c",
+        "overlay_color": "#b060ff"
+      },
+      "enable_attachables": false
+    }
+  }
+}

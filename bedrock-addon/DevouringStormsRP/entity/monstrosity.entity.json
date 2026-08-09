@@ -1,0 +1,26 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:monstrosity",
+      "materials": {
+        "default": "entity_alphatest",
+        "emitter": "entity_emissive"
+      },
+      "textures": {
+        "default": "textures/entity/monstrosity"
+      },
+      "geometry": {
+        "default": "geometry.ds.monstrosity"
+      },
+      "render_controllers": [
+        "controller.render.ds.basic"
+      ],
+      "spawn_egg": {
+        "base_color": "#3a124a",
+        "overlay_color": "#ff3fc8"
+      },
+      "enable_attachables": false
+    }
+  }
+}

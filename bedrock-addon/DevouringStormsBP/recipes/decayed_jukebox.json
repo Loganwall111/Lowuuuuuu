@@ -1,0 +1,14 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shaped": {
+    "description": { "identifier": "ds:decayed_jukebox" },
+    "tags": [ "crafting_table" ],
+    "pattern": [ "RRR", "RJR", "SSS" ],
+    "key": {
+      "R": { "item": "ds:rot_log" },
+      "J": { "item": "minecraft:jukebox" },
+      "S": { "item": "ds:storm_dust" }
+    },
+    "result": { "item": "ds:decayed_jukebox", "count": 1 }
+  }
+}

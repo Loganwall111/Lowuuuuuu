@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "minecraft:tnt" },
+    { "item": "minecraft:wither_rose" },
+    { "item": "minecraft:gunpowder" },
+    { "item": "minecraft:gunpowder" },
+    { "item": "minecraft:ghast_tear" },
+    { "item": "minecraft:dragon_breath" },
+    { "item": "devouring_storms:storm_dust" },
+    { "item": "devouring_storms:storm_dust" }
+  ],
+  "result": { "count": 2, "id": "devouring_storms:formidibomb" }
+}

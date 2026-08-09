@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "devouring_storms:block/terminal"
+    },
+    "active=true": {
+      "model": "devouring_storms:block/terminal_active"
+    }
+  }
+}

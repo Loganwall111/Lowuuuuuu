@@ -1,0 +1,175 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.creator_hand",
+        "texture_width": 64,
+        "texture_height": 64
+      },
+      "bones": [
+        {
+          "name": "palm",
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -7,
+                -3,
+                -3
+              ],
+              "size": [
+                14,
+                6,
+                7
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "finger_1",
+          "parent": "palm",
+          "pivot": [
+            -5,
+            3,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -6,
+                3,
+                -2
+              ],
+              "size": [
+                3,
+                8,
+                3
+              ],
+              "uv": [
+                0,
+                18
+              ]
+            }
+          ]
+        },
+        {
+          "name": "finger_2",
+          "parent": "palm",
+          "pivot": [
+            -1.5,
+            3,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -2.5,
+                3,
+                -2
+              ],
+              "size": [
+                3,
+                9,
+                3
+              ],
+              "uv": [
+                12,
+                18
+              ]
+            }
+          ]
+        },
+        {
+          "name": "finger_3",
+          "parent": "palm",
+          "pivot": [
+            1.5,
+            3,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                0.5,
+                3,
+                -2
+              ],
+              "size": [
+                3,
+                8,
+                3
+              ],
+              "uv": [
+                24,
+                18
+              ]
+            }
+          ]
+        },
+        {
+          "name": "finger_4",
+          "parent": "palm",
+          "pivot": [
+            5,
+            3,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                4,
+                3,
+                -2
+              ],
+              "size": [
+                3,
+                7,
+                3
+              ],
+              "uv": [
+                36,
+                18
+              ]
+            }
+          ]
+        },
+        {
+          "name": "finger_5",
+          "parent": "palm",
+          "pivot": [
+            7,
+            1,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                7,
+                -1,
+                -2
+              ],
+              "size": [
+                3,
+                5,
+                3
+              ],
+              "uv": [
+                48,
+                18
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "devouring_storms:epa_facility",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 44,
+    "separation": 22,
+    "salt": 841192,
+    "spread_type": "linear"
+  }
+}

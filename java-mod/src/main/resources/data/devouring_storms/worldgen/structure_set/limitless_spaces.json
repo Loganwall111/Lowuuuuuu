@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "devouring_storms:limitless_spaces",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 34,
+    "separation": 17,
+    "salt": 841225,
+    "spread_type": "linear"
+  }
+}

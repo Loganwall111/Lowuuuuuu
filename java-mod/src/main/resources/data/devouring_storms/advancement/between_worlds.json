@@ -1,0 +1,24 @@
+{
+  "parent": "devouring_storms:decayed",
+  "display": {
+    "icon": { "id": "devouring_storms:frayed_tear" },
+    "title": { "translate": "advancements.devouring_storms.between_worlds.title" },
+    "description": { "translate": "advancements.devouring_storms.between_worlds.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "fray": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": { "to": "devouring_storms:the_fray" }
+    },
+    "echo": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": { "to": "devouring_storms:echo_fields" }
+    }
+  },
+  "requirements": [
+    [ "fray", "echo" ]
+  ]
+}

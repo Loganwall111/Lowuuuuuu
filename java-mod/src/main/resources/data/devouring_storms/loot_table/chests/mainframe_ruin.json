@@ -1,0 +1,40 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "type": "minecraft:uniform", "min": 3, "max": 5 },
+      "entries": [
+        { "type": "minecraft:item", "name": "devouring_storms:storm_dust", "weight": 6,
+          "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1, "max": 3 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:redstone", "weight": 5,
+          "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 2, "max": 5 } } ] },
+        { "type": "minecraft:item", "name": "devouring_storms:decayed_flesh", "weight": 5,
+          "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1, "max": 2 } } ] },
+        { "type": "minecraft:item", "name": "devouring_storms:decayed_bone", "weight": 4,
+          "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1, "max": 2 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:iron_ingot", "weight": 4,
+          "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1, "max": 3 } } ] },
+        { "type": "minecraft:item", "name": "devouring_storms:memory_fragment", "weight": 3 },
+        { "type": "minecraft:item", "name": "devouring_storms:corrupted_blueprints", "weight": 2 }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "devouring_storms:schedule_2" }
+      ],
+      "conditions": [
+        { "condition": "minecraft:random_chance", "chance": 0.5 }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "devouring_storms:audio_log_2" }
+      ],
+      "conditions": [
+        { "condition": "minecraft:random_chance", "chance": 0.14 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "has_record=false": {
+      "model": "devouring_storms:block/decayed_jukebox"
+    },
+    "has_record=true": {
+      "model": "devouring_storms:block/decayed_jukebox"
+    }
+  }
+}

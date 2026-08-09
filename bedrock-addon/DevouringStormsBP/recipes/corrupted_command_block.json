@@ -1,0 +1,15 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shaped": {
+    "description": { "identifier": "ds:corrupted_command_block" },
+    "tags": [ "crafting_table" ],
+    "pattern": [ "SCS", "ONO", "SCS" ],
+    "key": {
+      "S": { "item": "minecraft:wither_skeleton_skull" },
+      "C": { "item": "minecraft:crying_obsidian" },
+      "O": { "item": "minecraft:obsidian" },
+      "N": { "item": "minecraft:nether_star" }
+    },
+    "result": { "item": "ds:corrupted_command_block", "count": 1 }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "devouring_storms:watcher_eye" }
+      ],
+      "conditions": [
+        { "condition": "minecraft:killed_by_player" },
+        { "condition": "minecraft:random_chance", "chance": 0.2 }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "devouring_storms:storm_killer" }
+      ],
+      "conditions": [
+        { "condition": "minecraft:killed_by_player" },
+        { "condition": "minecraft:random_chance", "chance": 0.25 }
+      ]
+    }
+  ]
+}

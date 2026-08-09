@@ -1,0 +1,16 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shaped": {
+    "description": { "identifier": "ds:terminal" },
+    "tags": [ "crafting_table" ],
+    "pattern": [ "FAF", "EGE", "FRF" ],
+    "key": {
+      "F": { "item": "ds:mainframe_frame" },
+      "A": { "item": "minecraft:amethyst_block" },
+      "E": { "item": "ds:watcher_eye" },
+      "G": { "item": "minecraft:glowstone" },
+      "R": { "item": "minecraft:redstone_block" }
+    },
+    "result": { "item": "ds:terminal", "count": 1 }
+  }
+}

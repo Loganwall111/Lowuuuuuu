@@ -1,0 +1,22 @@
+{
+  "parent": "devouring_storms:endertown",
+  "display": {
+    "icon": { "id": "devouring_storms:classified_payload" },
+    "title": { "translate": "advancements.devouring_storms.vault.title" },
+    "description": { "translate": "advancements.devouring_storms.vault.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "payload": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "devouring_storms:classified_payload" }
+        ]
+      }
+    }
+  }
+}

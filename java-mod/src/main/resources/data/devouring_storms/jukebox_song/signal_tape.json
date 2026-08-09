@@ -1,0 +1,8 @@
+{
+  "sound_event": "devouring_storms:record.signal_tape",
+  "description": {
+    "translate": "jukebox_song.devouring_storms.signal_tape"
+  },
+  "length_in_seconds": 47,
+  "comparator_output": 13
+}

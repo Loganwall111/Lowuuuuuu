@@ -1,0 +1,19 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ds:frayed_tear",
+      "menu_category": { "category": "construction" }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": { "texture": "ds_frayed_tear", "render_method": "alpha_test" }
+      },
+      "minecraft:map_color": "#2c0a40",
+      "minecraft:block_light_emission": 12,
+      "minecraft:destructible_by_mining": { "seconds_to_destroy": 9999.0 },
+      "minecraft:destructible_by_explosion": { "explosion_resistance": 3600000.0 }
+    }
+  }
+}

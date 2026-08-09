@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "devouring_storms:boom_town",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 52,
+    "separation": 26,
+    "salt": 841214,
+    "spread_type": "linear"
+  }
+}

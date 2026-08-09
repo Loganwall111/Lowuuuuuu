@@ -1,0 +1,13 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ds:corrupted_blueprints",
+      "menu_category": { "category": "items" }
+    },
+    "components": {
+      "minecraft:icon": { "textures": { "default": "ds_corrupted_blueprints" } },
+      "minecraft:max_stack_size": 1, "minecraft:glint": true
+    }
+  }
+}

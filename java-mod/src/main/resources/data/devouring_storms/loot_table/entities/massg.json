@@ -1,0 +1,70 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "devouring_storms:commanded_star" }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "devouring_storms:withered_nether_star" }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "devouring_storms:tendril",
+          "functions": [
+            { "function": "minecraft:set_count", "count": { "min": 2, "max": 4 } }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "devouring_storms:storm_flesh",
+          "functions": [
+            { "function": "minecraft:set_count", "count": { "min": 3, "max": 7 } }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "devouring_storms:storm_dust",
+          "functions": [
+            { "function": "minecraft:set_count", "count": { "min": 8, "max": 20 } }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "devouring_storms:music_disc_changed", "weight": 3 },
+        { "type": "minecraft:item", "name": "devouring_storms:music_disc_ships", "weight": 3 },
+        { "type": "minecraft:empty", "weight": 10 }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "devouring_storms:schedule_6" }
+      ],
+      "conditions": [
+        { "condition": "minecraft:random_chance", "chance": 0.75 }
+      ]
+    }
+  ]
+}

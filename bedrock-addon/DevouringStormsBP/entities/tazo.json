@@ -1,0 +1,74 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ds:tazo",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "components": {
+      "minecraft:type_family": { "family": [ "ds_tazo", "mob" ] },
+      "minecraft:health": { "value": 40, "max": 40 },
+      "minecraft:attack": { "damage": 5 },
+      "minecraft:movement": { "max": 0.34 },
+      "minecraft:physics": { "has_gravity": true, "has_collision": true },
+      "minecraft:collision_box": { "width": 0.6, "height": 1.9 },
+      "minecraft:follow_range": { "value": 40 },
+      "minecraft:nameable": { "always_show": true, "allow_name_tag_renaming": true },
+      "minecraft:tameable": {
+        "probability": 1.0,
+        "tame_items": [ "ds:memory_fragment" ],
+        "tame_event": { "event": "ds:tamed", "target": "self" }
+      },
+      "minecraft:behavior.follow_owner": {
+        "priority": 1,
+        "start_distance": 8.0,
+        "stop_distance": 4.0,
+        "speed_multiplier": 1.2
+      },
+      "minecraft:behavior.owner_hurt_by_target": {
+        "priority": 2
+      },
+      "minecraft:behavior.melee_attack": {
+        "priority": 3,
+        "speed_multiplier": 1.2
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 4,
+        "entity_types": [
+          {
+            "filters": {
+              "all_of": [
+                { "test": "is_family", "subject": "other", "value": "monster" },
+                { "test": "is_family", "subject": "other", "value": "ds_massg", "operator": "!=" },
+                { "test": "is_family", "subject": "other", "value": "ds_watcher", "operator": "!=" }
+              ]
+            },
+            "max_dist": 20
+          }
+        ],
+        "must_see": true
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 5,
+        "speed_multiplier": 0.8
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 6,
+        "look_distance": 12.0,
+        "probability": 0.1
+      }
+    },
+    "events": {
+      "ds:tamed": {
+        "add": { "component_groups": [ "ds_bonded" ] }
+      }
+    },
+    "component_groups": {
+      "ds_bonded": {
+        "minecraft:ambient_sound_interval": { "value": 90.0 }
+      }
+    }
+  }
+}

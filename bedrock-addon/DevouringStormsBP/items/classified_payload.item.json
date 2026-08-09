@@ -1,0 +1,14 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ds:classified_payload",
+      "menu_category": { "category": "items" }
+    },
+    "components": {
+      "minecraft:icon": { "textures": { "default": "ds_classified_payload" } },
+      "minecraft:max_stack_size": 1,
+      "minecraft:glint": true
+    }
+  }
+}

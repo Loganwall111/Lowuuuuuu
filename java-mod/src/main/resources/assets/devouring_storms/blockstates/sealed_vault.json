@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "open=false": { "model": "devouring_storms:block/sealed_vault" },
+    "open=true": { "model": "devouring_storms:block/sealed_vault_open" }
+  }
+}

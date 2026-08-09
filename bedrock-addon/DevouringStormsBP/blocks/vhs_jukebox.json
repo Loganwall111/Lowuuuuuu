@@ -1,0 +1,21 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ds:vhs_jukebox"
+    },
+    "components": {
+      "minecraft:geometry": "geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "vhs_jukebox"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 2.0
+      },
+      "minecraft:destructible_by_explosion": true,
+      "minecraft:map_color": "#3a3a42"
+    }
+  }
+}

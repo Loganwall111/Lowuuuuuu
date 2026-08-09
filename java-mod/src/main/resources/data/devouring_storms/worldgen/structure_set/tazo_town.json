@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "devouring_storms:tazo_town",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 46,
+    "separation": 23,
+    "salt": 841203,
+    "spread_type": "linear"
+  }
+}

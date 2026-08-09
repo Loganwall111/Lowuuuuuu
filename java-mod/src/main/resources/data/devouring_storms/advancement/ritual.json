@@ -1,0 +1,22 @@
+{
+  "parent": "devouring_storms:blueprints",
+  "display": {
+    "icon": { "id": "devouring_storms:corrupted_command_block" },
+    "title": { "translate": "advancements.devouring_storms.ritual.title" },
+    "description": { "translate": "advancements.devouring_storms.ritual.description" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "awakened": {
+      "trigger": "minecraft:item_used_on_block",
+      "conditions": {
+        "location": {
+          "block": "devouring_storms:corrupted_command_block",
+          "item": { "items": "devouring_storms:corrupted_blueprints" }
+        }
+      }
+    }
+  }
+}

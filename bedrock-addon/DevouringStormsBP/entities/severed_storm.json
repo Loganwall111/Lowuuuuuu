@@ -1,0 +1,54 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ds:severed_storm",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "components": {
+      "minecraft:type_family": { "family": [ "ds_severed", "main_wither_storm", "monster" ] },
+      "minecraft:health": { "value": 60, "max": 60 },
+      "minecraft:attack": { "damage": 6 },
+      "minecraft:movement": { "max": 0.45 },
+      "minecraft:physics": { "has_gravity": false, "has_collision": true },
+      "minecraft:can_fly": { "value": true },
+      "minecraft:collision_box": { "width": 1.2, "height": 1.2 },
+      "minecraft:follow_range": { "value": 64 },
+      "minecraft:navigation.fly": {
+        "can_path_over_water": true,
+        "can_path_from_air": true
+      },
+      "minecraft:behavior.nearest_attackable_target": {
+        "priority": 1,
+        "entity_types": [
+          {
+            "filters": { "test": "is_family", "subject": "other", "value": "player" },
+            "max_dist": 48
+          }
+        ],
+        "must_see": false
+      },
+      "minecraft:behavior.melee_attack": {
+        "priority": 2,
+        "speed_multiplier": 1.4,
+        "track_target": true
+      },
+      "minecraft:behavior.random_fly": {
+        "priority": 3,
+        "xz_dist": 16,
+        "y_dist": 6,
+        "speed_multiplier": 1.0
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/severed.json"
+      }
+    },
+    "events": {
+      "ds:true_dead": {
+        "trigger": "minecraft:instant_despawn"
+      }
+    }
+  }
+}

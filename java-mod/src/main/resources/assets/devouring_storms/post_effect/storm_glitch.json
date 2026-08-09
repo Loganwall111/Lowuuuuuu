@@ -1,0 +1,23 @@
+{
+  "_comment": "Storm-glitch post effect for the 1.21.2+ data-driven post pipeline. Best-effort schema — the identical effect is ALSO implemented screen-space in StormVisuals and in the standalone Iris shader pack, so the game looks corrupted with or without this chain being explicitly enabled.",
+  "targets": {
+    "ds_diffuse": { "persistent": false }
+  },
+  "passes": [
+    {
+      "shader": "devouring_storms:post/storm_glitch",
+      "uniforms": {
+        "DsIntensity": [ 1.0 ],
+        "DsTime": [ 0.0 ]
+      },
+      "inputs": [
+        {
+          "sampler_name": "Diffuse",
+          "target": "minecraft:main",
+          "bilinear": true
+        }
+      ],
+      "output": "minecraft:main"
+    }
+  ]
+}

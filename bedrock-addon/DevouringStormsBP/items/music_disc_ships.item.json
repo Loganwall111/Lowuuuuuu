@@ -1,0 +1,14 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ds:music_disc_ships",
+      "menu_category": { "category": "items" }
+    },
+    "components": {
+      "minecraft:icon": { "textures": { "default": "ds_music_disc_ships" } },
+      "minecraft:max_stack_size": 1,
+      "minecraft:record": { "duration": 66, "comparator_signal": 13, "sound_event": "ds.record.ships_to_carry_us_home" }
+    }
+  }
+}

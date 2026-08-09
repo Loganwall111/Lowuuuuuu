@@ -1,0 +1,8 @@
+{
+  "sound_event": "devouring_storms:record.eaoin",
+  "description": {
+    "translate": "jukebox_song.devouring_storms.eaoin"
+  },
+  "length_in_seconds": 58,
+  "comparator_output": 13
+}

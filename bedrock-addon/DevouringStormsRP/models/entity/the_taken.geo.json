@@ -1,0 +1,233 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.the_taken",
+        "texture_width": 64,
+        "texture_height": 64
+      },
+      "bones": [
+        {
+          "name": "root",
+          "parent": "root",
+          "pivot": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "torso",
+          "parent": "root",
+          "pivot": [
+            0,
+            10,
+            1.5
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                8,
+                -0.5
+              ],
+              "size": [
+                8,
+                10,
+                4
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "parent": "root",
+          "pivot": [
+            0,
+            18,
+            -2.5
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3.5,
+                15,
+                -6
+              ],
+              "size": [
+                7,
+                7,
+                7
+              ],
+              "uv": [
+                0,
+                15
+              ]
+            },
+            {
+              "origin": [
+                -1,
+                16,
+                -9
+              ],
+              "size": [
+                2,
+                4,
+                3
+              ],
+              "uv": [
+                20,
+                22
+              ]
+            }
+          ]
+        },
+        {
+          "name": "arm_l",
+          "parent": "root",
+          "pivot": [
+            -5.5,
+            17,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -7,
+                3,
+                -1.5
+              ],
+              "size": [
+                3,
+                14,
+                3
+              ],
+              "uv": [
+                28,
+                30
+              ]
+            },
+            {
+              "origin": [
+                -7,
+                1,
+                -1.5
+              ],
+              "size": [
+                3,
+                2,
+                3
+              ],
+              "uv": [
+                42,
+                46
+              ]
+            }
+          ]
+        },
+        {
+          "name": "arm_r",
+          "parent": "root",
+          "pivot": [
+            5.5,
+            17,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                4,
+                3,
+                -1.5
+              ],
+              "size": [
+                3,
+                14,
+                3
+              ],
+              "uv": [
+                28,
+                30
+              ]
+            },
+            {
+              "origin": [
+                4,
+                1,
+                -1.5
+              ],
+              "size": [
+                3,
+                2,
+                3
+              ],
+              "uv": [
+                42,
+                46
+              ]
+            }
+          ]
+        },
+        {
+          "name": "leg_l",
+          "parent": "root",
+          "pivot": [
+            -2.2,
+            9,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3.7,
+                0,
+                -1.5
+              ],
+              "size": [
+                3,
+                9,
+                3
+              ],
+              "uv": [
+                0,
+                30
+              ]
+            }
+          ]
+        },
+        {
+          "name": "leg_r",
+          "parent": "root",
+          "pivot": [
+            2.2,
+            9,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                0.7,
+                0,
+                -1.5
+              ],
+              "size": [
+                3,
+                9,
+                3
+              ],
+              "uv": [
+                0,
+                30
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

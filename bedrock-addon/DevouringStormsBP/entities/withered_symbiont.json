@@ -1,0 +1,25 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ds:withered_symbiont",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false,
+      "runtime_identifier": "minecraft:zombie"
+    },
+    "components": {
+      "minecraft:type_family": { "family": [ "ds_symbiont", "monster" ] },
+      "minecraft:health": { "value": 42, "max": 42 },
+      "minecraft:attack": { "damage": 7 },
+      "minecraft:movement": { "max": 0.27 },
+      "minecraft:physics": { "has_gravity": true, "has_collision": true },
+      "minecraft:collision_box": { "width": 0.7, "height": 2.1 },
+      "minecraft:follow_range": { "value": 48 },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/symbiont.json"
+      }
+    },
+    "events": {}
+  }
+}

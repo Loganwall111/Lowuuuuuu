@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "devouring_storms:block/rot_log_top",
+    "side": "devouring_storms:block/rot_log"
+  }
+}

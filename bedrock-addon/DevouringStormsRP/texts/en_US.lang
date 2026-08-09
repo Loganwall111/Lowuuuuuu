@@ -1,0 +1,90 @@
+## DEVOURING STORMS — English (US)
+
+## Entities
+entity.ds:massg.name=MASSG
+entity.ds:severed_storm.name=Severed Storm
+entity.ds:withered_symbiont.name=Withered Symbiont
+entity.ds:watcher.name=The Watcher
+entity.ds:tazo.name=Tazo
+entity.ds:anna_apparition.name=Anna?
+entity.ds:storm_skull.name=Storm Skull
+entity.ds:formidibomb.name=Formidibomb
+
+## Spawn eggs
+item.spawn_egg.entity.ds:massg.name=Spawn MASSG
+item.spawn_egg.entity.ds:severed_storm.name=Spawn Severed Storm
+item.spawn_egg.entity.ds:withered_symbiont.name=Spawn Withered Symbiont
+item.spawn_egg.entity.ds:watcher.name=Spawn The Watcher
+item.spawn_egg.entity.ds:tazo.name=Spawn Tazo
+item.spawn_egg.entity.ds:anna_apparition.name=Spawn Anna
+
+## Items
+item.ds:corrupted_blueprints.name=Corrupted Blueprints
+item.ds:rift_key.name=Rift Key
+item.ds:formidibomb.name=Formidibomb
+item.ds:watcher_eye.name=Decayed Human Eye
+item.ds:amulet_of_decay.name=Amulet of Decay
+item.ds:memory_fragment.name=Memory Fragment
+item.ds:storm_flesh.name=Storm Flesh
+item.ds:decayed_flesh.name=Decayed Flesh
+item.ds:decayed_bone.name=Decayed Bone
+item.ds:tendril.name=Tendril
+item.ds:storm_dust.name=Storm Dust
+item.ds:commanded_star.name=Commanded Star
+item.ds:withered_nether_star.name=Withered Nether Star
+item.ds:endertown_core.name=Endertown Core
+item.ds:classified_payload.name=[CLASSIFIED] Payload
+item.ds:schedule_1.name=Schedule I — The Broadcast
+item.ds:schedule_2.name=Schedule II — The Quarantine
+item.ds:schedule_3.name=Schedule III — The Waking
+item.ds:schedule_4.name=Schedule IV — The Apparition
+item.ds:schedule_5.name=Schedule V — The Companion
+item.ds:schedule_6.name=Schedule VI — The False Victory
+item.ds:schedule_7.name=Schedule VII — The Trumpet
+item.ds:storm_killer.name=Storm Killer
+item.ds:storm_heart.name=Storm Heart
+item.ds:seventh_trumpet.name=The Seventh Trumpet
+item.ds:audio_log_1.name=Audio Log — 'The Bell' (E.P.A.)
+item.ds:audio_log_2.name=Audio Log — 'The Plague' (E.P.A.)
+item.ds:audio_log_3.name=Audio Log — 'The Watcher' (E.P.A.)
+entity.ds:preacher.name=The Preacher
+entity.ds:townsfolk.name=Endertonian
+tile.ds:sealed_vault.name=Sealed Vault
+tile.ds:frayed_tear.name=Frayed Tear
+item.ds:music_disc_changed.name=Music Disc — We Have Been Changed
+item.ds:music_disc_ships.name=Music Disc — Ships to Carry Us Home
+
+## Blocks
+tile.ds:corrupted_command_block.name=Corrupted Command Block
+tile.ds:terminal.name=Terminal
+tile.ds:mainframe_frame.name=Mainframe Frame
+tile.ds:rift_portal_block.name=Rift
+tile.ds:decayed_jukebox.name=Decayed Jukebox
+tile.ds:decayed_soil.name=Decayed Soil
+tile.ds:decayed_stone.name=Decayed Stone
+tile.ds:rot_log.name=Rot Log
+tile.ds:decay_block.name=Decay
+
+## UI / lore
+ds.transmission.wake=§5§lM A S S G   I S   W A K I N G   U P.
+ds.cycle.continues=§5§lT H E   C Y C L E   C O N T I N U E S.
+
+## v1.5 — THE CREATOR / THE MULTIVERSE
+entity.ds:creator.name=The Creator
+entity.ds:creator_hand.name=The Hand
+entity.ds:monstrosity.name=The Monstrosity
+entity.ds:forger.name=The Forger
+entity.ds:sky_tentacle.name=Sky Tentacle
+entity.ds:cart_shopper.name=Cart Shopper
+entity.ds:researcher.name=E.P.A. Researcher
+entity.ds:earth_eater.name=The Earth Eater
+entity.ds:massg_rose.name=Massg (Rose)
+item.ds:broken_record.name=Broken Record
+item.ds:rocket_key.name=Rocket Key
+tile.ds:glitch_block.name=Glitch Block
+tile.ds:vhs_jukebox.name=VHS Jukebox
+tile.ds:crate_block.name=Shipping Crate
+record.ds.signal_tape.desc=REWRITTEN - The Signal (tape rip)
+record.ds.eaoin.desc=REWRITTEN - EAOIN, Sing
+record.ds.countdown.desc=REWRITTEN - Countdown
+record.ds.quarantine.desc=REWRITTEN - Outside The Quarantine

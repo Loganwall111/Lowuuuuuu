@@ -1,0 +1,148 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.researcher",
+        "texture_width": 64,
+        "texture_height": 64
+      },
+      "bones": [
+        {
+          "name": "body",
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                12,
+                4
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "parent": "body",
+          "pivot": [
+            0,
+            12,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                12,
+                -2.5
+              ],
+              "size": [
+                6,
+                6,
+                5
+              ],
+              "uv": [
+                0,
+                15
+              ]
+            }
+          ]
+        },
+        {
+          "name": "glasses",
+          "parent": "head",
+          "pivot": [
+            0,
+            15,
+            -2.5
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                14.5,
+                -3
+              ],
+              "size": [
+                6,
+                1,
+                1
+              ],
+              "uv": [
+                32,
+                18
+              ]
+            }
+          ]
+        },
+        {
+          "name": "clipboard",
+          "parent": "body",
+          "pivot": [
+            4,
+            8,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                4,
+                4,
+                -1.5
+              ],
+              "size": [
+                1,
+                5,
+                3
+              ],
+              "uv": [
+                40,
+                30
+              ]
+            }
+          ]
+        },
+        {
+          "name": "badge",
+          "parent": "body",
+          "pivot": [
+            -2,
+            10,
+            -2
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -2.5,
+                9.5,
+                -2.5
+              ],
+              "size": [
+                1,
+                1,
+                1
+              ],
+              "uv": [
+                52,
+                30
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

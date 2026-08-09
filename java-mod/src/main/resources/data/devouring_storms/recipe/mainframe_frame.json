@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "DTD",
+    "TST",
+    "DTD"
+  ],
+  "key": {
+    "D": { "item": "minecraft:polished_deepslate" },
+    "T": { "item": "minecraft:deepslate_tiles" },
+    "S": { "item": "devouring_storms:storm_dust" }
+  },
+  "result": { "count": 4, "id": "devouring_storms:mainframe_frame" },
+  "show_notification": true
+}

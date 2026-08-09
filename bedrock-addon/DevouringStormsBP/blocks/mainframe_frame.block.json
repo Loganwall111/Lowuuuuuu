@@ -1,0 +1,19 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ds:mainframe_frame",
+      "menu_category": { "category": "construction" }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": { "texture": "ds_mainframe_frame", "render_method": "opaque" }
+      },
+      "minecraft:map_color": "#1e1230",
+      "minecraft:block_light_emission": 0,
+      "minecraft:destructible_by_mining": { "seconds_to_destroy": 1.8 },
+      "minecraft:destructible_by_explosion": { "explosion_resistance": 6.0 }
+    }
+  }
+}

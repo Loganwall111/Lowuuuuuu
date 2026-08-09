@@ -1,0 +1,26 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:massg_rose",
+      "materials": {
+        "default": "entity_alphatest",
+        "emitter": "entity_emissive"
+      },
+      "textures": {
+        "default": "textures/entity/massg_rose"
+      },
+      "geometry": {
+        "default": "geometry.ds.massg"
+      },
+      "render_controllers": [
+        "controller.render.ds.basic"
+      ],
+      "spawn_egg": {
+        "base_color": "#5c1430",
+        "overlay_color": "#ff6fc0"
+      },
+      "enable_attachables": false
+    }
+  }
+}

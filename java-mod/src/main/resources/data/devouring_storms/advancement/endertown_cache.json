@@ -1,0 +1,19 @@
+{
+  "parent": "devouring_storms:endertown",
+  "display": {
+    "icon": { "id": "devouring_storms:memory_fragment" },
+    "title": { "translate": "advancements.devouring_storms.endertown_cache.title" },
+    "description": { "translate": "advancements.devouring_storms.endertown_cache.description" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "looted": {
+      "trigger": "minecraft:player_generates_container_loot",
+      "conditions": {
+        "loot_table": "devouring_storms:chests/endertown_plaza"
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ds:rift_portal_block",
+      "menu_category": { "category": "none" }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": { "texture": "ds_rift_portal", "render_method": "blend" }
+      },
+      "minecraft:collision_box": false,
+      "minecraft:selection_box": false,
+      "minecraft:map_color": "#a030e8",
+      "minecraft:block_light_emission": 13,
+      "minecraft:destructible_by_mining": { "seconds_to_destroy": -1 },
+      "minecraft:destructible_by_explosion": { "explosion_resistance": 3600000 }
+    }
+  }
+}

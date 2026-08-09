@@ -1,0 +1,19 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ds:decayed_jukebox",
+      "menu_category": { "category": "construction" }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "up": { "texture": "ds_decayed_jukebox_top", "render_method": "opaque" },
+        "*": { "texture": "ds_decayed_jukebox_side", "render_method": "opaque" }
+      },
+      "minecraft:map_color": "#2a1238",
+      "minecraft:destructible_by_mining": { "seconds_to_destroy": 2.0 },
+      "minecraft:destructible_by_explosion": { "explosion_resistance": 6.0 }
+    }
+  }
+}
