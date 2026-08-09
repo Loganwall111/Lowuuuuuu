@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "devouring_storms:rot_cathedral",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 55012024,
+    "spacing": 26,
+    "separation": 9,
+    "spread_type": "triangular"
+  }
+}

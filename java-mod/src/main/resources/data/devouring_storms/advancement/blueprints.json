@@ -1,0 +1,21 @@
+{
+  "parent": "devouring_storms:root",
+  "display": {
+    "icon": { "id": "devouring_storms:corrupted_blueprints" },
+    "title": { "translate": "advancements.devouring_storms.blueprints.title" },
+    "description": { "translate": "advancements.devouring_storms.blueprints.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_blueprints": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "devouring_storms:corrupted_blueprints" }
+        ]
+      }
+    }
+  }
+}

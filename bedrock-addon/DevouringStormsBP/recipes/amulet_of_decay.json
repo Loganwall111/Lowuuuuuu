@@ -1,0 +1,14 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shaped": {
+    "description": { "identifier": "ds:amulet_of_decay" },
+    "tags": [ "crafting_table" ],
+    "pattern": [ "SDS", "DAD", " D " ],
+    "key": {
+      "S": { "item": "minecraft:string" },
+      "D": { "item": "ds:storm_dust" },
+      "A": { "item": "minecraft:amethyst_shard" }
+    },
+    "result": { "item": "ds:amulet_of_decay", "count": 1 }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "parent": "devouring_storms:root",
+  "display": {
+    "icon": { "id": "devouring_storms:terminal" },
+    "title": { "translate": "advancements.devouring_storms.breached.title" },
+    "description": { "translate": "advancements.devouring_storms.breached.description" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "breached": {
+      "trigger": "minecraft:item_used_on_block",
+      "conditions": {
+        "location": {
+          "block": "devouring_storms:terminal",
+          "item": { "items": "devouring_storms:rift_key" }
+        }
+      }
+    }
+  }
+}

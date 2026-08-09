@@ -1,0 +1,191 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.creator",
+        "texture_width": 96,
+        "texture_height": 96
+      },
+      "bones": [
+        {
+          "name": "robe",
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -7,
+                0,
+                -4
+              ],
+              "size": [
+                14,
+                32,
+                8
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "parent": "robe",
+          "pivot": [
+            0,
+            32,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -5,
+                32,
+                -4
+              ],
+              "size": [
+                10,
+                10,
+                8
+              ],
+              "uv": [
+                60,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "eyes",
+          "parent": "head",
+          "pivot": [
+            0,
+            36,
+            -4
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                34.5,
+                -4.5
+              ],
+              "size": [
+                3,
+                2,
+                1
+              ],
+              "uv": [
+                62,
+                4
+              ]
+            },
+            {
+              "origin": [
+                1,
+                34.5,
+                -4.5
+              ],
+              "size": [
+                3,
+                2,
+                1
+              ],
+              "uv": [
+                76,
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "crown",
+          "parent": "head",
+          "pivot": [
+            0,
+            42,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -5,
+                42,
+                -4
+              ],
+              "size": [
+                10,
+                3,
+                8
+              ],
+              "uv": [
+                48,
+                40
+              ]
+            }
+          ]
+        },
+        {
+          "name": "arm_l",
+          "parent": "robe",
+          "pivot": [
+            7,
+            28,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                7,
+                10,
+                -2
+              ],
+              "size": [
+                4,
+                20,
+                4
+              ],
+              "uv": [
+                0,
+                46
+              ]
+            }
+          ]
+        },
+        {
+          "name": "arm_r",
+          "parent": "robe",
+          "pivot": [
+            -7,
+            28,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -11,
+                10,
+                -2
+              ],
+              "size": [
+                4,
+                20,
+                4
+              ],
+              "uv": [
+                48,
+                56
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

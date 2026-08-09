@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "DEVOURING STORMS \u2014 Resource Pack",
+    "description": "Storm-corrupted visuals for the Devouring Storms add-on: procedurally generated textures, fog files, particles, animations and the synthesized Devouring Storms score.",
+    "uuid": "b2d3f9a1-2222-4b3c-8d4e-16e6a7b8c902",
+    "version": [
+      1,
+      5,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "b2d3f9a1-2222-4b3c-8d4e-16e6a7b8c903",
+      "version": [
+        1,
+        4,
+        0
+      ]
+    }
+  ]
+}

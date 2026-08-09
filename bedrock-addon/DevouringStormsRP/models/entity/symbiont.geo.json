@@ -1,0 +1,53 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.symbiont",
+        "texture_width": 64,
+        "texture_height": 64
+      },
+      "bones": [
+        { "name": "root", "pivot": [ 0, 0, 0 ] },
+        {
+          "name": "body",
+          "parent": "root",
+          "pivot": [ 0, 12, 0 ],
+          "cubes": [ { "origin": [ -4, 12, -2 ], "size": [ 8, 12, 4 ], "uv": [ 0, 16 ] } ]
+        },
+        {
+          "name": "head",
+          "parent": "root",
+          "pivot": [ 0, 24, 0 ],
+          "cubes": [ { "origin": [ -4, 24, -4 ], "size": [ 8, 8, 8 ], "uv": [ 0, 0 ] } ]
+        },
+        {
+          "name": "arm_left",
+          "parent": "root",
+          "pivot": [ -5.5, 24, 0 ],
+          "rotation": [ -60, 0, -9 ],
+          "cubes": [ { "origin": [ -7, 11, -1.5 ], "size": [ 3, 13, 3 ], "uv": [ 32, 16 ] } ]
+        },
+        {
+          "name": "arm_right",
+          "parent": "root",
+          "pivot": [ 5.5, 24, 0 ],
+          "rotation": [ -58, 0, 11 ],
+          "cubes": [ { "origin": [ 4, 11, -1.5 ], "size": [ 3, 13, 3 ], "uv": [ 32, 16 ] } ]
+        },
+        {
+          "name": "leg_left",
+          "parent": "root",
+          "pivot": [ -2, 12, 0 ],
+          "cubes": [ { "origin": [ -3.75, 0, -1.75 ], "size": [ 3.5, 12, 3.5 ], "uv": [ 48, 16 ] } ]
+        },
+        {
+          "name": "leg_right",
+          "parent": "root",
+          "pivot": [ 2, 12, 0 ],
+          "cubes": [ { "origin": [ 0.25, 0, -1.75 ], "size": [ 3.5, 12, 3.5 ], "uv": [ 48, 16 ] } ]
+        }
+      ]
+    }
+  ]
+}

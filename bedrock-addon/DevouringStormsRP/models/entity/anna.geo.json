@@ -1,0 +1,39 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.anna",
+        "texture_width": 64,
+        "texture_height": 64
+      },
+      "bones": [
+        { "name": "root", "pivot": [ 0, 0, 0 ] },
+        {
+          "name": "dress",
+          "parent": "root",
+          "pivot": [ 0, 8, 0 ],
+          "cubes": [ { "origin": [ -4, 8, -2 ], "size": [ 8, 16, 4 ], "uv": [ 0, 14 ] } ]
+        },
+        {
+          "name": "head",
+          "parent": "root",
+          "pivot": [ 0, 24, 0 ],
+          "cubes": [ { "origin": [ -3.5, 24, -3.5 ], "size": [ 7, 7, 7 ], "uv": [ 0, 0 ] } ]
+        },
+        {
+          "name": "arm_left",
+          "parent": "root",
+          "pivot": [ -4.5, 22, 0 ],
+          "cubes": [ { "origin": [ -5.5, 10, -1 ], "size": [ 2, 12, 2 ], "uv": [ 28, 14 ] } ]
+        },
+        {
+          "name": "arm_right",
+          "parent": "root",
+          "pivot": [ 4.5, 22, 0 ],
+          "cubes": [ { "origin": [ 3.5, 10, -1 ], "size": [ 2, 12, 2 ], "uv": [ 28, 14 ] } ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "parent": "devouring_storms:decayed",
+  "display": {
+    "icon": { "id": "devouring_storms:decayed_flesh" },
+    "title": { "translate": "advancements.devouring_storms.infected.title" },
+    "description": { "translate": "advancements.devouring_storms.infected.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "put_down": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": { "type": "devouring_storms:withered_symbiont" }
+      }
+    }
+  }
+}

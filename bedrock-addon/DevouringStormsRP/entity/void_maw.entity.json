@@ -1,0 +1,25 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:void_maw",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/void_maw"
+      },
+      "geometry": {
+        "default": "geometry.ds.void_maw"
+      },
+      "render_controllers": [
+        "controller.render.ds.basic"
+      ],
+      "spawn_egg": {
+        "base_color": "#040308",
+        "overlay_color": "#f0dcff"
+      },
+      "enable_attachables": false
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "devouring_storms:rot_cathedral",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "devouring_storms:rot_cathedral",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shapeless": {
+    "description": { "identifier": "ds:seventh_trumpet" },
+    "tags": [ "crafting_table" ],
+    "ingredients": [
+      { "item": "minecraft:end_rod" },
+      { "item": "ds:tendril" },
+      { "item": "minecraft:echo_shard" }
+    ],
+    "result": { "item": "ds:seventh_trumpet", "count": 1 }
+  }
+}

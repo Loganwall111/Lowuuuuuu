@@ -1,0 +1,8 @@
+{
+  "sound_event": "devouring_storms:record.we_have_been_changed",
+  "description": {
+    "translate": "jukebox_song.devouring_storms.we_have_been_changed"
+  },
+  "length_in_seconds": 82,
+  "comparator_output": 14
+}

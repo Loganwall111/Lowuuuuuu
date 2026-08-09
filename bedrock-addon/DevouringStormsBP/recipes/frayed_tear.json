@@ -1,0 +1,13 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shapeless": {
+    "description": { "identifier": "ds:frayed_tear" },
+    "tags": [ "crafting_table" ],
+    "ingredients": [
+      { "item": "minecraft:obsidian" },
+      { "item": "minecraft:crying_obsidian" },
+      { "item": "ds:tendril" }
+    ],
+    "result": { "item": "ds:frayed_tear", "count": 2 }
+  }
+}

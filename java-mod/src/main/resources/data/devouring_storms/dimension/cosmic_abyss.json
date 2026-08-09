@@ -1,0 +1,13 @@
+{
+  "type": "devouring_storms:cosmic_abyss",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "devouring_storms:decayed_wastes",
+      "lakes": false,
+      "features": false,
+      "layers": [],
+      "structure_overrides": []
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shaped": {
+    "description": { "identifier": "ds:mainframe_frame" },
+    "tags": [ "crafting_table" ],
+    "pattern": [ "DTD", "TST", "DTD" ],
+    "key": {
+      "D": { "item": "minecraft:polished_deepslate" },
+      "T": { "item": "minecraft:deepslate_tiles" },
+      "S": { "item": "ds:storm_dust" }
+    },
+    "result": { "item": "ds:mainframe_frame", "count": 4 }
+  }
+}

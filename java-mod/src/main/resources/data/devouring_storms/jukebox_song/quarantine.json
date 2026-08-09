@@ -1,0 +1,8 @@
+{
+  "sound_event": "devouring_storms:record.quarantine",
+  "description": {
+    "translate": "jukebox_song.devouring_storms.quarantine"
+  },
+  "length_in_seconds": 52,
+  "comparator_output": 13
+}

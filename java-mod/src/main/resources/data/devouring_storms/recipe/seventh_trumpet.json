@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:end_rod" },
+    { "item": "devouring_storms:tendril" },
+    { "item": "minecraft:echo_shard" }
+  ],
+  "result": { "id": "devouring_storms:seventh_trumpet", "count": 1 }
+}

@@ -1,0 +1,22 @@
+{
+  "parent": "devouring_storms:ritual",
+  "display": {
+    "icon": { "id": "devouring_storms:commanded_star" },
+    "title": { "translate": "advancements.devouring_storms.end_it.title" },
+    "description": { "translate": "advancements.devouring_storms.end_it.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "rewards": {
+    "experience": 500
+  },
+  "criteria": {
+    "killed_massg": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": { "type": "devouring_storms:massg" }
+      }
+    }
+  }
+}

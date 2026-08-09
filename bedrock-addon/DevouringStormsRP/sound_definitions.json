@@ -1,0 +1,37 @@
+{
+  "format_version": "1.20.20",
+  "sound_definitions": {
+    "ds.ambient.decayed_loop": { "category": "ambient", "sounds": [ { "name": "sounds/ds/decayed_loop", "stream": true, "volume": 0.7, "load_on_low_memory": true } ] },
+    "ds.ambient.rift_hum": { "category": "ambient", "sounds": [ { "name": "sounds/ds/rift_hum", "volume": 0.6 } ] },
+
+    "ds.massg.awakening": { "category": "hostile", "sounds": [ { "name": "sounds/ds/awakening", "volume": 4.0 } ] },
+    "ds.massg.roar": { "category": "hostile", "sounds": [ { "name": "sounds/ds/roar", "volume": 4.0 } ] },
+    "ds.massg.devour": { "category": "hostile", "sounds": [ { "name": "sounds/ds/devour", "volume": 3.0 } ] },
+    "ds.massg.pull_loop": { "category": "hostile", "sounds": [ { "name": "sounds/ds/pull_loop", "stream": true, "volume": 3.0 } ] },
+    "ds.massg.devolve_sting": { "category": "hostile", "sounds": [ { "name": "sounds/ds/devolve_sting", "volume": 4.0 } ] },
+    "ds.massg.play_dead": { "category": "hostile", "sounds": [ { "name": "sounds/ds/play_dead", "volume": 4.0 } ] },
+    "ds.massg.rebirth": { "category": "hostile", "sounds": [ { "name": "sounds/ds/rebirth", "volume": 4.0 } ] },
+    "ds.massg.true_death": { "category": "hostile", "sounds": [ { "name": "sounds/ds/true_death", "volume": 4.0 } ] },
+
+    "ds.music.signal": { "category": "music", "sounds": [ { "name": "sounds/ds/signal", "stream": true, "volume": 1.0, "load_on_low_memory": true } ] },
+    "ds.music.hunger": { "category": "music", "sounds": [ { "name": "sounds/ds/hunger", "stream": true, "volume": 1.0, "load_on_low_memory": true } ] },
+    "ds.music.devourer": { "category": "music", "sounds": [ { "name": "sounds/ds/devourer", "stream": true, "volume": 1.0, "load_on_low_memory": true } ] },
+    "ds.music.sunderer": { "category": "music", "sounds": [ { "name": "sounds/ds/sunderer", "stream": true, "volume": 1.0, "load_on_low_memory": true } ] },
+    "ds.music.genesis": { "category": "music", "sounds": [ { "name": "sounds/ds/genesis", "stream": true, "volume": 1.0, "load_on_low_memory": true } ] },
+    "ds.music.critical": { "category": "music", "sounds": [ { "name": "sounds/ds/critical", "stream": true, "volume": 1.0, "load_on_low_memory": true } ] },
+
+    "ds.watcher.heartbeat": { "category": "hostile", "sounds": [ { "name": "sounds/ds/heartbeat", "volume": 0.9 } ] },
+    "ds.watcher.whisper": { "category": "hostile", "sounds": [ { "name": "sounds/ds/whisper", "volume": 1.2 } ] },
+    "ds.watcher.vanish": { "category": "hostile", "sounds": [ { "name": "sounds/ds/vanish", "volume": 1.5 } ] },
+
+    "ds.anna.giggle": { "category": "neutral", "sounds": [ { "name": "sounds/ds/giggle", "volume": 0.7 } ] },
+    "ds.glitch": { "category": "neutral", "sounds": [ { "name": "sounds/ds/glitch" }, { "name": "sounds/ds/glitch2" } ] },
+
+    "ds.terminal.boot": { "category": "block", "sounds": [ { "name": "sounds/ds/boot", "volume": 2.0 } ] },
+    "ds.terminal.transmission": { "category": "block", "sounds": [ { "name": "sounds/ds/transmission", "volume": 1.2 } ] },
+    "ds.rift.open": { "category": "block", "sounds": [ { "name": "sounds/ds/open", "volume": 1.5 } ] },
+
+    "ds.record.we_have_been_changed": { "category": "record", "sounds": [ { "name": "sounds/ds/we_have_been_changed", "stream": true, "volume": 1.0, "load_on_low_memory": true } ] },
+    "ds.record.ships_to_carry_us_home": { "category": "record", "sounds": [ { "name": "sounds/ds/ships_to_carry_us_home", "stream": true, "volume": 1.0, "load_on_low_memory": true } ] }
+  }
+}

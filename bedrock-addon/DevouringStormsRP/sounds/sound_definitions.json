@@ -1,0 +1,45 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "record.signal_tape": {
+      "category": "records",
+      "max_distance": 100.0,
+      "sounds": [
+        {
+          "name": "sounds/ds/signal_tape",
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "record.eaoin": {
+      "category": "records",
+      "max_distance": 100.0,
+      "sounds": [
+        {
+          "name": "sounds/ds/eaoin",
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "record.countdown": {
+      "category": "records",
+      "max_distance": 100.0,
+      "sounds": [
+        {
+          "name": "sounds/ds/countdown",
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "record.quarantine": {
+      "category": "records",
+      "max_distance": 100.0,
+      "sounds": [
+        {
+          "name": "sounds/ds/quarantine",
+          "load_on_low_memory": true
+        }
+      ]
+    }
+  }
+}

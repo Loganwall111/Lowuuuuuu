@@ -1,0 +1,15 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "devouring_storms:block/rot_log"
+    },
+    "axis=x": {
+      "model": "devouring_storms:block/rot_log",
+      "x": 90
+    },
+    "axis=z": {
+      "model": "devouring_storms:block/rot_log",
+      "z": 90
+    }
+  }
+}

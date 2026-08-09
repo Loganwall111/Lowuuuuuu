@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:jigsaw",
+  "start_pool": "devouring_storms:event_horizon",
+  "size": 1,
+  "biomes": [
+    "devouring_storms:decayed_wastes"
+  ],
+  "step": "surface_structures",
+  "start_height": {
+    "absolute": 1
+  },
+  "use_expansion_hack": false,
+  "max_distance_from_center": 90,
+  "terrain_adaptation": "beard_thin",
+  "spawn_overrides": {}
+}

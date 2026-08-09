@@ -1,0 +1,12 @@
+{
+  "processors": [
+    {
+      "processor_type": "minecraft:block_rot",
+      "integrity": 0.88,
+      "rottable_blocks": [
+        { "predicate_type": "minecraft:block_match", "block": "devouring_storms:mainframe_frame" },
+        { "predicate_type": "minecraft:block_match", "block": "devouring_storms:decayed_stone" }
+      ]
+    }
+  ]
+}

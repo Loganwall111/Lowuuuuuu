@@ -1,0 +1,18 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shapeless": {
+    "description": { "identifier": "ds:formidibomb" },
+    "tags": [ "crafting_table" ],
+    "ingredients": [
+      { "item": "minecraft:tnt" },
+      { "item": "minecraft:wither_rose" },
+      { "item": "minecraft:gunpowder" },
+      { "item": "minecraft:gunpowder" },
+      { "item": "minecraft:ghast_tear" },
+      { "item": "minecraft:dragon_breath" },
+      { "item": "ds:storm_dust" },
+      { "item": "ds:storm_dust" }
+    ],
+    "result": { "item": "ds:formidibomb", "count": 2 }
+  }
+}

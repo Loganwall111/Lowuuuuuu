@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "devouring_storms:watcher_eye" },
+    { "item": "devouring_storms:memory_fragment" },
+    { "item": "devouring_storms:storm_dust" },
+    { "item": "minecraft:amethyst_shard" }
+  ],
+  "result": { "count": 1, "id": "devouring_storms:rift_key" }
+}

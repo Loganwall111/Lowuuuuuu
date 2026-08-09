@@ -1,0 +1,16 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:tazo",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/tazo" },
+      "geometry": { "default": "geometry.ds.tazo" },
+      "animations": { "idle": "animation.ds.tazo" },
+      "scripts": { "animate": [ "idle" ] },
+      "render_controllers": [ "controller.render.ds.basic" ],
+      "spawn_egg": { "base_color": "#1e5a64", "overlay_color": "#b4f0fa" },
+      "enable_attachables": false
+    }
+  }
+}

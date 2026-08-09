@@ -1,0 +1,14 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:preacher",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/preacher" },
+      "geometry": { "default": "geometry.ds.preacher" },
+      "render_controllers": [ "controller.render.ds.basic" ],
+      "spawn_egg": { "base_color": "#341642", "overlay_color": "#e2d6ee" },
+      "enable_attachables": false
+    }
+  }
+}

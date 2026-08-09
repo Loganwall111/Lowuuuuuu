@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:obsidian" },
+    { "item": "minecraft:crying_obsidian" },
+    { "item": "devouring_storms:tendril" }
+  ],
+  "result": { "id": "devouring_storms:frayed_tear", "count": 2 }
+}

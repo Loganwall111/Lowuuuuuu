@@ -1,0 +1,12 @@
+{
+  "structures": [
+    { "structure": "devouring_storms:watcher_shrine", "weight": 1 }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 33117704,
+    "spacing": 20,
+    "separation": 7,
+    "spread_type": "triangular"
+  }
+}

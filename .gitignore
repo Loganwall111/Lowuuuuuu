@@ -1,0 +1,27 @@
+# Java / Gradle
+.gradle/
+build/
+out/
+run/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+.classpath
+.project
+.settings/
+bin/
+
+# Python
+__pycache__/
+*.pyc
+
+# Packed add-ons (build artifacts)
+*.mcaddon
+*.mcpack
+
+# OS
+.DS_Store
+Thumbs.db
+
+# packaged downloadables (built on demand, not stored in git)
+bedrock-addon/*.mcpack
+bedrock-addon/*.mcaddon

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "devouring_storms:block/decayed_jukebox_top",
+    "side": "devouring_storms:block/decayed_jukebox_side"
+  }
+}

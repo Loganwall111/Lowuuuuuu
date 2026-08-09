@@ -1,0 +1,72 @@
+{
+  "temperature": 0.35,
+  "downfall": 0.3,
+  "has_precipitation": false,
+  "effects": {
+    "fog_color": 1448180,
+    "water_color": 787472,
+    "water_fog_color": 591896,
+    "sky_color": 722464,
+    "grass_color": 3289122,
+    "foliage_color": 2628160,
+    "grass_color_modifier": "dark_forest",
+    "ambient_particle": {
+      "options": {
+        "type": "minecraft:white_ash"
+      },
+      "probability": 0.008
+    },
+    "music": {
+      "sound": "devouring_storms:ambient.decayed_loop",
+      "min_delay": 12000,
+      "max_delay": 24000,
+      "replace_current_music": true
+    }
+  },
+  "spawners": {
+    "monster": [
+      {
+        "type": "devouring_storms:withered_symbiont",
+        "weight": 55,
+        "minCount": 2,
+        "maxCount": 4
+      },
+      {
+        "type": "devouring_storms:watcher",
+        "weight": 3,
+        "minCount": 1,
+        "maxCount": 1
+      },
+      {
+        "type": "devouring_storms:storm_mite",
+        "weight": 22,
+        "minCount": 2,
+        "maxCount": 4
+      },
+      {
+        "type": "devouring_storms:the_taken",
+        "weight": 10,
+        "minCount": 1,
+        "maxCount": 2
+      }
+    ],
+    "creature": []
+  },
+  "spawn_costs": {},
+  "carvers": [],
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+      "minecraft:pale_garden_vegetation"
+    ],
+    []
+  ]
+}

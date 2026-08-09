@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ds:formidibomb",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "components": {
+      "minecraft:type_family": { "family": [ "ds_formidibomb" ] },
+      "minecraft:collision_box": { "width": 0.35, "height": 0.35 },
+      "minecraft:projectile": {
+        "on_hit": {
+          "impact_damage": {
+            "damage": 8,
+            "knockback": true,
+            "destroy_on_hit": true
+          }
+        },
+        "hit_sound": "random.tnt",
+        "power": 1.1,
+        "gravity": 0.05,
+        "angle_offset": 0.0,
+        "anchor": 1
+      },
+      "minecraft:physics": { "has_gravity": true, "has_collision": false }
+    },
+    "events": {}
+  }
+}

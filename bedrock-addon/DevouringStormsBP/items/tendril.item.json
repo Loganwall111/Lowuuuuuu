@@ -1,0 +1,13 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ds:tendril",
+      "menu_category": { "category": "nature" }
+    },
+    "components": {
+      "minecraft:icon": { "textures": { "default": "ds_tendril" } },
+      "minecraft:max_stack_size": 4
+    }
+  }
+}

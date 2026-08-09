@@ -1,0 +1,14 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:storm_skull",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/massg" },
+      "geometry": { "default": "geometry.ds.storm_skull" },
+      "animations": { "idle": "animation.ds.storm_skull" },
+      "scripts": { "animate": [ "idle" ] },
+      "render_controllers": [ "controller.render.ds.basic" ]
+    }
+  }
+}

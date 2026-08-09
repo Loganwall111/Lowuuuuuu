@@ -1,0 +1,52 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.preacher",
+        "texture_width": 64,
+        "texture_height": 64
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [0, 0, 0]
+        },
+        {
+          "name": "robe",
+          "parent": "root",
+          "pivot": [0, 10, 0],
+          "cubes": [
+            { "origin": [-5, -2, -3], "size": [10, 14, 6], "uv": [0, 0] },
+            { "origin": [-6, -6, -4], "size": [12, 4, 8], "uv": [32, 32] },
+            { "origin": [-3, 4, -6], "size": [6, 3, 4], "uv": [48, 16] }
+          ]
+        },
+        {
+          "name": "hood",
+          "parent": "root",
+          "pivot": [0, 17, 0],
+          "cubes": [
+            { "origin": [-4, 13, -4], "size": [8, 8, 8], "uv": [0, 20] }
+          ]
+        },
+        {
+          "name": "arm_l",
+          "parent": "root",
+          "pivot": [-6.5, 11, 0],
+          "cubes": [
+            { "origin": [-8, 1, -1.5], "size": [3, 10, 3], "uv": [48, 0] }
+          ]
+        },
+        {
+          "name": "arm_r",
+          "parent": "root",
+          "pivot": [6.5, 11, 0],
+          "cubes": [
+            { "origin": [5, 1, -1.5], "size": [3, 10, 3], "uv": [48, 0] }
+          ]
+        }
+      ]
+    }
+  ]
+}

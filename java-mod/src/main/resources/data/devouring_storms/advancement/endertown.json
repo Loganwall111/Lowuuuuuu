@@ -1,0 +1,19 @@
+{
+  "parent": "devouring_storms:decayed",
+  "display": {
+    "icon": { "id": "minecraft:purple_banner" },
+    "title": { "translate": "advancements.devouring_storms.endertown.title" },
+    "description": { "translate": "advancements.devouring_storms.endertown.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "in_town": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "location": { "structures": "devouring_storms:endertown" }
+      }
+    }
+  }
+}

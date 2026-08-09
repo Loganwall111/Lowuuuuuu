@@ -1,0 +1,16 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:withered_symbiont",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/symbiont" },
+      "geometry": { "default": "geometry.ds.symbiont" },
+      "animations": { "idle": "animation.ds.symbiont" },
+      "scripts": { "animate": [ "idle" ] },
+      "render_controllers": [ "controller.render.ds.basic" ],
+      "spawn_egg": { "base_color": "#463c28", "overlay_color": "#8cbe5a" },
+      "enable_attachables": false
+    }
+  }
+}

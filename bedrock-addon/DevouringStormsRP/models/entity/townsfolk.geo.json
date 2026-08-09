@@ -1,0 +1,51 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.townsfolk",
+        "texture_width": 64,
+        "texture_height": 64
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [0, 0, 0]
+        },
+        {
+          "name": "body",
+          "parent": "root",
+          "pivot": [0, 10, 0],
+          "cubes": [
+            { "origin": [-4, -2, -2.5], "size": [8, 12, 5], "uv": [0, 0] },
+            { "origin": [6.5, 4, -3], "size": [2, 12, 2], "uv": [44, 30] }
+          ]
+        },
+        {
+          "name": "head",
+          "parent": "root",
+          "pivot": [0, 16.5, 0],
+          "cubes": [
+            { "origin": [-3.5, 10, -3.5], "size": [7, 7, 7], "uv": [0, 17] }
+          ]
+        },
+        {
+          "name": "arm_l",
+          "parent": "root",
+          "pivot": [-5.5, 11, 0],
+          "cubes": [
+            { "origin": [-7, 2, -1.5], "size": [3, 9, 3], "uv": [28, 30] }
+          ]
+        },
+        {
+          "name": "arm_r",
+          "parent": "root",
+          "pivot": [5.5, 11, 0],
+          "cubes": [
+            { "origin": [4, 2, -1.5], "size": [3, 9, 3], "uv": [28, 30] }
+          ]
+        }
+      ]
+    }
+  ]
+}

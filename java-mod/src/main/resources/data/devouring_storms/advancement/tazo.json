@@ -1,0 +1,20 @@
+{
+  "parent": "devouring_storms:decayed",
+  "display": {
+    "icon": { "id": "devouring_storms:memory_fragment" },
+    "title": { "translate": "advancements.devouring_storms.tazo.title" },
+    "description": { "translate": "advancements.devouring_storms.tazo.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "bonded": {
+      "trigger": "minecraft:player_interacted_with_entity",
+      "conditions": {
+        "item": { "items": "devouring_storms:memory_fragment" },
+        "entity": { "type": "devouring_storms:tazo" }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "display": {
+    "icon": { "id": "devouring_storms:rift_key" },
+    "title": { "translate": "advancements.devouring_storms.root.title" },
+    "description": { "translate": "advancements.devouring_storms.root.description" },
+    "background": "devouring_storms:textures/block/corrupted_command_block.png",
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  }
+}

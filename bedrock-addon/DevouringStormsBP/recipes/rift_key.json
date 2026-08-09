@@ -1,0 +1,14 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:recipe_shapeless": {
+    "description": { "identifier": "ds:rift_key" },
+    "tags": [ "crafting_table" ],
+    "ingredients": [
+      { "item": "ds:watcher_eye" },
+      { "item": "ds:memory_fragment" },
+      { "item": "ds:storm_dust" },
+      { "item": "minecraft:amethyst_shard" }
+    ],
+    "result": { "item": "ds:rift_key", "count": 1 }
+  }
+}

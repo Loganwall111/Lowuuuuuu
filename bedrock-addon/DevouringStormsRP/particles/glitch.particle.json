@@ -1,0 +1,41 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "ds:glitch",
+      "basic_render_parameters": {
+        "material": "particles_alpha",
+        "texture": "textures/particle/glitch"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": { "num_particles": 16 },
+      "minecraft:emitter_lifetime_once": { "active_time": 0.25 },
+      "minecraft:emitter_shape_point": {},
+      "minecraft:particle_lifetime_expression": { "max_lifetime": 0.45 },
+      "minecraft:particle_initial_speed": 1.6,
+      "minecraft:particle_motion_dynamic": { "linear_drag_coefficient": 2.0 },
+      "minecraft:particle_appearance_billboard": {
+        "size": [ 0.12, 0.22 ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 16,
+          "texture_height": 16,
+          "uv": [ 0, 0 ],
+          "uv_size": [ 16, 16 ],
+          "flipbook": {
+            "base_UV": [ 0, 0 ],
+            "size_UV": [ 16, 16 ],
+            "step_UV": [ 0, 0 ],
+            "frames_per_second": 2.0,
+            "max_frame": 1,
+            "stretch_to_lifetime": true
+          }
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [ 1.0, 0.25, 1.0, 1.0 ]
+      }
+    }
+  }
+}

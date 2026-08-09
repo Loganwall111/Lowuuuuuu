@@ -1,0 +1,1 @@
+tellraw @s {"rawtext":[{"text":"§dDEVOURING STORMS §r— commands:\n/function ds/summon_massg\n/function ds/phase_signal | ds/phase_hunger | ds/phase_devourer | ds/devolve | ds/reset\n/event entity @e[family=ds_massg] ds:genesis\n(DR parity: ds:devour_phase1..3, ds:stage_sleeping)"}]}

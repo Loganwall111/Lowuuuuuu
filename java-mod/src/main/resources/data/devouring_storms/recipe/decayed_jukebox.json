@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RRR",
+    "RJR",
+    "SSS"
+  ],
+  "key": {
+    "R": { "item": "devouring_storms:rot_log" },
+    "J": { "item": "minecraft:jukebox" },
+    "S": { "item": "devouring_storms:storm_dust" }
+  },
+  "result": { "count": 1, "id": "devouring_storms:decayed_jukebox" },
+  "show_notification": true
+}

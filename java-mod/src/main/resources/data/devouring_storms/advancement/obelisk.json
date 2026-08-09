@@ -1,0 +1,19 @@
+{
+  "parent": "devouring_storms:decayed",
+  "display": {
+    "icon": { "id": "devouring_storms:rift_portal" },
+    "title": { "translate": "advancements.devouring_storms.obelisk.title" },
+    "description": { "translate": "advancements.devouring_storms.obelisk.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "at_obelisk": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "location": { "structures": "devouring_storms:rift_obelisk" }
+      }
+    }
+  }
+}

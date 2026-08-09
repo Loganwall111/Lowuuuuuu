@@ -1,0 +1,22 @@
+{
+  "parent": "devouring_storms:end_it",
+  "display": {
+    "icon": { "id": "devouring_storms:storm_heart" },
+    "title": { "translate": "advancements.devouring_storms.rend.title" },
+    "description": { "translate": "advancements.devouring_storms.rend.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "heart": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "devouring_storms:storm_heart" }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "ds:music_disc_changed",
+      "menu_category": { "category": "items" }
+    },
+    "components": {
+      "minecraft:icon": { "textures": { "default": "ds_music_disc_changed" } },
+      "minecraft:max_stack_size": 1,
+      "minecraft:record": { "duration": 82, "comparator_signal": 14, "sound_event": "ds.record.we_have_been_changed" }
+    }
+  }
+}

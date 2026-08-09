@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SCS",
+    "ONO",
+    "SCS"
+  ],
+  "key": {
+    "S": { "item": "minecraft:wither_skeleton_skull" },
+    "C": { "item": "minecraft:crying_obsidian" },
+    "O": { "item": "minecraft:obsidian" },
+    "N": { "item": "minecraft:nether_star" }
+  },
+  "result": { "count": 1, "id": "devouring_storms:corrupted_command_block" },
+  "show_notification": true
+}

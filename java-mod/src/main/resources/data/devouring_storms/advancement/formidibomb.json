@@ -1,0 +1,21 @@
+{
+  "parent": "devouring_storms:ritual",
+  "display": {
+    "icon": { "id": "devouring_storms:formidibomb" },
+    "title": { "translate": "advancements.devouring_storms.formidibomb.title" },
+    "description": { "translate": "advancements.devouring_storms.formidibomb.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_fbomb": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "devouring_storms:formidibomb" }
+        ]
+      }
+    }
+  }
+}

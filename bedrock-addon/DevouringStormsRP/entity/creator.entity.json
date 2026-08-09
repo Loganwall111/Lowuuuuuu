@@ -1,0 +1,26 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:creator",
+      "materials": {
+        "default": "entity_alphatest",
+        "emitter": "entity_emissive"
+      },
+      "textures": {
+        "default": "textures/entity/creator"
+      },
+      "geometry": {
+        "default": "geometry.ds.creator"
+      },
+      "render_controllers": [
+        "controller.render.ds.basic"
+      ],
+      "spawn_egg": {
+        "base_color": "#0c0814",
+        "overlay_color": "#ff3c3c"
+      },
+      "enable_attachables": false
+    }
+  }
+}

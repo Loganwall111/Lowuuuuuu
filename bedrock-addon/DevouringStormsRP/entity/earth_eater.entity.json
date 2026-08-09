@@ -1,0 +1,26 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:earth_eater",
+      "materials": {
+        "default": "entity_alphatest",
+        "emitter": "entity_emissive"
+      },
+      "textures": {
+        "default": "textures/entity/earth_eater"
+      },
+      "geometry": {
+        "default": "geometry.ds.earth_eater"
+      },
+      "render_controllers": [
+        "controller.render.ds.basic"
+      ],
+      "spawn_egg": {
+        "base_color": "#060508",
+        "overlay_color": "#3fd7c8"
+      },
+      "enable_attachables": false
+    }
+  }
+}

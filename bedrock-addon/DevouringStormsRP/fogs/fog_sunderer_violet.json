@@ -1,0 +1,42 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "ds:fog_sunderer_violet.json"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 0.06,
+        "fog_end": 0.55,
+        "fog_color": "#33135c",
+        "render_distance_type": "render"
+      },
+      "weather": {
+        "fog_start": 0.04,
+        "fog_end": 0.45,
+        "fog_color": "#281048",
+        "render_distance_type": "render"
+      },
+      "water": {
+        "fog_start": 0.0,
+        "fog_end": 0.14,
+        "fog_color": "#150826"
+      }
+    },
+    "volumetric": {
+      "density": {
+        "air": {
+          "max_density": 0.42,
+          "zero_density_height": 128.0,
+          "max_density_height": -64.0
+        }
+      },
+      "media_coefficients": {
+        "air": {
+          "scattering": "#2e1256",
+          "absorption": "#10051c"
+        }
+      }
+    }
+  }
+}

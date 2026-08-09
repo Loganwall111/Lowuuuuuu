@@ -1,0 +1,57 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ds.watcher",
+        "texture_width": 64,
+        "texture_height": 64
+      },
+      "bones": [
+        { "name": "root", "pivot": [ 0, 0, 0 ] },
+        {
+          "name": "torso",
+          "parent": "root",
+          "pivot": [ 0, 16, 0 ],
+          "cubes": [ { "origin": [ -5, 16, -2.5 ], "size": [ 10, 20, 5 ], "uv": [ 0, 0 ] } ]
+        },
+        {
+          "name": "arm_left",
+          "parent": "torso",
+          "pivot": [ -6, 36, 0 ],
+          "cubes": [ { "origin": [ -7, 12, -1 ], "size": [ 2, 24, 2 ], "uv": [ 30, 0 ] } ]
+        },
+        {
+          "name": "arm_right",
+          "parent": "torso",
+          "pivot": [ 6, 36, 0 ],
+          "cubes": [ { "origin": [ 5, 12, -1 ], "size": [ 2, 24, 2 ], "uv": [ 30, 0 ] } ]
+        },
+        {
+          "name": "leg_left",
+          "parent": "root",
+          "pivot": [ -2.5, 16, 0 ],
+          "cubes": [ { "origin": [ -4, 0, -1.5 ], "size": [ 3, 16, 3 ], "uv": [ 40, 0 ] } ]
+        },
+        {
+          "name": "leg_right",
+          "parent": "root",
+          "pivot": [ 2.5, 16, 0 ],
+          "cubes": [ { "origin": [ 1, 0, -1.5 ], "size": [ 3, 16, 3 ], "uv": [ 40, 0 ] } ]
+        },
+        {
+          "name": "head",
+          "parent": "torso",
+          "pivot": [ 0, 36, 0 ],
+          "cubes": [ { "origin": [ -4, 36, -4 ], "size": [ 8, 8, 8 ], "uv": [ 0, 30 ] } ]
+        },
+        {
+          "name": "gaze",
+          "parent": "head",
+          "pivot": [ 0, 36, -4 ],
+          "cubes": [ { "origin": [ -3, 42, -4.6 ], "size": [ 6, 2, 1 ], "uv": [ 0, 46 ] } ]
+        }
+      ]
+    }
+  ]
+}

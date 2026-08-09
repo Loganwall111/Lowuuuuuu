@@ -1,0 +1,226 @@
+{
+  "ambient.decayed_loop": {
+    "category": "ambient",
+    "sounds": [
+      {
+        "name": "devouring_storms:ambient/decayed_loop",
+        "stream": true,
+        "volume": 0.7
+      }
+    ]
+  },
+  "ambient.rift_hum": {
+    "category": "ambient",
+    "sounds": [
+      "devouring_storms:ambient/rift_hum"
+    ]
+  },
+  "massg.awakening": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:massg/awakening"
+    ]
+  },
+  "massg.roar": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:massg/roar"
+    ]
+  },
+  "massg.devour": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:massg/devour"
+    ]
+  },
+  "massg.pull_loop": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "devouring_storms:massg/pull_loop",
+        "stream": true
+      }
+    ]
+  },
+  "massg.devolve_sting": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:massg/devolve_sting"
+    ]
+  },
+  "massg.play_dead": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:massg/play_dead"
+    ]
+  },
+  "massg.rebirth": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:massg/rebirth"
+    ]
+  },
+  "massg.true_death": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:massg/true_death"
+    ]
+  },
+  "music.signal": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "devouring_storms:music/signal",
+        "stream": true
+      }
+    ]
+  },
+  "music.hunger": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "devouring_storms:music/hunger",
+        "stream": true
+      }
+    ]
+  },
+  "music.devourer": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "devouring_storms:music/devourer",
+        "stream": true
+      }
+    ]
+  },
+  "music.sunderer": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "devouring_storms:music/sunderer",
+        "stream": true
+      }
+    ]
+  },
+  "music.genesis": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "devouring_storms:music/genesis",
+        "stream": true
+      }
+    ]
+  },
+  "music.critical": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "devouring_storms:music/critical",
+        "stream": true
+      }
+    ]
+  },
+  "watcher.heartbeat": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:watcher/heartbeat"
+    ]
+  },
+  "watcher.whisper": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:watcher/whisper"
+    ]
+  },
+  "watcher.vanish": {
+    "category": "hostile",
+    "sounds": [
+      "devouring_storms:watcher/vanish"
+    ]
+  },
+  "anna.giggle": {
+    "category": "neutral",
+    "sounds": [
+      "devouring_storms:anna/giggle"
+    ]
+  },
+  "glitch": {
+    "category": "neutral",
+    "sounds": [
+      "devouring_storms:glitch",
+      "devouring_storms:glitch2"
+    ]
+  },
+  "terminal.boot": {
+    "category": "block",
+    "sounds": [
+      "devouring_storms:terminal/boot"
+    ]
+  },
+  "terminal.transmission": {
+    "category": "block",
+    "sounds": [
+      "devouring_storms:terminal/transmission"
+    ]
+  },
+  "rift.open": {
+    "category": "block",
+    "sounds": [
+      "devouring_storms:rift/open"
+    ]
+  },
+  "record.we_have_been_changed": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "devouring_storms:record/we_have_been_changed",
+        "stream": true
+      }
+    ]
+  },
+  "record.ships_to_carry_us_home": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "devouring_storms:record/ships_to_carry_us_home",
+        "stream": true
+      }
+    ]
+  },
+  "record.signal_tape": {
+    "subtitle": "jukebox_song.devouring_storms.signal_tape",
+    "sounds": [
+      {
+        "name": "devouring_storms:record/signal_tape",
+        "stream": true
+      }
+    ]
+  },
+  "record.eaoin": {
+    "subtitle": "jukebox_song.devouring_storms.eaoin",
+    "sounds": [
+      {
+        "name": "devouring_storms:record/eaoin",
+        "stream": true
+      }
+    ]
+  },
+  "record.countdown": {
+    "subtitle": "jukebox_song.devouring_storms.countdown",
+    "sounds": [
+      {
+        "name": "devouring_storms:record/countdown",
+        "stream": true
+      }
+    ]
+  },
+  "record.quarantine": {
+    "subtitle": "jukebox_song.devouring_storms.quarantine",
+    "sounds": [
+      {
+        "name": "devouring_storms:record/quarantine",
+        "stream": true
+      }
+    ]
+  }
+}

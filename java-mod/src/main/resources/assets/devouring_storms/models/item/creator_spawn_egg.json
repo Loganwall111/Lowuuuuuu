@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "devouring_storms:item/creator_spawn_egg"
+  }
+}

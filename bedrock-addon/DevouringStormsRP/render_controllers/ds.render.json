@@ -1,0 +1,17 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.ds.basic": {
+      "geometry": "Geometry.default",
+      "materials": [ { "*": "Material.default" } ],
+      "textures": [ "Texture.default" ],
+      "part_visibility": [ { "*": true } ]
+    },
+    "controller.render.ds.massg_glow": {
+      "geometry": "Geometry.default",
+      "materials": [ { "*": "Material.glow" } ],
+      "textures": [ "Texture.glow" ],
+      "part_visibility": [ { "*": false, "core": true, "maw": true } ]
+    }
+  }
+}

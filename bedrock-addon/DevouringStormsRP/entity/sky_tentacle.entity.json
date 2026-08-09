@@ -1,0 +1,25 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:sky_tentacle",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/sky_tentacle"
+      },
+      "geometry": {
+        "default": "geometry.ds.sky_tentacle"
+      },
+      "render_controllers": [
+        "controller.render.ds.basic"
+      ],
+      "spawn_egg": {
+        "base_color": "#28143e",
+        "overlay_color": "#c85aff"
+      },
+      "enable_attachables": false
+    }
+  }
+}

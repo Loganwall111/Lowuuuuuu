@@ -1,0 +1,19 @@
+{
+  "parent": "devouring_storms:breached",
+  "display": {
+    "icon": { "id": "devouring_storms:decayed_stone" },
+    "title": { "translate": "advancements.devouring_storms.decayed.title" },
+    "description": { "translate": "advancements.devouring_storms.decayed.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "entered": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": {
+        "to": "devouring_storms:decayed_reality"
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ds:terminal",
+      "menu_category": { "category": "construction" },
+      "states": {
+        "ds:active": { "values": [ false, true ] }
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": { "texture": "ds_terminal", "render_method": "opaque" }
+      },
+      "minecraft:map_color": "#101018",
+      "minecraft:block_light_emission": 4,
+      "minecraft:destructible_by_mining": { "seconds_to_destroy": 8.0 },
+      "minecraft:destructible_by_explosion": { "explosion_resistance": 1200.0 }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('ds:active')",
+        "components": {
+          "minecraft:material_instances": {
+            "*": { "texture": "ds_terminal_active", "render_method": "opaque" }
+          },
+          "minecraft:block_light_emission": 11
+        }
+      }
+    ]
+  }
+}

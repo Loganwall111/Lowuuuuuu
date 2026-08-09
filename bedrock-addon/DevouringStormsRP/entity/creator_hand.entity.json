@@ -1,0 +1,25 @@
+{
+  "format_version": "1.21.80",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ds:creator_hand",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/creator_hand"
+      },
+      "geometry": {
+        "default": "geometry.ds.creator_hand"
+      },
+      "render_controllers": [
+        "controller.render.ds.basic"
+      ],
+      "spawn_egg": {
+        "base_color": "#0c0814",
+        "overlay_color": "#ff3c3c"
+      },
+      "enable_attachables": false
+    }
+  }
+}

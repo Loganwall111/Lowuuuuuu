@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "FAF",
+    "EGE",
+    "FRF"
+  ],
+  "key": {
+    "F": { "item": "devouring_storms:mainframe_frame" },
+    "A": { "item": "minecraft:amethyst_block" },
+    "E": { "item": "devouring_storms:watcher_eye" },
+    "G": { "item": "minecraft:glowstone" },
+    "R": { "item": "minecraft:redstone_block" }
+  },
+  "result": { "count": 1, "id": "devouring_storms:terminal" },
+  "show_notification": true
+}

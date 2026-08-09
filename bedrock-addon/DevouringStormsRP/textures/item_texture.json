@@ -1,0 +1,114 @@
+{
+  "resource_pack_name": "devouring_storms",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "ds_corrupted_blueprints": {
+      "textures": "textures/items/corrupted_blueprints"
+    },
+    "ds_rift_key": {
+      "textures": "textures/items/rift_key"
+    },
+    "ds_formidibomb": {
+      "textures": "textures/items/formidibomb"
+    },
+    "ds_watcher_eye": {
+      "textures": "textures/items/watcher_eye"
+    },
+    "ds_amulet_of_decay": {
+      "textures": "textures/items/amulet_of_decay"
+    },
+    "ds_memory_fragment": {
+      "textures": "textures/items/memory_fragment"
+    },
+    "ds_storm_flesh": {
+      "textures": "textures/items/storm_flesh"
+    },
+    "ds_decayed_flesh": {
+      "textures": "textures/items/decayed_flesh"
+    },
+    "ds_decayed_bone": {
+      "textures": "textures/items/decayed_bone"
+    },
+    "ds_tendril": {
+      "textures": "textures/items/tendril"
+    },
+    "ds_storm_dust": {
+      "textures": "textures/items/storm_dust"
+    },
+    "ds_commanded_star": {
+      "textures": "textures/items/commanded_star"
+    },
+    "ds_withered_nether_star": {
+      "textures": "textures/items/withered_nether_star"
+    },
+    "ds_music_disc_changed": {
+      "textures": "textures/items/music_disc_changed"
+    },
+    "ds_music_disc_ships": {
+      "textures": "textures/items/music_disc_ships"
+    },
+    "ds_music_disc_signal_tape": {
+      "textures": "textures/items/music_disc_signal_tape"
+    },
+    "ds_music_disc_eaoin": {
+      "textures": "textures/items/music_disc_eaoin"
+    },
+    "ds_music_disc_countdown": {
+      "textures": "textures/items/music_disc_countdown"
+    },
+    "ds_music_disc_quarantine": {
+      "textures": "textures/items/music_disc_quarantine"
+    },
+    "ds_broken_record": {
+      "textures": "textures/items/broken_record"
+    },
+    "ds_rocket_key": {
+      "textures": "textures/items/rocket_key"
+    },
+    "ds_endertown_core": {
+      "textures": "textures/items/endertown_core"
+    },
+    "ds_classified_payload": {
+      "textures": "textures/items/classified_payload"
+    },
+    "ds_storm_killer": {
+      "textures": "textures/items/storm_killer"
+    },
+    "ds_storm_heart": {
+      "textures": "textures/items/storm_heart"
+    },
+    "ds_seventh_trumpet": {
+      "textures": "textures/items/seventh_trumpet"
+    },
+    "ds_audio_log_1": {
+      "textures": "textures/items/audio_log_1"
+    },
+    "ds_audio_log_2": {
+      "textures": "textures/items/audio_log_2"
+    },
+    "ds_audio_log_3": {
+      "textures": "textures/items/audio_log_3"
+    },
+    "ds_schedule_1": {
+      "textures": "textures/items/schedule_1"
+    },
+    "ds_schedule_2": {
+      "textures": "textures/items/schedule_2"
+    },
+    "ds_schedule_3": {
+      "textures": "textures/items/schedule_3"
+    },
+    "ds_schedule_4": {
+      "textures": "textures/items/schedule_4"
+    },
+    "ds_schedule_5": {
+      "textures": "textures/items/schedule_5"
+    },
+    "ds_schedule_6": {
+      "textures": "textures/items/schedule_6"
+    },
+    "ds_schedule_7": {
+      "textures": "textures/items/schedule_7"
+    }
+  }
+}
