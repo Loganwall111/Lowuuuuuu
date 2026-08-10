@@ -1,0 +1,1 @@
+"""Terrestrial & life simulation subsystem."""
