@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/environment/environment_director.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/environment/biome_forest.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/environments/forest.tres" id="3"]
+
+[node name="SceneRoot" type="Node3D"
+]
+script = ExtResource("2")
+[node name="WorldEnvironment" type="WorldEnvironment"
+parent="SceneRoot"
+]
+environment = SubResource("env")
+[node name="Sun" type="DirectionalLight3D"
+parent="SceneRoot"
+]
+script = ExtResource("{'light_color': 'Color(1,0.96,0.85,1)', 'light_energy': '1.4', 'shadow_enabled': 'true'}")
+[node name="EnvironmentDirector" type="Node"
+parent="SceneRoot"
+]
+script = ExtResource("1")
+surface_profile = ExtResource("3")
+underwater_profile = ExtResource("3")
+blend_time = 1.2
+[node name="SpawnPoint" type="Node3D"
+parent="SceneRoot"
+]
+position = Vector3(0,2,0)
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+tonemap_mode = 3
+volumetric_fog_enabled = true
+fog_enabled = true
+
+[sub_resource type="BoxShape3D" id="water_shape"]
+size = Vector3(160, 60, 160)

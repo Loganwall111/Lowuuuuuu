@@ -1,0 +1,75 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player_pawn.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/player/growth_component.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/player/metabolism_component.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/player/evolution_component.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/player/environment_probe.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/player/consumption_sensor.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/player/locomotion/locomotion_controller.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/camera/camera_rig.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/player/ability_controller.gd" id="9"]
+
+[node name="PlayerPawn" type="CharacterBody3D"
+]
+script = ExtResource("1")
+collision_layer = 2
+collision_mask = 231
+[node name="CollisionShape3D" type="CollisionShape3D"
+parent="PlayerPawn"
+]
+shape = SubResource("cap")
+[node name="MeshRoot" type="Node3D"
+parent="PlayerPawn"
+]
+[node name="CameraRig" type="Node3D"
+parent="PlayerPawn"
+]
+script = ExtResource("8")
+[node name="Camera3D" type="Camera3D"
+parent="CameraRig"
+]
+fov = 70.0
+near = 0.1
+far = 2000.0
+[node name="ConsumptionSensor" type="Area3D"
+parent="PlayerPawn"
+]
+script = ExtResource("6")
+collision_layer = 16
+collision_mask = 16
+monitoring = true
+[node name="CollisionShape3D2" type="CollisionShape3D"
+parent="ConsumptionSensor"
+]
+shape = SubResource("sense")
+[node name="EnvironmentProbe" type="Node"
+parent="PlayerPawn"
+]
+script = ExtResource("5")
+[node name="GrowthComponent" type="Node"
+parent="PlayerPawn"
+]
+script = ExtResource("2")
+collision_shape = NodePath("CollisionShape3D")
+[node name="MetabolismComponent" type="Node"
+parent="PlayerPawn"
+]
+script = ExtResource("3")
+[node name="EvolutionComponent" type="Node"
+parent="PlayerPawn"
+]
+script = ExtResource("4")
+[node name="LocomotionController" type="Node"
+parent="PlayerPawn"
+]
+script = ExtResource("7")
+[node name="AbilityController" type="Node" parent="PlayerPawn"
+script = ExtResource("9")
+]
+[sub_resource type="CapsuleShape3D" id="cap"]
+radius = 0.5
+height = 1.4
+
+[sub_resource type="SphereShape3D" id="sense"]
+radius = 2.2

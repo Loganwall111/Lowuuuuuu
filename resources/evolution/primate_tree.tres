@@ -1,0 +1,114 @@
+[gd_resource type="EvolutionTreeData" script_class="EvolutionTreeData" load_steps=18 format=3 uid="uid_a4206623"]
+
+[ext_resource type="Resource" path="res://resources/movement/swim.tres" id="1"]
+[ext_resource type="Resource" path="res://resources/movement/float.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/movement/fly.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/movement/crawl.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/movement/walk.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/movement/run.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/abilities/swim_efficient.tres" id="7"]
+[ext_resource type="Resource" path="res://resources/abilities/crawl.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/abilities/flight.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/abilities/tool_use.tres" id="10"]
+[ext_resource type="Resource" path="res://resources/abilities/predator.tres" id="11"]
+
+[sub_resource type="EvolutionStageData" id="stage_0"]
+stage_id = &"primate_infant"
+display_name = "Infant"
+display_order = 0
+lore = "Helpless at birth."
+biological_complexity = 1
+required_mass = 0.8
+required_evolution_points = 0
+required_age_seconds = 0
+body_scale_multiplier = 0.5
+energy_capacity = 120
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/crawl.tres")
+unlocked_abilities = PackedStringArray()
+enabled_movement_states = [2]
+next_stage_ids = PackedStringArray("primate_juvenile")
+cinematic_title = "Infant"
+cinematic_subtitle = "Helpless at birth."
+[sub_resource type="EvolutionStageData" id="stage_1"]
+stage_id = &"primate_juvenile"
+display_name = "Juvenile"
+display_order = 1
+lore = "Learning to walk and climb."
+biological_complexity = 1.2
+required_mass = 6
+required_evolution_points = 10
+required_age_seconds = 30
+body_scale_multiplier = 1
+energy_capacity = 180
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/walk.tres")
+unlocked_abilities = PackedStringArray("res://resources/abilities/crawl.tres")
+enabled_movement_states = [2, 6]
+next_stage_ids = PackedStringArray("primate_ape")
+cinematic_title = "Juvenile"
+cinematic_subtitle = "Learning to walk and climb."
+[sub_resource type="EvolutionStageData" id="stage_2"]
+stage_id = &"primate_ape"
+display_name = "Ape"
+display_order = 2
+lore = "Tool-using forager."
+biological_complexity = 1.5
+required_mass = 30
+required_evolution_points = 50
+required_age_seconds = 180
+body_scale_multiplier = 1.6
+energy_capacity = 240
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/walk.tres")
+unlocked_abilities = PackedStringArray("res://resources/abilities/tool_use.tres")
+enabled_movement_states = [3, 4]
+next_stage_ids = PackedStringArray("primate_tool", "primate_hunter")
+cinematic_title = "Ape"
+cinematic_subtitle = "Tool-using forager."
+[sub_resource type="EvolutionStageData" id="stage_3"]
+stage_id = &"primate_tool"
+display_name = "Tool User"
+display_order = 3
+lore = "Civilisation begins."
+biological_complexity = 1.8
+required_mass = 120
+required_evolution_points = 120
+required_age_seconds = 600
+body_scale_multiplier = 2.4
+energy_capacity = 320
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/run.tres")
+unlocked_abilities = PackedStringArray("res://resources/abilities/tool_use.tres")
+enabled_movement_states = [3, 4]
+next_stage_ids = PackedStringArray()
+cinematic_title = "Tool User"
+cinematic_subtitle = "Civilisation begins."
+[sub_resource type="EvolutionStageData" id="stage_4"]
+stage_id = &"primate_hunter"
+display_name = "Hunter"
+display_order = 3
+lore = "Apex terrestrial predator."
+biological_complexity = 1.7
+required_mass = 120
+required_evolution_points = 120
+required_age_seconds = 600
+body_scale_multiplier = 2.2
+energy_capacity = 320
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/run.tres")
+unlocked_abilities = PackedStringArray("res://resources/abilities/predator.tres", "res://resources/abilities/tool_use.tres")
+enabled_movement_states = [3, 4]
+next_stage_ids = PackedStringArray()
+cinematic_title = "Hunter"
+cinematic_subtitle = "Apex terrestrial predator."
+
+[resource]
+tree_name = "primate_tree"
+root_stage_id = &"primate_infant"
+stages = [SubResource("stage_0"), SubResource("stage_1"), SubResource("stage_2"), SubResource("stage_3"), SubResource("stage_4")]

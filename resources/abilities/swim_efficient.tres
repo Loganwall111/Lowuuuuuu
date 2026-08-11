@@ -1,0 +1,15 @@
+[gd_resource type="AbilityData" script_class="AbilityData" load_steps=2 format=3 uid="uid_60fd49d1"]
+
+[resource]
+ability_id = &"swim_efficient"
+display_name = "Efficient Swimming"
+description = "Streamlined body cuts drag in water."
+category = &"general"
+tags = PackedStringArray()
+move_speed_multiplier = 1.15
+metabolism_multiplier = 0.92
+sense_radius_multiplier = 1.05
+damage_multiplier = 1
+evolution_point_multiplier = 1
+unlocks_movement_states = [0]
+unlocks_abilities = PackedStringArray()

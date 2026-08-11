@@ -1,0 +1,15 @@
+[gd_resource type="AbilityData" script_class="AbilityData" load_steps=2 format=3 uid="uid_b4871f05"]
+
+[resource]
+ability_id = &"crawl"
+display_name = "Chitinous Limbs"
+description = "Hardened limbs allow crawling on substrate."
+category = &"general"
+tags = PackedStringArray()
+move_speed_multiplier = 1
+metabolism_multiplier = 1
+sense_radius_multiplier = 1
+damage_multiplier = 1
+evolution_point_multiplier = 1
+unlocks_movement_states = [2]
+unlocks_abilities = PackedStringArray()

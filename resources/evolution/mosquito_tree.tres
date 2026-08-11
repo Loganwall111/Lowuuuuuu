@@ -1,0 +1,76 @@
+[gd_resource type="EvolutionTreeData" script_class="EvolutionTreeData" load_steps=16 format=3 uid="uid_0e567baa"]
+
+[ext_resource type="Resource" path="res://resources/movement/swim.tres" id="1"]
+[ext_resource type="Resource" path="res://resources/movement/float.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/movement/fly.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/movement/crawl.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/movement/walk.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/movement/run.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/abilities/swim_efficient.tres" id="7"]
+[ext_resource type="Resource" path="res://resources/abilities/crawl.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/abilities/flight.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/abilities/tool_use.tres" id="10"]
+[ext_resource type="Resource" path="res://resources/abilities/predator.tres" id="11"]
+
+[sub_resource type="EvolutionStageData" id="stage_0"]
+stage_id = &"mosquito_larva"
+display_name = "Larval Wriggler"
+display_order = 0
+lore = "A blind wriggler in the shallows."
+biological_complexity = 1
+required_mass = 0.5
+required_evolution_points = 0
+required_age_seconds = 0
+body_scale_multiplier = 0.5
+energy_capacity = 100
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/swim.tres")
+unlocked_abilities = PackedStringArray()
+enabled_movement_states = [0]
+next_stage_ids = PackedStringArray("mosquito_pupa")
+cinematic_title = "Larval Wriggler"
+cinematic_subtitle = "A blind wriggler in the shallows."
+[sub_resource type="EvolutionStageData" id="stage_1"]
+stage_id = &"mosquito_pupa"
+display_name = "Pupa"
+display_order = 1
+lore = "Suspended, transforming."
+biological_complexity = 1.3
+required_mass = 3
+required_evolution_points = 5
+required_age_seconds = 20
+body_scale_multiplier = 1
+energy_capacity = 140
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/float.tres")
+unlocked_abilities = PackedStringArray()
+enabled_movement_states = [1]
+next_stage_ids = PackedStringArray("mosquito_adult")
+cinematic_title = "Pupa"
+cinematic_subtitle = "Suspended, transforming."
+[sub_resource type="EvolutionStageData" id="stage_2"]
+stage_id = &"mosquito_adult"
+display_name = "Adult Mosquito"
+display_order = 2
+lore = "Wings unlock the air."
+biological_complexity = 1.8
+required_mass = 12
+required_evolution_points = 20
+required_age_seconds = 60
+body_scale_multiplier = 1.6
+energy_capacity = 180
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/fly.tres")
+unlocked_abilities = PackedStringArray("res://resources/abilities/swim_efficient.tres", "res://resources/abilities/flight.tres")
+enabled_movement_states = [0, 5]
+next_stage_ids = PackedStringArray()
+cinematic_title = "Adult Mosquito"
+cinematic_subtitle = "Wings unlock the air."
+
+[resource]
+tree_name = "mosquito_tree"
+root_stage_id = &"mosquito_larva"
+stages = [SubResource("stage_0"), SubResource("stage_1"), SubResource("stage_2")]
