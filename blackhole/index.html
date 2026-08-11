@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Singularity Vault — Black Hole Customizer</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #020308;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
+  canvas.gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+  #houseCanvas { display: none; z-index: 5; }
+
+  #flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 80; }
+
+  #hud { position: fixed; top: 7vh; left: 0; right: 0; text-align: center; pointer-events: none; z-index: 30;
+    opacity: 0; }
+  #hud.show { animation: hudin 6s ease forwards; }
+  @keyframes hudin {
+    0% { opacity: 0; transform: translateY(14px); }
+    8% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-8px); }
+  }
+  #hudTitle { font-size: clamp(26px, 4.6vw, 46px); font-weight: 700; letter-spacing: 3px; color: #f2ecff;
+    text-shadow: 0 0 26px rgba(167, 120, 255, .8), 0 2px 20px rgba(0,0,0,.7); }
+  #hudSub { font-size: 13px; letter-spacing: 1.5px; color: #c9b6f2; margin-top: 6px;
+    text-shadow: 0 1px 12px rgba(0,0,0,.8); }
+  #objective { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 29;
+    color: #9f96c9; font-size: 12px; letter-spacing: .6px; pointer-events: none;
+    background: rgba(10, 6, 20, .5); padding: 6px 14px; border-radius: 20px;
+    border: 1px solid rgba(167, 120, 255, .18); backdrop-filter: blur(6px); }
+  #depth { position: fixed; bottom: 7vh; left: 50%; transform: translateX(-50%); display: none; z-index: 29;
+    color: #dccbff; font: 600 13px/1 ui-monospace, Consolas, monospace; letter-spacing: 1px;
+    background: rgba(8, 4, 16, .55); border: 1px solid rgba(167, 120, 255, .25);
+    padding: 8px 16px; border-radius: 10px; pointer-events: none; }
+
+  .chip { position: fixed; z-index: 20; padding: 7px 12px; border-radius: 9px;
+    background: rgba(8, 6, 16, .72); border: 1px solid rgba(167, 120, 255, .18);
+    color: #c4b6e8; font-size: 11.5px; backdrop-filter: blur(8px); }
+  #hint { left: 12px; bottom: 12px; pointer-events: none; line-height: 1.7; }
+  #hint b { color: #efe8ff; }
+  #home { left: 12px; top: 12px; cursor: pointer; text-decoration: none; z-index: 31; }
+  #home:hover { background: rgba(40, 24, 70, .85); }
+  #gl1warn { display: none; left: 50%; bottom: 12px; transform: translateX(-50%); color: #ffd9a8;
+    border-color: rgba(255, 200, 120, .4); }
+
+  #loading, #error { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; background: #020308; color: #d9ccff; gap: 14px; }
+  #error { display: none; }
+  .ring { width: 74px; height: 74px; border-radius: 50%;
+    border: 2px solid transparent; border-top-color: #b78bff; border-bottom-color: #5a3fa8;
+    animation: sp 1.2s linear infinite; box-shadow: 0 0 34px rgba(140, 90, 255, .35); }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  #loading p, #error p { max-width: 520px; text-align: center; color: #8f7fc9; font-size: 14px; line-height: 1.6; }
+  #error h2 { color: #ff9d9d; margin: 0; }
+</style>
+</head>
+<body>
+  <canvas id="renderCanvas" class="gl"></canvas>
+  <canvas id="houseCanvas" class="gl"></canvas>
+
+  <div id="hud"><div id="hudTitle"></div><div id="hudSub"></div></div>
+  <div id="objective"></div>
+  <div id="depth"></div>
+
+  <a id="home" class="chip" href="../">← LOW Suite</a>
+  <div id="hint" class="chip"><b>Drag</b> orbit · <b>Scroll</b> zoom · <b>H</b> control vault · <b>Enter the
+    black hole</b> from the panel to begin the descent</div>
+  <div id="gl1warn" class="chip">WebGL 1 fallback detected — this experience is designed for WebGL 2.</div>
+
+  <div id="flash"></div>
+
+  <div id="loading"><div class="ring"></div><p>Bending light… warming up the singularity.</p></div>
+  <div id="error"><h2>Unable to start</h2><p></p></div>
+
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="../shared/util.js"></script>
+  <script src="../shared/ui.js"></script>
+  <script src="./glsl.js"></script>
+  <script src="./presets.js"></script>
+  <script src="./house.js"></script>
+  <script src="./main.js"></script>
+</body>
+</html>
