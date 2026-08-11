@@ -1,0 +1,95 @@
+[gd_resource type="EvolutionTreeData" script_class="EvolutionTreeData" load_steps=17 format=3 uid="uid_d68aaabb"]
+
+[ext_resource type="Resource" path="res://resources/movement/swim.tres" id="1"]
+[ext_resource type="Resource" path="res://resources/movement/float.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/movement/fly.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/movement/crawl.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/movement/walk.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/movement/run.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/abilities/swim_efficient.tres" id="7"]
+[ext_resource type="Resource" path="res://resources/abilities/crawl.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/abilities/flight.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/abilities/tool_use.tres" id="10"]
+[ext_resource type="Resource" path="res://resources/abilities/predator.tres" id="11"]
+
+[sub_resource type="EvolutionStageData" id="stage_0"]
+stage_id = &"fish_larva"
+display_name = "Larva"
+display_order = 0
+lore = "A tiny planktivore."
+biological_complexity = 1
+required_mass = 0.5
+required_evolution_points = 0
+required_age_seconds = 0
+body_scale_multiplier = 0.4
+energy_capacity = 100
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/swim.tres")
+unlocked_abilities = PackedStringArray()
+enabled_movement_states = [0]
+next_stage_ids = PackedStringArray("fish_juvenile")
+cinematic_title = "Larva"
+cinematic_subtitle = "A tiny planktivore."
+[sub_resource type="EvolutionStageData" id="stage_1"]
+stage_id = &"fish_juvenile"
+display_name = "Juvenile"
+display_order = 1
+lore = "Faster, bolder."
+biological_complexity = 1.2
+required_mass = 4
+required_evolution_points = 6
+required_age_seconds = 15
+body_scale_multiplier = 0.9
+energy_capacity = 160
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/swim.tres")
+unlocked_abilities = PackedStringArray("res://resources/abilities/swim_efficient.tres")
+enabled_movement_states = [0]
+next_stage_ids = PackedStringArray("fish_predator", "fish_reef")
+cinematic_title = "Juvenile"
+cinematic_subtitle = "Faster, bolder."
+[sub_resource type="EvolutionStageData" id="stage_2"]
+stage_id = &"fish_predator"
+display_name = "Apex Predator"
+display_order = 2
+lore = "Hunter of the reef."
+biological_complexity = 1.6
+required_mass = 20
+required_evolution_points = 40
+required_age_seconds = 120
+body_scale_multiplier = 1.8
+energy_capacity = 260
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/swim.tres")
+unlocked_abilities = PackedStringArray("res://resources/abilities/predator.tres")
+enabled_movement_states = [0]
+next_stage_ids = PackedStringArray()
+cinematic_title = "Apex Predator"
+cinematic_subtitle = "Hunter of the reef."
+[sub_resource type="EvolutionStageData" id="stage_3"]
+stage_id = &"fish_reef"
+display_name = "Reef Dweller"
+display_order = 2
+lore = "Master of the coral maze."
+biological_complexity = 1.4
+required_mass = 20
+required_evolution_points = 40
+required_age_seconds = 120
+body_scale_multiplier = 1.5
+energy_capacity = 220
+metabolism_rate = 1.0
+sense_radius = 6.0
+base_movement_profile = ExtResource("res://resources/movement/swim.tres")
+unlocked_abilities = PackedStringArray()
+enabled_movement_states = [0]
+next_stage_ids = PackedStringArray()
+cinematic_title = "Reef Dweller"
+cinematic_subtitle = "Master of the coral maze."
+
+[resource]
+tree_name = "fish_tree"
+root_stage_id = &"fish_larva"
+stages = [SubResource("stage_0"), SubResource("stage_1"), SubResource("stage_2"), SubResource("stage_3")]

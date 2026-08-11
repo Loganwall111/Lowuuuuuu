@@ -1,0 +1,33 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/physics/gravity_well.gd" id="1"]
+
+[node name="BlackHole" type="Node3D"
+]
+[node name="GravityWell3D" type="Node3D"
+parent="BlackHole"
+]
+script = ExtResource("1")
+gravity_strength = 220.0
+influence_radius = 400.0
+falloff_type = 0
+max_force = 600.0
+softening = 4.0
+event_horizon_radius = 5.0
+attract = true
+[node name="Visual" type="MeshInstance3D"
+parent="BlackHole"
+]
+mesh = SubResource("m")
+material_override = SubResource("mat")
+[sub_resource type="SphereMesh" id="m"]
+radius = 4.5
+height = 9.0
+
+[sub_resource type="StandardMaterial3D" id="mat"]
+albedo_color = Color(0.0, 0.0, 0.0, 1)
+roughness = 0.2
+metallic = 0.0
+emission_enabled = true
+emission = Color(0.3, 0.1, 0.5, 1)
+emission_intensity = 0.4

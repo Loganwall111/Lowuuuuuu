@@ -1,0 +1,24 @@
+[gd_resource type="MovementProfile" script_class="MovementProfile" load_steps=2 format=3 uid="uid_5ce2a20e"]
+
+[resource]
+max_speed = 3
+sprint_multiplier = 1.8
+vertical_speed_scale = 1
+acceleration = 14
+deceleration = 24
+drag = 1.6
+turn_speed = 3
+pitch_speed = 2.2
+align_speed = 6
+medium_density = 1.2
+medium_resistance_exponent = 1
+buoyancy = 0
+gravity_scale = 1
+bank_angle = 0.2
+undulation = 0
+mass_speed_exponent = 0.18
+fov_offset = 0
+bob_amplitude = 0.06
+bob_frequency = 2
+step_height = 0.35
+max_slope = 0.785398

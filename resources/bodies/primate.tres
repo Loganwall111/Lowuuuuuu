@@ -1,0 +1,69 @@
+[gd_resource type="CreatureBodyRecipe" script_class="CreatureBodyRecipe" load_steps=10 format=3 uid="uid_77a35d63"]
+
+[sub_resource type="CreaturePartSpec" id="part_0"]
+shape = 1
+size = Vector3(0.5, 1, 0.5)
+position = Vector3(0, 0.8, 0)
+rotation_deg = Vector3(0, 0, 0)
+role = 0
+is_eye = false
+[sub_resource type="CreaturePartSpec" id="part_1"]
+shape = 0
+size = Vector3(0.35, 0.35, 0.35)
+position = Vector3(0, 1.4, -0.1)
+rotation_deg = Vector3(0, 0, 0)
+role = 0
+is_eye = false
+[sub_resource type="CreaturePartSpec" id="part_2"]
+shape = 3
+size = Vector3(0.15, 0.9, 0.15)
+position = Vector3(0.2, 0.4, 0)
+rotation_deg = Vector3(0, 0, 0)
+role = 0
+is_eye = false
+[sub_resource type="CreaturePartSpec" id="part_3"]
+shape = 3
+size = Vector3(0.15, 0.9, 0.15)
+position = Vector3(-0.2, 0.4, 0)
+rotation_deg = Vector3(0, 0, 0)
+role = 0
+is_eye = false
+[sub_resource type="CreaturePartSpec" id="part_4"]
+shape = 3
+size = Vector3(0.15, 0.9, 0.15)
+position = Vector3(0.2, 0.4, 0.3)
+rotation_deg = Vector3(0, 0, 0)
+role = 0
+is_eye = false
+[sub_resource type="CreaturePartSpec" id="part_5"]
+shape = 3
+size = Vector3(0.15, 0.9, 0.15)
+position = Vector3(-0.2, 0.4, 0.3)
+rotation_deg = Vector3(0, 0, 0)
+role = 0
+is_eye = false
+[sub_resource type="CreaturePartSpec" id="part_6"]
+shape = 0
+size = Vector3(0.12, 0.12, 0.12)
+position = Vector3(0.1, 1.5, -0.1)
+rotation_deg = Vector3(0, 0, 0)
+role = 2
+is_eye = true
+[sub_resource type="CreaturePartSpec" id="part_7"]
+shape = 0
+size = Vector3(0.12, 0.12, 0.12)
+position = Vector3(-0.1, 1.5, -0.1)
+rotation_deg = Vector3(0, 0, 0)
+role = 2
+is_eye = true
+
+[resource]
+silhouette = 2
+parts = [SubResource("part_0"), SubResource("part_1"), SubResource("part_2"), SubResource("part_3"), SubResource("part_4"), SubResource("part_5"), SubResource("part_6"), SubResource("part_7")]
+default_color = Color(0.55, 0.45, 0.35, 1)
+accent_color = Color(0.35, 0.28, 0.22, 1)
+eye_color = Color(0.9, 0.95, 1, 1)
+roughness = 0.7
+metallic = 0
+wetness = 0.2
+sub_surface = 0.4

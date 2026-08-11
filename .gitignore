@@ -1,0 +1,22 @@
+# Godot 4 -----------------------------------------------------------------
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Build output ------------------------------------------------------------
+build/
+dist/
+exports/
+bin/
+
+# Editor / OS -------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Large third-party source art (keep imported .glb/.png under assets/) -----
+assets/_source/

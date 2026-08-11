@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/organisms/creature_agent.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/player/edible_component.gd" id="2"]
+
+[node name="PreyCreature" type="Node3D"
+]
+script = ExtResource("1")
+collision_layer = 4
+collision_mask = 0
+[node name="MeshInstance3D" type="MeshInstance3D"
+parent="PreyCreature"
+]
+mesh = SubResource("m")
+[node name="EdibleComponent" type="Node"
+parent="PreyCreature"
+]
+script = ExtResource("2")
+provided_mass = 0.1
+provided_energy = 6.0
+provided_evolution_points = 1.0
+tags = PackedStringArray("fish")
+source_name = prey
+return_to_pool = true
+fade_out_seconds = 0.3
+[sub_resource type="SphereMesh" id="m"]
+radius = 0.35
+height = 0.7

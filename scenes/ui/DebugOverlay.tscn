@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/debug_overlay.gd" id="1"]
+
+[node name="DebugOverlay" type="Control"
+]
+script = ExtResource("1")
+mouse_filter = 2
+[node name="Log" type="Label"
+parent="DebugOverlay"
+]
+offset_left = 12
+offset_top = 12
+custom_minimum_size = Vector2(420,360)
+autowrap_mode = 2

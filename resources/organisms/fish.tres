@@ -1,0 +1,29 @@
+[gd_resource type="OrganismData" script_class="OrganismData" load_steps=8 format=3 uid="uid_2effbafa"]
+
+[ext_resource type="PackedScene" path="res://scenes/environments/AquaticReef.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/player/PlayerPawn.tscn" id="2"]
+[ext_resource type="CreatureBodyRecipe" path="res://resources/bodies/fish.tres" id="3"]
+[ext_resource type="EvolutionTreeData" path="res://resources/evolution/fish_tree.tres" id="4"]
+[ext_resource type="DietProfile" path="res://resources/diets/predator.tres" id="5"]
+[ext_resource type="EnvironmentProfile" path="res://resources/environments/deep_ocean.tres" id="6"]
+
+[resource]
+species_id = &"fish"
+display_name = "Fish"
+category = &"marine"
+summary = "A reef fish: predation, exploration, branching fates."
+menu_order = 200
+playable = true
+accent_color = Color(0.4, 0.85, 0.7, 1)
+starting_environment = ExtResource("1")
+player_scene = ExtResource("2")
+starting_mass = 0.6
+starting_energy = 110
+starting_health = 100.0
+growth_rate = 1
+base_movement_type = 0
+starting_abilities = PackedStringArray("swim_efficient")
+body_recipe = ExtResource("3")
+evolution_tree = ExtResource("4")
+diet = ExtResource("5")
+environment_profile = ExtResource("6")

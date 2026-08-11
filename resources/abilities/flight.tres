@@ -1,0 +1,15 @@
+[gd_resource type="AbilityData" script_class="AbilityData" load_steps=2 format=3 uid="uid_dc425558"]
+
+[resource]
+ability_id = &"flight"
+display_name = "Powered Flight"
+description = "Wings unlock true aerial locomotion."
+category = &"general"
+tags = PackedStringArray()
+move_speed_multiplier = 1.2
+metabolism_multiplier = 1
+sense_radius_multiplier = 1.1
+damage_multiplier = 1
+evolution_point_multiplier = 1
+unlocks_movement_states = [5]
+unlocks_abilities = PackedStringArray()

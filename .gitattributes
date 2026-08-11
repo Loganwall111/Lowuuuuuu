@@ -1,0 +1,15 @@
+# Godot text resources should always keep LF endings so diffs stay readable.
+*.gd        text eol=lf
+*.tscn      text eol=lf
+*.tres      text eol=lf
+*.gdshader  text eol=lf
+*.godot     text eol=lf
+*.md        text eol=lf
+
+# Binary art assets
+*.glb  binary
+*.gltf binary
+*.png  binary
+*.jpg  binary
+*.ogg  binary
+*.wav  binary

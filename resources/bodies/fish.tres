@@ -1,0 +1,41 @@
+[gd_resource type="CreatureBodyRecipe" script_class="CreatureBodyRecipe" load_steps=6 format=3 uid="uid_bbaae8d1"]
+
+[sub_resource type="CreaturePartSpec" id="part_0"]
+shape = 1
+size = Vector3(0.8, 1.8, 0.8)
+position = Vector3(0, 0, 0)
+rotation_deg = Vector3(0, 0, 0)
+role = 0
+is_eye = false
+[sub_resource type="CreaturePartSpec" id="part_1"]
+shape = 2
+size = Vector3(0.1, 0.9, 0.6)
+position = Vector3(0, 0, 0.9)
+rotation_deg = Vector3(0, 0, 0)
+role = 1
+is_eye = false
+[sub_resource type="CreaturePartSpec" id="part_2"]
+shape = 0
+size = Vector3(0.2, 0.2, 0.2)
+position = Vector3(0.2, 0.2, -0.6)
+rotation_deg = Vector3(0, 0, 0)
+role = 2
+is_eye = true
+[sub_resource type="CreaturePartSpec" id="part_3"]
+shape = 0
+size = Vector3(0.2, 0.2, 0.2)
+position = Vector3(-0.2, 0.2, -0.6)
+rotation_deg = Vector3(0, 0, 0)
+role = 2
+is_eye = true
+
+[resource]
+silhouette = 1
+parts = [SubResource("part_0"), SubResource("part_1"), SubResource("part_2"), SubResource("part_3")]
+default_color = Color(0.2, 0.5, 0.6, 1)
+accent_color = Color(0.9, 0.7, 0.3, 1)
+eye_color = Color(0.95, 0.98, 1, 1)
+roughness = 0.3
+metallic = 0
+wetness = 0.8
+sub_surface = 0.35
