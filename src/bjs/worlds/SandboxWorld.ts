@@ -22,7 +22,7 @@ import { PointerEventTypes } from '@babylonjs/core/Events/pointerEvents';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Observer } from '@babylonjs/core/Misc/observable';
 import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
-import { starfieldTexture } from '../Textures';
+import { createSky } from '../shaders/SkyShader';
 import { findObject, MATERIALS, type ObjectDef } from '../content/ObjectCatalog';
 import { buildObjectMesh } from '../content/ObjectFactory';
 import { BeamSystem, BEAMS, type BeamKind, type BeamTarget } from '../systems/BeamSystem';
@@ -105,16 +105,8 @@ export class SandboxWorld implements World {
 
     registerPlanetShader();
 
-    this.sky = MeshBuilder.CreateSphere('sky', { diameter: 2400, segments: 24, sideOrientation: 1 }, scene);
-    const sm = new StandardMaterial('skyMat', scene);
-    sm.emissiveTexture = starfieldTexture(scene);
-    sm.diffuseColor = Color3.Black();
-    sm.specularColor = Color3.Black();
-    sm.disableLighting = true;
-    sm.backFaceCulling = false;
-    this.sky.material = sm;
-    this.sky.infiniteDistance = true;
-    this.sky.isPickable = false;
+    // Direction-sampled sky: no mesh UVs, so no triangular seams.
+    this.sky = createSky(scene, 'sky', 1200).mesh;
 
     const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
     hemi.intensity = 0.12;
@@ -458,7 +450,14 @@ export class SandboxWorld implements World {
     // The player flying into a tear travels to the dimension the portal has
     // been showing them through its lens.
     if (this.portals.count() > 0 && ctx.enterDimension) {
-      const cam = { position: camPos.clone(), velocity: camPos.subtract(this.lastCam) };
+      // 'key' gives the camera a stable identity across frames; without it the
+      // per-traveller cooldown cannot recognise the player and the jump would
+      // re-fire on every frame spent inside the tear.
+      const cam = {
+        position: camPos.clone(),
+        velocity: camPos.subtract(this.lastCam),
+        key: 'player'
+      };
       const hit = this.portals.tryTransit(cam, 2);
       if (hit && hit.kind === 'tear' && hit.destination) {
         ctx.enterDimension(hit.destination.seed, hit.destination.depth);

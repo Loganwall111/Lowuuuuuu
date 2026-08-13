@@ -47,13 +47,30 @@ export interface Portal {
   lensStrength: number;
   throatMass: number;
   age: number;
-  /** Transports blocked briefly after a jump, to stop instant ping-ponging. */
+  /**
+   * Transports blocked briefly after a jump, to stop instant ping-ponging.
+   *
+   * This is PER TRAVELLER. A single shared number meant that any asteroid
+   * drifting through a rift locked out everyone else for 1.5s - including
+   * the player, whose dimension jump then silently did nothing. The number
+   * below is kept only for display and for the iris animation; the real
+   * gate is the per-traveller map on PortalSystem.
+   */
   cooldown: number;
 }
 
 export interface Traveller {
   position: Vector3;
   velocity: Vector3;
+  /**
+   * Stable identity for cooldown bookkeeping.
+   *
+   * Callers that rebuild their traveller object every frame (the player camera
+   * does) MUST pass this, or the system cannot tell one frame's traveller from
+   * the next. Objects that persist can leave it undefined and be keyed by
+   * reference.
+   */
+  key?: string;
 }
 
 let shaderRegistered = false;
@@ -73,6 +90,14 @@ export class PortalSystem {
   /** Incremented whenever anything travels; the UI reads it. */
   transits = 0;
   lastDestination: DimensionSpec | null = null;
+  /**
+   * Per-portal, per-traveller cooldowns, keyed weakly so travellers that are
+   * destroyed do not leak. Shared state here was a real bug: debris falling
+   * through a tear consumed the cooldown the player needed.
+   */
+  private travellerCooldown = new WeakMap<object, Map<string, number>>();
+  /** Cooldowns for travellers identified by a stable string key. */
+  private keyedCooldown = new Map<string, number>();
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -223,8 +248,12 @@ export class PortalSystem {
    * the traveller must be within the mouth's radius AND moving toward it.
    */
   tryTransit(t: Traveller, dtRadius = 1.5): Portal | null {
+    const now = this.time;
     for (const p of this.portals) {
-      if (p.cooldown > 0 || p.openness < 0.5) continue;
+      // An unopened portal is not enterable by anyone.
+      if (p.openness < 0.5) continue;
+      // Only THIS traveller's recent use of THIS portal blocks it.
+      if (this.cooldownUntil(t, p) > now) continue;
 
       for (const m of [p.a, p.b]) {
         if (!m) continue;
@@ -243,7 +272,7 @@ export class PortalSystem {
           // the dimension change. Report it and stop.
           this.lastDestination = p.destination;
           this.transits++;
-          p.cooldown = 1.5;
+          this.markUsed(t, p);
           return p;
         }
 
@@ -255,11 +284,33 @@ export class PortalSystem {
         t.velocity.copyFrom(exitDir.scale(Math.max(speed, 6)));
 
         this.transits++;
-        p.cooldown = 1.5;
+        this.markUsed(t, p);
         return p;
       }
     }
     return null;
+  }
+
+  /**
+   * Records that one traveller just used one portal, so it cannot immediately
+   * bounce back through. Also drives the visible cooldown readout.
+   */
+  private markUsed(t: Traveller, p: Portal): void {
+    if (t.key) {
+      this.keyedCooldown.set(t.key + '|' + p.id, this.time + 1.5);
+    } else {
+      let mine = this.travellerCooldown.get(t as object);
+      if (!mine) { mine = new Map(); this.travellerCooldown.set(t as object, mine); }
+      mine.set(p.id, this.time + 1.5);
+    }
+    p.cooldown = 1.5;
+  }
+
+  /** When this traveller may next use this portal. */
+  private cooldownUntil(t: Traveller, p: Portal): number {
+    if (t.key) return this.keyedCooldown.get(t.key + '|' + p.id) ?? 0;
+    const mine = this.travellerCooldown.get(t as object);
+    return mine ? (mine.get(p.id) ?? 0) : 0;
   }
 
   /** Closes and disposes one portal. Every portal must be closable. */

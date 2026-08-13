@@ -602,5 +602,67 @@ console.log('\n— fractured singularities are rare and isolated —');
     Math.abs(sphereRadiusFor(20, true) / sphereRadiusFor(10, true) - 2) < 1e-9);
 }
 
+
+// ------------------------------------------------------- seamless sky (bug 1)
+// The user saw the star background split into hard-edged triangular wedges of
+// different tint. Root cause: a textured icosphere. An icosphere has no
+// continuous UV map - measured, 69 of its 362 vertex positions carry more than
+// one UV, so the texture is cut at each of them. Clamping/filtering cannot fix
+// a discontinuity that lives in the mesh's UVs.
+console.log('\n— the sky has no seams —');
+{
+  const sky = read('src/bjs/shaders/SkyShader.ts');
+
+  ok('the sky derives its coordinates from DIRECTION, not mesh UVs',
+    /atan\(\s*d\.z\s*,\s*d\.x\s*\)/.test(sky) && /acos\(/.test(sky),
+    'equirectangular from a normalized direction is the only seam-free option');
+
+  ok('the sky shader declares no uv attribute',
+    !/attribute\s+vec2\s+uv/.test(sky),
+    'reading mesh uv on an icosphere reintroduces the wedges');
+
+  ok('the longitude wrap is made continuous with fract()',
+    /fract\(\s*u\s*\)/.test(sky));
+
+  ok('the false mip step at the wrap is neutralised',
+    /du\s*>\s*0\.5/.test(sky),
+    'without this the u=0/1 wrap picks the smallest mip and draws a bright line');
+
+  // Every world that shows stars must use it - a fix in one world only would
+  // leave the other worlds still wedged.
+  for (const w of ['PlanetaryWorld', 'SandboxWorld', 'ShipWorld']) {
+    const src = read(`src/bjs/worlds/${w}.ts`);
+    const usesSky = /createSky\(/.test(src);
+    ok(`${w} builds its sky with the seamless shader`, usesSky,
+      'expected a createSky() call');
+    ok(`${w} no longer puts a plain texture on the sky mesh`,
+      !/(sm|skyMat)\.emissiveTexture\s*=\s*starfieldTexture/.test(src),
+      'StandardMaterial samples by mesh uv, which is what caused the wedges');
+  }
+}
+
+// -------------------------------------------- one hole, one position (bug 2)
+// The user saw a plain black circle on one side of the screen and a separate
+// lensed orange disk on the other. Cause: the Singularity world raymarches its
+// own black hole, while HoleFieldRenderer independently built a second one out
+// of real geometry in the SAME scene. Two holes, two positions, so they slide
+// apart as the camera moves.
+console.log('\n— the Singularity shows exactly one black hole —');
+{
+  const app = read('src/bjs/App.ts');
+
+  ok('the geometry hole field is suppressed while a world owns the hole',
+    /ownsBlackHole/.test(app),
+    'BlackHoleWorld raymarches its own hole; a second geometry hole is a duplicate');
+
+  const bhw = read('src/bjs/worlds/BlackHoleWorld.ts');
+  ok('BlackHoleWorld declares that it owns the black hole',
+    /ownsBlackHole\s*(=|:)\s*true/.test(bhw));
+
+  // The disk, the lensing and the core must be one position, by construction.
+  ok('the world exposes a single hole position',
+    /holePos/.test(bhw));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

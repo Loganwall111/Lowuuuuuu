@@ -104,23 +104,36 @@ ok('entering free-fly levels the horizon', /this\.roll = 0/.test(vehicle));
 
 /* ---------------- 2. the sky ------------------------------------------- */
 
-ok('the skybox is an icosphere, which has no poles',
-   /CreateIcoSphere\('sky'/.test(planetary));
-ok('the old UV sphere skybox is gone',
-   !/CreateSphere\('sky'/.test(planetary));
-ok('the pole warp is explained so it is not reintroduced',
-   /singularity|pole/i.test(planetary));
-ok('the sky is never fogged', /skyMat\.fogEnabled = false/.test(planetary));
-ok('the sky does not receive fog as a mesh',
-   /this\.stars\.applyFog = false/.test(planetary));
-ok('the sky draws behind everything else',
-   /this\.stars\.renderingGroupId = 0/.test(planetary));
-
-// The skybox must sit inside the camera's far plane or it is clipped away.
+// The sky is now built by one shared helper (src/bjs/shaders/SkyShader.ts)
+// so every world gets the same seam-free sky; these properties are asserted
+// where they now live rather than inline in PlanetaryWorld.
 {
-  const r = planetary.match(/CreateIcoSphere\('sky',\s*\{\s*radius:\s*(\d+)/);
-  const radius = r ? parseInt(r[1], 10) : 0;
+  const sky = readFileSync('src/bjs/shaders/SkyShader.ts', 'utf8');
+
+  ok('the skybox is an icosphere, which has no poles',
+     /CreateIcoSphere\(/.test(sky));
+  ok('the old UV sphere skybox is gone',
+     !/CreateSphere\('sky'/.test(planetary) && !/CreateSphere\(/.test(sky));
+  ok('the pole warp is explained so it is not reintroduced',
+     /pole/i.test(sky));
+  ok('the sky is never fogged', /mat\.fogEnabled = false/.test(sky));
+  ok('the sky does not receive fog as a mesh',
+     /mesh\.applyFog = false/.test(sky));
+  ok('the sky draws behind everything else',
+     /mesh\.renderingGroupId = 0/.test(sky));
+
+  // Every world must route through the helper, or one of them keeps the
+  // wedge-seamed StandardMaterial sky.
+  for (const w of ['PlanetaryWorld', 'SandboxWorld', 'ShipWorld']) {
+    const src = readFileSync(`src/bjs/worlds/${w}.ts`, 'utf8');
+    ok(`${w} uses the shared seamless sky`, /createSky\(/.test(src));
+  }
+
+  // The skybox must sit inside the camera's far plane or it is clipped away.
   const maxZ = parseInt((app.match(/maxZ = (\d+)/) || [])[1] || '0', 10);
+  const radii = [...planetary.matchAll(/createSky\([^)]*?,\s*(\d+)\s*\)/g)]
+    .map((m) => parseInt(m[1], 10));
+  const radius = radii.length ? Math.max(...radii) : 0;
   ok('the skybox radius is within the camera far plane',
      radius > 0 && maxZ > 0 && radius <= maxZ,
      'radius ' + radius + ' vs maxZ ' + maxZ);

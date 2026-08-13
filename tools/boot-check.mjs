@@ -498,6 +498,33 @@ try {
     })));
   travelChecks.push(['holes are released once you leave',
     !appRef.holeField.has(h.id)]);
+
+  // ---- the Singularity must show exactly ONE hole ----
+  // The user saw a bare black circle on one side of the screen and the
+  // lensed orange disk on the other. That is two different holes: the world
+  // raymarches its own, and the geometry field built a second one from the
+  // universe region list at an unrelated position.
+  // Rebuild the geometry hole, then feed the empty list App passes when a
+  // world owns the hole, and require every mesh to be gone.
+  const spec = holes.map((r) => ({
+    id: r.id, position: r.position,
+    horizon: appRef.universe.horizonRadiusOf(r), seed: r.seed ?? 1
+  }));
+  const atHole = new V3(h.position.x + hz * 6, h.position.y, h.position.z);
+  appRef.holeField.update(atHole, spec);
+  travelChecks.push(['a geometry hole exists before suppression',
+    appRef.holeField.has(h.id)]);
+
+  appRef.holeField.update(atHole, []);
+  travelChecks.push(['a world that owns the hole suppresses the geometry one',
+    !appRef.holeField.has(h.id) && appRef.holeField.count === 0,
+    'count=' + appRef.holeField.count]);
+
+  const strays = appRef.scene.meshes.filter(
+    (m) => /^bh(Horizon|Disk|Glow)_/.test(m.name));
+  travelChecks.push(['no black-hole geometry is stranded in the scene',
+    strays.length === 0,
+    strays.map((m) => m.name).join(',')]);
 } catch (e) {
   travelChecks.push(['travelling to a hole survives: ' + e.message, false]);
 }
@@ -746,6 +773,41 @@ if (appRef) {
           }
         }
       } catch (e) { /* reported below */ }
+      // Debris must never consume the player's cooldown. This was a real
+      // bug: an asteroid drifting through a rift blocked the player's
+      // dimension jump for 1.5s, which showed up as the jump silently
+      // doing nothing.
+      try {
+        const sysC = sw['portals'] ?? null;
+        const tearP = sysC ? sysC.list().find((p) => p.kind === 'tear') : null;
+        ok('a tear exists for the cooldown check',
+           !!tearP, 'sys=' + !!sysC + ' kinds=' +
+           (sysC ? sysC.list().map((p) => p.kind).join(',') : 'n/a'));
+        if (tearP) {
+          const mouth = tearP.a;
+          // Sit exactly on the mouth and move toward it, which satisfies the
+          // "must be closing" rule in tryTransit.
+          const at = (o) => ({
+            position: mouth.position.clone(),
+            velocity: mouth.position.scale(0).add(mouth.normal.scale(-1)),
+            ...o
+          });
+          tearP.openness = 1;
+          const rock = at({});                       // keyed by reference
+          const first = sysC.tryTransit(rock, 3);
+          const player = at({ key: 'player-cooldown-probe' });
+          const second = sysC.tryTransit(player, 2);
+          ok('debris does not consume the player cooldown',
+            !!first && !!second, 'rock=' + !!first + ' player=' + !!second);
+
+          // ...and the player still cannot ping-pong on consecutive frames.
+          const again = sysC.tryTransit(at({ key: 'player-cooldown-probe' }), 2);
+          ok('the player cannot re-enter the same tear at once', !again);
+        }
+      } catch (e) {
+        ok('portal cooldown check ran', false, e && (e.stack || e.message || String(e)));
+      }
+
       ok('flying into a space tear triggers travel to its dimension',
          !!travelled && Number.isFinite(travelled.seed), JSON.stringify(travelled));
       appRef.ctx.enterDimension = realEnter;

@@ -1058,7 +1058,15 @@ export class App {
       // ---- black holes you can actually reach ----
       // Give every nearby hole a horizon sphere and an accretion disk, both
       // driven from one centre so they cannot drift apart.
-      this.holeField.update(eye, this.universe.regions
+      //
+      // A world that renders its own hole (BlackHoleWorld raymarches the
+      // core, disk and lensing together) is the sole authority on where that
+      // hole is. Running the geometry field there too put a second, unrelated
+      // hole in the same scene: the user saw a bare black circle on one side
+      // and the lensed disk on the other. Passing an empty list releases any
+      // geometry already built instead of leaving it stranded in the scene.
+      const worldOwnsHole = this.world?.ownsBlackHole === true;
+      this.holeField.update(eye, worldOwnsHole ? [] : this.universe.regions
         .filter((r) => r.kind === 'blackhole')
         .map((r) => ({
           id: r.id,

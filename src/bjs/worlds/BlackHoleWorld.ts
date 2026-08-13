@@ -381,6 +381,9 @@ void main(void){
 
 export class BlackHoleWorld implements World {
   id = 'blackhole';
+  // This world raymarches the hole, disk and lensing from one position, so
+  // the global geometry hole field must not add a second one on top.
+  ownsBlackHole = true;
   name = 'Singularity';
   private quad!: Mesh;
   private mat!: ShaderMaterial;

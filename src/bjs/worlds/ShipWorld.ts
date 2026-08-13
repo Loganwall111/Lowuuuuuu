@@ -15,7 +15,8 @@ import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
 import { PointLight } from '@babylonjs/core/Lights/pointLight';
-import { starfieldTexture } from '../Textures';
+import type { Material } from '@babylonjs/core/Materials/material';
+import { createSky } from '../shaders/SkyShader';
 import type { Scene } from '@babylonjs/core/scene';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
@@ -40,7 +41,9 @@ export class ShipWorld implements World {
   private scene!: Scene;
   private t = 0;
   private meshes: Mesh[] = [];
-  private mats: StandardMaterial[] = [];
+  // Only ever disposed, so the base Material type is the honest one - the
+  // sky now contributes a ShaderMaterial alongside the StandardMaterials.
+  private mats: Material[] = [];
   private consoles: Console3D[] = [];
   private p = { lights: 1.0, viewport: 1.0 };
   /** Set by the app each frame so consoles can light up as you approach. */
@@ -57,19 +60,10 @@ export class ShipWorld implements World {
     amb.groundColor = new Color3(0.14, 0.16, 0.24);
 
     // ---- starfield outside ----
-    const sky = MeshBuilder.CreateSphere('shipSky',
-      { diameter: 1600, segments: 24, sideOrientation: 1 }, scene);
-    const sm = new StandardMaterial('shipSkyM', scene);
-    sm.emissiveTexture = starfieldTexture(scene);
-    sm.diffuseColor = Color3.Black();
-    sm.specularColor = Color3.Black();
-    sm.disableLighting = true;
-    sm.backFaceCulling = false;
-    sky.material = sm;
-    sky.infiniteDistance = true;
-    sky.isPickable = false;
-    this.meshes.push(sky);
-    this.mats.push(sm);
+    // Direction-sampled sky: no mesh UVs, so no triangular seams.
+    const built = createSky(scene, 'shipSky', 800);
+    this.meshes.push(built.mesh);
+    this.mats.push(built.material);
 
     // ---- deck ----
     const deck = MeshBuilder.CreateCylinder('shipDeck',

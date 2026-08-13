@@ -21,7 +21,8 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
-import { starfieldTexture, ringTexture } from '../Textures';
+import { ringTexture } from '../Textures';
+import { createSky } from '../shaders/SkyShader';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
 import {
   CORONA_VERT, CORONA_FRAG, GLARE_VERT, GLARE_FRAG,
@@ -305,29 +306,10 @@ export class PlanetaryWorld implements World {
     Effect.ShadersStore['atmoFragmentShader'] = ATMO_FRAG;
 
     // ---- skybox of stars ----
-    // A UV sphere has a singularity at each pole where every column of the
-    // texture converges on one vertex. On a skybox that shows up as a smear
-    // directly below (and above) you that swims as you turn - the "warp at
-    // the very bottom". An icosphere has no poles and no seam, so the sky is
-    // even in every direction.
-    // The radius must stay inside the camera's far plane (4000) or the sky is
-    // clipped away and space goes black behind everything.
-    this.stars = MeshBuilder.CreateIcoSphere('sky',
-      { radius: 3600, subdivisions: 6, flat: false, sideOrientation: 1 }, scene);
-    const skyMat = new StandardMaterial('skyMat', scene);
-    skyMat.emissiveTexture = starfieldTexture(scene);
-    skyMat.diffuseColor = Color3.Black();
-    skyMat.specularColor = Color3.Black();
-    skyMat.backFaceCulling = false;
-    skyMat.disableLighting = true;
-    // The skybox must never be fogged; fog would grey out the stars.
-    skyMat.fogEnabled = false;
-    this.stars.material = skyMat;
-    this.stars.infiniteDistance = true;
-    this.stars.isPickable = false;
-    this.stars.applyFog = false;
-    // Always drawn first, behind everything.
-    this.stars.renderingGroupId = 0;
+    // Built by the shared helper, which samples by direction rather than by
+    // mesh UV. Texturing an icosphere directly cut the sky into twenty
+    // triangular patches with hard tint edges between them.
+    this.stars = createSky(scene, 'sky', 3600).mesh;
 
     // ---- central star ----
     this.star = MeshBuilder.CreateSphere('star', { diameter: 9, segments: 64 }, scene);

@@ -38,6 +38,19 @@ export interface WorldContext {
 export interface World {
   id: string;
   name: string;
+  /**
+   * True when the world renders its own black hole and must be the only
+   * source of one.
+   *
+   * BlackHoleWorld raymarches the hole, its accretion disk and its lensing
+   * together from a single position in one shader. The global geometry hole
+   * field also builds holes from the universe's region list, and in that
+   * world the two are different objects at different positions - which is
+   * why a bare black sphere appeared on one side of the screen while the
+   * lensed disk sat on the other. When this is set, App suppresses the
+   * geometry field so the world's hole is the only one.
+   */
+  ownsBlackHole?: boolean;
   build(ctx: WorldContext): Promise<void>;
   update(dt: number, ctx: WorldContext): void;
   getParams(): WorldParam[];
