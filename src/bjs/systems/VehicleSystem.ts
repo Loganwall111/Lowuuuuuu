@@ -13,7 +13,12 @@
 
 import { Vector3, Quaternion, Matrix } from '@babylonjs/core/Maths/math.vector';
 
-export type ControlMode = 'orbit' | 'fly' | 'walk';
+/**
+ * 'freefly' is the Space Engine style camera: no ship, no inertia, direct
+ * motion at a speed that scales with what you are near, so you can cross a
+ * solar system and then inspect a rock without changing anything.
+ */
+export type ControlMode = 'orbit' | 'fly' | 'walk' | 'freefly';
 
 export interface ShipSpec {
   id: string;
@@ -114,6 +119,11 @@ export class VehicleController {
   /** Distance travelled, for the UI. */
   odometer = 0;
 
+  /** Free-fly speed, in units per second. Scales enormously. */
+  flySpeed = 60;
+  /** Multiplier applied while boosting in free-fly. */
+  flyBoost = 12;
+
   setMode(m: ControlMode): void {
     if (this.mode === m) return;
     this.mode = m;
@@ -147,6 +157,7 @@ export class VehicleController {
     const before = this.position.clone();
 
     if (this.mode === 'fly') this.updateFly(dt, input);
+    else if (this.mode === 'freefly') this.updateFreeFly(dt, input);
     else if (this.mode === 'walk') this.updateWalk(dt, input, ground);
 
     if (this.mode !== 'orbit') {
@@ -189,6 +200,47 @@ export class VehicleController {
     if (sp > cap) this.velocity.scaleInPlace(cap / sp);
 
     this.position.addInPlace(this.velocity.scale(dt));
+  }
+
+  /* -------------------------------- free fly -------------------------------- */
+
+  /**
+   * Direct, weightless motion. Unlike ship flight there is no inertia: you
+   * stop the moment you release the key, which is what makes it usable for
+   * inspecting things at wildly different scales.
+   */
+  private updateFreeFly(dt: number, i: VehicleInput): void {
+    const rot = Quaternion.RotationYawPitchRoll(
+      i.yaw * 1.6 * dt,
+      i.pitch * 1.6 * dt,
+      -i.roll * 2.0 * dt);
+    this.orientation = this.orientation.multiply(rot);
+    this.orientation.normalize();
+
+    const { fwd, right, up } = this.axes();
+    const speed = this.flySpeed * (i.boost ? this.flyBoost : 1) * (i.brake ? 0.08 : 1);
+
+    const move = Vector3.Zero();
+    move.addInPlace(fwd.scale(i.forward));
+    move.addInPlace(right.scale(i.right));
+    move.addInPlace(up.scale(i.up));
+
+    const len = move.length();
+    if (len > 1e-6) {
+      move.scaleInPlace(speed / len);
+      this.position.addInPlace(move.scale(dt));
+    }
+    // velocity is reported for the HUD but is not integrated
+    this.velocity.copyFrom(move);
+  }
+
+  /**
+   * Sets a sensible cruising speed for the scale you are working at, so the
+   * same controls work for inspecting a pebble and crossing a galaxy.
+   */
+  setScaleSpeed(distanceToNearest: number): void {
+    const d = Number.isFinite(distanceToNearest) ? Math.abs(distanceToNearest) : 100;
+    this.flySpeed = Math.max(6, Math.min(60000, d * 0.55 + 8));
   }
 
   /* ---------------------------------- walk ---------------------------------- */

@@ -126,6 +126,70 @@ console.log('\n— flight: rotation and orientation stay valid —');
      Math.abs(Vector3.Dot(ax.fwd, ax.right)) < 1e-4);
 }
 
+console.log('\n— free fly: direct motion with no inertia —');
+{
+  const v = new VehicleController();
+  v.setMode('freefly');
+  ok('free fly is a real mode', v.mode === 'freefly');
+
+  const start = v.position.clone();
+  run(v, { ...emptyInput(), forward: 1 }, 1);
+  const moved = Vector3.Distance(v.position, start);
+  ok(`holding forward moves you (${moved.toFixed(1)} u)`, moved > 5);
+
+  // the defining difference from ship flight: releasing stops you dead
+  const stopped = v.position.clone();
+  run(v, emptyInput(), 2);
+  ok('releasing the key stops you immediately (no inertia)',
+     Vector3.Distance(v.position, stopped) < 1e-6,
+     `drifted ${Vector3.Distance(v.position, stopped)}`);
+
+  // and unlike walking there is no gravity
+  const y = v.position.y;
+  run(v, emptyInput(), 3);
+  ok('you do not fall in free fly', Math.abs(v.position.y - y) < 1e-6);
+}
+
+console.log('\n— free fly: speed scales to what you are near —');
+{
+  const v = new VehicleController();
+  v.setMode('freefly');
+
+  v.setScaleSpeed(10);
+  const slow = v.flySpeed;
+  v.setScaleSpeed(100000);
+  const fast = v.flySpeed;
+  ok(`speed scales with distance (${slow.toFixed(0)} -> ${fast.toFixed(0)} u/s)`,
+     fast > slow * 50);
+  ok('speed never drops to zero, so you are never stuck', slow >= 6);
+  ok('speed is capped so you cannot lose the universe', fast <= 60000);
+
+  v.setScaleSpeed(NaN);
+  ok('a NaN scale falls back to something usable',
+     Number.isFinite(v.flySpeed) && v.flySpeed > 0);
+  v.setScaleSpeed(-500);
+  ok('a negative scale is handled', Number.isFinite(v.flySpeed) && v.flySpeed > 0);
+}
+
+console.log('\n— free fly: boost and brake —');
+{
+  // measure distance TRAVELLED, not distance from the origin - the
+  // controller does not start at (0,0,0)
+  const mk = () => { const v = new VehicleController(); v.setMode('freefly'); v.flySpeed = 100; return v; };
+  const travel = (input) => {
+    const v = mk();
+    const s0 = v.position.clone();
+    run(v, input, 1);
+    return Vector3.Distance(v.position, s0);
+  };
+  const da = travel({ ...emptyInput(), forward: 1 });
+  const db = travel({ ...emptyInput(), forward: 1, boost: true });
+  const dc = travel({ ...emptyInput(), forward: 1, brake: true });
+  ok(`boost is much faster (${da.toFixed(0)} -> ${db.toFixed(0)})`, db > da * 5);
+  ok(`brake is much slower (${da.toFixed(0)} -> ${dc.toFixed(0)})`, dc < da * 0.5);
+  ok('braking still allows precise movement', dc > 0);
+}
+
 console.log('\n— walking: gravity and ground clamping —');
 {
   const v = new VehicleController();

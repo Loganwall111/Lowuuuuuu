@@ -18,6 +18,11 @@ import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { GLSL_NOISE } from '../Noise';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 import {
+  LENS_PROFILES, LENS_ORDER, LENS_MODE_ID, LENS_FIELDS, cloneProfile,
+  sanitizeProfile, randomAlienProfile, describeProfile,
+  type LensProfile, type LensMode
+} from '../systems/LensProfiles';
+import {
   BLACK_HOLES, HOLE_ORDER, horizonRadius, iscoRadius, photonSphere,
   deflectionScale, describeHole, type HoleKind
 } from '../systems/BlackHoleTypes';
@@ -41,6 +46,22 @@ uniform float exposure;
 uniform float lensStrength;
 uniform float diskBright;
 uniform float dopplerAmt;
+
+// ---- lens profile: every hole bends light its own way ----
+uniform float lensMode;       // see LENS_MODE_ID
+uniform float lensFalloff;
+uniform float ringAmt;        // 0 = no photon ring at all
+uniform float ringRadius;
+uniform float lensSymmetry;   // 0 = radial, 6 = six-fold, ...
+uniform float lensDistortion;
+uniform float lensTwist;
+uniform float lensChroma;
+uniform vec3  lensTint;
+uniform float lensSoftness;
+
+// ---- interior view: looking back out from inside the horizon ----
+uniform float insideAmt;      // 0 = outside, 1 = fully inside
+uniform vec3  exitDir;        // direction back toward where you came from
 
 ${GLSL_NOISE}
 
@@ -96,6 +117,41 @@ vec3 diskColor(float r, float a, out float alpha){
   return col * dens * diskBright;
 }
 
+
+// ---- angular modulation: what makes an alien lens look alien ----
+// Returns a multiplier on the deflection for a given azimuth and radius.
+float lensShape(float ang, float r){
+  float m = 1.0;
+
+  // symmetric folds: hexagonal, shattered, kaleidoscope
+  if (lensSymmetry > 0.5){
+    float folds = lensSymmetry;
+    m += cos(ang * folds) * lensDistortion;
+  }
+
+  // concentric shells
+  if (lensMode > 8.5 && lensMode < 9.5){
+    m += sin(r * 2.6) * lensDistortion;
+  }
+
+  // spiral drag winds the modulation around the axis
+  if (abs(lensTwist) > 0.001){
+    m += sin(ang + lensTwist / max(r, 0.35)) * lensDistortion * 0.6;
+  }
+
+  return max(0.02, m);
+}
+
+// Deflection per step for this profile. The physical case is 1/b, but the
+// falloff exponent lets a hole bend light gently and widely, or almost not
+// at all until the very edge.
+float deflectionAt(float r, float ang){
+  float base = 0.0335 * lensStrength;
+  // falloff reshapes how quickly the bending fades with distance
+  float scale = pow(clamp(rs / max(r, 1e-4), 0.0, 1.0), lensFalloff - 1.0);
+  return base * scale * lensShape(ang, r);
+}
+
 void main(void){
   // primary ray
   vec2 uv = vUV * 2.0 - 1.0;
@@ -137,7 +193,9 @@ void main(void){
     float phi = 0.0;
     // step size: fine near the hole, coarse far away
     const int STEPS = 320;
-    float dphi = 0.0335 * lensStrength;
+    // azimuth of this ray around the hole, used by the alien lens shapes
+    float rayAng = atan(dot(dir, et), dot(dir, er));
+    float dphi = deflectionAt(r0, rayAng);
 
     vec3 prevPos = ro;
     vec3 prevPrev = ro;
@@ -155,7 +213,7 @@ void main(void){
 
       if (u <= 0.0) break;              // escaped to infinity
       float r = 1.0 / u;
-      if (r <= rs * 1.02){ captured = true; break; }   // through the horizon
+      if (r <= rs * (1.02 + lensSoftness)){ captured = true; break; }  // through the horizon
       if (r > 900.0) break;
 
       // position along the bent path
@@ -195,7 +253,7 @@ void main(void){
       prevPos = p;
 
       // widen the step as we escape
-      dphi = 0.0335 * lensStrength * (1.0 + smoothstep(6.0, 60.0, r) * 3.5);
+      dphi = deflectionAt(r, rayAng + phi) * (1.0 + smoothstep(6.0, 60.0, r) * 3.5);
     }
 
     if (!captured && transmit > 0.02){
@@ -203,7 +261,44 @@ void main(void){
       // its last point, i.e. the difference of the final two samples — not
       // the position vector itself.
       vec3 escape = normalize(prevPos - prevPrev);
-      col += transmit * stars(escape);
+
+      vec3 sky;
+      if (lensChroma > 0.001){
+        // each wavelength bends slightly differently, so the stars smear
+        // into little spectra near the hole
+        float sp = lensChroma * 0.06;
+        vec3 axis = normalize(cross(escape, er) + vec3(1e-5));
+        vec3 rDir = normalize(escape + axis * sp);
+        vec3 bDir = normalize(escape - axis * sp);
+        sky = vec3(stars(rDir).r, stars(escape).g, stars(bDir).b);
+      } else {
+        sky = stars(escape);
+      }
+      col += transmit * sky * lensTint;
+    }
+
+    // ---- photon ring. Some holes simply do not have one. ----
+    if (ringAmt > 0.001 && ringRadius > 0.001){
+      // how close this ray passed to the ring radius
+      float rr = rs * ringRadius;
+      float closest = 1.0 / max(u, 1e-5);
+      float band = exp(-pow((closest - rr) / max(rr * 0.16, 1e-3), 2.0));
+      col += lensTint * band * ringAmt * 0.85 * lensShape(rayAng, rr);
+    }
+
+    // ---- looking back out from inside the horizon ----
+    // Once inside, the outside universe collapses into a shrinking window in
+    // the direction you fell from. This is what lets you look back at where
+    // you were.
+    if (insideAmt > 0.001){
+      float toExit = dot(dir, normalize(exitDir));
+      // the window narrows as you fall deeper
+      float aperture = mix(0.35, 0.985, clamp(insideAmt, 0.0, 1.0));
+      float w = smoothstep(aperture, aperture + 0.06, toExit);
+      vec3 outside = stars(dir) * 1.4 + lensTint * 0.25;
+      col = mix(col, outside, w * clamp(insideAmt, 0.0, 1.0));
+      // everything else darkens toward the singularity, but never to pure black
+      col = mix(col, col * 0.35 + lensTint * 0.03, clamp(insideAmt, 0.0, 1.0) * (1.0 - w));
     }
   }
 
@@ -238,6 +333,13 @@ export class BlackHoleWorld implements World {
   /** The currently selected variety; drives every derived quantity. */
   private kind: HoleKind = 'schwarzschild';
 
+  /** This hole's own lens profile. Fully editable per hole. */
+  lens: LensProfile = cloneProfile(LENS_PROFILES.schwarzschild);
+
+  /** 0 outside the horizon, 1 deep inside. Drives the look-back view. */
+  private inside = 0;
+  private exitDirection = new Vector3(0, 0, -1);
+
   private p = {
     mass: 1.0,
     spin: 1.0,
@@ -261,6 +363,9 @@ export class BlackHoleWorld implements World {
       attributes: ['position', 'uv'],
       uniforms: [
         'camPos', 'camInv', 'fov', 'aspect', 'time', 'rs', 'spin',
+        'lensMode', 'lensFalloff', 'ringAmt', 'ringRadius', 'lensSymmetry',
+        'lensDistortion', 'lensTwist', 'lensChroma', 'lensTint', 'lensSoftness',
+        'insideAmt', 'exitDir',
         'diskInner', 'diskOuter', 'diskTilt', 'exposure', 'lensStrength',
         'diskBright', 'dopplerAmt'
       ]
@@ -292,6 +397,21 @@ export class BlackHoleWorld implements World {
 
     const rs = 1.0 * this.p.mass;
     this.mat.setFloat('rs', rs);
+
+    // ---- per-hole lens profile ----
+    const L = this.lens;
+    this.mat.setFloat('lensMode', LENS_MODE_ID[L.mode] ?? 0);
+    this.mat.setFloat('lensFalloff', L.falloff);
+    this.mat.setFloat('ringAmt', L.ring);
+    this.mat.setFloat('ringRadius', L.ringRadius);
+    this.mat.setFloat('lensSymmetry', L.symmetry);
+    this.mat.setFloat('lensDistortion', L.distortion);
+    this.mat.setFloat('lensTwist', L.twist);
+    this.mat.setFloat('lensChroma', L.chroma);
+    this.mat.setColor3('lensTint', new Color3(L.tint[0], L.tint[1], L.tint[2]));
+    this.mat.setFloat('lensSoftness', L.softness);
+    this.mat.setFloat('insideAmt', this.inside);
+    this.mat.setVector3('exitDir', this.exitDirection);
     this.mat.setFloat('spin', this.p.spin);
     this.mat.setFloat('diskInner', this.p.diskInner * this.p.mass);
     this.mat.setFloat('diskOuter', this.p.diskOuter * this.p.mass);
@@ -320,15 +440,47 @@ export class BlackHoleWorld implements World {
     (this.p as any)[key] = value;
   }
 
+  /**
+   * Drives the interior view. When the player crosses a horizon the outside
+   * universe collapses into a window in the direction they fell from, so
+   * they can look back at where they were.
+   */
+  setInterior(depth: number, exitDirection: Vector3): void {
+    this.inside = Number.isFinite(depth) ? Math.max(0, Math.min(1, depth)) : 0;
+    if (exitDirection && exitDirection.lengthSquared() > 1e-9) {
+      this.exitDirection.copyFrom(exitDirection.clone().normalize());
+    }
+  }
+
+  /** Replaces this hole's lens profile wholesale. */
+  setLens(profile: LensProfile): void {
+    this.lens = sanitizeProfile(profile);
+  }
+
   getActions(): WorldAction[] {
-    return HOLE_ORDER.map((k) => ({
+    return [
+      ...LENS_ORDER.map((m) => ({
+        key: 'lens:' + m,
+        label: LENS_PROFILES[m].name,
+        glyph: LENS_PROFILES[m].glyph
+      })),
+      { key: 'lens:random', label: 'Random Alien Lens', glyph: '🎲' },
+      ...HOLE_ORDER.map((k) => ({
       key: 'hole:' + k,
       label: BLACK_HOLES[k].name,
       glyph: BLACK_HOLES[k].glyph
-    }));
+    }))
+    ];
   }
 
   runAction(key: string, _ctx: WorldContext): void {
+    if (key.startsWith('lens:')) {
+      const m = key.slice(5);
+      this.lens = m === 'random'
+        ? randomAlienProfile()
+        : sanitizeProfile(LENS_PROFILES[m as LensMode] ?? LENS_PROFILES.schwarzschild);
+      return;
+    }
     if (!key.startsWith('hole:')) return;
     const k = key.slice(5) as HoleKind;
     if (!BLACK_HOLES[k]) return;
@@ -359,8 +511,12 @@ export class BlackHoleWorld implements World {
     const t = BLACK_HOLES[this.kind];
     return {
       ...describeHole(t),
+      ...describeProfile(this.lens),
       'Integrator': 'RK2 geodesic',
-      'Deflection': deflectionScale(t).toFixed(2) + '×'
+      'Deflection': deflectionScale(t).toFixed(2) + '×',
+      'Inside horizon': this.inside > 0
+        ? Math.round(this.inside * 100) + '% — look back along your entry path'
+        : 'no'
     };
   }
 

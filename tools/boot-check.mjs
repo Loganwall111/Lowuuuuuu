@@ -87,6 +87,8 @@ const f = `/tmp/app-${Date.now()}.mjs`;
 fs.writeFileSync(f, out.outputFiles[0].text);
 
 let pass = 0, fail = 0;
+const Vector3Distance = (a, b) =>
+  Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 const ok = (n, c, e = '') => {
   c ? (pass++, origError('  PASS  ' + n))
     : (fail++, origError('  FAIL  ' + n + (e ? ' :: ' + e : '')));
@@ -286,6 +288,88 @@ if (appRef) {
       sw.runAction('portal:close', appRef.ctx);
       ok('Close All Portals really closes them',
          Number(sw.getStats()['Portals open']) === 0);
+    }
+
+    // ---- one continuous universe, in the live app ----
+    {
+      const u = appRef.universe;
+      ok('the app owns a populated universe', u && u.regions.length > 20);
+      const kinds = new Set(u.regions.map((r) => r.kind));
+      ok('every kind of place coexists in one universe',
+         ['star-system', 'planet', 'blackhole'].every((k) => kinds.has(k)),
+         [...kinds].join(','));
+
+      // flying somewhere must NOT reload a world
+      const worldBefore = appRef.world;
+      const target = u.regions.find((r) => r.kind === 'blackhole');
+      appRef.warpTo(target.id);
+      ok('flying to a place does not swap the world object',
+         appRef.world === worldBefore);
+      ok('flying to a place moves the camera near it',
+         Vector3Distance(appRef.camera.position, target.position) <
+           Math.max(target.radius * 3, 100),
+         String(Vector3Distance(appRef.camera.position, target.position)));
+
+      // grabbing and moving a black hole
+      const before = target.position.clone();
+      appRef.grab.grabAt(
+        { id: target.id, name: target.name, position: target.position, radius: target.radius },
+        appRef.camera.position);
+      ok('a black hole can be grabbed', appRef.grab.isHolding());
+      // use the real Vector3 class rather than a hand-rolled stub
+      const V3 = appRef.camera.position.constructor;
+      appRef.grab.update(1 / 60, appRef.camera.position, new V3(1, 0, 0));
+      ok('moving a grabbed black hole is safe',
+         [target.position.x, target.position.y, target.position.z].every(Number.isFinite));
+      appRef.grab.release();
+      ok('it can be released', !appRef.grab.isHolding());
+      target.position.copyFrom(before);
+
+      // crossing a horizon must set up the look-back view
+      const hr = u.horizonRadiusOf(target);
+      const V3u = target.position.constructor;
+      u.updatePlayer(target.position.add(new V3u(hr * 5, 0, 0)));
+      ok('outside the horizon nothing is flagged', u.insideHorizon === null);
+      u.updatePlayer(target.position.add(new V3u(hr * 0.4, 0, 0)));
+      ok('crossing the horizon is detected in the live app', u.insideHorizon !== null);
+      ok('the fall depth is reported', u.horizonDepth > 0);
+      ok('the stats say you are inside',
+         u.stats()['Inside horizon'].includes(target.name));
+      u.updatePlayer(target.position.add(new V3u(hr * 9, 0, 0)));
+      ok('you can climb back out', u.insideHorizon === null);
+    }
+
+    // ---- the black hole renderer accepts an interior view and any lens ----
+    {
+      await appRef.loadWorld('blackhole');
+      await new Promise((r) => setTimeout(r, 120));
+      const bw = appRef.world;
+      ok('the black hole world exposes the interior view',
+         typeof bw.setInterior === 'function');
+      let ierr = null;
+      try {
+        for (const d of [0, 0.5, 1, -5, 99, NaN]) {
+          const V3b = appRef.camera.position.constructor;
+          bw.setInterior(d, new V3b(0, 0, -1));
+          bw.update(1 / 60, appRef.ctx);
+        }
+      } catch (e) { ierr = e; }
+      ok('every interior depth including NaN is safe', !ierr, ierr ? ierr.message : '');
+
+      // every lens type must render without throwing
+      const lensActions = bw.getActions().filter((a) => a.key.startsWith('lens:'));
+      ok(`every lens type is offered as an action (${lensActions.length})`,
+         lensActions.length >= 11);
+      const lensErr = [];
+      for (const a of lensActions) {
+        try {
+          bw.runAction(a.key, appRef.ctx);
+          bw.update(1 / 60, appRef.ctx);
+          bw.getStats();
+        } catch (e) { lensErr.push(a.key + ': ' + e.message); }
+      }
+      ok('every lens type renders without throwing', lensErr.length === 0,
+         lensErr.slice(0, 3).join(' | '));
     }
 
     // entering a dimension by seed must land in exactly that dimension

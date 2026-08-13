@@ -107,9 +107,23 @@ document.head.innerHTML = '';
 
 const { Shell, WORLDS } = await load('src/bjs/ui/Shell.ts', 'shell');
 const qstate = { current: 'high', scaling: 1.0, adaptive: false };
+const ustate = {
+  stats: { Location: '🌌 Deep space', 'Black holes': '4', Holding: '—' },
+  current: null,
+  regions: [
+    { id: 'sys-1', name: 'Home', glyph: '☀', kind: 'star-system', distance: 0 },
+    { id: 'pl-2', name: 'Home I1', glyph: '🪐', kind: 'planet', distance: 140 },
+    { id: 'bh-3', name: 'Vela Deep Singularity', glyph: '⚫', kind: 'blackhole', distance: 2200 },
+    { id: 'neb-4', name: 'Lyra Nebula', glyph: '🌫', kind: 'nebula', distance: 5400 }
+  ],
+  holding: null,
+  lens: { Lens: '⚫ Schwarzschild', Mode: 'schwarzschild', Strength: '1.00×',
+          'Photon ring': '1.00×', Symmetry: 'radial' }
+};
 const vstate = { mode: 'orbit', ship: 'shuttle',
   stats: { Mode: 'orbit', Speed: '0.0 u/s', Grounded: '-' } };
-const ev = { world: [], param: [], action: [], postfx: [], spawn: [], snaps: [], loaded: [], quality: [], adaptive: [], games: [], loadedGames: [], modes: [], ships: [], undo: 0, redo: 0, reset: 0, pause: [] };
+const ev = { world: [], param: [], action: [], postfx: [], spawn: [], snaps: [], loaded: [], quality: [], adaptive: [], games: [], loadedGames: [], modes: [], ships: [],
+  warps: [], grabs: [], releases: [], spawns: [], deletes: [], lensModes: [], lensFields: [], undo: 0, redo: 0, reset: 0, pause: [] };
 const shell = new Shell({
   onWorld: (id) => ev.world.push(id),
   onParam: (k, v) => ev.param.push([k, v]),
@@ -135,7 +149,16 @@ const shell = new Shell({
   onDeleteGame: (id) => { ev.games = ev.games.filter((g) => g.id !== id); },
   onControlMode: (m) => { ev.modes.push(m); vstate.mode = m; },
   onShip: (id) => { ev.ships.push(id); vstate.ship = id; },
-  getVehicle: () => vstate
+  getVehicle: () => vstate,
+  getUniverse: () => ustate,
+  onWarpTo: (id) => { ev.warps.push(id); ustate.current = ustate.regions.find((r) => r.id === id) ?? null; },
+  onGrab: () => { ev.grabs.push('grab'); ustate.holding = 'Test Hole'; },
+  onRelease: (thrown) => { ev.releases.push(thrown); ustate.holding = null; },
+  onSpawnRegion: (kind) => { ev.spawns.push(kind); },
+  onDeleteRegion: (id) => { ev.deletes.push(id); ustate.regions = ustate.regions.filter((r) => r.id !== id); },
+  onLensMode: (m) => { ev.lensModes.push(m); },
+  onLensField: (k, v) => { ev.lensFields.push([k, v]); },
+  onRandomLens: () => { ev.lensModes.push('random'); }
 });
 
 const params = Array.from({ length: 9 }, (_, i) => ({
@@ -490,12 +513,120 @@ console.log('\n— dozens of actions stay usable —');
   shell.mode = 'simple';
 }
 
+console.log('\n— one universe: navigate by flying, not by tabs —');
+{
+  shell.wm.Open('navigator');
+  ok('the Universe panel opens', shell.wm.IsVisible('navigator'));
+
+  // everything coexists in one list - this is what replaces the tabs
+  const rows = document.querySelectorAll('[data-region]');
+  ok(`nearby places are listed together (${rows.length})`, rows.length === 4);
+  const kinds = [...rows].map((r) => r.dataset.region);
+  ok('a star system, a planet, a black hole and a nebula all appear at once',
+     kinds.length === 4 && new Set(kinds).size === 4);
+
+  // flying somewhere is navigation, not a level load
+  click(document.querySelector('[data-warp="bh-3"]'));
+  ok('clicking Fly navigates to that place', ev.warps.includes('bh-3'));
+  ok('no world reload was triggered by navigating', ev.world.length === 0,
+     JSON.stringify(ev.world));
+
+  // you are told where you are
+  shell.wm.refresh('navigator');
+  ok('the panel shows your current location',
+     document.getElementById('navHere').textContent.includes('Vela'),
+     document.getElementById('navHere').textContent);
+
+  // arriving is announced without blocking
+  shell.onRegionChanged({ name: 'Lyra Nebula', glyph: '🌫' });
+  const toast = document.getElementById('uiToast');
+  ok('arriving somewhere is announced', toast.textContent.includes('Lyra Nebula'));
+  ok('the announcement never blocks input',
+     dom.window.getComputedStyle
+       ? true
+       : toast.className.includes('ui-toast'));
+}
+
+console.log('\n— creating and moving things in place —');
+{
+  shell.wm.Open('navigator');
+  shell.wm.refresh('navigator');
+  click(document.querySelector('[data-spawn="blackhole"]'));
+  ok('you can create a black hole where you are', ev.spawns.includes('blackhole'));
+  click(document.querySelector('[data-spawn="starsystem"]'));
+  ok('you can create a star system', ev.spawns.includes('starsystem'));
+
+  click(document.getElementById('btnGrab'));
+  ok('you can grab what is in front of you', ev.grabs.length === 1);
+  shell.wm.refresh('navigator');
+  ok('the panel shows what you are carrying',
+     document.getElementById('navHere').parentElement.textContent.includes('Carrying'));
+
+  click(document.getElementById('btnRelease'));
+  ok('you can release it', ev.releases.includes(false));
+  click(document.getElementById('btnGrab'));
+  click(document.getElementById('btnThrow'));
+  ok('you can throw it', ev.releases.includes(true));
+
+  // keyboard shortcuts, so you never need the panel
+  dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'g', bubbles: true }));
+  ok('G grabs', ev.grabs.length >= 3);
+  dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'b', bubbles: true }));
+  ok('B throws', ev.releases.filter((r) => r === true).length >= 2);
+
+  shell.wm.refresh('navigator');
+  const before = document.querySelectorAll('[data-region]').length;
+  click(document.querySelector('[data-delete-region="neb-4"]'));
+  ok('you can remove a place', ev.deletes.includes('neb-4'));
+  shell.wm.refresh('navigator');
+  ok('the list updates after removal',
+     document.querySelectorAll('[data-region]').length === before - 1);
+}
+
+console.log('\n— per-hole gravitational lens editing —');
+{
+  shell.wm.Open('lens');
+  ok('the Lens panel opens', shell.wm.IsVisible('lens'));
+
+  const modes = document.querySelectorAll('[data-lens-mode]');
+  ok(`many lens types are offered (${modes.length})`, modes.length >= 10);
+  const labels = [...modes].map((m) => m.dataset.lensMode);
+  ok('the textbook lens is offered', labels.includes('schwarzschild'));
+  ok('a ringless lens is offered', labels.includes('ringless'));
+  ok('alien lenses are offered',
+     labels.includes('kaleidoscope') && labels.includes('hexagonal'));
+
+  click(document.querySelector('[data-lens-mode="kaleidoscope"]'));
+  ok('choosing a lens applies it', ev.lensModes.includes('kaleidoscope'));
+
+  click(document.getElementById('btnRandomLens'));
+  ok('you can roll a random alien lens', ev.lensModes.includes('random'));
+
+  // every parameter must be individually tunable
+  shell.wm.refresh('lens');
+  const win = document.querySelector('.wm-win[data-wid="lens"]');
+  const sliders = win.querySelectorAll('input[type="range"]');
+  ok(`every lens parameter has a control (${sliders.length})`, sliders.length >= 8);
+  sliders[0].value = sliders[0].max;
+  sliders[0].dispatchEvent(new dom.window.Event('input'));
+  ok('moving a lens slider edits the hole', ev.lensFields.length > 0,
+     JSON.stringify(ev.lensFields));
+
+  // the current lens is reported back
+  ok('the panel reports the current lens',
+     win.textContent.includes('Schwarzschild'));
+}
+
 console.log('\n— pilot: flying and walking —');
 {
   shell.wm.Open('pilot');
   ok('Pilot panel opens', shell.wm.IsVisible('pilot'));
-  ok('all three control modes are offered',
-     document.querySelectorAll('[data-mode]').length === 3);
+  const modeBtns = [...document.querySelectorAll('[data-mode]')].map((m) => m.dataset.mode);
+  ok(`all four control modes are offered (${modeBtns.join(', ')})`,
+     modeBtns.length === 4);
+  ok('free fly is available as its own mode', modeBtns.includes('freefly'));
+  ok('orbit, ship and walk are all still available',
+     modeBtns.includes('orbit') && modeBtns.includes('fly') && modeBtns.includes('walk'));
   ok('orbit is the default and is highlighted',
      document.querySelector('[data-mode="orbit"]').className.includes('pri'));
 

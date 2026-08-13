@@ -5,6 +5,9 @@
  */
 
 import { WindowManager } from './WindowManager';
+import {
+  LENS_PROFILES, LENS_ORDER, LENS_FIELDS
+} from '../systems/LensProfiles';
 import { UI_CSS } from './styles';
 import type { World, WorldParam } from '../World';
 import { POSTFX_PARAMS, DEFAULT_POSTFX } from '../PostFX';
@@ -28,6 +31,20 @@ export const WORLDS: WorldEntry[] = [
   { id: 'dimension', name: 'Beyond the Horizon', glyph: '🌀', desc: 'Infinite procedural dimensions: psychedelia, bloodstreams, cubist realities, time running backwards', tags: ['dimension', 'multiverse', 'black hole', 'psychedelic', 'weird', 'infinite', 'procedural', 'time'] },
   { id: 'blackhole', name: 'Singularity', glyph: '⚫', desc: 'Ray-marched geodesics and gravitational lensing', tags: ['black hole', 'lensing', 'relativity', 'gravity'] }
 ];
+
+/** Lens choices offered in the editor, derived from the real catalogue. */
+export const LENS_CHOICES: Array<[string, string]> = LENS_ORDER.map(
+  (m) => [m, LENS_PROFILES[m].glyph + ' ' + LENS_PROFILES[m].name] as [string, string]);
+
+/** Every lens parameter, as sliders. Bounds come from the system itself. */
+export const LENS_SLIDERS: WorldParam[] = LENS_FIELDS.map((f) => ({
+  key: f.key as string,
+  label: f.label,
+  min: f.min,
+  max: f.max,
+  step: f.step,
+  value: (LENS_PROFILES.schwarzschild as unknown as Record<string, number>)[f.key as string] ?? 0
+}));
 
 export const QUALITY_PRESETS = [
   { id: 'performance',  label: 'Performance',  glyph: '⚡', note: 'Highest framerate. Effects off.' },
@@ -62,6 +79,21 @@ interface ShellHooks {
   onDeleteGame: (id: string) => void;
   onControlMode: (mode: string) => void;
   onEnterDimension: (seed: number, depth: number) => void;
+  getUniverse: () => {
+    stats: Record<string, string>;
+    current: { id: string; name: string; glyph: string; kind: string } | null;
+    regions: Array<{ id: string; name: string; glyph: string; kind: string; distance: number }>;
+    holding: string | null;
+    lens: Record<string, string> | null;
+  };
+  onWarpTo: (id: string) => void;
+  onGrab: () => void;
+  onRelease: (thrown: boolean) => void;
+  onSpawnRegion: (kind: string) => void;
+  onDeleteRegion: (id: string) => void;
+  onLensMode: (mode: string) => void;
+  onLensField: (key: string, value: number) => void;
+  onRandomLens: () => void;
   onShip: (id: string) => void;
   getVehicle: () => { mode: string; ship: string; stats: Record<string, string> };
 }
@@ -121,6 +153,11 @@ export class Shell {
       else if (k === '7') this.wm.Toggle('snapshots');
       else if (k === '8') this.wm.Toggle('view');
       else if (k === '9') this.wm.Toggle('pilot');
+      else if (k === 'n') this.wm.Toggle('navigator');
+      else if (k === 'l') this.wm.Toggle('lens');
+      else if (k === 'g') this.hooks.onGrab();
+      else if (k === 'v') this.hooks.onRelease(false);
+      else if (k === 'b') this.hooks.onRelease(true);
       else if (k === 'f') this.toggleFocus();
       else if (k === 't') this.wm.TileEdges();
       else if (k === '3') this.wm.Toggle('telemetry');
@@ -218,6 +255,8 @@ export class Shell {
       <button class="iconbtn" id="w-snapshots" title="Snapshots (7)">📸</button>
       <button class="iconbtn" id="w-view" title="View &amp; Interface (8)">🖥</button>
       <button class="iconbtn" id="w-pilot" title="Pilot &amp; Explore (9)">🚀</button>
+      <button class="iconbtn" id="w-navigator" title="Universe (N)">🌌</button>
+      <button class="iconbtn" id="w-lens" title="Gravitational Lens (L)">🔭</button>
       <button class="iconbtn" id="btnReset"   title="Reset layout & sim (R)">↺</button>
     `;
     document.body.appendChild(this.topbar);
@@ -236,7 +275,7 @@ export class Shell {
       b.onclick = () => this.setMode(b.dataset.m as Mode);
     });
 
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot'] as const).forEach((id) => {
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement | null;
       if (btn) btn.onclick = () => this.wm.Toggle(id);
     });
@@ -261,7 +300,7 @@ export class Shell {
   }
 
   private syncTopbar(): void {
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot'] as const).forEach((id) => {
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id);
       btn?.classList.toggle('on', this.wm.IsVisible(id));
     });
@@ -365,6 +404,18 @@ export class Shell {
       id: 'objects', title: 'Objects', glyph: '🧰',
       x: 1, y: 0.10, width: 330, height: 520,
       render: (b) => this.renderObjects(b)
+    });
+
+    this.wm.register({
+      id: 'navigator', title: 'Universe', glyph: '🌌',
+      x: 0, y: 0.08, width: 300,
+      render: (b) => this.renderNavigator(b)
+    });
+
+    this.wm.register({
+      id: 'lens', title: 'Gravitational Lens', glyph: '🔭',
+      x: 1, y: 0.30, width: 300,
+      render: (b) => this.renderLens(b)
     });
 
     this.wm.register({
@@ -673,6 +724,15 @@ export class Shell {
     }
   }
 
+  /**
+   * Called when the player flies into or out of a place. This replaces the
+   * old tab bar: arriving somewhere is a position change, announced quietly.
+   */
+  onRegionChanged(region: { name: string; glyph: string } | null): void {
+    this.toast(region ? 'Entering ' + region.glyph + ' ' + region.name : 'Deep space');
+    this.wm.refresh('navigator');
+  }
+
   /** Focus mode: hide every panel so the simulation is fully visible. */
   toggleFocus(): void {
     const on = !this.wm.IsFocusMode();
@@ -714,6 +774,184 @@ export class Shell {
     this.toast(hint);
   }
 
+  /* ---- the universe: navigate by flying, not by tabs ---- */
+
+  private renderNavigator(b: HTMLElement): void {
+    const u = this.hooks.getUniverse();
+
+    // ---- where you are ----
+    const here = document.createElement('div');
+    here.className = 'grp';
+    here.innerHTML = '<div class="grp-h">You Are Here</div>';
+    const loc = document.createElement('div');
+    loc.className = 'note';
+    loc.id = 'navHere';
+    loc.style.cssText = 'font-size:12.5px;color:var(--txt)';
+    loc.textContent = u.current
+      ? u.current.glyph + '  ' + u.current.name
+      : '🌌  Deep space';
+    here.appendChild(loc);
+    if (u.holding) {
+      const h = document.createElement('div');
+      h.className = 'note';
+      h.textContent = '✋ Carrying ' + u.holding + ' — V to release, B to throw';
+      here.appendChild(h);
+    }
+    b.appendChild(here);
+
+    // ---- what is nearby. This is the navigation, not a tab bar. ----
+    const near = document.createElement('div');
+    near.className = 'grp';
+    near.innerHTML = '<div class="grp-h">Nearby (' + u.regions.length + ')</div>';
+    const fmtD = (d: number) => d > 9999 ? (d / 1000).toFixed(1) + 'k u'
+      : d > 99 ? d.toFixed(0) + ' u' : d.toFixed(1) + ' u';
+
+    u.regions.forEach((r) => {
+      const row = document.createElement('div');
+      row.className = 'stat';
+      row.dataset.region = r.id;
+      const isHere = u.current && r.id === u.current.id;
+      row.innerHTML = '<span class="stat-k">' + r.glyph + ' ' + r.name +
+        (isHere ? ' <b>(here)</b>' : '') +
+        '</span><span class="stat-v">' + fmtD(r.distance) + '</span>';
+
+      const go = document.createElement('button');
+      go.className = 'btn';
+      go.dataset.warp = r.id;
+      go.style.cssText = 'min-width:auto;padding:3px 9px;font-size:10.5px';
+      go.textContent = 'Fly';
+      go.title = 'Fly to ' + r.name;
+      go.onclick = () => this.hooks.onWarpTo(r.id);
+      row.appendChild(go);
+
+      const del = document.createElement('button');
+      del.className = 'btn';
+      del.dataset.deleteRegion = r.id;
+      del.style.cssText = 'min-width:auto;padding:3px 7px;font-size:10.5px';
+      del.textContent = '✕';
+      del.title = 'Remove ' + r.name;
+      del.onclick = () => this.hooks.onDeleteRegion(r.id);
+      row.appendChild(del);
+
+      near.appendChild(row);
+    });
+    b.appendChild(near);
+
+    // ---- create things right where you are ----
+    const make = document.createElement('div');
+    make.className = 'grp';
+    make.innerHTML = '<div class="grp-h">Create Here</div>';
+    const mrow = document.createElement('div');
+    mrow.className = 'btnrow';
+    ([['blackhole', '⚫ Black Hole'], ['starsystem', '☀ Star System']] as const)
+      .forEach(([kind, label]) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.dataset.spawn = kind;
+        btn.textContent = label;
+        btn.onclick = () => this.hooks.onSpawnRegion(kind);
+        mrow.appendChild(btn);
+      });
+    make.appendChild(mrow);
+
+    const grabRow = document.createElement('div');
+    grabRow.className = 'btnrow';
+    const gb = document.createElement('button');
+    gb.className = 'btn';
+    gb.id = 'btnGrab';
+    gb.textContent = '✋ Grab (G)';
+    gb.title = 'Grab whatever is under the crosshair and carry it';
+    gb.onclick = () => this.hooks.onGrab();
+    const rb = document.createElement('button');
+    rb.className = 'btn';
+    rb.id = 'btnRelease';
+    rb.textContent = 'Release (V)';
+    rb.onclick = () => this.hooks.onRelease(false);
+    const tb = document.createElement('button');
+    tb.className = 'btn';
+    tb.id = 'btnThrow';
+    tb.textContent = 'Throw (B)';
+    tb.onclick = () => this.hooks.onRelease(true);
+    grabRow.append(gb, rb, tb);
+    make.appendChild(grabRow);
+    b.appendChild(make);
+
+    // ---- universe statistics ----
+    const st = document.createElement('div');
+    st.className = 'grp';
+    st.innerHTML = '<div class="grp-h">Universe</div>';
+    Object.entries(u.stats).forEach(([k, v]) => {
+      const r = document.createElement('div');
+      r.className = 'stat';
+      r.innerHTML = '<span class="stat-k">' + k + '</span><span class="stat-v">' + v + '</span>';
+      st.appendChild(r);
+    });
+    b.appendChild(st);
+  }
+
+  /* ---- per-hole gravitational lens editor ---- */
+
+  private renderLens(b: HTMLElement): void {
+    const u = this.hooks.getUniverse();
+
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.textContent = u.lens
+      ? 'Editing the nearest black hole. Every hole bends light its own way.'
+      : 'No black hole nearby. Fly to one, or create one from the Universe panel.';
+    b.appendChild(n);
+
+    // ---- lens type ----
+    const tg = document.createElement('div');
+    tg.className = 'grp';
+    tg.innerHTML = '<div class="grp-h">Lens Type</div>';
+    const trow = document.createElement('div');
+    trow.className = 'btnrow';
+    LENS_CHOICES.forEach(([mode, label]) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.dataset.lensMode = mode;
+      btn.textContent = label;
+      btn.onclick = () => { this.hooks.onLensMode(mode); this.wm.refresh('lens'); };
+      trow.appendChild(btn);
+    });
+    tg.appendChild(trow);
+
+    const rrow = document.createElement('div');
+    rrow.className = 'btnrow';
+    const rnd = document.createElement('button');
+    rnd.className = 'btn pri';
+    rnd.id = 'btnRandomLens';
+    rnd.textContent = '🎲 Surprise Me (Alien Lens)';
+    rnd.onclick = () => { this.hooks.onRandomLens(); this.wm.refresh('lens'); };
+    rrow.appendChild(rnd);
+    tg.appendChild(rrow);
+    b.appendChild(tg);
+
+    // ---- live readout ----
+    if (u.lens) {
+      const st = document.createElement('div');
+      st.className = 'grp';
+      st.innerHTML = '<div class="grp-h">Current Lens</div>';
+      Object.entries(u.lens).forEach(([k, v]) => {
+        const r = document.createElement('div');
+        r.className = 'stat';
+        r.innerHTML = '<span class="stat-k">' + k + '</span><span class="stat-v">' + v + '</span>';
+        st.appendChild(r);
+      });
+      b.appendChild(st);
+    }
+
+    // ---- every parameter, fully editable ----
+    const fg = document.createElement('div');
+    fg.className = 'grp';
+    fg.innerHTML = '<div class="grp-h">Fine Control</div>';
+    LENS_SLIDERS.forEach((p) => {
+      fg.appendChild(this.slider(p, (k, v) => this.hooks.onLensField(k, v)));
+    });
+    b.appendChild(fg);
+  }
+
   /* ---- pilot & explore ---- */
 
   private renderPilot(b: HTMLElement): void {
@@ -721,7 +959,8 @@ export class Shell {
 
     const n = document.createElement('div');
     n.className = 'note';
-    n.textContent = 'Fly a ship or land and walk around. Press Esc-free keys: WASD to move.';
+    n.textContent = 'Free Fly moves you directly at a speed that scales with '
+      + 'whatever is nearby, so the same controls work everywhere.';
     b.appendChild(n);
 
     // --- mode ---
@@ -730,7 +969,8 @@ export class Shell {
     mg.innerHTML = '<div class="grp-h">Control Mode</div>';
     const mrow = document.createElement('div');
     mrow.className = 'btnrow';
-    ([['orbit', '🎥 Orbit'], ['fly', '🚀 Fly'], ['walk', '🚶 Walk']] as const)
+    ([['freefly', '🛰 Free Fly'], ['orbit', '🎥 Orbit'],
+      ['fly', '🚀 Ship'], ['walk', '🚶 Walk']] as const)
       .forEach(([id, label]) => {
         const btn = document.createElement('button');
         btn.className = 'btn' + (v.mode === id ? ' pri' : '');
@@ -785,8 +1025,11 @@ export class Shell {
     const help = document.createElement('div');
     help.className = 'note';
     help.style.marginTop = '8px';
-    help.innerHTML = '<b>Fly:</b> WASD thrust · R/F up-down · Q/E roll · arrows steer · '
-      + 'Shift boost · X brake<br><b>Walk:</b> WASD move · arrows look · Space jump · Shift run';
+    help.innerHTML =
+      '<b>Free Fly:</b> WASD move · R/F up-down · arrows look · Shift boost · X slow<br>'
+      + '<b>Ship:</b> WASD thrust · Q/E roll · Shift boost · X brake<br>'
+      + '<b>Walk:</b> WASD move · Space jump · Shift run<br>'
+      + '<b>Anywhere:</b> G grab · V release · B throw · N universe · L lens';
     b.appendChild(help);
   }
 

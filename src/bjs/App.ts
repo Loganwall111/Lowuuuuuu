@@ -25,6 +25,14 @@ import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySyste
 import {
   VehicleController, SHIPS, inputFromKeys, emptyInput, type ControlMode
 } from './systems/VehicleSystem';
+import { UniverseState } from './systems/UniverseState';
+import { GrabSystem, type Grabbable } from './systems/GrabSystem';
+import {
+  LENS_PROFILES, cloneProfile, randomAlienProfile,
+  describeProfile as describeLens, sanitizeProfile as sanitizeLens,
+  type LensMode
+} from './systems/LensProfiles';
+import type { Region } from './systems/UniverseState';
 
 const FACTORY: Record<string, () => World> = {
   planetary: () => new PlanetaryWorld(),
@@ -52,6 +60,11 @@ export class App {
   saves = new SaveSystem();
   quality = new QualitySystem('high');
   vehicle = new VehicleController();
+  /** The single continuous universe. Everything lives here at once. */
+  universe = new UniverseState();
+  grab = new GrabSystem();
+  /** Last position outside any horizon, so we know which way is "back". */
+  private lastOutsidePos = new Vector3(0, 0, -220);
   private keys = new Set<string>();
 
   async init(): Promise<void> {
@@ -82,6 +95,89 @@ export class App {
       },
       listGames: () => this.saves.list(),
       onControlMode: (m) => this.setControlMode(m as ControlMode),
+
+      // ---- one continuous universe ----
+      getUniverse: () => {
+        const eye = this.vehicle.mode === 'orbit'
+          ? this.camera.position : this.vehicle.position;
+        const cur = this.universe.current;
+        const bh = this.universe.insideHorizon
+          ?? (cur?.kind === 'blackhole' ? cur : null);
+        return {
+          stats: { ...this.universe.stats(), ...this.grab.stats() },
+          current: cur
+            ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
+            : null,
+          regions: this.universe.activeRegions(eye, 16).map((r) => ({
+            id: r.id, name: r.name, glyph: r.glyph, kind: r.kind,
+            distance: Vector3.Distance(eye, r.position)
+          })),
+          holding: this.grab.held ? this.grab.held.name : null,
+          lens: bh?.lens ? describeLens(bh.lens) : null
+        };
+      },
+
+      onWarpTo: (id) => this.warpTo(id),
+
+      onGrab: () => {
+        const dir = this.camera.getTarget().subtract(this.camera.position);
+        const candidates: Grabbable[] = this.universe.regions.map((r) => ({
+          id: r.id, name: r.name, position: r.position, radius: r.radius
+        }));
+        const got = this.grab.grab(this.camera.position, dir, candidates);
+        this.shell.toast(got ? 'Holding ' + got.name : 'Nothing under the cursor');
+      },
+
+      onRelease: (thrown) => {
+        const r = thrown ? this.grab.throwIt() : this.grab.release();
+        if (r) this.shell.toast((thrown ? 'Threw ' : 'Released ') + r.name);
+      },
+
+      onSpawnRegion: (kind) => {
+        // place it in front of the camera, at a sensible distance
+        const dir = this.camera.getTarget().subtract(this.camera.position).normalize();
+        const at = this.camera.position.add(dir.scale(400));
+        const r = kind === 'blackhole'
+          ? this.universe.spawnBlackHole(at)
+          : this.universe.spawnStarSystem(at);
+        this.shell.toast('Created ' + r.glyph + ' ' + r.name);
+        this.shell.refreshAll?.();
+      },
+
+      onDeleteRegion: (id) => {
+        const r = this.universe.byId(id);
+        if (r && this.universe.removeRegion(id)) {
+          this.shell.toast('Removed ' + r.name);
+          this.shell.refreshAll?.();
+        }
+      },
+
+      onLensMode: (mode) => {
+        const bh = this.universe.insideHorizon ?? this.nearestHole();
+        if (!bh) { this.shell.toast('No black hole nearby'); return; }
+        bh.lens = mode === 'random'
+          ? randomAlienProfile()
+          : cloneProfile(LENS_PROFILES[mode as LensMode] ?? LENS_PROFILES.schwarzschild);
+        this.applyLensToWorld(bh);
+        this.shell.toast(bh.name + ': ' + bh.lens.name + ' lens');
+      },
+
+      onLensField: (key, value) => {
+        const bh = this.universe.insideHorizon ?? this.nearestHole();
+        if (!bh?.lens) return;
+        (bh.lens as unknown as Record<string, number>)[key] = value;
+        bh.lens = sanitizeLens(bh.lens);
+        this.applyLensToWorld(bh);
+      },
+
+      onRandomLens: () => {
+        const bh = this.universe.insideHorizon ?? this.nearestHole();
+        if (!bh) { this.shell.toast('No black hole nearby'); return; }
+        bh.lens = randomAlienProfile();
+        this.applyLensToWorld(bh);
+        this.shell.toast(bh.name + ': ' + bh.lens.name);
+      },
+
       onEnterDimension: (seed, depth) => { void this.enterDimension(seed, depth); },
       onShip: (id) => this.vehicle.setShip(id),
       getVehicle: () => ({
@@ -150,6 +246,11 @@ export class App {
     this.shell.progress(58, 'compiling shaders');
     await this.loadWorld('planetary');
 
+    // Start in free flight inside the one continuous universe, rather than
+    // parked in an orbit camera waiting for a menu choice.
+    this.setControlMode('freefly');
+    this.universe.updatePlayer(this.camera.position);
+
     this.shell.progress(88, 'warming pipeline');
     await new Promise((r) => setTimeout(r, 120));
 
@@ -214,6 +315,49 @@ export class App {
     } finally {
       this.switching = false;
     }
+  }
+
+  /** The black hole the player is closest to, for lens editing. */
+  private nearestHole(): Region | null {
+    const eye = this.vehicle.mode === 'orbit'
+      ? this.camera.position : this.vehicle.position;
+    return this.universe.nearest(eye, 'blackhole');
+  }
+
+  /**
+   * Pushes a region's lens into the live renderer, so edits are visible
+   * immediately rather than on the next reload.
+   */
+  private applyLensToWorld(r: Region): void {
+    const w = this.world as unknown as { lens?: unknown };
+    if (w && r.lens && 'lens' in (this.world as object)) {
+      w.lens = cloneProfile(r.lens);
+    }
+    this.shell.refreshAll?.();
+  }
+
+  /**
+   * Flies the player to a place. This is navigation inside one universe -
+   * it moves the camera, it does not load a level.
+   */
+  warpTo(id: string): void {
+    const r = this.universe.byId(id);
+    if (!r) return;
+    // stand off by enough to see the whole thing
+    const standoff = Math.max(r.radius * 1.35, (r.surfaceRadius ?? 10) * 4);
+    const from = this.vehicle.mode === 'orbit'
+      ? this.camera.position : this.vehicle.position;
+    const dir = from.subtract(r.position);
+    const n = dir.lengthSquared() > 1e-6
+      ? dir.normalize() : new Vector3(0, 0.25, -1).normalize();
+    const dest = r.position.add(n.scale(standoff));
+
+    this.vehicle.teleport(dest);
+    this.camera.position.copyFrom(dest);
+    this.camera.setTarget(r.position.clone());
+    this.universe.updatePlayer(dest);
+    this.shell.toast('Arrived at ' + r.glyph + ' ' + r.name);
+    this.shell.refreshAll?.();
   }
 
   /**
@@ -285,9 +429,54 @@ export class App {
 
       // ---- player-controlled flight / walking ----
       if (this.vehicle.mode !== 'orbit') {
+        // Free-fly speed scales with how far the nearest thing is, so the
+        // same controls work for inspecting a rock and crossing a galaxy.
+        if (this.vehicle.mode === 'freefly') {
+          const near = this.universe.nearest(this.vehicle.position);
+          if (near) {
+            const d = Vector3.Distance(this.vehicle.position, near.position) - near.radius;
+            this.vehicle.setScaleSpeed(d);
+          }
+        }
         this.vehicle.update(dt, inputFromKeys(this.keys), this.groundProbe);
         this.camera.position.copyFrom(this.vehicle.position);
         this.camera.setTarget(this.vehicle.lookTarget());
+      }
+
+      // ---- one continuous universe: where am I, and what is near me ----
+      const eye = this.vehicle.mode === 'orbit'
+        ? this.camera.position
+        : this.vehicle.position;
+      const prevRegion = this.universe.current?.id ?? null;
+      this.universe.updatePlayer(eye);
+      if ((this.universe.current?.id ?? null) !== prevRegion) {
+        // arriving somewhere is just a position change, not a level load
+        this.shell.onRegionChanged?.(this.universe.current);
+      }
+
+      // ---- falling through a horizon: keep the way back visible ----
+      const bh = this.universe.insideHorizon;
+      const w = this.world as unknown as {
+        setInterior?: (d: number, dir: Vector3) => void;
+        setLens?: (p: unknown) => void;
+      };
+      if (typeof w?.setInterior === 'function') {
+        if (bh) {
+          // the exit is the direction back toward where we came from
+          const back = this.lastOutsidePos.subtract(bh.position);
+          w.setInterior(this.universe.horizonDepth,
+            back.lengthSquared() > 1e-9 ? back : new Vector3(0, 0, -1));
+          if (bh.lens && typeof w.setLens === 'function') w.setLens(bh.lens);
+        } else {
+          w.setInterior(0, new Vector3(0, 0, -1));
+          this.lastOutsidePos.copyFrom(eye);
+        }
+      }
+
+      // ---- carrying things around ----
+      if (this.grab.isHolding()) {
+        const dir = this.camera.getTarget().subtract(this.camera.position);
+        this.grab.update(dt, this.camera.position, dir);
       }
       this.scene.render();
 
