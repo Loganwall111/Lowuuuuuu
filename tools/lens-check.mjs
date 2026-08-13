@@ -199,7 +199,16 @@ console.log('\n— lensing works everywhere, not just in one world —');
   ok('it honours alien lens shapes',
      lfx.includes('symmetry') && lfx.includes('distortion') && lfx.includes('twist'));
   ok('ringless holes are supported', lfx.includes('ringAmt > 0.001'));
-  ok('it never renders a dead black screen', lfx.includes('mix(col, tint * 0.05, inside)'));
+  // This used to pin the literal expression `mix(col, tint * 0.05, inside)`,
+  // which is precisely the line that produced the reported black screen: it
+  // replaces the frame with a flat wash, and because the shadow radius was
+  // unbounded it applied to every pixel once you got close. The assertion
+  // name was right; what it checked was not. Now it checks the two
+  // properties that actually keep the screen alive.
+  ok('the horizon shadow can never cover the whole frame',
+     lfx.includes('min(holeR, 0.42)'));
+  ok('even inside the horizon some lensed light survives',
+     /mix\(col, col \* 0\.0\d+ \+ tint/.test(lfx));
   ok('it switches itself off when idle', lfx.includes('active < 0.5'));
   ok('a failed post-process cannot stop rendering', lfx.includes('Gravitational lensing unavailable'));
 

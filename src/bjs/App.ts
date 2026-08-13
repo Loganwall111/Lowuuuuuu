@@ -32,6 +32,7 @@ import { WarpDrive, galacticMedium } from './systems/DeepSkySystem';
 import { Fleet, shipClass, shipView, type ViewMode } from './systems/FleetSystem';
 import { StarFieldRenderer } from './systems/StarFieldRenderer';
 import { LayeredSky } from './systems/LayeredSky';
+import { HoleFieldRenderer } from './systems/HoleFieldRenderer';
 import { SpaceAudio } from './systems/SpaceAudio';
 import {
   depthOf, verseAt, verseProgress, edgeStateAt, crossInto,
@@ -115,6 +116,12 @@ export class App {
    * a sky that is both deep and navigable.
    */
   layeredSky = new LayeredSky();
+  /**
+   * Real geometry for the black holes out in the universe. Without this a
+   * hole you fly to is only a point of light plus a screen-space lens, so
+   * there is nothing to arrive at.
+   */
+  holeField = new HoleFieldRenderer();
   /** Procedural hum / warp / singularity voices, driven from live state. */
   audio = new SpaceAudio();
   /** Whichever verse you are currently standing in. */
@@ -694,6 +701,10 @@ export class App {
       this.layeredSky.attach(this.scene);
       void this.layeredSky.build();
 
+      // loadWorld purges every mesh, so the holes must be rebuilt too.
+      this.holeField.dispose();
+      this.holeField.attach(this.scene);
+
       this.shell.setWorld(w);
     } finally {
       this.switching = false;
@@ -1043,6 +1054,18 @@ export class App {
       // Each background shell slides toward the eye by its own lock factor,
       // so near stars sweep past and far ones hold station.
       this.layeredSky.update(eye);
+
+      // ---- black holes you can actually reach ----
+      // Give every nearby hole a horizon sphere and an accretion disk, both
+      // driven from one centre so they cannot drift apart.
+      this.holeField.update(eye, this.universe.regions
+        .filter((r) => r.kind === 'blackhole')
+        .map((r) => ({
+          id: r.id,
+          position: r.position,
+          horizon: this.universe.horizonRadiusOf(r),
+          seed: r.seed ?? 1
+        })));
 
       // ---- flying into a galaxy ----
       // The interstellar medium thickens as you approach the core, so a

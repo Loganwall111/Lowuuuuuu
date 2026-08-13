@@ -84,9 +84,22 @@ void main(void){
   float rr = max(r, 1e-4);
   float bend = strength * holeR * pow(clamp(holeR / rr, 0.0, 1.0), max(falloff - 1.0, 0.0)) * shape;
 
-  // Inside the horizon there is nothing to sample: fall to the tint rather
-  // than pure black, so the screen is never dead.
-  float inside = smoothstep(holeR * 1.02, holeR * 0.86, r);
+  // Inside the horizon there is nothing to sample.
+  //
+  // THIS IS WHAT MADE APPROACHING A HOLE GO BLACK. holeR is the horizon's
+  // apparent size in UV, and it grows without limit as you close in - by a
+  // few horizon radii away it already exceeds the corner of the screen.
+  // Every pixel then satisfies r < holeR*0.86 at once, so the inside
+  // term is 1 everywhere and the whole frame becomes a near-black wash,
+  // with the rest of the universe drawn underneath but entirely hidden.
+  //
+  // Clamping the shadow radius keeps the horizon a shape on the screen
+  // instead of the whole screen. 0.42 UV is a big, dominating disc - it
+  // reads as "you are right on top of it" - while always leaving the frame
+  // edges showing the lensed sky, which is what you actually want to see
+  // when falling in.
+  float shadowR = min(holeR, 0.42);
+  float inside = smoothstep(shadowR * 1.02, shadowR * 0.86, r);
 
   // Pull the sample toward the hole.
   vec2 dir = normalize(d + 1e-6);
@@ -112,7 +125,11 @@ void main(void){
     col += tint * ring * ringAmt * 1.6;
   }
 
-  col = mix(col, tint * 0.05, inside);
+  // Even inside the shadow, keep a trace of the lensed background rather
+  // than a flat fill: a completely uniform region reads as a rendering
+  // failure, and the user reported exactly that. The horizon stays clearly
+  // the darkest thing on screen without ever being a dead rectangle.
+  col = mix(col, col * 0.06 + tint * 0.035, inside);
   gl_FragColor = vec4(col, 1.0);
 }
 `;

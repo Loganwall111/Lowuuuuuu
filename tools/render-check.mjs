@@ -466,5 +466,141 @@ console.log('\n— starfield static —');
     read('src/bjs/App.ts').includes("audioCanvas?.addEventListener('click'"));
 }
 
+// ------------------------------------- black holes you can actually reach
+console.log('\n— travelling to a black hole —');
+{
+  const outFile = '/tmp/holefield-' + Date.now() + '.mjs';
+  const r = await build({
+    entryPoints: ['src/bjs/systems/HoleFieldRenderer.ts'], bundle: true,
+    format: 'esm', write: false, logLevel: 'error', platform: 'browser'
+  });
+  fs.writeFileSync(outFile, r.outputFiles[0].text);
+  const { HoleFieldRenderer, radiiAway, DISK_INNER, DISK_OUTER } =
+    await import(outFile);
+  const { Vector3 } = await import(
+    '/home/user/Low/node_modules/@babylonjs/core/Maths/math.vector.js');
+
+  // Distance is measured in horizon radii, because "close" only means
+  // anything relative to the hole's own size.
+  const spec = { id: 'h', position: new Vector3(0, 0, 0), horizon: 10, seed: 3 };
+  ok('distance is measured in horizon radii',
+    Math.abs(radiiAway(new Vector3(100, 0, 0), spec) - 10) < 1e-9);
+  ok('a zero-radius hole cannot divide by zero',
+    Number.isFinite(radiiAway(new Vector3(1, 0, 0),
+      { ...spec, horizon: 0 })));
+
+  ok('the disk surrounds the horizon rather than intersecting it',
+    DISK_INNER > 1 && DISK_OUTER > DISK_INNER);
+
+  // A detached renderer must be inert, not throw.
+  const hf = new HoleFieldRenderer();
+  ok('an unattached renderer is safe to update',
+    (hf.update(new Vector3(0, 0, 0), [spec]), true));
+  ok('an unattached renderer draws nothing', hf.count === 0);
+  ok('isLocked is vacuously true for a hole that does not exist',
+    hf.isLocked('nope') === true);
+
+  const src = read('src/bjs/systems/HoleFieldRenderer.ts');
+  ok('the horizon and disk are moved in a single call',
+    /private place\(/.test(src) &&
+    /body\.setCenter\(to\)/.test(src) &&
+    /disk\.position\.copyFrom\(to\)/.test(src));
+  ok('the disk is additive and does not write depth',
+    /dm\.alphaMode = 1/.test(src) && /dm\.disableDepthWrite = true/.test(src));
+  ok('the disk alpha is nudged off 1.0 so blending is armed',
+    /dm\.alpha = 0\.999/.test(src));
+  ok('holes are released once out of range',
+    /releaseBeyond/.test(src) && /this\.live\.delete\(id\)/.test(src));
+  ok('the release threshold exceeds the build threshold, avoiding thrash',
+    /buildWithin: 320/.test(src) && /releaseBeyond: 460/.test(src));
+
+  const app = read('src/bjs/App.ts');
+  ok('the app owns a hole field', app.includes('new HoleFieldRenderer()'));
+  ok('it is rebuilt after loadWorld purges meshes',
+    app.includes('this.holeField.dispose()') &&
+    app.includes('this.holeField.attach(this.scene)'));
+  ok('it is fed the real black hole regions',
+    app.includes("r.kind === 'blackhole'") &&
+    app.includes('horizon: this.universe.horizonRadiusOf(r)'));
+}
+
+// ------------------------------------- the lens cannot swallow the screen
+console.log('\n— the horizon shadow stays a shape, not the frame —');
+{
+  const lfx = read('src/bjs/systems/LensFX.ts');
+  ok('the shadow radius is clamped', /min\(holeR, 0\.42\)/.test(lfx));
+  ok('the clamp is used by the inside test',
+    /smoothstep\(shadowR \* 1\.02, shadowR \* 0\.86, r\)/.test(lfx));
+  ok('lensed light still shows through the horizon',
+    /mix\(col, col \* 0\.0\d+ \+ tint/.test(lfx));
+
+  // Measure it: at any apparent size, the frame corner must stay visible.
+  const ss = (a, b, x) => {
+    const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  };
+  let worst = 0;
+  for (const holeR of [0.05, 0.2, 0.42, 0.9, 1.5, 8, 100]) {
+    const sR = Math.min(holeR, 0.42);
+    worst = Math.max(worst, ss(sR * 1.02, sR * 0.86, 1.15));
+  }
+  ok('the frame corner is never inside the shadow, at any distance',
+    worst < 0.01, 'worst coverage ' + worst.toFixed(4));
+
+  // The GLSL must still be a single well-formed template literal. A stray
+  // backtick in a comment silently truncates the shader.
+  const body = lfx.slice(lfx.indexOf('universalLens'));
+  ok('no stray backtick truncates the lens shader',
+    (lfx.match(/`/g) || []).length % 2 === 0,
+    (lfx.match(/`/g) || []).length + ' backticks');
+}
+
+// ------------------------------------------------- the anomaly, per instance
+console.log('\n— fractured singularities are rare and isolated —');
+{
+  const outFile = '/tmp/bhbody-' + Date.now() + '.mjs';
+  const r = await build({
+    entryPoints: ['src/bjs/systems/BlackHoleBody.ts'], bundle: true,
+    format: 'esm', write: false, logLevel: 'error', platform: 'browser'
+  });
+  fs.writeFileSync(outFile, r.outputFiles[0].text);
+  const { rollAnomaly, sphereRadiusFor, ANOMALY_CHANCE } = await import(outFile);
+
+  ok('the configured rate is inside the 5-10% brief',
+    ANOMALY_CHANCE >= 0.05 && ANOMALY_CHANCE <= 0.10);
+
+  // A PRNG can hit its rate on one seed pattern and miss badly on another,
+  // so several shapes of input are measured.
+  const patterns = {
+    sequential: (i) => i,
+    sparse: (i) => i * 7919,
+    negative: (i) => -i,
+    largeOffset: (i) => i + 1e9
+  };
+  for (const [name, fn] of Object.entries(patterns)) {
+    let n = 0;
+    const N = 20000;
+    for (let i = 0; i < N; i++) if (rollAnomaly(fn(i))) n++;
+    const pct = 100 * n / N;
+    ok(`the rate holds for ${name} seeds`, pct >= 5 && pct <= 10,
+      pct.toFixed(2) + '%');
+  }
+
+  ok('a given hole is always the same hole',
+    rollAnomaly(12345) === rollAnomaly(12345));
+  ok('different holes roll independently',
+    new Set([...Array(200)].map((_, i) => rollAnomaly(i))).size === 2);
+
+  // The visual contract: standard masks the core, anomaly exposes it.
+  ok('a standard hole over-covers the disk inner edge',
+    sphereRadiusFor(10, false) > 10);
+  ok('an anomaly shrinks well inside it',
+    sphereRadiusFor(10, true) < 10 * 0.6);
+  ok('the anomaly is always the smaller of the two',
+    sphereRadiusFor(10, true) < sphereRadiusFor(10, false));
+  ok('the scale is proportional, so it works at any hole size',
+    Math.abs(sphereRadiusFor(20, true) / sphereRadiusFor(10, true) - 2) < 1e-9);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

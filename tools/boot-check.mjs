@@ -400,6 +400,110 @@ try {
 console.log('\n=== sky occlusion ===');
 for (const [n, c, e] of skyChecks) ok(n, c, e);
 
+// ---- REPRO: travelling to a black hole in the open universe ----
+// The user reports flying to a hole and getting an absolute black void.
+const travelChecks = [];
+try {
+  const holes = appRef.universe.regions.filter((r) => r.kind === 'blackhole');
+  travelChecks.push(['the universe contains black holes to fly to',
+    holes.length > 0, holes.length + ' holes']);
+
+  const h = holes[0];
+  const hz = appRef.universe.horizonRadiusOf(h);
+  const V3 = h.position.constructor;
+
+  // Approach it, exactly as flying would.
+  const approach = [hz * 300, hz * 100, hz * 20, hz * 5, hz * 1.5, hz];
+  let built = 0;
+  let everLocked = true;
+  let lockFailAt = null;
+  for (const d of approach) {
+    const eye = new V3(h.position.x + d, h.position.y, h.position.z);
+    appRef.holeField.update(eye, holes.map((r) => ({
+      id: r.id, position: r.position,
+      horizon: appRef.universe.horizonRadiusOf(r), seed: r.seed ?? 1
+    })));
+    if (appRef.holeField.has(h.id)) {
+      built++;
+      if (!appRef.holeField.isLocked(h.id)) {
+        everLocked = false;
+        const dm = appRef.scene.meshes.find((m) => m.name === 'bhDisk_' + h.id);
+        const hm = appRef.scene.meshes.find((m) => m.name === 'bhHorizon_' + h.id);
+        lockFailAt = d.toFixed(2) +
+          ' disk@' + (dm ? JSON.stringify(dm.position.asArray().map((v) => +v.toFixed(2))) : '?') +
+          ' horizon@' + (hm ? JSON.stringify(hm.position.asArray().map((v) => +v.toFixed(2))) : '?') +
+          ' region@' + JSON.stringify(h.position.asArray().map((v) => +v.toFixed(2)));
+      }
+    }
+  }
+  travelChecks.push(['a hole gains real geometry as you approach', built > 0,
+    'built at ' + built + '/' + approach.length + ' distances']);
+  travelChecks.push(['the horizon and disk never drift apart', everLocked,
+    lockFailAt ? 'first failed at distance ' + lockFailAt : '']);
+
+  // The check above only proves they agree where they were BUILT. The
+  // reported bug was separation while things MOVE, so actually move the
+  // hole and re-assert. Without this the test passes against code that
+  // never repositions the disk at all.
+  {
+    const moved = new V3(h.position.x + 500, h.position.y + 250,
+      h.position.z - 900);
+    const original = h.position.clone();
+    h.position.copyFrom(moved);
+    appRef.holeField.update(
+      new V3(moved.x + hz * 4, moved.y, moved.z),
+      holes.map((r) => ({
+        id: r.id, position: r.position,
+        horizon: appRef.universe.horizonRadiusOf(r), seed: r.seed ?? 1
+      })));
+    const dm = appRef.scene.meshes.find((m) => m.name === 'bhDisk_' + h.id);
+    const hm = appRef.scene.meshes.find((m) => m.name === 'bhHorizon_' + h.id);
+    travelChecks.push(['the disk follows the hole when it moves',
+      !!dm && Vector3Distance(dm.position, moved) < 1e-6,
+      dm ? JSON.stringify(dm.position.asArray()) : 'no disk']);
+    travelChecks.push(['the horizon follows the hole when it moves',
+      !!hm && Vector3Distance(hm.position, moved) < 1e-6]);
+    travelChecks.push(['they are still locked to each other after moving',
+      appRef.holeField.isLocked(h.id)]);
+    h.position.copyFrom(original);
+  }
+
+  // There must be something actually drawn at the hole.
+  const near = appRef.scene.meshes.filter((m) =>
+    /bhDisk|bhHorizon|bhGlow/.test(m.name));
+  travelChecks.push(['there are assets to see at the hole', near.length >= 3,
+    near.map((m) => m.name).join(', ')]);
+
+  // Rotating the camera must not move the hole.
+  const diskBefore = appRef.scene.meshes.find((m) => /bhDisk/.test(m.name));
+  const posBefore = diskBefore && diskBefore.getAbsolutePosition().clone();
+  appRef.camera.rotation && (appRef.camera.rotation.y += 1.1);
+  appRef.scene.render && null;
+  appRef.holeField.update(
+    new V3(h.position.x + hz * 6, h.position.y, h.position.z),
+    holes.map((r) => ({
+      id: r.id, position: r.position,
+      horizon: appRef.universe.horizonRadiusOf(r), seed: r.seed ?? 1
+    })));
+  const posAfter = diskBefore && diskBefore.getAbsolutePosition();
+  travelChecks.push(['rotating the camera does not move the hole',
+    !posBefore || Vector3Distance(posBefore, posAfter) < 1e-6]);
+
+  // Far away it must be released again, or an endless universe leaks meshes.
+  appRef.holeField.update(
+    new V3(h.position.x + hz * 5000, h.position.y, h.position.z),
+    holes.map((r) => ({
+      id: r.id, position: r.position,
+      horizon: appRef.universe.horizonRadiusOf(r), seed: r.seed ?? 1
+    })));
+  travelChecks.push(['holes are released once you leave',
+    !appRef.holeField.has(h.id)]);
+} catch (e) {
+  travelChecks.push(['travelling to a hole survives: ' + e.message, false]);
+}
+console.log('\n=== travelling to a black hole ===');
+for (const [n, c, e] of travelChecks) ok(n, c, e);
+
 console.log('\n=== creatures ===');
 for (const [name, cond, detail] of critterChecks) ok(name, cond, detail);
 
