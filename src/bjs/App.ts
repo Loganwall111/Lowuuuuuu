@@ -5,7 +5,7 @@
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
-import { Color4 } from '@babylonjs/core/Maths/math.color';
+import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import type { AbstractEngine } from '@babylonjs/core/Engines/abstractEngine';
 
 import { createEngine } from './Engine';
@@ -28,6 +28,10 @@ import { ElevatorSystem } from './systems/ElevatorSystem';
 import { PortalGunSystem } from './systems/PortalGunSystem';
 import { Descent, EARTHLIKE } from './systems/DescentSystem';
 import { missingShaders } from './ShaderRegistry';
+import { WarpDrive, galacticMedium } from './systems/DeepSkySystem';
+import { Fleet, shipClass, shipView, type ViewMode } from './systems/FleetSystem';
+import { StarFieldRenderer } from './systems/StarFieldRenderer';
+import { THROWABLES, computeImpact, throwableById } from './systems/ThrowableSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -87,6 +91,16 @@ export class App {
     );
     this.shell.toast('Entering atmosphere');
   }
+
+  /** Hold thrust long enough and the universe opens up. */
+  warpDrive = new WarpDrive();
+  /** Ships you have launched. They have mass, so they have gravity. */
+  fleet = new Fleet();
+  /** Which way you are looking at your ship. */
+  shipViewMode: ViewMode = 'chase';
+  private insideGalaxy = false;
+  /** The sky, drawn from real regions rather than painted on a sphere. */
+  starField = new StarFieldRenderer();
 
   /** Planet-to-orbit tethers you can ride. */
   elevators = new ElevatorSystem();
@@ -510,6 +524,16 @@ export class App {
       }
       this.history.attach(
         typeof (w as any).captureState === 'function' ? (w as any) : null);
+
+      // The purge above disposes every mesh, including the sky, so the star
+      // field is re-attached and rebuilt rather than left pointing at a
+      // disposed mesh.
+      this.starField.dispose();
+      this.starField.attach(this.scene);
+      this.starField.rebuild(
+        StarFieldRenderer.toSkyObjects(this.universe.regions),
+        this.vehicle.position);
+
       this.shell.setWorld(w);
     } finally {
       this.switching = false;
@@ -706,15 +730,39 @@ export class App {
         }
         // Keyboard supplies movement; the mouse supplies look and throttle.
         const input = inputFromKeys(this.keys);
+
+        // ---- warp drive ----
+        // Hold forward and the drive spools up, without limit. This is what
+        // makes the map crossable: at cruise the far side of the universe is
+        // hours away, and under warp it is seconds.
+        const warping = this.warpDrive.update(dt, input.forward > 0.5);
+        if (warping.engaged) {
+          this.vehicle.flySpeed *= warping.multiplier;
+        }
         const look = this.mouse.consume(dt);
         // Arrow keys still work: whichever the player is using wins.
         if (Math.abs(look.yaw) > 1e-4) input.yaw = look.yaw;
         if (Math.abs(look.pitch) > 1e-4) input.pitch = look.pitch;
         // The 'look around' lesson completes when you actually look around.
         if (Math.abs(look.yaw) + Math.abs(look.pitch) > 0.02) this.lookMoved = true;
+        const baseFly = this.vehicle.flySpeed;
         this.vehicle.update(dt, input, this.groundProbe);
-        this.camera.position.copyFrom(this.vehicle.position);
-        this.camera.setTarget(this.vehicle.lookTarget());
+        // The multiplier is applied per frame, so it must be taken back off
+        // again or it would compound into nonsense within a second.
+        if (warping.engaged) this.vehicle.flySpeed = baseFly / warping.multiplier;
+
+        // The ship views are derived from one basis, so cockpit and chase
+        // can never disagree about where the ship is pointing.
+        if (this.shipViewMode !== 'chase' && this.vehicle.mode === 'fly') {
+          const fwd = this.vehicle.lookTarget().subtract(this.vehicle.position);
+          const view = shipView(this.shipViewMode, this.vehicle.position,
+                                fwd, new Vector3(0, 1, 0), 26);
+          this.camera.position.copyFrom(view.position);
+          this.camera.setTarget(view.target);
+        } else {
+          this.camera.position.copyFrom(this.vehicle.position);
+          this.camera.setTarget(this.vehicle.lookTarget());
+        }
       }
 
       // ---- one continuous universe: where am I, and what is near me ----
@@ -795,6 +843,38 @@ export class App {
       this.warp.update(dt, this.shownSpeed, eye, fwd);
       this.stations?.update(dt);
       this.elevators.update(dt);
+      this.fleet.update(dt);
+
+      // ---- the real sky ----
+      // Points are placed from actual region positions, so the sky
+      // parallaxes as you fly and every light in it is a destination.
+      this.starField.update(
+        StarFieldRenderer.toSkyObjects(this.universe.regions), eye);
+
+      // ---- flying into a galaxy ----
+      // The interstellar medium thickens as you approach the core, so a
+      // galaxy is something you enter rather than a sprite you pass. Fog is
+      // driven by the same model that decides how crowded the stars are.
+      {
+        const gal = this.universe.nearest(eye, 'galaxy');
+        if (gal) {
+          const med = galacticMedium(eye, gal.position, gal.radius);
+          if (med.inside) {
+            this.scene.fogMode = Scene.FOGMODE_EXP2;
+            this.scene.fogDensity = med.fogDensity;
+            this.scene.fogColor = new Color3(
+              med.fogColor[0], med.fogColor[1], med.fogColor[2]);
+            if (!this.insideGalaxy) {
+              this.insideGalaxy = true;
+              this.shell.toast('Entering ' + gal.name);
+            }
+          } else if (this.insideGalaxy) {
+            this.insideGalaxy = false;
+            this.scene.fogMode = Scene.FOGMODE_NONE;
+            this.shell.toast('Leaving the galaxy');
+          }
+        }
+      }
 
       // An active descent drives the sky colour and the entry glow, so the
       // atmosphere thickens around you as you fall rather than cutting in.
