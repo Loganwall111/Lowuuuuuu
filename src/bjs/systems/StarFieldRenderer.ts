@@ -143,6 +143,11 @@ export class StarFieldRenderer {
         m.disableDepthWrite = true;
         m.forceDepthWrite = false;
         m.needDepthPrePass = false;
+        // Additive, so a star can only ever add light. alpha must be nudged
+        // off 1.0 or needAlphaBlending() stays false and Babylon ignores
+        // alphaMode entirely, leaving opaque quads behind every point.
+        m.alpha = 0.999;
+        m.alphaMode = 1; // Constants.ALPHA_ADD
       }
     });
 

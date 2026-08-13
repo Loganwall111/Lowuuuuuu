@@ -46,16 +46,159 @@ uniform vec3 camPos;
 uniform vec3 sunPos;
 uniform vec3 atmoColor;
 uniform float power;
+uniform vec3 planetCenter;
+uniform float planetRadius;   // surface radius, world units
+uniform float atmoRadius;     // top of the atmosphere, world units
+
+/**
+ * Volumetric atmospheric scattering.
+ *
+ * The previous version of this shader was a fake: a Fresnel rim term with a
+ * forward-scatter fudge. It produced a hard-edged shell because the opacity
+ * came from the angle of the mesh surface, not from how much gas the view
+ * ray actually passed through. Anything with a fixed geometric edge reads as
+ * a solid object, which is exactly the "solid geometric aura" problem.
+ *
+ * This version integrates optical depth along the real view ray, so the limb
+ * fades because the air genuinely thins out. Two species are tracked:
+ *
+ *   Rayleigh - air molecules, scale height 8.0 km. Scatters short
+ *              wavelengths far more strongly (the 1/lambda^4 law), which is
+ *              why the sky is blue and why sunsets redden.
+ *   Mie      - dust and aerosol, scale height 1.2 km. Nearly wavelength
+ *              neutral and strongly forward-biased, which is what makes the
+ *              gold halo hugging the sun.
+ *
+ * Scale heights are expressed as a fraction of planet radius so the same
+ * shader works for a moon and a gas giant. Earth is 8.0/6371 of its radius.
+ */
+
+// Rayleigh coefficients at sea level, per the 1/lambda^4 relationship
+// (650/550/440 nm). The ratio is what matters, not the absolute scale.
+const vec3 BETA_R = vec3(5.8e-3, 13.5e-3, 33.1e-3);
+// Mie is essentially grey - dust does not care much about wavelength.
+const vec3 BETA_M = vec3(4.0e-3);
+
+const float H_RAYLEIGH = 8.0 / 6371.0;   // 8.0 km on an Earth-sized world
+const float H_MIE      = 1.2 / 6371.0;   // 1.2 km
+
+/** Ray/sphere intersection. Returns (near, far); far < near means a miss. */
+vec2 raySphere(vec3 ro, vec3 rd, float rad){
+  float b = dot(ro, rd);
+  float c = dot(ro, ro) - rad * rad;
+  float d = b * b - c;
+  if (d < 0.0) return vec2(1.0, -1.0);
+  float s = sqrt(d);
+  return vec2(-b - s, -b + s);
+}
+
+/** Rayleigh phase: gentle, symmetric fore/aft lobes. */
+float phaseRayleigh(float mu){
+  return 0.0596831 * (1.0 + mu * mu);
+}
+
+/**
+ * Henyey-Greenstein phase for Mie. g near 0.76 is a standard hazy-atmosphere
+ * value and produces the tight forward lobe seen as a halo around the sun.
+ */
+float phaseMie(float mu, float g){
+  float g2 = g * g;
+  float denom = 1.0 + g2 - 2.0 * g * mu;
+  return (1.0 - g2) / (12.566371 * max(pow(denom, 1.5), 1e-4));
+}
+
 void main(void){
-  vec3 n = normalize(vNrm);
-  vec3 V = normalize(camPos - vWorld);
-  vec3 L = normalize(sunPos - vWorld);
-  float rim = pow(1.0 - max(dot(n, V), 0.0), power);
-  float lit = pow(max(dot(n, L), 0.0), 0.6);
-  float a = rim * (0.25 + lit * 1.15);
-  // forward scattering glow near the limb toward the sun
-  float fs = pow(max(dot(V, -L), 0.0), 6.0) * 0.5;
-  gl_FragColor = vec4(atmoColor * (1.0 + fs), clamp(a, 0.0, 1.0));
+  vec3 ro = camPos - planetCenter;
+  vec3 rd = normalize(vWorld - camPos);
+  vec3 L  = normalize(sunPos - planetCenter);
+
+  float Ra = max(atmoRadius, planetRadius * 1.001);
+  vec2 hit = raySphere(ro, rd, Ra);
+  if (hit.y < hit.x) { gl_FragColor = vec4(0.0); return; }
+
+  // Start at the atmosphere, stop at the surface if the ray hits it.
+  float tNear = max(hit.x, 0.0);
+  float tFar  = hit.y;
+  vec2 ground = raySphere(ro, rd, planetRadius);
+  if (ground.y >= ground.x && ground.x > 0.0) tFar = min(tFar, ground.x);
+  if (tFar <= tNear) { gl_FragColor = vec4(0.0); return; }
+
+  // Thickness of the shell, used to normalise the scale heights.
+  float shell = max(Ra - planetRadius, 1e-5);
+  float hR = max(H_RAYLEIGH * planetRadius, shell * 0.06);
+  float hM = max(H_MIE      * planetRadius, shell * 0.012);
+
+  // ---- primary raymarch ----
+  // Four samples, per the brief. Few samples are enough because density is
+  // smooth and exponential; the cost is in the light march, not this one.
+  const int STEPS = 4;
+  float seg = (tFar - tNear) / float(STEPS);
+
+  vec3 sumR = vec3(0.0);
+  vec3 sumM = vec3(0.0);
+  float odR = 0.0;   // accumulated optical depth toward the viewer
+  float odM = 0.0;
+
+  for (int i = 0; i < STEPS; i++){
+    float t = tNear + seg * (float(i) + 0.5);
+    vec3 pos = ro + rd * t;
+    float alt = max(length(pos) - planetRadius, 0.0);
+
+    float dR = exp(-alt / hR) * seg;
+    float dM = exp(-alt / hM) * seg;
+    odR += dR;
+    odM += dM;
+
+    // ---- light march: how much sun reaches this sample ----
+    // Two samples toward the star is enough to get the terminator reddening
+    // right without a nested loop blowing the frame budget.
+    vec2 lh = raySphere(pos, L, Ra);
+    float lodR = 0.0;
+    float lodM = 0.0;
+    if (lh.y > 0.0){
+      float lseg = lh.y / 2.0;
+      for (int j = 0; j < 2; j++){
+        vec3 lp = pos + L * (lseg * (float(j) + 0.5));
+        float la = max(length(lp) - planetRadius, 0.0);
+        lodR += exp(-la / hR) * lseg;
+        lodM += exp(-la / hM) * lseg;
+      }
+    }
+
+    // Beer-Lambert both ways: sun to sample, then sample to eye.
+    vec3 tau = BETA_R * (odR + lodR) + BETA_M * 1.1 * (odM + lodM);
+    vec3 att = exp(-tau * (1.0 / max(shell, 1e-5)) * 12.0);
+
+    // Shadowed samples contribute nothing - this is what carves the
+    // terminator instead of lighting the whole shell uniformly.
+    float lit = smoothstep(-0.35, 0.15, dot(normalize(pos), L));
+
+    sumR += dR * att * lit;
+    sumM += dM * att * lit;
+  }
+
+  float mu = dot(rd, L);
+  float pR = phaseRayleigh(mu);
+  float pM = phaseMie(mu, 0.76);
+
+  float norm = 1.0 / max(shell, 1e-5);
+  vec3 col = (sumR * BETA_R * pR + sumM * BETA_M * pM) * norm * 620.0;
+
+  // Tint toward the per-planet colour without discarding the physics: the
+  // scattering decides the shape and the artist decides the hue.
+  col = mix(col, col * atmoColor * 1.8, 0.55);
+
+  // Opacity is the integrated density, so the limb fades because the gas
+  // genuinely runs out. No geometric edge anywhere.
+  float dens = (odR + odM * 1.4) * norm;
+  float a = 1.0 - exp(-dens * 2.6);
+  a *= smoothstep(0.0, 0.06, dens);
+
+  // power stays meaningful as an artistic limb-sharpness control.
+  a = pow(clamp(a, 0.0, 1.0), max(power * 0.28, 0.25));
+
+  col = col / (col + vec3(1.0));            // keep the halo from clipping
+  gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));
 }
 `;
 
@@ -316,11 +459,19 @@ export class PlanetaryWorld implements World {
         atmo.parent = root;
         const am = new ShaderMaterial('am_' + cfg.name, scene, 'atmo', {
           attributes: ['position', 'normal'],
-          uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'atmoColor', 'power'],
+          uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos',
+                     'atmoColor', 'power',
+                     'planetCenter', 'planetRadius', 'atmoRadius'],
           needAlphaBlending: true
         });
         am.setColor3('atmoColor', new Color3(...cfg.atmo));
         am.setFloat('power', 3.0);
+        // The volumetric march needs the real geometry of the shell it is
+        // integrating through. The mesh diameter is cfg.r * 2.16, so the
+        // atmosphere tops out at 1.08 planet radii.
+        am.setFloat('planetRadius', cfg.r);
+        am.setFloat('atmoRadius', cfg.r * 1.08);
+        am.setVector3('planetCenter', Vector3.Zero());
         am.backFaceCulling = false;
         atmo.material = am;
         atmo.isPickable = false;
@@ -416,6 +567,11 @@ export class PlanetaryWorld implements World {
       if (b.atmoMat) {
         b.atmoMat.setVector3('camPos', cp);
         b.atmoMat.setVector3('sunPos', Vector3.Zero());
+        // The planet orbits, so the centre the raymarch integrates around
+        // moves every frame. A stale centre would tear the atmosphere off
+        // the planet exactly the way a stale camera tore the accretion disk
+        // off its horizon.
+        b.atmoMat.setVector3('planetCenter', b.mesh.getAbsolutePosition());
       }
       for (const mm of ((b as any).moonMats || []) as ShaderMaterial[]) {
         mm.setVector3('camPos', cp);

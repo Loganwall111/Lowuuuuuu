@@ -112,6 +112,20 @@ vec3 diskColor(float r, float a, out float alpha){
   float n  = fbm(vec3(cos(sw) * r * 0.28, sin(sw) * r * 0.28, time * 0.12), 5, 2.2, 0.55) * 0.5 + 0.5;
   float n2 = fbm(vec3(cos(sw) * r * 0.9,  sin(sw) * r * 0.9,  time * 0.2), 4, 2.4, 0.5) * 0.5 + 0.5;
   float dens = pow(n, 1.6) * (0.55 + n2 * 0.85);
+
+  // ---- Keplerian surface-density profile ----
+  // Matter in a thin disk orbits at v = sqrt(GM/r), so the inner disk both
+  // shears faster and packs denser. Modelling that (rather than spreading
+  // density evenly) is what gives the disk a bright, tight inner ring that
+  // falls away outward, instead of a uniform painted annulus.
+  float rr = max(r, diskInner * 0.5);
+  float kepler = pow(diskInner / rr, 1.5);     // v ~ r^-1/2, sigma ~ r^-3/2
+  dens *= 0.35 + 1.65 * clamp(kepler, 0.0, 1.0);
+
+  // The shear also stretches the turbulence azimuthally near the hole,
+  // which is the visual signature of differential rotation.
+  dens *= 1.0 + 0.35 * kepler * (n2 - 0.5);
+
   // temperature: hot inside, cool outside
   float heat = pow(1.0 - t, 2.2);
   vec3 hot  = vec3(1.0, 0.98, 0.94);
@@ -119,8 +133,17 @@ vec3 diskColor(float r, float a, out float alpha){
   vec3 cool = vec3(0.72, 0.16, 0.04);
   vec3 col = mix(cool, mid, heat);
   col = mix(col, hot, pow(heat, 2.6));
-  // soft inner/outer edges
-  float edge = smoothstep(0.0, 0.10, t) * (1.0 - smoothstep(0.82, 1.0, t));
+  // ---- soft edges driven by the density field, not a hard cut ----
+  // A disk that ends at a fixed radius has a visible rim, which is the
+  // "sharp clipping" look. Fading the OUTER edge across a wide band and
+  // then multiplying by the turbulent density means the boundary dissolves
+  // into filaments: some dense strands reach further out than others, so
+  // there is no single edge anywhere.
+  float inner = smoothstep(0.0, 0.12, t);
+  float outer = 1.0 - smoothstep(0.55, 1.0, t);
+  // Ragged: the noise perturbs where each azimuth actually fades out.
+  outer *= 0.55 + 0.45 * n2;
+  float edge = inner * outer;
   alpha = clamp(dens * edge * 1.5, 0.0, 1.0);
   return col * dens * diskBright;
 }

@@ -27,6 +27,8 @@ export interface AudioSettings {
   hum: number;
   warp: number;
   singularity: number;
+  /** Electromagnetic hiss near dense star fields. */
+  static: number;
   /** Hum pitch at rest and at full speed. */
   humBaseHz: number;
   humTopHz: number;
@@ -41,6 +43,7 @@ export const DEFAULT_AUDIO: AudioSettings = {
   hum: 0.5,
   warp: 0.6,
   singularity: 0.75,
+  static: 0.4,
   humBaseHz: 55,
   humTopHz: 80,
   humSpeedRef: 400,
@@ -87,6 +90,10 @@ export class SpaceAudio {
 
   private subOsc: OscillatorNode | null = null;
   private subGain: GainNode | null = null;
+
+  private staticSrc: AudioBufferSourceNode | null = null;
+  private staticFilter: BiquadFilterNode | null = null;
+  private staticGain: GainNode | null = null;
 
   settings: AudioSettings;
   started = false;
@@ -156,6 +163,26 @@ export class SpaceAudio {
       warpSrc.start();
       this.warpSrc = warpSrc; this.warpFilter = warpFilter; this.warpGain = warpGain;
 
+      // ---- electromagnetic starfield static ----
+      // Sonified sensor data rather than a sound anything could make in
+      // vacuum: denser star fields mean more incident radiation, so the
+      // hiss brightens. Shares the noise buffer with the warp voice - the
+      // character comes from the filter, not the source.
+      const staticSrc = ctx.createBufferSource();
+      staticSrc.buffer = buf; staticSrc.loop = true;
+      const staticFilter = ctx.createBiquadFilter();
+      // Highpass, so it sits well above the hum and never muddies it.
+      staticFilter.type = 'highpass';
+      staticFilter.frequency.value = 2200;
+      staticFilter.Q.value = 0.7;
+      const staticGain = ctx.createGain();
+      staticGain.gain.value = 0;
+      staticSrc.connect(staticFilter); staticFilter.connect(staticGain);
+      staticGain.connect(master);
+      staticSrc.start();
+      this.staticSrc = staticSrc; this.staticFilter = staticFilter;
+      this.staticGain = staticGain;
+
       // ---- singularity sub-bass ----
       const subOsc = ctx.createOscillator();
       subOsc.type = 'sine';
@@ -200,6 +227,8 @@ export class SpaceAudio {
     warping?: boolean;
     warpCharge?: number;
     singularityDistance?: number;
+    /** 0-1, how crowded the local star field is. */
+    starDensity?: number;
   }): void {
     if (!this.started || !this.ctx) return;
     const s = this.settings;
@@ -216,6 +245,13 @@ export class SpaceAudio {
     // Sweeping the passband upward is what makes it read as acceleration
     // rather than just louder noise.
     this.ramp(this.warpFilter?.frequency, 320 + charge * 2600, 0.3);
+
+    // starfield static: louder AND crisper in crowded space
+    const dens = Math.max(0, Math.min(1, state.starDensity ?? 0));
+    this.ramp(this.staticGain?.gain, s.static * 0.05 * dens * gate, 0.6);
+    // Raising the corner frequency is what "crispier" means acoustically:
+    // more of the low end is filtered away, leaving only the fine hiss.
+    this.ramp(this.staticFilter?.frequency, 2200 + dens * 5200, 0.7);
 
     // singularity
     const g = singularityGain(state.singularityDistance ?? Infinity, s);
@@ -236,7 +272,10 @@ export class SpaceAudio {
   }
 
   dispose(): void {
-    try { this.humOsc?.stop(); this.warpSrc?.stop(); this.subOsc?.stop(); } catch { /* already stopped */ }
+    try {
+      this.humOsc?.stop(); this.warpSrc?.stop();
+      this.subOsc?.stop(); this.staticSrc?.stop();
+    } catch { /* already stopped */ }
     try { void this.ctx?.close?.(); } catch { /* already closed */ }
     this.ctx = null; this.started = false;
   }

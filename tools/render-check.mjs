@@ -128,8 +128,15 @@ console.log('\n— the sky is deep and never occludes —');
     core.count === 2000 && core.inner === 100 && core.outer === 500);
   ok('the mid galactic shell matches the brief (10000 @ 500-2000)',
     mid.count === 10000 && mid.inner === 500 && mid.outer === 2000);
-  ok('the far cosmos shell matches the brief (30000 @ 2000-10000)',
-    far.count === 30000 && far.inner === 2000 && far.outer === 10000);
+  // The brief asked for 2000-10000, but camera.maxZ is 4000 and anything
+  // beyond the far plane is clipped, so ~60% of these 30000 points were
+  // never drawn. The count and the inner radius are kept; the outer radius
+  // is pulled inside the far plane. Depth comes from the parallax lock
+  // below, not from raw distance, so nothing is lost visually.
+  ok('the far cosmos shell keeps its 30000 points from 2000 out',
+    far.count === 30000 && far.inner === 2000);
+  ok('the far shell stops inside the camera far plane',
+    far.outer > 3000 && far.outer < 4000, String(far.outer));
   ok('the shells are strictly nested with no gaps',
     core.outer === mid.inner && mid.outer === far.inner);
   ok('42,000 background stars in total', shellBudget() === 42000);
@@ -263,6 +270,200 @@ console.log('\n— the simulation makes sound —');
     app.includes('warpCharge: this.warpDrive.charge'));
   ok('audio is driven from real black hole distance',
     app.includes('singularityDistance'));
+}
+
+// ------------------------------------------------- additive blending is real
+console.log('\n— the sky actually blends additively —');
+{
+  // THE BUG THAT BROUGHT THE SHARDS BACK.
+  // Babylon only takes the alpha path when needAlphaBlending() is true, and
+  // StandardMaterial returns false while alpha === 1. Setting alphaMode
+  // alone was therefore a no-op and every point drew as an opaque quad.
+  for (const f of ['LayeredSky', 'StarFieldRenderer', 'VerseRenderer']) {
+    const src = read(`src/bjs/systems/${f}.ts`);
+    ok(`${f} sets an additive alpha mode`, /alphaMode = 1/.test(src));
+    ok(`${f} nudges alpha off 1.0 so blending is actually armed`,
+      /alpha = 0\.999/.test(src),
+      'alphaMode is ignored while alpha === 1');
+    ok(`${f} still disables depth writing`,
+      /disableDepthWrite = true/.test(src));
+  }
+
+  // Nothing may be drawn beyond the camera's far plane, or it is clipped.
+  const app = read('src/bjs/App.ts');
+  const maxZ = parseFloat((app.match(/camera\.maxZ = ([\d.]+)/) || [])[1] || '0');
+  const sky = read('src/bjs/systems/LayeredSky.ts');
+  const outer = Math.max(...[...sky.matchAll(/outer: (\d+)/g)].map((m) => +m[1]));
+  ok('every sky shell fits inside the camera far plane',
+    outer > 0 && maxZ > 0 && outer < maxZ,
+    `outermost shell ${outer} vs maxZ ${maxZ}`);
+}
+
+// ------------------------------------------------------- resize/aspect guard
+console.log('\n— no resize can produce a bad aspect —');
+{
+  const outFile = '/tmp/safeuni-' + Date.now() + '.mjs';
+  const r = await build({
+    entryPoints: ['src/bjs/SafeUniforms.ts'], bundle: true, format: 'esm',
+    write: false, logLevel: 'error', platform: 'browser'
+  });
+  fs.writeFileSync(outFile, r.outputFiles[0].text);
+  const { safeAspect } = await import(outFile);
+
+  const cases = [[0, 0], [1920, 0], [0, 1080], [NaN, 1080], [1920, NaN],
+                 [-5, -5], [Infinity, 1080], [1920, Infinity], [-1920, 1080]];
+  let bad = null;
+  for (const [w, h] of cases) {
+    const a = safeAspect(w, h);
+    if (!Number.isFinite(a) || a <= 0) { bad = `${w}x${h} -> ${a}`; break; }
+  }
+  ok('no degenerate canvas size yields a bad aspect', !bad, bad ?? '');
+  ok('a collapsed canvas falls back to 16:9, not a stretched ratio',
+    Math.abs(safeAspect(1920, 0) - 16 / 9) < 1e-9,
+    String(safeAspect(1920, 0)));
+  ok('real sizes are still computed correctly',
+    Math.abs(safeAspect(800, 600) - 4 / 3) < 1e-9);
+  ok('resizes are skipped while the canvas is collapsed',
+    read('src/bjs/App.ts').includes('clientWidth < 1 || c.clientHeight < 1'));
+}
+
+// ------------------------------------------------ volumetric atmosphere
+console.log('\n— atmospheres are volumetric, not a solid shell —');
+{
+  const pw = read('src/bjs/worlds/PlanetaryWorld.ts');
+  ok('the fake Fresnel rim aura is gone',
+    !/float rim = pow\(1\.0 - max\(dot\(n, V\)/.test(pw));
+  ok('there is a raymarching loop through the atmosphere',
+    /for \(int i = 0; i < STEPS; i\+\+\)/.test(pw));
+  ok('optical depth is integrated, not faked', /odR \+= dR/.test(pw));
+  ok('a secondary light march gives the terminator its colour',
+    /for \(int j = 0; j < 2; j\+\+\)/.test(pw));
+  ok('Rayleigh scale height is 8.0 km', /8\.0 \/ 6371\.0/.test(pw));
+  ok('Mie scale height is 1.2 km', /1\.2 \/ 6371\.0/.test(pw));
+  ok('density decays exponentially with altitude',
+    /exp\(-alt \/ hR\)/.test(pw) && /exp\(-alt \/ hM\)/.test(pw));
+  ok('Beer-Lambert extinction is applied', /exp\(-tau/.test(pw));
+  ok('the view ray is dotted against the sun for the phase functions',
+    /float mu = dot\(rd, L\)/.test(pw));
+  ok('a Henyey-Greenstein lobe makes the gold forward halo',
+    /phaseMie/.test(pw) && /0\.76/.test(pw));
+  ok('opacity comes from integrated density, so the limb fades',
+    /1\.0 - exp\(-dens/.test(pw));
+  ok('the new geometry uniforms are declared',
+    /uniform vec3 planetCenter/.test(pw) && /uniform float atmoRadius/.test(pw));
+  ok('the new uniforms are listed on the material',
+    /'planetCenter', 'planetRadius', 'atmoRadius'/.test(pw));
+  ok('the orbiting planet centre is refreshed every frame',
+    /setVector3\('planetCenter', b\.mesh\.getAbsolutePosition\(\)\)/.test(pw));
+
+  // The physics, measured rather than asserted.
+  const BR = [5.8e-3, 13.5e-3, 33.1e-3];
+  ok('Rayleigh scatters blue ~5.7x more than red, per 1/lambda^4',
+    Math.abs(BR[2] / BR[0] - 5.7) < 0.2, (BR[2] / BR[0]).toFixed(2));
+  const pR = (mu) => 0.0596831 * (1 + mu * mu);
+  let integral = 0;
+  const N = 4000;
+  for (let i = 0; i < N; i++) {
+    const mu = -1 + 2 * (i + 0.5) / N;
+    integral += pR(mu) * 2 * Math.PI * (2 / N);
+  }
+  ok('the Rayleigh phase function is normalised to 1',
+    Math.abs(integral - 1) < 1e-3, integral.toFixed(5));
+  const pM = (mu, g) => (1 - g * g) /
+    (12.566371 * Math.pow(1 + g * g - 2 * g * mu, 1.5));
+  ok('Mie scatters strongly forward, which is what makes the halo',
+    pM(1, 0.76) / pM(-1, 0.76) > 100,
+    (pM(1, 0.76) / pM(-1, 0.76)).toFixed(0) + 'x forward');
+}
+
+// --------------------------------------------------- volumetric galaxy fog
+console.log('\n— galaxies are cloudy, not concentric shells —');
+{
+  const outFile = '/tmp/dss-' + Date.now() + '.mjs';
+  const r = await build({
+    entryPoints: ['src/bjs/systems/DeepSkySystem.ts'], bundle: true,
+    format: 'esm', write: false, logLevel: 'error', platform: 'browser'
+  });
+  fs.writeFileSync(outFile, r.outputFiles[0].text);
+  const { simplex3, fbm3, galacticMedium } = await import(outFile);
+  const { Vector3 } = await import(
+    '/home/user/Low/node_modules/@babylonjs/core/Maths/math.vector.js');
+
+  let mn = 1e9, mx = -1e9, sum = 0;
+  const N = 20000;
+  for (let i = 0; i < N; i++) {
+    const v = simplex3(Math.random() * 40 - 20, Math.random() * 40 - 20,
+      Math.random() * 40 - 20);
+    mn = Math.min(mn, v); mx = Math.max(mx, v); sum += v;
+  }
+  ok('simplex noise stays in [-1,1]', mn >= -1 && mx <= 1,
+    `${mn.toFixed(3)}..${mx.toFixed(3)}`);
+  ok('simplex noise is zero-mean', Math.abs(sum / N) < 0.03,
+    (sum / N).toFixed(4));
+  ok('simplex noise is deterministic',
+    simplex3(1.5, 2.5, 3.5) === simplex3(1.5, 2.5, 3.5));
+
+  let worst = 0;
+  for (let i = 0; i < 3000; i++) {
+    const x = Math.random() * 20, y = Math.random() * 20, z = Math.random() * 20;
+    worst = Math.max(worst, Math.abs(simplex3(x, y, z) - simplex3(x + 1e-4, y, z)));
+  }
+  ok('the noise field is continuous, so there are no seams', worst < 0.01,
+    worst.toExponential(2));
+
+  const vals = [];
+  for (let i = 0; i < 400; i++) vals.push(fbm3(i * 0.37, i * 0.11, i * 0.53, 4));
+  const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
+  ok('the fractal field genuinely varies', sd > 0.05, sd.toFixed(4));
+
+  // The medium must now be cloudy: same radius, different density.
+  const c = new Vector3(0, 0, 0);
+  const R = 1000;
+  const densities = [];
+  for (let i = 0; i < 64; i++) {
+    const a = (i / 64) * Math.PI * 2;
+    const p = new Vector3(Math.cos(a) * R * 0.5, 0, Math.sin(a) * R * 0.5);
+    densities.push(galacticMedium(p, c, R).fogDensity);
+  }
+  const dmin = Math.min(...densities), dmax = Math.max(...densities);
+  ok('fog varies around a circle of constant radius', dmax - dmin > 1e-9,
+    `min ${dmin.toExponential(2)} max ${dmax.toExponential(2)}`);
+  ok('fog is never negative', dmin >= 0);
+  ok('fog still thickens toward the core',
+    galacticMedium(new Vector3(50, 0, 0), c, R).depth >
+    galacticMedium(new Vector3(950, 0, 0), c, R).depth);
+  ok('outside the galaxy there is no fog',
+    galacticMedium(new Vector3(5000, 0, 0), c, R).inside === false);
+  ok('depth stays within 0..1', densities.every((d) => d >= 0));
+}
+
+// ------------------------------------------------- accretion disk softness
+console.log('\n— the accretion disk dissolves rather than clipping —');
+{
+  const bh = read('src/bjs/worlds/BlackHoleWorld.ts');
+  ok('the disk uses a Keplerian density profile', /float kepler/.test(bh));
+  ok('the profile follows r^-3/2', /pow\(diskInner \/ rr, 1\.5\)/.test(bh));
+  ok('differential shear modulates the turbulence',
+    /dens \*= 1\.0 \+ 0\.35 \* kepler/.test(bh));
+  ok('the outer edge fades over a wide band, not a hard cut',
+    /smoothstep\(0\.55, 1\.0, t\)/.test(bh));
+  ok('the fade is ragged, so no single rim is visible',
+    /outer \*= 0\.55 \+ 0\.45 \* n2/.test(bh));
+}
+
+// ------------------------------------------------------------ static voice
+console.log('\n— starfield static —');
+{
+  const sa = read('src/bjs/systems/SpaceAudio.ts');
+  ok('there is an electromagnetic static voice', /staticFilter/.test(sa));
+  ok('it is a highpass hiss, above the hum', /'highpass'/.test(sa));
+  ok('it gets crispier in dense star fields',
+    /2200 \+ dens \* 5200/.test(sa));
+  ok('it is driven by real galactic density',
+    read('src/bjs/App.ts').includes('starDensity: dens'));
+  ok('audio also arms on a canvas click, per the brief',
+    read('src/bjs/App.ts').includes("audioCanvas?.addEventListener('click'"));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

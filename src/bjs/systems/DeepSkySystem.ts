@@ -157,6 +157,84 @@ export function visibleSky(objects: SkyObject[], eye: Vector3, budget = 6000): S
 /*  Being inside a galaxy                                                      */
 /* -------------------------------------------------------------------------- */
 
+
+/* ----------------------- 3D simplex noise ------------------------------- */
+/*
+ * Used to break up the interstellar medium.
+ *
+ * A galaxy whose density depends only on distance from the core is a set of
+ * perfectly smooth concentric shells - which is exactly why the fog reads as
+ * a hard boundary rather than as cloud. Real nebulae are filamentary, so the
+ * radial falloff is modulated by a noise field sampled in world space.
+ *
+ * Simplex rather than Perlin: it has no directional bias, so the clouds do
+ * not line up with the coordinate axes, and it is cheaper in 3D.
+ */
+
+const SIMPLEX_GRAD: ReadonlyArray<readonly [number, number, number]> = [
+  [1, 1, 0], [-1, 1, 0], [1, -1, 0], [-1, -1, 0],
+  [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1],
+  [0, 1, 1], [0, -1, 1], [0, 1, -1], [0, -1, -1]
+];
+
+/** Integer hash with avalanche, so neighbouring cells are uncorrelated. */
+function hash3(i: number, j: number, k: number): number {
+  let h = Math.imul(i, 0x27d4eb2d) ^ Math.imul(j, 0x165667b1) ^ Math.imul(k, 0x9e3779b1);
+  h ^= h >>> 15; h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return h >>> 0;
+}
+
+/** 3D simplex noise, roughly in [-1, 1]. */
+export function simplex3(x: number, y: number, z: number): number {
+  const F3 = 1 / 3, G3 = 1 / 6;
+  const s = (x + y + z) * F3;
+  const i = Math.floor(x + s), j = Math.floor(y + s), k = Math.floor(z + s);
+  const t = (i + j + k) * G3;
+  const x0 = x - (i - t), y0 = y - (j - t), z0 = z - (k - t);
+
+  // Which of the six tetrahedra we are in.
+  let i1, j1, k1, i2, j2, k2;
+  if (x0 >= y0) {
+    if (y0 >= z0)      { i1=1;j1=0;k1=0; i2=1;j2=1;k2=0; }
+    else if (x0 >= z0) { i1=1;j1=0;k1=0; i2=1;j2=0;k2=1; }
+    else               { i1=0;j1=0;k1=1; i2=1;j2=0;k2=1; }
+  } else {
+    if (y0 < z0)       { i1=0;j1=0;k1=1; i2=0;j2=1;k2=1; }
+    else if (x0 < z0)  { i1=0;j1=1;k1=0; i2=0;j2=1;k2=1; }
+    else               { i1=0;j1=1;k1=0; i2=1;j2=1;k2=0; }
+  }
+
+  const c = [
+    [x0, y0, z0, i, j, k],
+    [x0 - i1 + G3, y0 - j1 + G3, z0 - k1 + G3, i + i1, j + j1, k + k1],
+    [x0 - i2 + 2 * G3, y0 - j2 + 2 * G3, z0 - k2 + 2 * G3, i + i2, j + j2, k + k2],
+    [x0 - 1 + 3 * G3, y0 - 1 + 3 * G3, z0 - 1 + 3 * G3, i + 1, j + 1, k + 1]
+  ];
+
+  let n = 0;
+  for (const [dx, dy, dz, ii, jj, kk] of c) {
+    let t0 = 0.6 - dx * dx - dy * dy - dz * dz;
+    if (t0 <= 0) continue;
+    const g = SIMPLEX_GRAD[hash3(ii, jj, kk) % 12];
+    t0 *= t0;
+    n += t0 * t0 * (g[0] * dx + g[1] * dy + g[2] * dz);
+  }
+  return Math.max(-1, Math.min(1, 32 * n));
+}
+
+/** Fractal simplex: several octaves, so clouds have detail at every scale. */
+export function fbm3(x: number, y: number, z: number, octaves = 4): number {
+  let sum = 0, amp = 0.5, freq = 1, norm = 0;
+  for (let o = 0; o < octaves; o++) {
+    sum += simplex3(x * freq, y * freq, z * freq) * amp;
+    norm += amp;
+    amp *= 0.5; freq *= 2.07;   // non-integer lacunarity avoids echoes
+  }
+  return sum / Math.max(norm, 1e-9);
+}
+
 /** What it looks like inside a galaxy's volume. */
 export interface GalacticMedium {
   /** True when the eye is within the galaxy's disc. */
@@ -193,7 +271,20 @@ export function galacticMedium(
   // Smooth, not linear: the outskirts stay clear and it thickens fast in
   // the inner third, which is how a spiral galaxy actually looks.
   const t = 1 - d / r;
-  const depth = t * t * (3 - 2 * t);
+  const smooth = t * t * (3 - 2 * t);
+
+  // Break the smooth radial falloff with a noise field sampled in world
+  // space. Without this the medium is a set of perfect concentric shells,
+  // which is what makes the fog look like a hard geometric boundary instead
+  // of cloud. Sampling in world space (not eye space) means the clouds stay
+  // put as you fly through them rather than swimming with the camera.
+  const scale = 3.2 / r;
+  const n = fbm3(eye.x * scale, eye.y * scale, eye.z * scale, 4);
+  // Map to a multiplier centred on 1: thin lanes and dense filaments, but
+  // never negative and never so thick it becomes a wall.
+  const clouds = Math.max(0.25, Math.min(1.9, 1 + n * 0.85));
+
+  const depth = Math.max(0, Math.min(1, smooth * clouds));
   return {
     inside: true,
     depth,

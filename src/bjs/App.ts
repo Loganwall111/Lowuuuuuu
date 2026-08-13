@@ -377,7 +377,18 @@ export class App {
     this.shell.progress(88, 'warming pipeline');
     await new Promise((r) => setTimeout(r, 120));
 
-    window.addEventListener('resize', () => this.engine.resize());
+    // A resize while the canvas is collapsed (a panel animating open, a
+    // hidden tab, a layout reflow) makes the backbuffer 0xN. Every aspect
+    // ratio computed from it is then 0/0 = NaN, which propagates into the
+    // raymarcher and blanks the frame. Skip those resizes entirely and let
+    // the next real one through - the canvas is not visible anyway.
+    window.addEventListener('resize', () => {
+      try {
+        const c = this.engine.getRenderingCanvas();
+        if (c && (c.clientWidth < 1 || c.clientHeight < 1)) return;
+        this.engine.resize();
+      } catch { /* engine already disposed */ }
+    });
 
     // ---- vehicle input. Ignored while typing into a field. ----
     const typing = (e: KeyboardEvent) => {
@@ -390,9 +401,17 @@ export class App {
       if (this.audio.start()) this.audio.resume();
       window.removeEventListener('pointerdown', armAudio);
       window.removeEventListener('keydown', armAudio);
+      const c2 = this.engine.getRenderingCanvas();
+      c2?.removeEventListener('click', armAudio);
+      c2?.removeEventListener('pointerdown', armAudio);
     };
     window.addEventListener('pointerdown', armAudio);
     window.addEventListener('keydown', armAudio);
+    // The canvas swallows pointer events for mouse-look, so listen there
+    // too - clicking into the sim is the most likely first gesture.
+    const audioCanvas = this.engine.getRenderingCanvas();
+    audioCanvas?.addEventListener('click', armAudio);
+    audioCanvas?.addEventListener('pointerdown', armAudio);
 
     window.addEventListener('keydown', (e) => {
       if (typing(e)) return;
@@ -886,9 +905,18 @@ export class App {
         {
           const bh = this.nearestHole();
           const eyeNow = this.vehicle.position;
+          // Star density comes from the same galactic-medium model that
+          // drives the fog, so the hiss and the visuals always agree.
+          let dens = 0;
+          const galA = this.universe.nearest(eyeNow, 'galaxy');
+          if (galA) {
+            const m = galacticMedium(eyeNow, galA.position, galA.radius);
+            if (m.inside) dens = Math.min(1, m.depth);
+          }
           this.audio.update({
             speed: this.vehicle.flySpeed * Math.abs(input.forward),
             warpCharge: this.warpDrive.charge,
+            starDensity: dens,
             singularityDistance: bh
               ? Vector3.Distance(eyeNow, bh.position)
               : Infinity

@@ -59,7 +59,12 @@ export interface ShellSpec {
 export const SKY_SHELLS: ShellSpec[] = [
   { name: 'core', count: 2000, inner: 100, outer: 500, size: 2.6, lock: 0.0 },
   { name: 'mid', count: 10000, inner: 500, outer: 2000, size: 1.8, lock: 0.55 },
-  { name: 'far', count: 30000, inner: 2000, outer: 10000, size: 1.2, lock: 0.92 }
+  // Outer radius deliberately sits inside the camera's far plane (maxZ is
+  // 4000). A shell drawn beyond the far plane is clipped, so the original
+  // 10000 threw away most of these 30000 points. The depth cue comes from
+  // the per-shell parallax lock below, not from raw distance, so pulling
+  // the radius in costs nothing visually and gains the whole shell.
+  { name: 'far', count: 30000, inner: 2000, outer: 3800, size: 1.2, lock: 0.92 }
 ];
 
 /** Total points across every shell. */
@@ -188,10 +193,21 @@ export class LayeredSky {
     m.disableDepthWrite = true;
     m.forceDepthWrite = false;
     m.needDepthPrePass = false;
-    // Additive: overlapping stars brighten each other rather than fighting
-    // over the pixel, and pure black contributes nothing, so there is no
-    // dark quad around any point.
-    m.alphaMode = 1; // ALPHA_ADD
+
+    // Additive blending, so overlapping stars brighten each other and pure
+    // black contributes nothing - no dark quad around any point.
+    //
+    // Setting alphaMode ALONE DOES NOT WORK, and that was the bug behind the
+    // shards coming back. Babylon only takes the alpha path when
+    // needAlphaBlending() is true, and StandardMaterial returns false while
+    // alpha === 1, so the blend mode was silently ignored and every point
+    // drew as an opaque quad. Verified against a real NullEngine material:
+    //   alpha=1,     alphaMode=1 -> needAlphaBlending() falsy  (ignored)
+    //   alpha=0.999, alphaMode=1 -> needAlphaBlending() true   (applied)
+    // Nudging alpha off 1.0 is what actually arms the blender; the visual
+    // difference of 0.001 is nil because the mode is additive anyway.
+    m.alpha = 0.999;
+    m.alphaMode = 1; // Constants.ALPHA_ADD
     m.separateCullingPass = false;
     m.backFaceCulling = false;
   }

@@ -48,6 +48,18 @@ export function safeDiv(a: number, b: number, fallback: number): number {
  * whereas NaN renders nothing at all. Failing visibly beats failing black.
  */
 export function safeAspect(width: number, height: number): number {
+  // A dimension that is not a sane positive number means the canvas is not
+  // really laid out yet (collapsed, hidden, mid-reflow). Clamping such a
+  // value to 1 would "work" but yields a nonsense ratio - 1920x0 would
+  // become 1920:1 and stretch the frame into unreadable streaks. Falling
+  // back to 16:9 renders a correct-looking frame instead, and the next
+  // resize with real numbers corrects it.
+  const okW = Number.isFinite(width) && width >= 1;
+  const okH = Number.isFinite(height) && height >= 1;
+  if (!okW || !okH) return 16 / 9;
+
+  // Both dimensions are sane, so the division cannot produce NaN or
+  // Infinity. safeDiv stays as a second line of defence.
   const a = safeDiv(width, height, 16 / 9);
   // Clamp absurd ratios too: a 1x2000 sliver is not worth rendering and
   // produces extreme ray divergence.
