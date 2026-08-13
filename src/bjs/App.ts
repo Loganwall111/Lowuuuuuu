@@ -20,6 +20,7 @@ import { DimensionWorld } from './worlds/DimensionWorld';
 import { PostFX } from './PostFX';
 import { MainMenu } from './ui/MainMenu';
 import { WarpSystem } from './systems/WarpSystem';
+import { PlanetSurfaceSystem } from './systems/PlanetSurfaceSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -66,6 +67,8 @@ export class App {
   grab = new GrabSystem();
   /** Last position outside any horizon, so we know which way is "back". */
   private lastOutsidePos = new Vector3(0, 0, -220);
+  /** Every planet's own terrain, water, weather and life. */
+  surfaces = new PlanetSurfaceSystem();
   /** Streaking starfield when the throttle is wound up. */
   private warp!: WarpSystem;
   /** Previous eye position, for measuring real travelled speed. */
@@ -110,7 +113,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats() },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats() },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -506,6 +509,16 @@ export class App {
           w.setInterior(0, new Vector3(0, 0, -1));
           this.lastOutsidePos.copyFrom(eye);
         }
+      }
+
+      // ---- the planet you are at simulates its own surface ----
+      // Water, weather and erosion belong to the world you are standing on,
+      // not to a global "water mode" somewhere else in the app.
+      const here = this.universe.current;
+      if (here && !this.paused) {
+        this.surfaces.setActive(here.id);
+        this.surfaces.acquire(here.id, here.seed ?? 1);
+        this.surfaces.step(here.id, dt);
       }
 
       // ---- speed, distance and the warp effect ----
