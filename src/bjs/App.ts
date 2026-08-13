@@ -29,6 +29,8 @@ import { LensFX } from './systems/LensFX';
 import { StationSystem } from './systems/StationSystem';
 import { CosmicScaleSystem } from './systems/CosmicScaleSystem';
 import { inspectFrame, showBlackScreenReport } from './RenderWatchdog';
+import { ElevatorSystem } from './systems/ElevatorSystem';
+import { PortalGunSystem } from './systems/PortalGunSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -98,6 +100,10 @@ export class App {
   private lookMoved = false;
   /** Title -> garage -> lessons -> portal -> ship. Replaces the main menu. */
   intro = new IntroSequence();
+  /** Planet-to-orbit tethers you can ride. */
+  elevators = new ElevatorSystem();
+  /** Two holes in the universe, and the walk between them. */
+  portalGun = new PortalGunSystem();
   /** Zoom out far enough and you leave the universe entirely. */
   cosmicScale = new CosmicScaleSystem();
   /** Procedural space stations you can dock with and walk inside. */
@@ -152,7 +158,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats() },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats() },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -788,6 +794,21 @@ export class App {
       const fwd = this.camera.getTarget().subtract(this.camera.position);
       this.warp.update(dt, this.shownSpeed, eye, fwd);
       this.stations?.update(dt);
+      this.elevators.update(dt);
+
+      // The portal gun works on the player like anything else: walk into
+      // one and you come out of the other, carrying your momentum.
+      if (this.portalGun.linked && this.vehicle.mode !== 'orbit') {
+        const trip = this.portalGun.tryTeleport({
+          position: this.vehicle.position,
+          velocity: this.vehicle.velocity,
+          radius: 1.2
+        }, dt);
+        if (trip) {
+          this.camera.position.copyFrom(this.vehicle.position);
+          this.shell.toast('Through the portal');
+        }
+      }
 
       // ---- opening sequence triggers ----
       // Progress comes from where you walk, not from clicking through
