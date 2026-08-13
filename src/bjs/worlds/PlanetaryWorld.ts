@@ -23,6 +23,10 @@ import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTextur
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { starfieldTexture, ringTexture } from '../Textures';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
+import {
+  CORONA_VERT, CORONA_FRAG, GLARE_VERT, GLARE_FRAG,
+  CORONA_UNIFORMS, GLARE_UNIFORMS, coronaFor
+} from '../shaders/SunShader';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 
 /* --------------------------- planet shader --------------------------- */
@@ -156,22 +160,71 @@ export class PlanetaryWorld implements World {
     this.starMat.setColor3('tintB', new Color3(1.0, 0.98, 0.86));
     this.star.material = this.starMat;
 
-    const corona = MeshBuilder.CreateSphere('corona', { diameter: 13.5, segments: 48 }, scene);
+    // ---- corona ----
+    // Previously this was the planetary atmosphere shader pointed at the
+    // star, which gives a smooth halo and reads as a plain ball. A real
+    // corona is turbulent: streamers, prominences, and a faint outer glow
+    // that extends for several radii.
+    const look = coronaFor('yellow');
+    const STAR_R = 4.5;
+    const SHELL_R = STAR_R * 5.4;
+
+    const corona = MeshBuilder.CreateSphere('corona',
+      { diameter: SHELL_R * 2, segments: 64 }, scene);
     const cm = new ShaderMaterial('coronaM', scene, {
-      vertexSource: ATMO_VERT, fragmentSource: ATMO_FRAG
+      vertexSource: CORONA_VERT, fragmentSource: CORONA_FRAG
     }, {
       attributes: ['position', 'normal'],
-      uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'atmoColor', 'power'],
+      uniforms: CORONA_UNIFORMS,
       needAlphaBlending: true
     });
-    cm.setColor3('atmoColor', new Color3(1.0, 0.62, 0.22));
-    cm.setFloat('power', 2.2);
-    cm.setVector3('sunPos', Vector3.Zero());
-    cm.alpha = 0.9;
+    cm.setVector3('camPos', Vector3.Zero());
+    cm.setVector3('starCenter', Vector3.Zero());
+    cm.setFloat('time', 0);
+    cm.setFloat('starRadius', STAR_R);
+    cm.setFloat('shellRadius', SHELL_R);
+    cm.setColor3('hotColor', new Color3(look.hot[0], look.hot[1], look.hot[2]));
+    cm.setColor3('midColor', new Color3(look.mid[0], look.mid[1], look.mid[2]));
+    cm.setColor3('coolColor', new Color3(look.cool[0], look.cool[1], look.cool[2]));
+    cm.setFloat('intensity', look.intensity);
+    cm.setFloat('turbulence', look.turbulence);
+    cm.setFloat('streamers', look.streamers);
+    cm.setFloat('prominence', look.prominence);
+    // Additive so the aura only ever adds light - it can never paint a
+    // black shell over the sky if a value goes out of range.
+    cm.alphaMode = 1;
     cm.backFaceCulling = false;
+    cm.disableDepthWrite = true;
     corona.material = cm;
     corona.isPickable = false;
+    corona.renderingGroupId = 0;
     (this as any)._coronaMat = cm;
+
+    // ---- glare ----
+    // A camera-facing disc in front of the star for the raw searing core
+    // and its diffraction spikes.
+    const glare = MeshBuilder.CreatePlane('sunGlare',
+      { size: SHELL_R * 4.2 }, scene);
+    const gm = new ShaderMaterial('glareM', scene, {
+      vertexSource: GLARE_VERT, fragmentSource: GLARE_FRAG
+    }, {
+      attributes: ['position', 'uv'],
+      uniforms: GLARE_UNIFORMS,
+      needAlphaBlending: true
+    });
+    gm.setFloat('time', 0);
+    gm.setColor3('glareColor',
+      new Color3(look.glare[0], look.glare[1], look.glare[2]));
+    gm.setFloat('intensity', look.intensity * 0.85);
+    gm.setFloat('spikes', 0.75);
+    gm.alphaMode = 1;
+    gm.backFaceCulling = false;
+    gm.disableDepthWrite = true;
+    glare.material = gm;
+    glare.isPickable = false;
+    glare.billboardMode = 7;   // always faces the camera
+    (this as any)._glareMat = gm;
+    (this as any)._glare = glare;
 
     this.light = new PointLight('sunLight', Vector3.Zero(), scene);
     this.light.intensity = 2.2;
@@ -284,8 +337,15 @@ export class PlanetaryWorld implements World {
     this.starMat.setVector3('camPos', cp);
     this.starMat.setFloat('time', this.t);
     this.star.rotation.y += dt * 0.02;
+    // The corona boils and its streamers drift outward, so it must be fed
+    // time as well as the camera.
     const cmat = (this as any)._coronaMat as ShaderMaterial;
-    if (cmat) cmat.setVector3('camPos', cp);
+    if (cmat) {
+      cmat.setVector3('camPos', cp);
+      cmat.setFloat('time', this.t);
+    }
+    const gmat = (this as any)._glareMat as ShaderMaterial;
+    if (gmat) gmat.setFloat('time', this.t);
 
     for (const b of this.bodies) {
       b.angle += dt * b.orbitSpeed * 0.12 * this.p.timeScale * this.p.orbitSpeed;

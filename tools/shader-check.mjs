@@ -25,8 +25,13 @@ const noise = extract('src/bjs/Noise.ts', ['GLSL_NOISE']).GLSL_NOISE;
 const gerstner = extract('src/bjs/worlds/OceanWorld.ts', ['GERSTNER_GLSL'])
   .GERSTNER_GLSL.replace('${GLSL_NOISE}', noise);
 
+// SunShader interpolates a local NOISE const into its corona source.
+const sunNoise = extract('src/bjs/shaders/SunShader.ts', ['NOISE']).NOISE ?? '';
+
 const resolve = (s) =>
-  s.replace('${GLSL_NOISE}', noise).replace('${GERSTNER_GLSL}', gerstner);
+  s.replace('${GLSL_NOISE}', noise)
+   .replace('${GERSTNER_GLSL}', gerstner)
+   .replace('${NOISE}', sunNoise);
 
 // [sourceFile, vertName, fragName, tsFilesThatBindTheUniforms]
 const PAIRS = [
@@ -35,7 +40,9 @@ const PAIRS = [
   ['src/bjs/shaders/PlanetShader.ts', 'PLANET_VERT', 'PLANET_FRAG',
    ['src/bjs/worlds/PlanetaryWorld.ts', 'src/bjs/worlds/SandboxWorld.ts', 'src/bjs/PlanetMaps.ts']],
   ['src/bjs/worlds/PlanetaryWorld.ts', 'ATMO_VERT', 'ATMO_FRAG', ['src/bjs/worlds/PlanetaryWorld.ts']],
-  ['src/bjs/shaders/PortalShader.ts', 'PORTAL_VERT', 'PORTAL_FRAG', ['src/bjs/systems/PortalSystem.ts']]
+  ['src/bjs/shaders/PortalShader.ts', 'PORTAL_VERT', 'PORTAL_FRAG', ['src/bjs/systems/PortalSystem.ts']],
+  ['src/bjs/shaders/SunShader.ts', 'CORONA_VERT', 'CORONA_FRAG', ['src/bjs/worlds/PlanetaryWorld.ts']],
+  ['src/bjs/shaders/SunShader.ts', 'GLARE_VERT', 'GLARE_FRAG', ['src/bjs/worlds/PlanetaryWorld.ts']]
 ];
 
 const uniformsOf = (s) =>
