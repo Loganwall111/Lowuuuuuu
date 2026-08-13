@@ -60,11 +60,15 @@ interface ShellHooks {
   onLoadGame: (id: string) => Promise<boolean> | boolean;
   listGames: () => { id: string; name: string; world: string; time: number }[];
   onDeleteGame: (id: string) => void;
+  onControlMode: (mode: string) => void;
+  onShip: (id: string) => void;
+  getVehicle: () => { mode: string; ship: string; stats: Record<string, string> };
 }
 
 export class Shell {
   wm: WindowManager;
   mode: Mode = 'simple';
+  controlMode = 'orbit';
   private hooks: ShellHooks;
   private world: World | null = null;
   private worldId = 'sandbox';
@@ -115,6 +119,7 @@ export class Shell {
       else if (k === '6') this.wm.Toggle('library');
       else if (k === '7') this.wm.Toggle('snapshots');
       else if (k === '8') this.wm.Toggle('view');
+      else if (k === '9') this.wm.Toggle('pilot');
       else if (k === 'f') this.toggleFocus();
       else if (k === 't') this.wm.TileEdges();
       else if (k === '3') this.wm.Toggle('telemetry');
@@ -211,6 +216,7 @@ export class Shell {
       <button class="iconbtn" id="btnRedo"    title="Redo (Ctrl+Shift+Z)">↷</button>
       <button class="iconbtn" id="w-snapshots" title="Snapshots (7)">📸</button>
       <button class="iconbtn" id="w-view" title="View &amp; Interface (8)">🖥</button>
+      <button class="iconbtn" id="w-pilot" title="Pilot &amp; Explore (9)">🚀</button>
       <button class="iconbtn" id="btnReset"   title="Reset layout & sim (R)">↺</button>
     `;
     document.body.appendChild(this.topbar);
@@ -229,7 +235,7 @@ export class Shell {
       b.onclick = () => this.setMode(b.dataset.m as Mode);
     });
 
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view'] as const).forEach((id) => {
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement | null;
       if (btn) btn.onclick = () => this.wm.Toggle(id);
     });
@@ -254,7 +260,7 @@ export class Shell {
   }
 
   private syncTopbar(): void {
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view'] as const).forEach((id) => {
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id);
       btn?.classList.toggle('on', this.wm.IsVisible(id));
     });
@@ -358,6 +364,12 @@ export class Shell {
       id: 'objects', title: 'Objects', glyph: '🧰',
       x: 1, y: 0.10, width: 330, height: 520,
       render: (b) => this.renderObjects(b)
+    });
+
+    this.wm.register({
+      id: 'pilot', title: 'Pilot & Explore', glyph: '🚀',
+      x: 0, y: 0.30, width: 300,
+      render: (b) => this.renderPilot(b)
     });
 
     this.wm.register({
@@ -625,6 +637,94 @@ export class Shell {
   /** Re-renders every open panel (after undo/redo changes world state). */
   refreshAll(): void {
     ['controls', 'telemetry', 'snapshots', 'objects'].forEach((id) => this.wm.refresh(id));
+  }
+
+  /** Reflects the active control mode in the UI. */
+  setControlMode(mode: string): void {
+    this.controlMode = mode;
+    this.wm.refresh('pilot');
+    const hint = mode === 'fly'
+      ? 'Flying — WASD thrust · Q/E roll · arrows steer · Shift boost · X brake'
+      : mode === 'walk'
+        ? 'Walking — WASD move · arrows look · Space jump · Shift run'
+        : 'Orbit camera — drag to look, scroll to zoom';
+    this.toast(hint);
+  }
+
+  /* ---- pilot & explore ---- */
+
+  private renderPilot(b: HTMLElement): void {
+    const v = this.hooks.getVehicle();
+
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.textContent = 'Fly a ship or land and walk around. Press Esc-free keys: WASD to move.';
+    b.appendChild(n);
+
+    // --- mode ---
+    const mg = document.createElement('div');
+    mg.className = 'grp';
+    mg.innerHTML = '<div class="grp-h">Control Mode</div>';
+    const mrow = document.createElement('div');
+    mrow.className = 'btnrow';
+    ([['orbit', '🎥 Orbit'], ['fly', '🚀 Fly'], ['walk', '🚶 Walk']] as const)
+      .forEach(([id, label]) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn' + (v.mode === id ? ' pri' : '');
+        btn.dataset.mode = id;
+        btn.textContent = label;
+        btn.onclick = () => { this.hooks.onControlMode(id); this.wm.refresh('pilot'); };
+        mrow.appendChild(btn);
+      });
+    mg.appendChild(mrow);
+    b.appendChild(mg);
+
+    // --- ship ---
+    const sg = document.createElement('div');
+    sg.className = 'grp';
+    sg.innerHTML = '<div class="grp-h">Craft</div>';
+    ([['shuttle', '🚀 Shuttle', 'Forgiving and stable'],
+      ['interceptor', '🛩 Interceptor', 'Very fast, little drag'],
+      ['hauler', '🛳 Hauler', 'Heavy, hard to destabilise'],
+      ['saucer', '🛸 Stolen Saucer', 'Absurd. Barely controllable']] as const)
+      .forEach(([id, label, note]) => {
+        const row = document.createElement('div');
+        row.className = 'stat';
+        row.innerHTML = '<span class="stat-k">' + label + '</span>';
+        row.title = note;
+        const pick = document.createElement('button');
+        pick.className = 'btn' + (v.ship === id ? ' pri' : '');
+        pick.dataset.ship = id;
+        pick.style.cssText = 'min-width:auto;padding:3px 10px;font-size:10.5px';
+        pick.textContent = v.ship === id ? 'Active' : 'Fly';
+        pick.onclick = () => {
+          this.hooks.onShip(id);
+          this.hooks.onControlMode('fly');
+          this.wm.refresh('pilot');
+        };
+        row.appendChild(pick);
+        sg.appendChild(row);
+      });
+    b.appendChild(sg);
+
+    // --- live telemetry ---
+    const tg = document.createElement('div');
+    tg.className = 'grp';
+    tg.innerHTML = '<div class="grp-h">Telemetry</div>';
+    Object.entries(v.stats).forEach(([k, val]) => {
+      const r = document.createElement('div');
+      r.className = 'stat';
+      r.innerHTML = '<span class="stat-k">' + k + '</span><span class="stat-v">' + val + '</span>';
+      tg.appendChild(r);
+    });
+    b.appendChild(tg);
+
+    const help = document.createElement('div');
+    help.className = 'note';
+    help.style.marginTop = '8px';
+    help.innerHTML = '<b>Fly:</b> WASD thrust · R/F up-down · Q/E roll · arrows steer · '
+      + 'Shift boost · X brake<br><b>Walk:</b> WASD move · arrows look · Space jump · Shift run';
+    b.appendChild(help);
   }
 
   /* ---- view & interface ---- */

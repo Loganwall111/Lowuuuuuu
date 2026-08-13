@@ -16,7 +16,11 @@ import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
 import { Effect } from '@babylonjs/core/Materials/effect';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { GLSL_NOISE } from '../Noise';
-import type { World, WorldContext, WorldParam } from '../World';
+import type { World, WorldContext, WorldParam, WorldAction } from '../World';
+import {
+  BLACK_HOLES, HOLE_ORDER, horizonRadius, iscoRadius, photonSphere,
+  deflectionScale, describeHole, type HoleKind
+} from '../systems/BlackHoleTypes';
 
 const FRAG = `
 precision highp float;
@@ -231,6 +235,9 @@ export class BlackHoleWorld implements World {
   private mat!: ShaderMaterial;
   private t = 0;
 
+  /** The currently selected variety; drives every derived quantity. */
+  private kind: HoleKind = 'schwarzschild';
+
   private p = {
     mass: 1.0,
     spin: 1.0,
@@ -313,13 +320,47 @@ export class BlackHoleWorld implements World {
     (this.p as any)[key] = value;
   }
 
+  getActions(): WorldAction[] {
+    return HOLE_ORDER.map((k) => ({
+      key: 'hole:' + k,
+      label: BLACK_HOLES[k].name,
+      glyph: BLACK_HOLES[k].glyph
+    }));
+  }
+
+  runAction(key: string, _ctx: WorldContext): void {
+    if (!key.startsWith('hole:')) return;
+    const k = key.slice(5) as HoleKind;
+    if (!BLACK_HOLES[k]) return;
+    this.applyHoleType(k);
+  }
+
+  /**
+   * Switching type rewrites the physics, not just the label: horizon, ISCO,
+   * photon sphere and deflection all come from the type's mass/spin/charge.
+   */
+  applyHoleType(k: HoleKind): void {
+    const t = BLACK_HOLES[k];
+    this.kind = k;
+    this.p.mass = horizonRadius(t);
+    this.p.spin = Math.min(t.spin, 1);
+    this.p.lens = deflectionScale(t);
+    this.p.diskBright = t.discBrightness;
+    this.p.diskInner = Math.max(1.2, iscoRadius(t) / Math.max(horizonRadius(t), 0.001));
+    this.p.diskOuter = this.p.diskInner * (4 + t.spin * 2);
+    this.p.doppler = 0.35 + t.spin * 1.4;
+  }
+
+  currentKind(): HoleKind {
+    return this.kind;
+  }
+
   getStats(): Record<string, string> {
-    const rs = this.p.mass;
+    const t = BLACK_HOLES[this.kind];
     return {
-      'Horizon rₛ': rs.toFixed(2),
-      'Photon ring': (rs * 1.5).toFixed(2),
-      'ISCO': (rs * 3).toFixed(2),
-      'Integrator': 'RK2 geodesic'
+      ...describeHole(t),
+      'Integrator': 'RK2 geodesic',
+      'Deflection': deflectionScale(t).toFixed(2) + '×'
     };
   }
 

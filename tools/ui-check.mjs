@@ -107,7 +107,9 @@ document.head.innerHTML = '';
 
 const { Shell, WORLDS } = await load('src/bjs/ui/Shell.ts', 'shell');
 const qstate = { current: 'high', scaling: 1.0, adaptive: false };
-const ev = { world: [], param: [], action: [], postfx: [], spawn: [], snaps: [], loaded: [], quality: [], adaptive: [], games: [], loadedGames: [], undo: 0, redo: 0, reset: 0, pause: [] };
+const vstate = { mode: 'orbit', ship: 'shuttle',
+  stats: { Mode: 'orbit', Speed: '0.0 u/s', Grounded: '-' } };
+const ev = { world: [], param: [], action: [], postfx: [], spawn: [], snaps: [], loaded: [], quality: [], adaptive: [], games: [], loadedGames: [], modes: [], ships: [], undo: 0, redo: 0, reset: 0, pause: [] };
 const shell = new Shell({
   onWorld: (id) => ev.world.push(id),
   onParam: (k, v) => ev.param.push([k, v]),
@@ -130,7 +132,10 @@ const shell = new Shell({
   onSaveGame: (name) => { const g = { id: 'g' + ev.games.length, name, world: 'sandbox', time: Date.now() }; ev.games.push(g); return g; },
   onLoadGame: (id) => { ev.loadedGames.push(id); return true; },
   listGames: () => ev.games,
-  onDeleteGame: (id) => { ev.games = ev.games.filter((g) => g.id !== id); }
+  onDeleteGame: (id) => { ev.games = ev.games.filter((g) => g.id !== id); },
+  onControlMode: (m) => { ev.modes.push(m); vstate.mode = m; },
+  onShip: (id) => { ev.ships.push(id); vstate.ship = id; },
+  getVehicle: () => vstate
 });
 
 const params = Array.from({ length: 9 }, (_, i) => ({
@@ -384,6 +389,34 @@ console.log('\n— EVERY window: no dead X anywhere —');
   }
   const stuck = ids.filter((id) => shell.wm.IsVisible(id));
   ok('repeated Escape closes everything (never trapped)', stuck.length === 0, stuck.join(', '));
+}
+
+console.log('\n— pilot: flying and walking —');
+{
+  shell.wm.Open('pilot');
+  ok('Pilot panel opens', shell.wm.IsVisible('pilot'));
+  ok('all three control modes are offered',
+     document.querySelectorAll('[data-mode]').length === 3);
+  ok('orbit is the default and is highlighted',
+     document.querySelector('[data-mode="orbit"]').className.includes('pri'));
+
+  click(document.querySelector('[data-mode="fly"]'));
+  ok('choosing Fly switches control mode', ev.modes.includes('fly'));
+  shell.wm.refresh('pilot');
+  ok('the active mode is highlighted after switching',
+     document.querySelector('[data-mode="fly"]').className.includes('pri'));
+
+  click(document.querySelector('[data-mode="walk"]'));
+  ok('choosing Walk switches control mode', ev.modes.includes('walk'));
+
+  ok('every craft is listed', document.querySelectorAll('[data-ship]').length === 4);
+  click(document.querySelector('[data-ship="saucer"]'));
+  ok('picking a craft selects it', ev.ships.includes('saucer'));
+  ok('picking a craft also puts you in flight mode',
+     ev.modes[ev.modes.length - 1] === 'fly');
+
+  shell.setControlMode('fly');
+  ok('setControlMode records the mode', shell.controlMode === 'fly');
 }
 
 console.log('\n— quality presets —');

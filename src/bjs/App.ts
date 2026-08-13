@@ -22,6 +22,9 @@ import { MainMenu } from './ui/MainMenu';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
+import {
+  VehicleController, SHIPS, inputFromKeys, emptyInput, type ControlMode
+} from './systems/VehicleSystem';
 
 const FACTORY: Record<string, () => World> = {
   planetary: () => new PlanetaryWorld(),
@@ -48,6 +51,8 @@ export class App {
   history = new HistorySystem<any>(40);
   saves = new SaveSystem();
   quality = new QualitySystem('high');
+  vehicle = new VehicleController();
+  private keys = new Set<string>();
 
   async init(): Promise<void> {
     const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
@@ -76,6 +81,13 @@ export class App {
         return true;
       },
       listGames: () => this.saves.list(),
+      onControlMode: (m) => this.setControlMode(m as ControlMode),
+      onShip: (id) => this.vehicle.setShip(id),
+      getVehicle: () => ({
+        mode: this.vehicle.mode,
+        ship: this.vehicle.ship.id,
+        stats: this.vehicle.stats()
+      }),
       onDeleteGame: (id) => this.saves.remove(id),
       onSpawn: (id, scale) => {
         this.history.push('spawn ' + id);
@@ -139,6 +151,20 @@ export class App {
 
     window.addEventListener('resize', () => this.engine.resize());
 
+    // ---- vehicle input. Ignored while typing into a field. ----
+    const typing = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    };
+    window.addEventListener('keydown', (e) => {
+      if (typing(e)) return;
+      this.keys.add(e.key.toLowerCase());
+      // Space would otherwise scroll the page while flying
+      if (e.key === ' ' && this.vehicle.mode !== 'orbit') e.preventDefault();
+    });
+    window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
+    window.addEventListener('blur', () => this.keys.clear());
+
     this.shell.progress(100, 'ready');
     setTimeout(() => this.shell.hideBoot(), 260);
     this.booted = true;
@@ -186,6 +212,33 @@ export class App {
     }
   }
 
+  /**
+   * Switches between orbiting, flying and walking. Detaching the arc camera
+   * is essential: otherwise its own input handlers fight the vehicle.
+   */
+  setControlMode(m: ControlMode): void {
+    this.vehicle.setMode(m);
+    const canvas = this.engine.getRenderingCanvas();
+    if (m === 'orbit') {
+      this.camera.attachControl(canvas as HTMLCanvasElement, true);
+    } else {
+      this.camera.detachControl();
+      // start the vehicle where the camera already is, so the view does not jump
+      this.vehicle.teleport(this.camera.position.clone());
+    }
+    this.shell.setControlMode?.(m);
+  }
+
+  /** Ground height probe for walk mode; delegates to the world if it has one. */
+  private groundProbe = (x: number, z: number) => {
+    const w = this.world as any;
+    if (typeof w?.sampleGround === 'function') {
+      const g = w.sampleGround(x, z);
+      if (g) return g;
+    }
+    return null;
+  };
+
   /** Applies a quality preset to the engine and the post-processing stack. */
   applyQuality(name: QualityName): void {
     const p = this.quality.set(name);
@@ -212,6 +265,13 @@ export class App {
 
       if (this.world && !this.paused && !this.switching) {
         this.world.update(dt, this.ctx);
+      }
+
+      // ---- player-controlled flight / walking ----
+      if (this.vehicle.mode !== 'orbit') {
+        this.vehicle.update(dt, inputFromKeys(this.keys), this.groundProbe);
+        this.camera.position.copyFrom(this.vehicle.position);
+        this.camera.setTarget(this.vehicle.lookTarget());
       }
       this.scene.render();
 
