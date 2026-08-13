@@ -17,6 +17,7 @@ import { Effect } from '@babylonjs/core/Materials/effect';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { GLSL_NOISE } from '../Noise';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
+import { rollAnomaly, ANOMALY_COVER, STANDARD_COVER } from '../systems/BlackHoleBody';
 import {
   LENS_PROFILES, LENS_ORDER, LENS_MODE_ID, LENS_FIELDS, cloneProfile,
   sanitizeProfile, randomAlienProfile, describeProfile,
@@ -40,6 +41,11 @@ uniform float time;
 uniform float rs;          // Schwarzschild radius
 uniform float spin;        // disk rotation speed
 uniform float diskInner;
+// How far the black horizon extends relative to the disk's inner edge.
+// 1.0+ masks the inner disc completely (standard). Below 1.0 pulls the
+// shadow back to the centre and exposes the Moire interference pattern
+// that the disk sampling produces there (the "fractured" anomaly).
+uniform float horizonCover;
 uniform float diskOuter;
 uniform float diskTilt;
 uniform float exposure;
@@ -213,7 +219,10 @@ void main(void){
 
       if (u <= 0.0) break;              // escaped to infinity
       float r = 1.0 / u;
-      if (r <= rs * (1.02 + lensSoftness)){ captured = true; break; }  // through the horizon
+      // The shadow radius is derived from rs and horizonCover only, so the
+      // black region and the disk maths share a single source of truth and
+      // cannot drift apart as the camera moves.
+      if (r <= rs * (1.02 + lensSoftness) * horizonCover){ captured = true; break; }
       if (r > 900.0) break;
 
       // position along the bent path
@@ -337,6 +346,14 @@ export class BlackHoleWorld implements World {
   lens: LensProfile = cloneProfile(LENS_PROFILES.schwarzschild);
 
   /** 0 outside the horizon, 1 deep inside. Drives the look-back view. */
+  /**
+   * Rare "fractured" horizons pull the shadow back to the dead centre and
+   * expose the geometric interference pattern around it. Rolled once per
+   * instance from a seed so a given hole never changes character.
+   */
+  isAnomaly = false;
+  /** Seed for the anomaly roll. Set before build() to pin the outcome. */
+  anomalySeed = 0x5f3a11;
   private inside = 0;
   private exitDirection = new Vector3(0, 0, -1);
 
@@ -353,6 +370,11 @@ export class BlackHoleWorld implements World {
   };
 
   async build(ctx: WorldContext): Promise<void> {
+    // Rolled from a per-instance seed rather than Math.random() so the hole
+    // is the same kind every time you come back to it - a rare find that
+    // reshuffled when you looked away would mean nothing.
+    this.isAnomaly = rollAnomaly(this.anomalySeed);
+
     const scene = ctx.scene;
     scene.clearColor = new Color4(0, 0, 0, 1);
 
@@ -366,7 +388,7 @@ export class BlackHoleWorld implements World {
         'lensMode', 'lensFalloff', 'ringAmt', 'ringRadius', 'lensSymmetry',
         'lensDistortion', 'lensTwist', 'lensChroma', 'lensTint', 'lensSoftness',
         'insideAmt', 'exitDir',
-        'diskInner', 'diskOuter', 'diskTilt', 'exposure', 'lensStrength',
+        'diskInner', 'diskOuter', 'diskTilt', 'exposure', 'lensStrength', 'horizonCover',
         'diskBright', 'dopplerAmt'
       ]
     });
@@ -413,6 +435,7 @@ export class BlackHoleWorld implements World {
     this.mat.setFloat('insideAmt', this.inside);
     this.mat.setVector3('exitDir', this.exitDirection);
     this.mat.setFloat('spin', this.p.spin);
+    this.mat.setFloat('horizonCover', this.isAnomaly ? ANOMALY_COVER : STANDARD_COVER);
     this.mat.setFloat('diskInner', this.p.diskInner * this.p.mass);
     this.mat.setFloat('diskOuter', this.p.diskOuter * this.p.mass);
     this.mat.setFloat('diskTilt', this.p.diskTilt);
@@ -465,6 +488,11 @@ export class BlackHoleWorld implements World {
         glyph: LENS_PROFILES[m].glyph
       })),
       { key: 'lens:random', label: 'Random Alien Lens', glyph: '🎲' },
+      // Anomalies are a ~7% find in the wild; this lets you look at one on
+      // purpose rather than only ever stumbling across it.
+      { key: 'anomaly:toggle',
+        label: this.isAnomaly ? 'Heal Horizon' : 'Fracture Horizon', glyph: '💠' },
+      { key: 'anomaly:reroll', label: 'Reroll Horizon', glyph: '🔀' },
       ...HOLE_ORDER.map((k) => ({
       key: 'hole:' + k,
       label: BLACK_HOLES[k].name,
@@ -474,6 +502,12 @@ export class BlackHoleWorld implements World {
   }
 
   runAction(key: string, _ctx: WorldContext): void {
+    if (key === 'anomaly:toggle') { this.isAnomaly = !this.isAnomaly; return; }
+    if (key === 'anomaly:reroll') {
+      this.anomalySeed = (this.anomalySeed * 1664525 + 1013904223) >>> 0;
+      this.isAnomaly = rollAnomaly(this.anomalySeed);
+      return;
+    }
     if (key.startsWith('lens:')) {
       const m = key.slice(5);
       this.lens = m === 'random'
@@ -514,6 +548,7 @@ export class BlackHoleWorld implements World {
       ...describeProfile(this.lens),
       'Integrator': 'RK2 geodesic',
       'Deflection': deflectionScale(t).toFixed(2) + '×',
+      'Horizon': this.isAnomaly ? 'Fractured — anomaly' : 'Standard',
       'Inside horizon': this.inside > 0
         ? Math.round(this.inside * 100) + '% — look back along your entry path'
         : 'no'

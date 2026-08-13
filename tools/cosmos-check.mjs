@@ -637,6 +637,162 @@ function Vector3Dist(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
+console.log('\n— the end of the universe —');
+{
+  const oEntry = join(dir, 'outer.js');
+  const oOut = join(dir, 'outer.mjs');
+  writeFileSync(oEntry, `
+export * from '/home/user/Low/src/bjs/systems/OuterVerses.ts';
+export * from '/home/user/Low/src/bjs/systems/VerseRenderer.ts';
+export * from '/home/user/Low/src/bjs/systems/BlackHoleBody.ts';
+`);
+  execFileSync('/home/user/Low/node_modules/.bin/esbuild',
+    [oEntry, '--bundle', '--format=esm', '--platform=browser',
+     '--outfile=' + oOut], { stdio: 'pipe' });
+  const O = await import(oOut);
+
+  // The coordinate, exactly as the user gave it.
+  const EXACT =
+    '9999999999999999999999999999999999999999999999999999999999999999999999' +
+    '9999999999999999999999999999999999999999999999999999999999999999999999' +
+    '9999999999999999999999999999999999999999999999999999999999999999999999' +
+    '9999999999999999999999999828282822282829999999999999999999999999999999' +
+    '9999999999992828288282822828822899999999999999999999999999999999999999' +
+    '9999999999999999999999999999999999999999999999999999272282292882';
+  ok('the final coordinate is stored exactly as given',
+    O.FINAL_COORDINATE === EXACT, O.FINAL_COORDINATE.length + ' digits');
+  ok('the final coordinate really is 414 digits', O.FINAL_DIGITS === 414);
+  // The reason depth exists at all.
+  ok('the coordinate genuinely overflows a float64',
+    !Number.isFinite(Number(O.FINAL_COORDINATE)));
+  ok('but its depth is a small integer', O.FINAL_DIGITS < 1000);
+
+  // Depth must be monotonic and never blow up anywhere on the scale.
+  ok('depth counts digits', O.depthOf(1) === 1 && O.depthOf(999) === 3 &&
+    O.depthOf(1000) === 4);
+  ok('depth at the origin is zero', O.depthOf(0) === 0);
+  ok('depth handles nonsense', O.depthOf(NaN) === 0 && O.depthOf(-5) === 1);
+  let mono = true, prev = -1;
+  for (let e = 0; e < 300; e += 3) {
+    const d = O.depthOf(Math.pow(10, e));
+    if (d < prev) mono = false;
+    prev = d;
+  }
+  ok('depth never decreases as you travel outward', mono);
+  let allResolve = true;
+  for (let d = 0; d <= O.FINAL_DIGITS; d++) {
+    const v = O.verseAt(d);
+    if (!v || !Number.isFinite(O.verseProgress(d))) allResolve = false;
+  }
+  ok('every depth from 0 to the end resolves without overflow', allResolve);
+
+  // Verse ordering.
+  ok('verses are ordered outward',
+    O.VERSES.every((v, i) => i === 0 || v.depth > O.VERSES[i - 1].depth));
+  ok('you start in the universe', O.verseAt(0).id === 'universe');
+  ok('the last verse sits at the final coordinate',
+    O.VERSES[O.VERSES.length - 1].depth === O.FINAL_DIGITS);
+  ok('the user\'s verses all exist',
+    ['metaverse', 'codeverse', 'squareverse', 'octagonverse', 'tripleverse',
+     'edge', 'mandelbrot', 'cubefield'].every(
+      (id) => O.VERSES.some((v) => v.id === id)));
+  ok('reaching the end is detected',
+    O.isAtFinalCoordinate(O.FINAL_DIGITS) && !O.isAtFinalCoordinate(1));
+  ok('strangeness increases outward',
+    O.VERSES.every((v, i) => i === 0 || v.strangeness >= O.VERSES[i - 1].strangeness));
+
+  // The Nothing: space must empty smoothly, not hit a wall.
+  ok('normal space is not empty', O.edgeStateAt(0).emptiness === 0);
+  ok('space is completely empty at the boundary',
+    O.edgeStateAt(1).emptiness > 0.99);
+  ok('you can look back at a wall of light',
+    O.edgeStateAt(0.98).wallBrightness > 0.5);
+  let smoothEmpty = true, last = -1;
+  for (let p2 = 0; p2 <= 1; p2 += 0.01) {
+    const e = O.edgeStateAt(p2).emptiness;
+    if (e < last - 1e-9) smoothEmpty = false;
+    last = e;
+  }
+  ok('space thins smoothly rather than hitting a wall', smoothEmpty);
+  ok('there are fewer objects as space empties',
+    O.edgeStateAt(0.99).densityScale < O.edgeStateAt(0.5).densityScale);
+
+  // Crossing must move you somewhere real.
+  const c = O.crossInto('universe');
+  ok('entering the nothing moves you to the next verse',
+    !!c && c.to.id === 'metaverse');
+  ok('you arrive somewhere representable',
+    !!c && Number.isFinite(c.arriveAt) && c.arriveAt > 0);
+  ok('every verse but the last can be crossed out of',
+    O.VERSES.slice(0, -1).every((v) => !!O.crossInto(v.id)));
+  ok('there is nothing past the final verse',
+    O.crossInto(O.VERSES[O.VERSES.length - 1].id) === null);
+
+  // The verses must actually look different from each other.
+  const shape = (id, n = 600) => {
+    const v = O.VERSES.find((x) => x.id === id);
+    const pts = O.versePoints(v, n, 1000, 7);
+    const xs = pts.map((p2) => p2.position.x);
+    const ys = pts.map((p2) => p2.position.y);
+    return {
+      n: pts.length,
+      spanY: Math.max(...ys) - Math.min(...ys),
+      spanX: Math.max(...xs) - Math.min(...xs),
+      lattice: new Set(xs.map((x) => x.toFixed(2))).size
+    };
+  };
+  const edge = shape('edge'), sq = shape('squareverse'), uni = shape('universe');
+  ok('the edge of reality really is a string',
+    edge.spanY / edge.spanX < 0.02,
+    'Y/X ratio ' + (edge.spanY / edge.spanX).toFixed(4));
+  ok('the geometric verses snap to a lattice',
+    sq.lattice < uni.lattice / 8,
+    sq.lattice + ' distinct vs ' + uni.lattice + ' in open space');
+  ok('ordinary space does not snap to a lattice', uni.lattice > 400);
+  ok('every verse generates something to look at',
+    O.VERSES.every((v) => O.versePoints(v, 400, 1000, 3).length > 0));
+
+  // Mandelbrot must be the real set, not a squiggle.
+  ok('the origin is inside the Mandelbrot set',
+    O.mandelbrotEscape(0, 0) === 0);
+  ok('-1+0i is inside the set', O.mandelbrotEscape(-1, 0) === 0);
+  ok('2+2i escapes immediately', O.mandelbrotEscape(2, 2) > 0);
+  ok('the set is symmetric about the real axis',
+    O.mandelbrotEscape(-0.5, 0.4) === O.mandelbrotEscape(-0.5, -0.4));
+
+  // ---- black hole horizon ----
+  ok('anomalies are rare but real', (() => {
+    let hits = 0;
+    const N = 20000;
+    for (let i = 0; i < N; i++) if (O.rollAnomaly(i)) hits++;
+    const pct = hits / N;
+    return pct > 0.04 && pct < 0.11;
+  })(), (() => {
+    let hits = 0;
+    for (let i = 0; i < 20000; i++) if (O.rollAnomaly(i)) hits++;
+    return (100 * hits / 20000).toFixed(2) + '%';
+  })());
+  ok('a given hole is always the same kind',
+    O.rollAnomaly(12345) === O.rollAnomaly(12345));
+  ok('a standard horizon masks the inner disc',
+    O.sphereRadiusFor(3.2, false) > 3.2);
+  ok('a fractured horizon exposes the pattern',
+    O.sphereRadiusFor(3.2, true) < 3.2);
+  ok('the anomaly shrinks toward the dead centre',
+    O.ANOMALY_COVER < 0.5 && O.STANDARD_COVER > 1);
+  ok('horizon radius always scales with the disk',
+    O.sphereRadiusFor(10, false) > O.sphereRadiusFor(5, false));
+
+  // The reported bug: sphere and disk must not be able to separate.
+  const body = new O.BlackHoleBody({
+    center: { x: 1, y: 2, z: 3, copyFrom() {}, clone() { return this; } },
+    diskInner: 3.2, isAnomaly: false
+  });
+  ok('a hole with no mesh is trivially locked', body.isLocked());
+  ok('the shader centre is the same object as the body centre',
+    body.shaderCenter() === body.center);
+}
+
 rmSync(dir, { recursive: true, force: true });
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

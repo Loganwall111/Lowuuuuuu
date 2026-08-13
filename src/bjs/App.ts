@@ -31,6 +31,11 @@ import { missingShaders } from './ShaderRegistry';
 import { WarpDrive, galacticMedium } from './systems/DeepSkySystem';
 import { Fleet, shipClass, shipView, type ViewMode } from './systems/FleetSystem';
 import { StarFieldRenderer } from './systems/StarFieldRenderer';
+import {
+  depthOf, verseAt, verseProgress, edgeStateAt, crossInto,
+  isAtFinalCoordinate, describeDepth, FINAL_COORDINATE, type VerseId
+} from './systems/OuterVerses';
+import { VerseRenderer } from './systems/VerseRenderer';
 import { FlightHUD } from './ui/FlightHUD';
 import { THROWABLES, computeImpact, throwableById } from './systems/ThrowableSystem';
 import { HistorySystem } from './systems/HistorySystem';
@@ -102,6 +107,12 @@ export class App {
   private insideGalaxy = false;
   /** The sky, drawn from real regions rather than painted on a sphere. */
   starField = new StarFieldRenderer();
+  /** Whichever verse you are currently standing in. */
+  verseRenderer = new VerseRenderer();
+  /** Which verse that is. Changes only by crossing through The Nothing. */
+  currentVerse: VerseId = 'universe';
+  private reachedFinal = false;
+  private crossing = false;
   /** The instrument panel you fly by. */
   flightHud = new FlightHUD();
 
@@ -443,6 +454,65 @@ export class App {
    * Each stage has exactly one trigger, so there is no ambiguity about
    * what advances what.
    */
+  /**
+   * The journey outward: thinning stars, The Nothing, and crossing into the
+   * verses beyond.
+   *
+   * Nothing here stops the player. Reaching the emptiness is not a wall -
+   * it is a door, and going into it moves you somewhere genuinely else.
+   */
+  private updateOuterJourney(eye: Vector3): void {
+    const depth = depthOf(eye.length());
+    const verse = verseAt(depth);
+    const progress = verseProgress(depth);
+    const edge = edgeStateAt(progress);
+
+    // Space empties as you approach a boundary, and the universe you left
+    // glows behind you. Both are driven by the same value, so the sky and
+    // the wall can never disagree about how far out you are.
+    if (edge.emptiness > 0) {
+      const w = edge.wallBrightness;
+      this.scene.clearColor = new Color4(
+        verse.tint[0] * 0.16 + w * 0.05,
+        verse.tint[1] * 0.16 + w * 0.06,
+        verse.tint[2] * 0.16 + w * 0.10,
+        1);
+    }
+
+    // Entering The Nothing carries you into the next verse.
+    if (edge.inNothing && !this.crossing) {
+      const cross = crossInto(this.currentVerse);
+      if (cross) {
+        this.crossing = true;
+        this.currentVerse = cross.to.id;
+        // Placed just inside the new verse, so there is somewhere to go.
+        const dir = eye.lengthSquared() > 1e-9
+          ? eye.normalize() : new Vector3(0, 0, 1);
+        this.vehicle.position.copyFrom(dir.scale(cross.arriveAt));
+        this.verseRenderer.show(cross.to, 2400, cross.to.depth + 1);
+        this.shell.toast(cross.message);
+        // Cleared once you are clear of the boundary, so one crossing does
+        // not immediately trigger the next.
+        window.setTimeout(() => { this.crossing = false; }, 1200);
+      }
+    }
+
+    // Draw whichever verse this is. Skips instantly when unchanged.
+    if (verse.id !== 'universe') {
+      this.verseRenderer.show(verse, 2400, verse.depth + 1);
+    } else if (this.verseRenderer.current) {
+      this.verseRenderer.clear();
+    }
+
+    // The very end.
+    if (!this.reachedFinal && isAtFinalCoordinate(depth)) {
+      this.reachedFinal = true;
+      this.shell.toast(
+        'You reached the final coordinate. There is nothing past this. ' +
+        FINAL_COORDINATE.slice(0, 24) + '…(' + FINAL_COORDINATE.length + ' digits)');
+    }
+  }
+
   private updateIntro(eye: Vector3): void {
     const st = this.intro.state;
 
@@ -570,6 +640,9 @@ export class App {
       // reset rather than left holding disposed meshes.
       this.fleet.dispose();
       this.fleet.attach(this.scene);
+
+      this.verseRenderer.dispose();
+      this.verseRenderer.attach(this.scene);
 
       this.starField.dispose();
       this.starField.attach(this.scene);
@@ -964,6 +1037,12 @@ export class App {
       // Fly far enough from the centre and you cross out of the universe
       // into the tier above it. Each tier recolours the void so the change
       // is something you see, not something you read in a panel.
+      // ---- the outward journey ----
+      // Distance is tracked as a depth in digits, because the far end of
+      // this scale is a 414-digit number that no float can hold. Depth is
+      // an integer 0-414, so the whole span stays representable.
+      this.updateOuterJourney(eye);
+
       const scaleState = this.cosmicScale.update(eye.length());
       if (scaleState.changed) {
         const t = scaleState.tier;
@@ -996,7 +1075,13 @@ export class App {
           throttle: Math.min(1, this.shownSpeed / Math.max(1, this.vehicle.flySpeed * 12)),
           warpCharge: w.charge,
           warpMultiplier: w.multiplier,
-          locale: near?.name ?? 'Deep space',
+          locale: (() => {
+            const d = depthOf(eye.length());
+            const v = verseAt(d);
+            return v.id === 'universe'
+              ? (near?.name ?? 'Deep space')
+              : v.name + ' · ' + describeDepth(d);
+          })(),
           localeDistance: near ? Vector3.Distance(eye, near.position) : 0,
           fleetSize: this.fleet.vessels.length,
           fleetGravity: fg.surfaceGravity
