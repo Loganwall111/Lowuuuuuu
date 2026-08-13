@@ -23,6 +23,7 @@ import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
 import { HydraulicSystem } from '../systems/HydraulicSystem';
 import { DisasterSystem, DISASTERS, DISASTER_ORDER, type DisasterKind } from '../systems/DisasterSystem';
 import { fbmCPU, ridgedCPU } from '../Noise';
+import { LifeSystem } from '../systems/LifeSystem';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 
 type Tool = 'raise' | 'lower' | 'smooth' | 'dig' | 'water' | 'drain';
@@ -37,6 +38,7 @@ export class TerraformWorld implements World {
 
   private ctx!: WorldContext;
   private hydro!: HydraulicSystem;
+  private life!: LifeSystem;
   private land!: Mesh;
   private sea!: Mesh;
   private landMat!: StandardMaterial;
@@ -59,7 +61,9 @@ export class TerraformWorld implements World {
     severity: 1.5,
     brushSize: 10,
     brushStrength: 1.0,
-    showWater: 1
+    showWater: 1,
+    life: 1,
+    lifeSpecies: 3
   };
 
   async build(ctx: WorldContext): Promise<void> {
@@ -84,7 +88,15 @@ export class TerraformWorld implements World {
 
     this.disasters = new DisasterSystem(this.hydro);
 
+    // Surface life. The landscape is a place once something lives on it.
+    this.life = new LifeSystem(
+      ctx.scene,
+      (x, z) => this.sampleGround(x, z),
+      SPAN * 0.45
+    );
+
     this.generateLandscape();
+    this.life.populate(Math.floor(this.seed * 100000), 3);
 
     // ---- meshes ----
     this.land = new Mesh('land', scene);
@@ -332,6 +344,11 @@ export class TerraformWorld implements World {
   update(dt: number, _ctx: WorldContext): void {
     this.t += dt;
 
+    // Creatures scatter when you walk up to them.
+    if (this.p.life > 0.5) {
+      this.life?.update(dt, _ctx.camera?.position ?? null);
+    }
+
     this.disasters.update(Math.min(dt, 0.05) * this.p.flowSpeed);
 
     // disasters can demand extra rain or evaporation on top of the sliders
@@ -367,13 +384,19 @@ export class TerraformWorld implements World {
       { key: 'severity', label: 'Disaster Severity', min: 0.2, max: 3, step: 0.1, value: this.p.severity, unit: '×' },
       { key: 'brushSize', label: 'Brush Size', min: 2, max: 30, step: 1, value: this.p.brushSize },
       { key: 'brushStrength', label: 'Brush Strength', min: 0.1, max: 3, step: 0.1, value: this.p.brushStrength },
-      { key: 'showWater', label: 'Show Water', min: 0, max: 1, step: 1, value: this.p.showWater }
+      { key: 'showWater', label: 'Show Water', min: 0, max: 1, step: 1, value: this.p.showWater },
+      { key: 'life', label: 'Surface Life', min: 0, max: 1, step: 1, value: this.p.life },
+      { key: 'lifeSpecies', label: 'Species Count', min: 1, max: 8, step: 1, value: this.p.lifeSpecies }
     ];
   }
 
   setParam(key: string, value: number): void {
     (this.p as Record<string, number>)[key] = value;
     if (key === 'seaLevel') this.hydro.setSeaLevel(value);
+    if (key === 'life') this.life?.setEnabled(value > 0.5);
+    if (key === 'lifeSpecies') {
+      this.life?.populate(Math.floor(this.seed * 100000), Math.round(value));
+    }
   }
 
   getActions(): WorldAction[] {
@@ -476,6 +499,7 @@ export class TerraformWorld implements World {
       'Active tool': this.tool,
       'Meteor impacts': String(this.meteors),
       'Active disasters': String(this.disasters?.count() ?? 0),
+      ...(this.life?.stats() ?? {}),
       'Disasters caused': String(this.disasters?.triggered ?? 0),
       'Hint': 'Shift+drag to paint'
     };
@@ -526,6 +550,7 @@ export class TerraformWorld implements World {
     this.pointerObs = null;
     this.land?.material?.dispose();
     this.sea?.material?.dispose();
+    this.life?.dispose();
     this.land?.dispose();
     this.sea?.dispose();
   }
