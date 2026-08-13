@@ -24,6 +24,7 @@ import { HydraulicSystem } from '../systems/HydraulicSystem';
 import { DisasterSystem, DISASTERS, DISASTER_ORDER, type DisasterKind } from '../systems/DisasterSystem';
 import { fbmCPU, ridgedCPU } from '../Noise';
 import { LifeSystem } from '../systems/LifeSystem';
+import { ConstructionSystem, STRUCTURE_ORDER, STRUCTURES } from '../systems/ConstructionSystem';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 
 type Tool = 'raise' | 'lower' | 'smooth' | 'dig' | 'water' | 'drain';
@@ -39,6 +40,7 @@ export class TerraformWorld implements World {
   private ctx!: WorldContext;
   private hydro!: HydraulicSystem;
   private life!: LifeSystem;
+  private construct!: ConstructionSystem;
   private land!: Mesh;
   private sea!: Mesh;
   private landMat!: StandardMaterial;
@@ -87,6 +89,10 @@ export class TerraformWorld implements World {
     });
 
     this.disasters = new DisasterSystem(this.hydro);
+
+    // Building and cutting operate on the same grid the water solver reads,
+    // so a wall dams a river and a laser trench floods on its own.
+    this.construct = new ConstructionSystem(this.hydro);
 
     // Surface life. The landscape is a place once something lives on it.
     this.life = new LifeSystem(
@@ -408,6 +414,15 @@ export class TerraformWorld implements World {
       { key: 'tool:water', label: 'Pour Water', glyph: '💧' },
       { key: 'tool:drain', label: 'Drain Water', glyph: '🌵' },
       { key: 'river', label: 'Start a River', glyph: '🏞' },
+      ...STRUCTURE_ORDER.map((k) => ({
+        key: 'build:' + k,
+        label: STRUCTURES[k].label,
+        glyph: STRUCTURES[k].glyph
+      })),
+      { key: 'build:undo', label: 'Undo Build', glyph: '↩' },
+      { key: 'build:clear', label: 'Remove Structures', glyph: '🧹' },
+      { key: 'laser:cut', label: 'Laser Trench', glyph: '🔫' },
+      { key: 'laser:bore', label: 'Bore Crater', glyph: '☄' },
       ...DISASTER_ORDER.map((k) => ({
         key: 'dis:' + k,
         label: DISASTERS[k].name,
@@ -425,8 +440,35 @@ export class TerraformWorld implements World {
       this.tool = key.slice(5) as Tool;
       return;
     }
+
     const n = GRID;
     const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+
+    // ---- building on the surface ----
+    if (key.startsWith('build:')) {
+      const what = key.slice(6);
+      if (what === 'undo') { this.construct.undo(); return; }
+      if (what === 'clear') { this.construct.removeAll(); return; }
+      // Place near the middle of the map so it is immediately visible.
+      this.construct.build(what as never, rnd(n * 0.3, n * 0.7), rnd(n * 0.3, n * 0.7),
+        0.8 + Math.random() * 0.8);
+      return;
+    }
+
+    // ---- cutting the surface open ----
+    if (key === 'laser:cut') {
+      // A trench straight across the map; the water finds it immediately.
+      const y = rnd(n * 0.2, n * 0.8);
+      this.construct.carveLine(2, y, n - 2, y + rnd(-12, 12),
+        2 + Math.random() * 3, 6 + Math.random() * 10);
+      return;
+    }
+    if (key === 'laser:bore') {
+      this.construct.carveAt(rnd(n * 0.2, n * 0.8), rnd(n * 0.2, n * 0.8),
+        5 + Math.random() * 9, 10 + Math.random() * 14);
+      this.meteors++;
+      return;
+    }
 
     if (key.startsWith('dis:')) {
       const kind = key.slice(4) as DisasterKind;
@@ -500,6 +542,7 @@ export class TerraformWorld implements World {
       'Meteor impacts': String(this.meteors),
       'Active disasters': String(this.disasters?.count() ?? 0),
       ...(this.life?.stats() ?? {}),
+      ...(this.construct?.stats() ?? {}),
       'Disasters caused': String(this.disasters?.triggered ?? 0),
       'Hint': 'Shift+drag to paint'
     };
@@ -550,6 +593,7 @@ export class TerraformWorld implements World {
     this.pointerObs = null;
     this.land?.material?.dispose();
     this.sea?.material?.dispose();
+    this.construct?.dispose();
     this.life?.dispose();
     this.land?.dispose();
     this.sea?.dispose();
