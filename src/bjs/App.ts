@@ -19,6 +19,8 @@ import { TerraformWorld } from './worlds/TerraformWorld';
 import { PostFX } from './PostFX';
 import { MainMenu } from './ui/MainMenu';
 import { HistorySystem } from './systems/HistorySystem';
+import { SaveSystem } from './systems/SaveSystem';
+import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
 
 const FACTORY: Record<string, () => World> = {
   planetary: () => new PlanetaryWorld(),
@@ -42,6 +44,8 @@ export class App {
   private menu: MainMenu | null = null;
   private postfx = new PostFX();
   history = new HistorySystem<any>(40);
+  saves = new SaveSystem();
+  quality = new QualitySystem('high');
 
   async init(): Promise<void> {
     const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
@@ -50,6 +54,27 @@ export class App {
       onWorld: (id) => this.loadWorld(id),
       onParam: (k, v) => this.world?.setParam(k, v),
       onPostFX: (k, v) => this.postfx.set(k, v),
+      onQuality: (name) => this.applyQuality(name as QualityName),
+      onAdaptive: (on) => { this.quality.adaptive = on; },
+      getQuality: () => ({
+        current: this.quality.current,
+        scaling: this.quality.scaling,
+        adaptive: this.quality.adaptive
+      }),
+      onSaveGame: (name) => {
+        const w = this.world as any;
+        if (!w?.captureState) return null;
+        return this.saves.save(name, w.id, w.captureState());
+      },
+      onLoadGame: async (id) => {
+        const entry = this.saves.load(id);
+        if (!entry) return false;
+        if (entry.world !== this.world?.id) await this.loadWorld(entry.world);
+        (this.world as any)?.restoreState?.(entry.data);
+        return true;
+      },
+      listGames: () => this.saves.list(),
+      onDeleteGame: (id) => this.saves.remove(id),
       onSpawn: (id, scale) => {
         this.history.push('spawn ' + id);
         (this.world as any)?.spawnObject?.(id, scale, this.ctx);
@@ -159,6 +184,23 @@ export class App {
     }
   }
 
+  /** Applies a quality preset to the engine and the post-processing stack. */
+  applyQuality(name: QualityName): void {
+    const p = this.quality.set(name);
+    try {
+      this.engine.setHardwareScalingLevel(p.scaling);
+    } catch (e) {
+      console.warn('hardware scaling rejected:', e);
+    }
+    // effects follow the preset; each set() is individually guarded in PostFX
+    this.postfx.set('bloom', p.bloom ? 0.55 : 0);
+    this.postfx.set('grain', p.grain ? 3.0 : 0);
+    this.postfx.set('chromatic', p.chromatic ? 2.0 : 0);
+    this.postfx.set('sharpen', p.sharpen ? 0.25 : 0);
+    this.postfx.set('fxaa', p.fxaa ? 1 : 0);
+    this.saves.setPrefs({ quality: name, adaptive: this.quality.adaptive });
+  }
+
   start(): void {
     let last = performance.now();
     this.engine.runRenderLoop(() => {
@@ -170,6 +212,19 @@ export class App {
         this.world.update(dt, this.ctx);
       }
       this.scene.render();
+
+      // adaptive resolution defends the framerate
+      const newScale = this.quality.sample(dt);
+      if (newScale !== null) {
+        try { this.engine.setHardwareScalingLevel(newScale); } catch { /* ignore */ }
+      }
+
+      // autosave so a crash or refresh never loses the session
+      this.saves.tick(dt, () => {
+        const w = this.world as any;
+        return w?.captureState ? { world: w.id, data: w.captureState() } : null;
+      });
+
       this.shell.tickHud(this.engine.getFps(), this.world?.name ?? '–');
     });
   }

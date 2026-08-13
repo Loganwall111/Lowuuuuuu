@@ -28,6 +28,14 @@ export const WORLDS: WorldEntry[] = [
   { id: 'blackhole', name: 'Singularity', glyph: '⚫', desc: 'Ray-marched geodesics and gravitational lensing', tags: ['black hole', 'lensing', 'relativity', 'gravity'] }
 ];
 
+export const QUALITY_PRESETS = [
+  { id: 'performance',  label: 'Performance',  glyph: '⚡', note: 'Highest framerate. Effects off.' },
+  { id: 'balanced',     label: 'Balanced',     glyph: '⚖', note: 'Good visuals at a steady framerate.' },
+  { id: 'high',         label: 'High',         glyph: '✨', note: 'Native resolution, full effect stack.' },
+  { id: 'cinematic',    label: 'Cinematic',    glyph: '🎬', note: 'Supersampled. For screenshots.' },
+  { id: 'experimental', label: 'Experimental', glyph: '🔬', note: 'Everything at maximum.' }
+];
+
 interface ShellHooks {
   onWorld: (id: string) => void;
   onParam: (key: string, value: number) => void;
@@ -44,6 +52,13 @@ interface ShellHooks {
   listSnapshots: () => { id: string; label: string; time: number }[];
   canUndo: () => boolean;
   canRedo: () => boolean;
+  onQuality: (name: string) => void;
+  onAdaptive: (on: boolean) => void;
+  getQuality: () => { current: string; scaling: number; adaptive: boolean };
+  onSaveGame: (name: string) => unknown;
+  onLoadGame: (id: string) => Promise<boolean> | boolean;
+  listGames: () => { id: string; name: string; world: string; time: number }[];
+  onDeleteGame: (id: string) => void;
 }
 
 export class Shell {
@@ -632,6 +647,52 @@ export class Shell {
       });
     }
     b.appendChild(sg);
+
+    // ---- persistent saves ----
+    const pg = document.createElement('div');
+    pg.className = 'grp';
+    pg.innerHTML = '<div class="grp-h">Saved to This Browser</div>';
+    const prow = document.createElement('div');
+    prow.className = 'btnrow';
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn';
+    saveBtn.id = 'btnSaveGame';
+    saveBtn.textContent = '💾 Save Universe';
+    saveBtn.onclick = () => {
+      this.hooks.onSaveGame('Universe ' + new Date().toLocaleString());
+      this.wm.refresh('snapshots');
+    };
+    prow.appendChild(saveBtn);
+    pg.appendChild(prow);
+
+    const games = this.hooks.listGames();
+    if (!games.length) {
+      const e = document.createElement('div');
+      e.className = 'note';
+      e.style.marginTop = '10px';
+      e.textContent = 'Nothing saved yet. Autosave runs every 20 seconds.';
+      pg.appendChild(e);
+    } else {
+      games.slice(0, 8).forEach((g) => {
+        const row = document.createElement('div');
+        row.className = 'stat';
+        row.innerHTML = '<span class="stat-k">' + g.name + '</span>';
+        const load = document.createElement('button');
+        load.className = 'btn';
+        load.style.cssText = 'min-width:auto;padding:3px 9px;font-size:10.5px';
+        load.textContent = 'Load';
+        load.onclick = () => { void this.hooks.onLoadGame(g.id); };
+        const del = document.createElement('button');
+        del.className = 'btn';
+        del.style.cssText = 'min-width:auto;padding:3px 9px;font-size:10.5px';
+        del.textContent = '✕';
+        del.title = 'Delete this save';
+        del.onclick = () => { this.hooks.onDeleteGame(g.id); this.wm.refresh('snapshots'); };
+        row.append(load, del);
+        pg.appendChild(row);
+      });
+    }
+    b.appendChild(pg);
   }
 
   /* ---- objects tray ---- */
@@ -736,6 +797,45 @@ export class Shell {
     n.textContent = 'Post-processing applies to every world. Lower these if the framerate drops.';
     b.appendChild(n);
 
+    // ---- quality presets ----
+    const q = this.hooks.getQuality();
+    const qg = document.createElement('div');
+    qg.className = 'grp';
+    qg.innerHTML = '<div class="grp-h">Quality Preset</div>';
+    const qrow = document.createElement('div');
+    qrow.className = 'btnrow';
+    QUALITY_PRESETS.forEach((p) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn' + (q.current === p.id ? ' pri' : '');
+      btn.dataset.quality = p.id;
+      btn.textContent = p.glyph + ' ' + p.label;
+      btn.title = p.note;
+      btn.onclick = () => { this.hooks.onQuality(p.id); this.wm.refresh('graphics'); };
+      qrow.appendChild(btn);
+    });
+    qg.appendChild(qrow);
+
+    const adaptRow = document.createElement('label');
+    adaptRow.className = 'stat';
+    adaptRow.style.cursor = 'pointer';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = q.adaptive;
+    cb.id = 'chkAdaptive';
+    cb.onchange = () => { this.hooks.onAdaptive(cb.checked); this.wm.refresh('graphics'); };
+    const lbl = document.createElement('span');
+    lbl.className = 'stat-k';
+    lbl.textContent = 'Adaptive resolution';
+    adaptRow.append(lbl, cb);
+    qg.appendChild(adaptRow);
+
+    const sc = document.createElement('div');
+    sc.className = 'stat';
+    sc.innerHTML = '<span class="stat-k">Render scale</span><span class="stat-v">'
+      + q.scaling.toFixed(2) + '×</span>';
+    qg.appendChild(sc);
+    b.appendChild(qg);
+
     const g = document.createElement('div');
     g.className = 'grp';
     g.innerHTML = '<div class="grp-h">Image</div>';
@@ -756,18 +856,19 @@ export class Shell {
 
     const pg = document.createElement('div');
     pg.className = 'grp';
-    pg.innerHTML = '<div class="grp-h">Looks</div>';
+    pg.innerHTML = '<div class="grp-h">Colour Grade</div>';
     const row = document.createElement('div');
     row.className = 'btnrow';
     const looks: [string, Partial<Record<string, number>>][] = [
       ['Clean', { bloom: 0.2, grain: 0, chromatic: 0, vignette: 0.15, contrast: 1.0 }],
-      ['Cinematic', { bloom: 0.75, grain: 4, chromatic: 3, vignette: 0.5, contrast: 1.12 }],
+      ['Filmic', { bloom: 0.75, grain: 4, chromatic: 3, vignette: 0.5, contrast: 1.12 }],
       ['Telescope', { bloom: 1.3, grain: 9, chromatic: 6, vignette: 0.8, contrast: 1.2 }],
       ['Flat', { bloom: 0, grain: 0, chromatic: 0, vignette: 0, contrast: 1.0, exposure: 1.0 }]
     ];
     looks.forEach(([label, vals]) => {
       const btn = document.createElement('button');
       btn.className = 'btn';
+      btn.dataset.look = label.toLowerCase();
       btn.textContent = label;
       btn.onclick = () => {
         Object.entries(vals).forEach(([k, v]) => {

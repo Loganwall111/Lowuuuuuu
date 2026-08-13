@@ -106,7 +106,8 @@ document.body.innerHTML = '<canvas id="renderCanvas"></canvas>';
 document.head.innerHTML = '';
 
 const { Shell, WORLDS } = await load('src/bjs/ui/Shell.ts', 'shell');
-const ev = { world: [], param: [], action: [], postfx: [], spawn: [], snaps: [], loaded: [], undo: 0, redo: 0, reset: 0, pause: [] };
+const qstate = { current: 'high', scaling: 1.0, adaptive: false };
+const ev = { world: [], param: [], action: [], postfx: [], spawn: [], snaps: [], loaded: [], quality: [], adaptive: [], games: [], loadedGames: [], undo: 0, redo: 0, reset: 0, pause: [] };
 const shell = new Shell({
   onWorld: (id) => ev.world.push(id),
   onParam: (k, v) => ev.param.push([k, v]),
@@ -122,7 +123,14 @@ const shell = new Shell({
   onLoadSnapshot: (id) => { ev.loaded.push(id); return true; },
   listSnapshots: () => ev.snaps,
   canUndo: () => ev.undo === 0 ? true : true,
-  canRedo: () => true
+  canRedo: () => true,
+  onQuality: (n) => { ev.quality.push(n); qstate.current = n; },
+  onAdaptive: (on) => { ev.adaptive.push(on); qstate.adaptive = on; },
+  getQuality: () => qstate,
+  onSaveGame: (name) => { const g = { id: 'g' + ev.games.length, name, world: 'sandbox', time: Date.now() }; ev.games.push(g); return g; },
+  onLoadGame: (id) => { ev.loadedGames.push(id); return true; },
+  listGames: () => ev.games,
+  onDeleteGame: (id) => { ev.games = ev.games.filter((g) => g.id !== id); }
 });
 
 const params = Array.from({ length: 9 }, (_, i) => ({
@@ -177,8 +185,7 @@ ok('graphics exposes sliders', gS.length > 0);
 gS[0].value = '1.4';
 gS[0].dispatchEvent(new dom.window.Event('input', { bubbles: true }));
 ok('graphics slider emits onPostFX', ev.postfx.length > 0, JSON.stringify(ev.postfx));
-const lookBtn = [...document.querySelectorAll('[data-wid="graphics"] .btn')]
-  .find((b) => b.textContent.includes('Cinematic'));
+const lookBtn = document.querySelector('[data-look="filmic"]');
 const beforeLook = ev.postfx.length;
 click(lookBtn);
 ok('a "look" applies several settings at once', ev.postfx.length > beforeLook + 2);
@@ -258,6 +265,38 @@ ok('load fires onLoadSnapshot', ev.loaded.length === 1);
 dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown',
   { key: 'z', ctrlKey: true, bubbles: true }));
 ok('Ctrl+Z triggers undo', ev.undo > 1);
+
+console.log('\n— quality presets —');
+shell.wm.Open('graphics');
+const qBtns = [...document.querySelectorAll('[data-quality]')];
+ok('all five quality presets are offered', qBtns.length === 5, `${qBtns.length}`);
+ok('the active preset is highlighted',
+   document.querySelector('[data-quality="' + qstate.current + '"]').className.includes('pri'),
+   qstate.current);
+click(document.querySelector('[data-quality="performance"]'));
+ok('clicking a preset applies it', ev.quality[0] === 'performance');
+shell.wm.refresh('graphics');
+ok('the highlight follows the selection',
+   document.querySelector('[data-quality="performance"]').className.includes('pri'));
+const adaptChk = document.getElementById('chkAdaptive');
+ok('adaptive resolution has a toggle', !!adaptChk);
+adaptChk.checked = true;
+adaptChk.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+ok('toggling adaptive fires the hook', ev.adaptive[0] === true);
+
+console.log('\n— persistent saves —');
+shell.wm.Open('snapshots');
+click(document.getElementById('btnSaveGame'));
+ok('save universe stores a game', ev.games.length === 1);
+shell.wm.refresh('snapshots');
+const gameLoad = [...document.querySelectorAll('[data-wid="snapshots"] .btn')]
+  .filter((x) => x.textContent === 'Load');
+ok('the saved universe is listed', gameLoad.length >= 1);
+const delBtn = [...document.querySelectorAll('[data-wid="snapshots"] .btn')]
+  .find((x) => x.textContent === '✕');
+ok('each save has a delete button', !!delBtn);
+click(delBtn);
+ok('delete removes the save', ev.games.length === 0);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
