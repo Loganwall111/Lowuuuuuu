@@ -18,7 +18,10 @@ import { SandboxWorld } from './worlds/SandboxWorld';
 import { TerraformWorld } from './worlds/TerraformWorld';
 import { DimensionWorld } from './worlds/DimensionWorld';
 import { PostFX } from './PostFX';
-import { MainMenu } from './ui/MainMenu';
+import { GarageWorld } from './worlds/GarageWorld';
+import { ShipWorld } from './worlds/ShipWorld';
+import { IntroSequence } from './systems/IntroSequence';
+import { IntroOverlay } from './ui/IntroOverlay';
 import { WarpSystem } from './systems/WarpSystem';
 import { PlanetSurfaceSystem } from './systems/PlanetSurfaceSystem';
 import { MouseLook } from './systems/MouseLook';
@@ -46,7 +49,10 @@ const FACTORY: Record<string, () => World> = {
   blackhole: () => new BlackHoleWorld(),
   sandbox: () => new SandboxWorld(),
   terraform: () => new TerraformWorld(),
-  dimension: () => new DimensionWorld()
+  dimension: () => new DimensionWorld(),
+  // The opening sequence. The ship is the main menu.
+  garage: () => new GarageWorld(),
+  ship: () => new ShipWorld()
 };
 
 export class App {
@@ -60,7 +66,7 @@ export class App {
   private currentId = 'planetary';
   private switching = false;
   booted = false;
-  private menu: MainMenu | null = null;
+  private introUI: IntroOverlay | null = null;
   private postfx = new PostFX();
   history = new HistorySystem<any>(40);
   saves = new SaveSystem();
@@ -71,6 +77,10 @@ export class App {
   grab = new GrabSystem();
   /** Last position outside any horizon, so we know which way is "back". */
   private lastOutsidePos = new Vector3(0, 0, -220);
+  /** Set once the player has moved the mouse, for the 'look' lesson. */
+  private lookMoved = false;
+  /** Title -> garage -> lessons -> portal -> ship. Replaces the main menu. */
+  intro = new IntroSequence();
   /** Zoom out far enough and you leave the universe entirely. */
   cosmicScale = new CosmicScaleSystem();
   /** Procedural space stations you can dock with and walk inside. */
@@ -271,7 +281,9 @@ export class App {
     };
 
     this.shell.progress(58, 'compiling shaders');
-    await this.loadWorld('planetary');
+    // Boot into the garage: the title card renders over it, so clicking
+    // Play puts you in a room that is already there.
+    await this.loadWorld('garage');
 
     // Start in free flight inside the one continuous universe, rather than
     // parked in an orbit camera waiting for a menu choice.
@@ -305,45 +317,150 @@ export class App {
     setTimeout(() => this.shell.hideBoot(), 260);
     this.booted = true;
 
-    // AAA front-end. The sim renders live behind it, so there is never a
-    // black screen, and picking an entry drops straight into the sandbox.
-    this.menu = new MainMenu((choice) => {
-      this.menu = null;
-      if (choice.world !== this.currentId) this.loadWorld(choice.world);
-
-      // The menu offers actions now, not worlds. Honour whichever was picked
-      // once the world has had a moment to build itself.
-      const after = (fn: () => void) => setTimeout(fn, 400);
-      switch (choice.action) {
-        case 'new':
-          // A genuinely different universe, not just a reloaded world.
-          after(() => {
-            const seed = this.universe.reseed();
-            this.shell.toast?.(`New universe - seed ${seed}`);
-            this.shell.refreshAll();
-          });
-          break;
-        case 'customize':
-          // Drop the player straight into the tweakables.
-          after(() => {
-            this.shell.wm.Open('presets');
-            this.shell.wm.Open('graphics');
-          });
-          break;
-        case 'settings':
-          after(() => this.shell.wm.Open('graphics'));
-          break;
-        default:
-          break;
-      }
-
-      if (choice.preset === 'chaos') {
-        after(() => this.world?.runAction?.('chaos', this.ctx));
-      } else if (choice.preset === 'weird') {
-        after(() => this.world?.runAction?.('weird', this.ctx));
-      }
-      this.shell.onMenuClosed();
+    // The main menu is gone. You get a title, then you are inside the
+    // world: an infinite white garage, people who teach you the rules, a
+    // portal, and a ship whose consoles are the menu. The sim renders live
+    // behind all of it, so there is never a black screen.
+    this.introUI = new IntroOverlay(this.intro, {
+      onPlay: () => {
+        this.intro.advance();            // title -> garage
+        this.startWalking();
+        this.shell.onMenuClosed();
+      },
+      onSkip: () => this.finishIntro(),
+      onAdvance: () => this.advanceIntro()
     });
+  }
+
+  /** Walk mode, standing on the floor, for the garage and the ship. */
+  private startWalking(): void {
+    this.setControlMode('walk');
+    this.vehicle.position.set(0, 1.7, 0);
+    this.vehicle.velocity.set(0, 0, 0);
+  }
+
+  /**
+   * One step forward in the opening. Each stage knows what it leads to, so
+   * this stays a single path rather than a web of special cases.
+   */
+  private advanceIntro(): void {
+    const st = this.intro.state;
+    switch (st.stage) {
+      case 'garage':
+        this.intro.advance();            // -> lesson
+        break;
+      case 'lesson':
+        this.intro.nextLesson();         // rolls into 'portal' on the last one
+        break;
+      case 'portal':
+        this.intro.advance();            // -> ship
+        this.loadWorld('ship').then(() => this.startWalking());
+        break;
+      case 'ship':
+        this.finishIntro();
+        break;
+      default:
+        break;
+    }
+  }
+
+  /** Ends the intro and drops the player into the universe proper. */
+  private finishIntro(): void {
+    this.intro.skip();
+    this.introUI?.dispose();
+    this.introUI = null;
+    if (this.currentId !== 'planetary') this.loadWorld('planetary');
+    setTimeout(() => this.setControlMode('freefly'), 300);
+    this.shell.onMenuClosed();
+    this.shell.toast('Welcome to the sandbox. There is no objective.');
+  }
+
+  /**
+   * Watches where the player is during the opening and moves it along.
+   * Each stage has exactly one trigger, so there is no ambiguity about
+   * what advances what.
+   */
+  private updateIntro(eye: Vector3): void {
+    const st = this.intro.state;
+
+    if (st.stage === 'garage') {
+      // Walking near the door starts the lessons.
+      if (eye.z > 14) {
+        this.intro.advance();
+        this.world?.runAction?.('door:open', this.ctx);
+      }
+      return;
+    }
+
+    if (st.stage === 'lesson') {
+      // Lessons that ask you to do something complete when you do it,
+      // rather than making everything a click-through.
+      const l = this.intro.currentLesson;
+      if (!l) return;
+      if (l.requires === 'move' && this.vehicle.velocity.length() > 1.2) {
+        this.intro.didAction('move');
+      } else if (l.requires === 'look' && this.lookMoved) {
+        this.intro.didAction('look');
+      } else if (l.requires === 'jump' && this.vehicle.velocity.y > 1.5) {
+        this.intro.didAction('jump');
+      }
+      return;
+    }
+
+    if (st.stage === 'portal') {
+      // Stepping into the ring takes you to the ship.
+      const w = this.world as unknown as { portalPosition?: () => Vector3 };
+      const pp = w.portalPosition?.() ?? new Vector3(0, 3, 18);
+      if (Vector3.Distance(eye, pp) < 3.2) this.advanceIntro();
+      return;
+    }
+
+    if (st.stage === 'ship') {
+      // The ship is the menu: standing at a console and pressing E uses it.
+      const w = this.world as unknown as
+        { activeStation?: () => { id: string } | null };
+      const at = w.activeStation?.();
+      if (at && this.keys.has('e')) {
+        this.keys.delete('e');
+        this.useStation(at.id);
+      }
+    }
+  }
+
+  /** Runs a ship console. The ship is the menu, so this is the menu handler. */
+  private useStation(id: string): void {
+    switch (id) {
+      case 'play':
+        this.finishIntro();
+        break;
+      case 'universe': {
+        const seed = this.universe.reseed();
+        this.finishIntro();
+        setTimeout(() => {
+          this.shell.toast(`New universe - seed ${seed}`);
+          this.shell.refreshAll();
+        }, 420);
+        break;
+      }
+      case 'graphics':
+        this.finishIntro();
+        setTimeout(() => this.shell.wm.Open('graphics'), 420);
+        break;
+      case 'presets':
+        this.finishIntro();
+        setTimeout(() => this.shell.wm.Open('presets'), 420);
+        break;
+      case 'library':
+        this.finishIntro();
+        setTimeout(() => this.shell.wm.Open('library'), 420);
+        break;
+      case 'load':
+        this.finishIntro();
+        setTimeout(() => this.shell.wm.Open('snapshots'), 420);
+        break;
+      default:
+        break;
+    }
   }
 
   private async loadWorld(id: string): Promise<void> {
@@ -510,6 +627,8 @@ export class App {
         // Arrow keys still work: whichever the player is using wins.
         if (Math.abs(look.yaw) > 1e-4) input.yaw = look.yaw;
         if (Math.abs(look.pitch) > 1e-4) input.pitch = look.pitch;
+        // The 'look around' lesson completes when you actually look around.
+        if (Math.abs(look.yaw) + Math.abs(look.pitch) > 0.02) this.lookMoved = true;
         this.vehicle.update(dt, input, this.groundProbe);
         this.camera.position.copyFrom(this.vehicle.position);
         this.camera.setTarget(this.vehicle.lookTarget());
@@ -592,6 +711,12 @@ export class App {
       const fwd = this.camera.getTarget().subtract(this.camera.position);
       this.warp.update(dt, this.shownSpeed, eye, fwd);
       this.stations?.update(dt);
+
+      // ---- opening sequence triggers ----
+      // Progress comes from where you walk, not from clicking through
+      // prompts: reach the door and the instructors start, reach the
+      // portal and you step through to the ship.
+      if (!this.intro.state.done) this.updateIntro(eye);
 
       // Fly far enough from the centre and you cross out of the universe
       // into the tier above it. Each tier recolours the void so the change

@@ -144,25 +144,34 @@ console.log('  message         :', document.getElementById('bootMsg')?.textConte
 ok('boot overlay is dismissed after init (not covering the app)',
    !boot || boot.classList.contains('gone'));
 
-// ---- main menu ----
-const menu = document.querySelector('.menu-root');
-console.log('\n=== main menu ===');
-console.log('  menu present    :', !!menu);
-ok('main menu is shown after boot', !!menu);
-if (menu) {
-  // The menu is an action list, not a world picker - worlds are somewhere
-  // you fly to, in-game.
-  const actions = menu.querySelectorAll('[data-action^="m"]');
-  ok(`menu offers actions (${actions.length})`, actions.length >= 5);
-  ok('menu has no world-card grid', menu.querySelectorAll('.menu-card').length === 0);
-  const primary = menu.querySelector('.menu-item.primary');
-  ok('menu has a primary call to action', !!primary);
-  // clicking must dismiss it and never leave a blocking layer
-  primary.dispatchEvent(
-    new dom.window.MouseEvent('click', { bubbles: true }));
+// ---- the opening sequence (there is no main menu any more) ----
+const intro = document.querySelector('.intro-root');
+console.log('\n=== opening sequence ===');
+console.log('  intro present   :', !!intro);
+ok('the opening is shown after boot', !!intro);
+ok('the old main menu is gone', !document.querySelector('.menu-root'));
+if (intro) {
+  const title = intro.querySelector('.intro-title');
+  ok('a title card is shown', !!title);
+  const play = intro.querySelector('.intro-play');
+  ok('there is a Play button', !!play);
+  ok('the intro can always be skipped', !!intro.querySelector('.intro-skip'));
+
+  // Clicking Play must put you in the world and stop blocking the sim.
+  play.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 900));
-  const still = document.querySelector('.menu-root');
-  ok('menu is removed after choosing (cannot block the sim)', !still);
+  const titleAfter = document.querySelector('.intro-title');
+  ok('Play dismisses the title card (cannot block the sim)',
+     !titleAfter || titleAfter.classList.contains('intro-hide'));
+
+  // Skipping must remove the overlay entirely, leaving nothing over the canvas.
+  if (appRef?.intro) {
+    appRef.intro.skip();
+    appRef.introUI?.dispose?.();
+    await new Promise((r) => setTimeout(r, 400));
+  }
+  ok('skipping removes the overlay completely',
+     !document.querySelector('.intro-root'));
 }
 
 // ---- nothing opaque is left covering the canvas ----
@@ -180,7 +189,8 @@ ok('no leftover element is covering the canvas', blockers.length === 0,
 // ---- every world must load without throwing and without blanking the UI ----
 console.log('\n=== world loading ===');
 if (appRef) {
-  const worlds = ['sandbox', 'planetary', 'ocean', 'terraform', 'blackhole', 'dimension'];
+  const worlds = ['sandbox', 'planetary', 'ocean', 'terraform', 'blackhole', 'dimension',
+                  'garage', 'ship'];
   for (const id of worlds) {
     let werr = null;
     try {

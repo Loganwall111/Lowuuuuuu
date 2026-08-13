@@ -106,7 +106,9 @@ document.body.innerHTML = '<canvas id="renderCanvas"></canvas>';
 document.head.innerHTML = '';
 
 const { Shell, WORLDS } = await load('src/bjs/ui/Shell.ts', 'shell');
-const { MainMenu } = await load('src/bjs/ui/MainMenu.ts', 'mainmenu');
+const { IntroOverlay } = await load('src/bjs/ui/IntroOverlay.ts', 'introui');
+const { IntroSequence, LESSONS, SHIP_STATIONS } =
+  await load('src/bjs/systems/IntroSequence.ts', 'introseq');
 const qstate = { current: 'high', scaling: 1.0, adaptive: false };
 const ustate = {
   stats: { Location: '🌌 Deep space', 'Black holes': '4', Holding: '—' },
@@ -429,59 +431,78 @@ console.log('\n— the art the look depends on is actually on disk —');
     const url = '/art/' + f.split('/').pop();
     ok('a planet kind actually uses ' + url, maps.includes(url));
   }
-  const menu = fs.readFileSync('src/bjs/ui/MainMenu.ts', 'utf8');
-  ok('the menu uses the cinematic hero plate', menu.includes('/art/menu-hero.jpg'));
+  // menu-hero.jpg is kept as the title-card plate now that the menu is gone.
+  ok('the hero plate is still shipped', fs.existsSync('public/art/menu-hero.jpg'));
 }
 
-console.log('\n— the main menu is an AAA front-end, not a world picker —');
+console.log('\n— there is no main menu; the opening is a place —');
 {
-  // The menu must offer ACTIONS, not one tile per world. World choice is a
-  // thing you do by flying, in-game.
-  const menu = new MainMenu(() => {});
-  const root = document.querySelector('.menu-root');
-  ok('the menu renders', !!root);
+  // The old menu is gone entirely. What replaces it is a title card and
+  // then a room you walk around in.
+  ok('the MainMenu module is gone', !fs.existsSync('src/bjs/ui/MainMenu.ts'));
 
-  ok('there is no grid of world tiles to pick between',
-     document.querySelectorAll('.menu-card').length === 0);
-  const actions = document.querySelectorAll('[data-action^="m"]');
-  ok(`the menu offers actions instead (${actions.length})`, actions.length >= 5);
+  const seq = new IntroSequence();
+  const overlay = new IntroOverlay(seq, {
+    onPlay: () => seq.advance(),
+    onSkip: () => seq.skip(),
+    onAdvance: () => seq.advance()
+  });
 
-  const labels = [...actions].map((a) => a.textContent.trim());
-  ok('Continue is offered', labels.some((l) => /CONTINUE/.test(l)));
-  ok('a new universe is offered', labels.some((l) => /NEW UNIVERSE/.test(l)));
-  ok('sandbox mode is offered', labels.some((l) => /SANDBOX/.test(l)));
-  ok('customization is offered', labels.some((l) => /CUSTOMIZATION/.test(l)));
-  ok('exactly one action is the primary call to action',
-     document.querySelectorAll('.menu-item.primary').length === 1);
+  ok('the intro renders', !!document.querySelector('.intro-root'));
+  ok('the title card is shown first', !!document.querySelector('.intro-title'));
+  const h1 = document.querySelector('.intro-title h1');
+  ok('the title is the project name',
+     !!h1 && /UNLIMITED[\s\S]*POSSIBILITIES[\s\S]*SANDBOX/.test(h1.textContent));
 
-  // AAA chrome from the concept
-  ok('there is a top navigation bar', !!document.querySelector('.menu-nav'));
-  ok('the nav has multiple sections',
-     document.querySelectorAll('.menu-navbtn').length >= 4);
-  ok('there is a commander/profile block', !!document.querySelector('.menu-user'));
-  ok('there is a news panel', !!document.querySelector('.menu-news'));
-  ok('there is a bottom status strip',
-     document.querySelectorAll('.menu-cell').length >= 3);
-  ok('the starfield canvas exists so it is never flat black',
-     !!document.querySelector('#menuStars'));
+  const playBtn = document.querySelector('.intro-play');
+  ok('there is a Play button', !!playBtn);
+  ok('Play is the only call to action',
+     document.querySelectorAll('.intro-play').length === 1);
 
-  // the news panel must be closable - no dead X anywhere, menu included
-  const newsX = document.getElementById('mNewsX');
-  ok('the news panel has a close button', !!newsX);
-  click(newsX);
-  ok('the news X actually closes it',
-     document.querySelector('.menu-news').style.display === 'none');
+  // No grid of world tiles, no nav bar - the menu genuinely went away.
+  ok('there is no world picker', document.querySelectorAll('.menu-card').length === 0);
+  ok('there is no menu nav bar', !document.querySelector('.menu-nav'));
 
-  // picking must report the choice. Destroy the first menu before creating
-  // a second, or duplicate ids make getElementById find the wrong button.
-  menu.destroy();
-  let picked = null;
-  const m2 = new MainMenu((c) => { picked = c; });
-  click(document.getElementById('mSandbox'));
-  ok('choosing an action reports it', !!picked && picked.world === 'sandbox');
-  ok('the action name is passed through', picked.action === 'sandbox');
-  m2.destroy();
-  ok('the menu can be destroyed', !document.querySelector('.menu-root'));
+  // Being trapped in a tutorial is unforgivable: skip must always be there.
+  ok('the intro can always be skipped', !!document.querySelector('.intro-skip'));
+
+  click(playBtn);
+  ok('Play leaves the title behind', seq.state.stage === 'garage');
+  overlay.render();
+  ok('the title card hides once you are in',
+     document.querySelector('.intro-title').classList.contains('intro-hide'));
+  ok('there is a prompt telling you where to go',
+     !document.querySelector('.intro-prompt').classList.contains('intro-hide'));
+
+  overlay.dispose();
+  ok('the intro can be taken down', !document.querySelector('.intro-root'));
+}
+
+console.log('\n— the ship is the menu —');
+{
+  // Everything the menu used to list is now an object you walk up to.
+  ok('the ship has consoles to walk to', SHIP_STATIONS.length >= 5);
+  ok('launching is one of them', SHIP_STATIONS.some((s) => s.id === 'play'));
+  ok('a new universe is one of them',
+     SHIP_STATIONS.some((s) => s.id === 'universe'));
+  ok('graphics settings are one of them',
+     SHIP_STATIONS.some((s) => s.id === 'graphics'));
+  ok('continuing is one of them', SHIP_STATIONS.some((s) => s.id === 'load'));
+
+  ok('every console has a position in the room',
+     SHIP_STATIONS.every((s) => Array.isArray(s.position) && s.position.length === 3));
+  ok('every console explains itself',
+     SHIP_STATIONS.every((s) => !!s.hint && !!s.label));
+
+  // They must be spread around, or you would trigger two at once.
+  let tooClose = 0;
+  for (let i = 0; i < SHIP_STATIONS.length; i++) {
+    for (let j = i + 1; j < SHIP_STATIONS.length; j++) {
+      const a = SHIP_STATIONS[i].position, b = SHIP_STATIONS[j].position;
+      if (Math.hypot(a[0] - b[0], a[2] - b[2]) < 3.5) tooClose++;
+    }
+  }
+  ok('consoles are far enough apart to use individually', tooClose === 0);
 }
 
 console.log('\n— the centre of the screen must stay clear —');
