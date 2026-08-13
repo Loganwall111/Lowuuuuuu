@@ -204,6 +204,56 @@ try {
   hudChecks.push(['the graphics panel opens: ' + e.message, false]);
 }
 
+// ---- launching a fleet, for real ----
+const fleetChecks = [];
+try {
+  appRef?.shell?.wm?.Toggle?.('pilot');
+  await new Promise((r) => setTimeout(r, 60));
+  const btn = document.querySelector('button[data-fleet="worldship"]');
+  fleetChecks.push(['the pilot panel offers a fleet launch', !!btn]);
+  const views = document.querySelectorAll('button[data-shipview]');
+  fleetChecks.push(['both ship viewpoints are offered', views.length >= 2]);
+
+  if (btn) {
+    const before = appRef.fleet.vessels.length;
+    btn.onclick();
+    const after = appRef.fleet.vessels.length;
+    fleetChecks.push(['clicking launch actually launches ships', after > before]);
+    fleetChecks.push(['launched ships have bodies in the scene',
+      appRef.fleet.vessels.every((v) => !!v.mesh)]);
+    // The whole point: enough mass in one place makes gravity.
+    const g = appRef.fleet.gravity();
+    fleetChecks.push(['a world ship fleet generates its own gravity',
+      g.significant, g.surfaceGravity.toExponential(2) + ' m/s^2']);
+    fleetChecks.push(['fleet mass is the sum of its vessels',
+      Math.abs(g.mass - appRef.fleet.totalMass()) < 1]);
+
+    // Ships must actually move toward their slots when the fleet updates.
+    const v0 = appRef.fleet.vessels[0];
+    const p0 = v0.position.clone();
+    appRef.fleet.moveTo(p0.add(new (p0.constructor)(9000, 0, 0)));
+    for (let i = 0; i < 60; i++) appRef.fleet.update(0.05);
+    fleetChecks.push(['a fleet ordered somewhere actually flies there',
+      v0.position.x > p0.x]);
+    fleetChecks.push(['ship meshes follow their vessels',
+      Math.abs(v0.mesh.position.x - v0.position.x) < 0.001]);
+
+    // Switching worlds must not leave disposed meshes behind.
+    const meshesBefore = appRef.scene.meshes.length;
+    await appRef.loadWorld?.('planetary');
+    await new Promise((r) => setTimeout(r, 250));
+    fleetChecks.push(['changing world clears the fleet rather than leaking it',
+      appRef.fleet.vessels.length === 0]);
+    fleetChecks.push(['no disposed meshes survive the world change',
+      appRef.scene.meshes.every((m) => !m.isDisposed()),
+      'meshes ' + meshesBefore + ' -> ' + appRef.scene.meshes.length]);
+  }
+} catch (e) {
+  fleetChecks.push(['launching a fleet survives a live frame: ' + e.message, false]);
+}
+console.log('\n=== fleets ===');
+for (const [name, cond, detail] of fleetChecks) ok(name, cond, detail);
+
 console.log('\n=== flight HUD ===');
 for (const [name, cond] of hudChecks) ok(name, cond);
 

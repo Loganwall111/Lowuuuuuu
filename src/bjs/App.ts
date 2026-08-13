@@ -131,6 +131,35 @@ export class App {
 
     this.shell = new Shell({
       onWorld: (id) => this.loadWorld(id),
+      onLaunchFleet: (cls, count) => {
+        const c = shipClass(cls);
+        if (!c) return;
+        // Launched ahead of you, so you watch them arrive rather than
+        // finding them already parked.
+        const ahead = this.camera.getTarget().subtract(this.camera.position);
+        const at = this.vehicle.position.add(
+          (ahead.lengthSquared() > 1e-9 ? ahead.normalize() : new Vector3(0, 0, 1))
+            .scale(140));
+        this.fleet.launch(c, count, at);
+        const g = this.fleet.gravity();
+        this.shell.toast(
+          count + ' × ' + c.name + ' launched' +
+          (g.significant
+            ? ' — the formation is generating ' + g.surfaceGravity.toFixed(2) + ' m/s²'
+            : ''));
+      },
+      onClearFleet: () => { this.fleet.clear(); this.shell.toast('Fleet recalled'); },
+      onShipView: (m) => { this.shipViewMode = m as ViewMode; },
+      getFleet: () => {
+        const g = this.fleet.gravity();
+        return {
+          size: this.fleet.vessels.length,
+          mass: g.mass,
+          gravity: g.surfaceGravity,
+          bound: g.selfBinding,
+          view: this.shipViewMode
+        };
+      },
       onHudElement: (name, on) => this.flightHud.setElement(name as any, on),
       getHudElements: () => ({ ...this.flightHud.elements }),
       onParam: (k, v) => this.world?.setParam(k, v),
@@ -537,6 +566,11 @@ export class App {
       // The purge above disposes every mesh, including the sky, so the star
       // field is re-attached and rebuilt rather than left pointing at a
       // disposed mesh.
+      // Same for the fleet: the purge above disposed its hulls, so it is
+      // reset rather than left holding disposed meshes.
+      this.fleet.dispose();
+      this.fleet.attach(this.scene);
+
       this.starField.dispose();
       this.starField.attach(this.scene);
       this.starField.rebuild(

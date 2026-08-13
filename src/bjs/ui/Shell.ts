@@ -96,6 +96,14 @@ interface ShellHooks {
   onRandomLens: () => void;
   onShip: (id: string) => void;
   getVehicle: () => { mode: string; ship: string; stats: Record<string, string> };
+  /** Launches a fleet of a ship class. */
+  onLaunchFleet?: (cls: string, count: number) => void;
+  /** Disbands everything launched. */
+  onClearFleet?: () => void;
+  /** Switches between cockpit, chase and standoff views. */
+  onShipView?: (mode: string) => void;
+  /** Current fleet state, for the readout. */
+  getFleet?: () => { size: number; mass: number; gravity: number; bound: boolean; view: string };
   /** Turns one HUD group on or off. */
   onHudElement?: (name: string, on: boolean) => void;
   /** Current HUD group states, for rendering the toggles. */
@@ -997,6 +1005,95 @@ export class Shell {
         sg.appendChild(row);
       });
     b.appendChild(sg);
+
+    // --- viewpoint ---
+    // Both views are built from the ship's own basis, so switching cannot
+    // make the ship appear to jump or change heading.
+    if (this.hooks.onShipView && this.hooks.getFleet) {
+      const f = this.hooks.getFleet();
+      const vg = document.createElement('div');
+      vg.className = 'grp';
+      vg.innerHTML = '<div class="grp-h">Viewpoint</div>';
+      const vrow = document.createElement('div');
+      vrow.className = 'btnrow';
+      ([['cockpit', '🪟 In the seat'], ['chase', '🎥 Chase'],
+        ['orbit-ship', '🛰 Stand off']] as const)
+        .forEach(([id, label]) => {
+          const btn = document.createElement('button');
+          btn.className = 'btn' + (f.view === id ? ' pri' : '');
+          btn.dataset.shipview = id;
+          btn.textContent = label;
+          btn.onclick = () => { this.hooks.onShipView?.(id); this.wm.refresh('pilot'); };
+          vrow.appendChild(btn);
+        });
+      vg.appendChild(vrow);
+      b.appendChild(vg);
+    }
+
+    // --- fleet ---
+    // Ships have mass, so a large enough fleet in a tight enough formation
+    // is a gravitational source. The readout says whether yours is.
+    if (this.hooks.onLaunchFleet && this.hooks.getFleet) {
+      const f = this.hooks.getFleet();
+      const fg = document.createElement('div');
+      fg.className = 'grp';
+      fg.innerHTML = '<div class="grp-h">Fleet</div>';
+
+      const note = document.createElement('div');
+      note.className = 'note';
+      note.textContent = 'Every vessel carries real mass. Launch enough of '
+        + 'something heavy and the formation makes its own gravity.';
+      fg.appendChild(note);
+
+      ([['scout', '🛩 Scouts', 12], ['fighter', '✈ Fighters', 24],
+        ['frigate', '🚀 Frigates', 8], ['cruiser', '🛸 Cruisers', 4],
+        ['dreadnought', '🛰 Dreadnoughts', 2],
+        ['worldship', '🏛 World Ship', 1]] as const)
+        .forEach(([id, label, n2]) => {
+          const row = document.createElement('div');
+          row.className = 'stat';
+          row.innerHTML = '<span class="stat-k">' + label + '</span>';
+          const go = document.createElement('button');
+          go.className = 'btn';
+          go.dataset.fleet = id;
+          go.style.cssText = 'min-width:auto;padding:3px 10px;font-size:10.5px';
+          go.textContent = 'Launch ' + n2;
+          go.onclick = () => {
+            this.hooks.onLaunchFleet?.(id, n2);
+            this.wm.refresh('pilot');
+          };
+          row.appendChild(go);
+          fg.appendChild(row);
+        });
+
+      const st = document.createElement('div');
+      st.className = 'stat';
+      st.innerHTML = '<span class="stat-k">In formation</span>'
+        + '<span class="stat-v" data-fleet-size>' + f.size + '</span>';
+      fg.appendChild(st);
+      const gr = document.createElement('div');
+      gr.className = 'stat';
+      gr.innerHTML = '<span class="stat-k">Own gravity</span>'
+        + '<span class="stat-v" data-fleet-gravity>'
+        + (f.gravity > 0.01 ? f.gravity.toFixed(2) + ' m/s²' : 'negligible')
+        + '</span>';
+      fg.appendChild(gr);
+      if (f.bound) {
+        const w = document.createElement('div');
+        w.className = 'note';
+        w.textContent = 'This formation is gravitationally bound - the ships '
+          + 'cannot leave under their own power.';
+        fg.appendChild(w);
+      }
+
+      const clr = document.createElement('button');
+      clr.className = 'btn';
+      clr.id = 'btnClearFleet';
+      clr.textContent = 'Recall all';
+      clr.onclick = () => { this.hooks.onClearFleet?.(); this.wm.refresh('pilot'); };
+      fg.appendChild(clr);
+      b.appendChild(fg);
+    }
 
     // --- live telemetry ---
     const tg = document.createElement('div');

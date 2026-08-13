@@ -19,6 +19,11 @@
  */
 
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { Color3 } from '@babylonjs/core/Maths/math.color';
+import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
+import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
+import type { Mesh } from '@babylonjs/core/Meshes/mesh';
+import type { Scene } from '@babylonjs/core/scene';
 
 /** One class of vessel. */
 export interface ShipClass {
@@ -174,6 +179,8 @@ export interface Vessel {
   velocity: Vector3;
   /** Slot in the formation, relative to the fleet centre. */
   slot: Vector3;
+  /** Its body in the scene, if the fleet has been given one. */
+  mesh?: Mesh;
 }
 
 export interface FleetOptions {
@@ -198,9 +205,40 @@ export class Fleet {
   destination: Vector3 | null = null;
   opts: FleetOptions;
   private counter = 0;
+  private scene: Scene | null = null;
+  /** One material per class, shared by every ship of that class. */
+  private mats = new Map<string, StandardMaterial>();
 
   constructor(opts: Partial<FleetOptions> = {}) {
     this.opts = { ...DEFAULT_FLEET, ...opts };
+  }
+
+  /**
+   * Gives the fleet a scene to appear in. Without one it still simulates -
+   * which is what makes the physics testable headlessly - but draws nothing.
+   */
+  attach(scene: Scene): void {
+    this.scene = scene;
+    this.mats.clear();
+  }
+
+  /** Screen size for a class, compressed so a world ship is not a wall. */
+  static visualSize(lengthMetres: number): number {
+    return Math.max(0.6, Math.min(60, Math.cbrt(lengthMetres) * 1.6));
+  }
+
+  private materialFor(cls: ShipClass): StandardMaterial | null {
+    if (!this.scene) return null;
+    const found = this.mats.get(cls.id);
+    if (found) return found;
+    const m = new StandardMaterial('fleet-' + cls.id, this.scene);
+    // Bigger ships read colder and dimmer; the little ones glow hot.
+    const t = Math.min(1, Math.log10(cls.mass) / 18);
+    m.diffuseColor = new Color3(0.55 - t * 0.25, 0.62 - t * 0.2, 0.78);
+    m.emissiveColor = new Color3(0.16 + (1 - t) * 0.5, 0.35, 0.75);
+    m.specularColor = new Color3(0.4, 0.45, 0.5);
+    this.mats.set(cls.id, m);
+    return m;
   }
 
   /** Launches `count` ships of a class, centred on `at`. */
@@ -228,6 +266,20 @@ export class Fleet {
         velocity: Vector3.Zero(),
         slot
       };
+      if (this.scene) {
+        const size = Fleet.visualSize(cls.length);
+        // A stretched box reads as a hull at any distance and costs almost
+        // nothing next to a modelled ship.
+        const mesh = MeshBuilder.CreateBox(
+          'ship-' + v.id,
+          { width: size * 0.34, height: size * 0.22, depth: size },
+          this.scene);
+        mesh.position.copyFrom(v.position);
+        mesh.isPickable = false;
+        const mat = this.materialFor(cls);
+        if (mat) mesh.material = mat;
+        v.mesh = mesh;
+      }
       this.vessels.push(v);
       made.push(v);
     }
@@ -263,8 +315,21 @@ export class Fleet {
 
   /** Disbands the fleet. */
   clear(): void {
+    for (const v of this.vessels) {
+      try { v.mesh?.dispose(); } catch { /* already gone */ }
+    }
     this.vessels.length = 0;
     this.destination = null;
+  }
+
+  /** Drops the scene and everything in it. */
+  dispose(): void {
+    this.clear();
+    for (const m of this.mats.values()) {
+      try { m.dispose(); } catch { /* already gone */ }
+    }
+    this.mats.clear();
+    this.scene = null;
   }
 
   /**
@@ -298,6 +363,16 @@ export class Fleet {
       // Damping, or they oscillate about their slots forever.
       v.velocity.scaleInPlace(Math.max(0, 1 - 2.4 * dt));
       v.position.addInPlace(v.velocity.scale(dt));
+
+      if (v.mesh) {
+        v.mesh.position.copyFrom(v.position);
+        // Face the way it is travelling, so a moving fleet looks like one.
+        if (v.velocity.lengthSquared() > 1e-4) {
+          const f = v.velocity.normalize();
+          v.mesh.rotation.y = Math.atan2(f.x, f.z);
+          v.mesh.rotation.x = -Math.asin(Math.max(-1, Math.min(1, f.y)));
+        }
+      }
     }
   }
 
