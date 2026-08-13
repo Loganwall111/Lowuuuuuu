@@ -96,6 +96,10 @@ interface ShellHooks {
   onRandomLens: () => void;
   onShip: (id: string) => void;
   getVehicle: () => { mode: string; ship: string; stats: Record<string, string> };
+  /** Turns one HUD group on or off. */
+  onHudElement?: (name: string, on: boolean) => void;
+  /** Current HUD group states, for rendering the toggles. */
+  getHudElements?: () => Record<string, boolean>;
 }
 
 export class Shell {
@@ -613,9 +617,9 @@ export class Shell {
     track.appendChild(input);
     wrap.appendChild(track);
 
-    // Expert mode gets exact numeric entry, because a slider cannot express
-    // a precise value and expert users need one.
-    if (this.mode === 'expert') {
+    // Exact numeric entry alongside every slider: a slider cannot express a
+    // precise value, and there is no longer a tier that withholds one.
+    {
       const num = document.createElement('input');
       num.type = 'number';
       num.className = 'numin';
@@ -692,7 +696,7 @@ export class Shell {
       b.appendChild(sg);
     }
 
-    if (this.mode === 'expert') {
+    {
       const eg = document.createElement('div');
       eg.className = 'grp';
       eg.innerHTML = '<div class="grp-h">Engine</div>';
@@ -1457,13 +1461,10 @@ export class Shell {
     const g = document.createElement('div');
     g.className = 'grp';
     g.innerHTML = '<div class="grp-h">Image</div>';
-    const shown = this.mode === 'simple'
-      ? POSTFX_PARAMS.filter((p) => ['bloom', 'exposure', 'vignette'].includes(p.key))
-      : this.mode === 'advanced'
-        ? POSTFX_PARAMS.filter((p) => p.key !== 'bloomThreshold' && p.key !== 'chromatic')
-        : POSTFX_PARAMS;
-
-    shown.forEach((p) => {
+    // Every post-process control is offered. The old tier filter hid
+    // bloomThreshold and chromatic behind an "expert" mode whose buttons no
+    // longer exist, which made them unreachable rather than advanced.
+    POSTFX_PARAMS.forEach((p) => {
       const cur = { ...p, value: this.postfx[p.key] ?? p.value };
       g.appendChild(this.slider(cur, (k, v) => {
         this.postfx[k] = v;
@@ -1499,6 +1500,42 @@ export class Shell {
     });
     pg.appendChild(row);
     b.appendChild(pg);
+
+    // ---- HUD ----
+    // The instruments are part of the picture, so they are configured here
+    // rather than in a separate place. Each group is independent: you can
+    // drop the reticle for a clean screenshot and keep the coordinates.
+    if (this.hooks.getHudElements && this.hooks.onHudElement) {
+      const hg = document.createElement('div');
+      hg.className = 'grp';
+      hg.innerHTML = '<div class="grp-h">Flight Instruments</div>';
+      const LABELS: Record<string, string> = {
+        coordinates: 'Navigation coordinates',
+        attitude: 'Heading and pitch',
+        velocity: 'Velocity and throttle',
+        warp: 'Warp drive charge',
+        target: 'Nearest body',
+        fleet: 'Fleet readout',
+        reticle: 'Centre reticle'
+      };
+      const state = this.hooks.getHudElements();
+      for (const [key, on] of Object.entries(state)) {
+        const row2 = document.createElement('label');
+        row2.className = 'stat';
+        row2.style.cursor = 'pointer';
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = !!on;
+        box.dataset.hud = key;
+        box.onchange = () => this.hooks.onHudElement?.(key, box.checked);
+        const t = document.createElement('span');
+        t.className = 'stat-k';
+        t.textContent = LABELS[key] ?? key;
+        row2.append(t, box);
+        hg.appendChild(row2);
+      }
+      b.appendChild(hg);
+    }
   }
 
   /* ---- presets ---- */

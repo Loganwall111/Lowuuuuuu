@@ -6,3 +6,6 @@ dist
 .arena
 .cache
 *.tsbuildinfo
+
+# scratch: standalone HUD preview harness, not part of the app
+.hudpreview/

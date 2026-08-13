@@ -180,6 +180,30 @@ try {
 
 console.error = origError;
 
+// ---- the graphics panel drives the HUD ----
+// Wiring that compiles is not wiring that works; open the real panel and
+// click the real checkbox.
+try {
+  appRef?.shell?.wm?.Toggle?.('graphics');
+  await new Promise((r) => setTimeout(r, 60));
+  const box = document.querySelector('input[data-hud="coordinates"]');
+  hudChecks.push(['the graphics panel offers a HUD toggle', !!box]);
+  if (box) {
+    const before = appRef.flightHud.elements.coordinates;
+    box.checked = !before;
+    box.onchange();
+    hudChecks.push(['clicking the toggle changes the HUD',
+      appRef.flightHud.elements.coordinates === !before]);
+    box.checked = before;
+    box.onchange();
+  }
+  // Every post-fx control must be reachable now the tier filter is gone.
+  const sliders = document.querySelectorAll('.wm-win input[type="range"]');
+  hudChecks.push(['the graphics panel exposes real sliders', sliders.length > 0]);
+} catch (e) {
+  hudChecks.push(['the graphics panel opens: ' + e.message, false]);
+}
+
 console.log('\n=== flight HUD ===');
 for (const [name, cond] of hudChecks) ok(name, cond);
 

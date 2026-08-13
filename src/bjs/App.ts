@@ -131,6 +131,8 @@ export class App {
 
     this.shell = new Shell({
       onWorld: (id) => this.loadWorld(id),
+      onHudElement: (name, on) => this.flightHud.setElement(name as any, on),
+      getHudElements: () => ({ ...this.flightHud.elements }),
       onParam: (k, v) => this.world?.setParam(k, v),
       onPostFX: (k, v) => this.postfx.set(k, v),
       onQuality: (name) => this.applyQuality(name as QualityName),
