@@ -152,7 +152,10 @@ export class PlanetDestructionSystem {
   damage(id: string, at: Vector3, energy: number, spread = 0.08): DestructionEvent[] {
     const p = this.get(id);
     const out: DestructionEvent[] = [];
-    if (!p || p.phase === 'destroyed' || !(energy > 0)) return out;
+    // Infinity passes a naive `energy > 0` check and then poisons every
+    // downstream number, so require a finite positive value.
+    if (!p || p.phase === 'destroyed') return out;
+    if (!Number.isFinite(energy) || energy <= 0) return out;
 
     this.totalEnergy += energy;
 
@@ -163,7 +166,8 @@ export class PlanetDestructionSystem {
 
     // Reuse a nearby wound rather than making a new one for every frame of
     // a sustained beam, or a held trigger would create thousands.
-    let w = p.wounds.find((k) => Vector3.Dot(k.direction, dir) > Math.cos(spread * 2.2));
+    let w = p.wounds.find(
+      (k) => Vector3.Dot(k.direction, dir) > Math.cos(Math.max(spread, 0.05) * 1.2));
     if (!w) {
       w = { direction: dir, depth: 0, width: spread, energy: 0,
             reached: 'crust' };
@@ -347,17 +351,22 @@ export class PlanetDestructionSystem {
   private reassess(p: PlanetBody): PlanetPhase {
     const [crust, mantle, core] = p.shells;
     // Weighted by how structural each layer is.
-    p.integrity = Math.max(0, 1 - (
-      crust.damage * 0.20 + mantle.damage * 0.35 + core.damage * 0.45
-    ));
-
     const massLeft = p.originalMass > 0 ? p.mass / p.originalMass : 0;
+
+    // Structural integrity is both how chewed-up the layers are and how much
+    // of the body is physically still there. A planet that has lost most of
+    // its mass is not intact no matter how the damage is distributed.
+    const shellWear =
+      crust.damage * 0.20 + mantle.damage * 0.35 + core.damage * 0.45;
+    p.integrity = Math.max(0, Math.min(1, (1 - shellWear) * massLeft));
 
     if (p.integrity <= 0.06 || massLeft < 0.25) p.phase = 'destroyed';
     else if (p.integrity < 0.35) p.phase = 'fracturing';
-    else if (core.damage > 0.01) p.phase = 'erupting';
-    else if (mantle.damage > 0.01) p.phase = 'bleeding';
-    else if (crust.damage > 0.01) p.phase = 'wounded';
+    else if (core.damage > 1e-4) p.phase = 'erupting';
+    else if (mantle.damage > 1e-4) p.phase = 'bleeding';
+    // Any hole at all is a wound. The old 1% threshold meant a visible
+    // crater still reported the planet as pristine.
+    else if (crust.damage > 1e-6 || p.wounds.length > 0) p.phase = 'wounded';
     else p.phase = 'intact';
     return p.phase;
   }
@@ -383,10 +392,21 @@ export class PlanetDestructionSystem {
     const out: DestructionEvent[] = [];
     // Several overlapping wounds make a crater rather than a drill hole.
     const dir = at.subtract(p.center).normalize();
-    for (let i = 0; i < 5; i++) {
-      const v = this.jitter(dir, 0.3);
-      const point = p.center.add(v.scale(p.radius));
-      out.push(...this.damage(id, point, energy / 5, 0.30));
+    // Spaced on a ring wider than the wound-merge angle, or all five
+    // collapse into a single drill hole and it reads as a laser, not a
+    // crater.
+    const up = Math.abs(dir.y) > 0.9 ? new Vector3(1, 0, 0) : new Vector3(0, 1, 0);
+    const t1 = Vector3.Cross(dir, up).normalize();
+    const t2 = Vector3.Cross(dir, t1).normalize();
+    const RING = 0.55;
+    out.push(...this.damage(id, at, energy / 5, 0.30));
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2;
+      const v = dir
+        .add(t1.scale(Math.cos(a) * RING))
+        .add(t2.scale(Math.sin(a) * RING))
+        .normalize();
+      out.push(...this.damage(id, p.center.add(v.scale(p.radius)), energy / 5, 0.30));
     }
     p.spin += energy / (p.mass * 400 + 1);
     return out;
