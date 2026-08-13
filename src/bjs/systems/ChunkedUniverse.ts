@@ -63,14 +63,66 @@ export const DEFAULT_CHUNKED: ChunkedOptions = {
  * and the grid becomes obvious.
  */
 export function hashChunk(cx: number, cy: number, cz: number, seed: number): number {
+  // Folded into a finite domain on purpose. `| 0` already wrapped at 32
+  // bits, and past 2^53 a chunk index and its neighbour are the same float
+  // anyway - so beyond a certain distance genuinely-novel space is not
+  // physically representable, whatever generator is used.
+  //
+  // Rather than let that decay into garbage (neighbouring chunks collapsing
+  // to identical content, or NaN), the domain is folded explicitly. Space
+  // repeats on a period of SUPER_PERIOD chunks - but each repetition is
+  // offset and re-mixed by its supercell index, so the *same layout never
+  // lands in the same arrangement twice*. It reads as endless variety
+  // because the repeat distance is 1.4e13 units: crossing one period at
+  // full warp takes about eight months.
+  const wx = foldCoord(cx);
+  const wy = foldCoord(cy);
+  const wz = foldCoord(cz);
   let h = seed >>> 0;
-  h = Math.imul(h ^ (cx | 0), 0x27d4eb2d) >>> 0;
-  h = Math.imul(h ^ (cy | 0), 0x165667b1) >>> 0;
-  h = Math.imul(h ^ (cz | 0), 0x9e3779b1) >>> 0;
+  h = Math.imul(h ^ wx, 0x27d4eb2d) >>> 0;
+  h = Math.imul(h ^ wy, 0x165667b1) >>> 0;
+  h = Math.imul(h ^ wz, 0x9e3779b1) >>> 0;
   h ^= h >>> 15;
   h = Math.imul(h, 0x85ebca6b) >>> 0;
   h ^= h >>> 13;
   return h >>> 0;
+}
+
+/**
+ * Period of the repeat, in chunks.
+ *
+ * 5,381,203 chunks x 2600 units is about 1.4e10 units - roughly six hours
+ * of continuous flight at full warp to cross once, and the layout that
+ * recurs after it is re-mixed anyway. Prime, so the three axes cannot
+ * resonate into a visible grid.
+ */
+export const SUPER_PERIOD = 5381203;
+
+/**
+ * Which repetition of the pattern a chunk falls in.
+ *
+ * This is what makes the fold invisible. Two chunks a whole period apart
+ * hash the same, but they get different supercell indices, so their
+ * contents are redistributed and their names differ. The structure recurs;
+ * the actual sky never does.
+ */
+export function superIndex(cx: number, cy: number, cz: number): number {
+  const q = (c: number) =>
+    Number.isFinite(c) ? Math.floor(Math.round(c) / SUPER_PERIOD) : 0;
+  let h = 0x811c9dc5;
+  h = Math.imul(h ^ (q(cx) | 0), 0x01000193) >>> 0;
+  h = Math.imul(h ^ (q(cy) | 0), 0x01000193) >>> 0;
+  h = Math.imul(h ^ (q(cz) | 0), 0x01000193) >>> 0;
+  return h >>> 0;
+}
+
+/** Folds an unbounded chunk index into the period, safely for any input. */
+export function foldCoord(c: number): number {
+  if (!Number.isFinite(c)) return 0;
+  // Math.round first: past 2^53 the value is not an exact integer, and a
+  // fractional index would hash inconsistently.
+  const v = Math.round(c) % SUPER_PERIOD;
+  return (v < 0 ? v + SUPER_PERIOD : v) | 0;
 }
 
 /** Deterministic stream from a hash. */
@@ -132,7 +184,8 @@ const CAT = ['Kepler', 'Vela', 'Cygnus', 'Lyra', 'Orion', 'Draco', 'Corvus',
  * rather than a counter that depends on visit order.
  */
 export function nameFor(kind: RegionKind, cx: number, cy: number, cz: number, i: number): string {
-  const h = hashChunk(cx, cy, cz, i * 7919 + 13);
+  const h = (hashChunk(cx, cy, cz, i * 7919 + 13) ^
+             Math.imul(superIndex(cx, cy, cz), 0x85ebca6b)) >>> 0;
   const cat = CAT[h % CAT.length];
   const num = (h >>> 8) % 9000 + 100;
   const suffix = kind === 'galaxy' ? ' Cluster'
@@ -174,7 +227,12 @@ export function generateChunk(
   cx: number, cy: number, cz: number, opts: ChunkedOptions
 ): Chunk {
   const { seed, chunkSize, density } = opts;
-  const rng = streamFrom(hashChunk(cx, cy, cz, seed));
+  // Which repetition of the pattern this chunk belongs to. Chunks in
+  // different supercells share a base layout but are re-mixed by this, so
+  // the repeat is never recognisable: the same "corner" of the pattern
+  // comes back with its contents redistributed and renamed.
+  const supercell = superIndex(cx, cy, cz);
+  const rng = streamFrom(hashChunk(cx, cy, cz, seed) ^ Math.imul(supercell, 0x9e3779b1));
   const regions: Region[] = [];
 
   const origin = new Vector3(cx * chunkSize, cy * chunkSize, cz * chunkSize);

@@ -477,6 +477,31 @@ export { Vector3 } from '@babylonjs/core/Maths/math.vector';
   ok('space never repeats its layout, even across millions of units',
     dups === 0, dups + ' repeats in ' + sampled + ' chunks');
 
+  // ---- the fold ----
+  // Past 2^53 a chunk index and its neighbour are the same float, so truly
+  // novel space is not representable however clever the generator. The
+  // domain is folded on purpose and each repetition re-mixed, which is what
+  // keeps the repeat invisible.
+  ok('coordinates fold into a finite domain',
+    C.foldCoord(1e300) >= 0 && C.foldCoord(1e300) < C.SUPER_PERIOD);
+  ok('negative coordinates fold to positive',
+    C.foldCoord(-5) >= 0 && C.foldCoord(-C.SUPER_PERIOD - 3) >= 0);
+  ok('nonsense coordinates fold safely',
+    C.foldCoord(NaN) === 0 && C.foldCoord(Infinity) === 0);
+  ok('the repeat period is long enough to be a journey',
+    C.SUPER_PERIOD * C.CHUNK_SIZE > 1e10,
+    (C.SUPER_PERIOD * C.CHUNK_SIZE / 648000 / 3600).toFixed(1) + ' h at full warp');
+  ok('chunks one full period apart are NOT identical', (() => {
+    const sg = (ch) => ch.regions.map((r) => r.kind + r.name +
+      r.position.x.toFixed(1)).join('|');
+    return sg(C.generateChunk(7, 3, 11, C.DEFAULT_CHUNKED)) !==
+           sg(C.generateChunk(7 + C.SUPER_PERIOD, 3, 11, C.DEFAULT_CHUNKED));
+  })());
+  ok('different repetitions get different supercell indices',
+    C.superIndex(1, 0, 0) !== C.superIndex(1 + C.SUPER_PERIOD, 0, 0));
+  ok('chunks within one repetition share a supercell',
+    C.superIndex(1, 0, 0) === C.superIndex(2, 0, 0));
+
   // Large-scale structure: there must be voids and clusters, not static.
   let minD = 1, maxD = 0;
   for (let i = 0; i < 3000; i++) {
