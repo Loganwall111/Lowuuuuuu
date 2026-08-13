@@ -18,6 +18,7 @@ import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { GLSL_NOISE } from '../Noise';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 import { rollAnomaly, ANOMALY_COVER, STANDARD_COVER } from '../systems/BlackHoleBody';
+import { safeFloat, safeAspect } from '../SafeUniforms';
 import {
   LENS_PROFILES, LENS_ORDER, LENS_MODE_ID, LENS_FIELDS, cloneProfile,
   sanitizeProfile, randomAlienProfile, describeProfile,
@@ -158,17 +159,36 @@ float deflectionAt(float r, float ang){
   return base * scale * lensShape(ang, r);
 }
 
+// ---- defensive helpers ----
+// A single NaN anywhere in a ray direction turns the whole frame black and
+// reports nothing, so the two operations that can produce one are wrapped.
+vec3 safeNormalize(vec3 v, vec3 fallback){
+  float l2 = dot(v, v);
+  if (!(l2 > 1e-20)) return fallback;   // catches 0 and NaN (NaN fails >)
+  return v * inversesqrt(l2);
+}
+float finiteOr(float v, float fallback){
+  // NaN fails every comparison, so this catches NaN and both infinities.
+  return (v > -1e30 && v < 1e30) ? v : fallback;
+}
+
 void main(void){
   // primary ray
   vec2 uv = vUV * 2.0 - 1.0;
-  uv.x *= aspect;
-  vec3 rayL = normalize(vec3(uv * tan(fov * 0.5), 1.0));
-  vec3 dir  = normalize((camInv * vec4(rayL, 0.0)).xyz);
+  // A canvas mid-resize yields a NaN aspect on the CPU side; guarded there
+  // too, but a bad uniform must never be able to blank the screen.
+  uv.x *= finiteOr(aspect, 1.7777);
+  vec3 rayL = safeNormalize(vec3(uv * tan(finiteOr(fov, 0.9) * 0.5), 1.0),
+                            vec3(0.0, 0.0, 1.0));
+  vec3 dir  = safeNormalize((camInv * vec4(rayL, 0.0)).xyz, vec3(0.0, 0.0, 1.0));
   vec3 ro   = camPos;
 
   // Work in the plane containing the camera, the ray and the singularity.
-  float r0 = length(ro);
-  vec3 er = ro / r0;                       // radial unit
+  // The camera sitting exactly at the origin makes r0 zero, and ro/r0 then
+  // yields NaN in all three components - the reported "camera at (0,0,0)"
+  // case. Held off the singularity by a hair instead.
+  float r0 = max(length(ro), 1e-4);
+  vec3 er = safeNormalize(ro, vec3(0.0, 0.0, 1.0));   // radial unit
   vec3 nrm = cross(er, dir);               // orbital plane normal
   float nl = length(nrm);
 
@@ -413,11 +433,20 @@ export class BlackHoleWorld implements World {
     const inv = Matrix.Invert(cam.getViewMatrix());
     this.mat.setVector3('camPos', cam.position);
     this.mat.setMatrix('camInv', inv);
-    this.mat.setFloat('fov', cam.fov ?? 0.9);
-    this.mat.setFloat('aspect', scene.getEngine().getAspectRatio(cam));
+    this.mat.setFloat('fov', safeFloat(cam.fov ?? 0.9, 0.9));
+    // ROOT CAUSE OF THE BLACK SCREEN. A canvas mid-resize has zero height,
+    // so getAspectRatio() returns 0/0 = NaN. The shader does `uv.x *=
+    // aspect`, so one NaN frame makes every ray direction NaN and nothing
+    // is drawn at all. Opening a panel resizes the canvas, which is why
+    // the report was "open the options menu and the screen goes black".
+    const eng = scene.getEngine();
+    this.mat.setFloat('aspect',
+      safeAspect(eng.getRenderWidth(), eng.getRenderHeight()));
     this.mat.setFloat('time', this.t);
 
-    const rs = 1.0 * this.p.mass;
+    // Mass drives the horizon radius, and a zero or negative rs makes the
+    // capture test meaningless. Floored rather than merely finite-checked.
+    const rs = Math.max(1e-3, safeFloat(1.0 * this.p.mass, 1.0));
     this.mat.setFloat('rs', rs);
 
     // ---- per-hole lens profile ----
@@ -435,9 +464,14 @@ export class BlackHoleWorld implements World {
     this.mat.setFloat('insideAmt', this.inside);
     this.mat.setVector3('exitDir', this.exitDirection);
     this.mat.setFloat('spin', this.p.spin);
-    this.mat.setFloat('horizonCover', this.isAnomaly ? ANOMALY_COVER : STANDARD_COVER);
-    this.mat.setFloat('diskInner', this.p.diskInner * this.p.mass);
-    this.mat.setFloat('diskOuter', this.p.diskOuter * this.p.mass);
+    this.mat.setFloat('horizonCover',
+      safeFloat(this.isAnomaly ? ANOMALY_COVER : STANDARD_COVER, STANDARD_COVER));
+    // The disk needs a non-zero width or `(r - inner) / (outer - inner)`
+    // divides by zero inside the shader.
+    const dIn = Math.max(1e-3, safeFloat(this.p.diskInner * this.p.mass, 3.2));
+    this.mat.setFloat('diskInner', dIn);
+    this.mat.setFloat('diskOuter',
+      Math.max(dIn + 1e-3, safeFloat(this.p.diskOuter * this.p.mass, 16)));
     this.mat.setFloat('diskTilt', this.p.diskTilt);
     this.mat.setFloat('exposure', this.p.exposure);
     this.mat.setFloat('lensStrength', this.p.lens);

@@ -126,8 +126,12 @@ export class StarFieldRenderer {
     void pcs.buildMeshAsync().then((mesh) => {
       this.mesh = mesh;
       if (!mesh) return;
-      // The sky is drawn first and never occludes anything.
       mesh.renderingGroupId = 0;
+      // The sky must never occlude anything. Points were writing opaque
+      // depth at their shell radius, so real geometry behind that shell was
+      // depth-culled and punched out as black patches - and because the
+      // points are rebuilt as the camera moves, the holes swarmed with
+      // mouse movement. Depth-write off makes the sky a pure backdrop.
       mesh.isPickable = false;
       mesh.applyFog = false;
       mesh.alwaysSelectAsActiveMesh = true;
@@ -135,6 +139,10 @@ export class StarFieldRenderer {
       if (m) {
         m.disableLighting = true;
         m.pointSize = 2;
+        // Depth-write off is the actual fix for the black patches.
+        m.disableDepthWrite = true;
+        m.forceDepthWrite = false;
+        m.needDepthPrePass = false;
       }
     });
 

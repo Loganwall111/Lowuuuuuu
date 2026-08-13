@@ -209,8 +209,20 @@ export class VerseRenderer {
       mesh.applyFog = false;
       mesh.alwaysSelectAsActiveMesh = true;
       mesh.renderingGroupId = 0;
+      // The sky must never occlude anything. Points were writing opaque
+      // depth at their shell radius, so real geometry behind that shell was
+      // depth-culled and punched out as black patches - and because the
+      // points are rebuilt as the camera moves, the holes swarmed with
+      // mouse movement. Depth-write off makes the sky a pure backdrop.
       const m = mesh.material as any;
-      if (m) { m.disableLighting = true; m.pointSize = 3; }
+      if (m) {
+        m.disableLighting = true;
+        m.pointSize = 3;
+        // Depth-write off is the actual fix for the black patches.
+        m.disableDepthWrite = true;
+        m.forceDepthWrite = false;
+        m.needDepthPrePass = false;
+      }
     });
 
     this.pcs = pcs;

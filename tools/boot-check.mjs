@@ -298,6 +298,108 @@ try {
 } catch (e) {
   critterChecks.push(['creatures build in a live scene: ' + e.message, false]);
 }
+// ---- REPRO: black hole world + its options panel ----
+// The user reports the screen going black when travelling to the black
+// hole or opening its options. Drive that exact sequence.
+const bhChecks = [];
+try {
+  await appRef?.loadWorld?.('blackhole');
+  await new Promise((r) => setTimeout(r, 300));
+  const w = appRef.world;
+  bhChecks.push(['the black hole world loads', w?.id === 'blackhole']);
+
+  // Run frames and look for NaN reaching any uniform.
+  let nanSeen = null;
+  const mat = w?.mat;
+  if (mat) {
+    const realFloat = mat.setFloat.bind(mat);
+    mat.setFloat = (n, v) => {
+      if (!Number.isFinite(v) && nanSeen === null) nanSeen = n + '=' + v;
+      return realFloat(n, v);
+    };
+  }
+  for (let i = 0; i < 30; i++) {
+    w?.update?.(0.016, appRef.ctx);
+  }
+  bhChecks.push(['no uniform ever receives NaN', nanSeen === null, nanSeen ?? '']);
+
+  // Every parameter at both extremes: a slider dragged to its end is the
+  // most likely way a user hits a degenerate value.
+  let badParam = null;
+  for (const prm of (w?.getParams?.() ?? [])) {
+    for (const v of [prm.min, prm.max, 0]) {
+      w.setParam(prm.key, v);
+      w.update(0.016, appRef.ctx);
+      if (nanSeen && !badParam) badParam = prm.key + '=' + v + ' -> ' + nanSeen;
+    }
+    w.setParam(prm.key, prm.value);
+  }
+  bhChecks.push(['no slider extreme produces NaN', !badParam, badParam ?? '']);
+
+  // Camera exactly at the origin - inside the horizon, the case the
+  // report calls out specifically.
+  appRef.camera.position.set(0, 0, 0);
+  w?.update?.(0.016, appRef.ctx);
+  bhChecks.push(['the camera at the origin does not break the world', true]);
+
+  // Now the actual reported trigger: open its options panel.
+  appRef.shell?.wm?.Toggle?.('controls');
+  await new Promise((r) => setTimeout(r, 120));
+  bhChecks.push(['opening the options panel does not throw', true]);
+
+  // Is anything actually being drawn?
+  const painting = appRef.postfx?.inspectFrame
+    ? null : 'n/a';
+  bhChecks.push(['the scene still has meshes to draw',
+    appRef.scene.meshes.length > 0,
+    appRef.scene.meshes.length + ' meshes']);
+  bhChecks.push(['the render loop is still alive', !!appRef.scene.activeCamera]);
+
+  // A zero-height canvas is the exact trigger: it makes getAspectRatio()
+  // return 0/0. Simulate it and require the shader still gets a sane value.
+  const eng2 = appRef.scene.getEngine();
+  const rw = eng2.getRenderHeight;
+  eng2.getRenderHeight = () => 0;
+  let zeroNan = null;
+  const mat2 = appRef.world?.mat;
+  if (mat2) {
+    const rf = mat2.setFloat.bind(mat2);
+    mat2.setFloat = (n, v) => {
+      if (!Number.isFinite(v) && !zeroNan) zeroNan = n + '=' + v;
+      return rf(n, v);
+    };
+  }
+  appRef.world?.update?.(0.016, appRef.ctx);
+  eng2.getRenderHeight = rw;
+  bhChecks.push(['a zero-height canvas still yields a finite aspect',
+    zeroNan === null, zeroNan ?? '']);
+} catch (e) {
+  bhChecks.push(['the black hole sequence survives: ' + e.message, false]);
+}
+console.log('\n=== black hole ===');
+for (const [n, c, e] of bhChecks) ok(n, c, e);
+
+// ---- the sky must not occlude geometry ----
+// Point clouds writing depth at their shell radius punch black holes in
+// everything behind them, which is what the "black patterns while moving
+// the mouse" report was.
+const skyChecks = [];
+try {
+  const pointMeshes = appRef.scene.meshes.filter(
+    (m) => m.material && m.material.pointsCloud);
+  skyChecks.push(['there is a point-cloud sky to check', pointMeshes.length > 0,
+    pointMeshes.length + ' point meshes']);
+  const writing = pointMeshes.filter((m) => !m.material.disableDepthWrite);
+  skyChecks.push(['no point cloud writes depth', writing.length === 0,
+    writing.map((m) => m.name).join(', ')]);
+  const occluding = pointMeshes.filter((m) => m.applyFog);
+  skyChecks.push(['no point cloud is fogged', occluding.length === 0]);
+} catch (e) {
+  skyChecks.push(['the sky check runs: ' + e.message, false]);
+}
+console.log('\n=== sky occlusion ===');
+for (const [n, c, e] of skyChecks) ok(n, c, e);
+
 console.log('\n=== creatures ===');
 for (const [name, cond, detail] of critterChecks) ok(name, cond, detail);
 

@@ -33,6 +33,7 @@ import { Effect } from '@babylonjs/core/Materials/effect';
 // there. This import is load-bearing - removing it turns the screen black.
 import '@babylonjs/core/Shaders/postprocess.vertex';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { safeAspect } from '../SafeUniforms';
 import { Matrix } from '@babylonjs/core/Maths/math.vector';
 import { Viewport } from '@babylonjs/core/Maths/math.viewport';
 import type { Camera } from '@babylonjs/core/Cameras/camera';
@@ -169,7 +170,10 @@ export class LensFX {
         const t = p?.tint ?? [0.7, 0.8, 1];
         effect.setFloat3('tint', t[0], t[1], t[2]);
         const eng = this.scene?.getEngine();
-        effect.setFloat('aspect', eng ? eng.getAspectRatio(camera) : 1.7);
+        // Same NaN hazard as the black hole world: a canvas mid-resize
+        // gives 0/0. See SafeUniforms.
+        effect.setFloat('aspect',
+          eng ? safeAspect(eng.getRenderWidth(), eng.getRenderHeight()) : 16 / 9);
         effect.setFloat('active', this.on && this.intensity > 0.001 ? 1 : 0);
       };
     } catch (e) {
