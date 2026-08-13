@@ -10,6 +10,8 @@ import { ToolSystem } from '../tools/ToolSystem';
 import { WidgetSystem } from '../widgets/WidgetSystem';
 import { ExperimentGenerator } from '../experiments/ExperimentGenerator';
 import { ChaosMode } from '../experiments/ChaosMode';
+import { SceneBuilder, WorldHandles } from '../scenes/SceneBuilder';
+import { MainMenu, WorldId } from '../ui/MainMenu';
 
 export class App {
     private canvas: HTMLCanvasElement;
@@ -27,6 +29,19 @@ export class App {
     
     private isRunning: boolean = false;
     private lastTimestamp: number = 0;
+
+    // Front end + world state
+    private sceneBuilder!: SceneBuilder;
+    private menu!: MainMenu;
+    private activeWorld: WorldHandles | null = null;
+    private activeWorldName: string = '—';
+    private elapsed: number = 0;
+    private fps: number = 60;
+
+    // Orbit camera state
+    private orbitRadius: number = 34;
+    private orbitTheta: number = -Math.PI / 2;
+    private orbitPhi: number = 1.14;
 
     constructor() {
         this.canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
@@ -63,7 +78,90 @@ export class App {
         
         // Window Manager Safe Recovery Event Binding (Fixes UI Trap and P0 Blocking Defects)
         window.addEventListener('resize', () => this.handleResize());
+
+        // ---- Front end + visible content ----
+        const scene = this.renderer.getScene();
+        this.sceneBuilder = new SceneBuilder();
+        scene.add(this.sceneBuilder.buildStarfield());
+
+        this.menu = new MainMenu();
+        this.menu.onWorldSelected((id) => this.loadWorld(id));
+
+        this.attachOrbitControls();
         console.log("Engine Core Initialization Sequence Complete.");
+    }
+
+    /** Swap the active world, disposing the previous one. */
+    private loadWorld(id: WorldId): void {
+        const scene = this.renderer.getScene();
+
+        if (this.activeWorld) {
+            scene.remove(this.activeWorld.group);
+            this.activeWorld.group.traverse((o: any) => {
+                if (o.geometry) o.geometry.dispose();
+                if (o.material) {
+                    const mats = Array.isArray(o.material) ? o.material : [o.material];
+                    mats.forEach((m: any) => { if (m.map) m.map.dispose(); m.dispose(); });
+                }
+            });
+            this.activeWorld = null;
+        }
+
+        const built =
+            id === 'planetary' ? this.sceneBuilder.buildPlanetary()
+          : id === 'stellar'   ? this.sceneBuilder.buildStellar()
+          :                      this.sceneBuilder.buildFluid();
+
+        scene.add(built.group);
+        this.activeWorld = built;
+        this.activeWorldName = id;
+
+        // Frame the world sensibly
+        const dist = id === 'planetary' ? 34 : id === 'stellar' ? 40 : 46;
+        this.orbitRadius = dist;
+        this.orbitPhi = id === 'fluid' ? 1.16 : 1.14;
+        this.applyOrbit();
+
+        console.log(`World loaded: ${id} (${built.bodies} bodies)`);
+    }
+
+    /** Drag to orbit, wheel to zoom — applied straight to the rescued Camera. */
+    private attachOrbitControls(): void {
+        const el = this.canvas;
+        let dragging = false;
+        let lx = 0, ly = 0;
+
+        el.addEventListener('pointerdown', (e) => {
+            dragging = true; lx = e.clientX; ly = e.clientY;
+            el.setPointerCapture(e.pointerId);
+        });
+        el.addEventListener('pointerup', (e) => {
+            dragging = false;
+            try { el.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+        });
+        el.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            this.orbitTheta -= (e.clientX - lx) * 0.005;
+            this.orbitPhi = Math.max(0.12, Math.min(Math.PI - 0.12, this.orbitPhi - (e.clientY - ly) * 0.005));
+            lx = e.clientX; ly = e.clientY;
+            this.applyOrbit();
+        });
+        el.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            this.orbitRadius = Math.max(8, Math.min(220, this.orbitRadius + e.deltaY * 0.05));
+            this.applyOrbit();
+        }, { passive: false });
+    }
+
+    private applyOrbit(): void {
+        const cam = this.camera.getThreeCamera();
+        const r = this.orbitRadius, p = this.orbitPhi, t = this.orbitTheta;
+        cam.position.set(
+            r * Math.sin(p) * Math.cos(t),
+            r * Math.cos(p),
+            r * Math.sin(p) * Math.sin(t)
+        );
+        cam.lookAt(0, 0, 0);
     }
 
     public start(): void {
@@ -90,6 +188,12 @@ export class App {
         this.universe.update(simulationDelta, totalElapsedTime);
         this.objectManager.update(simulationDelta);
         this.toolSystem.update(rawDelta);
+
+        // Advance the active world and refresh the HUD readout
+        this.elapsed += simulationDelta;
+        if (this.activeWorld) this.activeWorld.tick(this.elapsed, simulationDelta);
+        if (rawDelta > 0) this.fps += (1 / rawDelta - this.fps) * 0.08;
+        this.menu.setStats(this.fps, this.activeWorld ? this.activeWorld.bodies : 0, this.activeWorldName);
         
         // Frame Generation Output Matrix Stage
         this.renderer.render(this.camera.getThreeCamera());
