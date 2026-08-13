@@ -37,10 +37,10 @@ export const DEFAULT_POSTFX: PostFXSettings = {
   bloomThreshold: 0.42,
   exposure: 1.18,
   contrast: 1.14,
-  vignette: 0.42,
-  grain: 2.0,
+  vignette: 0.22,
+  grain: 1.0,
   sharpen: 0.35,
-  chromatic: 3.0,
+  chromatic: 1.2,
   fxaa: 1,
   bloomKernel: 96,
   bloomScale: 0.75
@@ -139,10 +139,14 @@ export class PostFX {
       ip.toneMappingEnabled = false;
       ip.exposure = s.exposure;
       ip.contrast = s.contrast;
+      // Vignette darkens toward the frame edge. In MULTIPLY mode the weight
+      // is a direct multiplier, so the old `weight * 4` (1.68 by default)
+      // drove the edges to black and, combined with a bogus 1.2 rad
+      // vignetteCameraFov, could swallow most of the picture. Keep it as a
+      // subtle edge falloff that can never black out the view.
       ip.vignetteEnabled = s.vignette > 0.001;
-      ip.vignetteWeight = s.vignette * 4;
-      ip.vignetteStretch = 0.4;
-      ip.vignetteCameraFov = 1.2;
+      ip.vignetteWeight = Math.min(1.5, Math.max(0, s.vignette));
+      ip.vignetteStretch = 0;
       ip.vignetteBlendMode = ImageProcessingConfiguration.VIGNETTEMODE_MULTIPLY;
     });
   }

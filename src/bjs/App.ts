@@ -28,6 +28,7 @@ import { MouseLook } from './systems/MouseLook';
 import { LensFX } from './systems/LensFX';
 import { StationSystem } from './systems/StationSystem';
 import { CosmicScaleSystem } from './systems/CosmicScaleSystem';
+import { inspectFrame, showBlackScreenReport } from './RenderWatchdog';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -620,11 +621,65 @@ export class App {
   }
 
   start(): void {
-    let last = performance.now();
+    this.lastFrameAt = performance.now();
     this.engine.runRenderLoop(() => {
+      // The whole frame is guarded. A throw anywhere in here - a missing
+      // Babylon side-effect import, a shader that will not compile on this
+      // driver, a null world mid-switch - otherwise kills the render loop
+      // permanently and the user just sees a black screen with no clue why.
+      // Simulation is allowed to fail; drawing something is not.
+      try {
+        this.frame();
+      } catch (e) {
+        this.onFrameError(e);
+        // Still put *something* on screen, so a broken subsystem degrades
+        // to a visible scene instead of a black rectangle.
+        try { this.scene.render(); } catch { /* nothing more we can do */ }
+      }
+    });
+  }
+
+  /** How many frames have thrown, and what the first failure was. */
+  private lastFrameAt = 0;
+  private frameErrors = 0;
+  private frameErrorMsg = '';
+
+  /**
+   * Reports a frame failure once, loudly, instead of letting it repeat
+   * silently sixty times a second.
+   */
+  private onFrameError(e: unknown): void {
+    this.frameErrors++;
+    const msg = e instanceof Error ? (e.stack ?? e.message) : String(e);
+    if (this.frameErrors === 1) {
+      this.frameErrorMsg = msg;
+      console.error('Frame error (rendering continues):', msg);
+      try {
+        this.shell.toast('Render error - see console. The view may be degraded.');
+      } catch { /* shell may not be up yet */ }
+    }
+    // A subsystem that fails every frame gets switched off rather than
+    // spamming, so the rest of the sim keeps running.
+    if (this.frameErrors === 120) {
+      console.error('Frame errors are persistent; disabling lensing as a precaution.');
+      try { this.lensfx.detach(); } catch { /* ignore */ }
+    }
+  }
+
+  /** Diagnostics for the telemetry panel. */
+  renderHealth(): Record<string, string> {
+    return {
+      'Frame errors': String(this.frameErrors),
+      'First error': this.frameErrorMsg ? this.frameErrorMsg.split('\n')[0].slice(0, 60) : 'none'
+    };
+  }
+
+  /** One simulation + render step. Called only from the guarded loop above. */
+  private frame(): void {
+    {
       const now = performance.now();
-      const dt = Math.min((now - last) / 1000, 0.1);
-      last = now;
+      const dt = Math.min((now - this.lastFrameAt) / 1000, 0.1);
+      this.lastFrameAt = now;
 
       if (this.world && !this.paused && !this.switching) {
         this.world.update(dt, this.ctx);
@@ -779,6 +834,40 @@ export class App {
       });
 
       this.shell.tickHud(this.engine.getFps(), this.world?.name ?? '–');
-    });
+
+      // ---- black-screen watchdog ----
+      // Runs for the first few seconds only. If the canvas really is blank,
+      // say why on screen instead of leaving the user guessing.
+      this.watchdogFrames++;
+      if (this.watchdogFrames === 90 || this.watchdogFrames === 300) {
+        this.checkForBlackScreen();
+      }
+    }
+  }
+
+  private watchdogFrames = 0;
+  private watchdogReported = false;
+
+  /** Reads the real framebuffer and reports a blank one. */
+  checkForBlackScreen(): void {
+    if (this.watchdogReported) return;
+    try {
+      const canvas = this.engine.getRenderingCanvas() as HTMLCanvasElement;
+      const report = inspectFrame({
+        canvas,
+        gl: (this.engine as unknown as { _gl?: WebGL2RenderingContext })._gl,
+        meshCount: () => this.scene?.meshes.length ?? 0,
+        frameErrors: () => this.frameErrors,
+        firstError: () => this.frameErrorMsg.split('\n')[0] || 'none',
+        fps: () => this.engine.getFps()
+      });
+      if (!report.painting) {
+        this.watchdogReported = true;
+        console.error('[black screen]', report.diagnosis, report.warnings);
+        showBlackScreenReport(report);
+      }
+    } catch (e) {
+      console.warn('Watchdog could not run:', e);
+    }
   }
 }

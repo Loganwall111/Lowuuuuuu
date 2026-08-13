@@ -19,11 +19,15 @@ export const INTRO_CSS = `
 .intro-root.on{ pointer-events:auto; }
 
 /* ---- title card ---- */
+/* The title card must never read as a black screen. It is a vignette over
+   the live sim, not a curtain: the middle stays clear so you can see the
+   garage behind it, and the darkest corner is still visibly blue rather
+   than near-black. */
 .intro-title{
   position:absolute; inset:0; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:26px;
   background:radial-gradient(ellipse at 50% 45%,
-    rgba(10,16,34,.55) 0%, rgba(4,7,16,.86) 70%);
+    rgba(12,20,42,.10) 0%, rgba(8,14,30,.42) 55%, rgba(6,11,24,.62) 100%);
   transition:opacity .6s ease;
 }
 .intro-title h1{
