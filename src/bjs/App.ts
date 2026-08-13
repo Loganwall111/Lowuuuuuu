@@ -877,7 +877,10 @@ export class App {
       // Runs for the first few seconds only. If the canvas really is blank,
       // say why on screen instead of leaving the user guessing.
       this.watchdogFrames++;
-      if (this.watchdogFrames === 90 || this.watchdogFrames === 300) {
+      // Sampled at several points, and a report needs repeated agreement -
+      // one unlucky read during a world switch or a resize is not evidence.
+      if (this.watchdogFrames === 90 || this.watchdogFrames === 150 ||
+          this.watchdogFrames === 300 || this.watchdogFrames === 600) {
         this.checkForBlackScreen();
       }
     }
@@ -888,6 +891,8 @@ export class App {
   private watchdogTimer: number | null = null;
   /** Post-processing is stripped once, automatically, on a black frame. */
   private blackScreenRecoveryTried = false;
+  /** Consecutive black samples; one is never enough to report. */
+  private blackFrameStreak = 0;
 
   /**
    * The frame-counted watchdog can only fire if frames are happening. A dead
@@ -926,7 +931,15 @@ export class App {
         });
         return;
       }
-      this.checkForBlackScreen();
+      // Frames ARE happening, so the loop is alive. Deliberately do not
+      // sample pixels here: readPixels outside the render loop reads the
+      // composited buffer, which the browser is entitled to have already
+      // cleared, so it returns zeros for a frame the user can plainly see.
+      // That produced a "the screen is black" panel over a working scene.
+      // Pixel sampling only happens inside frame(), where the buffer is
+      // guaranteed valid; this timer's only job is catching a dead loop.
+      if (this.watchdogTimer !== null) window.clearInterval(this.watchdogTimer);
+      this.watchdogTimer = null;
     }, 850);
   }
 
@@ -943,7 +956,21 @@ export class App {
         firstError: () => this.frameErrorMsg.split('\n')[0] || 'none',
         fps: () => this.engine.getFps()
       });
-      if (!report.painting) {
+      if (report.painting) {
+        // A single good frame permanently clears suspicion.
+        this.blackFrameStreak = 0;
+        return;
+      }
+
+      // Require consecutive black samples before believing it. Transient
+      // black frames are normal during a world switch, a resize, or the
+      // moment a render target is rebuilt, and reporting one of those as a
+      // failure is worse than useless - it puts an alarming panel over a
+      // perfectly good picture.
+      this.blackFrameStreak++;
+      if (this.blackFrameStreak < 2) return;
+
+      {
         // Reporting a black screen is not good enough - recover from it.
         // If the frame is being drawn (meshes present, frames ticking) but
         // every pixel is black, the overwhelmingly likely culprit is the
@@ -961,11 +988,10 @@ export class App {
             this.scene.clearColor = new Color4(0.05, 0.07, 0.13, 1);
           }
           this.shell.toast('Recovering from a black frame - post-processing disabled');
-          // Re-check shortly; if it is now painting, say nothing more.
-          window.setTimeout(() => {
-            this.watchdogReported = false;
-            this.checkForBlackScreen();
-          }, 900);
+          // Reset the streak and let the in-frame sampler judge the result.
+          // Re-checking from a timer would read the composited buffer and
+          // could report black for a frame that is now fine.
+          this.blackFrameStreak = 0;
           return;
         }
 

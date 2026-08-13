@@ -33,17 +33,22 @@ export interface PostFXSettings {
 export const DEFAULT_POSTFX: PostFXSettings = {
   // A cinematic default. Bloom is wide and soft rather than a tight halo,
   // which is what sells a star's glare and a planet's lit limb.
-  bloom: 0.95,
-  bloomThreshold: 0.42,
-  exposure: 1.18,
-  contrast: 1.14,
-  vignette: 0.22,
-  grain: 1.0,
-  sharpen: 0.35,
-  chromatic: 1.2,
+  // Now that the pipeline genuinely runs in HDR (its shaders were never
+  // registered before, so none of this was actually reaching the screen),
+  // the grade can be pushed properly: a wide soft bloom for star glare and
+  // lit planet limbs, with enough exposure headroom for highlights to
+  // bloom rather than clip.
+  bloom: 1.25,
+  bloomThreshold: 0.30,
+  exposure: 1.32,
+  contrast: 1.20,
+  vignette: 0.20,
+  grain: 0.6,
+  sharpen: 0.42,
+  chromatic: 1.0,
   fxaa: 1,
-  bloomKernel: 96,
-  bloomScale: 0.75
+  bloomKernel: 112,
+  bloomScale: 0.85
 };
 
 export const POSTFX_PARAMS: WorldParam[] = [
@@ -182,8 +187,13 @@ export class PostFX {
     p.imageProcessingEnabled = true;
     const ip = p.imageProcessing;
     if (ip) guard('imageProcessing', () => {
-      // Worlds tonemap in-shader; doing it again here would crush highlights.
-      ip.toneMappingEnabled = false;
+      // ACES filmic tone mapping. This is the single biggest contributor to
+      // a scene looking photographed rather than rendered: it rolls bright
+      // values off into white instead of clipping them, so a star's core and
+      // a planet's lit edge keep their shape. Only safe to enable now that
+      // the pipeline really is HDR - in LDR it would crush the image.
+      ip.toneMappingEnabled = this.hdr;
+      ip.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
       ip.exposure = s.exposure;
       ip.contrast = s.contrast;
       // Vignette darkens toward the frame edge. In MULTIPLY mode the weight

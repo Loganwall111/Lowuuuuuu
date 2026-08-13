@@ -53,18 +53,50 @@ export const INTRO_CSS = `
   margin:0; font-size:clamp(11px,1.5vw,15px); letter-spacing:.42em;
   text-transform:uppercase; color:#9fb2d8; text-align:center;
 }
+/* The play button is the first thing anyone touches, so it is built like a
+   piece of hardware: a bevelled plate with its own light, a sweeping sheen,
+   and a bracket frame that charges up on hover. */
 .intro-play{
-  margin-top:12px; padding:15px 62px; font-size:17px; font-weight:700;
-  letter-spacing:.2em; text-transform:uppercase; cursor:pointer;
-  color:#04101f; border:0;
-  background:linear-gradient(180deg,#9fe0ff 0%,#3ea0ff 52%,#1f6fd8 100%);
-  clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),
-                    calc(100% - 14px) 100%,0 100%,0 14px);
-  box-shadow:0 10px 40px rgba(50,140,255,.42);
-  transition:transform .12s ease, filter .12s ease;
+  position:relative; margin-top:18px; padding:18px 74px;
+  font-size:17px; font-weight:800; letter-spacing:.28em;
+  text-transform:uppercase; cursor:pointer; color:#eaf6ff; border:0;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,0) 42%),
+    linear-gradient(180deg,#4aa8ff 0%,#2f7ce8 46%,#1552b4 100%);
+  clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),
+                    calc(100% - 18px) 100%,0 100%,0 18px);
+  text-shadow:0 1px 0 rgba(0,0,0,.45), 0 0 22px rgba(150,210,255,.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -2px 0 rgba(0,20,60,.55),
+    0 12px 34px rgba(30,110,230,.48),
+    0 0 0 1px rgba(140,200,255,.35);
+  transition:transform .16s cubic-bezier(.2,.9,.3,1.4),
+             box-shadow .2s ease, filter .2s ease, letter-spacing .2s ease;
+  overflow:hidden; isolation:isolate;
 }
-.intro-play:hover{ transform:translateY(-2px); filter:brightness(1.1); }
-.intro-play:active{ transform:translateY(0); }
+/* A specular sweep that crosses the plate on hover. */
+.intro-play::before{
+  content:''; position:absolute; inset:0; z-index:-1;
+  background:linear-gradient(115deg,
+    transparent 0%, transparent 38%,
+    rgba(255,255,255,.42) 50%, transparent 62%, transparent 100%);
+  transform:translateX(-130%);
+  transition:transform .55s cubic-bezier(.25,.8,.3,1);
+}
+.intro-play:hover::before{ transform:translateX(130%); }
+.intro-play:hover{
+  transform:translateY(-3px) scale(1.02); letter-spacing:.32em;
+  filter:brightness(1.08) saturate(1.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    inset 0 -2px 0 rgba(0,20,60,.5),
+    0 18px 48px rgba(60,150,255,.62),
+    0 0 0 1px rgba(180,225,255,.55),
+    0 0 60px rgba(70,160,255,.45);
+}
+.intro-play:active{ transform:translateY(0) scale(.99); filter:brightness(.95); }
+.intro-play:focus-visible{ outline:2px solid #bfe0ff; outline-offset:4px; }
 .intro-skip{
   position:absolute; right:22px; bottom:20px; padding:8px 20px;
   font-size:12px; letter-spacing:.16em; text-transform:uppercase;

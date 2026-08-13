@@ -178,7 +178,7 @@ export class Shell {
     this.boot.className = 'boot';
     this.boot.innerHTML = `
       <div class="boot-in">
-        <div class="boot-name">LOW</div>
+        <div class="boot-name">UNLIMITED POSSIBILITIES</div>
         <div class="boot-sub">Universe Sandbox</div>
         <div class="boot-bar"><div class="boot-fill" id="bootFill"></div></div>
         <div class="boot-msg" id="bootMsg">initialising</div>
@@ -217,7 +217,7 @@ export class Shell {
     }
     const inner = this.boot.querySelector('.boot-in') as HTMLElement;
     inner.innerHTML = `
-      <div class="boot-name">LOW</div>
+      <div class="boot-name">UNLIMITED POSSIBILITIES</div>
       <div class="boot-sub" style="color:#ff6b6b">Startup failed</div>
       <div class="boot-err">${msg}</div>
       <button class="btn pri" id="bootDismiss" style="margin-top:16px;min-width:160px">
@@ -234,7 +234,7 @@ export class Shell {
     this.topbar.innerHTML = `
       <div class="brand">
         <div class="brand-dot"></div>
-        <div><div class="brand-name">LOW</div><div class="brand-sub">Universe Sandbox</div></div>
+        <div><div class="brand-name">UNLIMITED</div><div class="brand-sub">Possibilities Sandbox</div></div>
       </div>
       <div class="spacer"></div>
       <button class="iconbtn" id="btnPause" title="Pause / Resume (Space)">⏸</button>

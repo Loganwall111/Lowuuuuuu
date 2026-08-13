@@ -101,9 +101,13 @@ ok('the report is still shown if recovery does not help',
 
 // Order matters: recovery must come before the give-up report.
 {
-  const body = app.slice(app.indexOf('if (!report.painting)'));
+  // The early-out for a healthy frame is now `if (report.painting) return`,
+  // so anchor on the recovery block itself rather than the old condition.
+  const body = app.slice(app.indexOf('blackFrameStreak++'));
   ok('recovery is attempted before reporting failure',
      body.indexOf('blackScreenRecoveryTried') < body.indexOf('showBlackScreenReport'));
+  ok('a healthy frame returns before any of that',
+     app.indexOf('if (report.painting)') < app.indexOf('blackFrameStreak++'));
 }
 
 /* ------------- 4. the title card must never be black -------------------- */

@@ -109,6 +109,8 @@ export class VehicleController {
   grounded = false;
   private yaw = 0;
   private pitch = 0;
+  /** Deliberate roll, only changed while the roll keys are held. */
+  private roll = 0;
 
   /**
    * How far the player can drop and still be considered on the ground.
@@ -128,12 +130,23 @@ export class VehicleController {
     if (this.mode === m) return;
     this.mode = m;
     this.velocity.setAll(0);
+    // Both walk and free-fly steer with explicit yaw/pitch angles, so the
+    // current orientation is decomposed on entry. Without this the view
+    // snaps when you change mode, because the angles and the quaternion
+    // disagree about where you are facing.
+    const e = this.orientation.toEulerAngles();
     if (m === 'walk') {
-      // walking uses yaw/pitch euler rather than free quaternion roll
-      const e = this.orientation.toEulerAngles();
       this.yaw = e.y;
       this.pitch = 0;
+      this.roll = 0;
       this.grounded = false;
+    } else if (m === 'freefly') {
+      this.yaw = e.y;
+      this.pitch = Math.max(-1.5533, Math.min(1.5533, e.x));
+      // Entering free-fly always levels the horizon. Arriving mid-barrel-roll
+      // and being unable to tell which way is up is not a feature.
+      this.roll = 0;
+      this.orientation = Quaternion.RotationYawPitchRoll(this.yaw, this.pitch, 0);
     }
   }
 
@@ -210,12 +223,25 @@ export class VehicleController {
    * inspecting things at wildly different scales.
    */
   private updateFreeFly(dt: number, i: VehicleInput): void {
-    const rot = Quaternion.RotationYawPitchRoll(
-      i.yaw * 1.6 * dt,
-      i.pitch * 1.6 * dt,
-      -i.roll * 2.0 * dt);
-    this.orientation = this.orientation.multiply(rot);
-    this.orientation.normalize();
+    // Free-fly used to compound a delta quaternion into the orientation every
+    // frame. Yaw and pitch do not commute, so combining them repeatedly
+    // injects roll that was never asked for: the horizon slowly tilts, and
+    // once it has, "left" is no longer level and looking around feels like
+    // wrestling the camera. It also drifts differently depending on frame
+    // rate, which is why it felt worse on a slow machine.
+    //
+    // Tracking yaw and pitch as plain angles - exactly as walk mode already
+    // did - keeps the horizon level no matter how you move the mouse. Pitch
+    // is clamped just short of vertical so you can never flip over the pole
+    // and end up inverted.
+    this.yaw += i.yaw * 1.6 * dt;
+    this.pitch = Math.max(-1.5533, Math.min(1.5533, this.pitch + i.pitch * 1.6 * dt));
+
+    // Roll stays available for flying, but it is deliberate rather than
+    // accumulated: hold Q/E and it rolls, release and it stays put.
+    this.roll += -i.roll * 2.0 * dt;
+
+    this.orientation = Quaternion.RotationYawPitchRoll(this.yaw, this.pitch, this.roll);
 
     const { fwd, right, up } = this.axes();
     const speed = this.flySpeed * (i.boost ? this.flyBoost : 1) * (i.brake ? 0.08 : 1);

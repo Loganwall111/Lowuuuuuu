@@ -32,11 +32,15 @@ export interface WarpOptions {
 }
 
 export const DEFAULT_WARP: WarpOptions = {
-  threshold: 220,
-  full: 2600,
-  count: 260,
-  radius: 26,
-  depth: 150
+  // Free-fly cruises at ~60 u/s near objects and only climbs into the
+  // hundreds in deep space, so a 220 threshold meant the streaks almost
+  // never appeared and flying felt inert. They now begin at a speed you
+  // actually reach and reach full strength while still manoeuvring.
+  threshold: 45,
+  full: 900,
+  count: 320,
+  radius: 30,
+  depth: 170
 };
 
 interface Streak {

@@ -174,7 +174,17 @@ console.log('\n— the worlds it needs exist —');
   const g = fs.readFileSync('src/bjs/worlds/GarageWorld.ts', 'utf8');
   ok('the garage is white', /0\.9\d/.test(g) && g.includes('clearColor'));
   ok('it reads as infinite via fog', g.includes('FOGMODE_EXP2'));
-  ok('there is a door', g.includes("'door'"));
+  // The door is now a real sectional garage door built from panels, with the
+  // portal set into it, rather than a single box named 'door'.
+  ok('there is a door', /doorPanel_/.test(g) && /garage-door\.jpg/.test(g));
+  ok('the door is built from more than one panel',
+     /for \(let row = 0; row < 6; row\+\+\)/.test(g));
+  ok('the door has a texture rather than being a white slab',
+     /diffuseTexture = doorTex/.test(g));
+  ok('the portal is set into the door, not standing in the room',
+     /portal\.position\.set\(0, 3\.15, 25\.7\)/.test(g));
+  ok('the whole door animates open together',
+     /for \(const panel of this\.doorParts\)/.test(g));
   ok('there are people in it', g.includes('speakers'));
   ok('the cast comes from the script itself',
      g.includes('LESSONS.map((l) => l.speaker)'));
