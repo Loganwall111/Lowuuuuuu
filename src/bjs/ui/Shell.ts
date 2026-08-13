@@ -438,20 +438,56 @@ export class Shell {
 
     const actions = this.world.getActions?.() ?? [];
     if (actions.length) {
-      const ag = document.createElement('div');
-      ag.className = 'grp';
-      ag.innerHTML = '<div class="grp-h">Actions</div>';
-      const row = document.createElement('div');
-      row.className = 'btnrow';
-      actions.forEach((a) => {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.textContent = `${a.glyph ?? ''} ${a.label}`;
-        btn.onclick = () => this.hooks.onAction(a.key);
-        row.appendChild(btn);
-      });
-      ag.appendChild(row);
-      b.appendChild(ag);
+      // With dozens of actions a flat row is unusable, so group by prefix and
+      // give each group its own collapsible section.
+      const groups = new Map<string, typeof actions>();
+      const titleOf = (key: string): string => {
+        const pre = key.includes(':') ? key.split(':')[0] : '';
+        switch (pre) {
+          case 'beam': return '🔫 Beams & Weapons';
+          case 'god': return '✨ God Powers';
+          case 'dis': return '🌪 Natural Disasters';
+          case 'tool': return '🖌 Painter Tools';
+          case 'hole': return '⚫ Black Hole Type';
+          default: return '⚡ Actions';
+        }
+      };
+      for (const a of actions) {
+        const t = titleOf(a.key);
+        if (!groups.has(t)) groups.set(t, []);
+        groups.get(t)!.push(a);
+      }
+
+      for (const [title, list] of groups) {
+        const ag = document.createElement('div');
+        ag.className = 'grp';
+        const head = document.createElement('div');
+        head.className = 'grp-h';
+        head.textContent = title + '  (' + list.length + ')';
+        head.style.cursor = 'pointer';
+        head.dataset.actionGroup = title;
+        ag.appendChild(head);
+
+        const row = document.createElement('div');
+        row.className = 'btnrow';
+        // large groups start collapsed so the panel stays compact
+        const startCollapsed = list.length > 8 && this.mode === 'simple';
+        row.style.display = startCollapsed ? 'none' : '';
+        head.onclick = () => {
+          row.style.display = row.style.display === 'none' ? '' : 'none';
+        };
+
+        list.forEach((a) => {
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.dataset.action = a.key;
+          btn.textContent = `${a.glyph ?? ''} ${a.label}`;
+          btn.onclick = () => this.hooks.onAction(a.key);
+          row.appendChild(btn);
+        });
+        ag.appendChild(row);
+        b.appendChild(ag);
+      }
     }
 
     const sys = document.createElement('div');
@@ -495,6 +531,32 @@ export class Shell {
       (onChange ?? this.hooks.onParam)(p.key, v);
     };
     wrap.appendChild(input);
+
+    // Expert mode gets exact numeric entry, because a slider cannot express
+    // a precise value and expert users need one.
+    if (this.mode === 'expert') {
+      const num = document.createElement('input');
+      num.type = 'number';
+      num.className = 'numin';
+      num.dataset.numFor = p.key;
+      num.value = String(p.value);
+      num.step = String(p.step);
+      num.min = String(p.min);
+      num.max = String(p.max);
+      num.onchange = () => {
+        // accept out-of-slider-range values but keep them finite and sane
+        let v = parseFloat(num.value);
+        if (!Number.isFinite(v)) { num.value = String(p.value); return; }
+        v = Math.max(p.min, Math.min(p.max, v));
+        num.value = String(v);
+        input.value = String(v);
+        vEl.textContent = fmt(v);
+        input.style.setProperty('--pct', ((v - p.min) / (p.max - p.min)) * 100 + '%');
+        (onChange ?? this.hooks.onParam)(p.key, v);
+      };
+      wrap.appendChild(num);
+    }
+
     return wrap;
   }
 

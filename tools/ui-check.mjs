@@ -145,7 +145,16 @@ shell.setWorld({
   id: 'sandbox', name: 'Gravity Sandbox',
   getParams: () => params, setParam: () => {},
   getStats: () => ({ Bodies: '6', Integrator: 'Velocity Verlet' }),
-  getActions: () => [{ key: 'clear', label: 'Clear All', glyph: '🧹' }],
+  getActions: () => [
+    { key: 'clear', label: 'Clear All', glyph: '🧹' },
+    { key: 'chaos', label: 'CHAOS', glyph: '🌀' },
+    // realistic prefixed keys, mirroring the real worlds
+    ...['laser', 'plasma', 'freeze', 'tractor'].map((k) => ({ key: 'beam:' + k, label: k, glyph: '🔫' })),
+    ...['lightning', 'planet', 'star', 'life', 'rapture', 'freeze', 'reverse', 'cube', 'giant', 'shrink']
+      .map((k) => ({ key: 'god:' + k, label: k, glyph: '✨' })),
+    ...['whirlpool', 'tsunami', 'meteor', 'volcano', 'flood', 'drought', 'geyser', 'iceage', 'monsoon']
+      .map((k) => ({ key: 'dis:' + k, label: k, glyph: '🌪' }))
+  ],
   runAction: () => {}, build: async () => {}, update: () => {}, dispose: () => {}
 });
 
@@ -389,6 +398,96 @@ console.log('\n— EVERY window: no dead X anywhere —');
   }
   const stuck = ids.filter((id) => shell.wm.IsVisible(id));
   ok('repeated Escape closes everything (never trapped)', stuck.length === 0, stuck.join(', '));
+}
+
+console.log('\n— progressive disclosure: simple / advanced / expert —');
+{
+  const counts = {};
+  for (const m of ['simple', 'advanced', 'expert']) {
+    shell.mode = m;
+    shell.wm.Open('controls');
+    shell.wm.refresh('controls');
+    counts[m] = document.querySelectorAll('#w-body-controls .ctl, .wm-win[data-wid="controls"] .ctl').length;
+  }
+  ok(`advanced reveals more controls than simple (${counts.simple} -> ${counts.advanced})`,
+     counts.advanced > counts.simple);
+  ok(`expert reveals at least as many as advanced (${counts.advanced} -> ${counts.expert})`,
+     counts.expert >= counts.advanced);
+
+  shell.mode = 'expert';
+  shell.wm.refresh('controls');
+  ok('expert mode adds exact numeric entry',
+     document.querySelectorAll('[data-num-for]').length > 0);
+
+  // a numeric box must clamp rather than accept nonsense
+  const num = document.querySelector('[data-num-for]');
+  if (num) {
+    const key = num.dataset.numFor;
+    num.value = '999999';
+    num.dispatchEvent(new dom.window.Event('change'));
+    const applied = ev.param.filter(([k]) => k === key).pop();
+    ok('an out-of-range typed value is clamped, not applied raw',
+       !applied || applied[1] <= parseFloat(num.max) + 1e-9,
+       JSON.stringify(applied));
+    num.value = 'not-a-number';
+    const before = ev.param.length;
+    num.dispatchEvent(new dom.window.Event('change'));
+    ok('a non-numeric typed value is rejected', ev.param.length === before);
+  }
+
+  shell.mode = 'simple';
+  shell.wm.refresh('controls');
+}
+
+console.log('\n— dozens of actions stay usable —');
+{
+  shell.mode = 'expert';
+  shell.wm.Open('controls');
+  shell.wm.refresh('controls');
+  const win = document.querySelector('.wm-win[data-wid="controls"]');
+  const groups = win.querySelectorAll('[data-action-group]');
+  ok(`actions are grouped rather than one flat row (${groups.length} groups)`,
+     groups.length >= 4);
+  const titles = [...groups].map((g) => g.textContent);
+  ok('beams, god powers and disasters each get their own group',
+     titles.some((t) => /Beams/.test(t)) && titles.some((t) => /God/.test(t)) &&
+     titles.some((t) => /Disasters/.test(t)), titles.join(' | '));
+  ok('each group header shows how many actions it holds',
+     titles.every((t) => /\(\d+\)/.test(t)), titles.join(' | '));
+  const buttons = win.querySelectorAll('[data-action]');
+  ok(`every action still has a button (${buttons.length})`, buttons.length === 25);
+  // no action may be silently dropped by the grouping
+  const rendered = new Set([...buttons].map((b2) => b2.dataset.action));
+  const expected = shell.world.getActions().map((a) => a.key);
+  ok('grouping never drops an action', expected.every((k) => rendered.has(k)),
+     expected.filter((k) => !rendered.has(k)).join(','));
+
+  // large groups start collapsed in simple mode so a 38-action world does not
+  // fill the screen the moment it loads
+  {
+    shell.mode = 'simple';
+    shell.wm.refresh('controls');
+    const w2 = document.querySelector('.wm-win[data-wid="controls"]');
+    const bigHead = [...w2.querySelectorAll('[data-action-group]')]
+      .find((h) => /God/.test(h.textContent));
+    ok('a group with many actions starts collapsed in simple mode',
+       !!bigHead && bigHead.nextSibling.style.display === 'none');
+    shell.mode = 'expert';
+    shell.wm.refresh('controls');
+  }
+
+  if (groups.length) {
+    const head = document.querySelector('.wm-win[data-wid="controls"] [data-action-group]');
+    const row = head.nextSibling;
+    const wasHidden = row.style.display === 'none';
+    click(head);
+    ok('clicking a group header toggles it',
+       (row.style.display === 'none') !== wasHidden);
+    click(head);
+    ok('clicking again toggles it back',
+       (row.style.display === 'none') === wasHidden);
+  }
+  shell.mode = 'simple';
 }
 
 console.log('\n— pilot: flying and walking —');

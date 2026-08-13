@@ -160,6 +160,9 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
 .stat-k{color:var(--dim)}
 .stat-v{font-variant-numeric:tabular-nums;font-weight:600}
 
+.numin{width:100%;margin-top:5px;padding:5px 8px;border-radius:7px;border:1px solid var(--line);
+  background:rgba(0,0,0,.34);color:var(--txt);font:inherit;font-size:11px;font-variant-numeric:tabular-nums;}
+.numin:focus{outline:none;border-color:var(--acc);}
 .search{width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--line);
   background:rgba(0,0,0,.30);color:var(--txt);font-size:12.5px;font-family:inherit;margin-bottom:11px;outline:none}
 .search:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(77,163,255,.14)}

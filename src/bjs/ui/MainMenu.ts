@@ -35,14 +35,14 @@ export const MENU_CSS = `
 .menu-root.closing{opacity:0;pointer-events:none}
 #menuStars{position:absolute;inset:0;width:100%;height:100%;display:block}
 .menu-inner{position:relative;z-index:2;display:flex;flex-direction:column;height:100%;
-  padding:0 6vw;justify-content:center}
-.menu-title{font-size:clamp(46px,9vw,104px);font-weight:800;letter-spacing:-2px;line-height:.95;
+  padding:0 5vw;justify-content:center;gap:2px}
+.menu-title{font-size:clamp(30px,4.4vw,58px);font-weight:800;letter-spacing:-1.2px;line-height:.98;
   margin:0 0 6px;background:linear-gradient(120deg,#fff 10%,#8fc4ff 45%,#b39bff 80%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.menu-sub{font-size:clamp(11px,1.5vw,15px);color:#7f8aa3;letter-spacing:5px;text-transform:uppercase;
+.menu-sub{font-size:clamp(9px,1vw,11.5px);color:#7f8aa3;letter-spacing:3.4px;text-transform:uppercase;
   margin-bottom:38px;font-weight:600}
-.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:14px;max-width:1080px}
-.menu-card{position:relative;text-align:left;padding:20px 20px 18px;border-radius:16px;cursor:pointer;
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:9px;max-width:860px}
+.menu-card{position:relative;text-align:left;padding:12px 13px 11px;border-radius:11px;cursor:pointer;
   background:rgba(255,255,255,.038);border:1px solid rgba(255,255,255,.10);color:#e8edf7;
   font-family:inherit;overflow:hidden;transition:transform .16s cubic-bezier(.2,.8,.3,1),
   border-color .16s,background .16s;backdrop-filter:blur(12px)}
@@ -50,16 +50,16 @@ export const MENU_CSS = `
 .menu-card::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2.5px;
   background:var(--ac);transform:scaleX(0);transform-origin:left;transition:transform .22s ease}
 .menu-card:hover::after{transform:scaleX(1)}
-.menu-card-g{font-size:30px;display:block;margin-bottom:12px;line-height:1}
-.menu-card-t{font-size:16.5px;font-weight:700;margin-bottom:5px;letter-spacing:.2px}
-.menu-card-s{font-size:11.5px;color:#8b95ad;line-height:1.5}
+.menu-card-g{font-size:21px;display:block;margin-bottom:7px;line-height:1}
+.menu-card-t{font-size:13px;font-weight:700;margin-bottom:3px;letter-spacing:.2px}
+.menu-card-s{font-size:10px;color:#8b95ad;line-height:1.42}
 .menu-actions{display:flex;gap:12px;margin-top:34px;flex-wrap:wrap;align-items:center}
-.menu-btn{padding:13px 26px;border-radius:12px;border:1px solid rgba(255,255,255,.14);
-  background:rgba(255,255,255,.05);color:#e8edf7;font-size:13px;font-weight:600;cursor:pointer;
+.menu-btn{padding:9px 18px;border-radius:9px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.05);color:#e8edf7;font-size:11.5px;font-weight:600;cursor:pointer;
   font-family:inherit;transition:all .15s}
 .menu-btn:hover{background:rgba(255,255,255,.13);transform:translateY(-1px)}
 .menu-btn.primary{background:linear-gradient(135deg,#4da3ff,#7c5cff);border-color:transparent;
-  box-shadow:0 8px 26px rgba(77,163,255,.34);padding:14px 34px;font-size:14px}
+  box-shadow:0 6px 20px rgba(77,163,255,.34);padding:10px 24px;font-size:12.5px}
 .menu-btn.chaos{border-color:rgba(255,181,69,.45);color:#ffcf85}
 .menu-btn.chaos:hover{background:rgba(255,181,69,.16)}
 .menu-foot{position:absolute;bottom:22px;left:6vw;right:6vw;display:flex;justify-content:space-between;
