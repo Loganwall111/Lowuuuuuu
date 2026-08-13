@@ -15,6 +15,11 @@ const dom = new JSDOM(
 global.window = dom.window;
 global.document = dom.window.document;
 global.HTMLElement = dom.window.HTMLElement;
+// Babylon loads textures through XHR; jsdom provides one, expose it globally
+global.XMLHttpRequest = dom.window.XMLHttpRequest;
+global.Image = dom.window.Image;
+global.Blob = dom.window.Blob;
+global.URL = dom.window.URL;
 Object.defineProperty(global, 'navigator', {
   value: dom.window.navigator, configurable: true, writable: true
 });
@@ -88,9 +93,11 @@ const ok = (n, c, e = '') => {
 };
 
 let thrown = null;
+let appRef = null;
 try {
   const { App } = await import(f);
   const app = new App();
+  appRef = app;
   await app.init();
 } catch (e) {
   thrown = e;
@@ -145,6 +152,68 @@ const blockers = [...document.body.children].filter((el) => {
 console.log('  full-screen blockers:', blockers.map((b) => b.className || b.id));
 ok('no leftover element is covering the canvas', blockers.length === 0,
    blockers.map((b) => b.className || b.id).join(', '));
+
+// ---- every world must load without throwing and without blanking the UI ----
+console.log('\n=== world loading ===');
+if (appRef) {
+  const worlds = ['sandbox', 'planetary', 'ocean', 'terraform', 'blackhole'];
+  for (const id of worlds) {
+    let werr = null;
+    try {
+      await appRef.loadWorld(id);
+      await new Promise((r) => setTimeout(r, 120));
+    } catch (e) {
+      werr = e;
+    }
+    ok(`world "${id}" loads without throwing`, !werr,
+       werr ? String(werr && werr.message ? werr.message : werr) : '');
+
+    if (!werr) {
+      const w = appRef.world;
+      ok(`world "${id}" reports a name`, !!(w && w.name), String(w && w.name));
+      // a world must not leave a blocking overlay behind
+      const b2 = document.querySelector('.boot');
+      ok(`world "${id}" leaves no boot overlay covering the view`,
+         !b2 || b2.classList.contains('gone'));
+      // its UI surface must be describable without throwing
+      let uiErr = null;
+      try {
+        w.getParams();
+        w.getStats();
+        if (w.getActions) w.getActions();
+      } catch (e) { uiErr = e; }
+      ok(`world "${id}" exposes params, stats and actions safely`, !uiErr,
+         uiErr ? String(uiErr.message) : '');
+      // one simulation step must not throw
+      let stepErr = null;
+      try { w.update(1 / 60, appRef.ctx); } catch (e) { stepErr = e; }
+      ok(`world "${id}" survives a simulation step`, !stepErr,
+         stepErr ? String(stepErr.message) : '');
+    }
+  }
+
+  // ---- every registered action must be safe to click ----
+  console.log('\n=== actions ===');
+  try {
+    await appRef.loadWorld('sandbox');
+    await new Promise((r) => setTimeout(r, 120));
+    const w = appRef.world;
+    const actions = w.getActions ? w.getActions() : [];
+    ok(`sandbox exposes actions (${actions.length})`, actions.length > 0);
+    const broken = [];
+    for (const a of actions) {
+      try {
+        w.runAction(a.key, appRef.ctx);
+        w.update(1 / 60, appRef.ctx);
+      } catch (e) {
+        broken.push(a.key + ': ' + (e && e.message ? e.message : e));
+      }
+    }
+    ok('every action runs without throwing', broken.length === 0, broken.join(' | '));
+  } catch (e) {
+    ok('action sweep completed', false, String(e && e.message ? e.message : e));
+  }
+}
 
 if (errors.length) {
   console.log('\n=== console.error output during boot ===');

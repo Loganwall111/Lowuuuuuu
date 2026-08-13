@@ -266,6 +266,52 @@ dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown',
   { key: 'z', ctrlKey: true, bubbles: true }));
 ok('Ctrl+Z triggers undo', ev.undo > 1);
 
+console.log('\n— EVERY window: no dead X anywhere —');
+{
+  // the standing rule is that there must never be a dead X. Verify it by
+  // opening every registered window and clicking its close button for real.
+  const ids = shell.wm.list().map((w) => (typeof w === 'string' ? w : w.id));
+  ok(`shell registers windows (${ids.length})`, ids.length >= 6);
+  const deadX = [];
+  const missingX = [];
+  const lingering = [];
+  for (const id of ids) {
+    shell.wm.Open(id);
+    if (!shell.wm.IsVisible(id)) { deadX.push(id + ' (would not open)'); continue; }
+    const el = document.querySelector('[data-wid="' + id + '"]');
+    const x = el && el.querySelector('[data-act="close"]');
+    if (!x) { missingX.push(id); continue; }
+    click(x);
+    if (shell.wm.IsOpen(id)) deadX.push(id);
+    if (el.style.display !== 'none') lingering.push(id);
+  }
+  ok('every window has a close button', missingX.length === 0, missingX.join(', '));
+  ok('every X actually closes its window', deadX.length === 0, deadX.join(', '));
+  ok('no closed window is left visible', lingering.length === 0, lingering.join(', '));
+
+  // minimise and reopen must also work for every window
+  const badMin = [];
+  for (const id of ids) {
+    shell.wm.Open(id);
+    const el = document.querySelector('[data-wid="' + id + '"]');
+    const m = el && el.querySelector('[data-act="min"]');
+    if (m) { click(m); if (shell.wm.IsVisible(id)) badMin.push(id); }
+    shell.wm.Open(id);
+    if (!shell.wm.IsVisible(id)) badMin.push(id + ' (would not reopen)');
+    shell.wm.Close(id);
+  }
+  ok('every window minimises and reopens', badMin.length === 0, badMin.join(', '));
+
+  // and Escape must never leave the user trapped
+  ids.forEach((id) => shell.wm.Open(id));
+  for (let i = 0; i < ids.length + 2; i++) {
+    dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown',
+      { key: 'Escape', bubbles: true }));
+  }
+  const stuck = ids.filter((id) => shell.wm.IsVisible(id));
+  ok('repeated Escape closes everything (never trapped)', stuck.length === 0, stuck.join(', '));
+}
+
 console.log('\n— quality presets —');
 shell.wm.Open('graphics');
 const qBtns = [...document.querySelectorAll('[data-quality]')];
