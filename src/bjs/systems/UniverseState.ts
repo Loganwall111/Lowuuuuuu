@@ -89,6 +89,21 @@ export class UniverseState {
 
   /* ------------------------------ generation ------------------------------ */
 
+  /**
+   * Throws the current universe away and builds a brand new one.
+   *
+   * Passing no seed picks a random one, which is what "NEW UNIVERSE" in the
+   * menu does. Returns the seed so it can be shown or saved.
+   */
+  reseed(seed?: number): number {
+    const next = Number.isFinite(seed as number)
+      ? (seed as number) >>> 0
+      : (Math.floor(Math.random() * 0xffffffff) >>> 0);
+    this.opts.seed = next;
+    this.generate();
+    return next;
+  }
+
   /** Populates the universe deterministically from the seed. */
   generate(): void {
     this.regions = [];

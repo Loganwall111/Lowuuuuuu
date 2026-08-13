@@ -279,10 +279,37 @@ export class App {
     this.menu = new MainMenu((choice) => {
       this.menu = null;
       if (choice.world !== this.currentId) this.loadWorld(choice.world);
+
+      // The menu offers actions now, not worlds. Honour whichever was picked
+      // once the world has had a moment to build itself.
+      const after = (fn: () => void) => setTimeout(fn, 400);
+      switch (choice.action) {
+        case 'new':
+          // A genuinely different universe, not just a reloaded world.
+          after(() => {
+            const seed = this.universe.reseed();
+            this.shell.toast?.(`New universe - seed ${seed}`);
+            this.shell.refreshAll();
+          });
+          break;
+        case 'customize':
+          // Drop the player straight into the tweakables.
+          after(() => {
+            this.shell.wm.Open('presets');
+            this.shell.wm.Open('graphics');
+          });
+          break;
+        case 'settings':
+          after(() => this.shell.wm.Open('graphics'));
+          break;
+        default:
+          break;
+      }
+
       if (choice.preset === 'chaos') {
-        setTimeout(() => this.world?.runAction?.('chaos', this.ctx), 400);
+        after(() => this.world?.runAction?.('chaos', this.ctx));
       } else if (choice.preset === 'weird') {
-        setTimeout(() => this.world?.runAction?.('weird', this.ctx), 400);
+        after(() => this.world?.runAction?.('weird', this.ctx));
       }
       this.shell.onMenuClosed();
     });

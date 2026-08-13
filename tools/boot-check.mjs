@@ -63,16 +63,34 @@ dom.window.WebGL2RenderingContext = global.WebGL2RenderingContext;
 
 dom.window.HTMLCanvasElement.prototype.getContext = function (type) {
   if (String(type).startsWith('webgl')) return makeGL();
-  return {
-    clearRect(){}, beginPath(){}, moveTo(){}, lineTo(){}, stroke(){}, fill(){}, arc(){},
-    fillRect(){}, putImageData(){}, drawImage(){},
-    getImageData: () => ({ data: new Uint8ClampedArray(4) }),
-    createImageData: () => ({ data: new Uint8ClampedArray(4) }),
+  // A 2D context stub that tolerates ANY drawing call. Listing methods by
+  // hand meant every new bit of canvas art (save/restore/ellipse/filter...)
+  // broke the harness with "c.<x> is not a function" - a fake failure that
+  // says nothing about the product. Unknown methods become no-ops.
+  const known = {
+    getImageData: (x, y, w = 1, h = 1) => ({
+      data: new Uint8ClampedArray(Math.max(1, w * h * 4)), width: w, height: h
+    }),
+    createImageData: (w = 1, h = 1) => ({
+      data: new Uint8ClampedArray(Math.max(1, w * h * 4)), width: w, height: h
+    }),
     createLinearGradient: () => ({ addColorStop(){} }),
     createRadialGradient: () => ({ addColorStop(){} }),
-    measureText: () => ({ width: 10 }),
-    set fillStyle(v){}, set strokeStyle(v){}, set lineWidth(v){}, set font(v){}
+    createConicGradient: () => ({ addColorStop(){} }),
+    createPattern: () => null,
+    measureText: (t = '') => ({ width: String(t).length * 6 }),
+    isPointInPath: () => false,
+    getLineDash: () => []
   };
+  return new Proxy(known, {
+    get(target, prop) {
+      if (prop in target) return target[prop];
+      // Any other property read is either a settable style field or a
+      // drawing command; hand back a harmless no-op function.
+      return () => {};
+    },
+    set() { return true; }
+  });
 };
 
 const errors = [];
@@ -132,11 +150,15 @@ console.log('\n=== main menu ===');
 console.log('  menu present    :', !!menu);
 ok('main menu is shown after boot', !!menu);
 if (menu) {
-  const cards = menu.querySelectorAll('.menu-card');
-  ok(`menu offers world cards (${cards.length})`, cards.length >= 4);
-  ok('menu has a quick-start button', !!menu.querySelector('#mQuick'));
+  // The menu is an action list, not a world picker - worlds are somewhere
+  // you fly to, in-game.
+  const actions = menu.querySelectorAll('[data-action^="m"]');
+  ok(`menu offers actions (${actions.length})`, actions.length >= 5);
+  ok('menu has no world-card grid', menu.querySelectorAll('.menu-card').length === 0);
+  const primary = menu.querySelector('.menu-item.primary');
+  ok('menu has a primary call to action', !!primary);
   // clicking must dismiss it and never leave a blocking layer
-  menu.querySelector('#mQuick').dispatchEvent(
+  primary.dispatchEvent(
     new dom.window.MouseEvent('click', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 900));
   const still = document.querySelector('.menu-root');

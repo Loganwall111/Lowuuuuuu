@@ -44,6 +44,18 @@ interface WindowState {
   last: { x: number; y: number; w: number; h: number };
 }
 
+/**
+ * The widest a panel may ever be. Panels sit at the screen edges, so anything
+ * wider than roughly a quarter of the viewport starts eating the centre - the
+ * exact thing the player asked us to stop doing.
+ */
+export function clampPanelWidth(w: number): number {
+  const vw = (typeof window !== 'undefined' && window.innerWidth) || 1280;
+  const cap = Math.max(180, Math.min(300, vw * 0.26));
+  const n = Number.isFinite(w) ? w : 280;
+  return Math.round(Math.max(172, Math.min(cap, n)));
+}
+
 export class WindowManager {
   private layer: HTMLDivElement;
   private dock: HTMLDivElement;
@@ -82,7 +94,10 @@ export class WindowManager {
     el.className = 'wm-win';
     el.dataset.wid = spec.id;
 
-    const w = spec.width ?? 300;
+    // Enforce the width cap centrally. Individual panels used to declare
+    // their own width and could exceed it, which is how a 340px panel ended
+    // up straddling the middle of the screen even after tiling.
+    const w = clampPanelWidth(spec.width ?? 280);
     const h = spec.height ?? 420;
     const x = spec.x !== undefined ? spec.x * (window.innerWidth - w) : 24;
     const y = spec.y !== undefined ? spec.y * (window.innerHeight - h) : 84;
@@ -315,22 +330,37 @@ export class WindowManager {
   }
 
   /** Tiles all open windows down the screen edges so none overlap. */
+  /**
+   * Lays open panels down the left and right edges, leaving the centre of
+   * the screen clear.
+   *
+   * If more panels are open than the two columns can hold, the overflow is
+   * MINIMISED rather than left where it was. Leaving it in place was a real
+   * bug: a panel that started in the middle stayed in the middle, so tiling
+   * silently failed to clear the view it was supposed to clear.
+   */
   TileEdges(): void {
     const open = [...this.windows.values()].filter((w) => w.open && !w.minimized);
     const top = 64;
     const gapY = 8;
+    const margin = 12;
+    const bottom = window.innerHeight - margin;
     let leftY = top, rightY = top;
+
     for (const st of open) {
       const w = st.el.offsetWidth || st.home.w;
       const h = Math.min(st.el.offsetHeight || 320, window.innerHeight - top - 20);
       const useLeft = leftY <= rightY;
-      const x = useLeft ? 12 : window.innerWidth - w - 12;
       const y = useLeft ? leftY : rightY;
-      if (y + h > window.innerHeight - 12) {
-        // column is full; stop tiling rather than pushing panels off-screen
+
+      if (y + h > bottom) {
+        // Both columns are full. Minimise to the dock instead of abandoning
+        // this panel wherever it happened to be sitting.
+        this.Minimize(st.spec.id);
         continue;
       }
-      st.el.style.left = x + 'px';
+
+      st.el.style.left = (useLeft ? margin : window.innerWidth - w - margin) + 'px';
       st.el.style.top = y + 'px';
       if (useLeft) leftY += h + gapY; else rightY += h + gapY;
       this.clamp(st);
@@ -432,7 +462,7 @@ export class WindowManager {
     });
     grip.addEventListener('pointermove', (e: PointerEvent) => {
       if (!active) return;
-      st.el.style.width = Math.max(240, ow + e.clientX - sx) + 'px';
+      st.el.style.width = clampPanelWidth(Math.max(200, ow + e.clientX - sx)) + 'px';
       st.el.style.height = Math.max(160, oh + e.clientY - sy) + 'px';
     });
     const end = (e: PointerEvent) => {

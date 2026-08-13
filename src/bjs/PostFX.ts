@@ -24,18 +24,26 @@ export interface PostFXSettings {
   sharpen: number;
   chromatic: number;
   fxaa: number;
+  /** Blur width of the bloom, in pixels. Wide = soft cinematic glare. */
+  bloomKernel: number;
+  /** Resolution the bloom is computed at. Higher = smoother falloff. */
+  bloomScale: number;
 }
 
 export const DEFAULT_POSTFX: PostFXSettings = {
-  bloom: 0.55,
-  bloomThreshold: 0.62,
-  exposure: 1.0,
-  contrast: 1.06,
-  vignette: 0.35,
-  grain: 3.0,
-  sharpen: 0.25,
-  chromatic: 2.0,
-  fxaa: 1
+  // A cinematic default. Bloom is wide and soft rather than a tight halo,
+  // which is what sells a star's glare and a planet's lit limb.
+  bloom: 0.95,
+  bloomThreshold: 0.42,
+  exposure: 1.18,
+  contrast: 1.14,
+  vignette: 0.42,
+  grain: 2.0,
+  sharpen: 0.35,
+  chromatic: 3.0,
+  fxaa: 1,
+  bloomKernel: 96,
+  bloomScale: 0.75
 };
 
 export const POSTFX_PARAMS: WorldParam[] = [
@@ -47,6 +55,8 @@ export const POSTFX_PARAMS: WorldParam[] = [
   { key: 'grain', label: 'Film Grain', min: 0, max: 20, step: 0.5, value: DEFAULT_POSTFX.grain },
   { key: 'sharpen', label: 'Sharpen', min: 0, max: 1, step: 0.02, value: DEFAULT_POSTFX.sharpen },
   { key: 'chromatic', label: 'Chromatic Aberration', min: 0, max: 20, step: 0.5, value: DEFAULT_POSTFX.chromatic },
+  { key: 'bloomKernel', label: 'Glare Width', min: 8, max: 192, step: 4, value: DEFAULT_POSTFX.bloomKernel },
+  { key: 'bloomScale', label: 'Glare Quality', min: 0.25, max: 1, step: 0.05, value: DEFAULT_POSTFX.bloomScale },
   { key: 'fxaa', label: 'Anti-aliasing (FXAA)', min: 0, max: 1, step: 1, value: DEFAULT_POSTFX.fxaa }
 ];
 
@@ -91,8 +101,8 @@ export class PostFX {
       if (p.bloomEnabled) {
         p.bloomWeight = s.bloom;
         p.bloomThreshold = s.bloomThreshold;
-        p.bloomKernel = 64;
-        p.bloomScale = 0.5;
+        p.bloomKernel = s.bloomKernel;
+        p.bloomScale = s.bloomScale;
       }
     });
 

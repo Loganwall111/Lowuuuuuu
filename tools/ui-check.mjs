@@ -106,6 +106,7 @@ document.body.innerHTML = '<canvas id="renderCanvas"></canvas>';
 document.head.innerHTML = '';
 
 const { Shell, WORLDS } = await load('src/bjs/ui/Shell.ts', 'shell');
+const { MainMenu } = await load('src/bjs/ui/MainMenu.ts', 'mainmenu');
 const qstate = { current: 'high', scaling: 1.0, adaptive: false };
 const ustate = {
   stats: { Location: '🌌 Deep space', 'Black holes': '4', Holding: '—' },
@@ -375,6 +376,98 @@ console.log('\n— P0: panels must never block the view —');
   click(document.getElementById('btnCloseAllPanels'));
   ok('close-all really closes every panel',
      shell.wm.list().every((w) => !shell.wm.IsVisible(typeof w === 'string' ? w : w.id)));
+}
+
+console.log('\n— the main menu is an AAA front-end, not a world picker —');
+{
+  // The menu must offer ACTIONS, not one tile per world. World choice is a
+  // thing you do by flying, in-game.
+  const menu = new MainMenu(() => {});
+  const root = document.querySelector('.menu-root');
+  ok('the menu renders', !!root);
+
+  ok('there is no grid of world tiles to pick between',
+     document.querySelectorAll('.menu-card').length === 0);
+  const actions = document.querySelectorAll('[data-action^="m"]');
+  ok(`the menu offers actions instead (${actions.length})`, actions.length >= 5);
+
+  const labels = [...actions].map((a) => a.textContent.trim());
+  ok('Continue is offered', labels.some((l) => /CONTINUE/.test(l)));
+  ok('a new universe is offered', labels.some((l) => /NEW UNIVERSE/.test(l)));
+  ok('sandbox mode is offered', labels.some((l) => /SANDBOX/.test(l)));
+  ok('customization is offered', labels.some((l) => /CUSTOMIZATION/.test(l)));
+  ok('exactly one action is the primary call to action',
+     document.querySelectorAll('.menu-item.primary').length === 1);
+
+  // AAA chrome from the concept
+  ok('there is a top navigation bar', !!document.querySelector('.menu-nav'));
+  ok('the nav has multiple sections',
+     document.querySelectorAll('.menu-navbtn').length >= 4);
+  ok('there is a commander/profile block', !!document.querySelector('.menu-user'));
+  ok('there is a news panel', !!document.querySelector('.menu-news'));
+  ok('there is a bottom status strip',
+     document.querySelectorAll('.menu-cell').length >= 3);
+  ok('the starfield canvas exists so it is never flat black',
+     !!document.querySelector('#menuStars'));
+
+  // the news panel must be closable - no dead X anywhere, menu included
+  const newsX = document.getElementById('mNewsX');
+  ok('the news panel has a close button', !!newsX);
+  click(newsX);
+  ok('the news X actually closes it',
+     document.querySelector('.menu-news').style.display === 'none');
+
+  // picking must report the choice. Destroy the first menu before creating
+  // a second, or duplicate ids make getElementById find the wrong button.
+  menu.destroy();
+  let picked = null;
+  const m2 = new MainMenu((c) => { picked = c; });
+  click(document.getElementById('mSandbox'));
+  ok('choosing an action reports it', !!picked && picked.world === 'sandbox');
+  ok('the action name is passed through', picked.action === 'sandbox');
+  m2.destroy();
+  ok('the menu can be destroyed', !document.querySelector('.menu-root'));
+}
+
+console.log('\n— the centre of the screen must stay clear —');
+{
+  // The recurring complaint: panels covering what you are looking at.
+  // Assert it structurally rather than trusting the CSS by eye.
+  const W = dom.window.innerWidth, H = dom.window.innerHeight;
+  const ids = shell.wm.list().map((w) => (typeof w === 'string' ? w : w.id));
+  ids.forEach((id) => shell.wm.Open(id));
+
+  // no single panel may be wider than a quarter-ish of the screen
+  const tooWide = [];
+  ids.forEach((id) => {
+    const el = document.querySelector('[data-wid="' + id + '"]');
+    const w = parseFloat(el.style.width) || 0;
+    if (w > W * 0.34) tooWide.push(id + '=' + w);
+  });
+  ok('no panel is wide enough to dominate the view', tooWide.length === 0,
+     tooWide.join(', '));
+
+  // the default layout must leave a clear corridor down the middle
+  shell.wm.TileEdges();
+  const cx = W / 2;
+  const band = W * 0.18;   // the central band we insist stays clear
+  const blockers = [];
+  ids.forEach((id) => {
+    if (!shell.wm.IsVisible(id)) return;
+    const el = document.querySelector('[data-wid="' + id + '"]');
+    const left = parseFloat(el.style.left) || 0;
+    const w = parseFloat(el.style.width) || 0;
+    if (left < cx + band / 2 && left + w > cx - band / 2) blockers.push(id);
+  });
+  ok('after tiling, the central band of the screen is completely clear',
+     blockers.length === 0, blockers.join(', '));
+
+  // focus mode must clear it entirely regardless of layout
+  shell.wm.SetFocusMode(true);
+  ok('focus mode hides the chrome layer entirely',
+     document.body.dataset.focus === '1');
+  shell.wm.SetFocusMode(false);
+  shell.wm.CloseAll();
 }
 
 console.log('\n— EVERY window: no dead X anywhere —');

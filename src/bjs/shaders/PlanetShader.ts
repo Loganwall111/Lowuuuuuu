@@ -185,7 +185,20 @@ void main(void){
   float lam = max(ndl, 0.0);
   float day = smoothstep(-0.12, 0.22, ndl);
 
-  vec3 col = albedo * (lam * 1.25 + 0.035);
+  // ---- direct light with a soft terminator ----
+  // A hard N.L edge looks like CG. Real planets have a wide, warm terminator
+  // because the star is a disc, not a point, so wrap the diffuse slightly.
+  float wrap = 0.22;
+  float diff = clamp((ndl + wrap) / (1.0 + wrap), 0.0, 1.0);
+  // warm the light as it grazes, like sunset through more atmosphere
+  vec3 sunCol = mix(vec3(1.0, 0.62, 0.34), vec3(1.0, 0.97, 0.92),
+                    smoothstep(0.0, 0.42, ndl));
+
+  vec3 col = albedo * sunCol * (diff * 1.35 + 0.03);
+
+  // ---- ambient sky bounce, so the night side is never dead black ----
+  float upness = n.y * 0.5 + 0.5;
+  col += albedo * mix(vec3(0.012, 0.016, 0.030), vec3(0.030, 0.038, 0.062), upness);
 
   if (specMask > 0.01){
     vec3 H = normalize(L + V);
@@ -197,10 +210,26 @@ void main(void){
 
   if (cloudAmt > 0.01 && ptype > 0.5 && ptype < 3.5){
     vec3 cp = p * 3.1 + vec3(time * 0.012, 0.0, time * 0.006) + seed * 11.0;
-    float cl = fbm(cp, 6, 2.3, 0.55) * 0.5 + 0.5;
+    float cl  = fbm(cp, 6, 2.3, 0.55) * 0.5 + 0.5;
     float cl2 = fbm(cp * 2.4 - time * 0.02, 5, 2.4, 0.5) * 0.5 + 0.5;
     float cover = smoothstep(0.52, 0.80, cl * 0.65 + cl2 * 0.45) * cloudAmt;
-    col = mix(col, vec3(1.0) * (lam * 1.15 + 0.05), clamp(cover, 0.0, 0.92));
+
+    // Cloud tops are lit from above and their undersides are shadowed. Sample
+    // the field slightly toward the sun to get a cheap self-shadow, which is
+    // what gives cloud decks depth instead of looking like a painted decal.
+    float above = fbm(cp + L * 0.16, 5, 2.3, 0.55) * 0.5 + 0.5;
+    float selfShadow = clamp(1.0 - max(above - cl, 0.0) * 2.6, 0.35, 1.0);
+
+    // forward scattering: clouds glow where they are between you and the star
+    float vdl = max(dot(V, -L), 0.0);
+    float silver = pow(vdl, 7.0) * 0.85;
+
+    vec3 cloudLit = vec3(1.0) * (diff * 1.25 * selfShadow + 0.04)
+                  * sunCol + vec3(1.0, 0.96, 0.9) * silver * diff;
+    col = mix(col, cloudLit, clamp(cover, 0.0, 0.94));
+
+    // clouds cast a faint shadow on the surface at grazing light
+    col *= 1.0 - cover * 0.18 * (1.0 - diff);
   }
 
   if (cityLights > 0.01){
@@ -211,8 +240,30 @@ void main(void){
     col += vec3(1.0, 0.82, 0.48) * lights * 1.7;
   }
 
-  float rim = pow(1.0 - max(dot(n, V), 0.0), 3.0);
-  col += mix(vec3(0.18,0.42,0.95), vec3(0.95,0.55,0.30), 1.0 - day) * rim * 0.5 * day;
+  // ---- atmospheric limb ----
+  // Rayleigh scattering is strongly wavelength dependent, so the limb goes
+  // blue while the sunset edge goes orange. Two separate powers keep the
+  // thin bright rim distinct from the broad haze.
+  float fres = 1.0 - max(dot(n, V), 0.0);
+  float haze = pow(fres, 2.2);
+  float limb = pow(fres, 6.0);
+
+  vec3 rayleigh = vec3(0.16, 0.38, 0.92);
+  vec3 sunset   = vec3(1.00, 0.48, 0.20);
+  // the sunset colour appears where the light grazes the surface
+  float graze = smoothstep(0.35, -0.05, ndl) * smoothstep(-0.35, 0.05, ndl);
+  vec3 atmoCol = mix(rayleigh, sunset, clamp(graze * 1.4, 0.0, 1.0));
+
+  col += atmoCol * haze * 0.34 * (day * 0.85 + 0.15);
+  col += atmoCol * limb * 0.85 * day;
+
+  // ---- sun glare on the lit limb ----
+  // Where the star is almost behind the planet, light spills around the edge.
+  float behind = pow(max(dot(V, -L), 0.0), 3.5);
+  col += sunCol * behind * limb * 2.2;
+
+  // a faint bluish terminator glow, the atmosphere still lit after sunset
+  col += rayleigh * pow(fres, 3.0) * smoothstep(0.30, 0.0, abs(ndl)) * 0.30;
 
   col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
   gl_FragColor = vec4(pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2)), 1.0);

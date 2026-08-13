@@ -4,7 +4,7 @@ export const UI_CSS = `
   --line:rgba(255,255,255,.10); --line2:rgba(255,255,255,.06);
   --txt:#e8edf7; --dim:#8b95ad; --dim2:#5d6679;
   --acc:#4da3ff; --acc2:#7c5cff; --ok:#31d68a; --warn:#ffb545;
-  --r:11px; --r2:8px;
+  --r:6px; --r2:4px;
   --shadow:0 14px 38px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.35);
   /* UI density + see-through: the sim must always stay readable behind panels */
   --ui-scale:1;
@@ -13,8 +13,8 @@ export const UI_CSS = `
   --panel-dyn:rgba(16,20,30,var(--panel-alpha));
 }
 /* --- density presets: desktop games use tighter UI than web pages --- */
-body[data-density="compact"]{ --r:9px; --r2:7px; --ui-scale:.88; }
-body[data-density="tiny"]   { --r:8px; --r2:6px; --ui-scale:.78; }
+body[data-density="compact"]{ --r:8px; --r2:6px; --ui-scale:.80; }
+body[data-density="tiny"]   { --r:7px; --r2:5px; --ui-scale:.66; }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--bg);}
 body{font:14px/1.45 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--txt);
@@ -28,7 +28,9 @@ body{font:14px/1.45 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,s
   background:var(--panel);backdrop-filter:blur(22px) saturate(140%);
   -webkit-backdrop-filter:blur(22px) saturate(140%);
   border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
-  min-width:200px;max-height:calc(100vh - 88px);overflow:hidden;
+  min-width:172px;max-height:calc(100vh - 96px);overflow:hidden;
+  /* A panel may never be wide enough to cover the middle of the screen. */
+  max-width:min(300px,26vw);
   animation:wmIn .16s cubic-bezier(.2,.8,.3,1);
   font-size:calc(13px * var(--ui-scale));
   background:var(--panel-dyn);
