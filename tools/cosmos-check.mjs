@@ -566,6 +566,77 @@ export { Vector3 } from '@babylonjs/core/Maths/math.vector';
   })());
 }
 
+console.log('\n— things with arms —');
+{
+  const gEntry = join(dir, 'geo.js');
+  const gOut = join(dir, 'geo.mjs');
+  writeFileSync(gEntry,
+    "export * from '/home/user/Low/src/bjs/systems/CreatureGeometry.ts';");
+  execFileSync('/home/user/Low/node_modules/.bin/esbuild',
+    [gEntry, '--bundle', '--format=esm', '--platform=browser',
+     '--outfile=' + gOut], { stdio: 'pipe' });
+  const G = await import(gOut);
+
+  const spec = { ...G.DEFAULT_ARM, length: 4, baseRadius: 0.2 };
+  const path = G.armPath(spec, 0);
+  ok('an arm has the requested number of segments', path.length === spec.segments);
+  ok('an arm starts at the body', path[0].length() < 0.001);
+  ok('an arm actually reaches outward',
+    path[path.length - 1].length() > spec.length * 0.3,
+    path[path.length - 1].length().toFixed(2));
+
+  // The curve must be smooth: no segment may jump further than the others,
+  // or the tube kinks.
+  let maxStep = 0, minStep = Infinity;
+  for (let i = 1; i < path.length; i++) {
+    const d = path[i].subtract(path[i - 1]).length();
+    maxStep = Math.max(maxStep, d); minStep = Math.min(minStep, d);
+  }
+  ok('the arm curve has no kinks', maxStep / Math.max(minStep, 1e-6) < 6,
+    'step ratio ' + (maxStep / minStep).toFixed(2));
+
+  // Arms must taper, and never to exactly zero (a zero-radius tube is
+  // degenerate geometry).
+  ok('an arm is thickest at the base',
+    G.armRadius(spec, 0) > G.armRadius(spec, 0.5));
+  ok('an arm tapers to a tip',
+    G.armRadius(spec, 1) < G.armRadius(spec, 0) * 0.15);
+  ok('the tip still has non-zero thickness', G.armRadius(spec, 1) > 0);
+  ok('radius is clamped outside 0-1',
+    G.armRadius(spec, 2) > 0 && G.armRadius(spec, -1) > 0);
+  let tapers = true;
+  for (let t = 0; t < 1; t += 0.05) {
+    if (G.armRadius(spec, t + 0.05) > G.armRadius(spec, t) + 1e-9) tapers = false;
+  }
+  ok('thickness never increases toward the tip', tapers);
+
+  // Arms must move, and not all in lockstep.
+  const t0 = G.armPath(spec, 0), t1 = G.armPath(spec, 1.7);
+  ok('arms move over time',
+    t0.some((p, i) => Vector3Dist(p, t1[i]) > 0.01));
+  const armA = G.armPath({ ...spec, phase: 0 }, 1);
+  const armB = G.armPath({ ...spec, phase: 2.1 }, 1);
+  ok('arms do not all move in lockstep',
+    armA.some((p, i) => Vector3Dist(p, armB[i]) > 0.01));
+
+  // Motion must stay bounded - an arm that drifts is a bug you only see
+  // after a minute of watching.
+  let drift = 0;
+  for (let t = 0; t < 400; t += 3.7) {
+    const pth = G.armPath(spec, t);
+    drift = Math.max(drift, pth[pth.length - 1].length());
+  }
+  ok('arms never drift away from the body over time',
+    drift < spec.length * 1.6, drift.toFixed(2));
+
+  ok('the octopus defaults to eight arms', G.DEFAULT_OCTOPUS.arms === 8);
+  ok('deep-sea creatures glow', G.DEFAULT_OCTOPUS.glow > 0);
+}
+
+function Vector3Dist(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
 rmSync(dir, { recursive: true, force: true });
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

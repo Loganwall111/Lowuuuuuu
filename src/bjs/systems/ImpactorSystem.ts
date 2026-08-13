@@ -24,6 +24,8 @@ import type { Scene } from '@babylonjs/core/scene';
 import {
   computeImpact, throwableById, type Throwable, type ImpactResult
 } from './ThrowableSystem';
+import { buildOctopus, buildTentacle, animateArms } from './CreatureGeometry';
+import type { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 
 /** A body a projectile can hit. */
 export interface ImpactTarget {
@@ -49,6 +51,10 @@ export interface Projectile {
   phase: number;
   /** The body it has latched onto, for orbiters and devourers. */
   attached: ImpactTarget | null;
+  /** Arm meshes, for the things that have arms. */
+  arms?: Mesh[];
+  /** Root node when the projectile is a creature rather than a lump. */
+  creature?: TransformNode;
 }
 
 export interface ImpactEvent {
@@ -94,28 +100,62 @@ export class ImpactorSystem {
       ? direction.normalize() : new Vector3(0, 0, 1);
 
     const size = ImpactorSystem.visualRadius(spec.mass);
-    const mesh = MeshBuilder.CreateSphere(
-      'proj' + (++this.counter), { diameter: size * 2, segments: 12 }, scene);
-    mesh.position = from.add(dir.scale(size * 2 + 1));
-
-    const mat = new StandardMaterial(mesh.name + 'm', scene);
+    const name = 'proj' + (++this.counter);
+    const start = from.add(dir.scale(size * 2 + 1));
     const c = ImpactorSystem.tint(spec);
-    mat.diffuseColor = c;
-    mat.emissiveColor = c.scale(spec.composition === 'antimatter' ? 0.9 : 0.25);
-    mat.specularColor = new Color3(0.2, 0.2, 0.2);
-    mesh.material = mat;
+
+    let mesh: Mesh;
+    let arms: Mesh[] | undefined;
+    let creature: TransformNode | undefined;
+
+    // A sphere is an honest picture of a rock and a poor one of an animal.
+    if (spec.id === 'octopus') {
+      const built = buildOctopus(scene, name, { size, color: c, arms: 8, glow: 0.5 });
+      built.root.position.copyFrom(start);
+      mesh = built.body;
+      arms = built.arms;
+      creature = built.root;
+    } else if (spec.id === 'tentacle') {
+      const built = buildTentacle(scene, name, size, c);
+      built.mesh.position.copyFrom(start);
+      mesh = built.mesh;
+    } else {
+      mesh = MeshBuilder.CreateSphere(name, { diameter: size * 2, segments: 12 }, scene);
+      mesh.position.copyFrom(start);
+      const mat = new StandardMaterial(name + 'm', scene);
+      mat.diffuseColor = c;
+      mat.emissiveColor = c.scale(spec.composition === 'antimatter' ? 0.9 : 0.25);
+      mat.specularColor = new Color3(0.2, 0.2, 0.2);
+      mesh.material = mat;
+    }
 
     const p: Projectile = {
-      id: mesh.name,
+      id: name,
       spec,
       mesh,
       velocity: dir.scale(speed),
       age: 0,
       phase: 0,
-      attached: null
+      attached: null,
+      arms,
+      creature
     };
     this.projectiles.push(p);
     return p;
+  }
+
+  /**
+   * Where a projectile is. Creatures are a node with children, lumps are a
+   * bare mesh; everything else in this file works through these two so it
+   * never has to care which it is holding.
+   */
+  static place(p: Projectile, to: Vector3): void {
+    (p.creature ?? p.mesh).position.copyFrom(to);
+  }
+
+  /** Current position of a projectile, creature or lump. */
+  static posOf(p: Projectile): Vector3 {
+    return (p.creature ?? p.mesh).position;
   }
 
   /** Screen size from real mass, compressed logarithmically. */
@@ -157,6 +197,7 @@ export class ImpactorSystem {
       // Behaviour-carrying items do their own thing once attached.
       if (p.attached && p.spec.behaviour) {
         this.behave(p, dt);
+        if (p.arms && this.scene) animateArms(p.arms, p.age, this.scene);
         continue;
       }
 
@@ -168,18 +209,19 @@ export class ImpactorSystem {
         acc.addInPlace(d.normalize().scale((WORLD_G * t.mass) / r2));
       }
       p.velocity.addInPlace(acc.scale(dt));
-      p.mesh.position.addInPlace(p.velocity.scale(dt));
+      ImpactorSystem.place(p, ImpactorSystem.posOf(p).add(p.velocity.scale(dt)));
+      if (p.arms) animateArms(p.arms, p.age, this.scene!);
 
       // Did it arrive?
       for (const t of targets) {
-        const dist = Vector3.Distance(p.mesh.position, t.position);
+        const dist = Vector3.Distance(ImpactorSystem.posOf(p), t.position);
         if (dist > t.radius + ImpactorSystem.visualRadius(p.spec.mass)) continue;
 
         // Impact speed in m/s: world speed is scaled to something plausible
         // so the energies mean what they say.
         const speed = p.velocity.length() * 500;
         const result = computeImpact(p.spec, speed, t.mass, t.physicalRadius);
-        const at = p.mesh.position.clone();
+        const at = ImpactorSystem.posOf(p).clone();
 
         if (p.spec.behaviour === 'orbit' || p.spec.behaviour === 'devour') {
           // These do not land, they take up residence.
@@ -209,7 +251,7 @@ export class ImpactorSystem {
         // Circles the body it reached, staying just above the surface.
         const r = t.radius * 1.35;
         const a = p.phase * 0.6;
-        p.mesh.position.set(
+        (p.creature ?? p.mesh).position.set(
           t.position.x + Math.cos(a) * r,
           t.position.y + Math.sin(a * 0.7) * r * 0.3,
           t.position.z + Math.sin(a) * r
@@ -221,17 +263,17 @@ export class ImpactorSystem {
         // as it sounds and costs nothing extra to compute.
         const r = t.radius * Math.max(0.35, 1.6 - p.phase * 0.05);
         const a = p.phase * 0.9;
-        p.mesh.position.set(
+        (p.creature ?? p.mesh).position.set(
           t.position.x + Math.cos(a) * r,
           t.position.y,
           t.position.z + Math.sin(a) * r
         );
         const grow = 1 + Math.min(6, p.phase * 0.12);
-        p.mesh.scaling.setAll(grow);
+        (p.creature ?? p.mesh).scaling.setAll(grow);
         break;
       }
       case 'grow': {
-        p.mesh.scaling.setAll(1 + Math.min(9, p.phase * 0.3));
+        (p.creature ?? p.mesh).scaling.setAll(1 + Math.min(9, p.phase * 0.3));
         break;
       }
       default:
@@ -248,7 +290,13 @@ export class ImpactorSystem {
   private destroy(index: number): void {
     const p = this.projectiles[index];
     if (!p) return;
-    try { p.mesh.material?.dispose(); p.mesh.dispose(); } catch { /* gone */ }
+    try {
+      p.mesh.material?.dispose();
+      // A creature owns its arms through its root, so disposing the root
+      // takes the whole animal rather than orphaning eight tubes.
+      if (p.creature) p.creature.dispose(false, true);
+      else p.mesh.dispose();
+    } catch { /* gone */ }
     this.projectiles.splice(index, 1);
   }
 

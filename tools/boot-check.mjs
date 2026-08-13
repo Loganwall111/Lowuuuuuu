@@ -251,6 +251,56 @@ try {
 } catch (e) {
   fleetChecks.push(['launching a fleet survives a live frame: ' + e.message, false]);
 }
+// ---- creatures build for real ----
+// Tube geometry can pass pure-function tests and still throw inside
+// Babylon, so build the actual animal in the actual scene.
+const critterChecks = [];
+try {
+  const imp = appRef?.world?.impactor;
+  const scene = appRef?.scene;
+  // Reach the geometry through the app's own bundle by throwing one.
+  if (imp) {
+    const V = appRef.vehicle.position;
+    const oct = imp.throwAt('octopus', V, new V.constructor(0, 0, 1), 10);
+    critterChecks.push(['the octopus can be thrown', !!oct]);
+    critterChecks.push(['the octopus is built as a creature, not a sphere',
+      !!oct?.creature && Array.isArray(oct?.arms) && oct.arms.length === 8]);
+    critterChecks.push(['every arm is real geometry',
+      !!oct?.arms?.every((a) => a.getTotalVertices() > 0)]);
+    // Arms must follow the body, which is the bug you get for moving the
+    // mesh instead of the root.
+    const before = oct.arms[0].getAbsolutePosition().clone();
+    imp.update(0.4, []);
+    // getAbsolutePosition() reads a cached world matrix that Babylon only
+    // refreshes during a render, so it must be forced before comparing -
+    // otherwise this reports no movement for a creature that did move.
+    oct.creature.computeWorldMatrix(true);
+    oct.arms[0].computeWorldMatrix(true);
+    const armDelta = oct.arms[0].getAbsolutePosition().subtract(before).length();
+    critterChecks.push(['the whole animal moves together',
+      oct.creature.position.length() > 0 && armDelta > 0,
+      'arm moved ' + armDelta.toFixed(3)]);
+
+    const ten = imp.throwAt('tentacle', V, new V.constructor(1, 0, 0), 10);
+    critterChecks.push(['the tentacle is a tube, not a ball',
+      !!ten && ten.mesh.getTotalVertices() > 0 && !ten.creature]);
+
+    // Disposal must take the arms with it rather than orphaning tubes.
+    const meshesBefore = scene.meshes.length;
+    imp.clear();
+    critterChecks.push(['clearing removes the whole animal',
+      scene.meshes.length < meshesBefore]);
+    critterChecks.push(['no orphaned arms are left behind',
+      !scene.meshes.some((m) => m.name.includes('-arm'))]);
+  } else {
+    critterChecks.push(['the planetary world exposes its impactor', false]);
+  }
+} catch (e) {
+  critterChecks.push(['creatures build in a live scene: ' + e.message, false]);
+}
+console.log('\n=== creatures ===');
+for (const [name, cond, detail] of critterChecks) ok(name, cond, detail);
+
 console.log('\n=== fleets ===');
 for (const [name, cond, detail] of fleetChecks) ok(name, cond, detail);
 
