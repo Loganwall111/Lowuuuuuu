@@ -330,9 +330,7 @@ export class Shell {
       <div class="hud-chip"><div class="hud-k">FPS</div><div class="hud-v" id="hFps">–</div></div>
       <div class="hud-chip"><div class="hud-k">Renderer</div><div class="hud-v" id="hBackend" style="font-size:12px">–</div></div>
       <div class="hud-chip"><div class="hud-k">World</div><div class="hud-v" id="hWorld" style="font-size:12px">–</div></div>
-      <div class="hud-chip hud-flight"><div class="hud-k">Speed</div><div class="hud-v" id="hSpeed">0</div></div>
-      <div class="hud-chip hud-flight"><div class="hud-k">Distance</div><div class="hud-v" id="hDist">0</div></div>
-      <div class="hud-chip hud-flight"><div class="hud-k">Location</div><div class="hud-v" id="hWhere" style="font-size:12px">Deep space</div></div>
+
     `;
     document.body.appendChild(this.hud);
   }

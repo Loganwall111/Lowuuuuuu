@@ -335,6 +335,15 @@ export class VehicleController {
   }
 
   /** Where the camera should look, given the current orientation. */
+  /**
+   * Attitude, for instruments. Read-only: yaw and pitch stay private
+   * because letting anything outside write them is how camera state drifts
+   * out of sync with the transform.
+   */
+  attitude(): { yaw: number; pitch: number; roll: number } {
+    return { yaw: this.yaw, pitch: this.pitch, roll: this.roll };
+  }
+
   lookTarget(): Vector3 {
     const { fwd } = this.axes();
     return this.position.add(fwd.scale(10));

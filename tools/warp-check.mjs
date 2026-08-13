@@ -71,9 +71,18 @@ console.log('\n— speed and distance readouts —');
   // Pull the formatters off Shell without a DOM by reading the source: they
   // are static and pure, so evaluate them directly.
   const src = fs.readFileSync('src/bjs/ui/Shell.ts', 'utf8');
-  ok('the HUD has a speed field', src.includes('id="hSpeed"'));
-  ok('the HUD has a distance field', src.includes('id="hDist"'));
-  ok('the HUD names where you are', src.includes('id="hWhere"'));
+  // Flight telemetry moved out of Shell's chip strip into FlightHUD, which
+  // is a real instrument panel rather than three chips. The requirement is
+  // that the readouts exist and are fed - not which file holds them.
+  const hud = fs.readFileSync('src/bjs/ui/FlightHUD.ts', 'utf8');
+  ok('the HUD has a speed field', hud.includes('id="fhSpd"'));
+  ok('the HUD has a distance field', hud.includes('id="fhLocD"'));
+  ok('the HUD names where you are', hud.includes('id="fhLoc"'));
+  ok('the HUD shows navigation coordinates',
+    hud.includes('id="fhX"') && hud.includes('id="fhY"') && hud.includes('id="fhZ"'));
+  ok('the HUD shows warp charge', hud.includes('id="fhWrp"'));
+  ok('every HUD group can be switched off individually',
+    /setElement\(/.test(hud) && /DEFAULT_HUD_ELEMENTS/.test(hud));
   ok('there is a setFlight entry point', /setFlight\(/.test(src));
 
   // Import the real statics rather than re-parsing the source: a

@@ -251,6 +251,54 @@ console.log('\n— fleets and their gravity —');
   ok('an unknown ship class resolves to null', M.shipClass('nope') === null);
 }
 
+console.log('\n— flight instruments —');
+{
+  // Pure formatters, testable without a DOM.
+  const hudEntry = join(dir, 'hud.js');
+  const hudOut = join(dir, 'hud.mjs');
+  writeFileSync(hudEntry,
+    "export * from '/home/user/Low/src/bjs/ui/FlightHUD.ts';");
+  execFileSync('/home/user/Low/node_modules/.bin/esbuild',
+    [hudEntry, '--bundle', '--format=esm', '--platform=browser',
+     '--outfile=' + hudOut], { stdio: 'pipe' });
+  const H = await import(hudOut);
+
+  ok('north reads as N', H.compassPoint(0) === 'N');
+  ok('a quarter turn reads as east', H.compassPoint(Math.PI / 2) === 'E');
+  ok('half a turn reads as south', H.compassPoint(Math.PI) === 'S');
+  ok('compass wraps past a full turn', H.compassPoint(Math.PI * 2.001) === 'N');
+  ok('negative headings still resolve',
+    ['N', 'NW', 'NE'].includes(H.compassPoint(-0.01)));
+
+  ok('heading is reported in degrees', H.headingDegrees(Math.PI) === 180);
+  ok('heading is always 0-359', H.headingDegrees(Math.PI * 4) === 0);
+  let inRange = true;
+  for (let a2 = -20; a2 < 20; a2 += 0.37) {
+    const d = H.headingDegrees(a2);
+    if (!(d >= 0 && d <= 359)) inRange = false;
+  }
+  ok('no heading ever falls outside 0-359', inRange);
+
+  // Coordinates must be sign-prefixed and stable in width, or the numbers
+  // jitter sideways as they change - the worst thing a HUD can do.
+  ok('coordinates always carry a sign',
+    H.formatCoord(5).startsWith('+') && H.formatCoord(-5).startsWith('-'));
+  ok('large coordinates are abbreviated',
+    H.formatCoord(2.5e6).includes('M') && H.formatCoord(2500).includes('k'));
+  ok('coordinates survive nonsense input', H.formatCoord(NaN) === '+0.0');
+
+  ok('speed escalates to fractions of c', H.formatSpeed(600).includes('c'));
+  ok('slow speeds stay in world units', H.formatSpeed(5).includes('u/s'));
+  ok('distance escalates to light years', H.formatDistance(1e6).includes('ly'));
+  ok('mid distances read in AU', H.formatDistance(5000).includes('AU'));
+
+  ok('every HUD group defaults to a boolean',
+    Object.values(H.DEFAULT_HUD_ELEMENTS).every((v) => typeof v === 'boolean'));
+  ok('the HUD exposes the groups the user asked to toggle',
+    ['coordinates', 'attitude', 'velocity', 'warp', 'target', 'reticle']
+      .every((k) => k in H.DEFAULT_HUD_ELEMENTS));
+}
+
 rmSync(dir, { recursive: true, force: true });
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

@@ -126,7 +126,62 @@ try {
 // init() dismisses the overlay on a short timer; let it elapse.
 await new Promise((r) => setTimeout(r, 900));
 
+// ---- the flight HUD, in a real document ----
+// A green unit test on the formatters does not prove the panel mounted or
+// that it is wired to anything, so assert against the live DOM.
+const hudChecks = [];
+try {
+  const root = document.querySelector('.fhud');
+  hudChecks.push(['the flight HUD mounts into the document', !!root]);
+  hudChecks.push(['the HUD does not swallow clicks meant for the sim',
+    !!root && (root.style.pointerEvents === 'none' ||
+      String(root.className).includes('fhud'))]);
+  for (const id of ['fhX', 'fhY', 'fhZ', 'fhHdg', 'fhSpd', 'fhWrp', 'fhLoc']) {
+    hudChecks.push(['HUD field ' + id + ' exists', !!document.getElementById(id)]);
+  }
+  // Push a frame of telemetry through and confirm it lands on screen.
+  if (appRef?.flightHud) {
+    appRef.flightHud.update({
+      x: 1234, y: -56, z: 7.5, heading: Math.PI / 2, pitch: 0.2,
+      speed: 900, throttle: 0.5, warpCharge: 0.5, warpMultiplier: 12,
+      locale: 'Test Nebula', localeDistance: 5000,
+      fleetSize: 3, fleetGravity: 0
+    });
+    hudChecks.push(['coordinates reach the screen',
+      document.getElementById('fhX')?.textContent === '+1.23k']);
+    hudChecks.push(['heading reaches the screen',
+      document.getElementById('fhHdg')?.textContent === '090°']);
+    hudChecks.push(['the nearest place is named',
+      document.getElementById('fhLoc')?.textContent === 'Test Nebula']);
+    // The DOM normalises "50.0%" to "50%", so compare numerically rather
+    // than by string.
+    const wPct = parseFloat(document.getElementById('fhWrp')?.style.width ?? '');
+    hudChecks.push(['warp charge reaches the screen', Math.abs(wPct - 50) < 0.01]);
+    hudChecks.push(['the warp multiplier is displayed',
+      document.getElementById('fhWMul')?.textContent === '×12']);
+    // Toggling a group must actually hide it.
+    appRef.flightHud.setElement('coordinates', false);
+    const blk = document.querySelector('[data-g="coordinates"]');
+    hudChecks.push(['switching off a HUD group hides it',
+      !!blk && blk.style.display === 'none']);
+    appRef.flightHud.setElement('coordinates', true);
+    hudChecks.push(['switching it back on restores it',
+      !!blk && blk.style.display !== 'none']);
+    appRef.flightHud.setVisible(false);
+    hudChecks.push(['the whole HUD can be hidden',
+      root.style.display === 'none' && !appRef.flightHud.isVisible()]);
+    appRef.flightHud.setVisible(true);
+  } else {
+    hudChecks.push(['the app exposes its flight HUD', false]);
+  }
+} catch (e) {
+  hudChecks.push(['the flight HUD survives a live frame: ' + e.message, false]);
+}
+
 console.error = origError;
+
+console.log('\n=== flight HUD ===');
+for (const [name, cond] of hudChecks) ok(name, cond);
 
 console.log('\n=== App.init() ===');
 if (thrown) {

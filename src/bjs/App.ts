@@ -31,6 +31,7 @@ import { missingShaders } from './ShaderRegistry';
 import { WarpDrive, galacticMedium } from './systems/DeepSkySystem';
 import { Fleet, shipClass, shipView, type ViewMode } from './systems/FleetSystem';
 import { StarFieldRenderer } from './systems/StarFieldRenderer';
+import { FlightHUD } from './ui/FlightHUD';
 import { THROWABLES, computeImpact, throwableById } from './systems/ThrowableSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
@@ -101,6 +102,8 @@ export class App {
   private insideGalaxy = false;
   /** The sky, drawn from real regions rather than painted on a sphere. */
   starField = new StarFieldRenderer();
+  /** The instrument panel you fly by. */
+  flightHud = new FlightHUD();
 
   /** Planet-to-orbit tethers you can ride. */
   elevators = new ElevatorSystem();
@@ -304,6 +307,10 @@ export class App {
         void this.enterDimension(seed, depth);
       }
     };
+
+    // The flight instruments live outside the window layer so panels can be
+    // closed without losing the ability to navigate.
+    this.flightHud.mount();
 
     this.shell.progress(58, 'compiling shaders');
     // Boot into the garage: the title card renders over it, so clicking
@@ -931,6 +938,29 @@ export class App {
         eye.length(),
         this.universe.current?.name ?? 'Deep space'
       );
+
+      // ---- flight instruments ----
+      // Fed from the same state the camera uses, so the numbers on screen
+      // always describe the frame you are actually looking at.
+      {
+        const near = this.universe.nearest(eye);
+        const fg = this.fleet.gravity();
+        const att = this.vehicle.attitude();
+        const w = this.warpDrive.state();
+        this.flightHud.update({
+          x: eye.x, y: eye.y, z: eye.z,
+          heading: att.yaw,
+          pitch: att.pitch,
+          speed: this.shownSpeed,
+          throttle: Math.min(1, this.shownSpeed / Math.max(1, this.vehicle.flySpeed * 12)),
+          warpCharge: w.charge,
+          warpMultiplier: w.multiplier,
+          locale: near?.name ?? 'Deep space',
+          localeDistance: near ? Vector3.Distance(eye, near.position) : 0,
+          fleetSize: this.fleet.vessels.length,
+          fleetGravity: fg.surfaceGravity
+        });
+      }
 
       // ---- carrying things around ----
       if (this.grab.isHolding()) {

@@ -137,6 +137,63 @@ body[data-focus="1"] .hud{ opacity:.35; }
 .hud-v{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
 .hud-v small{font-size:10px;color:var(--dim);font-weight:500}
 
+/* ============ flight HUD ============ */
+/* Angled, thin-ruled and monospaced: instrument panel, not web page. The
+   canvas must stay readable through all of it, so nothing here is opaque
+   and nothing takes pointer events. */
+.fhud{position:fixed;inset:0;z-index:54;pointer-events:none;
+  font-family:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;}
+.fhud-left{position:absolute;left:20px;bottom:88px;display:flex;
+  flex-direction:column;gap:10px;align-items:flex-start;}
+.fhud-right{position:absolute;right:20px;bottom:88px;display:flex;
+  flex-direction:column;gap:10px;align-items:stretch;min-width:212px;}
+
+.fh-block{position:relative;padding:8px 14px 9px;
+  background:linear-gradient(135deg,rgba(10,16,28,.72),rgba(6,10,18,.58));
+  backdrop-filter:blur(14px) saturate(130%);
+  -webkit-backdrop-filter:blur(14px) saturate(130%);
+  border:1px solid rgba(120,175,255,.16);
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+  box-shadow:0 8px 26px rgba(0,0,0,.42);}
+/* live-telemetry edge */
+.fh-block::after{content:'';position:absolute;left:0;top:9px;bottom:9px;width:2px;
+  background:linear-gradient(180deg,var(--acc),transparent);opacity:.85;}
+
+.fh-label{font-size:8.5px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--dim2);margin-bottom:3px;}
+.fh-label b{color:var(--acc);font-weight:700;letter-spacing:1px;}
+.fh-coords{display:grid;grid-template-columns:auto auto;gap:1px 8px;align-items:baseline;}
+.fh-ax{font-size:9px;color:var(--dim2);letter-spacing:1px;}
+.fh-num{font-size:14px;font-weight:600;color:#cfe4ff;font-variant-numeric:tabular-nums;}
+.fh-row{display:flex;align-items:baseline;gap:9px;}
+.fh-big{font-size:21px;font-weight:700;line-height:1.1;color:#e6f1ff;
+  font-variant-numeric:tabular-nums;letter-spacing:.5px;}
+.fh-accent{color:#dff0ff;text-shadow:0 0 16px color-mix(in srgb,var(--acc) 60%,transparent);}
+.fh-cmp{font-size:12px;font-weight:700;color:var(--acc);letter-spacing:1.5px;}
+.fh-sub{font-size:9.5px;color:var(--dim);letter-spacing:.8px;}
+.fh-sub b{color:#b9cde8;font-weight:600;}
+.fh-tgt{font-size:13px;font-weight:600;color:#e2ecfa;letter-spacing:.4px;}
+
+.fh-bar{height:3px;margin-top:5px;background:rgba(140,180,240,.13);overflow:hidden;}
+.fh-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#9fd0ff);
+  box-shadow:0 0 10px color-mix(in srgb,var(--acc) 70%,transparent);
+  transition:width .09s linear;}
+.fh-bar-warp i{background:linear-gradient(90deg,var(--acc2),#c9b3ff);
+  box-shadow:0 0 12px color-mix(in srgb,var(--acc2) 75%,transparent);}
+/* at warp the whole panel picks up the drive colour */
+.fhud.warping .fh-warp{border-color:color-mix(in srgb,var(--acc2) 55%,transparent);}
+.fhud.warping .fh-warp::after{background:linear-gradient(180deg,var(--acc2),transparent);}
+
+.fhud-reticle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  opacity:.5;}
+.fh-ring{fill:none;stroke:rgba(150,200,255,.34);stroke-width:1;}
+.fh-dot{fill:var(--acc);}
+.fh-tick{stroke:rgba(160,205,255,.55);stroke-width:1.4;}
+.fh-arc{fill:none;stroke:color-mix(in srgb,var(--acc) 60%,transparent);stroke-width:1.2;
+  stroke-dasharray:3 6;}
+/* focus mode dims instruments but never hides them */
+body[data-focus="1"] .fhud{opacity:.42;}
+
 /* ============ controls ============ */
 .grp{margin-bottom:16px}
 .grp:last-child{margin-bottom:2px}
