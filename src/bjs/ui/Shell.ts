@@ -36,6 +36,13 @@ interface ShellHooks {
   onPause: (paused: boolean) => void;
   onPostFX: (key: string, value: number) => void;
   onSpawn: (objectId: string, scale: number) => void;
+  onUndo: () => string | null;
+  onRedo: () => string | null;
+  onSaveSnapshot: (label: string) => unknown;
+  onLoadSnapshot: (id: string) => boolean;
+  listSnapshots: () => { id: string; label: string; time: number }[];
+  canUndo: () => boolean;
+  canRedo: () => boolean;
 }
 
 export class Shell {
@@ -73,9 +80,19 @@ export class Shell {
     window.addEventListener('keydown', (e) => {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
       const k = e.key.toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && k === 'z') {
+        e.preventDefault();
+        e.shiftKey ? this.hooks.onRedo() : this.hooks.onUndo();
+        this.refreshAll();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && k === 'y') {
+        e.preventDefault(); this.hooks.onRedo(); this.refreshAll(); return;
+      }
       if (k === '1') this.wm.Toggle('controls');
       else if (k === '2') this.wm.Toggle('objects');
       else if (k === '6') this.wm.Toggle('library');
+      else if (k === '7') this.wm.Toggle('snapshots');
       else if (k === '3') this.wm.Toggle('telemetry');
       else if (k === '4') this.wm.Toggle('presets');
       else if (k === '5') this.wm.Toggle('graphics');
@@ -164,6 +181,9 @@ export class Shell {
       <button class="iconbtn" id="w-telemetry" title="Telemetry (3)">📊</button>
       <button class="iconbtn" id="w-presets"  title="Presets (4)">✨</button>
       <button class="iconbtn" id="w-graphics" title="Graphics (5)">🎨</button>
+      <button class="iconbtn" id="btnUndo"    title="Undo (Ctrl+Z)">↶</button>
+      <button class="iconbtn" id="btnRedo"    title="Redo (Ctrl+Shift+Z)">↷</button>
+      <button class="iconbtn" id="w-snapshots" title="Snapshots (7)">📸</button>
       <button class="iconbtn" id="btnReset"   title="Reset layout & sim (R)">↺</button>
     `;
     document.body.appendChild(this.topbar);
@@ -182,11 +202,17 @@ export class Shell {
       b.onclick = () => this.setMode(b.dataset.m as Mode);
     });
 
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics'] as const).forEach((id) => {
-      const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement;
-      btn.onclick = () => this.wm.Toggle(id);
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots'] as const).forEach((id) => {
+      const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement | null;
+      if (btn) btn.onclick = () => this.wm.Toggle(id);
     });
 
+    (this.topbar.querySelector('#btnUndo') as HTMLButtonElement).onclick = () => {
+      this.hooks.onUndo(); this.refreshAll();
+    };
+    (this.topbar.querySelector('#btnRedo') as HTMLButtonElement).onclick = () => {
+      this.hooks.onRedo(); this.refreshAll();
+    };
     (this.topbar.querySelector('#btnPause') as HTMLButtonElement).onclick = () => this.togglePause();
     (this.topbar.querySelector('#btnReset') as HTMLButtonElement).onclick = () => {
       this.wm.Reset();
@@ -195,7 +221,7 @@ export class Shell {
   }
 
   private syncTopbar(): void {
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics'] as const).forEach((id) => {
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id);
       btn?.classList.toggle('on', this.wm.IsVisible(id));
     });
@@ -299,6 +325,12 @@ export class Shell {
       id: 'objects', title: 'Objects', glyph: '🧰',
       x: 1, y: 0.10, width: 330, height: 520,
       render: (b) => this.renderObjects(b)
+    });
+
+    this.wm.register({
+      id: 'snapshots', title: 'Snapshots & History', glyph: '📸',
+      x: 0.5, y: 0.12, width: 310,
+      render: (b) => this.renderSnapshots(b)
     });
 
     this.wm.register({
@@ -525,6 +557,80 @@ export class Shell {
       });
       b.appendChild(eg);
     }
+  }
+
+  /** Re-renders every open panel (after undo/redo changes world state). */
+  refreshAll(): void {
+    ['controls', 'telemetry', 'snapshots', 'objects'].forEach((id) => this.wm.refresh(id));
+  }
+
+  /* ---- snapshots & history ---- */
+
+  private renderSnapshots(b: HTMLElement): void {
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.textContent = 'Experiments are reversible. Undo any action, or save a state you want to return to.';
+    b.appendChild(n);
+
+    const hg = document.createElement('div');
+    hg.className = 'grp';
+    hg.innerHTML = '<div class="grp-h">History</div>';
+    const hrow = document.createElement('div');
+    hrow.className = 'btnrow';
+    const ub = document.createElement('button');
+    ub.className = 'btn';
+    ub.textContent = '↶ Undo';
+    ub.disabled = !this.hooks.canUndo();
+    ub.style.opacity = ub.disabled ? '0.45' : '1';
+    ub.onclick = () => { this.hooks.onUndo(); this.refreshAll(); };
+    const rb = document.createElement('button');
+    rb.className = 'btn';
+    rb.textContent = '↷ Redo';
+    rb.disabled = !this.hooks.canRedo();
+    rb.style.opacity = rb.disabled ? '0.45' : '1';
+    rb.onclick = () => { this.hooks.onRedo(); this.refreshAll(); };
+    hrow.append(ub, rb);
+    hg.appendChild(hrow);
+    b.appendChild(hg);
+
+    const sg = document.createElement('div');
+    sg.className = 'grp';
+    sg.innerHTML = '<div class="grp-h">Saved States</div>';
+    const saveRow = document.createElement('div');
+    saveRow.className = 'btnrow';
+    const sb2 = document.createElement('button');
+    sb2.className = 'btn pri';
+    sb2.textContent = '📸 Save Current State';
+    sb2.onclick = () => {
+      this.hooks.onSaveSnapshot('Snapshot ' + new Date().toLocaleTimeString());
+      this.wm.refresh('snapshots');
+    };
+    saveRow.appendChild(sb2);
+    sg.appendChild(saveRow);
+
+    const list = this.hooks.listSnapshots();
+    if (!list.length) {
+      const e = document.createElement('div');
+      e.className = 'note';
+      e.style.marginTop = '10px';
+      e.textContent = 'No saved states yet.';
+      sg.appendChild(e);
+    } else {
+      list.forEach((snap) => {
+        const row = document.createElement('div');
+        row.className = 'stat';
+        row.style.cursor = 'pointer';
+        row.innerHTML = `<span class="stat-k">${snap.label}</span>`;
+        const load = document.createElement('button');
+        load.className = 'btn';
+        load.style.cssText = 'min-width:auto;padding:3px 10px;font-size:10.5px';
+        load.textContent = 'Load';
+        load.onclick = () => { this.hooks.onLoadSnapshot(snap.id); this.refreshAll(); };
+        row.appendChild(load);
+        sg.appendChild(row);
+      });
+    }
+    b.appendChild(sg);
   }
 
   /* ---- objects tray ---- */

@@ -17,6 +17,7 @@ import { BlackHoleWorld } from './worlds/BlackHoleWorld';
 import { SandboxWorld } from './worlds/SandboxWorld';
 import { PostFX } from './PostFX';
 import { MainMenu } from './ui/MainMenu';
+import { HistorySystem } from './systems/HistorySystem';
 
 const FACTORY: Record<string, () => World> = {
   planetary: () => new PlanetaryWorld(),
@@ -38,6 +39,7 @@ export class App {
   booted = false;
   private menu: MainMenu | null = null;
   private postfx = new PostFX();
+  history = new HistorySystem<any>(40);
 
   async init(): Promise<void> {
     const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
@@ -46,8 +48,21 @@ export class App {
       onWorld: (id) => this.loadWorld(id),
       onParam: (k, v) => this.world?.setParam(k, v),
       onPostFX: (k, v) => this.postfx.set(k, v),
-      onSpawn: (id, scale) => (this.world as any)?.spawnObject?.(id, scale, this.ctx),
-      onAction: (k) => this.world?.runAction?.(k, this.ctx),
+      onSpawn: (id, scale) => {
+        this.history.push('spawn ' + id);
+        (this.world as any)?.spawnObject?.(id, scale, this.ctx);
+      },
+      onUndo: () => this.history.undo(),
+      onRedo: () => this.history.redo(),
+      onSaveSnapshot: (label) => this.history.save(label),
+      onLoadSnapshot: (id) => this.history.load(id),
+      listSnapshots: () => this.history.list(),
+      canUndo: () => this.history.canUndo(),
+      canRedo: () => this.history.canRedo(),
+      onAction: (k) => {
+        this.history.push(k);
+        this.world?.runAction?.(k, this.ctx);
+      },
       onMode: () => {},
       onReset: () => this.loadWorld(this.currentId),
       onPause: (p) => { this.paused = p; }
@@ -134,6 +149,8 @@ export class App {
       this.world = w;
       this.currentId = id;
       this.postfx.attach(this.scene, this.camera);
+      this.history.attach(
+        typeof (w as any).captureState === 'function' ? (w as any) : null);
       this.shell.setWorld(w);
     } finally {
       this.switching = false;

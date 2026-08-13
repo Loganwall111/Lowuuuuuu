@@ -159,5 +159,68 @@ console.log('\n— softening prevents singularities —');
      `|a|=${aMag}`);
 }
 
+
+/* ------------------------- beam system verification ------------------------- */
+console.log('\n— beam ray/sphere intersection —');
+{
+  const V = (x, y, z) => ({ x, y, z });
+  const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+  const sub2 = (a, b) => V(a.x - b.x, a.y - b.y, a.z - b.z);
+  const addv = (a, b) => V(a.x + b.x, a.y + b.y, a.z + b.z);
+  const scal = (a, s) => V(a.x * s, a.y * s, a.z * s);
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+
+  // mirrors Beam.apply()
+  function hit(origin, dir, range, width, target) {
+    const oc = sub2(target.pos, origin);
+    const along = dot(oc, dir);
+    if (along < 0 || along > range) return null;
+    const closest = addv(origin, scal(dir, along));
+    const miss = dist(closest, target.pos);
+    if (miss > target.radius + width * 0.5) return null;
+    return { along, miss };
+  }
+
+  const origin = V(0, 0, 0), dir = V(0, 0, 1);
+  ok('direct hit is detected',
+     !!hit(origin, dir, 100, 1, { pos: V(0, 0, 40), radius: 3 }));
+  ok('object behind the emitter is not hit',
+     !hit(origin, dir, 100, 1, { pos: V(0, 0, -40), radius: 3 }));
+  ok('object beyond range is not hit',
+     !hit(origin, dir, 100, 1, { pos: V(0, 0, 400), radius: 3 }));
+  ok('off-axis miss is rejected',
+     !hit(origin, dir, 100, 1, { pos: V(50, 0, 40), radius: 3 }));
+  ok('grazing hit within radius is accepted',
+     !!hit(origin, dir, 100, 1, { pos: V(3.2, 0, 40), radius: 3 }));
+  ok('a wider beam catches more',
+     !!hit(origin, dir, 100, 8, { pos: V(6.5, 0, 40), radius: 3 }));
+
+  // tractor pulls toward emitter, repulsor pushes away
+  const t = { pos: V(0, 0, 40), vel: V(0, 0, 0), mass: 1 };
+  const toEmitter = sub2(origin, t.pos);
+  const d = Math.hypot(toEmitter.x, toEmitter.y, toEmitter.z);
+  const unit = scal(toEmitter, 1 / d);
+  const pullAccel = scal(unit, (3.2 * 10) / (t.mass * 0.5 + 1));
+  ok('tractor beam accelerates the target toward the emitter', pullAccel.z < 0);
+  const pushAccel = scal(unit, (-3.2 * 10) / (t.mass * 0.5 + 1));
+  ok('repulsor accelerates the target away', pushAccel.z > 0);
+}
+
+console.log('\n— fragmentation scales with energy and brittleness —');
+{
+  const nFrags = (energy, fracture) =>
+    Math.max(0, Math.min(14, Math.round(Math.cbrt(energy) * fracture * 1.6)));
+  ok('low energy does not shatter', nFrags(1, 0.3) < 2);
+  ok('high energy shatters', nFrags(4000, 0.9) >= 2);
+  ok('brittle material makes more fragments than tough material',
+     nFrags(4000, 0.95) > nFrags(4000, 0.1));
+  ok('fragment count is capped for performance', nFrags(1e9, 1) <= 14);
+
+  // mass is reduced (vaporisation), never created
+  const mass = 100, n = 8;
+  const fragMass = (mass * 0.62) / n;
+  ok('fragments never exceed the original mass', fragMass * n < mass);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

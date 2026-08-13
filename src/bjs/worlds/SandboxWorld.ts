@@ -25,6 +25,9 @@ import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
 import { starfieldTexture } from '../Textures';
 import { findObject, MATERIALS, type ObjectDef } from '../content/ObjectCatalog';
 import { buildObjectMesh } from '../content/ObjectFactory';
+import { BeamSystem, BEAMS, type BeamKind, type BeamTarget } from '../systems/BeamSystem';
+import { DestructionSystem } from '../systems/DestructionSystem';
+import { Wormhole, Galaxy, Nebula, type GalaxyKind } from '../systems/CosmicObjects';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 
@@ -47,6 +50,8 @@ interface Body {
   alive: boolean;
   def?: ObjectDef;
   restitution: number;
+  heat: number;
+  fracture: number;
 }
 
 export class SandboxWorld implements World {
@@ -66,9 +71,18 @@ export class SandboxWorld implements World {
   private nextSeed = 1;
   private collisions = 0;
   private spawned = 0;
+  private beams!: BeamSystem;
+  private destruction!: DestructionSystem;
+  private beamKind: BeamKind = 'laser';
+  private destroyed = 0;
+  private wormholes: Wormhole[] = [];
+  private galaxies: Galaxy[] = [];
+  private nebulae: Nebula[] = [];
   private paused = false;
 
   private p = {
+    beamWidth: 1.6,
+    beamPower: 1.0,
     gravity: 1.0,
     timeScale: 1.0,
     spawnMass: 1.0,
@@ -102,6 +116,9 @@ export class SandboxWorld implements World {
     this.light = new PointLight('starLight', Vector3.Zero(), scene);
     this.light.intensity = 1.6;
     this.light.range = 2000;
+
+    this.beams = new BeamSystem(scene);
+    this.destruction = new DestructionSystem(scene);
 
     this.seedSystem();
     this.installPointer();
@@ -145,7 +162,7 @@ export class SandboxWorld implements World {
       pos: opts.pos.clone(), vel: opts.vel.clone(), acc: Vector3.Zero(),
       mass: opts.mass, radius, kind: opts.kind, seed,
       isStar: !!opts.isStar, trail: [], trailMesh: null, alive: true,
-      restitution: 0
+      restitution: 0, heat: 0, fracture: 0.5
     };
     this.bodies.push(b);
     return b;
@@ -287,7 +304,7 @@ export class SandboxWorld implements World {
       pos, vel, acc: Vector3.Zero(),
       mass, radius, kind: PlanetKind.Rocky, seed: this.nextSeed++,
       isStar: false, trail: [], trailMesh: null, alive: true,
-      def, restitution: mp.restitution
+      def, restitution: mp.restitution, heat: 0, fracture: mp.fracture
     };
     this.bodies.push(b);
     this.spawned++;
@@ -365,6 +382,11 @@ export class SandboxWorld implements World {
         big.radius = nr;
         big.mat?.setFloat('radius', nr);
 
+        // impact energy from relative velocity drives the visuals
+        const relV = small.vel.subtract(big.vel).length();
+        const impactE = 0.5 * small.mass * relV * relV;
+        this.destruction.impact(small.pos, Math.max(small.radius, 1), impactE);
+
         small.alive = false;
         small.mesh.dispose();
         small.trailMesh?.dispose();
@@ -383,9 +405,32 @@ export class SandboxWorld implements World {
     const h = scaled / sub;
     if (!this.paused) for (let s = 0; s < sub; s++) this.step(h);
 
+    // ---- beams act on the same bodies the gravity solver uses ----
+    const targets = this.bodies.filter((b) => !b.isStar) as unknown as BeamTarget[];
+    const hits = this.beams.update((scaled || dt) * this.p.beamPower, targets);
+    for (const h of hits) {
+      const body = h.target as unknown as Body;
+      if (body.heat >= 1 && body.alive) this.destroyBody(body, 'burned');
+    }
+    this.destruction.update(dt);
+    const nowSec = this.t;
+    for (const w of this.wormholes) {
+      w.update(dt);
+      w.process(this.bodies.filter((b) => !b.isStar) as any, nowSec);
+    }
+
     const cam = ctx.camera;
     for (const b of this.bodies) {
       b.mesh.position.copyFrom(b.pos);
+      // heated bodies glow before they break apart
+      if (b.heat > 0.02 && b.mesh.material) {
+        const m: any = b.mesh.material;
+        if (m.emissiveColor) {
+          const g = Math.min(1, b.heat);
+          m.emissiveColor.set(g, g * 0.35, g * 0.08);
+        }
+        b.heat = Math.max(0, b.heat - dt * 0.05);   // radiative cooling
+      }
       if (!b.isStar) b.mesh.rotation.y += dt * 0.25;
       if (b.mat) {
         b.mat.setVector3('camPos', cam.position);
@@ -411,10 +456,113 @@ export class SandboxWorld implements World {
     }
   }
 
+  /** Destroys a body, spawning debris from the destruction system. */
+  private destroyBody(b: Body, _reason: string): void {
+    if (!b.alive) return;
+    const energy = 0.5 * b.mass * b.vel.lengthSquared() + b.mass * 8;
+    const frags = this.destruction.fragment(
+      b.pos, b.vel, b.mass, b.radius, energy, b.fracture);
+
+    this.destruction.impact(b.pos, b.radius, energy);
+
+    b.alive = false;
+    b.mesh.dispose();
+    b.trailMesh?.dispose();
+    this.destroyed++;
+
+    // debris keeps participating in gravity
+    for (const f of frags) {
+      if (this.bodies.length > 260) break;      // keep performance sane
+      const m = MeshBuilder.CreateSphere('frag', { diameter: f.radius * 2, segments: 8 }, this.ctx.scene);
+      const mm = new StandardMaterial('fragMat', this.ctx.scene);
+      mm.diffuseColor = new Color3(0.35, 0.3, 0.28);
+      mm.emissiveColor = new Color3(0.25, 0.09, 0.03);
+      mm.specularColor = Color3.Black();
+      m.material = mm;
+      m.position.copyFrom(f.pos);
+      m.isPickable = false;
+      this.bodies.push({
+        mesh: m, mat: null as any,
+        pos: f.pos.clone(), vel: f.vel.clone(), acc: Vector3.Zero(),
+        mass: f.mass, radius: f.radius, kind: PlanetKind.Rocky,
+        seed: this.nextSeed++, isStar: false, trail: [], trailMesh: null,
+        alive: true, restitution: 0.2, heat: 0.5, fracture: 0.3
+      });
+    }
+    this.bodies = this.bodies.filter((x) => x.alive);
+  }
+
+  /** Fires a beam from the camera toward the biggest body. */
+  fireBeam(kind: BeamKind, ctx: WorldContext): void {
+    const cam = ctx.camera;
+    const target = this.bodies.reduce<Body | null>(
+      (best, b) => (!best || b.mass > best.mass ? b : best), null);
+    const aim = target ? target.pos : Vector3.Zero();
+    const origin = cam.position.clone();
+    const dir = aim.subtract(origin).normalize();
+    const def = BEAMS[kind];
+    this.beams.fire(kind, origin, dir,
+      this.p.beamWidth, 700, 1.8);
+    // instant visual feedback at the target
+    this.destruction.flash(aim, 1.4, def.color);
+  }
+
+  /* ---------------------------- state capture ---------------------------- */
+
+  /** Serialisable snapshot of every simulated body plus tuning parameters. */
+  captureState(): any {
+    return {
+      p: { ...this.p },
+      bodies: this.bodies.map((b) => ({
+        pos: [b.pos.x, b.pos.y, b.pos.z],
+        vel: [b.vel.x, b.vel.y, b.vel.z],
+        mass: b.mass, radius: b.radius, kind: b.kind,
+        isStar: b.isStar, defId: b.def?.id ?? null,
+        heat: b.heat, fracture: b.fracture, restitution: b.restitution
+      }))
+    };
+  }
+
+  restoreState(state: any): void {
+    if (!state) return;
+    Object.assign(this.p, state.p ?? {});
+
+    for (const b of this.bodies) { b.mesh.dispose(); b.trailMesh?.dispose(); }
+    this.bodies = [];
+    this.starMesh = null;
+
+    for (const sb of state.bodies ?? []) {
+      const pos = new Vector3(sb.pos[0], sb.pos[1], sb.pos[2]);
+      const vel = new Vector3(sb.vel[0], sb.vel[1], sb.vel[2]);
+      if (sb.defId) {
+        // rebuild a catalogue object at its recorded transform
+        const before = this.bodies.length;
+        this.spawnObject(sb.defId, 1, this.ctx);
+        const nb = this.bodies[before];
+        if (nb) {
+          nb.pos.copyFrom(pos); nb.vel.copyFrom(vel);
+          nb.mass = sb.mass; nb.radius = sb.radius;
+          nb.heat = sb.heat ?? 0;
+          nb.mesh.position.copyFrom(pos);
+        }
+      } else {
+        const nb = this.makeBody({
+          pos, vel, mass: sb.mass, kind: sb.kind, isStar: sb.isStar
+        });
+        nb.heat = sb.heat ?? 0;
+        nb.fracture = sb.fracture ?? 0.5;
+        if (sb.isStar) this.starMesh = nb.mesh;
+      }
+    }
+    this.spawned = 0;
+  }
+
   /* ------------------------------ UI surface ------------------------------ */
 
   getParams(): WorldParam[] {
     return [
+      { key: 'beamWidth', label: 'Beam Width', min: 0.3, max: 12, step: 0.1, value: this.p.beamWidth },
+      { key: 'beamPower', label: 'Beam Power', min: 0.2, max: 4, step: 0.05, value: this.p.beamPower, unit: '×' },
       { key: 'spawnMass', label: 'New Body Mass', min: 0.2, max: 60, step: 0.2, value: this.p.spawnMass },
       { key: 'gravity', label: 'Gravity Strength', min: 0, max: 4, step: 0.05, value: this.p.gravity, unit: '×G' },
       { key: 'timeScale', label: 'Time Scale', min: 0, max: 5, step: 0.05, value: this.p.timeScale, unit: '×' },
@@ -435,12 +583,30 @@ export class SandboxWorld implements World {
       { key: 'rain', label: 'Asteroid Rain ×40', glyph: '🌧' },
       { key: 'ducks', label: '100 Rubber Ducks', glyph: '🦆' },
       { key: 'donotpress', label: 'DO NOT PRESS', glyph: '🚨' },
+      { key: 'beam:laser', label: 'Laser', glyph: '🔴' },
+      { key: 'beam:plasma', label: 'Plasma Beam', glyph: '🟣' },
+      { key: 'beam:heat', label: 'Heat Ray', glyph: '🟠' },
+      { key: 'beam:freeze', label: 'Freeze Ray', glyph: '🔵' },
+      { key: 'beam:tractor', label: 'Tractor Beam', glyph: '🔗' },
+      { key: 'beam:repulsor', label: 'Repulsor', glyph: '💨' },
+      { key: 'beam:push', label: 'Planet Punch', glyph: '👊' },
+      { key: 'beam:disintegrate', label: 'Disintegrator', glyph: '☠' },
+      { key: 'smash', label: 'Planet Smasher', glyph: '💢' },
+      { key: 'wormhole', label: 'Wormhole Pair', glyph: '🕳' },
+      { key: 'galaxy', label: 'Spawn Galaxy', glyph: '🌌' },
+      { key: 'nebula', label: 'Spawn Nebula', glyph: '☁' },
+      { key: 'blackhole', label: 'Drop Black Hole', glyph: '⚫' },
+      { key: 'supernova', label: 'Supernova', glyph: '💥' },
       { key: 'destroy', label: 'Destroy Last', glyph: '💥' },
       { key: 'clear', label: 'Clear All', glyph: '🧹' }
     ];
   }
 
   runAction(key: string, ctx: WorldContext): void {
+    if (key.startsWith('beam:')) {
+      this.fireBeam(key.slice(5) as BeamKind, ctx);
+      return;
+    }
     const rnd = (a: number, b: number) => a + Math.random() * (b - a);
     const orbitAt = (r: number, mass: number, kind: PlanetKind) => {
       const a = Math.random() * Math.PI * 2;
@@ -510,6 +676,55 @@ export class SandboxWorld implements World {
       }
       this.p.gravity = 2.8;
       this.p.timeScale = 2.2;
+    } else if (key === 'smash') {
+      const target = this.bodies.reduce<Body | null>(
+        (best, b) => (!best || (b.mass > best.mass && !b.isStar) ? b : best), null);
+      const tp = target ? target.pos : Vector3.Zero();
+      const a = Math.random() * Math.PI * 2;
+      const pos = new Vector3(tp.x + Math.cos(a) * 150, tp.y + rnd(-20, 20), tp.z + Math.sin(a) * 150);
+      const vel = tp.subtract(pos).normalize().scale(34);
+      this.makeBody({
+        pos, vel, mass: Math.max(this.p.spawnMass * 6, 120), kind: PlanetKind.Rocky,
+        tintA: new Color3(0.5, 0.25, 0.15), tintB: new Color3(0.8, 0.5, 0.3)
+      });
+    } else if (key === 'wormhole') {
+      const a2 = Math.random() * Math.PI * 2;
+      const posA = new Vector3(Math.cos(a2) * 70, rnd(-15, 15), Math.sin(a2) * 70);
+      const posB = new Vector3(Math.cos(a2 + Math.PI) * 70, rnd(-15, 15), Math.sin(a2 + Math.PI) * 70);
+      this.wormholes.push(new Wormhole(ctx.scene, posA, posB, 7));
+    } else if (key === 'galaxy') {
+      const kinds: GalaxyKind[] = ['spiral', 'barred', 'elliptical', 'irregular', 'ring'];
+      const k = kinds[Math.floor(Math.random() * kinds.length)];
+      const c = new Vector3(rnd(-900, 900), rnd(-350, 350), rnd(-900, 900));
+      this.galaxies.push(new Galaxy(ctx.scene, k, c, rnd(160, 300), 12000));
+    } else if (key === 'nebula') {
+      const c = new Vector3(rnd(-700, 700), rnd(-260, 260), rnd(-700, 700));
+      this.nebulae.push(new Nebula(ctx.scene, c, rnd(120, 240), 6000,
+        [Math.random() * 0.6 + 0.3, Math.random() * 0.5 + 0.2, Math.random() * 0.5 + 0.5]));
+    } else if (key === 'blackhole') {
+      const a3 = Math.random() * Math.PI * 2;
+      const r3 = rnd(60, 110);
+      this.makeBody({
+        pos: new Vector3(Math.cos(a3) * r3, rnd(-10, 10), Math.sin(a3) * r3),
+        vel: new Vector3(-Math.sin(a3), 0, Math.cos(a3)).scale(Math.sqrt((42 * 900) / r3) * 0.8),
+        mass: 4000, kind: PlanetKind.Star,
+        tintA: new Color3(0.02, 0.0, 0.05), tintB: new Color3(0.35, 0.1, 0.6)
+      });
+    } else if (key === 'supernova') {
+      // blow the star apart into a violent expanding shell
+      const star = this.bodies.find((b) => b.isStar) ?? this.bodies[0];
+      if (star) {
+        this.destruction.impact(star.pos, star.radius * 3, 90000);
+        for (let i = 0; i < 26; i++) {
+          const dir = new Vector3(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).normalize();
+          this.makeBody({
+            pos: star.pos.add(dir.scale(star.radius * 1.4)),
+            vel: dir.scale(rnd(28, 52)),
+            mass: rnd(0.6, 5), kind: PlanetKind.Lava,
+            tintA: new Color3(1.0, 0.5, 0.1), tintB: new Color3(1.0, 0.85, 0.4)
+          });
+        }
+      }
     } else if (key === 'destroy') {
       for (let i = this.bodies.length - 1; i >= 0; i--) {
         if (!this.bodies[i].isStar) {
@@ -543,12 +758,23 @@ export class SandboxWorld implements World {
       'Kinetic energy': ke.toExponential(2),
       'Merges': String(this.collisions),
       'Objects thrown': String(this.spawned),
+      'Destroyed': String(this.destroyed),
+      'Active beams': String(this.beams?.count ?? 0),
+      'Impacts': String(this.destruction?.getStats().craters ?? 0),
+      'Wormholes': String(this.wormholes.length),
+      'Galaxies': String(this.galaxies.length),
       'Integrator': 'Velocity Verlet',
       'Pairs / step': String((this.bodies.length * (this.bodies.length - 1)) / 2)
     };
   }
 
   dispose(): void {
+    this.wormholes.forEach((w) => w.dispose());
+    this.galaxies.forEach((g) => g.dispose());
+    this.nebulae.forEach((n) => n.dispose());
+    this.wormholes = []; this.galaxies = []; this.nebulae = [];
+    this.beams?.dispose();
+    this.destruction?.dispose();
     if (this.pointerObs) this.ctx.scene.onPointerObservable.remove(this.pointerObs);
     this.pointerObs = null;
     this.ghost?.dispose();

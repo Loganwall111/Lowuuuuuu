@@ -106,7 +106,7 @@ document.body.innerHTML = '<canvas id="renderCanvas"></canvas>';
 document.head.innerHTML = '';
 
 const { Shell, WORLDS } = await load('src/bjs/ui/Shell.ts', 'shell');
-const ev = { world: [], param: [], action: [], postfx: [], spawn: [], reset: 0, pause: [] };
+const ev = { world: [], param: [], action: [], postfx: [], spawn: [], snaps: [], loaded: [], undo: 0, redo: 0, reset: 0, pause: [] };
 const shell = new Shell({
   onWorld: (id) => ev.world.push(id),
   onParam: (k, v) => ev.param.push([k, v]),
@@ -115,7 +115,14 @@ const shell = new Shell({
   onReset: () => ev.reset++,
   onPause: (p) => ev.pause.push(p),
   onPostFX: (k, v) => ev.postfx.push([k, v]),
-  onSpawn: (id, sc) => ev.spawn.push([id, sc])
+  onSpawn: (id, sc) => ev.spawn.push([id, sc]),
+  onUndo: () => { ev.undo++; return 'undone'; },
+  onRedo: () => { ev.redo++; return 'redone'; },
+  onSaveSnapshot: (label) => { const s2 = { id: 's' + ev.snaps.length, label, time: Date.now() }; ev.snaps.push(s2); return s2; },
+  onLoadSnapshot: (id) => { ev.loaded.push(id); return true; },
+  listSnapshots: () => ev.snaps,
+  canUndo: () => ev.undo === 0 ? true : true,
+  canRedo: () => true
 });
 
 const params = Array.from({ length: 9 }, (_, i) => ({
@@ -230,6 +237,27 @@ const randomBtn = [...document.querySelectorAll('[data-wid="objects"] .btn')]
 const beforeRand = ev.spawn.length;
 click(randomBtn);
 ok('random object button spawns', ev.spawn.length > beforeRand);
+
+console.log('\n— snapshots & undo/redo —');
+shell.wm.Open('snapshots');
+ok('snapshots window opens', shell.wm.IsVisible('snapshots'));
+click(document.getElementById('btnUndo'));
+ok('undo button fires onUndo', ev.undo > 0);
+click(document.getElementById('btnRedo'));
+ok('redo button fires onRedo', ev.redo > 0);
+const saveBtn = [...document.querySelectorAll('[data-wid="snapshots"] .btn')]
+  .find((b) => b.textContent.includes('Save Current State'));
+click(saveBtn);
+ok('save creates a snapshot', ev.snaps.length === 1);
+shell.wm.refresh('snapshots');
+const loadBtn = [...document.querySelectorAll('[data-wid="snapshots"] .btn')]
+  .find((b) => b.textContent === 'Load');
+ok('saved snapshot is listed with a Load button', !!loadBtn);
+click(loadBtn);
+ok('load fires onLoadSnapshot', ev.loaded.length === 1);
+dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown',
+  { key: 'z', ctrlKey: true, bubbles: true }));
+ok('Ctrl+Z triggers undo', ev.undo > 1);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
