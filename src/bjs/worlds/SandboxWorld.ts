@@ -28,6 +28,7 @@ import { buildObjectMesh } from '../content/ObjectFactory';
 import { BeamSystem, BEAMS, type BeamKind, type BeamTarget } from '../systems/BeamSystem';
 import { DestructionSystem } from '../systems/DestructionSystem';
 import { Wormhole, Galaxy, Nebula, type GalaxyKind } from '../systems/CosmicObjects';
+import { AISystem } from '../systems/AISystem';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 
@@ -78,6 +79,7 @@ export class SandboxWorld implements World {
   private wormholes: Wormhole[] = [];
   private galaxies: Galaxy[] = [];
   private nebulae: Nebula[] = [];
+  private ai!: AISystem;
   private paused = false;
 
   private p = {
@@ -117,6 +119,7 @@ export class SandboxWorld implements World {
     this.light.intensity = 1.6;
     this.light.range = 2000;
 
+    this.ai = new AISystem(scene);
     this.beams = new BeamSystem(scene);
     this.destruction = new DestructionSystem(scene);
 
@@ -412,6 +415,31 @@ export class SandboxWorld implements World {
       const body = h.target as unknown as Body;
       if (body.heat >= 1 && body.alive) this.destroyBody(body, 'burned');
     }
+    // ---- alien fleet ----
+    if (this.ai.count() > 0) {
+      const prey = this.bodies.reduce<Body | null>(
+        (best, b) => (!b.isStar && (!best || b.mass > best.mass) ? b : best), null);
+      if (prey) this.ai.setTarget(prey as any);
+      const impacts = this.ai.update(dt);
+      for (const ship of impacts) {
+        // a ship hitting a planet is a real impact event
+        this.destruction.impact(ship.pos, 3.5, 4000);
+        if (prey) {
+          prey.heat = Math.min(1.2, prey.heat + 0.22);
+          prey.vel.addInPlace(ship.vel.scale(ship.cfg.maxSpeed * 0.0006));
+          if (prey.heat >= 1) this.destroyBody(prey, 'invaded');
+        }
+      }
+      // beams shoot ships down too - same generic hit test
+      for (const ship of this.ai.ships) {
+        for (const h of hits) {
+          if (Vector3.Distance(h.point, ship.pos) < ship.radius + 2) {
+            ship.damage(h.energy * 0.5);
+          }
+        }
+      }
+    }
+
     this.destruction.update(dt);
     const nowSec = this.t;
     for (const w of this.wormholes) {
@@ -592,6 +620,9 @@ export class SandboxWorld implements World {
       { key: 'beam:push', label: 'Planet Punch', glyph: '👊' },
       { key: 'beam:disintegrate', label: 'Disintegrator', glyph: '☠' },
       { key: 'smash', label: 'Planet Smasher', glyph: '💢' },
+      { key: 'ufo', label: 'Send a UFO', glyph: '🛸' },
+      { key: 'invasion', label: 'ALIEN INVASION', glyph: '👽' },
+      { key: 'mothership', label: 'Mothership', glyph: '🛰' },
       { key: 'wormhole', label: 'Wormhole Pair', glyph: '🕳' },
       { key: 'galaxy', label: 'Spawn Galaxy', glyph: '🌌' },
       { key: 'nebula', label: 'Spawn Nebula', glyph: '☁' },
@@ -687,6 +718,23 @@ export class SandboxWorld implements World {
         pos, vel, mass: Math.max(this.p.spawnMass * 6, 120), kind: PlanetKind.Rocky,
         tintA: new Color3(0.5, 0.25, 0.15), tintB: new Color3(0.8, 0.5, 0.3)
       });
+    } else if (key === 'ufo' || key === 'invasion' || key === 'mothership') {
+      const prey = this.bodies.reduce<Body | null>(
+        (best, b) => (!b.isStar && (!best || b.mass > best.mass) ? b : best), null);
+      const tgt = prey ?? this.bodies[0];
+      if (tgt) {
+        const from = new Vector3(rnd(-260, 260), rnd(40, 140), rnd(-260, 260));
+        if (key === 'ufo') {
+          const sh = this.ai.spawn('scout', from);
+          sh.target = tgt as any;
+        } else if (key === 'mothership') {
+          const sh = this.ai.spawn('mothership', from);
+          sh.target = tgt as any;
+          this.ai.invade(6, tgt as any, from);
+        } else {
+          this.ai.invade(14, tgt as any, from);
+        }
+      }
     } else if (key === 'wormhole') {
       const a2 = Math.random() * Math.PI * 2;
       const posA = new Vector3(Math.cos(a2) * 70, rnd(-15, 15), Math.sin(a2) * 70);
@@ -763,12 +811,15 @@ export class SandboxWorld implements World {
       'Impacts': String(this.destruction?.getStats().craters ?? 0),
       'Wormholes': String(this.wormholes.length),
       'Galaxies': String(this.galaxies.length),
+      'Alien ships': String(this.ai?.count() ?? 0),
+      'Ships crashed': String(this.ai?.crashes ?? 0),
       'Integrator': 'Velocity Verlet',
       'Pairs / step': String((this.bodies.length * (this.bodies.length - 1)) / 2)
     };
   }
 
   dispose(): void {
+    this.ai?.dispose();
     this.wormholes.forEach((w) => w.dispose());
     this.galaxies.forEach((g) => g.dispose());
     this.nebulae.forEach((n) => n.dispose());

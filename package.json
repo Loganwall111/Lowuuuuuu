@@ -10,10 +10,11 @@
     "check:shaders": "node tools/shader-check.mjs",
     "check:physics": "node tools/physics-check.mjs",
     "check:ui": "node tools/ui-check.mjs",
-    "check": "tsc --noEmit && npm run check:shaders && npm run check:physics && npm run check:water && npm run check:history && npm run check:ui && npm run check:boot",
+    "check": "tsc --noEmit && npm run check:shaders && npm run check:physics && npm run check:water && npm run check:ai && npm run check:history && npm run check:ui && npm run check:boot",
     "check:boot": "node tools/boot-check.mjs",
     "check:history": "node tools/history-check.mjs",
-    "check:water": "node tools/water-check.mjs"
+    "check:water": "node tools/water-check.mjs",
+    "check:ai": "node tools/ai-check.mjs"
   },
   "devDependencies": {
     "@shaderfrog/glsl-parser": "^7.0.1",
