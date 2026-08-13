@@ -241,6 +241,63 @@ if (appRef) {
     }
     ok('every action runs without throwing', broken.length === 0, broken.join(' | '));
 
+    // ---- portals and space tears, end to end through the real app ----
+    await appRef.loadWorld('sandbox');
+    await new Promise((r) => setTimeout(r, 120));
+    {
+      const sw = appRef.world;
+      let perr = null;
+      try {
+        sw.runAction('portal:wormhole', appRef.ctx);
+        sw.runAction('portal:tear', appRef.ctx);
+        for (let i = 0; i < 200; i++) sw.update(1 / 60, appRef.ctx);
+      } catch (e) { perr = e; }
+      ok('opening a wormhole and a tear in the live app is safe', !perr,
+         perr ? String(perr.message) : '');
+      const st = sw.getStats();
+      ok('the sandbox reports open portals',
+         Number(st['Portals open']) >= 2, JSON.stringify(st['Portals open']));
+      ok('wormholes and tears are counted separately',
+         Number(st['Wormholes']) >= 1 && Number(st['Space tears']) >= 1);
+
+      // a tear must be able to actually take the player somewhere
+      let travelled = null;
+      const realEnter = appRef.ctx.enterDimension;
+      appRef.ctx.enterDimension = (seed, depth) => { travelled = { seed, depth }; };
+      // fly the camera into the tear
+      const tear = sw.portals ? null : null;
+      try {
+        // drive many frames with the camera moved onto each portal mouth
+        const sys = sw['portals'] ?? null;
+        if (sys) {
+          for (const prt of sys.list()) {
+            if (prt.kind !== 'tear') continue;
+            prt.openness = 1;
+            appRef.camera.position.copyFrom(prt.a.position);
+            sw.update(1 / 60, appRef.ctx);
+            sw.update(1 / 60, appRef.ctx);
+          }
+        }
+      } catch (e) { /* reported below */ }
+      ok('flying into a space tear triggers travel to its dimension',
+         !!travelled && Number.isFinite(travelled.seed), JSON.stringify(travelled));
+      appRef.ctx.enterDimension = realEnter;
+
+      sw.runAction('portal:close', appRef.ctx);
+      ok('Close All Portals really closes them',
+         Number(sw.getStats()['Portals open']) === 0);
+    }
+
+    // entering a dimension by seed must land in exactly that dimension
+    {
+      await appRef.enterDimension(123456, 3);
+      await new Promise((r) => setTimeout(r, 120));
+      ok('enterDimension loads the dimension world', appRef.world.id === 'dimension');
+      const spec = appRef.world.currentSpec();
+      ok('it lands on the requested seed', spec.seed === 123456, String(spec.seed));
+      ok('it lands at the requested depth', spec.depth === 3, String(spec.depth));
+    }
+
     // dimension travel rebuilds the entire world, so sweep it too
     await appRef.loadWorld('dimension');
     await new Promise((r) => setTimeout(r, 120));

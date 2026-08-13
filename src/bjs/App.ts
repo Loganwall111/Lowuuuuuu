@@ -82,6 +82,7 @@ export class App {
       },
       listGames: () => this.saves.list(),
       onControlMode: (m) => this.setControlMode(m as ControlMode),
+      onEnterDimension: (seed, depth) => { void this.enterDimension(seed, depth); },
       onShip: (id) => this.vehicle.setShip(id),
       getVehicle: () => ({
         mode: this.vehicle.mode,
@@ -140,6 +141,9 @@ export class App {
         this.camera.setTarget(t.clone());
         this.camera.radius = r;
         this.camera.upperRadiusLimit = Math.max(r * 12, 400);
+      },
+      enterDimension: (seed: number, depth: number) => {
+        void this.enterDimension(seed, depth);
       }
     };
 
@@ -210,6 +214,18 @@ export class App {
     } finally {
       this.switching = false;
     }
+  }
+
+  /**
+   * Travels to a specific procedural dimension. Used when a player enters a
+   * space tear or falls through a black hole, so the destination they saw
+   * through the portal is the one they actually arrive in.
+   */
+  async enterDimension(seed: number, depth = 0): Promise<void> {
+    await this.loadWorld('dimension');
+    const w = this.world as any;
+    if (w && typeof w.jumpTo === 'function') w.jumpTo(seed, depth);
+    this.shell.refreshAll?.();
   }
 
   /**

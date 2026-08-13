@@ -61,6 +61,7 @@ interface ShellHooks {
   listGames: () => { id: string; name: string; world: string; time: number }[];
   onDeleteGame: (id: string) => void;
   onControlMode: (mode: string) => void;
+  onEnterDimension: (seed: number, depth: number) => void;
   onShip: (id: string) => void;
   getVehicle: () => { mode: string; ship: string; stats: Record<string, string> };
 }

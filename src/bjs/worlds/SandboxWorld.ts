@@ -27,6 +27,7 @@ import { findObject, MATERIALS, type ObjectDef } from '../content/ObjectCatalog'
 import { buildObjectMesh } from '../content/ObjectFactory';
 import { BeamSystem, BEAMS, type BeamKind, type BeamTarget } from '../systems/BeamSystem';
 import { DestructionSystem } from '../systems/DestructionSystem';
+import { PortalSystem } from '../systems/PortalSystem';
 import { Wormhole, Galaxy, Nebula, type GalaxyKind } from '../systems/CosmicObjects';
 import { AISystem } from '../systems/AISystem';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
@@ -74,6 +75,8 @@ export class SandboxWorld implements World {
   private spawned = 0;
   private beams!: BeamSystem;
   private destruction!: DestructionSystem;
+  private portals!: PortalSystem;
+  private lastCam = new Vector3(0, 0, 0);
   private beamKind: BeamKind = 'laser';
   private destroyed = 0;
   private wormholes: Wormhole[] = [];
@@ -122,6 +125,7 @@ export class SandboxWorld implements World {
     this.ai = new AISystem(scene);
     this.beams = new BeamSystem(scene);
     this.destruction = new DestructionSystem(scene);
+    this.portals = new PortalSystem(scene);
 
     this.seedSystem();
     this.installPointer();
@@ -441,6 +445,36 @@ export class SandboxWorld implements World {
     }
 
     this.destruction.update(dt);
+
+    // ---- portals. Bodies that fly into a mouth come out the other end. ----
+    const camPos = ctx.camera?.position ?? Vector3.Zero();
+    this.portals.update(dt, camPos);
+
+    // The player flying into a tear travels to the dimension the portal has
+    // been showing them through its lens.
+    if (this.portals.count() > 0 && ctx.enterDimension) {
+      const cam = { position: camPos.clone(), velocity: camPos.subtract(this.lastCam) };
+      const hit = this.portals.tryTransit(cam, 2);
+      if (hit && hit.kind === 'tear' && hit.destination) {
+        ctx.enterDimension(hit.destination.seed, hit.destination.depth);
+      }
+      this.lastCam.copyFrom(camPos);
+    }
+    if (this.portals.count() > 0) {
+      for (const b of this.bodies) {
+        if (b.isStar) continue;
+        // Bodies use pos/vel; the portal system speaks position/velocity.
+        // Adapt rather than renaming the physics fields.
+        const t = { position: b.pos, velocity: b.vel };
+        const used = this.portals.tryTransit(t, b.radius);
+        if (used) {
+          b.pos.copyFrom(t.position);
+          b.vel.copyFrom(t.velocity);
+          // keep the mesh with its body, or it visibly lags a frame behind
+          b.mesh.position.copyFrom(b.pos);
+        }
+      }
+    }
     const nowSec = this.t;
     for (const w of this.wormholes) {
       w.update(dt);
@@ -708,6 +742,9 @@ export class SandboxWorld implements World {
       { key: 'beam:push', label: 'Planet Punch', glyph: '👊' },
       { key: 'beam:disintegrate', label: 'Disintegrator', glyph: '☠' },
       { key: 'smash', label: 'Planet Smasher', glyph: '💢' },
+      { key: 'portal:wormhole', label: 'Open a Wormhole', glyph: '🌐' },
+      { key: 'portal:tear', label: 'Rip a Space Tear', glyph: '🕳' },
+      { key: 'portal:close', label: 'Close All Portals', glyph: '✖' },
       { key: 'god:lightning', label: 'Summon Lightning', glyph: '⚡' },
       { key: 'god:planet', label: 'Create a Planet', glyph: '🌍' },
       { key: 'god:star', label: 'Ignite a Star', glyph: '☀' },
@@ -732,6 +769,23 @@ export class SandboxWorld implements World {
   }
 
   runAction(key: string, ctx: WorldContext): void {
+    if (key.startsWith('portal:')) {
+      const what = key.slice(7);
+      const rndv = (a: number, b: number) => a + Math.random() * (b - a);
+      if (what === 'wormhole') {
+        // link two points on opposite sides of the system
+        const a = new Vector3(rndv(-70, -30), rndv(-10, 20), rndv(-40, 40));
+        const b = new Vector3(rndv(30, 70), rndv(-10, 20), rndv(-40, 40));
+        this.portals.createWormhole(a, b, 6, 1.4);
+      } else if (what === 'tear') {
+        const at = new Vector3(rndv(-50, 50), rndv(0, 30), rndv(-50, 50));
+        this.portals.createTear(at, at.clone().normalize().scale(-1), 7,
+          this.portals.lastDestination);
+      } else if (what === 'close') {
+        this.portals.closeAll();
+      }
+      return;
+    }
     if (key.startsWith('god:')) {
       this.runGodPower(key.slice(4), ctx);
       return;
@@ -911,16 +965,18 @@ export class SandboxWorld implements World {
       'Destroyed': String(this.destroyed),
       'Active beams': String(this.beams?.count ?? 0),
       'Impacts': String(this.destruction?.getStats().craters ?? 0),
-      'Wormholes': String(this.wormholes.length),
+      'Fixed wormholes': String(this.wormholes.length),
       'Galaxies': String(this.galaxies.length),
       'Alien ships': String(this.ai?.count() ?? 0),
       'Ships crashed': String(this.ai?.crashes ?? 0),
+      ...this.portals.stats(),
       'Integrator': 'Velocity Verlet',
       'Pairs / step': String((this.bodies.length * (this.bodies.length - 1)) / 2)
     };
   }
 
   dispose(): void {
+    this.portals?.dispose();
     this.ai?.dispose();
     this.wormholes.forEach((w) => w.dispose());
     this.galaxies.forEach((g) => g.dispose());

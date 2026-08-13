@@ -26,6 +26,13 @@ export interface WorldContext {
   scene: Scene;
   camera: ArcRotateCamera;
   setCameraTarget(target: Vector3, radius: number): void;
+  /**
+   * Travel to a procedural dimension. A world calls this when the player
+   * enters a space tear or falls through a black hole, so the destination
+   * seen through the portal is the one they arrive in. Optional so worlds
+   * can be built and tested without an app around them.
+   */
+  enterDimension?(seed: number, depth: number): void;
 }
 
 export interface World {
