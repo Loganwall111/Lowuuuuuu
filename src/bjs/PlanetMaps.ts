@@ -26,6 +26,73 @@ const MAP_FOR: Partial<Record<PlanetKind, string>> = {
   [PlanetKind.Rocky]: '/art/planet-desert.jpg'
 };
 
+/**
+ * Rare oddities.
+ *
+ * Most planets are ordinary. Every so often the universe hands you something
+ * that makes no sense, and finding one should feel like a genuine event -
+ * so these are deliberately uncommon rather than a menu you pick from.
+ */
+export interface ExoticSurface {
+  id: string;
+  name: string;
+  url: string;
+  /** Relative weight within the exotic roll. */
+  weight: number;
+  /** Some oddities aren't spherical. */
+  shape?: 'cube';
+  blurb: string;
+}
+
+export const EXOTICS: ExoticSurface[] = [
+  {
+    id: 'candy', name: 'Confection World', url: '/art/planet-candy.jpg', weight: 3,
+    blurb: 'Spun sugar continents over syrup seas. Nobody can explain it.'
+  },
+  {
+    id: 'fungal', name: 'Mycelial World', url: '/art/planet-fungal.jpg', weight: 3,
+    blurb: 'A single organism covering a planet, glowing in the dark.'
+  },
+  {
+    id: 'circuit', name: 'Machine World', url: '/art/planet-circuit.jpg', weight: 2,
+    blurb: 'Surface-wide circuitry. Still powered. Still running something.'
+  },
+  {
+    id: 'checker', name: 'Tessellated World', url: '/art/planet-checker.jpg', weight: 1,
+    shape: 'cube',
+    blurb: 'Perfectly cubic, perfectly tiled. Physics disagrees; it persists.'
+  }
+];
+
+/** Odds that any given planet turns out to be one of the oddities. */
+export const EXOTIC_CHANCE = 0.01;
+
+/**
+ * Rolls for an exotic surface using the planet's own seed, so a given world
+ * is always the same thing every time you visit it.
+ *
+ * @param chance override the 1% default (0 disables, 1 forces)
+ */
+export function rollExotic(seed: number, chance = EXOTIC_CHANCE): ExoticSurface | null {
+  // Deterministic hash of the seed -> [0,1)
+  let h = Math.imul(seed >>> 0 || 1, 0x9e3779b1) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 0x85ebca6b) >>> 0;
+  h ^= h >>> 13;
+  const roll = (h >>> 0) / 4294967296;
+  if (roll >= Math.max(0, Math.min(1, chance))) return null;
+
+  // Second, independent draw picks which oddity.
+  let g = Math.imul(h ^ 0x27d4eb2f, 0xc2b2ae35) >>> 0;
+  g ^= g >>> 16;
+  const total = EXOTICS.reduce((n, e) => n + e.weight, 0);
+  let pick = ((g >>> 0) / 4294967296) * total;
+  for (const e of EXOTICS) {
+    pick -= e.weight;
+    if (pick <= 0) return e;
+  }
+  return EXOTICS[0];
+}
+
 /** Cache per scene so twenty planets of one kind share a single upload. */
 const cache = new WeakMap<Scene, Map<string, Texture>>();
 
@@ -48,8 +115,16 @@ function get(scene: Scene, url: string): Texture {
  * Binds the right albedo map for `kind` onto `mat`.
  * Returns true if a map was applied.
  */
-export function applyPlanetMap(mat: ShaderMaterial, kind: PlanetKind, scene: Scene): boolean {
-  const url = MAP_FOR[kind];
+export function applyPlanetMap(
+  mat: ShaderMaterial,
+  kind: PlanetKind,
+  scene: Scene,
+  /** Pass the body's seed to let it roll for a rare exotic surface. */
+  seed?: number,
+  chance = EXOTIC_CHANCE
+): boolean {
+  const exotic = seed === undefined ? null : rollExotic(seed, chance);
+  const url = exotic ? exotic.url : MAP_FOR[kind];
   if (!url) {
     // No art for this kind: stay fully procedural rather than sampling a
     // texture that was never bound.
@@ -57,6 +132,7 @@ export function applyPlanetMap(mat: ShaderMaterial, kind: PlanetKind, scene: Sce
     return false;
   }
   try {
+    if (exotic) lastExotic.set(mat, exotic);
     const tex = get(scene, url);
     mat.setTexture('albedoMap', tex);
     mat.setFloat('useMap', 1);
@@ -70,6 +146,14 @@ export function applyPlanetMap(mat: ShaderMaterial, kind: PlanetKind, scene: Sce
     mat.setFloat('useMap', 0);
     return false;
   }
+}
+
+/** Which oddity (if any) a given material ended up with. */
+const lastExotic = new WeakMap<ShaderMaterial, ExoticSurface>();
+
+/** Returns the exotic surface applied to `mat`, if it rolled one. */
+export function exoticOf(mat: ShaderMaterial): ExoticSurface | null {
+  return lastExotic.get(mat) ?? null;
 }
 
 /** Uniform + sampler names callers must declare on the ShaderMaterial. */

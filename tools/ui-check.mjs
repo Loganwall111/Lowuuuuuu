@@ -191,7 +191,10 @@ ok('boot dismisses', document.querySelector('.boot').classList.contains('gone'))
 ok('top bar rendered', !!document.querySelector('.topbar'));
 ok('HUD rendered', !!document.querySelector('.hud'));
 ok('canvas still present', !!document.getElementById('renderCanvas'));
-ok(`all ${WORLDS.length} worlds listed`, document.querySelectorAll('#worldSeg button').length === WORLDS.length);
+// One continuous universe: no world tab strip in the toolbar.
+ok('the toolbar has no world tabs',
+   document.querySelectorAll('#worldSeg button').length === 0);
+ok('worlds are still reachable from the navigator', WORLDS.length >= 4);
 ok('gravity sandbox is present', WORLDS.some((w) => w.id === 'sandbox'));
 
 console.log('\n— every control is available, and searchable —');

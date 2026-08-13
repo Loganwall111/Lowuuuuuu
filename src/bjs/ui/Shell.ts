@@ -236,7 +236,6 @@ export class Shell {
         <div class="brand-dot"></div>
         <div><div class="brand-name">LOW</div><div class="brand-sub">Universe Sandbox</div></div>
       </div>
-      <div class="seg" id="worldSeg"></div>
       <div class="spacer"></div>
       <button class="iconbtn" id="btnPause" title="Pause / Resume (Space)">⏸</button>
       <button class="iconbtn" id="w-controls" title="Controls (1)">🎛</button>
@@ -258,15 +257,9 @@ export class Shell {
     `;
     document.body.appendChild(this.topbar);
 
-    const seg = this.topbar.querySelector('#worldSeg')!;
-    WORLDS.forEach((w) => {
-      const b = document.createElement('button');
-      b.textContent = `${w.glyph} ${w.name}`;
-      b.dataset.w = w.id;
-      if (w.id === this.worldId) b.classList.add('on');
-      b.onclick = () => this.selectWorld(w.id);
-      seg.appendChild(b);
-    });
+    // The world tab strip is gone: this is one continuous universe, and you
+    // reach places by flying to them, not by picking them off a toolbar.
+    // Worlds are still selectable from the Navigator for direct warps.
 
     this.topbar.querySelectorAll<HTMLButtonElement>('#modeSeg button').forEach((b) => {
       b.onclick = () => this.setMode(b.dataset.m as Mode);
@@ -346,6 +339,9 @@ export class Shell {
       <div class="hud-chip"><div class="hud-k">FPS</div><div class="hud-v" id="hFps">–</div></div>
       <div class="hud-chip"><div class="hud-k">Renderer</div><div class="hud-v" id="hBackend" style="font-size:12px">–</div></div>
       <div class="hud-chip"><div class="hud-k">World</div><div class="hud-v" id="hWorld" style="font-size:12px">–</div></div>
+      <div class="hud-chip hud-flight"><div class="hud-k">Speed</div><div class="hud-v" id="hSpeed">0</div></div>
+      <div class="hud-chip hud-flight"><div class="hud-k">Distance</div><div class="hud-v" id="hDist">0</div></div>
+      <div class="hud-chip hud-flight"><div class="hud-k">Location</div><div class="hud-v" id="hWhere" style="font-size:12px">Deep space</div></div>
     `;
     document.body.appendChild(this.hud);
   }
@@ -354,6 +350,45 @@ export class Shell {
   onMenuClosed(): void {
     this.wm.Open('controls');
     this.wm.Open('objects');
+  }
+
+  /**
+   * Live flight readout. Speed and distance are the two numbers you actually
+   * want while flying, so they live in the HUD rather than a panel.
+   *
+   * Both are scaled to human-readable units: metres per second becomes km/s
+   * then c (fractions of lightspeed) as you wind the warp up, and distance
+   * climbs from units to AU to light-years.
+   */
+  setFlight(speed: number, distance: number, where?: string): void {
+    const sp = document.getElementById('hSpeed');
+    if (sp) sp.textContent = Shell.formatSpeed(speed);
+    const di = document.getElementById('hDist');
+    if (di) di.textContent = Shell.formatDistance(distance);
+    if (where !== undefined) {
+      const w = document.getElementById('hWhere');
+      if (w) w.textContent = where;
+    }
+  }
+
+  /** Speed in world units/sec -> readable string. */
+  static formatSpeed(v: number): string {
+    const n = Number.isFinite(v) ? Math.abs(v) : 0;
+    // 1 world unit ~ 1000 km at system scale; c is ~300 units/s in those terms.
+    const C = 300;
+    if (n >= C) return (n / C).toFixed(n / C >= 10 ? 0 : 2) + 'c';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'k u/s';
+    if (n >= 10) return n.toFixed(0) + ' u/s';
+    return n.toFixed(1) + ' u/s';
+  }
+
+  /** Distance from origin in world units -> readable string. */
+  static formatDistance(d: number): string {
+    const n = Number.isFinite(d) ? Math.abs(d) : 0;
+    if (n >= 63241) return (n / 63241).toFixed(2) + ' ly';
+    if (n >= 1000) return (n / 1000).toFixed(2) + ' AU';
+    if (n >= 10) return n.toFixed(0) + ' u';
+    return n.toFixed(1) + ' u';
   }
 
   setBackend(b: string): void {
@@ -588,7 +623,12 @@ export class Shell {
       input.style.setProperty('--pct', ((v - p.min) / (p.max - p.min)) * 100 + '%');
       (onChange ?? this.hooks.onParam)(p.key, v);
     };
-    wrap.appendChild(input);
+    // Recessed track cell: gives the slider its instrument look and hosts
+    // the tick rule drawn in CSS.
+    const track = document.createElement('div');
+    track.className = 'ctl-track';
+    track.appendChild(input);
+    wrap.appendChild(track);
 
     // Expert mode gets exact numeric entry, because a slider cannot express
     // a precise value and expert users need one.

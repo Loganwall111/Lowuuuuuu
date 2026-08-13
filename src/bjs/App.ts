@@ -19,6 +19,7 @@ import { TerraformWorld } from './worlds/TerraformWorld';
 import { DimensionWorld } from './worlds/DimensionWorld';
 import { PostFX } from './PostFX';
 import { MainMenu } from './ui/MainMenu';
+import { WarpSystem } from './systems/WarpSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -65,6 +66,11 @@ export class App {
   grab = new GrabSystem();
   /** Last position outside any horizon, so we know which way is "back". */
   private lastOutsidePos = new Vector3(0, 0, -220);
+  /** Streaking starfield when the throttle is wound up. */
+  private warp!: WarpSystem;
+  /** Previous eye position, for measuring real travelled speed. */
+  private prevEye = new Vector3(0, 0, 0);
+  private shownSpeed = 0;
   private keys = new Set<string>();
 
   async init(): Promise<void> {
@@ -215,6 +221,8 @@ export class App {
     this.scene = new Scene(this.engine);
     this.scene.clearColor = new Color4(0.004, 0.006, 0.014, 1);
     this.scene.skipPointerMovePicking = true;
+
+    this.warp = new WarpSystem(this.scene);
 
     this.camera = new ArcRotateCamera('cam', -Math.PI / 2, 1.14, 60, Vector3.Zero(), this.scene);
     this.camera.attachControl(canvas, true);
@@ -499,6 +507,24 @@ export class App {
           this.lastOutsidePos.copyFrom(eye);
         }
       }
+
+      // ---- speed, distance and the warp effect ----
+      // Measure actual travelled distance rather than trusting a throttle
+      // value, so the readout matches what you can see happening.
+      const moved = Vector3.Distance(eye, this.prevEye);
+      const instant = dt > 1e-6 ? moved / dt : 0;
+      // Smooth it or the number is unreadable at high framerates.
+      this.shownSpeed += (instant - this.shownSpeed) * Math.min(1, dt * 6);
+      this.prevEye.copyFrom(eye);
+
+      const fwd = this.camera.getTarget().subtract(this.camera.position);
+      this.warp.update(dt, this.shownSpeed, eye, fwd);
+
+      this.shell.setFlight(
+        this.shownSpeed,
+        eye.length(),
+        this.universe.current?.name ?? 'Deep space'
+      );
 
       // ---- carrying things around ----
       if (this.grab.isHolding()) {

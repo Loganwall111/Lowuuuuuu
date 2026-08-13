@@ -129,22 +129,77 @@ body[data-focus="1"] .hud{ opacity:.35; }
   margin:0 0 9px;display:flex;align-items:center;gap:7px;font-weight:700}
 .grp-h::after{content:'';flex:1;height:1px;background:var(--line2)}
 
-.ctl{margin-bottom:13px}
-.ctl-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:8px}
-.ctl-l{font-size:12px;color:var(--txt);font-weight:500}
-.ctl-v{font-size:11.5px;color:var(--acc);font-variant-numeric:tabular-nums;font-weight:600;
-  background:rgba(77,163,255,.10);padding:1.5px 7px;border-radius:6px;white-space:nowrap}
+/* ------------------------------ sliders ------------------------------
+   Instrument panel rather than a web form: each control is a recessed
+   cell with a machined track, a tick rule and a numeric readout that
+   looks like a gauge. */
+.ctl{
+  margin:0 0 7px;padding:7px 9px 8px;border-radius:var(--r2);
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.014));
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  transition:border-color .14s, background .14s;}
+.ctl:hover{border-color:rgba(120,180,255,.30);
+  background:linear-gradient(180deg,rgba(120,180,255,.07),rgba(255,255,255,.02));}
+.ctl:focus-within{border-color:var(--acc);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),
+             0 0 0 1px color-mix(in srgb,var(--acc) 32%,transparent);}
+
+.ctl-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:8px}
+.ctl-l{font-size:calc(11px * var(--ui-scale));color:var(--txt);font-weight:600;
+  letter-spacing:.34px;text-transform:uppercase;opacity:.86;}
+.ctl-v{
+  font-size:calc(11px * var(--ui-scale));color:var(--acc);
+  font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.2px;
+  background:linear-gradient(180deg,rgba(77,163,255,.20),rgba(77,163,255,.07));
+  border:1px solid rgba(77,163,255,.30);
+  padding:1px 7px;border-radius:5px;white-space:nowrap;
+  min-width:52px;text-align:right;
+  text-shadow:0 0 10px color-mix(in srgb,var(--acc) 55%,transparent);}
+
+/* Tick rule under the track: reads as a calibrated instrument. */
+.ctl-track{position:relative;padding-top:1px}
+.ctl-track::after{
+  content:'';position:absolute;left:2px;right:2px;bottom:2px;height:3px;
+  pointer-events:none;opacity:.30;
+  background:repeating-linear-gradient(90deg,
+    rgba(255,255,255,.55) 0 1px, transparent 1px 10%);}
+
 input[type=range]{
-  -webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;cursor:pointer;margin:0;display:block;
-}
-input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:4px;
-  background:linear-gradient(90deg,var(--acc) var(--pct,50%),rgba(255,255,255,.11) var(--pct,50%));}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
-  background:#fff;margin-top:-5px;box-shadow:0 2px 7px rgba(0,0,0,.5);border:2.5px solid var(--acc);transition:transform .1s}
-input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.16)}
-input[type=range]::-moz-range-track{height:5px;border-radius:4px;background:rgba(255,255,255,.11)}
-input[type=range]::-moz-range-progress{height:5px;border-radius:4px;background:var(--acc)}
-input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:#fff;border:2.5px solid var(--acc);cursor:pointer}
+  -webkit-appearance:none;appearance:none;width:100%;height:20px;
+  background:transparent;cursor:pointer;margin:0;display:block;position:relative;z-index:1;}
+
+/* --- WebKit --- */
+input[type=range]::-webkit-slider-runnable-track{
+  height:6px;border-radius:3px;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb,var(--acc) 92%,#fff) 0%,
+      var(--acc) var(--pct,50%),
+      rgba(255,255,255,.09) var(--pct,50%));
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.55),
+             0 0 12px color-mix(in srgb,var(--acc) 26%,transparent);}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  margin-top:-4px;cursor:grab;
+  background:radial-gradient(circle at 34% 30%,#ffffff 0%,#dce9fb 48%,#93b6e4 100%);
+  border:2px solid var(--acc);
+  box-shadow:0 1px 5px rgba(0,0,0,.65),
+             0 0 9px color-mix(in srgb,var(--acc) 62%,transparent);
+  transition:transform .11s ease, box-shadow .11s ease;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.22);
+  box-shadow:0 1px 6px rgba(0,0,0,.7),0 0 15px color-mix(in srgb,var(--acc) 85%,transparent);}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.06);cursor:grabbing}
+
+/* --- Firefox --- */
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;
+  background:rgba(255,255,255,.09);box-shadow:inset 0 1px 2px rgba(0,0,0,.55);}
+input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--acc);
+  box-shadow:0 0 12px color-mix(in srgb,var(--acc) 40%,transparent);}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#ffffff 0%,#dce9fb 48%,#93b6e4 100%);
+  border:2px solid var(--acc);cursor:grab;
+  box-shadow:0 1px 5px rgba(0,0,0,.65);}
 
 .btnrow{display:flex;flex-wrap:wrap;gap:7px}
 .btn{

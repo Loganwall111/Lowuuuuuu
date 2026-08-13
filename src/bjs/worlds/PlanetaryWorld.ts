@@ -189,7 +189,7 @@ export class PlanetaryWorld implements World {
                    ...PLANET_MAP_UNIFORMS],
         samplers: PLANET_MAP_SAMPLERS
       });
-      applyPlanetMap(mat, cfg.type as PlanetKind, scene);
+      applyPlanetMap(mat, cfg.type as PlanetKind, scene, Math.floor(i * 2654435761 + 101));
       mat.setFloat('seed', i * 3.77 + 1.3);
       mat.setFloat('ptype', cfg.type);
       mat.setColor3('tintA', new Color3(...cfg.a));
