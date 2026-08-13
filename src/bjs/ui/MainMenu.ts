@@ -139,17 +139,36 @@ export const MENU_CSS = `
 .menu-blurb{font-size:12px;color:#93a6c4;line-height:1.62;max-width:330px;margin:0 0 20px}
 
 .menu-list{display:flex;flex-direction:column;gap:5px;max-width:330px}
+/* Angled hardware-style plates with a scanning sheen and a live accent bar. */
 .menu-item{position:relative;display:flex;align-items:center;justify-content:space-between;
-  padding:11px 15px;border:1px solid rgba(95,140,205,.16);border-radius:4px;cursor:pointer;
-  background:rgba(9,16,29,.62);color:#c3d3ea;font-size:11.5px;font-weight:700;
-  letter-spacing:2.1px;text-align:left;transition:all .16s ease;
-  backdrop-filter:blur(9px);font-family:inherit}
-.menu-item:hover{background:rgba(24,48,86,.80);color:#fff;
-  border-color:rgba(120,180,255,.45);transform:translateX(4px)}
-.menu-item::after{content:'›';font-size:16px;opacity:.5;font-weight:400}
-.menu-item.primary{background:linear-gradient(90deg,#1d63c4,#2f86e8);color:#fff;
-  border-color:rgba(150,200,255,.5);box-shadow:0 5px 26px rgba(40,120,230,.42)}
-.menu-item.primary:hover{background:linear-gradient(90deg,#2775db,#3d97f7)}
+  padding:12px 16px 12px 20px;border:1px solid rgba(95,140,205,.18);cursor:pointer;
+  background:linear-gradient(100deg,rgba(11,20,36,.80),rgba(9,16,29,.52));
+  color:#c3d3ea;font-size:11.5px;font-weight:700;overflow:hidden;
+  letter-spacing:2.1px;text-align:left;font-family:inherit;
+  backdrop-filter:blur(9px);
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+  transition:background .17s ease,color .17s ease,border-color .17s ease,
+             transform .17s ease,box-shadow .17s ease;}
+/* leading accent bar lights up on hover */
+.menu-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,transparent,rgba(120,180,255,.55),transparent);
+  opacity:.45;transition:opacity .17s ease, box-shadow .17s ease;}
+.menu-item:hover::before{opacity:1;box-shadow:0 0 14px rgba(120,180,255,.9)}
+.menu-item::after{content:'›';font-size:16px;opacity:.5;font-weight:400;
+  transition:transform .17s ease, opacity .17s ease}
+.menu-item:hover{color:#fff;transform:translateX(5px);
+  background:linear-gradient(100deg,rgba(28,58,104,.90),rgba(16,32,60,.62));
+  border-color:rgba(120,180,255,.50);
+  box-shadow:0 6px 26px rgba(30,90,190,.30),
+             inset 0 0 24px rgba(90,160,255,.10);}
+.menu-item:hover::after{transform:translateX(3px);opacity:.95}
+.menu-item.primary{color:#fff;border-color:rgba(150,200,255,.55);
+  background:linear-gradient(100deg,#1d63c4,#2f86e8);
+  box-shadow:0 6px 30px rgba(40,120,230,.48);}
+.menu-item.primary::before{opacity:1;background:linear-gradient(180deg,#bfe0ff,#63a8ff,#bfe0ff);
+  box-shadow:0 0 16px rgba(150,205,255,.95)}
+.menu-item.primary:hover{background:linear-gradient(100deg,#2775db,#3d97f7);
+  box-shadow:0 8px 36px rgba(60,150,250,.58)}
 
 /* ---------- news ---------- */
 .menu-news{position:absolute;right:22px;bottom:74px;width:min(320px,26vw);z-index:3;

@@ -17,14 +17,29 @@ import type { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
 import { PlanetKind } from './shaders/PlanetShader';
 
 /** Where each planet kind finds its surface art. */
-const MAP_FOR: Partial<Record<PlanetKind, string>> = {
-  [PlanetKind.Terran]: '/art/planet-terran.jpg',
-  [PlanetKind.Ice]: '/art/planet-ice.jpg',
-  [PlanetKind.Gas]: '/art/planet-gas.jpg',
-  [PlanetKind.Lava]: '/art/planet-volcanic.jpg',
-  [PlanetKind.Desert]: '/art/planet-desert.jpg',
-  [PlanetKind.Rocky]: '/art/planet-desert.jpg'
+const MAP_FOR: Partial<Record<PlanetKind, string[]>> = {
+  // Several maps per kind so neighbouring planets of the same type do not
+  // look like copies of each other.
+  [PlanetKind.Terran]: [
+    '/art/planet-terran.jpg',
+    '/art/planet-eyeball.jpg',
+    '/art/planet-ocean.jpg'
+  ],
+  [PlanetKind.Ice]: ['/art/planet-ice.jpg'],
+  [PlanetKind.Gas]: ['/art/planet-gas.jpg', '/art/planet-storm.jpg'],
+  [PlanetKind.Lava]: ['/art/planet-volcanic.jpg'],
+  [PlanetKind.Desert]: ['/art/planet-desert.jpg'],
+  [PlanetKind.Rocky]: ['/art/planet-desert.jpg']
 };
+
+/** Picks one of a kind's maps deterministically from the body's seed. */
+function variantFor(kind: PlanetKind, seed: number): string | undefined {
+  const list = MAP_FOR[kind];
+  if (!list || !list.length) return undefined;
+  let h = Math.imul((seed >>> 0) ^ 0x632be59b, 0x85ebca6b) >>> 0;
+  h ^= h >>> 13;
+  return list[h % list.length];
+}
 
 /**
  * Rare oddities.
@@ -61,6 +76,14 @@ export const EXOTICS: ExoticSurface[] = [
     id: 'checker', name: 'Tessellated World', url: '/art/planet-checker.jpg', weight: 1,
     shape: 'cube',
     blurb: 'Perfectly cubic, perfectly tiled. Physics disagrees; it persists.'
+  },
+  {
+    id: 'crystal', name: 'Crystalline World', url: '/art/planet-crystal.jpg', weight: 2,
+    blurb: 'A planet-sized geode. The whole crust refracts.'
+  },
+  {
+    id: 'iris', name: 'Iris World', url: '/art/planet-iris.jpg', weight: 2,
+    blurb: 'Concentric living rings. It appears to be growing.'
   }
 ];
 
@@ -124,7 +147,17 @@ export function applyPlanetMap(
   chance = EXOTIC_CHANCE
 ): boolean {
   const exotic = seed === undefined ? null : rollExotic(seed, chance);
-  const url = exotic ? exotic.url : MAP_FOR[kind];
+  const url = exotic ? exotic.url : variantFor(kind, seed ?? 0);
+
+  // How deep this world's oceans run. Drives per-channel light absorption in
+  // the shader, so an ocean world reads as genuinely deep rather than blue.
+  const depthFor: Partial<Record<PlanetKind, number>> = {
+    [PlanetKind.Terran]: 0.85,
+    [PlanetKind.Ice]: 0.45,
+    [PlanetKind.Desert]: 0.18,
+    [PlanetKind.Rocky]: 0.10
+  };
+  mat.setFloat('oceanDepth', depthFor[kind] ?? 0.5);
   if (!url) {
     // No art for this kind: stay fully procedural rather than sampling a
     // texture that was never bound.
@@ -157,5 +190,5 @@ export function exoticOf(mat: ShaderMaterial): ExoticSurface | null {
 }
 
 /** Uniform + sampler names callers must declare on the ShaderMaterial. */
-export const PLANET_MAP_UNIFORMS = ['useMap'];
+export const PLANET_MAP_UNIFORMS = ['useMap', 'oceanDepth'];
 export const PLANET_MAP_SAMPLERS = ['albedoMap'];

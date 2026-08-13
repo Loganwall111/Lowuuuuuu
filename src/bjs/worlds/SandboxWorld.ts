@@ -162,7 +162,7 @@ export class SandboxWorld implements World {
     mat.setFloat('radius', radius);
     mat.setFloat('isStar', opts.isStar ? 1 : 0);
     // Stars stay procedural; everything else gets the photoreal surface art.
-    if (opts.isStar) mat.setFloat('useMap', 0);
+    if (opts.isStar) { mat.setFloat('useMap', 0); mat.setFloat('oceanDepth', 0); }
     else applyPlanetMap(mat, opts.kind as PlanetKind, scene, Math.floor(seed * 100000));
     mat.setFloat('detail', 1.0);
     mat.setFloat('cloudAmt', opts.kind === PlanetKind.Terran ? 0.7 : 0);

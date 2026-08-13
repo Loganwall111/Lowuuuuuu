@@ -143,6 +143,7 @@ export class PlanetaryWorld implements World {
     // Stars are self-luminous and take the isStar path, but the uniform must
     // still be bound or the sampler reads garbage.
     this.starMat.setFloat('useMap', 0);
+    this.starMat.setFloat('oceanDepth', 0);
     this.starMat.setFloat('isStar', 1);
     this.starMat.setFloat('ptype', PlanetKind.Star);
     this.starMat.setFloat('seed', 4.2);
@@ -257,6 +258,7 @@ export class PlanetaryWorld implements World {
           samplers: PLANET_MAP_SAMPLERS
         });
         mm.setFloat('useMap', 0);
+        mm.setFloat('oceanDepth', 0);
         mm.setFloat('seed', i * 9.1 + m * 4.3 + 20.0);
         mm.setFloat('ptype', 0);
         mm.setColor3('tintA', new Color3(0.28, 0.26, 0.25));

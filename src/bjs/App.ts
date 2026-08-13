@@ -21,6 +21,7 @@ import { PostFX } from './PostFX';
 import { MainMenu } from './ui/MainMenu';
 import { WarpSystem } from './systems/WarpSystem';
 import { PlanetSurfaceSystem } from './systems/PlanetSurfaceSystem';
+import { MouseLook } from './systems/MouseLook';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -67,6 +68,8 @@ export class App {
   grab = new GrabSystem();
   /** Last position outside any horizon, so we know which way is "back". */
   private lastOutsidePos = new Vector3(0, 0, -220);
+  /** Mouse look + wheel throttle, the other half of free flight. */
+  mouse = new MouseLook();
   /** Every planet's own terrain, water, weather and life. */
   surfaces = new PlanetSurfaceSystem();
   /** Streaking starfield when the throttle is wound up. */
@@ -113,7 +116,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats() },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats() },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -229,6 +232,9 @@ export class App {
 
     this.camera = new ArcRotateCamera('cam', -Math.PI / 2, 1.14, 60, Vector3.Zero(), this.scene);
     this.camera.attachControl(canvas, true);
+    // Free-fly detaches the arc camera, so the mouse must drive the vehicle
+    // directly or there is no way to look around or zoom.
+    this.mouse.attach(canvas as unknown as HTMLElement);
     this.camera.minZ = 0.05;
     this.camera.maxZ = 4000;
     this.camera.lowerRadiusLimit = 3;
@@ -277,6 +283,8 @@ export class App {
       this.keys.add(e.key.toLowerCase());
       // Space would otherwise scroll the page while flying
       if (e.key === ' ' && this.vehicle.mode !== 'orbit') e.preventDefault();
+      // Pointer lock: look around without holding the button down.
+      if (e.key.toLowerCase() === 'c') this.mouse.toggleLock();
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     window.addEventListener('blur', () => this.keys.clear());
@@ -473,10 +481,18 @@ export class App {
           const near = this.universe.nearest(this.vehicle.position);
           if (near) {
             const d = Vector3.Distance(this.vehicle.position, near.position) - near.radius;
-            this.vehicle.setScaleSpeed(d);
+            // The wheel scales that baseline, so scrolling is a real throttle
+            // rather than a dead control.
+            this.vehicle.setScaleSpeed(d * this.mouse.throttleScale);
           }
         }
-        this.vehicle.update(dt, inputFromKeys(this.keys), this.groundProbe);
+        // Keyboard supplies movement; the mouse supplies look and throttle.
+        const input = inputFromKeys(this.keys);
+        const look = this.mouse.consume(dt);
+        // Arrow keys still work: whichever the player is using wins.
+        if (Math.abs(look.yaw) > 1e-4) input.yaw = look.yaw;
+        if (Math.abs(look.pitch) > 1e-4) input.pitch = look.pitch;
+        this.vehicle.update(dt, input, this.groundProbe);
         this.camera.position.copyFrom(this.vehicle.position);
         this.camera.setTarget(this.vehicle.lookTarget());
       }

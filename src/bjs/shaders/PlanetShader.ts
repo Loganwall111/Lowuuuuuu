@@ -65,6 +65,8 @@ uniform float isStar;
    demoted to high-frequency break-up on top of it. */
 uniform sampler2D albedoMap;
 uniform float useMap;
+/** How deep this planet's oceans run, 0..1. Drives light absorption. */
+uniform float oceanDepth;
 
 ${GLSL_NOISE}
 
@@ -216,11 +218,47 @@ void main(void){
   col += albedo * mix(vec3(0.012, 0.016, 0.030), vec3(0.030, 0.038, 0.062), upness);
 
   if (specMask > 0.01){
+    // ---------------------------- deep water ----------------------------
+    // Real oceans are not a blue surface with a highlight. Light that enters
+    // water is absorbed with depth, and red goes first - which is why shallow
+    // water is turquoise and deep water is nearly black-blue. Doing the
+    // absorption properly is most of what sells an ocean.
+
+    // Depth proxy: how far below the shoreline this point sits.
+    float shore = smoothstep(0.0, 0.16, specMask);
+    float depth = specMask * oceanDepth;
+
+    // Beer-Lambert absorption per channel: red dies fastest, blue survives.
+    vec3 absorb = exp(-depth * vec3(2.35, 0.62, 0.22));
+    vec3 shallow = vec3(0.16, 0.62, 0.68);   // sunlit turquoise
+    vec3 abyss   = vec3(0.004, 0.020, 0.055); // trench
+    vec3 waterCol = mix(abyss, shallow, absorb.b * 0.85 + absorb.g * 0.15);
+
+    // Subsurface glow where light scatters back out of shallow water.
+    float scatter = pow(1.0 - clamp(depth, 0.0, 1.0), 2.2) * shore;
+    waterCol += vec3(0.05, 0.24, 0.26) * scatter * lam;
+
+    col = mix(col, waterCol * (0.25 + lam * 1.15), specMask);
+
+    // Fresnel: water turns mirror-like at grazing angles.
+    float f0 = 0.02;
+    float fres = f0 + (1.0 - f0) * pow(1.0 - max(dot(n, V), 0.0), 5.0);
+
+    // Sky reflection on the water rather than a flat blue.
+    vec3 skyRefl = mix(vec3(0.05, 0.11, 0.24), vec3(0.35, 0.52, 0.78), max(n.y, 0.0));
+    col = mix(col, skyRefl, fres * specMask * 0.75);
+
+    // Sun glitter: many small wave facets, so the highlight is a broken
+    // shimmering path rather than one round dot.
     vec3 H = normalize(L + V);
     float a = max(rough * rough, 0.004);
     float ndh = max(dot(n, H), 0.0);
     float d = a * a / (3.14159 * pow(ndh * ndh * (a * a - 1.0) + 1.0, 2.0));
-    col += vec3(1.0, 0.97, 0.9) * d * specMask * 1.6 * lam;
+
+    float ripple = fbm(p * 260.0 + vec3(time * 0.35, time * 0.21, 0.0), 3, 2.4, 0.55);
+    float glint = pow(max(ndh, 0.0), 90.0) * (0.55 + 0.45 * ripple);
+
+    col += vec3(1.0, 0.97, 0.9) * (d * 1.1 + glint * 2.2) * specMask * lam * (0.35 + fres);
   }
 
   if (cloudAmt > 0.01 && ptype > 0.5 && ptype < 3.5){
