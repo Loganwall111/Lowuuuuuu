@@ -18,6 +18,20 @@
 
 import { PostProcess } from '@babylonjs/core/PostProcesses/postProcess';
 import { Effect } from '@babylonjs/core/Materials/effect';
+// THE BLACK SCREEN.
+//
+// Every PostProcess is a full-screen quad drawn with the shared
+// "postprocess" vertex shader. In Babylon's tree-shaken ES build that
+// shader is registered by a side-effect import and by nothing else -
+// importing PostProcess itself registers no shaders at all. Without it the
+// effect can never become ready, so this pass contributes nothing to the
+// frame while still sitting in the camera's chain, and the screen is black
+// at full frame rate with every mesh present and correct.
+//
+// It cannot be caught by the headless suite: jsdom's WebGL stub reports
+// every compile and link as successful, so the missing shader is invisible
+// there. This import is load-bearing - removing it turns the screen black.
+import '@babylonjs/core/Shaders/postprocess.vertex';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Matrix } from '@babylonjs/core/Maths/math.vector';
 import { Viewport } from '@babylonjs/core/Maths/math.viewport';

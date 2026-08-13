@@ -27,6 +27,7 @@ import { inspectFrame, showBlackScreenReport } from './RenderWatchdog';
 import { ElevatorSystem } from './systems/ElevatorSystem';
 import { PortalGunSystem } from './systems/PortalGunSystem';
 import { Descent, EARTHLIKE } from './systems/DescentSystem';
+import { missingShaders } from './ShaderRegistry';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -493,10 +494,20 @@ export class App {
       await w.build(this.ctx);
       this.world = w;
       this.currentId = id;
-      this.postfx.attach(this.scene, this.camera);
-      // Lensing is a property of the universe, not of one world, so it is
-      // re-attached with the pipeline every time.
-      this.lensfx.attach(this.scene, this.camera);
+      // Post-processing without its shaders draws a black frame, so this is
+      // checked before anything is attached rather than diagnosed after.
+      const absent = missingShaders();
+      if (absent.length) {
+        console.error(
+          'Post-process shaders are not registered, so post-processing is ' +
+          'disabled to keep the picture visible. Missing: ' + absent.join(', '));
+        this.shell.toast('Post-processing unavailable on this build');
+      } else {
+        this.postfx.attach(this.scene, this.camera);
+        // Lensing is a property of the universe, not of one world, so it is
+        // re-attached with the pipeline every time.
+        this.lensfx.attach(this.scene, this.camera);
+      }
       this.history.attach(
         typeof (w as any).captureState === 'function' ? (w as any) : null);
       this.shell.setWorld(w);

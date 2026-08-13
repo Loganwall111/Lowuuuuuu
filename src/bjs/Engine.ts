@@ -18,6 +18,10 @@ import '@babylonjs/core/Rendering/depthRendererSceneComponent';
 // picks - scene.pick, createPickingRay, camera.getForwardRay - throws without
 // it, and a throw inside the render loop leaves a permanently black canvas.
 import '@babylonjs/core/Culling/ray';
+// Registers every post-process shader. Post-processing draws nothing at all
+// without these, which presents as a completely black screen; see
+// ShaderRegistry.ts for the full explanation.
+import './ShaderRegistry';
 
 export interface EngineBoot {
   engine: AbstractEngine;
