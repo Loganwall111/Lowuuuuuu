@@ -353,6 +353,77 @@ console.log('\n— throwing things at planets —');
   ok('every composition in the catalogue has a colour', allTinted);
 }
 
+console.log('\n— the people who live there —');
+{
+  const sEntry = join(dir, 'set.js');
+  const sOut = join(dir, 'set.mjs');
+  writeFileSync(sEntry,
+    "export * from '/home/user/Low/src/bjs/systems/SettlerSystem.ts';");
+  execFileSync('/home/user/Low/node_modules/.bin/esbuild',
+    [sEntry, '--bundle', '--format=esm', '--platform=browser',
+     '--outfile=' + sOut], { stdio: 'pipe' });
+  const S = await import(sOut);
+
+  // Determinism: the same planet must always have the same people, or
+  // "the botanist on Terrapor" means nothing between visits.
+  const a1 = S.settlersFor(40917, 6);
+  const a2 = S.settlersFor(40917, 6);
+  ok('a planet always has the same people',
+    a1.map((s) => s.name + s.trade).join('|') ===
+    a2.map((s) => s.name + s.trade).join('|'));
+  ok('different planets have different people',
+    S.settlersFor(1, 6)[0].name !== S.settlersFor(2, 6)[0].name);
+  ok('the requested number of people appear', a1.length === 6);
+  ok('nobody shares a name on one planet',
+    new Set(a1.map((s) => s.name)).size === a1.length);
+  ok('everyone has a real trade',
+    a1.every((s) => S.TRADES.includes(s.trade)));
+  ok('asking for nobody yields nobody', S.settlersFor(5, 0).length === 0);
+  ok('a negative population is not an error', S.settlersFor(5, -3).length === 0);
+
+  // Mood must be ordered and total.
+  ok('mood spans terrified to delighted',
+    S.moodOf(-1) === 'terrified' && S.moodOf(1) === 'delighted');
+  ok('indifference reads as neutral', S.moodOf(0) === 'neutral');
+  let moodOk = true;
+  for (let r = -1; r <= 1; r += 0.05) {
+    if (typeof S.moodOf(r) !== 'string') moodOk = false;
+  }
+  ok('every possible regard maps to a mood', moodOk);
+
+  // The point of the system: they remember what you did.
+  const sys = new S.SettlerSystem();
+  sys.settlers = S.settlersFor(40917, 6);
+  const before = sys.settlers[0].regard;
+  sys.witnessed(2);
+  ok('dropping a moon on people makes them hate you',
+    sys.settlers[0].regard < before);
+  ok('shattering a world bottoms out their regard',
+    S.moodOf(sys.settlers[0].regard) === 'terrified');
+  ok('regard never runs below -1',
+    sys.settlers.every((s) => s.regard >= -1));
+  sys.pleased(5);
+  ok('regard never runs above +1',
+    sys.settlers.every((s) => s.regard <= 1));
+  const calm = new S.SettlerSystem();
+  calm.settlers = S.settlersFor(40917, 6);
+  const r0 = calm.settlers[0].regard;
+  calm.witnessed(0);
+  ok('a harmless bounce does not upset anyone',
+    calm.settlers[0].regard === r0);
+
+  // They must actually say something, and it must change with mood.
+  const happy = { ...a1[0], regard: 1 };
+  const scared = { ...a1[0], regard: -1 };
+  ok('people say something', typeof S.speak(a1[0], 0) === 'string' &&
+    S.speak(a1[0], 0).length > 0);
+  ok('what they say depends on how they feel',
+    S.speak(happy, 0) !== S.speak(scared, 0));
+  let varied = new Set();
+  for (let t = 0; t < 8; t++) varied.add(S.speak(happy, t));
+  ok('they do not repeat one line forever', varied.size > 1);
+}
+
 rmSync(dir, { recursive: true, force: true });
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

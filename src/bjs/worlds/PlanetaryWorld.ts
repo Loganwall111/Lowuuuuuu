@@ -30,6 +30,7 @@ import {
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 import { ImpactorSystem, type ImpactTarget } from '../systems/ImpactorSystem';
 import { THROWABLES, throwableById } from '../systems/ThrowableSystem';
+import { SettlerSystem } from '../systems/SettlerSystem';
 
 /* --------------------------- planet shader --------------------------- */
 
@@ -108,6 +109,9 @@ const PLANETS: {
 
 /** Terrapor is the Earth-like world, so it is the yardstick for mass. */
 const EARTH_VISUAL_R = 1.15;
+/** ...and the one with people on it. */
+const INHABITED = 'Terrapor';
+const INHABITED_SEED = 40917;
 
 export class PlanetaryWorld implements World {
   id = 'planetary';
@@ -119,6 +123,9 @@ export class PlanetaryWorld implements World {
   /** What the next throw will be. */
   private armed = 'asteroid';
   private lastImpactNote = '';
+  /** The people who live on Terrapor, and what they make of you. */
+  private settlers = new SettlerSystem();
+  private settlerAnchor = new Vector3(0, 0, 0);
   private star!: Mesh;
   private starMat!: ShaderMaterial;
   private light!: PointLight;
@@ -133,10 +140,21 @@ export class PlanetaryWorld implements World {
 
     // Throwing things is core to this place, so the impactor is attached
     // for the lifetime of the world rather than spun up on first use.
+    this.settlers.attach(scene);
+
     this.impactor.attach(scene, (e) => {
       this.lastImpactNote =
         e.projectile.spec.name + ' → ' + e.target.id + ': ' +
         e.result.megatons.toExponential(1) + ' Mt, ' + e.result.description;
+
+      // The people living there notice. How much depends on what you did,
+      // taken from the same outcome the physics produced rather than a
+      // separate table that could disagree with it.
+      const SEVERITY: Record<string, number> = {
+        bounce: 0, crater: 0.05, regional: 0.4,
+        extinction: 1.2, 'crust-loss': 2, shattered: 2
+      };
+      this.settlers.witnessed(SEVERITY[e.result.outcome] ?? 0);
     });
 
     registerPlanetShader();
@@ -410,6 +428,29 @@ export class PlanetaryWorld implements World {
     // Projectiles fly under the gravity of every planet at once, so a throw
     // can be slung around one world into another.
     this.impactor.update(dt * Math.max(0.05, this.p.timeScale), this.targets());
+
+    // The inhabited world carries its people with it as it orbits, so they
+    // stay on the ground rather than being left behind in empty space.
+    const home = this.bodies.find((x) => x.name === INHABITED);
+    if (home) {
+      if (!this.settlers.settlers.length) {
+        this.settlers.populate(
+          INHABITED_SEED, home.mesh.getAbsolutePosition(),
+          home.mesh.getBoundingInfo().boundingSphere.radiusWorld, 6);
+        this.settlerAnchor = home.mesh.getAbsolutePosition().clone();
+      } else {
+        const now = home.mesh.getAbsolutePosition();
+        const drift = now.subtract(this.settlerAnchor);
+        if (drift.lengthSquared() > 1e-9) {
+          for (const st of this.settlers.settlers) {
+            st.position.addInPlace(drift);
+            st.mesh?.position.copyFrom(st.position);
+          }
+          this.settlerAnchor.copyFrom(now);
+        }
+      }
+    }
+    this.settlers.update(dt);
   }
 
   /** The planets, described the way the impact maths needs them. */
@@ -451,7 +492,8 @@ export class PlanetaryWorld implements World {
         glyph: t.glyph
       })),
       { key: 'throw', label: 'Throw at nearest', glyph: '🎯' },
-      { key: 'clear-throws', label: 'Clear projectiles', glyph: '🧹' }
+      { key: 'clear-throws', label: 'Clear projectiles', glyph: '🧹' },
+      { key: 'talk', label: 'Hail the inhabitants', glyph: '💬' }
     ];
   }
 
@@ -461,6 +503,11 @@ export class PlanetaryWorld implements World {
       return;
     }
     if (key === 'clear-throws') { this.impactor.clear(); return; }
+    if (key === 'talk') {
+      const said = this.settlers.talkTo(ctx.camera.position, 1e9);
+      this.lastImpactNote = said ?? 'Nobody within earshot.';
+      return;
+    }
     if (key === 'throw') {
       // Thrown from the camera toward whatever you are looking at, so aim
       // is yours and a bad throw genuinely misses.
@@ -487,6 +534,7 @@ export class PlanetaryWorld implements World {
   getStats(): Record<string, string> {
     return {
       ...this.impactor.stats(),
+      ...this.settlers.stats(),
       'Armed': throwableById(this.armed)?.name ?? '—',
       'Last event': this.lastImpactNote || '—',
       'Planets': String(this.bodies.length),
@@ -498,6 +546,7 @@ export class PlanetaryWorld implements World {
 
   dispose(): void {
     this.impactor.dispose();
+    this.settlers.dispose();
     this.bodies.forEach((b) => { b.root.dispose(false, true); b.mat.dispose(); });
     this.bodies = [];
     this.star?.dispose();
