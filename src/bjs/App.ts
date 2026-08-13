@@ -24,6 +24,7 @@ import { PlanetSurfaceSystem } from './systems/PlanetSurfaceSystem';
 import { MouseLook } from './systems/MouseLook';
 import { LensFX } from './systems/LensFX';
 import { StationSystem } from './systems/StationSystem';
+import { CosmicScaleSystem } from './systems/CosmicScaleSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -70,6 +71,8 @@ export class App {
   grab = new GrabSystem();
   /** Last position outside any horizon, so we know which way is "back". */
   private lastOutsidePos = new Vector3(0, 0, -220);
+  /** Zoom out far enough and you leave the universe entirely. */
+  cosmicScale = new CosmicScaleSystem();
   /** Procedural space stations you can dock with and walk inside. */
   stations: StationSystem | null = null;
   /** Gravitational lensing that works in every world, not just one. */
@@ -122,7 +125,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...(this.stations?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats() },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -589,6 +592,19 @@ export class App {
       const fwd = this.camera.getTarget().subtract(this.camera.position);
       this.warp.update(dt, this.shownSpeed, eye, fwd);
       this.stations?.update(dt);
+
+      // Fly far enough from the centre and you cross out of the universe
+      // into the tier above it. Each tier recolours the void so the change
+      // is something you see, not something you read in a panel.
+      const scaleState = this.cosmicScale.update(eye.length());
+      if (scaleState.changed) {
+        const t = scaleState.tier;
+        this.scene.clearColor = new Color4(
+          t.tint[0] * 0.16, t.tint[1] * 0.16, t.tint[2] * 0.16, 1);
+        this.shell.toast(
+          (scaleState.direction > 0 ? 'Exited into ' : 'Fell back into ') +
+          t.name + ' - ' + t.tagline);
+      }
 
       this.shell.setFlight(
         this.shownSpeed,

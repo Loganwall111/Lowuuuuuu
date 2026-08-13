@@ -10,7 +10,7 @@
     "check:shaders": "node tools/shader-check.mjs",
     "check:physics": "node tools/physics-check.mjs",
     "check:ui": "node tools/ui-check.mjs",
-    "check": "tsc --noEmit && npm run check:shaders && npm run check:physics && npm run check:water && npm run check:disaster && npm run check:ai && npm run check:dimension && npm run check:portal && npm run check:lens && npm run check:universe && npm run check:grab && npm run check:blackhole && npm run check:vehicle && npm run check:history && npm run check:save && npm run check:quality && npm run check:life && npm run check:warp && npm run check:surface && npm run check:mouse && npm run check:construct && npm run check:station && npm run check:ui && npm run check:boot",
+    "check": "tsc --noEmit && npm run check:shaders && npm run check:physics && npm run check:water && npm run check:disaster && npm run check:ai && npm run check:dimension && npm run check:portal && npm run check:lens && npm run check:universe && npm run check:grab && npm run check:blackhole && npm run check:vehicle && npm run check:history && npm run check:save && npm run check:quality && npm run check:life && npm run check:warp && npm run check:surface && npm run check:mouse && npm run check:construct && npm run check:station && npm run check:scale && npm run check:ui && npm run check:boot",
     "check:boot": "node tools/boot-check.mjs",
     "check:history": "node tools/history-check.mjs",
     "check:water": "node tools/water-check.mjs",
@@ -30,7 +30,8 @@
     "check:surface": "node tools/surface-check.mjs",
     "check:mouse": "node tools/mouse-check.mjs",
     "check:construct": "node tools/build-check.mjs",
-    "check:station": "node tools/station-check.mjs"
+    "check:station": "node tools/station-check.mjs",
+    "check:scale": "node tools/scale-check.mjs"
   },
   "devDependencies": {
     "@shaderfrog/glsl-parser": "^7.0.1",
