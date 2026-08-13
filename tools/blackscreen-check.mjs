@@ -94,9 +94,29 @@ console.log('— no full-screen overlay may be an opaque black curtain —');
   const alphas = [...titleBlock.matchAll(
     /rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d.]+)\s*\)/g)]
     .map((m) => parseFloat(m[1]));
-  const opaque = alphas.filter((a) => a > 0.7);
-  ok(`the title card is a vignette, not a curtain (max alpha ${Math.max(...alphas)})`,
+  // The card now has the hero artwork behind the scrim, so the scrim is a
+  // legibility wash over a real image rather than the only thing on screen.
+  // The rule that matters is therefore "the card is never black", not "the
+  // scrim is faint": a heavier wash over artwork is still a lit picture.
+  const hasArtwork = /background-image:[\s\S]*?url\('\/art\/menu-hero\.jpg'\)/.test(titleBlock);
+  ok('the title card has real artwork behind it', hasArtwork);
+
+  const limit = hasArtwork ? 0.85 : 0.7;
+  const opaque = alphas.filter((a) => a > limit);
+  ok(`the title card is never an opaque curtain (max alpha ${Math.max(...alphas)}, limit ${limit})`,
      opaque.length === 0, opaque.join(','));
+
+  // Whatever the scrim, there must be a lit fallback colour so a failed
+  // image download cannot produce a black card.
+  const fb = titleBlock.match(/background-color:#([0-9a-f]{6})/i);
+  ok('the card declares a lit fallback colour', !!fb);
+  if (fb) {
+    const r = parseInt(fb[1].slice(0, 2), 16),
+          g = parseInt(fb[1].slice(2, 4), 16),
+          b2 = parseInt(fb[1].slice(4, 6), 16);
+    const luma = (0.2126 * r + 0.7152 * g + 0.0722 * b2) / 255;
+    ok('the fallback colour is not black', luma > 0.04, 'luma ' + luma.toFixed(3));
+  }
 
   // And it must genuinely cover the whole screen, so this is the one that
   // matters most.

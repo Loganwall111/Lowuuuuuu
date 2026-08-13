@@ -26,8 +26,20 @@ export const INTRO_CSS = `
 .intro-title{
   position:absolute; inset:0; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:26px;
-  background:radial-gradient(ellipse at 50% 45%,
-    rgba(12,20,42,.10) 0%, rgba(8,14,30,.42) 55%, rgba(6,11,24,.62) 100%);
+  /* The hero plate sits behind the title so there is always a real image
+     behind the Play button. Previously this was a bare gradient over the
+     canvas, so if the canvas was dark the whole card - and the area around
+     the button - read as solid black. The gradient is now layered ON TOP of
+     the artwork purely to keep the text legible. */
+  background-image:
+    radial-gradient(ellipse at 50% 45%,
+      rgba(10,16,34,.30) 0%, rgba(7,12,26,.58) 55%, rgba(5,9,20,.78) 100%),
+    url('/art/menu-hero.jpg');
+  background-size:cover, cover;
+  background-position:center center, center center;
+  background-repeat:no-repeat, no-repeat;
+  /* Fallback colour if the image ever fails to load: a lit blue, never black. */
+  background-color:#101a36;
   transition:opacity .6s ease;
 }
 .intro-title h1{

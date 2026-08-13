@@ -275,14 +275,20 @@ console.log('\n— the side tabs are gone; worlds are places you fly to —');
 
   // Travelling to a place must load what that place is.
   const app = fs.readFileSync('src/bjs/App.ts', 'utf8');
+  // The kind-to-world mapping now lives in one table shared with the world
+  // registry, so these assert the behaviour and the table rather than a
+  // literal in App.ts. locales-check covers the mapping in detail.
+  const locales = fs.readFileSync('src/bjs/worlds/Locales.ts', 'utf8');
   ok('arriving somewhere loads that kind of world',
-     app.includes('WORLD_FOR_REGION'));
-  ok('an ocean region is the ocean world', /'ocean':\s*'ocean'/.test(app));
-  ok('a terrain region is the terraform world', /'terrain':\s*'terraform'/.test(app));
+     app.includes('localeForKind('));
+  ok('an ocean region is the ocean world',
+     /id: 'ocean',[\s\S]*?kinds: \['ocean'\]/.test(locales));
+  ok('a terrain region is the terraform world',
+     /id: 'terraform',[\s\S]*?kinds: \['terrain'\]/.test(locales));
   ok('a black hole region is the black hole world',
-     /'blackhole':\s*'blackhole'/.test(app));
+     /id: 'blackhole',[\s\S]*?kinds: \['blackhole'\]/.test(locales));
   ok('warping loads the destination world',
-     /WORLD_FOR_REGION\[r\.kind\]/.test(app));
+     /localeForKind\(r\.kind\)\.id/.test(app));
 
   // The navigator is now the way around, and it lists real destinations.
   shell.wm.Open('navigator');

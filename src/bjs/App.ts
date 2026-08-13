@@ -11,15 +11,10 @@ import type { AbstractEngine } from '@babylonjs/core/Engines/abstractEngine';
 import { createEngine } from './Engine';
 import { Shell } from './ui/Shell';
 import type { World, WorldContext } from './World';
-import { PlanetaryWorld } from './worlds/PlanetaryWorld';
-import { OceanWorld } from './worlds/OceanWorld';
-import { BlackHoleWorld } from './worlds/BlackHoleWorld';
-import { SandboxWorld } from './worlds/SandboxWorld';
-import { TerraformWorld } from './worlds/TerraformWorld';
-import { DimensionWorld } from './worlds/DimensionWorld';
+// Every place in the universe comes from one table now, rather than a world
+// registry sitting alongside a region-kind lookup that had to agree with it.
+import { buildLocale, localeForKind } from './worlds/Locales';
 import { PostFX } from './PostFX';
-import { GarageWorld } from './worlds/GarageWorld';
-import { ShipWorld } from './worlds/ShipWorld';
 import { IntroSequence } from './systems/IntroSequence';
 import { IntroOverlay } from './ui/IntroOverlay';
 import { WarpSystem } from './systems/WarpSystem';
@@ -47,33 +42,7 @@ import {
 } from './systems/LensProfiles';
 import type { Region } from './systems/UniverseState';
 
-/**
- * What each kind of place in the universe *is* when you get there. The side
- * tabs are gone; these experiences are reached by flying to them.
- */
-const WORLD_FOR_REGION: Record<string, string> = {
-  'ocean': 'ocean',
-  'terrain': 'terraform',
-  'blackhole': 'blackhole',
-  'dimension': 'dimension',
-  'star-system': 'planetary',
-  'planet': 'planetary',
-  'nebula': 'planetary',
-  'galaxy': 'planetary',
-  'deep-space': 'planetary'
-};
 
-const FACTORY: Record<string, () => World> = {
-  planetary: () => new PlanetaryWorld(),
-  ocean: () => new OceanWorld(),
-  blackhole: () => new BlackHoleWorld(),
-  sandbox: () => new SandboxWorld(),
-  terraform: () => new TerraformWorld(),
-  dimension: () => new DimensionWorld(),
-  // The opening sequence. The ship is the main menu.
-  garage: () => new GarageWorld(),
-  ship: () => new ShipWorld()
-};
 
 export class App {
   private engine!: AbstractEngine;
@@ -519,8 +488,8 @@ export class App {
       [...this.scene.textures].forEach((t) => t.dispose());
       this.scene.customRenderTargets.length = 0;
 
-      const make = FACTORY[id] ?? FACTORY.planetary;
-      const w = make();
+      // One table describes every place; there is no separate world registry.
+      const w = buildLocale(id);
       await w.build(this.ctx);
       this.world = w;
       this.currentId = id;
@@ -581,8 +550,9 @@ export class App {
     // Arriving somewhere loads what that place actually is. This is why
     // there is no world list any more: an ocean world is a place you fly
     // to, not an entry you click.
-    const world = WORLD_FOR_REGION[r.kind];
-    if (world && world !== this.currentId) this.loadWorld(world);
+    // Arriving resolves the region kind straight to a locale.
+    const world = localeForKind(r.kind).id;
+    if (world !== this.currentId) this.loadWorld(world);
   }
 
   /**
@@ -905,6 +875,8 @@ export class App {
   private watchdogFrames = 0;
   private watchdogReported = false;
   private watchdogTimer: number | null = null;
+  /** Post-processing is stripped once, automatically, on a black frame. */
+  private blackScreenRecoveryTried = false;
 
   /**
    * The frame-counted watchdog can only fire if frames are happening. A dead
@@ -961,6 +933,31 @@ export class App {
         fps: () => this.engine.getFps()
       });
       if (!report.painting) {
+        // Reporting a black screen is not good enough - recover from it.
+        // If the frame is being drawn (meshes present, frames ticking) but
+        // every pixel is black, the overwhelmingly likely culprit is the
+        // post-process chain resolving to nothing. Strip it and re-test
+        // before bothering the user: an unfiltered image beats no image.
+        if (!this.blackScreenRecoveryTried && report.luminance <= 0.0001) {
+          this.blackScreenRecoveryTried = true;
+          console.warn('[black screen] stripping post-processing and retrying');
+          try { this.lensfx.detach(); } catch { /* already gone */ }
+          try { this.postfx.detach(); } catch { /* already gone */ }
+          // Guarantee the clear colour itself is not black, so even an
+          // empty scene shows something.
+          const c = this.scene.clearColor;
+          if (c.r + c.g + c.b < 0.02) {
+            this.scene.clearColor = new Color4(0.05, 0.07, 0.13, 1);
+          }
+          this.shell.toast('Recovering from a black frame - post-processing disabled');
+          // Re-check shortly; if it is now painting, say nothing more.
+          window.setTimeout(() => {
+            this.watchdogReported = false;
+            this.checkForBlackScreen();
+          }, 900);
+          return;
+        }
+
         this.watchdogReported = true;
         console.error('[black screen]', report.diagnosis, report.warnings);
         showBlackScreenReport(report);

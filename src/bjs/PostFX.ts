@@ -63,12 +63,31 @@ export const POSTFX_PARAMS: WorldParam[] = [
 export class PostFX {
   settings: PostFXSettings = { ...DEFAULT_POSTFX };
   private pipeline: DefaultRenderingPipeline | null = null;
+  /** Whether the pipeline is running in floating-point mode. */
+  hdr = false;
 
   /** Rebuilt per world load, because world switching disposes scene resources. */
   attach(scene: Scene, camera: Camera): void {
     this.detach();
     try {
-      this.pipeline = new DefaultRenderingPipeline('postfx', true, scene, [camera]);
+      // HDR here means "render the whole frame into a floating-point
+      // texture". That is the right choice for bloom, but it is only valid
+      // if the GPU can actually render to and filter half-float textures.
+      // Where it cannot, Babylon still builds the pipeline and still reports
+      // a healthy scene - it just resolves to an entirely black image, at
+      // full frame rate, with every mesh present. That is precisely the
+      // black screen that has been reported: drawing, 93 meshes, 46 fps,
+      // mean luminance 0.0000.
+      //
+      // So HDR is now conditional on the capability actually being there.
+      const caps = scene.getEngine().getCaps();
+      const hdr = !!(caps.textureHalfFloatRender && caps.textureHalfFloatLinearFiltering) ||
+                  !!(caps.textureFloatRender && caps.textureFloatLinearFiltering);
+      if (!hdr) {
+        console.warn('This GPU cannot render to float textures - using an LDR pipeline so the frame is not black.');
+      }
+      this.hdr = hdr;
+      this.pipeline = new DefaultRenderingPipeline('postfx', hdr, scene, [camera]);
       this.apply();
       this.watchPipelineHealth(scene);
     } catch (e) {
