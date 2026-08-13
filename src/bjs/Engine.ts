@@ -14,6 +14,10 @@ import type { AbstractEngine } from '@babylonjs/core/Engines/abstractEngine';
 
 import '@babylonjs/core/Materials/standardMaterial';
 import '@babylonjs/core/Rendering/depthRendererSceneComponent';
+// Ray is a side-effect import in Babylon's tree-shaken build. Anything that
+// picks - scene.pick, createPickingRay, camera.getForwardRay - throws without
+// it, and a throw inside the render loop leaves a permanently black canvas.
+import '@babylonjs/core/Culling/ray';
 
 export interface EngineBoot {
   engine: AbstractEngine;

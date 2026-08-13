@@ -187,6 +187,54 @@ ok('no leftover element is covering the canvas', blockers.length === 0,
    blockers.map((b) => b.className || b.id).join(', '));
 
 // ---- every world must load without throwing and without blanking the UI ----
+console.log('\n=== the render loop must actually run ===');
+// This is the black-screen test. Everything above can pass while the canvas
+// stays black, because a throw *inside* the render loop kills the frame
+// without touching the DOM. Babylon's tree-shaken build is full of
+// side-effect imports (Ray in particular) whose absence only ever shows up
+// here. So: capture the real frame callback and run it.
+if (appRef) {
+  const eng = appRef.engine;
+  let frameFn = null;
+  const realRun = eng.runRenderLoop.bind(eng);
+  eng.runRenderLoop = (fn) => { frameFn = fn; };
+  try { appRef.start(); } catch (e) { /* reported below */ }
+  eng.runRenderLoop = realRun;
+
+  ok('the app registers a render loop', typeof frameFn === 'function');
+
+  if (frameFn) {
+    let firstErr = null, ran = 0;
+    for (let i = 0; i < 120; i++) {
+      try { frameFn(); ran++; }
+      catch (e) { firstErr = String(e && e.stack ? e.stack : e); break; }
+    }
+    ok('the first frame renders without throwing (black-screen guard)',
+       ran > 0, firstErr || '');
+    ok(`120 frames run without throwing (${ran})`, ran === 120, firstErr || '');
+
+    // The scene must have something in it and must not be clearing to black
+    // by accident - a black clear colour with no meshes is the other way
+    // this fails.
+    const sc = appRef.scene;
+    ok('the scene has geometry to draw', sc.meshes.length > 0);
+    const cc = sc.clearColor;
+    ok('the scene is not clearing to pure black with nothing drawn',
+       sc.meshes.some((m) => m.isVisible) || (cc.r + cc.g + cc.b) > 0.01);
+
+    // Every world must survive frames too, since each rebuilds the
+    // post-process chain on load.
+    for (const id of ['garage', 'ship', 'planetary', 'blackhole']) {
+      let e2 = null;
+      try {
+        await appRef.loadWorld(id);
+        for (let i = 0; i < 20; i++) frameFn();
+      } catch (e) { e2 = String(e).slice(0, 90); }
+      ok(`world "${id}" renders frames without throwing`, !e2, e2 || '');
+    }
+  }
+}
+
 console.log('\n=== world loading ===');
 if (appRef) {
   const worlds = ['sandbox', 'planetary', 'ocean', 'terraform', 'blackhole', 'dimension',

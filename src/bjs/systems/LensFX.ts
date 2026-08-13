@@ -182,8 +182,16 @@ export class LensFX {
     const dist = toCam.length();
 
     // Behind the camera: nothing to bend.
-    const fwd = camera.getForwardRay?.().direction;
-    if (fwd && Vector3.Dot(toCam, fwd) <= 0) { this.on = false; return; }
+    //
+    // The forward vector is read straight out of the view matrix rather than
+    // via camera.getForwardRay(). getForwardRay() constructs a Ray, and Ray
+    // is a side-effect import in Babylon's tree-shaken build: calling it
+    // without that import throws *inside the render loop*, killing the frame
+    // and leaving a permanently black canvas. The third row of the view
+    // matrix is the same vector with no dependency at all.
+    const vm = view.m;
+    const fwd = new Vector3(vm[2], vm[6], vm[10]);
+    if (Vector3.Dot(toCam, fwd) <= 0) { this.on = false; return; }
 
     const p = Vector3.Project(
       center,
