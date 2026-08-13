@@ -25,6 +25,7 @@ export const WORLDS: WorldEntry[] = [
   { id: 'planetary', name: 'Star Systems', glyph: '🪐', desc: 'Procedural planets, moons, rings and atmospheres', tags: ['space', 'planets', 'orbit', 'gravity'] },
   { id: 'ocean', name: 'Ocean Worlds', glyph: '🌊', desc: 'Gerstner fluid with ray-traced reflections', tags: ['water', 'fluid', 'waves', 'reflection'] },
   { id: 'terraform', name: 'Terraform', glyph: '⛰', desc: 'Carve rivers, flood valleys and erode mountains with a real fluid solver', tags: ['terrain', 'water', 'erosion', 'river', 'flood', 'tsunami', 'painter', 'landscape'] },
+  { id: 'dimension', name: 'Beyond the Horizon', glyph: '🌀', desc: 'Infinite procedural dimensions: psychedelia, bloodstreams, cubist realities, time running backwards', tags: ['dimension', 'multiverse', 'black hole', 'psychedelic', 'weird', 'infinite', 'procedural', 'time'] },
   { id: 'blackhole', name: 'Singularity', glyph: '⚫', desc: 'Ray-marched geodesics and gravitational lensing', tags: ['black hole', 'lensing', 'relativity', 'gravity'] }
 ];
 

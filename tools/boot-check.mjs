@@ -156,7 +156,7 @@ ok('no leftover element is covering the canvas', blockers.length === 0,
 // ---- every world must load without throwing and without blanking the UI ----
 console.log('\n=== world loading ===');
 if (appRef) {
-  const worlds = ['sandbox', 'planetary', 'ocean', 'terraform', 'blackhole'];
+  const worlds = ['sandbox', 'planetary', 'ocean', 'terraform', 'blackhole', 'dimension'];
   for (const id of worlds) {
     let werr = null;
     try {
@@ -210,6 +210,34 @@ if (appRef) {
       }
     }
     ok('every action runs without throwing', broken.length === 0, broken.join(' | '));
+
+    // dimension travel rebuilds the entire world, so sweep it too
+    await appRef.loadWorld('dimension');
+    await new Promise((r) => setTimeout(r, 120));
+    const dw = appRef.world;
+    const dActions = dw.getActions ? dw.getActions() : [];
+    const dBroken = [];
+    for (const a of dActions) {
+      try {
+        dw.runAction(a.key, appRef.ctx);
+        dw.update(1 / 60, appRef.ctx);
+        dw.getStats();
+      } catch (e) {
+        dBroken.push(a.key + ': ' + (e && e.message ? e.message : e));
+      }
+    }
+    ok(`every dimension action runs without throwing (${dActions.length})`,
+       dBroken.length === 0, dBroken.join(' | '));
+
+    // repeated deep travel must not leak or throw
+    let travelErr = null;
+    try {
+      for (let i = 0; i < 25; i++) dw.runAction('deeper', appRef.ctx);
+      for (let i = 0; i < 10; i++) dw.runAction('tear', appRef.ctx);
+      dw.update(1 / 60, appRef.ctx);
+    } catch (e) { travelErr = e; }
+    ok('35 consecutive dimension jumps stay stable', !travelErr,
+       travelErr ? String(travelErr.message) : '');
   } catch (e) {
     ok('action sweep completed', false, String(e && e.message ? e.message : e));
   }

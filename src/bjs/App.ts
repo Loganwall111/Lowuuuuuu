@@ -16,6 +16,7 @@ import { OceanWorld } from './worlds/OceanWorld';
 import { BlackHoleWorld } from './worlds/BlackHoleWorld';
 import { SandboxWorld } from './worlds/SandboxWorld';
 import { TerraformWorld } from './worlds/TerraformWorld';
+import { DimensionWorld } from './worlds/DimensionWorld';
 import { PostFX } from './PostFX';
 import { MainMenu } from './ui/MainMenu';
 import { HistorySystem } from './systems/HistorySystem';
@@ -27,7 +28,8 @@ const FACTORY: Record<string, () => World> = {
   ocean: () => new OceanWorld(),
   blackhole: () => new BlackHoleWorld(),
   sandbox: () => new SandboxWorld(),
-  terraform: () => new TerraformWorld()
+  terraform: () => new TerraformWorld(),
+  dimension: () => new DimensionWorld()
 };
 
 export class App {
