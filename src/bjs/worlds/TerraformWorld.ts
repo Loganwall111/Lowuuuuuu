@@ -21,6 +21,7 @@ import { PointerEventTypes } from '@babylonjs/core/Events/pointerEvents';
 import type { Observer } from '@babylonjs/core/Misc/observable';
 import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
 import { HydraulicSystem } from '../systems/HydraulicSystem';
+import { DisasterSystem, DISASTERS, DISASTER_ORDER, type DisasterKind } from '../systems/DisasterSystem';
 import { fbmCPU, ridgedCPU } from '../Noise';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 
@@ -47,6 +48,7 @@ export class TerraformWorld implements World {
   private accum = 0;
   private seed = Math.random() * 1000;
   private meteors = 0;
+  private disasters!: DisasterSystem;
 
   private p = {
     rain: 0.0,
@@ -54,6 +56,7 @@ export class TerraformWorld implements World {
     erosion: 0.35,
     seaLevel: 0.30,
     flowSpeed: 1.0,
+    severity: 1.5,
     brushSize: 10,
     brushStrength: 1.0,
     showWater: 1
@@ -78,6 +81,8 @@ export class TerraformWorld implements World {
       deposition: this.p.erosion * 0.7,
       rain: 0
     });
+
+    this.disasters = new DisasterSystem(this.hydro);
 
     this.generateLandscape();
 
@@ -327,8 +332,12 @@ export class TerraformWorld implements World {
   update(dt: number, _ctx: WorldContext): void {
     this.t += dt;
 
-    this.hydro.opts.rain = this.p.rain * 0.02;
-    this.hydro.opts.evaporation = this.p.evaporation * 0.01;
+    this.disasters.update(Math.min(dt, 0.05) * this.p.flowSpeed);
+
+    // disasters can demand extra rain or evaporation on top of the sliders
+    this.hydro.opts.rain = this.p.rain * 0.02 + this.disasters.climateRain * 0.02;
+    this.hydro.opts.evaporation =
+      this.p.evaporation * 0.01 + this.disasters.climateEvaporation * 0.01;
     this.hydro.opts.erosion = this.p.erosion;
     this.hydro.opts.deposition = this.p.erosion * 0.7;
 
@@ -355,6 +364,7 @@ export class TerraformWorld implements World {
       { key: 'erosion', label: 'Erosion', min: 0, max: 1.5, step: 0.02, value: this.p.erosion },
       { key: 'flowSpeed', label: 'Flow Speed', min: 0, max: 3, step: 0.05, value: this.p.flowSpeed, unit: '×' },
       { key: 'seaLevel', label: 'Sea Level', min: 0, max: 1, step: 0.01, value: this.p.seaLevel },
+      { key: 'severity', label: 'Disaster Severity', min: 0.2, max: 3, step: 0.1, value: this.p.severity, unit: '×' },
       { key: 'brushSize', label: 'Brush Size', min: 2, max: 30, step: 1, value: this.p.brushSize },
       { key: 'brushStrength', label: 'Brush Strength', min: 0.1, max: 3, step: 0.1, value: this.p.brushStrength },
       { key: 'showWater', label: 'Show Water', min: 0, max: 1, step: 1, value: this.p.showWater }
@@ -375,11 +385,13 @@ export class TerraformWorld implements World {
       { key: 'tool:water', label: 'Pour Water', glyph: '💧' },
       { key: 'tool:drain', label: 'Drain Water', glyph: '🌵' },
       { key: 'river', label: 'Start a River', glyph: '🏞' },
-      { key: 'tsunami', label: 'TSUNAMI', glyph: '🌊' },
-      { key: 'flood', label: 'Great Flood', glyph: '🌧' },
-      { key: 'meteor', label: 'Meteor Impact', glyph: '☄' },
-      { key: 'volcano', label: 'Raise Volcano', glyph: '🌋' },
-      { key: 'drought', label: 'Drought', glyph: '🏜' },
+      ...DISASTER_ORDER.map((k) => ({
+        key: 'dis:' + k,
+        label: DISASTERS[k].name,
+        glyph: DISASTERS[k].glyph
+      })),
+      { key: 'apocalypse', label: 'APOCALYPSE', glyph: '☠' },
+      { key: 'calm', label: 'Stop All Disasters', glyph: '🕊' },
       { key: 'regen', label: 'New Landscape', glyph: '🎲' },
       { key: 'flatten', label: 'Flatten All', glyph: '🧹' }
     ];
@@ -392,6 +404,26 @@ export class TerraformWorld implements World {
     }
     const n = GRID;
     const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+
+    if (key.startsWith('dis:')) {
+      const kind = key.slice(4) as DisasterKind;
+      // aim at the wettest area for water disasters, otherwise anywhere
+      const cx = Math.floor(rnd(18, n - 18));
+      const cy = Math.floor(rnd(18, n - 18));
+      this.disasters.trigger(kind, cx, cy, this.p.severity, 16);
+      return;
+    }
+    if (key === 'apocalypse') {
+      for (const k of DISASTER_ORDER) {
+        this.disasters.trigger(k, Math.floor(rnd(15, n - 15)), Math.floor(rnd(15, n - 15)),
+          this.p.severity, 14);
+      }
+      return;
+    }
+    if (key === 'calm') {
+      this.disasters.clear();
+      return;
+    }
 
     if (key === 'river') {
       // spring on the highest ground: it will carve its own path downhill
@@ -422,7 +454,9 @@ export class TerraformWorld implements World {
       for (let i = 0; i < this.hydro.water.length; i++) this.hydro.water[i] *= 0.35;
     } else if (key === 'regen') {
       this.seed = Math.random() * 1000;
-      this.generateLandscape();
+      this.disasters = new DisasterSystem(this.hydro);
+
+    this.generateLandscape();
       this.hydro.sediment.fill(0);
     } else if (key === 'flatten') {
       this.hydro.terrain.fill(0.2);
@@ -441,8 +475,32 @@ export class TerraformWorld implements World {
       'Total water': this.hydro.totalWater().toFixed(0),
       'Active tool': this.tool,
       'Meteor impacts': String(this.meteors),
+      'Active disasters': String(this.disasters?.count() ?? 0),
+      'Disasters caused': String(this.disasters?.triggered ?? 0),
       'Hint': 'Shift+drag to paint'
     };
+  }
+
+  /**
+   * Ground height probe used by walk mode, so you can land on this planet and
+   * walk over the terrain the solver is actively eroding.
+   */
+  sampleGround(x: number, z: number): { height: number; normal: Vector3 } | null {
+    const gx = ((x + SPAN / 2) / SPAN) * (GRID - 1);
+    const gz = ((z + SPAN / 2) / SPAN) * (GRID - 1);
+    if (gx < 0 || gz < 0 || gx > GRID - 1 || gz > GRID - 1) return null;
+
+    // bilinear sample so walking is smooth rather than stepped
+    const x0 = Math.floor(gx), z0 = Math.floor(gz);
+    const x1 = Math.min(GRID - 1, x0 + 1), z1 = Math.min(GRID - 1, z0 + 1);
+    const fx = gx - x0, fz = gz - z0;
+    const t = this.hydro.terrain;
+    const h00 = t[z0 * GRID + x0], h10 = t[z0 * GRID + x1];
+    const h01 = t[z1 * GRID + x0], h11 = t[z1 * GRID + x1];
+    const height = (h00 * (1 - fx) + h10 * fx) * (1 - fz)
+                 + (h01 * (1 - fx) + h11 * fx) * fz;
+
+    return { height: height * HEIGHT, normal: new Vector3(0, 1, 0) };
   }
 
   /* ------------------------------ state capture ------------------------------ */
