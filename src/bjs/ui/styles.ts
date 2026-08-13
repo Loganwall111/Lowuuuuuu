@@ -4,9 +4,17 @@ export const UI_CSS = `
   --line:rgba(255,255,255,.10); --line2:rgba(255,255,255,.06);
   --txt:#e8edf7; --dim:#8b95ad; --dim2:#5d6679;
   --acc:#4da3ff; --acc2:#7c5cff; --ok:#31d68a; --warn:#ffb545;
-  --r:14px; --r2:10px;
-  --shadow:0 18px 50px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+  --r:11px; --r2:8px;
+  --shadow:0 14px 38px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.35);
+  /* UI density + see-through: the sim must always stay readable behind panels */
+  --ui-scale:1;
+  --panel-alpha:.80;
+  --idle-alpha:.30;
+  --panel-dyn:rgba(16,20,30,var(--panel-alpha));
 }
+/* --- density presets: desktop games use tighter UI than web pages --- */
+body[data-density="compact"]{ --r:9px; --r2:7px; --ui-scale:.88; }
+body[data-density="tiny"]   { --r:8px; --r2:6px; --ui-scale:.78; }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--bg);}
 body{font:14px/1.45 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--txt);
@@ -20,28 +28,42 @@ body{font:14px/1.45 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,s
   background:var(--panel);backdrop-filter:blur(22px) saturate(140%);
   -webkit-backdrop-filter:blur(22px) saturate(140%);
   border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
-  min-width:240px;max-height:calc(100vh - 96px);overflow:hidden;
+  min-width:200px;max-height:calc(100vh - 88px);overflow:hidden;
   animation:wmIn .16s cubic-bezier(.2,.8,.3,1);
+  font-size:calc(13px * var(--ui-scale));
+  background:var(--panel-dyn);
+  transition:opacity .35s ease, background .2s ease;
 }
+/* Panels fade back when you are not using them, so they never hide the sim. */
+body[data-idle="1"] .wm-win:not(:hover):not(.wm-pinned){ opacity:var(--idle-alpha); }
+body[data-idle="1"] .wm-win:not(:hover):not(.wm-pinned) .wm-body{ pointer-events:none; }
+.wm-win:hover{ opacity:1 !important; }
+/* Focus mode hides every panel instantly without closing anything. */
+body[data-focus="1"] .wm-layer,
+body[data-focus="1"] .topbar,
+body[data-focus="1"] .wm-dock{ opacity:0; pointer-events:none; }
+body[data-focus="1"] .hud{ opacity:.35; }
+.wm-win.wm-pinned{ box-shadow:0 0 0 1px var(--acc), var(--shadow); }
+.wm-b.on{ background:var(--acc); color:#04121f; }
 @keyframes wmIn{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
 .wm-win.wm-dragging{transition:none;box-shadow:0 26px 70px rgba(0,0,0,.7);}
 .wm-bar{
-  display:flex;align-items:center;gap:8px;padding:9px 8px 9px 12px;cursor:grab;
+  display:flex;align-items:center;gap:6px;padding:6px 6px 6px 10px;cursor:grab;
   background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,0));
   border-bottom:1px solid var(--line2);user-select:none;flex:0 0 auto;
 }
 .wm-bar:active{cursor:grabbing}
 .wm-grip{width:3px;height:15px;border-radius:2px;background:linear-gradient(var(--acc),var(--acc2));flex:0 0 auto;}
-.wm-title{flex:1;font-size:12.5px;font-weight:600;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wm-title{flex:1;font-size:calc(12px * var(--ui-scale));font-weight:600;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .wm-btns{display:flex;gap:3px;flex:0 0 auto;}
 .wm-b{
-  width:24px;height:24px;border:0;border-radius:7px;background:rgba(255,255,255,.05);
+  width:21px;height:21px;border:0;border-radius:6px;background:rgba(255,255,255,.05);
   color:var(--dim);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center;
   transition:background .12s,color .12s;font-family:inherit;
 }
 .wm-b:hover{background:rgba(255,255,255,.14);color:#fff}
 .wm-x:hover{background:#e5484d;color:#fff}
-.wm-body{padding:12px;overflow-y:auto;overflow-x:hidden;flex:1 1 auto;min-height:0;}
+.wm-body{padding:9px 10px;overflow-y:auto;overflow-x:hidden;flex:1 1 auto;min-height:0;}
 .wm-body::-webkit-scrollbar{width:9px}
 .wm-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:9px;border:2px solid transparent;background-clip:content-box}
 .wm-resize{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;
@@ -193,6 +215,12 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
 .boot-err{font-size:11.5px;color:#ffb4b4;max-width:460px;margin:14px auto 0;line-height:1.6;
   background:rgba(229,72,77,.10);border:1px solid rgba(229,72,77,.35);border-radius:10px;padding:11px 14px;
   font-family:ui-monospace,Menlo,monospace;text-align:left;word-break:break-word}
+/* Non-blocking status message, bottom-left, never over the middle. */
+.ui-toast{position:fixed;left:14px;bottom:14px;z-index:120;padding:9px 14px;border-radius:10px;
+  background:rgba(12,16,24,.92);border:1px solid var(--line);color:var(--txt);font-size:12px;
+  pointer-events:none;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;
+  max-width:min(420px,44vw);backdrop-filter:blur(14px);}
+.ui-toast.show{opacity:1;transform:none;}
 .fatal-toast{position:fixed;right:16px;bottom:16px;z-index:300;max-width:420px;padding:13px 15px;
   border-radius:12px;background:var(--panel);backdrop-filter:blur(20px);border:1px solid rgba(229,72,77,.5);
   box-shadow:var(--shadow);color:var(--txt);font-size:12px;line-height:1.5}

@@ -85,6 +85,10 @@ export class Shell {
     style.textContent = UI_CSS;
     document.head.appendChild(style);
 
+    // Compact desktop density by default; panels stay out of the way.
+    document.body.dataset.density = 'compact';
+    document.body.dataset.focus = '0';
+    document.body.dataset.idle = '0';
     this.wm = new WindowManager(document.body);
     this.buildBoot();
     this.buildTopbar();
@@ -109,6 +113,9 @@ export class Shell {
       else if (k === '2') this.wm.Toggle('objects');
       else if (k === '6') this.wm.Toggle('library');
       else if (k === '7') this.wm.Toggle('snapshots');
+      else if (k === '8') this.wm.Toggle('view');
+      else if (k === 'f') this.toggleFocus();
+      else if (k === 't') this.wm.TileEdges();
       else if (k === '3') this.wm.Toggle('telemetry');
       else if (k === '4') this.wm.Toggle('presets');
       else if (k === '5') this.wm.Toggle('graphics');
@@ -197,9 +204,12 @@ export class Shell {
       <button class="iconbtn" id="w-telemetry" title="Telemetry (3)">📊</button>
       <button class="iconbtn" id="w-presets"  title="Presets (4)">✨</button>
       <button class="iconbtn" id="w-graphics" title="Graphics (5)">🎨</button>
+      <button class="iconbtn" id="btnFocus"   title="Focus mode - hide all panels (F)">👁</button>
+      <button class="iconbtn" id="btnTile"    title="Tile panels to the screen edges (T)">▤</button>
       <button class="iconbtn" id="btnUndo"    title="Undo (Ctrl+Z)">↶</button>
       <button class="iconbtn" id="btnRedo"    title="Redo (Ctrl+Shift+Z)">↷</button>
       <button class="iconbtn" id="w-snapshots" title="Snapshots (7)">📸</button>
+      <button class="iconbtn" id="w-view" title="View &amp; Interface (8)">🖥</button>
       <button class="iconbtn" id="btnReset"   title="Reset layout & sim (R)">↺</button>
     `;
     document.body.appendChild(this.topbar);
@@ -218,11 +228,17 @@ export class Shell {
       b.onclick = () => this.setMode(b.dataset.m as Mode);
     });
 
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots'] as const).forEach((id) => {
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement | null;
       if (btn) btn.onclick = () => this.wm.Toggle(id);
     });
 
+    (this.topbar.querySelector('#btnFocus') as HTMLButtonElement).onclick = () => {
+      this.toggleFocus();
+    };
+    (this.topbar.querySelector('#btnTile') as HTMLButtonElement).onclick = () => {
+      this.wm.TileEdges();
+    };
     (this.topbar.querySelector('#btnUndo') as HTMLButtonElement).onclick = () => {
       this.hooks.onUndo(); this.refreshAll();
     };
@@ -237,7 +253,7 @@ export class Shell {
   }
 
   private syncTopbar(): void {
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots'] as const).forEach((id) => {
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id);
       btn?.classList.toggle('on', this.wm.IsVisible(id));
     });
@@ -341,6 +357,12 @@ export class Shell {
       id: 'objects', title: 'Objects', glyph: '🧰',
       x: 1, y: 0.10, width: 330, height: 520,
       render: (b) => this.renderObjects(b)
+    });
+
+    this.wm.register({
+      id: 'view', title: 'View & Interface', glyph: '🖥',
+      x: 1, y: 0.08, width: 285,
+      render: (b) => this.renderView(b)
     });
 
     this.wm.register({
@@ -575,9 +597,176 @@ export class Shell {
     }
   }
 
+  /** Focus mode: hide every panel so the simulation is fully visible. */
+  toggleFocus(): void {
+    const on = !this.wm.IsFocusMode();
+    this.wm.SetFocusMode(on);
+    const btn = this.topbar.querySelector('#btnFocus');
+    btn?.classList.toggle('on', on);
+    this.toast(on ? 'Focus mode on — press F to bring the panels back' : 'Panels restored');
+  }
+
+  /** Brief non-blocking message; never covers the centre of the screen. */
+  toast(msg: string): void {
+    let t = document.getElementById('uiToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'uiToast';
+      t.className = 'ui-toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('show');
+    window.clearTimeout((t as any)._h);
+    (t as any)._h = window.setTimeout(() => t!.classList.remove('show'), 2200);
+  }
+
   /** Re-renders every open panel (after undo/redo changes world state). */
   refreshAll(): void {
     ['controls', 'telemetry', 'snapshots', 'objects'].forEach((id) => this.wm.refresh(id));
+  }
+
+  /* ---- view & interface ---- */
+
+  /** Reads a CSS custom property defensively; never throws if unsupported. */
+  private cssVar(name: string, fallback: number): number {
+    try {
+      const gcs = (typeof window !== 'undefined' && window.getComputedStyle)
+        ? window.getComputedStyle(document.body) : null;
+      const raw = gcs?.getPropertyValue(name);
+      const v = parseFloat(String(raw ?? '').trim());
+      return Number.isFinite(v) ? v : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  private renderView(b: HTMLElement): void {
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.textContent = 'Tune the interface so it never gets in the way of the simulation.';
+    b.appendChild(n);
+
+    // --- visibility ---
+    const vg = document.createElement('div');
+    vg.className = 'grp';
+    vg.innerHTML = '<div class="grp-h">Visibility</div>';
+
+    const row = document.createElement('div');
+    row.className = 'btnrow';
+    const focusBtn = document.createElement('button');
+    focusBtn.className = 'btn' + (this.wm.IsFocusMode() ? ' pri' : '');
+    focusBtn.id = 'btnFocusPanel';
+    focusBtn.textContent = '👁 Focus Mode (F)';
+    focusBtn.title = 'Hide every panel without closing it';
+    focusBtn.onclick = () => { this.toggleFocus(); this.wm.refresh('view'); };
+    const tileBtn = document.createElement('button');
+    tileBtn.className = 'btn';
+    tileBtn.id = 'btnTilePanel';
+    tileBtn.textContent = '▤ Tile to Edges (T)';
+    tileBtn.title = 'Arrange open panels along the screen edges so none overlap';
+    tileBtn.onclick = () => { this.wm.TileEdges(); this.toast('Panels tiled to the edges'); };
+    row.append(focusBtn, tileBtn);
+    vg.appendChild(row);
+
+    const row2 = document.createElement('div');
+    row2.className = 'btnrow';
+    const closeAll = document.createElement('button');
+    closeAll.className = 'btn';
+    closeAll.id = 'btnCloseAllPanels';
+    closeAll.textContent = '✕ Close All Panels';
+    closeAll.onclick = () => { this.wm.CloseAll(); this.toast('All panels closed'); };
+    row2.appendChild(closeAll);
+    vg.appendChild(row2);
+
+    vg.appendChild(this.toggle('Auto-fade when idle', 'chkAutoFade',
+      this.wm.IsAutoFade(),
+      'Panels fade back after 4 seconds of no input, and wake on hover.',
+      (on) => this.wm.SetAutoFade(on)));
+    b.appendChild(vg);
+
+    // --- density ---
+    const dg = document.createElement('div');
+    dg.className = 'grp';
+    dg.innerHTML = '<div class="grp-h">Interface Size</div>';
+    const drow = document.createElement('div');
+    drow.className = 'btnrow';
+    ([['normal', 'Normal'], ['compact', 'Compact'], ['tiny', 'Tiny']] as const)
+      .forEach(([id, label]) => {
+        const cur = document.body.dataset.density || 'compact';
+        const btn = document.createElement('button');
+        btn.className = 'btn' + (cur === id ? ' pri' : '');
+        btn.dataset.densityBtn = id;
+        btn.textContent = label;
+        btn.onclick = () => {
+          document.body.dataset.density = id;
+          this.wm.refresh('view');
+          this.toast('Interface size: ' + label);
+        };
+        drow.appendChild(btn);
+      });
+    dg.appendChild(drow);
+
+    dg.appendChild(this.slider(
+      { key: 'panelAlpha', label: 'Panel Opacity', min: 0.15, max: 1, step: 0.05,
+        value: this.cssVar('--panel-alpha', 0.8) },
+      (_k, v) => {
+        document.documentElement.style.setProperty('--panel-alpha', String(v));
+        document.documentElement.style.setProperty('--panel-dyn', 'rgba(16,20,30,' + v + ')');
+      }));
+
+    dg.appendChild(this.slider(
+      { key: 'idleAlpha', label: 'Faded Opacity', min: 0, max: 0.9, step: 0.05,
+        value: this.cssVar('--idle-alpha', 0.3) },
+      (_k, v) => document.documentElement.style.setProperty('--idle-alpha', String(v))));
+    b.appendChild(dg);
+
+    // --- per-window visibility, so nothing can be lost ---
+    const wg = document.createElement('div');
+    wg.className = 'grp';
+    wg.innerHTML = '<div class="grp-h">Panels</div>';
+    this.wm.list().forEach((w: any) => {
+      const id = typeof w === 'string' ? w : w.id;
+      if (id === 'view') return;
+      const r = document.createElement('div');
+      r.className = 'stat';
+      r.innerHTML = '<span class="stat-k">' + id + '</span>';
+      const t = document.createElement('button');
+      t.className = 'btn';
+      t.dataset.panelToggle = id;
+      t.style.cssText = 'min-width:auto;padding:3px 10px;font-size:10.5px';
+      t.textContent = this.wm.IsVisible(id) ? 'Hide' : 'Show';
+      t.onclick = () => { this.wm.Toggle(id); this.wm.refresh('view'); };
+      const pin = document.createElement('button');
+      pin.className = 'btn' + (this.wm.IsPinned(id) ? ' pri' : '');
+      pin.dataset.panelPin = id;
+      pin.style.cssText = 'min-width:auto;padding:3px 8px;font-size:10.5px';
+      pin.textContent = '📌';
+      pin.title = 'Pin: never auto-fade this panel';
+      pin.onclick = () => { this.wm.Pin(id); this.wm.refresh('view'); };
+      r.append(t, pin);
+      wg.appendChild(r);
+    });
+    b.appendChild(wg);
+  }
+
+  /** Labelled checkbox row used across the advanced panels. */
+  private toggle(label: string, id: string, value: boolean, hint: string,
+                 onChange: (on: boolean) => void): HTMLElement {
+    const wrap = document.createElement('label');
+    wrap.className = 'stat';
+    wrap.style.cursor = 'pointer';
+    wrap.title = hint;
+    const l = document.createElement('span');
+    l.className = 'stat-k';
+    l.textContent = label;
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = id;
+    cb.checked = value;
+    cb.onchange = () => onChange(cb.checked);
+    wrap.append(l, cb);
+    return wrap;
   }
 
   /* ---- snapshots & history ---- */

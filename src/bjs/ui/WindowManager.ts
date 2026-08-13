@@ -38,6 +38,7 @@ interface WindowState {
   open: boolean;
   minimized: boolean;
   maximized: boolean;
+  pinned: boolean;
   z: number;
   home: { x: number; y: number; w: number; h: number };
   last: { x: number; y: number; w: number; h: number };
@@ -48,6 +49,8 @@ export class WindowManager {
   private dock: HTMLDivElement;
   private windows = new Map<WindowId, WindowState>();
   private zCounter = 100;
+  private autoFade = false;
+  private lastInput = Date.now();
   private listeners: Array<() => void> = [];
 
   constructor(root: HTMLElement = document.body) {
@@ -79,7 +82,7 @@ export class WindowManager {
     el.className = 'wm-win';
     el.dataset.wid = spec.id;
 
-    const w = spec.width ?? 340;
+    const w = spec.width ?? 300;
     const h = spec.height ?? 420;
     const x = spec.x !== undefined ? spec.x * (window.innerWidth - w) : 24;
     const y = spec.y !== undefined ? spec.y * (window.innerHeight - h) : 84;
@@ -94,6 +97,7 @@ export class WindowManager {
         <span class="wm-grip"></span>
         <span class="wm-title">${spec.glyph ? spec.glyph + ' ' : ''}${spec.title}</span>
         <div class="wm-btns">
+          <button class="wm-b" data-act="pin"   title="Pin (keep visible)" aria-label="Pin">📌</button>
           <button class="wm-b" data-act="min"   title="Minimize" aria-label="Minimize">–</button>
           <button class="wm-b" data-act="max"   title="Maximize" aria-label="Maximize">□</button>
           <button class="wm-b wm-x" data-act="close" title="Close" aria-label="Close">×</button>
@@ -107,7 +111,7 @@ export class WindowManager {
 
     const st: WindowState = {
       spec, el, body,
-      open: false, minimized: false, maximized: false,
+      open: false, minimized: false, maximized: false, pinned: false,
       z: 0,
       home: { x: Math.max(8, x), y: Math.max(8, y), w, h },
       last: { x: Math.max(8, x), y: Math.max(8, y), w, h }
@@ -123,6 +127,7 @@ export class WindowManager {
         if (act === 'close') this.Close(spec.id);
         else if (act === 'min') this.Minimize(spec.id);
         else if (act === 'max') this.Maximize(spec.id);
+        else if (act === 'pin') this.Pin(spec.id);
       };
       btn.addEventListener('pointerdown', (e) => e.stopPropagation());
       btn.addEventListener('click', handler);
@@ -252,6 +257,84 @@ export class WindowManager {
       for (const st of this.windows.values()) { doReset(st); this.Close(st.spec.id); }
     }
     this.syncDock();
+    this.emit();
+  }
+
+  /** Pinned windows stay fully opaque and never auto-fade. */
+  Pin(id: string, on?: boolean): boolean {
+    const st = this.windows.get(id);
+    if (!st) return false;
+    st.pinned = on === undefined ? !st.pinned : on;
+    st.el.classList.toggle('wm-pinned', st.pinned);
+    const btn = st.el.querySelector('[data-act="pin"]');
+    if (btn) btn.classList.toggle('on', st.pinned);
+    this.emit();
+    return st.pinned;
+  }
+
+  IsPinned(id: string): boolean {
+    return !!this.windows.get(id)?.pinned;
+  }
+
+  /**
+   * Focus mode hides all chrome without closing anything, so the user can
+   * always see the simulation. Toggling it back restores the exact layout.
+   */
+  SetFocusMode(on: boolean): void {
+    document.body.dataset.focus = on ? '1' : '0';
+    this.emit();
+  }
+
+  IsFocusMode(): boolean {
+    return document.body.dataset.focus === '1';
+  }
+
+  /** Fades unpinned panels back after a period of no interaction. */
+  SetAutoFade(on: boolean): void {
+    this.autoFade = on;
+    if (!on) document.body.dataset.idle = '0';
+    this.bumpIdle();
+  }
+
+  IsAutoFade(): boolean {
+    return this.autoFade;
+  }
+
+  /** Call on any user input to wake the panels back up. */
+  bumpIdle(): void {
+    this.lastInput = Date.now();
+    if (document.body.dataset.idle === '1') document.body.dataset.idle = '0';
+  }
+
+  /** Drives the idle fade; safe to call every frame. */
+  tickIdle(idleSeconds = 4): void {
+    if (!this.autoFade) return;
+    const idle = (Date.now() - this.lastInput) / 1000 >= idleSeconds;
+    const want = idle ? '1' : '0';
+    if (document.body.dataset.idle !== want) document.body.dataset.idle = want;
+  }
+
+  /** Tiles all open windows down the screen edges so none overlap. */
+  TileEdges(): void {
+    const open = [...this.windows.values()].filter((w) => w.open && !w.minimized);
+    const top = 64;
+    const gapY = 8;
+    let leftY = top, rightY = top;
+    for (const st of open) {
+      const w = st.el.offsetWidth || st.home.w;
+      const h = Math.min(st.el.offsetHeight || 320, window.innerHeight - top - 20);
+      const useLeft = leftY <= rightY;
+      const x = useLeft ? 12 : window.innerWidth - w - 12;
+      const y = useLeft ? leftY : rightY;
+      if (y + h > window.innerHeight - 12) {
+        // column is full; stop tiling rather than pushing panels off-screen
+        continue;
+      }
+      st.el.style.left = x + 'px';
+      st.el.style.top = y + 'px';
+      if (useLeft) leftY += h + gapY; else rightY += h + gapY;
+      this.clamp(st);
+    }
     this.emit();
   }
 

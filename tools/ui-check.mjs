@@ -266,6 +266,80 @@ dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown',
   { key: 'z', ctrlKey: true, bubbles: true }));
 ok('Ctrl+Z triggers undo', ev.undo > 1);
 
+console.log('\n— P0: panels must never block the view —');
+{
+  // The user reported panels covering the screen. Verify the escape hatches.
+  ok('interface defaults to compact density',
+     document.body.dataset.density === 'compact', document.body.dataset.density);
+
+  // 1. Focus mode hides everything without closing it
+  const ids0 = shell.wm.list().map((w) => (typeof w === 'string' ? w : w.id));
+  ids0.forEach((id) => shell.wm.Open(id));
+  const openCount = ids0.filter((id) => shell.wm.IsVisible(id)).length;
+  click(document.getElementById('btnFocus'));
+  ok('focus mode engages', shell.wm.IsFocusMode());
+  ok('focus mode does NOT close panels (layout is preserved)',
+     ids0.filter((id) => shell.wm.IsVisible(id)).length === openCount);
+  click(document.getElementById('btnFocus'));
+  ok('focus mode toggles back off', !shell.wm.IsFocusMode());
+  ok('panels are still open after leaving focus mode',
+     ids0.filter((id) => shell.wm.IsVisible(id)).length === openCount);
+
+  // 2. F key does the same
+  dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'f', bubbles: true }));
+  ok('F key toggles focus mode', shell.wm.IsFocusMode());
+  dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'f', bubbles: true }));
+
+  // 3. Tiling must never leave a panel overlapping the screen centre
+  shell.wm.CloseAll();
+  ['controls', 'objects', 'telemetry'].forEach((id) => shell.wm.Open(id));
+  shell.wm.TileEdges();
+  const cx = dom.window.innerWidth / 2;
+  const centreHogs = ['controls', 'objects', 'telemetry'].filter((id) => {
+    const el = document.querySelector('[data-wid="' + id + '"]');
+    const left = parseFloat(el.style.left) || 0;
+    const w = el.offsetWidth || parseFloat(el.style.width) || 300;
+    // a tiled panel must sit against an edge, not straddle the middle
+    return left < cx && left + w > cx;
+  });
+  ok('tiled panels never straddle the screen centre', centreHogs.length === 0,
+     centreHogs.join(', '));
+
+  // 4. Auto-fade
+  shell.wm.SetAutoFade(true);
+  ok('auto-fade can be enabled', shell.wm.IsAutoFade());
+  shell.wm.tickIdle(0);              // force the idle threshold
+  ok('panels fade when idle', document.body.dataset.idle === '1');
+  shell.wm.bumpIdle();
+  ok('any input wakes panels immediately', document.body.dataset.idle === '0');
+  shell.wm.SetAutoFade(false);
+  ok('auto-fade can be disabled', !shell.wm.IsAutoFade());
+
+  // 5. Pinning protects a panel from fading
+  shell.wm.Open('controls');
+  shell.wm.Pin('controls', true);
+  ok('a panel can be pinned', shell.wm.IsPinned('controls'));
+  ok('pinned panels are marked in the DOM',
+     document.querySelector('[data-wid="controls"]').className.includes('wm-pinned'));
+  shell.wm.Pin('controls', false);
+  ok('a panel can be unpinned', !shell.wm.IsPinned('controls'));
+
+  // 6. The View panel exposes all of this
+  shell.wm.Open('view');
+  ok('View panel opens', shell.wm.IsVisible('view'));
+  ok('View panel offers focus mode', !!document.getElementById('btnFocusPanel'));
+  ok('View panel offers tiling', !!document.getElementById('btnTilePanel'));
+  ok('View panel offers close-all', !!document.getElementById('btnCloseAllPanels'));
+  ok('View panel offers auto-fade', !!document.getElementById('chkAutoFade'));
+  ok('View panel offers density presets',
+     document.querySelectorAll('[data-density-btn]').length === 3);
+  ok('View panel lists every other panel for show/hide',
+     document.querySelectorAll('[data-panel-toggle]').length >= 7);
+  click(document.getElementById('btnCloseAllPanels'));
+  ok('close-all really closes every panel',
+     shell.wm.list().every((w) => !shell.wm.IsVisible(typeof w === 'string' ? w : w.id)));
+}
+
 console.log('\n— EVERY window: no dead X anywhere —');
 {
   // the standing rule is that there must never be a dead X. Verify it by
