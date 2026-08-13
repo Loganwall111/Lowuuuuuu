@@ -80,38 +80,51 @@ export class PostFX {
     const p = this.pipeline;
     if (!p) return;
     const s = this.settings;
+    // Each stage is guarded: a driver quirk in one effect must not disable
+    // the entire pipeline (FXAA in particular can throw on odd driver info).
+    const guard = (name: string, fn: () => void) => {
+      try { fn(); } catch (e) { console.warn(`post-fx "${name}" unavailable:`, e); }
+    };
 
-    p.bloomEnabled = s.bloom > 0.001;
-    if (p.bloomEnabled) {
-      p.bloomWeight = s.bloom;
-      p.bloomThreshold = s.bloomThreshold;
-      p.bloomKernel = 64;
-      p.bloomScale = 0.5;
-    }
+    guard('bloom', () => {
+      p.bloomEnabled = s.bloom > 0.001;
+      if (p.bloomEnabled) {
+        p.bloomWeight = s.bloom;
+        p.bloomThreshold = s.bloomThreshold;
+        p.bloomKernel = 64;
+        p.bloomScale = 0.5;
+      }
+    });
 
-    p.fxaaEnabled = s.fxaa > 0.5;
+    guard('fxaa', () => { p.fxaaEnabled = s.fxaa > 0.5; });
 
-    p.sharpenEnabled = s.sharpen > 0.001;
-    if (p.sharpenEnabled) {
-      p.sharpen.edgeAmount = s.sharpen;
-      p.sharpen.colorAmount = 1.0;
-    }
+    guard('sharpen', () => {
+      p.sharpenEnabled = s.sharpen > 0.001;
+      if (p.sharpenEnabled) {
+        p.sharpen.edgeAmount = s.sharpen;
+        p.sharpen.colorAmount = 1.0;
+      }
+    });
 
-    p.chromaticAberrationEnabled = s.chromatic > 0.001;
-    if (p.chromaticAberrationEnabled) {
-      p.chromaticAberration.aberrationAmount = s.chromatic;
-      p.chromaticAberration.radialIntensity = 0.7;
-    }
+    guard('chromatic', () => {
+      p.chromaticAberrationEnabled = s.chromatic > 0.001;
+      if (p.chromaticAberrationEnabled) {
+        p.chromaticAberration.aberrationAmount = s.chromatic;
+        p.chromaticAberration.radialIntensity = 0.7;
+      }
+    });
 
-    p.grainEnabled = s.grain > 0.001;
-    if (p.grainEnabled) {
-      p.grain.intensity = s.grain;
-      p.grain.animated = true;
-    }
+    guard('grain', () => {
+      p.grainEnabled = s.grain > 0.001;
+      if (p.grainEnabled) {
+        p.grain.intensity = s.grain;
+        p.grain.animated = true;
+      }
+    });
 
     p.imageProcessingEnabled = true;
     const ip = p.imageProcessing;
-    if (ip) {
+    if (ip) guard('imageProcessing', () => {
       // Worlds tonemap in-shader; doing it again here would crush highlights.
       ip.toneMappingEnabled = false;
       ip.exposure = s.exposure;
@@ -121,6 +134,6 @@ export class PostFX {
       ip.vignetteStretch = 0.4;
       ip.vignetteCameraFov = 1.2;
       ip.vignetteBlendMode = ImageProcessingConfiguration.VIGNETTEMODE_MULTIPLY;
-    }
+    });
   }
 }

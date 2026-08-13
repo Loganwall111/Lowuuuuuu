@@ -8,6 +8,7 @@ import { WindowManager } from './WindowManager';
 import { UI_CSS } from './styles';
 import type { World, WorldParam } from '../World';
 import { POSTFX_PARAMS, DEFAULT_POSTFX } from '../PostFX';
+import { CATALOG, CATEGORIES, SCALES, randomObject, type ObjectDef } from '../content/ObjectCatalog';
 
 export type Mode = 'simple' | 'advanced' | 'expert';
 
@@ -34,6 +35,7 @@ interface ShellHooks {
   onReset: () => void;
   onPause: (paused: boolean) => void;
   onPostFX: (key: string, value: number) => void;
+  onSpawn: (objectId: string, scale: number) => void;
 }
 
 export class Shell {
@@ -46,6 +48,8 @@ export class Shell {
   private favs = new Set<string>();
   private fpsHist: number[] = [];
   private postfx: Record<string, number> = { ...DEFAULT_POSTFX } as any;
+  private objScale = 1;
+  private objCat: string = 'All';
 
   private topbar!: HTMLDivElement;
   private hud!: HTMLDivElement;
@@ -70,7 +74,8 @@ export class Shell {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
       const k = e.key.toLowerCase();
       if (k === '1') this.wm.Toggle('controls');
-      else if (k === '2') this.wm.Toggle('library');
+      else if (k === '2') this.wm.Toggle('objects');
+      else if (k === '6') this.wm.Toggle('library');
       else if (k === '3') this.wm.Toggle('telemetry');
       else if (k === '4') this.wm.Toggle('presets');
       else if (k === '5') this.wm.Toggle('graphics');
@@ -102,9 +107,37 @@ export class Shell {
     if (m) m.textContent = msg;
   }
 
+  /** Removes the boot overlay from the DOM entirely. Safe to call repeatedly. */
   hideBoot(): void {
+    if (!this.boot) return;
     this.boot.classList.add('gone');
-    setTimeout(() => this.boot.remove(), 500);
+    const el = this.boot;
+    setTimeout(() => el.remove(), 500);
+    // Hard guarantee: even if the transition never fires, it cannot block input.
+    el.style.pointerEvents = 'none';
+  }
+
+  /** Surfaces a fatal error instead of leaving the user at a black screen. */
+  showBootError(err: unknown): void {
+    const msg = (err as any)?.message ?? String(err);
+    if (!this.boot || !this.boot.isConnected) {
+      // Boot already gone; use a floating, dismissible toast instead.
+      const t = document.createElement('div');
+      t.className = 'fatal-toast';
+      t.innerHTML = `<b>Renderer error</b><div>${msg}</div><button>Dismiss</button>`;
+      (t.querySelector('button') as HTMLButtonElement).onclick = () => t.remove();
+      document.body.appendChild(t);
+      return;
+    }
+    const inner = this.boot.querySelector('.boot-in') as HTMLElement;
+    inner.innerHTML = `
+      <div class="boot-name">LOW</div>
+      <div class="boot-sub" style="color:#ff6b6b">Startup failed</div>
+      <div class="boot-err">${msg}</div>
+      <button class="btn pri" id="bootDismiss" style="margin-top:16px;min-width:160px">
+        Continue anyway
+      </button>`;
+    (this.boot.querySelector('#bootDismiss') as HTMLButtonElement).onclick = () => this.hideBoot();
   }
 
   /* ------------------------------ topbar ------------------------------ */
@@ -126,7 +159,8 @@ export class Shell {
       <div class="spacer"></div>
       <button class="iconbtn" id="btnPause" title="Pause / Resume (Space)">⏸</button>
       <button class="iconbtn" id="w-controls" title="Controls (1)">🎛</button>
-      <button class="iconbtn" id="w-library"  title="World Library (2)">🗂</button>
+      <button class="iconbtn" id="w-objects"  title="Objects (2)">🧰</button>
+      <button class="iconbtn" id="w-library"  title="World Library (6)">🗂</button>
       <button class="iconbtn" id="w-telemetry" title="Telemetry (3)">📊</button>
       <button class="iconbtn" id="w-presets"  title="Presets (4)">✨</button>
       <button class="iconbtn" id="w-graphics" title="Graphics (5)">🎨</button>
@@ -148,7 +182,7 @@ export class Shell {
       b.onclick = () => this.setMode(b.dataset.m as Mode);
     });
 
-    (['controls', 'library', 'telemetry', 'presets', 'graphics'] as const).forEach((id) => {
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement;
       btn.onclick = () => this.wm.Toggle(id);
     });
@@ -161,7 +195,7 @@ export class Shell {
   }
 
   private syncTopbar(): void {
-    (['controls', 'library', 'telemetry', 'presets', 'graphics'] as const).forEach((id) => {
+    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id);
       btn?.classList.toggle('on', this.wm.IsVisible(id));
     });
@@ -193,6 +227,9 @@ export class Shell {
 
   setWorld(w: World): void {
     this.world = w;
+    this.worldId = w.id;
+    this.topbar.querySelectorAll<HTMLButtonElement>('#worldSeg button')
+      .forEach((b) => b.classList.toggle('on', b.dataset.w === w.id));
     this.wm.refresh('controls');
     this.wm.refresh('telemetry');
     this.wm.refresh('library');
@@ -209,6 +246,12 @@ export class Shell {
       <div class="hud-chip"><div class="hud-k">World</div><div class="hud-v" id="hWorld" style="font-size:12px">–</div></div>
     `;
     document.body.appendChild(this.hud);
+  }
+
+  /** Called once the main menu is dismissed: reveal the default panel set. */
+  onMenuClosed(): void {
+    this.wm.Open('controls');
+    this.wm.Open('objects');
   }
 
   setBackend(b: string): void {
@@ -230,37 +273,43 @@ export class Shell {
   private registerWindows(): void {
     this.wm.register({
       id: 'controls', title: 'Controls', glyph: '🎛',
-      x: 0, y: 0.09, width: 320, open: true,
+      x: 0, y: 0.10, width: 310, open: false,
       render: (b) => this.renderControls(b)
     });
 
     this.wm.register({
       id: 'library', title: 'World Library', glyph: '🗂',
-      x: 0.5, y: 0.09, width: 360,
+      x: 0, y: 0.55, width: 340,
       render: (b) => this.renderLibrary(b)
     });
 
     this.wm.register({
       id: 'telemetry', title: 'Telemetry', glyph: '📊',
-      x: 1, y: 0.09, width: 290,
+      x: 1, y: 0.10, width: 280,
       render: (b) => this.renderTelemetry(b)
     });
 
     this.wm.register({
       id: 'presets', title: 'Presets & Experiments', glyph: '✨',
-      x: 1, y: 0.5, width: 300,
+      x: 1, y: 0.56, width: 290,
       render: (b) => this.renderPresets(b)
     });
 
     this.wm.register({
+      id: 'objects', title: 'Objects', glyph: '🧰',
+      x: 1, y: 0.10, width: 330, height: 520,
+      render: (b) => this.renderObjects(b)
+    });
+
+    this.wm.register({
       id: 'graphics', title: 'Graphics', glyph: '🎨',
-      x: 1, y: 0.28, width: 300,
+      x: 1, y: 0.33, width: 285,
       render: (b) => this.renderGraphics(b)
     });
 
     this.wm.register({
       id: 'help', title: 'Shortcuts', glyph: '⌨',
-      x: 0.5, y: 0.6, width: 300,
+      x: 0.5, y: 0.62, width: 300,
       render: (b) => {
         b.innerHTML = `
           <div class="note">Every panel floats. Drag by the title bar, resize from the corner,
@@ -476,6 +525,100 @@ export class Shell {
       });
       b.appendChild(eg);
     }
+  }
+
+  /* ---- objects tray ---- */
+
+  private renderObjects(b: HTMLElement): void {
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.innerHTML = `Click any object to launch it at the world. <b>${CATALOG.length}</b> objects available.`;
+    b.appendChild(n);
+
+    // scale selector
+    const sg = document.createElement('div');
+    sg.className = 'grp';
+    sg.innerHTML = '<div class="grp-h">Scale</div>';
+    const srow = document.createElement('div');
+    srow.className = 'btnrow';
+    SCALES.forEach((sc) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn' + (this.objScale === sc.value ? ' pri' : '');
+      btn.textContent = sc.label;
+      btn.onclick = () => { this.objScale = sc.value; this.wm.refresh('objects'); };
+      srow.appendChild(btn);
+    });
+    sg.appendChild(srow);
+    b.appendChild(sg);
+
+    // quick actions
+    const qg = document.createElement('div');
+    qg.className = 'grp';
+    const qrow = document.createElement('div');
+    qrow.className = 'btnrow';
+    const randBtn = document.createElement('button');
+    randBtn.className = 'btn pri';
+    randBtn.textContent = '🎲 Random Object';
+    randBtn.onclick = () => this.hooks.onSpawn(randomObject().id, this.objScale);
+    qrow.appendChild(randBtn);
+    qg.appendChild(qrow);
+    b.appendChild(qg);
+
+    // search + category filter
+    const search = document.createElement('input');
+    search.className = 'search';
+    search.placeholder = `Search ${CATALOG.length} objects…`;
+    b.appendChild(search);
+
+    const tabs = document.createElement('div');
+    tabs.className = 'tabs';
+    tabs.style.flexWrap = 'wrap';
+    b.appendChild(tabs);
+
+    const grid = document.createElement('div');
+    grid.className = 'cards';
+    b.appendChild(grid);
+
+    const drawTabs = () => {
+      tabs.innerHTML = '';
+      ['All', ...CATEGORIES].forEach((cat) => {
+        const t = document.createElement('button');
+        t.className = 'tab' + (this.objCat === cat ? ' on' : '');
+        t.textContent = cat;
+        t.onclick = () => { this.objCat = cat; drawTabs(); draw(search.value); };
+        tabs.appendChild(t);
+      });
+    };
+
+    const draw = (q: string) => {
+      grid.innerHTML = '';
+      const ql = q.toLowerCase().trim();
+      const list = CATALOG.filter((o) => {
+        const catOk = this.objCat === 'All' || o.category === this.objCat;
+        const qOk = !ql || o.name.toLowerCase().includes(ql) ||
+                    o.category.toLowerCase().includes(ql) ||
+                    o.material.toLowerCase().includes(ql);
+        return catOk && qOk;
+      });
+      if (!list.length) {
+        grid.innerHTML = '<div class="note" style="grid-column:1/-1">No objects match.</div>';
+        return;
+      }
+      list.forEach((o) => {
+        const c = document.createElement('button');
+        c.className = 'card';
+        c.title = `${o.name} · ${o.material} · mass ${o.mass}`;
+        c.innerHTML = `
+          <span class="card-g">${o.glyph}</span>
+          <div class="card-t">${o.name}</div>
+          <div class="card-d">${o.note ?? o.material}</div>`;
+        c.onclick = () => this.hooks.onSpawn(o.id, this.objScale);
+        grid.appendChild(c);
+      });
+    };
+    search.oninput = () => draw(search.value);
+    drawTabs();
+    draw('');
   }
 
   /* ---- graphics ---- */

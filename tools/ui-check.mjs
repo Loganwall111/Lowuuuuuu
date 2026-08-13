@@ -106,7 +106,7 @@ document.body.innerHTML = '<canvas id="renderCanvas"></canvas>';
 document.head.innerHTML = '';
 
 const { Shell, WORLDS } = await load('src/bjs/ui/Shell.ts', 'shell');
-const ev = { world: [], param: [], action: [], postfx: [], reset: 0, pause: [] };
+const ev = { world: [], param: [], action: [], postfx: [], spawn: [], reset: 0, pause: [] };
 const shell = new Shell({
   onWorld: (id) => ev.world.push(id),
   onParam: (k, v) => ev.param.push([k, v]),
@@ -114,7 +114,8 @@ const shell = new Shell({
   onMode: () => {},
   onReset: () => ev.reset++,
   onPause: (p) => ev.pause.push(p),
-  onPostFX: (k, v) => ev.postfx.push([k, v])
+  onPostFX: (k, v) => ev.postfx.push([k, v]),
+  onSpawn: (id, sc) => ev.spawn.push([id, sc])
 });
 
 const params = Array.from({ length: 9 }, (_, i) => ({
@@ -141,6 +142,7 @@ ok(`all ${WORLDS.length} worlds listed`, document.querySelectorAll('#worldSeg bu
 ok('gravity sandbox is present', WORLDS.some((w) => w.id === 'sandbox'));
 
 console.log('\n— progressive disclosure —');
+shell.wm.Open('controls');
 const sliders = () => document.querySelectorAll('[data-wid="controls"] input[type=range]');
 shell.setMode('simple');   const nS = sliders().length;
 shell.setMode('advanced'); const nA = sliders().length;
@@ -208,6 +210,26 @@ key('5'); ok('"5" opens Graphics', shell.wm.IsVisible('graphics'));
 key('h');
 ok('"h" clears the screen for the sim',
    !shell.wm.IsVisible('controls') && !shell.wm.IsVisible('graphics'));
+
+console.log('\n— object catalogue tray —');
+shell.wm.Open('objects');
+ok('objects window opens', shell.wm.IsVisible('objects'));
+const objCards = () => document.querySelectorAll('[data-wid="objects"] .card');
+ok(`tray renders objects (${objCards().length})`, objCards().length > 20);
+const objSearch = document.querySelector('[data-wid="objects"] .search');
+objSearch.value = 'duck';
+objSearch.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+ok('object search filters', objCards().length >= 1 && objCards().length < 10,
+   `got ${objCards().length}`);
+click(objCards()[0]);
+ok('clicking an object emits onSpawn', ev.spawn.length > 0, JSON.stringify(ev.spawn));
+objSearch.value = '';
+objSearch.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+const randomBtn = [...document.querySelectorAll('[data-wid="objects"] .btn')]
+  .find((b) => b.textContent.includes('Random Object'));
+const beforeRand = ev.spawn.length;
+click(randomBtn);
+ok('random object button spawns', ev.spawn.length > beforeRand);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

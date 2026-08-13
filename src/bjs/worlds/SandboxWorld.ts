@@ -23,6 +23,8 @@ import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Observer } from '@babylonjs/core/Misc/observable';
 import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
 import { starfieldTexture } from '../Textures';
+import { findObject, MATERIALS, type ObjectDef } from '../content/ObjectCatalog';
+import { buildObjectMesh } from '../content/ObjectFactory';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 
@@ -43,6 +45,8 @@ interface Body {
   trail: Vector3[];
   trailMesh: LinesMesh | null;
   alive: boolean;
+  def?: ObjectDef;
+  restitution: number;
 }
 
 export class SandboxWorld implements World {
@@ -61,6 +65,7 @@ export class SandboxWorld implements World {
   private aimLine: LinesMesh | null = null;
   private nextSeed = 1;
   private collisions = 0;
+  private spawned = 0;
   private paused = false;
 
   private p = {
@@ -139,7 +144,8 @@ export class SandboxWorld implements World {
       mesh, mat,
       pos: opts.pos.clone(), vel: opts.vel.clone(), acc: Vector3.Zero(),
       mass: opts.mass, radius, kind: opts.kind, seed,
-      isStar: !!opts.isStar, trail: [], trailMesh: null, alive: true
+      isStar: !!opts.isStar, trail: [], trailMesh: null, alive: true,
+      restitution: 0
     };
     this.bodies.push(b);
     return b;
@@ -238,6 +244,55 @@ export class SandboxWorld implements World {
     });
   }
 
+  /**
+   * Spawns a catalogue object on an intercept course with the primary body.
+   * The object is a first-class physics body: it attracts, is attracted,
+   * collides and merges exactly like a planet does.
+   */
+  spawnObject(id: string, scale: number, ctx: WorldContext): void {
+    const def = findObject(id);
+    if (!def) return;
+    const scene = ctx.scene;
+
+    const mp = MATERIALS[def.material];
+    const radius = def.radius * scale;
+    const mass = def.mass * Math.pow(scale, 3) * mp.density * 0.35;
+
+    const mesh = buildObjectMesh(scene, def);
+    mesh.scaling.setAll(scale);
+
+    // Aim it at the largest body from a random direction outside the system.
+    const target = this.bodies.reduce<Body | null>(
+      (best, b) => (!best || b.mass > best.mass ? b : best), null);
+    const tp = target ? target.pos : Vector3.Zero();
+
+    const a = Math.random() * Math.PI * 2;
+    const dist = 120 + Math.random() * 60;
+    const pos = new Vector3(
+      tp.x + Math.cos(a) * dist,
+      tp.y + (Math.random() - 0.5) * 40,
+      tp.z + Math.sin(a) * dist
+    );
+    // velocity toward the target, with a little lateral offset so some shots miss
+    const toward = tp.subtract(pos).normalize();
+    const lateral = new Vector3(-toward.z, 0, toward.x).scale((Math.random() - 0.5) * 6);
+    const speed = 12 + Math.random() * 10;
+    const vel = toward.scale(speed).add(lateral);
+
+    mesh.position.copyFrom(pos);
+
+    const b: Body = {
+      mesh: mesh as unknown as Mesh,
+      mat: null as any,
+      pos, vel, acc: Vector3.Zero(),
+      mass, radius, kind: PlanetKind.Rocky, seed: this.nextSeed++,
+      isStar: false, trail: [], trailMesh: null, alive: true,
+      def, restitution: mp.restitution
+    };
+    this.bodies.push(b);
+    this.spawned++;
+  }
+
   /* ------------------------------ physics ------------------------------ */
 
   private accelerations(): void {
@@ -306,9 +361,9 @@ export class SandboxWorld implements World {
         }
         big.mass = m;
         const nr = Math.cbrt(m) * 1.5;
-        big.mesh.scaling.setAll(nr / big.radius);
+        big.mesh.scaling.setAll((big.mesh.scaling.x || 1) * (nr / big.radius));
         big.radius = nr;
-        big.mat.setFloat('radius', nr);
+        big.mat?.setFloat('radius', nr);
 
         small.alive = false;
         small.mesh.dispose();
@@ -332,9 +387,11 @@ export class SandboxWorld implements World {
     for (const b of this.bodies) {
       b.mesh.position.copyFrom(b.pos);
       if (!b.isStar) b.mesh.rotation.y += dt * 0.25;
-      b.mat.setVector3('camPos', cam.position);
-      b.mat.setVector3('sunPos', this.starMesh ? this.starMesh.position : Vector3.Zero());
-      b.mat.setFloat('time', this.t);
+      if (b.mat) {
+        b.mat.setVector3('camPos', cam.position);
+        b.mat.setVector3('sunPos', this.starMesh ? this.starMesh.position : Vector3.Zero());
+        b.mat.setFloat('time', this.t);
+      }
 
       if (this.p.trails > 0.5 && !b.isStar) {
         b.trail.push(b.pos.clone());
@@ -374,6 +431,10 @@ export class SandboxWorld implements World {
       { key: 'binary', label: 'Binary Star', glyph: '⭐' },
       { key: 'shower', label: 'Asteroid Shower', glyph: '☄' },
       { key: 'chaos', label: 'Chaos', glyph: '🎲' },
+      { key: 'weird', label: 'Make It Weird', glyph: '✨' },
+      { key: 'rain', label: 'Asteroid Rain ×40', glyph: '🌧' },
+      { key: 'ducks', label: '100 Rubber Ducks', glyph: '🦆' },
+      { key: 'donotpress', label: 'DO NOT PRESS', glyph: '🚨' },
       { key: 'destroy', label: 'Destroy Last', glyph: '💥' },
       { key: 'clear', label: 'Clear All', glyph: '🧹' }
     ];
@@ -424,6 +485,31 @@ export class SandboxWorld implements World {
           tintB: new Color3(Math.random(), Math.random(), Math.random())
         });
       }
+    } else if (key === 'weird') {
+      // randomise the whole simulation into something absurd
+      this.p.gravity = rnd(0.2, 3.2);
+      this.p.timeScale = rnd(0.3, 3);
+      this.p.spawnMass = rnd(0.5, 30);
+      this.p.trailLength = Math.round(rnd(60, 380));
+      for (let i = 0; i < 5; i++) {
+        this.spawnObject(
+          ['duck', 'piano', 'banana', 'toilet', 'ufo', 'whale', 'donut', 'anvil'][
+            Math.floor(Math.random() * 8)],
+          rnd(2, 14), ctx);
+      }
+    } else if (key === 'rain') {
+      for (let i = 0; i < 40; i++) this.spawnObject('asteroid', rnd(0.4, 1.6), ctx);
+    } else if (key === 'ducks') {
+      for (let i = 0; i < 100; i++) this.spawnObject('duck', rnd(0.6, 2.2), ctx);
+    } else if (key === 'donotpress') {
+      // absurd but safely contained
+      for (let i = 0; i < 24; i++) {
+        this.spawnObject(
+          ['duck', 'toilet', 'piano', 'chicken', 'cart', 'dice', 'penguin', 'pizza'][i % 8],
+          rnd(3, 18), ctx);
+      }
+      this.p.gravity = 2.8;
+      this.p.timeScale = 2.2;
     } else if (key === 'destroy') {
       for (let i = this.bodies.length - 1; i >= 0; i--) {
         if (!this.bodies[i].isStar) {
@@ -456,6 +542,7 @@ export class SandboxWorld implements World {
       'Total mass': mass.toFixed(1),
       'Kinetic energy': ke.toExponential(2),
       'Merges': String(this.collisions),
+      'Objects thrown': String(this.spawned),
       'Integrator': 'Velocity Verlet',
       'Pairs / step': String((this.bodies.length * (this.bodies.length - 1)) / 2)
     };

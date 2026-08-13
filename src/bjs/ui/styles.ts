@@ -190,6 +190,16 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
 .boot-fill{height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));
   transition:width .3s ease}
 .boot-msg{font-size:10.5px;color:var(--dim);margin-top:12px;height:14px;letter-spacing:.5px}
+.boot-err{font-size:11.5px;color:#ffb4b4;max-width:460px;margin:14px auto 0;line-height:1.6;
+  background:rgba(229,72,77,.10);border:1px solid rgba(229,72,77,.35);border-radius:10px;padding:11px 14px;
+  font-family:ui-monospace,Menlo,monospace;text-align:left;word-break:break-word}
+.fatal-toast{position:fixed;right:16px;bottom:16px;z-index:300;max-width:420px;padding:13px 15px;
+  border-radius:12px;background:var(--panel);backdrop-filter:blur(20px);border:1px solid rgba(229,72,77,.5);
+  box-shadow:var(--shadow);color:var(--txt);font-size:12px;line-height:1.5}
+.fatal-toast b{color:#ff8a8a;display:block;margin-bottom:5px}
+.fatal-toast button{margin-top:10px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);
+  background:rgba(255,255,255,.06);color:var(--txt);cursor:pointer;font-family:inherit;font-size:11px}
+.fatal-toast button:hover{background:rgba(255,255,255,.14)}
 
 @media (max-width:820px){
   .cards{grid-template-columns:1fr}

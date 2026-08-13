@@ -16,6 +16,7 @@ import { OceanWorld } from './worlds/OceanWorld';
 import { BlackHoleWorld } from './worlds/BlackHoleWorld';
 import { SandboxWorld } from './worlds/SandboxWorld';
 import { PostFX } from './PostFX';
+import { MainMenu } from './ui/MainMenu';
 
 const FACTORY: Record<string, () => World> = {
   planetary: () => new PlanetaryWorld(),
@@ -29,11 +30,13 @@ export class App {
   private scene!: Scene;
   private camera!: ArcRotateCamera;
   private world: World | null = null;
-  private shell!: Shell;
+  shell!: Shell;
   private ctx!: WorldContext;
   private paused = false;
   private currentId = 'planetary';
   private switching = false;
+  booted = false;
+  private menu: MainMenu | null = null;
   private postfx = new PostFX();
 
   async init(): Promise<void> {
@@ -43,6 +46,7 @@ export class App {
       onWorld: (id) => this.loadWorld(id),
       onParam: (k, v) => this.world?.setParam(k, v),
       onPostFX: (k, v) => this.postfx.set(k, v),
+      onSpawn: (id, scale) => (this.world as any)?.spawnObject?.(id, scale, this.ctx),
       onAction: (k) => this.world?.runAction?.(k, this.ctx),
       onMode: () => {},
       onReset: () => this.loadWorld(this.currentId),
@@ -93,6 +97,20 @@ export class App {
 
     this.shell.progress(100, 'ready');
     setTimeout(() => this.shell.hideBoot(), 260);
+    this.booted = true;
+
+    // AAA front-end. The sim renders live behind it, so there is never a
+    // black screen, and picking an entry drops straight into the sandbox.
+    this.menu = new MainMenu((choice) => {
+      this.menu = null;
+      if (choice.world !== this.currentId) this.loadWorld(choice.world);
+      if (choice.preset === 'chaos') {
+        setTimeout(() => this.world?.runAction?.('chaos', this.ctx), 400);
+      } else if (choice.preset === 'weird') {
+        setTimeout(() => this.world?.runAction?.('weird', this.ctx), 400);
+      }
+      this.shell.onMenuClosed();
+    });
   }
 
   private async loadWorld(id: string): Promise<void> {
