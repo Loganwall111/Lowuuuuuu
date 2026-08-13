@@ -31,6 +31,7 @@ import { CosmicScaleSystem } from './systems/CosmicScaleSystem';
 import { inspectFrame, showBlackScreenReport } from './RenderWatchdog';
 import { ElevatorSystem } from './systems/ElevatorSystem';
 import { PortalGunSystem } from './systems/PortalGunSystem';
+import { Descent, EARTHLIKE } from './systems/DescentSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -100,6 +101,23 @@ export class App {
   private lookMoved = false;
   /** Title -> garage -> lessons -> portal -> ship. Replaces the main menu. */
   intro = new IntroSequence();
+  /**
+   * The current fall onto a world, if any. Null when not descending.
+   * Created when the player drops toward a planet, so the sky, the heat and
+   * the growing horizon all come from one physical model.
+   */
+  descent: Descent | null = null;
+
+  /** Begins a fall onto a world from a given altitude in km. */
+  beginDescent(altitudeKm = 120, speed = 0): void {
+    this.descent = new Descent(
+      EARTHLIKE,
+      { mass: 90, area: 0.8, dragCoefficient: 1.0, noseRadius: 0.4 },
+      altitudeKm, speed
+    );
+    this.shell.toast('Entering atmosphere');
+  }
+
   /** Planet-to-orbit tethers you can ride. */
   elevators = new ElevatorSystem();
   /** Two holes in the universe, and the walk between them. */
@@ -158,7 +176,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats() },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -628,6 +646,7 @@ export class App {
 
   start(): void {
     this.lastFrameAt = performance.now();
+    this.startWatchdogTimer();
     this.engine.runRenderLoop(() => {
       // The whole frame is guarded. A throw anywhere in here - a missing
       // Babylon side-effect import, a shader that will not compile on this
@@ -796,6 +815,23 @@ export class App {
       this.stations?.update(dt);
       this.elevators.update(dt);
 
+      // An active descent drives the sky colour and the entry glow, so the
+      // atmosphere thickens around you as you fall rather than cutting in.
+      if (this.descent) {
+        const d = this.descent.step(dt);
+        const sky = d.skyColor;
+        this.scene.clearColor = new Color4(sky[0], sky[1], sky[2], 1);
+        // Re-entry heat blooms the frame.
+        if (d.reentryGlow > 0.01) {
+          this.postfx.set('bloom', 0.95 + d.reentryGlow * 1.4);
+        }
+        if (d.landed) {
+          this.shell.toast('Touchdown');
+          this.postfx.set('bloom', 0.95);
+          this.descent = null;
+        }
+      }
+
       // The portal gun works on the player like anything else: walk into
       // one and you come out of the other, carrying your momentum.
       if (this.portalGun.linked && this.vehicle.mode !== 'orbit') {
@@ -868,6 +904,48 @@ export class App {
 
   private watchdogFrames = 0;
   private watchdogReported = false;
+  private watchdogTimer: number | null = null;
+
+  /**
+   * The frame-counted watchdog can only fire if frames are happening. A dead
+   * render loop is exactly the case that produces a black screen, so the real
+   * check has to be driven by a timer that does not depend on the loop.
+   */
+  private startWatchdogTimer(): void {
+    let ticks = 0;
+    const seenFrames = () => this.watchdogFrames;
+    const before = seenFrames();
+    this.watchdogTimer = window.setInterval(() => {
+      ticks++;
+      if (this.watchdogReported || ticks > 6) {
+        if (this.watchdogTimer !== null) window.clearInterval(this.watchdogTimer);
+        this.watchdogTimer = null;
+        return;
+      }
+      // Give it ~2.5s of grace, then judge.
+      if (ticks < 3) return;
+
+      if (seenFrames() === before) {
+        // The loop never ran a single frame.
+        this.watchdogReported = true;
+        showBlackScreenReport({
+          painting: false,
+          luminance: 0,
+          diagnosis: this.frameErrors > 0
+            ? 'The render loop is throwing every frame: ' +
+              (this.frameErrorMsg.split('\n')[0] || 'unknown error')
+            : 'The render loop never started, so no frame was ever drawn.',
+          warnings: [
+            'frames rendered: 0',
+            'frame errors: ' + this.frameErrors,
+            'meshes: ' + (this.scene?.meshes.length ?? 0)
+          ]
+        });
+        return;
+      }
+      this.checkForBlackScreen();
+    }, 850);
+  }
 
   /** Reads the real framebuffer and reports a blank one. */
   checkForBlackScreen(): void {

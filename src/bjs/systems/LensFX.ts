@@ -132,6 +132,14 @@ export class LensFX {
       );
       this.scene = scene;
 
+      // A post-process whose shader will not compile on this GPU is a
+      // black-screen machine: Babylon skips the pass, and the frame it was
+      // supposed to blit to the screen never arrives. jsdom's WebGL stub
+      // compiles everything happily, so this can only be caught at runtime.
+      // If the effect is still not ready after a couple of seconds, drop the
+      // pass entirely and render unlensed rather than render nothing.
+      this.compileWatch = 0;
+
       this.pp.onApply = (effect) => {
         effect.setFloat2('holeUV', this.uv.x, this.uv.y);
         effect.setFloat('holeR', this.radius);
@@ -157,6 +165,29 @@ export class LensFX {
     }
   }
 
+  /** Frames spent waiting for the lens shader to compile. */
+  private compileWatch = 0;
+
+  /**
+   * Drops the pass if its shader never becomes ready. Returns true if the
+   * lens is healthy, false once it has been disabled.
+   */
+  private ensureCompiles(): boolean {
+    const pp = this.pp;
+    if (!pp) return false;
+    if (this.compileWatch < 0) return true;      // already verified good
+    let ready = false;
+    try { ready = pp.isReady(); } catch { ready = false; }
+    if (ready) { this.compileWatch = -1; return true; }
+    this.compileWatch++;
+    if (this.compileWatch > 150) {
+      console.warn('Lens shader never compiled on this GPU - disabling lensing so the scene still draws.');
+      this.detach();
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Points the lens at a world-space position.
    *
@@ -170,6 +201,7 @@ export class LensFX {
 
     const scene = this.scene;
     if (!scene) { this.on = false; return; }
+    if (!this.ensureCompiles()) { this.on = false; return; }
 
     // Project the hole into screen space.
     const eng = scene.getEngine();

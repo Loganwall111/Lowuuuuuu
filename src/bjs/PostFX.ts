@@ -70,10 +70,38 @@ export class PostFX {
     try {
       this.pipeline = new DefaultRenderingPipeline('postfx', true, scene, [camera]);
       this.apply();
+      this.watchPipelineHealth(scene);
     } catch (e) {
       console.warn('Post-processing unavailable, rendering without it:', e);
       this.pipeline = null;
     }
+  }
+
+  /**
+   * The entire frame is blitted through this pipeline. If one of its shaders
+   * will not compile on the user's GPU, the result is not "no bloom" - it is
+   * a black screen. jsdom compiles every shader successfully, so this class
+   * of failure is invisible to the test suite and has to be caught live.
+   *
+   * If the pipeline is still not ready after ~3 seconds of real frames, tear
+   * it down. An unfiltered image is infinitely better than no image.
+   */
+  private watchPipelineHealth(scene: Scene): void {
+    let frames = 0;
+    const observer = scene.onAfterRenderObservable.add(() => {
+      const p = this.pipeline;
+      if (!p) { scene.onAfterRenderObservable.remove(observer); return; }
+      // isSupported is the pipeline's own verdict on whether its effects
+      // could be built for this engine.
+      let ready = true;
+      try { ready = p.isSupported; } catch { ready = false; }
+      if (ready) { scene.onAfterRenderObservable.remove(observer); return; }
+      if (++frames > 180) {
+        console.warn('Post-processing pipeline never became ready on this GPU - removing it so the scene is visible.');
+        this.detach();
+        scene.onAfterRenderObservable.remove(observer);
+      }
+    });
   }
 
   detach(): void {
