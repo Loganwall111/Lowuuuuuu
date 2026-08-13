@@ -151,7 +151,7 @@ export class Shell {
       }
       if (k === '1') this.wm.Toggle('controls');
       else if (k === '2') this.wm.Toggle('objects');
-      else if (k === '6') this.wm.Toggle('library');
+      else if (k === '6') this.wm.Toggle('navigator');
       else if (k === '7') this.wm.Toggle('snapshots');
       else if (k === '8') this.wm.Toggle('view');
       else if (k === '9') this.wm.Toggle('pilot');
@@ -265,7 +265,7 @@ export class Shell {
       b.onclick = () => this.setMode(b.dataset.m as Mode);
     });
 
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
+    (['controls', 'objects', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement | null;
       if (btn) btn.onclick = () => this.wm.Toggle(id);
     });
@@ -290,7 +290,7 @@ export class Shell {
   }
 
   private syncTopbar(): void {
-    (['controls', 'objects', 'library', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
+    (['controls', 'objects', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id);
       btn?.classList.toggle('on', this.wm.IsVisible(id));
     });
@@ -313,21 +313,12 @@ export class Shell {
     this.wm.refresh('telemetry');
   }
 
-  private selectWorld(id: string): void {
-    this.worldId = id;
-    this.topbar.querySelectorAll<HTMLButtonElement>('#worldSeg button')
-      .forEach((b) => b.classList.toggle('on', b.dataset.w === id));
-    this.hooks.onWorld(id);
-  }
 
   setWorld(w: World): void {
     this.world = w;
     this.worldId = w.id;
-    this.topbar.querySelectorAll<HTMLButtonElement>('#worldSeg button')
-      .forEach((b) => b.classList.toggle('on', b.dataset.w === w.id));
     this.wm.refresh('controls');
     this.wm.refresh('telemetry');
-    this.wm.refresh('library');
   }
 
   /* -------------------------------- HUD -------------------------------- */
@@ -410,73 +401,67 @@ export class Shell {
   private registerWindows(): void {
     this.wm.register({
       id: 'controls', title: 'Controls', glyph: '🎛',
-      x: 0, y: 0.10, width: 310, open: false,
+      x: 0, y: 0.10, width: 232, open: false,
       render: (b) => this.renderControls(b)
     });
 
     this.wm.register({
-      id: 'library', title: 'World Library', glyph: '🗂',
-      x: 0, y: 0.55, width: 340,
-      render: (b) => this.renderLibrary(b)
-    });
-
-    this.wm.register({
       id: 'telemetry', title: 'Telemetry', glyph: '📊',
-      x: 1, y: 0.10, width: 280,
+      x: 1, y: 0.10, width: 218,
       render: (b) => this.renderTelemetry(b)
     });
 
     this.wm.register({
       id: 'presets', title: 'Presets & Experiments', glyph: '✨',
-      x: 1, y: 0.56, width: 290,
+      x: 1, y: 0.56, width: 226,
       render: (b) => this.renderPresets(b)
     });
 
     this.wm.register({
       id: 'objects', title: 'Objects', glyph: '🧰',
-      x: 1, y: 0.10, width: 330, height: 520,
+      x: 1, y: 0.10, width: 232, height: 520,
       render: (b) => this.renderObjects(b)
     });
 
     this.wm.register({
       id: 'navigator', title: 'Universe', glyph: '🌌',
-      x: 0, y: 0.08, width: 300,
+      x: 0, y: 0.08, width: 232,
       render: (b) => this.renderNavigator(b)
     });
 
     this.wm.register({
       id: 'lens', title: 'Gravitational Lens', glyph: '🔭',
-      x: 1, y: 0.30, width: 300,
+      x: 1, y: 0.30, width: 232,
       render: (b) => this.renderLens(b)
     });
 
     this.wm.register({
       id: 'pilot', title: 'Pilot & Explore', glyph: '🚀',
-      x: 0, y: 0.30, width: 300,
+      x: 0, y: 0.30, width: 232,
       render: (b) => this.renderPilot(b)
     });
 
     this.wm.register({
       id: 'view', title: 'View & Interface', glyph: '🖥',
-      x: 1, y: 0.08, width: 285,
+      x: 1, y: 0.08, width: 222,
       render: (b) => this.renderView(b)
     });
 
     this.wm.register({
       id: 'snapshots', title: 'Snapshots & History', glyph: '📸',
-      x: 0.5, y: 0.12, width: 310,
+      x: 0.5, y: 0.12, width: 232,
       render: (b) => this.renderSnapshots(b)
     });
 
     this.wm.register({
       id: 'graphics', title: 'Graphics', glyph: '🎨',
-      x: 1, y: 0.33, width: 285,
+      x: 1, y: 0.33, width: 222,
       render: (b) => this.renderGraphics(b)
     });
 
     this.wm.register({
       id: 'help', title: 'Shortcuts', glyph: '⌨',
-      x: 0.5, y: 0.62, width: 300,
+      x: 0.5, y: 0.62, width: 232,
       render: (b) => {
         b.innerHTML = `
           <div class="note">Every panel floats. Drag by the title bar, resize from the corner,
@@ -659,51 +644,6 @@ export class Shell {
   }
 
   /* ---- library: search + cards + favourites ---- */
-
-  private renderLibrary(b: HTMLElement): void {
-    const s = document.createElement('input');
-    s.className = 'search';
-    s.placeholder = 'Search worlds, phenomena, tags…';
-    b.appendChild(s);
-
-    const grid = document.createElement('div');
-    grid.className = 'cards';
-    b.appendChild(grid);
-
-    const draw = (q: string) => {
-      grid.innerHTML = '';
-      const ql = q.toLowerCase().trim();
-      const list = WORLDS.filter((w) =>
-        !ql || w.name.toLowerCase().includes(ql) || w.desc.toLowerCase().includes(ql) ||
-        w.tags.some((t) => t.includes(ql)));
-      const sorted = [...list].sort((a, c) =>
-        Number(this.favs.has(c.id)) - Number(this.favs.has(a.id)));
-
-      if (!sorted.length) {
-        grid.innerHTML = '<div class="note" style="grid-column:1/-1">No matches.</div>';
-        return;
-      }
-      sorted.forEach((w) => {
-        const c = document.createElement('button');
-        c.className = 'card' + (w.id === this.worldId ? ' on' : '');
-        c.innerHTML = `
-          <span class="card-g">${w.glyph}</span>
-          <div class="card-t">${w.name}</div>
-          <div class="card-d">${w.desc}</div>
-          <button class="fav ${this.favs.has(w.id) ? 'on' : ''}">★</button>`;
-        c.onclick = () => { this.selectWorld(w.id); draw(s.value); };
-        const fav = c.querySelector('.fav') as HTMLButtonElement;
-        fav.onclick = (e) => {
-          e.stopPropagation();
-          this.favs.has(w.id) ? this.favs.delete(w.id) : this.favs.add(w.id);
-          draw(s.value);
-        };
-        grid.appendChild(c);
-      });
-    };
-    s.oninput = () => draw(s.value);
-    draw('');
-  }
 
   /* ---- telemetry ---- */
 

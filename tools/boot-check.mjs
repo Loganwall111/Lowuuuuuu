@@ -379,12 +379,19 @@ if (appRef) {
          ['star-system', 'planet', 'blackhole'].every((k) => kinds.has(k)),
          [...kinds].join(','));
 
-      // flying somewhere must NOT reload a world
-      const worldBefore = appRef.world;
+      // Flying somewhere loads what that place IS. This replaced the World
+      // Library: an ocean world is a destination, not a menu entry. The
+      // universe itself is still one continuous space - the regions below
+      // are unchanged by travelling, which is the property that matters.
+      const regionsBefore = u.regions.length;
       const target = u.regions.find((r) => r.kind === 'blackhole');
       appRef.warpTo(target.id);
-      ok('flying to a place does not swap the world object',
-         appRef.world === worldBefore);
+      // loadWorld is async; give it a moment to swap in.
+      await new Promise((r) => setTimeout(r, 600));
+      ok('flying to a black hole loads the black hole world',
+         appRef.currentId === 'blackhole', String(appRef.currentId));
+      ok('travelling never destroys the universe around you',
+         u.regions.length === regionsBefore);
       ok('flying to a place moves the camera near it',
          Vector3Distance(appRef.camera.position, target.position) <
            Math.max(target.radius * 3, 100),

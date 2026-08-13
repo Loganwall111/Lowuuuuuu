@@ -272,5 +272,38 @@ console.log('\n— robustness —');
   ok('stats render for a minimal universe', !!tiny.stats().Location);
 }
 
+console.log('— the sandbox\'s signature places are always reachable —');
+{
+  // With the side tabs removed, an ocean world and a terrain world are
+  // things you fly to. If generation happened not to make one near the
+  // start, they would effectively not exist.
+  let missingOcean = 0, missingTerrain = 0, missingHole = 0;
+  for (let seed = 1; seed <= 40; seed++) {
+    const u = new UniverseState({ seed, spacing: 2600, extent: 12000 });
+    const home = u.regions.find((r) => r.name === 'Home');
+    const dist = (r) => Math.hypot(
+      r.position.x - home.position.x,
+      r.position.y - home.position.y,
+      r.position.z - home.position.z);
+    if (!u.regions.some((r) => r.kind === 'ocean' && dist(r) < 900)) missingOcean++;
+    if (!u.regions.some((r) => r.kind === 'terrain' && dist(r) < 900)) missingTerrain++;
+    if (!u.regions.some((r) => r.kind === 'blackhole' && dist(r) < 4200)) missingHole++;
+  }
+  ok('every universe has an ocean world near the start', missingOcean === 0,
+     `${missingOcean}/40 without one`);
+  ok('every universe has a terrain world near the start', missingTerrain === 0,
+     `${missingTerrain}/40 without one`);
+  ok('every universe has a black hole within reach', missingHole === 0,
+     `${missingHole}/40 without one`);
+
+  // And they must not be piled on top of the home star.
+  const u = new UniverseState({ seed: 5, spacing: 2600, extent: 12000 });
+  const home = u.regions.find((r) => r.name === 'Home');
+  const guaranteed = u.regions.filter((r) => /^Home I{2,3}$/.test(r.name));
+  ok('the guaranteed worlds are placed away from the star',
+     guaranteed.every((r) => Math.hypot(
+       r.position.x - home.position.x, r.position.z - home.position.z) > 100));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

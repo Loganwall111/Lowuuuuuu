@@ -51,9 +51,12 @@ interface WindowState {
  */
 export function clampPanelWidth(w: number): number {
   const vw = (typeof window !== 'undefined' && window.innerWidth) || 1280;
-  const cap = Math.max(180, Math.min(300, vw * 0.26));
-  const n = Number.isFinite(w) ? w : 280;
-  return Math.round(Math.max(172, Math.min(cap, n)));
+  // Panels are instruments, not documents. The controls are single-line
+  // rows now, so they fit comfortably in far less width - which is the
+  // whole point: the middle of the screen must stay visible.
+  const cap = Math.max(168, Math.min(248, vw * 0.19));
+  const n = Number.isFinite(w) ? w : 232;
+  return Math.round(Math.max(156, Math.min(cap, n)));
 }
 
 export class WindowManager {
@@ -97,7 +100,9 @@ export class WindowManager {
     // Enforce the width cap centrally. Individual panels used to declare
     // their own width and could exceed it, which is how a 340px panel ended
     // up straddling the middle of the screen even after tiling.
-    const w = clampPanelWidth(spec.width ?? 280);
+    const w = clampPanelWidth(spec.width ?? 232);
+    // Wide enough for label, track and value on one line.
+    el.dataset.wide = w >= 210 ? '1' : '0';
     const h = spec.height ?? 420;
     const x = spec.x !== undefined ? spec.x * (window.innerWidth - w) : 24;
     const y = spec.y !== undefined ? spec.y * (window.innerHeight - h) : 84;

@@ -112,7 +112,13 @@ export class UniverseState {
     const { spacing, extent } = this.opts;
 
     // ---- the home star system, always at the origin so you start somewhere ----
-    this.addStarSystem(new Vector3(0, 0, 0), rng, 'Home');
+    const home = this.addStarSystem(new Vector3(0, 0, 0), rng, 'Home');
+
+    // There are no side tabs any more: an ocean world, a terrain world and a
+    // black hole are *places*. Guarantee one of each within easy reach of
+    // the start, or a new player could fly for a long time without finding
+    // the things the sandbox is built around.
+    this.ensureNearHome(home, rng);
 
     // ---- surrounding star systems on a jittered lattice ----
     const steps = Math.max(1, Math.floor(extent / spacing));
@@ -131,6 +137,41 @@ export class UniverseState {
         else if (roll < 0.9) this.addNebula(p, rng);
         else this.addGalaxy(p, rng);
       }
+    }
+  }
+
+  /**
+   * Guarantees an ocean world, a terrain world and a black hole close to the
+   * origin. Called once at generation; if the random pass already produced
+   * one nearby, nothing is added.
+   */
+  private ensureNearHome(home: Region, rng: () => number): void {
+    const near = (kind: RegionKind, within: number) =>
+      this.regions.some((r) => r.kind === kind &&
+        Vector3.Distance(r.position, home.position) < within);
+
+    const place = (kind: RegionKind, name: string, glyph: string,
+                   dist: number, surface: number) => {
+      const a = rng() * Math.PI * 2;
+      this.regions.push({
+        id: this.nextId('pl'),
+        kind,
+        name,
+        glyph,
+        position: home.position.add(new Vector3(
+          Math.cos(a) * dist, (rng() - 0.5) * 40, Math.sin(a) * dist)),
+        radius: surface * 4.5,
+        mass: 60 + rng() * 400,
+        seed: Math.floor(rng() * 0xffffffff) >>> 0,
+        surfaceRadius: surface
+      });
+    };
+
+    if (!near('ocean', 900)) place('ocean', 'Home II', '🌊', 260, 34);
+    if (!near('terrain', 900)) place('terrain', 'Home III', '⛰', 400, 30);
+    if (!near('blackhole', 4200)) {
+      this.addBlackHole(home.position.add(new Vector3(
+        (rng() - 0.5) * 600, 0, -2600 - rng() * 600)), rng);
     }
   }
 

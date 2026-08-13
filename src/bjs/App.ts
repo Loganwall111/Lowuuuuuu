@@ -43,6 +43,22 @@ import {
 } from './systems/LensProfiles';
 import type { Region } from './systems/UniverseState';
 
+/**
+ * What each kind of place in the universe *is* when you get there. The side
+ * tabs are gone; these experiences are reached by flying to them.
+ */
+const WORLD_FOR_REGION: Record<string, string> = {
+  'ocean': 'ocean',
+  'terrain': 'terraform',
+  'blackhole': 'blackhole',
+  'dimension': 'dimension',
+  'star-system': 'planetary',
+  'planet': 'planetary',
+  'nebula': 'planetary',
+  'galaxy': 'planetary',
+  'deep-space': 'planetary'
+};
+
 const FACTORY: Record<string, () => World> = {
   planetary: () => new PlanetaryWorld(),
   ocean: () => new OceanWorld(),
@@ -536,6 +552,12 @@ export class App {
     this.universe.updatePlayer(dest);
     this.shell.toast('Arrived at ' + r.glyph + ' ' + r.name);
     this.shell.refreshAll?.();
+
+    // Arriving somewhere loads what that place actually is. This is why
+    // there is no world list any more: an ocean world is a place you fly
+    // to, not an entry you click.
+    const world = WORLD_FOR_REGION[r.kind];
+    if (world && world !== this.currentId) this.loadWorld(world);
   }
 
   /**

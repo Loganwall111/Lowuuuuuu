@@ -260,21 +260,36 @@ const beforeLook = ev.postfx.length;
 click(lookBtn);
 ok('a "look" applies several settings at once', ev.postfx.length > beforeLook + 2);
 
-console.log('\n— library search —');
-shell.wm.Open('library');
-const cards = () => document.querySelectorAll('[data-wid="library"] .card');
-ok(`library lists ${WORLDS.length} worlds`, cards().length === WORLDS.length);
-const search = document.querySelector('[data-wid="library"] .search');
-search.value = 'lensing';
-search.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
-ok('search narrows to the black hole', cards().length === 1, `got ${cards().length}`);
-search.value = 'collision';
-search.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
-ok('search finds the sandbox by tag', cards().length === 1);
-search.value = 'zzz';
-search.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
-ok('empty state instead of a blank panel',
-   document.querySelector('[data-wid="library"] .note')?.textContent.includes('No matches'));
+console.log('\n— the side tabs are gone; worlds are places you fly to —');
+{
+  // The World Library was a list of clickable worlds - exactly the tabbed
+  // menu that was rejected. It is deleted. Travel is the navigator.
+  ok('the World Library window is gone',
+     !shell.wm.list().some((w) => (typeof w === 'string' ? w : w.id) === 'library'));
+  ok('nothing renders a library panel',
+     !document.querySelector('[data-wid="library"]'));
+
+  const src = fs.readFileSync('src/bjs/ui/Shell.ts', 'utf8');
+  ok('renderLibrary is deleted', !src.includes('renderLibrary'));
+  ok('the dead #worldSeg lookups are gone', !src.includes('#worldSeg'));
+
+  // Travelling to a place must load what that place is.
+  const app = fs.readFileSync('src/bjs/App.ts', 'utf8');
+  ok('arriving somewhere loads that kind of world',
+     app.includes('WORLD_FOR_REGION'));
+  ok('an ocean region is the ocean world', /'ocean':\s*'ocean'/.test(app));
+  ok('a terrain region is the terraform world', /'terrain':\s*'terraform'/.test(app));
+  ok('a black hole region is the black hole world',
+     /'blackhole':\s*'blackhole'/.test(app));
+  ok('warping loads the destination world',
+     /WORLD_FOR_REGION\[r\.kind\]/.test(app));
+
+  // The navigator is now the way around, and it lists real destinations.
+  shell.wm.Open('navigator');
+  const flyBtns = document.querySelectorAll('[data-wid="navigator"] [data-warp]');
+  ok(`the navigator offers real places to fly to (${flyBtns.length})`,
+     flyBtns.length > 0);
+}
 
 console.log('\n— telemetry & global controls —');
 shell.tickHud(60, 'Gravity Sandbox');
@@ -522,6 +537,26 @@ console.log('\n— the centre of the screen must stay clear —');
   });
   ok('no panel is wide enough to dominate the view', tooWide.length === 0,
      tooWide.join(', '));
+
+  // The complaint was that panels are still too big. Hold a hard ceiling
+  // so this cannot drift back.
+  const widths = ids.map((id) => parseFloat(
+    document.querySelector('[data-wid="' + id + '"]').style.width) || 0);
+  const widest = Math.max(...widths);
+  ok(`the widest panel is genuinely small (${widest}px)`, widest <= 248, String(widest));
+  ok('panels take under a fifth of the screen each',
+     widest <= W * 0.20 + 1, `${widest} vs ${(W * 0.20).toFixed(0)}`);
+
+  // Density: a control must be a row, not a card. Measured from the CSS
+  // contract rather than by eye.
+  const css = fs.readFileSync('src/bjs/ui/styles.ts', 'utf8');
+  ok('controls lay out as grid rows, not stacked blocks',
+     /\.ctl\{[\s\S]*?display:grid/.test(css));
+  ok('label, value and track share a line on wide panels',
+     css.includes("grid-template-areas:'label track value'"));
+  ok('control padding is tight', /\.ctl\{[\s\S]*?padding:3px/.test(css));
+  ok('the slider row is short', css.includes('height:13px'));
+  ok('panel body padding is tight', css.includes('.wm-body{padding:5px 6px'));
 
   // the default layout must leave a clear corridor down the middle
   shell.wm.TileEdges();

@@ -65,7 +65,7 @@ body[data-focus="1"] .hud{ opacity:.35; }
 }
 .wm-b:hover{background:rgba(255,255,255,.14);color:#fff}
 .wm-x:hover{background:#e5484d;color:#fff}
-.wm-body{padding:9px 10px;overflow-y:auto;overflow-x:hidden;flex:1 1 auto;min-height:0;}
+.wm-body{padding:5px 6px;overflow-y:auto;overflow-x:hidden;flex:1 1 auto;min-height:0;}
 .wm-body::-webkit-scrollbar{width:9px}
 .wm-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:9px;border:2px solid transparent;background-clip:content-box}
 .wm-resize{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;
@@ -151,45 +151,63 @@ body[data-focus="1"] .hud{ opacity:.35; }
    Instrument panel rather than a web form: each control is a recessed
    cell with a machined track, a tick rule and a numeric readout that
    looks like a gauge. */
+/* Instrument rows, not stacked cards.
+   Label, value and track share one line, which roughly halves the height of
+   every control and lets a panel show twice as many without growing. */
 .ctl{
-  margin:0 0 7px;padding:7px 9px 8px;border-radius:var(--r2);
+  display:grid;
+  grid-template-columns:minmax(58px, 1fr) auto;
+  grid-template-areas:'label value' 'track track';
+  align-items:center;
+  column-gap:6px; row-gap:1px;
+  margin:0 0 3px;padding:3px 6px 4px;border-radius:var(--r2);
   background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.014));
   border:1px solid rgba(255,255,255,.07);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
   transition:border-color .14s, background .14s;}
+/* Wide panels put the track inline for a true single-line instrument. */
+@media (min-width:0px){
+  .wm-win[data-wide="1"] .ctl{
+    grid-template-columns:minmax(56px,88px) 1fr auto;
+    grid-template-areas:'label track value';
+    row-gap:0;}
+}
 .ctl:hover{border-color:rgba(120,180,255,.30);
   background:linear-gradient(180deg,rgba(120,180,255,.07),rgba(255,255,255,.02));}
 .ctl:focus-within{border-color:var(--acc);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06),
              0 0 0 1px color-mix(in srgb,var(--acc) 32%,transparent);}
 
-.ctl-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:8px}
-.ctl-l{font-size:calc(11px * var(--ui-scale));color:var(--txt);font-weight:600;
-  letter-spacing:.34px;text-transform:uppercase;opacity:.86;}
+/* ctl-top is now a passthrough: its children are placed by the grid above. */
+.ctl-top{display:contents}
+.ctl-l{grid-area:label;font-size:calc(9.5px * var(--ui-scale));color:var(--txt);font-weight:600;
+  letter-spacing:.3px;text-transform:uppercase;opacity:.86;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ctl-v{
-  font-size:calc(11px * var(--ui-scale));color:var(--acc);
+  grid-area:value;
+  font-size:calc(9.5px * var(--ui-scale));color:var(--acc);
   font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.2px;
   background:linear-gradient(180deg,rgba(77,163,255,.20),rgba(77,163,255,.07));
   border:1px solid rgba(77,163,255,.30);
-  padding:1px 7px;border-radius:5px;white-space:nowrap;
-  min-width:52px;text-align:right;
+  padding:0 5px;border-radius:4px;white-space:nowrap;
+  min-width:40px;text-align:right;
   text-shadow:0 0 10px color-mix(in srgb,var(--acc) 55%,transparent);}
 
 /* Tick rule under the track: reads as a calibrated instrument. */
-.ctl-track{position:relative;padding-top:1px}
+.ctl-track{grid-area:track;position:relative;padding-top:0}
 .ctl-track::after{
-  content:'';position:absolute;left:2px;right:2px;bottom:2px;height:3px;
+  content:'';position:absolute;left:2px;right:2px;bottom:1px;height:2px;
   pointer-events:none;opacity:.30;
   background:repeating-linear-gradient(90deg,
     rgba(255,255,255,.55) 0 1px, transparent 1px 10%);}
 
 input[type=range]{
-  -webkit-appearance:none;appearance:none;width:100%;height:20px;
+  -webkit-appearance:none;appearance:none;width:100%;height:13px;
   background:transparent;cursor:pointer;margin:0;display:block;position:relative;z-index:1;}
 
 /* --- WebKit --- */
 input[type=range]::-webkit-slider-runnable-track{
-  height:6px;border-radius:3px;
+  height:4px;border-radius:2px;
   background:
     linear-gradient(90deg,
       color-mix(in srgb,var(--acc) 92%,#fff) 0%,
@@ -198,8 +216,8 @@ input[type=range]::-webkit-slider-runnable-track{
   box-shadow:inset 0 1px 2px rgba(0,0,0,.55),
              0 0 12px color-mix(in srgb,var(--acc) 26%,transparent);}
 input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
-  margin-top:-4px;cursor:grab;
+  -webkit-appearance:none;width:11px;height:11px;border-radius:50%;
+  margin-top:-3.5px;cursor:grab;
   background:radial-gradient(circle at 34% 30%,#ffffff 0%,#dce9fb 48%,#93b6e4 100%);
   border:2px solid var(--acc);
   box-shadow:0 1px 5px rgba(0,0,0,.65),
