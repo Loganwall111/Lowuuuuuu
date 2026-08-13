@@ -23,6 +23,7 @@ const ENTRIES: MenuEntry[] = [
   { id: 'sandbox',   title: 'Gravity Sandbox', sub: 'Build systems · throw anything · smash worlds', glyph: '🌌', accent: '#4da3ff' },
   { id: 'planetary', title: 'Star Systems',    sub: 'Procedural planets, moons, rings & atmospheres', glyph: '🪐', accent: '#7c5cff' },
   { id: 'ocean',     title: 'Ocean Worlds',    sub: 'Fluid simulation with ray-traced reflections',   glyph: '🌊', accent: '#31d68a' },
+  { id: 'terraform', title: 'Terraform',       sub: 'Carve rivers, flood valleys, erode mountains',   glyph: '⛰', accent: '#8ad14f' },
   { id: 'blackhole', title: 'Singularity',     sub: 'Ray-marched geodesics & gravitational lensing',  glyph: '⚫', accent: '#ffb545' }
 ];
 
