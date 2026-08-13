@@ -13,6 +13,7 @@
 
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { makeRng, hashSeed } from './DimensionSystem';
+import { ChunkStreamer } from './ChunkedUniverse';
 import {
   LENS_PROFILES, cloneProfile, randomAlienProfile, sanitizeProfile,
   type LensProfile
@@ -51,6 +52,13 @@ export interface UniverseOptions {
   extent: number;
 }
 
+/**
+ * Regions inside this radius are the hand-built ones: the home system and
+ * the guaranteed ocean/terrain/black hole near it. Everything beyond is
+ * generated on demand and has no edge.
+ */
+export const CORE_RADIUS = 14800;
+
 export const DEFAULT_UNIVERSE: UniverseOptions = {
   seed: 20260813,
   spacing: 2600,
@@ -72,6 +80,20 @@ function nameFor(rng: () => number): string {
 export class UniverseState {
   opts: UniverseOptions;
   regions: Region[] = [];
+  /**
+   * The hand-built heart of the universe: the home system and its
+   * guaranteed neighbours. Kept separate so streaming can replace the
+   * outer regions without ever disturbing these.
+   */
+  private coreRegions: Region[] = [];
+  /**
+   * Everything past the core, generated in chunks as you approach and
+   * forgotten as you leave. This is what makes space endless: no total is
+   * ever stored, so there is no size to run out of.
+   */
+  streamer = new ChunkStreamer();
+  /** Set false to pin the universe to its hand-built core, for tests. */
+  streaming = true;
   /** Where the player is right now, in universe coordinates. */
   playerPos = new Vector3(0, 0, -220);
   /** The region the player is currently inside, if any. */
@@ -138,6 +160,29 @@ export class UniverseState {
         else this.addGalaxy(p, rng);
       }
     }
+
+    // Everything above is the authored core. Past it, space is generated on
+    // demand from the same seed and never ends.
+    this.coreRegions = [...this.regions];
+    this.streamer = new ChunkStreamer({ seed: this.opts.seed });
+    this.streamer.clear();
+  }
+
+  /**
+   * Streams the endless part of space around a viewpoint.
+   *
+   * The core is always present; chunked regions are appended for wherever
+   * you happen to be. Chunks far from the core are skipped so the authored
+   * neighbourhood is never doubled up with generated stars.
+   */
+  streamAround(eye: Vector3): boolean {
+    if (!this.streaming) return false;
+    const changed = this.streamer.update(eye);
+    if (!changed) return false;
+    const streamed = this.streamer.regions()
+      .filter((r) => r.position.length() > CORE_RADIUS);
+    this.regions = this.coreRegions.concat(streamed);
+    return true;
   }
 
   /**

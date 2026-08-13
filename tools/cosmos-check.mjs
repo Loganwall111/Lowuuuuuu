@@ -424,6 +424,148 @@ console.log('\n— the people who live there —');
   ok('they do not repeat one line forever', varied.size > 1);
 }
 
+console.log('\n— space that does not end —');
+{
+  const cEntry = join(dir, 'chunk.js');
+  const cOut = join(dir, 'chunk.mjs');
+  writeFileSync(cEntry, `
+export * from '/home/user/Low/src/bjs/systems/ChunkedUniverse.ts';
+export { UniverseState, CORE_RADIUS } from '/home/user/Low/src/bjs/systems/UniverseState.ts';
+export { TIERS } from '/home/user/Low/src/bjs/systems/CosmicScaleSystem.ts';
+export { Vector3 } from '@babylonjs/core/Maths/math.vector';
+`);
+  execFileSync('/home/user/Low/node_modules/.bin/esbuild',
+    [cEntry, '--bundle', '--format=esm', '--platform=browser',
+     '--outfile=' + cOut], { stdio: 'pipe' });
+  const C = await import(cOut);
+  const V3 = C.Vector3;
+
+  // Determinism is what allows infinity without storage: a chunk must
+  // rebuild identically however you arrive at it.
+  const sig = (ch) => ch.regions.map((r) =>
+    r.kind + r.name + r.position.x.toFixed(4) + r.mass.toFixed(2)).join('|');
+  ok('a chunk is identical every time it is generated',
+    sig(C.generateChunk(5, -2, 9, C.DEFAULT_CHUNKED)) ===
+    sig(C.generateChunk(5, -2, 9, C.DEFAULT_CHUNKED)));
+  ok('a chunk a trillion units out is still deterministic',
+    sig(C.generateChunk(400000000, 17, -900000, C.DEFAULT_CHUNKED)) ===
+    sig(C.generateChunk(400000000, 17, -900000, C.DEFAULT_CHUNKED)));
+  ok('different chunks hold different things',
+    sig(C.generateChunk(1, 0, 0, C.DEFAULT_CHUNKED)) !==
+    sig(C.generateChunk(0, 1, 0, C.DEFAULT_CHUNKED)));
+  ok('a different universe seed gives a different chunk',
+    sig(C.generateChunk(3, 3, 3, C.DEFAULT_CHUNKED)) !==
+    sig(C.generateChunk(3, 3, 3, { ...C.DEFAULT_CHUNKED, seed: 999 })));
+
+  // THE question: does it visibly tile? Fingerprint the layout of many
+  // chunks spread over millions of units and look for repeats.
+  const seen = new Set();
+  let dups = 0, sampled = 0;
+  for (let i = 0; i < 1500; i++) {
+    const cx = ((i * 7919) % 2000003) - 1000000;
+    const cy = ((i * 104729) % 1999993) - 1000000;
+    const cz = ((i * 15485863) % 2000029) - 1000000;
+    const ch = C.generateChunk(cx, cy, cz, C.DEFAULT_CHUNKED);
+    if (!ch.regions.length) continue;
+    sampled++;
+    // Positions relative to the chunk, so only the *pattern* is compared.
+    const rel = ch.regions.map((r) => r.kind +
+      (r.position.x - cx * C.CHUNK_SIZE).toFixed(1) +
+      (r.position.y - cy * C.CHUNK_SIZE).toFixed(1)).join('|');
+    if (seen.has(rel)) dups++; else seen.add(rel);
+  }
+  ok('space never repeats its layout, even across millions of units',
+    dups === 0, dups + ' repeats in ' + sampled + ' chunks');
+
+  // Large-scale structure: there must be voids and clusters, not static.
+  let minD = 1, maxD = 0;
+  for (let i = 0; i < 3000; i++) {
+    const p2 = new V3((i * 9973) % 4000000 - 2000000,
+                      (i * 3571) % 4000000 - 2000000,
+                      (i * 6151) % 4000000 - 2000000);
+    const d = C.cosmicDensity(p2, C.DEFAULT_CHUNKED.seed, C.CHUNK_SIZE);
+    minD = Math.min(minD, d); maxD = Math.max(maxD, d);
+  }
+  ok('there are genuine voids in space', minD < 0.05, minD.toFixed(3));
+  ok('there are genuine superclusters', maxD > 0.7, maxD.toFixed(3));
+
+  // Structure must be *smooth*, or it is noise rather than cosmology.
+  let coherent = 0, trials = 0;
+  for (let i = 0; i < 300; i++) {
+    const p2 = new V3((i * 7717) % 900000, (i * 5843) % 900000, (i * 4211) % 900000);
+    const near = new V3(p2.x + C.CHUNK_SIZE, p2.y, p2.z);
+    const far = new V3(p2.x + C.CHUNK_SIZE * 400, p2.y, p2.z);
+    const dn = Math.abs(C.cosmicDensity(p2, 20260813, C.CHUNK_SIZE) -
+                        C.cosmicDensity(near, 20260813, C.CHUNK_SIZE));
+    const df = Math.abs(C.cosmicDensity(p2, 20260813, C.CHUNK_SIZE) -
+                        C.cosmicDensity(far, 20260813, C.CHUNK_SIZE));
+    trials++;
+    if (dn <= df) coherent++;
+  }
+  ok('nearby space is more alike than distant space (real structure)',
+    coherent / trials > 0.8, (100 * coherent / trials).toFixed(0) + '%');
+
+  // Memory must not grow with distance travelled.
+  const st = new C.ChunkStreamer();
+  st.update(new V3(0, 0, 0));
+  const early = st.residentCount;
+  for (let i = 0; i < 400; i++) st.update(new V3(i * C.CHUNK_SIZE * 11, 0, i * 900));
+  ok('flying millions of units does not grow memory',
+    st.residentCount <= early * 1.5 + 4,
+    early + ' -> ' + st.residentCount + ' chunks resident');
+  ok('the streamer really did generate as it went', st.generated > 1000);
+  ok('regions are always available wherever you are',
+    st.regions().length > 0);
+  ok('revisiting a chunk does not regenerate it', (() => {
+    const s2 = new C.ChunkStreamer();
+    s2.update(new V3(0, 0, 0));
+    const g = s2.generated;
+    s2.update(new V3(10, 0, 10));
+    return s2.generated === g;
+  })());
+
+  // The live universe must actually be endless.
+  const u = new C.UniverseState();
+  const atOrigin = u.regions.length;
+  ok('the hand-built core still exists', atOrigin > 100);
+  let alwaysPopulated = true;
+  let nearestEver = 0;
+  for (const d of [5e4, 5e5, 5e6, 1e8, 1e10, 1e12]) {
+    const eye = new V3(d, 0, 0);
+    u.streamAround(eye);
+    const n = u.nearest(eye);
+    if (!n) { alwaysPopulated = false; break; }
+    nearestEver = Math.max(nearestEver,
+      Math.hypot(n.position.x - d, n.position.y, n.position.z));
+  }
+  ok('there is always something nearby, however far out you go',
+    alwaysPopulated);
+  ok('the nearest thing is always within reach, not a speck on the horizon',
+    nearestEver < C.CHUNK_SIZE * 4, nearestEver.toFixed(0) + ' units');
+  ok('the core is never duplicated by generated space', (() => {
+    const u2 = new C.UniverseState();
+    u2.streamAround(new V3(0, 0, 0));
+    const ids = u2.regions.map((r) => r.id);
+    return new Set(ids).size === ids.length;
+  })());
+
+  // Tier boundaries must be far enough apart to be journeys.
+  const WARP = 720 * 900;
+  ok('tier boundaries increase outward',
+    C.TIERS.every((t, i) => i === 0 || t.boundary > C.TIERS[i - 1].boundary));
+  ok('the first tier is seconds away, not instant',
+    C.TIERS[0].boundary / WARP > 5);
+  ok('the outermost tier takes an absurdly long time to reach',
+    C.TIERS[C.TIERS.length - 1].boundary / WARP > 3.15e7,
+    (C.TIERS[C.TIERS.length - 1].boundary / WARP / 3.15e7).toFixed(1) + ' years at full warp');
+  ok('populated space extends past the first tier boundary', (() => {
+    const u3 = new C.UniverseState();
+    const eye = new V3(C.TIERS[0].boundary * 1.5, 0, 0);
+    u3.streamAround(eye);
+    return !!u3.nearest(eye);
+  })());
+}
+
 rmSync(dir, { recursive: true, force: true });
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

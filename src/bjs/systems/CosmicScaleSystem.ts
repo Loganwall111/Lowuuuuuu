@@ -38,12 +38,21 @@ export interface CosmicTier {
 /**
  * The ladder, innermost first. Order is load-bearing: index is depth.
  */
+/**
+ * Boundaries are enormous because space no longer has an edge: regions are
+ * generated for ever in every direction, so a tier has to be genuinely far
+ * away or you would cross the whole nesting in a few seconds of warp.
+ *
+ * At full warp (648,000 u/s) the first boundary is about nine seconds out
+ * and the last is about thirty years. Getting to The Source is meant to be
+ * absurd - that is the joke - but every step of the way is populated.
+ */
 export const TIERS: CosmicTier[] = [
   {
     id: 'universe',
     name: 'The Universe',
     tagline: 'Stars, worlds, and the space between them.',
-    boundary: 120000,
+    boundary: 6000000,
     scaleFactor: 1,
     tint: [0.06, 0.10, 0.22],
     inhabitants: 'galaxies',
@@ -53,7 +62,7 @@ export const TIERS: CosmicTier[] = [
     id: 'multiverse',
     name: 'The Multiverse',
     tagline: 'Your universe is one bubble among uncountable others.',
-    boundary: 420000,
+    boundary: 240000000,
     scaleFactor: 0.012,
     tint: [0.22, 0.09, 0.30],
     inhabitants: 'universe bubbles',
@@ -63,7 +72,7 @@ export const TIERS: CosmicTier[] = [
     id: 'metaverse',
     name: 'The Metaverse',
     tagline: 'It was all running on something. Here is the something.',
-    boundary: 900000,
+    boundary: 9600000000,
     scaleFactor: 0.010,
     tint: [0.04, 0.26, 0.20],
     inhabitants: 'lattices of executing code',
@@ -73,7 +82,7 @@ export const TIERS: CosmicTier[] = [
     id: 'multimultiverse',
     name: 'The Multi-Multiverse',
     tagline: 'Metaverses drift here in shoals. None of them notice you.',
-    boundary: 1800000,
+    boundary: 384000000000,
     scaleFactor: 0.008,
     tint: [0.30, 0.16, 0.05],
     inhabitants: 'drifting metaverses',
@@ -83,7 +92,7 @@ export const TIERS: CosmicTier[] = [
     id: 'molecular',
     name: 'The Molecular Field',
     tagline: 'Everything above is a molecule in something larger.',
-    boundary: 4200000,
+    boundary: 15360000000000,
     scaleFactor: 0.006,
     tint: [0.10, 0.20, 0.34],
     inhabitants: 'bonded molecules the size of multiverses',
@@ -94,7 +103,7 @@ export const TIERS: CosmicTier[] = [
     name: 'The Source',
     tagline: 'There is no further out. It loops.',
     // The last tier wraps back to the first: the universe is inside itself.
-    boundary: 9000000,
+    boundary: 614400000000000,
     scaleFactor: 0.004,
     tint: [0.44, 0.42, 0.16],
     inhabitants: 'the beginning, seen from outside',

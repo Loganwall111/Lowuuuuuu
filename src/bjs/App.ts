@@ -888,6 +888,11 @@ export class App {
       this.elevators.update(dt);
       this.fleet.update(dt);
 
+      // ---- endless space ----
+      // Chunks are generated as you approach and forgotten behind you, so
+      // there is no edge to the universe and no total held in memory.
+      this.universe.streamAround(eye);
+
       // ---- the real sky ----
       // Points are placed from actual region positions, so the sky
       // parallaxes as you fly and every light in it is a destination.
