@@ -197,13 +197,21 @@ ok('pixels are sampled at several points in the first seconds',
 
 /* ---------------- 7. the HDR grade ------------------------------------- */
 
-ok('ACES tone mapping is enabled', /TONEMAPPING_ACES/.test(postfx));
-ok('tone mapping only runs when the pipeline is really HDR',
-   /toneMappingEnabled = this\.hdr/.test(postfx));
+// These two assertions used to require exposure 1.32 and pipeline-side ACES.
+// Both were wrong, and together they WERE the "planets are extremely bright"
+// bug: every world shader already ends with the ACES curve followed by
+// pow(1/2.2), so the pipeline was tonemapping an already-tonemapped, already
+// gamma-encoded image and then scaling it by 1.32. Measured effect: +190% at
+// 0.05 luminance. The grade now lives in the shaders, and the pipeline stays
+// photometrically neutral. See tools/render-check.mjs for the measurement.
+ok('the ACES constant is still available to the pipeline',
+   /TONEMAPPING_ACES/.test(postfx));
+ok('the pipeline does not tonemap on top of the shaders',
+   /toneMappingEnabled = false/.test(postfx));
 ok('bloom is stronger now that it reaches the screen',
    /bloom: 1\.25/.test(postfx));
-ok('exposure has headroom for highlights to bloom',
-   /exposure: 1\.32/.test(postfx));
+ok('exposure is neutral, because the shaders own the grade',
+   /exposure: 1(\.0)?,/.test(postfx));
 
 // The grade must stay inside the bounds the black-screen check enforces.
 {

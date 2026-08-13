@@ -34,6 +34,7 @@ precision highp float;
 varying vec2 vUV;
 
 uniform vec3  camPos;
+uniform vec3  holePos;     // world-space centre of the physical horizon
 uniform mat4  camInv;
 uniform float fov;
 uniform float aspect;
@@ -181,7 +182,10 @@ void main(void){
   vec3 rayL = safeNormalize(vec3(uv * tan(finiteOr(fov, 0.9) * 0.5), 1.0),
                             vec3(0.0, 0.0, 1.0));
   vec3 dir  = safeNormalize((camInv * vec4(rayL, 0.0)).xyz, vec3(0.0, 0.0, 1.0));
-  vec3 ro   = camPos;
+  // Everything downstream assumes the singularity is at the origin, so work
+  // in hole-relative space. Binding holePos every frame is what keeps the
+  // raymarched disk locked to the physical horizon instead of drifting.
+  vec3 ro   = camPos - holePos;
 
   // Work in the plane containing the camera, the ray and the singularity.
   // The camera sitting exactly at the origin makes r0 zero, and ro/r0 then
@@ -404,7 +408,7 @@ export class BlackHoleWorld implements World {
     this.mat = new ShaderMaterial('bh', scene, 'bh', {
       attributes: ['position', 'uv'],
       uniforms: [
-        'camPos', 'camInv', 'fov', 'aspect', 'time', 'rs', 'spin',
+        'camPos', 'holePos', 'camInv', 'fov', 'aspect', 'time', 'rs', 'spin',
         'lensMode', 'lensFalloff', 'ringAmt', 'ringRadius', 'lensSymmetry',
         'lensDistortion', 'lensTwist', 'lensChroma', 'lensTint', 'lensSoftness',
         'insideAmt', 'exitDir',
@@ -425,23 +429,58 @@ export class BlackHoleWorld implements World {
     ctx.setCameraTarget(Vector3.Zero(), 26);
   }
 
-  update(dt: number, ctx: WorldContext): void {
-    this.t += dt;
+  /**
+   * Binds every camera-derived uniform.
+   *
+   * Split out of update() because of an ordering bug: update() runs early in
+   * the frame, but the camera is not moved into its final position until
+   * later, and the scene is not drawn until later still. The shader was
+   * therefore raymarching from the PREVIOUS frame's camera while the rest of
+   * the scene drew from the current one. The two disagreed by exactly one
+   * frame of motion, which is seen as the accretion disk sliding off the
+   * horizon whenever the camera turns or a panel resizes the canvas.
+   *
+   * Calling this immediately before scene.render() closes that gap. It is
+   * cheap - one matrix inversion and five uniform writes - and idempotent,
+   * so calling it from update() as well is harmless.
+   */
+  syncCamera(ctx: WorldContext): void {
     const cam = ctx.camera;
     const scene = ctx.scene;
 
+    // The view matrix must be recomputed, not read from cache: the camera
+    // may have been repositioned since Babylon last built it.
+    cam.computeWorldMatrix();
     const inv = Matrix.Invert(cam.getViewMatrix());
     this.mat.setVector3('camPos', cam.position);
     this.mat.setMatrix('camInv', inv);
     this.mat.setFloat('fov', safeFloat(cam.fov ?? 0.9, 0.9));
-    // ROOT CAUSE OF THE BLACK SCREEN. A canvas mid-resize has zero height,
-    // so getAspectRatio() returns 0/0 = NaN. The shader does `uv.x *=
-    // aspect`, so one NaN frame makes every ray direction NaN and nothing
-    // is drawn at all. Opening a panel resizes the canvas, which is why
-    // the report was "open the options menu and the screen goes black".
+    // A canvas mid-resize has zero height, so getAspectRatio() returns
+    // 0/0 = NaN. The shader does `uv.x *= aspect`, so one NaN frame makes
+    // every ray direction NaN and nothing is drawn at all. Opening a side
+    // panel resizes the canvas, which is why the report was "open the
+    // options menu and the screen goes black".
     const eng = scene.getEngine();
     this.mat.setFloat('aspect',
       safeAspect(eng.getRenderWidth(), eng.getRenderHeight()));
+
+    // Lock the raymarched hole to the physical horizon position every single
+    // frame. The shader works in world space, so if this is ever stale the
+    // disk and the horizon separate.
+    this.mat.setVector3('holePos', this.center);
+  }
+
+  /**
+   * World-space centre of the hole. Kept as a field (not a local) so the
+   * physical horizon and the shader read from the same object.
+   */
+  center = Vector3.Zero();
+
+  update(dt: number, ctx: WorldContext): void {
+    this.t += dt;
+    const scene = ctx.scene;
+
+    this.syncCamera(ctx);
     this.mat.setFloat('time', this.t);
 
     // Mass drives the horizon radius, and a zero or negative rs makes the

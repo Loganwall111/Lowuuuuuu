@@ -58,6 +58,7 @@ uniform vec3  tintB;
 uniform float detail;
 uniform float cloudAmt;
 uniform float cityLights;
+uniform float exposure;   // artistic stop, 1.0 = neutral
 uniform float radius;
 uniform float isStar;
 /* Optional photoreal albedo map. Procedural noise alone reads as cartoonish
@@ -211,7 +212,10 @@ void main(void){
   vec3 sunCol = mix(vec3(1.0, 0.62, 0.34), vec3(1.0, 0.97, 0.92),
                     smoothstep(0.0, 0.42, ndl));
 
-  vec3 col = albedo * sunCol * (diff * 1.35 + 0.03);
+  // 1.35 was a deliberate overdrive that only looked right because the
+  // post pipeline was tonemapping a second time and crushing it back down.
+  // With the pipeline neutral, the physically sane 1.0 is correct.
+  vec3 col = albedo * sunCol * (diff * 1.0 + 0.03);
 
   // ---- ambient sky bounce, so the night side is never dead black ----
   float upness = n.y * 0.5 + 0.5;
@@ -318,6 +322,11 @@ void main(void){
   // a faint bluish terminator glow, the atmosphere still lit after sunset
   col += rayleigh * pow(fres, 3.0) * smoothstep(0.30, 0.0, abs(ndl)) * 0.30;
 
+  // Exposure is applied in linear space, before the tone curve - that is
+  // the whole point of a filmic curve. Applying it afterwards (as the post
+  // pipeline used to) just scales an already-displayable image and blows
+  // out the highlights.
+  col *= max(exposure, 0.0);
   col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
   gl_FragColor = vec4(pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2)), 1.0);
 }

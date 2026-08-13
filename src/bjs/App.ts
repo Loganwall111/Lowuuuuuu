@@ -31,6 +31,8 @@ import { missingShaders } from './ShaderRegistry';
 import { WarpDrive, galacticMedium } from './systems/DeepSkySystem';
 import { Fleet, shipClass, shipView, type ViewMode } from './systems/FleetSystem';
 import { StarFieldRenderer } from './systems/StarFieldRenderer';
+import { LayeredSky } from './systems/LayeredSky';
+import { SpaceAudio } from './systems/SpaceAudio';
 import {
   depthOf, verseAt, verseProgress, edgeStateAt, crossInto,
   isAtFinalCoordinate, describeDepth, FINAL_COORDINATE, type VerseId
@@ -107,6 +109,14 @@ export class App {
   private insideGalaxy = false;
   /** The sky, drawn from real regions rather than painted on a sphere. */
   starField = new StarFieldRenderer();
+  /**
+   * The anonymous background haze, in three parallaxing shells. Sits behind
+   * starField, which draws the real reachable regions - together they give
+   * a sky that is both deep and navigable.
+   */
+  layeredSky = new LayeredSky();
+  /** Procedural hum / warp / singularity voices, driven from live state. */
+  audio = new SpaceAudio();
   /** Whichever verse you are currently standing in. */
   verseRenderer = new VerseRenderer();
   /** Which verse that is. Changes only by crossing through The Nothing. */
@@ -374,6 +384,16 @@ export class App {
       const t = e.target as HTMLElement | null;
       return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
     };
+    // Audio may only begin inside a user gesture, so arm it on the first
+    // interaction of any kind and then stop listening.
+    const armAudio = () => {
+      if (this.audio.start()) this.audio.resume();
+      window.removeEventListener('pointerdown', armAudio);
+      window.removeEventListener('keydown', armAudio);
+    };
+    window.addEventListener('pointerdown', armAudio);
+    window.addEventListener('keydown', armAudio);
+
     window.addEventListener('keydown', (e) => {
       if (typing(e)) return;
       this.keys.add(e.key.toLowerCase());
@@ -650,6 +670,11 @@ export class App {
         StarFieldRenderer.toSkyObjects(this.universe.regions),
         this.vehicle.position);
 
+      // loadWorld purges every mesh, so the shells must be rebuilt with it.
+      this.layeredSky.dispose();
+      this.layeredSky.attach(this.scene);
+      void this.layeredSky.build();
+
       this.shell.setWorld(w);
     } finally {
       this.switching = false;
@@ -855,6 +880,21 @@ export class App {
         if (warping.engaged) {
           this.vehicle.flySpeed *= warping.multiplier;
         }
+        // ---- audio, driven from live simulation state ----
+        // Browsers only allow audio after a gesture, so the graph is started
+        // lazily here; before that this is a no-op.
+        {
+          const bh = this.nearestHole();
+          const eyeNow = this.vehicle.position;
+          this.audio.update({
+            speed: this.vehicle.flySpeed * Math.abs(input.forward),
+            warpCharge: this.warpDrive.charge,
+            singularityDistance: bh
+              ? Vector3.Distance(eyeNow, bh.position)
+              : Infinity
+          });
+        }
+
         const look = this.mouse.consume(dt);
         // Arrow keys still work: whichever the player is using wins.
         if (Math.abs(look.yaw) > 1e-4) input.yaw = look.yaw;
@@ -971,6 +1011,10 @@ export class App {
       // parallaxes as you fly and every light in it is a destination.
       this.starField.update(
         StarFieldRenderer.toSkyObjects(this.universe.regions), eye);
+
+      // Each background shell slides toward the eye by its own lock factor,
+      // so near stars sweep past and far ones hold station.
+      this.layeredSky.update(eye);
 
       // ---- flying into a galaxy ----
       // The interstellar medium thickens as you approach the core, so a
@@ -1093,6 +1137,14 @@ export class App {
         const dir = this.camera.getTarget().subtract(this.camera.position);
         this.grab.update(dt, this.camera.position, dir);
       }
+      // ---- strict camera sync, immediately before the draw ----
+      // world.update() ran early in the frame, before the camera was moved
+      // into its final position. Any world that raymarches from camera
+      // uniforms would otherwise be drawing from a one-frame-stale camera,
+      // which shows up as the black hole's disk sliding off its horizon
+      // while turning or when a panel resizes the canvas.
+      (this.world as any)?.syncCamera?.(this.ctx);
+
       this.scene.render();
 
       // adaptive resolution defends the framerate

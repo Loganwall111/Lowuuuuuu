@@ -409,6 +409,9 @@ export class PlanetaryWorld implements World {
       b.mat.setFloat('detail', this.p.detail);
       b.mat.setFloat('cloudAmt', this.p.clouds);
       b.mat.setFloat('cityLights', b.name === 'Terrapor' ? this.p.lights : 0);
+      // The Exposure slider existed in the options panel but was never sent
+      // to the shader, so dragging it did nothing at all.
+      b.mat.setFloat('exposure', this.p.exposure);
 
       if (b.atmoMat) {
         b.atmoMat.setVector3('camPos', cp);

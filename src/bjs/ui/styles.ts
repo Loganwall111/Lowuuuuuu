@@ -262,37 +262,43 @@ input[type=range]{
   -webkit-appearance:none;appearance:none;width:100%;height:13px;
   background:transparent;cursor:pointer;margin:0;display:block;position:relative;z-index:1;}
 
-/* --- WebKit --- */
+/* --- WebKit ---
+   Squared off rather than rounded. Rounded pill sliders read as a web form;
+   instrument panels use hard edges, a machined vertical thumb and a lit
+   track, which is what makes the UI feel like hardware. */
 input[type=range]::-webkit-slider-runnable-track{
-  height:4px;border-radius:2px;
+  height:5px;border-radius:1px;
   background:
     linear-gradient(90deg,
       color-mix(in srgb,var(--acc) 92%,#fff) 0%,
       var(--acc) var(--pct,50%),
-      rgba(255,255,255,.09) var(--pct,50%));
-  box-shadow:inset 0 1px 2px rgba(0,0,0,.55),
-             0 0 12px color-mix(in srgb,var(--acc) 26%,transparent);}
+      rgba(255,255,255,.07) var(--pct,50%)),
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.16) 0 1px, transparent 1px 12.5%);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.6),
+             0 0 14px color-mix(in srgb,var(--acc) 30%,transparent);}
 input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:11px;height:11px;border-radius:50%;
-  margin-top:-3.5px;cursor:grab;
-  background:radial-gradient(circle at 34% 30%,#ffffff 0%,#dce9fb 48%,#93b6e4 100%);
-  border:2px solid var(--acc);
-  box-shadow:0 1px 5px rgba(0,0,0,.65),
-             0 0 9px color-mix(in srgb,var(--acc) 62%,transparent);
+  -webkit-appearance:none;width:7px;height:16px;border-radius:1px;
+  margin-top:-5.5px;cursor:grab;
+  background:linear-gradient(180deg,#ffffff 0%,#cfe2fb 42%,#7ea8dc 100%);
+  border:1px solid color-mix(in srgb,var(--acc) 85%,#fff);
+  box-shadow:0 1px 6px rgba(0,0,0,.75),
+             0 0 12px color-mix(in srgb,var(--acc) 75%,transparent),
+             inset 0 0 0 1px rgba(255,255,255,.4);
   transition:transform .11s ease, box-shadow .11s ease;}
-input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.22);
-  box-shadow:0 1px 6px rgba(0,0,0,.7),0 0 15px color-mix(in srgb,var(--acc) 85%,transparent);}
-input[type=range]:active::-webkit-slider-thumb{transform:scale(1.06);cursor:grabbing}
+input[type=range]::-webkit-slider-thumb:hover{transform:scaleY(1.18);
+  box-shadow:0 1px 7px rgba(0,0,0,.8),0 0 18px color-mix(in srgb,var(--acc) 95%,transparent);}
+input[type=range]:active::-webkit-slider-thumb{transform:scaleY(1.05);cursor:grabbing}
 
 /* --- Firefox --- */
-input[type=range]::-moz-range-track{height:6px;border-radius:3px;
-  background:rgba(255,255,255,.09);box-shadow:inset 0 1px 2px rgba(0,0,0,.55);}
-input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--acc);
-  box-shadow:0 0 12px color-mix(in srgb,var(--acc) 40%,transparent);}
-input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;
-  background:radial-gradient(circle at 34% 30%,#ffffff 0%,#dce9fb 48%,#93b6e4 100%);
-  border:2px solid var(--acc);cursor:grab;
-  box-shadow:0 1px 5px rgba(0,0,0,.65);}
+input[type=range]::-moz-range-track{height:5px;border-radius:1px;
+  background:rgba(255,255,255,.07);box-shadow:inset 0 1px 2px rgba(0,0,0,.6);}
+input[type=range]::-moz-range-progress{height:5px;border-radius:1px;background:var(--acc);
+  box-shadow:0 0 14px color-mix(in srgb,var(--acc) 45%,transparent);}
+input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
+  background:linear-gradient(180deg,#ffffff 0%,#cfe2fb 42%,#7ea8dc 100%);
+  border:1px solid var(--acc);cursor:grab;
+  box-shadow:0 1px 6px rgba(0,0,0,.75);}
 
 .btnrow{display:flex;flex-wrap:wrap;gap:7px}
 /* Angled corner + sweep highlight: reads as hardware, not a web page. */
@@ -425,4 +431,123 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;
   .brand-sub{display:none}
   .seg button{padding:7px 9px;font-size:11px}
 }
+
+
+/* =====================================================================
+   SPACE-ENGINE INSTRUMENT LAYER
+   ---------------------------------------------------------------------
+   A professional simulator UI is not a set of boxes with rounded corners.
+   Three things carry the look, and each is done here with no extra markup
+   so nothing in the app has to change:
+
+     1. Cut corners, not radii. Angled clips read as machined panels.
+     2. Corner brackets. Drawn with a single conic-gradient border image,
+        so they cost nothing and cannot desynchronise from the panel size.
+     3. A faint scanline wash, which is what stops a flat translucent panel
+        from looking like a web modal.
+   ===================================================================== */
+
+/* --- windows: cut corners + engraved bracket --- */
+.wm-win{
+  border-radius:0;
+  clip-path:polygon(
+    12px 0, 100% 0,
+    100% calc(100% - 12px), calc(100% - 12px) 100%,
+    0 100%, 0 12px);
+  border:1px solid rgba(125,180,255,.20);
+  background:
+    linear-gradient(180deg, rgba(18,26,44,.88), rgba(8,12,22,.82));
+}
+/* the bright hairline along the top edge: catches the eye like lit metal */
+.wm-win::before{
+  content:'';position:absolute;left:12px;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,
+    transparent, color-mix(in srgb,var(--acc) 85%,transparent) 22%,
+    color-mix(in srgb,var(--acc) 85%,transparent) 78%, transparent);
+  opacity:.75;pointer-events:none;z-index:2;}
+/* scanline wash */
+.wm-win .wm-body{
+  background-image:repeating-linear-gradient(180deg,
+    rgba(140,190,255,.028) 0 1px, transparent 1px 3px);
+}
+
+.wm-bar{
+  background:linear-gradient(180deg,rgba(90,150,230,.16),rgba(255,255,255,0));
+  border-bottom:1px solid rgba(125,180,255,.16);
+}
+.wm-title{
+  text-transform:uppercase;letter-spacing:1.4px;
+  font-family:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  font-size:calc(10.5px * var(--ui-scale));
+  color:#cfe2ff;
+}
+.wm-grip{
+  width:2px;height:13px;border-radius:0;
+  background:linear-gradient(180deg,var(--acc),var(--acc2));
+  box-shadow:0 0 8px color-mix(in srgb,var(--acc) 80%,transparent);}
+
+/* --- section headings inside panels --- */
+.wm-body h4, .sec-title{
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  font-size:9px;letter-spacing:2.2px;text-transform:uppercase;
+  color:var(--dim2);
+  display:flex;align-items:center;gap:8px;margin:12px 0 7px;}
+.wm-body h4::after, .sec-title::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,rgba(125,180,255,.28),transparent);}
+
+/* --- buttons: angled, with a lit leading edge --- */
+.btn, .wm-b{
+  border-radius:0;
+  clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  letter-spacing:.9px;text-transform:uppercase;font-size:10px;
+}
+.btn.on, .wm-b.on{
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 70%,transparent),
+             0 0 14px color-mix(in srgb,var(--acc) 45%,transparent);}
+
+/* --- HUD: heavier, with corner brackets on every instrument block --- */
+.fh-block{
+  border:1px solid rgba(120,175,255,.20);
+  background:
+    linear-gradient(135deg,rgba(10,18,34,.80),rgba(5,9,17,.66));
+}
+/* bracket ticks at the two square corners */
+.fh-block::before{
+  content:'';position:absolute;right:0;top:0;width:9px;height:9px;
+  border-top:1px solid color-mix(in srgb,var(--acc) 70%,transparent);
+  border-right:1px solid color-mix(in srgb,var(--acc) 70%,transparent);
+  pointer-events:none;}
+.fh-label{
+  font-size:8px;letter-spacing:2.4px;color:#6f8ab0;}
+.fh-num, .fh-big{
+  text-shadow:0 0 12px color-mix(in srgb,var(--acc) 35%,transparent);}
+/* Coordinates read like an instrument: fixed width, so digits never jitter */
+.fh-coords{grid-template-columns:auto minmax(72px,auto);}
+.fh-num{letter-spacing:.6px;}
+
+/* the reticle gets a slow breathing pulse so the frame never feels frozen */
+@keyframes fhPulse{0%,100%{opacity:.44}50%{opacity:.60}}
+.fhud-reticle{animation:fhPulse 4.5s ease-in-out infinite;}
+
+/* --- the top ring bar --- */
+.topbar{
+  background:linear-gradient(180deg,rgba(10,16,30,.92),rgba(8,12,22,.72));
+  border-bottom:1px solid rgba(125,180,255,.18);
+  backdrop-filter:blur(18px) saturate(140%);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+}
+.topbar::after{
+  content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:linear-gradient(90deg,transparent,
+    color-mix(in srgb,var(--acc) 55%,transparent) 30%,
+    color-mix(in srgb,var(--acc2) 55%,transparent) 70%,transparent);
+  pointer-events:none;}
+
+/* Reduced motion: the pulse is decorative, so drop it on request. */
+@media (prefers-reduced-motion: reduce){
+  .fhud-reticle{animation:none;}
+}
+
 `;

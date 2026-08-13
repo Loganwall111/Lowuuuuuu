@@ -40,8 +40,13 @@ export const DEFAULT_POSTFX: PostFXSettings = {
   // bloom rather than clip.
   bloom: 1.25,
   bloomThreshold: 0.30,
-  exposure: 1.32,
-  contrast: 1.20,
+  // Neutral. Every world shader already tonemaps and gamma-encodes its own
+  // output (see the note at the top of this file), so the pipeline must not
+  // grade on top of that. An exposure of 1.32 here was multiplying an
+  // already-displayable image and then ACES-tonemapping it a second time,
+  // which lifted dark tones by up to 190% and made planets glare white.
+  exposure: 1.0,
+  contrast: 1.05,
   vignette: 0.20,
   grain: 0.6,
   sharpen: 0.42,
@@ -192,7 +197,17 @@ export class PostFX {
       // values off into white instead of clipping them, so a star's core and
       // a planet's lit edge keep their shape. Only safe to enable now that
       // the pipeline really is HDR - in LDR it would crush the image.
-      ip.toneMappingEnabled = this.hdr;
+      // DOUBLE TONE MAPPING WAS THE PLANET BRIGHTNESS BUG.
+      // PlanetShader, PortalShader and BlackHoleWorld all end with the ACES
+      // curve followed by pow(1/2.2) - they emit finished, gamma-encoded
+      // colour. Running ACES again here re-tonemapped an already-tonemapped
+      // image: measured inflation was +190% at 0.05 luminance and +107% at
+      // 0.10, so shadows and midtones were pushed toward white and every
+      // planet read as blown out.
+      //
+      // The scene's own shaders are the single source of truth for tone
+      // mapping, so the pipeline stays photometrically neutral.
+      ip.toneMappingEnabled = false;
       ip.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
       ip.exposure = s.exposure;
       ip.contrast = s.contrast;

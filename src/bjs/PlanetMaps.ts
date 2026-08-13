@@ -158,6 +158,9 @@ export function applyPlanetMap(
     [PlanetKind.Rocky]: 0.10
   };
   mat.setFloat('oceanDepth', depthFor[kind] ?? 0.5);
+  // Neutral default. Bound here so that no call site can leave it unset -
+  // an unbound float reads as 0 and would render the planet pure black.
+  mat.setFloat('exposure', 1);
   if (!url) {
     // No art for this kind: stay fully procedural rather than sampling a
     // texture that was never bound.
@@ -190,5 +193,8 @@ export function exoticOf(mat: ShaderMaterial): ExoticSurface | null {
 }
 
 /** Uniform + sampler names callers must declare on the ShaderMaterial. */
-export const PLANET_MAP_UNIFORMS = ['useMap', 'oceanDepth'];
+// 'exposure' rides along here because every planet-shader call site already
+// spreads this list, so adding it in one place binds it everywhere and no
+// site can forget it and read an unbound uniform.
+export const PLANET_MAP_UNIFORMS = ['useMap', 'oceanDepth', 'exposure'];
 export const PLANET_MAP_SAMPLERS = ['albedoMap'];
