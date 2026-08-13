@@ -7,6 +7,7 @@
 import { WindowManager } from './WindowManager';
 import { UI_CSS } from './styles';
 import type { World, WorldParam } from '../World';
+import { POSTFX_PARAMS, DEFAULT_POSTFX } from '../PostFX';
 
 export type Mode = 'simple' | 'advanced' | 'expert';
 
@@ -19,6 +20,7 @@ export interface WorldEntry {
 }
 
 export const WORLDS: WorldEntry[] = [
+  { id: 'sandbox', name: 'Gravity Sandbox', glyph: '🌌', desc: 'Build systems, launch bodies, watch them collide and merge', tags: ['create', 'gravity', 'n-body', 'orbit', 'collision', 'sandbox'] },
   { id: 'planetary', name: 'Star Systems', glyph: '🪐', desc: 'Procedural planets, moons, rings and atmospheres', tags: ['space', 'planets', 'orbit', 'gravity'] },
   { id: 'ocean', name: 'Ocean Worlds', glyph: '🌊', desc: 'Gerstner fluid with ray-traced reflections', tags: ['water', 'fluid', 'waves', 'reflection'] },
   { id: 'blackhole', name: 'Singularity', glyph: '⚫', desc: 'Ray-marched geodesics and gravitational lensing', tags: ['black hole', 'lensing', 'relativity', 'gravity'] }
@@ -31,6 +33,7 @@ interface ShellHooks {
   onMode: (m: Mode) => void;
   onReset: () => void;
   onPause: (paused: boolean) => void;
+  onPostFX: (key: string, value: number) => void;
 }
 
 export class Shell {
@@ -38,10 +41,11 @@ export class Shell {
   mode: Mode = 'simple';
   private hooks: ShellHooks;
   private world: World | null = null;
-  private worldId = 'planetary';
+  private worldId = 'sandbox';
   private paused = false;
   private favs = new Set<string>();
   private fpsHist: number[] = [];
+  private postfx: Record<string, number> = { ...DEFAULT_POSTFX } as any;
 
   private topbar!: HTMLDivElement;
   private hud!: HTMLDivElement;
@@ -69,6 +73,7 @@ export class Shell {
       else if (k === '2') this.wm.Toggle('library');
       else if (k === '3') this.wm.Toggle('telemetry');
       else if (k === '4') this.wm.Toggle('presets');
+      else if (k === '5') this.wm.Toggle('graphics');
       else if (k === 'h') this.wm.CloseAll();
       else if (k === ' ') { e.preventDefault(); this.togglePause(); }
       else if (k === 'r') this.hooks.onReset();
@@ -124,6 +129,7 @@ export class Shell {
       <button class="iconbtn" id="w-library"  title="World Library (2)">🗂</button>
       <button class="iconbtn" id="w-telemetry" title="Telemetry (3)">📊</button>
       <button class="iconbtn" id="w-presets"  title="Presets (4)">✨</button>
+      <button class="iconbtn" id="w-graphics" title="Graphics (5)">🎨</button>
       <button class="iconbtn" id="btnReset"   title="Reset layout & sim (R)">↺</button>
     `;
     document.body.appendChild(this.topbar);
@@ -142,7 +148,7 @@ export class Shell {
       b.onclick = () => this.setMode(b.dataset.m as Mode);
     });
 
-    (['controls', 'library', 'telemetry', 'presets'] as const).forEach((id) => {
+    (['controls', 'library', 'telemetry', 'presets', 'graphics'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement;
       btn.onclick = () => this.wm.Toggle(id);
     });
@@ -155,7 +161,7 @@ export class Shell {
   }
 
   private syncTopbar(): void {
-    (['controls', 'library', 'telemetry', 'presets'] as const).forEach((id) => {
+    (['controls', 'library', 'telemetry', 'presets', 'graphics'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id);
       btn?.classList.toggle('on', this.wm.IsVisible(id));
     });
@@ -247,6 +253,12 @@ export class Shell {
     });
 
     this.wm.register({
+      id: 'graphics', title: 'Graphics', glyph: '🎨',
+      x: 1, y: 0.28, width: 300,
+      render: (b) => this.renderGraphics(b)
+    });
+
+    this.wm.register({
       id: 'help', title: 'Shortcuts', glyph: '⌨',
       x: 0.5, y: 0.6, width: 300,
       render: (b) => {
@@ -328,7 +340,7 @@ export class Shell {
     b.appendChild(sys);
   }
 
-  private slider(p: WorldParam): HTMLElement {
+  private slider(p: WorldParam, onChange?: (k: string, v: number) => void): HTMLElement {
     const wrap = document.createElement('div');
     wrap.className = 'ctl';
     const fmt = (v: number) => (p.step >= 1 ? String(Math.round(v)) : v.toFixed(2)) + (p.unit ? ' ' + p.unit : '');
@@ -348,7 +360,7 @@ export class Shell {
       const v = parseFloat(input.value);
       vEl.textContent = fmt(v);
       input.style.setProperty('--pct', ((v - p.min) / (p.max - p.min)) * 100 + '%');
-      this.hooks.onParam(p.key, v);
+      (onChange ?? this.hooks.onParam)(p.key, v);
     };
     wrap.appendChild(input);
     return wrap;
@@ -466,6 +478,60 @@ export class Shell {
     }
   }
 
+  /* ---- graphics ---- */
+
+  private renderGraphics(b: HTMLElement): void {
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.textContent = 'Post-processing applies to every world. Lower these if the framerate drops.';
+    b.appendChild(n);
+
+    const g = document.createElement('div');
+    g.className = 'grp';
+    g.innerHTML = '<div class="grp-h">Image</div>';
+    const shown = this.mode === 'simple'
+      ? POSTFX_PARAMS.filter((p) => ['bloom', 'exposure', 'vignette'].includes(p.key))
+      : this.mode === 'advanced'
+        ? POSTFX_PARAMS.filter((p) => p.key !== 'bloomThreshold' && p.key !== 'chromatic')
+        : POSTFX_PARAMS;
+
+    shown.forEach((p) => {
+      const cur = { ...p, value: this.postfx[p.key] ?? p.value };
+      g.appendChild(this.slider(cur, (k, v) => {
+        this.postfx[k] = v;
+        this.hooks.onPostFX(k, v);
+      }));
+    });
+    b.appendChild(g);
+
+    const pg = document.createElement('div');
+    pg.className = 'grp';
+    pg.innerHTML = '<div class="grp-h">Looks</div>';
+    const row = document.createElement('div');
+    row.className = 'btnrow';
+    const looks: [string, Partial<Record<string, number>>][] = [
+      ['Clean', { bloom: 0.2, grain: 0, chromatic: 0, vignette: 0.15, contrast: 1.0 }],
+      ['Cinematic', { bloom: 0.75, grain: 4, chromatic: 3, vignette: 0.5, contrast: 1.12 }],
+      ['Telescope', { bloom: 1.3, grain: 9, chromatic: 6, vignette: 0.8, contrast: 1.2 }],
+      ['Flat', { bloom: 0, grain: 0, chromatic: 0, vignette: 0, contrast: 1.0, exposure: 1.0 }]
+    ];
+    looks.forEach(([label, vals]) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = label;
+      btn.onclick = () => {
+        Object.entries(vals).forEach(([k, v]) => {
+          this.postfx[k] = v as number;
+          this.hooks.onPostFX(k, v as number);
+        });
+        this.wm.refresh('graphics');
+      };
+      row.appendChild(btn);
+    });
+    pg.appendChild(row);
+    b.appendChild(pg);
+  }
+
   /* ---- presets ---- */
 
   private renderPresets(b: HTMLElement): void {
@@ -492,6 +558,12 @@ export class Shell {
         ['🌀 Supermassive', { mass: 2.8, diskInner: 6, diskOuter: 30, diskBright: 1.6 }],
         ['📐 Edge-On', { diskTilt: 0.02, doppler: 1.8, exposure: 1.3 }],
         ['🔭 Max Lensing', { lens: 2.0, mass: 2.0, exposure: 1.4 }]
+      ],
+      sandbox: [
+        ['🪐 Solar System', { gravity: 1, timeScale: 1, spawnMass: 1 }],
+        ['💫 Heavy Gravity', { gravity: 2.6, timeScale: 1.2 }],
+        ['🐌 Slow Motion', { timeScale: 0.15, trails: 1, trailLength: 300 }],
+        ['🌠 Long Trails', { trails: 1, trailLength: 380 }]
       ],
       planetary: [
         ['🌍 Realtime', { timeScale: 1, orbitSpeed: 1, detail: 1 }],

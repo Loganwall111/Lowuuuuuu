@@ -14,11 +14,14 @@ import type { World, WorldContext } from './World';
 import { PlanetaryWorld } from './worlds/PlanetaryWorld';
 import { OceanWorld } from './worlds/OceanWorld';
 import { BlackHoleWorld } from './worlds/BlackHoleWorld';
+import { SandboxWorld } from './worlds/SandboxWorld';
+import { PostFX } from './PostFX';
 
 const FACTORY: Record<string, () => World> = {
   planetary: () => new PlanetaryWorld(),
   ocean: () => new OceanWorld(),
-  blackhole: () => new BlackHoleWorld()
+  blackhole: () => new BlackHoleWorld(),
+  sandbox: () => new SandboxWorld()
 };
 
 export class App {
@@ -31,6 +34,7 @@ export class App {
   private paused = false;
   private currentId = 'planetary';
   private switching = false;
+  private postfx = new PostFX();
 
   async init(): Promise<void> {
     const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
@@ -38,6 +42,7 @@ export class App {
     this.shell = new Shell({
       onWorld: (id) => this.loadWorld(id),
       onParam: (k, v) => this.world?.setParam(k, v),
+      onPostFX: (k, v) => this.postfx.set(k, v),
       onAction: (k) => this.world?.runAction?.(k, this.ctx),
       onMode: () => {},
       onReset: () => this.loadWorld(this.currentId),
@@ -94,6 +99,7 @@ export class App {
     if (this.switching) return;
     this.switching = true;
     try {
+      this.postfx.detach();
       this.world?.dispose();
       this.world = null;
 
@@ -109,6 +115,7 @@ export class App {
       await w.build(this.ctx);
       this.world = w;
       this.currentId = id;
+      this.postfx.attach(this.scene, this.camera);
       this.shell.setWorld(w);
     } finally {
       this.switching = false;
