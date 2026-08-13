@@ -299,6 +299,60 @@ console.log('\n— flight instruments —');
       .every((k) => k in H.DEFAULT_HUD_ELEMENTS));
 }
 
+console.log('\n— throwing things at planets —');
+{
+  const iEntry = join(dir, 'imp.js');
+  const iOut = join(dir, 'imp.mjs');
+  writeFileSync(iEntry,
+    "export * from '/home/user/Low/src/bjs/systems/ImpactorSystem.ts';");
+  execFileSync('/home/user/Low/node_modules/.bin/esbuild',
+    [iEntry, '--bundle', '--format=esm', '--platform=browser',
+     '--outfile=' + iOut], { stdio: 'pipe' });
+  const I = await import(iOut);
+
+  // Screen size must compress 27 orders of magnitude of real mass into a
+  // range you can actually see, while preserving the ordering.
+  const rPebble = I.ImpactorSystem.visualRadius(0.2);
+  const rMoon = I.ImpactorSystem.visualRadius(7.3e22);
+  const rNeutron = I.ImpactorSystem.visualRadius(4.0e26);
+  ok('a heavier object draws larger', rMoon > rPebble && rNeutron > rMoon);
+  ok('even the heaviest object stays a sane size on screen', rNeutron <= 8);
+  ok('even the lightest object stays visible', rPebble >= 0.18);
+  ok('visual size is never NaN',
+    Number.isFinite(I.ImpactorSystem.visualRadius(0)) &&
+    Number.isFinite(I.ImpactorSystem.visualRadius(-5)));
+
+  // Planet mass scales with the cube of radius at constant density, which is
+  // what makes a gas giant genuinely tougher than a rocky world rather than
+  // merely bigger on screen.
+  const EARTH_VIS = 1.15;
+  const massOf = (visR) => 5.97e24 * Math.pow(visR / EARTH_VIS, 3);
+  const radOf = (visR) => 6.371e6 * (visR / EARTH_VIS);
+  const ophion = massOf(2.9), cinder = massOf(0.62);
+  ok('a gas giant far outmasses a small rocky world', ophion / cinder > 100);
+
+  const T = await import(out);
+  const rock = T.throwableById('asteroid');
+  const hitSmall = T.computeImpact(rock, 20000, cinder, radOf(0.62));
+  const hitGiant = T.computeImpact(rock, 20000, ophion, radOf(2.9));
+  ok('the same rock does proportionally more damage to a smaller world',
+    hitSmall.bindingFraction > hitGiant.bindingFraction,
+    hitSmall.bindingFraction.toExponential(2) + ' vs ' +
+    hitGiant.bindingFraction.toExponential(2));
+
+  ok('gravity in world units matches the universe constant', I.WORLD_G === 42);
+  ok('strays are eventually reaped', I.MAX_AGE > 0 && I.MAX_AGE <= 600);
+
+  // Composition must map to a colour, and every catalogue entry must have one.
+  const comps = new Set(T.THROWABLES.map((t) => t.composition));
+  let allTinted = true;
+  for (const c of comps) {
+    const col = I.ImpactorSystem.tint({ composition: c });
+    if (!col || !Number.isFinite(col.r)) allTinted = false;
+  }
+  ok('every composition in the catalogue has a colour', allTinted);
+}
+
 rmSync(dir, { recursive: true, force: true });
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

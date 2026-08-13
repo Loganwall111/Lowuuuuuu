@@ -28,6 +28,8 @@ import {
   CORONA_UNIFORMS, GLARE_UNIFORMS, coronaFor
 } from '../shaders/SunShader';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
+import { ImpactorSystem, type ImpactTarget } from '../systems/ImpactorSystem';
+import { THROWABLES, throwableById } from '../systems/ThrowableSystem';
 
 /* --------------------------- planet shader --------------------------- */
 
@@ -81,6 +83,8 @@ interface Body {
   atmo?: Mesh;
   atmoMat?: ShaderMaterial;
   orbitR: number;
+  /** Visual radius, kept so impact mass can be derived from real size. */
+  visualR: number;
   orbitSpeed: number;
   angle: number;
   spin: number;
@@ -102,11 +106,19 @@ const PLANETS: {
   { name: 'Silex',    r: 1.05, orbit: 96,  speed: 0.07, type: 2, a: [0.66,0.78,0.88], b: [0.88,0.94,0.99], atmo: [0.6,0.8,1.0], clouds: 0.3, lights: 0, moons: 1 }
 ];
 
+/** Terrapor is the Earth-like world, so it is the yardstick for mass. */
+const EARTH_VISUAL_R = 1.15;
+
 export class PlanetaryWorld implements World {
   id = 'planetary';
   name = 'Star Systems';
 
   private bodies: Body[] = [];
+  /** Things thrown at the planets, and what they did when they arrived. */
+  private impactor = new ImpactorSystem();
+  /** What the next throw will be. */
+  private armed = 'asteroid';
+  private lastImpactNote = '';
   private star!: Mesh;
   private starMat!: ShaderMaterial;
   private light!: PointLight;
@@ -118,6 +130,14 @@ export class PlanetaryWorld implements World {
   async build(ctx: WorldContext): Promise<void> {
     const scene = ctx.scene;
     scene.clearColor = new Color4(0.002, 0.004, 0.012, 1);
+
+    // Throwing things is core to this place, so the impactor is attached
+    // for the lifetime of the world rather than spun up on first use.
+    this.impactor.attach(scene, (e) => {
+      this.lastImpactNote =
+        e.projectile.spec.name + ' → ' + e.target.id + ': ' +
+        e.result.megatons.toExponential(1) + ' Mt, ' + e.result.description;
+    });
 
     registerPlanetShader();
     Effect.ShadersStore['atmoVertexShader'] = ATMO_VERT;
@@ -267,7 +287,7 @@ export class PlanetaryWorld implements World {
 
       const body: Body = {
         root, mesh, mat,
-        orbitR: cfg.orbit, orbitSpeed: cfg.speed,
+        orbitR: cfg.orbit, visualR: cfg.r, orbitSpeed: cfg.speed,
         angle: Math.random() * Math.PI * 2,
         spin: 0.15 + Math.random() * 0.35,
         name: cfg.name, moons: []
@@ -386,6 +406,27 @@ export class PlanetaryWorld implements World {
       }
       for (const m of b.moons) m.pivot.rotation.y += dt * m.speed * this.p.timeScale;
     }
+
+    // Projectiles fly under the gravity of every planet at once, so a throw
+    // can be slung around one world into another.
+    this.impactor.update(dt * Math.max(0.05, this.p.timeScale), this.targets());
+  }
+
+  /** The planets, described the way the impact maths needs them. */
+  private targets(): ImpactTarget[] {
+    return this.bodies.map((b) => ({
+      id: b.name,
+      position: b.mesh.getAbsolutePosition(),
+      radius: b.mesh.getBoundingInfo().boundingSphere.radiusWorld,
+      // Mass and physical radius are derived from the planet's own visual
+      // size against an Earth-sized reference, at constant density: a body
+      // twice Earth's radius masses eight times as much and has roughly
+      // thirty times the binding energy. So the gas giants genuinely shrug
+      // off what shatters the little rocky worlds, rather than every planet
+      // being equally destructible.
+      mass: 5.97e24 * Math.pow(b.visualR / EARTH_VISUAL_R, 3),
+      physicalRadius: 6.371e6 * (b.visualR / EARTH_VISUAL_R)
+    }));
   }
 
   getParams(): WorldParam[] {
@@ -400,10 +441,34 @@ export class PlanetaryWorld implements World {
   }
 
   getActions(): WorldAction[] {
-    return this.bodies.map((b) => ({ key: 'goto:' + b.name, label: b.name, glyph: '🪐' }));
+    return [
+      ...this.bodies.map((b) => ({ key: 'goto:' + b.name, label: b.name, glyph: '🪐' })),
+      // Arm something, then throw it. Two clicks from arriving to watching a
+      // moon hit a planet.
+      ...THROWABLES.map((t) => ({
+        key: 'arm:' + t.id,
+        label: (this.armed === t.id ? '● ' : '') + t.name,
+        glyph: t.glyph
+      })),
+      { key: 'throw', label: 'Throw at nearest', glyph: '🎯' },
+      { key: 'clear-throws', label: 'Clear projectiles', glyph: '🧹' }
+    ];
   }
 
   runAction(key: string, ctx: WorldContext): void {
+    if (key.startsWith('arm:')) {
+      this.armed = key.slice(4);
+      return;
+    }
+    if (key === 'clear-throws') { this.impactor.clear(); return; }
+    if (key === 'throw') {
+      // Thrown from the camera toward whatever you are looking at, so aim
+      // is yours and a bad throw genuinely misses.
+      const from = ctx.camera.position.clone();
+      const dir = ctx.camera.getTarget().subtract(from);
+      this.impactor.throwAt(this.armed, from, dir, 55);
+      return;
+    }
     if (key.startsWith('goto:')) {
       const n = key.slice(5);
       const b = this.bodies.find((x) => x.name === n);
@@ -421,6 +486,9 @@ export class PlanetaryWorld implements World {
 
   getStats(): Record<string, string> {
     return {
+      ...this.impactor.stats(),
+      'Armed': throwableById(this.armed)?.name ?? '—',
+      'Last event': this.lastImpactNote || '—',
       'Planets': String(this.bodies.length),
       'Moons': String(this.bodies.reduce((s, b) => s + b.moons.length, 0)),
       'Surfaces': 'Procedural FBM',
@@ -429,6 +497,7 @@ export class PlanetaryWorld implements World {
   }
 
   dispose(): void {
+    this.impactor.dispose();
     this.bodies.forEach((b) => { b.root.dispose(false, true); b.mat.dispose(); });
     this.bodies = [];
     this.star?.dispose();
