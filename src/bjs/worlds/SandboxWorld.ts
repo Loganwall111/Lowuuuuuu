@@ -31,6 +31,7 @@ import { PortalSystem } from '../systems/PortalSystem';
 import { Wormhole, Galaxy, Nebula, type GalaxyKind } from '../systems/CosmicObjects';
 import { AISystem } from '../systems/AISystem';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
+import { applyPlanetMap, PLANET_MAP_UNIFORMS, PLANET_MAP_SAMPLERS } from '../PlanetMaps';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 
 const G = 42.0;                 // tuned so orbits read well at this scale
@@ -151,7 +152,8 @@ export class SandboxWorld implements World {
       attributes: ['position', 'normal', 'uv'],
       uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time',
                  'seed', 'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt',
-                 'cityLights', 'radius', 'isStar']
+                 'cityLights', 'radius', 'isStar', ...PLANET_MAP_UNIFORMS],
+      samplers: PLANET_MAP_SAMPLERS
     });
     mat.setFloat('seed', seed);
     mat.setFloat('ptype', opts.kind);
@@ -159,6 +161,9 @@ export class SandboxWorld implements World {
     mat.setColor3('tintB', opts.tintB ?? new Color3(0.68, 0.60, 0.52));
     mat.setFloat('radius', radius);
     mat.setFloat('isStar', opts.isStar ? 1 : 0);
+    // Stars stay procedural; everything else gets the photoreal surface art.
+    if (opts.isStar) mat.setFloat('useMap', 0);
+    else applyPlanetMap(mat, opts.kind as PlanetKind, scene);
     mat.setFloat('detail', 1.0);
     mat.setFloat('cloudAmt', opts.kind === PlanetKind.Terran ? 0.7 : 0);
     mat.setFloat('cityLights', opts.kind === PlanetKind.Terran ? 1 : 0);

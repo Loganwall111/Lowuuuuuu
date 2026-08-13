@@ -13,6 +13,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
+import { applyPlanetMap, PLANET_MAP_UNIFORMS, PLANET_MAP_SAMPLERS } from '../PlanetMaps';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Effect } from '@babylonjs/core/Materials/effect';
 import { PointLight } from '@babylonjs/core/Lights/pointLight';
@@ -136,8 +137,12 @@ export class PlanetaryWorld implements World {
       attributes: ['position', 'normal', 'uv'],
       uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time', 'seed',
                  'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights',
-                 'radius', 'isStar']
+                 'radius', 'isStar', ...PLANET_MAP_UNIFORMS],
+      samplers: PLANET_MAP_SAMPLERS
     });
+    // Stars are self-luminous and take the isStar path, but the uniform must
+    // still be bound or the sampler reads garbage.
+    this.starMat.setFloat('useMap', 0);
     this.starMat.setFloat('isStar', 1);
     this.starMat.setFloat('ptype', PlanetKind.Star);
     this.starMat.setFloat('seed', 4.2);
@@ -180,8 +185,11 @@ export class PlanetaryWorld implements World {
       const mat = new ShaderMaterial('m_' + cfg.name, scene, PLANET_SHADER, {
         attributes: ['position', 'normal', 'uv'],
         uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time',
-                   'seed', 'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights', 'radius', 'isStar']
+                   'seed', 'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights', 'radius', 'isStar',
+                   ...PLANET_MAP_UNIFORMS],
+        samplers: PLANET_MAP_SAMPLERS
       });
+      applyPlanetMap(mat, cfg.type as PlanetKind, scene);
       mat.setFloat('seed', i * 3.77 + 1.3);
       mat.setFloat('ptype', cfg.type);
       mat.setColor3('tintA', new Color3(...cfg.a));
@@ -244,8 +252,11 @@ export class PlanetaryWorld implements World {
         const mm = new ShaderMaterial('mm', scene, PLANET_SHADER, {
           attributes: ['position', 'normal', 'uv'],
           uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time',
-                     'seed', 'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights', 'radius', 'isStar']
+                     'seed', 'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights', 'radius', 'isStar',
+                     ...PLANET_MAP_UNIFORMS],
+          samplers: PLANET_MAP_SAMPLERS
         });
+        mm.setFloat('useMap', 0);
         mm.setFloat('seed', i * 9.1 + m * 4.3 + 20.0);
         mm.setFloat('ptype', 0);
         mm.setColor3('tintA', new Color3(0.28, 0.26, 0.25));

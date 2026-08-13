@@ -59,7 +59,24 @@ export const MENU_CSS = `
   opacity:1;transition:opacity .55s ease;overflow:hidden;
   font-feature-settings:'tnum' 1;}
 .menu-root.closing{opacity:0;pointer-events:none}
-#menuStars{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+#menuStars{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;opacity:.55}
+
+/* Cinematic hero plate. A rendered starfield alone reads as flat and a bit
+   cartoonish; a real photographic plate underneath is what sells the
+   AAA look. Slow drift keeps it alive without distracting. */
+.menu-plate{position:absolute;inset:-3% -3% -3% -3%;z-index:0;
+  background-image:url('/art/menu-hero.jpg');
+  background-size:cover;background-position:62% 42%;
+  animation:heroDrift 46s ease-in-out infinite alternate;
+  will-change:transform;}
+@keyframes heroDrift{
+  from{transform:scale(1.03) translate3d(0,0,0)}
+  to{transform:scale(1.09) translate3d(-1.4%,-1%,0)}}
+/* Graded so UI text always has contrast over it. */
+.menu-grade{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(3,6,14,.94) 0%,rgba(3,6,14,.72) 34%,rgba(3,6,14,.16) 62%,rgba(3,6,14,.42) 100%),
+    linear-gradient(0deg,rgba(2,4,10,.92) 0%,transparent 38%);}
 
 /* atmospheric depth over the starfield */
 .menu-glow{position:absolute;inset:0;z-index:1;pointer-events:none;
@@ -188,7 +205,9 @@ export class MainMenu {
     this.root = document.createElement('div');
     this.root.className = 'menu-root';
     this.root.innerHTML = `
+      <div class="menu-plate"></div>
       <canvas id="menuStars"></canvas>
+      <div class="menu-grade"></div>
       <div class="menu-glow"></div>
       <div class="menu-scan"></div>
       <div class="menu-vig"></div>

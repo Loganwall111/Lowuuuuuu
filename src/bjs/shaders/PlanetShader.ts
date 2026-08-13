@@ -60,6 +60,11 @@ uniform float cloudAmt;
 uniform float cityLights;
 uniform float radius;
 uniform float isStar;
+/* Optional photoreal albedo map. Procedural noise alone reads as cartoonish
+   at close range; a real texture carries the detail and the noise stack is
+   demoted to high-frequency break-up on top of it. */
+uniform sampler2D albedoMap;
+uniform float useMap;
 
 ${GLSL_NOISE}
 
@@ -160,6 +165,16 @@ void main(void){
   vec3 V = normalize(camPos - vWorld);
   float rough, specMask;
   vec3 albedo = surface(p, rough, specMask);
+
+  if (useMap > 0.5){
+    // Equirectangular lookup from the sphere normal.
+    vec2 uvm = vec2(atan(p.z, p.x) / 6.2831853 + 0.5, acos(clamp(p.y, -1.0, 1.0)) / 3.14159265);
+    vec3 mapped = texture2D(albedoMap, uvm).rgb;
+    // Keep a little procedural grain so the surface still has detail when
+    // the camera gets closer than the texture's resolution.
+    float grain = dot(albedo, vec3(0.333)) - 0.5;
+    albedo = clamp(mapped * (1.0 + grain * 0.28), 0.0, 1.0);
+  }
 
   // ---- self-luminous star path ----
   if (isStar > 0.5){

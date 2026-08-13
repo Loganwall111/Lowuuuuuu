@@ -194,14 +194,41 @@ ok('canvas still present', !!document.getElementById('renderCanvas'));
 ok(`all ${WORLDS.length} worlds listed`, document.querySelectorAll('#worldSeg button').length === WORLDS.length);
 ok('gravity sandbox is present', WORLDS.some((w) => w.id === 'sandbox'));
 
-console.log('\n— progressive disclosure —');
+console.log('\n— every control is available, and searchable —');
 shell.wm.Open('controls');
 const sliders = () => document.querySelectorAll('[data-wid="controls"] input[type=range]');
-shell.setMode('simple');   const nS = sliders().length;
-shell.setMode('advanced'); const nA = sliders().length;
-shell.setMode('expert');   const nE = sliders().length;
-ok(`simple(${nS}) < advanced(${nA}) < expert(${nE})`, nS < nA && nA < nE);
-ok('expert shows every parameter', nE === params.length);
+ok(`every parameter is shown by default (${sliders().length})`,
+   sliders().length === params.length);
+ok('there are no Simple/Advanced/Expert tier buttons',
+   document.querySelectorAll('#modeSeg button').length === 0);
+
+const ctlSearch = () => document.querySelector('[data-search="controls"]');
+ok('the controls panel has a search box', !!ctlSearch());
+{
+  // typing must narrow the list to matching controls
+  const target = params[params.length - 1];
+  const box = ctlSearch();
+  box.value = target.label;
+  box.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+  const after = sliders().length;
+  ok(`searching "${target.label}" narrows the list (${params.length} -> ${after})`,
+     after < params.length && after >= 1);
+
+  // a nonsense query must say so rather than render an empty void
+  const box2 = ctlSearch();
+  box2.value = 'zzzznothingmatchesthis';
+  box2.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+  ok('a search with no hits explains itself instead of going blank',
+     sliders().length === 0 &&
+     /nothing matches/i.test(document.querySelector('[data-wid="controls"]').textContent));
+
+  // clearing restores everything
+  const x = document.querySelector('[data-search-clear]');
+  ok('the search box has a clear button', !!x);
+  click(x);
+  ok('clearing the search restores every control',
+     sliders().length === params.length);
+}
 
 console.log('\n— controls are wired —');
 const s0 = sliders()[0];
@@ -378,6 +405,31 @@ console.log('\n— P0: panels must never block the view —');
      shell.wm.list().every((w) => !shell.wm.IsVisible(typeof w === 'string' ? w : w.id)));
 }
 
+console.log('\n— the art the look depends on is actually on disk —');
+{
+  // If one of these goes missing the sim silently falls back to procedural
+  // surfaces and quietly looks worse, with nothing in the logs to say why.
+  const need = [
+    'public/art/menu-hero.jpg',
+    'public/art/planet-terran.jpg',
+    'public/art/planet-ice.jpg',
+    'public/art/planet-gas.jpg',
+    'public/art/planet-volcanic.jpg',
+    'public/art/planet-desert.jpg'
+  ];
+  for (const f of need) {
+    const exists = fs.existsSync(f) && fs.statSync(f).size > 20000;
+    ok('art present: ' + f.split('/').pop(), exists);
+  }
+  const maps = fs.readFileSync('src/bjs/PlanetMaps.ts', 'utf8');
+  for (const f of need.slice(1)) {
+    const url = '/art/' + f.split('/').pop();
+    ok('a planet kind actually uses ' + url, maps.includes(url));
+  }
+  const menu = fs.readFileSync('src/bjs/ui/MainMenu.ts', 'utf8');
+  ok('the menu uses the cinematic hero plate', menu.includes('/art/menu-hero.jpg'));
+}
+
 console.log('\n— the main menu is an AAA front-end, not a world picker —');
 {
   // The menu must offer ACTIONS, not one tile per world. World choice is a
@@ -516,19 +568,13 @@ console.log('\n— EVERY window: no dead X anywhere —');
   ok('repeated Escape closes everything (never trapped)', stuck.length === 0, stuck.join(', '));
 }
 
-console.log('\n— progressive disclosure: simple / advanced / expert —');
+console.log('\n— the full toolset is always reachable —');
 {
-  const counts = {};
-  for (const m of ['simple', 'advanced', 'expert']) {
-    shell.mode = m;
-    shell.wm.Open('controls');
-    shell.wm.refresh('controls');
-    counts[m] = document.querySelectorAll('#w-body-controls .ctl, .wm-win[data-wid="controls"] .ctl').length;
-  }
-  ok(`advanced reveals more controls than simple (${counts.simple} -> ${counts.advanced})`,
-     counts.advanced > counts.simple);
-  ok(`expert reveals at least as many as advanced (${counts.advanced} -> ${counts.expert})`,
-     counts.expert >= counts.advanced);
+  shell.filter = '';
+  shell.wm.Open('controls');
+  shell.wm.refresh('controls');
+  const all = document.querySelectorAll('.wm-win[data-wid="controls"] .ctl').length;
+  ok(`no control is hidden behind a mode (${all} shown)`, all >= params.length);
 
   shell.mode = 'expert';
   shell.wm.refresh('controls');

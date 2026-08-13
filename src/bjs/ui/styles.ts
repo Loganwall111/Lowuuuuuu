@@ -162,6 +162,25 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
 .stat-k{color:var(--dim)}
 .stat-v{font-variant-numeric:tabular-nums;font-weight:600}
 
+/* Search field: how you reach any control now that tiers are gone. */
+.searchrow{position:relative;display:flex;align-items:center;margin:2px 0 8px;}
+.searchin{
+  width:100%;padding:6px 26px 6px 26px;border-radius:var(--r2);
+  border:1px solid var(--line);background:rgba(8,12,22,.72);color:var(--fg);
+  font:inherit;font-size:calc(11.5px * var(--ui-scale));outline:none;
+  -webkit-appearance:none;appearance:none;}
+.searchin::placeholder{color:var(--dim);opacity:.85}
+.searchin:focus{border-color:var(--accent);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 26%,transparent);}
+.searchrow::before{
+  content:'⌕';position:absolute;left:8px;color:var(--dim);
+  font-size:calc(13px * var(--ui-scale));pointer-events:none;line-height:1;}
+.searchx{
+  position:absolute;right:5px;width:17px;height:17px;padding:0;line-height:1;
+  border:0;border-radius:5px;cursor:pointer;
+  background:rgba(255,255,255,.10);color:var(--fg);font-size:13px;}
+.searchx:hover{background:var(--danger,#c0392b);color:#fff}
+
 .numin{width:100%;margin-top:5px;padding:5px 8px;border-radius:7px;border:1px solid var(--line);
   background:rgba(0,0,0,.34);color:var(--txt);font:inherit;font-size:11px;font-variant-numeric:tabular-nums;}
 .numin:focus{outline:none;border-color:var(--acc);}

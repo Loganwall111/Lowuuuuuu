@@ -100,7 +100,9 @@ interface ShellHooks {
 
 export class Shell {
   wm: WindowManager;
-  mode: Mode = 'simple';
+  mode: Mode = 'expert';
+  /** Live search string for the controls panel. Empty means show everything. */
+  filter = '';
   controlMode = 'orbit';
   private hooks: ShellHooks;
   private world: World | null = null;
@@ -235,11 +237,6 @@ export class Shell {
         <div><div class="brand-name">LOW</div><div class="brand-sub">Universe Sandbox</div></div>
       </div>
       <div class="seg" id="worldSeg"></div>
-      <div class="seg" id="modeSeg">
-        <button data-m="simple" class="on">Simple</button>
-        <button data-m="advanced">Advanced</button>
-        <button data-m="expert">Expert</button>
-      </div>
       <div class="spacer"></div>
       <button class="iconbtn" id="btnPause" title="Pause / Resume (Space)">⏸</button>
       <button class="iconbtn" id="w-controls" title="Controls (1)">🎛</button>
@@ -470,19 +467,26 @@ export class Shell {
     if (!this.world) { b.innerHTML = '<div class="note">Loading world…</div>'; return; }
 
     const params = this.world.getParams();
-    const limit = this.mode === 'simple' ? 4 : this.mode === 'advanced' ? 7 : params.length;
-    const shown = params.slice(0, limit);
+
+    // Everything is available, always. Hiding controls behind Simple /
+    // Advanced / Expert tiers meant the full toolset was never in reach;
+    // a search box gets you to any one of them faster than a tier switch.
+    const q = this.filter.trim().toLowerCase();
+    const match = (text: string) => !q || text.toLowerCase().includes(q);
+    const shown = params.filter((p) => match(p.label + ' ' + p.key));
 
     const g = document.createElement('div');
     g.className = 'grp';
     g.innerHTML = `<div class="grp-h">${this.world.name}
-      <span class="badge">${this.mode}</span></div>`;
+      <span class="badge">${shown.length}/${params.length}</span></div>`;
     b.appendChild(g);
 
-    if (this.mode === 'simple') {
+    g.appendChild(this.searchBox('Search parameters and actions…'));
+
+    if (!shown.length && q) {
       const n = document.createElement('div');
       n.className = 'note';
-      n.textContent = 'Simple mode shows the essentials. Switch to Advanced or Expert for the full parameter set.';
+      n.textContent = `Nothing matches “${this.filter}”.`;
       g.appendChild(n);
     }
 
@@ -505,6 +509,7 @@ export class Shell {
         }
       };
       for (const a of actions) {
+        if (!match(a.label + ' ' + a.key)) continue;
         const t = titleOf(a.key);
         if (!groups.has(t)) groups.set(t, []);
         groups.get(t)!.push(a);
@@ -523,7 +528,8 @@ export class Shell {
         const row = document.createElement('div');
         row.className = 'btnrow';
         // large groups start collapsed so the panel stays compact
-        const startCollapsed = list.length > 8 && this.mode === 'simple';
+        // While searching, never hide a hit behind a collapsed group.
+        const startCollapsed = !q && list.length > 8;
         row.style.display = startCollapsed ? 'none' : '';
         head.onclick = () => {
           row.style.display = row.style.display === 'none' ? '' : 'none';
@@ -1155,6 +1161,44 @@ export class Shell {
       wg.appendChild(r);
     });
     b.appendChild(wg);
+  }
+
+  /**
+   * Search field for a panel. Replaces the Simple/Advanced/Expert tiers:
+   * rather than hiding controls, let people find them.
+   */
+  private searchBox(placeholder: string): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'searchrow';
+
+    const input = document.createElement('input');
+    input.type = 'search';
+    input.className = 'searchin';
+    input.dataset.search = 'controls';
+    input.placeholder = placeholder;
+    input.value = this.filter;
+    input.oninput = () => {
+      this.filter = input.value;
+      this.wm.refresh('controls');
+      // Re-focus after the rebuild so typing is never interrupted.
+      const again = document.querySelector<HTMLInputElement>('[data-search="controls"]');
+      if (again) {
+        again.focus();
+        again.setSelectionRange(again.value.length, again.value.length);
+      }
+    };
+    wrap.appendChild(input);
+
+    if (this.filter) {
+      const clear = document.createElement('button');
+      clear.className = 'searchx';
+      clear.dataset.searchClear = '1';
+      clear.textContent = '×';
+      clear.title = 'Clear search';
+      clear.onclick = () => { this.filter = ''; this.wm.refresh('controls'); };
+      wrap.appendChild(clear);
+    }
+    return wrap;
   }
 
   /** Labelled checkbox row used across the advanced panels. */

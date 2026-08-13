@@ -33,7 +33,7 @@ const PAIRS = [
   ['src/bjs/worlds/BlackHoleWorld.ts', 'VERT', 'FRAG', ['src/bjs/worlds/BlackHoleWorld.ts']],
   ['src/bjs/worlds/OceanWorld.ts', 'OCEAN_VERT', 'OCEAN_FRAG', ['src/bjs/worlds/OceanWorld.ts']],
   ['src/bjs/shaders/PlanetShader.ts', 'PLANET_VERT', 'PLANET_FRAG',
-   ['src/bjs/worlds/PlanetaryWorld.ts', 'src/bjs/worlds/SandboxWorld.ts']],
+   ['src/bjs/worlds/PlanetaryWorld.ts', 'src/bjs/worlds/SandboxWorld.ts', 'src/bjs/PlanetMaps.ts']],
   ['src/bjs/worlds/PlanetaryWorld.ts', 'ATMO_VERT', 'ATMO_FRAG', ['src/bjs/worlds/PlanetaryWorld.ts']],
   ['src/bjs/shaders/PortalShader.ts', 'PORTAL_VERT', 'PORTAL_FRAG', ['src/bjs/systems/PortalSystem.ts']]
 ];
