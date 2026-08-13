@@ -101,7 +101,13 @@ export function profileFor(seed: number, exotic = false): SurfaceProfile {
     storminess: rng() * (climate === 'arid' ? 0.4 : 1.6),
     gravity: 0.4 + rng() * 1.9,
     oceanDepth: base.depth * (0.7 + rng() * 0.8),
-    species: speciesFor(seed ^ 0x5f3759df, climate === 'frozen' ? 2 : 2 + Math.floor(rng() * 5))
+    // Life native to this climate: jellyfish on ocean worlds, centipedes in
+    // volcanic trenches, rather than the same creatures everywhere.
+    species: speciesFor(
+      seed ^ 0x5f3759df,
+      climate === 'frozen' ? 2 : 2 + Math.floor(rng() * 5),
+      climate
+    )
   };
 }
 

@@ -24,7 +24,9 @@ import type { Scene } from '@babylonjs/core/scene';
 /** How the ground is queried. Any world can supply this. */
 export type GroundProbe = (x: number, z: number) => { height: number; normal: Vector3 } | null;
 
-export type BodyPlan = 'grazer' | 'strider' | 'hopper' | 'crawler' | 'floater';
+export type BodyPlan =
+  | 'grazer' | 'strider' | 'hopper' | 'crawler' | 'floater'
+  | 'jelly' | 'centipede' | 'swarm' | 'colossus' | 'tendril';
 
 export interface Species {
   name: string;
@@ -57,10 +59,32 @@ const PLAN_NAMES: Record<BodyPlan, string[]> = {
   strider: ['Stilt Strider', 'Longlimb', 'Ridgewalker', 'Pale Strider'],
   hopper: ['Dustshrew', 'Springlegs', 'Pocket Hopper', 'Gravel Flea'],
   crawler: ['Plated Crawler', 'Silt Crawler', 'Rock Louse', 'Shalebug'],
-  floater: ['Driftbell', 'Sky Medusa', 'Gasbag', 'Lumen Drifter']
+  floater: ['Driftbell', 'Sky Medusa', 'Gasbag', 'Lumen Drifter'],
+  jelly: ['Bubble Medusa', 'Ascendant Jelly', 'Lantern Bell', 'Glass Cathedral'],
+  centipede: ['Great Centipede', 'Segmented Horror', 'Hundred-Leg', 'Trench Myriapod'],
+  swarm: ['Chitter Swarm', 'Mote Cloud', 'Whisper Flock', 'Locust Veil'],
+  colossus: ['Walking Mountain', 'Titan Grazer', 'Old Ambler', 'Continental Beast'],
+  tendril: ['Root Horror', 'Grasping Vine', 'Anemone Tower', 'Reaching Thing']
 };
 
-const PLANS: BodyPlan[] = ['grazer', 'strider', 'hopper', 'crawler', 'floater'];
+const PLANS: BodyPlan[] = [
+  'grazer', 'strider', 'hopper', 'crawler', 'floater',
+  'jelly', 'centipede', 'swarm', 'colossus', 'tendril'
+];
+
+/**
+ * Which body plans suit which climate. A jellyfish belongs on an ocean
+ * world; a centipede belongs in volcanic trenches. Passing a climate makes
+ * a planet's life feel native to it rather than randomly assigned.
+ */
+export const PLANS_BY_CLIMATE: Record<string, BodyPlan[]> = {
+  ocean: ['jelly', 'floater', 'tendril', 'swarm', 'crawler'],
+  temperate: ['grazer', 'strider', 'hopper', 'colossus', 'swarm'],
+  arid: ['crawler', 'hopper', 'centipede', 'strider'],
+  frozen: ['crawler', 'grazer', 'tendril'],
+  volcanic: ['centipede', 'crawler', 'swarm'],
+  exotic: PLANS
+};
 
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -73,23 +97,37 @@ function mulberry32(seed: number): () => number {
 }
 
 /** Builds a plausible species set for a planet from its seed. */
-export function speciesFor(seed: number, count = 3): Species[] {
+export function speciesFor(seed: number, count = 3, climate?: string): Species[] {
   const rng = mulberry32(seed);
   const out: Species[] = [];
+  const pool = (climate && PLANS_BY_CLIMATE[climate]) || PLANS;
   for (let i = 0; i < count; i++) {
-    const plan = PLANS[Math.floor(rng() * PLANS.length)];
+    const plan = pool[Math.floor(rng() * pool.length)];
     const names = PLAN_NAMES[plan];
-    const size = plan === 'floater' ? 1.2 + rng() * 2.2
-      : plan === 'strider' ? 1.4 + rng() * 2.6
-        : 0.5 + rng() * 1.1;
+    const size =
+      plan === 'colossus' ? 9 + rng() * 22           // walking mountains
+        : plan === 'centipede' ? 3.5 + rng() * 9     // as long as a bus
+          : plan === 'jelly' ? 2.5 + rng() * 7
+            : plan === 'tendril' ? 2 + rng() * 6
+              : plan === 'swarm' ? 0.25 + rng() * 0.4
+                : plan === 'floater' ? 1.2 + rng() * 2.2
+                  : plan === 'strider' ? 1.4 + rng() * 2.6
+                    : 0.5 + rng() * 1.1;
     out.push({
       name: names[Math.floor(rng() * names.length)],
       plan,
       size,
       colour: new Color3(0.25 + rng() * 0.6, 0.25 + rng() * 0.5, 0.25 + rng() * 0.55),
-      speed: plan === 'hopper' ? 4 + rng() * 5 : 1.2 + rng() * 3.2,
+      speed: plan === 'hopper' ? 4 + rng() * 5
+        : plan === 'swarm' ? 5 + rng() * 7
+          : plan === 'colossus' ? 0.3 + rng() * 0.8   // slow and enormous
+            : plan === 'centipede' ? 2.5 + rng() * 5
+              : 1.2 + rng() * 3.2,
       shy: 6 + rng() * 16,
-      herd: plan === 'grazer' ? 6 + Math.floor(rng() * 10) : 2 + Math.floor(rng() * 6)
+      herd: plan === 'swarm' ? 40 + Math.floor(rng() * 70)
+        : plan === 'colossus' ? 1 + Math.floor(rng() * 2)
+          : plan === 'grazer' ? 6 + Math.floor(rng() * 10)
+            : 2 + Math.floor(rng() * 6)
     });
   }
   return out;
@@ -169,6 +207,29 @@ export class LifeSystem {
         mesh = MeshBuilder.CreateSphere('life_' + si,
           { diameter: s, segments: 10 }, this.scene);
         break;
+      case 'jelly':
+        // A bell, wider than tall, that drifts upward.
+        mesh = MeshBuilder.CreateSphere('life_' + si,
+          { diameterX: s, diameterZ: s, diameterY: s * 0.72, segments: 12 }, this.scene);
+        break;
+      case 'centipede':
+        // Long and low: reads as a segmented body from a distance.
+        mesh = MeshBuilder.CreateCapsule('life_' + si,
+          { radius: s * 0.16, height: s * 2.2, subdivisions: 4, tessellation: 8 }, this.scene);
+        break;
+      case 'swarm':
+        mesh = MeshBuilder.CreateSphere('life_' + si,
+          { diameter: s, segments: 5 }, this.scene);
+        break;
+      case 'colossus':
+        mesh = MeshBuilder.CreateCapsule('life_' + si,
+          { radius: s * 0.34, height: s * 1.5, subdivisions: 3, tessellation: 10 }, this.scene);
+        break;
+      case 'tendril':
+        mesh = MeshBuilder.CreateCylinder('life_' + si,
+          { diameterTop: s * 0.08, diameterBottom: s * 0.42, height: s * 2.0, tessellation: 8 },
+          this.scene);
+        break;
       default:
         mesh = MeshBuilder.CreateCapsule('life_' + si,
           { radius: s * 0.42, height: s * 1.1, subdivisions: 2, tessellation: 8 }, this.scene);
@@ -177,9 +238,14 @@ export class LifeSystem {
     const mat = new StandardMaterial('lifeM_' + si, this.scene);
     mat.diffuseColor = sp.colour;
     // Never fully black under any lighting - a silhouette still reads.
-    mat.emissiveColor = sp.plan === 'floater'
-      ? sp.colour.scale(0.55)
-      : sp.colour.scale(0.10);
+    // Jellies and drifters are bioluminescent; everything else just avoids
+    // going fully black on the unlit side.
+    mat.emissiveColor =
+      sp.plan === 'jelly' ? sp.colour.scale(0.75)
+        : sp.plan === 'floater' ? sp.colour.scale(0.55)
+          : sp.plan === 'swarm' ? sp.colour.scale(0.35)
+            : sp.colour.scale(0.10);
+    if (sp.plan === 'jelly') mat.alpha = 0.72;
     mat.specularColor = new Color3(0.12, 0.12, 0.12);
     this.mats.push(mat);
 
@@ -249,9 +315,18 @@ export class LifeSystem {
       const bob = sp.plan === 'hopper'
         ? Math.abs(Math.sin(c.phase)) * sp.size * 0.7
         : Math.sin(c.phase) * sp.size * 0.05;
-      c.pos.y = sp.plan === 'floater'
-        ? g.height + sp.size * 2.4 + Math.sin(c.phase * 0.5) * sp.size * 0.5
-        : g.height + sp.size * 0.5 + bob;
+      if (sp.plan === 'jelly') {
+        // Jellies pulse upward like bubbles, then sink back and rise again,
+        // so a shoal of them climbs the whole water column.
+        const climb = (c.phase * 0.35) % 6.0;
+        c.pos.y = g.height + sp.size * 1.5 + climb * sp.size * 3.2;
+      } else if (sp.plan === 'floater') {
+        c.pos.y = g.height + sp.size * 2.4 + Math.sin(c.phase * 0.5) * sp.size * 0.5;
+      } else if (sp.plan === 'swarm') {
+        c.pos.y = g.height + sp.size * 4 + Math.sin(c.phase * 1.7) * sp.size * 3;
+      } else {
+        c.pos.y = g.height + sp.size * 0.5 + bob;
+      }
     }
     this.syncInstances();
   }

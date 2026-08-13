@@ -145,6 +145,57 @@ console.log('\n— the wheel is a real throttle —');
   ml.detach();
 }
 
+console.log('\n— shift+wheel is an optical zoom —');
+{
+  const ml = new MouseLook();
+  ml.attach(canvas);
+  ok('zoom starts at 1x', Math.abs(ml.zoomScale - 1) < 1e-9);
+
+  const shiftWheel = (dy) => canvas.dispatchEvent(
+    new dom.window.WheelEvent('wheel', { deltaY: dy, shiftKey: true, bubbles: true, cancelable: true }));
+
+  const throttleBefore = ml.throttleScale;
+  shiftWheel(-100);
+  ok(`shift+wheel magnifies (${ml.zoomScale.toFixed(2)}x)`, ml.zoomScale > 1);
+  ok('and does not touch the throttle',
+     Math.abs(ml.throttleScale - throttleBefore) < 1e-9);
+
+  const plain = ml.zoomScale;
+  wheel(canvas, -100);
+  ok('plain wheel does not touch the zoom',
+     Math.abs(ml.zoomScale - plain) < 1e-9);
+
+  for (let i = 0; i < 200; i++) shiftWheel(-100);
+  ok(`zoom is capped (${ml.zoomScale.toFixed(1)}x)`,
+     Number.isFinite(ml.zoomScale) && ml.zoomScale <= 60);
+  for (let i = 0; i < 400; i++) shiftWheel(100);
+  ok('zoom never goes below 1x', ml.zoomScale >= 1);
+
+  shiftWheel(-100);
+  ml.resetZoom();
+  ok('zoom can be snapped back', Math.abs(ml.zoomScale - 1) < 1e-9);
+  ml.detach();
+}
+
+console.log('\n— flying near things is not a cannon —');
+{
+  // Speed scales with how far away the nearest thing is. It used to be
+  // linear, so being 500 units out gave 283 u/s and close work was
+  // unusable. It must stay gentle near things and still climb far away.
+  const src = fs.readFileSync('src/bjs/systems/VehicleSystem.ts', 'utf8');
+  ok('speed scaling is sub-linear', src.includes('Math.sqrt(near)'));
+
+  const speedAt = (d) => Math.max(2, Math.min(60000, Math.sqrt(d) * 3.2 + d * 0.02 + 3));
+  ok(`close manoeuvring is slow (${speedAt(20).toFixed(0)} u/s at 20 units)`,
+     speedAt(20) < 30);
+  ok(`mid range is moderate (${speedAt(500).toFixed(0)} u/s at 500)`,
+     speedAt(500) < 150);
+  ok(`deep space is still fast (${speedAt(100000).toFixed(0)} u/s)`,
+     speedAt(100000) > 1500);
+  ok('speed always increases with distance',
+     speedAt(10) < speedAt(100) && speedAt(100) < speedAt(10000));
+}
+
 console.log('\n— it never fights the interface —');
 {
   const panel = document.createElement('div');
@@ -189,6 +240,9 @@ console.log('\n— wired into the app —');
   ok('the wheel scales real flight speed',
      app.includes('this.mouse.throttleScale'));
   ok('there is a pointer-lock key', /toggleLock\(\)/.test(app));
+  ok('optical zoom drives the real camera FOV',
+     app.includes('this.mouse.zoomScale') && app.includes('this.camera.fov'));
+  ok('zoom can be reset with a key', app.includes('resetZoom()'));
 
   const v = fs.readFileSync('src/bjs/systems/VehicleSystem.ts', 'utf8');
   ok('free-fly is still the launch default', fs.readFileSync('src/bjs/App.ts', 'utf8')

@@ -240,7 +240,12 @@ export class VehicleController {
    */
   setScaleSpeed(distanceToNearest: number): void {
     const d = Number.isFinite(distanceToNearest) ? Math.abs(distanceToNearest) : 100;
-    this.flySpeed = Math.max(6, Math.min(60000, d * 0.55 + 8));
+    // Sub-linear scaling. A straight d*0.55 meant that merely being 1000
+    // units from a planet gave you 560 u/s, so close manoeuvring felt like
+    // being fired out of a cannon. sqrt keeps precision near things while
+    // still letting speed climb into the thousands in deep space.
+    const near = Math.max(0, d);
+    this.flySpeed = Math.max(2, Math.min(60000, Math.sqrt(near) * 3.2 + near * 0.02 + 3));
   }
 
   /* ---------------------------------- walk ---------------------------------- */

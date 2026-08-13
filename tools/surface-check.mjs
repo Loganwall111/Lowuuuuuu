@@ -66,6 +66,32 @@ console.log('— each planet has its own character —');
      `arid ${(aridRain / na).toFixed(2)} vs ocean ${(oceanRain / no).toFixed(2)}`);
 }
 
+console.log('\n— life matches the world it lives on —');
+{
+  // An ocean world should not be populated by desert crawlers.
+  let oceanJelly = 0, volcCentipede = 0, checked = 0;
+  for (let i = 1; i < 1500; i++) {
+    const p = profileFor(i);
+    if (p.climate === 'ocean') {
+      checked++;
+      if (p.species.some((s) => s.plan === 'jelly')) oceanJelly++;
+    }
+    if (p.climate === 'volcanic' && p.species.some((s) => s.plan === 'centipede')) {
+      volcCentipede++;
+    }
+  }
+  ok(`ocean worlds grow jellyfish (${oceanJelly}/${checked})`, oceanJelly > 0);
+  ok(`volcanic worlds grow centipedes (${volcCentipede} found)`, volcCentipede > 0);
+
+  const arid = [];
+  for (let i = 1; i < 1500 && arid.length < 40; i++) {
+    const p = profileFor(i);
+    if (p.climate === 'arid') arid.push(p);
+  }
+  ok('arid worlds never grow jellyfish',
+     arid.every((p) => !p.species.some((s) => s.plan === 'jelly')));
+}
+
 console.log('\n— surfaces are per planet, not global —');
 {
   const sys = new PlanetSurfaceSystem();

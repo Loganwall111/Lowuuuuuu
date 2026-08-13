@@ -45,6 +45,36 @@ console.log('— species generation —');
   }
 }
 
+console.log('\n— planets have genuinely strange natives —');
+{
+  const { PLANS_BY_CLIMATE } = await load('src/bjs/systems/LifeSystem.ts', 'life2');
+  ok('climates have their own life', Object.keys(PLANS_BY_CLIMATE).length >= 5);
+  ok('ocean worlds get jellyfish', PLANS_BY_CLIMATE.ocean.includes('jelly'));
+  ok('volcanic worlds get centipedes', PLANS_BY_CLIMATE.volcanic.includes('centipede'));
+
+  // Climate must actually constrain what spawns.
+  const oceanKinds = new Set();
+  for (let i = 1; i < 400; i++) {
+    speciesFor(i, 4, 'ocean').forEach((sp) => oceanKinds.add(sp.plan));
+  }
+  ok('ocean life is drawn from the ocean pool',
+     [...oceanKinds].every((k) => PLANS_BY_CLIMATE.ocean.includes(k)),
+     [...oceanKinds].join(','));
+
+  // The headline creatures must be reachable and appropriately huge.
+  let big = 0, longOnes = 0, swarms = 0;
+  for (let i = 1; i < 600; i++) {
+    for (const sp of speciesFor(i, 5)) {
+      if (sp.plan === 'colossus' && sp.size > 8) big++;
+      if (sp.plan === 'centipede' && sp.size > 3) longOnes++;
+      if (sp.plan === 'swarm' && sp.herd > 30) swarms++;
+    }
+  }
+  ok(`colossi are genuinely enormous (${big} found)`, big > 0);
+  ok(`centipedes are large (${longOnes} found)`, longOnes > 0);
+  ok(`swarms come in big flocks (${swarms} found)`, swarms > 0);
+}
+
 console.log('\n— creatures live on the terrain —');
 {
   // A simple hilly ground so we can check clamping.
@@ -82,13 +112,26 @@ console.log('\n— creatures live on the terrain —');
     ok('none of them walk off the edge of the world', offGrid.length === 0,
        offGrid.length + ' escaped');
 
+    // Some plans are meant to be airborne: jellies climb like bubbles,
+    // swarms hover, floaters drift. Only ground-dwellers must stay clamped.
+    const AIRBORNE = new Set(['floater', 'jelly', 'swarm']);
     const floating = life.critters.filter((c) => {
       const sp = life.species[c.species];
-      if (sp.plan === 'floater') return false;   // floaters are meant to be up high
+      if (AIRBORNE.has(sp.plan)) return false;
       return Math.abs(c.pos.y - height(c.pos.x, c.pos.z)) > sp.size * 2.5;
     });
     ok('walkers stay clamped to the ground', floating.length === 0,
        floating.length + ' detached');
+
+    // ...and the airborne ones must actually leave the ground.
+    const risers = life.critters.filter((c) => {
+      const sp = life.species[c.species];
+      return AIRBORNE.has(sp.plan) && c.pos.y > height(c.pos.x, c.pos.z) + sp.size;
+    });
+    const airborneCount = life.critters.filter((c) =>
+      AIRBORNE.has(life.species[c.species].plan)).length;
+    ok(`airborne species actually fly (${risers.length}/${airborneCount})`,
+       airborneCount === 0 || risers.length > 0);
 
     ok('every position stays finite',
        life.critters.every((c) =>

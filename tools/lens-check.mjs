@@ -187,5 +187,35 @@ console.log('\n— descriptions for the UI —');
      describeProfile(LENS_PROFILES.schwarzschild).Symmetry === 'radial');
 }
 
+console.log('\n— lensing works everywhere, not just in one world —');
+{
+  // The regression: the warp lived inside BlackHoleWorld's raymarcher, so
+  // you only saw it if you switched to that world. In one continuous
+  // universe it has to bend whatever is on screen.
+  const lfx = fs.readFileSync('src/bjs/systems/LensFX.ts', 'utf8');
+  ok('there is a universal lensing pass', lfx.includes('universalLens'));
+  ok('it is a screen-space post-process', lfx.includes('PostProcess'));
+  ok('deflection falls off with distance', lfx.includes('pow(clamp(holeR / rr'));
+  ok('it honours alien lens shapes',
+     lfx.includes('symmetry') && lfx.includes('distortion') && lfx.includes('twist'));
+  ok('ringless holes are supported', lfx.includes('ringAmt > 0.001'));
+  ok('it never renders a dead black screen', lfx.includes('mix(col, tint * 0.05, inside)'));
+  ok('it switches itself off when idle', lfx.includes('active < 0.5'));
+  ok('a failed post-process cannot stop rendering', lfx.includes('Gravitational lensing unavailable'));
+
+  const app = fs.readFileSync('src/bjs/App.ts', 'utf8');
+  ok('the app owns a universal lens', app.includes('new LensFX'));
+  ok('it is attached on every world load', app.includes('this.lensfx.attach('));
+  ok('it tracks the nearest hole each frame', app.includes('this.lensfx.track('));
+  ok('it clears when no hole is near', app.includes('this.lensfx.clear()'));
+  ok('lensing state is reported in telemetry', app.includes('this.lensfx.stats()'));
+
+  // It must not be gated on being in the blackhole world.
+  const trackIdx = app.indexOf('this.lensfx.track(');
+  const slice = app.slice(Math.max(0, trackIdx - 900), trackIdx);
+  ok('lensing is not gated on the blackhole world',
+     !/currentId\s*===\s*'blackhole'/.test(slice));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

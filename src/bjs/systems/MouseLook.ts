@@ -42,6 +42,8 @@ export class MouseLook {
   private dy = 0;
   /** Throttle multiplier driven by the wheel, 0.05x .. 20x. */
   private throttle = 1;
+  /** Optical zoom, 1 = normal, higher = magnified. Shift+wheel. */
+  private zoom = 1;
   private dragging = false;
   private locked = false;
   private enabled = true;
@@ -51,6 +53,13 @@ export class MouseLook {
   get isDragging(): boolean { return this.dragging; }
   get isLocked(): boolean { return this.locked; }
   get throttleScale(): number { return this.throttle; }
+  /** Magnification factor; feed this into the camera FOV. */
+  get zoomScale(): number { return this.zoom; }
+
+  setZoom(v: number): void {
+    this.zoom = Math.max(1, Math.min(60, Number.isFinite(v) ? v : 1));
+  }
+  resetZoom(): void { this.zoom = 1; }
 
   setEnabled(on: boolean): void {
     this.enabled = on;
@@ -101,9 +110,15 @@ export class MouseLook {
     const onWheel = (e: WheelEvent) => {
       if (!this.enabled || isUI(e.target)) return;
       e.preventDefault();
-      // Exponential so one flick spans a big range, like a real throttle.
       const dir = e.deltaY > 0 ? -1 : 1;
-      this.setThrottle(this.throttle * Math.exp(dir * this.opts.wheelStep));
+      // Shift+wheel is an optical zoom - the "spyglass" for picking out a
+      // distant planet. Plain wheel is the throttle.
+      if (e.shiftKey) {
+        this.setZoom(this.zoom * Math.exp(dir * this.opts.wheelStep * 1.4));
+      } else {
+        // Exponential so one flick spans a big range, like a real throttle.
+        this.setThrottle(this.throttle * Math.exp(dir * this.opts.wheelStep));
+      }
     };
     const onLockChange = () => {
       const d = el.ownerDocument;
@@ -186,6 +201,7 @@ export class MouseLook {
   stats(): Record<string, string> {
     return {
       'Throttle': this.throttle.toFixed(2) + '×',
+      'Zoom': this.zoom > 1.01 ? this.zoom.toFixed(1) + '×' : '1×',
       'Mouse look': this.locked ? 'locked' : this.dragging ? 'dragging' : 'idle'
     };
   }

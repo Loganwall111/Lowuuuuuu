@@ -22,6 +22,8 @@ import { MainMenu } from './ui/MainMenu';
 import { WarpSystem } from './systems/WarpSystem';
 import { PlanetSurfaceSystem } from './systems/PlanetSurfaceSystem';
 import { MouseLook } from './systems/MouseLook';
+import { LensFX } from './systems/LensFX';
+import { StationSystem } from './systems/StationSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
 import { QualitySystem, QUALITY, type QualityName } from './systems/QualitySystem';
@@ -68,6 +70,10 @@ export class App {
   grab = new GrabSystem();
   /** Last position outside any horizon, so we know which way is "back". */
   private lastOutsidePos = new Vector3(0, 0, -220);
+  /** Procedural space stations you can dock with and walk inside. */
+  stations: StationSystem | null = null;
+  /** Gravitational lensing that works in every world, not just one. */
+  lensfx = new LensFX();
   /** Mouse look + wheel throttle, the other half of free flight. */
   mouse = new MouseLook();
   /** Every planet's own terrain, water, weather and life. */
@@ -116,7 +122,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats() },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...(this.stations?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -229,6 +235,7 @@ export class App {
     this.scene.skipPointerMovePicking = true;
 
     this.warp = new WarpSystem(this.scene);
+    this.stations = new StationSystem(this.scene);
 
     this.camera = new ArcRotateCamera('cam', -Math.PI / 2, 1.14, 60, Vector3.Zero(), this.scene);
     this.camera.attachControl(canvas, true);
@@ -285,6 +292,8 @@ export class App {
       if (e.key === ' ' && this.vehicle.mode !== 'orbit') e.preventDefault();
       // Pointer lock: look around without holding the button down.
       if (e.key.toLowerCase() === 'c') this.mouse.toggleLock();
+      // Snap the spyglass back to normal.
+      if (e.key.toLowerCase() === 'z') this.mouse.resetZoom();
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     window.addEventListener('blur', () => this.keys.clear());
@@ -355,6 +364,9 @@ export class App {
       this.world = w;
       this.currentId = id;
       this.postfx.attach(this.scene, this.camera);
+      // Lensing is a property of the universe, not of one world, so it is
+      // re-attached with the pipeline every time.
+      this.lensfx.attach(this.scene, this.camera);
       this.history.attach(
         typeof (w as any).captureState === 'function' ? (w as any) : null);
       this.shell.setWorld(w);
@@ -437,6 +449,9 @@ export class App {
 
   /** Ground height probe for walk mode; delegates to the world if it has one. */
   private groundProbe = (x: number, z: number) => {
+    // Aboard a station, the deck is the ground.
+    const deck = this.stations?.floorAt(x, z);
+    if (deck) return deck;
     const w = this.world as any;
     if (typeof w?.sampleGround === 'function') {
       const g = w.sampleGround(x, z);
@@ -537,6 +552,26 @@ export class App {
         this.surfaces.step(here.id, dt);
       }
 
+      // ---- gravitational lensing, wherever you happen to be ----
+      // BlackHoleWorld integrates photon paths properly for its own view;
+      // this bends whatever is actually on screen as you fly past a hole in
+      // any world, which is what makes it feel like one universe.
+      {
+        const hole = this.universe.insideHorizon ?? this.nearestHole();
+        if (hole) {
+          const hr = this.universe.horizonRadiusOf(hole);
+          const d = Vector3.Distance(eye, hole.position);
+          // Only worth doing when you are close enough to notice.
+          if (d < hr * 260) {
+            this.lensfx.track(hole.position, hr, this.camera, hole.lens ?? null);
+          } else {
+            this.lensfx.clear();
+          }
+        } else {
+          this.lensfx.clear();
+        }
+      }
+
       // ---- speed, distance and the warp effect ----
       // Measure actual travelled distance rather than trusting a throttle
       // value, so the readout matches what you can see happening.
@@ -546,8 +581,14 @@ export class App {
       this.shownSpeed += (instant - this.shownSpeed) * Math.min(1, dt * 6);
       this.prevEye.copyFrom(eye);
 
+      // Optical zoom drives the real camera FOV, so shift+wheel actually
+      // magnifies the view instead of only changing a speed number.
+      const wantFov = 0.9 / Math.max(1, this.mouse.zoomScale);
+      this.camera.fov += (wantFov - this.camera.fov) * Math.min(1, dt * 8);
+
       const fwd = this.camera.getTarget().subtract(this.camera.position);
       this.warp.update(dt, this.shownSpeed, eye, fwd);
+      this.stations?.update(dt);
 
       this.shell.setFlight(
         this.shownSpeed,
