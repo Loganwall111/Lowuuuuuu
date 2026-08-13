@@ -53,7 +53,7 @@ export interface ObjectDef {
   id: string;
   name: string;
   glyph: string;
-  category: 'Cosmic' | 'Goofy' | 'Food' | 'Furniture' | 'Vehicles' | 'Alien' | 'Creatures' | 'Tools' | 'Sports';
+  category: 'Cosmic' | 'Goofy' | 'Food' | 'Furniture' | 'Vehicles' | 'Alien' | 'Creatures' | 'Tools' | 'Sports' | 'Toys' | 'Absurd';
   shape: Shape;
   /** Base radius in world units before the scale multiplier. */
   radius: number;
@@ -174,7 +174,41 @@ export const CATALOG: ObjectDef[] = [
   { id: 'crab',        name: 'Giant Crab',        glyph: '🦀', category: 'Creatures', shape: 'creature', radius: 2.2, mass: 8, material: Material.Organic, color: [0.9, 0.3, 0.2] },
   { id: 'cactus',      name: 'Giant Cactus',      glyph: '🌵', category: 'Creatures', shape: 'capsule',  radius: 2.4, mass: 6, material: Material.Organic, color: [0.25, 0.55, 0.3] },
   { id: 'mushroom',    name: 'Giant Mushroom',    glyph: '🍄', category: 'Creatures', shape: 'cone',     radius: 2.2, mass: 4, material: Material.Organic, color: [0.85, 0.25, 0.25] },
-  { id: 'tree',        name: 'Giant Tree',        glyph: '🌳', category: 'Creatures', shape: 'capsule',  radius: 3.0, mass: 14, material: Material.Wood, color: [0.3, 0.5, 0.25] }
+  { id: 'tree',        name: 'Giant Tree',        glyph: '🌳', category: 'Creatures', shape: 'capsule',  radius: 3.0, mass: 14, material: Material.Wood, color: [0.3, 0.5, 0.25] },
+
+  /* ---------------------------- Toys ---------------------------- */
+  { id: 'yoyo',         name: 'Yo-Yo',             glyph: '🪀', category: 'Toys', shape: 'cylinder', radius: 0.5, mass: 0.3,  material: Material.Rubber },
+  { id: 'teddy',        name: 'Teddy Bear',        glyph: '🧸', category: 'Toys', shape: 'creature', radius: 0.9, mass: 0.6,  material: Material.Organic },
+  { id: 'balloon',      name: 'Party Balloon',     glyph: '🎈', category: 'Toys', shape: 'sphere',   radius: 0.9, mass: 0.05, material: Material.Rubber },
+  { id: 'kite',         name: 'Kite',              glyph: '🪁', category: 'Toys', shape: 'box',      radius: 1.1, mass: 0.2,  material: Material.Wood },
+  { id: 'legobrick',    name: 'Lego Brick',        glyph: '🧱', category: 'Toys', shape: 'box',      radius: 0.5, mass: 0.2,  material: Material.Rubber },
+  { id: 'rubikscube',   name: 'Puzzle Cube',       glyph: '🧩', category: 'Toys', shape: 'box',      radius: 0.7, mass: 0.5,  material: Material.Rubber },
+  { id: 'spinningtop',  name: 'Spinning Top',      glyph: '🔝', category: 'Toys', shape: 'cone',     radius: 0.6, mass: 0.4,  material: Material.Wood },
+  { id: 'slinky',       name: 'Slinky',            glyph: '🌀', category: 'Toys', shape: 'torus',    radius: 0.8, mass: 0.5,  material: Material.Metal },
+  { id: 'dartboard',    name: 'Dartboard',         glyph: '🎯', category: 'Toys', shape: 'cylinder', radius: 1.4, mass: 3,    material: Material.Wood },
+  { id: 'jackinbox',    name: 'Jack-in-the-Box',   glyph: '🎁', category: 'Toys', shape: 'box',      radius: 0.9, mass: 1.5,  material: Material.Wood },
+  { id: 'beachball',    name: 'Beach Ball',        glyph: '🏐', category: 'Toys', shape: 'sphere',   radius: 1.2, mass: 0.3,  material: Material.Rubber },
+  { id: 'pogostick',    name: 'Pogo Stick',        glyph: '🦯', category: 'Toys', shape: 'cylinder', radius: 0.4, mass: 2,    material: Material.Metal },
+  { id: 'watergun',     name: 'Water Pistol',      glyph: '🔫', category: 'Toys', shape: 'box',      radius: 0.5, mass: 0.4,  material: Material.Rubber },
+  { id: 'bouncycastle', name: 'Bouncy Castle',     glyph: '🏰', category: 'Toys', shape: 'box',      radius: 4,   mass: 30,   material: Material.Rubber },
+  { id: 'rubberchicken',name: 'Rubber Chicken',    glyph: '🐔', category: 'Toys', shape: 'creature', radius: 0.8, mass: 0.4,  material: Material.Rubber },
+
+  /* --------------------------- Absurd --------------------------- */
+  { id: 'gianteyeball',  name: 'Giant Eyeball',     glyph: '👁', category: 'Absurd', shape: 'sphere',   radius: 3,   mass: 45,   material: Material.Organic },
+  { id: 'floatinghead',  name: 'Floating Head',     glyph: '🗿', category: 'Absurd', shape: 'blob',     radius: 2.6, mass: 90,   material: Material.Stone },
+  { id: 'sentientsofa',  name: 'Sentient Sofa',     glyph: '🛋', category: 'Absurd', shape: 'box',      radius: 2.2, mass: 40,   material: Material.Organic },
+  { id: 'impossiblestair',name:'Impossible Stair',  glyph: '🪜', category: 'Absurd', shape: 'box',      radius: 3,   mass: 25,   material: Material.Stone },
+  { id: 'cubeplanet',    name: 'Cube Planet',       glyph: '🧊', category: 'Absurd', shape: 'box',      radius: 7,   mass: 500,  material: Material.Stone },
+  { id: 'donutplanet',   name: 'Donut Planet',      glyph: '🍩', category: 'Absurd', shape: 'torus',    radius: 8,   mass: 420,  material: Material.Stone },
+  { id: 'upsidedownhouse',name:'Upside-Down House', glyph: '🏚', category: 'Absurd', shape: 'box',      radius: 2.6, mass: 60,   material: Material.Wood },
+  { id: 'screamingskull',name: 'Screaming Skull',   glyph: '💀', category: 'Absurd', shape: 'blob',     radius: 1.1, mass: 8,    material: Material.Stone },
+  { id: 'alienjellyfish',name: 'Alien Jellyfish',   glyph: '🎐', category: 'Absurd', shape: 'blob',     radius: 2.4, mass: 6,    material: Material.Alien },
+  { id: 'pocketblackhole',name:'Pocket Black Hole', glyph: '⚫', category: 'Absurd', shape: 'sphere',   radius: 1.2, mass: 3000, material: Material.Plasma },
+  { id: 'tornadojar',    name: 'Tornado in a Jar',  glyph: '🌪', category: 'Absurd', shape: 'cylinder', radius: 1,   mass: 4,    material: Material.Glass },
+  { id: 'duckking',      name: 'Rubber Duck King',  glyph: '👑', category: 'Absurd', shape: 'duck',     radius: 6,   mass: 240,  material: Material.Rubber },
+  { id: 'colossalmeatball',name:'Colossal Meatball',glyph: '🧆', category: 'Absurd', shape: 'sphere',   radius: 4.5, mass: 160,  material: Material.Organic },
+  { id: 'brain',         name: 'Disembodied Brain', glyph: '🧠', category: 'Absurd', shape: 'blob',     radius: 1.6, mass: 12,   material: Material.Organic },
+  { id: 'portaltoilet',  name: 'Portal Toilet',     glyph: '🚽', category: 'Absurd', shape: 'box',      radius: 1,   mass: 20,   material: Material.Glass }
 ];
 
 export const CATEGORIES = [...new Set(CATALOG.map((o) => o.category))];

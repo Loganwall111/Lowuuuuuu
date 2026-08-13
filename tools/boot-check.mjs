@@ -189,6 +189,36 @@ if (appRef) {
       try { w.update(1 / 60, appRef.ctx); } catch (e) { stepErr = e; }
       ok(`world "${id}" survives a simulation step`, !stepErr,
          stepErr ? String(stepErr.message) : '');
+
+      // EVERY action in EVERY world must be safe to click
+      const acts = w.getActions ? w.getActions() : [];
+      const bad = [];
+      for (const a of acts) {
+        try {
+          w.runAction(a.key, appRef.ctx);
+          w.update(1 / 60, appRef.ctx);
+          w.getStats();
+        } catch (e) {
+          bad.push(a.key + ': ' + (e && e.message ? e.message : e));
+        }
+      }
+      ok(`world "${id}": all ${acts.length} actions run safely`, bad.length === 0,
+         bad.slice(0, 3).join(' | '));
+
+      // and every parameter must accept its full documented range
+      const pErr = [];
+      for (const prm of (w.getParams ? w.getParams() : [])) {
+        for (const v of [prm.min, prm.max, (prm.min + prm.max) / 2]) {
+          try {
+            w.setParam(prm.key, v);
+            w.update(1 / 60, appRef.ctx);
+          } catch (e) {
+            pErr.push(prm.key + '=' + v + ': ' + (e && e.message ? e.message : e));
+          }
+        }
+      }
+      ok(`world "${id}": every parameter accepts its full range`, pErr.length === 0,
+         pErr.slice(0, 3).join(' | '));
     }
   }
 

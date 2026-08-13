@@ -520,6 +520,94 @@ export class SandboxWorld implements World {
     this.bodies = this.bodies.filter((x) => x.alive);
   }
 
+  /**
+   * God powers: direct authorship of the universe. Each one acts through the
+   * same body list the solver uses, so nothing here is a special case.
+   */
+  private runGodPower(power: string, ctx: WorldContext): void {
+    const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+
+    if (power === 'lightning') {
+      // strike every body with a bolt of energy: heat plus a violent kick
+      for (const b of this.bodies) {
+        if (b.isStar || Math.random() > 0.55) continue;
+        const from = b.pos.add(new Vector3(rnd(-6, 6), 90, rnd(-6, 6)));
+        this.beams.fire('plasma', from, b.pos.subtract(from).normalize(),
+          0.7, 140, 0.35);
+        b.heat = Math.min(1.1, b.heat + 0.35);
+        b.vel.addInPlace(new Vector3(rnd(-4, 4), rnd(-8, -2), rnd(-4, 4)));
+        this.destruction.flash(b.pos, b.radius * 1.4, [0.8, 0.9, 1]);
+      }
+    } else if (power === 'planet') {
+      const a = Math.random() * Math.PI * 2;
+      const r = rnd(35, 95);
+      const speed = Math.sqrt((42 * 900) / r);
+      this.makeBody({
+        pos: new Vector3(Math.cos(a) * r, rnd(-8, 8), Math.sin(a) * r),
+        vel: new Vector3(-Math.sin(a), 0, Math.cos(a)).scale(speed),
+        mass: rnd(60, 420),
+        kind: [PlanetKind.Terran, PlanetKind.Rocky, PlanetKind.Ice,
+               PlanetKind.Desert, PlanetKind.Gas][Math.floor(Math.random() * 5)]
+      });
+    } else if (power === 'star') {
+      const a = Math.random() * Math.PI * 2;
+      const r = rnd(120, 200);
+      this.makeBody({
+        pos: new Vector3(Math.cos(a) * r, rnd(-20, 20), Math.sin(a) * r),
+        vel: new Vector3(-Math.sin(a), 0, Math.cos(a)).scale(rnd(4, 10)),
+        mass: rnd(700, 1600), kind: PlanetKind.Star, isStar: true,
+        tintA: new Color3(1, 0.85, 0.5), tintB: new Color3(1, 0.97, 0.85)
+      });
+    } else if (power === 'life') {
+      // scatter creatures across the largest world
+      const host = this.bodies.reduce<Body | null>(
+        (best, b) => (!b.isStar && (!best || b.mass > best.mass) ? b : best), null);
+      const ids = ['duck', 'chicken', 'teddy', 'brain', 'alienjellyfish', 'gianteyeball'];
+      for (let i = 0; i < 12; i++) {
+        this.spawnObject(ids[i % ids.length], 1, ctx);
+        const nb = this.bodies[this.bodies.length - 1];
+        if (nb && host) {
+          const d = new Vector3(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).normalize();
+          nb.pos.copyFrom(host.pos.add(d.scale(host.radius + 6)));
+          nb.vel.copyFrom(host.vel);
+          nb.mesh.position.copyFrom(nb.pos);
+        }
+      }
+    } else if (power === 'rapture') {
+      // everything gently ascends
+      for (const b of this.bodies) {
+        if (b.isStar) continue;
+        b.vel.y += 18;
+      }
+    } else if (power === 'freeze') {
+      for (const b of this.bodies) b.vel.setAll(0);
+      this.p.timeScale = 0;
+    } else if (power === 'reverse') {
+      for (const b of this.bodies) b.vel.scaleInPlace(-1);
+    } else if (power === 'cube') {
+      // every planet becomes a cube, because you are allowed to do that
+      for (const b of this.bodies) {
+        if (b.isStar) continue;
+        b.mesh.scaling.scaleInPlace(0.82);
+        (b.mesh as any).convertToFlatShadedMesh?.();
+      }
+    } else if (power === 'giant') {
+      for (const b of this.bodies) {
+        if (b.isStar) continue;
+        b.mass *= 2.2;
+        b.radius = Math.cbrt(b.mass) * 1.5;
+        b.mesh.scaling.scaleInPlace(1.5);
+      }
+    } else if (power === 'shrink') {
+      for (const b of this.bodies) {
+        if (b.isStar) continue;
+        b.mass = Math.max(0.05, b.mass / 2.2);
+        b.radius = Math.cbrt(b.mass) * 1.5;
+        b.mesh.scaling.scaleInPlace(1 / 1.5);
+      }
+    }
+  }
+
   /** Fires a beam from the camera toward the biggest body. */
   fireBeam(kind: BeamKind, ctx: WorldContext): void {
     const cam = ctx.camera;
@@ -620,6 +708,16 @@ export class SandboxWorld implements World {
       { key: 'beam:push', label: 'Planet Punch', glyph: '👊' },
       { key: 'beam:disintegrate', label: 'Disintegrator', glyph: '☠' },
       { key: 'smash', label: 'Planet Smasher', glyph: '💢' },
+      { key: 'god:lightning', label: 'Summon Lightning', glyph: '⚡' },
+      { key: 'god:planet', label: 'Create a Planet', glyph: '🌍' },
+      { key: 'god:star', label: 'Ignite a Star', glyph: '☀' },
+      { key: 'god:life', label: 'Seed Life', glyph: '🌱' },
+      { key: 'god:rapture', label: 'Lift Everything', glyph: '🕊' },
+      { key: 'god:freeze', label: 'Freeze Time', glyph: '❄' },
+      { key: 'god:reverse', label: 'Reverse Time', glyph: '⏪' },
+      { key: 'god:cube', label: 'Cube Everything', glyph: '🧊' },
+      { key: 'god:giant', label: 'Embiggen All', glyph: '🔎' },
+      { key: 'god:shrink', label: 'Shrink All', glyph: '🔬' },
       { key: 'ufo', label: 'Send a UFO', glyph: '🛸' },
       { key: 'invasion', label: 'ALIEN INVASION', glyph: '👽' },
       { key: 'mothership', label: 'Mothership', glyph: '🛰' },
@@ -634,6 +732,10 @@ export class SandboxWorld implements World {
   }
 
   runAction(key: string, ctx: WorldContext): void {
+    if (key.startsWith('god:')) {
+      this.runGodPower(key.slice(4), ctx);
+      return;
+    }
     if (key.startsWith('beam:')) {
       this.fireBeam(key.slice(5) as BeamKind, ctx);
       return;
