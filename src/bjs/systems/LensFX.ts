@@ -126,16 +126,30 @@ void main(void){
     // shadow moves a large fraction of the screen and the field visibly
     // wraps around the hole; scaled by the horizon it moved a sub-pixel
     // amount and the sky looked dead straight.
-    // Close to the shadow the thin-lens formula diverges - it is derived
-    // for weak deflection and stops being valid where light actually
-    // orbits. Left unbounded it asks for a displacement of twice the
-    // screen, which samples clamped edge pixels and turns the rim into a
-    // smear. Softening the denominator caps the shift near the shadow
-    // while leaving the far field exactly as the formula says.
-    float rr = max(r, lensR[i] * 0.45);
-    float bend = strength[i] * lensR[i]
-               * pow(clamp(lensR[i] / rr, 0.0, 1.0), max(falloff[i] - 1.0, 0.0))
-               * shape;
+    // The deflection: displacement = lensR^2 / theta, the thin-lens result.
+    //
+    // THIS IS THE LINE THAT LOOKED LIKE "nothing bends". It used to read
+    //   bend = strength * lensR * pow(clamp(lensR / rr, 0, 1), falloff - 1)
+    // and every part of that clamp conspires against it. Inside the
+    // Einstein radius lensR/rr exceeds 1 and clamps to exactly 1; the
+    // profiles in play have falloff between 0.98 and 1.32, so the exponent
+    // max(falloff-1, 0) is 0 or near it; and pow(1, 0) is 1. The bend
+    // therefore evaluated to strength*lensR - THE SAME VALUE AT EVERY
+    // PIXEL. A constant offset translates the whole image sideways. It
+    // cannot warp anything, because warping is by definition a deflection
+    // that varies across the field.
+    //
+    // Written as a ratio the falloff cannot be clamped away: theta appears
+    // in the denominator, so the deflection genuinely decays with distance
+    // and neighbouring pixels move by different amounts. The falloff knob
+    // now shapes the decay exponent directly, which is what it always meant.
+    float rr = max(r, lensR[i] * 0.42);
+    float decay = pow(max(rr / max(lensR[i], 1e-4), 1e-4), max(falloff[i], 0.35));
+    float bend = strength[i] * lensR[i] / max(decay, 1e-3) * shape;
+
+    // Cap the shift so a very close pass cannot ask for more than a screen
+    // and smear the rim into clamped edge pixels.
+    bend = clamp(bend, -0.75, 0.75);
 
     // Inside the horizon there is nothing to sample.
     //

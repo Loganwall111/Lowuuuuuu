@@ -300,6 +300,53 @@ const hole = (x, y, z, horizon = 40) =>
   })());
 }
 
+// -- THE DEFLECTION MUST VARY ACROSS THE SCREEN
+//
+// A bend that is the same at every pixel translates the image; it does not
+// warp it. The shipped shader did exactly that: clamp(lensR/rr, 0, 1) hits
+// 1 inside the Einstein radius, and the live lens profiles have falloff
+// between 0.98 and 1.32 so the exponent max(falloff-1, 0) was 0 - leaving
+// bend = strength * lensR, constant. Every structural test still passed.
+// Only evaluating the formula at several radii catches it.
+{
+  const frag = fs.readFileSync(SRC, 'utf8')
+    .match(/const\s+LENS_FRAG\s*=\s*`([\s\S]*?)`;/m)[1];
+
+  ok('the deflection is not a clamped power that can collapse to a constant',
+    !/pow\(clamp\(lensR\[i\] \/ rr/.test(frag));
+  ok('theta appears in the denominator of the deflection',
+    /lensR\[i\] \/ max\(decay/.test(frag));
+
+  // Model the shipped formula exactly and require real variation.
+  const bendAt = (theta, lensR, falloff, strength = 1) => {
+    const rr = Math.max(theta, lensR * 0.42);
+    const decay = Math.pow(Math.max(rr / Math.max(lensR, 1e-4), 1e-4),
+      Math.max(falloff, 0.35));
+    return Math.min(0.75, Math.max(-0.75, strength * lensR / Math.max(decay, 1e-3)));
+  };
+
+  // These are the real falloff values observed on live holes.
+  for (const fo of [0.98, 1.0, 1.20, 1.32, 2.0]) {
+    const near = bendAt(0.35, 0.3977, fo);
+    const far = bendAt(1.20, 0.3977, fo);
+    ok('deflection decays with distance at falloff ' + fo, near > far * 1.25,
+      'near ' + near.toFixed(4) + ' vs far ' + far.toFixed(4));
+  }
+
+  // The specific regression: falloff = 1 must NOT give a constant field.
+  const samples = [0.3, 0.5, 0.8, 1.1].map((t) => bendAt(t, 0.3977, 1.0));
+  const spread = Math.max(...samples) - Math.min(...samples);
+  ok('a falloff of 1 still produces a varying field', spread > 0.05,
+    'spread ' + spread.toFixed(4));
+
+  ok('the bend is bounded', bendAt(0.001, 0.9, 2.0) <= 0.75);
+  ok('the bend is large enough to see at mid-screen',
+    bendAt(0.5, 0.3977, 1.0) * 1080 > 40,
+    (bendAt(0.5, 0.3977, 1.0) * 1080).toFixed(0) + 'px');
+  ok('a distant hole bends far less than a near one',
+    bendAt(0.5, 0.05, 1.0) < bendAt(0.5, 0.4, 1.0));
+}
+
 // -- stats report the multi-hole count
 {
   const lens = makeLens();
