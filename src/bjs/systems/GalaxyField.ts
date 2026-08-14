@@ -561,7 +561,7 @@ export class GalaxyField {
         attributes: ['position'],
         uniforms: ['worldViewProjection', 'camPos', 'innerR', 'outerR',
           'thickness', 'arms', 'armFactor', 'anomaly', 'density', 'time',
-          'marchFar', 'tint', 'tintStrength']
+          'marchFar', 'u_verseColor', 'tintStrength', 'u_time', 'u_gasDensity']
       });
       const cfg = FIELD_GALAXY;
       mat.setFloat('innerR', cfg.innerBound);
@@ -573,9 +573,11 @@ export class GalaxyField {
       mat.setFloat('density', 1);
       mat.setFloat('time', 0);
       // Home galaxy: no external cast, so (1,1,1) and zero strength keep the
-      // Andromeda gold/blue ramp exactly as authored.
-      mat.setVector3('tint', new Vector3(1, 1, 1));
+      // authored gold-to-blue ramp exactly as tuned.
+      mat.setVector3('u_verseColor', new Vector3(1, 1, 1));
       mat.setFloat('tintStrength', 0);
+      mat.setFloat('u_time', 0);
+      mat.setFloat('u_gasDensity', 1);
       // Far enough to cross the whole disc from outside it.
       mat.setFloat('marchFar', cfg.outerBound * 2.6);
       mat.setVector3('camPos', Vector3.Zero());
@@ -871,12 +873,15 @@ export class GalaxyField {
             // Pure re-hue: a multiplicative cast never washes the gas
             // toward white the way a blend can. Blue stays blue, gold stays
             // gold - only the base changes.
-            this.fogMat.setVector3('tint', new Vector3(
+            this.fogMat.setVector3('u_verseColor', new Vector3(
               g.tint[0], g.tint[1], g.tint[2]));
             // The Milky Way-scale ramp already separates gold core from blue
             // halo; a moderate strength re-hues the whole of a distant
             // galaxy without flattening it into one solid colour.
             this.fogMat.setFloat('tintStrength', 0.55);
+            // Per-galaxy gas amount straight from the cell engine: bright
+            // starbursts read thicker, dim old ellipticals thinner.
+            this.fogMat.setFloat('u_gasDensity', g.brightness);
             // Shape follows the host too, so a two-armed, loosely-wound
             // galaxy looks like itself rather than like the home galaxy's
             // four-armed spiral.
@@ -885,13 +890,14 @@ export class GalaxyField {
               g.klass === 'elliptical' ? 1.0 : 1.6 + g.winding * 2.6);
           } else {
             // Home / intergalactic: restore the authored reference look.
-            this.fogMat.setVector3('tint', new Vector3(1, 1, 1));
+            this.fogMat.setVector3('u_verseColor', new Vector3(1, 1, 1));
             this.fogMat.setFloat('tintStrength', 0);
+            this.fogMat.setFloat('u_gasDensity', 1);
             this.fogMat.setFloat('arms', FIELD_GALAXY.arms);
             this.fogMat.setFloat('armFactor', FIELD_GALAXY.armFactor);
           }
         }
-        this.fogMat.setFloat('time', this.fogTime);
+        this.fogMat.setFloat('u_time', this.fogTime);
       } catch { /* disposed mid-frame */ }
     }
 

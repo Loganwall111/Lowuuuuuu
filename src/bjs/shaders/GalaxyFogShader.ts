@@ -26,7 +26,7 @@
  * into each other rather than switching. The dust lanes are carved by a
  * separate ridged field that ABSORBS instead of emitting, which is what
  * gives a real galaxy its dark filaments - and they keep the faint
- * purple-brown residue (#11091c) of the light they extinguish, so they read
+ * brownish-black residue (#12091c) of the light they extinguish, so they read
  * as real obscuring dust rather than as black cut-outs.
  */
 
@@ -72,9 +72,13 @@ uniform float time;
 /** How far the ray is allowed to travel, galaxy units. */
 uniform float marchFar;
 /** Per-galaxy colour cast. (1,1,1) = the home Milky Way's own palette. */
-uniform vec3 tint;
+uniform vec3 u_verseColor;
 /** How strongly the host galaxy's tint re-hues the gas. 0 = off. */
 uniform float tintStrength;
+/** Multiverse time base (additive with the drift uniform). Cell-engine fed. */
+uniform float u_time;
+/** Per-galaxy gas amount (multiplicative). 1 = home baseline. */
+uniform float u_gasDensity;
 
 /**
  * How fast the sector hue varies across the galaxy. Low so a "sector" is a
@@ -119,16 +123,16 @@ const float DUST_FREQ = 7.0;
 /** How crisp each lane is. */
 const float DUST_SHARPNESS = 2.2;
 /** How much light a dust lane removes. 0 = none, 1 = total. */
-const float DUST_CUT = 0.88;
+const float DUST_CUT = 0.92;
 /**
- * The colour a dust lane leaves behind, #11091c: a deep purple-brown
+ * The colour a dust lane leaves behind, #12091c: a deep brownish-black
  * rather than a hole punched to pure black. Obscuring dust never blocks
  * 100% of the light - it scatters a faint warm residue of the starlight it
  * is extinguishing, and that residue is what a real lane looks like.
  */
-const vec3 DUST_COLOR = vec3(0.0667, 0.0353, 0.1098);
-/** How strongly that purple-brown residue shows through the extinction. */
-const float DUST_TINT = 0.22;
+const vec3 DUST_COLOR = vec3(0.0706, 0.0353, 0.1098);
+/** How strongly that brownish-black residue shows through the extinction. */
+const float DUST_TINT = 0.20;
 /**
  * Only ridge values above this become dust.
  *
@@ -141,12 +145,12 @@ const float DUST_THRESHOLD = 0.95;
 const float NUCLEUS_RADIUS = 0.028;
 /** How fast the blaze falls off. Higher = tighter, hotter core. */
 const float NUCLEUS_FALLOFF = 1.9;
-/** Emission strength of the nucleus. */
-const float NUCLEUS_GAIN = 7.5;
+/** Emission strength of the nucleus. High for a blinding core. */
+const float NUCLEUS_GAIN = 9.5;
 /** Vertical squash of the nucleus. */
 const float NUCLEUS_FLATTEN = 0.78;
-/** Colour of the blaze: creamy gold running to white at the very centre. */
-const vec3 NUCLEUS_COLOR = vec3(1.00, 0.93, 0.74);
+/** Colour of the blaze: hot white-gold running to white at the very centre. */
+const vec3 NUCLEUS_COLOR = vec3(1.00, 0.97, 0.86);
 
 /** Spatial frequency of the rare anomaly strands. */
 const float ANOMALY_FREQ = 5.5;
@@ -246,7 +250,7 @@ float galaxyDensity(vec3 p){
   // Broad continuous swells rather than isolated spikes, so the medium
   // reads as cloud instead of grain.
   vec3 q = p * (1.6 / max(outerR, 1.0));
-  float clump = fbm(q * 2.2 + vec3(time * 0.004, 0.0, time * 0.003), 5);
+  float clump = fbm(q * 2.2 + vec3((time + u_time) * 0.004, 0.0, (time + u_time) * 0.003), 5);
   clump = 0.35 + 0.65 * smoothstep(0.10, 0.88, clump);
 
   float disc = plane * radial * armMask * clump * DISC_GAIN;
@@ -322,7 +326,11 @@ float nucleusGlare(vec3 p){
   // A wider, fainter halo around the blaze so it fades into the bulge
   // rather than ending on a visible edge.
   float halo = exp(-pow(gr / max(outerR * NUCLEUS_RADIUS * 3.4, 1.0), 1.5));
-  return core * NUCLEUS_GAIN + halo * NUCLEUS_GAIN * 0.22;
+  // A hot white innermost flare: even tighter than the gold core, it is the
+  // blinding point of light at the dead centre the bulge glow fades out of.
+  float flare = exp(-pow(gr / max(outerR * NUCLEUS_RADIUS * 0.5, 1.0), 2.4));
+  return core * NUCLEUS_GAIN + halo * NUCLEUS_GAIN * 0.22
+       + flare * NUCLEUS_GAIN * 0.55;
 }
 
 /** Dark dust: ridged filaments that absorb rather than glow. */
@@ -384,17 +392,17 @@ vec3 gasColor(vec3 p, float d){
   vec3 base;
   {
     // Photoreal is now the ONLY base layout, for every galaxy including the
-    // anomalies. Brilliant creamy solar gold at the bulge, cooling through
-    // blue-white to a deep indigo halo - the Andromeda ramp.
+    // anomalies. Blinding creamy-gold at the bulge, cooling through deep
+    // midnight-blue arms to a dark purple halo - the Andromeda ramp.
     //
     // The anomaly used to REPLACE this entirely with flat neon, which threw
     // away the spiral structure and the gold core that took this long to
     // get right. It is now an overlay woven between the arms instead, so a
     // rare galaxy is a recognisable galaxy wearing something extraordinary
     // rather than a different object.
-    vec3 CORE = vec3(1.00, 0.90, 0.60);
-    vec3 DISC = vec3(0.50, 0.64, 1.00);
-    vec3 HALO = vec3(0.12, 0.14, 0.40);
+    vec3 CORE = vec3(1.00, 0.93, 0.72);
+    vec3 DISC = vec3(0.30, 0.34, 0.78);
+    vec3 HALO = vec3(0.24, 0.14, 0.44);
     base = t < 0.32
       ? mix(CORE, DISC, t / 0.32)
       : mix(DISC, HALO, (t - 0.32) / 0.68);
@@ -548,6 +556,8 @@ void main(void) {
     vec3 pos = camPos + dir * s;
 
     float d = galaxyDensity(pos);
+    // Multiverse alias: the cell engine scales each galaxy's gas amount.
+    d *= u_gasDensity;
     if (d > 0.002) {
       // Dust removes light from everything behind it.
       float dust = dustAt(pos);
@@ -563,7 +573,7 @@ void main(void) {
       // extinction coefficient is what restores its presence WITHOUT
       // refilling the gaps, since it scales what is there rather than
       // adding anything back.
-      float ext = (d * 0.85 + dust * 1.9) * dt * density * 0.00005;
+      float ext = (d * 0.85 + dust * 2.4) * dt * density * 0.000075;
 
       // Absorb THEN emit, so a dense sample cannot both block the light
       // behind it and add its own at full strength in the same step. That
@@ -571,11 +581,12 @@ void main(void) {
       float absorbed = 1.0 - exp(-ext);
       vec3 emit = gasColor(pos, d);
 
-      // Every galaxy carries its own tint from the cell seed hash. Bias the
-      // emission toward that colour in proportion to how dense the gas is,
-      // so a blue starburst stays blue and an old red galaxy stays red -
-      // without erasing the Andromeda gold/blue ramp the tint leans on.
-      emit *= mix(vec3(1.0), tint, tintStrength);
+      // Every galaxy carries its own colour from the 260,000-unit cell seed
+      // hash (fed through u_verseColor). Bias the emission toward it in
+      // proportion to how dense the gas is, so a blue starburst stays blue
+      // and an old red galaxy stays red - without erasing the gold-to-blue
+      // ramp the cast leans on.
+      emit *= mix(vec3(1.0), u_verseColor, tintStrength);
 
       // The nucleus blaze is emission, not density: it is added to the
       // light leaving this sample so it can out-shine everything without
@@ -593,7 +604,7 @@ void main(void) {
       emit *= 1.0 - DUST_CUT * dust;
 
       // The lane is not cut to black: the residual scatter of the light the
-      // dust is blocking leaves it a deep purple-brown (#11091c) instead.
+      // dust is blocking leaves it a deep brownish-black (#12091c) instead.
       emit += DUST_COLOR * (dust * DUST_TINT);
 
       acc += emit * trans * absorbed;
