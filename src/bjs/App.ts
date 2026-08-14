@@ -52,6 +52,7 @@ import { MODES, can, type GameMode } from './systems/GameModes';
 import type { InteriorDestination } from './systems/HoleInterior';
 import { HoleDescent } from './systems/HoleDescent';
 import { TidalField } from './systems/TidalField';
+import { RegionTides, describeRegionTide } from './systems/RegionTides';
 import { SHIP as TIDAL_SHIP, ROCKY_PLANET } from './systems/GameModes';
 import { GrabSystem, type Grabbable } from './systems/GrabSystem';
 import {
@@ -141,15 +142,24 @@ export class App {
     this.shell?.setGameMode?.(m);
     this.shell?.toast(info.glyph + ' ' + info.name + ' — ' + info.tagline);
     // Leaving sandbox must not leave a half-stretched planet on screen.
-    if (!this.can('spaghettification')) this.tidal.clear();
+    if (!this.can('spaghettification')) {
+      this.tidal.clear();
+      this.regionTides.clear();
+    }
     this.saves.setPrefs({ mode: m });
     this.shell?.refreshAll?.();
   }
 
   /** The fall through a horizon, when one is in progress. */
   descentInto = new HoleDescent();
-  /** Bodies currently being torn apart, in sandbox mode. */
+  /** Individual meshes being torn apart, in sandbox mode. */
   tidal = new TidalField();
+  /** Whole worlds being dragged in and shredded, in sandbox mode. */
+  regionTides = new RegionTides();
+  /** How many worlds are currently coming apart, for the HUD. */
+  tornWorlds = 0;
+  /** Worlds already announced as tearing, so each is reported once. */
+  private announcedTearing = new Set<string>();
 
   /** Hold thrust long enough and the universe opens up. */
   warpDrive = new WarpDrive();
@@ -937,13 +947,16 @@ export class App {
    * Limited to what is nearby: the tidal term falls off as 1/r³, so a hole
    * on the far side of the universe contributes nothing but cost.
    */
-  private tidalSources(eye: Vector3): Array<{ position: Vector3; horizon: number }> {
-    const out: Array<{ position: Vector3; horizon: number }> = [];
+  private tidalSources(
+    eye: Vector3
+  ): Array<{ id: string; position: Vector3; horizon: number }> {
+    const out: Array<{ id: string; position: Vector3; horizon: number }> = [];
     for (const r of this.universe.regions) {
       if (r.kind !== 'blackhole') continue;
       const hz = this.universe.horizonRadiusOf(r);
       if (Vector3.Distance(eye, r.position) > hz * 900) continue;
-      out.push({ position: r.position, horizon: hz });
+      // The id matters: region-level disruption reports which hole ate what.
+      out.push({ id: r.id, position: r.position, horizon: hz });
     }
     return out;
   }
@@ -1214,9 +1227,40 @@ export class App {
       // Explorer mode never calls this, so the universe stays a place you
       // can look at rather than one that eats your ship while you admire it.
       if (this.can('spaghettification') && !this.paused) {
-        this.tidal.update(dt, this.tidalSources(eye), true);
+        const sources = this.tidalSources(eye);
+
+        // Ships are the thing the user specifically asked about: put one
+        // near a hole and it should be pulled in and stretched. They are
+        // registered every frame because a fleet can be launched, recalled
+        // or rebuilt at any time; add() is idempotent and keeps each hull's
+        // original scale, so re-registering cannot shrink anything.
+        for (const v of this.fleet.vessels) {
+          if (v.mesh) this.tidal.add('ship:' + v.id, v.mesh, TIDAL_SHIP);
+        }
+
+        this.tidal.update(dt, sources, true);
         for (const id of this.tidal.drainConsumed()) {
-          this.shell.toast('Lost to the singularity: ' + id);
+          this.shell.toast('Lost to the singularity: ' + id.replace(/^ship:/, 'ship '));
+        }
+
+        // Whole worlds are dragged in and torn apart too. A planet has no
+        // mesh to stretch out here - it is a region in the point cloud - so
+        // it is disrupted at the region level and genuinely removed when it
+        // crosses the horizon.
+        const torn = this.regionTides.update(dt, this.universe.regions, sources, true);
+        this.tornWorlds = torn.length;
+        for (const t of this.regionTides.drainConsumed()) {
+          this.universe.removeRegion(t.id);
+          this.shell.toast(describeRegionTide(t));
+        }
+        // Announce a world beginning to come apart, but only once each.
+        for (const t of torn) {
+          if (t.disrupting && !this.announcedTearing.has(t.id)) {
+            this.announcedTearing.add(t.id);
+            this.shell.toast(describeRegionTide(t));
+          } else if (!t.disrupting) {
+            this.announcedTearing.delete(t.id);
+          }
         }
       }
 

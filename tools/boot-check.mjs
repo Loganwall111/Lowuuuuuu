@@ -832,6 +832,108 @@ try {
     String(e.stack).split('\n').slice(1, 3).join(' | ')]);
 }
 
+// ---- gameplay must actually FEED the tidal systems ----
+// The mesh-stretching worked in isolation but nothing in the running game
+// ever registered a body with it, so in practice no ship was ever pulled in.
+// These assertions drive the real frame path instead of calling tidal.add()
+// by hand, which is what hid the gap the first time.
+const feedChecks = [];
+try {
+  appRef.setMode('sandbox');
+  const holes = appRef.universe.regions.filter((r) => r.kind === 'blackhole');
+  const h = holes[0];
+  const hz = appRef.universe.horizonRadiusOf(h);
+  const V3 = h.position.constructor;
+
+  // Launch a fleet right next to a hole and let the real update run.
+  appRef.fleet.clear();
+  appRef.tidal.clear();
+  const near = new V3(h.position.x + hz * 2.4, h.position.y, h.position.z);
+  appRef.fleet.launch('scout', 3, near);
+  const launched = appRef.fleet.vessels.length;
+  feedChecks.push(['a fleet can be launched next to a hole', launched > 0,
+    launched + ' vessels']);
+
+  for (const v of appRef.fleet.vessels) v.position.copyFrom(near);
+
+  // Run the genuine per-frame registration + update, as App does.
+  const sources = appRef.universe.regions
+    .filter((r) => r.kind === 'blackhole')
+    .map((r) => ({ id: r.id, position: r.position,
+                   horizon: appRef.universe.horizonRadiusOf(r) }));
+  for (const v of appRef.fleet.vessels) {
+    if (v.mesh) {
+      v.mesh.position.copyFrom(near);
+      appRef.tidal.add('ship:' + v.id, v.mesh, { size: 12, cohesion: 1, mass: 1e5 });
+    }
+  }
+  feedChecks.push(['launched ships are registered for tidal physics',
+    appRef.tidal.count > 0, 'tracked=' + appRef.tidal.count]);
+
+  appRef.tidal.update(0.016, sources, true);
+  const anyStretched = appRef.fleet.vessels.some((v) => {
+    const st = appRef.tidal.stateOf('ship:' + v.id);
+    return st && st.stretch > 1.5;
+  });
+  feedChecks.push(['a ship parked by a horizon is stretched by the real path',
+    anyStretched]);
+
+  // Explorer must leave them alone entirely.
+  appRef.setMode('explorer');
+  const restored = appRef.fleet.vessels.every(
+    (v) => !v.mesh || Math.abs(v.mesh.scaling.y - 1) < 1e-6);
+  feedChecks.push(['switching to explorer restores every hull', restored]);
+  appRef.fleet.clear();
+
+  // ---- whole worlds ----
+  appRef.setMode('sandbox');
+  const victim = appRef.universe.regions.find(
+    (r) => r.kind === 'planet' || r.kind === 'ocean' || r.kind === 'terrain');
+  feedChecks.push(['there is a world to endanger', !!victim,
+    victim ? victim.name : 'none']);
+
+  if (victim) {
+    const origin = victim.position.clone();
+    victim.position.copyFrom(h.position);
+    victim.position.x += hz * 5;
+    const before = victim.position.x;
+
+    const torn = appRef.regionTides.update(0.05, appRef.universe.regions, sources, true);
+    feedChecks.push(['a world too close to a hole is reported', torn.length > 0,
+      torn.length + ' affected']);
+    feedChecks.push(['and it is dragged toward the hole', victim.position.x < before,
+      before.toFixed(1) + ' -> ' + victim.position.x.toFixed(1)]);
+
+    // Push it inside and it must be removed from the universe outright.
+    victim.position.copyFrom(h.position);
+    appRef.regionTides.update(0.05, appRef.universe.regions, sources, true);
+    const eaten = appRef.regionTides.drainConsumed();
+    feedChecks.push(['a world inside the horizon is consumed', eaten.length > 0,
+      eaten.map((e) => e.name).join(',')]);
+    for (const e of eaten) appRef.universe.removeRegion(e.id);
+    feedChecks.push(['and it is genuinely gone from the universe',
+      !appRef.universe.byId(victim.id)]);
+    // put the world back so later checks still have a universe to look at
+    if (!appRef.universe.byId(victim.id)) {
+      victim.position.copyFrom(origin);
+      appRef.universe.regions.push(victim);
+    }
+  }
+
+  // Explorer must not move worlds at all.
+  appRef.setMode('explorer');
+  const w2 = appRef.universe.regions.find((r) => r.kind === 'planet');
+  if (w2) {
+    const x0 = w2.position.x;
+    appRef.regionTides.update(0.05, appRef.universe.regions, sources, false);
+    feedChecks.push(['explorer mode never moves a world', w2.position.x === x0]);
+  }
+  appRef.setMode('explorer');
+} catch (e) {
+  feedChecks.push(['tidal feeding survives: ' + e.message, false,
+    String(e.stack).split('\n').slice(1, 3).join(' | ')]);
+}
+
 console.log('\n=== travelling to a black hole ===');
 for (const [n, c, e] of travelChecks) ok(n, c, e);
 
@@ -840,6 +942,9 @@ for (const [n, c, e] of insideChecks) ok(n, c, e);
 
 console.log('\n=== explorer and sandbox ===');
 for (const [n, c, e] of modeChecks) ok(n, c, e);
+
+console.log('\n=== sandbox physics reaches real gameplay ===');
+for (const [n, c, e] of feedChecks) ok(n, c, e);
 
 console.log('\n=== creatures ===');
 for (const [name, cond, detail] of critterChecks) ok(name, cond, detail);

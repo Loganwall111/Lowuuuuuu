@@ -353,8 +353,11 @@ export class Shell {
     this.topbar?.querySelectorAll<HTMLButtonElement>('#modeSwitch button')
       .forEach((b) => b.classList.toggle('on', b.dataset.gm === this.gameMode));
     // Sandbox-only tools should not advertise themselves in Explorer.
+    // The navigator matters most here: it owns create/grab/throw, so leaving
+    // it stale left dead buttons on screen after a switch.
     this.wm.refresh('objects');
     this.wm.refresh('controls');
+    this.wm.refresh('navigator');
   }
 
   setMode(m: Mode): void {
@@ -875,9 +878,38 @@ export class Shell {
     b.appendChild(near);
 
     // ---- create things right where you are ----
+    // This whole section is Sandbox. In Explorer it is replaced by a line
+    // explaining where it went, rather than leaving buttons that look
+    // available and silently do nothing when clicked.
+    const sandbox = this.gameMode === 'sandbox';
     const make = document.createElement('div');
-    make.className = 'grp';
-    make.innerHTML = '<div class="grp-h">Create Here</div>';
+    make.className = 'grp' + (sandbox ? '' : ' grp-locked');
+    make.innerHTML = '<div class="grp-h">Create Here ' +
+      (sandbox ? '<i class="grp-tag">sandbox</i>' : '') + '</div>';
+
+    if (!sandbox) {
+      const why = document.createElement('div');
+      why.className = 'note';
+      why.id = 'navSandboxNote';
+      why.innerHTML =
+        'Creating, grabbing and throwing live in <b>🌌 Sandbox</b>. ' +
+        'Press <b>M</b> to switch — you keep your position and everything ' +
+        'you have found.';
+      make.appendChild(why);
+      const sw = document.createElement('button');
+      sw.className = 'btn pri';
+      sw.id = 'btnToSandbox';
+      sw.textContent = '🌌 Switch to Sandbox';
+      sw.onclick = () => {
+        this.setGameMode('sandbox');
+        this.hooks.onGameMode?.('sandbox');
+      };
+      make.appendChild(sw);
+      b.appendChild(make);
+      this.renderUniverseStats(b, u);
+      return;
+    }
+
     const mrow = document.createElement('div');
     mrow.className = 'btnrow';
     ([['blackhole', '⚫ Black Hole'], ['starsystem', '☀ Star System']] as const)
@@ -913,7 +945,17 @@ export class Shell {
     make.appendChild(grabRow);
     b.appendChild(make);
 
-    // ---- universe statistics ----
+    this.renderUniverseStats(b, u);
+  }
+
+  /**
+   * The universe read-out. Shared because the navigator returns early in
+   * Explorer mode, and the statistics are not a sandbox feature - knowing
+   * where you are matters just as much when you are only looking.
+   */
+  private renderUniverseStats(
+    b: HTMLElement, u: { stats: Record<string, string> }
+  ): void {
     const st = document.createElement('div');
     st.className = 'grp';
     st.innerHTML = '<div class="grp-h">Universe</div>';
@@ -1458,6 +1500,30 @@ export class Shell {
   /* ---- objects tray ---- */
 
   private renderObjects(b: HTMLElement): void {
+    // Throwing things at worlds is the sandbox in miniature, so the whole
+    // panel belongs to that mode. Explorer gets the reason and the switch,
+    // not a catalogue of buttons that do nothing.
+    if (this.gameMode !== 'sandbox') {
+      const locked = document.createElement('div');
+      locked.className = 'note';
+      locked.id = 'objSandboxNote';
+      locked.innerHTML =
+        'Throwing things at worlds is <b>🌌 Sandbox</b>. ' +
+        'Press <b>M</b> to switch, then come back here to pick something ' +
+        'ridiculous and launch it.';
+      b.appendChild(locked);
+      const sw = document.createElement('button');
+      sw.className = 'btn pri';
+      sw.id = 'btnObjToSandbox';
+      sw.textContent = '🌌 Switch to Sandbox';
+      sw.onclick = () => {
+        this.setGameMode('sandbox');
+        this.hooks.onGameMode?.('sandbox');
+      };
+      b.appendChild(sw);
+      return;
+    }
+
     const n = document.createElement('div');
     n.className = 'note';
     n.innerHTML = `Click any object to launch it at the world. <b>${CATALOG.length}</b> objects available.`;

@@ -316,7 +316,42 @@ key('h');
 ok('"h" clears the screen for the sim',
    !shell.wm.IsVisible('controls') && !shell.wm.IsVisible('graphics'));
 
+console.log('\n— physics tools live in sandbox mode —');
+// The object tray is where you throw things at worlds, so it belongs to
+// Sandbox. In Explorer the panel must explain that and offer the switch
+// rather than showing a catalogue of buttons that do nothing.
+shell.setGameMode('explorer');
+shell.wm.Open('objects');
+ok('the objects window still opens in explorer', shell.wm.IsVisible('objects'));
+ok('but it shows no throwables',
+   document.querySelectorAll('[data-wid="objects"] .card').length === 0);
+ok('it says where the throwing went',
+   /sandbox/i.test(document.querySelector('[data-wid="objects"]').textContent));
+const toSandbox = document.getElementById('btnObjToSandbox');
+ok('and offers a way to get there', !!toSandbox);
+click(toSandbox);
+ok('clicking it switches mode', shell.gameMode === 'sandbox');
+ok('and the catalogue appears',
+   document.querySelectorAll('[data-wid="objects"] .card').length > 20);
+
+// The navigator's create/grab/throw section is the same story.
+shell.setGameMode('explorer');
+shell.wm.Open('navigator');
+ok('explorer hides the create/grab tools',
+   !document.getElementById('btnGrab') && !document.getElementById('btnThrow'));
+ok('and explains why', !!document.getElementById('navSandboxNote'));
+ok('but still shows where you are',
+   /You Are Here/i.test(document.querySelector('[data-wid="navigator"]').textContent));
+ok('and still shows the universe statistics',
+   /Universe/i.test(document.querySelector('[data-wid="navigator"]').textContent));
+click(document.getElementById('btnToSandbox'));
+ok('switching from the navigator works', shell.gameMode === 'sandbox');
+ok('sandbox restores the grab tools', !!document.getElementById('btnGrab'));
+ok('sandbox restores the create buttons',
+   !!document.querySelector('[data-wid="navigator"] [data-spawn="blackhole"]'));
+
 console.log('\n— object catalogue tray —');
+shell.setGameMode('sandbox');
 shell.wm.Open('objects');
 ok('objects window opens', shell.wm.IsVisible('objects'));
 const objCards = () => document.querySelectorAll('[data-wid="objects"] .card');

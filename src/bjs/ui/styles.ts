@@ -103,6 +103,14 @@ body[data-focus="1"] .hud{ opacity:.35; }
 .seg button.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;box-shadow:0 3px 12px rgba(77,163,255,.34)}
 .spacer{flex:1}
 
+/* Marks a panel section as belonging to Sandbox mode. */
+.grp-tag{font-style:normal;font-size:8px;letter-spacing:1.4px;
+  text-transform:uppercase;padding:2px 6px;margin-left:7px;vertical-align:1px;
+  background:linear-gradient(135deg,#a45cff,#ff7a4d);color:#fff;
+  border-radius:2px;font-weight:800;}
+/* A section that exists but is not available in this mode. */
+.grp-locked{opacity:.92;}
+
 /* ---- Explorer / Sandbox switch ---- */
 /* The single most consequential control in the app, so it is a labelled
    switch in the top bar rather than another anonymous icon: which mode you
