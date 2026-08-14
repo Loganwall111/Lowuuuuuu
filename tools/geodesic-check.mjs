@@ -140,14 +140,24 @@ ok('there is a critical impact parameter', critical !== null,
 ok('the capture radius is close to the photon sphere (2.6 rs)',
   critical !== null && critical > 2.2 && critical < 3.2, String(critical));
 
-// -------------------------------------------------- the starfield itself
-ok('the sky has stars', /float star = exp\(/.test(frag));
-ok('the sky has large-scale structure to distort',
-  /float band = exp\(/.test(frag));
-ok('star colour is temperature-biased toward cool',
-  /temp < 0\.7\d/.test(frag));
+// ------------------------------------------------------- the sky it bends
+// The hole used to carry its own private starfield, which meant the sky it
+// lensed and the sky drawn behind it were two different pieces of maths and
+// drifted apart. It now compiles the SAME function as the sky dome, so the
+// ring can only ever show a warped copy of the real background.
+ok('the hole compiles the shared procedural sky',
+  /COSMIC_SKY_GLSL/.test(src));
+ok('the hole has no private starfield of its own',
+  !/float star = exp\(/.test(frag.split('vec3 cosmicSky')[0]));
+ok('rays are sampled through the shared sky entry point',
+  /cosmicSky\(/.test(frag));
 ok('the sky is a function of direction only, not screen position',
-  /vec3 d = normalize\(dir\)/.test(frag));
+  /vec3 skyAlongRay\(vec3 dir\)/.test(frag) && !/gl_FragCoord/.test(
+    (frag.match(/vec3 skyAlongRay\(vec3 dir\)[\s\S]*?\n\}/) || [''])[0]));
+ok('the sky the hole bends is the sky the dome draws', (() => {
+  const dome = fs.readFileSync('src/bjs/shaders/CosmicSkyShader.ts', 'utf8');
+  return /cosmicSky\(/.test(dome) && /COSMIC_SKY_GLSL/.test(dome);
+})());
 
 // The sky must not be added twice: far from the hole the real background
 // is already correct behind the quad.

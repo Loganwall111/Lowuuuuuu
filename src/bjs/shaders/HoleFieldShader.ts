@@ -19,6 +19,7 @@
  */
 
 import { Effect } from '@babylonjs/core/Materials/effect';
+import { COSMIC_SKY_GLSL } from './CosmicSkyShader';
 
 export const HOLE_FIELD_SHADER = 'holeField';
 
@@ -133,64 +134,30 @@ vec3 diskColor(float r, float ang, float height, out float alpha){
 
 // ------------------------------------------------------------------ the sky
 /**
- * Starfield sampled along a DIRECTION, not a screen position.
+ * The sky, shared verbatim with the background dome.
  *
- * This is the piece that was missing, and the reason a screen-space warp
- * could never reproduce a real black hole image. A post-process is a
- * function uv -> uv: it rearranges pixels that were already drawn. But the
- * defining features of a lensed sky are light that the flat frame contains
- * no record of - the far side of the disk bent up over the shadow, and
- * Einstein rings, which are SEVERAL images of the SAME star. One output
- * pixel can only take one input pixel, so a warp cannot duplicate a star
- * into a ring no matter how the offsets are shaped.
+ * This is the "dynamic cubemap" requirement, met without a cubemap. A cube
+ * map is a function from direction to colour; capturing one would mean six
+ * extra renders per frame and would cap the sky at the cube's resolution -
+ * worst exactly at an Einstein ring, where a tiny patch of sky is magnified
+ * enormously and would smear into texels. Compiling the SAME function into
+ * both shaders is infinitely sharp, free to "capture", and cannot go stale:
+ * the hole and the background are the same maths by construction.
  *
- * Sampling by direction has no such limit. Two different fragments whose
- * geodesics escape toward the same patch of sky both see that patch, which
- * is exactly what an Einstein ring is.
+ * The practical payoff is that a hole in the Codeverse warps matrix rain,
+ * and a hole in the Fractal Core warps Mandelbrot spirals, with no plumbing.
  */
+${COSMIC_SKY_GLSL}
+
+uniform float skyMedium;
+uniform float skySymmetry;
+uniform vec3  skyTint;
+uniform float skyStrangeness;
+uniform float skyZoom;
+
 vec3 skyAlongRay(vec3 dir){
-  vec3 d = normalize(dir);
-
-  // Three octaves of cell noise on the direction vector. Cheap, stable
-  // under rotation, and dense enough to read as a real field.
-  vec3 col = vec3(0.0);
-  for (int oct = 0; oct < 3; oct++){
-    float scale = 48.0 * pow(2.3, float(oct));
-    vec3 p = d * scale;
-    vec3 cell = floor(p);
-    vec3 f = p - cell;
-
-    // Nearest-feature search over the 8 surrounding cells.
-    for (int gx = 0; gx <= 1; gx++){
-      for (int gy = 0; gy <= 1; gy++){
-        for (int gz = 0; gz <= 1; gz++){
-          vec3 g = vec3(float(gx), float(gy), float(gz));
-          vec3 id = cell + g;
-          float h = hash13(id);
-          // Only a fraction of cells hold a star.
-          if (h < 0.86) continue;
-          vec3 jitter = vec3(hash13(id + 17.1), hash13(id + 39.7), hash13(id + 71.3));
-          float dist = length(f - g - (jitter - 0.5) * 0.85);
-          float star = exp(-dist * dist * 210.0);
-          // Cool stars dominate, as in any real sky.
-          float temp = hash13(id + 5.5);
-          vec3 tint = temp < 0.74
-            ? vec3(1.0, 0.72 + temp * 0.3, 0.55 + temp * 0.4)
-            : vec3(0.72, 0.84, 1.0);
-          col += tint * star * (0.35 + h * 0.65) / (1.0 + float(oct) * 1.6);
-        }
-      }
-    }
-  }
-
-  // A faint galactic band so the lensed sky has large-scale structure to
-  // distort. Without it the warp has nothing but points to act on and the
-  // wrapping is much harder to read.
-  float band = exp(-pow(d.y * 3.1, 2.0));
-  vec3 gas = vec3(0.16, 0.15, 0.26) * band * 0.5;
-  gas += vec3(0.26, 0.17, 0.12) * band * noise3(d * 7.0) * 0.55;
-
-  return col * 1.5 + gas;
+  return cosmicSky(dir, skyMedium, skySymmetry, skyTint, skyStrangeness,
+                   time, skyZoom);
 }
 
 void main(void){

@@ -25,13 +25,19 @@ const noise = extract('src/bjs/Noise.ts', ['GLSL_NOISE']).GLSL_NOISE;
 const gerstner = extract('src/bjs/worlds/OceanWorld.ts', ['GERSTNER_GLSL'])
   .GERSTNER_GLSL.replace('${GLSL_NOISE}', noise);
 
+// HoleFieldShader interpolates the shared sky function into its fragment
+// source; the parser must see the resolved GLSL, not the placeholder.
+const cosmicSky = extract('src/bjs/shaders/CosmicSkyShader.ts',
+  ['COSMIC_SKY_GLSL']).COSMIC_SKY_GLSL ?? '';
+
 // SunShader interpolates a local NOISE const into its corona source.
 const sunNoise = extract('src/bjs/shaders/SunShader.ts', ['NOISE']).NOISE ?? '';
 
 const resolve = (s) =>
   s.replace('${GLSL_NOISE}', noise)
    .replace('${GERSTNER_GLSL}', gerstner)
-   .replace('${NOISE}', sunNoise);
+   .replace('${NOISE}', sunNoise)
+   .replace('${COSMIC_SKY_GLSL}', cosmicSky);
 
 // [sourceFile, vertName, fragName, tsFilesThatBindTheUniforms]
 const PAIRS = [

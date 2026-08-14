@@ -27,6 +27,7 @@
  */
 
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { mediumId } from '../shaders/CosmicSkyShader';
 import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
@@ -212,6 +213,43 @@ export class HoleFieldRenderer {
     lh.mat.setVector3('camPos', eye);
     lh.mat.setVector3('holePos', lh.center);
     lh.mat.setFloat('time', this.t);
+
+    // The sky the hole lenses. Fed from the same state the background dome
+    // uses, so a hole standing in the Codeverse warps matrix rain and one in
+    // the Fractal Core warps Mandelbrot spirals - no cubemap to capture, no
+    // snapshot that can go stale.
+    const sky = this.sky;
+    lh.mat.setFloat('skyMedium', mediumId(sky.medium));
+    lh.mat.setFloat('skySymmetry', sky.symmetry > 0 ? sky.symmetry : 4);
+    lh.mat.setVector3('skyTint', new Vector3(sky.tint[0], sky.tint[1], sky.tint[2]));
+    lh.mat.setFloat('skyStrangeness', sky.strangeness);
+    lh.mat.setFloat('skyZoom', sky.zoom);
+  }
+
+  /**
+   * Which sky these holes should bend. Mirrors CosmicSky's state so both
+   * evaluate the identical function.
+   */
+  sky: { medium: string; symmetry: number; tint: [number, number, number];
+         strangeness: number; zoom: number } = {
+    medium: 'stars', symmetry: 0, tint: [0.06, 0.10, 0.22],
+    strangeness: 0, zoom: 1
+  };
+
+  /** Points every hole at the current verse's sky. */
+  setSky(next: Partial<typeof this.sky>): void {
+    if (typeof next.medium === 'string') this.sky.medium = next.medium;
+    if (Number.isFinite(next.symmetry as number)) this.sky.symmetry = next.symmetry as number;
+    if (Array.isArray(next.tint) && next.tint.length === 3 &&
+        next.tint.every((v) => Number.isFinite(v))) {
+      this.sky.tint = [next.tint[0], next.tint[1], next.tint[2]];
+    }
+    if (Number.isFinite(next.strangeness as number)) {
+      this.sky.strangeness = Math.max(0, Math.min(1, next.strangeness as number));
+    }
+    if (Number.isFinite(next.zoom as number)) {
+      this.sky.zoom = Math.max(1, next.zoom as number);
+    }
   }
 
   /** Moves an existing hole. One call, one position: nothing can separate. */
@@ -244,7 +282,8 @@ export class HoleFieldRenderer {
           'worldViewProjection', 'world', 'camPos', 'holePos', 'time',
           'rs', 'quadRadius', 'diskInner', 'diskOuter', 'diskThickness',
           'diskBright', 'diskTilt', 'spin', 'dopplerAmt', 'diskTemp',
-          'turbulence', 'horizonCover'
+          'turbulence', 'horizonCover',
+          'skyMedium', 'skySymmetry', 'skyTint', 'skyStrangeness', 'skyZoom'
         ]
       });
 

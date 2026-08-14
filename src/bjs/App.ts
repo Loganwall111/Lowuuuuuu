@@ -53,6 +53,7 @@ import type { InteriorDestination } from './systems/HoleInterior';
 import { HoleDescent } from './systems/HoleDescent';
 import { TidalField } from './systems/TidalField';
 import { RegionTides, describeRegionTide } from './systems/RegionTides';
+import { CosmicSky } from './systems/CosmicSky';
 import { SHIP as TIDAL_SHIP, ROCKY_PLANET } from './systems/GameModes';
 import { GrabSystem, type Grabbable } from './systems/GrabSystem';
 import {
@@ -203,6 +204,10 @@ export class App {
   stations: StationSystem | null = null;
   /** Gravitational lensing that works in every world, not just one. */
   lensfx = new LensFX();
+  /** The procedural sky dome. Shares its GLSL with the hole raymarcher. */
+  cosmicSky = new CosmicSky();
+  /** Whether the player is holding forward, for the fractal zoom. */
+  private thrusting = false;
   /** Mouse look + wheel throttle, the other half of free flight. */
   mouse = new MouseLook();
   /** Every planet's own terrain, water, weather and life. */
@@ -284,7 +289,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -588,6 +593,23 @@ export class App {
     const progress = verseProgress(depth);
     const edge = edgeStateAt(progress);
 
+    // Point the sky - and every black hole that lenses it - at this verse.
+    // One state, two consumers, so a hole can never warp a sky that differs
+    // from the one behind it.
+    this.cosmicSky.setState({
+      medium: verse.medium,
+      symmetry: verse.symmetry,
+      tint: verse.tint,
+      strangeness: verse.strangeness
+    });
+    this.holeField.setSky({
+      medium: verse.medium,
+      symmetry: verse.symmetry,
+      tint: verse.tint,
+      strangeness: verse.strangeness,
+      zoom: this.cosmicSky.zoom
+    });
+
     // Space empties as you approach a boundary, and the universe you left
     // glows behind you. Both are driven by the same value, so the sky and
     // the wall can never disagree about how far out you are.
@@ -773,6 +795,11 @@ export class App {
         // Lensing is a property of the universe, not of one world, so it is
         // re-attached with the pipeline every time.
         this.lensfx.attach(this.scene, this.camera);
+      }
+      // The sky is a property of the universe, not of the post-process
+      // chain, so it attaches even when post-processing is unavailable.
+      {
+        this.cosmicSky.attach(this.scene);
       }
       this.history.attach(
         typeof (w as any).captureState === 'function' ? (w as any) : null);
@@ -1120,6 +1147,8 @@ export class App {
         // makes the map crossable: at cruise the far side of the universe is
         // hours away, and under warp it is seconds.
         const warping = this.warpDrive.update(dt, input.forward > 0.5);
+        this.thrusting = input.forward > 0.5;
+
         if (warping.engaged) {
           this.vehicle.flySpeed *= warping.multiplier;
         }
@@ -1177,6 +1206,11 @@ export class App {
       const eye = this.vehicle.mode === 'orbit'
         ? this.camera.position
         : this.vehicle.position;
+      // The sky follows the camera and, in the Fractal Core, magnifies while
+      // you hold forward - so flying "into" the Mandelbrot really descends
+      // into it rather than scaling a picture of it.
+      this.cosmicSky.update(dt, eye, this.thrusting);
+
       // A world can declare that it renders its own black hole. Both the
       // geometry hole field and the screen-space lens must stand down when it
       // does, or the scene gets a second hole and a grey wash over the core.
