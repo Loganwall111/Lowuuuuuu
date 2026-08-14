@@ -66,9 +66,40 @@ export const FIELD_INNER = 2000;
 /** Outer edge. Beyond this is intergalactic emptiness. */
 export const FIELD_OUTER = 50000;
 
-/** Near/far planes for the galaxy camera. */
+/**
+ * The shell the galaxy is projected into, in main-camera space.
+ *
+ * The main camera runs 0.05..4,000 because standing on a planet needs a
+ * near plane that tight. A galaxy 200,000 units away cannot be drawn
+ * through that, so each point is remapped along its own view direction
+ * into this shell: direction is preserved exactly, only radial distance
+ * is compressed. The result is visually identical to a distant galaxy -
+ * angular position is all the eye has to go on at that range - while
+ * living entirely inside the existing depth range.
+ */
+export const PROXY_INNER = 2600;
+export const PROXY_OUTER = 3700;
+
+/** Legacy names kept so callers and tests do not break. */
 export const GALAXY_NEAR = 500;
 export const GALAXY_FAR = 200000;
+
+/**
+ * Map a true distance onto the proxy shell.
+ *
+ * Logarithmic, so near galaxies still resolve as nearer than far ones and
+ * the ordering the eye expects is preserved across five decades of range.
+ * Pure, so the mapping can be tested without a GPU.
+ */
+export function proxyRadius(trueDist: number, radius = GALAXY_RADIUS_REF): number {
+  if (!Number.isFinite(trueDist) || trueDist <= 0) return PROXY_INNER;
+  const t = Math.log10(1 + trueDist / Math.max(radius, 1)) / Math.log10(1 + 400);
+  const k = Math.max(0, Math.min(1, t));
+  return PROXY_INNER + (PROXY_OUTER - PROXY_INNER) * k;
+}
+
+/** Reference scale for the log remap. */
+export const GALAXY_RADIUS_REF = 50000;
 
 /** How many stars and gas puffs the field is built from. */
 export const STAR_COUNT = 30000;
@@ -143,7 +174,10 @@ export function fogStateAt(
 
 export class GalaxyField {
   private scene: Scene | null = null;
-  private cam: UniversalCamera | null = null;
+  private main: Camera | null = null;
+  /** True positions, kept so the proxy can be recomputed each frame. */
+  private truePos: Float64Array | null = null;
+  private farTruePos: Float64Array | null = null;
   private clouds: PointsCloudSystem[] = [];
   private meshes: Mesh[] = [];
   private built = false;
@@ -157,7 +191,6 @@ export class GalaxyField {
   private farCloud: PointsCloudSystem | null = null;
   private farCells: GalaxyCell[] = [];
 
-  get camera(): Camera | null { return this.cam; }
   get isBuilt(): boolean { return this.built; }
 
   /**
@@ -169,26 +202,29 @@ export class GalaxyField {
   attach(scene: Scene, main: Camera): void {
     this.detach();
     this.scene = scene;
+    this.main = main;
     try {
-      const cam = new UniversalCamera(
-        'galaxyCam', Vector3.Zero(), scene);
-      cam.minZ = GALAXY_NEAR;
-      cam.maxZ = GALAXY_FAR;
-      // Only this camera sees the galaxy layer.
-      cam.layerMask = GALAXY_LAYER;
-      // No input of its own; it mirrors the main camera every frame.
-      cam.inputs?.clear?.();
-      this.cam = cam;
-
-      // The main camera must NOT see the galaxy layer, or it would try to
-      // draw 50,000-unit geometry through a 4,000-unit far plane.
-      main.layerMask = main.layerMask & ~GALAXY_LAYER;
-
-      // Draw the galaxy first, then the main scene on top of it. Colour is
-      // cleared once at the start; the second pass must not wipe it.
-      scene.activeCameras = [cam, main];
+      // NO SECOND CAMERA.
+      //
+      // The galaxy used to render through its own UniversalCamera at
+      // 500..200,000 while the main camera stayed at 0.05..4,000. That
+      // worked in isolation and failed in the real app, because
+      // DefaultRenderingPipeline is attached to the MAIN camera only: a
+      // post-process pipeline renders into its own framebuffer and blits
+      // the result over the backbuffer, erasing whatever the first camera
+      // had drawn. The galaxy was being rendered every frame and then
+      // painted over - which is exactly "the galaxies are gone".
+      //
+      // Attaching the pipeline to both cameras would run bloom twice.
+      // Instead the galaxy is drawn by the ordinary camera, in rendering
+      // group 0, as a PROXY scaled down into a shell that fits inside the
+      // existing far plane. Direction is preserved exactly, so the galaxy
+      // looks identical; only the radial distance is remapped. Parallax
+      // still works because the remap is recomputed from the true
+      // coordinates every frame.
+      scene.activeCameras = null;
+      scene.activeCamera = main;
       scene.autoClear = true;
-      (main as any).autoClear = false;
     } catch (e) {
       // The galaxy is scenery. Losing it must not lose the frame.
       console.warn('Galaxy field unavailable:', e);
@@ -228,7 +264,7 @@ export class GalaxyField {
         p.color = c;
       });
       const starMesh = await stars.buildMeshAsync();
-      this.applyState(starMesh, 3.0);
+      this.applyState(starMesh, 2.0);
       this.clouds.push(stars);
       this.meshes.push(starMesh);
 
@@ -260,9 +296,20 @@ export class GalaxyField {
         }
       });
       const gasMesh = await gas.buildMeshAsync();
-      this.applyState(gasMesh, 90.0);
+      // THE PINK GLITCH.
+      // This was 90.0. A 90-pixel additive quad, 9,000 of them along one
+      // band, overlaps itself many times over: the gas colour is a dim
+      // (0.42, 0.13, 0.31), but three overlapping points already saturate
+      // red and blue to 1.0 while green lags - which is precisely the
+      // magenta smear that filled the screen - and eight stack to white.
+      // A few pixels lets the density read as haze instead of paint.
+      this.applyState(gasMesh, 4.0);
       this.clouds.push(gas);
       this.meshes.push(gasMesh);
+
+      // Keep the true coordinates: the proxy overwrites the vertex buffer
+      // every frame, so the real positions have to live somewhere else.
+      this.truePos = this.capturePositions([starMesh, gasMesh]);
 
       // ---- other galaxies ----
       // Each is a cluster of points at its true coordinates, so the smudge
@@ -324,6 +371,7 @@ export class GalaxyField {
       mesh.setEnabled(this.visible);
       this.farCloud = cloud;
       this.farMesh = mesh;
+      this.farTruePos = this.capturePositions([mesh]);
     } catch (e) {
       // Distant galaxies are scenery; losing them must not lose the frame.
       console.warn('Distant galaxies unavailable:', e);
@@ -348,9 +396,69 @@ export class GalaxyField {
     };
   }
 
+  /**
+   * Rewrite every point into the proxy shell around the eye.
+   *
+   * Called once a frame. Direction from the eye to the true position is
+   * preserved exactly; only the radial distance is remapped, so the sky
+   * looks right and parallax still happens - move sideways and near
+   * galaxies shift against far ones, because their true positions are
+   * what the direction is computed from.
+   */
+  private projectProxy(eye: Vector3): void {
+    this.projectOne(this.meshes[0] ?? null, this.truePos, eye);
+    this.projectOne(this.meshes[1] ?? null, this.truePos, eye, STAR_COUNT);
+    this.projectOne(this.farMesh, this.farTruePos, eye);
+  }
+
+  private projectOne(
+    mesh: Mesh | null, src: Float64Array | null, eye: Vector3, offset = 0
+  ): void {
+    if (!mesh || !src) return;
+    try {
+      const data = mesh.getVerticesData('position');
+      if (!data) return;
+      const n = Math.floor(data.length / 3);
+      for (let i = 0; i < n; i++) {
+        const j = (i + offset) * 3;
+        if (j + 2 >= src.length) break;
+        const dx = src[j] - eye.x;
+        const dy = src[j + 1] - eye.y;
+        const dz = src[j + 2] - eye.z;
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (!(d > 1e-6)) { continue; }
+        const r = proxyRadius(d);
+        const k = r / d;
+        data[i * 3] = dx * k;
+        data[i * 3 + 1] = dy * k;
+        data[i * 3 + 2] = dz * k;
+      }
+      mesh.updateVerticesData('position', data, false, false);
+      // The proxy is built around the eye, so the mesh itself sits there.
+      mesh.position.copyFrom(eye);
+      // Its bounds are now the shell, not the galaxy.
+      mesh.refreshBoundingInfo();
+    } catch {
+      // A failed remap leaves last frame's positions, which is a stale
+      // galaxy rather than no galaxy.
+    }
+  }
+
+  /** Snapshot the world positions of some meshes into one flat array. */
+  private capturePositions(meshes: (Mesh | null)[]): Float64Array {
+    const parts: number[] = [];
+    for (const m of meshes) {
+      if (!m) continue;
+      const d = m.getVerticesData('position');
+      if (!d) continue;
+      for (let i = 0; i < d.length; i++) parts.push(d[i]);
+    }
+    return Float64Array.from(parts);
+  }
+
   /** Render state shared by both point clouds. */
   private applyState(mesh: Mesh, size: number): void {
-    mesh.layerMask = GALAXY_LAYER;
+    // Drawn by the ordinary camera now, so it uses the default layer.
     mesh.renderingGroupId = 0;
     mesh.isPickable = false;
     mesh.applyFog = false;
@@ -393,12 +501,9 @@ export class GalaxyField {
   }
 
   update(eye: Vector3, target: Vector3, scene: Scene | null = this.scene): void {
-    const cam = this.cam;
-    if (cam) {
-      cam.position.copyFrom(eye);
-      cam.setTarget(target);
-    }
     if (!scene) return;
+    // Remap the galaxy into the shell the main camera can actually see.
+    this.projectProxy(eye);
 
     // Coordinate-bound nebular fog: density comes from where you actually
     // are, so crossing the disc fills the cockpit and leaving it clears.
@@ -439,8 +544,9 @@ export class GalaxyField {
     for (const c of this.clouds) { try { c.dispose(); } catch { /* gone */ } }
     this.clouds = [];
     this.meshes = [];
-    try { this.cam?.dispose(); } catch { /* gone */ }
-    this.cam = null;
+    this.main = null;
+    this.truePos = null;
+    this.farTruePos = null;
     this.built = false;
     this.count = 0;
     this.scene = null;

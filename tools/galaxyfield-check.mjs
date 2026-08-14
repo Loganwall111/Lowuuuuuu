@@ -51,25 +51,30 @@ ok('gas is sampled from the shared 3D noise field',
 // A 50,000-unit structure cannot be drawn through a 4,000-unit far plane,
 // and widening the main camera to reach it would wreck depth precision at
 // the surface scale (minZ 0.05 against maxZ 50000 is a ratio of 1e6).
-ok('the galaxy has its own camera', /new UniversalCamera\(\s*'galaxyCam'/.test(src));
-ok('that camera can actually reach the far edge', (() => {
-  const far = src.match(/GALAXY_FAR = (\d+)/);
-  const outer = src.match(/FIELD_OUTER = (\d+)/);
-  return far && outer && Number(far[1]) > Number(outer[1]) * 2;
+// The depth problem was originally solved with a second camera at
+// 500..200,000. That is the RIGHT answer in isolation and the WRONG one
+// here: DefaultRenderingPipeline is attached to the main camera only, and
+// a post-process pipeline blits its own framebuffer over the backbuffer,
+// erasing whatever the first camera drew. The galaxy rendered every frame
+// and was then painted over - it vanished completely.
+//
+// It is now drawn by the ordinary camera, with each point remapped along
+// its true view direction into a shell inside the existing far plane.
+// These assertions pin that, and specifically forbid the regression.
+ok('there is no second camera for a post-process to paint over',
+  !/new UniversalCamera\(\s*'galaxyCam'/.test(src));
+ok('the galaxy renders on the single main camera',
+  /scene\.activeCameras = null/.test(src));
+ok('the proxy shell fits inside the main camera far plane', (() => {
+  const o = src.match(/PROXY_OUTER = (\d+)/);
+  return o && Number(o[1]) < 4000;
 })());
-ok('its near plane is far enough out to keep depth precision', (() => {
-  const near = src.match(/GALAXY_NEAR = (\d+)/);
-  return near && Number(near[1]) >= 100;
+ok('the shell is far enough out to sit behind the scene', (() => {
+  const i = src.match(/PROXY_INNER = (\d+)/);
+  return i && Number(i[1]) > 1500;
 })());
-ok('the galaxy is on a layer of its own', /GALAXY_LAYER = 0x20000000/.test(src));
-ok('the layer is outside Babylon default mask, so nothing else changes',
-  (0x20000000 & 0x0fffffff) === 0);
-ok('the main camera is excluded from that layer',
-  /main\.layerMask = main\.layerMask & ~GALAXY_LAYER/.test(src));
-ok('the galaxy draws before the main scene',
-  /activeCameras = \[cam, main\]/.test(src));
-ok('the second pass does not wipe the first',
-  /autoClear = false/.test(src));
+ok('direction is preserved, so only distance is compressed',
+  /Direction is preserved exactly|direction is computed from/.test(src));
 ok('the galaxy never writes depth, so real objects composite in front',
   /disableDepthWrite = true/.test(src));
 

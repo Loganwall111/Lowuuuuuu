@@ -14,6 +14,28 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { makeRng, hashSeed } from './DimensionSystem';
 import { ChunkStreamer } from './ChunkedUniverse';
+
+/**
+ * Shortest distance from point p to the segment a->b.
+ *
+ * Exported so the swept horizon test can be verified without a scene.
+ * This is what turns "am I inside the hole this instant" into "did my
+ * path pass through the hole", which is the difference between catching
+ * a crossing and tunnelling straight through it at warp.
+ */
+export function segmentPointDistance(a: Vector3, b: Vector3, p: Vector3): number {
+  const abx = b.x - a.x, aby = b.y - a.y, abz = b.z - a.z;
+  const apx = p.x - a.x, apy = p.y - a.y, apz = p.z - a.z;
+  const len2 = abx * abx + aby * aby + abz * abz;
+  if (!(len2 > 1e-12)) {
+    return Math.sqrt(apx * apx + apy * apy + apz * apz);
+  }
+  let t = (apx * abx + apy * aby + apz * abz) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const cx = a.x + abx * t, cy = a.y + aby * t, cz = a.z + abz * t;
+  const dx = p.x - cx, dy = p.y - cy, dz = p.z - cz;
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
 import {
   LENS_PROFILES, cloneProfile, randomAlienProfile, sanitizeProfile,
   type LensProfile
@@ -100,6 +122,8 @@ export class UniverseState {
   current: Region | null = null;
   /** Set when the player crosses a horizon; drives the look-back view. */
   insideHorizon: Region | null = null;
+  /** Where the player was last frame, for swept collision tests. */
+  readonly lastPlayerPos = new Vector3();
   horizonDepth = 0;
 
   private seq = 0;
@@ -415,6 +439,9 @@ export class UniverseState {
    * is what the UI shows instead of a tab.
    */
   updatePlayer(pos: Vector3): Region | null {
+    // Keep the previous position before overwriting it: the horizon test
+    // below needs the segment travelled, not just where we ended up.
+    this.lastPlayerPos.copyFrom(this.playerPos);
     this.playerPos.copyFrom(pos);
     const inside = this.containing(pos);
     // the smallest containing region wins, so a planet beats its star system
@@ -422,10 +449,34 @@ export class UniverseState {
     this.current = inside[0] ?? null;
 
     // ---- horizon crossing ----
-    const bh = inside.find((r) => r.kind === 'blackhole');
+    //
+    // SWEPT, not sampled. The old test asked "is the ship inside the
+    // horizon RIGHT NOW", which is only ever evaluated at frame
+    // boundaries. A horizon is ~90 units across; under warp the ship
+    // covers 142,500 units in a single frame. It was therefore outside
+    // the hole before the step and outside it after, and the player flew
+    // straight through and out the far side without ever being detected
+    // as inside - the "it bounces me out" bug.
+    //
+    // The segment from the previous position to this one is tested
+    // instead, so a crossing cannot be missed however fast you are going.
+    const bh = inside.find((r) => r.kind === 'blackhole')
+      ?? this.sweptHole(this.lastPlayerPos, pos);
     if (bh) {
-      const d = Vector3.Distance(pos, bh.position);
       const horizon = this.horizonRadiusOf(bh);
+      const endD = Vector3.Distance(pos, bh.position);
+      const sweptD = segmentPointDistance(this.lastPlayerPos, pos, bh.position);
+
+      // The sweep is for ENTERING, never for leaving.
+      //
+      // If it applied both ways, climbing out would re-trigger: the path
+      // from just inside the horizon to well outside it still passes
+      // close to the centre, so its closest approach is small and the
+      // player would be flagged as inside forever. Once we are already
+      // inside, only the endpoint matters - that is what lets you get out
+      // and look back, which is the whole point of going in.
+      const wasInside = this.insideHorizon?.id === bh.id;
+      const d = wasInside ? endD : Math.min(endD, sweptD);
       if (d <= horizon) {
         this.insideHorizon = bh;
         // 0 at the horizon, 1 at the singularity
@@ -440,6 +491,26 @@ export class UniverseState {
     }
 
     return this.current;
+  }
+
+  /**
+   * Any black hole whose horizon the segment a->b passes through.
+   *
+   * Only holes are considered, and only their horizons, so this stays
+   * cheap: it is a point-to-segment distance per hole.
+   */
+  private sweptHole(a: Vector3, b: Vector3): Region | null {
+    let best: Region | null = null;
+    let bestD = Infinity;
+    for (const r of this.regions) {
+      if (r.kind !== 'blackhole') continue;
+      const d = segmentPointDistance(a, b, r.position);
+      if (d <= this.horizonRadiusOf(r) && d < bestD) {
+        bestD = d;
+        best = r;
+      }
+    }
+    return best;
   }
 
   horizonRadiusOf(r: Region): number {
