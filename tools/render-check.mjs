@@ -684,5 +684,36 @@ console.log('\n— the singularity core renders black —');
     /captured\s*=\s*true/.test(bhw));
 }
 
+// -------------------------------- warping to a hole actually arrives (bug 3)
+// The user clicked "Fly" on a black hole and the screen froze with nothing to
+// see. warpTo() places you a standoff distance from the REGION (e.g. the hole
+// at (-4.7, 0, -2722)), then loads BlackHoleWorld - which hardcoded its hole
+// at the origin and pointed the camera there. So the player ended up ~837
+// units from their target, staring at empty space with the rendered hole
+// thousands of units behind them. Nothing threw, which is why it read as a
+// freeze rather than a crash.
+console.log('\n— warping to a black hole arrives at that hole —');
+{
+  const bhw = read('src/bjs/worlds/BlackHoleWorld.ts');
+  const world = read('src/bjs/World.ts');
+  const app = read('src/bjs/App.ts');
+
+  ok('the world context can carry the place you travelled to',
+    /focus\??\s*:/.test(world),
+    'the world must be told WHICH hole, or it can only ever draw one at 0,0,0');
+
+  ok('the hole centre is taken from the arrival focus',
+    /focus[\s\S]{0,300}?this\.center/.test(bhw) ||
+    /this\.center[\s\S]{0,200}?focus/.test(bhw),
+    'center = Vector3.Zero() with no way to move it strands the player');
+
+  ok('the camera is aimed at the hole, not blindly at the origin',
+    !/setCameraTarget\(Vector3\.Zero\(\)/.test(bhw),
+    'aiming at the origin points away from a hole that is elsewhere');
+
+  ok('App tells the world which region was travelled to',
+    /focus/.test(app));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

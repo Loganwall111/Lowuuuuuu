@@ -499,6 +499,68 @@ try {
   travelChecks.push(['holes are released once you leave',
     !appRef.holeField.has(h.id)]);
 
+  // ---- clicking "Fly" on a hole must actually arrive at THAT hole ----
+  // The user clicked Fly and the screen froze with nothing visible. Nothing
+  // threw: warpTo() put them a standoff from the region, but BlackHoleWorld
+  // rendered its hole at the origin and aimed the camera there, leaving them
+  // ~837 units away looking at empty space.
+  {
+    const target = holes[0];
+    await appRef.warpTo(target.id);
+    await new Promise((res) => setTimeout(res, 2000));
+
+    const w = appRef.world;
+    travelChecks.push(['flying to a hole loads the singularity',
+      w && w.id === 'blackhole', 'world=' + (w && w.id)]);
+
+    // The raymarched hole must sit exactly on the region travelled to.
+    const off = w && w.center
+      ? Vector3Distance(w.center, target.position) : Infinity;
+    travelChecks.push(['the rendered hole sits on the region you flew to',
+      off < 1e-6,
+      'offset ' + (Number.isFinite(off) ? off.toFixed(4) : 'n/a') +
+      ' center=' + (w && w.center ? [w.center.x, w.center.y, w.center.z]
+        .map((n) => n.toFixed(1)).join(',') : 'n/a')]);
+
+    // ...and it must be in front of the camera, not behind it.
+    const aimedAt = (c, at) => {
+      const fwd = c.getTarget().subtract(c.position);
+      const to = at.subtract(c.position);
+      const fl = Math.hypot(fwd.x, fwd.y, fwd.z);
+      const tl = Math.hypot(to.x, to.y, to.z);
+      return (fwd.x * to.x + fwd.y * to.y + fwd.z * to.z) / (fl * tl);
+    };
+    travelChecks.push(['the camera is pointed at the hole after arriving',
+      aimedAt(appRef.camera, target.position) > 0.99,
+      'cos=' + aimedAt(appRef.camera, target.position).toFixed(4)]);
+
+    // The WORLD itself must do the aiming. App re-points the camera after
+    // loadWorld resolves, which masked a world that aimed at the origin -
+    // the check above passed even with the bug present. Rebuild the world
+    // directly against the real context and re-test the aim, with no App
+    // correction afterwards.
+    {
+      const ctx = appRef.ctx;
+      const before = ctx.focus;
+      ctx.focus = { position: target.position.clone(), radius: target.radius };
+      let aimOk = false, detail = '';
+      try {
+        const fresh = appRef.world;
+        if (fresh && typeof fresh.build === 'function') {
+          appRef.camera.setTarget(new V3(0, 0, 0));
+          await fresh.build(ctx);
+          const c = aimedAt(appRef.camera, target.position);
+          aimOk = c > 0.99;
+          detail = 'cos=' + c.toFixed(4);
+        } else { detail = 'no world to rebuild'; }
+      } catch (e) { detail = 'threw ' + e.message; }
+      ctx.focus = before;
+      travelChecks.push([
+        'the world aims at its own hole without App correcting it',
+        aimOk, detail]);
+    }
+  }
+
   // ---- the Singularity must show exactly ONE hole ----
   // The user saw a bare black circle on one side of the screen and the
   // lensed orange disk on the other. That is two different holes: the world

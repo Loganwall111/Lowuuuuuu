@@ -357,6 +357,10 @@ export class App {
     this.ctx = {
       scene: this.scene,
       camera: this.camera,
+      // Set by warpTo() just before the destination world is built, so the
+      // world knows which hole/system it is a view of instead of assuming
+      // it owns the origin.
+      focus: null,
       setCameraTarget: (t: Vector3, r: number) => {
         this.camera.setTarget(t.clone());
         this.camera.radius = r;
@@ -758,7 +762,18 @@ export class App {
     // to, not an entry you click.
     // Arriving resolves the region kind straight to a locale.
     const world = localeForKind(r.kind).id;
-    if (world !== this.currentId) this.loadWorld(world);
+    // Tell the destination world WHICH place this is. Without it a world
+    // renders its subject at the origin while the player stands beside the
+    // real region coordinates, seeing nothing at all.
+    this.ctx.focus = { position: r.position.clone(), radius: r.radius };
+    // Always rebuild, even when the locale id is unchanged: flying from one
+    // black hole to another stays in 'blackhole' but is a different subject,
+    // and skipping the rebuild would leave the old hole on screen.
+    void this.loadWorld(world).then(() => {
+      // Re-point after the build. loadWorld purges the scene and the world
+      // frames its own subject, so the aim must settle afterwards.
+      this.camera.setTarget(r.position.clone());
+    });
   }
 
   /**

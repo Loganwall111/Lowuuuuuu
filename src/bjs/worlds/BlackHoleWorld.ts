@@ -452,7 +452,21 @@ export class BlackHoleWorld implements World {
     this.quad.alwaysSelectAsActiveMesh = true;
     this.quad.freezeWorldMatrix();
 
-    ctx.setCameraTarget(Vector3.Zero(), 26);
+    // Sit the hole where the player actually travelled to. Hardcoding the
+    // origin here is what stranded them: warpTo() leaves you a standoff
+    // distance from the REGION, so a hole drawn at (0,0,0) is thousands of
+    // units away and off-camera, which looks exactly like a frozen screen.
+    if (ctx.focus) {
+      this.center.copyFrom(ctx.focus.position);
+    } else {
+      this.center.setAll(0);
+    }
+    // Frame the hole itself, at a distance that suits its size rather than a
+    // fixed 26 units.
+    const framing = ctx.focus
+      ? Math.max(26, Math.min(ctx.focus.radius * 0.25, 400))
+      : 26;
+    ctx.setCameraTarget(this.center.clone(), framing);
   }
 
   /**
@@ -499,6 +513,9 @@ export class BlackHoleWorld implements World {
   /**
    * World-space centre of the hole. Kept as a field (not a local) so the
    * physical horizon and the shader read from the same object.
+   *
+   * Set from ctx.focus in build(): this world is a view onto one hole in a
+   * large universe, not a standalone scene that owns the origin.
    */
   center = Vector3.Zero();
 

@@ -27,6 +27,22 @@ export interface WorldContext {
   camera: ArcRotateCamera;
   setCameraTarget(target: Vector3, radius: number): void;
   /**
+   * The place the player just travelled to, if any.
+   *
+   * Worlds used to assume they were always built at the origin. That is fine
+   * when a world IS the universe, but these worlds are views onto one region
+   * of a much bigger universe: flying to a hole at (-4.7, 0, -2722) and then
+   * rendering it at (0, 0, 0) left the player ~837 units from their target,
+   * staring into empty space with nothing on screen. Nothing threw, so it
+   * read as a frozen screen rather than an error.
+   */
+  focus?: {
+    /** World-space centre of the region that was travelled to. */
+    position: Vector3;
+    /** Region radius, for framing the camera sensibly. */
+    radius: number;
+  } | null;
+  /**
    * Travel to a procedural dimension. A world calls this when the player
    * enters a space tear or falls through a black hole, so the destination
    * seen through the portal is the one they arrive in. Optional so worlds
