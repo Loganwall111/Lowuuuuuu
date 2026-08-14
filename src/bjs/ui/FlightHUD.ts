@@ -94,6 +94,24 @@ export function formatCoord(v: number): string {
   return (n < 0 ? '-' : '+') + s;
 }
 
+/**
+ * The bits of a descent the HUD needs.
+ *
+ * Structural rather than an import of HoleInterior's types: the HUD should
+ * not depend on the physics module, only on the shape of what it is handed.
+ */
+export interface DescentStateLike {
+  phase: string;
+  progress: number;
+  remaining: number;
+  exitWindow: number;
+}
+
+export interface DescentPlanLike {
+  gargantua: boolean;
+  nested: boolean;
+}
+
 export class FlightHUD {
   elements: HUDElements = { ...DEFAULT_HUD_ELEMENTS };
   private root: HTMLDivElement | null = null;
@@ -112,6 +130,13 @@ export class FlightHUD {
           <path d="M60 14 L60 26 M60 94 L60 106 M14 60 L26 60 M94 60 L106 60" class="fh-tick"/>
           <path d="M26 34 A 44 44 0 0 1 94 34" class="fh-arc"/>
         </svg>
+      </div>
+
+      <div class="fhud-descent" id="fhDescent">
+        <div class="fh-desc-phase" id="fhDescPhase">FALLING</div>
+        <div class="fh-desc-sub" id="fhDescSub"></div>
+        <div class="fh-desc-bar"><i id="fhDescBar" style="width:0%"></i></div>
+        <div class="fh-desc-exit" id="fhDescExit"></div>
       </div>
 
       <div class="fhud-left">
@@ -167,6 +192,19 @@ export class FlightHUD {
     if (el) el.textContent = text;
   }
 
+  /**
+   * Same as put(), but for the few readouts that carry markup.
+   *
+   * Kept separate rather than switching put() to innerHTML: everything else
+   * on the HUD is live telemetry that must never be parsed as HTML.
+   */
+  private putHtml(id: string, html: string): void {
+    if (this.cache.get(id) === html) return;
+    this.cache.set(id, html);
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
+
   private width(id: string, pct: number): void {
     const key = id + ':w';
     const v = Math.max(0, Math.min(100, pct)).toFixed(1);
@@ -210,6 +248,50 @@ export class FlightHUD {
       this.put('fhFleetG', d.fleetGravity > 0.01
         ? d.fleetGravity.toFixed(2) + ' m/s²' : 'no gravity');
     }
+  }
+
+  /**
+   * Drives the descent readout.
+   *
+   * Called with (null, null) whenever no fall is in progress, which hides
+   * the panel — so the instrument exists only while it means something.
+   */
+  setDescent(plan: DescentPlanLike | null, state: DescentStateLike | null): void {
+    if (!this.root) return;
+    const panel = this.root.querySelector('#fhDescent') as HTMLElement | null;
+    if (!panel) return;
+    if (!plan || !state || state.phase === 'outside') {
+      panel.classList.remove('on', 'singular');
+      return;
+    }
+    panel.classList.add('on');
+    panel.classList.toggle('singular',
+      state.phase === 'singularity' || state.phase === 'darkness');
+
+    const PHASE: Record<string, string> = {
+      throat: 'PAST THE HORIZON',
+      deep: 'FALLING',
+      nested: 'SOMETHING BELOW YOU',
+      singularity: 'SINGULARITY — FLY INTO IT',
+      darkness: 'DARKNESS',
+      arrived: 'ARRIVING'
+    };
+    this.put('fhDescPhase', PHASE[state.phase] ?? 'FALLING');
+
+    const sub = state.phase === 'singularity'
+      ? 'hold your line to pass through it'
+      : state.phase === 'nested'
+        ? 'a second lens is opening ahead'
+        : formatDistance(state.remaining) + ' to the far side';
+    this.put('fhDescSub', sub);
+
+    const bar = this.root.querySelector('#fhDescBar') as HTMLElement | null;
+    if (bar) bar.style.width = Math.round(state.progress * 100) + '%';
+
+    this.putHtml('fhDescExit', state.exitWindow > 0.02
+      ? 'the way back is still open — <b>' +
+        Math.round(state.exitWindow * 100) + '%</b>'
+      : 'the way back has closed');
   }
 
   /** Shows or hides one group. */

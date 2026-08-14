@@ -44,14 +44,16 @@ export type DimensionTrait =
   | 'upside-down' | 'inverted-gravity' | 'time-reversed' | 'liquid'
   | 'crystalline' | 'void' | 'fractal' | 'jellyfish' | 'clockwork'
   | 'paper' | 'neon' | 'bone' | 'fungal' | 'oceanic' | 'molten'
-  | 'glitched' | 'monochrome' | 'giant' | 'miniature' | 'mirror';
+  | 'glitched' | 'monochrome' | 'giant' | 'miniature' | 'mirror'
+  | 'library' | 'tesseract' | 'dust' | 'streaming';
 
 export const ALL_TRAITS: DimensionTrait[] = [
   'psychedelic', 'flesh', 'bloodstream', 'neural', 'cubist',
   'upside-down', 'inverted-gravity', 'time-reversed', 'liquid',
   'crystalline', 'void', 'fractal', 'jellyfish', 'clockwork',
   'paper', 'neon', 'bone', 'fungal', 'oceanic', 'molten',
-  'glitched', 'monochrome', 'giant', 'miniature', 'mirror'
+  'glitched', 'monochrome', 'giant', 'miniature', 'mirror',
+  'library', 'tesseract', 'dust', 'streaming'
 ];
 
 /** Themed archetypes. Depth biases which of these can appear. */
@@ -65,6 +67,16 @@ interface Archetype {
   ambient: number;
   minDepth: number;
   blurb: string;
+  /**
+   * Never chosen by an ordinary roll, at any depth.
+   *
+   * Some places must be arrived at rather than stumbled into. The Library
+   * exists behind one specific black hole in the whole universe, and the
+   * Dust Stream is only on the far side of a singularity. If the random
+   * draw could produce them they would stop being destinations and become
+   * scenery, so they are excluded from the pool and reached by name.
+   */
+  summonedOnly?: boolean;
 }
 
 const ARCHETYPES: Archetype[] = [
@@ -158,8 +170,37 @@ const ARCHETYPES: Archetype[] = [
     palette: [[0.15, 0.35, 0.55], [0.6, 0.85, 0.9], [0.05, 0.1, 0.2], [0.9, 0.95, 1]],
     fogDensity: 0.03, ambient: 0.4, minDepth: 5,
     blurb: 'You have gone deep enough to arrive before things began.'
+  },
+
+  /* --------------------- summoned-only destinations --------------------- */
+
+  {
+    // Behind the one Gargantua-class hole in the universe. You arrive in
+    // darkness and fall for a while before the shelves resolve around you.
+    id: 'library', name: 'The Library Realm', glyph: '📚',
+    traits: ['library', 'tesseract', 'cubist', 'time-reversed'],
+    palette: [[0.82, 0.66, 0.38], [0.16, 0.13, 0.10], [1, 0.88, 0.62], [0.04, 0.035, 0.03]],
+    fogDensity: 0.018, ambient: 0.22, minDepth: 0,
+    blurb: 'Every moment is a shelf. You are behind all of them at once.',
+    summonedOnly: true
+  },
+  {
+    // Through the singularity itself, rather than merely past the horizon.
+    id: 'duststream', name: 'The Dust Stream', glyph: '✨',
+    traits: ['dust', 'streaming', 'void', 'giant'],
+    palette: [[0.95, 0.86, 0.72], [0.55, 0.45, 0.35], [1, 0.96, 0.9], [0.03, 0.03, 0.04]],
+    fogDensity: 0.055, ambient: 0.5, minDepth: 0,
+    blurb: 'Matter on its way to somewhere else, and now so are you.',
+    summonedOnly: true
   }
 ];
+
+/**
+ * Realms that exist but are never randomly rolled. Reached with
+ * `namedDimension`, which is what the black hole interior calls when you
+ * pass through the singularity or fall into the Gargantua hole.
+ */
+export const SUMMONED_IDS = ARCHETYPES.filter((a) => a.summonedOnly).map((a) => a.id);
 
 /* ------------------------------- the spec ------------------------------- */
 
@@ -208,6 +249,10 @@ const SHAPE_SETS: Record<string, string[]> = {
   void: ['icosphere', 'plane'],
   fractal: ['icosphere', 'torusknot', 'octahedron'],
   liquid: ['sphere', 'blob', 'disc'],
+  library: ['box', 'box', 'plane', 'shelf'],
+  tesseract: ['box', 'plane', 'octahedron'],
+  dust: ['grain', 'grain', 'grain', 'icosphere'],
+  streaming: ['grain', 'disc', 'blob'],
   default: ['sphere', 'box', 'torus', 'capsule']
 };
 
@@ -224,11 +269,34 @@ export function generateDimension(seed: number, depth = 0): DimensionSpec {
   const rng = makeRng(seed);
   const d = Math.max(0, Math.floor(depth));
 
-  // deeper falls unlock stranger places, but shallow ones stay possible
-  const eligible = ARCHETYPES.filter((a) => a.minDepth <= d);
+  // deeper falls unlock stranger places, but shallow ones stay possible.
+  // Summoned-only realms are excluded: they are destinations, not scenery.
+  const eligible = ARCHETYPES.filter((a) => a.minDepth <= d && !a.summonedOnly);
   const pool = eligible.length ? eligible : [ARCHETYPES[0]];
   const arch = pool[Math.floor(rng() * pool.length) % pool.length];
+  return realise(arch, rng, seed, d);
+}
 
+/**
+ * Builds one specific realm by archetype id, bypassing the random draw.
+ *
+ * This is how the Library and the Dust Stream are reached: the caller knows
+ * exactly where the player is going, but the realm is still generated from a
+ * seed so its palette and contents vary between visits to different holes.
+ * Falls back to a normal roll if the id is unknown, so a bad string can
+ * never strand the player in an empty world.
+ */
+export function namedDimension(id: string, seed: number, depth = 0): DimensionSpec {
+  const arch = ARCHETYPES.find((a) => a.id === id);
+  if (!arch) return generateDimension(seed, depth);
+  const rng = makeRng(seed);
+  return realise(arch, rng, seed, Math.max(0, Math.floor(depth)));
+}
+
+/** Turns a chosen archetype into a full spec. Shared by both entry points. */
+function realise(
+  arch: Archetype, rng: () => number, seed: number, d: number
+): DimensionSpec {
   // every dimension mixes its archetype traits with one wildcard
   const traits: DimensionTrait[] = [...arch.traits];
   const wild = pick(rng, ALL_TRAITS);

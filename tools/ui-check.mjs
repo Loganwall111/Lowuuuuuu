@@ -477,8 +477,32 @@ console.log('\n— there is no main menu; the opening is a place —');
 
   const playBtn = document.querySelector('.intro-play');
   ok('there is a Play button', !!playBtn);
-  ok('Play is the only call to action',
-     document.querySelectorAll('.intro-play').length === 1);
+  // The title offers exactly two ways in - Explorer and Sandbox - and
+  // nothing else. Still no menu: two doors, not a list of options.
+  const plates = document.querySelectorAll('.intro-play');
+  ok('the title offers exactly two ways in', plates.length === 2,
+     'found ' + plates.length);
+  ok('one of them is Explorer',
+     Array.from(plates).some((b) => /explore/i.test(b.textContent)));
+  ok('the other is Sandbox',
+     Array.from(plates).some((b) => /sandbox/i.test(b.textContent)));
+  ok('each says what the mode actually is',
+     Array.from(plates).every((b) => !!b.querySelector('i')));
+
+  // Choosing a mode has to actually report which one was chosen, or the
+  // choice is decoration.
+  let chose = null;
+  const modeSeq = new IntroSequence();
+  const modeOverlay = new IntroOverlay(modeSeq, {
+    onPlay: (m) => { chose = m; },
+    onSkip: () => {}, onAdvance: () => {}
+  });
+  const all = document.querySelectorAll('.intro-play');
+  all[all.length - 1].onclick();
+  ok('clicking Sandbox reports sandbox', chose === 'sandbox', String(chose));
+  all[all.length - 2].onclick();
+  ok('clicking Explore reports explorer', chose === 'explorer', String(chose));
+  modeOverlay.dispose();
 
   // No grid of world tiles, no nav bar - the menu genuinely went away.
   ok('there is no world picker', document.querySelectorAll('.menu-card').length === 0);

@@ -103,6 +103,27 @@ body[data-focus="1"] .hud{ opacity:.35; }
 .seg button.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;box-shadow:0 3px 12px rgba(77,163,255,.34)}
 .spacer{flex:1}
 
+/* ---- Explorer / Sandbox switch ---- */
+/* The single most consequential control in the app, so it is a labelled
+   switch in the top bar rather than another anonymous icon: which mode you
+   are in decides whether the universe can tear your ship apart. */
+.modesw{display:flex;align-items:stretch;margin-right:4px;
+  border:1px solid rgba(140,190,255,.22);
+  background:linear-gradient(180deg,rgba(16,24,40,.86),rgba(10,15,26,.86));
+  backdrop-filter:blur(20px);box-shadow:var(--shadow);
+  clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);}
+.modesw-b{border:0;background:transparent;color:var(--dim);cursor:pointer;
+  font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.6px;
+  padding:0 13px;height:34px;white-space:nowrap;
+  transition:color .13s, background .13s, box-shadow .13s;}
+.modesw-b:hover{color:var(--txt);background:rgba(255,255,255,.06);}
+.modesw-b.on{color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2));
+  box-shadow:0 3px 14px rgba(77,163,255,.36);}
+/* sandbox reads as the dangerous one */
+.modesw-b[data-gm="sandbox"].on{
+  background:linear-gradient(135deg,#a45cff,#ff7a4d);
+  box-shadow:0 3px 14px rgba(190,90,255,.40);}
+
 .iconbtn{
   width:34px;height:34px;border:1px solid rgba(140,190,255,.20);
   background:linear-gradient(180deg,rgba(16,24,40,.86),rgba(10,15,26,.86));
@@ -183,6 +204,28 @@ body[data-focus="1"] .hud{ opacity:.35; }
 /* at warp the whole panel picks up the drive colour */
 .fhud.warping .fh-warp{border-color:color-mix(in srgb,var(--acc2) 55%,transparent);}
 .fhud.warping .fh-warp::after{background:linear-gradient(180deg,var(--acc2),transparent);}
+
+/* ---- descent: only on screen while falling through a horizon ---- */
+/* Centred at the top rather than in the corners: while you are inside a
+   black hole this is the only instrument that matters, and the corners are
+   where the eye is not. */
+.fhud-descent{position:absolute;left:50%;top:74px;transform:translateX(-50%);
+  min-width:340px;text-align:center;display:none;}
+.fhud-descent.on{display:block;}
+.fh-desc-phase{font-size:12px;letter-spacing:3px;text-transform:uppercase;
+  color:#ffd9a8;text-shadow:0 0 18px rgba(255,170,80,.55);font-weight:700;}
+.fh-desc-sub{font-size:10px;letter-spacing:1.2px;color:var(--dim);margin-top:3px;}
+.fh-desc-bar{height:4px;margin-top:7px;background:rgba(255,190,120,.14);
+  overflow:hidden;}
+.fh-desc-bar i{display:block;height:100%;
+  background:linear-gradient(90deg,#ff9a3c,#ffd9a8);
+  box-shadow:0 0 14px rgba(255,150,60,.75);transition:width .12s linear;}
+/* the way back, shown as its own closing aperture */
+.fh-desc-exit{font-size:9.5px;letter-spacing:1px;color:#8fa8ce;margin-top:5px;}
+.fh-desc-exit b{color:#cfe4ff;font-weight:600;}
+/* the singularity warning takes the panel over when the dot is in reach */
+.fhud-descent.singular .fh-desc-phase{color:#fff;text-shadow:0 0 26px #fff;}
+.fhud-descent.singular .fh-desc-bar i{background:linear-gradient(90deg,#fff,#dfefff);}
 
 .fhud-reticle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   opacity:.5;}

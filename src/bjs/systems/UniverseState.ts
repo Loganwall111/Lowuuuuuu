@@ -362,6 +362,21 @@ export class UniverseState {
     return true;
   }
 
+  /**
+   * Clears the "inside a horizon" state for one hole.
+   *
+   * Called when a descent completes: the player has left through the far
+   * side, so they are no longer inside that hole even though their world
+   * coordinates have not changed. Without this the next frame would start a
+   * fresh fall into the hole they just came out of.
+   */
+  leaveHorizon(id: string): void {
+    if (this.insideHorizon?.id === id) {
+      this.insideHorizon = null;
+      this.horizonDepth = 0;
+    }
+  }
+
   byId(id: string): Region | null {
     return this.regions.find((r) => r.id === id) ?? null;
   }

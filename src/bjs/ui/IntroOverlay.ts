@@ -56,8 +56,12 @@ export const INTRO_CSS = `
 /* The play button is the first thing anyone touches, so it is built like a
    piece of hardware: a bevelled plate with its own light, a sweeping sheen,
    and a bracket frame that charges up on hover. */
+.intro-modes{ display:flex; gap:16px; margin-top:22px; flex-wrap:wrap;
+  justify-content:center; }
 .intro-play{
-  position:relative; margin-top:18px; padding:18px 74px;
+  position:relative; padding:16px 34px 15px;
+  min-width:250px; display:flex; flex-direction:column; gap:5px;
+  align-items:center;
   font-size:17px; font-weight:800; letter-spacing:.28em;
   text-transform:uppercase; cursor:pointer; color:#eaf6ff; border:0;
   background:
@@ -94,6 +98,30 @@ export const INTRO_CSS = `
     0 18px 48px rgba(60,150,255,.62),
     0 0 0 1px rgba(180,225,255,.55),
     0 0 60px rgba(70,160,255,.45);
+}
+.intro-play b{ font-size:17px; letter-spacing:.24em; font-weight:800; }
+/* The one-line explanation of what the mode IS, so the choice can be made
+   without having to try both. */
+.intro-play i{ font-size:10.5px; letter-spacing:.06em; font-style:normal;
+  text-transform:none; opacity:.86; font-weight:600; }
+/* Sandbox is the dangerous one and looks it. */
+.intro-play-sandbox{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,0) 42%),
+    linear-gradient(180deg,#b05cff 0%,#8b3ce0 46%,#5a1aa8 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -2px 0 rgba(30,0,60,.55),
+    0 12px 34px rgba(150,50,230,.48),
+    0 0 0 1px rgba(210,160,255,.35);
+}
+.intro-play-sandbox:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    inset 0 -2px 0 rgba(30,0,60,.5),
+    0 18px 48px rgba(170,70,255,.62),
+    0 0 0 1px rgba(225,190,255,.55),
+    0 0 60px rgba(160,70,255,.45);
 }
 .intro-play:active{ transform:translateY(0) scale(.99); filter:brightness(.95); }
 .intro-play:focus-visible{ outline:2px solid #bfe0ff; outline-offset:4px; }
@@ -153,7 +181,7 @@ export const INTRO_CSS = `
 `;
 
 export interface IntroHooks {
-  onPlay(): void;
+  onPlay(mode: string): void;
   onSkip(): void;
   onAdvance(): void;
 }
@@ -189,11 +217,25 @@ export class IntroOverlay {
       <h1>UNLIMITED<br>POSSIBILITIES<br>SANDBOX</h1>
       <p class="intro-sub">Create · Experiment · Break · Observe</p>
     `;
+    // Two ways in, not one. Explorer is the universe as a place; Sandbox is
+    // the universe as an experiment. Choosing at the title is what stops
+    // "sandbox" being a hidden mode nobody finds.
+    const modes = document.createElement('div');
+    modes.className = 'intro-modes';
+
     const play = document.createElement('button');
     play.className = 'intro-play';
-    play.textContent = 'Play';
-    play.onclick = () => this.hooks.onPlay();
-    this.titleCard.appendChild(play);
+    play.innerHTML = '<b>🔭 Explore</b><i>Fly anywhere. Fall into a black hole.</i>';
+    play.onclick = () => this.hooks.onPlay('explorer');
+    modes.appendChild(play);
+
+    const sand = document.createElement('button');
+    sand.className = 'intro-play intro-play-sandbox';
+    sand.innerHTML = '<b>🌌 Sandbox</b><i>Full physics. Break things.</i>';
+    sand.onclick = () => this.hooks.onPlay('sandbox');
+    modes.appendChild(sand);
+
+    this.titleCard.appendChild(modes);
 
     const skip = document.createElement('button');
     skip.className = 'intro-skip';

@@ -17,7 +17,7 @@ import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
 import { PointLight } from '@babylonjs/core/Lights/pointLight';
 import { Scene } from '@babylonjs/core/scene';
 import {
-  generateDimension, descend, tearSideways, describeDimension,
+  generateDimension, namedDimension, descend, tearSideways, describeDimension,
   makeRng, type DimensionSpec
 } from '../systems/DimensionSystem';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
@@ -285,6 +285,20 @@ export class DimensionWorld implements World {
   /** Jumps to a specific seed, so a dimension can be shared or revisited. */
   jumpTo(seed: number, depth: number): void {
     this.spec = generateDimension(seed >>> 0, depth);
+    this.history.push(this.spec);
+    this.realise();
+  }
+
+  /**
+   * Arrives in one specific realm rather than a rolled one.
+   *
+   * The Library and the Dust Stream are destinations behind particular black
+   * holes, so they are asked for by name. An unknown name falls back to a
+   * normal roll rather than an empty world.
+   */
+  jumpToRealm(realm: string, seed: number, depth: number): void {
+    this.spec = namedDimension(realm, seed >>> 0, depth);
+    this.name = this.spec.glyph + ' ' + this.spec.name;
     this.history.push(this.spec);
     this.realise();
   }

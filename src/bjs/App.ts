@@ -48,6 +48,11 @@ import {
   VehicleController, SHIPS, inputFromKeys, emptyInput, type ControlMode
 } from './systems/VehicleSystem';
 import { UniverseState } from './systems/UniverseState';
+import { MODES, can, type GameMode } from './systems/GameModes';
+import type { InteriorDestination } from './systems/HoleInterior';
+import { HoleDescent } from './systems/HoleDescent';
+import { TidalField } from './systems/TidalField';
+import { SHIP as TIDAL_SHIP, ROCKY_PLANET } from './systems/GameModes';
 import { GrabSystem, type Grabbable } from './systems/GrabSystem';
 import {
   LENS_PROFILES, cloneProfile, randomAlienProfile,
@@ -100,6 +105,51 @@ export class App {
     );
     this.shell.toast('Entering atmosphere');
   }
+
+  /**
+   * Explorer or Sandbox.
+   *
+   * Explorer is the default because it is the one that shows the universe
+   * off; sandbox physics is opt-in, so nobody is spaghettified before they
+   * have understood where they are.
+   */
+  mode: GameMode = 'explorer';
+
+  /** Whether the current mode permits something. */
+  can(cap: Parameters<typeof can>[1]): boolean {
+    return can(this.mode, cap);
+  }
+
+  /**
+   * Explains why something did nothing, and offers the fix.
+   *
+   * A blocked action that fails silently reads as a bug. This names the
+   * capability and points at the switch that enables it.
+   */
+  private needSandbox(what: string): void {
+    this.shell?.toast(what + ' needs Sandbox mode — press M to switch');
+  }
+
+  /**
+   * Switches mode. Sandbox physics is a capability set rather than a
+   * different universe, so this changes what is allowed, not where you are.
+   */
+  setMode(m: GameMode): void {
+    if (this.mode === m) return;
+    this.mode = m;
+    const info = MODES[m] ?? MODES.explorer;
+    this.shell?.setGameMode?.(m);
+    this.shell?.toast(info.glyph + ' ' + info.name + ' — ' + info.tagline);
+    // Leaving sandbox must not leave a half-stretched planet on screen.
+    if (!this.can('spaghettification')) this.tidal.clear();
+    this.saves.setPrefs({ mode: m });
+    this.shell?.refreshAll?.();
+  }
+
+  /** The fall through a horizon, when one is in progress. */
+  descentInto = new HoleDescent();
+  /** Bodies currently being torn apart, in sandbox mode. */
+  tidal = new TidalField();
 
   /** Hold thrust long enough and the universe opens up. */
   warpDrive = new WarpDrive();
@@ -190,6 +240,8 @@ export class App {
       },
       onHudElement: (name, on) => this.flightHud.setElement(name as any, on),
       getHudElements: () => ({ ...this.flightHud.elements }),
+      onGameMode: (m) => this.setMode(m as GameMode),
+      getGameMode: () => this.mode,
       onParam: (k, v) => this.world?.setParam(k, v),
       onPostFX: (k, v) => this.postfx.set(k, v),
       onQuality: (name) => this.applyQuality(name as QualityName),
@@ -238,6 +290,10 @@ export class App {
       onWarpTo: (id) => this.warpTo(id),
 
       onGrab: () => {
+        // Grabbing a planet and moving it is a sandbox act, not an
+        // exploratory one. Gated on the capability rather than the mode name
+        // so the rule lives in exactly one place.
+        if (!this.can('grabbing')) return this.needSandbox('Moving objects');
         const dir = this.camera.getTarget().subtract(this.camera.position);
         const candidates: Grabbable[] = this.universe.regions.map((r) => ({
           id: r.id, name: r.name, position: r.position, radius: r.radius
@@ -252,6 +308,7 @@ export class App {
       },
 
       onSpawnRegion: (kind) => {
+        if (!this.can('spawning')) return this.needSandbox('Creating bodies');
         // place it in front of the camera, at a sensible distance
         const dir = this.camera.getTarget().subtract(this.camera.position).normalize();
         const at = this.camera.position.add(dir.scale(400));
@@ -446,7 +503,11 @@ export class App {
     // portal, and a ship whose consoles are the menu. The sim renders live
     // behind all of it, so there is never a black screen.
     this.introUI = new IntroOverlay(this.intro, {
-      onPlay: () => {
+      onPlay: (mode: string) => {
+        // The title screen is where the mode is chosen, so it is set before
+        // anything is built rather than discovered later in a menu.
+        this.setMode(mode === 'sandbox' ? 'sandbox' : 'explorer');
+        this.shell.setGameMode(this.mode);
         this.intro.advance();            // title -> garage
         this.startWalking();
         this.shell.onMenuClosed();
@@ -852,6 +913,42 @@ export class App {
   }
 
   /**
+   * Arrives at whatever was on the far side of a black hole.
+   *
+   * Named realms (the Library, the Dust Stream) are specific places rather
+   * than rolls, so they are requested by id; everything else is a procedural
+   * dimension seeded from the hole.
+   */
+  async enterRealm(d: InteriorDestination): Promise<void> {
+    await this.loadWorld('dimension');
+    const w = this.world as any;
+    if (!w) return;
+    if (d.realm && typeof w.jumpToRealm === 'function') {
+      w.jumpToRealm(d.realm, d.seed, d.depth);
+    } else if (typeof w.jumpTo === 'function') {
+      w.jumpTo(d.seed, d.depth);
+    }
+    this.shell.refreshAll?.();
+  }
+
+  /**
+   * Black holes close enough to tear things apart.
+   *
+   * Limited to what is nearby: the tidal term falls off as 1/r³, so a hole
+   * on the far side of the universe contributes nothing but cost.
+   */
+  private tidalSources(eye: Vector3): Array<{ position: Vector3; horizon: number }> {
+    const out: Array<{ position: Vector3; horizon: number }> = [];
+    for (const r of this.universe.regions) {
+      if (r.kind !== 'blackhole') continue;
+      const hz = this.universe.horizonRadiusOf(r);
+      if (Vector3.Distance(eye, r.position) > hz * 900) continue;
+      out.push({ position: r.position, horizon: hz });
+    }
+    return out;
+  }
+
+  /**
    * Switches between orbiting, flying and walking. Detaching the arc camera
    * is essential: otherwise its own input handlers fight the vehicle.
    */
@@ -1053,22 +1150,73 @@ export class App {
         this.shell.onRegionChanged?.(this.universe.current);
       }
 
-      // ---- falling through a horizon: keep the way back visible ----
+      // ---- falling through a horizon ----
+      // Crossing a horizon is not a state flag, it is the start of a journey
+      // of thousands of units that ends in another dimension. HoleDescent
+      // owns that journey; this only feeds it position and hands the result
+      // to the shader.
       const bh = this.universe.insideHorizon;
       const w = this.world as unknown as {
         setInterior?: (d: number, dir: Vector3) => void;
+        setDescent?: (d: {
+          inside: number; exitWindow: number; nestedLens: number;
+          singularity: number; darkness: number; fallDir?: Vector3;
+        }) => void;
         setLens?: (p: unknown) => void;
       };
-      if (typeof w?.setInterior === 'function') {
-        if (bh) {
-          // the exit is the direction back toward where we came from
-          const back = this.lastOutsidePos.subtract(bh.position);
-          w.setInterior(this.universe.horizonDepth,
-            back.lengthSquared() > 1e-9 ? back : new Vector3(0, 0, -1));
+
+      if (bh && this.can('enterHoles')) {
+        this.descentInto.begin(bh.id, bh.seed ?? 1, eye, bh.position);
+        const fall = this.descentInto.update(dt, eye);
+
+        // the exit is the direction back toward where we came from
+        const back = this.lastOutsidePos.subtract(bh.position);
+        const exitDir = back.lengthSquared() > 1e-9 ? back : new Vector3(0, 0, -1);
+        const fallDir = bh.position.subtract(this.lastOutsidePos);
+
+        if (typeof w?.setInterior === 'function') {
+          w.setInterior(fall.state.inside, exitDir);
           if (bh.lens && typeof w.setLens === 'function') w.setLens(bh.lens);
-        } else {
+        }
+        if (typeof w?.setDescent === 'function') {
+          w.setDescent({
+            ...this.descentInto.shaderState(),
+            fallDir: fallDir.lengthSquared() > 1e-9 ? fallDir : new Vector3(0, 0, 1)
+          });
+        }
+
+        this.flightHud.setDescent?.(this.descentInto.interior, fall.state);
+
+        // Reaching the bottom is the only way out, and where you come out
+        // depends on the hole and on whether you threaded its singularity.
+        if (fall.arrived) {
+          const d = fall.arrived;
+          this.descentInto.end();
+          this.universe.leaveHorizon?.(bh.id);
+          this.shell.toast(d.blurb);
+          void this.enterRealm(d);
+        }
+      } else {
+        if (this.descentInto.active) this.descentInto.end();
+        if (typeof w?.setInterior === 'function') {
           w.setInterior(0, new Vector3(0, 0, -1));
-          this.lastOutsidePos.copyFrom(eye);
+        }
+        if (typeof w?.setDescent === 'function') {
+          w.setDescent({
+            inside: 0, exitWindow: 1, nestedLens: 0, singularity: 0, darkness: 0
+          });
+        }
+        this.flightHud.setDescent?.(null, null);
+        this.lastOutsidePos.copyFrom(eye);
+      }
+
+      // ---- sandbox: things too close to a hole are torn apart ----
+      // Explorer mode never calls this, so the universe stays a place you
+      // can look at rather than one that eats your ship while you admire it.
+      if (this.can('spaghettification') && !this.paused) {
+        this.tidal.update(dt, this.tidalSources(eye), true);
+        for (const id of this.tidal.drainConsumed()) {
+          this.shell.toast('Lost to the singularity: ' + id);
         }
       }
 

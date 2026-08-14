@@ -671,8 +671,175 @@ try {
 } catch (e) {
   travelChecks.push(['travelling to a hole survives: ' + e.message, false]);
 }
+
+// ---- actually falling INTO a hole, in the live app ----
+// The unit tests prove the descent model; this proves the app is wired to
+// it. The user's complaint was that you could not go inside at all, so the
+// assertion is end-to-end: cross a horizon, keep flying inward, and end up
+// somewhere else entirely.
+const insideChecks = [];
+try {
+  const holes = appRef.universe.regions.filter((r) => r.kind === 'blackhole');
+  const h = holes[0];
+  const hz = appRef.universe.horizonRadiusOf(h);
+  const V3 = h.position.constructor;
+
+  insideChecks.push(['the app has a descent controller', !!appRef.descentInto]);
+
+  // Outside the horizon nothing should be falling.
+  appRef.universe.updatePlayer(new V3(
+    h.position.x + hz * 40, h.position.y, h.position.z));
+  insideChecks.push(['outside a horizon, no descent is running',
+    !appRef.descentInto.active]);
+
+  // Cross it.
+  appRef.universe.updatePlayer(new V3(
+    h.position.x + hz * 0.5, h.position.y, h.position.z));
+  insideChecks.push(['crossing the horizon puts you inside it',
+    !!appRef.universe.insideHorizon,
+    'inside=' + (appRef.universe.insideHorizon || {}).id]);
+
+  // Drive the descent directly, exactly as the frame loop does.
+  appRef.descentInto.begin(h.id, h.seed ?? 1, h.position, h.position);
+  const plan = appRef.descentInto.interior;
+  insideChecks.push(['the interior is thousands of units deep',
+    plan && plan.depth > 4000, plan ? Math.round(plan.depth) + ' u' : 'no plan']);
+
+  // Fly inward until something happens.
+  let arrived = null, frames = 0, sawInside = 0, sawWindowClose = false;
+  let firstWindow = null;
+  while (frames++ < 30000 && !arrived) {
+    const r = appRef.descentInto.update(0.05, h.position);
+    const sh = appRef.descentInto.shaderState();
+    if (firstWindow === null) firstWindow = sh.exitWindow;
+    if (sh.inside > 0.5) sawInside++;
+    if (sh.exitWindow < firstWindow * 0.5) sawWindowClose = true;
+    if (r.arrived) arrived = r.arrived;
+  }
+  insideChecks.push(['flying deep enough reaches the far side', !!arrived,
+    'after ' + frames + ' frames']);
+  insideChecks.push(['the descent takes real time, not one frame',
+    frames > 100, frames + ' frames']);
+  insideChecks.push(['the interior takes over the view as you fall',
+    sawInside > 0]);
+  insideChecks.push(['the way back visibly closes behind you', sawWindowClose]);
+  insideChecks.push(['arriving names a destination',
+    !!arrived && !!arrived.kind, arrived ? arrived.kind : 'none']);
+
+  // And the app can actually build that destination.
+  if (arrived) {
+    await appRef.enterRealm(arrived);
+    await new Promise((res) => setTimeout(res, 1200));
+    insideChecks.push(['the far side of a black hole is a real world',
+      appRef.world && appRef.world.id === 'dimension',
+      'world=' + (appRef.world && appRef.world.id)]);
+    insideChecks.push(['the destination world has geometry in it',
+      appRef.scene.meshes.length > 0,
+      appRef.scene.meshes.length + ' meshes']);
+  }
+
+  // The Library must be reachable from the one hole that has it.
+  {
+    const gargSeed = (() => {
+      for (let i = 1; i < 400000; i++) {
+        appRef.descentInto.end();
+        appRef.descentInto.begin('probe-' + i, i, h.position, h.position);
+        if (appRef.descentInto.interior.gargantua) return i;
+      }
+      return null;
+    })();
+    appRef.descentInto.end();
+    insideChecks.push(['a Gargantua-class hole exists in the universe',
+      gargSeed !== null, 'seed=' + gargSeed]);
+    if (gargSeed !== null) {
+      appRef.descentInto.begin('garg', gargSeed, h.position, h.position);
+      let got = null, n = 0, maxDark = 0;
+      while (n++ < 40000 && !got) {
+        const r = appRef.descentInto.update(0.05, h.position);
+        maxDark = Math.max(maxDark, appRef.descentInto.shaderState().darkness);
+        if (r.arrived) got = r.arrived;
+      }
+      insideChecks.push(['falling into Gargantua reaches the Library Realm',
+        !!got && got.realm === 'library', got ? got.realm : 'none']);
+      insideChecks.push(['and it goes dark on the way in', maxDark > 0.9,
+        'darkness=' + maxDark.toFixed(2)]);
+      if (got) {
+        await appRef.enterRealm(got);
+        await new Promise((res) => setTimeout(res, 1200));
+        const nm = appRef.world && appRef.world.name;
+        insideChecks.push(['the Library Realm is what actually loads',
+          /library/i.test(String(nm)), 'name=' + nm]);
+      }
+      appRef.descentInto.end();
+    }
+  }
+} catch (e) {
+  insideChecks.push(['falling into a hole survives: ' + e.message, false,
+    String(e.stack).split('\n').slice(1, 3).join(' | ')]);
+}
+
+// ---- sandbox vs explorer, in the live app ----
+const modeChecks = [];
+try {
+  appRef.setMode('explorer');
+  modeChecks.push(['the app starts in a known mode',
+    appRef.mode === 'explorer', appRef.mode]);
+  modeChecks.push(['explorer cannot throw things', !appRef.can('throwing')]);
+  modeChecks.push(['explorer has no spaghettification',
+    !appRef.can('spaghettification')]);
+  modeChecks.push(['explorer can still travel', appRef.can('travel')]);
+  modeChecks.push(['explorer can still enter black holes',
+    appRef.can('enterHoles')]);
+
+  appRef.setMode('sandbox');
+  modeChecks.push(['switching to sandbox takes effect',
+    appRef.mode === 'sandbox']);
+  modeChecks.push(['sandbox can throw things', appRef.can('throwing')]);
+  modeChecks.push(['sandbox can move black holes', appRef.can('moveBlackHoles')]);
+  modeChecks.push(['sandbox spaghettifies', appRef.can('spaghettification')]);
+  modeChecks.push(['sandbox can go back in time', appRef.can('timeTravel')]);
+
+  // A ship near a hole must actually be stretched, and only in sandbox.
+  const holes = appRef.universe.regions.filter((r) => r.kind === 'blackhole');
+  if (holes.length && appRef.scene.meshes.length) {
+    const h = holes[0];
+    const hzz = appRef.universe.horizonRadiusOf(h);
+    const mesh = appRef.scene.meshes.find((m) => !/^bhQuad_/.test(m.name));
+    if (mesh) {
+      const base = mesh.scaling.clone();
+      appRef.tidal.add('probe', mesh, { size: 12, cohesion: 1, mass: 1e5 });
+      mesh.position.copyFrom(h.position);
+      mesh.position.x += hzz * 2.1;
+      appRef.tidal.update(0.016, [{ position: h.position, horizon: hzz }], true);
+      const st = appRef.tidal.stateOf('probe');
+      modeChecks.push(['a ship near a horizon is stretched in sandbox',
+        !!st && st.stretch > 1.5, st ? 'stretch=' + st.stretch.toFixed(2) : 'none']);
+      modeChecks.push(['the stretch reaches the actual mesh',
+        mesh.scaling.y > base.y * 1.4,
+        'scaleY ' + base.y.toFixed(2) + ' -> ' + mesh.scaling.y.toFixed(2)]);
+
+      // Leaving sandbox must put it back.
+      appRef.setMode('explorer');
+      modeChecks.push(['leaving sandbox restores the ship to its own shape',
+        Math.abs(mesh.scaling.y - base.y) < 1e-6,
+        'scaleY=' + mesh.scaling.y.toFixed(3)]);
+      appRef.tidal.remove('probe');
+      mesh.scaling.copyFrom(base);
+    }
+  }
+} catch (e) {
+  modeChecks.push(['game modes survive: ' + e.message, false,
+    String(e.stack).split('\n').slice(1, 3).join(' | ')]);
+}
+
 console.log('\n=== travelling to a black hole ===');
 for (const [n, c, e] of travelChecks) ok(n, c, e);
+
+console.log('\n=== falling inside a black hole ===');
+for (const [n, c, e] of insideChecks) ok(n, c, e);
+
+console.log('\n=== explorer and sandbox ===');
+for (const [n, c, e] of modeChecks) ok(n, c, e);
 
 console.log('\n=== creatures ===');
 for (const [name, cond, detail] of critterChecks) ok(name, cond, detail);

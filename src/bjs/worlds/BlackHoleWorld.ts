@@ -76,6 +76,16 @@ uniform float lensSoftness;
 // ---- interior view: looking back out from inside the horizon ----
 uniform float insideAmt;      // 0 = outside, 1 = fully inside
 uniform vec3  exitDir;        // direction back toward where you came from
+// Angular size of the window back to the universe you came from. Shrinks as
+// you fall, but never reaches zero, so you can always look back.
+uniform float exitWindow;
+// A second black hole far inside this one: its own lens, wrapped around an
+// exposed white singularity. Zero for holes that do not have one.
+uniform float nestedLens;
+uniform float singularity;    // brightness of the white point, 0..1
+uniform vec3  fallDir;        // the direction you are falling, i.e. deeper in
+// Gargantua only: the interior goes black before the Library resolves.
+uniform float darkness;
 
 ${GLSL_NOISE}
 
@@ -374,14 +384,67 @@ void main(void){
     // the direction you fell from. This is what lets you look back at where
     // you were.
     if (insideAmt > 0.001){
+      float amt = clamp(insideAmt, 0.0, 1.0);
       float toExit = dot(dir, normalize(exitDir));
-      // the window narrows as you fall deeper
-      float aperture = mix(0.35, 0.985, clamp(insideAmt, 0.0, 1.0));
-      float w = smoothstep(aperture, aperture + 0.06, toExit);
-      vec3 outside = stars(dir) * 1.4 + lensTint * 0.25;
-      col = mix(col, outside, w * clamp(insideAmt, 0.0, 1.0));
+
+      // ---- the way back ----
+      // The window is driven by exitWindow, which the interior model shrinks
+      // as you fall. It is a real aperture in the direction you came from,
+      // so turning around actually finds it rather than it being a vignette.
+      float win = clamp(exitWindow, 0.0, 1.0);
+      float aperture = mix(0.995, 0.30, win);
+      float w = smoothstep(aperture, aperture + 0.05 + win * 0.10, toExit);
+      // Light from outside is blueshifted and concentrated as the window
+      // closes, which is why the last glimpse is a brilliant point.
+      float concentrate = mix(3.5, 1.0, win);
+      vec3 outside = (stars(dir) * 1.4 + lensTint * 0.25) * concentrate;
+      col = mix(col, outside, w * amt);
+
       // everything else darkens toward the singularity, but never to pure black
-      col = mix(col, col * 0.35 + lensTint * 0.03, clamp(insideAmt, 0.0, 1.0) * (1.0 - w));
+      col = mix(col, col * 0.35 + lensTint * 0.03, amt * (1.0 - w));
+
+      // ---- a second hole, far below ----
+      // Some holes contain another one. Its lens is drawn as a genuine
+      // radial distortion of whatever is behind it, centred on the direction
+      // of the fall, so it reads as curved spacetime rather than a decal.
+      if (nestedLens > 0.001){
+        vec3 fd = normalize(fallDir);
+        float toFall = dot(dir, fd);
+        float ang = acos(clamp(toFall, -1.0, 1.0));
+        // apparent angular radius of the inner hole's shadow
+        float shadow = mix(0.02, 0.34, clamp(nestedLens, 0.0, 1.0));
+
+        // Rays passing near it are bent inward: sample the sky from a
+        // direction pulled toward the inner hole by 1/angle, the same
+        // falloff the outer lens uses.
+        float bend = shadow * shadow / max(ang * ang, 1e-4);
+        vec3 toward = normalize(dir - fd * toFall + vec3(1e-6));
+        vec3 bent = normalize(dir - toward * bend * 0.55);
+        vec3 behind = stars(bent) * 1.25;
+        float lensZone = smoothstep(shadow * 5.0, shadow * 1.02, ang);
+        col = mix(col, behind, lensZone * nestedLens * 0.85);
+
+        // its Einstein ring
+        float ring = exp(-pow((ang - shadow * 1.5) / max(shadow * 0.30, 1e-4), 2.0));
+        col += lensTint * ring * nestedLens * 0.55;
+
+        // and its shadow: genuinely black, an absence of light
+        col *= 1.0 - smoothstep(shadow * 1.06, shadow * 0.94, ang) * nestedLens;
+
+        // ---- the singularity itself ----
+        // A small white dot at the dead centre. Fly into it and you come out
+        // somewhere the ordinary bottom of the hole does not lead.
+        if (singularity > 0.001){
+          float pt = exp(-pow(ang / max(shadow * 0.10, 1e-4), 2.0));
+          float halo = exp(-pow(ang / max(shadow * 0.55, 1e-4), 2.0)) * 0.35;
+          col += vec3(1.0, 0.985, 0.96) * (pt * 2.4 + halo) * singularity;
+        }
+      }
+
+      // ---- Gargantua: darkness before the Library ----
+      // Not a fade to a colour; a fade to nothing, so the arrival lands in
+      // total black exactly as the user described.
+      col *= 1.0 - clamp(darkness, 0.0, 1.0);
     }
   }
 
@@ -442,6 +505,18 @@ export class BlackHoleWorld implements World {
   anomalySeed = 0x5f3a11;
   private inside = 0;
   private exitDirection = new Vector3(0, 0, -1);
+  /**
+   * The rest of the descent, straight from the HoleInterior model.
+   *
+   * Held as plain numbers rather than recomputed here so the shader and the
+   * app can never disagree about how deep the player is — the app owns the
+   * fall, this world only draws it.
+   */
+  private exitWindow = 1;
+  private nestedLens = 0;
+  private singularityDot = 0;
+  private darkness = 0;
+  private fallDirection = new Vector3(0, 0, 1);
 
   private p = {
     mass: 1.0,
@@ -480,7 +555,8 @@ export class BlackHoleWorld implements World {
         'camPos', 'holePos', 'camInv', 'fov', 'aspect', 'time', 'rs', 'spin',
         'lensMode', 'lensFalloff', 'ringAmt', 'ringRadius', 'lensSymmetry',
         'lensDistortion', 'lensTwist', 'lensChroma', 'lensTint', 'lensSoftness',
-        'insideAmt', 'exitDir',
+        'insideAmt', 'exitDir', 'exitWindow', 'nestedLens', 'singularity',
+        'fallDir', 'darkness',
         'diskInner', 'diskOuter', 'diskTilt', 'exposure', 'lensStrength', 'horizonCover',
         'diskBright', 'dopplerAmt', 'diskThickness', 'diskTemp'
       ]
@@ -612,6 +688,11 @@ export class BlackHoleWorld implements World {
     this.mat.setFloat('lensSoftness', L.softness);
     this.mat.setFloat('insideAmt', this.inside);
     this.mat.setVector3('exitDir', this.exitDirection);
+    this.mat.setFloat('exitWindow', safeFloat(this.exitWindow, 1));
+    this.mat.setFloat('nestedLens', safeFloat(this.nestedLens, 0));
+    this.mat.setFloat('singularity', safeFloat(this.singularityDot, 0));
+    this.mat.setFloat('darkness', safeFloat(this.darkness, 0));
+    this.mat.setVector3('fallDir', this.fallDirection);
     this.mat.setFloat('spin', this.p.spin);
     this.mat.setFloat('horizonCover',
       safeFloat(this.isAnomaly ? ANOMALY_COVER : STANDARD_COVER, STANDARD_COVER));
@@ -660,6 +741,38 @@ export class BlackHoleWorld implements World {
     this.inside = Number.isFinite(depth) ? Math.max(0, Math.min(1, depth)) : 0;
     if (exitDirection && exitDirection.lengthSquared() > 1e-9) {
       this.exitDirection.copyFrom(exitDirection.clone().normalize());
+    }
+    // Outside the horizon nothing interior should be on screen. Without this
+    // a hole you have previously fallen into keeps its inner lens when you
+    // fly back out to look at it.
+    if (this.inside <= 0) {
+      this.exitWindow = 1;
+      this.nestedLens = 0;
+      this.singularityDot = 0;
+      this.darkness = 0;
+    }
+  }
+
+  /**
+   * The full state of a fall, from HoleInterior.fallState.
+   *
+   * Separate from setInterior so a caller that only knows "how deep" still
+   * works, and so this world needs no knowledge of which hole it is in: it
+   * is handed the numbers and draws them.
+   */
+  setDescent(d: {
+    inside: number; exitWindow: number; nestedLens: number;
+    singularity: number; darkness: number; fallDir?: Vector3;
+  }): void {
+    const clamp01 = (v: number) =>
+      Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
+    this.inside = clamp01(d.inside);
+    this.exitWindow = clamp01(d.exitWindow);
+    this.nestedLens = clamp01(d.nestedLens);
+    this.singularityDot = clamp01(d.singularity);
+    this.darkness = clamp01(d.darkness);
+    if (d.fallDir && d.fallDir.lengthSquared() > 1e-9) {
+      this.fallDirection.copyFrom(d.fallDir.clone().normalize());
     }
   }
 

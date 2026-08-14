@@ -108,11 +108,17 @@ interface ShellHooks {
   onHudElement?: (name: string, on: boolean) => void;
   /** Current HUD group states, for rendering the toggles. */
   getHudElements?: () => Record<string, boolean>;
+  /** Switches between Explorer and Sandbox. */
+  onGameMode?: (m: string) => void;
+  /** Which mode is active, for rendering the switch. */
+  getGameMode?: () => string;
 }
 
 export class Shell {
   wm: WindowManager;
   mode: Mode = 'expert';
+  /** Explorer or Sandbox. Mirrors App.mode; the topbar switch drives it. */
+  gameMode = 'explorer';
   /** Live search string for the controls panel. Empty means show everything. */
   filter = '';
   controlMode = 'orbit';
@@ -169,6 +175,13 @@ export class Shell {
       else if (k === '9') this.wm.Toggle('pilot');
       else if (k === 'n') this.wm.Toggle('navigator');
       else if (k === 'l') this.wm.Toggle('lens');
+      else if (k === 'm') {
+        // Explorer <-> Sandbox. One key, because it is the switch the player
+        // reaches for most once they know both modes exist.
+        const next = this.gameMode === 'sandbox' ? 'explorer' : 'sandbox';
+        this.setGameMode(next);
+        this.hooks.onGameMode?.(next);
+      }
       else if (k === 'g') this.hooks.onGrab();
       else if (k === 'v') this.hooks.onRelease(false);
       else if (k === 'b') this.hooks.onRelease(true);
@@ -249,6 +262,10 @@ export class Shell {
         <div><div class="brand-name">UNLIMITED</div><div class="brand-sub">Possibilities Sandbox</div></div>
       </div>
       <div class="spacer"></div>
+      <div class="modesw" id="modeSwitch" title="Explorer explores; Sandbox has full physics (M)">
+        <button class="modesw-b" data-gm="explorer">🔭 Explorer</button>
+        <button class="modesw-b" data-gm="sandbox">🌌 Sandbox</button>
+      </div>
       <button class="iconbtn" id="btnPause" title="Pause / Resume (Space)">⏸</button>
       <button class="iconbtn" id="w-controls" title="Controls (1)">🎛</button>
       <button class="iconbtn" id="w-objects"  title="Objects (2)">🧰</button>
@@ -276,6 +293,15 @@ export class Shell {
     this.topbar.querySelectorAll<HTMLButtonElement>('#modeSeg button').forEach((b) => {
       b.onclick = () => this.setMode(b.dataset.m as Mode);
     });
+
+    this.topbar.querySelectorAll<HTMLButtonElement>('#modeSwitch button').forEach((b) => {
+      b.onclick = () => {
+        const m = b.dataset.gm ?? 'explorer';
+        this.setGameMode(m);
+        this.hooks.onGameMode?.(m);
+      };
+    });
+    this.setGameMode(this.hooks.getGameMode?.() ?? 'explorer');
 
     (['controls', 'objects', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement | null;
@@ -314,6 +340,21 @@ export class Shell {
     b.textContent = this.paused ? '▶' : '⏸';
     b.classList.toggle('on', this.paused);
     this.hooks.onPause(this.paused);
+  }
+
+  /**
+   * Reflects the active game mode in the topbar.
+   *
+   * Distinct from setMode(), which is the simple/advanced/expert detail
+   * tier. This is Explorer vs Sandbox — what the universe lets you do to it.
+   */
+  setGameMode(m: string): void {
+    this.gameMode = m === 'sandbox' ? 'sandbox' : 'explorer';
+    this.topbar?.querySelectorAll<HTMLButtonElement>('#modeSwitch button')
+      .forEach((b) => b.classList.toggle('on', b.dataset.gm === this.gameMode));
+    // Sandbox-only tools should not advertise themselves in Explorer.
+    this.wm.refresh('objects');
+    this.wm.refresh('controls');
   }
 
   setMode(m: Mode): void {
