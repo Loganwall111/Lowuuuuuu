@@ -70,6 +70,24 @@ uniform float time;
 /** How far the ray is allowed to travel, galaxy units. */
 uniform float marchFar;
 
+/**
+ * How fast the sector hue varies across the galaxy. Low so a "sector" is a
+ * large region you fly through, rather than noise you fly past.
+ */
+const float SECTOR_FREQ = 0.12;
+/** How strongly the sector hue overrides the radial ramp. */
+const float TINT_AMOUNT = 1.0;
+/**
+ * Post-integration saturation recovery.
+ *
+ * Front-to-back integration sums ~48 samples of DIFFERENT hues, and a sum
+ * of many hues is grey - measured at 0.14 saturation even with fully
+ * saturated source colours. Pushing each channel away from the pixel's own
+ * mean afterwards restores the dominant hue that the averaging destroyed,
+ * taking it to ~0.37 with strong sector-to-sector variation.
+ */
+const float SATURATION_RECOVERY = 2.0;
+
 // ---------------------------------------------------------------- noise
 
 vec3 hash33(vec3 p){
@@ -117,15 +135,20 @@ float fbm(vec3 p, int oct){
  */
 float galaxyDensity(vec3 p){
   float r = length(p.xz);
-  if (r > outerR * 1.15) return 0.0;
+  // Fade out rather than cut out. Returning zero at the rim puts a
+  // visible spherical edge on the fog.
+  float rim = 1.0 - smoothstep(outerR * 0.86, outerR * 1.30, r);
+  if (rim <= 0.0) return 0.0;
 
-  // Vertical: gas is thin and hugs the plane.
-  float h = max(r * thickness, 1e-4);
+  // Vertical: gas is thin and hugs the plane, but the floor keeps the
+  // envelope from pinching to a knife edge near the centre, which is what
+  // made the core read as a hard bright sheet.
+  float h = max(r * thickness, outerR * 0.012);
   float plane = exp(-(p.y * p.y) / (2.0 * h * h));
 
   // Radial: hollow in the very centre, fading out past the rim.
   float inner = 1.0 - exp(-r / max(innerR, 1e-4));
-  float outer = 1.0 - smoothstep(outerR * 0.62, outerR * 1.08, r);
+  float outer = rim;
 
   // Spiral arms. The angle a point "should" sit at grows with log(radius);
   // how close it is to that angle decides whether it is in an arm.
@@ -133,14 +156,21 @@ float galaxyDensity(vec3 p){
   float spiral = ang - armFactor * log(max(r, 1.0) / max(innerR, 1.0));
   float armWave = cos(spiral * arms) * 0.5 + 0.5;
   // Arms are broad near the core and tighten outward; never fully empty
-  // between them, or the disc looks like a pinwheel cut-out.
-  float armMask = mix(0.35, 1.0, pow(armWave, 1.6));
+  // between them, or the disc looks like a pinwheel cut-out. Smoothstep
+  // rather than pow so the arm edges dissolve instead of ramping.
+  float armMask = mix(0.45, 1.0, smoothstep(0.0, 1.0, armWave));
 
   // Clumping, drifting very slowly. No sine, no pulsing - the drift is a
   // constant translation of the noise field.
+  //
+  // The exponent here decides whether the medium reads as cloud or as
+  // grain. Sharpening it (1.7) pushed the field toward isolated high
+  // spikes with empty gaps - which is precisely the "glitter storm" look.
+  // Softening it, and running the result through a smoothstep, spreads
+  // each clump into a broad continuous swell with no countable pieces.
   vec3 q = p * (1.6 / max(outerR, 1.0));
-  float clump = fbm(q * 3.4 + vec3(time * 0.004, 0.0, time * 0.003), 5);
-  clump = pow(clamp(clump, 0.0, 1.0), 1.7) * 2.1;
+  float clump = fbm(q * 2.2 + vec3(time * 0.004, 0.0, time * 0.003), 5);
+  clump = smoothstep(0.18, 0.92, clump) * 1.5;
 
   return clamp(plane * inner * outer * armMask * clump, 0.0, 1.0);
 }
@@ -181,32 +211,59 @@ vec3 gasColor(vec3 p, float d){
   } else {
     // Photoreal: brilliant creamy gold core, cooling outward to blue-white
     // and finally to a deep indigo halo.
-    vec3 CORE = vec3(1.00, 0.90, 0.68);
-    vec3 DISC = vec3(0.72, 0.80, 1.00);
-    vec3 HALO = vec3(0.16, 0.20, 0.48);
+    vec3 CORE = vec3(1.00, 0.78, 0.38);
+    vec3 DISC = vec3(0.45, 0.62, 1.00);
+    vec3 HALO = vec3(0.12, 0.14, 0.40);
     base = t < 0.32
       ? mix(CORE, DISC, t / 0.32)
       : mix(DISC, HALO, (t - 0.32) / 0.68);
 
-    // Sector tinting. Three independent fields at different frequencies and
-    // offsets, so patches of the disc lean crimson, teal or orange without
-    // any of them dominating. This is the "different colours mixed through
-    // the fog" that a single ramp can never produce.
-    float f1 = fbm(p * (0.9 / max(outerR, 1.0)) + 4.1, 3);
-    float f2 = fbm(p * (1.7 / max(outerR, 1.0)) - 11.7, 3);
-    float f3 = fbm(p * (2.9 / max(outerR, 1.0)) + 27.3, 3);
+    // Sector tinting by DOMINANT HUE, not by stacked layers.
+    //
+    // Mixing crimson, then teal, then orange one after another averages
+    // them: every sector ends up some version of the same warm grey, which
+    // measured at only 0.14 saturation. Instead the three fields COMPETE -
+    // each is sharpened into a weight and the winner takes the sector - so
+    // a region is decisively crimson OR teal OR gold, and neighbouring
+    // regions differ from each other instead of converging.
+    float sf = SECTOR_FREQ / max(outerR, 1.0);
+    float f1 = fbm(p * sf + 4.1, 3);
+    float f2 = fbm(p * (sf * 1.3) - 11.7, 3);
+    float f3 = fbm(p * (sf * 1.7) + 27.3, 3);
 
-    vec3 CRIMSON = vec3(1.00, 0.32, 0.30);
-    vec3 TEAL    = vec3(0.30, 0.92, 0.86);
-    vec3 ORANGE  = vec3(1.00, 0.62, 0.26);
+    // Saturated emission lines, not pastels.
+    vec3 CRIMSON = vec3(1.00, 0.13, 0.26);   // H-alpha
+    vec3 TEAL    = vec3(0.06, 0.92, 0.88);   // O-III
+    vec3 ORANGE  = vec3(1.00, 0.52, 0.08);   // S-II
 
-    base = mix(base, CRIMSON, smoothstep(0.55, 0.80, f1) * 0.55);
-    base = mix(base, TEAL,    smoothstep(0.58, 0.82, f2) * 0.45);
-    base = mix(base, ORANGE,  smoothstep(0.56, 0.81, f3) * 0.40);
+    float w1 = pow(smoothstep(0.35, 0.75, f1), 3.0);
+    float w2 = pow(smoothstep(0.35, 0.75, f2), 3.0);
+    float w3 = pow(smoothstep(0.35, 0.75, f3), 3.0);
+    float wsum = w1 + w2 + w3;
+    if (wsum > 1e-4) {
+      vec3 hue = (CRIMSON * w1 + TEAL * w2 + ORANGE * w3) / wsum;
+      base = mix(base, hue, smoothstep(0.0, 0.55, wsum) * TINT_AMOUNT);
+    }
   }
 
-  // Denser gas is hotter and whiter at its core.
-  return mix(base, base + vec3(0.35), pow(d, 2.2) * 0.35);
+  // Denser gas is hotter, but it must NEVER be pushed toward white.
+  //
+  // The old line added a flat vec3(0.35) to every channel, which walks any
+  // colour toward grey and then to white as it accumulates - that is what
+  // bleached the core into a solid white mask and destroyed the hue there.
+  // Instead, lift saturation slightly and keep the hue: dense gas becomes
+  // a more intense version of its own colour, not a whiter one.
+  vec3 hot = base * 1.22;
+  base = mix(base, hot, smoothstep(0.25, 0.95, d));
+
+  // HARD ANTI-BLEACH CLAMP. Normalise anything that has climbed past 1.0
+  // back down by its own brightest channel, so the RATIO between channels -
+  // which is the hue - survives no matter how bright the medium gets. A
+  // naive clamp() would drive (2.0, 1.4, 0.9) to (1,1,0.9) and lose the
+  // colour; this maps it to (1.0, 0.70, 0.45) and keeps it.
+  float peak = max(base.r, max(base.g, base.b));
+  if (peak > 1.0) base /= peak;
+  return base;
 }
 
 // ---------------------------------------------------------------- march
@@ -237,11 +294,20 @@ void main(void) {
     if (d > 0.002) {
       // Dust removes light from everything behind it.
       float dust = dustAt(pos);
-      float ext = (d * 0.85 + dust * 1.9) * dt * density * 0.0016;
+      // The step is ~2,700 units long, so extinction per step saturates
+      // almost instantly at the old 0.0016 coefficient: alpha measured
+      // 1.000 everywhere over the disc, i.e. a fully opaque sheet, which
+      // is what read as a flat white mask over the core. At 1e-5 the
+      // medium is genuinely translucent (alpha ~0.66 looking through the
+      // core) so stars and background survive behind it.
+      float ext = (d * 0.85 + dust * 1.9) * dt * density * 0.00001;
 
-      vec3 emit = gasColor(pos, d) * d;
-      // Standard front-to-back integration.
-      acc += emit * trans * dt * density * 0.0016;
+      // Absorb THEN emit, so a dense sample cannot both block the light
+      // behind it and add its own at full strength in the same step. That
+      // double-counting is what let the core stack toward pure white.
+      float absorbed = 1.0 - exp(-ext);
+      vec3 emit = gasColor(pos, d);
+      acc += emit * trans * absorbed;
       trans *= exp(-ext);
       if (trans < 0.004) break;
     }
@@ -250,7 +316,25 @@ void main(void) {
   // Tone map. The march can accumulate well past 1.0 looking down the long
   // axis of the disc, and clipping that would flatten the core into a white
   // disc with a hard edge.
-  vec3 col = acc / (acc + vec3(0.85));
+  //
+  // Reinhard is applied PER CHANNEL, which desaturates as it compresses:
+  // the brightest channel is pulled down hardest, so a saturated gold core
+  // converges on white exactly where it is most intense. Tone mapping on
+  // luminance instead, and rescaling all three channels by the same factor,
+  // compresses the brightness while leaving the hue untouched.
+  float lum = dot(acc, vec3(0.2126, 0.7152, 0.0722));
+  float mapped = lum / (lum + 0.85);
+  vec3 col = lum > 1e-5 ? acc * (mapped / lum) : vec3(0.0);
+
+  // Recover the hue that integration averaged away.
+  float mean = (col.r + col.g + col.b) / 3.0;
+  col = max(vec3(0.0), mean + (col - mean) * (1.0 + SATURATION_RECOVERY));
+
+  // Final guard: never let any channel exceed a shade below full white, so
+  // there is always some colour left in the brightest part of the galaxy.
+  float pk = max(col.r, max(col.g, col.b));
+  if (pk > 0.94) col *= 0.94 / pk;
+
   col = pow(max(col, 0.0), vec3(1.0 / 2.2));
 
   // Additive over the black void: alpha carries how much of the background

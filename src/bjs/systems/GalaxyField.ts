@@ -171,6 +171,14 @@ export const FIELD_GALAXY: GalaxyConfig = {
 export const GALAXY_CENTER: [number, number, number] =
   [-observerPosition(FIELD_GALAXY)[0], 0, 0];
 
+/** Smoothstep on a 0-1 result, used for occlusion ramps. */
+export function smoothstep01(edge0: number, edge1: number, x: number): number {
+  const d = edge1 - edge0;
+  if (Math.abs(d) < 1e-9) return x < edge0 ? 0 : 1;
+  const t = Math.max(0, Math.min(1, (x - edge0) / d));
+  return t * t * (3 - 2 * t);
+}
+
 /** Deterministic PRNG, so the galaxy is the same place every session. */
 export function makeRng(seed: number): () => number {
   let s = seed >>> 0;
@@ -785,10 +793,33 @@ export class GalaxyField {
 
     if (this.pointMats.length) {
       const h = scene.getEngine()?.getRenderHeight?.() ?? 1080;
+
+      // ---- OCCLUSION: stars vanish INTO the smoke ----
+      //
+      // The star points are remapped onto a proxy shell every frame, so
+      // they are always the same short distance from the eye no matter
+      // where the camera really is. That means nothing about their
+      // geometry can ever hide them - inside a thick cloud they kept
+      // drawing at full brightness straight into the lens, which is the
+      // "glitter storm flying into my face" artefact.
+      //
+      // The volumetric fog cannot occlude them either: it is alpha
+      // blended with depth write off, so it never wins a depth test
+      // against the points. So the occlusion is done analytically -
+      // sample the same density field the fog marches, and fade the
+      // points out as the medium around the camera thickens. Deep in a
+      // dense cloud the stars are gone entirely and only colour remains,
+      // exactly as when you fly into real cloud.
+      const dens = fogAt(eye.x, eye.y, eye.z);
+      // Full brightness in clear space, fully buried by the time the
+      // medium is thick. Smoothstep so there is no pop at the threshold.
+      const vis = 1 - smoothstep01(0.16, 0.62, dens);
+
       for (const m of this.pointMats) {
         try {
           m.setVector3('camPos', Vector3.Zero());
           m.setFloat('viewportHeight', h);
+          m.setFloat('gasDensity', vis);
         } catch { /* material disposed mid-frame */ }
       }
     }

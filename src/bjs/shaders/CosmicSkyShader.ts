@@ -330,9 +330,16 @@ vec3 cosmicSky(vec3 dir, float medium, float symmetry, vec3 tint,
     col = vec3(0.55, 0.55, 0.62) * grid * 0.35 + skyStars(d, 0.22, 46.0);
   }
 
-  // The verse tint is a floor, never a flat wash: it lifts the empty
-  // regions off pure black without hiding the structure on top of it.
-  col += tint * 0.30;
+  // The verse tint is a floor for the EXOTIC verses only.
+  //
+  // In ordinary space it must not exist at all. tint defaults to
+  // (0.06, 0.10, 0.22), so this line was adding a flat (0.018, 0.030,
+  // 0.066) navy over every pixel of the sky - that is the "space is still
+  // a bit blue" wash. Intergalactic vacuum has to be genuinely black or
+  // the faint galaxies have nothing to be brighter than, and the fog has
+  // nothing to glow against. The strange verses still get their floor,
+  // because there "empty" is a look rather than a vacuum.
+  if (medium >= 0.5) col += tint * 0.30;
 
   // Strangeness pushes the palette away from anything natural.
   if (strangeness > 0.001){

@@ -173,6 +173,37 @@ export function cellOf(x: number, y: number, z: number): [number, number, number
  * This is the whole visible universe at any moment: a bounded list drawn
  * from an unbounded space.
  */
+/**
+ * The lattice galaxies whose centres fall inside an axis-aligned box.
+ *
+ * Used by the chunk streamer to place each galaxy's central singularity.
+ * A chunk is 2,600 units and a cell is 260,000, so the overwhelming
+ * majority of chunks contain no galaxy centre at all and this returns an
+ * empty array immediately - which is the point: a core exists only where
+ * a galaxy is actually drawn.
+ */
+export function latticeGalaxiesInChunk(
+  origin: { x: number; y: number; z: number }, size: number
+): GalaxyCell[] {
+  if (!Number.isFinite(size) || size <= 0) return [];
+  const out: GalaxyCell[] = [];
+  const lo = cellOf(origin.x, origin.y, origin.z);
+  const hi = cellOf(origin.x + size, origin.y + size, origin.z + size);
+  for (let i = lo[0]; i <= hi[0]; i++) {
+    for (let j = lo[1]; j <= hi[1]; j++) {
+      for (let k = lo[2]; k <= hi[2]; k++) {
+        const g = galaxyInCell(i, j, k);
+        if (g.x >= origin.x && g.x < origin.x + size &&
+            g.y >= origin.y && g.y < origin.y + size &&
+            g.z >= origin.z && g.z < origin.z + size) {
+          out.push(g);
+        }
+      }
+    }
+  }
+  return out;
+}
+
 export function galaxiesNear(
   x: number, y: number, z: number, cells = VIEW_CELLS
 ): GalaxyCell[] {

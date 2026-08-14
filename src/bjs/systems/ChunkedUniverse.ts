@@ -26,6 +26,7 @@
 
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import type { Region, RegionKind } from './UniverseState';
+import { latticeGalaxiesInChunk } from './IntergalacticGrid';
 
 /** Edge length of one chunk, world units. */
 export const CHUNK_SIZE = 2600;
@@ -260,7 +261,17 @@ export function generateChunk(
     const roll = rng();
     let kind: RegionKind;
     if (field > 0.72) {
-      kind = roll < 0.38 ? 'galaxy' : roll < 0.64 ? 'nebula' : 'star-system';
+      // NO 'galaxy' REGION HERE.
+      //
+      // Chunks are 2,600 units across, but a galaxy is drawn on the
+      // 260,000-unit intergalactic lattice with a radius of ~50,000. A
+      // "galaxy" region rolled at chunk scale is a hundred times smaller
+      // than the thing it claims to be and lands nowhere near any drawn
+      // galaxy - and because every galaxy region carries a central
+      // singularity, that is exactly what was scattering black holes above
+      // and below the visible disc. Galaxies come from the lattice
+      // (galaxiesNear) and nowhere else.
+      kind = roll < 0.64 ? 'nebula' : 'star-system';
     } else if (field > 0.34) {
       kind = roll < 0.58 ? 'star-system' : roll < 0.76 ? 'nebula' : 'planet';
     } else {
@@ -271,17 +282,24 @@ export function generateChunk(
     const made = makeRegion(kind, pos, rng, cx, cy, cz, i);
     regions.push(made);
 
-    // A streamed galaxy gets its central singularity too, so the rule
-    // "every galaxy has a core, and only galaxies have one" holds in the
-    // infinite generated space as well as in the authored core.
-    if (kind === 'galaxy') {
-      const core = makeRegion('blackhole', pos.clone(), rng, cx, cy, cz,
-        i * 977 + 5);
-      core.name = made.name.replace(' Galaxy', '') + ' Core';
-      core.mass = 60000 + rng() * 90000;
-      core.galacticCore = true;
-      regions.push(core);
-    }
+  }
+
+  // ---- galactic cores ----
+  //
+  // A supermassive singularity sits at the exact centre of a DRAWN galaxy,
+  // and the drawn galaxies come from the intergalactic lattice. So the core
+  // is emitted by whichever chunk happens to contain that lattice centre,
+  // rather than being rolled per chunk. That is what makes the hole line up
+  // with the bright core you can actually see, instead of floating in empty
+  // space above or below the disc.
+  for (const g of latticeGalaxiesInChunk(origin, chunkSize)) {
+    const core = makeRegion('blackhole', new Vector3(g.x, g.y, g.z),
+      streamFrom(g.seed >>> 0), cx, cy, cz, 5);
+    core.name = 'Galaxy ' + g.ix + '.' + g.iy + '.' + g.iz + ' Core';
+    // Scaled to the galaxy it anchors, so a big galaxy has a big core.
+    core.mass = 60000 + (g.radius / 50000) * 90000;
+    core.galacticCore = true;
+    regions.push(core);
   }
 
   return { key: chunkKey(cx, cy, cz), coord: { cx, cy, cz }, regions };
