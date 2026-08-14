@@ -88,6 +88,17 @@ uniform float holeOn[MAX_HOLES];    // 0 = this slot is unused
 uniform float aspect;
 uniform float active;       // 0 disables the whole pass
 
+/**
+ * Folds a sample coordinate back inside the frame.
+ *
+ * clamp() repeats a single edge pixel into a streak; mirroring reflects the
+ * neighbouring image back, which reads as more sky.
+ */
+vec2 mirrorUV(vec2 p){
+  vec2 q = abs(fract(p * 0.5) * 2.0 - 1.0);
+  return clamp(q, 0.002, 0.998);
+}
+
 void main(void){
   vec2 uv = vUV;
 
@@ -115,9 +126,19 @@ void main(void){
 
     // Alien lens shapes: the same knobs the raymarcher uses, so a hole looks
     // like itself whether you are inside its world or flying past it.
-    float shape = 1.0 + cos(ang * symmetry[i]) * distortion[i]
-                      + sin(ang + twist[i] / max(r, 0.35)) * distortion[i] * 0.6;
-    shape = max(shape, 0.02);
+    //
+    // The angular term is deliberately GENTLE. At full strength it swung the
+    // deflection from 0.02x to 2.0x purely with angle, which draws a fan of
+    // hard spokes radiating out of the hole - eight directions bending
+    // violently, eight barely bending at all. Real lensing is the same in
+    // every direction around a non-rotating hole: the sky slides smoothly
+    // around a circular shadow. Alien holes should still read as strange,
+    // but as a rippling of that circle rather than a starburst, so the
+    // modulation is scaled down and floored well above zero.
+    float shape = 1.0
+      + cos(ang * symmetry[i]) * distortion[i] * 0.22
+      + sin(ang + twist[i] / max(r, 0.35)) * distortion[i] * 0.12;
+    shape = clamp(shape, 0.55, 1.6);
 
     // Deflection falls off with distance like a real photon path.
     //
@@ -180,9 +201,18 @@ void main(void){
     // Photon ring: a bright circle at the last stable orbit. Some holes have
     // none at all, which is why ringAmt can be zero.
     if (ringAmt[i] > 0.001){
-      // The ring forms at the lensing scale, not the shadow's edge.
-      float rw = max(lensR[i] * 0.05, 0.004);
-      float ring = exp(-pow((r - lensR[i] * ringRadius[i]) / max(rw, 1e-4), 2.0));
+      // The photon ring hugs the shadow. Light on the photon sphere orbits
+      // at 1.5 horizon radii and the ring appears just outside the shadow's
+      // apparent edge - it is the thin bright rim in every real image of a
+      // black hole, not a detached halo.
+      //
+      // Anchoring it to the LENSING radius instead put it five to nine
+      // times further out than the shadow, drawing a large disconnected
+      // circle floating in empty space. ringRadius still tunes it, but now
+      // it multiplies the thing the ring is physically attached to.
+      float ringR = max(holeR[i], 0.004) * 1.5 * max(ringRadius[i], 0.05);
+      float rw = max(ringR * 0.09, 0.0025);
+      float ring = exp(-pow((r - ringR) / max(rw, 1e-4), 2.0));
       rings += tint[i] * ring * ringAmt[i] * 1.6;
     }
   }
@@ -194,13 +224,27 @@ void main(void){
   vec2 uvG = uv - totalOff;
   vec2 uvB = uv - totalOff * (1.0 - maxChroma * 0.06);
 
+  // Sampling outside the frame is the other half of what looked wrong.
+  // A deflection can easily point past the edge of the screen, and there is
+  // simply no image there to fetch. Clamping returns the edge pixel over and
+  // over, which paints the long dark rays smeared outward from the hole.
+  // Mirroring folds the coordinate back into the frame instead, so the
+  // out-of-frame region is filled with plausible sky that keeps moving with
+  // the warp rather than with a stripe of one repeated pixel.
+  //
+  // This is a screen-space approximation either way: the information really
+  // is missing. Mirroring just fails in a way that looks like sky.
+  vec2 mR = mirrorUV(uvR);
+  vec2 mG = mirrorUV(uvG);
+  vec2 mB = mirrorUV(uvB);
+
   // This is the sampling that bends the REAL scene - planets, nebulae,
   // station hulls, other ships - and not merely a procedural starfield.
   // Whatever was drawn before this pass is what gets warped.
   vec3 col = vec3(
-    texture2D(textureSampler, clamp(uvR, 0.001, 0.999)).r,
-    texture2D(textureSampler, clamp(uvG, 0.001, 0.999)).g,
-    texture2D(textureSampler, clamp(uvB, 0.001, 0.999)).b
+    texture2D(textureSampler, mR).r,
+    texture2D(textureSampler, mG).g,
+    texture2D(textureSampler, mB).b
   );
 
   col += rings;

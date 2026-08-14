@@ -347,6 +347,76 @@ const hole = (x, y, z, horizon = 40) =>
     bendAt(0.5, 0.05, 1.0) < bendAt(0.5, 0.4, 1.0));
 }
 
+// -- THE WARP MUST LOOK LIKE A LENS, NOT A STARBURST
+//
+// Lensing that works is not the same as lensing that looks right. Compared
+// against real black hole imagery the warp had three tells: hard radial
+// spokes, dark rays smeared outward from the rim, and a photon ring
+// floating detached in empty space. Each has a measurable cause.
+{
+  const frag = fs.readFileSync(SRC, 'utf8')
+    .match(/const\s+LENS_FRAG\s*=\s*`([\s\S]*?)`;/m)[1];
+
+  // 1. The angular term must stay gentle. At full strength the deflection
+  //    swung from 0.02x to 2.0x with angle alone, which IS a fan of spokes.
+  const shape = (ang, symmetry, distortion, twist = 0, r = 0.3) => {
+    const v = 1 + Math.cos(ang * symmetry) * distortion * 0.22
+                + Math.sin(ang + twist / Math.max(r, 0.35)) * distortion * 0.12;
+    return Math.min(1.6, Math.max(0.55, v));
+  };
+  // Worst case in the shipped profiles: kaleidoscope, symmetry 8, distortion 1.
+  let lo = Infinity, hi = -Infinity;
+  for (let d = 0; d < 360; d += 1) {
+    const v = shape(d * Math.PI / 180, 8, 1.0, 1.2);
+    lo = Math.min(lo, v); hi = Math.max(hi, v);
+  }
+  ok('the angular term never nearly cancels the bend', lo > 0.5, 'min ' + lo.toFixed(3));
+  ok('the angular term never doubles the bend', hi < 1.7, 'max ' + hi.toFixed(3));
+  ok('angular variation reads as a ripple, not spokes', hi / lo < 2.6,
+    'ratio ' + (hi / lo).toFixed(2));
+  ok('the shape term is clamped in the shader', /clamp\(shape, 0\.\d+, 1\.\d+\)/.test(frag));
+
+  // A perfectly round hole must bend identically at every angle.
+  const round = new Set();
+  for (let d = 0; d < 360; d += 30) round.add(shape(d * Math.PI / 180, 0, 0).toFixed(6));
+  ok('a plain hole is radially symmetric', round.size === 1);
+
+  // 2. Out-of-frame samples must mirror, not clamp. clamp() repeats one edge
+  //    pixel into the long dark rays that were visible around the shadow.
+  ok('out-of-frame samples are mirrored back into the image',
+    /vec2 mirrorUV\(vec2 p\)/.test(frag));
+  ok('the sampler no longer clamps the warped coordinate',
+    !/texture2D\(textureSampler, clamp\(uv[RGB]/.test(frag));
+  const mirror = (v) => {
+    const q = Math.abs(((v * 0.5) % 1 + 1) % 1 * 2 - 1);
+    return Math.min(0.998, Math.max(0.002, q));
+  };
+  ok('mirrored coordinates always land inside the frame', (() => {
+    for (let v = -3; v <= 3; v += 0.017) {
+      const m = mirror(v);
+      if (!(m >= 0.002 && m <= 0.998) || !Number.isFinite(m)) return false;
+    }
+    return true;
+  })());
+  ok('mirroring is continuous at the frame edge',
+    Math.abs(mirror(0.999) - mirror(1.001)) < 0.01);
+  ok('mirroring does not flatten distinct samples onto one pixel',
+    new Set([1.1, 1.3, 1.5, 1.7].map((v) => mirror(v).toFixed(4))).size === 4);
+
+  // 3. The photon ring hugs the shadow; it is not a detached halo.
+  ok('the ring is anchored to the shadow radius',
+    /float ringR = max\(holeR\[i\]/.test(frag));
+  const ringAt = (shadowR, ringRadius) =>
+    Math.max(shadowR, 0.004) * 1.5 * Math.max(ringRadius, 0.05);
+  for (const rr of [0.3, 0.85, 1.1, 1.5]) {
+    const ratio = ringAt(0.0632, rr) / 0.0632;
+    ok('the ring stays near the shadow at ringRadius ' + rr, ratio < 3,
+      'x' + ratio.toFixed(2));
+  }
+  ok('the ring scales with the shadow, not the lensing radius',
+    ringAt(0.2, 1) > ringAt(0.05, 1));
+}
+
 // -- stats report the multi-hole count
 {
   const lens = makeLens();
