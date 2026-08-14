@@ -54,6 +54,7 @@ import { HoleDescent } from './systems/HoleDescent';
 import { TidalField } from './systems/TidalField';
 import { RegionTides, describeRegionTide } from './systems/RegionTides';
 import { CosmicSky } from './systems/CosmicSky';
+import { SkyProbe } from './systems/SkyProbe';
 import { SHIP as TIDAL_SHIP, ROCKY_PLANET } from './systems/GameModes';
 import { GrabSystem, type Grabbable } from './systems/GrabSystem';
 import {
@@ -206,6 +207,8 @@ export class App {
   lensfx = new LensFX();
   /** The procedural sky dome. Shares its GLSL with the hole raymarcher. */
   cosmicSky = new CosmicSky();
+  /** Live 360 cubemap of the sky, for reflections and ambient light. */
+  skyProbe = new SkyProbe();
   /** Whether the player is holding forward, for the fractal zoom. */
   private thrusting = false;
   /** Mouse look + wheel throttle, the other half of free flight. */
@@ -289,7 +292,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -800,6 +803,13 @@ export class App {
       // chain, so it attaches even when post-processing is unavailable.
       {
         this.cosmicSky.attach(this.scene);
+        // The cubemap is built from the dome, so it must attach after it.
+        this.skyProbe.attach(this.scene, this.cosmicSky.mesh);
+        // The environment texture drives PBR ambient light, so every
+        // reflective hull and pane of station glass picks up the real sky
+        // of whatever verse the player is standing in.
+        const envTex = this.skyProbe.cubeTexture;
+        if (envTex) this.scene.environmentTexture = envTex;
       }
       this.history.attach(
         typeof (w as any).captureState === 'function' ? (w as any) : null);
@@ -1210,6 +1220,17 @@ export class App {
       // you hold forward - so flying "into" the Mandelbrot really descends
       // into it rather than scaling a picture of it.
       this.cosmicSky.update(dt, eye, this.thrusting);
+      // Keep the cubemap centred on the viewer and re-capture only when the
+      // sky has actually changed - a new verse, or a fractal zoom step big
+      // enough to see. A still sky costs nothing after the first frame.
+      this.skyProbe.setCenter(eye);
+      this.skyProbe.refresh({
+        medium: this.cosmicSky.current.medium,
+        symmetry: this.cosmicSky.current.symmetry,
+        strangeness: this.cosmicSky.current.strangeness,
+        tint: this.cosmicSky.current.tint as [number, number, number],
+        zoom: this.cosmicSky.zoom
+      });
 
       // A world can declare that it renders its own black hole. Both the
       // geometry hole field and the screen-space lens must stand down when it

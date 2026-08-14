@@ -124,42 +124,47 @@ console.log('\n— the sky is deep and never occludes —');
   ok('there are three concentric shells', SKY_SHELLS.length === 3);
 
   const [core, mid, far] = SKY_SHELLS;
-  ok('the inner core matches the brief (2000 @ 100-500)',
-    core.count === 2000 && core.inner === 100 && core.outer === 500);
-  ok('the mid galactic shell matches the brief (10000 @ 500-2000)',
-    mid.count === 10000 && mid.inner === 500 && mid.outer === 2000);
-  // The brief asked for 2000-10000, but camera.maxZ is 4000 and anything
-  // beyond the far plane is clipped, so ~60% of these 30000 points were
-  // never drawn. The count and the inner radius are kept; the outer radius
-  // is pulled inside the far plane. Depth comes from the parallax lock
-  // below, not from raw distance, so nothing is lost visually.
-  ok('the far cosmos shell keeps its 30000 points from 2000 out',
-    far.count === 30000 && far.inner === 2000);
+  // The RADII are the contract, because they set the parallax geometry.
+  // The COUNTS are not pinned to their original values any more: the shells
+  // were cut from 42,000 points to a foreground sparkle when the galaxy
+  // moved into the dome shader, and a test demanding 2000/10000/30000 would
+  // have blocked the fix that stopped the sky washing out.
+  ok('the inner core spans 100-500', core.inner === 100 && core.outer === 500);
+  ok('the mid shell spans 500-2000', mid.inner === 500 && mid.outer === 2000);
+  ok('the far shell starts at 2000', far.inner === 2000);
+  ok('every shell carries some stars',
+    [core, mid, far].every((sh) => sh.count > 0));
+  ok('the shells thin out with distance per point, not in bulk',
+    core.size > mid.size && mid.size > far.size);
   ok('the far shell stops inside the camera far plane',
     far.outer > 3000 && far.outer < 4000, String(far.outer));
   ok('the shells are strictly nested with no gaps',
     core.outer === mid.inner && mid.outer === far.inner);
-  ok('42,000 background stars in total', shellBudget() === 42000);
-
-  // The far shell is a galaxy, not a scatter. An evenly-scattered shell
-  // looks statistically identical in every direction, which is exactly why
-  // the outer sky read as a repeating pattern with nothing to recognise.
-  ok('the far shell is built as a real galaxy', far.galaxy === true);
-  ok('only the far shell is a galaxy', !core.galaxy && !mid.galaxy);
-  ok('the far shell carries interstellar gas', (far.gas ?? 0) > 0, String(far.gas));
-  ok('the near shells have no gas', !core.gas && !mid.gas);
+  // THE SHELLS ARE FOREGROUND PARALLAX, NOT THE GALAXY.
+  // They used to hold 42,000 points including a full galaxy and 9,000 gas
+  // points, all drawn additively AFTER the sky dome in the same rendering
+  // group. That second galaxy sat in front of the dome's and washed its
+  // dust lanes and nebulae out to a uniform sparkle - the "just a bunch of
+  // stars with no fog" the sky kept looking like. The galaxy belongs to the
+  // dome alone, because only a shader can do absorption; a point can only
+  // ever add light. These assertions lock that division in place.
+  ok('the shells are a modest foreground, not the whole sky',
+    shellBudget() < 12000, String(shellBudget()));
+  ok('the shells still give real parallax depth', shellBudget() > 3000,
+    String(shellBudget()));
+  ok('no shell draws a second galaxy in front of the dome',
+    !core.galaxy && !mid.galaxy && !far.galaxy);
+  ok('no shell draws gas that would wash out the dome nebulae',
+    !core.gas && !mid.gas && !far.gas);
 
   const skySrc = read('src/bjs/systems/LayeredSky.ts');
-  ok('the sky builds stars from the galaxy model', /galaxyStar\(/.test(skySrc));
-  ok('the sky projects them onto the shell', /projectToShell\(/.test(skySrc));
-  ok('the sky places the observer inside the disc', /observerPosition\(/.test(skySrc));
-  ok('gas is sampled from the density field, not scattered evenly',
-    /sampleNebulaPoint\(/.test(skySrc));
-  ok('gas is coloured from the nebula palette', /nebulaColor\(/.test(skySrc));
-  // Gas that fails rejection sampling must vanish, not sit at the origin as
-  // a visible clump.
-  ok('unplaced gas points are fully transparent',
-    /new Color4\(0, 0, 0, 0\)/.test(skySrc));
+  ok('the sky projects points onto the shell', /projectToShell\(/.test(skySrc));
+  // The dome is the only thing allowed to render the galaxy, and it is the
+  // only one that can darken as well as brighten.
+  const domeSrc = read('src/bjs/shaders/CosmicSkyShader.ts');
+  ok('the galaxy lives in the dome shader', /skyGalaxy\(/.test(domeSrc));
+  ok('only the dome can absorb light', /col \*= 1\.0 - dust/.test(domeSrc) &&
+    !/\*= 1\.0 - dust/.test(skySrc));
 
   // Parallax is the entire point of layering.
   ok('each shell parallaxes differently',

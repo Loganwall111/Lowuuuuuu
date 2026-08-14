@@ -73,17 +73,23 @@ export interface ShellSpec {
  * bright near ones. Sizes shrink with distance for the same reason.
  */
 export const SKY_SHELLS: ShellSpec[] = [
-  { name: 'core', count: 2000, inner: 100, outer: 500, size: 2.6, lock: 0.0 },
-  { name: 'mid', count: 10000, inner: 500, outer: 2000, size: 1.8, lock: 0.55 },
+  // These shells exist for ONE reason the sky dome cannot serve: parallax.
+  // A dome is infinitely far away, so it cannot shift as you fly. Points at
+  // a finite radius do, and that motion is the whole depth cue of space.
+  //
+  // They used to carry the galaxy too - band, arms and gas - which put a
+  // SECOND Milky Way in front of the dome's. 51,000 additive points drew
+  // after the dome in the same group and washed its dust lanes and nebulae
+  // out to a uniform sparkle, which is exactly the "just a bunch of stars,
+  // no fog" the sky kept looking like. The galaxy now lives only in the
+  // dome, where it can do absorption; these shells are foreground stars and
+  // nothing else, at a fraction of the count and brightness.
+  { name: 'core', count: 900, inner: 100, outer: 500, size: 2.2, lock: 0.0 },
+  { name: 'mid', count: 2600, inner: 500, outer: 2000, size: 1.5, lock: 0.55 },
   // Outer radius deliberately sits inside the camera's far plane (maxZ is
-  // 4000). A shell drawn beyond the far plane is clipped, so the original
-  // 10000 threw away most of these 30000 points. The depth cue comes from
-  // the per-shell parallax lock below, not from raw distance, so pulling
-  // the radius in costs nothing visually and gains the whole shell.
-  {
-    name: 'far', count: 30000, inner: 2000, outer: 3800, size: 1.2, lock: 0.92,
-    galaxy: true, gas: 9000
-  }
+  // 4000); a shell drawn beyond it is clipped. The depth cue comes from the
+  // per-shell parallax lock, not from raw distance.
+  { name: 'far', count: 5200, inner: 2000, outer: 3800, size: 1.1, lock: 0.92 }
 ];
 
 /** Total points across every shell. */

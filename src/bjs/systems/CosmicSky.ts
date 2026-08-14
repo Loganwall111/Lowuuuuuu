@@ -105,6 +105,19 @@ export class CosmicSky {
   /** The dome mesh, exposed so tests can verify its render state. */
   get mesh(): Mesh | null { return this.dome; }
   get zoom(): number { return this.state.zoom; }
+  /**
+   * A read-only copy of the current sky, so other systems (the cubemap
+   * probe, the hole raymarcher) can mirror it without being able to reach
+   * in and change it behind setState's validation.
+   */
+  get current(): Readonly<SkyState> {
+    const s = this.state;
+    return {
+      medium: s.medium, symmetry: s.symmetry, strangeness: s.strangeness,
+      tint: [s.tint[0], s.tint[1], s.tint[2]], zoom: s.zoom,
+      exposure: s.exposure
+    };
+  }
 
   attach(scene: Scene): void {
     this.detach();
