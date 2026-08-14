@@ -646,8 +646,25 @@ export class App {
     }
   }
 
+  /**
+   * The world a warp asked for while another load was already running.
+   *
+   * Dropping such a request is what made warping look like a freeze: the
+   * camera had already moved to the new place, but the destination world
+   * never loaded, so the player sat in the old scene aimed at nothing. The
+   * latest request wins - clicking three places quickly should land you at
+   * the third, not the first.
+   */
+  private pendingWorld: string | null = null;
+  /** The region the queued world belongs to, so its focus is not lost. */
+  private pendingRegion: Region | null = null;
+
   private async loadWorld(id: string): Promise<void> {
-    if (this.switching) return;
+    if (this.switching) {
+      // Remember it and let the in-flight load finish; it will chain to this.
+      this.pendingWorld = id;
+      return;
+    }
     this.switching = true;
     try {
       this.postfx.detach();
@@ -713,6 +730,28 @@ export class App {
     } finally {
       this.switching = false;
     }
+
+    // Serve whatever was asked for while this load was running. Done after
+    // `switching` is cleared so the recursive call actually proceeds, and
+    // only when it differs from what was just built.
+    const queued = this.pendingWorld;
+    const queuedRegion = this.pendingRegion;
+    this.pendingWorld = null;
+    if (queued) {
+      // Rebuild against the queued destination's focus, not the one left over
+      // from the load that just finished.
+      if (queuedRegion) {
+        this.ctx.focus = {
+          position: queuedRegion.position.clone(),
+          radius: queuedRegion.radius,
+          mass: queuedRegion.mass
+        };
+      }
+      if (queued !== this.currentId || queuedRegion) {
+        await this.loadWorld(queued);
+        if (queuedRegion) this.camera.setTarget(queuedRegion.position.clone());
+      }
+    }
   }
 
   /** The black hole the player is closest to, for lens editing. */
@@ -759,6 +798,11 @@ export class App {
     const dest = r.position.add(n.scale(standoff));
 
     this.vehicle.teleport(dest);
+    // Turn the SHIP, not just the camera. In free-fly the camera is rebuilt
+    // from the vehicle's heading every frame, so setting the camera target
+    // alone is undone on the next frame and the player ends up facing the
+    // way they came.
+    this.vehicle.faceTowards(r.position);
     this.camera.position.copyFrom(dest);
     this.camera.setTarget(r.position.clone());
     this.universe.updatePlayer(dest);
@@ -779,10 +823,17 @@ export class App {
     // Always rebuild, even when the locale id is unchanged: flying from one
     // black hole to another stays in 'blackhole' but is a different subject,
     // and skipping the rebuild would leave the old hole on screen.
+    // Remember where this warp was headed. If a load is already running this
+    // is what the queued rebuild will focus on; without it the queued world
+    // built against a stale focus and aimed at the origin.
+    this.pendingRegion = r;
     void this.loadWorld(world).then(() => {
-      // Re-point after the build. loadWorld purges the scene and the world
-      // frames its own subject, so the aim must settle afterwards.
-      this.camera.setTarget(r.position.clone());
+      // Re-point after the build, but only if no newer warp has superseded
+      // this one - otherwise an earlier, slower load steals the camera back
+      // from the place the player actually asked for last.
+      if (this.pendingRegion === r || this.pendingRegion === null) {
+        this.camera.setTarget(r.position.clone());
+      }
     });
   }
 

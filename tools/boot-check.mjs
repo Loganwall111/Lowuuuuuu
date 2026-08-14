@@ -561,6 +561,50 @@ try {
     }
   }
 
+  // ---- after warping you must actually be FACING the place ----
+  // The user flew to a hole, saw an unlensed black disc, and asked whether it
+  // was even the black hole. It was the geometry hole - and lensing was off
+  // because the camera was pointing away from it. warpTo aimed the camera,
+  // but in free-fly the frame re-aims the camera from the VEHICLE's heading
+  // every frame, and nothing ever turned the vehicle. One frame later the aim
+  // was gone, LensFX's "behind the camera" test rejected the hole, and the
+  // player saw unlensed geometry.
+  {
+    const hf = holes[0];
+    await appRef.warpTo(hf.id);
+    await new Promise((res) => setTimeout(res, 2200));
+
+    const fwd = appRef.vehicle.axes().fwd;
+    const toHole = hf.position.subtract(appRef.vehicle.position);
+    const tl = Math.hypot(toHole.x, toHole.y, toHole.z);
+    const dot = (fwd.x * toHole.x + fwd.y * toHole.y + fwd.z * toHole.z) / tl;
+    travelChecks.push(['the ship itself faces the place you warped to',
+      dot > 0.99, 'dot=' + dot.toFixed(4)]);
+  }
+
+  // ---- a second Fly click must never be silently dropped ----
+  // The user reported that warping to ANY place froze the screen. loadWorld
+  // returns early while `switching` is true, and warpTo now always rebuilds,
+  // so a click that lands during a ~3s load was thrown away: the camera had
+  // already been moved but the destination world never loaded. The player was
+  // left in the old world, aimed at nothing, with no error.
+  {
+    const A = appRef.universe.regions.filter((x) => x.kind === 'star-system')[0];
+    const B = appRef.universe.regions.filter((x) => x.kind === 'blackhole')[0];
+    if (A && B) {
+      appRef.warpTo(A.id);          // begins an async load
+      appRef.warpTo(B.id);          // arrives mid-load
+      await new Promise((res) => setTimeout(res, 4500));
+      travelChecks.push(['a warp requested during a load is not dropped',
+        appRef.currentId === 'blackhole',
+        'ended in ' + appRef.currentId + ', expected blackhole']);
+      const tgt = appRef.camera.getTarget();
+      travelChecks.push(['the camera ends up aimed at the LAST place clicked',
+        Vector3Distance(tgt, B.position) < 1e-3,
+        'target=' + [tgt.x, tgt.y, tgt.z].map((n) => n.toFixed(1)).join(',')]);
+    }
+  }
+
   // ---- and it must be BIG ENOUGH TO SEE on arrival ----
   // The aim fix was not enough: the user still saw only a small white blob.
   // BlackHoleWorld rendered a hardcoded mass of 1.0 while the region carried

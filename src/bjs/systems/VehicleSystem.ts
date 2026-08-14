@@ -353,6 +353,29 @@ export class VehicleController {
     return this.velocity.length();
   }
 
+  /**
+   * Turns the craft to look at a point.
+   *
+   * Needed because the camera is re-derived from this orientation every
+   * frame: aiming the camera alone is undone on the very next frame. After
+   * warping to a place, the player was left facing exactly backwards
+   * (dot = -1) with the destination behind them - which also switched off
+   * gravitational lensing, since it ignores holes behind the camera.
+   */
+  faceTowards(target: Vector3): void {
+    const d = target.subtract(this.position);
+    const len = d.length();
+    if (!Number.isFinite(len) || len < 1e-6) return;
+    d.scaleInPlace(1 / len);
+    // Yaw about +Y, pitch from the vertical component. Matches the
+    // RotationYawPitchRoll convention used everywhere else in this class,
+    // so the camera basis and the instruments stay consistent.
+    this.yaw = Math.atan2(d.x, d.z);
+    this.pitch = Math.max(-1.5533, Math.min(1.5533, -Math.asin(d.y)));
+    this.roll = 0;
+    this.orientation = Quaternion.RotationYawPitchRoll(this.yaw, this.pitch, 0);
+  }
+
   /** Puts the controller somewhere safe and stationary. */
   teleport(pos: Vector3): void {
     this.position.copyFrom(pos);
