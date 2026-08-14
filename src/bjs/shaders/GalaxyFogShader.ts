@@ -88,6 +88,40 @@ const float TINT_AMOUNT = 1.0;
  */
 const float SATURATION_RECOVERY = 2.0;
 
+/**
+ * Disc half-height as a fraction of the galaxy radius.
+ *
+ * Fixed rather than proportional to local radius: a proportional envelope
+ * flares outward into a cone, which is what produced the tall vertical
+ * cloud instead of a flat plane.
+ */
+const float DISC_HEIGHT = 0.040;
+/** How tightly gas bunches into the arms. Higher = crisper streams. */
+const float ARM_SHARPNESS = 4.0;
+/** Density between the arms. Small but non-zero, so gaps are gas not holes. */
+const float ARM_FLOOR = 0.06;
+/** Overall disc density. */
+const float DISC_GAIN = 2.4;
+/** Bulge extent as a fraction of galaxy radius. */
+const float BULGE_RADIUS = 0.085;
+/** Bulge peak density. Must stay modest or it saturates over the arms. */
+const float BULGE_GAIN = 1.35;
+/** Vertical squash of the bulge. */
+const float BULGE_FLATTEN = 0.55;
+/** Spatial frequency of the dust lanes. High = fine winding filaments. */
+const float DUST_FREQ = 7.0;
+/** How crisp each lane is. */
+const float DUST_SHARPNESS = 2.2;
+/** How much light a dust lane removes. 0 = none, 1 = total. */
+const float DUST_CUT = 0.88;
+/**
+ * Only ridge values above this become dust.
+ *
+ * The single most important dust constant: below it the lanes merge into a
+ * sheet that covers the disc, above it they separate into filaments.
+ */
+const float DUST_THRESHOLD = 0.95;
+
 // ---------------------------------------------------------------- noise
 
 vec3 hash33(vec3 p){
@@ -140,77 +174,58 @@ float galaxyDensity(vec3 p){
   float rim = 1.0 - smoothstep(outerR * 0.86, outerR * 1.30, r);
   if (rim <= 0.0) return 0.0;
 
-  // Vertical: gas is thin and hugs the plane, but the floor keeps the
-  // envelope from pinching to a knife edge near the centre, which is what
-  // made the core read as a hard bright sheet.
-  float h = max(r * thickness, outerR * 0.012);
+  // ---- disc plane ----
+  //
+  // FLAT. The height scale is a fixed fraction of the galaxy radius, not a
+  // fraction of the local radius, so the disc does not flare into a cone
+  // toward the rim. The small floor keeps the very centre from pinching to
+  // a knife edge.
+  float h = max(outerR * DISC_HEIGHT + r * 0.012, outerR * 0.008);
   float plane = exp(-(p.y * p.y) / (2.0 * h * h));
 
-  // Radial: hollow in the very centre, fading out past the rim.
+  // ---- logarithmic spiral arms ----
   //
-  // The hollow must not be a true void. A full hole at r=0 meant the
-  // brightest part of a real galaxy - the bulge - was the one place with no
-  // gas at all, so the centre rendered darker than its surroundings. The
-  // floor keeps a dense nucleus while still thinning the very middle.
-  float inner = mix(0.55, 1.0, 1.0 - exp(-r / max(innerR, 1e-4)));
-  float outer = rim;
-
-  // Spiral arms. The angle a point "should" sit at grows with log(radius);
-  // how close it is to that angle decides whether it is in an arm.
+  // A real spiral arm is a logarithmic curve: the angle a point should sit
+  // at grows with the log of its radius. Measuring how far the point's
+  // actual angle is from that ideal gives the arm mask.
+  //
+  // Sharpening it with a high power is what turns a soft radial gradient
+  // into crisp winding streams with genuinely dark vacuum between them.
   float ang = atan(p.z, p.x);
-  float spiral = ang - armFactor * log(max(r, 1.0) / max(innerR, 1.0));
-  float armWave = cos(spiral * arms) * 0.5 + 0.5;
-  // Arms are broad near the core and tighten outward; never fully empty
-  // between them, or the disc looks like a pinwheel cut-out.
-  //
-  // ARM CONTRAST. At a 0.45 floor the gaps between the arms carried nearly
-  // half the density of the arms themselves, which smeared the spiral into
-  // an even haze. Dropping the floor and sharpening the crest makes the
-  // arms actually read AS arms, with dark sky between them.
-  float armMask = mix(0.16, 1.0, pow(smoothstep(0.0, 1.0, armWave), 0.75));
+  float arm = armFactor * log(max(r, innerR) / max(innerR, 1.0));
+  float armWave = cos(ang * arms - arm * arms) * 0.5 + 0.5;
+  // pow(mask, 4) is the difference between "haze that is slightly brighter
+  // in places" and "arms". The floor is small but non-zero so the
+  // inter-arm gaps read as thin gas rather than as hard cut-outs.
+  float armMask = ARM_FLOOR + (1.0 - ARM_FLOOR) * pow(armWave, ARM_SHARPNESS);
 
-  // Clumping, drifting very slowly. No sine, no pulsing - the drift is a
-  // constant translation of the noise field.
-  //
-  // The exponent here decides whether the medium reads as cloud or as
-  // grain. Sharpening it (1.7) pushed the field toward isolated high
-  // spikes with empty gaps - which is precisely the "glitter storm" look.
-  // Softening it, and running the result through a smoothstep, spreads
-  // each clump into a broad continuous swell with no countable pieces.
+  // Arms are only a disc feature. Near the centre the bulge takes over, so
+  // the spiral is faded out there rather than winding into the nucleus.
+  armMask = mix(1.0, armMask, smoothstep(innerR * 0.5, outerR * 0.22, r));
+
+  // ---- radial falloff of the disc ----
+  // Exponential, the way a real disc's surface brightness behaves.
+  float radial = exp(-r / (outerR * 0.42)) * rim;
+
+  // ---- clumping ----
+  // Broad continuous swells rather than isolated spikes, so the medium
+  // reads as cloud instead of grain.
   vec3 q = p * (1.6 / max(outerR, 1.0));
   float clump = fbm(q * 2.2 + vec3(time * 0.004, 0.0, time * 0.003), 5);
-  // ARM DENSITY. Widening the smoothstep floor keeps more of the field
-  // above zero, and the multiplier raises the whole medium, so the disc is
-  // a thick body of gas rather than a thin wash. The clamp below still
-  // bounds it, so this cannot run away.
-  clump = smoothstep(0.10, 0.88, clump) * 2.6;
+  clump = 0.35 + 0.65 * smoothstep(0.10, 0.88, clump);
 
-  // ARM-CONCENTRATED BOOST. The brief asks for higher density specifically
-  // inside the arms rather than everywhere: a flat multiplier would just
-  // fog the gaps too and undo the contrast above. Keyed off armMask so the
-  // gain lands where the spiral structure already is.
-  float armBoost = 1.0 + 3.0 * pow(armMask, 2.0);
+  float disc = plane * radial * armMask * clump * DISC_GAIN;
 
-  float disc = plane * inner * outer * armMask * clump * armBoost;
-
-  // ---- CENTRAL BULGE ----
+  // ---- central bulge ----
   //
-  // A real galaxy is a thin disc PLUS a fat spheroidal bulge, and the bulge
-  // was missing entirely. Because the disc's vertical envelope collapses to
-  // ~600 units near the axis, a face-on ray through the centre crossed less
-  // gas than one through the arms, so the brightest region of a galaxy came
-  // out the DIMMEST - measured 0.071 against 0.341 at mid radius. That is a
-  // dark hole exactly where Andromeda blazes.
-  //
-  // The bulge is a genuine 3D spheroid, slightly flattened, so it is thick
-  // in every direction and dominates the centre from any viewing angle.
-  float br = length(vec3(p.x, p.y / 0.62, p.z));
-  // Radius tuned by measurement, not by eye: at 0.16 the bulge was too
-  // tight to out-shine the arms along a face-on ray (core/mid 0.93), and
-  // raising its amplitude did nothing because the density clamps at 1.0 -
-  // the limit is how far the ray travels through it, not how thick it is.
-  // Widening it is what actually works.
-  float bulge = exp(-pow(br / max(outerR * 0.30, 1.0), 1.6)) * 9.0;
+  // A flattened spheroid of old starlight. It must NOT swallow the disc:
+  // at radius 0.30 x outerR and amplitude 9.0 this term clamped the density
+  // to 1.0 out to 25,000 units - half the galaxy - and a saturated sphere
+  // has no structure at all. That is exactly the airbrushed blob. It is now
+  // tight and moderate, so it reads as a bright nucleus that the arms wind
+  // out of rather than a ball the arms are buried inside.
+  float br = length(vec3(p.x, p.y / BULGE_FLATTEN, p.z));
+  float bulge = exp(-pow(br / max(outerR * BULGE_RADIUS, 1.0), 1.7)) * BULGE_GAIN;
 
   return clamp(disc + bulge, 0.0, 1.0);
 }
@@ -218,13 +233,43 @@ float galaxyDensity(vec3 p){
 /** Dark dust: ridged filaments that absorb rather than glow. */
 float dustAt(vec3 p){
   float r = length(p.xz);
-  vec3 q = p * (1.9 / max(outerR, 1.0));
-  float ang = atan(p.z, p.x) * 0.5;
-  float n = fbm(q * 2.2 + vec3(cos(ang) * 1.6, 0.0, sin(ang) * 1.6), 4);
+
+  // HIGH-FREQUENCY fBm, sheared along the spiral.
+  //
+  // Frequency matters more than amplitude here. Low-frequency dust is just
+  // a soft shadow across the disc; the sharp winding filaments that give a
+  // real galaxy its contrast only appear once the noise is fine enough to
+  // resolve lanes narrower than an arm. Shearing the sample by the spiral
+  // angle makes the lanes follow the arms rather than cutting across them.
+  float ang = atan(p.z, p.x);
+  float wind = armFactor * log(max(r, innerR) / max(innerR, 1.0));
+  float sheared = ang - wind;
+  vec3 q = vec3(cos(sheared) * r, p.y * 2.4, sin(sheared) * r)
+         * (DUST_FREQ / max(outerR, 1.0));
+
+  float n = fbm(q, 5);
+  // Ridged noise: the ABSOLUTE value of a signed field creates creases,
+  // which is what a filament is. A plain fbm gives blobs instead.
   float ridged = 1.0 - abs(n - 0.5) * 2.0;
-  float band = smoothstep(innerR * 0.7, outerR * 0.35, r)
+
+  // THRESHOLD, NOT JUST A POWER.
+  //
+  // fbm concentrates hard around 0.5, so this ridge function sits near 1.0
+  // across almost the whole disc - measured median 0.85, with 80% of the
+  // disc reading as lane. Raising it to a power only dims that blanket
+  // instead of breaking it up, so the dust came out as a uniform grey wash
+  // rather than as filaments. Cutting everything below the crest line and
+  // rescaling what survives is what leaves isolated winding lanes with
+  // clean gas between them.
+  ridged = smoothstep(DUST_THRESHOLD, 1.0, ridged);
+
+  // Dust lives in the disc, not in the halo and not in the nucleus.
+  float band = smoothstep(innerR * 0.7, outerR * 0.30, r)
              * (1.0 - smoothstep(outerR * 0.72, outerR * 1.05, r));
-  return pow(max(ridged, 0.0), 3.0) * band;
+  // A thin layer: dust hugs the mid-plane more tightly than the gas does.
+  float layer = exp(-(p.y * p.y) / (2.0 * pow(outerR * 0.022, 2.0)));
+
+  return pow(max(ridged, 0.0), DUST_SHARPNESS) * band * layer;
 }
 
 // --------------------------------------------------------------- colour
@@ -292,7 +337,10 @@ vec3 gasColor(vec3 p, float d){
       // starlight, not emission nebulae, so the coloured gas belongs in
       // the ARMS. Fading the tint out toward the centre keeps the
       // Andromeda look: gold heart, coloured arms.
-      float armsOnly = smoothstep(0.10, 0.42, t);
+      // The nucleus keeps its gold and the arms carry the emission
+      // colour, with a wide crossfade so the bulge grows smoothly out into
+      // the arms rather than ending on a visible ring.
+      float armsOnly = smoothstep(0.06, 0.34, t);
       base = mix(base, hue, smoothstep(0.0, 0.55, wsum) * TINT_AMOUNT * armsOnly);
     }
   }
@@ -388,13 +436,29 @@ void main(void) {
       // is what read as a flat white mask over the core. At 1e-5 the
       // medium is genuinely translucent (alpha ~0.66 looking through the
       // core) so stars and background survive behind it.
-      float ext = (d * 0.85 + dust * 1.9) * dt * density * 0.00001;
+      // 5e-5, not 1e-5. Sharpening the arms and carving the dust lanes
+      // removed most of the gas by design, which dropped the whole galaxy
+      // to alpha 0.06 - structurally correct but nearly invisible. The
+      // extinction coefficient is what restores its presence WITHOUT
+      // refilling the gaps, since it scales what is there rather than
+      // adding anything back.
+      float ext = (d * 0.85 + dust * 1.9) * dt * density * 0.00005;
 
       // Absorb THEN emit, so a dense sample cannot both block the light
       // behind it and add its own at full strength in the same step. That
       // double-counting is what let the core stack toward pure white.
       float absorbed = 1.0 - exp(-ext);
       vec3 emit = gasColor(pos, d);
+
+      // DUST CARVES THE GAS.
+      //
+      // Extinction alone only dims what is BEHIND a lane, which at these
+      // densities is a barely visible haze. Subtracting the dust from the
+      // emission as well means a lane also blanks the gas it runs through,
+      // which is what produces hard dark filaments cutting across bright
+      // arms instead of a soft airbrushed wash.
+      emit *= 1.0 - DUST_CUT * dust;
+
       acc += emit * trans * absorbed;
       trans *= exp(-ext);
       if (trans < 0.004) break;
