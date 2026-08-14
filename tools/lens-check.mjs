@@ -195,10 +195,10 @@ console.log('\n— lensing works everywhere, not just in one world —');
   const lfx = fs.readFileSync('src/bjs/systems/LensFX.ts', 'utf8');
   ok('there is a universal lensing pass', lfx.includes('universalLens'));
   ok('it is a screen-space post-process', lfx.includes('PostProcess'));
-  ok('deflection falls off with distance', lfx.includes('pow(clamp(holeR / rr'));
+  ok('deflection falls off with distance', lfx.includes('pow(clamp(holeR[i] / rr'));
   ok('it honours alien lens shapes',
      lfx.includes('symmetry') && lfx.includes('distortion') && lfx.includes('twist'));
-  ok('ringless holes are supported', lfx.includes('ringAmt > 0.001'));
+  ok('ringless holes are supported', lfx.includes('ringAmt[i] > 0.001'));
   // This used to pin the literal expression `mix(col, tint * 0.05, inside)`,
   // which is precisely the line that produced the reported black screen: it
   // replaces the frame with a flat wash, and because the shadow radius was
@@ -206,21 +206,24 @@ console.log('\n— lensing works everywhere, not just in one world —');
   // name was right; what it checked was not. Now it checks the two
   // properties that actually keep the screen alive.
   ok('the horizon shadow can never cover the whole frame',
-     lfx.includes('min(holeR, 0.42)'));
+     lfx.includes('min(holeR[i], 0.42)'));
   ok('even inside the horizon some lensed light survives',
-     /mix\(col, col \* 0\.0\d+ \+ tint/.test(lfx));
+     /mix\(col, col \* 0\.0\d+ \+ shadowTint/.test(lfx));
   ok('it switches itself off when idle', lfx.includes('active < 0.5'));
   ok('a failed post-process cannot stop rendering', lfx.includes('Gravitational lensing unavailable'));
 
   const app = fs.readFileSync('src/bjs/App.ts', 'utf8');
   ok('the app owns a universal lens', app.includes('new LensFX'));
   ok('it is attached on every world load', app.includes('this.lensfx.attach('));
-  ok('it tracks the nearest hole each frame', app.includes('this.lensfx.track('));
+  // Every hole on screen bends light now, not only the nearest: a binary
+  // pair with one straight starfield behind it was the tell that this was a
+  // decal on one object rather than a property of space.
+  ok('it tracks every visible hole each frame', app.includes('this.lensfx.trackMany('));
   ok('it clears when no hole is near', app.includes('this.lensfx.clear()'));
   ok('lensing state is reported in telemetry', app.includes('this.lensfx.stats()'));
 
   // It must not be gated on being in the blackhole world.
-  const trackIdx = app.indexOf('this.lensfx.track(');
+  const trackIdx = app.indexOf('this.lensfx.trackMany(');
   const slice = app.slice(Math.max(0, trackIdx - 900), trackIdx);
   ok('lensing is not gated on the blackhole world',
      !/currentId\s*===\s*'blackhole'/.test(slice));

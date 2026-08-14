@@ -529,11 +529,11 @@ console.log('\n— travelling to a black hole —');
 console.log('\n— the horizon shadow stays a shape, not the frame —');
 {
   const lfx = read('src/bjs/systems/LensFX.ts');
-  ok('the shadow radius is clamped', /min\(holeR, 0\.42\)/.test(lfx));
+  ok('the shadow radius is clamped', /min\(holeR\[i\], 0\.42\)/.test(lfx));
   ok('the clamp is used by the inside test',
     /smoothstep\(shadowR \* 1\.02, shadowR \* 0\.86, r\)/.test(lfx));
   ok('lensed light still shows through the horizon',
-    /mix\(col, col \* 0\.0\d+ \+ tint/.test(lfx));
+    /mix\(col, col \* 0\.0\d+ \+ shadowTint/.test(lfx));
 
   // Measure it: at any apparent size, the frame corner must stay visible.
   const ss = (a, b, x) => {
@@ -673,7 +673,7 @@ console.log('\n— the singularity core renders black —');
   const lensBlock = (app.match(
     /gravitational lensing[\s\S]{0,1200}?lensfx\.clear\(\);\s*\}/) || [''])[0];
   ok('the screen-space lens is skipped when the world raymarches its own hole',
-    /worldOwnsHole/.test(lensBlock) && /\?\s*null/.test(lensBlock),
+    /if\s*\(worldOwnsHole\)\s*\{\s*this\.lensfx\.clear\(\);/.test(lensBlock),
     'LensFX grey shadow must not be painted over the raymarched black core');
   ok('the ownership flag is computed before anything consumes it',
     app.indexOf('const worldOwnsHole') < app.indexOf('gravitational lensing') &&

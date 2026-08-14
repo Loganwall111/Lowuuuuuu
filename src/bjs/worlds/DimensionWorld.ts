@@ -21,6 +21,19 @@ import {
   makeRng, type DimensionSpec
 } from '../systems/DimensionSystem';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
+import { TearGate, type Tear } from '../systems/TearGate';
+
+/**
+ * Tear geometry.
+ *
+ * A rift has to be large enough to aim a ship at from across the dimension,
+ * and far enough out that reaching one is a short flight rather than a
+ * twitch. These are the numbers that decide whether descending feels like
+ * travelling or like clicking.
+ */
+export const TEAR_DIAMETER = 54;
+export const TEAR_RING = 190;
+export const TEAR_COUNT = 3;
 
 interface Drifter {
   mesh: Mesh;
@@ -41,6 +54,14 @@ export class DimensionWorld implements World {
   private drifters: Drifter[] = [];
   private lights: (HemisphericLight | PointLight)[] = [];
   private tears: Mesh[] = [];
+  /**
+   * Turns the tear rings into doors you fly through.
+   *
+   * Descending used to be a button. An endless stack of realities reached by
+   * clicking a list item is a menu; reached by aiming at a rift and flying
+   * into it, it is a place.
+   */
+  private gate = new TearGate();
   private t = 0;
   private history: DimensionSpec[] = [];
 
@@ -121,7 +142,11 @@ export class DimensionWorld implements World {
     }
 
     // ---- exits: tears you can fall through ----
-    for (let i = 0; i < 3; i++) this.tears.push(this.makeTear(rng, i));
+    for (let i = 0; i < TEAR_COUNT; i++) this.tears.push(this.makeTear(rng, i));
+    // Re-arm on every rebuild. arm() also forgets the previous position, so
+    // being teleported into a new reality cannot be mistaken for flying
+    // through one of its tears on the first frame.
+    this.gate.arm(this.tearGates());
 
     this.name = s.glyph + ' ' + s.name;
   }
@@ -241,8 +266,10 @@ export class DimensionWorld implements World {
   private makeTear(rng: () => number, i: number): Mesh {
     const scene = this.ctx.scene;
     const c = this.spec.palette[(i + 2) % this.spec.palette.length];
+    // Big enough to aim at and fly through. The old 16-unit ring was a prop
+    // you would never notice you had passed.
     const m = MeshBuilder.CreateTorus('tear',
-      { diameter: 16, thickness: 1.1, tessellation: 48 }, scene);
+      { diameter: TEAR_DIAMETER, thickness: 2.4, tessellation: 56 }, scene);
     const mat = new StandardMaterial('tearMat', scene);
     mat.emissiveColor = new Color3(
       Math.min(1, c[0] + 0.35), Math.min(1, c[1] + 0.35), Math.min(1, c[2] + 0.35));
@@ -250,14 +277,54 @@ export class DimensionWorld implements World {
     mat.specularColor = Color3.Black();
     mat.disableLighting = true;
     m.material = mat;
-    const a = (i / 3) * Math.PI * 2 + rng();
-    m.position.set(Math.cos(a) * 95, (rng() - 0.5) * 30, Math.sin(a) * 95);
-    m.rotation.set(rng() * 3, a, rng() * 3);
+    const a = (i / TEAR_COUNT) * Math.PI * 2 + rng();
+    m.position.set(Math.cos(a) * TEAR_RING, (rng() - 0.5) * 40, Math.sin(a) * TEAR_RING);
+    // Faced at the centre of the dimension, so flying out through one is a
+    // straight line rather than a slot you have to thread sideways.
+    m.lookAt(new Vector3(0, m.position.y * 0.4, 0));
     m.isPickable = false;
     return m;
   }
 
   /* --------------------------------- travel --------------------------------- */
+
+  /**
+   * The tear rings as flyable gates.
+   *
+   * Derived from the meshes rather than stored alongside them, so the door
+   * and the thing you can see can never disagree about where they are.
+   */
+  private tearGates(): Tear[] {
+    return this.tears.map((m, i) => {
+      // A torus built by MeshBuilder lies in its own XZ plane, so its local
+      // up is the ring's normal. lookAt() has since rotated it, so the
+      // normal has to come from the world matrix, not from a constant.
+      m.computeWorldMatrix(true);
+      const n = Vector3.TransformNormal(new Vector3(0, 1, 0), m.getWorldMatrix());
+      return {
+        id: 'tear-' + i,
+        position: m.position.clone(),
+        radius: (TEAR_DIAMETER * 0.5) * Math.max(0.001, m.scaling.x),
+        normal: n.normalize()
+      };
+    });
+  }
+
+  /**
+   * Flies the player one level deeper if they passed through a tear.
+   *
+   * Called from update() with the live eye position, so descending is a
+   * consequence of where the ship went rather than of a button press.
+   */
+  private checkTears(dt: number, eye: Vector3): void {
+    const hit = this.gate.update(dt, eye);
+    if (!hit) return;
+    this.goDeeper();
+    this.onDescend?.(this.spec);
+  }
+
+  /** Notified whenever the player falls a level by flying through a tear. */
+  onDescend: ((spec: DimensionSpec) => void) | null = null;
 
   /** Falls deeper: a new dimension one level down, and further back in time. */
   goDeeper(): void {
@@ -311,6 +378,14 @@ export class DimensionWorld implements World {
 
   update(dt: number, _ctx: WorldContext): void {
     const s = this.spec;
+    // Descending is flying, not clicking. Checked before anything else so a
+    // rebuild triggered by a crossing does not then animate the old world's
+    // meshes, which have just been disposed.
+    // A crossing rebuilds the world, but realise() refills `drifters` and
+    // `tears` in the same call, so the animation below operates on the new
+    // reality rather than on disposed meshes.
+    const eye = _ctx?.camera?.position;
+    if (eye) this.checkTears(dt, eye);
     // time direction is part of the dimension, not a UI toggle
     const flow = dt * s.timeScale * this.p.timeScale * s.timeDirection;
     this.t += flow;

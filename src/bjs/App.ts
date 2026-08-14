@@ -58,7 +58,7 @@ import { GrabSystem, type Grabbable } from './systems/GrabSystem';
 import {
   LENS_PROFILES, cloneProfile, randomAlienProfile,
   describeProfile as describeLens, sanitizeProfile as sanitizeLens,
-  type LensMode
+  type LensMode, type LensProfile
 } from './systems/LensProfiles';
 import type { Region } from './systems/UniverseState';
 
@@ -919,7 +919,25 @@ export class App {
     await this.loadWorld('dimension');
     const w = this.world as any;
     if (w && typeof w.jumpTo === 'function') w.jumpTo(seed, depth);
+    this.watchDimensionDescents();
     this.shell.refreshAll?.();
+  }
+
+  /**
+   * Announces each level as the player flies down through the tears.
+   *
+   * The dimensions are endless, so the only way to know you are getting
+   * somewhere is to be told which reality you just fell into and how deep
+   * you now are.
+   */
+  private watchDimensionDescents(): void {
+    const w = this.world as any;
+    if (!w || typeof w !== 'object') return;
+    w.onDescend = (spec: { glyph: string; name: string; depth: number }) => {
+      this.shell.toast(
+        spec.glyph + ' ' + spec.name + ' — depth ' + spec.depth);
+      this.shell.refreshAll?.();
+    };
   }
 
   /**
@@ -938,6 +956,7 @@ export class App {
     } else if (typeof w.jumpTo === 'function') {
       w.jumpTo(d.seed, d.depth);
     }
+    this.watchDimensionDescents();
     this.shell.refreshAll?.();
   }
 
@@ -1283,20 +1302,32 @@ export class App {
         // correct black core. The screen-space shadow floors at
         // col*0.06 + tint*0.035 - linear (0.035,0.022,0.010), a warm grey -
         // so painting it on top turned the core grey instead of black.
-        const hole = worldOwnsHole
-          ? null
-          : (this.universe.insideHorizon ?? this.nearestHole());
-        if (hole) {
-          const hr = this.universe.horizonRadiusOf(hole);
-          const d = Vector3.Distance(eye, hole.position);
-          // Only worth doing when you are close enough to notice.
-          if (d < hr * 260) {
-            this.lensfx.track(hole.position, hr, this.camera, hole.lens ?? null);
-          } else {
-            this.lensfx.clear();
-          }
-        } else {
+        if (worldOwnsHole) {
           this.lensfx.clear();
+        } else {
+          // EVERY hole in range bends the sky, not just the closest one.
+          // With a single lens, a binary pair or a cluster left all but one
+          // hole sitting on a dead-straight starfield - the giveaway that
+          // the effect was a decal on one object rather than a property of
+          // the space itself.
+          const lensing: Array<{ center: Vector3; horizon: number; profile: LensProfile | null }> = [];
+          const inside = this.universe.insideHorizon;
+          if (inside) {
+            lensing.push({
+              center: inside.position,
+              horizon: this.universe.horizonRadiusOf(inside),
+              profile: inside.lens ?? null
+            });
+          }
+          for (const r of this.universe.regions) {
+            if (!r || r.kind !== 'blackhole' || r === inside) continue;
+            const hr = this.universe.horizonRadiusOf(r);
+            // Only worth doing when you are close enough to notice.
+            if (Vector3.Distance(eye, r.position) >= hr * 260) continue;
+            lensing.push({ center: r.position, horizon: hr, profile: r.lens ?? null });
+          }
+          if (lensing.length) this.lensfx.trackMany(lensing, this.camera);
+          else this.lensfx.clear();
         }
       }
 
