@@ -332,7 +332,21 @@ export const DEFAULT_WARP_DRIVE: WarpDriveOptions = {
   // Bleeding off faster than it builds means you can always stop, which
   // matters when the thing can cross a galaxy in seconds.
   decay: 0.85,
-  topMultiplier: 900
+  // 100x the old 900.
+  //
+  // This is only sane because the universe is now unbounded: galaxies
+  // repeat forever on a 260,000-unit cell grid, so there is no rim to
+  // overshoot into empty nothing. At 90,000x a shuttle covers roughly
+  // 8.5 million units a second, which crosses a 50,000-unit galaxy in a
+  // blink and reaches the next one in well under a second - which is the
+  // point, because at the old speed the gap between galaxies was a
+  // half-minute of staring at black.
+  //
+  // The cubic charge curve is what keeps this controllable: you only get
+  // the top multiplier after holding thrust through the full ramp, and
+  // decay outruns build so releasing always drops you back to something
+  // you can manoeuvre with.
+  topMultiplier: 90000
 };
 
 /**

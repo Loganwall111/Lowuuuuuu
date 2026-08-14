@@ -256,9 +256,19 @@ const EARTH_VISUAL_R = 1.15;
 const INHABITED = 'Terrapor';
 const INHABITED_SEED = 40917;
 
+/**
+ * Size of the sun's glare billboard, world units.
+ *
+ * Module-level because the build pass creates the quad at this size and
+ * the update pass has to scale it back down relative to it.
+ */
+export const GLARE_SIZE = 4.5 * 5.4 * 4.2;
+
 export class PlanetaryWorld implements World {
   id = 'planetary';
   name = 'Star Systems';
+  /** Configured glare intensity, before distance easing. */
+  private glareIntensity = 1;
 
   private bodies: Body[] = [];
   /** Things thrown at the planets, and what they did when they arrived. */
@@ -380,7 +390,7 @@ export class PlanetaryWorld implements World {
     // A camera-facing disc in front of the star for the raw searing core
     // and its diffraction spikes.
     const glare = MeshBuilder.CreatePlane('sunGlare',
-      { size: SHELL_R * 4.2 }, scene);
+      { size: GLARE_SIZE }, scene);
     const gm = new ShaderMaterial('glareM', scene, {
       vertexSource: GLARE_VERT, fragmentSource: GLARE_FRAG
     }, {
@@ -391,7 +401,8 @@ export class PlanetaryWorld implements World {
     gm.setFloat('time', 0);
     gm.setColor3('glareColor',
       new Color3(look.glare[0], look.glare[1], look.glare[2]));
-    gm.setFloat('intensity', look.intensity * 0.85);
+    this.glareIntensity = look.intensity * 0.85;
+    gm.setFloat('intensity', this.glareIntensity);
     gm.setFloat('spikes', 0.75);
     gm.alphaMode = 1;
     gm.backFaceCulling = false;
@@ -530,6 +541,30 @@ export class PlanetaryWorld implements World {
     }
     const gmat = (this as any)._glareMat as ShaderMaterial;
     if (gmat) gmat.setFloat('time', this.t);
+
+    // ---- keep the glare from swallowing the screen ----
+    // The glare is a fixed 102-unit billboard, so its ANGULAR size grows
+    // without limit as you approach: measured 54 degrees at 100 units and
+    // 119 degrees at 30. That is the white-out that buries everything else
+    // in the frame and leaves nearby bodies as black silhouettes.
+    //
+    // A real star does the opposite - it stays a small brilliant disc and
+    // it is the BLOOM that grows. So the billboard is scaled to hold a
+    // constant apparent size once you are inside the range where it would
+    // otherwise take over, and its intensity is eased down to match.
+    const glare = (this as any)._glare as Mesh | undefined;
+    if (glare && gmat) {
+      const dist = Vector3.Distance(cp, glare.getAbsolutePosition());
+      // Half-angle we are willing to let the glare occupy.
+      const MAX_HALF_ANGLE = 0.28;          // ~32 degrees across
+      const baseHalf = GLARE_SIZE * 0.5;
+      const allowedHalf = Math.tan(MAX_HALF_ANGLE) * Math.max(dist, 1);
+      const k = Math.max(0.06, Math.min(1, allowedHalf / baseHalf));
+      glare.scaling.set(k, k, 1);
+      // Fade with the same curve, so closing on a star brightens the scene
+      // smoothly instead of clipping every pixel to white.
+      gmat.setFloat('intensity', this.glareIntensity * (0.35 + 0.65 * k));
+    }
 
     for (const b of this.bodies) {
       b.angle += dt * b.orbitSpeed * 0.12 * this.p.timeScale * this.p.orbitSpeed;

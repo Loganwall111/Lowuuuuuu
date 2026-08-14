@@ -49,6 +49,9 @@ import {
   MILKY_WAY, galaxyStar, nebulaDensity, nebulaColor, observerPosition,
   type GalaxyConfig
 } from './GalaxyShape';
+import {
+  galaxiesNear, nearestGalaxy, type GalaxyCell
+} from './IntergalacticGrid';
 
 /**
  * The layer only the galaxy camera can see.
@@ -149,6 +152,10 @@ export class GalaxyField {
   count = 0;
   /** Whether the field is currently shown. */
   visible = true;
+  /** Other galaxies, as real points at real coordinates. */
+  private farMesh: Mesh | null = null;
+  private farCloud: PointsCloudSystem | null = null;
+  private farCells: GalaxyCell[] = [];
 
   get camera(): Camera | null { return this.cam; }
   get isBuilt(): boolean { return this.built; }
@@ -257,12 +264,88 @@ export class GalaxyField {
       this.clouds.push(gas);
       this.meshes.push(gasMesh);
 
+      // ---- other galaxies ----
+      // Each is a cluster of points at its true coordinates, so the smudge
+      // you steer toward is genuinely there and grows as you close on it.
+      await this.buildFarGalaxies();
+
       this.count = STAR_COUNT + GAS_COUNT;
       this.built = true;
     } catch (e) {
       console.warn('Galaxy field build failed:', e);
       this.built = false;
     }
+  }
+
+  /**
+   * Build the distant galaxies around the current origin.
+   *
+   * Each far galaxy gets a small cluster of points rather than a single
+   * dot, so it reads as an extended object with a bright core - and so it
+   * still looks like a galaxy while it is too far away to realise fully.
+   */
+  private async buildFarGalaxies(centre: Vector3 = Vector3.Zero()): Promise<void> {
+    const scene = this.scene;
+    if (!scene) return;
+    try {
+      this.disposeFar();
+      const cells = galaxiesNear(centre.x, centre.y, centre.z)
+        // The galaxy we are inside is drawn as real stars, not a smudge.
+        .filter((g) => Math.hypot(g.x - centre.x, g.y - centre.y,
+          g.z - centre.z) > g.radius * 1.2);
+      this.farCells = cells;
+      if (!cells.length) return;
+
+      const PER = 26;
+      const cloud = new PointsCloudSystem('farGalaxies', 1, scene);
+      cloud.addPoints(cells.length * PER, (p: any, i: number) => {
+        const g = cells[Math.floor(i / PER) % cells.length];
+        const k = i % PER;
+        // A tight core with a few outliers: recognisable at a glance,
+        // and cheap enough that hundreds cost nothing.
+        const t = k / PER;
+        const spread = g.radius * (0.05 + t * t * 0.85);
+        const a = (i * 2.399963) % (Math.PI * 2);
+        const rr = spread * Math.sqrt((k % 7) / 7 + 0.05);
+        const lx = Math.cos(a) * rr;
+        const lz = Math.sin(a) * rr;
+        const ly = (((i * 7919) % 100) / 100 - 0.5) * spread * 0.12;
+        // Tilt the disc so not every galaxy faces the same way.
+        const cx = Math.cos(g.tiltX), sx = Math.sin(g.tiltX);
+        const y2 = ly * cx - lz * sx;
+        const z2 = ly * sx + lz * cx;
+        p.position = new Vector3(g.x + lx, g.y + y2, g.z + z2);
+        const b = g.brightness * (k === 0 ? 1.0 : 0.42 * (1 - t) + 0.08);
+        p.color = new Color4(g.tint[0] * b, g.tint[1] * b, g.tint[2] * b,
+          Math.min(1, 0.35 + b));
+      });
+      const mesh = await cloud.buildMeshAsync();
+      this.applyState(mesh, 2.4);
+      mesh.setEnabled(this.visible);
+      this.farCloud = cloud;
+      this.farMesh = mesh;
+    } catch (e) {
+      // Distant galaxies are scenery; losing them must not lose the frame.
+      console.warn('Distant galaxies unavailable:', e);
+    }
+  }
+
+  private disposeFar(): void {
+    try { this.farCloud?.dispose(); } catch { /* gone */ }
+    this.farCloud = null;
+    this.farMesh = null;
+    this.farCells = [];
+  }
+
+  /** The nearest galaxy to a point, for navigation. */
+  nearest(x: number, y: number, z: number): { name: string; distance: number } | null {
+    const n = nearestGalaxy(x, y, z);
+    if (!n) return null;
+    const g = n.galaxy;
+    return {
+      name: 'Galaxy ' + g.ix + '.' + g.iy + '.' + g.iz,
+      distance: n.distance
+    };
   }
 
   /** Render state shared by both point clouds. */
@@ -305,6 +388,7 @@ export class GalaxyField {
     for (const m of this.meshes) {
       try { m.setEnabled(on); } catch { /* disposed */ }
     }
+    try { this.farMesh?.setEnabled(on); } catch { /* disposed */ }
     this.visible = on;
   }
 
@@ -351,6 +435,7 @@ export class GalaxyField {
   }
 
   detach(): void {
+    this.disposeFar();
     for (const c of this.clouds) { try { c.dispose(); } catch { /* gone */ } }
     this.clouds = [];
     this.meshes = [];

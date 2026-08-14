@@ -56,6 +56,7 @@ import { RegionTides, describeRegionTide } from './systems/RegionTides';
 import { CosmicSky } from './systems/CosmicSky';
 import { SkyProbe } from './systems/SkyProbe';
 import { GalaxyField } from './systems/GalaxyField';
+import { warmupShaders } from './systems/ShaderWarmup';
 import { SHIP as TIDAL_SHIP, ROCKY_PLANET } from './systems/GameModes';
 import { GrabSystem, type Grabbable } from './systems/GrabSystem';
 import {
@@ -857,6 +858,22 @@ export class App {
       this.holeField.attach(this.scene);
 
       this.shell.setWorld(w);
+
+      // Compile the expensive programs now, while the loading screen is
+      // still up. The hole raymarcher in particular is a very large
+      // fragment program, and WebGL blocks the thread while it links - so
+      // if it compiles on first sight of a black hole it is a visible
+      // hitch, and anything drawn before its program is ready can fall
+      // back to flat magenta. Best-effort: never awaited into a failure.
+      try {
+        const warm = await warmupShaders(this.scene);
+        if (warm.failed.length) {
+          console.warn('Shader warmup incomplete:',
+            warm.failed.map((f) => f.name).join(', '));
+        }
+      } catch (e) {
+        console.warn('Shader warmup skipped:', e);
+      }
     } finally {
       this.switching = false;
     }
