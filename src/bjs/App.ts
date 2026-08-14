@@ -744,7 +744,8 @@ export class App {
         this.ctx.focus = {
           position: queuedRegion.position.clone(),
           radius: queuedRegion.radius,
-          mass: queuedRegion.mass
+          mass: queuedRegion.mass,
+          seed: queuedRegion.seed
         };
       }
       if (queued !== this.currentId || queuedRegion) {
@@ -818,7 +819,8 @@ export class App {
     // renders its subject at the origin while the player stands beside the
     // real region coordinates, seeing nothing at all.
     this.ctx.focus = {
-      position: r.position.clone(), radius: r.radius, mass: r.mass
+      position: r.position.clone(), radius: r.radius, mass: r.mass,
+      seed: r.seed
     };
     // Always rebuild, even when the locale id is unchanged: flying from one
     // black hole to another stays in 'blackhole' but is a different subject,

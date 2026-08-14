@@ -501,14 +501,15 @@ console.log('\n— travelling to a black hole —');
     hf.isLocked('nope') === true);
 
   const src = read('src/bjs/systems/HoleFieldRenderer.ts');
-  ok('the horizon and disk are moved in a single call',
-    /private place\(/.test(src) &&
-    /body\.setCenter\(to\)/.test(src) &&
-    /disk\.position\.copyFrom\(to\)/.test(src));
-  ok('the disk is additive and does not write depth',
-    /dm\.alphaMode = 1/.test(src) && /dm\.disableDepthWrite = true/.test(src));
-  ok('the disk alpha is nudged off 1.0 so blending is armed',
-    /dm\.alpha = 0\.999/.test(src));
+  // A hole is now ONE object - a quad carrying the raymarcher - so the
+  // horizon and the disk are the same thing and cannot be moved apart. The
+  // old three-mesh assertions are replaced by the property that matters.
+  ok('a hole is moved by a single call',
+    /private place\(/.test(src) && /quad\.position\.copyFrom\(to\)/.test(src));
+  ok('the hole composites over the scene without writing depth',
+    /disableDepthWrite = true/.test(src) && /alphaMode = 2/.test(src));
+  ok('blending is armed rather than left to alpha === 1',
+    /alpha = 0\.999/.test(src) && /needAlphaBlending/.test(src));
   ok('holes are released once out of range',
     /releaseBeyond/.test(src) && /this\.live\.delete\(id\)/.test(src));
   ok('the release threshold exceeds the build threshold, avoiding thrash',
@@ -751,5 +752,57 @@ console.log('\n— you arrive close enough to actually see the hole —');
   ok('a real hole framed at 8 horizons fills the frame',
     pxRadius(rs, rs * 8) > 100, pxRadius(rs, rs * 8).toFixed(1) + ' px');
 }
+// ------------------------------- black holes are shaders, not meshes (bug 5)
+// The user: "the black hole is like a shader itself... it's meant to not
+// geometry". The nearby-hole renderer built an opaque black sphere, a torus
+// and a glow sphere. That cannot lens (the core is opaque geometry drawn over
+// the lensed background), cannot be entered, and every hole looked identical.
+console.log('\n— every black hole is raymarched, never geometry —');
+{
+  const hfr = read('src/bjs/systems/HoleFieldRenderer.ts');
+
+  ok('the hole field builds no black sphere',
+    !/new BlackHoleBody/.test(hfr) && !/\.build\(scene/.test(hfr),
+    'an opaque sphere hides the lensing behind it');
+  ok('the hole field builds no torus disk',
+    !/CreateTorus/.test(hfr),
+    'a real accretion disk is volumetric, not a solid ring of geometry');
+  ok('the hole field builds no glow sphere',
+    !/CreateSphere/.test(hfr));
+  ok('the hole field renders through a shader material',
+    /ShaderMaterial/.test(hfr));
+
+  // Each hole must carry its own look, or they are all the same object.
+  // A missing file must FAIL, not crash the run and hide every later check.
+  const prof = fs.existsSync('src/bjs/systems/HoleProfiles.ts')
+    ? read('src/bjs/systems/HoleProfiles.ts') : '';
+  ok('holes have a per-hole physical profile',
+    /export interface HoleProfile/.test(prof));
+  ok('a hole can have no accretion disk at all',
+    /export function isDiskless/.test(prof) && /'starved'/.test(prof),
+    'the user asked for holes with no disk whatsoever');
+  ok('disk thickness is a real property, not an infinitely thin plane',
+    /diskThickness/.test(prof));
+  ok('profiles are generated from the hole seed, so each hole differs',
+    /seed/.test(prof) && /export function holeProfile/.test(prof));
+}
+
+// ----------------------------- the raymarched disk has real thickness (bug 6)
+// "the accretion disk is an actual thick object". The raymarcher tested for a
+// single plane crossing (d0 * d1 < 0), which is an infinitely thin sheet: seen
+// edge-on it vanishes to a line.
+console.log('\n— the accretion disk is volumetric —');
+{
+  const bhw = read('src/bjs/worlds/BlackHoleWorld.ts');
+  ok('the disk has a thickness uniform',
+    /uniform float diskThickness/.test(bhw));
+  ok('the disk is sampled through its volume, not at one plane crossing',
+    /diskThickness/.test(bhw) && /height|hAbs|slab/i.test(bhw),
+    'a plane crossing test is a zero-thickness sheet');
+  ok('a hole with zero disk brightness renders no disk',
+    /diskBright\s*>\s*0\.0/.test(bhw),
+    'diskless holes must skip the disk entirely');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

@@ -50,6 +50,11 @@ export interface WorldContext {
      * was its bloom: a small white blob.
      */
     mass?: number;
+    /**
+     * The region's seed, so a world can derive that specific place's
+     * character. Without it every black hole rendered identically.
+     */
+    seed?: number;
   } | null;
   /**
    * Travel to a procedural dimension. A world calls this when the player

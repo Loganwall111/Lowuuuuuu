@@ -456,26 +456,31 @@ try {
         id: r.id, position: r.position,
         horizon: appRef.universe.horizonRadiusOf(r), seed: r.seed ?? 1
       })));
-    const dm = appRef.scene.meshes.find((m) => m.name === 'bhDisk_' + h.id);
-    const hm = appRef.scene.meshes.find((m) => m.name === 'bhHorizon_' + h.id);
-    travelChecks.push(['the disk follows the hole when it moves',
-      !!dm && Vector3Distance(dm.position, moved) < 1e-6,
-      dm ? JSON.stringify(dm.position.asArray()) : 'no disk']);
-    travelChecks.push(['the horizon follows the hole when it moves',
-      !!hm && Vector3Distance(hm.position, moved) < 1e-6]);
+    // One raymarched quad carries the shadow, the disk and the lensing, so
+    // "the disk drifting off the horizon" is now impossible by construction.
+    // What can still go wrong is the quad being left behind, so assert that.
+    const qm = appRef.scene.meshes.find((m) => m.name === 'bhQuad_' + h.id);
+    travelChecks.push(['the hole follows its region when it moves',
+      !!qm && Vector3Distance(qm.position, moved) < 1e-6,
+      qm ? JSON.stringify(qm.position.asArray()) : 'no quad']);
+    travelChecks.push(['the shadow and disk cannot separate (one object)',
+      !!qm && appRef.holeField.isLocked(h.id)]);
     travelChecks.push(['they are still locked to each other after moving',
       appRef.holeField.isLocked(h.id)]);
     h.position.copyFrom(original);
   }
 
   // There must be something actually drawn at the hole.
-  const near = appRef.scene.meshes.filter((m) =>
-    /bhDisk|bhHorizon|bhGlow/.test(m.name));
-  travelChecks.push(['there are assets to see at the hole', near.length >= 3,
-    near.map((m) => m.name).join(', ')]);
+  const near = appRef.scene.meshes.filter((m) => /^bhQuad_/.test(m.name));
+  travelChecks.push(['there is a hole drawn where you flew to',
+    near.length >= 1, near.map((m) => m.name).join(', ')]);
+  // ...and it must be a shader, not a lit mesh.
+  const shaded = near.every((m) => m.material &&
+    /ShaderMaterial/.test(m.material.getClassName()));
+  travelChecks.push(['the hole is drawn by a shader, not geometry', shaded]);
 
   // Rotating the camera must not move the hole.
-  const diskBefore = appRef.scene.meshes.find((m) => /bhDisk/.test(m.name));
+  const diskBefore = appRef.scene.meshes.find((m) => /^bhQuad_/.test(m.name));
   const posBefore = diskBefore && diskBefore.getAbsolutePosition().clone();
   appRef.camera.rotation && (appRef.camera.rotation.y += 1.1);
   appRef.scene.render && null;
@@ -659,7 +664,7 @@ try {
     'count=' + appRef.holeField.count]);
 
   const strays = appRef.scene.meshes.filter(
-    (m) => /^bh(Horizon|Disk|Glow)_/.test(m.name));
+    (m) => /^bh(Horizon|Disk|Glow|Quad)_/.test(m.name));
   travelChecks.push(['no black-hole geometry is stranded in the scene',
     strays.length === 0,
     strays.map((m) => m.name).join(',')]);

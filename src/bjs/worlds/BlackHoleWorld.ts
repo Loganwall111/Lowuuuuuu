@@ -19,6 +19,7 @@ import { GLSL_NOISE } from '../Noise';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 import { rollAnomaly, ANOMALY_COVER, STANDARD_COVER } from '../systems/BlackHoleBody';
 import { safeFloat, safeAspect } from '../SafeUniforms';
+import { holeProfile } from '../systems/HoleProfiles';
 import {
   LENS_PROFILES, LENS_ORDER, LENS_MODE_ID, LENS_FIELDS, cloneProfile,
   sanitizeProfile, randomAlienProfile, describeProfile,
@@ -53,6 +54,11 @@ uniform float diskTilt;
 uniform float exposure;
 uniform float lensStrength;
 uniform float diskBright;
+// Vertical half-thickness of the disk in world units. Zero means this hole
+// has no disk at all and the disk march is skipped entirely.
+uniform float diskThickness;
+// Colour temperature bias: <1 cooler/redder, >1 hotter/bluer.
+uniform float diskTemp;
 uniform float dopplerAmt;
 
 // ---- lens profile: every hole bends light its own way ----
@@ -126,8 +132,9 @@ vec3 diskColor(float r, float a, out float alpha){
   // which is the visual signature of differential rotation.
   dens *= 1.0 + 0.35 * kepler * (n2 - 0.5);
 
-  // temperature: hot inside, cool outside
-  float heat = pow(1.0 - t, 2.2);
+  // temperature: hot inside, cool outside. diskTemp shifts the whole curve
+  // so a cold ancient hole and a furious blazar do not share a palette.
+  float heat = pow(clamp((1.0 - t) * max(diskTemp, 0.01), 0.0, 1.0), 2.2);
   vec3 hot  = vec3(1.0, 0.98, 0.94);
   vec3 mid  = vec3(1.0, 0.62, 0.22);
   vec3 cool = vec3(0.72, 0.16, 0.04);
@@ -275,13 +282,32 @@ void main(void){
       // position along the bent path
       vec3 p = (er * cos(phi) + et * sin(phi)) * r;
 
-      // ---- disk intersection test (crossing the disk plane) ----
+      // ---- disk sampling ----
+      // A real accretion disk is a thick, turbulent torus. Testing for a
+      // single plane crossing (d0 * d1 < 0) modelled a sheet of zero
+      // thickness, which vanished to a line when seen edge-on.
+      //
+      // Instead: whenever this step is inside the slab |height| <=
+      // diskThickness, accumulate emission scaled by how deep into the slab
+      // it is. A hole with diskThickness 0 (a starved hole with no disk)
+      // never enters this branch at all.
       float d0 = dot(prevPos, dn);
       float d1 = dot(p, dn);
-      if (d0 * d1 < 0.0){
-        float f = d0 / (d0 - d1);
-        vec3 hit = mix(prevPos, p, f);
+      bool crossed = d0 * d1 < 0.0;
+      bool inSlab = diskThickness > 0.0 && abs(d1) <= diskThickness;
+      if (diskBright > 0.0 && (crossed || inSlab)){
+        // For a crossing use the exact intersection; inside the slab use the
+        // sample itself, so grazing rays pick up the full depth of gas.
+        float f = crossed ? d0 / (d0 - d1) : 1.0;
+        vec3 hit = crossed ? mix(prevPos, p, f) : p;
         float hr = length(hit);
+        // Fade with height so the disk has soft faces rather than a hard lid.
+        float hgt = diskThickness > 0.0
+          ? 1.0 - clamp(abs(dot(hit, dn)) / diskThickness, 0.0, 1.0)
+          : 1.0;
+        // Grazing rays traverse more gas, which is what makes a thick disk
+        // read as a volume instead of a decal.
+        float slabGain = crossed ? 1.0 : clamp(hgt, 0.0, 1.0) * 0.55;
         if (hr > diskInner && hr < diskOuter){
           float ang = atan(dot(hit, dz), dot(hit, dx));
           float a;
@@ -300,8 +326,9 @@ void main(void){
             ? mix(dc, vec3(0.75, 0.88, 1.0) * (dc.r + dc.g + dc.b) * 0.5, clamp(beta * 1.6 * dopplerAmt, 0.0, 0.85))
             : mix(dc, vec3(1.0, 0.35, 0.12) * (dc.r + dc.g + dc.b) * 0.45, clamp(-beta * 1.4 * dopplerAmt, 0.0, 0.8));
 
-          col += transmit * shift * boost * a;
-          transmit *= (1.0 - a * 0.92);
+          float w = a * slabGain * mix(0.35, 1.0, hgt);
+          col += transmit * shift * boost * w;
+          transmit *= (1.0 - clamp(w, 0.0, 1.0) * 0.92);
           if (transmit < 0.02) break;
         }
       }
@@ -425,8 +452,15 @@ export class BlackHoleWorld implements World {
     exposure: 1.15,
     lens: 1.0,
     diskBright: 1.25,
-    doppler: 1.0
+    doppler: 1.0,
+    /** Vertical half-thickness in Schwarzschild radii; 0 = no disk. */
+    diskThickness: 0.55,
+    /** Colour temperature bias for the disk. */
+    diskTemp: 1.0
   };
+
+  /** Which kind of hole this is. Set from the region seed on arrival. */
+  holeKind = 'Schwarzschild';
 
   async build(ctx: WorldContext): Promise<void> {
     // Rolled from a per-instance seed rather than Math.random() so the hole
@@ -448,7 +482,7 @@ export class BlackHoleWorld implements World {
         'lensDistortion', 'lensTwist', 'lensChroma', 'lensTint', 'lensSoftness',
         'insideAmt', 'exitDir',
         'diskInner', 'diskOuter', 'diskTilt', 'exposure', 'lensStrength', 'horizonCover',
-        'diskBright', 'dopplerAmt'
+        'diskBright', 'dopplerAmt', 'diskThickness', 'diskTemp'
       ]
     });
     this.mat.backFaceCulling = false;
@@ -477,6 +511,23 @@ export class BlackHoleWorld implements World {
       // Same law the universe uses for its horizon, so the raymarched hole
       // and UniverseState.horizonRadiusOf agree on how big this hole is.
       this.p.mass = Math.max(2, Math.cbrt(ctx.focus.mass as number) * 0.9);
+    }
+
+    // Adopt this specific hole's character. Every hole in the universe used
+    // to render with identical disk parameters, so they all looked the same.
+    // The profile is derived from the hole's own seed, so there are as many
+    // appearances as there are holes, and it is stable across visits.
+    if (ctx.focus && Number.isFinite(ctx.focus.seed)) {
+      const hp = holeProfile(ctx.focus.seed as number);
+      this.holeKind = hp.label;
+      this.p.diskBright = hp.diskBright;
+      this.p.diskInner = hp.diskInner;
+      this.p.diskOuter = hp.diskOuter;
+      this.p.diskThickness = hp.diskThickness;
+      this.p.diskTilt = hp.diskTilt;
+      this.p.spin = hp.spin;
+      this.p.doppler = hp.doppler;
+      this.p.diskTemp = hp.temperature;
     }
 
     // Frame on the horizon, not on the region's sphere of influence. The
@@ -575,6 +626,11 @@ export class BlackHoleWorld implements World {
     this.mat.setFloat('lensStrength', this.p.lens);
     this.mat.setFloat('diskBright', this.p.diskBright);
     this.mat.setFloat('dopplerAmt', this.p.doppler);
+    // Thickness is in Schwarzschild radii in the profile; the shader works in
+    // world units, so scale by the mass exactly as the disk radii are.
+    this.mat.setFloat('diskThickness',
+      Math.max(0, safeFloat(this.p.diskThickness * this.p.mass, 0)));
+    this.mat.setFloat('diskTemp', Math.max(0.01, safeFloat(this.p.diskTemp, 1)));
   }
 
   getParams(): WorldParam[] {
