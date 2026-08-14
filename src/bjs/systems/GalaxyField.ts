@@ -252,6 +252,8 @@ export class GalaxyField {
   private fogMat: ShaderMaterial | null = null;
   /** Class of the galaxy the fog volume is currently representing. */
   private fogClass: string = HOME_CLASS;
+  /** Host galaxy the fog is currently representing (drives tint + shape). */
+  private fogHostKey: string = '';
   private fogTime = 0;
   private meshes: Mesh[] = [];
   private built = false;
@@ -559,7 +561,7 @@ export class GalaxyField {
         attributes: ['position'],
         uniforms: ['worldViewProjection', 'camPos', 'innerR', 'outerR',
           'thickness', 'arms', 'armFactor', 'anomaly', 'density', 'time',
-          'marchFar']
+          'marchFar', 'tint', 'tintStrength']
       });
       const cfg = FIELD_GALAXY;
       mat.setFloat('innerR', cfg.innerBound);
@@ -570,6 +572,10 @@ export class GalaxyField {
       mat.setFloat('anomaly', HOME_CLASS === 'anomaly' ? 1 : 0);
       mat.setFloat('density', 1);
       mat.setFloat('time', 0);
+      // Home galaxy: no external cast, so (1,1,1) and zero strength keep the
+      // Andromeda gold/blue ramp exactly as authored.
+      mat.setVector3('tint', new Vector3(1, 1, 1));
+      mat.setFloat('tintStrength', 0);
       // Far enough to cross the whole disc from outside it.
       mat.setFloat('marchFar', cfg.outerBound * 2.6);
       mat.setVector3('camPos', Vector3.Zero());
@@ -823,6 +829,12 @@ export class GalaxyField {
         //
         // The volume now adopts whichever lattice galaxy the player is
         // actually inside, falling back to home out in intergalactic space.
+        //
+        // This is the conditional bracket the spec calls for: `klass` comes
+        // straight from the 260,000-unit cell-matrix seed hash, so the
+        // DEFAULT (overwhelming majority) of galaxies render the realistic
+        // golden-brown Milky Way profile, and only a rare seed roll flips
+        // `anomaly` to 1 and weaves the H-alpha/O-III ribbons in.
         const host = nearestGalaxy(eye.x, eye.y, eye.z);
         const inHost = host && host.distance < host.galaxy.radius * 1.3;
 
@@ -838,6 +850,46 @@ export class GalaxyField {
         if (klass !== this.fogClass) {
           this.fogClass = klass;
           this.fogMat.setFloat('anomaly', klass === 'anomaly' ? 1 : 0);
+        }
+
+        // ---- EVERY GALAXY WEARS ITS OWN COLOUR ----
+        //
+        // Each lattice galaxy already carries its own tint, winding and
+        // brightness from the 260,000-unit cell seed hash - the fog just
+        // never used them, so every spiral rendered the identical
+        // gold-to-indigo ramp. Feeding them through lets a blue starburst
+        // read blue and an old red elliptical read red while the shared
+        // spiral structure stays intact. The home Milky Way keeps its
+        // authored photoreal look (tint strength 0, canonical geometry).
+        const hostKey = inHost
+          ? host.galaxy.ix + ':' + host.galaxy.iy + ':' + host.galaxy.iz
+          : '';
+        if (hostKey !== this.fogHostKey) {
+          this.fogHostKey = hostKey;
+          if (inHost) {
+            const g = host.galaxy;
+            // Pure re-hue: a multiplicative cast never washes the gas
+            // toward white the way a blend can. Blue stays blue, gold stays
+            // gold - only the base changes.
+            this.fogMat.setVector3('tint', new Vector3(
+              g.tint[0], g.tint[1], g.tint[2]));
+            // The Milky Way-scale ramp already separates gold core from blue
+            // halo; a moderate strength re-hues the whole of a distant
+            // galaxy without flattening it into one solid colour.
+            this.fogMat.setFloat('tintStrength', 0.55);
+            // Shape follows the host too, so a two-armed, loosely-wound
+            // galaxy looks like itself rather than like the home galaxy's
+            // four-armed spiral.
+            this.fogMat.setFloat('arms', g.klass === 'elliptical' ? 0 : 2);
+            this.fogMat.setFloat('armFactor',
+              g.klass === 'elliptical' ? 1.0 : 1.6 + g.winding * 2.6);
+          } else {
+            // Home / intergalactic: restore the authored reference look.
+            this.fogMat.setVector3('tint', new Vector3(1, 1, 1));
+            this.fogMat.setFloat('tintStrength', 0);
+            this.fogMat.setFloat('arms', FIELD_GALAXY.arms);
+            this.fogMat.setFloat('armFactor', FIELD_GALAXY.armFactor);
+          }
         }
         this.fogMat.setFloat('time', this.fogTime);
       } catch { /* disposed mid-frame */ }

@@ -25,7 +25,9 @@
  * crimson here, teal there, orange and magenta elsewhere - and they flow
  * into each other rather than switching. The dust lanes are carved by a
  * separate ridged field that ABSORBS instead of emitting, which is what
- * gives a real galaxy its dark filaments.
+ * gives a real galaxy its dark filaments - and they keep the faint
+ * purple-brown residue (#11091c) of the light they extinguish, so they read
+ * as real obscuring dust rather than as black cut-outs.
  */
 
 import { Effect } from '@babylonjs/core/Materials/effect';
@@ -69,6 +71,10 @@ uniform float density;
 uniform float time;
 /** How far the ray is allowed to travel, galaxy units. */
 uniform float marchFar;
+/** Per-galaxy colour cast. (1,1,1) = the home Milky Way's own palette. */
+uniform vec3 tint;
+/** How strongly the host galaxy's tint re-hues the gas. 0 = off. */
+uniform float tintStrength;
 
 /**
  * How fast the sector hue varies across the galaxy. Low so a "sector" is a
@@ -114,6 +120,15 @@ const float DUST_FREQ = 7.0;
 const float DUST_SHARPNESS = 2.2;
 /** How much light a dust lane removes. 0 = none, 1 = total. */
 const float DUST_CUT = 0.88;
+/**
+ * The colour a dust lane leaves behind, #11091c: a deep purple-brown
+ * rather than a hole punched to pure black. Obscuring dust never blocks
+ * 100% of the light - it scatters a faint warm residue of the starlight it
+ * is extinguishing, and that residue is what a real lane looks like.
+ */
+const vec3 DUST_COLOR = vec3(0.0667, 0.0353, 0.1098);
+/** How strongly that purple-brown residue shows through the extinction. */
+const float DUST_TINT = 0.22;
 /**
  * Only ridge values above this become dust.
  *
@@ -426,6 +441,13 @@ vec3 gasColor(vec3 p, float d){
 
   // ---- RARE CLASS-C ANOMALY: NEON STRANDS BETWEEN THE ARMS ----
   //
+  // The anomaly uniform is the rare branch of the conditional bracket the
+  // host drives: the 260,000-unit cell-matrix seed hash classifies each
+  // galaxy, and by default it resolves to the photoreal golden-brown Milky
+  // Way profile above. Only on the rare roll does anomaly become 1 and open
+  // this block, weaving thick ribbons of H-alpha magenta and O-III teal fog
+  // through the spiral tracks.
+  //
   // Woven into the GAPS, not painted over the whole galaxy. The inter-arm
   // regions are where the arm mask is weakest, so recomputing it here and
   // inverting it puts the strands exactly in the dark lanes between the
@@ -549,6 +571,12 @@ void main(void) {
       float absorbed = 1.0 - exp(-ext);
       vec3 emit = gasColor(pos, d);
 
+      // Every galaxy carries its own tint from the cell seed hash. Bias the
+      // emission toward that colour in proportion to how dense the gas is,
+      // so a blue starburst stays blue and an old red galaxy stays red -
+      // without erasing the Andromeda gold/blue ramp the tint leans on.
+      emit *= mix(vec3(1.0), tint, tintStrength);
+
       // The nucleus blaze is emission, not density: it is added to the
       // light leaving this sample so it can out-shine everything without
       // saturating the medium.
@@ -563,6 +591,10 @@ void main(void) {
       // which is what produces hard dark filaments cutting across bright
       // arms instead of a soft airbrushed wash.
       emit *= 1.0 - DUST_CUT * dust;
+
+      // The lane is not cut to black: the residual scatter of the light the
+      // dust is blocking leaves it a deep purple-brown (#11091c) instead.
+      emit += DUST_COLOR * (dust * DUST_TINT);
 
       acc += emit * trans * absorbed;
       trans *= exp(-ext);
