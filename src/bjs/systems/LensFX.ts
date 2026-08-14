@@ -62,6 +62,19 @@ const int MAX_HOLES = 4;
 
 uniform vec2  holeUV[MAX_HOLES];
 uniform float holeR[MAX_HOLES];     // apparent horizon radius, UV units
+/**
+ * Einstein radius, UV units - the angular scale of the LENSING, which is a
+ * completely different quantity from the size of the shadow.
+ *
+ * This is the fix for "nothing is bent". The deflection law below has the
+ * right shape (displacement = scale^2 / theta, the standard thin-lens
+ * result) but it was fed the apparent horizon as its scale. At a typical
+ * viewing distance the horizon subtends ~0.05 UV while the Einstein radius
+ * is ~0.35 UV, so every displacement came out roughly 40x too small -
+ * a fraction of one pixel, which is indistinguishable from no lensing at
+ * all. The horizon is still used for the shadow; only the bend changes.
+ */
+uniform float lensR[MAX_HOLES];
 uniform float strength[MAX_HOLES];
 uniform float falloff[MAX_HOLES];
 uniform float ringAmt[MAX_HOLES];
@@ -107,9 +120,21 @@ void main(void){
     shape = max(shape, 0.02);
 
     // Deflection falls off with distance like a real photon path.
-    float rr = max(r, 1e-4);
-    float bend = strength[i] * holeR[i]
-               * pow(clamp(holeR[i] / rr, 0.0, 1.0), max(falloff[i] - 1.0, 0.0))
+    //
+    // For falloff = 2 this is exactly lensR^2 / r, the thin-lens
+    // displacement. Scaled by the Einstein radius, a star just outside the
+    // shadow moves a large fraction of the screen and the field visibly
+    // wraps around the hole; scaled by the horizon it moved a sub-pixel
+    // amount and the sky looked dead straight.
+    // Close to the shadow the thin-lens formula diverges - it is derived
+    // for weak deflection and stops being valid where light actually
+    // orbits. Left unbounded it asks for a displacement of twice the
+    // screen, which samples clamped edge pixels and turns the rim into a
+    // smear. Softening the denominator caps the shift near the shadow
+    // while leaving the far field exactly as the formula says.
+    float rr = max(r, lensR[i] * 0.45);
+    float bend = strength[i] * lensR[i]
+               * pow(clamp(lensR[i] / rr, 0.0, 1.0), max(falloff[i] - 1.0, 0.0))
                * shape;
 
     // Inside the horizon there is nothing to sample.
@@ -141,8 +166,9 @@ void main(void){
     // Photon ring: a bright circle at the last stable orbit. Some holes have
     // none at all, which is why ringAmt can be zero.
     if (ringAmt[i] > 0.001){
-      float rw = holeR[i] * 0.06;
-      float ring = exp(-pow((r - holeR[i] * ringRadius[i]) / max(rw, 1e-4), 2.0));
+      // The ring forms at the lensing scale, not the shadow's edge.
+      float rw = max(lensR[i] * 0.05, 0.004);
+      float ring = exp(-pow((r - lensR[i] * ringRadius[i]) / max(rw, 1e-4), 2.0));
       rings += tint[i] * ring * ringAmt[i] * 1.6;
     }
   }
@@ -187,8 +213,27 @@ export const MAX_LENSES = 4;
 /** One hole's screen-space lens state. */
 interface LensSlot {
   uv: { x: number; y: number };
+  /** Apparent horizon radius in UV - the size of the black shadow. */
   radius: number;
+  /** Einstein radius in UV - the angular scale over which light bends. */
+  lensRadius: number;
   profile: LensProfile | null;
+}
+
+/**
+ * Angular radius of the Einstein ring, in radians.
+ *
+ * theta_E = sqrt(2 * rs / D) for a source far behind a lens of Schwarzschild
+ * radius rs at distance D. This is the scale that governs how far light is
+ * displaced, and it is much larger than the horizon's angular size: at 388
+ * units from a typical hole the horizon subtends about 0.05 rad while the
+ * Einstein radius is about 0.35. Using the horizon for both is what made
+ * the bend sub-pixel and the starfield look untouched.
+ */
+export function einsteinRadius(horizon: number, distance: number): number {
+  if (!(horizon > 0) || !(distance > 0)) return 0;
+  const v = Math.sqrt((2 * horizon) / distance);
+  return Number.isFinite(v) ? v : 0;
 }
 
 export class LensFX {
@@ -213,7 +258,7 @@ export class LensFX {
         'universalLens', 'universalLens',
         ['holeUV', 'holeR', 'strength', 'falloff', 'ringAmt', 'ringRadius',
          'symmetry', 'distortion', 'twist', 'chroma', 'tint', 'holeOn',
-         'aspect', 'active'],
+         'lensR', 'aspect', 'active'],
         null, 1.0, camera
       );
       this.scene = scene;
@@ -232,6 +277,7 @@ export class LensFX {
         // light around a hole that is no longer there.
         const uvs: number[] = [];
         const radii: number[] = [];
+        const lensRadii: number[] = [];
         const strengths: number[] = [];
         const falloffs: number[] = [];
         const ringAmts: number[] = [];
@@ -248,6 +294,7 @@ export class LensFX {
           const p = s?.profile ?? null;
           uvs.push(s ? s.uv.x : 0.5, s ? s.uv.y : 0.5);
           radii.push(s ? s.radius : 0);
+          lensRadii.push(s ? s.lensRadius : 0);
           strengths.push((p?.strength ?? 1) * this.intensity);
           falloffs.push(p?.falloff ?? 2);
           ringAmts.push(p?.ring ?? 0.6);
@@ -263,6 +310,7 @@ export class LensFX {
 
         effect.setArray2('holeUV', uvs);
         effect.setArray('holeR', radii);
+        effect.setArray('lensR', lensRadii);
         effect.setArray('strength', strengths);
         effect.setArray('falloff', falloffs);
         effect.setArray('ringAmt', ringAmts);
@@ -375,16 +423,24 @@ export class LensFX {
         : 1;
       const radius = Math.max(0.0005, Math.min(1.5, apparent));
 
+      // The lensing scale, in the same UV units. Clamped well above the
+      // shadow so the bend is always visible, and below 0.9 so a close pass
+      // cannot smear the entire frame into unreadable mush.
+      const thetaE = dist > 1e-6
+        ? einsteinRadius(hole.horizon, dist) / Math.max(fov * 0.5, 1e-4) * 0.5
+        : 1;
+      const lensRadius = Math.max(radius, Math.min(0.9, thetaE));
+
       const onScreen = uv.x > -0.6 && uv.x < 1.6 && uv.y > -0.6 && uv.y < 1.6;
       if (!onScreen || !(radius > 0.001) || !Number.isFinite(radius)) continue;
 
-      found.push({ uv, radius, profile: hole.profile, dist });
+      found.push({ uv, radius, lensRadius, profile: hole.profile, dist });
     }
 
     // Nearest first, then keep only what the shader has room for.
     found.sort((a, b) => a.dist - b.dist);
     this.slots = found.slice(0, MAX_LENSES)
-      .map(({ uv, radius, profile }) => ({ uv, radius, profile }));
+      .map(({ uv, radius, lensRadius, profile }) => ({ uv, radius, lensRadius, profile }));
     this.on = this.slots.length > 0;
   }
 

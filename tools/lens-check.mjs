@@ -195,7 +195,10 @@ console.log('\n— lensing works everywhere, not just in one world —');
   const lfx = fs.readFileSync('src/bjs/systems/LensFX.ts', 'utf8');
   ok('there is a universal lensing pass', lfx.includes('universalLens'));
   ok('it is a screen-space post-process', lfx.includes('PostProcess'));
-  ok('deflection falls off with distance', lfx.includes('pow(clamp(holeR[i] / rr'));
+  // Scaled by the Einstein radius, not the horizon: the horizon is the size
+  // of the shadow, the Einstein radius is the scale of the bending, and
+  // using the former made every displacement sub-pixel.
+  ok('deflection falls off with distance', lfx.includes('pow(clamp(lensR[i] / rr'));
   ok('it honours alien lens shapes',
      lfx.includes('symmetry') && lfx.includes('distortion') && lfx.includes('twist'));
   ok('ringless holes are supported', lfx.includes('ringAmt[i] > 0.001'));

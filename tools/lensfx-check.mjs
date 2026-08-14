@@ -239,6 +239,67 @@ const hole = (x, y, z, horizon = 40) =>
   }
 }
 
+// -- THE BEND MUST BE BIG ENOUGH TO SEE
+//
+// This is the regression that made the user report "nothing is bent". The
+// pass was running, the uniforms were bound, every structural test passed -
+// and the deflection was a fraction of a pixel because it was scaled by the
+// apparent horizon instead of the Einstein radius. Structure tests cannot
+// catch that; only measuring the magnitude can.
+{
+  const { einsteinRadius } = await import(out);
+
+  ok('einsteinRadius grows as you approach',
+    einsteinRadius(19, 200) > einsteinRadius(19, 2000));
+  ok('einsteinRadius grows with mass',
+    einsteinRadius(40, 400) > einsteinRadius(10, 400));
+  ok('einsteinRadius is safe at zero distance', einsteinRadius(19, 0) === 0);
+  ok('einsteinRadius is safe at zero mass', einsteinRadius(0, 400) === 0);
+  ok('einsteinRadius rejects negatives',
+    einsteinRadius(-5, 400) === 0 && einsteinRadius(19, -5) === 0);
+  ok('einsteinRadius never returns NaN',
+    Number.isFinite(einsteinRadius(NaN, 400)) &&
+    Number.isFinite(einsteinRadius(19, NaN)));
+
+  // The Einstein radius must dominate the horizon at ordinary viewing
+  // range - that inequality IS the bug, stated as an assertion.
+  const rs = 18.7, D = 388, fov = 0.9;
+  const shadow = Math.atan(rs / D) / (fov * 0.5) * 0.5;
+  const lens = einsteinRadius(rs, D) / (fov * 0.5) * 0.5;
+  ok('the lensing scale is far larger than the shadow', lens > shadow * 4,
+    'lens ' + lens.toFixed(3) + ' vs shadow ' + shadow.toFixed(3));
+
+  // And the resulting displacement must be tens of pixels, not fractions.
+  const shiftPx = (theta, scale) =>
+    (scale * scale / Math.max(theta, scale * 0.45)) * 1080;
+  ok('a star beside the hole moves hundreds of pixels',
+    shiftPx(0.2, lens) > 100, shiftPx(0.2, lens).toFixed(0) + 'px');
+  ok('a star far across the frame still moves visibly',
+    shiftPx(1.0, lens) > 20, shiftPx(1.0, lens).toFixed(0) + 'px');
+  ok('the old horizon-scaled bend would have been invisible',
+    shiftPx(0.2, shadow) < 20, shiftPx(0.2, shadow).toFixed(1) + 'px');
+
+  // The softened denominator must cap the rim without killing the far field.
+  ok('the bend is bounded near the shadow', shiftPx(0.01, lens) < 1400,
+    shiftPx(0.01, lens).toFixed(0) + 'px');
+  ok('the bend still falls off with distance',
+    shiftPx(0.3, lens) > shiftPx(0.9, lens));
+
+  // The slot must actually carry the lensing radius through to the shader.
+  const lensFx = makeLens();
+  lensFx.trackMany([hole(0, 0, 388, 18.7)], makeCamera());
+  const slot = lensFx.slots[0];
+  ok('the slot carries a separate lensing radius', slot.lensRadius > slot.radius,
+    'lens ' + slot.lensRadius.toFixed(3) + ' vs shadow ' + slot.radius.toFixed(3));
+  ok('the lensing radius is clamped below full screen', slot.lensRadius <= 0.9);
+  ok('the lensing radius is never below the shadow', (() => {
+    const l2 = makeLens();
+    // Very close pass: the shadow is huge and would otherwise exceed it.
+    l2.trackMany([hole(0, 0, 25, 18.7)], makeCamera());
+    return l2.slots[0].lensRadius >= l2.slots[0].radius;
+  })());
+}
+
 // -- stats report the multi-hole count
 {
   const lens = makeLens();
