@@ -122,23 +122,24 @@ void main(void){
     vec2 d = uv - holeUV[i];
     d.x *= aspect;
     float r = length(d);
-    float ang = atan(d.y, d.x);
 
-    // Alien lens shapes: the same knobs the raymarcher uses, so a hole looks
-    // like itself whether you are inside its world or flying past it.
+    // NO ANGULAR MODULATION.
     //
-    // The angular term is deliberately GENTLE. At full strength it swung the
-    // deflection from 0.02x to 2.0x purely with angle, which draws a fan of
-    // hard spokes radiating out of the hole - eight directions bending
-    // violently, eight barely bending at all. Real lensing is the same in
-    // every direction around a non-rotating hole: the sky slides smoothly
-    // around a circular shadow. Alien holes should still read as strange,
-    // but as a rippling of that circle rather than a starburst, so the
-    // modulation is scaled down and floored well above zero.
-    float shape = 1.0
-      + cos(ang * symmetry[i]) * distortion[i] * 0.22
-      + sin(ang + twist[i] / max(r, 0.35)) * distortion[i] * 0.12;
-    shape = clamp(shape, 0.55, 1.6);
+    // This is where the cheap "water ripple" look came from. The deflection
+    // used to be multiplied by
+    //   1 + cos(ang * symmetry) * distortion + sin(ang + twist / r) * ...
+    // which are periodic sinusoids in the polar angle. Scaling them down
+    // turned hard spokes into a gentle ripple, but a smaller ripple is
+    // still a ripple: it makes the bend depend on WHICH WAY a pixel lies
+    // from the centre, and real gravity does not care about direction.
+    //
+    // A Schwarzschild lens is exactly radially symmetric. The deflection is
+    // a function of distance from the singularity and nothing else, which
+    // is what produces a smooth circular Einstein ring instead of a
+    // scalloped one. Per-hole character now lives entirely in the physical
+    // parameters - mass, lensing radius, ring brightness, tint - not in
+    // trigonometric decoration painted over the top.
+    float shape = 1.0;
 
     // Deflection falls off with distance like a real photon path.
     //
@@ -167,6 +168,7 @@ void main(void){
     float rr = max(r, lensR[i] * 0.42);
     float decay = pow(max(rr / max(lensR[i], 1e-4), 1e-4), max(falloff[i], 0.35));
     float bend = strength[i] * lensR[i] / max(decay, 1e-3) * shape;
+
 
     // Cap the shift so a very close pass cannot ask for more than a screen
     // and smear the rim into clamped edge pixels.

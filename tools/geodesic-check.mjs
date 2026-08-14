@@ -156,5 +156,97 @@ ok('an unbent ray contributes no lensed sky', (() => {
   return m && Number(m[1]) > 0;
 })());
 
+// ------------------------------------ the disk must WRAP, not sit on top
+//
+// In the reference images the accretion disk appears above and below the
+// shadow at the same time: light leaving the FAR side of the disk is bent
+// up and over the hole into the camera. That can only happen if the disk is
+// sampled along the bent path, which is what the marcher does - the disk
+// slab test runs inside the integration loop, not as a flat overlay.
+{
+  /** Marches a ray and reports where it crosses the disk plane. */
+  function marchDisk(b, rs = 1, r0 = 120) {
+    let u = 1 / r0;
+    const dru = -Math.sqrt(Math.max(0, 1 - (b * b) / (r0 * r0)));
+    const dtu = b / r0;
+    let du = -u * (dru / Math.max(dtu, 1e-4));
+    let phi = 0;
+    const dphi = 0.004;
+    const er = [0, 0, 1], et = [0, 1, 0];
+    const n = [0, 1, 0];              // disk lies in the x-z plane
+    let prev = null;
+    const hits = [];
+    for (let i = 0; i < 8000; i++) {
+      const k1 = -u + 1.5 * rs * u * u;
+      const uM = u + du * dphi * 0.5, duM = du + k1 * dphi * 0.5;
+      const k2 = -uM + 1.5 * rs * uM * uM;
+      u += duM * dphi; du += k2 * dphi; phi += dphi;
+      if (u <= 0) break;
+      const r = 1 / u;
+      if (r <= rs * 1.06) return { captured: true, hits };
+      const p = [
+        (er[0] * Math.cos(phi) + et[0] * Math.sin(phi)) * r,
+        (er[1] * Math.cos(phi) + et[1] * Math.sin(phi)) * r,
+        (er[2] * Math.cos(phi) + et[2] * Math.sin(phi)) * r
+      ];
+      if (prev) {
+        const h1 = p[0] * n[0] + p[1] * n[1] + p[2] * n[2];
+        const h0 = prev[0] * n[0] + prev[1] * n[1] + prev[2] * n[2];
+        if (h0 * h1 < 0) {
+          const t = h0 / (h0 - h1);
+          const hit = [0, 1, 2].map((k) => prev[k] + (p[k] - prev[k]) * t);
+          hits.push({ hr: Math.hypot(...hit), z: hit[2] });
+        }
+      }
+      prev = p;
+      if (r > r0 * 2.5 && phi > 0.2) break;
+    }
+    return { captured: false, hits };
+  }
+
+  const inDisk = (h) => h.hr > 3 && h.hr < 24;
+
+  // The payoff: a ray offset ABOVE the hole reaches the disk on the FAR
+  // side (z < 0). Straight-line rendering could never show that surface.
+  const wrapped = [4, 6].map((b) => marchDisk(b).hits.filter(inDisk))
+    .flat().filter((h) => h.z < 0);
+  ok('light from the far side of the disk is bent over the shadow',
+    wrapped.length > 0, wrapped.length + ' far-side crossings');
+
+  // Both the position update and the disk test must live inside the same
+  // integration loop, so the disk is evaluated at the ray's BENT position.
+  const loopStart = frag.indexOf('for (int i = 0; i < 160; i++)');
+  const loopEnd = frag.indexOf('dphi = 0.035 *', loopStart);
+  const loopBody = frag.slice(loopStart, loopEnd);
+  ok('the disk is sampled inside the integration loop, not overlaid',
+    loopStart > 0 && loopEnd > loopStart &&
+    /vec3 p = \(er \* cos\(phi\)/.test(loopBody) &&
+    /diskBright > 0\.0/.test(loopBody));
+  ok('the disk slab has real vertical extent',
+    /abs\(h1\) <= diskThickness/.test(frag));
+  ok('the disk crossing is interpolated, not snapped to a step',
+    /mix\(prevPos, p, h0 \/ \(h0 - h1\)\)/.test(frag));
+
+  // Rays that miss entirely must not paint disk anywhere.
+  ok('a ray far from the hole never touches the disk',
+    marchDisk(30).hits.filter(inDisk).length === 0);
+  ok('a ray into the shadow is captured before reaching the far disk',
+    marchDisk(1.2).captured === true);
+}
+
+// ------------------------------------------- no animation in the geometry
+//
+// The distortion must be a static spatial curve. Time may drive the gas
+// swirling in the disk, but it must never enter the ray bending, or the
+// whole image shimmers like water.
+{
+  const bendSection = frag.slice(frag.indexOf('float k1 ='),
+    frag.indexOf('---- volumetric disk ----'));
+  ok('the geodesic integration never reads the clock',
+    !/\btime\b/.test(bendSection));
+  ok('the deflection depends only on rs and the radius',
+    /1\.5 \* rs \* u \* u/.test(bendSection));
+}
+
 console.log(pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

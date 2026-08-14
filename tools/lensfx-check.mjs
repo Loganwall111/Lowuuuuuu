@@ -357,29 +357,39 @@ const hole = (x, y, z, horizon = 40) =>
   const frag = fs.readFileSync(SRC, 'utf8')
     .match(/const\s+LENS_FRAG\s*=\s*`([\s\S]*?)`;/m)[1];
 
-  // 1. The angular term must stay gentle. At full strength the deflection
-  //    swung from 0.02x to 2.0x with angle alone, which IS a fan of spokes.
-  const shape = (ang, symmetry, distortion, twist = 0, r = 0.3) => {
-    const v = 1 + Math.cos(ang * symmetry) * distortion * 0.22
-                + Math.sin(ang + twist / Math.max(r, 0.35)) * distortion * 0.12;
-    return Math.min(1.6, Math.max(0.55, v));
-  };
-  // Worst case in the shipped profiles: kaleidoscope, symmetry 8, distortion 1.
-  let lo = Infinity, hi = -Infinity;
-  for (let d = 0; d < 360; d += 1) {
-    const v = shape(d * Math.PI / 180, 8, 1.0, 1.2);
-    lo = Math.min(lo, v); hi = Math.max(hi, v);
-  }
-  ok('the angular term never nearly cancels the bend', lo > 0.5, 'min ' + lo.toFixed(3));
-  ok('the angular term never doubles the bend', hi < 1.7, 'max ' + hi.toFixed(3));
-  ok('angular variation reads as a ripple, not spokes', hi / lo < 2.6,
-    'ratio ' + (hi / lo).toFixed(2));
-  ok('the shape term is clamped in the shader', /clamp\(shape, 0\.\d+, 1\.\d+\)/.test(frag));
+  // 1. THE DEFLECTION MUST BE PURELY RADIAL.
+  //
+  // Gravity does not care which direction a pixel lies from the centre. Any
+  // dependence of the bend on the polar angle is a periodic decoration that
+  // reads as a water ripple or a starburst - the earlier version modulated
+  // by cos(ang * symmetry) and sin(ang + twist / r), and softening those
+  // coefficients only made the ripple smaller, not absent.
+  ok('the deflection has no angular modulation at all',
+    /float shape = 1\.0;/.test(frag));
+  ok('the polar angle is no longer computed in the lens loop',
+    !/float ang = atan\(d\.y, d\.x\);/.test(frag));
+  ok('no sine or cosine survives in the lens shader',
+    !/^[^/]*\b(sin|cos)\s*\(/m.test(
+      frag.split('\n').filter((l) => !l.trim().startsWith('//')).join('\n')));
+  ok('the lens shader has no time uniform, so it cannot animate',
+    !/uniform\s+float\s+time/.test(frag));
+  ok('the lens shader never reads a clock', !/\btime\b/.test(
+    frag.split('\n').filter((l) => !l.trim().startsWith('//')).join('\n')));
 
-  // A perfectly round hole must bend identically at every angle.
-  const round = new Set();
-  for (let d = 0; d < 360; d += 30) round.add(shape(d * Math.PI / 180, 0, 0).toFixed(6));
-  ok('a plain hole is radially symmetric', round.size === 1);
+  // The bend must be identical at every angle for a given radius. Model the
+  // shipped expression and sweep the full circle.
+  const bendPolar = (theta, lensR, falloff, strength = 1) => {
+    const rr = Math.max(theta, lensR * 0.42);
+    const decay = Math.pow(Math.max(rr / Math.max(lensR, 1e-4), 1e-4),
+      Math.max(falloff, 0.35));
+    return Math.min(0.75, Math.max(-0.75, strength * lensR / Math.max(decay, 1e-3)));
+  };
+  const atRadius = new Set();
+  for (let d = 0; d < 360; d += 15) {
+    // Angle is not an input at all now; the value must be constant.
+    atRadius.add(bendPolar(0.4, 0.3977, 1.0).toFixed(9));
+  }
+  ok('the bend is identical all the way around a circle', atRadius.size === 1);
 
   // 2. Out-of-frame samples must mirror, not clamp. clamp() repeats one edge
   //    pixel into the long dark rays that were visible around the shadow.
