@@ -55,6 +55,7 @@ import { TidalField } from './systems/TidalField';
 import { RegionTides, describeRegionTide } from './systems/RegionTides';
 import { CosmicSky } from './systems/CosmicSky';
 import { SkyProbe } from './systems/SkyProbe';
+import { GalaxyField } from './systems/GalaxyField';
 import { SHIP as TIDAL_SHIP, ROCKY_PLANET } from './systems/GameModes';
 import { GrabSystem, type Grabbable } from './systems/GrabSystem';
 import {
@@ -178,6 +179,8 @@ export class App {
    * a sky that is both deep and navigable.
    */
   layeredSky = new LayeredSky();
+  /** The Milky Way as real, reachable coordinates. */
+  galaxyField = new GalaxyField();
   /**
    * Real geometry for the black holes out in the universe. Without this a
    * hole you fly to is only a point of light plus a screen-space lens, so
@@ -292,7 +295,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -835,6 +838,13 @@ export class App {
       this.layeredSky.dispose();
       this.layeredSky.attach(this.scene);
       void this.layeredSky.build();
+
+      // The real galaxy. Its own camera covers 500..200000 so a 50,000-unit
+      // structure does not have to fit inside the main camera's 4,000-unit
+      // far plane, which would clip it entirely.
+      this.galaxyField.dispose();
+      this.galaxyField.attach(this.scene, this.camera);
+      void this.galaxyField.build();
 
       // loadWorld purges every mesh, so the holes must be rebuilt too.
       this.holeField.dispose();
@@ -1426,6 +1436,9 @@ export class App {
       // Each background shell slides toward the eye by its own lock factor,
       // so near stars sweep past and far ones hold station.
       this.layeredSky.update(eye);
+      // Mirror the main camera and apply coordinate-bound nebular fog, so
+      // crossing the galactic plane actually fills the cockpit with gas.
+      this.galaxyField.update(eye, this.camera.getTarget(), this.scene);
 
       // ---- black holes you can actually reach ----
       // Give every nearby hole a horizon sphere and an accretion disk, both

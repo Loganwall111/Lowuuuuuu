@@ -126,7 +126,12 @@ vec3 diskColor(float r, float ang, float height, out float alpha){
 
   // Soft ragged edges rather than a hard rim.
   float inner = smoothstep(0.0, 0.12, t);
-  float outer = 1.0 - smoothstep(0.55, 1.0, t);
+  // Dissolve organically into the starfield. The old 0.55->1.0 ramp still
+  // had gradient left at the very edge, which read as a sharp white
+  // outline against space; squaring a longer ramp takes the density to
+  // zero smoothly with zero slope at the boundary.
+  float outerRamp = 1.0 - smoothstep(0.42, 1.0, t);
+  float outer = outerRamp * outerRamp;
   outer *= 0.55 + 0.45 * n2;
   alpha = clamp(dens * inner * outer * 1.5, 0.0, 1.0);
   return col * dens * diskBright;
@@ -154,6 +159,11 @@ uniform float skySymmetry;
 uniform vec3  skyTint;
 uniform float skyStrangeness;
 uniform float skyZoom;
+
+/* Cinematic ACES filmic curve, shared by the disk and the lensed sky. */
+vec3 tonemapACES(vec3 x){
+  return (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14);
+}
 
 vec3 skyAlongRay(vec3 dir){
   return cosmicSky(dir, skyMedium, skySymmetry, skyTint, skyStrangeness,
@@ -253,7 +263,16 @@ void main(void){
             vec3 toCam = normalize(camPos - holePos - hit);
             float beta = dot(orbit * vmag, -toCam);
             float dop = 1.0 / max(1.0 - beta, 0.05);
-            float boost = pow(clamp(dop, 0.2, 4.0), 3.0 * dopplerAmt);
+            // THE WHITE BUBBLE.
+            // Surface brightness beams as D^3, but D was clamped at 4.0,
+            // giving 4^3 = 64x. Accumulated over ~60 in-slab steps that
+            // drove col to ~68, far past anything a tonemapper can pull
+            // back, so the whole disk saturated into one white blob.
+            // Orbital speed is bounded by physics: beta = sqrt(rs/2r), so
+            // even at 1.5rs beta is 0.577 and the true D is 2.36. Clamping
+            // D to 2.4 keeps every physically reachable value and discards
+            // only the runaway.
+            float boost = pow(clamp(dop, 0.2, 2.4), 3.0 * dopplerAmt);
             vec3 shift = beta > 0.0
               ? mix(dc, vec3(0.75, 0.88, 1.0) * (dc.r + dc.g + dc.b) * 0.5,
                     clamp(beta * 1.6 * dopplerAmt, 0.0, 0.85))
@@ -307,8 +326,17 @@ void main(void){
   float edge = 1.0 - smoothstep(0.86, 1.0, length(d));
   alpha *= edge;
 
-  // Tone map so a bright disk does not clip to a flat white blob.
-  col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+  // Tone map so a bright disk does not clip to a flat white blob. The
+  // pre-clamp bounds the integrated emission before ACES sees it: the
+  // curve is only well behaved on sane input, and an unbounded sum will
+  // saturate it no matter how good the curve is.
+  // 4.0, not 8.0: ACES already saturates at 8 (aces(8) = 1.003), so a
+  // higher ceiling only guarantees the brightest gas clips to flat white
+  // and loses all internal structure. At 4.0 the peak maps to 0.973,
+  // leaving headroom so hot and cool gas stay distinguishable.
+  col = min(col, vec3(4.0));
+  col = tonemapACES(col);
+  col = clamp(col, 0.0, 1.2);
   col = pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2));
 
   gl_FragColor = vec4(col * (captured ? 0.0 : 1.0), clamp(alpha, 0.0, 1.0));

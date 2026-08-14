@@ -189,18 +189,38 @@ void main(void){
   float r = length(p);
   if (r > 1.0) { gl_FragColor = vec4(0.0); return; }
 
-  // Core plus a wide soft skirt.
-  float core = exp(-r * r * 34.0);
-  float skirt = exp(-r * 3.1) * 0.42;
+  // ISOTROPIC RADIAL GAUSSIAN PROFILE.
+  //
+  // The jagged white spikes shooting into the screen corners came from
+  // pow(abs(cos(ang * k)), p): a purely ANGULAR term with no radial
+  // falloff of its own beyond a slow exp(-r * 4.4). Measured against the
+  // skirt it was still 1.8x brighter at r=0.2 and comparable out to r=0.6,
+  // so four hard-edged rays reached most of the way across the quad. The
+  // sharpness was inherent - a cos() raised to the 22nd power has almost
+  // no angular width, so it can only ever alias into a hard line.
+  //
+  // Replaced with a sum of Gaussians in r alone. Being a function of
+  // radius only, it is perfectly isotropic: there is no angle at which it
+  // can pinch, so no direction can produce a streak.
+  float core  = exp(-r * r * 34.0);           // searing centre
+  float inner = exp(-r * r * 7.5) * 0.55;     // hot inner atmosphere
+  float skirt = exp(-r * r * 1.6) * 0.30;     // broad soft halo
+  float bloom = exp(-r * 3.1) * 0.12;         // faint long tail
 
-  // Diffraction spikes, slowly rotating so it never looks like a decal.
-  float ang = atan(p.y, p.x) + time * 0.02;
-  float star4 = pow(abs(cos(ang * 2.0)), 22.0);
-  float star6 = pow(abs(cos(ang * 3.0 + 0.7)), 30.0);
-  float spike = (star4 + star6 * 0.6) * exp(-r * 4.4) * spikes;
+  // The spikes uniform now controls how tight the glare is rather than how many rays
+  // it throws, so existing call sites stay meaningful.
+  float halo = (core + inner + skirt + bloom) * mix(0.85, 1.15, spikes);
 
-  float a = clamp((core + skirt + spike) * intensity, 0.0, 1.0);
-  gl_FragColor = vec4(glareColor * a, a);
+  // BLAZING ORANGE AND SOLAR GOLD, not a blown-out white mask.
+  // #ff7a00 -> #ffb300, with the very centre allowed to run hot toward
+  // white so the star still reads as incandescent rather than painted.
+  vec3 hotOrange = vec3(1.0, 0.478, 0.0);     // #ff7a00
+  vec3 solarGold = vec3(1.0, 0.700, 0.0);     // #ffb300
+  vec3 tint = mix(solarGold, hotOrange, clamp(r * 1.6, 0.0, 1.0));
+  vec3 rgb = mix(tint, glareColor, clamp(core * 0.85, 0.0, 1.0));
+
+  float a = clamp(halo * intensity, 0.0, 1.0);
+  gl_FragColor = vec4(rgb * a, a);
 }
 `;
 

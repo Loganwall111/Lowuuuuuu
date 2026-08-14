@@ -1,0 +1,345 @@
+/**
+ * GalaxyField - the Milky Way as a real place you can fly into.
+ *
+ * THE PROBLEM THIS SOLVES
+ *
+ * The galaxy used to be painted on a dome at infinite distance and on
+ * point shells locked to the camera. Both are backdrops: they translate
+ * with you, so no matter how long you burn toward them the distance never
+ * changes and nothing ever gets closer. Worse, because the shells sat at
+ * radius 2,000-3,800 while real objects sit much nearer, the "sky" was
+ * physically INSIDE the scene, so ordinary objects kept popping in front
+ * of the galaxy. That is the rendering-order glitch: not a sorting bug but
+ * a geometry one. The stars were never actually far away.
+ *
+ * Here the galaxy is instead a true coordinate grid: stars at honest XYZ
+ * positions from radius 2,000 out to 50,000, on the same logarithmic
+ * spiral the rest of the engine already uses, with volumetric gas sampled
+ * from the same 3D noise field. Fly for long enough and you arrive; keep
+ * going and you come out the far side into empty intergalactic space.
+ *
+ * THE DEPTH PROBLEM, AND WHY THERE IS A SECOND CAMERA
+ *
+ * A single camera cannot cover this. The scene needs minZ = 0.05 to let
+ * you stand on a planet surface, and a 50,000-unit far plane against a
+ * 0.05 near plane is a depth ratio of 1e6, which shreds a 24-bit depth
+ * buffer and z-fights everything. So the galaxy is drawn by its own camera
+ * with a near plane of 500 and a far plane of 200,000, in a layer the main
+ * camera cannot see, before the main pass and without clearing colour.
+ * Each camera then gets a sane depth range for the scale it draws, and
+ * because the galaxy pass runs FIRST and never writes depth, real objects
+ * always composite in front of it - which is the correct occlusion, since
+ * everything in the scene is genuinely nearer than 2,000 units.
+ *
+ * WHAT STAYS PROCEDURAL
+ *
+ * Every star position, every gas puff and every colour comes from the
+ * shared GalaxyShape maths. No textures, no image files.
+ */
+import { Color3 } from '@babylonjs/core/Maths/math.color';
+import { Color4 } from '@babylonjs/core/Maths/math.color';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { PointsCloudSystem } from '@babylonjs/core/Particles/pointsCloudSystem';
+import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera';
+import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
+import type { Scene } from '@babylonjs/core/scene';
+import type { Mesh } from '@babylonjs/core/Meshes/mesh';
+import type { Camera } from '@babylonjs/core/Cameras/camera';
+import {
+  MILKY_WAY, galaxyStar, nebulaDensity, nebulaColor, observerPosition,
+  type GalaxyConfig
+} from './GalaxyShape';
+
+/**
+ * The layer only the galaxy camera can see.
+ *
+ * Babylon's default mask is 0x0FFFFFFF, so bit 29 is outside it: existing
+ * meshes and cameras are untouched by adding this.
+ */
+export const GALAXY_LAYER = 0x20000000;
+
+/** Inner edge of the star field, in world units. */
+export const FIELD_INNER = 2000;
+/** Outer edge. Beyond this is intergalactic emptiness. */
+export const FIELD_OUTER = 50000;
+
+/** Near/far planes for the galaxy camera. */
+export const GALAXY_NEAR = 500;
+export const GALAXY_FAR = 200000;
+
+/** How many stars and gas puffs the field is built from. */
+export const STAR_COUNT = 30000;
+export const GAS_COUNT = 9000;
+
+/**
+ * A galaxy sized to span FIELD_INNER..FIELD_OUTER in real coordinates.
+ *
+ * MILKY_WAY's own bounds are in a different unit scale, so the shape is
+ * reused but rescaled: same arms, same spiral, real distances.
+ */
+export const FIELD_GALAXY: GalaxyConfig = {
+  ...MILKY_WAY,
+  innerBound: FIELD_INNER * 1.4,
+  outerBound: FIELD_OUTER
+};
+
+/**
+ * Where the galactic centre sits relative to world origin.
+ *
+ * The galaxy must NOT be centred on the origin: the playable scene lives
+ * there, and centring put 4,876 of the 30,000 stars within 4,000 units of
+ * the home system - the core would have been sitting on top of the
+ * planets. Offsetting by the observer radius puts the player out in a
+ * spiral arm where Earth actually is, with the core far away in one
+ * direction and the rim in the other, both reachable by flying.
+ */
+export const GALAXY_CENTER: [number, number, number] =
+  [-observerPosition(FIELD_GALAXY)[0], 0, 0];
+
+/** Deterministic PRNG, so the galaxy is the same place every session. */
+export function makeRng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+/**
+ * How thick the gas is along the line of sight at a point.
+ *
+ * Pure, so the fog can be tested without a GPU. Returns 0 outside the
+ * disc and rises smoothly toward the dust lanes, which is what lets the
+ * cockpit actually fill with nebula as you cross the plane.
+ */
+export function fogAt(
+  x: number, y: number, z: number, cfg: GalaxyConfig = FIELD_GALAXY
+): number {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return 0;
+  // World -> galaxy-local, so the density field lines up with the stars.
+  const d = nebulaDensity(
+    x - GALAXY_CENTER[0], y - GALAXY_CENTER[1], z - GALAXY_CENTER[2], cfg);
+  return Math.min(1, Math.max(0, d));
+}
+
+/**
+ * Fog colour and strength for the camera's current position.
+ *
+ * Kept separate from fogAt so the colour can be checked independently of
+ * the density curve.
+ */
+export function fogStateAt(
+  x: number, y: number, z: number, cfg: GalaxyConfig = FIELD_GALAXY
+): { density: number; color: [number, number, number] } {
+  const d = fogAt(x, y, z, cfg);
+  if (d <= 0) return { density: 0, color: [0, 0, 0] };
+  const c = nebulaColor(d,
+    x - GALAXY_CENTER[0], y - GALAXY_CENTER[1], z - GALAXY_CENTER[2], cfg);
+  return { density: d, color: [c[0], c[1], c[2]] };
+}
+
+export class GalaxyField {
+  private scene: Scene | null = null;
+  private cam: UniversalCamera | null = null;
+  private clouds: PointsCloudSystem[] = [];
+  private meshes: Mesh[] = [];
+  private built = false;
+
+  /** Total points placed. */
+  count = 0;
+
+  get camera(): Camera | null { return this.cam; }
+  get isBuilt(): boolean { return this.built; }
+
+  /**
+   * Create the galaxy camera and register the render pass.
+   *
+   * The main camera keeps its own near/far; this one covers the large
+   * scale, and the two are composited by rendering the galaxy first.
+   */
+  attach(scene: Scene, main: Camera): void {
+    this.detach();
+    this.scene = scene;
+    try {
+      const cam = new UniversalCamera(
+        'galaxyCam', Vector3.Zero(), scene);
+      cam.minZ = GALAXY_NEAR;
+      cam.maxZ = GALAXY_FAR;
+      // Only this camera sees the galaxy layer.
+      cam.layerMask = GALAXY_LAYER;
+      // No input of its own; it mirrors the main camera every frame.
+      cam.inputs?.clear?.();
+      this.cam = cam;
+
+      // The main camera must NOT see the galaxy layer, or it would try to
+      // draw 50,000-unit geometry through a 4,000-unit far plane.
+      main.layerMask = main.layerMask & ~GALAXY_LAYER;
+
+      // Draw the galaxy first, then the main scene on top of it. Colour is
+      // cleared once at the start; the second pass must not wipe it.
+      scene.activeCameras = [cam, main];
+      scene.autoClear = true;
+      (main as any).autoClear = false;
+    } catch (e) {
+      // The galaxy is scenery. Losing it must not lose the frame.
+      console.warn('Galaxy field unavailable:', e);
+      this.detach();
+    }
+  }
+
+  /**
+   * Place the stars and gas at real coordinates.
+   *
+   * Async because a PointsCloudSystem builds its mesh asynchronously; the
+   * caller can ignore the promise safely.
+   */
+  async build(seed = 20240617): Promise<void> {
+    const scene = this.scene;
+    if (!scene) return;
+    const cfg = FIELD_GALAXY;
+
+    try {
+      // ---- stars ----
+      const starRng = makeRng(seed);
+      const stars = new PointsCloudSystem('galaxyStars', 1, scene);
+      stars.addPoints(STAR_COUNT, (p: any) => {
+        const st = galaxyStar(starRng, cfg);
+        // Real coordinates, offset so the player sits in an arm rather
+        // than inside the galactic core. No shell, no camera lock.
+        p.position = new Vector3(
+          st.x + GALAXY_CENTER[0], st.y + GALAXY_CENTER[1],
+          st.z + GALAXY_CENTER[2]);
+        const b = Math.max(0.05, Math.min(1, st.bright));
+        // Hot blue-white in the arms, warmer in the bulge, dim in the halo.
+        const c = st.kind === 'bulge'
+          ? new Color4(1.0, 0.86 * b + 0.1, 0.62 * b + 0.1, 1)
+          : st.kind === 'halo'
+            ? new Color4(0.86 * b, 0.88 * b, 1.0 * b, 1)
+            : new Color4(0.78 * b + 0.2, 0.86 * b + 0.12, 1.0, 1);
+        p.color = c;
+      });
+      const starMesh = await stars.buildMeshAsync();
+      this.applyState(starMesh, 3.0);
+      this.clouds.push(stars);
+      this.meshes.push(starMesh);
+
+      // ---- gas ----
+      // Rejection-sampled against the same density field the fog reads, so
+      // the visible clouds and the fog you fly through are the same object.
+      const gasRng = makeRng(seed ^ 0x9e3779b9);
+      const gas = new PointsCloudSystem('galaxyGas', 1, scene);
+      gas.addPoints(GAS_COUNT, (p: any) => {
+        let placed = false;
+        for (let tries = 0; tries < 24 && !placed; tries++) {
+          const r = FIELD_INNER + gasRng() * (FIELD_OUTER - FIELD_INNER);
+          const th = gasRng() * Math.PI * 2;
+          const h = (gasRng() - 0.5) * 2 * r * cfg.thickness * 2.2;
+          const x = Math.cos(th) * r, z = Math.sin(th) * r;
+          const d = nebulaDensity(x, h, z, cfg);
+          if (gasRng() < d) {
+            p.position = new Vector3(
+              x + GALAXY_CENTER[0], h + GALAXY_CENTER[1], z + GALAXY_CENTER[2]);
+            const c = nebulaColor(d, x, h, z, cfg);
+            p.color = new Color4(c[0], c[1], c[2], Math.min(0.5, d * 0.6));
+            placed = true;
+          }
+        }
+        if (!placed) {
+          // Never leave a point at the origin as a visible clump.
+          p.position = new Vector3(0, 0, 0);
+          p.color = new Color4(0, 0, 0, 0);
+        }
+      });
+      const gasMesh = await gas.buildMeshAsync();
+      this.applyState(gasMesh, 90.0);
+      this.clouds.push(gas);
+      this.meshes.push(gasMesh);
+
+      this.count = STAR_COUNT + GAS_COUNT;
+      this.built = true;
+    } catch (e) {
+      console.warn('Galaxy field build failed:', e);
+      this.built = false;
+    }
+  }
+
+  /** Render state shared by both point clouds. */
+  private applyState(mesh: Mesh, size: number): void {
+    mesh.layerMask = GALAXY_LAYER;
+    mesh.renderingGroupId = 0;
+    mesh.isPickable = false;
+    mesh.applyFog = false;
+    mesh.alwaysSelectAsActiveMesh = true;
+    const m = mesh.material as any;
+    if (!m) return;
+    m.disableLighting = true;
+    // Never write depth: the galaxy is behind everything by construction.
+    m.disableDepthWrite = true;
+    m.forceDepthWrite = false;
+    // Additive, and alpha nudged off 1.0 so Babylon actually arms the
+    // blender (needAlphaBlending() is false while alpha === 1).
+    m.alpha = 0.999;
+    m.alphaMode = 1;
+    m.backFaceCulling = false;
+    if (m.pointSize !== undefined) m.pointSize = size;
+  }
+
+  /**
+   * Mirror the main camera and apply volumetric fog.
+   *
+   * The galaxy camera shares the main camera's exact position and
+   * orientation, so the two passes line up perfectly; only their depth
+   * ranges differ.
+   */
+  update(eye: Vector3, target: Vector3, scene: Scene | null = this.scene): void {
+    const cam = this.cam;
+    if (cam) {
+      cam.position.copyFrom(eye);
+      cam.setTarget(target);
+    }
+    if (!scene) return;
+
+    // Coordinate-bound nebular fog: density comes from where you actually
+    // are, so crossing the disc fills the cockpit and leaving it clears.
+    const f = fogStateAt(eye.x, eye.y, eye.z);
+    if (f.density > 0.001) {
+      scene.fogMode = 2; // EXP
+      scene.fogDensity = f.density * 0.0016;
+      scene.fogColor = new Color3(f.color[0], f.color[1], f.color[2]);
+    } else {
+      scene.fogMode = 0;
+    }
+  }
+
+  /**
+   * Where the player starts, in world coordinates.
+   *
+   * The offset above is chosen so this is the origin: the existing scene
+   * does not have to move, and it lands in a spiral arm.
+   */
+  static homePosition(): [number, number, number] {
+    const o = observerPosition(FIELD_GALAXY);
+    return [o[0] + GALAXY_CENTER[0], o[1] + GALAXY_CENTER[1],
+      o[2] + GALAXY_CENTER[2]];
+  }
+
+  stats(): Record<string, string> {
+    return {
+      'Galaxy points': this.built ? String(this.count) : 'off',
+      'Galaxy span': FIELD_INNER + '-' + FIELD_OUTER
+    };
+  }
+
+  detach(): void {
+    for (const c of this.clouds) { try { c.dispose(); } catch { /* gone */ } }
+    this.clouds = [];
+    this.meshes = [];
+    try { this.cam?.dispose(); } catch { /* gone */ }
+    this.cam = null;
+    this.built = false;
+    this.count = 0;
+    this.scene = null;
+  }
+
+  dispose(): void { this.detach(); }
+}
