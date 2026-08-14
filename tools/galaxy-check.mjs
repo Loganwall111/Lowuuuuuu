@@ -314,14 +314,44 @@ for (let i = 0; i < 30000; i++) stars.push(galaxyStar(rand, MILKY_WAY));
     const hi = nebulaColor(0.95, 5000, 0, 5000, c).reduce((a, b) => a + b, 0);
     return hi > lo;
   })());
-  ok('the palette is purple/indigo/blue, never green', (() => {
+  // This assertion used to read "the palette is purple/indigo/blue, never
+  // green" and forbade green from ever being the dominant channel. That rule
+  // WAS the flat pink wash: it confined every point to a single violet line
+  // through colour space, measured mean hue (1.00, 0.33, 0.82). Real emission
+  // nebulae are multi-species, and the green-dominant one - O-III at 501nm -
+  // is exactly the line that stops a nebula field looking monochrome. So the
+  // rule is inverted: the palette must contain several distinct species.
+  ok('the nebula palette spans several emission species', (() => {
     const r = makeRand(67);
-    for (let i = 0; i < 1500; i++) {
-      const col = nebulaColor(0.8, (r() - 0.5) * 30000, 0, (r() - 0.5) * 30000, c);
-      // Green must never be the dominant channel in this palette.
-      if (col[1] > col[0] && col[1] > col[2]) return false;
+    const fam = { crimson: 0, teal: 0, orange: 0, blue: 0 };
+    for (let i = 0; i < 4000; i++) {
+      const col = nebulaColor(0.8, (r() - 0.5) * 30000, (r() - 0.5) * 900,
+        (r() - 0.5) * 30000, c);
+      const m = Math.max(...col);
+      if (!(m > 1e-4)) continue;
+      const [R, G, B] = col.map((v) => v / m);
+      if (G > 0.55 && B > 0.45 && R < 0.65) fam.teal++;
+      else if (R > 0.8 && G < 0.45 && B < 0.5) fam.crimson++;
+      else if (R > 0.7 && G > 0.35 && G < 0.75) fam.orange++;
+      else if (B > 0.65 && R < 0.75) fam.blue++;
     }
-    return true;
+    // Every species must actually appear, not just be reachable in theory.
+    return fam.teal > 0 && fam.crimson > 0 && fam.orange > 0;
+  })());
+  ok('no single hue swamps the whole nebula field', (() => {
+    const r = makeRand(71);
+    let n = 0, mono = 0;
+    for (let i = 0; i < 3000; i++) {
+      const col = nebulaColor(0.8, (r() - 0.5) * 30000, (r() - 0.5) * 900,
+        (r() - 0.5) * 30000, c);
+      const m = Math.max(...col);
+      if (!(m > 1e-4)) continue;
+      n++;
+      const [R, G, B] = col.map((v) => v / m);
+      // The old failure mode: red high, green crushed, blue high (magenta).
+      if (R > 0.9 && B > 0.7 && G < 0.4) mono++;
+    }
+    return n > 0 && mono / n < 0.5;
   })());
 
   // Rejection sampling must find gas, and must reject empty space.

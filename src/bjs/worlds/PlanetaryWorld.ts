@@ -23,6 +23,7 @@ import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTextur
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { ringTexture } from '../Textures';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
+import { hashCell } from '../systems/IntergalacticGrid';
 import {
   CORONA_VERT, CORONA_FRAG, GLARE_VERT, GLARE_FRAG,
   CORONA_UNIFORMS, GLARE_UNIFORMS, coronaFor
@@ -236,24 +237,160 @@ interface Body {
   moons: { pivot: TransformNode; speed: number }[];
 }
 
-const PLANETS: {
+export interface PlanetCfg {
   name: string; r: number; orbit: number; speed: number; type: number;
   a: [number, number, number]; b: [number, number, number];
   atmo?: [number, number, number]; clouds: number; lights: number; moons: number; ring?: boolean;
+  /** The one world in the system with people on it. */
+  inhabited?: boolean;
+}
+
+/**
+ * The classes of world a system can produce.
+ *
+ * Each entry is a recipe rather than a fixed planet: radius, orbital
+ * position, colour and cloud cover are all drawn from ranges, so two lava
+ * worlds in different galaxies are recognisably the same KIND of place
+ * without being the same object.
+ */
+const PLANET_CLASSES: {
+  kind: string;
+  type: PlanetKind;
+  /** Visual radius range. */
+  rMin: number; rMax: number;
+  /** Surface colour endpoints, each with a per-channel jitter range. */
+  a: [number, number, number]; b: [number, number, number];
+  atmo?: [number, number, number];
+  cloudMin: number; cloudMax: number;
+  /** Chance this class carries a ring system. */
+  ringChance: number;
+  moonMin: number; moonMax: number;
+  /** Relative likelihood of being picked. */
+  weight: number;
 }[] = [
-  { name: 'Cinder',   r: 0.62, orbit: 14,  speed: 0.62, type: 4, a: [0.35,0.12,0.08], b: [0.6,0.3,0.2], clouds: 0, lights: 0, moons: 0 },
-  { name: 'Vasara',   r: 0.95, orbit: 21,  speed: 0.44, type: 5, a: [0.72,0.52,0.28], b: [0.92,0.78,0.5], atmo: [0.85,0.6,0.35], clouds: 0.25, lights: 0, moons: 0 },
-  { name: 'Terrapor', r: 1.15, orbit: 30,  speed: 0.33, type: 1, a: [0.2,0.4,0.15], b: [0.5,0.45,0.3], atmo: [0.25,0.5,1.0], clouds: 0.75, lights: 1.0, moons: 1 },
-  { name: 'Rhogar',   r: 0.86, orbit: 40,  speed: 0.25, type: 0, a: [0.42,0.26,0.18], b: [0.66,0.44,0.3], clouds: 0, lights: 0, moons: 2 },
-  { name: 'Ophion',   r: 2.9,  orbit: 58,  speed: 0.15, type: 3, a: [0.72,0.58,0.40], b: [0.90,0.80,0.62], clouds: 0, lights: 0, moons: 3, ring: true },
-  { name: 'Kelvara',  r: 2.3,  orbit: 78,  speed: 0.10, type: 3, a: [0.32,0.48,0.62], b: [0.62,0.78,0.88], clouds: 0, lights: 0, moons: 2, ring: true },
-  { name: 'Silex',    r: 1.05, orbit: 96,  speed: 0.07, type: 2, a: [0.66,0.78,0.88], b: [0.88,0.94,0.99], atmo: [0.6,0.8,1.0], clouds: 0.3, lights: 0, moons: 1 }
+  // Gas giants: big, banded, usually ringed. The showpiece worlds.
+  { kind: 'gas-giant', type: PlanetKind.Gas, rMin: 2.1, rMax: 3.4,
+    a: [0.72,0.58,0.40], b: [0.90,0.80,0.62],
+    cloudMin: 0, cloudMax: 0, ringChance: 0.72, moonMin: 2, moonMax: 4, weight: 1.15 },
+  // Ice giants: the cold blue variety of the same family.
+  { kind: 'ice-giant', type: PlanetKind.Gas, rMin: 1.8, rMax: 2.7,
+    a: [0.32,0.48,0.62], b: [0.62,0.78,0.88],
+    cloudMin: 0, cloudMax: 0, ringChance: 0.55, moonMin: 1, moonMax: 3, weight: 0.85 },
+  // Volcanic worlds: glowing magma fissures, no atmosphere worth the name.
+  { kind: 'volcanic', type: PlanetKind.Lava, rMin: 0.55, rMax: 1.05,
+    a: [0.35,0.12,0.08], b: [0.72,0.34,0.16],
+    cloudMin: 0, cloudMax: 0.12, ringChance: 0.04, moonMin: 0, moonMax: 1, weight: 1.0 },
+  // Lush terra worlds: oceans, weather, and the only ones that get cities.
+  { kind: 'terra', type: PlanetKind.Terran, rMin: 0.95, rMax: 1.35,
+    a: [0.20,0.40,0.15], b: [0.50,0.45,0.30], atmo: [0.25,0.50,1.00],
+    cloudMin: 0.55, cloudMax: 0.95, ringChance: 0.05, moonMin: 1, moonMax: 2, weight: 0.9 },
+  // Frozen worlds: bright, high albedo, thin hazy atmosphere.
+  { kind: 'ice', type: PlanetKind.Ice, rMin: 0.75, rMax: 1.25,
+    a: [0.66,0.78,0.88], b: [0.88,0.94,0.99], atmo: [0.60,0.80,1.00],
+    cloudMin: 0.18, cloudMax: 0.45, ringChance: 0.10, moonMin: 0, moonMax: 2, weight: 1.0 },
+  // Deserts and bare rock: the common, unglamorous majority.
+  { kind: 'desert', type: PlanetKind.Desert, rMin: 0.70, rMax: 1.15,
+    a: [0.72,0.52,0.28], b: [0.92,0.78,0.50], atmo: [0.85,0.60,0.35],
+    cloudMin: 0.10, cloudMax: 0.35, ringChance: 0.05, moonMin: 0, moonMax: 1, weight: 1.0 },
+  { kind: 'rocky', type: PlanetKind.Rocky, rMin: 0.55, rMax: 1.00,
+    a: [0.42,0.26,0.18], b: [0.66,0.44,0.30],
+    cloudMin: 0, cloudMax: 0.08, ringChance: 0.03, moonMin: 0, moonMax: 2, weight: 1.1 }
 ];
 
-/** Terrapor is the Earth-like world, so it is the yardstick for mass. */
-const EARTH_VISUAL_R = 1.15;
+const SYS_SYLL_A = ['Cin', 'Vas', 'Terr', 'Rho', 'Oph', 'Kel', 'Sil', 'Mor',
+  'Aur', 'Tha', 'Ven', 'Xan', 'Bel', 'Nyx', 'Cor', 'Zel', 'Ith', 'Dra', 'Sol',
+  'Ery', 'Pha', 'Qel', 'Tyr', 'Ume'];
+const SYS_SYLL_B = ['dara', 'ara', 'apor', 'gar', 'ion', 'vara', 'ex', 'ata',
+  'elis', 'ros', 'une', 'thus', 'mir', 'aque', 'vus', 'yn', 'oda', 'ander',
+  'is', 'ophe', 'ux', 'een'];
+
+/** Proper Roman numerals, so worlds read as Kelvara IV rather than Kel L4. */
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+
+/**
+ * Builds a star system's planets from the coordinates of the 260,000-unit
+ * galaxy cell it sits in.
+ *
+ * The point is that nothing here is authored. Feed it a different cell and
+ * you get a different system - different count, different classes, different
+ * colours, different rings - but feed it the SAME cell and you get exactly
+ * the same system back, forever, with nothing stored. That determinism is
+ * what lets an infinite universe have specific places in it.
+ */
+export function planetsForCell(ix: number, iy: number, iz: number): PlanetCfg[] {
+  const h = hashCell(ix, iy, iz);
+  // One hash, many independent streams. Reusing the same hash directly for
+  // several decisions correlates them - every ringed planet would also be
+  // the largest, and so on - so each draw takes its own channel.
+  let c = 0;
+  const nx = () => {
+    let v = (h + Math.imul(++c, 2654435761)) >>> 0;
+    v = Math.imul(v ^ (v >>> 15), 2246822519) >>> 0;
+    v = (v ^ (v >>> 13)) >>> 0;
+    return v / 4294967296;
+  };
+  const range = (lo: number, hi: number) => lo + nx() * (hi - lo);
+
+  const total = PLANET_CLASSES.reduce((s, k) => s + k.weight, 0);
+  const pick = () => {
+    let t = nx() * total;
+    for (const k of PLANET_CLASSES) { t -= k.weight; if (t <= 0) return k; }
+    return PLANET_CLASSES[PLANET_CLASSES.length - 1];
+  };
+
+  const count = 5 + Math.floor(nx() * 4);          // 5..8 worlds
+  const name = SYS_SYLL_A[Math.floor(nx() * SYS_SYLL_A.length)] +
+               SYS_SYLL_B[Math.floor(nx() * SYS_SYLL_B.length)];
+
+  // Every system gets exactly one habitable world, placed somewhere in the
+  // middle of the run where a temperate orbit belongs. Left purely to the
+  // weighted roll, most systems come out with none - the origin cell rolled
+  // six worlds and not one of them was terra - which would mean no
+  // settlements, no city lights, and nowhere to land and meet anyone.
+  const habitableAt = 1 + Math.floor(nx() * Math.max(1, count - 2));
+
+  const out: PlanetCfg[] = [];
+  let orbit = 13 + nx() * 6;
+  for (let i = 0; i < count; i++) {
+    const k = i === habitableAt
+      ? PLANET_CLASSES.find((q) => q.kind === 'terra')!
+      : pick();
+    // Orbits widen outward roughly geometrically, like a real system, so the
+    // inner worlds are crowded and the outer ones are lonely.
+    orbit += 7 + orbit * range(0.24, 0.46);
+    const jitter = (m: number): number => Math.min(1, Math.max(0, m + (nx() - 0.5) * 0.12));
+    const a = k.a.map(jitter) as [number, number, number];
+    const b = k.b.map(jitter) as [number, number, number];
+    out.push({
+      name: name + ' ' + (ROMAN[i] ?? String(i + 1)),
+      r: range(k.rMin, k.rMax),
+      orbit,
+      // Kepler: further out is slower. This is why the inner worlds visibly
+      // race and the gas giants barely creep.
+      speed: 0.62 * Math.pow(14 / orbit, 1.5),
+      type: k.type,
+      a, b,
+      atmo: k.atmo,
+      clouds: range(k.cloudMin, k.cloudMax),
+      // Only the ONE inhabited world lights up at night. Keying this on the
+      // class instead let a second, randomly-rolled terra world glow with
+      // city lights while having no settlers on it.
+      lights: i === habitableAt ? range(0.7, 1.3) : 0,
+      moons: Math.floor(range(k.moonMin, k.moonMax + 0.999)),
+      ring: nx() < k.ringChance,
+      inhabited: i === habitableAt
+    });
+  }
+  return out;
+}
+
+/** The system at the origin cell, which is where the planetary world opens. */
+const PLANETS: PlanetCfg[] = planetsForCell(0, 0, 0);
+
+/** The habitable world is the yardstick for mass, whatever it is called. */
+const EARTH_VISUAL_R = (PLANETS.find((q) => q.inhabited) ?? PLANETS[0]).r;
 /** ...and the one with people on it. */
-const INHABITED = 'Terrapor';
+const INHABITED = (PLANETS.find((q) => q.inhabited) ?? PLANETS[0]).name;
 const INHABITED_SEED = 40917;
 
 /**
@@ -576,7 +713,10 @@ export class PlanetaryWorld implements World {
       b.mat.setFloat('time', this.t);
       b.mat.setFloat('detail', this.p.detail);
       b.mat.setFloat('cloudAmt', this.p.clouds);
-      b.mat.setFloat('cityLights', b.name === 'Terrapor' ? this.p.lights : 0);
+      // Keyed to the system's inhabited world, whichever one that turned out
+      // to be. Hard-coding the old literal name here meant the night side of
+      // every planet stayed dark once the roster became procedural.
+      b.mat.setFloat('cityLights', b.name === INHABITED ? this.p.lights : 0);
       // The Exposure slider existed in the options panel but was never sent
       // to the shader, so dragging it did nothing at all.
       b.mat.setFloat('exposure', this.p.exposure);

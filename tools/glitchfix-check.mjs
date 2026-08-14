@@ -82,9 +82,18 @@ ok('true coordinates are kept so parallax survives',
 // colour is a dim (0.42, 0.13, 0.31), but three overlapping points
 // already saturate red and blue while green lags - magenta - and eight
 // stack to white.
-ok('the gas point size is no longer enormous', (() => {
+// The original form of this assertion was `size <= 8`, which was a magic
+// number standing in for the property we actually care about: the gas must
+// not stack up into saturated magenta. 8 was also too tight - at size 4 the
+// gas covered 1.6% of the screen and the nebulae read as absent, which is
+// the defect the number itself caused. So test the real invariant, and cap
+// the size only where blowout genuinely begins (measured: 20 -> 0.55% of the
+// frame clipped, 90 -> 13.2%).
+ok('the gas point size shows the clouds without saturating them', (() => {
   const m = field.match(/this\.applyState\(gasMesh, ([\d.]+)\)/);
-  return m && Number(m[1]) <= 8;
+  if (!m) return false;
+  const size = Number(m[1]);
+  return size >= 10 && size < 20;
 })(), (field.match(/this\.applyState\(gasMesh, ([\d.]+)\)/) || [])[1]);
 ok('the magenta saturation is explained for future edits',
   /THE PINK GLITCH/.test(field));

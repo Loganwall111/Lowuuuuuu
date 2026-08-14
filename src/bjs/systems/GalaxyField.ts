@@ -303,7 +303,23 @@ export class GalaxyField {
       // red and blue to 1.0 while green lags - which is precisely the
       // magenta smear that filled the screen - and eight stack to white.
       // A few pixels lets the density read as haze instead of paint.
-      this.applyState(gasMesh, 4.0);
+      //
+      // But 4.0 overcorrected: it dropped the gas to 1.6% of the screen,
+      // which is why the nebulae "vanished". Rasterising the real point set
+      // through the proxy projection gives the tradeoff directly -
+      //
+      //   size  4 -> 1.6% of screen lit, 0.000% blown out
+      //   size 14 -> 9.8% lit,           0.005% blown out
+      //   size 20 -> 14.4% lit,          0.554% blown out  (pink returns)
+      //   size 90 -> 27.7% lit,          13.2% blown out   (the glitch)
+      //
+      // 14 is the knee: six times the visible gas of 4.0 while the blown-out
+      // fraction is still effectively zero. Raising the COLOUR instead (the
+      // obvious "just make it brighter" move) is the wrong lever - an 8x
+      // exposure multiplier barely moves coverage, 1.6% -> 1.7%, because the
+      // points are tiny, but it drives peak intensity to 4.94 and saturates
+      // 0.4% of the frame straight back to magenta.
+      this.applyState(gasMesh, 14.0);
       this.clouds.push(gas);
       this.meshes.push(gasMesh);
 

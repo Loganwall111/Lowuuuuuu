@@ -296,24 +296,84 @@ export function nebulaDensity(
 /**
  * Emission colour for gas at a given density and position.
  *
- * Hydrogen-alpha reds near active regions, indigo and deep blue in the
- * quieter outskirts, in the palette the sky already uses.
+ * A real emission nebula is not one colour smeared about. It is a handful of
+ * distinct ionisation species, each radiating at its own fixed wavelength,
+ * and they separate in space because they need different amounts of energy
+ * to light up. That separation is the whole reason nebula photographs look
+ * the way they do, so it is what this function models.
+ *
+ *   H-alpha  (656nm) - hydrogen, deep crimson. The bulk of the gas, and the
+ *                      colour of the big diffuse arm complexes.
+ *   O-III    (501nm) - doubly ionised oxygen, teal-green. Needs hard UV, so
+ *                      it only appears near hot young stars.
+ *   S-II     (672nm) - sulphur, dull orange-red. Rims and shock fronts.
+ *   Reflection       - cold dusty blue where nothing is ionised at all and
+ *                      the dust is simply scattering starlight.
+ *
+ * The previous version interpolated a single warm/cool pair, so every point
+ * in the galaxy landed somewhere on one straight line through colour space
+ * between (0.62,0.16,0.30) and (0.16,0.13,0.48). Both endpoints are
+ * magenta-violet, which is why the mean hue measured (1.00, 0.33, 0.82) and
+ * why the gas read as a flat pink wash with no variety in it.
+ *
+ * Species are chosen by their own noise field at a DIFFERENT frequency to
+ * the density field, which is what makes the colour run in long flowing
+ * strips along the arms rather than turning over point by point.
  */
 export function nebulaColor(
   density: number, x: number, y: number, z: number, cfg: GalaxyConfig = MILKY_WAY
 ): [number, number, number] {
-  const s = 1 / Math.max(cfg.outerBound * 0.1, 1e-6);
-  const hue = fbm3(x * s + 31.7, y * s, z * s - 12.3, 3);
   const d = Math.min(1, Math.max(0, density));
+  const radius = Math.sqrt(x * x + z * z);
 
-  // Warm, ionised cores blend toward cold violet in the thin regions.
-  const warm: [number, number, number] = [0.62, 0.16, 0.30];
-  const cool: [number, number, number] = [0.16, 0.13, 0.48];
-  const t = Math.min(1, Math.max(0, hue * 1.25));
+  // ---- the ionisation field ----
+  // Low frequency along the plane, high frequency vertically: that anisotropy
+  // is what stretches the colour into strips that follow the disc instead of
+  // breaking it into isotropic blobs.
+  const s = 1 / Math.max(cfg.outerBound * 0.28, 1e-6);
+  const ion = fbm3(x * s + 31.7, y * s * 5.0, z * s - 12.3, 4);
 
-  const r = lerp(cool[0], warm[0], t);
-  const g = lerp(cool[1], warm[1], t);
-  const b = lerp(cool[2], warm[2], t);
+  // A second, finer field decides where the hard-UV pockets sit. O-III is
+  // rare and clustered, so it is gated behind a threshold rather than mixed
+  // in everywhere.
+  const t2 = 1 / Math.max(cfg.outerBound * 0.09, 1e-6);
+  const hot = fbm3(x * t2 - 7.1, y * t2 * 3.0, z * t2 + 19.4, 3);
+
+  // Ionisation needs energy, and the energy comes from the crowded inner
+  // disc. Out at the rim the same gas is cold and just scatters light.
+  const excitation = Math.exp(-radius / Math.max(cfg.outerBound * 0.55, 1e-6));
+
+  // ---- the emission lines, as actual colours ----
+  const HA:   [number, number, number] = [0.95, 0.14, 0.22];   // crimson
+  const OIII: [number, number, number] = [0.10, 0.85, 0.72];   // teal
+  const SII:  [number, number, number] = [0.90, 0.42, 0.20];   // orange
+  const DUST: [number, number, number] = [0.22, 0.30, 0.62];   // cold blue
+
+  // Base: hydrogen almost everywhere, sulphur creeping in where the noise
+  // runs high, cold dust taking over past the ionisation front.
+  // Thresholds come from the measured distribution of these fields, not from
+  // guesswork: averaging octaves pulls fbm toward its mean, so `ion` and
+  // `hot` actually span about 0.12..0.88 with a median near 0.50 rather than
+  // filling 0..1. Gating at 0.58 against that distribution is why an earlier
+  // pass produced literally zero teal points.
+  const sulphur = Math.min(1, Math.max(0, (ion - 0.56) * 3.0));
+  let r = lerp(HA[0], SII[0], sulphur);
+  let g = lerp(HA[1], SII[1], sulphur);
+  let b = lerp(HA[2], SII[2], sulphur);
+
+  const cold = 1 - excitation;
+  r = lerp(r, DUST[0], cold * 0.8);
+  g = lerp(g, DUST[1], cold * 0.8);
+  b = lerp(b, DUST[2], cold * 0.8);
+
+  // O-III overrides wherever a hot pocket coincides with real gas. It is the
+  // colour that makes a nebula field look photographed rather than tinted,
+  // precisely because it is the one that is NOT red.
+  const oiii = Math.min(1, Math.max(0, (hot - 0.50) * 3.4))
+             * (0.45 + 0.55 * excitation) * 1.25;
+  r = lerp(r, OIII[0], Math.min(0.85, oiii));
+  g = lerp(g, OIII[1], Math.min(0.85, oiii));
+  b = lerp(b, OIII[2], Math.min(0.85, oiii));
 
   // Brightness follows density, so wisps stay wisps.
   const mag = Math.pow(d, 0.75);
