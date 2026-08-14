@@ -41,6 +41,15 @@ export interface WorldContext {
     position: Vector3;
     /** Region radius, for framing the camera sensibly. */
     radius: number;
+    /**
+     * Region mass, where the region has one.
+     *
+     * Without this a world renders whatever mass it was written with. The
+     * black hole world defaulted to 1.0 while real regions carry 4,000-44,000,
+     * so the hole it drew was ~2 px across on arrival and all the player saw
+     * was its bloom: a small white blob.
+     */
+    mass?: number;
   } | null;
   /**
    * Travel to a procedural dimension. A world calls this when the player

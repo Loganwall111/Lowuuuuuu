@@ -561,6 +561,38 @@ try {
     }
   }
 
+  // ---- and it must be BIG ENOUGH TO SEE on arrival ----
+  // The aim fix was not enough: the user still saw only a small white blob.
+  // BlackHoleWorld rendered a hardcoded mass of 1.0 while the region carried
+  // ~10,000, and warpTo stood off by the 620 u region radius. The shadow
+  // subtended ~2 px, so only bloom survived.
+  {
+    const target2 = holes[0];
+    await appRef.warpTo(target2.id);
+    await new Promise((res) => setTimeout(res, 2000));
+
+    const w2 = appRef.world;
+    const dist = Vector3Distance(appRef.camera.position, target2.position);
+    // The raymarcher captures photons inside ~2.6 rs; rs is the world's mass.
+    const rs = w2 && w2.p ? w2.p.mass : 0;
+    const fov = appRef.camera.fov || 0.9;
+    const angular = Math.atan((rs * 2.6) / Math.max(dist, 1e-6));
+    const fracOfHalf = angular / (fov / 2);
+
+    travelChecks.push(['the arrival hole uses the region mass, not a default',
+      rs > 2, 'rs=' + rs.toFixed(2)]);
+    // 0.35 of half-screen is ~122 px radius on a 700 px viewport - a hole you
+    // are looking AT. The old 837 u framing scored 0.15 (53 px), which is
+    // still just a bloomed dot, so a lower bar would pass the reported bug.
+    travelChecks.push(['the hole is large on screen when you arrive',
+      fracOfHalf > 0.35,
+      'dist=' + dist.toFixed(0) + ' rs=' + rs.toFixed(1) +
+      ' -> ' + (fracOfHalf * 100).toFixed(1) + '% of half-screen']);
+    // ...and not so close that it swallows the whole frame.
+    travelChecks.push(['the hole does not fill the entire frame',
+      fracOfHalf < 1.6, (fracOfHalf * 100).toFixed(1) + '%']);
+  }
+
   // ---- the Singularity must show exactly ONE hole ----
   // The user saw a bare black circle on one side of the screen and the
   // lensed orange disk on the other. That is two different holes: the world

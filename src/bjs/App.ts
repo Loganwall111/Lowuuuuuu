@@ -741,8 +741,16 @@ export class App {
   warpTo(id: string): void {
     const r = this.universe.byId(id);
     if (!r) return;
-    // stand off by enough to see the whole thing
-    const standoff = Math.max(r.radius * 1.35, (r.surfaceRadius ?? 10) * 4);
+    // Stand off by enough to see the whole thing.
+    //
+    // A black hole's region radius is 620 u for every hole regardless of its
+    // mass - that is its sphere of influence, not its visible size. Standing
+    // off by that put the player 837 u from a 19 u horizon, where the shadow
+    // subtends about two pixels and only its bloom survives: the "white blob"
+    // the user reported. Holes are framed on their horizon instead.
+    const standoff = r.kind === 'blackhole'
+      ? this.universe.horizonRadiusOf(r) * 8
+      : Math.max(r.radius * 1.35, (r.surfaceRadius ?? 10) * 4);
     const from = this.vehicle.mode === 'orbit'
       ? this.camera.position : this.vehicle.position;
     const dir = from.subtract(r.position);
@@ -765,7 +773,9 @@ export class App {
     // Tell the destination world WHICH place this is. Without it a world
     // renders its subject at the origin while the player stands beside the
     // real region coordinates, seeing nothing at all.
-    this.ctx.focus = { position: r.position.clone(), radius: r.radius };
+    this.ctx.focus = {
+      position: r.position.clone(), radius: r.radius, mass: r.mass
+    };
     // Always rebuild, even when the locale id is unchanged: flying from one
     // black hole to another stays in 'blackhole' but is a different subject,
     // and skipping the rebuild would leave the old hole on screen.

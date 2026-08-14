@@ -715,5 +715,41 @@ console.log('\n— warping to a black hole arrives at that hole —');
     /focus/.test(app));
 }
 
+
+// ------------------------- the hole you arrive at is big enough to see (bug 4)
+// After the aim was fixed the user still saw only a small white blob. The
+// camera was correct; the hole was sub-pixel. Two disconnected mass systems:
+// a black hole REGION carries mass 4000-44000 (universe horizon
+// cbrt(mass)*0.9 ~ 19.6 u) but BlackHoleWorld rendered its own hole with a
+// hardcoded mass of 1.0, and warpTo stood off by the region's 620 u sphere of
+// influence. At 837 u a shadow of radius 2.6 u subtends ~2.4 px, so all that
+// survived was bloom - a white blob.
+console.log('\n— you arrive close enough to actually see the hole —');
+{
+  const bhw = read('src/bjs/worlds/BlackHoleWorld.ts');
+  const app = read('src/bjs/App.ts');
+
+  // Must be an assignment to the params, not merely the word "mass" in a
+  // nearby comment - the first version of this check passed against the bug.
+  ok('the rendered hole takes its mass from the region',
+    /this\.p\.mass\s*=/.test(bhw) && /focus\.mass|focus[\s\S]{0,200}?this\.p\.mass\s*=/.test(bhw),
+    'a hardcoded mass of 1 renders a sub-pixel hole at any real distance');
+
+  ok('the arrival standoff is based on the horizon, not the region radius',
+    /horizonRadiusOf|horizon/.test(app.slice(
+      app.indexOf('warpTo(id: string)'),
+      app.indexOf('warpTo(id: string)') + 1400)),
+    'region radius 620 is a sphere of influence, not the visible size');
+
+  // Geometry: a hole must subtend a usable fraction of the screen on arrival.
+  const shadowOf = (rs) => rs * 2.6;
+  const pxRadius = (rs, dist, fov = 0.9, halfPx = 350) =>
+    (Math.atan(shadowOf(rs) / dist) / (fov / 2)) * halfPx;
+  ok('a mass-1 hole at the old standoff was invisible (the bug)',
+    pxRadius(1, 837) < 5, pxRadius(1, 837).toFixed(2) + ' px');
+  const rs = Math.cbrt(10386) * 0.9;
+  ok('a real hole framed at 8 horizons fills the frame',
+    pxRadius(rs, rs * 8) > 100, pxRadius(rs, rs * 8).toFixed(1) + ' px');
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

@@ -368,6 +368,15 @@ void main(void){
 }
 `;
 
+/**
+ * How far back to sit from a hole, in horizon radii.
+ *
+ * At 8 horizons the shadow fills roughly a third of the frame height, which
+ * reads as "a black hole in front of you" rather than a distant speck. Much
+ * closer and the disk runs off the edges; much further and bloom swallows it.
+ */
+const FRAMING_HORIZONS = 8;
+
 const VERT = `
 precision highp float;
 attribute vec3 position;
@@ -461,12 +470,19 @@ export class BlackHoleWorld implements World {
     } else {
       this.center.setAll(0);
     }
-    // Frame the hole itself, at a distance that suits its size rather than a
-    // fixed 26 units.
-    const framing = ctx.focus
-      ? Math.max(26, Math.min(ctx.focus.radius * 0.25, 400))
-      : 26;
-    ctx.setCameraTarget(this.center.clone(), framing);
+    // Adopt the region's mass. The default of 1.0 is only right for a
+    // standalone scene; a universe hole carries 4,000-44,000, and rendering
+    // it at mass 1 makes the shadow sub-pixel from any realistic distance.
+    if (ctx.focus && Number.isFinite(ctx.focus.mass) && (ctx.focus.mass as number) > 0) {
+      // Same law the universe uses for its horizon, so the raymarched hole
+      // and UniverseState.horizonRadiusOf agree on how big this hole is.
+      this.p.mass = Math.max(2, Math.cbrt(ctx.focus.mass as number) * 0.9);
+    }
+
+    // Frame on the horizon, not on the region's sphere of influence. The
+    // region radius is 620 u for every hole regardless of mass, which is why
+    // the old framing put the player 837 u from a 19 u horizon.
+    ctx.setCameraTarget(this.center.clone(), this.p.mass * FRAMING_HORIZONS);
   }
 
   /**
