@@ -27,6 +27,10 @@ import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import { PointsCloudSystem } from '@babylonjs/core/Particles/pointsCloudSystem';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
+import {
+  MILKY_WAY, galaxyStar, observerPosition, projectToShell,
+  sampleNebulaPoint, nebulaColor, projectToShell as projectGas
+} from './GalaxyShape';
 
 /** One concentric shell of background stars. */
 export interface ShellSpec {
@@ -38,6 +42,18 @@ export interface ShellSpec {
   outer: number;
   /** Drawn point size, pixels. */
   size: number;
+  /**
+   * Draw this shell as a real galaxy - logarithmic arms, a thin disc and a
+   * blazing core - rather than an even scatter.
+   *
+   * An evenly-scattered shell is statistically identical in every
+   * direction, which is exactly why the outer sky "drops into a repeating
+   * pattern": there is nothing in it to recognise. Only the far shell gets
+   * this, because the near shells are supposed to be local stars.
+   */
+  galaxy?: boolean;
+  /** Points of glowing interstellar gas to mix into this shell. */
+  gas?: number;
   /**
    * How strongly this shell follows the camera. 0 pins it to world space
    * (full parallax), 1 locks it to the eye (no parallax at all).
@@ -64,7 +80,10 @@ export const SKY_SHELLS: ShellSpec[] = [
   // 10000 threw away most of these 30000 points. The depth cue comes from
   // the per-shell parallax lock below, not from raw distance, so pulling
   // the radius in costs nothing visually and gains the whole shell.
-  { name: 'far', count: 30000, inner: 2000, outer: 3800, size: 1.2, lock: 0.92 }
+  {
+    name: 'far', count: 30000, inner: 2000, outer: 3800, size: 1.2, lock: 0.92,
+    galaxy: true, gas: 9000
+  }
 ];
 
 /** Total points across every shell. */
@@ -144,20 +163,71 @@ export class LayeredSky {
       const rand = rng(this.seed + si * 7919);
       const pcs = new PointsCloudSystem('sky_' + spec.name, spec.size, scene);
 
-      pcs.addPoints(spec.count, (p: any) => {
-        const [x, y, z] = spherePoint(rand(), rand());
-        // Cube-root keeps the points volumetrically uniform between the two
-        // radii instead of bunching them against the inner surface.
-        const t = Math.cbrt(rand());
-        const r = spec.inner + (spec.outer - spec.inner) * t;
-        p.position = new Vector3(x * r, y * r, z * r);
+      const observer = observerPosition(MILKY_WAY);
 
-        const c = starColor(rand());
-        // Faint stars dominate: a few bright ones read as depth, an evenly
-        // bright field reads as noise.
-        const mag = 0.25 + Math.pow(rand(), 2.4) * 0.75;
-        p.color = new Color4(c.r * mag, c.g * mag, c.b * mag, 1);
-      });
+      if (spec.galaxy) {
+        // A real galaxy, seen from inside it. The band across the sky, the
+        // bright core in one direction and the empty galactic poles are all
+        // consequences of the geometry rather than painted decoration.
+        pcs.addPoints(spec.count, (p: any) => {
+          const star = galaxyStar(rand, MILKY_WAY);
+          const proj = projectToShell(star, observer, spec.inner, spec.outer, MILKY_WAY);
+          p.position = new Vector3(proj.x, proj.y, proj.z);
+
+          const c = starColor(rand());
+          // The bulge is hot and crowded; the halo is old and red. Using the
+          // structural class here is what makes the core read as a core.
+          const tone = star.kind === 'bulge'
+            ? new Color3(Math.min(1, c.r * 1.05), c.g, Math.min(1, c.b * 1.12))
+            : c;
+          const mag = star.bright * (0.3 + Math.pow(rand(), 2.0) * 0.7);
+          p.color = new Color4(tone.r * mag, tone.g * mag, tone.b * mag, 1);
+        });
+      } else {
+        pcs.addPoints(spec.count, (p: any) => {
+          const [x, y, z] = spherePoint(rand(), rand());
+          // Cube-root keeps the points volumetrically uniform between the two
+          // radii instead of bunching them against the inner surface.
+          const t = Math.cbrt(rand());
+          const r = spec.inner + (spec.outer - spec.inner) * t;
+          p.position = new Vector3(x * r, y * r, z * r);
+
+          const c = starColor(rand());
+          // Faint stars dominate: a few bright ones read as depth, an evenly
+          // bright field reads as noise.
+          const mag = 0.25 + Math.pow(rand(), 2.4) * 0.75;
+          p.color = new Color4(c.r * mag, c.g * mag, c.b * mag, 1);
+        });
+      }
+
+      if (spec.gas && spec.gas > 0) {
+        // Interstellar gas, sampled where the density field is actually
+        // thick. Scattering points evenly and fading them by density would
+        // give an even haze; rejection sampling gives clouds with edges.
+        //
+        // Points that miss are simply parked far off the shell's inner
+        // radius rather than skipped, because a PointsCloudSystem needs a
+        // fixed count - so the miss budget is bounded and cheap.
+        pcs.addPoints(spec.gas, (p: any) => {
+          let hit = null;
+          for (let tries = 0; tries < 12 && !hit; tries++) {
+            hit = sampleNebulaPoint(rand, MILKY_WAY, 0.16);
+          }
+          if (!hit) {
+            // No cloud found: hide this point at the origin with zero alpha.
+            p.position = new Vector3(0, 0, 0);
+            p.color = new Color4(0, 0, 0, 0);
+            return;
+          }
+          const proj = projectGas(
+            { x: hit.x, y: hit.y, z: hit.z, kind: 'arm', bright: 1 },
+            observer, spec.inner, spec.outer, MILKY_WAY);
+          p.position = new Vector3(proj.x, proj.y, proj.z);
+          const [r, g, b] = nebulaColor(hit.density, hit.x, hit.y, hit.z, MILKY_WAY);
+          // Gas is dim and additive: it must tint the sky, never wall it off.
+          p.color = new Color4(r, g, b, Math.min(0.5, hit.density * 0.55));
+        });
+      }
 
       const mesh = await pcs.buildMeshAsync();
       if (mesh) {
@@ -166,7 +236,7 @@ export class LayeredSky {
         this.meshes.push(mesh);
       }
       this.systems.push(pcs);
-      this.count += spec.count;
+      this.count += spec.count + (spec.gas ?? 0);
     }
   }
 

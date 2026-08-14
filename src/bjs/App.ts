@@ -593,10 +593,16 @@ export class App {
     // the wall can never disagree about how far out you are.
     if (edge.emptiness > 0) {
       const w = edge.wallBrightness;
+      // Deliberately dim. The backdrop used to carry the sky's whole colour
+      // as one flat fill, which is what made deep space read as a purple
+      // washout: a uniform field has no structure for the eye to hold on
+      // to. The nebular gas in LayeredSky supplies that colour now, with
+      // clouds and gaps, so this only has to keep the void from being an
+      // absolute black rectangle and then get out of the way.
       this.scene.clearColor = new Color4(
-        verse.tint[0] * 0.16 + w * 0.05,
-        verse.tint[1] * 0.16 + w * 0.06,
-        verse.tint[2] * 0.16 + w * 0.10,
+        verse.tint[0] * 0.05 + w * 0.05,
+        verse.tint[1] * 0.05 + w * 0.06,
+        verse.tint[2] * 0.06 + w * 0.10,
         1);
     }
 
@@ -1459,8 +1465,10 @@ export class App {
       const scaleState = this.cosmicScale.update(eye.length());
       if (scaleState.changed) {
         const t = scaleState.tier;
+        // Same reasoning as the verse tint above: the gas carries the
+        // colour, the clear colour only keeps the void off pure black.
         this.scene.clearColor = new Color4(
-          t.tint[0] * 0.16, t.tint[1] * 0.16, t.tint[2] * 0.16, 1);
+          t.tint[0] * 0.05, t.tint[1] * 0.05, t.tint[2] * 0.06, 1);
         this.shell.toast(
           (scaleState.direction > 0 ? 'Exited into ' : 'Fell back into ') +
           t.name + ' - ' + t.tagline);

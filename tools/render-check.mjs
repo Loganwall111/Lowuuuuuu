@@ -141,6 +141,26 @@ console.log('\n— the sky is deep and never occludes —');
     core.outer === mid.inner && mid.outer === far.inner);
   ok('42,000 background stars in total', shellBudget() === 42000);
 
+  // The far shell is a galaxy, not a scatter. An evenly-scattered shell
+  // looks statistically identical in every direction, which is exactly why
+  // the outer sky read as a repeating pattern with nothing to recognise.
+  ok('the far shell is built as a real galaxy', far.galaxy === true);
+  ok('only the far shell is a galaxy', !core.galaxy && !mid.galaxy);
+  ok('the far shell carries interstellar gas', (far.gas ?? 0) > 0, String(far.gas));
+  ok('the near shells have no gas', !core.gas && !mid.gas);
+
+  const skySrc = read('src/bjs/systems/LayeredSky.ts');
+  ok('the sky builds stars from the galaxy model', /galaxyStar\(/.test(skySrc));
+  ok('the sky projects them onto the shell', /projectToShell\(/.test(skySrc));
+  ok('the sky places the observer inside the disc', /observerPosition\(/.test(skySrc));
+  ok('gas is sampled from the density field, not scattered evenly',
+    /sampleNebulaPoint\(/.test(skySrc));
+  ok('gas is coloured from the nebula palette', /nebulaColor\(/.test(skySrc));
+  // Gas that fails rejection sampling must vanish, not sit at the origin as
+  // a visible clump.
+  ok('unplaced gas points are fully transparent',
+    /new Color4\(0, 0, 0, 0\)/.test(skySrc));
+
   // Parallax is the entire point of layering.
   ok('each shell parallaxes differently',
     core.lock < mid.lock && mid.lock < far.lock,
