@@ -98,8 +98,37 @@ const DUST_FREQ = num(/DUST_FREQ = ([\d.]+)/);
 const DUST_SHARPNESS = num(/DUST_SHARPNESS = ([\d.]+)/);
 const DUST_CUT = num(/DUST_CUT = ([\d.]+)/);
 const DUST_THRESHOLD = num(/DUST_THRESHOLD = ([\d.]+)/);
+const NUCLEUS_RADIUS = num(/NUCLEUS_RADIUS = ([\d.]+)/);
+const NUCLEUS_FALLOFF = num(/NUCLEUS_FALLOFF = ([\d.]+)/);
+const NUCLEUS_GAIN = num(/NUCLEUS_GAIN = ([\d.]+)/);
+const NUCLEUS_FLATTEN = num(/NUCLEUS_FLATTEN = ([\d.]+)/);
+const ANOMALY_FREQ = num(/ANOMALY_FREQ = ([\d.]+)/);
+const ANOMALY_THRESHOLD = num(/ANOMALY_THRESHOLD = ([\d.]+)/);
+const ANOMALY_STRENGTH = num(/ANOMALY_STRENGTH = ([\d.]+)/);
+const ANOMALY_DENSITY = num(/ANOMALY_DENSITY = ([\d.]+)/);
 
-function galaxyDensity(px, py, pz) {
+function anomalyStrand(px, py, pz) {
+  const r = Math.hypot(px, pz), t = clamp(r / outerR, 0, 1);
+  const ang = Math.atan2(pz, px);
+  const arm = armFactor * Math.log(Math.max(r, innerR) / Math.max(innerR, 1));
+  const wave = Math.cos(ang * arms - arm * arms) * 0.5 + 0.5;
+  const gaps = Math.pow(1 - wave, 2);
+  const f = ANOMALY_FREQ / outerR;
+  const sn = fbm(px * f + 51.7, py * f + 51.7, pz * f + 51.7, 4);
+  const strand = ss(ANOMALY_THRESHOLD, 1, 1 - Math.abs(sn - 0.5) * 2);
+  const band = ss(0.05, 0.20, t) * (1 - ss(0.72, 1.05, t));
+  const h = Math.max(outerR * DISC_HEIGHT * 1.4, 1);
+  const layer = Math.exp(-(py * py) / (2 * h * h));
+  return clamp(strand * gaps * band * layer, 0, 1);
+}
+function nucleusGlare(px, py, pz) {
+  const gr = Math.hypot(px, py / NUCLEUS_FLATTEN, pz);
+  const core = Math.exp(-Math.pow(gr / Math.max(outerR * NUCLEUS_RADIUS, 1), NUCLEUS_FALLOFF));
+  const halo = Math.exp(-Math.pow(gr / Math.max(outerR * NUCLEUS_RADIUS * 3.4, 1), 1.5));
+  return core * NUCLEUS_GAIN + halo * NUCLEUS_GAIN * 0.22;
+}
+
+function galaxyDensity(px, py, pz, anomaly = 0) {
   const r = Math.hypot(px, pz);
   const rim = 1 - ss(outerR * 0.86, outerR * 1.30, r);
   if (rim <= 0) return 0;
@@ -117,7 +146,8 @@ function galaxyDensity(px, py, pz) {
   const disc = plane * radial * armMask * clump * DISC_GAIN;
   const br = Math.hypot(px, py / BULGE_FLATTEN, pz);
   const bulge = Math.exp(-Math.pow(br / Math.max(outerR * BULGE_RADIUS, 1), 1.7)) * BULGE_GAIN;
-  return clamp(disc + bulge, 0, 1);
+  const neonGas = anomaly > 0.5 ? anomalyStrand(px, py, pz) * ANOMALY_DENSITY : 0;
+  return clamp(disc + bulge + neonGas, 0, 1);
 }
 function dustAt(px, py, pz) {
   const r = Math.hypot(px, pz);
@@ -132,7 +162,7 @@ function dustAt(px, py, pz) {
   const layer = Math.exp(-(py * py) / (2 * Math.pow(outerR * 0.022, 2)));
   return Math.pow(Math.max(ridged, 0), DUST_SHARPNESS) * band * layer;
 }
-function gasColor(px, py, pz, d) {
+function gasColor(px, py, pz, d, anomaly = 0) {
   const r = Math.hypot(px, pz), t = clamp(r / outerR, 0, 1);
   const m3 = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
   const CORE = [1.00, 0.90, 0.60], DISC = [0.50, 0.64, 1.00], HALO = [0.12, 0.14, 0.40];
@@ -152,6 +182,13 @@ function gasColor(px, py, pz, d) {
       (CR[2] * w1 + TE[2] * w2 + OR[2] * w3) / wsum];
     base = m3(base, hue, ss(0, 0.55, wsum) * TINT_AMOUNT * ss(0.06, 0.34, t));
   }
+  if (anomaly > 0.5) {
+    const strand = anomalyStrand(px, py, pz);
+    const pf = 0.5 / outerR;
+    const pick = fbm(px * pf + 8.3, py * pf + 8.3, pz * pf + 8.3, 3);
+    const HA = [1.00, 0.10, 0.62], OIII = [0.05, 0.95, 0.85];
+    base = m3(base, m3(HA, OIII, ss(0.40, 0.60, pick)), clamp(strand * ANOMALY_STRENGTH, 0, 1));
+  }
   base = m3(base, base.map((v) => v * 1.22), ss(0.25, 0.95, d));
   const peak = Math.max(...base);
   if (peak > 1) base = base.map((v) => v / peak);
@@ -165,7 +202,7 @@ function galaxySpan(ro, rd, R) {
   h = Math.sqrt(h);
   return [-b - h, -b + h];
 }
-function march(camPos, dir, marchFar, satRec = SAT_REC) {
+function march(camPos, dir, marchFar, satRec = SAT_REC, anomaly = 0) {
   const R = outerR * 1.30;
   const span = galaxySpan(camPos, dir, R);
   if (span[1] < span[0]) return { col: [0, 0, 0], alpha: 0 };
@@ -176,12 +213,15 @@ function march(camPos, dir, marchFar, satRec = SAT_REC) {
   for (let i = 0; i < STEPS; i++) {
     const s = t0 + (i + 0.5) * dt;
     const p = [camPos[0] + dir[0] * s, camPos[1] + dir[1] * s, camPos[2] + dir[2] * s];
-    const d = galaxyDensity(p[0], p[1], p[2]);
+    const d = galaxyDensity(p[0], p[1], p[2], anomaly);
     if (d > 0.002) {
       const ext = (d * 0.85 + dustAt(p[0], p[1], p[2]) * 1.9) * dt * density * EXTC;
       const absorbed = 1 - Math.exp(-ext);
       const dust = dustAt(p[0], p[1], p[2]);
-      const emit = gasColor(p[0], p[1], p[2], d).map((v) => v * (1 - DUST_CUT * dust));
+      const glare = nucleusGlare(p[0], p[1], p[2]);
+      const NC = [1.00, 0.93, 0.74];
+      const emit = gasColor(p[0], p[1], p[2], d, anomaly)
+        .map((v, i) => (v + NC[i] * glare) * (1 - DUST_CUT * dust));
       for (let k = 0; k < 3; k++) acc[k] += emit[k] * trans * absorbed;
       trans *= Math.exp(-ext);
       if (trans < 0.004) break;
@@ -614,6 +654,139 @@ ok('the disc height is a fixed fraction of the galaxy, not of local radius',
   const flat = galaxyDensity(14000, 0, 0);
   ok('density falls off sharply with height',
     galaxyDensity(14000, 6000, 0) < flat * 0.5);
+}
+
+// ============================ NUCLEUS BLAZE (turn P) ============================
+{
+  ok('the nucleus glare is emission, not density',
+    /float nucleusGlare\(vec3 p\)/.test(frag));
+  ok('the glare is added to emission in the march',
+    /emit \+= NUCLEUS_COLOR \* glare;/.test(frag));
+  ok('the glare has a wider halo so it has no hard edge',
+    /float halo = exp/.test(frag));
+
+  const lum = (c) => c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722;
+  const at = (rr) => march([rr, -70000, 0], [0, 1, 0], 400000);
+  const core = at(0);
+
+  ok('the nucleus is the brightest thing in the galaxy',
+    lum(core.col) > lum(at(16000).col) && lum(core.col) > lum(at(24000).col),
+    'core ' + lum(core.col).toFixed(3));
+  ok('the nucleus is creamy gold, never blue',
+    core.col[0] >= core.col[1] && core.col[1] >= core.col[2],
+    core.col.map((v) => v.toFixed(2)).join(','));
+  ok('the nucleus still does not bleach to flat white',
+    Math.max(...core.col) <= 0.9401);
+  // Smooth ACROSS THE BULGE only. Past ~8,000 units the spiral arms start,
+  // and the jumps there are arm-to-gap contrast - the structure the last
+  // pass was built to create. Measuring out to 12,000 flagged a 0.117 step
+  // at r=10,500 that is an arm edge, not a ring around the nucleus.
+  ok('the blaze falls off smoothly rather than ending on a ring', (() => {
+    let worst = 0;
+    for (let r = 0; r < 7000; r += 250) {
+      const a1 = lum(at(r).col), b1 = lum(at(r + 250).col);
+      worst = Math.max(worst, Math.abs(a1 - b1));
+    }
+    return worst < 0.05;
+  })());
+
+  // NEGATIVE CONTROL: adding this as DENSITY instead could not work, because
+  // density is clamped to 1.0 and the bulge already saturates the centre.
+  ok('NEGATIVE CONTROL: the centre is already at max density',
+    galaxyDensity(0, 0, 0) >= 0.999,
+    'so extra density there is invisible - it had to be emission');
+
+  ok('the nucleus outshines the surrounding disc by a clear margin',
+    lum(core.col) > lum(at(24000).col) * 1.5);
+}
+
+// ======================== CLASS-C ANOMALY STRANDS (turn P) ========================
+{
+  ok('the anomaly is an overlay, not a replacement palette',
+    /float anomalyStrand\(vec3 p\)/.test(frag));
+  ok('the strands are placed in the inter-arm gaps',
+    /float gaps = pow\(1\.0 - wave, 2\.0\);/.test(frag));
+  ok('the strands carry their own gas',
+    /anomalyStrand\(p\) \* ANOMALY_DENSITY/.test(frag));
+  ok('density and colour share one strand field',
+    (frag.match(/anomalyStrand\(p\)/g) || []).length >= 2);
+
+  // The anomaly must be unmistakable when you find one.
+  let changed = 0, total = 0;
+  const magenta = [], teal = [];
+  for (const rr of [8000, 14000, 20000, 26000, 32000, 38000])
+    for (const ang of [0, 60, 120, 180, 240, 300]) {
+      const rad = ang * Math.PI / 180;
+      const p = [Math.cos(rad) * rr, -70000, Math.sin(rad) * rr];
+      const a1 = march(p, [0, 1, 0], 400000, SAT_REC, 0);
+      const b1 = march(p, [0, 1, 0], 400000, SAT_REC, 1);
+      const dd = Math.hypot(a1.col[0] - b1.col[0], a1.col[1] - b1.col[1], a1.col[2] - b1.col[2]);
+      total++;
+      if (dd > 0.03) {
+        changed++;
+        if (b1.col[0] > b1.col[1] && b1.col[2] > b1.col[1]) magenta.push(b1);
+        if (b1.col[1] > b1.col[0] && b1.col[2] > b1.col[0]) teal.push(b1);
+      }
+    }
+  ok('an anomaly galaxy looks clearly different from a photoreal one',
+    changed / total > 0.4, changed + '/' + total + ' sightlines changed');
+  ok('both H-alpha magenta and O-III teal appear',
+    magenta.length > 0 && teal.length > 0,
+    magenta.length + ' magenta, ' + teal.length + ' teal');
+
+  // Strands belong between the arms, not over them.
+  let inGap = 0, onArm = 0;
+  for (let r = 10000; r <= 40000; r += 2000)
+    for (let a2 = 0; a2 < 360; a2 += 6) {
+      const rad = a2 * Math.PI / 180;
+      const px = Math.cos(rad) * r, pz = Math.sin(rad) * r;
+      if (anomalyStrand(px, 0, pz) < 0.05) continue;
+      const arm = armFactor * Math.log(Math.max(r, innerR) / Math.max(innerR, 1));
+      if (Math.cos(rad * arms - arm * arms) * 0.5 + 0.5 < 0.5) inGap++; else onArm++;
+    }
+  ok('the strands thread between the arms rather than over them',
+    inGap > onArm * 2, inGap + ' in gaps vs ' + onArm + ' on crests');
+
+  // NEGATIVE CONTROL: recolouring alone was invisible, because the gaps
+  // carry ~17x less gas than the arm crests.
+  {
+    let hi = 0, lo = 1;
+    for (let a2 = 0; a2 < 360; a2 += 2) {
+      const rad = a2 * Math.PI / 180;
+      const d = galaxyDensity(Math.cos(rad) * 24000, 0, Math.sin(rad) * 24000);
+      hi = Math.max(hi, d); lo = Math.min(lo, d);
+    }
+    ok('NEGATIVE CONTROL: the gaps are far too thin to merely tint',
+      hi / Math.max(lo, 1e-6) > 8,
+      'arm/gap density ratio ' + (hi / Math.max(lo, 1e-6)).toFixed(1) + 'x');
+  }
+
+  // The nucleus is never neon: a rare galaxy is still a galaxy.
+  const n0 = march([0, -70000, 0], [0, 1, 0], 400000, SAT_REC, 0);
+  const n1 = march([0, -70000, 0], [0, 1, 0], 400000, SAT_REC, 1);
+  ok('an anomaly keeps its gold nucleus',
+    Math.hypot(n0.col[0] - n1.col[0], n0.col[1] - n1.col[1], n0.col[2] - n1.col[2]) < 0.02);
+  ok('an anomaly keeps the photoreal spiral structure',
+    /Photoreal is now the ONLY base layout/.test(frag));
+}
+
+// ==================== THE ANOMALY IS REACHABLE (turn P) ====================
+{
+  const field = fs.readFileSync('src/bjs/systems/GalaxyField.ts', 'utf8');
+  ok('the fog adopts the galaxy the player is actually inside',
+    /const host = nearestGalaxy\(eye\.x, eye\.y, eye\.z\)/.test(field));
+  ok('its class drives the anomaly uniform',
+    /setFloat\('anomaly', klass === 'anomaly' \? 1 : 0\)/.test(field));
+  ok('the uniform is only rewritten when it changes',
+    /if \(klass !== this\.fogClass\)/.test(field));
+  ok('intergalactic space falls back to the home look',
+    /inHost \? host\.galaxy\.klass : HOME_CLASS/.test(field));
+
+  // Nucleus stars must dissolve into the glow rather than sit on top of it.
+  ok('the innermost stars merge into the volumetric nucleus',
+    /NUCLEUS_MERGE_INNER/.test(field) && /NUCLEUS_MERGE_OUTER/.test(field));
+  ok('the merge is a ramp, so there is no hard edge',
+    /smoothstep01\(NUCLEUS_MERGE_INNER, NUCLEUS_MERGE_OUTER, rc\)/.test(field));
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

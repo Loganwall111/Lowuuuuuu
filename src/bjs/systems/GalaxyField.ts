@@ -171,6 +171,14 @@ export const FIELD_GALAXY: GalaxyConfig = {
 export const GALAXY_CENTER: [number, number, number] =
   [-observerPosition(FIELD_GALAXY)[0], 0, 0];
 
+/**
+ * Inside this radius, individual stars are fully dissolved into the
+ * volumetric nucleus. Galaxy-local units.
+ */
+export const NUCLEUS_MERGE_INNER = 700;
+/** Past this radius stars are drawn at full strength again. */
+export const NUCLEUS_MERGE_OUTER = 2600;
+
 /** Smoothstep on a 0-1 result, used for occlusion ramps. */
 export function smoothstep01(edge0: number, edge1: number, x: number): number {
   const d = edge1 - edge0;
@@ -242,6 +250,8 @@ export class GalaxyField {
   /** The volumetric fog shell and its material. */
   private fogMesh: Mesh | null = null;
   private fogMat: ShaderMaterial | null = null;
+  /** Class of the galaxy the fog volume is currently representing. */
+  private fogClass: string = HOME_CLASS;
   private fogTime = 0;
   private meshes: Mesh[] = [];
   private built = false;
@@ -327,6 +337,24 @@ export class GalaxyField {
           : st.kind === 'halo'
             ? new Color4(0.86 * b, 0.88 * b, 1.0 * b, 1)
             : new Color4(0.78 * b + 0.2, 0.86 * b + 0.12, 1.0, 1);
+
+        // ---- THE NUCLEUS IS A GLOW, NOT A PILE OF DOTS ----
+        //
+        // 4,726 of the 30,000 stars land within 2,000 units of the centre.
+        // Drawn as individual 2px sprites that reads as a loose scatter of
+        // yellow specks sitting ON TOP of the fog's bulge, which is exactly
+        // the "dim collection of dots" in the report - and no amount of
+        // work on the fog could fix it, because the sprites draw over it.
+        //
+        // Real telescope imagery cannot resolve individual stars in a
+        // galactic bulge either; they blend into continuous light. So the
+        // innermost stars are faded out and the volumetric nucleus is left
+        // to supply the light there. They are faded rather than removed so
+        // there is no hard edge where the point cloud stops.
+        const rc = Math.hypot(st.x, st.y, st.z);
+        const merge = smoothstep01(NUCLEUS_MERGE_INNER, NUCLEUS_MERGE_OUTER, rc);
+        c.a *= merge;
+        c.r *= merge; c.g *= merge; c.b *= merge;
         p.color = c;
       });
       const starMesh = await stars.buildMeshAsync();
@@ -783,10 +811,34 @@ export class GalaxyField {
       this.fogTime += 1 / 60;
       try {
         this.fogMesh.position.copyFrom(eye);
-        this.fogMat.setVector3('camPos', new Vector3(
-          eye.x - GALAXY_CENTER[0],
-          eye.y - GALAXY_CENTER[1],
-          eye.z - GALAXY_CENTER[2]));
+
+        // ---- WHICH GALAXY IS THIS FOG? ----
+        //
+        // The shell used to be hardwired to the home galaxy, which made the
+        // rare anomaly class unreachable: only one fog volume is ever built,
+        // its class came from the HOME_CLASS constant, and that constant is
+        // photoreal. A player could fly to a Class-C cell for as long as
+        // they liked and still see the standard palette, so the "legendary
+        // find" did not exist in the fog at all.
+        //
+        // The volume now adopts whichever lattice galaxy the player is
+        // actually inside, falling back to home out in intergalactic space.
+        const host = nearestGalaxy(eye.x, eye.y, eye.z);
+        const inHost = host && host.distance < host.galaxy.radius * 1.3;
+
+        const cx = inHost ? host.galaxy.x : GALAXY_CENTER[0];
+        const cy = inHost ? host.galaxy.y : GALAXY_CENTER[1];
+        const cz = inHost ? host.galaxy.z : GALAXY_CENTER[2];
+        const klass = inHost ? host.galaxy.klass : HOME_CLASS;
+
+        this.fogMat.setVector3('camPos',
+          new Vector3(eye.x - cx, eye.y - cy, eye.z - cz));
+        // Only pushed when it changes: a uniform write per frame is cheap,
+        // but a needless one on every galaxy is still waste.
+        if (klass !== this.fogClass) {
+          this.fogClass = klass;
+          this.fogMat.setFloat('anomaly', klass === 'anomaly' ? 1 : 0);
+        }
         this.fogMat.setFloat('time', this.fogTime);
       } catch { /* disposed mid-frame */ }
     }

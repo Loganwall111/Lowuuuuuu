@@ -122,6 +122,26 @@ const float DUST_CUT = 0.88;
  */
 const float DUST_THRESHOLD = 0.95;
 
+/** Extent of the blazing nucleus, as a fraction of galaxy radius. */
+const float NUCLEUS_RADIUS = 0.028;
+/** How fast the blaze falls off. Higher = tighter, hotter core. */
+const float NUCLEUS_FALLOFF = 1.9;
+/** Emission strength of the nucleus. */
+const float NUCLEUS_GAIN = 7.5;
+/** Vertical squash of the nucleus. */
+const float NUCLEUS_FLATTEN = 0.78;
+/** Colour of the blaze: creamy gold running to white at the very centre. */
+const vec3 NUCLEUS_COLOR = vec3(1.00, 0.93, 0.74);
+
+/** Spatial frequency of the rare anomaly strands. */
+const float ANOMALY_FREQ = 5.5;
+/** Ridge cut for the strands, same reasoning as the dust threshold. */
+const float ANOMALY_THRESHOLD = 0.80;
+/** How strongly the neon overrides the photoreal base where it falls. */
+const float ANOMALY_STRENGTH = 0.95;
+/** How much gas the strands themselves contribute. */
+const float ANOMALY_DENSITY = 1.10;
+
 // ---------------------------------------------------------------- noise
 
 vec3 hash33(vec3 p){
@@ -227,7 +247,67 @@ float galaxyDensity(vec3 p){
   float br = length(vec3(p.x, p.y / BULGE_FLATTEN, p.z));
   float bulge = exp(-pow(br / max(outerR * BULGE_RADIUS, 1.0), 1.7)) * BULGE_GAIN;
 
-  return clamp(disc + bulge, 0.0, 1.0);
+  // A Class-C anomaly's strands carry their OWN gas.
+  //
+  // Recolouring the gaps alone did nothing visible: the inter-arm gaps are
+  // 17x thinner than the arm crests, so tinting them painted colour onto
+  // almost no medium and the "legendary find" was invisible. The strands
+  // therefore ADD density where they fall, which is also physically right -
+  // they are meant to be glowing gas threaded between the arms, not a
+  // filter over empty space.
+  float neonGas = anomaly > 0.5 ? anomalyStrand(p) * ANOMALY_DENSITY : 0.0;
+
+  return clamp(disc + bulge + neonGas, 0.0, 1.0);
+}
+
+/**
+ * Nucleus glare: the blaze at the dead centre of the galaxy.
+ *
+ * Kept OUT of galaxyDensity on purpose. Density is clamped to 1.0, so once
+ * the bulge saturates - which it did, flat, out to 6,000 units - piling
+ * more density on cannot make the centre any brighter and only flattens it
+ * into a featureless white pad. Emission is not clamped, so the glare is
+ * added as light instead: it can blaze at the very middle and fall off
+ * smoothly without ever pinning the density field.
+ *
+ * Returned separately so the march can add it as pure emission that the
+ * dust lanes still absorb, which is what makes the nucleus appear to
+ * illuminate the lanes crossing in front of it.
+ */
+/**
+ * The rare Class-C anomaly's strand field: 1 inside a neon filament, 0
+ * outside. Shared by the density and the colour so the two cannot drift
+ * apart and leave coloured gas where there is no gas, or vice versa.
+ *
+ * Placed in the inter-arm GAPS by inverting the arm mask, so the strands
+ * thread between the spiral tracks instead of covering them.
+ */
+float anomalyStrand(vec3 p){
+  float r = length(p.xz);
+  float t = clamp(r / max(outerR, 1.0), 0.0, 1.0);
+  float ang = atan(p.z, p.x);
+  float arm = armFactor * log(max(r, innerR) / max(innerR, 1.0));
+  float wave = cos(ang * arms - arm * arms) * 0.5 + 0.5;
+  float gaps = pow(1.0 - wave, 2.0);
+
+  vec3 sq = p * (ANOMALY_FREQ / max(outerR, 1.0));
+  float sn = fbm(sq + 51.7, 4);
+  float strand = smoothstep(ANOMALY_THRESHOLD, 1.0, 1.0 - abs(sn - 0.5) * 2.0);
+
+  // Confined to the disc plane and kept off the nucleus.
+  float band = smoothstep(0.05, 0.20, t) * (1.0 - smoothstep(0.72, 1.05, t));
+  float h = max(outerR * DISC_HEIGHT * 1.4, 1.0);
+  float layer = exp(-(p.y * p.y) / (2.0 * h * h));
+  return clamp(strand * gaps * band * layer, 0.0, 1.0);
+}
+
+float nucleusGlare(vec3 p){
+  float gr = length(vec3(p.x, p.y / NUCLEUS_FLATTEN, p.z));
+  float core = exp(-pow(gr / max(outerR * NUCLEUS_RADIUS, 1.0), NUCLEUS_FALLOFF));
+  // A wider, fainter halo around the blaze so it fades into the bulge
+  // rather than ending on a visible edge.
+  float halo = exp(-pow(gr / max(outerR * NUCLEUS_RADIUS * 3.4, 1.0), 1.5));
+  return core * NUCLEUS_GAIN + halo * NUCLEUS_GAIN * 0.22;
 }
 
 /** Dark dust: ridged filaments that absorb rather than glow. */
@@ -287,17 +367,16 @@ vec3 gasColor(vec3 p, float d){
   float t = clamp(r / max(outerR, 1.0), 0.0, 1.0);
 
   vec3 base;
-  if (anomaly > 0.5) {
-    // The rare neon galaxy: hard magenta / teal emission.
-    vec3 HA   = vec3(0.95, 0.13, 0.42);
-    vec3 OIII = vec3(0.10, 0.88, 0.80);
-    float sel = fbm(p * (2.6 / max(outerR, 1.0)) + 19.4, 4);
-    base = mix(HA, OIII, smoothstep(0.42, 0.62, sel));
-  } else {
-    // Photoreal: brilliant creamy gold core, cooling outward to blue-white
-    // and finally to a deep indigo halo.
-    // Brilliant creamy solar gold at the bulge, cooling through blue-white
-    // to a deep indigo halo - the Andromeda ramp.
+  {
+    // Photoreal is now the ONLY base layout, for every galaxy including the
+    // anomalies. Brilliant creamy solar gold at the bulge, cooling through
+    // blue-white to a deep indigo halo - the Andromeda ramp.
+    //
+    // The anomaly used to REPLACE this entirely with flat neon, which threw
+    // away the spiral structure and the gold core that took this long to
+    // get right. It is now an overlay woven between the arms instead, so a
+    // rare galaxy is a recognisable galaxy wearing something extraordinary
+    // rather than a different object.
     vec3 CORE = vec3(1.00, 0.90, 0.60);
     vec3 DISC = vec3(0.50, 0.64, 1.00);
     vec3 HALO = vec3(0.12, 0.14, 0.40);
@@ -343,6 +422,26 @@ vec3 gasColor(vec3 p, float d){
       float armsOnly = smoothstep(0.06, 0.34, t);
       base = mix(base, hue, smoothstep(0.0, 0.55, wsum) * TINT_AMOUNT * armsOnly);
     }
+  }
+
+  // ---- RARE CLASS-C ANOMALY: NEON STRANDS BETWEEN THE ARMS ----
+  //
+  // Woven into the GAPS, not painted over the whole galaxy. The inter-arm
+  // regions are where the arm mask is weakest, so recomputing it here and
+  // inverting it puts the strands exactly in the dark lanes between the
+  // spiral tracks - which is what makes them read as something threaded
+  // through the galaxy rather than a recolour of it.
+  if (anomaly > 0.5) {
+    // Exactly the field the density used, so the colour lands on the gas
+    // the strands actually created.
+    float strand = anomalyStrand(p);
+    // Which line is glowing here: H-alpha magenta or O-III teal, chosen by
+    // its own low-frequency field so the two separate into regions.
+    float pick = fbm(p * (0.5 / max(outerR, 1.0)) + 8.3, 3);
+    vec3 HA   = vec3(1.00, 0.10, 0.62);
+    vec3 OIII = vec3(0.05, 0.95, 0.85);
+    vec3 neon = mix(HA, OIII, smoothstep(0.40, 0.60, pick));
+    base = mix(base, neon, clamp(strand * ANOMALY_STRENGTH, 0.0, 1.0));
   }
 
   // Denser gas is hotter, but it must NEVER be pushed toward white.
@@ -449,6 +548,12 @@ void main(void) {
       // double-counting is what let the core stack toward pure white.
       float absorbed = 1.0 - exp(-ext);
       vec3 emit = gasColor(pos, d);
+
+      // The nucleus blaze is emission, not density: it is added to the
+      // light leaving this sample so it can out-shine everything without
+      // saturating the medium.
+      float glare = nucleusGlare(pos);
+      emit += NUCLEUS_COLOR * glare;
 
       // DUST CARVES THE GAS.
       //
