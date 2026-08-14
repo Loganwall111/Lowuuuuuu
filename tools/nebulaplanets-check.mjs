@@ -205,8 +205,8 @@ ok('and they do not blow out into the magenta smear', now.sat < 0.2,
     exposed.lit.toFixed(2) + '%');
 }
 
-ok('the pink-glitch reasoning is still recorded for future edits',
-  /THE PINK GLITCH/.test(field));
+ok('the reason sprites were abandoned is recorded for future edits',
+  /THE GAS IS NO LONGER PARTICLES/.test(field));
 
 console.log('\n--- 2b. every OTHER galaxy has coloured gas inside it too ---');
 

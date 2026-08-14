@@ -456,12 +456,79 @@ export function photorealColor(
  * One entry point so no call site has to know which look is in play.
  */
 export function galaxyGasColor(
-  klass: 'photoreal' | 'anomaly',
+  klass: 'photoreal' | 'elliptical' | 'anomaly',
   density: number, x: number, y: number, z: number, cfg: GalaxyConfig = MILKY_WAY
 ): [number, number, number] {
-  return klass === 'anomaly'
-    ? nebulaColor(density, x, y, z, cfg)
-    : photorealColor(density, x, y, z, cfg);
+  if (klass === 'anomaly') return nebulaColor(density, x, y, z, cfg);
+  if (klass === 'elliptical') return ellipticalColor(density, x, y, z, cfg);
+  return photorealColor(density, x, y, z, cfg);
+}
+
+/**
+ * Colour for an elliptical galaxy.
+ *
+ * Ellipticals are "red and dead": star formation finished billions of
+ * years ago, so the blue giants are long gone and what is left is old
+ * cool population-II stars. That means no blue outer disc and no bright
+ * young knots - just a warm amber core fading to dim dust-free rust.
+ *
+ * Deliberately smooth. The spiral palette earns its structure from dust
+ * lanes, and an elliptical has essentially none, so reusing it would
+ * paint arms onto a galaxy that has no arms.
+ */
+export function ellipticalColor(
+  density: number, x: number, y: number, z: number, cfg: GalaxyConfig = MILKY_WAY
+): [number, number, number] {
+  const r = Math.sqrt(x * x + y * y + z * z);
+  const t = Math.min(1, r / Math.max(cfg.outerBound, 1e-3));
+  // Warm core -> muted rust halo. No blue anywhere in the ramp.
+  const CORE: [number, number, number] = [1.00, 0.88, 0.66];
+  const HALO: [number, number, number] = [0.42, 0.26, 0.22];
+  const k = Math.pow(t, 0.8);
+  const d = Math.max(0, Math.min(1, density));
+  // Smooth central concentration: ellipticals are brightest dead centre
+  // and fall off monotonically, with no disc plateau.
+  const b = Math.pow(d, 0.7) * (0.30 + 0.70 * Math.pow(1 - t, 1.7));
+  return [
+    (CORE[0] + (HALO[0] - CORE[0]) * k) * b,
+    (CORE[1] + (HALO[1] - CORE[1]) * k) * b,
+    (CORE[2] + (HALO[2] - CORE[2]) * k) * b
+  ];
+}
+
+/**
+ * A star in an elliptical galaxy: a 3D Gaussian ellipsoid, not a disc.
+ *
+ * Three independent normal draws give a genuine triaxial swarm. Squashing
+ * a spiral's disc would keep the arms, which is exactly the structure an
+ * elliptical does not have.
+ */
+export function ellipticalStar(
+  rand: () => number, cfg: GalaxyConfig = MILKY_WAY
+): GalaxyStar {
+  // Box-Muller, reused three times for the three axes.
+  const gauss = (): number => {
+    const u = Math.max(1e-9, rand());
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rand());
+  };
+  // sigma set so ~3 sigma reaches the galaxy's outer bound.
+  const sx = cfg.outerBound * 0.32;
+  const sy = cfg.outerBound * 0.32 * 0.62;   // triaxial: flattened
+  const sz = cfg.outerBound * 0.32 * 0.84;
+  let x = gauss() * sx, y = gauss() * sy, z = gauss() * sz;
+  const rr = Math.sqrt(x * x + y * y + z * z);
+  const lim = cfg.outerBound;
+  if (rr > lim) { const f = lim / rr; x *= f; y *= f; z *= f; }
+  const t = Math.min(1, Math.sqrt(x * x + y * y + z * z) / lim);
+  return {
+    x, y, z,
+    // StarClass is positional, not spectral. An elliptical has no arms at
+    // all, so every star is either bulge or halo, split by where this one
+    // actually landed rather than by a coin flip.
+    kind: t < 0.35 ? 'bulge' : 'halo',
+    // Smooth central concentration, brightest dead centre.
+    bright: Math.max(0.05, Math.pow(1 - t, 1.7))
+  };
 }
 
 /**

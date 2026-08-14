@@ -32,6 +32,7 @@ import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 import { ImpactorSystem, type ImpactTarget } from '../systems/ImpactorSystem';
 import { THROWABLES, throwableById } from '../systems/ThrowableSystem';
 import { SettlerSystem } from '../systems/SettlerSystem';
+import { AsteroidBeltSystem } from '../systems/AsteroidBelts';
 
 /* --------------------------- planet shader --------------------------- */
 
@@ -385,7 +386,35 @@ export function planetsForCell(ix: number, iy: number, iz: number): PlanetCfg[] 
 }
 
 /** The system at the origin cell, which is where the planetary world opens. */
-const PLANETS: PlanetCfg[] = planetsForCell(0, 0, 0);
+/**
+ * The home system.
+ *
+ * Generated from the origin cell like every other system, then its
+ * habitable world is replaced with a proper Earth: deep blue oceans, green
+ * and tan continents, heavy white cloud. The player should recognise home
+ * the moment they see it, rather than it being one more procedural terra.
+ */
+const PLANETS: PlanetCfg[] = (() => {
+  const gen = planetsForCell(0, 0, 0);
+  const i = gen.findIndex((q) => q.inhabited);
+  if (i >= 0) {
+    gen[i] = {
+      ...gen[i],
+      name: 'Earth',
+      r: 1.15,
+      type: PlanetKind.Terran,
+      // Ocean blue against continental green; the shader mixes between
+      // them by landmass, so these two are what give Earth its colour.
+      a: [0.06, 0.22, 0.52],
+      b: [0.24, 0.44, 0.18],
+      atmo: [0.35, 0.58, 1.00],
+      clouds: 0.85,
+      lights: 1.0,
+      moons: 1
+    };
+  }
+  return gen;
+})();
 
 /** The habitable world is the yardstick for mass, whatever it is called. */
 const EARTH_VISUAL_R = (PLANETS.find((q) => q.inhabited) ?? PLANETS[0]).r;
@@ -420,17 +449,22 @@ export class PlanetaryWorld implements World {
   private starMat!: ShaderMaterial;
   private light!: PointLight;
   private stars!: Mesh;
+  private belts = new AsteroidBeltSystem();
   private t = 0;
 
   private p = { timeScale: 1.0, detail: 1.0, clouds: 1.0, lights: 1.0, exposure: 1.0, orbitSpeed: 1.0 };
 
   async build(ctx: WorldContext): Promise<void> {
     const scene = ctx.scene;
-    scene.clearColor = new Color4(0.002, 0.004, 0.012, 1);
+    // INK-BLACK VACUUM. All the colour in ordinary space comes from the
+    // galaxy fog volume, never from the clear colour - lifting this to fake
+    // a "space blue" washes the whole frame and buries the faint stars.
+    scene.clearColor = new Color4(0, 0, 0, 1);
 
     // Throwing things is core to this place, so the impactor is attached
     // for the lifetime of the world rather than spun up on first use.
     this.settlers.attach(scene);
+    this.belts.attach(scene);
 
     this.impactor.attach(scene, (e) => {
       this.lastImpactNote =
@@ -549,6 +583,44 @@ export class PlanetaryWorld implements World {
     glare.billboardMode = 7;   // always faces the camera
     (this as any)._glareMat = gm;
     (this as any)._glare = glare;
+
+    // ---- asteroid belts ----
+    // One main belt in the gap between the inner worlds and the first gas
+    // giant, which is where a real belt forms: close enough for debris to
+    // survive, far enough that the giant's resonances stopped a planet
+    // from ever accreting there.
+    {
+      // Find the widest gap between consecutive orbits and put the belt
+      // there. Keying off "the first gas giant" was wrong: the generator
+      // is free to put a giant in the innermost slot, in which case the
+      // supposed inner worlds all orbit OUTSIDE it and the gap inverts to
+      // nothing, which is why no belt was being created at all.
+      const sorted = [...PLANETS].sort((p1, p2) => p1.orbit - p2.orbit);
+      let lastInner = sorted.length ? sorted[0].orbit : 40;
+      let gapOuter = lastInner * 1.8;
+      let widest = 0;
+      for (let i = 1; i < sorted.length; i++) {
+        const gap = sorted[i].orbit - sorted[i - 1].orbit;
+        if (gap > widest) {
+          widest = gap;
+          lastInner = sorted[i - 1].orbit;
+          gapOuter = sorted[i].orbit;
+        }
+      }
+      if (gapOuter > lastInner * 1.15) {
+        this.belts.add({
+          centre: Vector3.Zero(),
+          inner: lastInner * 1.12,
+          outer: gapOuter * 0.86,
+          count: 1100,
+          thickness: 0.9,
+          // Tuned so the belt's period reads as motion without spinning
+          // like a fan; the SHAPE of the curve is what matters.
+          mu: 260,
+          seed: 0x5eed1
+        });
+      }
+    }
 
     this.light = new PointLight('sunLight', Vector3.Zero(), scene);
     this.light.intensity = 2.2;
@@ -744,6 +816,7 @@ export class PlanetaryWorld implements World {
     // Projectiles fly under the gravity of every planet at once, so a throw
     // can be slung around one world into another.
     this.impactor.update(dt * Math.max(0.05, this.p.timeScale), this.targets());
+    this.belts.update(dt * Math.max(0.05, this.p.timeScale));
 
     // The inhabited world carries its people with it as it orbits, so they
     // stay on the ground rather than being left behind in empty space.
@@ -863,6 +936,7 @@ export class PlanetaryWorld implements World {
   dispose(): void {
     this.impactor.dispose();
     this.settlers.dispose();
+    this.belts.detach();
     this.bodies.forEach((b) => { b.root.dispose(false, true); b.mat.dispose(); });
     this.bodies = [];
     this.star?.dispose();

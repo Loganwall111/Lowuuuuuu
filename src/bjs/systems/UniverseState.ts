@@ -64,6 +64,8 @@ export interface Region {
   data?: Record<string, number | string | boolean>;
   /** Whether the player created this, so it can be deleted or moved. */
   playerMade?: boolean;
+  /** True for the one supermassive hole at a galaxy's centre. */
+  galacticCore?: boolean;
 }
 
 export interface UniverseOptions {
@@ -124,6 +126,8 @@ export class UniverseState {
   insideHorizon: Region | null = null;
   /** Where the player was last frame, for swept collision tests. */
   readonly lastPlayerPos = new Vector3();
+  /** False until the first updatePlayer, so frame one has no phantom sweep. */
+  private playerStarted = false;
   horizonDepth = 0;
 
   private seq = 0;
@@ -177,10 +181,16 @@ export class UniverseState {
           ix * spacing + (rng() - 0.5) * spacing * 0.6,
           (rng() - 0.5) * spacing * 0.35,
           iz * spacing + (rng() - 0.5) * spacing * 0.6);
+        // SINGULARITIES BELONG AT GALACTIC CENTRES.
+        //
+        // Black holes used to be scattered across this lattice at 16% of
+        // occupied cells, which put them adrift in empty intergalactic
+        // space with nothing around them. Real supermassive holes sit at
+        // the centre of a galaxy, so that is the only place the lattice
+        // may create one; addGalaxy() places the hole at its own core.
         const roll = rng();
-        if (roll < 0.62) this.addStarSystem(p, rng);
-        else if (roll < 0.78) this.addBlackHole(p, rng);
-        else if (roll < 0.9) this.addNebula(p, rng);
+        if (roll < 0.68) this.addStarSystem(p, rng);
+        else if (roll < 0.86) this.addNebula(p, rng);
         else this.addGalaxy(p, rng);
       }
     }
@@ -238,8 +248,14 @@ export class UniverseState {
 
     if (!near('ocean', 900)) place('ocean', 'Home II', '🌊', 260, 34);
     if (!near('terrain', 900)) place('terrain', 'Home III', '⛰', 400, 30);
+    // The player must always have a black hole within reach, or the whole
+    // singularity half of the game is gated behind a long random search.
+    // But a lone hole floating in empty space is exactly the "random
+    // sparkle" being removed, so this one is given the galaxy it deserves:
+    // addGalaxy places a supermassive core at its own centre, which
+    // satisfies both rules at once.
     if (!near('blackhole', 4200)) {
-      this.addBlackHole(home.position.add(new Vector3(
+      this.addGalaxy(home.position.add(new Vector3(
         (rng() - 0.5) * 600, 0, -2600 - rng() * 600)), rng);
     }
   }
@@ -336,6 +352,13 @@ export class UniverseState {
       seed: Math.floor(rng() * 0xffffffff) >>> 0
     };
     this.regions.push(r);
+    // Every galaxy has one supermassive singularity at its exact centre.
+    // This is the ONLY way space itself creates a black hole; the player
+    // can still place their own anywhere via spawnBlackHole().
+    const core = this.addBlackHole(at.clone(), rng);
+    core.name = r.name.replace(' Galaxy', '') + ' Core';
+    core.mass = 60000 + rng() * 90000;
+    core.galacticCore = true;
     return r;
   }
 
@@ -441,6 +464,19 @@ export class UniverseState {
   updatePlayer(pos: Vector3): Region | null {
     // Keep the previous position before overwriting it: the horizon test
     // below needs the segment travelled, not just where we ended up.
+    //
+    // On the FIRST call there is no previous position - playerPos is still
+    // the zero vector - so the "segment travelled" would be a line from the
+    // world origin to wherever the player actually is. That line can pass
+    // straight through a black hole the player is nowhere near, and the
+    // swept test would report them as already inside its horizon on frame
+    // one. Seeding both endpoints to the true starting position makes the
+    // first step a zero-length segment, which can only ever be inside a
+    // horizon the player genuinely is inside.
+    if (!this.playerStarted) {
+      this.playerStarted = true;
+      this.playerPos.copyFrom(pos);
+    }
     this.lastPlayerPos.copyFrom(this.playerPos);
     this.playerPos.copyFrom(pos);
     const inside = this.containing(pos);

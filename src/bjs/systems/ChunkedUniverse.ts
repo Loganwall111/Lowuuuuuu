@@ -252,21 +252,36 @@ export function generateChunk(
       origin.z + rng() * chunkSize);
 
     // What kind of thing it is depends on how crowded the neighbourhood is:
-    // galaxies cluster in dense regions, lone black holes haunt the voids.
+    // Galaxies cluster in dense regions. Black holes are NOT scattered
+    // through the void any more - a supermassive singularity belongs at the
+    // centre of a galaxy, so 'galaxy' carries one implicitly and the loose
+    // 'blackhole' rolls are gone. This is what stopped holes appearing as
+    // random sparkles in otherwise empty intergalactic space.
     const roll = rng();
     let kind: RegionKind;
     if (field > 0.72) {
-      kind = roll < 0.34 ? 'galaxy' : roll < 0.58 ? 'nebula'
-        : roll < 0.86 ? 'star-system' : 'blackhole';
+      kind = roll < 0.38 ? 'galaxy' : roll < 0.64 ? 'nebula' : 'star-system';
     } else if (field > 0.34) {
-      kind = roll < 0.56 ? 'star-system' : roll < 0.72 ? 'nebula'
-        : roll < 0.88 ? 'planet' : 'blackhole';
+      kind = roll < 0.58 ? 'star-system' : roll < 0.76 ? 'nebula' : 'planet';
     } else {
-      kind = roll < 0.48 ? 'star-system' : roll < 0.66 ? 'planet'
-        : roll < 0.82 ? 'ocean' : roll < 0.93 ? 'terrain' : 'blackhole';
+      kind = roll < 0.50 ? 'star-system' : roll < 0.70 ? 'planet'
+        : roll < 0.86 ? 'ocean' : 'terrain';
     }
 
-    regions.push(makeRegion(kind, pos, rng, cx, cy, cz, i));
+    const made = makeRegion(kind, pos, rng, cx, cy, cz, i);
+    regions.push(made);
+
+    // A streamed galaxy gets its central singularity too, so the rule
+    // "every galaxy has a core, and only galaxies have one" holds in the
+    // infinite generated space as well as in the authored core.
+    if (kind === 'galaxy') {
+      const core = makeRegion('blackhole', pos.clone(), rng, cx, cy, cz,
+        i * 977 + 5);
+      core.name = made.name.replace(' Galaxy', '') + ' Core';
+      core.mass = 60000 + rng() * 90000;
+      core.galacticCore = true;
+      regions.push(core);
+    }
   }
 
   return { key: chunkKey(cx, cy, cz), coord: { cx, cy, cz }, regions };

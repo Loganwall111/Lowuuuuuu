@@ -410,7 +410,14 @@ export class App {
 
     this.shell.progress(35, 'creating scene');
     this.scene = new Scene(this.engine);
-    this.scene.clearColor = new Color4(0.004, 0.006, 0.014, 1);
+    // INK-BLACK VACUUM.
+    //
+    // Deep intergalactic space is a true light-swallowing black, so distant
+    // galaxies read against maximum contrast. The blue you see near the
+    // Milky Way is NOT the clear colour - it comes from the fog volume,
+    // which is where all the colour in space belongs. Lifting the clear
+    // colour to fake it washes the whole sky and buries the faint stars.
+    this.scene.clearColor = new Color4(0, 0, 0, 1);
     this.scene.skipPointerMovePicking = true;
 
     this.warp = new WarpSystem(this.scene);
@@ -634,11 +641,11 @@ export class App {
       // to. The nebular gas in LayeredSky supplies that colour now, with
       // clouds and gaps, so this only has to keep the void from being an
       // absolute black rectangle and then get out of the way.
+      // The wall glow still shows which universe you left, but the floor is
+      // now true black: the fog volume carries every bit of colour in
+      // ordinary space, so the clear colour no longer has to fake any.
       this.scene.clearColor = new Color4(
-        verse.tint[0] * 0.05 + w * 0.05,
-        verse.tint[1] * 0.05 + w * 0.06,
-        verse.tint[2] * 0.06 + w * 0.10,
-        1);
+        w * 0.05, w * 0.05, w * 0.06, 1);
     }
 
     // Entering The Nothing carries you into the next verse.
@@ -1189,6 +1196,25 @@ export class App {
         // Hold forward and the drive spools up, without limit. This is what
         // makes the map crossable: at cruise the far side of the universe is
         // hours away, and under warp it is seconds.
+        // Before reading the drive, tell it how close the nearest solid
+        // body is. At 90,000x the ship covers ~142,000 units a frame and a
+        // planet is tens of units across, so arriving anywhere is
+        // impossible without an approach brake - you are always either far
+        // away or already past it. The brake scales the multiplier, never
+        // the position, so the player is decelerated rather than shoved.
+        {
+          const eyeW = this.vehicle.position;
+          let nearest = Infinity;
+          for (const r of this.universe.activeRegions(eyeW, 12)) {
+            if (r.kind === 'blackhole' || r.kind === 'galaxy') continue;
+            const surf = r.surfaceRadius ?? 0;
+            const d = Vector3.Distance(eyeW, r.position) - surf;
+            if (d < nearest) nearest = d;
+          }
+          this.warpDrive.setApproach(
+            Number.isFinite(nearest) ? Math.max(0, nearest) : Infinity);
+        }
+
         const warping = this.warpDrive.update(dt, input.forward > 0.5);
         this.thrusting = input.forward > 0.5;
 
@@ -1558,6 +1584,8 @@ export class App {
         const t = scaleState.tier;
         // Same reasoning as the verse tint above: the gas carries the
         // colour, the clear colour only keeps the void off pure black.
+        // Inside a descent the tint IS the medium you are falling through,
+        // so it stays - this is not empty space.
         this.scene.clearColor = new Color4(
           t.tint[0] * 0.05, t.tint[1] * 0.05, t.tint[2] * 0.06, 1);
         this.shell.toast(
@@ -1737,12 +1765,15 @@ export class App {
           console.warn('[black screen] stripping post-processing and retrying');
           try { this.lensfx.detach(); } catch { /* already gone */ }
           try { this.postfx.detach(); } catch { /* already gone */ }
-          // Guarantee the clear colour itself is not black, so even an
-          // empty scene shows something.
+          // Do NOT lift the clear colour here any more. Deep space is
+          // deliberately pure black now, so a black clear colour is the
+          // correct state rather than evidence of a fault - overriding it
+          // would paint a permanent blue-grey wash over the void the first
+          // time this guard ever fired. Recovery is stripping the post
+          // chain; if the galaxy still draws nothing after that, the fault
+          // is upstream of the clear colour anyway.
           const c = this.scene.clearColor;
-          if (c.r + c.g + c.b < 0.02) {
-            this.scene.clearColor = new Color4(0.05, 0.07, 0.13, 1);
-          }
+          if (c.a < 0.99) this.scene.clearColor = new Color4(c.r, c.g, c.b, 1);
           this.shell.toast('Recovering from a black frame - post-processing disabled');
           // Reset the streak and let the in-frame sampler judge the result.
           // Re-checking from a timer would read the composited buffer and

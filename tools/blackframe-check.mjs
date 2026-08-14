@@ -90,8 +90,16 @@ ok('recovery only fires on a genuinely black frame',
    /report\.luminance <= 0\.0001/.test(app));
 ok('recovery is attempted only once',
    /this\.blackScreenRecoveryTried = true/.test(app));
-ok('a black clear colour is replaced during recovery',
-   /clearColor\.r \+|c\.r \+ c\.g \+ c\.b/.test(app));
+// This used to assert that recovery REPLACES a black clear colour with a
+// visible one. Deep space is now deliberately pure black - that is the
+// requested look, not a fault - so lifting it on the first false positive
+// would paint a permanent blue-grey wash across the void. The invariant
+// that still matters is that recovery never leaves a transparent clear
+// colour, which really would compose as a broken frame.
+ok('recovery never leaves a transparent clear colour',
+   /c\.a < 0\.99/.test(app));
+ok('recovery no longer overrides an intentionally black void',
+   !/clearColor = new Color4\(0\.05, 0\.07, 0\.13, 1\)/.test(app));
 ok('the frame is re-checked after recovery',
    /checkForBlackScreen\(\)/.test(app) && /setTimeout/.test(app));
 ok('the user is told recovery happened',

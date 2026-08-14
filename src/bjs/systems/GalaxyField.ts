@@ -46,6 +46,10 @@ import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
 import {
   GALAXY_POINT_SHADER, registerGalaxyPointShader
 } from '../shaders/GalaxyPointShader';
+import {
+  GALAXY_FOG_SHADER, registerGalaxyFogShader
+} from '../shaders/GalaxyFogShader';
+import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import type { Scene } from '@babylonjs/core/scene';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Camera } from '@babylonjs/core/Cameras/camera';
@@ -124,6 +128,15 @@ export const FAR_STAR_PER = 26;
 const PROXY_MID = (PROXY_INNER + PROXY_OUTER) / 2;
 /** The screen height the point sizes were measured against. */
 const REFERENCE_HEIGHT = 1080;
+
+/**
+ * Radius of the fog shell.
+ *
+ * Inside the camera's far plane (4000) and outside the proxy star shell
+ * (2600..3700) so the fog encloses the stars rather than cutting through
+ * them.
+ */
+const FOG_SHELL_R = 3850;
 
 /**
  * A galaxy sized to span FIELD_INNER..FIELD_OUTER in real coordinates.
@@ -218,6 +231,10 @@ export class GalaxyField {
   private clouds: PointsCloudSystem[] = [];
   /** Soft-point materials, kept so camPos and viewport can be fed. */
   private pointMats: ShaderMaterial[] = [];
+  /** The volumetric fog shell and its material. */
+  private fogMesh: Mesh | null = null;
+  private fogMat: ShaderMaterial | null = null;
+  private fogTime = 0;
   private meshes: Mesh[] = [];
   private built = false;
 
@@ -310,63 +327,23 @@ export class GalaxyField {
       this.meshes.push(starMesh);
 
       // ---- gas ----
-      // Rejection-sampled against the same density field the fog reads, so
-      // the visible clouds and the fog you fly through are the same object.
-      const gasRng = makeRng(seed ^ 0x9e3779b9);
-      const gas = new PointsCloudSystem('galaxyGas', 1, scene);
-      gas.addPoints(GAS_COUNT, (p: any) => {
-        let placed = false;
-        for (let tries = 0; tries < 24 && !placed; tries++) {
-          const r = FIELD_INNER + gasRng() * (FIELD_OUTER - FIELD_INNER);
-          const th = gasRng() * Math.PI * 2;
-          const h = (gasRng() - 0.5) * 2 * r * cfg.thickness * 2.2;
-          const x = Math.cos(th) * r, z = Math.sin(th) * r;
-          const d = nebulaDensity(x, h, z, cfg);
-          if (gasRng() < d) {
-            p.position = new Vector3(
-              x + GALAXY_CENTER[0], h + GALAXY_CENTER[1], z + GALAXY_CENTER[2]);
-            const c = galaxyGasColor(HOME_CLASS, d, x, h, z, cfg);
-            p.color = new Color4(c[0], c[1], c[2], Math.min(0.5, d * 0.6));
-            placed = true;
-          }
-        }
-        if (!placed) {
-          // Never leave a point at the origin as a visible clump.
-          p.position = new Vector3(0, 0, 0);
-          p.color = new Color4(0, 0, 0, 0);
-        }
-      });
-      const gasMesh = await gas.buildMeshAsync();
-      // THE PINK GLITCH.
-      // This was 90.0. A 90-pixel additive quad, 9,000 of them along one
-      // band, overlaps itself many times over: the gas colour is a dim
-      // (0.42, 0.13, 0.31), but three overlapping points already saturate
-      // red and blue to 1.0 while green lags - which is precisely the
-      // magenta smear that filled the screen - and eight stack to white.
-      // A few pixels lets the density read as haze instead of paint.
       //
-      // But 4.0 overcorrected: it dropped the gas to 1.6% of the screen,
-      // which is why the nebulae "vanished". Rasterising the real point set
-      // through the proxy projection gives the tradeoff directly -
+      // THE GAS IS NO LONGER PARTICLES.
       //
-      //   size  4 -> 1.6% of screen lit, 0.000% blown out
-      //   size 14 -> 9.8% lit,           0.005% blown out
-      //   size 20 -> 14.4% lit,          0.554% blown out  (pink returns)
-      //   size 90 -> 27.7% lit,          13.2% blown out   (the glitch)
+      // It used to be 9,000 additive sprites. Sprites cannot be fog: small
+      // they read as dots, large as squares, softened as soft dots. Three
+      // separate attempts to tune size and falloff all still looked like
+      // particles, because a finite set of billboards is not a continuous
+      // medium and no amount of tuning makes it one.
       //
-      // 14 is the knee: six times the visible gas of 4.0 while the blown-out
-      // fraction is still effectively zero. Raising the COLOUR instead (the
-      // obvious "just make it brighter" move) is the wrong lever - an 8x
-      // exposure multiplier barely moves coverage, 1.6% -> 1.7%, because the
-      // points are tiny, but it drives peak intensity to 4.94 and saturates
-      // 0.4% of the frame straight back to magenta.
-      this.applyState(gasMesh, 14.0);
-      this.clouds.push(gas);
-      this.meshes.push(gasMesh);
+      // The gas is now a raymarched volume - see GalaxyFogShader. The stars
+      // stay as points, because in the reference photograph the fog is
+      // continuous while individual stars are still crisp.
+      this.buildFog(scene);
 
       // Keep the true coordinates: the proxy overwrites the vertex buffer
       // every frame, so the real positions have to live somewhere else.
-      this.truePos = this.capturePositions([starMesh, gasMesh]);
+      this.truePos = this.capturePositions([starMesh]);
 
       // ---- other galaxies ----
       // Each is a cluster of points at its true coordinates, so the smudge
@@ -447,14 +424,35 @@ export class GalaxyField {
 
         // Gas hugs the disc and the arms: sample a radius biased inward,
         // wrap it onto a loose spiral, and keep it thin vertically.
+        //
+        // Ellipticals skip that entirely. They have no arms and no thin
+        // disc, so winding their gas onto a spiral would draw exactly the
+        // structure they are defined by not having. They get a 3D Gaussian
+        // ellipsoid instead - a smooth triaxial swarm.
         const t = Math.pow(rnd(), 0.65);
-        const rr = g.radius * (0.08 + t * 0.92);
-        const arm = Math.floor(rnd() * 2) * Math.PI;
-        const wind = g.winding * 2.6;
-        const ang = arm + Math.log(1 + t * 6) * wind + (rnd() - 0.5) * 0.9;
-        const lx = Math.cos(ang) * rr;
-        const lz = Math.sin(ang) * rr;
-        const ly = (rnd() - 0.5) * g.radius * 0.06;
+        let lx: number, ly: number, lz: number;
+        if (g.klass === 'elliptical') {
+          const gauss = (): number => {
+            const u = Math.max(1e-9, rnd());
+            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd());
+          };
+          const sg = g.radius * 0.30;
+          lx = gauss() * sg;
+          ly = gauss() * sg * 0.62;
+          lz = gauss() * sg * 0.84;
+          const rr2 = Math.sqrt(lx * lx + ly * ly + lz * lz);
+          if (rr2 > g.radius) {
+            const f = g.radius / rr2; lx *= f; ly *= f; lz *= f;
+          }
+        } else {
+          const rr = g.radius * (0.08 + t * 0.92);
+          const arm = Math.floor(rnd() * 2) * Math.PI;
+          const wind = g.winding * 2.6;
+          const ang = arm + Math.log(1 + t * 6) * wind + (rnd() - 0.5) * 0.9;
+          lx = Math.cos(ang) * rr;
+          lz = Math.sin(ang) * rr;
+          ly = (rnd() - 0.5) * g.radius * 0.06;
+        }
 
         const cx = Math.cos(g.tiltX), sx = Math.sin(g.tiltX);
         const y2 = ly * cx - lz * sx;
@@ -505,6 +503,74 @@ export class GalaxyField {
   }
 
   /** Release the soft-point materials. */
+  /**
+   * Build the volumetric fog shell.
+   *
+   * A single inward-facing sphere that always surrounds the camera. It is
+   * NOT the galaxy's geometry - the galaxy is far larger than the far plane
+   * - it is a screen for the raymarcher, and the march itself happens in
+   * true galaxy coordinates, so flying across the disc genuinely changes
+   * what the ray passes through.
+   */
+  private buildFog(scene: Scene): void {
+    try {
+      registerGalaxyFogShader();
+      const shell = MeshBuilder.CreateSphere(
+        'galaxyFog', { diameter: FOG_SHELL_R * 2, segments: 16 }, scene);
+      shell.flipFaces(true);          // seen from inside
+
+      const mat = new ShaderMaterial('galaxyFogM', scene, GALAXY_FOG_SHADER, {
+        attributes: ['position'],
+        uniforms: ['worldViewProjection', 'camPos', 'innerR', 'outerR',
+          'thickness', 'arms', 'armFactor', 'anomaly', 'density', 'time',
+          'marchFar']
+      });
+      const cfg = FIELD_GALAXY;
+      mat.setFloat('innerR', cfg.innerBound);
+      mat.setFloat('outerR', cfg.outerBound);
+      mat.setFloat('thickness', cfg.thickness);
+      mat.setFloat('arms', cfg.arms);
+      mat.setFloat('armFactor', cfg.armFactor);
+      mat.setFloat('anomaly', HOME_CLASS === 'anomaly' ? 1 : 0);
+      mat.setFloat('density', 1);
+      mat.setFloat('time', 0);
+      // Far enough to cross the whole disc from outside it.
+      mat.setFloat('marchFar', cfg.outerBound * 2.6);
+      mat.setVector3('camPos', Vector3.Zero());
+
+      mat.backFaceCulling = false;
+      mat.disableDepthWrite = true;
+      mat.alpha = 0.999;
+      // Alpha-blended rather than additive: the volume has real extinction,
+      // so dust lanes must be able to DARKEN what is behind them. Additive
+      // can only ever add light, which is why dust never showed up before.
+      mat.alphaMode = 2;
+
+      shell.material = mat;
+      shell.renderingGroupId = 0;
+      shell.isPickable = false;
+      shell.applyFog = false;
+      shell.alwaysSelectAsActiveMesh = true;
+      shell.infiniteDistance = false;
+
+      this.fogMesh = shell;
+      this.fogMat = mat;
+      shell.setEnabled(this.visible);
+    } catch (e) {
+      // No fog is survivable; a black screen is not.
+      console.warn('Volumetric galaxy fog unavailable:', e);
+      this.fogMesh = null;
+      this.fogMat = null;
+    }
+  }
+
+  private disposeFog(): void {
+    try { this.fogMesh?.dispose(); } catch { /* gone */ }
+    try { this.fogMat?.dispose(); } catch { /* gone */ }
+    this.fogMesh = null;
+    this.fogMat = null;
+  }
+
   private disposePointMats(): void {
     for (const m of this.pointMats) { try { m.dispose(); } catch { /* gone */ } }
     this.pointMats = [];
@@ -542,7 +608,8 @@ export class GalaxyField {
    */
   private projectProxy(eye: Vector3): void {
     this.projectOne(this.meshes[0] ?? null, this.truePos, eye);
-    this.projectOne(this.meshes[1] ?? null, this.truePos, eye, STAR_COUNT);
+    // meshes[1] used to be the gas point cloud. The gas is a volume now,
+    // so there is nothing else to reproject here.
     this.projectOne(this.farMesh, this.farTruePos, eye);
     // The gas positions live after the star positions in the same buffer.
     this.projectOne(this.farGasMesh, this.farTruePos, eye,
@@ -688,6 +755,7 @@ export class GalaxyField {
     }
     try { this.farMesh?.setEnabled(on); } catch { /* disposed */ }
     try { this.farGasMesh?.setEnabled(on); } catch { /* disposed */ }
+    try { this.fogMesh?.setEnabled(on); } catch { /* disposed */ }
     this.visible = on;
   }
 
@@ -700,6 +768,21 @@ export class GalaxyField {
     // shell every frame, so the shader must size them against the PROXY
     // position rather than the eye's true distance to the real galaxy -
     // hence camPos is the origin of the shell, not the world eye.
+    // The fog shell rides with the camera, and the march reads the eye's
+    // TRUE galaxy-local position, so crossing the disc really does thicken
+    // the medium instead of looking the same from everywhere.
+    if (this.fogMesh && this.fogMat) {
+      this.fogTime += 1 / 60;
+      try {
+        this.fogMesh.position.copyFrom(eye);
+        this.fogMat.setVector3('camPos', new Vector3(
+          eye.x - GALAXY_CENTER[0],
+          eye.y - GALAXY_CENTER[1],
+          eye.z - GALAXY_CENTER[2]));
+        this.fogMat.setFloat('time', this.fogTime);
+      } catch { /* disposed mid-frame */ }
+    }
+
     if (this.pointMats.length) {
       const h = scene.getEngine()?.getRenderHeight?.() ?? 1080;
       for (const m of this.pointMats) {
@@ -717,8 +800,15 @@ export class GalaxyField {
     if (!this.visible) { scene.fogMode = 0; return; }
     const f = fogStateAt(eye.x, eye.y, eye.z);
     if (f.density > 0.001) {
+      // Scene fog now only tints NEARBY GEOMETRY - ships, planets, debris -
+      // so objects seen through thick gas pick up its colour. The sky's own
+      // haze is the raymarched volume, which handles the view into the
+      // distance far better than a per-vertex exponential ever could.
+      //
+      // Keeping both at full strength double-counted the medium and was
+      // what greyed the whole frame, so this stays deliberately faint.
       scene.fogMode = 2; // EXP
-      scene.fogDensity = f.density * 0.0016;
+      scene.fogDensity = f.density * 0.0011;
       scene.fogColor = new Color3(f.color[0], f.color[1], f.color[2]);
     } else {
       scene.fogMode = 0;
@@ -746,6 +836,7 @@ export class GalaxyField {
 
   detach(): void {
     this.disposeFar();
+    this.disposeFog();
     this.disposePointMats();
     for (const c of this.clouds) { try { c.dispose(); } catch { /* gone */ } }
     this.clouds = [];

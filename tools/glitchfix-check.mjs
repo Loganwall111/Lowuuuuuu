@@ -89,14 +89,22 @@ ok('true coordinates are kept so parallax survives',
 // the defect the number itself caused. So test the real invariant, and cap
 // the size only where blowout genuinely begins (measured: 20 -> 0.55% of the
 // frame clipped, 90 -> 13.2%).
-ok('the gas point size shows the clouds without saturating them', (() => {
-  const m = field.match(/this\.applyState\(gasMesh, ([\d.]+)\)/);
-  if (!m) return false;
-  const size = Number(m[1]);
-  return size >= 10 && size < 20;
-})(), (field.match(/this\.applyState\(gasMesh, ([\d.]+)\)/) || [])[1]);
-ok('the magenta saturation is explained for future edits',
-  /THE PINK GLITCH/.test(field));
+// THE HOME GAS IS NO LONGER SPRITES.
+//
+// This used to pin the gas point size into a window that was visible but
+// did not saturate. That whole tradeoff existed because the gas was 9,000
+// additive billboards, and it is gone: the gas is a raymarched volume now,
+// which has no point size and cannot stack into magenta because it
+// integrates extinction instead of summing quads.
+//
+// What still has to hold is that no *sprite* gas came back.
+ok('the home gas is a volume, not a point cloud',
+  !/new PointsCloudSystem\('galaxyGas'/.test(field));
+ok('a fog volume is built instead', /this\.buildFog\(/.test(field));
+ok('the volume integrates extinction rather than adding quads',
+  /alphaMode = 2/.test(field));
+ok('the reason sprites were abandoned is recorded for future edits',
+  /THE GAS IS NO LONGER PARTICLES/.test(field));
 ok('star points stay small too', (() => {
   const m = field.match(/this\.applyState\(starMesh, ([\d.]+)\)/);
   return m && Number(m[1]) <= 4;

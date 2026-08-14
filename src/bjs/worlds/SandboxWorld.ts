@@ -100,7 +100,10 @@ export class SandboxWorld implements World {
   async build(ctx: WorldContext): Promise<void> {
     this.ctx = ctx;
     const scene = ctx.scene;
-    scene.clearColor = new Color4(0.002, 0.004, 0.012, 1);
+    // INK-BLACK VACUUM. All the colour in ordinary space comes from the
+    // galaxy fog volume, never from the clear colour - lifting this to fake
+    // a "space blue" washes the whole frame and buries the faint stars.
+    scene.clearColor = new Color4(0, 0, 0, 1);
 
     registerPlanetShader();
 

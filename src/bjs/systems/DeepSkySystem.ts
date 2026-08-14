@@ -326,6 +326,19 @@ export interface WarpDriveOptions {
   topMultiplier: number;
 }
 
+/** Distance at which the approach brake starts to bite. */
+export const APPROACH_RADIUS = 500;
+/**
+ * The brake never fully stops you, but it must bring 90,000x down to
+ * something you can actually fly with.
+ *
+ * At 0.02 the floor still left ~1,300x - about 2,000 units per frame, when
+ * a planet is tens of units across, so you would still shoot straight past.
+ * 1/90000 brings full warp back to roughly 1x at the surface, which is
+ * walking pace next to a world.
+ */
+export const APPROACH_FLOOR = 1 / 90000;
+
 export const DEFAULT_WARP_DRIVE: WarpDriveOptions = {
   spool: 1.1,
   rampUp: 5.5,
@@ -376,6 +389,8 @@ export class WarpDrive {
    * @param dt        seconds
    * @param thrusting whether the player is holding forward
    */
+  private approachScale = 1;
+
   update(dt: number, thrusting: boolean): WarpState {
     if (!Number.isFinite(dt) || dt <= 0) return this.state();
 
@@ -405,13 +420,43 @@ export class WarpDrive {
     const c = this.chargeValue;
     // Cubic: gentle at first, then it really goes.
     const curve = c * c * c;
+    const raw = 1 + curve * (this.opts.topMultiplier - 1);
     return {
       charge: c,
-      multiplier: 1 + curve * (this.opts.topMultiplier - 1),
+      multiplier: raw * this.approachScale,
       streak: Math.min(1, c * 1.25),
       engaged: c > 0.02
     };
   }
+
+  /**
+   * Exponential deceleration on approach.
+   *
+   * At full warp the ship covers ~142,000 units per frame, and a planet is
+   * a few tens of units across, so without this you cannot arrive anywhere
+   * - you are always either far away or already past. The brake is applied
+   * to the MULTIPLIER rather than to position, so control stays smooth and
+   * the player never gets shoved.
+   *
+   * The curve is exponential in the ratio of distance to the braking
+   * radius, which means the closer you get the harder it bites, and it
+   * approaches but never reaches zero: you can always still move.
+   */
+  setApproach(distance: number, brakeRadius = APPROACH_RADIUS): void {
+    if (!Number.isFinite(distance) || distance < 0) {
+      this.approachScale = 1;
+      return;
+    }
+    const r = Math.max(brakeRadius, 1e-3);
+    if (distance >= r) { this.approachScale = 1; return; }
+    const t = distance / r;                 // 0 at the surface, 1 at the edge
+    // exp curve: 0.02x hard against the body, easing back to 1x at r.
+    const e = (Math.exp(t * 3.2) - 1) / (Math.exp(3.2) - 1);
+    this.approachScale = Math.max(APPROACH_FLOOR, e);
+  }
+
+  /** Current approach brake, 1 when nothing is near. */
+  get approach(): number { return this.approachScale; }
 
   stats(): Record<string, string> {
     const s = this.state();
