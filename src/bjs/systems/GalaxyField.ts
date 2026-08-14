@@ -104,6 +104,16 @@ export const GALAXY_RADIUS_REF = 50000;
 /** How many stars and gas puffs the field is built from. */
 export const STAR_COUNT = 30000;
 export const GAS_COUNT = 9000;
+/**
+ * Gas points per distant galaxy.
+ *
+ * 26 star points each gave a flat single-tint smudge; this is the cloud
+ * that goes inside it. 343 galaxies x 34 = ~11,700 points, against the
+ * 39,000 the home galaxy already costs.
+ */
+export const FAR_GAS_PER = 34;
+/** Star points per distant galaxy. The gas offset depends on this. */
+export const FAR_STAR_PER = 26;
 
 /**
  * A galaxy sized to span FIELD_INNER..FIELD_OUTER in real coordinates.
@@ -189,6 +199,8 @@ export class GalaxyField {
   /** Other galaxies, as real points at real coordinates. */
   private farMesh: Mesh | null = null;
   private farCloud: PointsCloudSystem | null = null;
+  private farGasMesh: Mesh | null = null;
+  private farGasCloud: PointsCloudSystem | null = null;
   private farCells: GalaxyCell[] = [];
 
   get isBuilt(): boolean { return this.built; }
@@ -359,7 +371,7 @@ export class GalaxyField {
       this.farCells = cells;
       if (!cells.length) return;
 
-      const PER = 26;
+      const PER = FAR_STAR_PER;
       const cloud = new PointsCloudSystem('farGalaxies', 1, scene);
       cloud.addPoints(cells.length * PER, (p: any, i: number) => {
         const g = cells[Math.floor(i / PER) % cells.length];
@@ -387,7 +399,76 @@ export class GalaxyField {
       mesh.setEnabled(this.visible);
       this.farCloud = cloud;
       this.farMesh = mesh;
-      this.farTruePos = this.capturePositions([mesh]);
+
+      // ---- nebula gas inside every other galaxy ----
+      //
+      // The star cluster above carries `g.tint` and nothing else, and there
+      // are only three tints in the whole grid, so 343 galaxies rendered as
+      // three flat colours of smudge with no gas in them at all. Only the
+      // Milky Way had coloured clouds. Give each of the others its own
+      // emission field, drawn from the same ionisation species as the home
+      // galaxy so the universe looks like one place.
+      const gasCloud = new PointsCloudSystem('farGalaxyGas', 1, scene);
+      gasCloud.addPoints(cells.length * FAR_GAS_PER, (p: any, i: number) => {
+        const g = cells[Math.floor(i / FAR_GAS_PER) % cells.length];
+        const k = i % FAR_GAS_PER;
+        // Per-galaxy stream, so each galaxy's gas is its own shape and the
+        // structure is stable frame to frame.
+        const rnd = makeRng((g.seed ^ 0x5bf03635) + k * 2654435761);
+
+        // Gas hugs the disc and the arms: sample a radius biased inward,
+        // wrap it onto a loose spiral, and keep it thin vertically.
+        const t = Math.pow(rnd(), 0.65);
+        const rr = g.radius * (0.08 + t * 0.92);
+        const arm = Math.floor(rnd() * 2) * Math.PI;
+        const wind = g.winding * 2.6;
+        const ang = arm + Math.log(1 + t * 6) * wind + (rnd() - 0.5) * 0.9;
+        const lx = Math.cos(ang) * rr;
+        const lz = Math.sin(ang) * rr;
+        const ly = (rnd() - 0.5) * g.radius * 0.06;
+
+        const cx = Math.cos(g.tiltX), sx = Math.sin(g.tiltX);
+        const y2 = ly * cx - lz * sx;
+        const z2 = ly * sx + lz * cx;
+        p.position = new Vector3(g.x + lx, g.y + y2, g.z + z2);
+
+        // Density falls off outward, exactly like the home galaxy's field,
+        // so the colour ramp behaves the same way at the same radii.
+        const dens = Math.max(0.12, 0.95 - t * 0.8);
+        // Sample the shared emission palette in the galaxy's own local
+        // coordinates. This is what gives every galaxy H-alpha crimson,
+        // O-III teal and S-II orange strips instead of one flat tint.
+        // Sampled against a config scaled to THIS galaxy's radius. Passing
+        // raw coordinates against MILKY_WAY's 16,000-unit disc would push a
+        // 50,000-unit galaxy far outside the frequency the palette was tuned
+        // for, and the excitation term - which keys off radius - would read
+        // the whole galaxy as cold outskirts.
+        const c = nebulaColor(dens, lx, ly, lz, {
+          ...MILKY_WAY, outerBound: g.radius, innerBound: g.radius * 0.06
+        });
+        // The galaxy's own tint still shows through, so blue starbursts
+        // stay blue and old red ellipticals stay red - the species mix
+        // varies the colour WITHIN each galaxy rather than erasing it.
+        const b = g.brightness * 0.55;
+        // The tint is a lean bias, not a blend. At 0.32 it desaturated the
+        // emission colours to a near-white mean hue of (0.97, 0.85, 1.00),
+        // which is the flat look this change exists to remove.
+        p.color = new Color4(
+          (c[0] * 0.86 + g.tint[0] * 0.14) * b,
+          (c[1] * 0.86 + g.tint[1] * 0.14) * b,
+          (c[2] * 0.86 + g.tint[2] * 0.14) * b,
+          Math.min(0.42, dens * 0.5));
+      });
+      const gasMesh = await gasCloud.buildMeshAsync();
+      // Larger than the star points for the same reason the home galaxy's
+      // gas is: haze has to cover area to read as haze. Still far below the
+      // size where additive stacking clips.
+      this.applyState(gasMesh, 9.0);
+      gasMesh.setEnabled(this.visible);
+      this.farGasCloud = gasCloud;
+      this.farGasMesh = gasMesh;
+
+      this.farTruePos = this.capturePositions([mesh, gasMesh]);
     } catch (e) {
       // Distant galaxies are scenery; losing them must not lose the frame.
       console.warn('Distant galaxies unavailable:', e);
@@ -396,8 +477,11 @@ export class GalaxyField {
 
   private disposeFar(): void {
     try { this.farCloud?.dispose(); } catch { /* gone */ }
+    try { this.farGasCloud?.dispose(); } catch { /* gone */ }
     this.farCloud = null;
     this.farMesh = null;
+    this.farGasCloud = null;
+    this.farGasMesh = null;
     this.farCells = [];
   }
 
@@ -425,6 +509,9 @@ export class GalaxyField {
     this.projectOne(this.meshes[0] ?? null, this.truePos, eye);
     this.projectOne(this.meshes[1] ?? null, this.truePos, eye, STAR_COUNT);
     this.projectOne(this.farMesh, this.farTruePos, eye);
+    // The gas positions live after the star positions in the same buffer.
+    this.projectOne(this.farGasMesh, this.farTruePos, eye,
+      this.farCells.length * FAR_STAR_PER);
   }
 
   private projectOne(
@@ -513,6 +600,7 @@ export class GalaxyField {
       try { m.setEnabled(on); } catch { /* disposed */ }
     }
     try { this.farMesh?.setEnabled(on); } catch { /* disposed */ }
+    try { this.farGasMesh?.setEnabled(on); } catch { /* disposed */ }
     this.visible = on;
   }
 

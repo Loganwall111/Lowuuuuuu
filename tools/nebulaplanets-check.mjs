@@ -208,6 +208,152 @@ ok('and they do not blow out into the magenta smear', now.sat < 0.2,
 ok('the pink-glitch reasoning is still recorded for future edits',
   /THE PINK GLITCH/.test(field));
 
+console.log('\n--- 2b. every OTHER galaxy has coloured gas inside it too ---');
+
+// The home galaxy got its palette back, but the 343 distant galaxies were
+// still 26 star points each carrying `g.tint` - and the whole grid only has
+// three tints in it. So every other galaxy in the universe was a flat
+// single-colour smudge with no cloud inside at all.
+{
+  const grid0 = await bundle('src/bjs/systems/IntergalacticGrid.ts');
+  const cells = grid0.galaxiesNear(0, 0, 0);
+  ok('there are many galaxies to fill', cells.length > 100, cells.length + ' galaxies');
+
+  const tints = new Set(cells.map((c) => c.tint.join(',')));
+  ok('the star clusters really do only carry a handful of tints',
+    tints.size <= 4, tints.size + ' distinct tints — this is why gas was needed');
+
+  ok('a per-galaxy gas budget is defined', gfield.FAR_GAS_PER > 0,
+    String(gfield.FAR_GAS_PER));
+  ok('the star-per-galaxy count is shared, not duplicated as a literal',
+    gfield.FAR_STAR_PER === 26, String(gfield.FAR_STAR_PER));
+  ok('the total far-galaxy point budget stays modest',
+    cells.length * (gfield.FAR_GAS_PER + gfield.FAR_STAR_PER) < 40000,
+    cells.length * (gfield.FAR_GAS_PER + gfield.FAR_STAR_PER) + ' points');
+
+  // Reproduce the generator's own sampling and classify what comes out.
+  const famOf = (c) => {
+    const m = Math.max(...c);
+    if (!(m > 1e-4)) return null;
+    const [R, G, B] = c.map((v) => v / m);
+    if (G > 0.55 && B > 0.45 && R < 0.65) return 'teal';
+    if (R > 0.8 && G < 0.45 && B < 0.5) return 'crimson';
+    if (R > 0.7 && G > 0.35 && G < 0.75) return 'orange';
+    if (B > 0.65 && R < 0.75) return 'blue';
+    return 'other';
+  };
+  const mk = (sd) => {
+    let x = sd >>> 0;
+    return () => ((x = (Math.imul(x, 1664525) + 1013904223) >>> 0) / 4294967296);
+  };
+  const galaxyGas = (c) => {
+    const out = [];
+    for (let k = 0; k < gfield.FAR_GAS_PER; k++) {
+      const rnd = mk((c.seed ^ 0x5bf03635) + k * 2654435761);
+      const t = Math.pow(rnd(), 0.65);
+      const rr = c.radius * (0.08 + t * 0.92);
+      const arm = Math.floor(rnd() * 2) * Math.PI;
+      const ang = arm + Math.log(1 + t * 6) * (c.winding * 2.6) + (rnd() - 0.5) * 0.9;
+      const lx = Math.cos(ang) * rr, lz = Math.sin(ang) * rr;
+      const ly = (rnd() - 0.5) * c.radius * 0.06;
+      const dens = Math.max(0.12, 0.95 - t * 0.8);
+      const col = nebulaColor(dens, lx, ly, lz,
+        { ...MILKY_WAY, outerBound: c.radius, innerBound: c.radius * 0.06 });
+      out.push(col.map((v, i) => v * BLEND_C + c.tint[i] * BLEND_T));
+    }
+    return out;
+  };
+
+  // Read the blend weights out of the source rather than hardcoding them,
+  // or this whole section silently stops testing the real code. A negative
+  // control that washed the colour to 95% tint went undetected because the
+  // classifier was reproducing 0.86/0.14 from memory.
+  const srcBlend = read('src/bjs/systems/GalaxyField.ts');
+  const bm = srcBlend.match(/c\[0\] \* ([\d.]+) \+ g\.tint\[0\] \* ([\d.]+)/);
+  ok('the gas/tint blend weights are readable from source', !!bm,
+    bm ? bm[1] + '/' + bm[2] : 'not found');
+  const BLEND_C = bm ? Number(bm[1]) : 0;
+  const BLEND_T = bm ? Number(bm[2]) : 1;
+  ok('emission colour dominates the galaxy tint, so gas is not washed out',
+    BLEND_C > 0.6 && BLEND_C > BLEND_T * 2,
+    'emission ' + BLEND_C + ' vs tint ' + BLEND_T);
+
+  const totals = {};
+  let multi = 0;
+  let speciesSum = 0;
+  for (const c of cells) {
+    const seen = new Set();
+    for (const col of galaxyGas(c)) {
+      const f = famOf(col);
+      if (!f) continue;
+      totals[f] = (totals[f] || 0) + 1;
+      seen.add(f);
+    }
+    speciesSum += seen.size;
+    if (seen.size >= 2) multi++;
+  }
+  ok('distant galaxies contain teal gas', (totals.teal || 0) > 0, String(totals.teal || 0));
+  ok('distant galaxies contain crimson gas', (totals.crimson || 0) > 0,
+    String(totals.crimson || 0));
+  ok('distant galaxies contain orange gas', (totals.orange || 0) > 0,
+    String(totals.orange || 0));
+  ok('EVERY distant galaxy has more than one colour inside it',
+    multi === cells.length, multi + '/' + cells.length);
+  ok('the average galaxy shows several species at once',
+    speciesSum / cells.length > 2.5,
+    (speciesSum / cells.length).toFixed(2) + ' species per galaxy');
+
+  // Different galaxies must not all look the same.
+  const sigs = new Set(cells.slice(0, 80).map((c) =>
+    galaxyGas(c).map((col) => col.map((v) => Math.round(v * 10)).join('')).join('|')));
+  ok('the far gas is actually saturated, not near-white', (() => {
+    let n = 0, washed = 0;
+    for (const c of cells.slice(0, 120)) {
+      for (const col of galaxyGas(c)) {
+        const mx = Math.max(...col), mn = Math.min(...col);
+        if (!(mx > 1e-4)) continue;
+        n++;
+        // Saturation of an RGB colour. Near-white means (max-min)/max ~ 0.
+        if ((mx - mn) / mx < 0.25) washed++;
+      }
+    }
+    return n > 0 && washed / n < 0.35;
+  })());
+
+  ok('no two galaxies get identical gas', sigs.size === 80, sigs.size + '/80 unique');
+
+  // ...but a given galaxy must be stable, or it would shimmer between frames.
+  ok('a galaxy gas cloud is deterministic', (() => {
+    const a = JSON.stringify(galaxyGas(cells[3]));
+    const b = JSON.stringify(galaxyGas(cells[3]));
+    return a === b;
+  })());
+
+  ok('gas stays inside its own galaxy radius', (() => {
+    for (const c of cells.slice(0, 60)) {
+      for (let k = 0; k < gfield.FAR_GAS_PER; k++) {
+        const rnd = mk((c.seed ^ 0x5bf03635) + k * 2654435761);
+        const t = Math.pow(rnd(), 0.65);
+        if (c.radius * (0.08 + t * 0.92) > c.radius) return false;
+      }
+    }
+    return true;
+  })());
+
+  const src = read('src/bjs/systems/GalaxyField.ts');
+  ok('the far gas mesh is wired into the proxy projection',
+    /projectOne\(this\.farGasMesh/.test(src));
+  ok('the far gas offset is past the star points, not zero',
+    /farGasMesh, this\.farTruePos, eye,\s*\n?\s*this\.farCells\.length \* FAR_STAR_PER/
+      .test(src));
+  ok('the far gas mesh is disposed with the rest',
+    /this\.farGasCloud\?\.dispose\(\)/.test(src));
+  ok('the far gas mesh follows galaxy visibility',
+    /this\.farGasMesh\?\.setEnabled\(on\)/.test(src));
+  ok('the far gas is sampled against a per-galaxy scaled config',
+    /outerBound: g\.radius/.test(src));
+}
+
 console.log('\n--- 3. planets vary per 260,000-unit cell ---');
 
 const grid = await bundle('src/bjs/systems/IntergalacticGrid.ts');
