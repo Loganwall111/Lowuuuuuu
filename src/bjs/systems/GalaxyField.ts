@@ -823,6 +823,12 @@ export class GalaxyField {
         //
         // The volume now adopts whichever lattice galaxy the player is
         // actually inside, falling back to home out in intergalactic space.
+        //
+        // This is the conditional bracket the spec calls for: `klass` comes
+        // straight from the 260,000-unit cell-matrix seed hash, so the
+        // DEFAULT (overwhelming majority) of galaxies render the realistic
+        // golden-brown Milky Way profile, and only a rare seed roll flips
+        // `anomaly` to 1 and weaves the H-alpha/O-III ribbons in.
         const host = nearestGalaxy(eye.x, eye.y, eye.z);
         const inHost = host && host.distance < host.galaxy.radius * 1.3;
 
