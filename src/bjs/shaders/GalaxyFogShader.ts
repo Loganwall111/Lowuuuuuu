@@ -105,17 +105,27 @@ const float SATURATION_RECOVERY = 2.0;
  * flares outward into a cone, which is what produced the tall vertical
  * cloud instead of a flat plane.
  */
-const float DISC_HEIGHT = 0.040;
-/** How tightly gas bunches into the arms. Higher = crisper streams. */
-const float ARM_SHARPNESS = 4.0;
-/** Density between the arms. Small but non-zero, so gaps are gas not holes. */
-const float ARM_FLOOR = 0.06;
+const float DISC_HEIGHT = 0.045;
+/**
+ * How tightly gas bunches into the arms. Lower = wider, softer streams.
+ *
+ * Was 4.0, which made the arms read as hard-edged glitter tracks. 3.2 keeps
+ * them recognisably arms (the harness pins >= 3.0) while letting each crest
+ * bloom outward into continuous smoke instead of a sharp crest line.
+ */
+const float ARM_SHARPNESS = 3.2;
+/**
+ * Density between the arms. Raised toward the harness ceiling so the gaps
+ * fill with thin gas and the whole disc reads as one flowing medium rather
+ * than isolated bright tracks over vacuum.
+ */
+const float ARM_FLOOR = 0.10;
 /** Overall disc density. */
-const float DISC_GAIN = 2.4;
+const float DISC_GAIN = 2.5;
 /** Bulge extent as a fraction of galaxy radius. */
-const float BULGE_RADIUS = 0.085;
+const float BULGE_RADIUS = 0.095;
 /** Bulge peak density. Must stay modest or it saturates over the arms. */
-const float BULGE_GAIN = 1.35;
+const float BULGE_GAIN = 1.55;
 /** Vertical squash of the bulge. */
 const float BULGE_FLATTEN = 0.55;
 /** Spatial frequency of the dust lanes. High = fine winding filaments. */
@@ -146,7 +156,7 @@ const float NUCLEUS_RADIUS = 0.028;
 /** How fast the blaze falls off. Higher = tighter, hotter core. */
 const float NUCLEUS_FALLOFF = 1.9;
 /** Emission strength of the nucleus. High for a blinding core. */
-const float NUCLEUS_GAIN = 9.5;
+const float NUCLEUS_GAIN = 10.5;
 /** Vertical squash of the nucleus. */
 const float NUCLEUS_FLATTEN = 0.78;
 /** Colour of the blaze: hot white-gold running to white at the very centre. */
@@ -244,7 +254,7 @@ float galaxyDensity(vec3 p){
 
   // ---- radial falloff of the disc ----
   // Exponential, the way a real disc's surface brightness behaves.
-  float radial = exp(-r / (outerR * 0.42)) * rim;
+  float radial = exp(-r / (outerR * 0.48)) * rim;
 
   // ---- clumping ----
   // Broad continuous swells rather than isolated spikes, so the medium
@@ -420,17 +430,19 @@ vec3 gasColor(vec3 p, float d){
     float f2 = fbm(p * (sf * 1.3) - 11.7, 3);
     float f3 = fbm(p * (sf * 1.7) + 27.3, 3);
 
-    // Saturated emission lines, not pastels.
-    vec3 CRIMSON = vec3(1.00, 0.13, 0.26);   // H-alpha
-    vec3 TEAL    = vec3(0.06, 0.92, 0.88);   // O-III
-    vec3 ORANGE  = vec3(1.00, 0.52, 0.08);   // S-II
+    // Saturated emission lines, not pastels. Magenta H-alpha and teal O-III
+    // are pushed up so the arms weave in thick, flowing ribbons of colour
+    // rather than reading as one flat blue-purple tint.
+    vec3 MAGENTA = vec3(1.00, 0.12, 0.58);   // H-alpha
+    vec3 TEAL    = vec3(0.05, 0.92, 0.86);   // O-III
+    vec3 ORANGE  = vec3(1.00, 0.58, 0.10);   // S-II warm
 
     float w1 = pow(smoothstep(0.35, 0.75, f1), 3.0);
     float w2 = pow(smoothstep(0.35, 0.75, f2), 3.0);
     float w3 = pow(smoothstep(0.35, 0.75, f3), 3.0);
     float wsum = w1 + w2 + w3;
     if (wsum > 1e-4) {
-      vec3 hue = (CRIMSON * w1 + TEAL * w2 + ORANGE * w3) / wsum;
+      vec3 hue = (MAGENTA * w1 + TEAL * w2 + ORANGE * w3) / wsum;
       // THE BULGE KEEPS ITS GOLD.
       //
       // At full strength the sector hue overwrote the core too, and the
