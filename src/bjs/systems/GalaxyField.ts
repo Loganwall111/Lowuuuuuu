@@ -54,8 +54,7 @@ import type { Scene } from '@babylonjs/core/scene';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Camera } from '@babylonjs/core/Cameras/camera';
 import {
-  MILKY_WAY, galaxyStar, nebulaDensity, nebulaColor, galaxyGasColor,
-  photorealColor, observerPosition,
+  MILKY_WAY, galaxyStar, nebulaDensity, galaxyGasColor,
   type GalaxyConfig
 } from './GalaxyShape';
 import {
@@ -159,17 +158,27 @@ export const FIELD_GALAXY: GalaxyConfig = {
 };
 
 /**
+ * Distance from the home observer to the galactic core, in world units.
+ *
+ * This is an EXPLICIT constant, not derived from `outerBound * 0.52`. The
+ * old formula coupled the observer's distance to the galaxy's radius, which
+ * is what kept the camera at a fixed fraction of the disc and made the
+ * galaxy read as a small distant knot no matter how the rest of the scene
+ * was tuned. Choosing the distance directly puts the player close enough to
+ * the core that it dominates the sky - while staying far enough out that
+ * the core never lands on top of the playable planets (the centring bug).
+ */
+export const OBSERVER_DISTANCE = 12000;
+
+/**
  * Where the galactic centre sits relative to world origin.
  *
- * The galaxy must NOT be centred on the origin: the playable scene lives
- * there, and centring put 4,876 of the 30,000 stars within 4,000 units of
- * the home system - the core would have been sitting on top of the
- * planets. Offsetting by the observer radius puts the player out in a
- * spiral arm where Earth actually is, with the core far away in one
- * direction and the rim in the other, both reachable by flying.
+ * The player starts at the world origin, out in a spiral arm, with the
+ * core this far away in the -X direction and the rim in the +X direction,
+ * both reachable by flying.
  */
 export const GALAXY_CENTER: [number, number, number] =
-  [-observerPosition(FIELD_GALAXY)[0], 0, 0];
+  [-OBSERVER_DISTANCE, 0, 0];
 
 /**
  * Inside this radius, individual stars are fully dissolved into the
@@ -963,9 +972,9 @@ export class GalaxyField {
    * does not have to move, and it lands in a spiral arm.
    */
   static homePosition(): [number, number, number] {
-    const o = observerPosition(FIELD_GALAXY);
-    return [o[0] + GALAXY_CENTER[0], o[1] + GALAXY_CENTER[1],
-      o[2] + GALAXY_CENTER[2]];
+    // The player starts at the world origin, which sits OBSERVER_DISTANCE
+    // out from the galactic core in the disc plane.
+    return [0, 0, 0];
   }
 
   stats(): Record<string, string> {
