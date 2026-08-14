@@ -101,6 +101,14 @@ function nameFor(rng: () => number): string {
   return a + ' ' + b + '-' + (100 + Math.floor(rng() * 899));
 }
 
+/**
+ * The galactic plane. Supermassive cores sit exactly here.
+ *
+ * Not a tolerance band - an exact value. A core defines the plane its disc
+ * orbits in, so any deviation at all is the core being in the wrong place.
+ */
+export const GALACTIC_PLANE_Y = 0;
+
 export class UniverseState {
   opts: UniverseOptions;
   regions: Region[] = [];
@@ -355,7 +363,15 @@ export class UniverseState {
     // Every galaxy has one supermassive singularity at its exact centre.
     // This is the ONLY way space itself creates a black hole; the player
     // can still place their own anywhere via spawnBlackHole().
-    const core = this.addBlackHole(at.clone(), rng);
+    //
+    // THE CORE IS PINNED TO THE GALACTIC PLANE. A singularity is what the
+    // disc orbits, so it defines y = 0 rather than floating relative to it.
+    // Inheriting the region's own y let cores sit hundreds of units above
+    // or below the plane - a visible drift, because the disc is only ~600
+    // units thick there, so half a thickness reads as "hovering off to one
+    // side of the galaxy" rather than sitting in its heart.
+    const core = this.addBlackHole(
+      new Vector3(at.x, GALACTIC_PLANE_Y, at.z), rng);
     core.name = r.name.replace(' Galaxy', '') + ' Core';
     core.mass = 60000 + rng() * 90000;
     core.galacticCore = true;

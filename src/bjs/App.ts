@@ -172,6 +172,10 @@ export class App {
   /** Which way you are looking at your ship. */
   shipViewMode: ViewMode = 'chase';
   private insideGalaxy = false;
+  /** True while the horizon-approach glare clamp is holding bloom down. */
+  private bloomClamped = false;
+  /** Bloom strength before the approach clamp took over. */
+  private bloomBeforeHorizon = 0.55;
   /** The sky, drawn from real regions rather than painted on a sphere. */
   starField = new StarFieldRenderer();
   /**
@@ -1307,6 +1311,48 @@ export class App {
       // of thousands of units that ends in another dimension. HoleDescent
       // owns that journey; this only feeds it position and hands the result
       // to the shader.
+      // ---- APPROACH GLARE CLAMP ----
+      //
+      // Crossing a horizon used to flash the screen white. Nothing raises
+      // bloom near a hole directly - the cause is that the accretion disc
+      // is the brightest emitter in the scene, and as it fills the frame at
+      // the threshold the bloom pass has an entire screen of above-
+      // threshold pixels to bleed. The result is a blinding white blob at
+      // exactly the moment the player wants to see where they are going.
+      //
+      // So bloom is pulled DOWN as the horizon closes, reaching a fraction
+      // of its normal strength at the crossing. It is restored the moment
+      // the player is clear, and it is deliberately driven off the same
+      // horizonDepth the transition itself uses, so the fade cannot slip
+      // out of step with the event it is smoothing.
+      {
+        const depth = this.universe.horizonDepth;
+        const near = this.universe.insideHorizon ?? this.nearestHole();
+        let proximity = depth;
+        if (!depth && near) {
+          // Outside the horizon, ramp on the last few radii of approach.
+          const hr = this.universe.horizonRadiusOf(near);
+          const d = Vector3.Distance(eye, near.position);
+          proximity = 1 - Math.max(0, Math.min(1, (d - hr) / Math.max(hr * 6, 1e-3)));
+        }
+        if (proximity > 0.001) {
+          // Capture the unclamped value ONCE. Reading the live setting each
+          // frame would feed the clamped result back into itself and
+          // ratchet bloom toward zero, never restoring it.
+          if (!this.bloomClamped) {
+            this.bloomBeforeHorizon = this.postfx.settings.bloom;
+            this.bloomClamped = true;
+          }
+          // Never fully off: a black hole should still glow, just not
+          // white out the frame.
+          this.postfx.set('bloom',
+            this.bloomBeforeHorizon * (1 - 0.82 * proximity));
+        } else if (this.bloomClamped) {
+          this.postfx.set('bloom', this.bloomBeforeHorizon);
+          this.bloomClamped = false;
+        }
+      }
+
       const bh = this.universe.insideHorizon;
       const w = this.world as unknown as {
         setInterior?: (d: number, dir: Vector3) => void;

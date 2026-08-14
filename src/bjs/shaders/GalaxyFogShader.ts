@@ -147,7 +147,12 @@ float galaxyDensity(vec3 p){
   float plane = exp(-(p.y * p.y) / (2.0 * h * h));
 
   // Radial: hollow in the very centre, fading out past the rim.
-  float inner = 1.0 - exp(-r / max(innerR, 1e-4));
+  //
+  // The hollow must not be a true void. A full hole at r=0 meant the
+  // brightest part of a real galaxy - the bulge - was the one place with no
+  // gas at all, so the centre rendered darker than its surroundings. The
+  // floor keeps a dense nucleus while still thinning the very middle.
+  float inner = mix(0.55, 1.0, 1.0 - exp(-r / max(innerR, 1e-4)));
   float outer = rim;
 
   // Spiral arms. The angle a point "should" sit at grows with log(radius);
@@ -156,9 +161,13 @@ float galaxyDensity(vec3 p){
   float spiral = ang - armFactor * log(max(r, 1.0) / max(innerR, 1.0));
   float armWave = cos(spiral * arms) * 0.5 + 0.5;
   // Arms are broad near the core and tighten outward; never fully empty
-  // between them, or the disc looks like a pinwheel cut-out. Smoothstep
-  // rather than pow so the arm edges dissolve instead of ramping.
-  float armMask = mix(0.45, 1.0, smoothstep(0.0, 1.0, armWave));
+  // between them, or the disc looks like a pinwheel cut-out.
+  //
+  // ARM CONTRAST. At a 0.45 floor the gaps between the arms carried nearly
+  // half the density of the arms themselves, which smeared the spiral into
+  // an even haze. Dropping the floor and sharpening the crest makes the
+  // arms actually read AS arms, with dark sky between them.
+  float armMask = mix(0.16, 1.0, pow(smoothstep(0.0, 1.0, armWave), 0.75));
 
   // Clumping, drifting very slowly. No sine, no pulsing - the drift is a
   // constant translation of the noise field.
@@ -170,9 +179,40 @@ float galaxyDensity(vec3 p){
   // each clump into a broad continuous swell with no countable pieces.
   vec3 q = p * (1.6 / max(outerR, 1.0));
   float clump = fbm(q * 2.2 + vec3(time * 0.004, 0.0, time * 0.003), 5);
-  clump = smoothstep(0.18, 0.92, clump) * 1.5;
+  // ARM DENSITY. Widening the smoothstep floor keeps more of the field
+  // above zero, and the multiplier raises the whole medium, so the disc is
+  // a thick body of gas rather than a thin wash. The clamp below still
+  // bounds it, so this cannot run away.
+  clump = smoothstep(0.10, 0.88, clump) * 2.6;
 
-  return clamp(plane * inner * outer * armMask * clump, 0.0, 1.0);
+  // ARM-CONCENTRATED BOOST. The brief asks for higher density specifically
+  // inside the arms rather than everywhere: a flat multiplier would just
+  // fog the gaps too and undo the contrast above. Keyed off armMask so the
+  // gain lands where the spiral structure already is.
+  float armBoost = 1.0 + 3.0 * pow(armMask, 2.0);
+
+  float disc = plane * inner * outer * armMask * clump * armBoost;
+
+  // ---- CENTRAL BULGE ----
+  //
+  // A real galaxy is a thin disc PLUS a fat spheroidal bulge, and the bulge
+  // was missing entirely. Because the disc's vertical envelope collapses to
+  // ~600 units near the axis, a face-on ray through the centre crossed less
+  // gas than one through the arms, so the brightest region of a galaxy came
+  // out the DIMMEST - measured 0.071 against 0.341 at mid radius. That is a
+  // dark hole exactly where Andromeda blazes.
+  //
+  // The bulge is a genuine 3D spheroid, slightly flattened, so it is thick
+  // in every direction and dominates the centre from any viewing angle.
+  float br = length(vec3(p.x, p.y / 0.62, p.z));
+  // Radius tuned by measurement, not by eye: at 0.16 the bulge was too
+  // tight to out-shine the arms along a face-on ray (core/mid 0.93), and
+  // raising its amplitude did nothing because the density clamps at 1.0 -
+  // the limit is how far the ray travels through it, not how thick it is.
+  // Widening it is what actually works.
+  float bulge = exp(-pow(br / max(outerR * 0.30, 1.0), 1.6)) * 9.0;
+
+  return clamp(disc + bulge, 0.0, 1.0);
 }
 
 /** Dark dust: ridged filaments that absorb rather than glow. */
@@ -211,8 +251,10 @@ vec3 gasColor(vec3 p, float d){
   } else {
     // Photoreal: brilliant creamy gold core, cooling outward to blue-white
     // and finally to a deep indigo halo.
-    vec3 CORE = vec3(1.00, 0.78, 0.38);
-    vec3 DISC = vec3(0.45, 0.62, 1.00);
+    // Brilliant creamy solar gold at the bulge, cooling through blue-white
+    // to a deep indigo halo - the Andromeda ramp.
+    vec3 CORE = vec3(1.00, 0.90, 0.60);
+    vec3 DISC = vec3(0.50, 0.64, 1.00);
     vec3 HALO = vec3(0.12, 0.14, 0.40);
     base = t < 0.32
       ? mix(CORE, DISC, t / 0.32)
@@ -242,7 +284,16 @@ vec3 gasColor(vec3 p, float d){
     float wsum = w1 + w2 + w3;
     if (wsum > 1e-4) {
       vec3 hue = (CRIMSON * w1 + TEAL * w2 + ORANGE * w3) / wsum;
-      base = mix(base, hue, smoothstep(0.0, 0.55, wsum) * TINT_AMOUNT);
+      // THE BULGE KEEPS ITS GOLD.
+      //
+      // At full strength the sector hue overwrote the core too, and the
+      // centre of the galaxy came out blue-violet (0.25, 0.31, 0.57)
+      // instead of creamy gold. In a real galaxy the bulge is old dense
+      // starlight, not emission nebulae, so the coloured gas belongs in
+      // the ARMS. Fading the tint out toward the centre keeps the
+      // Andromeda look: gold heart, coloured arms.
+      float armsOnly = smoothstep(0.10, 0.42, t);
+      base = mix(base, hue, smoothstep(0.0, 0.55, wsum) * TINT_AMOUNT * armsOnly);
     }
   }
 
@@ -268,6 +319,21 @@ vec3 gasColor(vec3 p, float d){
 
 // ---------------------------------------------------------------- march
 
+/**
+ * Ray vs the galaxy's bounding sphere, centred on the galactic origin.
+ *
+ * Returns the entry and exit distances along the ray, or a degenerate
+ * range when the ray misses entirely.
+ */
+vec2 galaxySpan(vec3 ro, vec3 rd, float R){
+  float b = dot(ro, rd);
+  float c = dot(ro, ro) - R * R;
+  float h = b * b - c;
+  if (h < 0.0) return vec2(1.0, -1.0);   // miss
+  h = sqrt(h);
+  return vec2(-b - h, -b + h);
+}
+
 void main(void) {
   vec3 dir = normalize(vDir);
 
@@ -275,7 +341,29 @@ void main(void) {
   // and WebGL1 will not compile it. 48 steps is enough for smooth cloud at
   // this scale without stalling integrated GPUs.
   const int STEPS = 48;
-  float far = max(marchFar, 1.0);
+
+  // CONCENTRATE THE SAMPLES ON THE GALAXY.
+  //
+  // Marching a fixed 130,000 units gives a 2,708-unit step, but the disc is
+  // only 600-3,000 units thick. Seen face-on a ray therefore crossed the
+  // whole galaxy in well under one sample - measured alpha 0.003 - so the
+  // galaxy almost vanished from outside while still looking dense edge-on,
+  // where the ray runs ALONG the disc and lands many samples. That single
+  // sampling failure is why it read as a faint local wisp instead of a
+  // galaxy.
+  //
+  // Clipping the march to the galaxy's bounding sphere makes the step size
+  // adapt: distant face-on rays now spend all 48 samples inside the disc
+  // instead of throwing most of them away in empty space.
+  float R = outerR * 1.30;
+  vec2 span = galaxySpan(camPos, dir, R);
+  if (span.y < span.x) { gl_FragColor = vec4(0.0); return; }
+
+  float t0 = max(span.x, 0.0);
+  float t1 = min(span.y, max(marchFar, 1.0));
+  if (t1 <= t0) { gl_FragColor = vec4(0.0); return; }
+
+  float far = t1 - t0;
   float dt = far / float(STEPS);
 
   // Dither the entry point. Without this the fixed step size lays down
@@ -287,7 +375,7 @@ void main(void) {
   float trans = 1.0;
 
   for (int i = 0; i < STEPS; i++){
-    float s = (float(i) + jitter) * dt;
+    float s = t0 + (float(i) + jitter) * dt;
     vec3 pos = camPos + dir * s;
 
     float d = galaxyDensity(pos);

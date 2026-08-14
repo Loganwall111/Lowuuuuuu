@@ -26,6 +26,7 @@
 
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import type { Region, RegionKind } from './UniverseState';
+import { GALACTIC_PLANE_Y } from './UniverseState';
 import { latticeGalaxiesInChunk } from './IntergalacticGrid';
 
 /** Edge length of one chunk, world units. */
@@ -293,7 +294,10 @@ export function generateChunk(
   // with the bright core you can actually see, instead of floating in empty
   // space above or below the disc.
   for (const g of latticeGalaxiesInChunk(origin, chunkSize)) {
-    const core = makeRegion('blackhole', new Vector3(g.x, g.y, g.z),
+    // Pinned to the galactic plane, exactly as in the authored core: the
+    // singularity is what the disc orbits, so it defines y = 0 rather than
+    // drifting relative to it.
+    const core = makeRegion('blackhole', new Vector3(g.x, GALACTIC_PLANE_Y, g.z),
       streamFrom(g.seed >>> 0), cx, cy, cz, 5);
     core.name = 'Galaxy ' + g.ix + '.' + g.iy + '.' + g.iz + ' Core';
     // Scaled to the galaxy it anchors, so a big galaxy has a big core.

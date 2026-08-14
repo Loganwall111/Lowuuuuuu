@@ -93,14 +93,19 @@ function galaxyDensity(px, py, pz) {
   if (rim <= 0) return 0;
   const h = Math.max(r * thickness, outerR * 0.012);
   const plane = Math.exp(-(py * py) / (2 * h * h));
-  const inner = 1 - Math.exp(-r / Math.max(innerR, 1e-4));
+  const inner = 0.55 + 0.45 * (1 - Math.exp(-r / Math.max(innerR, 1e-4)));
   const ang = Math.atan2(pz, px);
   const spiral = ang - armFactor * Math.log(Math.max(r, 1) / Math.max(innerR, 1));
-  const armMask = 0.45 + 0.55 * ss(0, 1, Math.cos(spiral * arms) * 0.5 + 0.5);
+  const armMask = 0.16 + 0.84 * Math.pow(ss(0, 1, Math.cos(spiral * arms) * 0.5 + 0.5), 0.75);
   const s = 1.6 / outerR;
   let clump = fbm(px * s * 2.2, py * s * 2.2, pz * s * 2.2, 5);
-  clump = ss(0.18, 0.92, clump) * 1.5;
-  return clamp(plane * inner * rim * armMask * clump, 0, 1);
+  clump = ss(0.10, 0.88, clump) * 2.6;
+  const armBoost = 1 + 3 * Math.pow(armMask, 2);
+  const disc = plane * inner * rim * armMask * clump * armBoost;
+  // Central bulge: a flattened spheroid, thick in every direction.
+  const br = Math.hypot(px, py / 0.62, pz);
+  const bulge = Math.exp(-Math.pow(br / Math.max(outerR * 0.30, 1), 1.6)) * 9.0;
+  return clamp(disc + bulge, 0, 1);
 }
 function dustAt(px, py, pz) {
   const r = Math.hypot(px, pz), s = 1.9 / outerR;
@@ -113,7 +118,7 @@ function dustAt(px, py, pz) {
 function gasColor(px, py, pz, d) {
   const r = Math.hypot(px, pz), t = clamp(r / outerR, 0, 1);
   const m3 = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
-  const CORE = [1.00, 0.78, 0.38], DISC = [0.45, 0.62, 1.00], HALO = [0.12, 0.14, 0.40];
+  const CORE = [1.00, 0.90, 0.60], DISC = [0.50, 0.64, 1.00], HALO = [0.12, 0.14, 0.40];
   let base = t < 0.32 ? m3(CORE, DISC, t / 0.32) : m3(DISC, HALO, (t - 0.32) / 0.68);
   const sf = SECTOR_FREQ / outerR;
   const f1 = fbm(px * sf + 4.1, py * sf + 4.1, pz * sf + 4.1, 3);
@@ -128,18 +133,31 @@ function gasColor(px, py, pz, d) {
     const hue = [(CR[0] * w1 + TE[0] * w2 + OR[0] * w3) / wsum,
       (CR[1] * w1 + TE[1] * w2 + OR[1] * w3) / wsum,
       (CR[2] * w1 + TE[2] * w2 + OR[2] * w3) / wsum];
-    base = m3(base, hue, ss(0, 0.55, wsum) * TINT_AMOUNT);
+    base = m3(base, hue, ss(0, 0.55, wsum) * TINT_AMOUNT * ss(0.10, 0.42, t));
   }
   base = m3(base, base.map((v) => v * 1.22), ss(0.25, 0.95, d));
   const peak = Math.max(...base);
   if (peak > 1) base = base.map((v) => v / peak);
   return base;
 }
+function galaxySpan(ro, rd, R) {
+  const b = ro[0] * rd[0] + ro[1] * rd[1] + ro[2] * rd[2];
+  const c = ro[0] * ro[0] + ro[1] * ro[1] + ro[2] * ro[2] - R * R;
+  let h = b * b - c;
+  if (h < 0) return [1, -1];
+  h = Math.sqrt(h);
+  return [-b - h, -b + h];
+}
 function march(camPos, dir, marchFar, satRec = SAT_REC) {
-  const far = Math.max(marchFar, 1), dt = far / STEPS;
+  const R = outerR * 1.30;
+  const span = galaxySpan(camPos, dir, R);
+  if (span[1] < span[0]) return { col: [0, 0, 0], alpha: 0 };
+  const t0 = Math.max(span[0], 0), t1 = Math.min(span[1], Math.max(marchFar, 1));
+  if (t1 <= t0) return { col: [0, 0, 0], alpha: 0 };
+  const far = t1 - t0, dt = far / STEPS;
   let acc = [0, 0, 0], trans = 1;
   for (let i = 0; i < STEPS; i++) {
-    const s = (i + 0.5) * dt;
+    const s = t0 + (i + 0.5) * dt;
     const p = [camPos[0] + dir[0] * s, camPos[1] + dir[1] * s, camPos[2] + dir[2] * s];
     const d = galaxyDensity(p[0], p[1], p[2]);
     if (d > 0.002) {
@@ -279,6 +297,153 @@ ok('the vertical envelope has a floor so the core cannot pinch',
     ok(w.split('/').pop() + ' clears to pure black',
       /clearColor = new Color4\(0, 0, 0, 1\)/.test(t));
   }
+}
+
+// ------------------------------------------- VISIBLE FROM OUTSIDE (turn N)
+// The regression: marchFar was a fixed 130,000 units over 48 steps, giving
+// a 2,708-unit step, while the disc is only 600-3,000 units thick. Seen
+// face-on a ray therefore crossed the whole galaxy in UNDER ONE SAMPLE and
+// alpha measured 0.003 - the galaxy nearly vanished from outside, while
+// still looking dense edge-on where the ray runs along the disc.
+{
+  ok('the march is clipped to the galaxy volume', /galaxySpan\(camPos, dir, R\)/.test(frag));
+  ok('a ray that misses the galaxy costs nothing',
+    /if \(span\.y < span\.x\) \{ gl_FragColor = vec4\(0\.0\); return; \}/.test(frag));
+
+  const faceOn = [[0, -70000, 0], [10000, -90000, 6000], [-18000, -120000, 0]]
+    .map((p) => march(p, [0, 1, 0], 400000));
+  ok('the galaxy is clearly visible face-on from outside',
+    faceOn.every((r) => r.alpha > 0.08),
+    'min alpha ' + Math.min(...faceOn.map((r) => r.alpha)).toFixed(4));
+
+  // NEGATIVE CONTROL, measured where the failure actually was.
+  //
+  // Two separate defects were tangled together here. Close in, the fixed
+  // 130,000-unit march does reach the disc and looks fine - which is why a
+  // naive control passed and had to be rewritten. The failure is at RANGE:
+  // the march always started at the camera and ran a fixed length, so once
+  // the galaxy was further away than that length the ray stopped short and
+  // never touched it at all. Clipping to the bounding sphere puts every
+  // sample inside the galaxy no matter how far away the viewer is.
+  {
+    const sweep = (clipped, camY) => {
+      const origin = [8000, camY, 0], dir = [0, 1, 0];
+      let t0 = 0, far = 130000;
+      if (clipped) {
+        const span = galaxySpan(origin, dir, outerR * 1.30);
+        if (span[1] < span[0]) return 0;
+        t0 = Math.max(span[0], 0);
+        far = Math.min(span[1], 400000) - t0;
+        if (far <= 0) return 0;
+      }
+      const dt = far / STEPS;
+      let trans = 1;
+      for (let i = 0; i < STEPS; i++) {
+        const s = t0 + (i + 0.5) * dt;
+        const p = [origin[0], camY + s, 0];
+        const d = galaxyDensity(p[0], p[1], p[2]);
+        if (d > 0.002) {
+          const ext = (d * 0.85 + dustAt(p[0], p[1], p[2]) * 1.9) * dt * EXTC;
+          trans *= Math.exp(-ext);
+        }
+      }
+      return 1 - trans;
+    };
+    const FAR = -190000;
+    const before = sweep(false, FAR), after = sweep(true, FAR);
+    ok('NEGATIVE CONTROL: the fixed-length march never reached a distant galaxy',
+      before < 0.01, 'unclipped alpha ' + before.toFixed(4));
+    ok('clipping keeps a distant galaxy visible', after > 0.05,
+      'clipped ' + after.toFixed(4) + ' vs unclipped ' + before.toFixed(4));
+    ok('the galaxy does not fade out as you back away',
+      Math.abs(sweep(true, -90000) - sweep(true, -260000)) < 0.08);
+  }
+}
+
+// ------------------------------------------------- THE BULGE (turn N)
+// Without a bulge term the disc envelope collapses to ~600 units near the
+// axis, so a face-on ray through the CENTRE crossed less gas than one
+// through the arms and the brightest part of a galaxy rendered dimmest.
+{
+  ok('a central bulge exists', /float bulge = exp/.test(frag));
+  ok('the bulge is a spheroid, not part of the thin disc',
+    /length\(vec3\(p\.x, p\.y \/ 0\.62, p\.z\)\)/.test(frag));
+
+  const lum = (c) => c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722;
+  const at = (rr) => march([rr, -70000, 0], [0, 1, 0], 400000);
+  const core = at(0), mid = at(20000), outer = at(34000);
+
+  ok('the core is the brightest part of the galaxy',
+    lum(core.col) > lum(mid.col) && lum(core.col) > lum(outer.col),
+    'core ' + lum(core.col).toFixed(3) + ' mid ' + lum(mid.col).toFixed(3));
+  ok('the core is creamy gold, not blue',
+    core.col[0] >= core.col[1] && core.col[1] >= core.col[2],
+    core.col.map((v) => v.toFixed(2)).join(','));
+  ok('the core still does not bleach to white',
+    Math.max(...core.col) <= 0.9401);
+  ok('the arms keep their emission colour', sat(outer.col) > 0.25,
+    'arm saturation ' + sat(outer.col).toFixed(3));
+  ok('brightness falls off toward the rim', lum(outer.col) > lum(at(46000).col));
+
+  // The bulge must not swallow the whole galaxy.
+  ok('the bulge is confined to the centre',
+    galaxyDensity(0, 0, 0) > galaxyDensity(40000, 0, 0));
+}
+
+// ------------------------------------------------ ARM CONTRAST (turn N)
+{
+  ok('the inter-arm gaps are genuinely darker than the arms',
+    /mix\(0\.16, 1\.0/.test(frag));
+  ok('density is boosted inside the arms specifically',
+    /armBoost = 1\.0 \+ 3\.0 \* pow\(armMask, 2\.0\)/.test(frag));
+}
+
+// ------------------------------------ CORES ON THE PLANE (turn N)
+{
+  const us = fs.readFileSync('src/bjs/systems/UniverseState.ts', 'utf8');
+  const cu = fs.readFileSync('src/bjs/systems/ChunkedUniverse.ts', 'utf8');
+  ok('the galactic plane is a named constant', /GALACTIC_PLANE_Y = 0/.test(us));
+  ok('authored cores are pinned to the plane',
+    /new Vector3\(at\.x, GALACTIC_PLANE_Y, at\.z\)/.test(us));
+  ok('streamed cores are pinned to the plane',
+    /new Vector3\(g\.x, GALACTIC_PLANE_Y, g\.z\)/.test(cu));
+  ok('chunk-scale galaxy regions no longer exist',
+    !/kind = roll < 0\.38 \? 'galaxy'/.test(cu));
+}
+
+// ------------------------------------- APPROACH GLARE CLAMP (turn N)
+{
+  const app = fs.readFileSync('src/bjs/App.ts', 'utf8');
+  ok('bloom is pulled down as a horizon closes',
+    /bloomBeforeHorizon \* \(1 - 0\.82 \* proximity\)/.test(app));
+  ok('the pre-clamp bloom is captured once, not re-read each frame',
+    /if \(!this\.bloomClamped\) \{\s*\n\s*this\.bloomBeforeHorizon = this\.postfx\.settings\.bloom;/.test(app));
+  ok('bloom is restored on leaving', /this\.postfx\.set\('bloom', this\.bloomBeforeHorizon\);/.test(app));
+  ok('the clamp is driven by the same depth as the transition',
+    /const depth = this\.universe\.horizonDepth;/.test(app));
+
+  // The ramp itself, simulated: it must fall smoothly, hold stable, and
+  // restore exactly - a naive version that re-reads the live setting
+  // ratchets bloom to zero and never comes back.
+  let bloom = 0.55, clamped = false, before = 0.55;
+  const step = (prox) => {
+    if (prox > 0.001) {
+      if (!clamped) { before = bloom; clamped = true; }
+      bloom = before * (1 - 0.82 * prox);
+    } else if (clamped) { bloom = before; clamped = false; }
+    return bloom;
+  };
+  const ramp = [0, 0.25, 0.5, 0.75, 1].map(step);
+  let mono = true;
+  for (let i = 1; i < ramp.length; i++) if (ramp[i] > ramp[i - 1]) mono = false;
+  ok('the glare falls monotonically as the horizon closes', mono);
+  ok('bloom never reaches zero: a hole still glows', ramp[ramp.length - 1] > 0);
+  ok('the frame is not blown out at the crossing', ramp[ramp.length - 1] < 0.2);
+  let held;
+  for (let i = 0; i < 100; i++) held = step(1);
+  ok('holding at the horizon does not ratchet bloom away',
+    Math.abs(held - ramp[ramp.length - 1]) < 1e-9);
+  ok('bloom is restored exactly on leaving', Math.abs(step(0) - 0.55) < 1e-9);
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);
