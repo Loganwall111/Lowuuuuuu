@@ -131,6 +131,68 @@ vec3 diskColor(float r, float ang, float height, out float alpha){
   return col * dens * diskBright;
 }
 
+// ------------------------------------------------------------------ the sky
+/**
+ * Starfield sampled along a DIRECTION, not a screen position.
+ *
+ * This is the piece that was missing, and the reason a screen-space warp
+ * could never reproduce a real black hole image. A post-process is a
+ * function uv -> uv: it rearranges pixels that were already drawn. But the
+ * defining features of a lensed sky are light that the flat frame contains
+ * no record of - the far side of the disk bent up over the shadow, and
+ * Einstein rings, which are SEVERAL images of the SAME star. One output
+ * pixel can only take one input pixel, so a warp cannot duplicate a star
+ * into a ring no matter how the offsets are shaped.
+ *
+ * Sampling by direction has no such limit. Two different fragments whose
+ * geodesics escape toward the same patch of sky both see that patch, which
+ * is exactly what an Einstein ring is.
+ */
+vec3 skyAlongRay(vec3 dir){
+  vec3 d = normalize(dir);
+
+  // Three octaves of cell noise on the direction vector. Cheap, stable
+  // under rotation, and dense enough to read as a real field.
+  vec3 col = vec3(0.0);
+  for (int oct = 0; oct < 3; oct++){
+    float scale = 48.0 * pow(2.3, float(oct));
+    vec3 p = d * scale;
+    vec3 cell = floor(p);
+    vec3 f = p - cell;
+
+    // Nearest-feature search over the 8 surrounding cells.
+    for (int gx = 0; gx <= 1; gx++){
+      for (int gy = 0; gy <= 1; gy++){
+        for (int gz = 0; gz <= 1; gz++){
+          vec3 g = vec3(float(gx), float(gy), float(gz));
+          vec3 id = cell + g;
+          float h = hash13(id);
+          // Only a fraction of cells hold a star.
+          if (h < 0.86) continue;
+          vec3 jitter = vec3(hash13(id + 17.1), hash13(id + 39.7), hash13(id + 71.3));
+          float dist = length(f - g - (jitter - 0.5) * 0.85);
+          float star = exp(-dist * dist * 210.0);
+          // Cool stars dominate, as in any real sky.
+          float temp = hash13(id + 5.5);
+          vec3 tint = temp < 0.74
+            ? vec3(1.0, 0.72 + temp * 0.3, 0.55 + temp * 0.4)
+            : vec3(0.72, 0.84, 1.0);
+          col += tint * star * (0.35 + h * 0.65) / (1.0 + float(oct) * 1.6);
+        }
+      }
+    }
+  }
+
+  // A faint galactic band so the lensed sky has large-scale structure to
+  // distort. Without it the warp has nothing but points to act on and the
+  // wrapping is much harder to read.
+  float band = exp(-pow(d.y * 3.1, 2.0));
+  vec3 gas = vec3(0.16, 0.15, 0.26) * band * 0.5;
+  gas += vec3(0.26, 0.17, 0.12) * band * noise3(d * 7.0) * 0.55;
+
+  return col * 1.5 + gas;
+}
+
 void main(void){
   // Ray from the eye through this fragment of the quad.
   vec3 ro = camPos - holePos;
@@ -144,6 +206,10 @@ void main(void){
   vec3 col = vec3(0.0);
   float transmit = 1.0;
   bool captured = false;
+  // Where this fragment's light ultimately comes from, and how far the
+  // geodesic swung to get there.
+  vec3 escapeDir = rd;
+  float totalBend = 0.0;
 
   // Disk basis.
   vec3 dn = normalize(vec3(sin(diskTilt), cos(diskTilt), 0.0));
@@ -169,6 +235,7 @@ void main(void){
     float dphi = 0.035;
     vec3 prevPos = ro;
     vec3 prevPrev = ro;
+    escapeDir = rd;
 
     for (int i = 0; i < 160; i++){
       float k1 = -u + 1.5 * rs * u * u;
@@ -182,9 +249,18 @@ void main(void){
       if (u <= 0.0) break;                       // escaped
       float r = 1.0 / u;
       if (r <= rs * horizonCover){ captured = true; break; }
-      if (r > quadRadius * 2.2) break;           // left the region we draw
 
       vec3 p = (er * cos(phi) + et * sin(phi)) * r;
+
+      // The ray's CURRENT heading, in world space. Once it stops bending
+      // this is the direction it flies off toward, and that is the patch of
+      // sky this fragment shows. Tracking it is what lets a fragment near
+      // the rim - whose geodesic has swung through a large angle - display
+      // sky from behind the hole, which is the whole point of lensing.
+      escapeDir = normalize(p - prevPos);
+      totalBend = phi;
+
+      if (r > quadRadius * 2.2) break;           // left the region we draw
 
       // ---- volumetric disk ----
       // Accumulate through a slab of real thickness rather than testing a
@@ -232,11 +308,32 @@ void main(void){
     }
   }
 
+  // ---- the lensed sky ----
+  // An escaping ray carries light from whatever it is pointing at once it
+  // has finished bending. Adding it here is what puts a genuinely warped
+  // starfield INSIDE the hole's own render, including the two things a
+  // screen-space pass can never produce: multiple images of one star, and
+  // the sky wrapped tightly around the shadow's rim.
+  //
+  // Weighted by how far the geodesic actually swung, so that far from the
+  // hole - where the ray is essentially straight and the real starfield
+  // behind the quad is already correct - this contributes nothing and
+  // cannot double the stars. It fades in exactly where the deflection
+  // becomes real, which is also where the flat background is most wrong.
+  float lensedSky = 0.0;
+  if (!captured){
+    lensedSky = smoothstep(0.05, 0.55, totalBend) * transmit;
+    col += skyAlongRay(escapeDir) * lensedSky;
+  }
+
   // Coverage. Captured rays are pure shadow: fully opaque black, which is
   // what actually occludes the stars behind the hole. Everything else
   // contributes only the light it picked up, so the sky shows through.
   float lum = clamp(max(max(col.r, col.g), col.b), 0.0, 1.0);
-  float alpha = captured ? 1.0 : lum;
+  // Where the sky is being drawn lensed, the quad must be opaque enough to
+  // hide the UNBENT background behind it, or both are visible at once and
+  // the stars appear doubled.
+  float alpha = captured ? 1.0 : max(lum, lensedSky * 0.92);
 
   // Fade the quad's own rim so its square edge is never visible.
   vec2 d = (vUV - 0.5) * 2.0;
