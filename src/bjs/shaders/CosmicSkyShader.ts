@@ -272,17 +272,44 @@ vec3 skyMandelbrot(vec3 d, float zoom, float t){
  * medium: 0 stars, 1 technology, 2 code, 3 geometry, 4 fractal,
  *         5 string, 6 void.
  */
+/*
+ * Very distant galaxies: unresolved smudges far outside our own.
+ *
+ * This is deliberately NOT our Milky Way - that is real geometry now. It
+ * exists so the sky between the real stars is not dead black, and it is
+ * kept dim and structureless so nothing here can be mistaken for a place
+ * you could fly to.
+ */
+vec3 skyDeepField(vec3 d){
+  float n = skyFbm(d * 2.4 + 61.3, 4);
+  float clump = smoothstep(0.62, 1.0, n);
+  vec3 warm = vec3(0.10, 0.09, 0.13);
+  vec3 cool = vec3(0.06, 0.08, 0.14);
+  float pick = skyNoise(d * 5.1 - 12.0);
+  return mix(cool, warm, pick) * clump * 0.55;
+}
+
 vec3 cosmicSky(vec3 dir, float medium, float symmetry, vec3 tint,
                float strangeness, float t, float zoom){
   vec3 d = normalize(dir);
   vec3 col = vec3(0.0);
 
   if (medium < 0.5){
-    // Ordinary space: galaxy, nebulae, stars.
-    col = skyGalaxy(d, 0.42) + skyStars(d, 0.16, 42.0) * 1.35;
+    // ORDINARY SPACE: NO PAINTED GALAXY.
+    //
+    // The Milky Way is real geometry now - 30,000 stars and 9,000 gas
+    // points at true coordinates out to radius 50,000 (GalaxyField). A
+    // painted band here would be a SECOND Milky Way drawn at infinite
+    // distance on top of the reachable one: it would never move as you
+    // flew toward it, so the real galaxy would visibly slide against a
+    // stuck copy of itself. Only the faintest deep-field grain remains,
+    // which is unresolved distant galaxies rather than our own.
+    col = skyStars(d, 0.16, 42.0) * 1.35;
+    col += skyDeepField(d) * 0.5;
   } else if (medium < 1.5){
-    // Technology: the galaxy dimmed behind a cold structural grid.
-    col = skyGalaxy(d, 0.42) * 0.35 + skyStars(d, 0.08, 38.0) * 0.7;
+    // Technology: a cold structural grid over deep field.
+    col = skyStars(d, 0.08, 38.0) * 0.7;
+    col += skyDeepField(d) * 0.3;
     col += skyLattice(d, 4.0, t) * 0.55;
     col += vec3(0.05, 0.24, 0.26) * 0.5;
   } else if (medium < 2.5){

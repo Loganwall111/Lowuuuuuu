@@ -608,6 +608,12 @@ export class App {
       tint: verse.tint,
       strangeness: verse.strangeness
     });
+    // Our galaxy belongs to ordinary space. In the Codeverse, the Fractal
+    // Core and the rest, the sky is a different reality and the Milky Way
+    // must not be hanging in it. Driven from the same verse state as the
+    // dome, so the two can never disagree about which reality this is.
+    this.galaxyField.setVisible(verse.medium === 'stars');
+
     this.holeField.setSky({
       medium: verse.medium,
       symmetry: verse.symmetry,

@@ -83,6 +83,30 @@ ok('the app builds the real galaxy',
 ok('the app drives it every frame',
   /this\.galaxyField\.update\(eye,/.test(app));
 
+// -------------------------------------- exactly ONE Milky Way, not two
+// The dome used to paint a galaxy band for ordinary space. Now that the
+// Milky Way is real geometry, a painted band would be a second copy at
+// infinite distance: it could never move as you flew toward it, so the
+// real galaxy would visibly slide against a stuck duplicate.
+{
+  const dome = fs.readFileSync('src/bjs/shaders/CosmicSkyShader.ts', 'utf8');
+  const ordinary = (dome.match(
+    /if \(medium < 0\.5\)\{[\s\S]*?\} else if/) || [''])[0];
+  ok('ordinary space does not paint a galaxy band',
+    !/skyGalaxy\(/.test(ordinary));
+  ok('the deep field that remains is not our galaxy',
+    /skyDeepField\(/.test(dome) && /NOT our Milky Way/.test(dome));
+  ok('the real galaxy is the only Milky Way',
+    /THE MILKY WAY IS REAL GEOMETRY|NO PAINTED GALAXY/.test(dome));
+}
+
+// ------------------------------- the galaxy belongs to ordinary space
+ok('the field can be hidden', /setVisible\(on: boolean\)/.test(src));
+ok('hiding the galaxy also clears its fog',
+  /if \(!this\.visible\) \{ scene\.fogMode = 0; return; \}/.test(src));
+ok('the app hides it outside ordinary space',
+  /this\.galaxyField\.setVisible\(verse\.medium === 'stars'\)/.test(app));
+
 // ------------------------------------------------------------- behaviour
 {
   const out = '/tmp/galaxyfield-' + Date.now() + '.mjs';

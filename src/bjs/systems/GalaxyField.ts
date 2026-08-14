@@ -147,6 +147,8 @@ export class GalaxyField {
 
   /** Total points placed. */
   count = 0;
+  /** Whether the field is currently shown. */
+  visible = true;
 
   get camera(): Camera | null { return this.cam; }
   get isBuilt(): boolean { return this.built; }
@@ -291,6 +293,21 @@ export class GalaxyField {
    * orientation, so the two passes line up perfectly; only their depth
    * ranges differ.
    */
+  /**
+   * Show or hide the whole field.
+   *
+   * The Milky Way is a feature of ORDINARY space. Inside the Codeverse or
+   * the Fractal Core the sky is a different reality entirely, and leaving
+   * 39,000 real stars hanging in it would mean flying through the matrix
+   * with our galaxy still visible behind the data streams.
+   */
+  setVisible(on: boolean): void {
+    for (const m of this.meshes) {
+      try { m.setEnabled(on); } catch { /* disposed */ }
+    }
+    this.visible = on;
+  }
+
   update(eye: Vector3, target: Vector3, scene: Scene | null = this.scene): void {
     const cam = this.cam;
     if (cam) {
@@ -301,6 +318,9 @@ export class GalaxyField {
 
     // Coordinate-bound nebular fog: density comes from where you actually
     // are, so crossing the disc fills the cockpit and leaving it clears.
+    // A hidden galaxy must not leave its fog behind, or the Codeverse
+    // inherits nebula haze from a Milky Way that is not being drawn.
+    if (!this.visible) { scene.fogMode = 0; return; }
     const f = fogStateAt(eye.x, eye.y, eye.z);
     if (f.density > 0.001) {
       scene.fogMode = 2; // EXP
@@ -325,7 +345,7 @@ export class GalaxyField {
 
   stats(): Record<string, string> {
     return {
-      'Galaxy points': this.built ? String(this.count) : 'off',
+      'Galaxy points': this.built && this.visible ? String(this.count) : 'off',
       'Galaxy span': FIELD_INNER + '-' + FIELD_OUTER
     };
   }
