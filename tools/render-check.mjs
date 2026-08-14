@@ -603,44 +603,6 @@ console.log('\n— fractured singularities are rare and isolated —');
 }
 
 
-// ------------------------------------------------------- seamless sky (bug 1)
-// The user saw the star background split into hard-edged triangular wedges of
-// different tint. Root cause: a textured icosphere. An icosphere has no
-// continuous UV map - measured, 69 of its 362 vertex positions carry more than
-// one UV, so the texture is cut at each of them. Clamping/filtering cannot fix
-// a discontinuity that lives in the mesh's UVs.
-console.log('\n— the sky has no seams —');
-{
-  const sky = read('src/bjs/shaders/SkyShader.ts');
-
-  ok('the sky derives its coordinates from DIRECTION, not mesh UVs',
-    /atan\(\s*d\.z\s*,\s*d\.x\s*\)/.test(sky) && /acos\(/.test(sky),
-    'equirectangular from a normalized direction is the only seam-free option');
-
-  ok('the sky shader declares no uv attribute',
-    !/attribute\s+vec2\s+uv/.test(sky),
-    'reading mesh uv on an icosphere reintroduces the wedges');
-
-  ok('the longitude wrap is made continuous with fract()',
-    /fract\(\s*u\s*\)/.test(sky));
-
-  ok('the false mip step at the wrap is neutralised',
-    /du\s*>\s*0\.5/.test(sky),
-    'without this the u=0/1 wrap picks the smallest mip and draws a bright line');
-
-  // Every world that shows stars must use it - a fix in one world only would
-  // leave the other worlds still wedged.
-  for (const w of ['PlanetaryWorld', 'SandboxWorld', 'ShipWorld']) {
-    const src = read(`src/bjs/worlds/${w}.ts`);
-    const usesSky = /createSky\(/.test(src);
-    ok(`${w} builds its sky with the seamless shader`, usesSky,
-      'expected a createSky() call');
-    ok(`${w} no longer puts a plain texture on the sky mesh`,
-      !/(sm|skyMat)\.emissiveTexture\s*=\s*starfieldTexture/.test(src),
-      'StandardMaterial samples by mesh uv, which is what caused the wedges');
-  }
-}
-
 // -------------------------------------------- one hole, one position (bug 2)
 // The user saw a plain black circle on one side of the screen and a separate
 // lensed orange disk on the other. Cause: the Singularity world raymarches its
@@ -662,6 +624,64 @@ console.log('\n— the Singularity shows exactly one black hole —');
   // The disk, the lensing and the core must be one position, by construction.
   ok('the world exposes a single hole position',
     /holePos/.test(bhw));
+}
+
+// ---------------------------------------- no flat sky screen at all (bug 1)
+// The direction-sampled sky removed the UV seams but the user still saw hard
+// wedges, and was right about the real answer: in space there should be NO
+// sky object. The wedges are the icosphere's own triangles - a finite mesh
+// wrapped around the camera will always show its silhouette against the
+// procedural star volume. The fix is to delete the sky mesh entirely and let
+// the three real point-cloud shells be the sky.
+console.log('\n— there is no flat sky mesh anywhere —');
+{
+  const worlds = ['PlanetaryWorld', 'SandboxWorld', 'ShipWorld'];
+  for (const w of worlds) {
+    const src = read(`src/bjs/worlds/${w}.ts`);
+    ok(`${w} builds no sky sphere`,
+      !/createSky\(/.test(src) && !/CreateIcoSphere\('sky'/.test(src),
+      'a wrapped mesh shows its own triangle silhouettes');
+    ok(`${w} puts no starfield texture on a mesh`,
+      !/starfieldTexture/.test(src));
+  }
+
+  // The stars must still exist - as real 3D points, not a painted shell.
+  const sky = read('src/bjs/systems/LayeredSky.ts');
+  ok('the stars are a real 3D point cloud',
+    /PointsCloudSystem/.test(sky));
+  ok('there are three concentric shells',
+    /'core'/.test(sky) && /'mid'/.test(sky) && /'far'/.test(sky));
+  ok('point shells never write depth',
+    /disableDepthWrite\s*=\s*true/.test(sky),
+    'depth-writing points punch black blocks into the scene');
+  ok('point shells blend additively',
+    /alphaMode\s*=\s*1/.test(sky));
+}
+
+// ------------------------------------ the singularity core is black (bug 2)
+// The user asked why the centre is grey. LensFX paints a screen-space shadow
+// wherever a hole is near, including inside BlackHoleWorld, which already
+// raymarches a true black core. Its shadow floor is col*0.06 + tint*0.035,
+// which for a black input is linear (0.035,0.0217,0.0098) = sRGB (56,45,31):
+// a warm grey laid over the black core.
+console.log('\n— the singularity core renders black —');
+{
+  const app = read('src/bjs/App.ts');
+  // Assert the behaviour: the hole LensFX tracks must be forced null when the
+  // world owns it, so nothing is painted over the raymarched core.
+  const lensBlock = (app.match(
+    /gravitational lensing[\s\S]{0,1200}?lensfx\.clear\(\);\s*\}/) || [''])[0];
+  ok('the screen-space lens is skipped when the world raymarches its own hole',
+    /worldOwnsHole/.test(lensBlock) && /\?\s*null/.test(lensBlock),
+    'LensFX grey shadow must not be painted over the raymarched black core');
+  ok('the ownership flag is computed before anything consumes it',
+    app.indexOf('const worldOwnsHole') < app.indexOf('gravitational lensing') &&
+    app.indexOf('const worldOwnsHole') < app.indexOf('this.holeField.update'));
+
+  // And the raymarcher itself must emit true black where a photon is captured.
+  const bhw = read('src/bjs/worlds/BlackHoleWorld.ts');
+  ok('a captured photon contributes no light',
+    /captured\s*=\s*true/.test(bhw));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

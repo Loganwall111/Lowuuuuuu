@@ -964,6 +964,10 @@ export class App {
       const eye = this.vehicle.mode === 'orbit'
         ? this.camera.position
         : this.vehicle.position;
+      // A world can declare that it renders its own black hole. Both the
+      // geometry hole field and the screen-space lens must stand down when it
+      // does, or the scene gets a second hole and a grey wash over the core.
+      const worldOwnsHole = this.world?.ownsBlackHole === true;
       const prevRegion = this.universe.current?.id ?? null;
       this.universe.updatePlayer(eye);
       if ((this.universe.current?.id ?? null) !== prevRegion) {
@@ -1005,7 +1009,13 @@ export class App {
       // this bends whatever is actually on screen as you fly past a hole in
       // any world, which is what makes it feel like one universe.
       {
-        const hole = this.universe.insideHorizon ?? this.nearestHole();
+        // A world that raymarches its own hole already draws a physically
+        // correct black core. The screen-space shadow floors at
+        // col*0.06 + tint*0.035 - linear (0.035,0.022,0.010), a warm grey -
+        // so painting it on top turned the core grey instead of black.
+        const hole = worldOwnsHole
+          ? null
+          : (this.universe.insideHorizon ?? this.nearestHole());
         if (hole) {
           const hr = this.universe.horizonRadiusOf(hole);
           const d = Vector3.Distance(eye, hole.position);
@@ -1065,7 +1075,6 @@ export class App {
       // hole in the same scene: the user saw a bare black circle on one side
       // and the lensed disk on the other. Passing an empty list releases any
       // geometry already built instead of leaving it stranded in the scene.
-      const worldOwnsHole = this.world?.ownsBlackHole === true;
       this.holeField.update(eye, worldOwnsHole ? [] : this.universe.regions
         .filter((r) => r.kind === 'blackhole')
         .map((r) => ({

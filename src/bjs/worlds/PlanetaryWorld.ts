@@ -22,7 +22,6 @@ import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { ringTexture } from '../Textures';
-import { createSky } from '../shaders/SkyShader';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
 import {
   CORONA_VERT, CORONA_FRAG, GLARE_VERT, GLARE_FRAG,
@@ -305,11 +304,12 @@ export class PlanetaryWorld implements World {
     Effect.ShadersStore['atmoVertexShader'] = ATMO_VERT;
     Effect.ShadersStore['atmoFragmentShader'] = ATMO_FRAG;
 
-    // ---- skybox of stars ----
-    // Built by the shared helper, which samples by direction rather than by
-    // mesh UV. Texturing an icosphere directly cut the sky into twenty
-    // triangular patches with hard tint edges between them.
-    this.stars = createSky(scene, 'sky', 3600).mesh;
+    // ---- no skybox ----
+    // There is deliberately no sky object here. Any finite mesh wrapped around
+    // the camera shows its own triangle silhouettes against the star volume,
+    // which is what the hard-edged wedges were: not UV seams, but the
+    // icosphere's own faces. Space is rendered by the three real point-cloud
+    // shells in LayeredSky, which App rebuilds for every world.
 
     // ---- central star ----
     this.star = MeshBuilder.CreateSphere('star', { diameter: 9, segments: 64 }, scene);

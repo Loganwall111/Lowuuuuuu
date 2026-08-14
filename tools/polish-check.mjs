@@ -104,39 +104,36 @@ ok('entering free-fly levels the horizon', /this\.roll = 0/.test(vehicle));
 
 /* ---------------- 2. the sky ------------------------------------------- */
 
-// The sky is now built by one shared helper (src/bjs/shaders/SkyShader.ts)
-// so every world gets the same seam-free sky; these properties are asserted
-// where they now live rather than inline in PlanetaryWorld.
+// There is no sky object at all any more.
+//
+// The wedges the user kept seeing were not UV seams: they were the sky
+// sphere's own triangles silhouetted against the star volume. Any finite
+// mesh wrapped around the camera does this. Space is now drawn purely by the
+// three point-cloud shells in LayeredSky, which is also what a real
+// procedural star renderer does.
 {
-  const sky = readFileSync('src/bjs/shaders/SkyShader.ts', 'utf8');
+  const sky = readFileSync('src/bjs/systems/LayeredSky.ts', 'utf8');
 
-  ok('the skybox is an icosphere, which has no poles',
-     /CreateIcoSphere\(/.test(sky));
-  ok('the old UV sphere skybox is gone',
-     !/CreateSphere\('sky'/.test(planetary) && !/CreateSphere\(/.test(sky));
-  ok('the pole warp is explained so it is not reintroduced',
-     /pole/i.test(sky));
-  ok('the sky is never fogged', /mat\.fogEnabled = false/.test(sky));
-  ok('the sky does not receive fog as a mesh',
-     /mesh\.applyFog = false/.test(sky));
-  ok('the sky draws behind everything else',
-     /mesh\.renderingGroupId = 0/.test(sky));
-
-  // Every world must route through the helper, or one of them keeps the
-  // wedge-seamed StandardMaterial sky.
   for (const w of ['PlanetaryWorld', 'SandboxWorld', 'ShipWorld']) {
     const src = readFileSync(`src/bjs/worlds/${w}.ts`, 'utf8');
-    ok(`${w} uses the shared seamless sky`, /createSky\(/.test(src));
+    ok(`${w} has no sky mesh`,
+       !/createSky\(/.test(src) &&
+       !/CreateIcoSphere\(['"`]sky/.test(src) &&
+       !/CreateSphere\(['"`](sky|shipSky)/.test(src));
+    ok(`${w} paints no starfield texture`, !/starfieldTexture/.test(src));
   }
 
-  // The skybox must sit inside the camera's far plane or it is clipped away.
+  ok('the stars are a real 3D point cloud', /PointsCloudSystem/.test(sky));
+  ok('the point shells never write depth',
+     /disableDepthWrite\s*=\s*true/.test(sky));
+  ok('the point shells blend additively', /alphaMode\s*=\s*1/.test(sky));
+
+  // Every shell must sit inside the camera far plane or it is clipped away.
   const maxZ = parseInt((app.match(/maxZ = (\d+)/) || [])[1] || '0', 10);
-  const radii = [...planetary.matchAll(/createSky\([^)]*?,\s*(\d+)\s*\)/g)]
-    .map((m) => parseInt(m[1], 10));
-  const radius = radii.length ? Math.max(...radii) : 0;
-  ok('the skybox radius is within the camera far plane',
-     radius > 0 && maxZ > 0 && radius <= maxZ,
-     'radius ' + radius + ' vs maxZ ' + maxZ);
+  const outers = [...sky.matchAll(/outer:\s*(\d+)/g)].map((m) => parseInt(m[1], 10));
+  ok('every star shell sits inside the camera far plane',
+     outers.length === 3 && maxZ > 0 && Math.max(...outers) <= maxZ,
+     'outers ' + outers.join(',') + ' vs maxZ ' + maxZ);
 }
 
 /* ---------------- 3. speed you can see --------------------------------- */

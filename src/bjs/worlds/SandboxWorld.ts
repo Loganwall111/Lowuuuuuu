@@ -22,7 +22,6 @@ import { PointerEventTypes } from '@babylonjs/core/Events/pointerEvents';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Observer } from '@babylonjs/core/Misc/observable';
 import type { PointerInfo } from '@babylonjs/core/Events/pointerEvents';
-import { createSky } from '../shaders/SkyShader';
 import { findObject, MATERIALS, type ObjectDef } from '../content/ObjectCatalog';
 import { buildObjectMesh } from '../content/ObjectFactory';
 import { BeamSystem, BEAMS, type BeamKind, type BeamTarget } from '../systems/BeamSystem';
@@ -105,8 +104,8 @@ export class SandboxWorld implements World {
 
     registerPlanetShader();
 
-    // Direction-sampled sky: no mesh UVs, so no triangular seams.
-    this.sky = createSky(scene, 'sky', 1200).mesh;
+    // No sky mesh: the star volume (LayeredSky) is the sky. A wrapped sphere
+    // silhouettes its own triangles against it.
 
     const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
     hemi.intensity = 0.12;

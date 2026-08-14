@@ -16,7 +16,6 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
 import { PointLight } from '@babylonjs/core/Lights/pointLight';
 import type { Material } from '@babylonjs/core/Materials/material';
-import { createSky } from '../shaders/SkyShader';
 import type { Scene } from '@babylonjs/core/scene';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
@@ -60,10 +59,7 @@ export class ShipWorld implements World {
     amb.groundColor = new Color3(0.14, 0.16, 0.24);
 
     // ---- starfield outside ----
-    // Direction-sampled sky: no mesh UVs, so no triangular seams.
-    const built = createSky(scene, 'shipSky', 800);
-    this.meshes.push(built.mesh);
-    this.mats.push(built.material);
+    // No sky mesh: the star volume (LayeredSky) is the sky.
 
     // ---- deck ----
     const deck = MeshBuilder.CreateCylinder('shipDeck',
