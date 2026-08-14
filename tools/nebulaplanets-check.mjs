@@ -354,6 +354,178 @@ console.log('\n--- 2b. every OTHER galaxy has coloured gas inside it too ---');
     /outerBound: g\.radius/.test(src));
 }
 
+console.log('\n--- 2c. photoreal baseline, rare neon anomaly, soft points ---');
+
+{
+  const grid1 = await bundle('src/bjs/systems/IntergalacticGrid.ts');
+  const shp = await bundle('src/bjs/systems/GalaxyShape.ts');
+  const fld = await bundle('src/bjs/systems/GalaxyField.ts');
+
+  // ---- rarity ----
+  ok('an anomaly chance is defined as one constant',
+    typeof grid1.ANOMALY_CHANCE === 'number', String(grid1.ANOMALY_CHANCE));
+  ok('the neon galaxy is rare, not the default',
+    grid1.ANOMALY_CHANCE > 0 && grid1.ANOMALY_CHANCE <= 0.10,
+    (grid1.ANOMALY_CHANCE * 100).toFixed(0) + '%');
+  {
+    let anom = 0, n = 0;
+    for (let i = -40; i < 40; i++)
+      for (let j = -6; j < 6; j++)
+        for (let k = -6; k < 6; k++) {
+          const c = grid1.galaxyInCell(i, j, k);
+          n++;
+          if (c.klass === 'anomaly') anom++;
+        }
+    const pct = anom / n;
+    ok('the measured anomaly rate matches the constant',
+      Math.abs(pct - grid1.ANOMALY_CHANCE) < 0.01,
+      (pct * 100).toFixed(2) + '% over ' + n + ' galaxies');
+    ok('the overwhelming majority are photorealistic', pct < 0.12,
+      (100 - pct * 100).toFixed(1) + '% photoreal');
+    ok('anomalies do still exist to be found', anom > 0, anom + ' found');
+  }
+  ok('a galaxy keeps its class forever', (() => {
+    for (let i = 0; i < 200; i++) {
+      if (grid1.galaxyInCell(i, -i, i * 2).klass !==
+          grid1.galaxyInCell(i, -i, i * 2).klass) return false;
+    }
+    return true;
+  })());
+  ok('class is independent of size and brightness', (() => {
+    // If class shared a hash channel with radius, every anomaly would also
+    // be the same size - a visible tell.
+    const an = [];
+    for (let i = -60; i < 60; i++)
+      for (let j = -4; j < 4; j++) {
+        const c = grid1.galaxyInCell(i, j, 3);
+        if (c.klass === 'anomaly') an.push(c.radius);
+      }
+    return an.length > 3 && new Set(an.map((r) => r.toFixed(0))).size > 2;
+  })());
+
+  // ---- the home galaxy is the reference look ----
+  ok('the home galaxy is photorealistic', fld.HOME_CLASS === 'photoreal',
+    fld.HOME_CLASS);
+
+  const cfgH = fld.FIELD_GALAXY;
+  const bucket = (lo, hi) => {
+    let x = 987654321;
+    const rnd = () => ((x = (Math.imul(x, 1664525) + 1013904223) >>> 0) / 4294967296);
+    const acc = [0, 0, 0];
+    let n = 0;
+    for (let i = 0; i < 6000; i++) {
+      const t = lo + rnd() * (hi - lo);
+      const r = t * cfgH.outerBound;
+      const a = rnd() * Math.PI * 2;
+      const px = Math.cos(a) * r, pz = Math.sin(a) * r;
+      const c = shp.photorealColor(0.8, px, 0, pz, cfgH);
+      for (let k = 0; k < 3; k++) acc[k] += c[k];
+      n++;
+    }
+    return acc.map((v) => v / n);
+  };
+  const core = bucket(0.0, 0.18);
+  const rim = bucket(0.65, 1.0);
+  ok('the core is warm creamy gold', core[0] > core[2],
+    'R ' + core[0].toFixed(3) + ' > B ' + core[2].toFixed(3));
+  ok('the outer halo is cold blue', rim[2] > rim[0],
+    'B ' + rim[2].toFixed(3) + ' > R ' + rim[0].toFixed(3));
+  ok('the core is brighter than the halo',
+    core[0] + core[1] + core[2] > rim[0] + rim[1] + rim[2]);
+
+  // Dust lanes are the signature of a real spiral and cannot come from an
+  // emission-only palette.
+  ok('dark dust lanes cut across the disc', (() => {
+    let x = 24680;
+    const rnd = () => ((x = (Math.imul(x, 1664525) + 1013904223) >>> 0) / 4294967296);
+    const lum = [];
+    for (let i = 0; i < 5000; i++) {
+      const r = cfgH.outerBound * (0.2 + rnd() * 0.7);
+      const a = rnd() * Math.PI * 2;
+      const c = shp.photorealColor(0.8, Math.cos(a) * r, 0, Math.sin(a) * r, cfgH);
+      lum.push(c[0] * 0.3 + c[1] * 0.6 + c[2] * 0.1);
+    }
+    lum.sort((p, q) => p - q);
+    const p05 = lum[Math.floor(lum.length * 0.05)];
+    const p95 = lum[Math.floor(lum.length * 0.95)];
+    return p95 / Math.max(p05, 1e-4) > 3;
+  })());
+
+  ok('the home galaxy has no neon magenta in it', (() => {
+    let x = 13579;
+    const rnd = () => ((x = (Math.imul(x, 1664525) + 1013904223) >>> 0) / 4294967296);
+    let mag = 0, n = 0;
+    for (let i = 0; i < 5000; i++) {
+      const r = cfgH.outerBound * rnd();
+      const a = rnd() * Math.PI * 2;
+      const c = shp.photorealColor(0.8, Math.cos(a) * r,
+        (rnd() - 0.5) * 600, Math.sin(a) * r, cfgH);
+      const mx = Math.max(...c);
+      if (!(mx > 1e-4)) continue;
+      n++;
+      const [R, G, B] = c.map((v) => v / mx);
+      if (R > 0.9 && B > 0.7 && G < 0.5) mag++;
+    }
+    return n > 0 && mag / n < 0.02;
+  })());
+
+  // The anomaly palette must still be the vivid one.
+  ok('the anomaly palette is still the vivid neon look', (() => {
+    const a = shp.galaxyGasColor('anomaly', 0.8, 5000, 100, 4000, cfgH);
+    const p = shp.galaxyGasColor('photoreal', 0.8, 5000, 100, 4000, cfgH);
+    const sat = (c) => {
+      const mx = Math.max(...c), mn = Math.min(...c);
+      return mx > 1e-5 ? (mx - mn) / mx : 0;
+    };
+    return sat(a) > sat(p) * 1.15;
+  })());
+  ok('the two palettes genuinely differ', (() => {
+    const a = shp.galaxyGasColor('anomaly', 0.7, 9000, 0, -3000, cfgH);
+    const p = shp.galaxyGasColor('photoreal', 0.7, 9000, 0, -3000, cfgH);
+    return a.some((v, i) => Math.abs(v - p[i]) > 0.05);
+  })());
+
+  // ---- soft points, not squares ----
+  const ptSrc = read('src/bjs/shaders/GalaxyPointShader.ts');
+  ok('a dedicated galaxy point shader exists', ptSrc.length > 0);
+  ok('the point quad is clipped to a disc',
+    /if\s*\(\s*r\s*>\s*0\.5\s*\)\s*discard/.test(ptSrc));
+  ok('the clip uses gl_PointCoord', /gl_PointCoord/.test(ptSrc));
+  ok('opacity decays with a Gaussian, not a hard edge',
+    /exp\(-r \* r \*/.test(ptSrc));
+  ok('the rim is smoothstepped to zero', /smoothstep\(0\.5,/.test(ptSrc));
+  ok('colour is premultiplied so the falloff affects the colour too',
+    /vColor\.rgb \* a/.test(ptSrc));
+  ok('point size is a per-point attribute, not one global constant',
+    /attribute float pointSize/.test(ptSrc));
+  ok('point size is clamped so no quad can swallow the screen',
+    /clamp\(sz, 1\.0, 64\.0\)/.test(ptSrc));
+
+  const fSrc = read('src/bjs/systems/GalaxyField.ts');
+  ok('the field actually uses the soft-point shader',
+    /GALAXY_POINT_SHADER/.test(fSrc));
+  ok('the soft material is fed the viewport height each frame',
+    /setFloat\('viewportHeight'/.test(fSrc));
+  ok('point size is calibrated against the proxy shell',
+    /PROXY_MID \/ REFERENCE_HEIGHT/.test(fSrc));
+  ok('the soft materials are disposed with the field',
+    /disposePointMats/.test(fSrc));
+  ok('a shader failure still falls back to visible points',
+    /Soft galaxy points unavailable/.test(fSrc));
+
+  // ---- the grey sky ----
+  ok('fog no longer washes the sky grey', (() => {
+    const st = fld.fogStateAt(0, 0, 0);
+    const [r, g, b] = st.color;
+    return r * 0.3 + g * 0.6 + b * 0.1 < 0.08;
+  })(), fld.fogStateAt(0, 0, 0).color.map((v) => v.toFixed(3)).join(', '));
+  ok('but fog still carries a hue', (() => {
+    const [r, g, b] = fld.fogStateAt(0, 0, 0).color;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    return mx > 1e-5 && (mx - mn) / mx > 0.12;
+  })());
+}
+
 console.log('\n--- 3. planets vary per 260,000-unit cell ---');
 
 const grid = await bundle('src/bjs/systems/IntergalacticGrid.ts');

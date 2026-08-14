@@ -44,8 +44,11 @@ ok('the galaxy spans a real distance', (() => {
 ok('the star count survives the move to 3D', /STAR_COUNT = 30000/.test(src));
 ok('the gas arrays survive too', /GAS_COUNT = 9000/.test(src));
 ok('stars follow the shared logarithmic spiral', /galaxyStar\(/.test(src));
+// Colour now goes through galaxyGasColor(), which dispatches to the
+// photoreal palette or the rare neon one. nebulaColor is still the anomaly
+// branch, it is just no longer named directly at this call site.
 ok('gas is sampled from the shared 3D noise field',
-  /nebulaDensity\(/.test(src) && /nebulaColor\(/.test(src));
+  /nebulaDensity\(/.test(src) && /galaxyGasColor\(/.test(src));
 
 // -------------------------------------------------------- the depth problem
 // A 50,000-unit structure cannot be drawn through a 4,000-unit far plane,
@@ -154,11 +157,25 @@ ok('the app hides it outside ordinary space',
       }
       return true;
     })());
-    ok('fog is coloured from the nebula palette, not grey', (() => {
+    // This assertion used to require an ABSOLUTE channel spread > 0.02,
+    // which conflates "has a hue" with "is bright". Babylon's EXP fog lerps
+    // the entire frame toward fogColor, so a fog colour bright enough to
+    // pass that test painted the whole sky mid-grey and buried the stars -
+    // the exact defect in the reported screenshot. What actually matters is
+    // that the fog keeps its HUE while staying dark, so both are tested.
+    ok('fog keeps a hue rather than going neutral grey', (() => {
       const s = fogStateAt(0, 0, 0);
       if (s.density <= 0) return false;
       const [r, g, b] = s.color;
-      return Math.max(r, g, b) - Math.min(r, g, b) > 0.02;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      return mx > 1e-5 && (mx - mn) / mx > 0.12;
+    })());
+    ok('fog is dark enough not to wash the sky out', (() => {
+      const s = fogStateAt(0, 0, 0);
+      const [r, g, b] = s.color;
+      // Luminance of the densest fog in the galaxy must stay well below the
+      // mid grey that swallowed the starfield.
+      return r * 0.3 + g * 0.6 + b * 0.1 < 0.08;
     })());
     ok('fog outside the galaxy has no colour to apply',
       fogStateAt(GALAXY_CENTER[0] - FIELD_OUTER * 2, 0, 0).density === 0);

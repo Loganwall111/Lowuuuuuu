@@ -44,6 +44,20 @@ export const GALAXY_RADIUS = 50000;
  */
 export const DETAIL_RANGE = GALAXY_RADIUS * 2.6;
 
+/** How a galaxy is coloured and structured. */
+export type GalaxyClass = 'photoreal' | 'anomaly';
+
+/**
+ * Share of galaxies that are the neon magenta/teal variety.
+ *
+ * NOTE ON THE NUMBER. The written brief asked for a "5% to 10% threshold",
+ * but the instruction in the user's own words was "super rare ... like a one
+ * percent". Those disagree, and the prose is the clearer statement of
+ * intent, so the rare class is 1%. This is deliberately a single named
+ * constant: moving it to 0.05 restores the brief's figure exactly.
+ */
+export const ANOMALY_CHANCE = 0.01;
+
 export interface GalaxyCell {
   /** Integer cell coordinates. */
   ix: number; iy: number; iz: number;
@@ -61,6 +75,14 @@ export interface GalaxyCell {
   winding: number;
   /** Relative brightness, 0-1. */
   brightness: number;
+  /**
+   * Which palette this galaxy uses.
+   *
+   * Nearly every galaxy is 'photoreal': a creamy-gold core with a cold blue
+   * halo and dark dust lanes, like Andromeda. 'anomaly' is the intense
+   * magenta/teal emission variety, kept rare enough to be a genuine find.
+   */
+  klass: GalaxyClass;
 }
 
 /** Integer hash. Deterministic across machines and sessions. */
@@ -93,13 +115,21 @@ export function galaxyInCell(ix: number, iy: number, iz: number): GalaxyCell {
   const jy = 0.22 + chan(h, 1) * 0.56;
   const jz = 0.22 + chan(h, 2) * 0.56;
   const radius = GALAXY_RADIUS * (0.55 + chan(h, 3) * 0.9);
+
+  // Classification comes off its own hash channel, so it is independent of
+  // size, tilt and tint - a rare galaxy is not also always a big bright one.
+  const klass: GalaxyClass = chan(h, 9) < ANOMALY_CHANCE ? 'anomaly' : 'photoreal';
+
   // Colour: most galaxies are warm white to gold, some blue starbursts.
   const cool = chan(h, 6);
-  const tint: [number, number, number] = cool > 0.72
-    ? [0.62, 0.74, 1.0]
-    : cool < 0.16
-      ? [1.0, 0.62, 0.42]
-      : [1.0, 0.90, 0.76];
+  const tint: [number, number, number] = klass === 'anomaly'
+    // The neon variety announces itself from a distance.
+    ? [1.0, 0.42, 0.86]
+    : cool > 0.72
+      ? [0.62, 0.74, 1.0]
+      : cool < 0.16
+        ? [1.0, 0.62, 0.42]
+        : [1.0, 0.90, 0.76];
   return {
     ix, iy, iz,
     x: (ix + jx) * CELL_SIZE,
@@ -111,7 +141,8 @@ export function galaxyInCell(ix: number, iy: number, iz: number): GalaxyCell {
     tiltZ: chan(h, 5) * Math.PI,
     tint,
     winding: 0.6 + chan(h, 7) * 0.9,
-    brightness: 0.45 + chan(h, 8) * 0.55
+    brightness: 0.45 + chan(h, 8) * 0.55,
+    klass
   };
 }
 

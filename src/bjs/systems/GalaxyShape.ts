@@ -381,6 +381,90 @@ export function nebulaColor(
 }
 
 /**
+ * The photorealistic galaxy palette — the default look.
+ *
+ * Modelled on how a real spiral actually photographs (the reference is
+ * Andromeda), which is nothing like a uniform tint:
+ *
+ *   - the bulge is a brilliant creamy gold, blown nearly to white at the
+ *     very centre, because it is billions of old stars packed together;
+ *   - the disc cools to blue-white outward, since the young hot stars that
+ *     dominate the arms are blue;
+ *   - the outer halo falls to a deep midnight indigo;
+ *   - and threaded through all of it are DARK dust lanes, which are the
+ *     single most recognisable feature of a spiral galaxy and the thing a
+ *     pure emission palette can never produce, because dust does not glow -
+ *     it blocks. Those lanes are what make the arms read as arms.
+ *
+ * `t` is normalised radius, 0 at the core and 1 at the rim.
+ */
+export function photorealColor(
+  density: number, x: number, y: number, z: number, cfg: GalaxyConfig = MILKY_WAY
+): [number, number, number] {
+  const radius = Math.sqrt(x * x + z * z);
+  const t = Math.min(1, radius / Math.max(cfg.outerBound, 1e-6));
+  const d = Math.min(1, Math.max(0, density));
+
+  // Core -> disc -> halo, as three stops rather than one straight line.
+  const CORE: [number, number, number] = [1.00, 0.94, 0.78];   // creamy gold
+  const DISC: [number, number, number] = [0.78, 0.82, 1.00];   // cold blue-white
+  const HALO: [number, number, number] = [0.20, 0.24, 0.52];   // midnight indigo
+
+  let r: number, g: number, b: number;
+  if (t < 0.34) {
+    const k = t / 0.34;
+    r = lerp(CORE[0], DISC[0], k);
+    g = lerp(CORE[1], DISC[1], k);
+    b = lerp(CORE[2], DISC[2], k);
+  } else {
+    const k = (t - 0.34) / 0.66;
+    r = lerp(DISC[0], HALO[0], k);
+    g = lerp(DISC[1], HALO[1], k);
+    b = lerp(DISC[2], HALO[2], k);
+  }
+
+  // Dust lanes. A ridged noise field - the absolute value of a signed
+  // noise, inverted - produces long thin filaments rather than round
+  // blobs, which is the right shape for a lane of obscuring dust. Winding
+  // it with the spiral angle makes the lanes follow the arms.
+  const s = 1 / Math.max(cfg.outerBound * 0.20, 1e-6);
+  const swirl = Math.atan2(z, x) * 0.55 + Math.log(Math.max(radius, 1) /
+    Math.max(cfg.innerBound, 1e-6)) * cfg.armFactor * 0.16;
+  const lane = fbm3(x * s + Math.cos(swirl) * 1.7, y * s * 4.0,
+    z * s + Math.sin(swirl) * 1.7, 4);
+  const ridged = 1 - Math.abs(lane - 0.5) * 2;         // 1 on the ridge line
+  // Only bite in the disc: the core is too bright to be obscured and the
+  // halo has no dust to speak of.
+  const inDisc = Math.min(1, Math.max(0, (t - 0.12) / 0.25)) *
+    Math.min(1, Math.max(0, (0.98 - t) / 0.3));
+  const dust = Math.pow(Math.max(0, ridged), 3.0) * inDisc * 0.82;
+
+  const absorb = 1 - dust;
+  // Brightness: the core blazes, the rim is faint.
+  const mag = Math.pow(d, 0.7) * (0.35 + 0.65 * Math.pow(1 - t, 1.4));
+
+  return [
+    Math.min(1, r * mag * absorb),
+    Math.min(1, g * mag * absorb),
+    Math.min(1, b * mag * absorb)
+  ];
+}
+
+/**
+ * Picks the palette for a galaxy class.
+ *
+ * One entry point so no call site has to know which look is in play.
+ */
+export function galaxyGasColor(
+  klass: 'photoreal' | 'anomaly',
+  density: number, x: number, y: number, z: number, cfg: GalaxyConfig = MILKY_WAY
+): [number, number, number] {
+  return klass === 'anomaly'
+    ? nebulaColor(density, x, y, z, cfg)
+    : photorealColor(density, x, y, z, cfg);
+}
+
+/**
  * Rejection-samples a gas point where the density field is actually thick.
  *
  * Returns null when the attempt lands somewhere empty; the caller retries.

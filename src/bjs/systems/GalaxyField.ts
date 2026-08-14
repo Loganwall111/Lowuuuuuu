@@ -42,11 +42,16 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { PointsCloudSystem } from '@babylonjs/core/Particles/pointsCloudSystem';
 import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
+import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
+import {
+  GALAXY_POINT_SHADER, registerGalaxyPointShader
+} from '../shaders/GalaxyPointShader';
 import type { Scene } from '@babylonjs/core/scene';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Camera } from '@babylonjs/core/Cameras/camera';
 import {
-  MILKY_WAY, galaxyStar, nebulaDensity, nebulaColor, observerPosition,
+  MILKY_WAY, galaxyStar, nebulaDensity, nebulaColor, galaxyGasColor,
+  photorealColor, observerPosition,
   type GalaxyConfig
 } from './GalaxyShape';
 import {
@@ -115,12 +120,25 @@ export const FAR_GAS_PER = 34;
 /** Star points per distant galaxy. The gas offset depends on this. */
 export const FAR_STAR_PER = 26;
 
+/** Middle of the proxy shell, used to calibrate on-screen point size. */
+const PROXY_MID = (PROXY_INNER + PROXY_OUTER) / 2;
+/** The screen height the point sizes were measured against. */
+const REFERENCE_HEIGHT = 1080;
+
 /**
  * A galaxy sized to span FIELD_INNER..FIELD_OUTER in real coordinates.
  *
  * MILKY_WAY's own bounds are in a different unit scale, so the shape is
  * reused but rescaled: same arms, same spiral, real distances.
  */
+/**
+ * The home galaxy is the photorealistic reference look, always.
+ *
+ * It is the one galaxy the player is guaranteed to see, so it is the one
+ * that sets the visual baseline for the whole project.
+ */
+export const HOME_CLASS: 'photoreal' | 'anomaly' = 'photoreal';
+
 export const FIELD_GALAXY: GalaxyConfig = {
   ...MILKY_WAY,
   innerBound: FIELD_INNER * 1.4,
@@ -177,9 +195,18 @@ export function fogStateAt(
 ): { density: number; color: [number, number, number] } {
   const d = fogAt(x, y, z, cfg);
   if (d <= 0) return { density: 0, color: [0, 0, 0] };
-  const c = nebulaColor(d,
+  const c = galaxyGasColor(HOME_CLASS, d,
     x - GALAXY_CENTER[0], y - GALAXY_CENTER[1], z - GALAXY_CENTER[2], cfg);
-  return { density: d, color: [c[0], c[1], c[2]] };
+  // THE GREY SKY.
+  //
+  // Babylon's EXP fog lerps the whole frame toward fogColor, so whatever is
+  // passed here is painted over empty space as well as over geometry. The
+  // raw gas colour at the player's start position is (0.225, 0.326, 0.338) -
+  // a mid grey-teal - and at density 0.52 that turned the entire background
+  // into flat grey, burying the starfield. Interstellar gas does not
+  // illuminate the void; it only slightly veils it. So the fog keeps the
+  // hue but is taken right down in value.
+  return { density: d, color: [c[0] * 0.11, c[1] * 0.11, c[2] * 0.13] };
 }
 
 export class GalaxyField {
@@ -189,6 +216,8 @@ export class GalaxyField {
   private truePos: Float64Array | null = null;
   private farTruePos: Float64Array | null = null;
   private clouds: PointsCloudSystem[] = [];
+  /** Soft-point materials, kept so camPos and viewport can be fed. */
+  private pointMats: ShaderMaterial[] = [];
   private meshes: Mesh[] = [];
   private built = false;
 
@@ -296,7 +325,7 @@ export class GalaxyField {
           if (gasRng() < d) {
             p.position = new Vector3(
               x + GALAXY_CENTER[0], h + GALAXY_CENTER[1], z + GALAXY_CENTER[2]);
-            const c = nebulaColor(d, x, h, z, cfg);
+            const c = galaxyGasColor(HOME_CLASS, d, x, h, z, cfg);
             p.color = new Color4(c[0], c[1], c[2], Math.min(0.5, d * 0.6));
             placed = true;
           }
@@ -443,7 +472,7 @@ export class GalaxyField {
         // 50,000-unit galaxy far outside the frequency the palette was tuned
         // for, and the excitation term - which keys off radius - would read
         // the whole galaxy as cold outskirts.
-        const c = nebulaColor(dens, lx, ly, lz, {
+        const c = galaxyGasColor(g.klass, dens, lx, ly, lz, {
           ...MILKY_WAY, outerBound: g.radius, innerBound: g.radius * 0.06
         });
         // The galaxy's own tint still shows through, so blue starbursts
@@ -473,6 +502,12 @@ export class GalaxyField {
       // Distant galaxies are scenery; losing them must not lose the frame.
       console.warn('Distant galaxies unavailable:', e);
     }
+  }
+
+  /** Release the soft-point materials. */
+  private disposePointMats(): void {
+    for (const m of this.pointMats) { try { m.dispose(); } catch { /* gone */ } }
+    this.pointMats = [];
   }
 
   private disposeFar(): void {
@@ -566,6 +601,58 @@ export class GalaxyField {
     mesh.isPickable = false;
     mesh.applyFog = false;
     mesh.alwaysSelectAsActiveMesh = true;
+
+    // ---- soft points instead of hard squares ----
+    //
+    // PointsCloudSystem hands back a StandardMaterial with pointsCloud =
+    // true, which draws square GL_POINTS. At the sizes the gas needs in
+    // order to be visible those squares are plainly visible as digital
+    // boxes. There is no fragment stage in that path to clip them with, so
+    // the material is replaced outright with one that clips the quad to a
+    // disc and decays its alpha outward.
+    const scene = this.scene;
+    if (scene) {
+      try {
+        registerGalaxyPointShader();
+        const sizes: number[] = [];
+        const n = Math.floor((mesh.getVerticesData('position')?.length ?? 0) / 3);
+        for (let i = 0; i < n; i++) sizes.push(size);
+        mesh.setVerticesData('pointSize', sizes, false, 1);
+
+        const sm = new ShaderMaterial('galaxyPtM_' + mesh.name, scene,
+          GALAXY_POINT_SHADER, {
+            attributes: ['position', 'color', 'pointSize'],
+            uniforms: ['world', 'worldViewProjection', 'camPos', 'sizeScale',
+              'viewportHeight', 'gasDensity']
+          });
+        // Calibration. The vertex shader divides by distance, and every
+        // point sits on the proxy shell at ~2600-3700 units, so a raw size
+        // of 14 would land at ~5px and undo the visibility work that size
+        // was measured for. Scaling by (shell / reference height) makes the
+        // requested number mean what it meant before - pixels at the middle
+        // of the shell - while still letting near points bloom and far
+        // points tighten across the shell's depth.
+        sm.setFloat('sizeScale', PROXY_MID / REFERENCE_HEIGHT);
+        sm.setFloat('viewportHeight', 1);
+        sm.setFloat('gasDensity', 1);
+        sm.pointsCloud = true;
+        sm.disableDepthWrite = true;
+        sm.backFaceCulling = false;
+        sm.alpha = 0.999;
+        // Premultiplied in the shader, so the source factor is ONE.
+        sm.alphaMode = 1;
+        const old = mesh.material;
+        mesh.material = sm;
+        try { old?.dispose(); } catch { /* not ours */ }
+        this.pointMats.push(sm);
+        return;
+      } catch (e) {
+        // A shader failure must not cost the galaxy. Fall through to the
+        // stock material, squares and all, rather than rendering nothing.
+        console.warn('Soft galaxy points unavailable, using stock points:', e);
+      }
+    }
+
     const m = mesh.material as any;
     if (!m) return;
     m.disableLighting = true;
@@ -609,6 +696,20 @@ export class GalaxyField {
     // Remap the galaxy into the shell the main camera can actually see.
     this.projectProxy(eye);
 
+    // Feed the soft-point shader. The points are remapped onto the proxy
+    // shell every frame, so the shader must size them against the PROXY
+    // position rather than the eye's true distance to the real galaxy -
+    // hence camPos is the origin of the shell, not the world eye.
+    if (this.pointMats.length) {
+      const h = scene.getEngine()?.getRenderHeight?.() ?? 1080;
+      for (const m of this.pointMats) {
+        try {
+          m.setVector3('camPos', Vector3.Zero());
+          m.setFloat('viewportHeight', h);
+        } catch { /* material disposed mid-frame */ }
+      }
+    }
+
     // Coordinate-bound nebular fog: density comes from where you actually
     // are, so crossing the disc fills the cockpit and leaving it clears.
     // A hidden galaxy must not leave its fog behind, or the Codeverse
@@ -645,6 +746,7 @@ export class GalaxyField {
 
   detach(): void {
     this.disposeFar();
+    this.disposePointMats();
     for (const c of this.clouds) { try { c.dispose(); } catch { /* gone */ } }
     this.clouds = [];
     this.meshes = [];
