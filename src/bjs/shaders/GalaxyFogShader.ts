@@ -71,6 +71,10 @@ uniform float density;
 uniform float time;
 /** How far the ray is allowed to travel, galaxy units. */
 uniform float marchFar;
+/** Per-galaxy colour cast. (1,1,1) = the home Milky Way's own palette. */
+uniform vec3 tint;
+/** How strongly the host galaxy's tint re-hues the gas. 0 = off. */
+uniform float tintStrength;
 
 /**
  * How fast the sector hue varies across the galaxy. Low so a "sector" is a
@@ -566,6 +570,12 @@ void main(void) {
       // double-counting is what let the core stack toward pure white.
       float absorbed = 1.0 - exp(-ext);
       vec3 emit = gasColor(pos, d);
+
+      // Every galaxy carries its own tint from the cell seed hash. Bias the
+      // emission toward that colour in proportion to how dense the gas is,
+      // so a blue starburst stays blue and an old red galaxy stays red -
+      // without erasing the Andromeda gold/blue ramp the tint leans on.
+      emit *= mix(vec3(1.0), tint, tintStrength);
 
       // The nucleus blaze is emission, not density: it is added to the
       // light leaving this sample so it can out-shine everything without
