@@ -61,6 +61,10 @@ uniform float cityLights;
 uniform float exposure;   // artistic stop, 1.0 = neutral
 uniform float radius;
 uniform float isStar;
+/** 1 on a living world, 0 elsewhere. Living worlds get a saturated blue
+ *  Rayleigh limb with a warm sunset; dead worlds get a thin, desaturated,
+ *  harsher haze. */
+uniform float habitable;
 /* Optional photoreal albedo map. Procedural noise alone reads as cartoonish
    at close range; a real texture carries the detail and the noise stack is
    demoted to high-frequency break-up on top of it. */
@@ -297,30 +301,42 @@ void main(void){
     col += vec3(1.0, 0.82, 0.48) * lights * 1.7;
   }
 
-  // ---- atmospheric limb ----
+  // ---- atmospheric limb (Rayleigh + Mie) ----
   // Rayleigh scattering is strongly wavelength dependent, so the limb goes
   // blue while the sunset edge goes orange. Two separate powers keep the
   // thin bright rim distinct from the broad haze.
+  //
+  // Habitable worlds get the lush version: a saturated blue limb and a warm
+  // sunset, and a brighter glow. Dead worlds keep a tighter, thinner haze
+  // whose colour is pulled toward a desaturated grey - the "harsher,
+  // celestial" look, driven off the same per-planet flag as the volumetric
+  // shell so the two can never disagree about which worlds are alive.
+  float hab = clamp(habitable, 0.0, 1.0);
   float fres = 1.0 - max(dot(n, V), 0.0);
-  float haze = pow(fres, 2.2);
-  float limb = pow(fres, 6.0);
+  float haze = pow(fres, mix(2.6, 2.2, hab));
+  float limb = pow(fres, mix(5.2, 6.0, hab));
 
   vec3 rayleigh = vec3(0.16, 0.38, 0.92);
   vec3 sunset   = vec3(1.00, 0.48, 0.20);
   // the sunset colour appears where the light grazes the surface
   float graze = smoothstep(0.35, -0.05, ndl) * smoothstep(-0.35, 0.05, ndl);
   vec3 atmoCol = mix(rayleigh, sunset, clamp(graze * 1.4, 0.0, 1.0));
+  // Non-living worlds wash the haze toward grey, keeping only a hint of hue.
+  float atmoLum = dot(atmoCol, vec3(0.2126, 0.7152, 0.0722));
+  atmoCol = mix(mix(vec3(atmoLum), atmoCol, 0.35), atmoCol, hab);
+  // Living worlds glow; dead worlds stay faint and hard-edged.
+  float atmoIntensity = mix(0.55, 1.0, hab);
 
-  col += atmoCol * haze * 0.34 * (day * 0.85 + 0.15);
-  col += atmoCol * limb * 0.85 * day;
+  col += atmoCol * haze * 0.34 * atmoIntensity * (day * 0.85 + 0.15);
+  col += atmoCol * limb * 0.85 * atmoIntensity * day;
 
   // ---- sun glare on the lit limb ----
   // Where the star is almost behind the planet, light spills around the edge.
   float behind = pow(max(dot(V, -L), 0.0), 3.5);
-  col += sunCol * behind * limb * 2.2;
+  col += sunCol * behind * limb * 2.2 * atmoIntensity;
 
   // a faint bluish terminator glow, the atmosphere still lit after sunset
-  col += rayleigh * pow(fres, 3.0) * smoothstep(0.30, 0.0, abs(ndl)) * 0.30;
+  col += rayleigh * pow(fres, 3.0) * smoothstep(0.30, 0.0, abs(ndl)) * 0.30 * atmoIntensity;
 
   // Exposure is applied in linear space, before the tone curve - that is
   // the whole point of a filmic curve. Applying it afterwards (as the post

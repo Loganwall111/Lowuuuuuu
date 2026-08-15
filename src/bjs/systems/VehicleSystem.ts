@@ -93,8 +93,34 @@ export function emptyInput(): VehicleInput {
   };
 }
 
-/** Terrain query: returns ground height and normal at a world position. */
-export type GroundProbe = (x: number, z: number) => { height: number; normal: Vector3 } | null;
+/**
+ * The shortest rotation that maps world +Y onto `up`.
+ *
+ * Walk mode builds its view by yawing and pitching around the local up axis;
+ * on a planet that axis is the surface normal, not world +Y. Pre-rotating by
+ * this keeps the horizon level relative to the surface, and on flat ground
+ * (`up` = +Y) it is the identity, so the flat path is untouched.
+ */
+function rotationAligningUp(up: Vector3): Quaternion {
+  const from = new Vector3(0, 1, 0);
+  const dot = Vector3.Dot(from, up);
+  if (dot > 0.999999) return Quaternion.Identity();
+  if (dot < -0.999999) return Quaternion.RotationAxis(new Vector3(1, 0, 0), Math.PI);
+  const axis = Vector3.Cross(from, up).normalize();
+  const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
+  return Quaternion.RotationAxis(axis, angle);
+}
+
+/**
+ * Terrain query: returns ground height and normal at a world position.
+ *
+ * `normal` is the surface "up" at that footprint - world +Y for floors and
+ * decks, the radial outward direction for a planet - and the optional
+ * `point` is the exact surface point under the walker. When `point` is
+ * present the walker is clamped along `normal` rather than along world Y,
+ * which is what lets the same integrator stand on a planet as on a deck.
+ */
+export type GroundProbe = (x: number, z: number) => { height: number; normal: Vector3; point?: Vector3 } | null;
 
 export class VehicleController {
   mode: ControlMode = 'orbit';
@@ -281,57 +307,102 @@ export class VehicleController {
 
     this.yaw += i.yaw * 2.2 * dt;
     this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch + i.pitch * 2.2 * dt));
-    this.orientation = Quaternion.RotationYawPitchRoll(this.yaw, this.pitch, 0);
 
-    // movement is horizontal only: looking up must not launch you
+    // ---- the ground frame: up is the surface normal where we stand ----
+    const g0 = ground ? ground(this.position.x, this.position.z) : null;
+    const up = (g0 && g0.normal) ? g0.normal.normalize() : new Vector3(0, 1, 0);
+    if (!(up.lengthSquared() > 0.5)) up.copyFromFloats(0, 1, 0);
+
+    // Align the view so "up" really is the surface normal: rotate the local
+    // frame from world-up to `up`, then apply yaw/pitch inside it. On flat
+    // ground the rotation is identity and this is the old walk behaviour.
+    this.orientation = rotationAligningUp(up)
+      .multiply(Quaternion.RotationYawPitchRoll(this.yaw, this.pitch, 0));
+
+    // ---- movement basis, projected onto the tangent plane ----
+    // Movement is horizontal only: looking up must not launch you.
     const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
-    const fwd = new Vector3(sy, 0, cy);
-    const right = new Vector3(cy, 0, -sy);
+    let fwd = new Vector3(sy, 0, cy).subtract(
+      up.scale(Vector3.Dot(new Vector3(sy, 0, cy), up)));
+    if (!(fwd.lengthSquared() > 1e-8)) {
+      // Looking straight down the normal: fall back to an arbitrary tangent.
+      fwd = new Vector3(1, 0, 0).subtract(up.scale(Vector3.Dot(new Vector3(1, 0, 0), up)));
+      if (!(fwd.lengthSquared() > 1e-8)) {
+        fwd = new Vector3(0, 0, 1).subtract(up.scale(Vector3.Dot(new Vector3(0, 0, 1), up)));
+      }
+    }
+    fwd.normalize();
+    const right = Vector3.Cross(up, fwd).normalize();
 
     const speed = i.run ? w.runSpeed : w.walkSpeed;
     const wish = fwd.scale(i.forward).add(right.scale(i.right));
     const wl = wish.length();
     if (wl > 1e-5) wish.scaleInPlace(speed / wl);
 
+    // Split velocity into radial (along the surface normal) and tangent
+    // (across it), so gravity and ground-friction each touch only their own
+    // axis and the two never fight.
+    let radial = Vector3.Dot(this.velocity, up);
+    const tan = this.velocity.subtract(up.scale(radial));
+
     if (this.grounded) {
-      // snap horizontal velocity toward the wish direction
+      // snap tangent velocity toward the wish direction
       const f = Math.min(1, w.friction * dt);
-      this.velocity.x += (wish.x - this.velocity.x) * f;
-      this.velocity.z += (wish.z - this.velocity.z) * f;
+      tan.x += (wish.x - tan.x) * f;
+      tan.y += (wish.y - tan.y) * f;
+      tan.z += (wish.z - tan.z) * f;
       if (i.jump) {
-        this.velocity.y = w.jumpSpeed;
+        radial = w.jumpSpeed;
         this.grounded = false;
       }
     } else {
       // reduced air control, so jumps commit
-      this.velocity.x += (wish.x - this.velocity.x) * Math.min(1, 1.5 * dt);
-      this.velocity.z += (wish.z - this.velocity.z) * Math.min(1, 1.5 * dt);
+      const af = Math.min(1, 1.5 * dt);
+      tan.x += (wish.x - tan.x) * af;
+      tan.y += (wish.y - tan.y) * af;
+      tan.z += (wish.z - tan.z) * af;
     }
 
-    this.velocity.y -= w.gravity * dt;
+    // Gravity anchors along the inward normal, so "down" is toward the
+    // planet's centre rather than a fixed world axis.
+    this.velocity.copyFrom(tan.add(up.scale(radial - w.gravity * dt)));
     this.position.addInPlace(this.velocity.scale(dt));
 
-    // ---- ground clamping ----
-    const g = ground ? ground(this.position.x, this.position.z) : { height: 0, normal: new Vector3(0, 1, 0) };
-    if (g) {
-      const floor = g.height + w.eyeHeight;
-      const wasGrounded = this.grounded;
+    // ---- ground clamping, sampled at the new footprint ----
+    const g = ground ? ground(this.position.x, this.position.z) : null;
+    const cg = g ?? { height: 0, normal: new Vector3(0, 1, 0) };
+    const cup = cg.normal ? cg.normal.normalize() : new Vector3(0, 1, 0);
+    const above = cg.point
+      ? Vector3.Dot(this.position.subtract(cg.point), cup)
+      : this.position.y - cg.height;
+    const wasGrounded = this.grounded;
 
-      if (this.position.y <= floor) {
-        this.position.y = floor;
-        if (this.velocity.y < 0) this.velocity.y = 0;
-        this.grounded = true;
-      } else if (wasGrounded && this.velocity.y <= 0 &&
-                 this.position.y - floor <= this.stepDown) {
-        // Walking downhill must not launch you off every slope. If we were on
-        // the ground and the ground is only slightly below, stick to it.
-        this.position.y = floor;
-        this.velocity.y = 0;
-        this.grounded = true;
-      } else {
-        this.grounded = false;
-      }
+    if (above <= w.eyeHeight) {
+      this.snapToGround(cg, cup);
+      this.grounded = true;
+    } else if (wasGrounded && Vector3.Dot(this.velocity, cup) <= 0 &&
+               above - w.eyeHeight <= this.stepDown) {
+      // Walking downhill must not launch you off every slope. If we were on
+      // the ground and the ground is only slightly below, stick to it.
+      this.snapToGround(cg, cup);
+      this.grounded = true;
+    } else {
+      this.grounded = false;
     }
+  }
+
+  /** Places the walker on the surface at eye height and kills inward motion. */
+  private snapToGround(
+    cg: { height: number; normal?: Vector3; point?: Vector3 }, up: Vector3
+  ): void {
+    const floor = this.walk.eyeHeight;
+    if (cg.point) {
+      this.position.copyFrom(cg.point).addInPlace(up.scale(floor));
+    } else {
+      this.position.y = cg.height + floor;
+    }
+    const vn = Vector3.Dot(this.velocity, up);
+    if (vn < 0) this.velocity.addInPlace(up.scale(-vn));
   }
 
   /** Where the camera should look, given the current orientation. */

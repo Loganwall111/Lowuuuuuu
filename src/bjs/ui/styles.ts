@@ -172,6 +172,77 @@ body[data-focus="1"] .hud{ opacity:.35; }
    and nothing takes pointer events. */
 .fhud{position:fixed;inset:0;z-index:54;pointer-events:none;
   font-family:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;}
+/* The canopy glass: a curved-window tint and a faint phosphor scanline
+   raster, blended over the scene so the whole cockpit reads as one lit
+   surface. Pure overlay - no pointer events, never opaque. */
+.fhud-canopy{position:absolute;inset:0;pointer-events:none;overflow:hidden;
+  mix-blend-mode:screen;
+  background:
+    radial-gradient(130% 100% at 50% 42%,
+      rgba(24,46,88,0) 0%, rgba(10,20,44,.10) 62%, rgba(4,10,26,.30) 100%),
+    linear-gradient(180deg,
+      rgba(96,156,255,.05) 0%, rgba(96,156,255,0) 34%,
+      rgba(0,0,0,0) 66%, rgba(140,90,255,.05) 100%);
+  box-shadow:inset 0 0 180px rgba(30,60,120,.22);}
+.fhud-canopy::after{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(180deg,
+    rgba(150,200,255,.028) 0px, rgba(150,200,255,.028) 1px,
+    transparent 1px, transparent 4px);
+  animation:fhCanopy 9s linear infinite;}
+@keyframes fhCanopy{
+  from{transform:translateY(0);}
+  to{transform:translateY(4px);}}
+/* Warp rips the canopy brighter - the glass itself reacts to the drive. */
+.fhud.warping .fhud-canopy{
+  box-shadow:inset 0 0 220px rgba(90,120,255,.30),
+             inset 0 -40px 120px rgba(150,110,255,.16);}
+
+/* ---- holographic instrument look ---- */
+/* Panels are glass plates lit from the edge, like a projected interface.
+   The accent edge brightens and the text carries a faint chromatic fringe. */
+.fh-block{
+  box-shadow:
+    0 8px 26px rgba(0,0,0,.46),
+    0 0 0 1px rgba(110,175,255,.10),
+    inset 0 0 22px rgba(80,150,255,.06);
+}
+.fh-block::before{
+  content:'';position:absolute;left:1px;right:1px;top:0;height:1px;
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--acc) 65%,transparent),transparent 70%);
+  opacity:.8;pointer-events:none;
+}
+.fh-big{background:linear-gradient(180deg,#f2f8ff,#b9d4ff 70%,#7fb2f5);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.fh-accent{background:linear-gradient(90deg,#cfe8ff,#6fd0ff 45%,#9fd0ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 8px rgba(90,190,255,.45));}
+.fh-tgt{color:#eaf4ff;text-shadow:0 0 12px rgba(120,190,255,.28);}
+/* A faint holographic flicker across every panel, like a projected feed. */
+.fh-block::after{animation:fhFlicker 7s linear infinite;}
+@keyframes fhFlicker{
+  0%,100%{opacity:.85} 8%{opacity:.5} 9%{opacity:.85}
+  46%{opacity:.8} 48%{opacity:.45} 50%{opacity:.85}}
+/* The reticle reads as a targeting computer: a slowly rotating outer ring. */
+.fhud-reticle svg{animation:fhRetSpin 24s linear infinite;}
+@keyframes fhRetSpin{to{transform:rotate(360deg);}}
+
+/* ---- bottom telemetry ticker ---- */
+.fhud-status{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+  display:flex;align-items:center;gap:14px;max-width:min(92vw,860px);
+  padding:5px 16px 6px;font-size:9px;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(170,205,245,.82);
+  background:linear-gradient(180deg,rgba(8,13,24,.62),rgba(6,10,18,.42));
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(120,180,255,.14);
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);}
+.fh-st-seg{white-space:nowrap;}
+.fh-st-seg:first-child{color:#7fd0ff;text-shadow:0 0 10px rgba(90,180,255,.5);}
+.fh-st-right{margin-left:auto;font-weight:700;color:#cfe6ff;}
+/* A little centre notch above the ticker, like a HUD alignment mark. */
+.fhud-status::before{content:'';position:absolute;left:50%;top:-3px;
+  width:22px;height:3px;transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,var(--acc),transparent);}
 .fhud-left{position:absolute;left:20px;bottom:88px;display:flex;
   flex-direction:column;gap:10px;align-items:flex-start;}
 .fhud-right{position:absolute;right:20px;bottom:88px;display:flex;
@@ -754,6 +825,12 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
   border-bottom:1px solid rgba(125,180,255,.18);
   backdrop-filter:blur(18px) saturate(140%);
   -webkit-backdrop-filter:blur(18px) saturate(140%);
+  transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .5s ease;
+}
+/* The tool bar stays off the title screen and slides in once the player
+   enters the game. */
+.topbar.hidden{
+  transform:translateY(-130%); opacity:0; pointer-events:none;
 }
 .topbar::after{
   content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;

@@ -35,6 +35,8 @@ import { WarpDrive, galacticMedium } from './systems/DeepSkySystem';
 import { SpeedGearbox } from './systems/SpeedGears';
 import { Fleet, shipClass, shipView, type ViewMode } from './systems/FleetSystem';
 import { StarFieldRenderer } from './systems/StarFieldRenderer';
+import { PlanetField } from './systems/PlanetField';
+import { SpaceDust } from './systems/SpaceDust';
 import { LayeredSky } from './systems/LayeredSky';
 import { HoleFieldRenderer } from './systems/HoleFieldRenderer';
 import { SpaceAudio } from './systems/SpaceAudio';
@@ -64,6 +66,9 @@ import { GalaxyField } from './systems/GalaxyField';
 import { warmupShaders } from './systems/ShaderWarmup';
 import { SHIP as TIDAL_SHIP, ROCKY_PLANET } from './systems/GameModes';
 import { GrabSystem, type Grabbable } from './systems/GrabSystem';
+import {
+  resolveCollisions, planetGround, nearestSolid, type SolidSphere
+} from './systems/PlanetLanding';
 import {
   LENS_PROFILES, cloneProfile, randomAlienProfile,
   describeProfile as describeLens, sanitizeProfile as sanitizeLens,
@@ -185,6 +190,15 @@ export class App {
   private bloomBeforeHorizon = 0.55;
   /** The sky, drawn from real regions rather than painted on a sphere. */
   starField = new StarFieldRenderer();
+  /**
+   * The universe's planets as real spheres. The starfield draws everything
+   * as points; this realises the nearby worlds as limb-darkened discs that
+   * swell as you approach, so a planet is a place you arrive at rather than
+   * a speck that never changes size.
+   */
+  planetField = new PlanetField();
+  /** Fine motes sliding past the canopy - the near-field depth cue. */
+  spaceDust = new SpaceDust();
   /**
    * The anonymous background haze, in three parallaxing shells. Sits behind
    * starField, which draws the real reachable regions - together they give
@@ -329,7 +343,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...this.planetField.stats(), ...this.spaceDust.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -493,6 +507,9 @@ export class App {
     // The flight instruments live outside the window layer so panels can be
     // closed without losing the ability to navigate.
     this.flightHud.mount();
+    // The cockpit belongs to the game, not to the title screen: it stays
+    // hidden until the player presses Play and enters.
+    this.flightHud.setVisible(false);
     this.sonarCursor.mount();
     // The cursor reflects what the zoom control is doing, so the spyglass
     // has a visible state rather than only changing the field of view.
@@ -563,6 +580,9 @@ export class App {
       if (e.key.toLowerCase() === 'c') this.mouse.toggleLock();
       // Snap the spyglass back to normal.
       if (e.key.toLowerCase() === 'z') this.mouse.resetZoom();
+      // L lands on the nearest planet / lifts off again. Guarded against key
+      // repeat so holding it cannot flip between modes every frame.
+      if (e.key.toLowerCase() === 'l' && !e.repeat) this.toggleLand();
       // 1/2/3 shift the gearbox. Applied instantly, on the keypress, so a
       // gear change lands on the very next frame rather than waiting for
       // anything to spool.
@@ -587,6 +607,8 @@ export class App {
         this.shell.setGameMode(this.mode);
         this.intro.advance();            // title -> garage
         this.startWalking();
+        // Entering the game brings up the cockpit and the tool bar.
+        this.flightHud.setVisible(true);
         this.shell.onMenuClosed();
       },
       onSkip: () => this.finishIntro(),
@@ -633,6 +655,7 @@ export class App {
     this.introUI = null;
     if (this.currentId !== 'planetary') this.loadWorld('planetary');
     setTimeout(() => this.setControlMode('freefly'), 300);
+    this.flightHud.setVisible(true);
     this.shell.onMenuClosed();
     this.shell.toast('Welcome to the sandbox. There is no objective.');
   }
@@ -902,6 +925,16 @@ export class App {
         StarFieldRenderer.toSkyObjects(this.universe.regions),
         this.vehicle.position);
 
+      // The purge above disposes every mesh, so the planet spheres must be
+      // re-attached too, or the worlds you fly to would vanish to points.
+      this.planetField.dispose();
+      this.planetField.attach(this.scene);
+
+      // Same for the drifting canopy motes.
+      this.spaceDust.dispose();
+      this.spaceDust.attach(this.scene);
+      void this.spaceDust.build();
+
       // loadWorld purges every mesh, so the shells must be rebuilt with it.
       this.layeredSky.dispose();
       this.layeredSky.attach(this.scene);
@@ -1158,8 +1191,74 @@ export class App {
       const g = w.sampleGround(x, z);
       if (g) return g;
     }
+    // A planet's own surface: stand on a solid body in the universe. Returns
+    // the surface point and outward normal so the walker anchors to the
+    // sphere instead of to a flat world-Y floor.
+    const pg = planetGround(this.solidSpheres(), x, this.vehicle.position.y, z);
+    if (pg) {
+      return {
+        height: pg.height,
+        normal: new Vector3(pg.nx, pg.ny, pg.nz),
+        point: new Vector3(pg.px, pg.py, pg.pz)
+      };
+    }
     return null;
   };
+
+  /**
+   * Solid bodies the player can collide with and land on, taken from the
+   * current world. A world that renders planet meshes declares them here;
+   * worlds without solid geometry (rooms, the ship) declare none.
+   */
+  private solidSpheres(): SolidSphere[] {
+    const out: SolidSphere[] = [];
+    const w = this.world as unknown as { collisionBodies?: () => SolidSphere[] };
+    if (typeof w?.collisionBodies === 'function') {
+      const list = w.collisionBodies();
+      if (list && list.length) out.push(...list);
+    }
+    // The universe's own planets are real spheres now, so they are solid
+    // too: flight stops on their surface and walk mode stands on them.
+    for (const r of this.universe.regions) {
+      if ((r.kind === 'planet' || r.kind === 'ocean' || r.kind === 'terrain')
+          && r.surfaceRadius && r.surfaceRadius > 0) {
+        out.push({
+          id: r.name, x: r.position.x, y: r.position.y, z: r.position.z,
+          radius: r.surfaceRadius, mass: r.mass
+        });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * The seamless spaceflight <-> walking transition.
+   *
+   * In flight, pressing land anchors onto the nearest solid body and switches
+   * to walk mode, whose gravity and ground clamping are then the planet's
+   * own (radial) rather than world-Y. In walk mode the same key lifts off
+   * back into weightless free flight.
+   */
+  private toggleLand(): void {
+    if (this.vehicle.mode === 'orbit') return;
+    if (this.vehicle.mode === 'walk') {
+      this.setControlMode('freefly');
+      this.shell.toast('Liftoff');
+      return;
+    }
+    const solids = this.solidSpheres();
+    if (!solids.length) { this.shell.toast('Nothing to land on'); return; }
+    const p = this.vehicle.position;
+    const s = nearestSolid(solids, p.x, p.y, p.z);
+    if (!s) { this.shell.toast('No planet nearby'); return; }
+    const alt = Math.hypot(p.x - s.x, p.y - s.y, p.z - s.z) - s.radius;
+    if (alt > Math.max(s.radius * 4, 60)) {
+      this.shell.toast('Too far from the surface to land');
+      return;
+    }
+    this.setControlMode('walk');
+    this.shell.toast('Landed on ' + s.id);
+  }
 
   /** Applies a quality preset to the engine and the post-processing stack. */
   applyQuality(name: QualityName): void {
@@ -1284,6 +1383,13 @@ export class App {
             const d = Vector3.Distance(eyeW, r.position) - surf;
             if (d < nearest) nearest = d;
           }
+          // Solid planet meshes brake warp too: a world's planets are tens of
+          // units across, and arriving under full warp would tunnel straight
+          // through before the per-frame collision could catch it.
+          for (const s of this.solidSpheres()) {
+            const d = Math.hypot(eyeW.x - s.x, eyeW.y - s.y, eyeW.z - s.z) - s.radius;
+            if (d < nearest) nearest = d;
+          }
           this.warpDrive.setApproach(
             Number.isFinite(nearest) ? Math.max(0, nearest) : Infinity);
         }
@@ -1333,6 +1439,28 @@ export class App {
         if (Math.abs(look.yaw) + Math.abs(look.pitch) > 0.02) this.lookMoved = true;
         const baseFly = this.vehicle.flySpeed;
         this.vehicle.update(dt, input, this.groundProbe);
+
+        // ---- planetary collision ----
+        // Flight integrates position directly from input, so nothing stops
+        // it flying through a planet. Resolve against every solid body the
+        // current world exposes: push out along the surface normal and cancel
+        // the inward component of velocity, so the player stops on top of the
+        // world and slides along it rather than tunnelling through.
+        if (this.vehicle.mode === 'freefly' || this.vehicle.mode === 'fly') {
+          const solids = this.solidSpheres();
+          if (solids.length) {
+            const r = resolveCollisions(
+              solids,
+              this.vehicle.position.x, this.vehicle.position.y, this.vehicle.position.z,
+              this.vehicle.velocity.x, this.vehicle.velocity.y, this.vehicle.velocity.z,
+              0.5);
+            if (r.contacts.length) {
+              this.vehicle.position.set(r.x, r.y, r.z);
+              this.vehicle.velocity.set(r.vx, r.vy, r.vz);
+            }
+          }
+        }
+
         // The multiplier is applied per frame, so it must be taken back off
         // again or it would compound into nonsense within a second.
         if (warpOn) this.vehicle.flySpeed = baseFly / warpMul;
@@ -1611,6 +1739,10 @@ export class App {
       // parallaxes as you fly and every light in it is a destination.
       this.starField.update(
         StarFieldRenderer.toSkyObjects(this.universe.regions), eye);
+      // The nearby worlds stop being points and become growing spheres.
+      this.planetField.update(this.universe.regions, eye);
+      // The canopy motes drift and reseed as you travel.
+      this.spaceDust.update(eye);
 
       // Each background shell slides toward the eye by its own lock factor,
       // so near stars sweep past and far ones hold station.

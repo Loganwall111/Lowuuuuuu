@@ -376,7 +376,11 @@ export class GalaxyField {
         p.color = c;
       });
       const starMesh = await stars.buildMeshAsync();
-      this.applyState(starMesh, 2.0);
+      // Sized up so the disc reads as the Milky Way band from inside it: at
+      // the old 2.0px the stars thinned to a faint scatter and the band that
+      // is the single most recognisable thing about Earth's night sky never
+      // formed. A galaxy is a band of light, not a field of dust motes.
+      this.applyState(starMesh, 2.8);
       this.clouds.push(stars);
       this.meshes.push(starMesh);
 

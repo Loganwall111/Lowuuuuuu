@@ -134,6 +134,11 @@ export class FlightHUD {
     const el = document.createElement('div');
     el.className = 'fhud ' + hudTheme(this.theme).className;
     el.innerHTML = `
+      <!-- Cockpit canopy: a glass layer blended over the scene, so the
+           instruments read as projected on the inside of a ship's window
+           rather than as flat stickers on the screen. -->
+      <div class="fhud-canopy" aria-hidden="true"></div>
+
       <div class="fhud-reticle" data-g="reticle">
         <svg viewBox="0 0 120 120" width="120" height="120">
           <circle cx="60" cy="60" r="34" class="fh-ring"/>
@@ -221,6 +226,13 @@ export class FlightHUD {
           <div class="fh-row"><span class="fh-num" id="fhFleet">0</span>
             <span class="fh-sub" id="fhFleetG">—</span></div>
         </div>
+      </div>
+
+      <!-- Bottom telemetry ticker: the ship's own status line. -->
+      <div class="fhud-status">
+        <span class="fh-st-seg" id="fhStSys">SYS&nbsp;NOMINAL</span>
+        <span class="fh-st-seg" id="fhStLoc">DEEP SPACE</span>
+        <span class="fh-st-seg fh-st-right" id="fhStSpd">0 u/s</span>
       </div>`;
     parent.appendChild(el);
     this.root = el;
@@ -293,7 +305,9 @@ export class FlightHUD {
   }
 
   update(d: FlightData): void {
-    if (!this.root || !this.visible) return;
+    // Writes happen even while the HUD is display-hidden, so that the moment
+    // it is revealed it already shows live values instead of stale ones.
+    if (!this.root) return;
     const e = this.elements;
 
     if (e.coordinates) {
@@ -338,6 +352,13 @@ export class FlightHUD {
       this.put('fhFleetG', d.fleetGravity > 0.01
         ? d.fleetGravity.toFixed(2) + ' m/s²' : 'no gravity');
     }
+
+    // ---- bottom status ticker ----
+    this.put('fhStLoc', d.locale);
+    this.put('fhStSpd', formatSpeed(d.speed));
+    this.put('fhStSys', d.warpMultiplier > 1.5
+      ? 'WARP ' + Math.round(d.warpMultiplier) + '×'
+      : d.localeDistance > 1e5 ? 'CRUISE' : 'SYS NOMINAL');
   }
 
   /**

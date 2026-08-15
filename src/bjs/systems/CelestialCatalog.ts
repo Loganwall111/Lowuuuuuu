@@ -281,10 +281,11 @@ export interface FieldOptions {
 
 export const DEFAULT_FIELD: FieldOptions = {
   cellSize: 9000,
-  // Slightly under two per cell: enough that a cell is rarely empty and
-  // rarely crowded, which is what makes a field read as natural rather
-  // than as a grid with one thing at each node.
-  density: 1.7,
+  // A touch denser than before: enough that a cell is rarely empty and
+  // rarely crowded, and so the space between the home worlds carries a
+  // steady traffic of pulsars, comets, clusters and nebulae rather than
+  // the occasional lonely spark.
+  density: 2.3,
   seed: 1
 };
 

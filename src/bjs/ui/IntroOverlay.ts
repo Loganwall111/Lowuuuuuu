@@ -75,6 +75,83 @@ export const INTRO_CSS = `
   background-color:#101a36;
   transition:opacity .6s ease;
 }
+/* AAA title treatment over the hero plate: a slow aurora that breathes
+   across the Jupiter backdrop and a film vignette that pulls the eye to the
+   logotype without ever dimming the planet behind it. Both are blended
+   light - the artwork stays exactly as it is underneath. */
+.intro-title::before{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  mix-blend-mode:screen;
+  background:
+    radial-gradient(120% 90% at 50% -12%,
+      rgba(120,170,255,.18) 0%, rgba(120,170,255,0) 55%),
+    radial-gradient(90% 70% at 50% 118%,
+      rgba(96,64,180,.20) 0%, rgba(96,64,180,0) 62%);
+  animation:introAurora 16s ease-in-out infinite alternate;
+}
+.intro-title::after{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(180deg,
+      rgba(2,6,16,.16) 0%, rgba(2,6,16,0) 24%,
+      rgba(2,6,16,0) 76%, rgba(2,6,16,.34) 100%),
+    radial-gradient(ellipse at center,
+      rgba(2,4,12,0) 56%, rgba(2,4,12,.5) 100%);
+}
+@keyframes introAurora{
+  from{ transform:translateY(-1.6%) scale(1.03); opacity:.8; }
+  to{ transform:translateY(1.6%) scale(1.07); opacity:1; }
+}
+/* The logotype's halo breathes, like a beacon rather than a print mark. */
+.intro-title h1{
+  animation:introGlow 6s ease-in-out infinite alternate;
+}
+@keyframes introGlow{
+  from{ text-shadow:0 0 42px rgba(90,150,255,.26); }
+  to{ text-shadow:0 0 86px rgba(110,170,255,.55); }
+}
+/* The hero plate drifts very slowly behind the text - a living backdrop
+   rather than a frozen photograph. */
+.intro-title{
+  animation:introKenBurns 40s ease-in-out infinite alternate;
+}
+@keyframes introKenBurns{
+  from{ background-position:center 46%, center 46%; }
+  to{ background-position:center 54%, center 54%; }
+}
+/* Cinematic letterbox bars, so the menu reads as a film frame. */
+.intro-cinema{
+  position:absolute;left:0;right:0;height:9vh;min-height:54px;
+  background:linear-gradient(180deg,rgba(2,4,10,.96),rgba(2,4,10,.82));
+  z-index:2;pointer-events:none;
+}
+.intro-cinema.t{top:0;box-shadow:0 1px 0 rgba(140,200,255,.10);}
+.intro-cinema.b{bottom:0;box-shadow:0 -1px 0 rgba(140,200,255,.10);}
+/* A single scan line that sweeps the title once on load, like a projector
+   warming up, then fades out. */
+.intro-scan{
+  position:absolute;left:0;right:0;height:2px;z-index:3;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(160,210,255,.9),transparent);
+  box-shadow:0 0 26px rgba(120,180,255,.8);
+  animation:introScan 1.8s cubic-bezier(.2,.7,.2,1) forwards;
+}
+@keyframes introScan{
+  0%{top:-2%;opacity:0}
+  12%{opacity:1}
+  100%{top:104%;opacity:0}
+}
+/* The logotype assembles itself: rises and snaps its letters into place. */
+.intro-logo{
+  animation:introReveal .95s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes introReveal{
+  from{opacity:0;transform:translateY(14px);letter-spacing:.5em;}
+  to{opacity:1;transform:translateY(0);}
+}
+/* The subtitle reads as a holographic caption, not plain text. */
+.intro-sub{
+  text-shadow:0 0 18px rgba(110,170,255,.35);
+}
 .intro-title h1{
   margin:0; font-size:clamp(30px,6.5vw,78px); font-weight:800;
   letter-spacing:.14em; text-align:center; line-height:1.06;
@@ -333,6 +410,9 @@ export class IntroOverlay {
     // like a list of words; on one line with the weight shift between
     // UNLIMITED and POSSIBILITIES it reads as a logotype.
     this.titleCard.innerHTML = `
+      <i class="intro-cinema t" aria-hidden="true"></i>
+      <i class="intro-cinema b" aria-hidden="true"></i>
+      <i class="intro-scan" aria-hidden="true"></i>
       <p class="intro-sub">A cosmic sandbox</p>
       <h1 class="intro-logo">
         <span class="il-1">UNLIMITED</span>

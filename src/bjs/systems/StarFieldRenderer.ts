@@ -138,7 +138,7 @@ export class StarFieldRenderer {
       const m = mesh.material as any;
       if (m) {
         m.disableLighting = true;
-        m.pointSize = 2;
+        m.pointSize = 2.3;
         // Depth-write off is the actual fix for the black patches.
         m.disableDepthWrite = true;
         m.forceDepthWrite = false;

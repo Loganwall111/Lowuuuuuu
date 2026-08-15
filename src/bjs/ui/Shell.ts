@@ -265,7 +265,9 @@ export class Shell {
 
   private buildTopbar(): void {
     this.topbar = document.createElement('div');
-    this.topbar.className = 'topbar';
+    // The tool bar belongs to the game, not to the main menu: it starts
+    // hidden and is revealed the moment the player enters (onMenuClosed).
+    this.topbar.className = 'topbar hidden';
     this.topbar.innerHTML = `
       <div class="brand">
         <div class="brand-dot"></div>
@@ -403,6 +405,8 @@ export class Shell {
 
   /** Called once the main menu is dismissed: reveal the default panel set. */
   onMenuClosed(): void {
+    // The tool bar lives in the game, not on the title screen.
+    this.topbar?.classList.remove('hidden');
     this.wm.Open('controls');
     this.wm.Open('objects');
   }

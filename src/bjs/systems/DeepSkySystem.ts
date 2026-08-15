@@ -104,7 +104,7 @@ export function apparentBrightness(luminosity: number, distance: number): number
   const raw = luminosity / (4 * Math.PI * d * d);
   if (!Number.isFinite(raw)) return 0;
   // Perceptual compression: doubling distance dims, but not to nothing.
-  return Math.min(1, Math.pow(raw, 0.36) * 0.02);
+  return Math.min(1, Math.pow(raw, 0.36) * 0.026);
 }
 
 /** Angular diameter of an object of this radius at this distance. */

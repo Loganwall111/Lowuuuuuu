@@ -93,7 +93,7 @@ float skyRidge(vec3 p, int octaves){
  * same way see the SAME star. That is what makes an Einstein ring show a
  * genuine second image rather than unrelated noise.
  */
-vec3 skyStars(vec3 d, float density, float scaleBase){
+vec3 skyStars(vec3 d, float density, float scaleBase, float t){
   vec3 col = vec3(0.0);
   for (int oct = 0; oct < 3; oct++){
     float scale = scaleBase * pow(2.7, float(oct));
@@ -111,6 +111,9 @@ vec3 skyStars(vec3 d, float density, float scaleBase){
           float dist = length(f - g - j);
           float star = exp(-dist * dist * 260.0);
           float temp = skyHash(id + 5.5);
+          // Atmospheric scintillation: real stars shimmer faintly. Every star
+          // carries its own phase, so the sky twinkles rather than pulsing.
+          star *= 0.86 + 0.14 * sin(t * 2.4 + h * 51.0 + temp * 23.0);
           // Most stars are cool. An even spread of colour reads as confetti.
           vec3 tint = temp < 0.74
             ? vec3(1.0, 0.70 + temp * 0.32, 0.52 + temp * 0.42)
@@ -278,15 +281,31 @@ vec3 skyMandelbrot(vec3 d, float zoom, float t){
  * This is deliberately NOT our Milky Way - that is real geometry now. It
  * exists so the sky between the real stars is not dead black, and it is
  * kept dim and structureless so nothing here can be mistaken for a place
- * you could fly to.
+ * you could fly to. Each clump still carries its own colour - blue spiral,
+ * warm elliptical, pink starburst - and a brighter core, so deep space is
+ * a field of faint galaxies rather than one grey haze.
  */
-vec3 skyDeepField(vec3 d){
-  float n = skyFbm(d * 2.4 + 61.3, 4);
-  float clump = smoothstep(0.62, 1.0, n);
-  vec3 warm = vec3(0.10, 0.09, 0.13);
-  vec3 cool = vec3(0.06, 0.08, 0.14);
-  float pick = skyNoise(d * 5.1 - 12.0);
-  return mix(cool, warm, pick) * clump * 0.55;
+vec3 skyDeepField(vec3 d, float t){
+  vec3 col = vec3(0.0);
+  for (int i = 0; i < 3; i++){
+    float s = 2.0 * pow(1.9, float(i));
+    vec3 p = d * s;
+    float n = skyFbm(p + vec3(61.3, -17.7, 9.2), 4);
+    float clump = smoothstep(0.60, 0.92, n);
+    if (clump < 0.01) continue;
+    // A per-clump galaxy colour, so the deep field is varied, not uniform.
+    float pick = skyNoise(p * 3.1 + vec3(-12.0, 5.5, 33.1));
+    vec3 tintCol = pick < 0.33
+      ? vec3(0.50, 0.62, 0.95)      // blue spiral
+      : pick < 0.66
+        ? vec3(0.98, 0.80, 0.50)    // warm elliptical
+        : vec3(0.95, 0.42, 0.60);   // pink starburst
+    // A bright nucleus inside each clump so it reads as a distant galaxy,
+    // not a flat stain.
+    float core = smoothstep(0.86, 1.0, n);
+    col += tintCol * clump * (0.045 + core * 0.11);
+  }
+  return col;
 }
 
 vec3 cosmicSky(vec3 dir, float medium, float symmetry, vec3 tint,
@@ -304,30 +323,30 @@ vec3 cosmicSky(vec3 dir, float medium, float symmetry, vec3 tint,
     // flew toward it, so the real galaxy would visibly slide against a
     // stuck copy of itself. Only the faintest deep-field grain remains,
     // which is unresolved distant galaxies rather than our own.
-    col = skyStars(d, 0.16, 42.0) * 1.35;
-    col += skyDeepField(d) * 0.5;
+    col = skyStars(d, 0.16, 42.0, t) * 1.5;
+    col += skyDeepField(d, t) * 0.6;
   } else if (medium < 1.5){
     // Technology: a cold structural grid over deep field.
-    col = skyStars(d, 0.08, 38.0) * 0.7;
-    col += skyDeepField(d) * 0.3;
+    col = skyStars(d, 0.08, 38.0, t) * 0.7;
+    col += skyDeepField(d, t) * 0.3;
     col += skyLattice(d, 4.0, t) * 0.55;
     col += vec3(0.05, 0.24, 0.26) * 0.5;
   } else if (medium < 2.5){
-    col = skyCode(d, t) + skyStars(d, 0.04, 30.0) * 0.25;
+    col = skyCode(d, t) + skyStars(d, 0.04, 30.0, t) * 0.25;
   } else if (medium < 3.5){
-    col = skyLattice(d, symmetry, t) + skyStars(d, 0.05, 26.0) * 0.4;
+    col = skyLattice(d, symmetry, t) + skyStars(d, 0.05, 26.0, t) * 0.4;
   } else if (medium < 4.5){
-    col = skyMandelbrot(d, zoom, t) + skyStars(d, 0.03, 24.0) * 0.3;
+    col = skyMandelbrot(d, zoom, t) + skyStars(d, 0.03, 24.0, t) * 0.3;
   } else if (medium < 5.5){
     // String: everything collapsed onto one blazing line.
     float line = exp(-pow(d.y * 34.0, 2.0));
     col = vec3(0.85, 0.86, 0.95) * line * 0.9;
-    col += skyStars(d, 0.05, 30.0) * 0.35;
+    col += skyStars(d, 0.05, 30.0, t) * 0.35;
   } else {
     // Void: the infinite cube of stars.
     vec3 q = abs(fract(d * 9.0) - 0.5);
     float grid = 1.0 - smoothstep(0.0, 0.05, min(min(q.x, q.y), q.z));
-    col = vec3(0.55, 0.55, 0.62) * grid * 0.35 + skyStars(d, 0.22, 46.0);
+    col = vec3(0.55, 0.55, 0.62) * grid * 0.35 + skyStars(d, 0.22, 46.0, t);
   }
 
   // The verse tint is a floor for the EXOTIC verses only.

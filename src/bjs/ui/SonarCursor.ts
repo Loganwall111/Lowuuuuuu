@@ -81,10 +81,6 @@ export class SonarCursor {
   private el: HTMLElement | null = null;
   private on = false;
   private state: CursorState = 'idle';
-  private raf = 0;
-  private x = -100;
-  private y = -100;
-  private pending = false;
 
   get enabled(): boolean { return this.on; }
   get current(): CursorState { return this.state; }
@@ -97,30 +93,21 @@ export class SonarCursor {
     parent.appendChild(el);
     this.el = el;
 
-    // Pointer position is captured on the event but written to the DOM in
-    // a rAF. Writing transform directly in the handler means a layout
-    // write per pointermove event, which on a high-polling mouse is
-    // several hundred a second and shows up as jank in the render loop.
+    // The transform is written straight into the handler. Batching it into a
+    // rAF left the cursor a whole frame behind the pointer, and on a heavy
+    // WebGL loop that frame is 30-50ms - exactly the "laggy cursor" that was
+    // reported. A transform on a `will-change: transform` element with
+    // `pointer-events: none` is a compositor-only update: it never triggers
+    // layout or paint, so writing it per event is cheap, not janky.
     window.addEventListener('pointermove', this.onMove, { passive: true });
     window.addEventListener('pointerdown', this.onDown, { passive: true });
     this.setEnabled(true);
   }
 
   private onMove = (e: PointerEvent): void => {
-    this.x = e.clientX;
-    this.y = e.clientY;
-    if (!this.pending && this.on) {
-      this.pending = true;
-      this.raf = requestAnimationFrame(this.flush);
-    }
-  };
-
-  private flush = (): void => {
-    this.pending = false;
-    if (this.el) {
-      this.el.style.transform =
-        'translate3d(' + this.x + 'px,' + this.y + 'px,0) translate(-50%,-50%)';
-    }
+    if (!this.on || !this.el) return;
+    this.el.style.transform =
+      'translate3d(' + e.clientX + 'px,' + e.clientY + 'px,0) translate(-50%,-50%)';
   };
 
   /** Fires the expanding ping ring. */
@@ -153,7 +140,6 @@ export class SonarCursor {
   dispose(): void {
     window.removeEventListener('pointermove', this.onMove);
     window.removeEventListener('pointerdown', this.onDown);
-    if (this.raf) cancelAnimationFrame(this.raf);
     this.el?.remove();
     this.el = null;
     document.body?.classList.remove('sonar-on');

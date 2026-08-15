@@ -126,7 +126,7 @@ const float BULGE_RE = 0.055;
  *  real bulge has. */
 const float BULGE_POW = 0.62;
 /** Peak brightness of the bulge. */
-const float BULGE_GAIN = 5.0;
+const float BULGE_GAIN = 6.0;
 /** Where the bulge starts being truncated, and where it ends. WITHOUT
  *  THIS the profile's tail never reaches zero and lights the whole sky. */
 const float BULGE_CUT_IN = 0.14;
@@ -135,7 +135,7 @@ const float BULGE_CUT_OUT = 0.34;
 /** The blazing nucleus at the dead centre. */
 const float NUCLEUS_RE = 0.013;
 const float NUCLEUS_POW = 1.10;
-const float NUCLEUS_GAIN = 11.0;
+const float NUCLEUS_GAIN = 13.0;
 
 /** Dust lane frequency, phase offset from the arm ridge, and profile. */
 const float DUST_FREQ = 3.2;
@@ -174,7 +174,7 @@ const float K_DUST = 26.0;
 /** Overall extinction scale. */
 const float SIGMA = 0.00006;
 /** Overall emission scale. */
-const float EMIT = 0.000075;
+const float EMIT = 0.00011;
 /** How much of a sample's own light a dust lane blocks. Extinction alone
  *  only dims what is BEHIND a lane; this is what makes a lane also blank
  *  the gas it runs through, producing hard dark filaments. */

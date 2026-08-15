@@ -33,6 +33,7 @@ import { ImpactorSystem, type ImpactTarget } from '../systems/ImpactorSystem';
 import { THROWABLES, throwableById } from '../systems/ThrowableSystem';
 import { SettlerSystem } from '../systems/SettlerSystem';
 import { AsteroidBeltSystem } from '../systems/AsteroidBelts';
+import type { SolidSphere } from '../systems/PlanetLanding';
 
 /* --------------------------- planet shader --------------------------- */
 
@@ -48,6 +49,14 @@ uniform vec3 camPos;
 uniform vec3 sunPos;
 uniform vec3 atmoColor;
 uniform float power;
+/** 1 on a living world, 0 on a dead one. Drives the whole character of the
+ *  halo: living worlds get a deep, saturated blue with a warm sunset, dead
+ *  worlds get a thin, dusty, desaturated grey that reads as harsh. */
+uniform float habitable;
+/** Overall atmosphere density multiplier. */
+uniform float density;
+/** 0 = grey haze, 1 = full spectral colour. */
+uniform float saturation;
 uniform vec3 planetCenter;
 uniform float planetRadius;   // surface radius, world units
 uniform float atmoRadius;     // top of the atmosphere, world units
@@ -110,6 +119,13 @@ float phaseMie(float mu, float g){
 }
 
 void main(void){
+  float hab = clamp(habitable, 0.0, 1.0);
+
+  // Living worlds scatter blue hard (strong Rayleigh); dead worlds keep a
+  // thin, dustier sky where Mie dominates and the colour washes out.
+  vec3 br = BETA_R * mix(0.42, 1.0, hab);
+  vec3 bm = BETA_M * mix(1.6, 1.0, hab);
+
   vec3 ro = camPos - planetCenter;
   vec3 rd = normalize(vWorld - camPos);
   vec3 L  = normalize(sunPos - planetCenter);
@@ -127,8 +143,9 @@ void main(void){
 
   // Thickness of the shell, used to normalise the scale heights.
   float shell = max(Ra - planetRadius, 1e-5);
-  float hR = max(H_RAYLEIGH * planetRadius, shell * 0.06);
-  float hM = max(H_MIE      * planetRadius, shell * 0.012);
+  // Habitable atmospheres are puffier; dead ones are shallower and crisper.
+  float hR = max(H_RAYLEIGH * planetRadius * mix(0.72, 1.0, hab), shell * 0.06);
+  float hM = max(H_MIE      * planetRadius * mix(1.25, 1.0, hab), shell * 0.012);
 
   // ---- primary raymarch ----
   // Four samples, per the brief. Few samples are enough because density is
@@ -168,7 +185,7 @@ void main(void){
     }
 
     // Beer-Lambert both ways: sun to sample, then sample to eye.
-    vec3 tau = BETA_R * (odR + lodR) + BETA_M * 1.1 * (odM + lodM);
+    vec3 tau = br * (odR + lodR) + bm * 1.1 * (odM + lodM);
     vec3 att = exp(-tau * (1.0 / max(shell, 1e-5)) * 12.0);
 
     // Shadowed samples contribute nothing - this is what carves the
@@ -184,17 +201,23 @@ void main(void){
   float pM = phaseMie(mu, 0.76);
 
   float norm = 1.0 / max(shell, 1e-5);
-  vec3 col = (sumR * BETA_R * pR + sumM * BETA_M * pM) * norm * 620.0;
+  vec3 col = (sumR * br * pR + sumM * bm * pM) * norm * 620.0;
 
   // Tint toward the per-planet colour without discarding the physics: the
   // scattering decides the shape and the artist decides the hue.
   col = mix(col, col * atmoColor * 1.8, 0.55);
+
+  // Living worlds keep their spectral colour; dead worlds are pulled toward
+  // a desaturated grey, which is the "harsher, celestial" look.
+  float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  col = mix(vec3(lum), col, clamp(saturation, 0.0, 1.0));
 
   // Opacity is the integrated density, so the limb fades because the gas
   // genuinely runs out. No geometric edge anywhere.
   float dens = (odR + odM * 1.4) * norm;
   float a = 1.0 - exp(-dens * 2.6);
   a *= smoothstep(0.0, 0.06, dens);
+  a *= clamp(density, 0.0, 4.0);
 
   // power stays meaningful as an artistic limb-sharpness control.
   a = pow(clamp(a, 0.0, 1.0), max(power * 0.28, 0.25));
@@ -235,7 +258,7 @@ interface Body {
   angle: number;
   spin: number;
   name: string;
-  moons: { pivot: TransformNode; speed: number }[];
+  moons: { pivot: TransformNode; mesh: Mesh; speed: number }[];
 }
 
 export interface PlanetCfg {
@@ -636,7 +659,7 @@ export class PlanetaryWorld implements World {
         attributes: ['position', 'normal', 'uv'],
         uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time',
                    'seed', 'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights', 'radius', 'isStar',
-                   ...PLANET_MAP_UNIFORMS],
+                   'habitable', ...PLANET_MAP_UNIFORMS],
         samplers: PLANET_MAP_SAMPLERS
       });
       applyPlanetMap(mat, cfg.type as PlanetKind, scene, Math.floor(i * 2654435761 + 101));
@@ -646,6 +669,9 @@ export class PlanetaryWorld implements World {
       mat.setColor3('tintB', new Color3(...cfg.b));
       mat.setFloat('radius', cfg.r);
       mat.setFloat('isStar', 0);
+      // Only the inhabited world gets the lush atmospheric limb; every other
+      // body keeps the thin, desaturated, "dead rock" haze.
+      mat.setFloat('habitable', cfg.inhabited ? 1 : 0);
       mesh.material = mat;
 
       const body: Body = {
@@ -662,12 +688,18 @@ export class PlanetaryWorld implements World {
         const am = new ShaderMaterial('am_' + cfg.name, scene, 'atmo', {
           attributes: ['position', 'normal'],
           uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos',
-                     'atmoColor', 'power',
+                     'atmoColor', 'power', 'habitable', 'density', 'saturation',
                      'planetCenter', 'planetRadius', 'atmoRadius'],
           needAlphaBlending: true
         });
         am.setColor3('atmoColor', new Color3(...cfg.atmo));
-        am.setFloat('power', 3.0);
+        // Habitable worlds get a soft, glowing halo; dead worlds get a
+        // tighter, harsher limb. Everything else keys off the same flag so
+        // the two looks can never drift apart.
+        am.setFloat('power', cfg.inhabited ? 2.4 : 3.6);
+        am.setFloat('habitable', cfg.inhabited ? 1 : 0);
+        am.setFloat('density', cfg.inhabited ? 1.0 : 0.55);
+        am.setFloat('saturation', cfg.inhabited ? 1.0 : 0.45);
         // The volumetric march needs the real geometry of the shell it is
         // integrating through. The mesh diameter is cfg.r * 2.16, so the
         // atmosphere tops out at 1.08 planet radii.
@@ -682,15 +714,19 @@ export class PlanetaryWorld implements World {
       }
 
       // ---- rings ----
+      // Saturn's rings span about 2.3 planetary radii and are the first
+      // thing anyone looks for; the old 2.4x disc read as a faint hoop you
+      // had to squint at. A wider, brighter disc makes a ringed world read
+      // as a ringed world from a distance instead of a slightly fuzzy ball.
       if (cfg.ring) {
-        const ring = MeshBuilder.CreateDisc('r_' + cfg.name, { radius: cfg.r * 2.4, tessellation: 128 }, scene);
+        const ring = MeshBuilder.CreateDisc('r_' + cfg.name, { radius: cfg.r * 3.4, tessellation: 160 }, scene);
         ring.parent = root;
         ring.rotation.x = Math.PI / 2;
         ring.rotation.z = 0.24;
         const rm = new StandardMaterial('rm_' + cfg.name, scene);
         rm.diffuseTexture = ringTexture(scene);
         rm.opacityTexture = rm.diffuseTexture;
-        rm.emissiveColor = new Color3(0.35, 0.30, 0.24);
+        rm.emissiveColor = new Color3(0.5, 0.42, 0.33);
         rm.specularColor = Color3.Black();
         rm.backFaceCulling = false;
         (rm.diffuseTexture as Texture).hasAlpha = true;
@@ -711,11 +747,12 @@ export class PlanetaryWorld implements World {
           attributes: ['position', 'normal', 'uv'],
           uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time',
                      'seed', 'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights', 'radius', 'isStar',
-                     ...PLANET_MAP_UNIFORMS],
+                     'habitable', ...PLANET_MAP_UNIFORMS],
           samplers: PLANET_MAP_SAMPLERS
         });
         mm.setFloat('useMap', 0);
         mm.setFloat('oceanDepth', 0);
+        mm.setFloat('habitable', 0);
         mm.setFloat('seed', i * 9.1 + m * 4.3 + 20.0);
         mm.setFloat('ptype', 0);
         mm.setColor3('tintA', new Color3(0.28, 0.26, 0.25));
@@ -723,7 +760,7 @@ export class PlanetaryWorld implements World {
         mm.setFloat('radius', mr);
         mm.setFloat('isStar', 0);
         moon.material = mm;
-        body.moons.push({ pivot, speed: 0.5 + Math.random() * 0.9 });
+        body.moons.push({ pivot, mesh: moon, speed: 0.5 + Math.random() * 0.9 });
         (body as any).moonMats = [...((body as any).moonMats || []), mm];
       }
 
@@ -857,6 +894,38 @@ export class PlanetaryWorld implements World {
       mass: 5.97e24 * Math.pow(b.visualR / EARTH_VISUAL_R, 3),
       physicalRadius: 6.371e6 * (b.visualR / EARTH_VISUAL_R)
     }));
+  }
+
+  /**
+   * The solid bodies flight can collide with and land on: the sun, every
+   * planet and every moon, at their current world positions. App resolves the
+   * player against these so a planet stops them instead of swallowing them,
+   * and the ground probe walks on them.
+   */
+  collisionBodies(): SolidSphere[] {
+    const out: SolidSphere[] = [];
+    const starPos = this.star ? this.star.getAbsolutePosition() : Vector3.Zero();
+    out.push({
+      id: 'the sun', x: starPos.x, y: starPos.y, z: starPos.z,
+      radius: 4.5, mass: 120000, habitable: false
+    });
+    for (const b of this.bodies) {
+      const p = b.mesh.getAbsolutePosition();
+      out.push({
+        id: b.name, x: p.x, y: p.y, z: p.z,
+        radius: b.visualR,
+        mass: 60 + 400 * Math.pow(b.visualR / EARTH_VISUAL_R, 3),
+        habitable: b.name === INHABITED
+      });
+      for (const m of b.moons) {
+        const mp = m.mesh.getAbsolutePosition();
+        out.push({
+          id: b.name + ' moon', x: mp.x, y: mp.y, z: mp.z,
+          radius: b.visualR * 0.2, mass: 1, habitable: false
+        });
+      }
+    }
+    return out;
   }
 
   getParams(): WorldParam[] {

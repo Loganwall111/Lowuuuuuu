@@ -633,8 +633,11 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
   ok('clicking fires a ping', /sc-ping/.test(cur) && /classList\.add\('go'\)/.test(cur));
   ok('the ping restart forces a reflow, or it would only ever play once',
     /void ping\.offsetWidth/.test(cur));
-  ok('pointer moves are batched into a rAF, not written per event',
-    /requestAnimationFrame\(this\.flush\)/.test(cur));
+  ok('pointer moves are written straight into a compositor-only transform',
+    /style\.transform/.test(cur) && !/requestAnimationFrame/.test(cur),
+    'batching into a rAF left the cursor a frame behind the pointer');
+  ok('the live cursor is promoted to its own compositor layer',
+    /will-change\s*:\s*transform/.test(css) && /pointer-events\s*:\s*none/.test(css));
   ok('the native cursor is only hidden while ours is shown',
     /classList\.toggle\('sonar-on', v\)/.test(cur));
   ok('text fields keep a real caret', /input\[type="text"\][\s\S]{0,120}cursor:text/.test(css));
