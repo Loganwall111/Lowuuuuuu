@@ -17,6 +17,10 @@
  */
 
 import { GEAR_ORDER, GEARS, type GearId } from '../systems/SpeedGears';
+import {
+  DEFAULT_HUD_THEME, HUD_THEMES, hudTheme, signalBars, signalStrength,
+  type HudThemeId
+} from './HudTheme';
 
 export interface HUDElements {
   coordinates: boolean;
@@ -128,7 +132,7 @@ export class FlightHUD {
   mount(parent: HTMLElement = document.body): void {
     if (this.root) return;
     const el = document.createElement('div');
-    el.className = 'fhud';
+    el.className = 'fhud ' + hudTheme(this.theme).className;
     el.innerHTML = `
       <div class="fhud-reticle" data-g="reticle">
         <svg viewBox="0 0 120 120" width="120" height="120">
@@ -137,6 +141,22 @@ export class FlightHUD {
           <path d="M60 14 L60 26 M60 94 L60 106 M14 60 L26 60 M94 60 L106 60" class="fh-tick"/>
           <path d="M26 34 A 44 44 0 0 1 94 34" class="fh-arc"/>
         </svg>
+      </div>
+
+      <!-- Satellite frame furniture. Present in the DOM for both themes;
+           the theme class is what makes it visible, so switching themes
+           is a class change rather than a rebuild. -->
+      <div class="fhud-frame" aria-hidden="true">
+        <span class="fh-corner tl"></span><span class="fh-corner tr"></span>
+        <span class="fh-corner bl"></span><span class="fh-corner br"></span>
+        <span class="fh-scan"></span>
+      </div>
+
+      <div class="fhud-uplink">
+        <span class="fh-up-dot"></span>
+        <span class="fh-up-id" id="fhUpId">SAT·ORB-1</span>
+        <span class="fh-up-sig" id="fhUpSig">▮▮▮▯▯</span>
+        <span class="fh-up-mode" id="fhUpMode">TRACKING</span>
       </div>
 
       <div class="fhud-gears" data-g="gears">
@@ -282,6 +302,17 @@ export class FlightHUD {
       this.put('fhZ', formatCoord(d.z));
     }
     if (e.gears) this.showGear(d.gear ?? 'cruise');
+
+    // ---- satellite uplink strip ----
+    // Only touched in the satellite theme; legacy has no such readout and
+    // writing to hidden nodes every frame is wasted DOM work.
+    if (hudTheme(this.theme).uplink) {
+      const sig = signalStrength(d.localeDistance);
+      this.put('fhUpSig', signalBars(sig));
+      this.put('fhUpMode',
+        d.warpMultiplier > 1.5 ? 'REACQUIRING'
+          : d.localeDistance > 1e5 ? 'DEEP FIELD' : 'TRACKING');
+    }
     if (e.attitude) {
       this.put('fhHdg', String(headingDegrees(d.heading)).padStart(3, '0') + '°');
       this.put('fhCmp', compassPoint(d.heading));
@@ -354,6 +385,26 @@ export class FlightHUD {
   }
 
   /** Shows or hides one group. */
+  /**
+   * Switches instrument skin.
+   *
+   * The frame furniture is always in the DOM, so this is a class swap and
+   * costs nothing. Rebuilding the HUD would drop the cache and cause a
+   * full re-write of every readout on the next frame.
+   */
+  setTheme(id: HudThemeId): void {
+    const spec = hudTheme(id);
+    if (this.theme === spec.id) return;
+    this.theme = spec.id;
+    if (!this.root) return;
+    for (const t of Object.values(HUD_THEMES)) {
+      this.root.classList.toggle(t.className, t.id === spec.id);
+    }
+  }
+
+  get currentTheme(): HudThemeId { return this.theme; }
+  private theme: HudThemeId = DEFAULT_HUD_THEME;
+
   setElement(name: keyof HUDElements, on: boolean): void {
     this.elements[name] = on;
     this.applyElements();

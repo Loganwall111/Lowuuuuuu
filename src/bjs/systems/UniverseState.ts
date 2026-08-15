@@ -534,8 +534,52 @@ export class UniverseState {
         // 0 at the horizon, 1 at the singularity
         this.horizonDepth = Math.max(0, Math.min(1, 1 - d / Math.max(horizon, 1e-3)));
       } else if (this.insideHorizon?.id === bh.id) {
-        this.insideHorizon = null;
-        this.horizonDepth = 0;
+        // ---- RELEASE, and why it is not just "endD > horizon" ----
+        //
+        // That was the "I still cannot get inside" bug. The swept test
+        // above correctly CATCHES the crossing, but a single frame at
+        // deep-space cruise covers 204 units and a horizon is only 9-90
+        // units across. So the frame after capture, the ship's own
+        // inertia had already carried the endpoint back outside, this
+        // branch fired, and the descent was torn down one frame after it
+        // began. Capture worked perfectly and was immediately undone.
+        //
+        // The distinction that matters is whether the player was ever
+        // REALLY in there. Two cases have to be told apart:
+        //
+        //   climb-out  the ship occupied a point inside the horizon, and
+        //              is now moving out under control, a small fraction
+        //              of a horizon per frame. This must release - being
+        //              able to go in, look around and come back out is
+        //              the whole point.
+        //
+        //   flythrough the ship was only ever caught by the SWEEP. It was
+        //              outside before the step and outside after it, and
+        //              merely passed through at a speed that covers many
+        //              horizons per frame. This must NOT release: it is
+        //              someone flying into a black hole, and they should
+        //              end up inside it.
+        //
+        // What separates them is WHERE THE STEP STARTED. A climb-out
+        // begins at a point inside the horizon, because that is where the
+        // player was standing. A flythrough begins outside it - the ship
+        // was caught mid-segment by the sweep and never occupied an
+        // interior point at a frame boundary at all.
+        //
+        // This is checked rather than step size, because a fast climb-out
+        // from just inside a small horizon and a slow flythrough of a
+        // large one can have identical step lengths.
+        const startedInside =
+          Vector3.Distance(this.lastPlayerPos, bh.position) <= horizon;
+        if (startedInside) {
+          this.insideHorizon = null;
+          this.horizonDepth = 0;
+        } else {
+          // Still captured. Hold at the singularity end of the scale: the
+          // ship is past the centre and the fall should continue rather
+          // than the player being spat back out into open space.
+          this.horizonDepth = 1;
+        }
       }
     } else if (this.insideHorizon) {
       this.insideHorizon = null;

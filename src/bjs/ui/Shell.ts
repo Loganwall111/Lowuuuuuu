@@ -12,6 +12,7 @@ import { UI_CSS } from './styles';
 import type { World, WorldParam } from '../World';
 import { POSTFX_PARAMS, DEFAULT_POSTFX } from '../PostFX';
 import { CATALOG, CATEGORIES, SCALES, randomObject, type ObjectDef } from '../content/ObjectCatalog';
+import { HUD_THEMES, HUD_THEME_ORDER } from './HudTheme';
 
 export type Mode = 'simple' | 'advanced' | 'expert';
 
@@ -106,6 +107,15 @@ interface ShellHooks {
   getFleet?: () => { size: number; mass: number; gravity: number; bound: boolean; view: string };
   /** Turns one HUD group on or off. */
   onHudElement?: (name: string, on: boolean) => void;
+  /** Switches the instrument skin (satellite / legacy). */
+  onHudTheme?: (id: string) => void;
+  getHudTheme?: () => string;
+  /** Toggles the full-screen warp tunnel overlay. */
+  onWarpTunnel?: (on: boolean) => void;
+  getWarpTunnel?: () => boolean;
+  /** Music / satellite hum / black-hole wind, each independent. */
+  onAudioToggle?: (key: string, on: boolean) => void;
+  getAudioToggles?: () => Record<string, boolean>;
   /** Current HUD group states, for rendering the toggles. */
   getHudElements?: () => Record<string, boolean>;
   /** Switches between Explorer and Sandbox. */
@@ -1709,6 +1719,100 @@ export class Shell {
     // The instruments are part of the picture, so they are configured here
     // rather than in a separate place. Each group is independent: you can
     // drop the reticle for a clean screenshot and keep the coordinates.
+    // Instrument skin. Sits above the element list because it changes what
+    // those elements look like, so choosing it first is the natural order.
+    if (this.hooks.getHudTheme && this.hooks.onHudTheme) {
+      const tg = document.createElement('div');
+      tg.className = 'grp';
+      tg.innerHTML = '<div class="grp-h">HUD Style</div>';
+      const cur = this.hooks.getHudTheme();
+      for (const t of HUD_THEME_ORDER) {
+        const spec = HUD_THEMES[t];
+        const row = document.createElement('label');
+        row.className = 'stat';
+        row.style.cursor = 'pointer';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'hudTheme';
+        radio.checked = cur === spec.id;
+        radio.onchange = () => {
+          this.hooks.onHudTheme?.(spec.id);
+          this.toast('HUD: ' + spec.label);
+        };
+        const txt = document.createElement('span');
+        txt.innerHTML = '<b>' + spec.label + '</b><br><i style="opacity:.6">'
+          + spec.blurb + '</i>';
+        row.appendChild(radio);
+        row.appendChild(txt);
+        tg.appendChild(row);
+      }
+      b.appendChild(tg);
+    }
+
+    // Warp tunnel overlay: the user asked for it to be switchable, because
+    // a full-screen effect is exactly the sort of thing people want off
+    // when they are lining up a screenshot.
+    if (this.hooks.getWarpTunnel && this.hooks.onWarpTunnel) {
+      const wg = document.createElement('div');
+      wg.className = 'grp';
+      wg.innerHTML = '<div class="grp-h">Warp Visuals</div>';
+      const row = document.createElement('label');
+      row.className = 'stat';
+      row.style.cursor = 'pointer';
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = this.hooks.getWarpTunnel();
+      box.onchange = () => {
+        this.hooks.onWarpTunnel?.(box.checked);
+        this.toast('Warp tunnel ' + (box.checked ? 'on' : 'off'));
+      };
+      const txt = document.createElement('span');
+      txt.innerHTML = '<b>Warp tunnel overlay</b><br><i style="opacity:.6">'
+        + 'Full-screen radial rush and chromatic fringe at speed</i>';
+      row.appendChild(box);
+      row.appendChild(txt);
+      wg.appendChild(row);
+      b.appendChild(wg);
+    }
+
+    // Sound. Three independent switches, because "music off" and "I still
+    // want the hum" are different preferences and one toggle cannot serve
+    // both.
+    if (this.hooks.getAudioToggles && this.hooks.onAudioToggle) {
+      const ag = document.createElement('div');
+      ag.className = 'grp';
+      ag.innerHTML = '<div class="grp-h">Sound</div>';
+      const AUDIO_LABELS: Record<string, [string, string]> = {
+        music: ['Ambient score',
+          'Slow generative music, written live rather than looped'],
+        hum: ['Satellite hum',
+          'The soft low vibration of the platform you are watching through'],
+        wind: ['Event horizon wind',
+          'A very faint rush that rises only close to a black hole']
+      };
+      const state = this.hooks.getAudioToggles();
+      for (const [key, on] of Object.entries(state)) {
+        const [label, blurb] = AUDIO_LABELS[key] ?? [key, ''];
+        const row = document.createElement('label');
+        row.className = 'stat';
+        row.style.cursor = 'pointer';
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = on;
+        box.onchange = () => {
+          this.hooks.onAudioToggle?.(key, box.checked);
+          this.toast(label + ' ' + (box.checked ? 'on' : 'off'));
+        };
+        const txt = document.createElement('span');
+        txt.innerHTML = '<b>' + label + '</b><br><i style="opacity:.6">'
+          + blurb + '</i>';
+        row.appendChild(box);
+        row.appendChild(txt);
+        ag.appendChild(row);
+      }
+      b.appendChild(ag);
+    }
+
     if (this.hooks.getHudElements && this.hooks.onHudElement) {
       const hg = document.createElement('div');
       hg.className = 'grp';

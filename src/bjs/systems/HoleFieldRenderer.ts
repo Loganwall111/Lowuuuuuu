@@ -83,8 +83,15 @@ export const DISK_OUTER = 9.0;
  * the photon ring, the lensed sky around it and the outer disk - or the
  * effect is clipped to a visible square. The shader fades to nothing well
  * inside this bound so the quad's own edge is never seen.
+ *
+ * 12, not 26. The disk's outer edge is at 9 radii and the lensed sky is now
+ * gone by about 7, so 26 was three times wider than anything ever drawn on
+ * it. That surplus was not free: the sky term stayed faintly opaque right
+ * out to ~22 radii, so the quad rendered as a huge translucent disc around
+ * every hole - the "giant floating bubble". 12 leaves a comfortable margin
+ * past the disk while ending the quad before it can wash the sky.
  */
-export const QUAD_RADII = 26;
+export const QUAD_RADII = 12;
 
 interface LiveHole {
   id: string;

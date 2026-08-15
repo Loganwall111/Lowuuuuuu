@@ -306,9 +306,21 @@ void main(void){
   // behind the quad is already correct - this contributes nothing and
   // cannot double the stars. It fades in exactly where the deflection
   // becomes real, which is also where the flat background is most wrong.
+  // THE THRESHOLDS ARE WHY THERE IS NO LONGER A BUBBLE. At 0.05..0.55 a
+  // ray only 20 horizon radii out - where the true deflection is a
+  // fraction of a degree and the real starfield behind the quad is
+  // already correct - still scored 0.028 and made the quad 2.6% opaque.
+  // Across a disc 20 radii wide that is not a subtle wash: it reads as a
+  // giant translucent bubble sitting around the hole, which is exactly
+  // what it looked like.
+  //
+  // At 0.22..0.75 the lensed sky is gone by about 7 radii, inside the
+  // disk's own outer edge of 9, so nothing extends past the object you
+  // can actually see. The Einstein ring and the wrap around the shadow
+  // are untouched, because there the bend is 0.4-0.7 and still saturates.
   float lensedSky = 0.0;
   if (!captured){
-    lensedSky = smoothstep(0.05, 0.55, totalBend) * transmit;
+    lensedSky = smoothstep(0.22, 0.75, totalBend) * transmit;
     col += skyAlongRay(escapeDir) * lensedSky;
   }
 

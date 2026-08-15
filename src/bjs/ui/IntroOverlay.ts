@@ -9,6 +9,39 @@
  */
 
 import type { IntroSequence, Lesson } from '../systems/IntroSequence';
+import {
+  CURRENT_UPDATE, CURRENT_UPDATE_NAME, countByTag, latestRelease
+} from '../content/PatchNotes';
+
+/** Escapes text destined for innerHTML. Patch copy is authored, but this
+ *  is the one place player-visible strings become markup, so it is not
+ *  left to trust. */
+function esc(s: string): string {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Builds the patch notes panel markup from the structured release data. */
+export function renderPatchNotes(): string {
+  const r = latestRelease();
+  const counts = countByTag(r);
+  const summary = [
+    counts.new ? counts.new + ' new' : '',
+    counts.fixed ? counts.fixed + ' fixed' : '',
+    counts.improved ? counts.improved + ' improved' : ''
+  ].filter(Boolean).join(' · ');
+  const rows = r.entries.map((e) =>
+    '<li class="ip-row"><span class="ip-tag ip-' + e.tag + '">'
+    + e.tag.toUpperCase() + '</span>'
+    + '<div class="ip-text"><b>' + esc(e.title) + '</b>'
+    + '<p>' + esc(e.body) + '</p></div></li>').join('');
+  return '<div class="ip-head">'
+    + '<span class="ip-ver">' + esc(CURRENT_UPDATE) + '</span>'
+    + '<span class="ip-name">' + esc(CURRENT_UPDATE_NAME) + '</span>'
+    + '<span class="ip-count">' + esc(summary) + '</span></div>'
+    + '<p class="ip-tagline">' + esc(r.tagline) + '</p>'
+    + '<ul class="ip-list">' + rows + '</ul>';
+}
 
 export const INTRO_CSS = `
 .intro-root{
@@ -48,6 +81,34 @@ export const INTRO_CSS = `
   background:linear-gradient(180deg,#ffffff 0%,#9fc6ff 58%,#4d86e8 100%);
   -webkit-background-clip:text; background-clip:text; color:transparent;
   text-shadow:0 0 62px rgba(90,150,255,.34);
+}
+/* The logotype reads across on one line. The three words carry different
+   weights and sizes so it is a mark rather than a sentence, and it wraps
+   only on genuinely narrow screens. */
+.intro-logo{
+  display:flex; align-items:baseline; justify-content:center;
+  gap:.34em; flex-wrap:wrap;
+  font-size:clamp(20px,4.6vw,58px);
+}
+.intro-logo .il-1{ font-weight:300; letter-spacing:.30em; opacity:.92; }
+.intro-logo .il-2{ font-weight:900; letter-spacing:.06em; }
+.intro-logo .il-3{
+  font-weight:500; letter-spacing:.34em; font-size:.46em; opacity:.8;
+  align-self:center;
+}
+/* The release badge, directly under the mark. */
+.intro-release{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  margin-top:14px;
+}
+.ir-badge{
+  padding:3px 11px 4px; font-size:10px; font-weight:800; letter-spacing:.22em;
+  color:#04101f; background:linear-gradient(180deg,#8fd0ff,#3f97f0);
+  border-radius:3px; box-shadow:0 0 20px rgba(90,180,255,.5);
+}
+.ir-name{
+  font-size:11px; font-weight:600; letter-spacing:.34em; color:#9fc6ff;
+  text-transform:uppercase;
 }
 .intro-sub{
   margin:0; font-size:clamp(11px,1.5vw,15px); letter-spacing:.42em;
@@ -99,6 +160,61 @@ export const INTRO_CSS = `
     0 0 0 1px rgba(180,225,255,.55),
     0 0 60px rgba(70,160,255,.45);
 }
+/* Patch notes sits in the same row so the choices read as one horizontal
+   set, but it is deliberately smaller and quieter than the two doors: it
+   is something you read, not a way into the game. */
+.intro-aux{
+  position:relative; padding:11px 22px 10px; align-self:center;
+  display:flex; flex-direction:column; gap:3px; align-items:center;
+  font-family:inherit; cursor:pointer; color:#b9cde9;
+  font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+  background:linear-gradient(180deg,rgba(38,50,76,.72),rgba(18,25,42,.72));
+  border:1px solid rgba(140,175,225,.24); border-radius:4px;
+  transition:filter .2s ease, transform .2s ease, border-color .2s ease;
+}
+.intro-aux:hover{
+  filter:brightness(1.2); transform:translateY(-2px);
+  border-color:rgba(170,205,250,.45); color:#e2eeff;
+}
+.intro-aux b{ font-size:12px; letter-spacing:.18em; font-weight:800; }
+.intro-aux i{ font-size:9.5px; letter-spacing:.05em; font-style:normal;
+  text-transform:none; opacity:.68; font-weight:500; }
+
+/* The panel. Scrolls internally so a long release cannot push the buttons
+   off the screen. */
+.intro-patch{
+  margin-top:18px; width:min(760px,86vw); max-height:min(44vh,420px);
+  overflow-y:auto; text-align:left;
+  padding:16px 18px 18px;
+  background:linear-gradient(160deg,rgba(12,20,38,.94),rgba(7,12,24,.9));
+  border:1px solid rgba(140,180,240,.22); border-radius:8px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+}
+.ip-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding-bottom:9px; border-bottom:1px solid rgba(150,190,245,.16); }
+.ip-ver{ font-size:11px; font-weight:800; letter-spacing:.2em; color:#04101f;
+  background:linear-gradient(180deg,#8fd0ff,#3f97f0); padding:3px 9px 4px;
+  border-radius:3px; }
+.ip-name{ font-size:13px; font-weight:700; letter-spacing:.24em; color:#cfe4ff; }
+.ip-count{ margin-left:auto; font-size:10px; letter-spacing:.14em;
+  color:#7f9ac4; text-transform:uppercase; }
+.ip-tagline{ margin:10px 0 4px; font-size:12px; color:#9fb8de;
+  font-style:italic; letter-spacing:.02em; }
+.ip-list{ list-style:none; margin:0; padding:0; }
+.ip-row{ display:flex; gap:11px; padding:11px 0;
+  border-bottom:1px solid rgba(140,180,240,.09); }
+.ip-row:last-child{ border-bottom:0; }
+.ip-tag{ flex:0 0 auto; align-self:flex-start; margin-top:2px;
+  font-size:8.5px; font-weight:800; letter-spacing:.14em; padding:3px 7px;
+  border-radius:3px; min-width:52px; text-align:center; }
+.ip-new{ color:#04140c; background:linear-gradient(180deg,#69e6a6,#2fbf7c); }
+.ip-fixed{ color:#1a0d02; background:linear-gradient(180deg,#ffc978,#f0993a); }
+.ip-improved{ color:#04101f; background:linear-gradient(180deg,#8fd0ff,#3f97f0); }
+.ip-text b{ display:block; font-size:12.5px; font-weight:700; color:#e6f0ff;
+  letter-spacing:.04em; margin-bottom:3px; }
+.ip-text p{ margin:0; font-size:11.5px; line-height:1.58; color:#9db4d6;
+  letter-spacing:.01em; }
+
 .intro-play b{ font-size:17px; letter-spacing:.24em; font-weight:800; }
 /* The one-line explanation of what the mode IS, so the choice can be made
    without having to try both. */
@@ -189,6 +305,7 @@ export interface IntroHooks {
 export class IntroOverlay {
   private root: HTMLDivElement;
   private titleCard: HTMLDivElement;
+  private patchPanel: HTMLDivElement | null = null;
   private talk: HTMLDivElement;
   private prompt: HTMLDivElement;
   private seq: IntroSequence;
@@ -212,9 +329,20 @@ export class IntroOverlay {
     // ---- title ----
     this.titleCard = document.createElement('div');
     this.titleCard.className = 'intro-title';
+    // The name reads across, not down. Stacked over three lines it looked
+    // like a list of words; on one line with the weight shift between
+    // UNLIMITED and POSSIBILITIES it reads as a logotype.
     this.titleCard.innerHTML = `
       <p class="intro-sub">A cosmic sandbox</p>
-      <h1>UNLIMITED<br>POSSIBILITIES<br>SANDBOX</h1>
+      <h1 class="intro-logo">
+        <span class="il-1">UNLIMITED</span>
+        <span class="il-2">POSSIBILITIES</span>
+        <span class="il-3">SANDBOX</span>
+      </h1>
+      <div class="intro-release">
+        <span class="ir-badge">${CURRENT_UPDATE}</span>
+        <span class="ir-name">${CURRENT_UPDATE_NAME}</span>
+      </div>
       <p class="intro-sub">Create · Experiment · Break · Observe</p>
     `;
     // Two ways in, not one. Explorer is the universe as a place; Sandbox is
@@ -235,7 +363,29 @@ export class IntroOverlay {
     sand.onclick = () => this.hooks.onPlay('sandbox');
     modes.appendChild(sand);
 
+    // Patch notes sits in the same row as the two mode buttons, per the
+    // brief that these should read as one horizontal row of choices rather
+    // than a vertical stack. It is styled as a secondary action so it does
+    // not compete with the two ways into the game.
+    // NOT .intro-play. That class means "a way into the game", and there
+    // are still exactly two of those - the title must stay two doors, not
+    // a menu. Patch notes is a different kind of action and carries its
+    // own class, which also keeps it visually subordinate.
+    const notes = document.createElement('button');
+    notes.className = 'intro-aux intro-play-notes';
+    notes.innerHTML = '<b>📖 Patch Notes</b><i>What changed in '
+      + CURRENT_UPDATE + '</i>';
+    notes.onclick = () => this.togglePatchNotes();
+    modes.appendChild(notes);
+
     this.titleCard.appendChild(modes);
+
+    // The notes panel itself, collapsed until asked for. Built once and
+    // shown/hidden rather than rebuilt, so opening it is instant.
+    this.patchPanel = document.createElement('div');
+    this.patchPanel.className = 'intro-patch intro-hide';
+    this.patchPanel.innerHTML = renderPatchNotes();
+    this.titleCard.appendChild(this.patchPanel);
 
     const skip = document.createElement('button');
     skip.className = 'intro-skip';
@@ -312,6 +462,18 @@ export class IntroOverlay {
   }
 
   /** Takes the overlay down for good. */
+  /** Shows or hides the patch notes panel. */
+  togglePatchNotes(): boolean {
+    if (!this.patchPanel) return false;
+    const showing = this.patchPanel.classList.toggle('intro-hide');
+    return !showing;
+  }
+
+  /** True while the notes are on screen. Used by the tests. */
+  get patchNotesOpen(): boolean {
+    return !!this.patchPanel && !this.patchPanel.classList.contains('intro-hide');
+  }
+
   dispose(): void {
     window.removeEventListener('keydown', this.keyHandler);
     this.root.remove();

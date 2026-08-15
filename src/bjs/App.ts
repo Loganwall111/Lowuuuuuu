@@ -18,6 +18,9 @@ import { PostFX } from './PostFX';
 import { IntroSequence } from './systems/IntroSequence';
 import { IntroOverlay } from './ui/IntroOverlay';
 import { WarpSystem } from './systems/WarpSystem';
+import { WarpTunnel } from './systems/WarpTunnel';
+import { CelestialRenderer } from './systems/CelestialRenderer';
+import { SpaceMusic } from './systems/SpaceMusic';
 import { PlanetSurfaceSystem } from './systems/PlanetSurfaceSystem';
 import { MouseLook } from './systems/MouseLook';
 import { LensFX } from './systems/LensFX';
@@ -41,6 +44,7 @@ import {
 } from './systems/OuterVerses';
 import { VerseRenderer } from './systems/VerseRenderer';
 import { FlightHUD } from './ui/FlightHUD';
+import { SonarCursor } from './ui/SonarCursor';
 import { THROWABLES, computeImpact, throwableById } from './systems/ThrowableSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
@@ -197,6 +201,8 @@ export class App {
   holeField = new HoleFieldRenderer();
   /** Procedural hum / warp / singularity voices, driven from live state. */
   audio = new SpaceAudio();
+  /** Generative score, satellite hum, and the wind near a horizon. */
+  music = new SpaceMusic();
   /** Whichever verse you are currently standing in. */
   verseRenderer = new VerseRenderer();
   /** Which verse that is. Changes only by crossing through The Nothing. */
@@ -216,6 +222,12 @@ export class App {
   stations: StationSystem | null = null;
   /** Gravitational lensing that works in every world, not just one. */
   lensfx = new LensFX();
+  /** The screen-space half of warp: radial rush, tunnel, chromatic fringe. */
+  warpTunnel = new WarpTunnel();
+  /** Sonar tracking reticle in place of the OS arrow. */
+  sonarCursor = new SonarCursor();
+  /** Pulsars, quasars, comets, clusters and the rest of the catalog. */
+  celestials = new CelestialRenderer();
   /** The procedural sky dome. Shares its GLSL with the hole raymarcher. */
   cosmicSky = new CosmicSky();
   /** Live 360 cubemap of the sky, for reflections and ambient light. */
@@ -269,6 +281,20 @@ export class App {
       },
       onHudElement: (name, on) => this.flightHud.setElement(name as any, on),
       getHudElements: () => ({ ...this.flightHud.elements }),
+      onHudTheme: (id) => this.flightHud.setTheme(id as any),
+      getHudTheme: () => this.flightHud.currentTheme,
+      onWarpTunnel: (on) => this.warpTunnel.setEnabled(on),
+      getWarpTunnel: () => this.warpTunnel.enabled,
+      onAudioToggle: (key, on) => {
+        if (key === 'music') this.music.setMusicEnabled(on);
+        else if (key === 'hum') this.music.setHumEnabled(on);
+        else if (key === 'wind') this.music.setWindEnabled(on);
+      },
+      getAudioToggles: () => ({
+        music: this.music.musicEnabled,
+        hum: this.music.humEnabled,
+        wind: this.music.windEnabled
+      }),
       onGameMode: (m) => this.setMode(m as GameMode),
       getGameMode: () => this.mode,
       onParam: (k, v) => this.world?.setParam(k, v),
@@ -303,7 +329,7 @@ export class App {
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -467,6 +493,10 @@ export class App {
     // The flight instruments live outside the window layer so panels can be
     // closed without losing the ability to navigate.
     this.flightHud.mount();
+    this.sonarCursor.mount();
+    // The cursor reflects what the zoom control is doing, so the spyglass
+    // has a visible state rather than only changing the field of view.
+    this.sonarCursor.setState(this.mouse.zoomScale > 1.05 ? 'zoom' : 'idle');
     // Clicking a gear button goes through the same path as pressing 1/2/3.
     this.flightHud.onGear = (id) => {
       if (this.gearbox.select(id)) this.onGearShift();
@@ -507,6 +537,9 @@ export class App {
     // interaction of any kind and then stop listening.
     const armAudio = () => {
       if (this.audio.start()) this.audio.resume();
+      // Shares the gesture: browsers only unlock audio once, and asking
+      // for a second gesture to hear music would be baffling.
+      this.music.start();
       window.removeEventListener('pointerdown', armAudio);
       window.removeEventListener('keydown', armAudio);
       const c2 = this.engine.getRenderingCanvas();
@@ -827,13 +860,19 @@ export class App {
         this.shell.toast('Post-processing unavailable on this build');
       } else {
         this.postfx.attach(this.scene, this.camera);
+        // The warp tunnel goes BEFORE the lens: warp light is light in the
+        // scene, and light in the scene is what a black hole bends. After
+        // the lens it would sit flat on a warped image and read as an
+        // overlay pasted on top.
+        this.warpTunnel.attach(this.scene, this.camera);
         // Lensing is a property of the universe, not of one world, so it is
-        // re-attached with the pipeline every time.
+        // re-attached with the pipeline every time. It must remain last.
         this.lensfx.attach(this.scene, this.camera);
       }
       // The sky is a property of the universe, not of the post-process
       // chain, so it attaches even when post-processing is unavailable.
       {
+        this.celestials.attach(this.scene);
         this.cosmicSky.attach(this.scene);
         // The cubemap is built from the dome, so it must attach after it.
         this.skyProbe.attach(this.scene, this.cosmicSky.mesh);
@@ -1274,14 +1313,16 @@ export class App {
             const m = galacticMedium(eyeNow, galA.position, galA.radius);
             if (m.inside) dens = Math.min(1, m.depth);
           }
+          const holeD = bh ? Vector3.Distance(eyeNow, bh.position) : Infinity;
           this.audio.update({
             speed: this.vehicle.flySpeed * Math.abs(input.forward),
             warpCharge: this.warpDrive.charge,
             starDensity: dens,
-            singularityDistance: bh
-              ? Vector3.Distance(eyeNow, bh.position)
-              : Infinity
+            singularityDistance: holeD
           });
+          // The score and the satellite's own hum run off the same frame
+          // and the same hole distance, so the wind and the rumble agree.
+          this.music.update(dt, holeD);
         }
 
         const look = this.mouse.consume(dt);
@@ -1547,7 +1588,15 @@ export class App {
       this.camera.fov += (wantFov - this.camera.fov) * Math.min(1, dt * 8);
 
       const fwd = this.camera.getTarget().subtract(this.camera.position);
+      this.celestials.update(eye);
       this.warp.update(dt, this.shownSpeed, eye, fwd);
+      // Driven from the streaks' own flow rate so the two halves of the
+      // effect advance together instead of sliding against each other.
+      this.warpTunnel.update(dt, {
+        amount: this.warp.intensity,
+        flow: this.warp.flow,
+        focusX: 0.5, focusY: 0.5
+      });
       this.stations?.update(dt);
       this.elevators.update(dt);
       this.fleet.update(dt);

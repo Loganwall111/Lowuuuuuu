@@ -244,6 +244,125 @@ body[data-focus="1"] .hud{ opacity:.35; }
 .fh-tick{stroke:rgba(160,205,255,.55);stroke-width:1.4;}
 .fh-arc{fill:none;stroke:color-mix(in srgb,var(--acc) 60%,transparent);stroke-width:1.2;
   stroke-dasharray:3 6;}
+/* ================= sonar cursor =================
+   A tracking reticle instead of an arrow. Built from borders and
+   transforms, no image files. */
+body.sonar-on,body.sonar-on *{cursor:none !important;}
+/* Except real text entry, where losing the caret is genuinely disorienting. */
+body.sonar-on input[type="text"],body.sonar-on input[type="number"],
+body.sonar-on textarea{cursor:text !important;}
+
+.sonar-cursor{position:fixed;left:0;top:0;width:34px;height:34px;
+  pointer-events:none;z-index:100000;will-change:transform;}
+.sonar-cursor span{position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);}
+.sc-ring{width:18px;height:18px;border-radius:50%;
+  border:1.2px solid color-mix(in srgb,var(--acc) 85%,transparent);
+  box-shadow:0 0 8px color-mix(in srgb,var(--acc) 45%,transparent);}
+.sc-dot{width:3px;height:3px;border-radius:50%;background:var(--acc);
+  box-shadow:0 0 6px var(--acc);}
+/* The sweep: a conic wedge rotating inside the ring, like a radar trace. */
+.sc-sweep{width:18px;height:18px;border-radius:50%;
+  background:conic-gradient(from 0deg,
+    color-mix(in srgb,var(--acc) 40%,transparent) 0deg,
+    transparent 62deg,transparent 360deg);
+  animation:scSweep 2.6s linear infinite;opacity:.75;}
+@keyframes scSweep{to{transform:translate(-50%,-50%) rotate(360deg);}}
+/* Four tracking ticks outside the ring. */
+.sc-tick{width:1.2px;height:5px;background:color-mix(in srgb,var(--acc) 80%,transparent);}
+.sc-tick.n{transform:translate(-50%,-50%) translateY(-13px);}
+.sc-tick.s{transform:translate(-50%,-50%) translateY(13px);}
+.sc-tick.w{width:5px;height:1.2px;transform:translate(-50%,-50%) translateX(-13px);}
+.sc-tick.e{width:5px;height:1.2px;transform:translate(-50%,-50%) translateX(13px);}
+/* Click ping: expands and fades once, then waits for the next click. */
+.sc-ping{width:18px;height:18px;border-radius:50%;
+  border:1.2px solid var(--acc);opacity:0;}
+.sc-ping.go{animation:scPing .5s ease-out 1;}
+@keyframes scPing{
+  0%{opacity:.8;transform:translate(-50%,-50%) scale(.55);}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.6);}
+}
+/* State variants. Colour carries the meaning, geometry stays constant so
+   the cursor never appears to jump size as you move over things. */
+.sonar-cursor[data-state="target"] .sc-ring{border-color:var(--warn);
+  box-shadow:0 0 10px color-mix(in srgb,var(--warn) 55%,transparent);}
+.sonar-cursor[data-state="target"] .sc-dot{background:var(--warn);}
+.sonar-cursor[data-state="grab"] .sc-ring{border-color:var(--ok);}
+.sonar-cursor[data-state="grab"] .sc-dot{background:var(--ok);}
+/* Zoom: the ring opens up, which is the one case where a size change is
+   the actual information being conveyed. */
+.sonar-cursor[data-state="zoom"] .sc-ring{width:26px;height:26px;
+  border-style:dashed;}
+
+@media (prefers-reduced-motion: reduce){
+  .sc-sweep{animation:none;opacity:.4;}
+}
+
+/* ================= satellite HUD theme =================
+   The conceit: you are watching a downlink from a tracking satellite, not
+   looking through a canopy. Everything here is frame furniture around the
+   edges of the feed - it must never encroach on the middle of the screen,
+   which is the picture itself. */
+
+/* Frame + uplink are in the DOM for both themes; the theme class decides
+   whether they render, so switching is a class swap not a rebuild. */
+.fhud-frame,.fhud-uplink{display:none;}
+.fhud-satellite .fhud-frame{display:block;position:absolute;inset:0;
+  pointer-events:none;}
+.fhud-satellite .fhud-uplink{display:flex;}
+
+/* Corner brackets: the classic "this is a tracked feed" tell. Drawn with
+   borders rather than images, per the no-image-files rule. */
+.fh-corner{position:absolute;width:26px;height:26px;
+  border-color:color-mix(in srgb,var(--acc) 46%,transparent);border-style:solid;
+  border-width:0;opacity:.75;}
+.fh-corner.tl{left:14px;top:14px;border-left-width:2px;border-top-width:2px;
+  border-top-left-radius:4px;}
+.fh-corner.tr{right:14px;top:14px;border-right-width:2px;border-top-width:2px;
+  border-top-right-radius:4px;}
+.fh-corner.bl{left:14px;bottom:14px;border-left-width:2px;border-bottom-width:2px;
+  border-bottom-left-radius:4px;}
+.fh-corner.br{right:14px;bottom:14px;border-right-width:2px;border-bottom-width:2px;
+  border-bottom-right-radius:4px;}
+
+/* The scan sweep. A slow vertical pass, the one piece of ambient motion
+   the satellite theme allows - it reads as a sensor refreshing. */
+.fh-scan{position:absolute;left:14px;right:14px;height:78px;top:0;
+  background:linear-gradient(180deg,transparent,
+    color-mix(in srgb,var(--acc) 9%,transparent) 55%,transparent);
+  opacity:.5;animation:fhSweep 7.5s linear infinite;}
+@keyframes fhSweep{
+  0%{transform:translateY(-80px);opacity:0;}
+  8%{opacity:.5;}
+  92%{opacity:.5;}
+  100%{transform:translateY(100vh);opacity:0;}
+}
+
+/* Uplink strip: identifier, signal bars, tracking state. Top-left, tucked
+   under the corner bracket so it reads as part of the frame. */
+.fhud-uplink{position:absolute;left:52px;top:16px;align-items:center;gap:9px;
+  padding:4px 11px 5px;pointer-events:none;
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;
+  color:rgba(175,205,240,.8);
+  background:linear-gradient(135deg,rgba(9,15,26,.72),rgba(5,9,16,.55));
+  backdrop-filter:blur(12px) saturate(130%);
+  border:1px solid var(--line);border-radius:999px;}
+.fh-up-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);
+  box-shadow:0 0 9px var(--ok);}
+.fh-up-id{color:rgba(200,225,255,.92);font-weight:600;}
+.fh-up-sig{color:var(--acc);letter-spacing:.05em;}
+.fh-up-mode{color:rgba(160,190,225,.6);}
+
+/* In the satellite theme the instrument blocks get a harder, more
+   technical edge than the rounded legacy chips. */
+.fhud-satellite .fh-block{border-radius:3px;
+  border-left:2px solid color-mix(in srgb,var(--acc) 50%,transparent);}
+.fhud-satellite .fh-label{color:rgba(150,190,235,.72);}
+
+/* Legacy is the original look: no frame, no sweep, no uplink. */
+.fhud-legacy .fhud-frame,.fhud-legacy .fhud-uplink{display:none;}
+
 /* ---- velocity gearbox, top centre ---- */
 /* Sits above the descent readout and clear of the reticle, because it is
    the one instrument you look at while deciding where to point the ship. */
@@ -646,6 +765,9 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 /* Reduced motion: the pulse is decorative, so drop it on request. */
 @media (prefers-reduced-motion: reduce){
   .fhud-reticle{animation:none;}
+  /* The sweep is ambient motion with no informational content, so it is
+     the first thing to go when motion is unwelcome. */
+  .fh-scan{animation:none;opacity:0;}
 }
 
 `;
