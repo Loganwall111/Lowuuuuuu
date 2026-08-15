@@ -16,6 +16,8 @@
  * HUDs cost frames.
  */
 
+import { GEAR_ORDER, GEARS, type GearId } from '../systems/SpeedGears';
+
 export interface HUDElements {
   coordinates: boolean;
   attitude: boolean;
@@ -24,6 +26,8 @@ export interface HUDElements {
   target: boolean;
   fleet: boolean;
   reticle: boolean;
+  /** The manual speed-gear shifter across the top of the screen. */
+  gears: boolean;
 }
 
 export const DEFAULT_HUD_ELEMENTS: HUDElements = {
@@ -33,7 +37,8 @@ export const DEFAULT_HUD_ELEMENTS: HUDElements = {
   warp: true,
   target: true,
   fleet: false,
-  reticle: true
+  reticle: true,
+  gears: true
 };
 
 export interface FlightData {
@@ -58,12 +63,14 @@ export interface FlightData {
   fleetSize: number;
   /** Fleet gravity, m/s^2. */
   fleetGravity: number;
+  /** Which speed gear is engaged. */
+  gear?: GearId;
 }
 
 export const EMPTY_FLIGHT: FlightData = {
   x: 0, y: 0, z: 0, heading: 0, pitch: 0, speed: 0, throttle: 0,
   warpCharge: 0, warpMultiplier: 1, locale: 'Deep space',
-  localeDistance: 0, fleetSize: 0, fleetGravity: 0
+  localeDistance: 0, fleetSize: 0, fleetGravity: 0, gear: 'cruise'
 };
 
 /** Compass point for a heading in radians. */
@@ -132,6 +139,22 @@ export class FlightHUD {
         </svg>
       </div>
 
+      <div class="fhud-gears" data-g="gears">
+        <div class="fh-gear-label">Velocity Gear</div>
+        <div class="fh-gear-set" id="fhGears">${GEAR_ORDER.map((id, i) => {
+          const g = GEARS[id];
+          const mul = g.speedMul >= 1 ? g.speedMul + 'x' : g.speedMul.toFixed(2) + 'x';
+          return '<button type="button" class="fh-gear" data-gear="' + id
+            + '" title="' + g.blurb + '">'
+            + '<span class="fh-gear-key">' + g.key + '</span>'
+            + '<span class="fh-gear-name">' + g.label + '</span>'
+            + '<span class="fh-gear-mul">' + mul + '</span>'
+            + '</button>' + (i < GEAR_ORDER.length - 1
+              ? '<span class="fh-gear-sep"></span>' : '');
+        }).join('')}</div>
+      </div>
+      <div class="fhud-notice" id="fhNotice"></div>
+
       <div class="fhud-descent" id="fhDescent">
         <div class="fh-desc-phase" id="fhDescPhase">FALLING</div>
         <div class="fh-desc-sub" id="fhDescSub"></div>
@@ -181,8 +204,43 @@ export class FlightHUD {
       </div>`;
     parent.appendChild(el);
     this.root = el;
+    // The HUD is pointer-events:none as a whole so it never eats clicks
+    // meant for the world; the gear buttons opt back in individually.
+    el.querySelectorAll<HTMLElement>('.fh-gear').forEach((b) => {
+      b.addEventListener('click', () => {
+        const id = b.dataset.gear;
+        if (id && this.onGear) this.onGear(id as GearId);
+      });
+    });
     this.applyElements();
   }
+
+  /**
+   * Called when the player clicks a gear button.
+   *
+   * The HUD does not own the gearbox - it only reports what it is told and
+   * asks for changes - so that the keyboard path and the click path go
+   * through exactly the same code in the app.
+   */
+  onGear: ((id: GearId) => void) | null = null;
+
+  /**
+   * Brief telemetry line under the gear row.
+   *
+   * Separate from the app-wide toast: this one is anchored to the flight
+   * instruments, styled as terminal telemetry, and must not displace or
+   * compete with a system message.
+   */
+  notify(msg: string): void {
+    const n = this.root?.querySelector<HTMLElement>('#fhNotice');
+    if (!n) return;
+    n.textContent = msg;
+    n.classList.add('on');
+    if (this.noticeTimer !== null) clearTimeout(this.noticeTimer);
+    this.noticeTimer = setTimeout(() => n.classList.remove('on'), 1900) as unknown as number;
+  }
+
+  private noticeTimer: number | null = null;
 
   /** Writes only when the value actually changed. */
   private put(id: string, text: string): void {
@@ -223,6 +281,7 @@ export class FlightHUD {
       this.put('fhY', formatCoord(d.y));
       this.put('fhZ', formatCoord(d.z));
     }
+    if (e.gears) this.showGear(d.gear ?? 'cruise');
     if (e.attitude) {
       this.put('fhHdg', String(headingDegrees(d.heading)).padStart(3, '0') + '°');
       this.put('fhCmp', compassPoint(d.heading));
@@ -307,6 +366,15 @@ export class FlightHUD {
   }
 
   isVisible(): boolean { return this.visible; }
+
+  /** Marks the active gear button. Cheap: only touches it on a change. */
+  private showGear(id: GearId): void {
+    if (this.cache.get('gear') === id) return;
+    this.cache.set('gear', id);
+    this.root?.querySelectorAll<HTMLElement>('.fh-gear').forEach((b) => {
+      b.classList.toggle('on', b.dataset.gear === id);
+    });
+  }
 
   private applyElements(): void {
     if (!this.root) return;

@@ -217,7 +217,9 @@ body[data-focus="1"] .hud{ opacity:.35; }
 /* Centred at the top rather than in the corners: while you are inside a
    black hole this is the only instrument that matters, and the corners are
    where the eye is not. */
-.fhud-descent{position:absolute;left:50%;top:74px;transform:translateX(-50%);
+/* Pushed below the gear row + its shift notice, which now own the top
+   centre; a descent readout overlapping the shifter would hide both. */
+.fhud-descent{position:absolute;left:50%;top:122px;transform:translateX(-50%);
   min-width:340px;text-align:center;display:none;}
 .fhud-descent.on{display:block;}
 .fh-desc-phase{font-size:12px;letter-spacing:3px;text-transform:uppercase;
@@ -242,6 +244,51 @@ body[data-focus="1"] .hud{ opacity:.35; }
 .fh-tick{stroke:rgba(160,205,255,.55);stroke-width:1.4;}
 .fh-arc{fill:none;stroke:color-mix(in srgb,var(--acc) 60%,transparent);stroke-width:1.2;
   stroke-dasharray:3 6;}
+/* ---- velocity gearbox, top centre ---- */
+/* Sits above the descent readout and clear of the reticle, because it is
+   the one instrument you look at while deciding where to point the ship. */
+.fhud-gears{position:absolute;left:50%;top:14px;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:7px 10px 8px;pointer-events:auto;
+  background:linear-gradient(135deg,rgba(10,16,28,.74),rgba(6,10,18,.60));
+  backdrop-filter:blur(16px) saturate(135%);
+  border:1px solid var(--line);border-radius:11px;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.fh-gear-label{font-size:8.5px;letter-spacing:.20em;text-transform:uppercase;
+  color:rgba(170,200,235,.62);}
+.fh-gear-set{display:flex;align-items:stretch;gap:0;}
+.fh-gear-sep{width:1px;margin:5px 5px;background:var(--line2);}
+.fh-gear{display:flex;flex-direction:column;align-items:center;gap:1px;
+  min-width:82px;padding:5px 11px 6px;cursor:pointer;
+  background:transparent;border:1px solid transparent;border-radius:7px;
+  font-family:inherit;color:rgba(190,212,240,.60);
+  transition:background .13s ease,color .13s ease,border-color .13s ease;}
+.fh-gear:hover{background:rgba(120,170,255,.10);color:rgba(220,235,255,.9);}
+.fh-gear-key{font-size:8px;letter-spacing:.14em;opacity:.55;}
+.fh-gear-name{font-size:11.5px;font-weight:600;letter-spacing:.11em;}
+.fh-gear-mul{font-size:8.5px;letter-spacing:.06em;opacity:.62;}
+/* The engaged gear is the only lit thing in the row, so the current
+   velocity regime is readable in peripheral vision. */
+.fh-gear.on{color:#eaf4ff;
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--acc) 26%,transparent),
+    color-mix(in srgb,var(--acc) 9%,transparent));
+  border-color:color-mix(in srgb,var(--acc) 52%,transparent);
+  box-shadow:0 0 16px color-mix(in srgb,var(--acc) 28%,transparent),
+    inset 0 1px 0 rgba(255,255,255,.13);}
+.fh-gear.on .fh-gear-key,.fh-gear.on .fh-gear-mul{opacity:.85;}
+.fh-gear.on .fh-gear-name{text-shadow:0 0 12px color-mix(in srgb,var(--acc) 70%,transparent);}
+/* shift telemetry: green, brief, directly under the shifter */
+.fhud-notice{position:absolute;left:50%;top:76px;transform:translateX(-50%) translateY(-5px);
+  padding:4px 12px 5px;white-space:nowrap;pointer-events:none;
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ok);text-shadow:0 0 14px color-mix(in srgb,var(--ok) 60%,transparent);
+  background:linear-gradient(135deg,rgba(8,20,14,.80),rgba(5,12,9,.62));
+  border:1px solid color-mix(in srgb,var(--ok) 34%,transparent);border-radius:7px;
+  opacity:0;transition:opacity .16s ease,transform .16s ease;}
+.fhud-notice.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
 /* focus mode dims instruments but never hides them */
 body[data-focus="1"] .fhud{opacity:.42;}
 

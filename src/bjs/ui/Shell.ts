@@ -1720,7 +1720,8 @@ export class Shell {
         warp: 'Warp drive charge',
         target: 'Nearest body',
         fleet: 'Fleet readout',
-        reticle: 'Centre reticle'
+        reticle: 'Centre reticle',
+        gears: 'Velocity gear shifter'
       };
       const state = this.hooks.getHudElements();
       for (const [key, on] of Object.entries(state)) {

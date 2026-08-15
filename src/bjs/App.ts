@@ -29,6 +29,7 @@ import { PortalGunSystem } from './systems/PortalGunSystem';
 import { Descent, EARTHLIKE } from './systems/DescentSystem';
 import { missingShaders } from './ShaderRegistry';
 import { WarpDrive, galacticMedium } from './systems/DeepSkySystem';
+import { SpeedGearbox } from './systems/SpeedGears';
 import { Fleet, shipClass, shipView, type ViewMode } from './systems/FleetSystem';
 import { StarFieldRenderer } from './systems/StarFieldRenderer';
 import { LayeredSky } from './systems/LayeredSky';
@@ -167,6 +168,8 @@ export class App {
 
   /** Hold thrust long enough and the universe opens up. */
   warpDrive = new WarpDrive();
+  /** Manual velocity gearbox: 1 impulse, 2 cruise, 3 hyper. */
+  gearbox = new SpeedGearbox();
   /** Ships you have launched. They have mass, so they have gravity. */
   fleet = new Fleet();
   /** Which way you are looking at your ship. */
@@ -464,6 +467,10 @@ export class App {
     // The flight instruments live outside the window layer so panels can be
     // closed without losing the ability to navigate.
     this.flightHud.mount();
+    // Clicking a gear button goes through the same path as pressing 1/2/3.
+    this.flightHud.onGear = (id) => {
+      if (this.gearbox.select(id)) this.onGearShift();
+    };
 
     this.shell.progress(58, 'compiling shaders');
     // Boot into the garage: the title card renders over it, so clicking
@@ -523,6 +530,10 @@ export class App {
       if (e.key.toLowerCase() === 'c') this.mouse.toggleLock();
       // Snap the spyglass back to normal.
       if (e.key.toLowerCase() === 'z') this.mouse.resetZoom();
+      // 1/2/3 shift the gearbox. Applied instantly, on the keypress, so a
+      // gear change lands on the very next frame rather than waiting for
+      // anything to spool.
+      if (this.gearbox.handleKey(e.key)) this.onGearShift();
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     window.addEventListener('blur', () => this.keys.clear());
@@ -914,6 +925,20 @@ export class App {
   }
 
   /** The black hole the player is closest to, for lens editing. */
+  /**
+   * Reacts to a gear change.
+   *
+   * Dropping out of hyper also dumps whatever warp charge had built up.
+   * Without this the drive would keep coasting on stored charge for a
+   * second or two after you asked for impulse, which is precisely the
+   * "I pressed the brake and nothing happened" feeling being fixed.
+   */
+  private onGearShift(): void {
+    if (!this.gearbox.warpAllowed) this.warpDrive.disengage();
+    this.gearbox.consumeChange();
+    this.flightHud.notify(this.gearbox.message());
+  }
+
   private nearestHole(): Region | null {
     const eye = this.vehicle.mode === 'orbit'
       ? this.camera.position : this.vehicle.position;
@@ -1191,6 +1216,11 @@ export class App {
             // The wheel scales that baseline, so scrolling is a real throttle
             // rather than a dead control.
             this.vehicle.setScaleSpeed(d * this.mouse.throttleScale);
+            // ...and the gearbox is the manual authority on top of it. The
+            // autoscaler alone hands out 12,000 u/s in deep space, which
+            // crosses the whole 12,000-unit galaxy slab in a single second;
+            // the gear is how the player says "no, I want to look at this".
+            this.vehicle.flySpeed = this.gearbox.applySpeed(this.vehicle.flySpeed);
           }
         }
         // Keyboard supplies movement; the mouse supplies look and throttle.
@@ -1222,8 +1252,13 @@ export class App {
         const warping = this.warpDrive.update(dt, input.forward > 0.5);
         this.thrusting = input.forward > 0.5;
 
-        if (warping.engaged) {
-          this.vehicle.flySpeed *= warping.multiplier;
+        // The gear caps the drive. Warp spools up from held thrust rather
+        // than from an explicit control, so without this ceiling the low
+        // gears would be undone the instant the player pushed forward.
+        const warpMul = this.gearbox.clampWarp(warping.multiplier);
+        const warpOn = warping.engaged && this.gearbox.warpAllowed && warpMul > 1;
+        if (warpOn) {
+          this.vehicle.flySpeed *= warpMul;
         }
         // ---- audio, driven from live simulation state ----
         // Browsers only allow audio after a gesture, so the graph is started
@@ -1259,7 +1294,7 @@ export class App {
         this.vehicle.update(dt, input, this.groundProbe);
         // The multiplier is applied per frame, so it must be taken back off
         // again or it would compound into nonsense within a second.
-        if (warping.engaged) this.vehicle.flySpeed = baseFly / warping.multiplier;
+        if (warpOn) this.vehicle.flySpeed = baseFly / warpMul;
 
         // The ship views are derived from one basis, so cockpit and chase
         // can never disagree about where the ship is pointing.
@@ -1659,8 +1694,12 @@ export class App {
           pitch: att.pitch,
           speed: this.shownSpeed,
           throttle: Math.min(1, this.shownSpeed / Math.max(1, this.vehicle.flySpeed * 12)),
-          warpCharge: w.charge,
-          warpMultiplier: w.multiplier,
+          warpCharge: this.gearbox.warpAllowed ? w.charge : 0,
+          // Report what the gear actually permits, not what the drive
+          // wanted: a HUD that reads 90,000x while you are locked to
+          // impulse is lying to the player.
+          warpMultiplier: this.gearbox.clampWarp(w.multiplier),
+          gear: this.gearbox.current,
           locale: (() => {
             const d = depthOf(eye.length());
             const v = verseAt(d);
