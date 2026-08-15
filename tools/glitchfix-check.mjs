@@ -101,8 +101,19 @@ ok('true coordinates are kept so parallax survives',
 ok('the home gas is a volume, not a point cloud',
   !/new PointsCloudSystem\('galaxyGas'/.test(field));
 ok('a fog volume is built instead', /this\.buildFog\(/.test(field));
-ok('the volume integrates extinction rather than adding quads',
-  /alphaMode = 2/.test(field));
+// The point of this assertion is that the gas is a BLENDED VOLUME with real
+// extinction rather than additive sprites - additive can only ever add
+// light, so dust lanes could never darken anything. It used to pin
+// alphaMode === 2 (ALPHA_COMBINE) literally. The fog now uses 7
+// (ALPHA_PREMULTIPLIED), because the shader already outputs the light that
+// reached the eye and ALPHA_COMBINE multiplied that by coverage a second
+// time - measured, it drew the galactic core at 12% of its brightness.
+// Both modes honour extinction; additive mode 1 is the one that must not
+// come back.
+ok('the volume integrates extinction rather than adding quads', (() => {
+  const m = field.match(/mat\.alphaMode = (\d+)/);
+  return m && (Number(m[1]) === 2 || Number(m[1]) === 7);
+})(), 'fog alphaMode ' + (field.match(/mat\.alphaMode = (\d+)/) || [])[1]);
 ok('the reason sprites were abandoned is recorded for future edits',
   /THE GAS IS NO LONGER PARTICLES/.test(field));
 ok('star points stay small too', (() => {

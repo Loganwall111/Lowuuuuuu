@@ -152,8 +152,26 @@ const FOG_SHELL_R = 3850;
  */
 export const HOME_CLASS: 'photoreal' | 'anomaly' = 'photoreal';
 
+/**
+ * A GRAND-DESIGN TWO-ARM SPIRAL, like the reference photograph.
+ *
+ * MILKY_WAY's own 4 arms at armFactor 4.2 are kept for everything that
+ * uses that config directly, but the rendered field overrides them, and
+ * the override is load bearing rather than cosmetic.
+ *
+ * The number of radial cycles a spiral shows across its disc is
+ *   arms * armFactor * ln(outerBound / innerBound) / 2pi
+ * At 4 arms and armFactor 4.2 that is 7.71 cycles with a 13.4 degree
+ * pitch angle: rendered, it reads as a stack of concentric rings rather
+ * than as spiral arms, because the arms wrap so many times that adjacent
+ * windings merge. At 2 arms and armFactor 2.6 it is 2.39 cycles with a
+ * 21.0 degree pitch - which is what a grand-design spiral looks like, and
+ * what the fog shader's structure constants are tuned against.
+ */
 export const FIELD_GALAXY: GalaxyConfig = {
   ...MILKY_WAY,
+  arms: 2,
+  armFactor: 2.6,
   innerBound: FIELD_INNER * 1.4,
   outerBound: FIELD_OUTER
 };
@@ -577,10 +595,22 @@ export class GalaxyField {
       mat.backFaceCulling = false;
       mat.disableDepthWrite = true;
       mat.alpha = 0.999;
-      // Alpha-blended rather than additive: the volume has real extinction,
-      // so dust lanes must be able to DARKEN what is behind them. Additive
-      // can only ever add light, which is why dust never showed up before.
-      mat.alphaMode = 2;
+      // PREMULTIPLIED alpha, not ALPHA_COMBINE.
+      //
+      // The shader outputs the light that actually reached the eye, plus
+      // alpha = 1 - transmittance describing how much of the background it
+      // blocked. The correct composite is therefore
+      //   result = rgb + background * (1 - alpha)
+      // which is exactly premultiplied blending.
+      //
+      // Under ALPHA_COMBINE the GPU instead computes
+      //   rgb * alpha + background * (1 - alpha)
+      // multiplying the emission by its own coverage a second time.
+      // Measured, the galactic core renders at alpha 0.124, so the
+      // brightest object in the scene was being drawn at 12% brightness -
+      // a major reason the nucleus kept reading as dim. Extinction still
+      // works: dust lanes raise alpha and darken what is behind them.
+      mat.alphaMode = 7;   // Constants.ALPHA_PREMULTIPLIED
 
       shell.material = mat;
       shell.renderingGroupId = 0;
