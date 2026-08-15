@@ -9,3 +9,6 @@ dist
 
 # scratch: standalone HUD preview harness, not part of the app
 .hudpreview/
+
+# scratch: offline galaxy render previews, not part of the app
+.galaxy-preview/
