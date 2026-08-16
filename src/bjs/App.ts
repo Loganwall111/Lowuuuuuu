@@ -603,6 +603,9 @@ export class App {
       onPause: (p) => { this.paused = p; }
     });
 
+    // Defend interactivity automatically on real hardware. High remains the
+    // visual target, but resolution can step down before the HUD hits 11 fps.
+    this.quality.adaptive = true;
     this.shell.progress(12, 'starting graphics engine');
     const boot = await createEngine(canvas);
     this.engine = boot.engine;
@@ -1940,6 +1943,7 @@ export class App {
   private confirmIgnition(): void {
     if (this.ignitionConfirmed) return;
     this.ignitionConfirmed = true;
+    (window as unknown as { __renderLoopAlive?: boolean }).__renderLoopAlive = true;
     document.getElementById('blackScreenReport')?.remove();
     // The static bootstrap interceptor is useful before WebGL runs, but a
     // completed hardware draw is stronger evidence than a stale timeout.

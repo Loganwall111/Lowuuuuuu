@@ -141,7 +141,10 @@ export class LoadingScreenManager {
   }
 
   private resize(): void {
-    const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    // The cinematic is an effects veil, not the 3D backbuffer. Rendering two
+    // full-screen 2D canvases at Retina resolution starved Babylon and made
+    // both the loading animation and cursor hitch. CSS still scales it cleanly.
+    const dpr = 1;
     for (const c of [this.fx, this.frost]) {
       if (!c) continue;
       c.width = Math.max(1, Math.floor(innerWidth * dpr));

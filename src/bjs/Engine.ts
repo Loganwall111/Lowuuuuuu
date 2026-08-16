@@ -38,7 +38,10 @@ export async function createEngine(canvas: HTMLCanvasElement): Promise<EngineBoo
     failIfMajorPerformanceCaveat: false
   });
 
-  engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, 2));
+  // Cap the initial Retina load. Adaptive quality may raise fidelity later,
+  // but compiling shaders while driving a 2x backbuffer caused 10-12 fps
+  // startup and made raw mouse input feel delayed despite compositor cursors.
+  engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, 1.5));
 
   const gl = engine._gl as WebGL2RenderingContext | undefined;
   const ver = engine.webGLVersion === 2 ? 'WebGL2' : 'WebGL1';

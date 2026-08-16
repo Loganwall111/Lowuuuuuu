@@ -135,7 +135,7 @@ const float BULGE_CUT_OUT = 0.34;
 /** The blazing nucleus at the dead centre. */
 const float NUCLEUS_RE = 0.013;
 const float NUCLEUS_POW = 1.10;
-const float NUCLEUS_GAIN = 13.0;
+const float NUCLEUS_GAIN = 7.5;
 
 /** Dust lane frequency, phase offset from the arm ridge, and profile. */
 const float DUST_FREQ = 3.2;
@@ -200,7 +200,7 @@ const float ANOMALY_GAIN = 2.6;
 // ------------------------------------------------------------- palette
 
 /** Creamy white-gold at the very centre. */
-const vec3 C_NUCLEUS = vec3(1.00, 0.97, 0.90);
+const vec3 C_NUCLEUS = vec3(1.00, 0.84, 0.62);
 /** The gold bulge. */
 const vec3 C_BULGE = vec3(1.00, 0.83, 0.53);
 /** Warm tan of the inner disc. */

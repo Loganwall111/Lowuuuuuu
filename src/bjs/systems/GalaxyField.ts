@@ -264,6 +264,8 @@ export class GalaxyField {
   /** True positions, kept so the proxy can be recomputed each frame. */
   private truePos: Float64Array | null = null;
   private farTruePos: Float64Array | null = null;
+  /** Proxy positions depend on translation, not mouse orientation. */
+  private lastProxyEye = new Vector3(1e20, 1e20, 1e20);
   private clouds: PointsCloudSystem[] = [];
   /** Soft-point materials, kept so camPos and viewport can be fed. */
   private pointMats: ShaderMaterial[] = [];
@@ -300,6 +302,7 @@ export class GalaxyField {
     this.detach();
     this.scene = scene;
     this.main = main;
+    this.lastProxyEye.set(1e20, 1e20, 1e20);
     try {
       // NO SECOND CAMERA.
       //
@@ -552,6 +555,17 @@ export class GalaxyField {
       // gas is: haze has to cover area to read as haze. Still far below the
       // size where additive stacking clips.
       this.applyState(gasMesh, 14.0);
+      // Runtime puffs are deliberately fine-grained. The 14px calibration
+      // above proves visibility in the offline coverage test, but using one
+      // global 14px sprite in-game produced the giant floating blobs in the
+      // screenshot. Per-point sizes create filaments: mostly pinpricks, with
+      // a sparse hierarchy of broader knots rather than uniform balloons.
+      const gasSizes = new Float32Array(cells.length * FAR_GAS_PER);
+      for (let i = 0; i < gasSizes.length; i++) {
+        const h = ((Math.imul(i + 1, 1103515245) >>> 8) & 1023) / 1023;
+        gasSizes[i] = 1.4 + h * h * 3.2;
+      }
+      gasMesh.setVerticesData('pointSize', gasSizes, false, 1);
       gasMesh.setEnabled(this.visible);
       this.farGasCloud = gasCloud;
       this.farGasMesh = gasMesh;
@@ -680,6 +694,11 @@ export class GalaxyField {
    * what the direction is computed from.
    */
   private projectProxy(eye: Vector3): void {
+    // Mouse look does not change any proxy position. Rewriting ~30k vertices
+    // on every pointer frame was the primary cause of the laggy cursor and
+    // flickering sky. Reproject only after meaningful translation.
+    if (Vector3.DistanceSquared(eye, this.lastProxyEye) < 80 * 80) return;
+    this.lastProxyEye.copyFrom(eye);
     this.projectOne(this.meshes[0] ?? null, this.truePos, eye);
     // meshes[1] used to be the gas point cloud. The gas is a volume now,
     // so there is nothing else to reproject here.

@@ -168,15 +168,23 @@ export class QuantumAnomalySystem {
       ring.material = mat;
       this.rings.push(ring); this.mats.push(mat);
     }
-    const core = MeshBuilder.CreatePolyhedron('quantumCore', { type: 2, size: s.radius * .17 }, scene);
+    // The centre is an aperture, never a solid. A polyhedron here used to
+    // become the giant faceted black object in the player's screenshot when
+    // additive material compilation fell back. A thin photon ring cannot
+    // occlude the universe even under a fallback material.
+    const core = MeshBuilder.CreateTorus('quantumCore', {
+      diameter: s.radius * .28, thickness: 1.4, tessellation: 96
+    }, scene);
     core.position.copyFrom(s.center);
+    core.rotation.x = Math.PI * .5;
     core.isPickable = false;
     core.alwaysSelectAsActiveMesh = true;
+    core.renderingGroupId = 1;
     const cm = new StandardMaterial('quantumCoreM', scene);
     cm.diffuseColor = Color3.Black(); cm.specularColor = Color3.Black();
-    cm.emissiveColor = new Color3(.75, .95, 1);
-    cm.disableLighting = true; cm.alpha = .72; cm.alphaMode = 1;
-    cm.disableDepthWrite = true;
+    cm.emissiveColor = new Color3(.35, .9, 1);
+    cm.disableLighting = true; cm.alpha = .58; cm.alphaMode = 1;
+    cm.disableDepthWrite = true; cm.backFaceCulling = false;
     core.material = cm;
     this.core = core; this.mats.push(cm);
   }

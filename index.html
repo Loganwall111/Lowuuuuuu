@@ -133,6 +133,13 @@
       var failed = false;
 
       function fail(why, detail) {
+        // Once a hardware frame has completed this is no longer a startup
+        // failure. Late optional shader/asset rejections belong in the
+        // console, not in a fatal card over a visibly running game.
+        if (window.__renderLoopAlive) {
+          console.warn('[non-fatal runtime rejection]', why, detail || '');
+          return;
+        }
         if (failed) return;
         failed = true;
         var sb = document.getElementById('staticBoot');
