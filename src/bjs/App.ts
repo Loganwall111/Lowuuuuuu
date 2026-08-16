@@ -1768,8 +1768,13 @@ export class App {
             const d = Math.hypot(eyeW.x - s.x, eyeW.y - s.y, eyeW.z - s.z) - s.radius;
             if (d < nearest) nearest = d;
           }
+          // No approach brake inside a horizon: the fall inward must be
+          // unimpeded, or the drive would slow the ship the moment it crossed
+          // and read as the hole "rejecting" it.
+          const insideHole = this.universe.insideHorizon !== null;
           this.warpDrive.setApproach(
-            Number.isFinite(nearest) ? Math.max(0, nearest) : Infinity);
+            insideHole ? Infinity
+              : (Number.isFinite(nearest) ? Math.max(0, nearest) : Infinity));
         }
 
         const warping = this.warpDrive.update(dt, input.forward > 0.5);
@@ -1824,17 +1829,27 @@ export class App {
         // current world exposes: push out along the surface normal and cancel
         // the inward component of velocity, so the player stops on top of the
         // world and slides along it rather than tunnelling through.
+        //
+        // SEAMLESS HORIZON ENTRY: the moment the player is inside a black
+        // hole's horizon (or has just crossed it), every collision block is
+        // bypassed entirely. A black hole is a horizon, not a solid body -
+        // nothing may push, bounce or brake the ship back out of the fall.
+        // This is the hard guarantee that crossing a singularity always
+        // carries you into the multiverse transition instead of spitting you
+        // back into space.
         if (this.vehicle.mode === 'freefly' || this.vehicle.mode === 'fly') {
-          const solids = this.solidSpheres();
-          if (solids.length) {
-            const r = resolveCollisions(
-              solids,
-              this.vehicle.position.x, this.vehicle.position.y, this.vehicle.position.z,
-              this.vehicle.velocity.x, this.vehicle.velocity.y, this.vehicle.velocity.z,
-              0.5);
-            if (r.contacts.length) {
-              this.vehicle.position.set(r.x, r.y, r.z);
-              this.vehicle.velocity.set(r.vx, r.vy, r.vz);
+          if (this.universe.insideHorizon === null) {
+            const solids = this.solidSpheres();
+            if (solids.length) {
+              const r = resolveCollisions(
+                solids,
+                this.vehicle.position.x, this.vehicle.position.y, this.vehicle.position.z,
+                this.vehicle.velocity.x, this.vehicle.velocity.y, this.vehicle.velocity.z,
+                0.5);
+              if (r.contacts.length) {
+                this.vehicle.position.set(r.x, r.y, r.z);
+                this.vehicle.velocity.set(r.vx, r.vy, r.vz);
+              }
             }
           }
         }
@@ -2498,6 +2513,11 @@ export class App {
 
       // ---- transient collision effects fade and are disposed ----
       this.updateCollisionFX();
+
+      // Hard guarantee: the backdrop must repaint every frame regardless of
+      // camera height or orientation, so the viewport can never stall on a
+      // stale buffer and flicker black above or below the galactic plane.
+      if (!this.scene.autoClear) this.scene.autoClear = true;
 
       this.scene.render();
 
