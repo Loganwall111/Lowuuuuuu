@@ -287,6 +287,64 @@ body[data-photo="1"] .sonar-cursor{ display:none !important; }
   transform:translate(-50%,-50%);
   border-left:7px solid transparent;border-right:7px solid transparent;
   border-bottom:10px solid rgba(255,200,90,.65);filter:drop-shadow(0 0 5px rgba(255,170,40,.4));}
+
+/* ---- exosuit (powered armor) framing ---- */
+/* The helmet visor: an angular mask at the screen edges that reads as
+   looking out through an armored faceplate. Pure overlay, pointer-events
+   none, never occludes the scene - it frames it. */
+.fhud-suit .fhud-visor{display:block;position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(90deg,
+      rgba(8,10,16,.55) 0%, rgba(8,10,16,0) 7%,
+      rgba(8,10,16,0) 93%, rgba(8,10,16,.55) 100%),
+    linear-gradient(180deg,
+      rgba(8,10,16,.6) 0%, rgba(8,10,16,0) 9%,
+      rgba(8,10,16,0) 91%, rgba(8,10,16,.6) 100%);}
+.fv-top,.fv-bottom{position:absolute;left:50%;transform:translateX(-50%);
+  width:min(70vw,860px);height:3px;
+  background:linear-gradient(90deg,transparent,var(--acc),transparent);
+  box-shadow:0 0 14px color-mix(in srgb,var(--acc) 55%,transparent);}
+.fv-top{top:16px;}.fv-bottom{bottom:16px;}
+.fv-side{position:absolute;top:50%;transform:translateY(-50%);
+  width:3px;height:min(46vh,420px);
+  background:linear-gradient(180deg,transparent,var(--acc),transparent);
+  box-shadow:0 0 14px color-mix(in srgb,var(--acc) 55%,transparent);}
+.fv-side.l{left:16px;}.fv-side.r{right:16px;}
+.fv-pylon{position:absolute;top:50%;width:14px;height:120px;transform:translateY(-50%);
+  border:1px solid rgba(255,180,60,.22);
+  background:linear-gradient(180deg,rgba(255,170,60,.08),rgba(255,120,40,.02));}
+.fv-pylon.l{left:6px;clip-path:polygon(0 0,100% 8%,100% 92%,0 100%);}
+.fv-pylon.r{right:6px;clip-path:polygon(0 8%,100% 0,100% 100%,0 92%);}
+
+/* The suit vitals: a reactor core ring on the left, armor + life support
+   stacked under it. Only the exosuit theme shows them. */
+.fhud-suit .fhud-vitals{display:flex;position:absolute;left:40px;top:50%;
+  transform:translateY(-50%);flex-direction:column;gap:16px;align-items:center;}
+.fh-reactor{position:relative;width:78px;height:78px;border-radius:50%;
+  display:grid;place-items:center;
+  background:rgba(10,14,22,.55);border:1px solid rgba(255,180,60,.24);
+  box-shadow:0 0 30px rgba(255,150,40,.12), inset 0 0 18px rgba(0,0,0,.5);}
+.fh-reactor i{position:absolute;inset:7px;border-radius:50%;
+  background:conic-gradient(var(--acc) 0deg, rgba(255,255,255,.06) 0deg);
+  -webkit-mask:radial-gradient(circle,transparent 58%,#000 60%);
+  mask:radial-gradient(circle,transparent 58%,#000 60%);}
+.fh-reactor::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;
+  background:var(--acc);box-shadow:0 0 12px var(--acc);}
+.fh-reactor span{position:absolute;bottom:-16px;font-size:8px;letter-spacing:.28em;
+  color:rgba(255,205,130,.66);text-transform:uppercase;}
+.fh-suit-block{width:150px;padding:8px 12px 9px;
+  background:linear-gradient(135deg,rgba(14,16,24,.72),rgba(8,10,16,.55));
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,180,60,.18);
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);}
+.fh-bar-armor i{background:linear-gradient(90deg,#ff9a3c,#ffd9a8);}
+.fh-suit-rows{display:flex;gap:10px;margin-top:7px;justify-content:space-between;
+  font-size:8.5px;letter-spacing:.1em;color:rgba(255,205,140,.55);text-transform:uppercase;}
+.fh-suit-rows b{color:#ffe3b0;font-weight:700;letter-spacing:.02em;}
+/* The suit still wears the satellite corner brackets, in the amber accent. */
+.fhud-suit .fh-corner{border-color:rgba(255,180,60,.4);}
+.fhud-suit .fh-scan{background:linear-gradient(180deg,transparent,rgba(255,180,60,.10),transparent);}
+
 .fhud-left{position:absolute;left:20px;bottom:88px;display:flex;
   flex-direction:column;gap:10px;align-items:flex-start;}
 .fhud-right{position:absolute;right:20px;bottom:88px;display:flex;
@@ -421,8 +479,8 @@ body.sonar-on textarea{cursor:text !important;}
 
 /* Frame + uplink are in the DOM for both themes; the theme class decides
    whether they render, so switching is a class swap not a rebuild. */
-.fhud-frame,.fhud-uplink{display:none;}
-.fhud-satellite .fhud-frame{display:block;position:absolute;inset:0;
+.fhud-frame,.fhud-uplink,.fhud-visor,.fhud-vitals{display:none;}
+.fhud-satellite .fhud-frame,.fhud-suit .fhud-frame{display:block;position:absolute;inset:0;
   pointer-events:none;}
 .fhud-satellite .fhud-uplink{display:flex;}
 

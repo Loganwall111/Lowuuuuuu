@@ -370,6 +370,130 @@ export const INTRO_CSS = `
   animation:introPulse 1.7s ease-in-out infinite;
 }
 @keyframes introPulse{ 0%,100%{opacity:.68} 50%{opacity:1} }
+
+/* ================================================================
+   AAA overhaul - the same Jupiter plate, dressed as a launch screen.
+   The artwork underneath never changes; these are layered light.
+   ================================================================ */
+
+/* A slow starfield drifting behind the planet, so the backdrop is alive. */
+.intro-stars{position:absolute;inset:-40% 0 0 0;pointer-events:none;opacity:.55;
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.9) 0, transparent 100%),
+    radial-gradient(1px 1px at 71% 9%,  rgba(255,255,255,.7) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 41% 31%, rgba(255,220,170,.8) 0, transparent 100%),
+    radial-gradient(1px 1px at 88% 41%, rgba(255,255,255,.6) 0, transparent 100%),
+    radial-gradient(1px 1px at 23% 53%, rgba(255,255,255,.55) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 57% 61%, rgba(200,225,255,.65) 0, transparent 100%),
+    radial-gradient(1px 1px at 5% 70%,  rgba(255,255,255,.5) 0, transparent 100%),
+    radial-gradient(1px 1px at 94% 77%, rgba(255,255,255,.5) 0, transparent 100%);
+  background-size:760px 760px;
+  animation:introStars 300s linear infinite;}
+@keyframes introStars{ from{transform:translateY(0)} to{transform:translateY(-760px)} }
+
+/* A faint landing-pad grid rising from the foot of the frame. */
+.intro-grid{position:absolute;left:-10%;right:-10%;bottom:-6px;height:32vh;
+  pointer-events:none;opacity:.30;
+  background-image:
+    linear-gradient(rgba(255,180,60,.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,180,60,.16) 1px, transparent 1px);
+  background-size:52px 52px;
+  transform:perspective(620px) rotateX(63deg);transform-origin:bottom;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 70%);
+  mask-image:linear-gradient(180deg,transparent,#000 70%);
+  animation:introGrid 9s linear infinite;}
+@keyframes introGrid{ from{background-position:0 0} to{background-position:0 52px} }
+
+/* Top-left identity, like the boot logo of a launch screen. */
+.intro-brand{position:absolute;left:28px;top:22px;z-index:4;
+  font-size:11px;letter-spacing:.32em;text-transform:uppercase;
+  color:rgba(255,226,170,.72);}
+.intro-brand b{color:var(--acc,#ffb020);font-weight:800;text-shadow:0 0 14px rgba(255,180,40,.6);}
+
+/* A spinning hex emblem above the logotype - the studio mark. */
+.intro-emblem{width:66px;height:66px;position:relative;display:grid;place-items:center;
+  margin-bottom:-4px;}
+.intro-emblem::before{content:'';position:absolute;inset:0;
+  clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+  background:linear-gradient(135deg,#ffd28a 0%,#ff9a3c 55%,#ff6a2a 100%);
+  box-shadow:0 0 34px rgba(255,150,40,.45);}
+.intro-emblem span{position:absolute;inset:4px;
+  clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+  background:#0a0e18;animation:introEmblem 26s linear infinite;}
+@keyframes introEmblem{ to{transform:rotate(360deg)} }
+
+/* The accent line that sweeps open under the logotype. */
+.intro-kicker{display:block;width:min(440px,62vw);height:2px;margin-top:-8px;
+  background:linear-gradient(90deg,transparent,var(--acc,#ffb020),transparent);
+  transform:scaleX(0);transform-origin:center;
+  animation:introKicker 1.1s .45s cubic-bezier(.2,.8,.2,1) forwards;}
+@keyframes introKicker{ to{transform:scaleX(1)} }
+
+/* Bottom-left control hints, like a cockpit checklist. */
+.intro-info{position:absolute;left:28px;bottom:22px;z-index:4;display:flex;gap:16px;
+  font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(205,222,255,.42);}
+.intro-info-ver{color:rgba(255,210,140,.6);}
+
+/* --- amber recolour: the mark, the badge, the buttons --- */
+.intro-title h1{
+  background:linear-gradient(180deg,#ffffff 0%,#ffe0b0 46%,#ffb020 80%,#ff8a2a 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:introGlowAmber 6s ease-in-out infinite alternate;
+  text-shadow:0 0 70px rgba(255,170,50,.4);
+}
+@keyframes introGlowAmber{
+  from{ text-shadow:0 0 46px rgba(255,180,60,.30); }
+  to{ text-shadow:0 0 96px rgba(255,160,40,.6); }
+}
+.intro-sub{ color:#ffd9a0; text-shadow:0 0 18px rgba(255,160,60,.4); }
+.ir-badge{ color:#2a1500; background:linear-gradient(180deg,#ffd28a,#ff9a3c);
+  box-shadow:0 0 22px rgba(255,160,50,.55); }
+.ir-name{ color:#ffc87a; }
+
+.intro-play{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,0) 42%),
+    linear-gradient(180deg,#ffc24a 0%,#ff9a2a 46%,#e86a12 100%);
+  text-shadow:0 1px 0 rgba(60,20,0,.55), 0 0 24px rgba(255,190,90,.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.6),
+    inset 0 -2px 0 rgba(90,30,0,.55),
+    0 12px 38px rgba(230,120,20,.5),
+    0 0 0 1px rgba(255,190,110,.4);
+}
+.intro-play:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.75),
+    inset 0 -2px 0 rgba(90,30,0,.5),
+    0 20px 52px rgba(255,140,30,.65),
+    0 0 0 1px rgba(255,210,140,.6),
+    0 0 70px rgba(255,150,40,.5);
+}
+/* Sandbox reads as the hotter, riskier door. */
+.intro-play-sandbox{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,0) 42%),
+    linear-gradient(180deg,#ff7a3c 0%,#f05520 46%,#c2330c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -2px 0 rgba(70,15,0,.55),
+    0 12px 34px rgba(230,80,20,.5),
+    0 0 0 1px rgba(255,170,120,.4);
+}
+.intro-play-sandbox:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    inset 0 -2px 0 rgba(70,15,0,.5),
+    0 18px 48px rgba(250,100,30,.62),
+    0 0 0 1px rgba(255,190,150,.55),
+    0 0 60px rgba(250,110,40,.45);
+}
+.intro-aux{ background:linear-gradient(180deg,rgba(52,46,30,.72),rgba(30,24,14,.72));
+  border-color:rgba(255,180,90,.26); color:#f2d6a8; }
+.intro-aux:hover{ border-color:rgba(255,200,120,.5); color:#fff; }
+.intro-skip{ border-color:rgba(255,180,90,.32); color:#f0d2a6; }
+
 .intro-hide{ display:none !important; }
 `;
 
@@ -413,17 +537,26 @@ export class IntroOverlay {
       <i class="intro-cinema t" aria-hidden="true"></i>
       <i class="intro-cinema b" aria-hidden="true"></i>
       <i class="intro-scan" aria-hidden="true"></i>
+      <i class="intro-stars" aria-hidden="true"></i>
+      <i class="intro-grid" aria-hidden="true"></i>
+      <div class="intro-brand">Unlimited Possibilities <b>Sandbox</b></div>
+      <div class="intro-emblem" aria-hidden="true"><span></span></div>
       <p class="intro-sub">A cosmic sandbox</p>
       <h1 class="intro-logo">
         <span class="il-1">UNLIMITED</span>
         <span class="il-2">POSSIBILITIES</span>
         <span class="il-3">SANDBOX</span>
       </h1>
+      <i class="intro-kicker" aria-hidden="true"></i>
       <div class="intro-release">
         <span class="ir-badge">${CURRENT_UPDATE}</span>
         <span class="ir-name">${CURRENT_UPDATE_NAME}</span>
       </div>
       <p class="intro-sub">Create · Experiment · Break · Observe</p>
+      <div class="intro-info">
+        <span>WASD fly · Shift boost · L land · P photomode</span>
+        <span class="intro-info-ver">${CURRENT_UPDATE} · ${CURRENT_UPDATE_NAME}</span>
+      </div>
     `;
     // Two ways in, not one. Explorer is the universe as a place; Sandbox is
     // the universe as an experiment. Choosing at the title is what stops

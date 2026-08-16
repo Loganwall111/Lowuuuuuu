@@ -67,6 +67,8 @@ export interface FlightData {
   fleetSize: number;
   /** Fleet gravity, m/s^2. */
   fleetGravity: number;
+  /** 0..1 how close the ship is to a black hole horizon (suit armor). */
+  hazard?: number;
   /** Which speed gear is engaged. */
   gear?: GearId;
 }
@@ -74,7 +76,7 @@ export interface FlightData {
 export const EMPTY_FLIGHT: FlightData = {
   x: 0, y: 0, z: 0, heading: 0, pitch: 0, speed: 0, throttle: 0,
   warpCharge: 0, warpMultiplier: 1, locale: 'Deep space',
-  localeDistance: 0, fleetSize: 0, fleetGravity: 0, gear: 'cruise'
+  localeDistance: 0, fleetSize: 0, fleetGravity: 0, hazard: 0, gear: 'cruise'
 };
 
 /** Compass point for a heading in radians. */
@@ -140,6 +142,29 @@ export class FlightHUD {
            instruments read as projected on the inside of a ship's window
            rather than as flat stickers on the screen. -->
       <div class="fhud-canopy" aria-hidden="true"></div>
+
+      <!-- Exosuit framing: a powered-armor helmet visor the player looks out
+           through. Pure overlay - it frames the scene, never occludes it. -->
+      <div class="fhud-visor" aria-hidden="true">
+        <span class="fv-top"></span><span class="fv-bottom"></span>
+        <span class="fv-side l"></span><span class="fv-side r"></span>
+        <span class="fv-pylon l"></span><span class="fv-pylon r"></span>
+      </div>
+
+      <!-- Suit vitals: reactor power core, armor integrity, life support.
+           Present in the DOM for every theme; the suit theme shows them. -->
+      <div class="fhud-vitals">
+        <div class="fh-reactor"><i id="fhReactor"></i><span>REACTOR</span></div>
+        <div class="fh-suit-block">
+          <div class="fh-label">Armor</div>
+          <div class="fh-bar fh-bar-armor"><i id="fhArmorBar" style="width:100%"></i></div>
+          <div class="fh-suit-rows">
+            <span>O₂ <b id="fhO2">—</b></span>
+            <span>G <b id="fhG">—</b></span>
+            <span>T <b id="fhTemp">—</b></span>
+          </div>
+        </div>
+      </div>
 
       <!-- Flight director: pitch ladder, heading tape and horizon, the
            centre-of-screen instruments a pilot actually flies by. -->
@@ -419,6 +444,47 @@ export class FlightHUD {
     this.put('fhStSys', d.warpMultiplier > 1.5
       ? 'WARP ' + Math.round(d.warpMultiplier) + '×'
       : d.localeDistance > 1e5 ? 'CRUISE' : 'SYS NOMINAL');
+
+    // ---- suit vitals (the exosuit theme) ----
+    this.setVitals(d);
+  }
+
+  /**
+   * Drives the powered-armor readouts. Everything is derived from real
+   * telemetry rather than a wandering timer, so the suit means what it says:
+   *
+   *   reactor power = warp charge,
+   *   armor         = 1 - hazard (drains as a horizon closes),
+   *   oxygen        = altitude (higher up, thinner air),
+   *   G-load        = speed stress,
+   *   temperature   = radiation heating near a black hole.
+   */
+  private setVitals(d: FlightData): void {
+    const hazard = Math.max(0, Math.min(1, d.hazard ?? 0));
+    const warp = Math.max(0, Math.min(1, d.warpCharge ?? 0));
+    const armor = Math.round((1 - hazard * 0.9) * 100);
+
+    // Reactor: a conic ring that fills with warp charge.
+    const rKey = 'reactor:' + Math.round(warp * 100);
+    if (this.cache.get(rKey) !== rKey) {
+      this.cache.set(rKey, rKey);
+      const el = document.getElementById('fhReactor');
+      if (el) {
+        el.style.background = 'conic-gradient(var(--acc) ' + Math.round(warp * 360)
+          + 'deg, rgba(255,255,255,.06) 0deg)';
+      }
+    }
+
+    // Armor integrity, a simple width bar.
+    this.width('fhArmorBar', armor);
+
+    // Life support, three honest numbers.
+    const alt = Math.max(0, d.localeDistance ?? 0);
+    const o2 = Math.max(4, Math.min(100, Math.round((1 - Math.log1p(alt) / 7) * 100)));
+    this.put('fhO2', o2 + '%');
+    const g = Math.min(9.9, (Math.abs(d.speed) / 800) * 9.8);
+    this.put('fhG', g.toFixed(1));
+    this.put('fhTemp', Math.round(21 + hazard * 140) + '°');
   }
 
   /**

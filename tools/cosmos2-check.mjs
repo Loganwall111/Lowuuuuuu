@@ -555,17 +555,18 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
 }
 
 /* ================================================================
-   8. SATELLITE HUD + LEGACY
+   8. EXOSUIT HUD + SATELLITE + LEGACY
    ================================================================ */
 {
   const H = await bundle('src/bjs/ui/HudTheme.ts');
-  ok('there are two themes', H.HUD_THEME_ORDER.length === 2);
-  ok('satellite is the default', H.DEFAULT_HUD_THEME === 'satellite');
+  ok('there are three themes', H.HUD_THEME_ORDER.length === 3);
+  ok('the exosuit is the default', H.DEFAULT_HUD_THEME === 'suit');
   ok('legacy exists and is named Legacy', H.HUD_THEMES.legacy.label === 'Legacy');
-  ok('only the satellite theme has frame furniture',
-    H.HUD_THEMES.satellite.frame && !H.HUD_THEMES.legacy.frame);
-  ok('only the satellite theme sweeps',
-    H.HUD_THEMES.satellite.sweep && !H.HUD_THEMES.legacy.sweep);
+  ok('the exosuit exists and is named Exosuit', H.HUD_THEMES.suit.label === 'Exosuit');
+  ok('only the legacy theme lacks frame furniture',
+    H.HUD_THEMES.suit.frame && H.HUD_THEMES.satellite.frame && !H.HUD_THEMES.legacy.frame);
+  ok('the exosuit and satellite sweep',
+    H.HUD_THEMES.suit.sweep && H.HUD_THEMES.satellite.sweep && !H.HUD_THEMES.legacy.sweep);
   ok('an unknown theme falls back rather than throwing',
     H.hudTheme('nonsense').id === H.DEFAULT_HUD_THEME);
   ok('isHudTheme rejects prototype keys', !H.isHudTheme('toString'));

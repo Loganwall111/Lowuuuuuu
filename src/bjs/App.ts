@@ -7,6 +7,10 @@ import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import type { AbstractEngine } from '@babylonjs/core/Engines/abstractEngine';
+import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
+import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
+import { PointsCloudSystem } from '@babylonjs/core/Particles/pointsCloudSystem';
+import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 
 import { createEngine } from './Engine';
 import { Shell } from './ui/Shell';
@@ -252,6 +256,15 @@ export class App {
   private universeAge = 0;
   /** Last season label announced, so each one is toasted once. */
   private lastSeason = '';
+  /** Transient collision effects (flash + debris), fading out over time. */
+  private collisionFX: Array<{
+    born: number; flash: Mesh; fm: StandardMaterial; debris: Mesh | null; dm: any;
+  }> = [];
+  /** Performance governor tier: 0 full, 1 light, 2 minimal. */
+  private perfTier = 0;
+  private perfTimer = 0;
+  /** Shared zero vector, so hot paths do not allocate one every frame. */
+  private zeroVec = new Vector3(0, 0, 0);
   /**
    * The anonymous background haze, in three parallaxing shells. Sits behind
    * starField, which draws the real reachable regions - together they give
@@ -1482,6 +1495,119 @@ export class App {
     this.shell.toast(t.glyph + ' Sculpt tool: ' + t.label);
   }
 
+  /**
+   * Spawns a transient flash + debris ring where two worlds just merged.
+   *
+   * The flash is an additive billboard that blooms and expands; the debris is
+   * a ring of faint additive points that fade out as the new world settles.
+   * Both are tracked in `collisionFX` and cleaned up in the frame loop, so
+   * they can never leak a mesh into the scene.
+   */
+  private spawnCollisionFX(at: Vector3, radius: number): void {
+    if (!this.scene) return;
+    const born = performance.now() / 1000;
+    const r = Math.max(4, radius);
+
+    // The core flash.
+    const flash = MeshBuilder.CreatePlane('impactFlash' + this.collisionFX.length, { size: r * 6 }, this.scene);
+    const fm = new StandardMaterial('impactFlashM' + this.collisionFX.length, this.scene);
+    fm.emissiveColor = new Color3(1.0, 0.82, 0.5);
+    fm.diffuseColor = Color3.Black();
+    fm.specularColor = Color3.Black();
+    fm.disableLighting = true;
+    fm.alphaMode = 1;      // additive
+    fm.backFaceCulling = false;
+    flash.material = fm;
+    flash.billboardMode = 7;
+    flash.position.copyFrom(at);
+    flash.isPickable = false;
+    flash.renderingGroupId = 0;
+
+    // The debris ring, scattered in a disc around the impact.
+    const entry: { born: number; flash: Mesh; fm: StandardMaterial; debris: Mesh | null; dm: any } = {
+      born, flash, fm, debris: null, dm: null
+    };
+    this.collisionFX.push(entry);
+
+    const pcs = new PointsCloudSystem('impactDebris' + this.collisionFX.length, 2.4, this.scene);
+    pcs.addPoints(140, (p: any, i: number) => {
+      const ang = (i / 140) * Math.PI * 2;
+      const rr = r * (1.05 + ((i * 7919) % 100) / 100 * 0.9);
+      p.position = new Vector3(
+        at.x + Math.cos(ang) * rr,
+        at.y + (((i * 15485863) % 100) / 100 - 0.5) * r * 0.4,
+        at.z + Math.sin(ang) * rr);
+      p.color = new Color4(1.0, 0.78, 0.45, 0.5 + ((i * 97) % 100) / 100 * 0.5);
+    });
+    void pcs.buildMeshAsync().then((mesh) => {
+      if (!mesh) return;
+      mesh.renderingGroupId = 0;
+      mesh.isPickable = false;
+      mesh.applyFog = false;
+      mesh.alwaysSelectAsActiveMesh = true;
+      const m = mesh.material as any;
+      if (m) {
+        m.disableLighting = true;
+        m.disableDepthWrite = true;
+        m.alpha = 0.999;
+        m.alphaMode = 1;
+        m.backFaceCulling = false;
+      }
+      entry.debris = mesh;
+      entry.dm = m;
+    });
+  }
+
+  /** Fades and disposes transient collision effects. */
+  private updateCollisionFX(): void {
+    const now = performance.now() / 1000;
+    for (let i = this.collisionFX.length - 1; i >= 0; i--) {
+      const fx = this.collisionFX[i];
+      const age = now - fx.born;
+      const LIFE = 3.2;
+      if (age >= LIFE) {
+        try { fx.flash.dispose(); } catch { /* gone */ }
+        try { fx.fm.dispose(); } catch { /* gone */ }
+        try { fx.debris?.dispose(); } catch { /* gone */ }
+        this.collisionFX.splice(i, 1);
+        continue;
+      }
+      const k = age / LIFE;
+      const fade = 1 - k;
+      try {
+        fx.fm.alpha = fade;
+        fx.flash.scaling.set(1 + k * 1.6, 1 + k * 1.6, 1);
+      } catch { /* disposed */ }
+      if (fx.dm && fx.debris) {
+        try { fx.dm.alpha = 0.999; fx.debris.scaling.set(1 + k * 1.4, 1 + k * 1.4, 1 + k * 1.4); } catch { /* disposed */ }
+      }
+    }
+  }
+
+  /**
+   * Performance governor: when the frame rate drops, shed the most expensive
+   * post effects and restore them once it recovers. Driven by the real FPS,
+   * so it only ever acts when the machine is actually struggling.
+   */
+  private applyPerfTier(tier: number): void {
+    if (this.perfTier === tier) return;
+    this.perfTier = tier;
+    if (tier === 0) {
+      this.postfx.set('grain', 0.85);
+      this.postfx.set('chromatic', 1.2);
+      this.postfx.set('bloomKernel', 112);
+    } else if (tier === 1) {
+      this.postfx.set('grain', 0);
+      this.postfx.set('chromatic', 0.6);
+      this.postfx.set('bloomKernel', 64);
+    } else {
+      this.postfx.set('grain', 0);
+      this.postfx.set('chromatic', 0);
+      this.postfx.set('bloomKernel', 48);
+    }
+    this.shell?.toast(tier === 0 ? 'Graphics restored' : 'Performance mode');
+  }
+
   /** Copies the universe seed so a friend can visit the same worlds. */
   private copySeed(): void {
     const seed = String(this.universe.opts.seed);
@@ -2016,6 +2142,12 @@ export class App {
         for (const layer of this.gasDive.drainEvents()) {
           this.shell.toast('🪐 Entering the ' + layer);
         }
+        // The view hazes toward the cloud colour as the decks thicken.
+        const gd = this.gasDive.state();
+        const haze = 0.01 + gd.density * 0.14;
+        this.scene.clearColor = new Color4(
+          haze * 0.55, haze * 0.62, haze * 0.8, 1);
+        this.postfx.set('bloom', 0.8 + gd.density * 0.4);
       }
 
       // ---- planet collisions: two worlds become one ----
@@ -2043,6 +2175,7 @@ export class App {
             keep.mass = merged.mass;
             keep.radius = merged.radius * 4.5;
             this.universe.removeRegion(drop.id);
+            this.spawnCollisionFX(keep.position.clone(), merged.radius);
             this.postfx.set('bloom', 2);
             this.onMilestone('first-collision');
             this.onDiscovery('event', 'merge:' + keep.id, '💥', 'Two Become One',
@@ -2111,8 +2244,12 @@ export class App {
       this.warp.update(dt, this.shownSpeed, eye, fwd);
       // Driven from the streaks' own flow rate so the two halves of the
       // effect advance together instead of sliding against each other.
+      // A gas dive also streaks: falling through cloud decks at terminal
+      // velocity is its own kind of rush, fed into the same screen pass.
+      const diveStreak = this.gasDive
+        ? Math.min(0.85, this.gasDive.state().speed / 240) : 0;
       this.warpTunnel.update(dt, {
-        amount: this.warp.intensity,
+        amount: Math.max(this.warp.intensity, diveStreak),
         flow: this.warp.flow,
         focusX: 0.5, focusY: 0.5
       });
@@ -2134,10 +2271,12 @@ export class App {
       this.planetField.update(this.universe.regions, eye);
       // The canopy motes drift and reseed as you travel.
       this.spaceDust.update(eye);
-      // Comets orbit whichever star the player is nearest.
+      // Comets orbit whichever star the player is nearest. The zero fallback
+      // reuses one vector so the no-star case never allocates per frame.
       {
         const star = this.universe.nearest(eye, 'star-system');
-        this.comets.update(dt, star ? star.position : Vector3.Zero(), eye);
+        this.zeroVec.setAll(0);
+        this.comets.update(dt, star ? star.position : this.zeroVec, eye);
       }
 
       // Each background shell slides toward the eye by its own lock factor,
@@ -2271,6 +2410,16 @@ export class App {
         const fg = this.fleet.gravity();
         const att = this.vehicle.attitude();
         const w = this.warpDrive.state();
+        // Suit hazard: how close the nearest horizon is, for the armor ring.
+        let hazard = 0;
+        {
+          const hz = this.universe.insideHorizon ?? this.nearestHole();
+          if (hz) {
+            const hr = this.universe.horizonRadiusOf(hz);
+            const d = Vector3.Distance(eye, hz.position);
+            hazard = Math.max(0, Math.min(1, 1 - (d - hr) / Math.max(hr * 8, 1e-3)));
+          }
+        }
         this.flightHud.update({
           x: eye.x, y: eye.y, z: eye.z,
           heading: att.yaw,
@@ -2292,7 +2441,8 @@ export class App {
           })(),
           localeDistance: near ? Vector3.Distance(eye, near.position) : 0,
           fleetSize: this.fleet.vessels.length,
-          fleetGravity: fg.surfaceGravity
+          fleetGravity: fg.surfaceGravity,
+          hazard
         });
       }
 
@@ -2332,12 +2482,24 @@ export class App {
         }
       }
 
+      // ---- transient collision effects fade and are disposed ----
+      this.updateCollisionFX();
+
       this.scene.render();
 
       // adaptive resolution defends the framerate
       const newScale = this.quality.sample(dt);
       if (newScale !== null) {
         try { this.engine.setHardwareScalingLevel(newScale); } catch { /* ignore */ }
+      }
+
+      // ---- performance governor: shed post effects when fps drops ----
+      this.perfTimer += dt;
+      if (this.perfTimer >= 0.6) {
+        this.perfTimer = 0;
+        const fps = this.engine.getFps();
+        const tier = fps < 26 ? 2 : fps < 42 ? 1 : 0;
+        if (tier !== this.perfTier) this.applyPerfTier(tier);
       }
 
       // autosave so a crash or refresh never loses the session

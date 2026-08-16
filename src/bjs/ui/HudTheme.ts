@@ -21,7 +21,7 @@
  * each other.
  */
 
-export type HudThemeId = 'satellite' | 'legacy';
+export type HudThemeId = 'suit' | 'satellite' | 'legacy';
 
 export interface HudThemeSpec {
   id: HudThemeId;
@@ -39,6 +39,15 @@ export interface HudThemeSpec {
 }
 
 export const HUD_THEMES: Record<HudThemeId, HudThemeSpec> = {
+  suit: {
+    id: 'suit',
+    label: 'Exosuit',
+    blurb: 'A powered-armor cockpit: helmet visor, reactor core and suit telemetry',
+    className: 'fhud-suit',
+    frame: true,
+    sweep: true,
+    uplink: false
+  },
   satellite: {
     id: 'satellite',
     label: 'Satellite Uplink',
@@ -59,8 +68,8 @@ export const HUD_THEMES: Record<HudThemeId, HudThemeSpec> = {
   }
 };
 
-export const HUD_THEME_ORDER: HudThemeId[] = ['satellite', 'legacy'];
-export const DEFAULT_HUD_THEME: HudThemeId = 'satellite';
+export const HUD_THEME_ORDER: HudThemeId[] = ['suit', 'satellite', 'legacy'];
+export const DEFAULT_HUD_THEME: HudThemeId = 'suit';
 
 export function isHudTheme(v: string): v is HudThemeId {
   return Object.prototype.hasOwnProperty.call(HUD_THEMES, v);
