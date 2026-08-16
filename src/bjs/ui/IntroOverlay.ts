@@ -549,6 +549,56 @@ export const INTRO_CSS = `
   transition:all .14s ease;
 }
 .is-close:hover{ color:#fff; border-color:rgba(150,205,255,.5); }
+.is-input{
+  width:100%; padding:8px 10px; font-size:12px; letter-spacing:.06em;
+  color:#eaf4ff; background:rgba(10,18,34,.7);
+  border:1px solid rgba(110,170,240,.24); border-radius:6px; font-family:inherit;
+}
+.is-input::placeholder{ color:rgba(150,200,250,.4); }
+.is-input:focus{ outline:none; border-color:var(--acc,#00f0ff);
+  box-shadow:0 0 12px rgba(0,240,255,.25); }
+
+/* The launch row: Play / Settings / Quit, centred and moved up. */
+.intro-launchrow{ display:flex; gap:14px; align-items:center; justify-content:center;
+  margin-top:18px; flex-wrap:wrap; }
+.intro-launch{
+  position:relative; padding:15px 30px 14px; min-width:180px;
+  display:flex; flex-direction:column; gap:4px; align-items:center;
+  font-size:16px; font-weight:800; letter-spacing:.26em; text-transform:uppercase;
+  cursor:pointer; color:#eaf6ff; border:0; font-family:inherit;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,0) 42%),
+    linear-gradient(180deg,#00cfff 0%,#1f8be8 46%,#155cc0 100%);
+  clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);
+  text-shadow:0 1px 0 rgba(0,20,60,.5), 0 0 22px rgba(120,210,255,.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.6),
+    inset 0 -2px 0 rgba(0,30,70,.5),
+    0 12px 38px rgba(20,120,220,.5),
+    0 0 0 1px rgba(140,200,255,.4);
+  overflow:hidden; isolation:isolate;
+  transition:transform .16s cubic-bezier(.2,.9,.3,1.4), box-shadow .2s ease;
+}
+.intro-launch::before{
+  content:''; position:absolute; inset:0; z-index:-1;
+  background:linear-gradient(115deg,transparent 0%,transparent 38%,
+    rgba(255,255,255,.42) 50%,transparent 62%,transparent 100%);
+  transform:translateX(-130%); transition:transform .55s cubic-bezier(.25,.8,.3,1);
+}
+.intro-launch:hover::before{ transform:translateX(130%); }
+.intro-launch:hover{
+  transform:translateY(-3px) scale(1.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.75),
+    inset 0 -2px 0 rgba(0,30,70,.5),
+    0 20px 52px rgba(30,140,255,.62),
+    0 0 0 1px rgba(190,225,255,.55),
+    0 0 70px rgba(40,150,255,.5);
+}
+.intro-launch.off{ display:none; }
+.intro-launch b{ font-size:16px; letter-spacing:.26em; font-weight:800; }
+.intro-launch i{ font-size:10px; letter-spacing:.06em; font-style:normal;
+  text-transform:none; opacity:.86; font-weight:600; }
 
 .intro-hide{ display:none !important; }
 `;
@@ -561,6 +611,10 @@ export interface IntroHooks {
   onSettingsQuality?(name: string): void;
   /** Optional: switches the HUD theme from the title-screen settings. */
   onSettingsHudTheme?(id: string): void;
+  /** Optional: builds a fresh universe at the chosen spawn preset. */
+  onCreateUniverse?(mode: string, spawn: string, name: string): void;
+  /** Optional: the Quit button, which returns to the desktop. */
+  onQuit?(): void;
 }
 
 export class IntroOverlay {
@@ -568,6 +622,7 @@ export class IntroOverlay {
   private titleCard: HTMLDivElement;
   private patchPanel: HTMLDivElement | null = null;
   private settingsPanel: HTMLDivElement;
+  private createPanel: HTMLDivElement;
   private talk: HTMLDivElement;
   private prompt: HTMLDivElement;
   private seq: IntroSequence;
@@ -614,6 +669,14 @@ export class IntroOverlay {
         <span class="ir-badge">${CURRENT_UPDATE}</span>
         <span class="ir-name">${CURRENT_UPDATE_NAME}</span>
       </div>
+      <div class="intro-launchrow">
+        <button type="button" class="intro-launch" id="btnLaunch">
+          <b>▶ Play</b><i>Enter the universe</i></button>
+        <button type="button" class="intro-aux intro-settings">
+          <b>⚙ Settings</b><i>Graphics &amp; interface</i></button>
+        <button type="button" class="intro-aux intro-quit">
+          <b>⏻ Quit</b><i>Return to the desktop</i></button>
+      </div>
       <p class="intro-sub">Create · Experiment · Break · Observe</p>
       <div class="intro-info">
         <span>WASD fly · Shift boost · L land · P photomode</span>
@@ -623,8 +686,12 @@ export class IntroOverlay {
     // Two ways in, not one. Explorer is the universe as a place; Sandbox is
     // the universe as an experiment. Choosing at the title is what stops
     // "sandbox" being a hidden mode nobody finds.
+    // The mode menu sits behind the Play button: it starts hidden, and the
+    // two .intro-play doors inside it (Explore / Sandbox) are the same two
+    // ways in the suite pins. There are exactly two .intro-play elements,
+    // always - "Create New Universe" and the notes are auxiliary actions.
     const modes = document.createElement('div');
-    modes.className = 'intro-modes';
+    modes.className = 'intro-modes intro-reveal intro-hide';
 
     const play = document.createElement('button');
     play.className = 'intro-play';
@@ -637,6 +704,14 @@ export class IntroOverlay {
     sand.innerHTML = '<b>🌌 Sandbox</b><i>Full physics. Break things.</i>';
     sand.onclick = () => this.hooks.onPlay('sandbox');
     modes.appendChild(sand);
+
+    // Create New Universe: the preset flow. A new universe, spawned where
+    // you choose - deep space, the galactic core, or inside a black hole.
+    const create = document.createElement('button');
+    create.className = 'intro-aux intro-create';
+    create.innerHTML = '<b>🪐 Create New Universe</b><i>Presets · spawn · name</i>';
+    create.onclick = () => this.toggleCreatePanel();
+    modes.appendChild(create);
 
     // Patch notes sits in the same row as the two mode buttons, per the
     // brief that these should read as one horizontal row of choices rather
@@ -653,19 +728,32 @@ export class IntroOverlay {
     notes.onclick = () => this.togglePatchNotes();
     modes.appendChild(notes);
 
-    // A real settings door: quality and HUD skin, live on the title screen.
-    const settings = document.createElement('button');
-    settings.className = 'intro-aux intro-settings';
-    settings.innerHTML = '<b>⚙ Settings</b><i>Graphics &amp; interface</i>';
-    settings.onclick = () => this.toggleSettings();
-    modes.appendChild(settings);
-
     this.titleCard.appendChild(modes);
 
     // The settings panel, collapsed until asked for.
     this.settingsPanel = document.createElement('div');
     this.settingsPanel.className = 'intro-settings-panel intro-hide';
     this.titleCard.appendChild(this.settingsPanel);
+
+    // The Create New Universe preset panel, collapsed until asked for.
+    this.createPanel = document.createElement('div');
+    this.createPanel.className = 'intro-create-panel intro-hide';
+    this.titleCard.appendChild(this.createPanel);
+
+    // Wire the Play / Settings / Quit launch row (it lives in the title
+    // markup, so its handlers are attached here after the card is built).
+    const launch = this.titleCard.querySelector<HTMLButtonElement>('#btnLaunch');
+    if (launch) {
+      launch.onclick = () => {
+        // Play reveals the two ways in, and tucks the launch row away.
+        modes.classList.toggle('intro-hide');
+        launch.classList.toggle('off');
+      };
+    }
+    this.titleCard.querySelectorAll<HTMLButtonElement>('.intro-settings')
+      .forEach((b) => { b.onclick = () => this.toggleSettings(); });
+    this.titleCard.querySelectorAll<HTMLButtonElement>('.intro-quit')
+      .forEach((b) => { b.onclick = () => this.hooks.onQuit?.(); });
 
     // The notes panel itself, collapsed until asked for. Built once and
     // shown/hidden rather than rebuilt, so opening it is instant.
@@ -829,6 +917,66 @@ export class IntroOverlay {
     });
     (p.querySelector('.is-close') as HTMLElement).onclick = () =>
       p.classList.add('intro-hide');
+  }
+
+  /** Opens (or closes) the Create New Universe preset panel. */
+  toggleCreatePanel(): boolean {
+    if (!this.createPanel) return false;
+    if (this.createPanel.classList.contains('intro-hide')) {
+      this.buildCreatePanel();
+      this.createPanel.classList.remove('intro-hide');
+      this.patchPanel?.classList.add('intro-hide');
+      this.settingsPanel?.classList.add('intro-hide');
+      return true;
+    }
+    this.createPanel.classList.add('intro-hide');
+    return false;
+  }
+
+  /** Builds the spawn-preset + name panel once, wired to onCreateUniverse. */
+  private buildCreatePanel(): void {
+    const p = this.createPanel;
+    if (p.childElementCount) return;
+    p.innerHTML =
+      '<div class="is-head">Create New Universe</div>' +
+      '<div class="is-grp">' +
+      '<div class="is-label">Where do you spawn?</div>' +
+      '<div class="is-row">' +
+      '<button class="is-btn" data-spawn="deepspace">Deep Space</button>' +
+      '<button class="is-btn on" data-spawn="core">Galactic Core</button>' +
+      '<button class="is-btn" data-spawn="hole">Inside a Black Hole</button>' +
+      '</div></div>' +
+      '<div class="is-grp">' +
+      '<div class="is-label">Mode</div>' +
+      '<div class="is-row">' +
+      '<button class="is-btn on" data-mode="explorer">Explore</button>' +
+      '<button class="is-btn" data-mode="sandbox">Sandbox</button>' +
+      '</div></div>' +
+      '<div class="is-grp">' +
+      '<div class="is-label">World name</div>' +
+      '<input class="is-input" type="text" maxlength="40" placeholder="My Universe">' +
+      '</div>' +
+      '<button class="is-close" data-build="1">Build &amp; Play</button>';
+    let spawn = 'core';
+    let mode = 'explorer';
+    p.querySelectorAll<HTMLElement>('[data-spawn]').forEach((b) => {
+      b.onclick = () => {
+        p.querySelectorAll<HTMLElement>('[data-spawn]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        spawn = b.dataset.spawn ?? 'core';
+      };
+    });
+    p.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => {
+      b.onclick = () => {
+        p.querySelectorAll<HTMLElement>('[data-mode]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        mode = b.dataset.mode ?? 'explorer';
+      };
+    });
+    const nameInput = p.querySelector<HTMLInputElement>('.is-input');
+    (p.querySelector('[data-build]') as HTMLElement).onclick = () => {
+      this.hooks.onCreateUniverse?.(mode, spawn, nameInput?.value.trim() || '');
+    };
   }
 
   /** True while the notes are on screen. Used by the tests. */

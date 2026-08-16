@@ -762,8 +762,47 @@ export class App {
       },
       onSettingsHudTheme: (id) => {
         this.flightHud.setTheme(id as 'suit' | 'satellite' | 'legacy');
+      },
+      onCreateUniverse: (mode, spawn, name) => {
+        this.createNewUniverse(mode, spawn, name);
+      },
+      onQuit: () => {
+        this.shell.toast('Quit — this is the desktop. Fly back any time.');
       }
     });
+  }
+
+  /**
+   * Creates a fresh universe, spawned where the player chose, and names it.
+   * Deep space leaves you at the origin; the core drops you at the galactic
+   * heart; inside a black hole spawns you at the nearest horizon so the
+   * fall begins the moment the world loads.
+   */
+  private createNewUniverse(mode: string, spawn: string, name: string): void {
+    this.setMode(mode === 'sandbox' ? 'sandbox' : 'explorer');
+    this.shell.setGameMode(this.mode);
+    // A new seed reshapes everything; the chosen spawn is applied after.
+    this.universe.reseed();
+    if (name) this.shell.toast('Universe "' + name + '" created');
+    // Finish the intro and drop into the universe.
+    this.finishIntro();
+    setTimeout(() => {
+      if (spawn === 'core') {
+        this.spawnAtGalacticCore();
+      } else if (spawn === 'hole') {
+        const hole = this.universe.nearest(this.vehicle.position, 'blackhole');
+        if (hole) {
+          this.vehicle.teleport(hole.position.clone());
+          this.universe.updatePlayer(this.vehicle.position);
+        }
+      } else {
+        this.vehicle.teleport(new Vector3(0, 0, 240));
+        this.vehicle.faceTowards(Vector3.Zero());
+        this.camera.position.copyFrom(this.vehicle.position);
+        this.camera.setTarget(Vector3.Zero());
+      }
+      void this.loadWorld('planetary');
+    }, 350);
   }
 
   /** Walk mode, standing on the floor, for the garage and the ship. */
