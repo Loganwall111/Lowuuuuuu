@@ -219,7 +219,7 @@ ok('the ACES constant is still available to the pipeline',
 ok('the pipeline does not tonemap on top of the shaders',
    /toneMappingEnabled = false/.test(postfx));
 ok('bloom is stronger now that it reaches the screen',
-   /bloom: 1\.25/.test(postfx));
+   /bloom: 1\.42/.test(postfx));
 ok('exposure is neutral, because the shaders own the grade',
    /exposure: 1(\.0)?,/.test(postfx));
 

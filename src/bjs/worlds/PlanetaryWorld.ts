@@ -22,6 +22,7 @@ import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { ringTexture } from '../Textures';
+import { GLSL_NOISE } from '../Noise';
 import { PLANET_SHADER, registerPlanetShader, PlanetKind } from '../shaders/PlanetShader';
 import { hashCell } from '../systems/IntergalacticGrid';
 import {
@@ -60,6 +61,12 @@ uniform float saturation;
 uniform vec3 planetCenter;
 uniform float planetRadius;   // surface radius, world units
 uniform float atmoRadius;     // top of the atmosphere, world units
+/** 1 = draw animated aurora curtains over the magnetic poles. */
+uniform float aurora;
+/** Slow clock for the aurora drift. */
+uniform float time;
+
+${GLSL_NOISE}
 
 /**
  * Volumetric atmospheric scattering.
@@ -221,6 +228,32 @@ void main(void){
 
   // power stays meaningful as an artistic limb-sharpness control.
   a = pow(clamp(a, 0.0, 1.0), max(power * 0.28, 0.25));
+
+  // ---- aurora over the magnetic poles ----
+  // Real aurorae hug the poles and light up on the night side, where the
+  // solar wind funnels down the field lines. They read as slow ribbons of
+  // green and violet, which is exactly the "alive planet" cue a bare limb
+  // glow cannot give. Driven off the same noise field as the rest of the
+  // shader so the curtains are one family with the planet, not decals.
+  if (aurora > 0.5){
+    vec3 p = normalize(vWorld - planetCenter);
+    float lat = abs(p.y);
+    // Poleward bias, night-side bias.
+    float polar = smoothstep(0.55, 0.98, lat);
+    float night = smoothstep(0.05, -0.30, dot(p, L));
+    // Curtains: noise stretched along longitude so it drapes in bands.
+    vec3 q = vec3(p.x * 5.0, p.y * 11.0, p.z * 5.0)
+           + vec3(0.0, time * 0.35, time * 0.10);
+    float curtain = fbm(q, 4, 2.2, 0.55);
+    float ribbons = smoothstep(0.42, 0.95, curtain);
+    // Vertical striping, the classic aurora look.
+    float vert = sin(p.x * 26.0 + time * 1.15) * 0.5 + 0.5;
+    float glow = polar * night * ribbons * (0.30 + 0.70 * vert);
+    // Green at the base, violet where the field is strongest.
+    vec3 auroraCol = mix(vec3(0.16, 0.95, 0.45), vec3(0.50, 0.25, 1.00), vert);
+    col += auroraCol * glow * 0.55;
+    a = clamp(a + glow * 0.25, 0.0, 1.0);
+  }
 
   col = col / (col + vec3(1.0));            // keep the halo from clipping
   gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));
@@ -689,6 +722,7 @@ export class PlanetaryWorld implements World {
           attributes: ['position', 'normal'],
           uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos',
                      'atmoColor', 'power', 'habitable', 'density', 'saturation',
+                     'aurora', 'time',
                      'planetCenter', 'planetRadius', 'atmoRadius'],
           needAlphaBlending: true
         });
@@ -700,6 +734,10 @@ export class PlanetaryWorld implements World {
         am.setFloat('habitable', cfg.inhabited ? 1 : 0);
         am.setFloat('density', cfg.inhabited ? 1.0 : 0.55);
         am.setFloat('saturation', cfg.inhabited ? 1.0 : 0.45);
+        // Aurorae need a magnetic field: habitable and icy worlds get them,
+        // airless rocks do not.
+        am.setFloat('aurora', cfg.inhabited || cfg.type === PlanetKind.Ice ? 1 : 0);
+        am.setFloat('time', 0);
         // The volumetric march needs the real geometry of the shell it is
         // integrating through. The mesh diameter is cfg.r * 2.16, so the
         // atmosphere tops out at 1.08 planet radii.
@@ -833,6 +871,8 @@ export class PlanetaryWorld implements World {
       if (b.atmoMat) {
         b.atmoMat.setVector3('camPos', cp);
         b.atmoMat.setVector3('sunPos', Vector3.Zero());
+        // The aurora curtains drift on the same clock as the weather.
+        b.atmoMat.setFloat('time', this.t);
         // The planet orbits, so the centre the raymarch integrates around
         // moves every frame. A stale centre would tear the atmosphere off
         // the planet exactly the way a stale camera tore the accretion disk

@@ -38,19 +38,19 @@ export const DEFAULT_POSTFX: PostFXSettings = {
   // the grade can be pushed properly: a wide soft bloom for star glare and
   // lit planet limbs, with enough exposure headroom for highlights to
   // bloom rather than clip.
-  bloom: 1.25,
-  bloomThreshold: 0.30,
+  bloom: 1.42,
+  bloomThreshold: 0.28,
   // Neutral. Every world shader already tonemaps and gamma-encodes its own
   // output (see the note at the top of this file), so the pipeline must not
   // grade on top of that. An exposure of 1.32 here was multiplying an
   // already-displayable image and then ACES-tonemapping it a second time,
   // which lifted dark tones by up to 190% and made planets glare white.
   exposure: 1.0,
-  contrast: 1.05,
-  vignette: 0.20,
-  grain: 0.6,
-  sharpen: 0.42,
-  chromatic: 1.0,
+  contrast: 1.08,
+  vignette: 0.26,
+  grain: 0.85,
+  sharpen: 0.46,
+  chromatic: 1.2,
   fxaa: 1,
   bloomKernel: 112,
   bloomScale: 0.85

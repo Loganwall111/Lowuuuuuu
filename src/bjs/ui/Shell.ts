@@ -86,6 +86,7 @@ interface ShellHooks {
     regions: Array<{ id: string; name: string; glyph: string; kind: string; distance: number }>;
     holding: string | null;
     lens: Record<string, string> | null;
+    seed?: number;
   };
   onWarpTo: (id: string) => void;
   onGrab: () => void;
@@ -811,6 +812,21 @@ export class Shell {
     (t as any)._h = window.setTimeout(() => t!.classList.remove('show'), 2200);
   }
 
+  /** Copies text to the clipboard if the platform allows it. */
+  copyText(text: string, confirm: string): void {
+    let done = false;
+    try {
+      const nav = navigator as unknown as {
+        clipboard?: { writeText?: (t: string) => Promise<void> };
+      };
+      if (nav.clipboard?.writeText) {
+        void nav.clipboard.writeText(text);
+        done = true;
+      }
+    } catch { /* clipboard unavailable */ }
+    this.toast(done ? confirm : text);
+  }
+
   /** Re-renders every open panel (after undo/redo changes world state). */
   refreshAll(): void {
     ['controls', 'telemetry', 'snapshots', 'objects'].forEach((id) => this.wm.refresh(id));
@@ -850,6 +866,20 @@ export class Shell {
       h.className = 'note';
       h.textContent = '✋ Carrying ' + u.holding + ' — V to release, B to throw';
       here.appendChild(h);
+    }
+    // The universe seed: copy it and a friend visits the same worlds.
+    if (u.seed !== undefined) {
+      const srow = document.createElement('div');
+      srow.className = 'stat';
+      srow.innerHTML = '<span class="stat-k">Seed</span><span class="stat-v">' + u.seed + '</span>';
+      const cpy = document.createElement('button');
+      cpy.className = 'btn';
+      cpy.style.cssText = 'min-width:auto;padding:3px 9px;font-size:10.5px';
+      cpy.textContent = 'Copy';
+      cpy.title = 'Copy the universe seed (U)';
+      cpy.onclick = () => this.copyText(String(u.seed), 'Seed copied: ' + u.seed);
+      srow.appendChild(cpy);
+      here.appendChild(srow);
     }
     b.appendChild(here);
 

@@ -3,7 +3,7 @@ export const UI_CSS = `
   --bg:#05070d; --panel:rgba(16,20,30,.82); --panel-solid:#11141d;
   --line:rgba(255,255,255,.10); --line2:rgba(255,255,255,.06);
   --txt:#e8edf7; --dim:#8b95ad; --dim2:#5d6679;
-  --acc:#4da3ff; --acc2:#7c5cff; --ok:#31d68a; --warn:#ffb545;
+  --acc:#ffb020; --acc2:#ff7a3d; --ok:#3ddb8f; --warn:#ff5a45;
   --r:6px; --r2:4px;
   --shadow:0 14px 38px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.35);
   /* UI density + see-through: the sim must always stay readable behind panels */
@@ -45,6 +45,12 @@ body[data-focus="1"] .wm-layer,
 body[data-focus="1"] .topbar,
 body[data-focus="1"] .wm-dock{ opacity:0; pointer-events:none; }
 body[data-focus="1"] .hud{ opacity:.35; }
+/* Photomode drops every layer of UI for a clean, screenshot-ready frame. */
+body[data-photo="1"] .topbar,
+body[data-photo="1"] .wm-layer,
+body[data-photo="1"] .hud,
+body[data-photo="1"] .fhud,
+body[data-photo="1"] .sonar-cursor{ display:none !important; }
 .wm-win.wm-pinned{ box-shadow:0 0 0 1px var(--acc), var(--shadow); }
 .wm-b.on{ background:var(--acc); color:#04121f; }
 @keyframes wmIn{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
@@ -243,6 +249,44 @@ body[data-focus="1"] .hud{ opacity:.35; }
 .fhud-status::before{content:'';position:absolute;left:50%;top:-3px;
   width:22px;height:3px;transform:translateX(-50%);
   background:linear-gradient(90deg,transparent,var(--acc),transparent);}
+
+/* ---- flight director: pitch ladder + heading tape ---- */
+/* The centre instruments. Drawn faint so the scene stays readable through
+   them, but always present - a pilot's eye never has to leave the middle of
+   the screen to know which way the ship points. */
+.fhud-director{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;}
+.fh-hdg-tape{position:absolute;left:50%;top:-64px;width:620px;height:20px;
+  transform:translateX(-50%);overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);}
+.fh-hdg-inner{position:absolute;top:0;left:0;height:20px;width:0;
+  will-change:transform;transition:transform .08s linear;}
+.fh-hdg-tick{position:absolute;top:0;width:0;height:14px;
+  border-left:1px solid rgba(255,190,70,.30);}
+.fh-hdg-tick.lbl{border-left-color:rgba(255,205,90,.55);height:16px;}
+.fh-hdg-tick i{position:absolute;left:4px;top:1px;font-style:normal;
+  font-size:8px;letter-spacing:.06em;color:rgba(255,215,130,.66);white-space:nowrap;}
+.fh-pitch{position:absolute;left:50%;top:50%;width:150px;height:220px;
+  transform:translate(-50%,-50%);overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);
+  mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);}
+.fh-pitch-inner{position:absolute;top:0;left:0;width:150px;height:0;
+  will-change:transform;transition:transform .08s linear;}
+.fh-ladder-line{position:absolute;left:0;width:150px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,190,70,.34) 24%,
+    rgba(255,190,70,.34) 76%,transparent);}
+.fh-ladder-line span{position:absolute;right:2px;top:-4px;font-size:8px;
+  color:rgba(255,205,120,.5);letter-spacing:.04em;}
+.fh-ladder-line.zero{height:2px;
+  background:linear-gradient(90deg,transparent,var(--acc) 12%,var(--acc) 88%,transparent);
+  box-shadow:0 0 10px color-mix(in srgb,var(--acc) 55%,transparent);}
+.fh-horizon{position:absolute;left:50%;top:50%;width:190px;height:2px;
+  transform:translate(-50%,-50%);
+  background:linear-gradient(90deg,transparent,rgba(255,200,90,.4),transparent);}
+.fh-fd{position:absolute;left:50%;top:50%;width:0;height:0;
+  transform:translate(-50%,-50%);
+  border-left:7px solid transparent;border-right:7px solid transparent;
+  border-bottom:10px solid rgba(255,200,90,.65);filter:drop-shadow(0 0 5px rgba(255,170,40,.4));}
 .fhud-left{position:absolute;left:20px;bottom:88px;display:flex;
   flex-direction:column;gap:10px;align-items:flex-start;}
 .fhud-right{position:absolute;right:20px;bottom:88px;display:flex;

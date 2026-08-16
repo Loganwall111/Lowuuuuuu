@@ -37,6 +37,14 @@ import { Fleet, shipClass, shipView, type ViewMode } from './systems/FleetSystem
 import { StarFieldRenderer } from './systems/StarFieldRenderer';
 import { PlanetField } from './systems/PlanetField';
 import { SpaceDust } from './systems/SpaceDust';
+import { CometRenderer } from './systems/CometSystem';
+import {
+  DiscoveryLog, Milestones, Challenges, CHALLENGES, MILESTONES, type CodexKind
+} from './systems/Progression';
+import { CivilizationSystem } from './systems/CivilizationSystem';
+import { EcologySystem } from './systems/EcologySystem';
+import { SupernovaSystem } from './systems/SupernovaSystem';
+import { BlackHoleFeeding } from './systems/BlackHoleFeeding';
 import { LayeredSky } from './systems/LayeredSky';
 import { HoleFieldRenderer } from './systems/HoleFieldRenderer';
 import { SpaceAudio } from './systems/SpaceAudio';
@@ -199,6 +207,32 @@ export class App {
   planetField = new PlanetField();
   /** Fine motes sliding past the canopy - the near-field depth cue. */
   spaceDust = new SpaceDust();
+  /** Comets on real elliptical orbits around the nearest star. */
+  comets = new CometRenderer();
+
+  /* ---------------- purpose: discovery, milestones, challenges ------------- */
+  /** The field guide: everything the player has discovered, logged once. */
+  discoveries = new DiscoveryLog();
+  /** One-time "you have never seen this before" moments. */
+  milestones = new Milestones();
+  /** No-fail progress trackers that give the sandbox a reason. */
+  challenges = new Challenges();
+  /** The home civilization, advancing through technological stages. */
+  civilization = new CivilizationSystem(this.universe.opts.seed);
+  /** A predator/prey ecology per planet the player has visited. */
+  private ecologies = new Map<string, EcologySystem>();
+  /** Stars that go supernova, on their own or by the player's hand. */
+  nova = new SupernovaSystem(this.universe.opts.seed);
+  /** Black holes that brighten when they eat. */
+  feeding = new BlackHoleFeeding();
+  /** Whether a supernova flash is currently in progress. */
+  private novaActive = false;
+  /** Worlds the player has landed on, for the Wanderer challenge. */
+  private landedWorlds = new Set<string>();
+  /** Verses reached, for the Beyond challenge. */
+  private versesReached = new Set<string>();
+  /** Photomode: hide every layer of UI for a clean frame. */
+  private photoMode = false;
   /**
    * The anonymous background haze, in three parallaxing shells. Sits behind
    * starField, which draws the real reachable regions - together they give
@@ -342,8 +376,9 @@ export class App {
         const cur = this.universe.current;
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
+        const hereEco = cur ? this.ecologies.get(cur.id) : null;
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...this.planetField.stats(), ...this.spaceDust.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...this.planetField.stats(), ...this.spaceDust.stats(), ...this.comets.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}), ...this.discoveries.stats(), ...this.milestones.stats(), ...this.challenges.stats(), ...this.civilization.stats(), ...this.nova.stats(), ...this.feeding.stats(), ...(hereEco?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -352,7 +387,8 @@ export class App {
             distance: Vector3.Distance(eye, r.position)
           })),
           holding: this.grab.held ? this.grab.held.name : null,
-          lens: bh?.lens ? describeLens(bh.lens) : null
+          lens: bh?.lens ? describeLens(bh.lens) : null,
+          seed: this.universe.opts.seed
         };
       },
 
@@ -583,6 +619,10 @@ export class App {
       // L lands on the nearest planet / lifts off again. Guarded against key
       // repeat so holding it cannot flip between modes every frame.
       if (e.key.toLowerCase() === 'l' && !e.repeat) this.toggleLand();
+      // P toggles photomode: every layer of UI drops away for a clean frame.
+      if (e.key.toLowerCase() === 'p' && !e.repeat) this.togglePhotoMode();
+      // U copies the universe seed so a friend can visit the same worlds.
+      if (e.key.toLowerCase() === 'u' && !e.repeat) this.copySeed();
       // 1/2/3 shift the gearbox. Applied instantly, on the keypress, so a
       // gear change lands on the very next frame rather than waiting for
       // anything to spool.
@@ -731,6 +771,17 @@ export class App {
         this.vehicle.position.copyFrom(dir.scale(cross.arriveAt));
         this.verseRenderer.show(cross.to, 2400, cross.to.depth + 1);
         this.shell.toast(cross.message);
+        // A new verse is a discovery, and reaching every verse is a goal.
+        if (!this.versesReached.has(cross.to.id)) {
+          this.versesReached.add(cross.to.id);
+          this.onDiscovery('verse', 'verse:' + cross.to.id,
+            '🚪', cross.to.name,
+            'A different reality, reached by crossing The Nothing.');
+          if (this.challenges.set('all-verses', this.versesReached.size)) {
+            this.challengeDone('all-verses');
+          }
+          if (this.versesReached.size >= 7) this.onMilestone('all-verses');
+        }
         // Cleared once you are clear of the boundary, so one crossing does
         // not immediately trigger the next.
         window.setTimeout(() => { this.crossing = false; }, 1200);
@@ -934,6 +985,11 @@ export class App {
       this.spaceDust.dispose();
       this.spaceDust.attach(this.scene);
       void this.spaceDust.build();
+
+      // And the comet traffic, rebuilt per world like every other sky layer.
+      this.comets.dispose();
+      this.comets.attach(this.scene);
+      void this.comets.build();
 
       // loadWorld purges every mesh, so the shells must be rebuilt with it.
       this.layeredSky.dispose();
@@ -1258,6 +1314,91 @@ export class App {
     }
     this.setControlMode('walk');
     this.shell.toast('Landed on ' + s.id);
+    this.onMilestone('first-landing');
+    if (!this.landedWorlds.has(s.id)) {
+      this.landedWorlds.add(s.id);
+      if (this.challenges.add('land-3')) this.challengeDone('land-3');
+    }
+    if (s.habitable) this.onMilestone('first-aurora');
+  }
+
+  /** Logs a discovery to the field guide, toasting the first of each kind. */
+  private onDiscovery(
+    kind: CodexKind, id: string, glyph: string, title: string, blurb: string
+  ): void {
+    const isNew = this.discoveries.discover({ id, kind, glyph, title, blurb });
+    if (!isNew) return;
+    this.shell.toast(glyph + ' Discovered: ' + title);
+    if (kind === 'species') {
+      this.onMilestone('first-species');
+      if (this.challenges.set('species-10', this.discoveries.countOf('species'))) {
+        this.challengeDone('species-10');
+      }
+    }
+    if (this.challenges.set('log-20', this.discoveries.countOf())) {
+      this.challengeDone('log-20');
+    }
+  }
+
+  /** Unlocks a milestone, toasting it the first time. */
+  private onMilestone(id: string): void {
+    const m = this.milestones.unlock(id);
+    if (!m) return;
+    const spec = this.milestoneSpec(id);
+    this.shell.toast(spec.glyph + ' Milestone: ' + spec.title + ' — ' + spec.blurb);
+  }
+
+  /** Reports a completed challenge. */
+  private challengeDone(id: string): void {
+    const c = CHALLENGES.find((x) => x.id === id);
+    if (!c) return;
+    this.shell.toast(c.glyph + ' Challenge complete: ' + c.title);
+  }
+
+  /** Finds a milestone by id, tolerating typos with a fallback. */
+  private milestoneSpec(id: string): { glyph: string; title: string; blurb: string } {
+    const m = MILESTONES.find((x) => x.id === id);
+    return m ?? { glyph: '🏆', title: id, blurb: '' };
+  }
+
+  /** A one-line field-guide blurb for a region kind. */
+  private describePlace(r: Region): string {
+    switch (r.kind) {
+      case 'star-system': return 'A star and the worlds bound to it.';
+      case 'planet': return 'A world you can land on and walk across.';
+      case 'ocean': return 'A world drowned under a single deep ocean.';
+      case 'terrain': return 'A bare world of mountains and dust.';
+      case 'blackhole': return 'A horizon you can fall through.';
+      case 'galaxy': return 'A hundred billion stars in a spiral.';
+      case 'nebula': return 'A cloud of ionised gas and newborn stars.';
+      case 'dimension': return 'A reality reached through a hole.';
+      default: return 'A place in the one continuous universe.';
+    }
+  }
+
+  /** Photomode: drop every UI layer so the view is a clean frame. */
+  private togglePhotoMode(): void {
+    this.photoMode = !this.photoMode;
+    document.body.dataset.photo = this.photoMode ? '1' : '0';
+    this.shell.toast(this.photoMode
+      ? 'Photomode on — press P to return'
+      : 'Photomode off');
+  }
+
+  /** Copies the universe seed so a friend can visit the same worlds. */
+  private copySeed(): void {
+    const seed = String(this.universe.opts.seed);
+    let copied = false;
+    try {
+      const nav = navigator as unknown as {
+        clipboard?: { writeText?: (t: string) => Promise<void> };
+      };
+      if (nav.clipboard?.writeText) {
+        void nav.clipboard.writeText(seed);
+        copied = true;
+      }
+    } catch { /* clipboard unavailable */ }
+    this.shell.toast((copied ? 'Seed copied' : 'Universe seed') + ': ' + seed);
   }
 
   /** Applies a quality preset to the engine and the post-processing stack. */
@@ -1505,9 +1646,16 @@ export class App {
       const worldOwnsHole = this.world?.ownsBlackHole === true;
       const prevRegion = this.universe.current?.id ?? null;
       this.universe.updatePlayer(eye);
-      if ((this.universe.current?.id ?? null) !== prevRegion) {
+      const cur = this.universe.current;
+      if ((cur?.id ?? null) !== prevRegion) {
         // arriving somewhere is just a position change, not a level load
-        this.shell.onRegionChanged?.(this.universe.current);
+        this.shell.onRegionChanged?.(cur);
+        // ...and it is also a discovery: every place enters the field guide.
+        if (cur) {
+          const glyph = cur.glyph ?? '🌌';
+          this.onDiscovery('world', 'region:' + cur.kind + ':' + cur.name,
+            glyph, cur.name, this.describePlace(cur));
+        }
       }
 
       // ---- falling through a horizon ----
@@ -1569,6 +1717,7 @@ export class App {
 
       if (bh && this.can('enterHoles')) {
         this.descentInto.begin(bh.id, bh.seed ?? 1, eye, bh.position);
+        this.onMilestone('first-horizon');
         const fall = this.descentInto.update(dt, eye);
 
         // the exit is the direction back toward where we came from
@@ -1641,6 +1790,12 @@ export class App {
         for (const t of this.regionTides.drainConsumed()) {
           this.universe.removeRegion(t.id);
           this.shell.toast(describeRegionTide(t));
+          // The hole has eaten: flare the disk, count it, log it.
+          this.feeding.feed();
+          this.onMilestone('first-feed');
+          if (this.challenges.add('feed-5')) this.challengeDone('feed-5');
+          this.onDiscovery('event', 'feed:' + t.id, '🌌', 'Feeding Time',
+            'A black hole swallowed ' + t.id + ' whole.');
         }
         // Announce a world beginning to come apart, but only once each.
         for (const t of torn) {
@@ -1659,8 +1814,58 @@ export class App {
       const here = this.universe.current;
       if (here && !this.paused) {
         this.surfaces.setActive(here.id);
-        this.surfaces.acquire(here.id, here.seed ?? 1);
+        const surf = this.surfaces.acquire(here.id, here.seed ?? 1);
         this.surfaces.step(here.id, dt);
+
+        // Native life enters the field guide the first time you meet it.
+        for (const sp of surf.profile.species) {
+          this.onDiscovery('species', 'sp:' + here.id + ':' + sp.name,
+            '🧬', sp.name, 'Native life of ' + here.name + '.');
+        }
+        // Each visited planet runs its own predator/prey ecology.
+        let eco = this.ecologies.get(here.id);
+        if (!eco) {
+          eco = new EcologySystem(0.6, 0.2);
+          this.ecologies.set(here.id, eco);
+        }
+        eco.step(dt);
+      }
+
+      // ---- the home civilization advances on its own clock ----
+      if (!this.paused) {
+        const stage = this.civilization.step(dt);
+        if (stage) {
+          const s = this.civilization.stage;
+          const label = stage === 'collapse' ? 'Collapse' : stage;
+          this.shell.toast(
+            '🏛 Civilization: ' + (stage === 'collapse'
+              ? 'the lights have gone out'
+              : 'reached the ' + label + ' age'));
+          if (stage === 'radio' || stage === 'contact') {
+            this.onMilestone('first-contact');
+            this.onDiscovery('event', 'civ:' + s, '📡', 'The Signal',
+              'A civilization has reached the radio age.');
+          }
+        }
+        // Stars end. The flash is bloom, the memory is the field guide.
+        const nv = this.nova.tick(dt);
+        if (!this.novaActive && nv.phase !== 'quiet') {
+          this.novaActive = true;
+          this.onMilestone('first-supernova');
+          if (this.challenges.add('nova-3')) this.challengeDone('nova-3');
+          this.onDiscovery('event', 'nova:' + this.nova.last, '💥', 'Supernova',
+            this.nova.last + ' ended its life as a flash of light.');
+          this.shell.toast('💥 A star has gone supernova');
+        } else if (nv.phase === 'quiet') {
+          this.novaActive = false;
+        }
+        // Feeding flares bloom as the hole swallows; a supernova flash does
+        // the same. One shared boost so the two never fight over the value.
+        const feed = this.feeding.tick(dt);
+        const boost = Math.max(nv.flash * 1.5, feed.flare * 1.2);
+        if (boost > 0.01) {
+          this.postfx.set('bloom', Math.min(2, 0.55 + boost));
+        }
       }
 
       // ---- gravitational lensing, wherever you happen to be ----
@@ -1743,6 +1948,11 @@ export class App {
       this.planetField.update(this.universe.regions, eye);
       // The canopy motes drift and reseed as you travel.
       this.spaceDust.update(eye);
+      // Comets orbit whichever star the player is nearest.
+      {
+        const star = this.universe.nearest(eye, 'star-system');
+        this.comets.update(dt, star ? star.position : Vector3.Zero(), eye);
+      }
 
       // Each background shell slides toward the eye by its own lock factor,
       // so near stars sweep past and far ones hold station.

@@ -133,11 +133,22 @@ export class FlightHUD {
     if (this.root) return;
     const el = document.createElement('div');
     el.className = 'fhud ' + hudTheme(this.theme).className;
+    const ticks = this.headingTicksHtml();
+    const bars = this.pitchBarsHtml();
     el.innerHTML = `
       <!-- Cockpit canopy: a glass layer blended over the scene, so the
            instruments read as projected on the inside of a ship's window
            rather than as flat stickers on the screen. -->
       <div class="fhud-canopy" aria-hidden="true"></div>
+
+      <!-- Flight director: pitch ladder, heading tape and horizon, the
+           centre-of-screen instruments a pilot actually flies by. -->
+      <div class="fhud-director" data-g="attitude" aria-hidden="true">
+        <div class="fh-hdg-tape"><div class="fh-hdg-inner" id="fhHdgTape">${ticks}</div></div>
+        <div class="fh-pitch"><div class="fh-pitch-inner" id="fhPitch">${bars}</div></div>
+        <div class="fh-horizon"></div>
+        <div class="fh-fd"></div>
+      </div>
 
       <div class="fhud-reticle" data-g="reticle">
         <svg viewBox="0 0 120 120" width="120" height="120">
@@ -247,6 +258,54 @@ export class FlightHUD {
     this.applyElements();
   }
 
+  /** The heading tape: a row of ticks ±180° either side of the nose. */
+  private headingTicksHtml(): string {
+    let out = '';
+    for (let deg = -180; deg <= 180; deg += 10) {
+      const abs = ((deg % 360) + 360) % 360;
+      const labeled = abs % 30 === 0;
+      const label = abs % 90 === 0
+        ? (abs === 0 ? 'N' : abs === 90 ? 'E' : abs === 180 ? 'S' : 'W')
+        : String(abs);
+      out += '<span class="fh-hdg-tick' + (labeled ? ' lbl' : '') +
+        '" style="left:calc(50% + ' + (deg * 3) + 'px)">' +
+        (labeled ? '<i>' + label + '</i>' : '') + '</span>';
+    }
+    return out;
+  }
+
+  /** The pitch ladder: one bar every 10° of pitch. */
+  private pitchBarsHtml(): string {
+    let out = '';
+    for (let deg = 80; deg >= -80; deg -= 10) {
+      out += '<div class="fh-ladder-line' + (deg === 0 ? ' zero' : '') +
+        '" style="top:calc(50% - ' + (deg * 4) + 'px)">' +
+        '<span>' + Math.abs(deg) + '</span></div>';
+    }
+    return out;
+  }
+
+  /** Drives the pitch ladder and heading tape, only on a real change. */
+  private setDirector(pitch: number, heading: number): void {
+    // Pitch ladder: one px per degree of pitch, so the bar matching your
+    // current pitch sits exactly on the horizon line.
+    const pd = Math.round((pitch * 180) / Math.PI * 4) / 4;
+    const pV = (pd * 4).toFixed(1);
+    if (this.cache.get('pitch') !== pV) {
+      this.cache.set('pitch', pV);
+      const el = document.getElementById('fhPitch');
+      if (el) el.style.transform = 'translateY(' + pV + 'px)';
+    }
+    // Heading tape: 3px per degree, translated so the nose stays centred.
+    const hd = headingDegrees(heading);
+    const hV = (-hd * 3).toFixed(1);
+    if (this.cache.get('hdg') !== hV) {
+      this.cache.set('hdg', hV);
+      const el = document.getElementById('fhHdgTape');
+      if (el) el.style.transform = 'translateX(' + hV + 'px)';
+    }
+  }
+
   /**
    * Called when the player clicks a gear button.
    *
@@ -332,6 +391,7 @@ export class FlightHUD {
       this.put('fhCmp', compassPoint(d.heading));
       const p = Math.round((d.pitch * 180) / Math.PI);
       this.put('fhPit', (p >= 0 ? '+' : '') + p + '°');
+      this.setDirector(d.pitch, d.heading);
     }
     if (e.velocity) {
       this.put('fhSpd', formatSpeed(d.speed));

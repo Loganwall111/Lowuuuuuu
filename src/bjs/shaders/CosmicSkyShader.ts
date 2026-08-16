@@ -308,6 +308,36 @@ vec3 skyDeepField(vec3 d, float t){
   return col;
 }
 
+/**
+ * Zodiacal light and its counter-glow, the gegenschein.
+ *
+ * Interplanetary dust scattered around the home star catches the sunlight,
+ * so a real night sky has a faint cone of light along the ecliptic and a
+ * soft patch exactly opposite the sun. The home sun's direction is stable
+ * in ordinary space, so the band is drawn against a fixed ecliptic. Kept
+ * deliberately faint - it is haze, not structure - so it warms the void
+ * without ever washing out the stars above it.
+ */
+vec3 skyZodiacal(vec3 d){
+  // The ecliptic pole (home-system up) and the sunward direction.
+  vec3 pole = normalize(vec3(0.28, 1.0, 0.18));
+  float above = dot(d, pole);
+  // How far this ray is from the ecliptic plane.
+  float lat = abs(above);
+  float band = exp(-lat * lat * 38.0);
+  // The cone is brightest toward the sun and falls off around the sky.
+  vec3 sunDir = normalize(vec3(0.85, 0.08, 0.52));
+  float toward = max(dot(d, sunDir), 0.0);
+  vec3 zodiac = vec3(1.0, 0.86, 0.64) * band * (0.028 + toward * 0.10);
+
+  // Gegenschein: a soft glow exactly opposite the sun.
+  float opp = max(dot(d, -sunDir), 0.0);
+  float gegen = pow(opp, 14.0);
+  zodiac += vec3(0.90, 0.82, 0.66) * gegen * 0.12;
+
+  return zodiac;
+}
+
 vec3 cosmicSky(vec3 dir, float medium, float symmetry, vec3 tint,
                float strangeness, float t, float zoom){
   vec3 d = normalize(dir);
@@ -325,6 +355,8 @@ vec3 cosmicSky(vec3 dir, float medium, float symmetry, vec3 tint,
     // which is unresolved distant galaxies rather than our own.
     col = skyStars(d, 0.16, 42.0, t) * 1.5;
     col += skyDeepField(d, t) * 0.6;
+    // Interplanetary dust: a faint warm cone along the ecliptic.
+    col += skyZodiacal(d) * 0.5;
   } else if (medium < 1.5){
     // Technology: a cold structural grid over deep field.
     col = skyStars(d, 0.08, 38.0, t) * 0.7;
