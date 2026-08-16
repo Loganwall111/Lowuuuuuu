@@ -227,6 +227,7 @@ export class FlightHUD {
       <div class="fhud-descent" id="fhDescent">
         <div class="fh-desc-phase" id="fhDescPhase">FALLING</div>
         <div class="fh-desc-sub" id="fhDescSub"></div>
+        <div class="fh-desc-warn" id="fhDescWarn"></div>
         <div class="fh-desc-bar"><i id="fhDescBar" style="width:0%"></i></div>
         <div class="fh-desc-exit" id="fhDescExit"></div>
       </div>
@@ -538,6 +539,12 @@ export class FlightHUD {
       arrived: 'ARRIVING'
     };
     this.put('fhDescPhase', PHASE[state.phase] ?? 'FALLING');
+
+    // The neon horizon warning, printed the whole time you are inside.
+    this.put('fhDescWarn',
+      state.phase !== 'outside'
+        ? 'WARNING: HORIZON CROSSED. EVENT HORIZON BOUNDS STABLE. MULTIVERSE ISOLATION IMPACT IMMINENT.'
+        : '');
 
     const sub = state.phase === 'singularity'
       ? 'hold your line to pass through it'

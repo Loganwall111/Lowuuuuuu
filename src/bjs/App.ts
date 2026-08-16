@@ -44,6 +44,10 @@ import { SpaceDust } from './systems/SpaceDust';
 import { CometRenderer } from './systems/CometSystem';
 import { WormholeField } from './systems/WormholeField';
 import { AlienTraffic } from './systems/AlienTraffic';
+import { resolveSearch } from './systems/ObjectSearch';
+import {
+  shouldStrand, strandedDepth, strandedWormholeSeed, HORIZON_WARNING
+} from './systems/VoidNavigation';
 import {
   DiscoveryLog, Milestones, Challenges, CHALLENGES, MILESTONES, type CodexKind
 } from './systems/Progression';
@@ -252,6 +256,14 @@ export class App {
   private photoMode = false;
   /** True while the walker stands under a habitable world's sky. */
   private walkSky = false;
+  /** Set when a crossing strands the player in an uncharted universe. */
+  private stranded = false;
+  /** The seed of the stranding, so the way home is deterministic. */
+  private strandedSeed = 0;
+  /** True while the Left-Alt gesture is held (cursor reappears). */
+  private altHeld = false;
+  /** True once the horizon warning has been shown for the current fall. */
+  private horizonWarned = false;
   /** Rolling buffer of the player's motion, for the rewind key. */
   rewind = new TimeRewind();
   /** The gas-giant dive in progress, if any. */
@@ -433,6 +445,7 @@ export class App {
       },
 
       onWarpTo: (id) => this.warpTo(id),
+      onSearch: (q) => this.searchAndWarp(q),
 
       onGrab: () => {
         // Grabbing a planet and moving it is a sandbox act, not an
@@ -668,6 +681,12 @@ export class App {
       if (e.key === ' ' && this.vehicle.mode !== 'orbit') e.preventDefault();
       // Pointer lock: look around without holding the button down.
       if (e.key.toLowerCase() === 'c') this.mouse.toggleLock();
+      // The Left-Alt gesture: hold it to free the cursor (for sliders),
+      // release to snap back into locked, centred look mode.
+      if (e.key.toLowerCase() === 'alt' && !this.altHeld) {
+        this.altHeld = true;
+        this.mouse.exitLock();
+      }
       // Snap the spyglass back to normal.
       if (e.key.toLowerCase() === 'z') this.mouse.resetZoom();
       // L lands on the nearest planet / lifts off again. Guarded against key
@@ -692,8 +711,21 @@ export class App {
       // anything to spool.
       if (this.gearbox.handleKey(e.key)) this.onGearShift();
     });
-    window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
-    window.addEventListener('blur', () => this.keys.clear());
+    window.addEventListener('keyup', (e) => {
+      this.keys.delete(e.key.toLowerCase());
+      // Releasing Alt snaps the cursor back into hidden, centred look mode.
+      if (e.key.toLowerCase() === 'alt') {
+        this.altHeld = false;
+        if (this.vehicle.mode === 'freefly' || this.vehicle.mode === 'fly' ||
+            this.vehicle.mode === 'walk') {
+          this.mouse.requestLock();
+        }
+      }
+    });
+    window.addEventListener('blur', () => {
+      this.keys.clear();
+      this.altHeld = false;
+    });
 
     this.shell.progress(100, 'ready');
     setTimeout(() => this.shell.hideBoot(), 260);
@@ -772,7 +804,12 @@ export class App {
     this.introUI?.dispose();
     this.introUI = null;
     if (this.currentId !== 'planetary') this.loadWorld('planetary');
-    setTimeout(() => this.setControlMode('freefly'), 300);
+    setTimeout(() => {
+      this.setControlMode('freefly');
+      // Open the universe at the heart of the Milky Way, facing the central
+      // supermassive black hole - the load-in vista.
+      this.spawnAtGalacticCore();
+    }, 300);
     this.flightHud.setVisible(true);
     this.shell.onMenuClosed();
     this.shell.toast('Welcome to the sandbox. There is no objective.');
@@ -1659,6 +1696,57 @@ export class App {
     this.shell?.toast(tier === 0 ? 'Graphics restored' : 'Performance mode');
   }
 
+  /**
+   * SpaceEngine-style object search. Resolves "black hole", "earth", "sun"
+   * or a region name and warps the player beside it, dropping to the
+   * impulse gear so they never overshoot on arrival.
+   */
+  private searchAndWarp(query: string): void {
+    const regions = this.universe.regions.map((r) => ({
+      id: r.id, name: r.name, kind: r.kind,
+      x: r.position.x, y: r.position.y, z: r.position.z
+    }));
+    const target = resolveSearch(query, regions, this.vehicle.position);
+    if (!target) {
+      this.shell.toast('No object matches "' + query + '"');
+      return;
+    }
+    // Always drop to impulse before the jump, so arrival is a stop, not a
+    // fly-through at cruise.
+    this.gearbox.select('impulse');
+    if (target.kind === 'region') {
+      this.warpTo(target.id);
+    } else {
+      // The home system: teleport to a standoff and face the star.
+      this.vehicle.teleport(new Vector3(0, 0, 240));
+      this.vehicle.faceTowards(new Vector3(0, 0, 0));
+      this.camera.position.copyFrom(this.vehicle.position);
+      this.camera.setTarget(new Vector3(0, 0, 0));
+      this.universe.updatePlayer(this.vehicle.position);
+      void this.loadWorld('planetary');
+      this.shell.toast('Arrived at ' + target.name);
+    }
+    this.shell.refreshAll?.();
+  }
+
+  /**
+   * Spawns the player at the heart of the Milky Way, looking straight at
+   * the central supermassive black hole - the "load in and be breathless"
+   * opening. Called once, when the intro hands over to the universe proper.
+   */
+  private spawnAtGalacticCore(): void {
+    this.vehicle.teleport(new Vector3(0, 1500, 5000));
+    // Face whichever hole the universe seeded as the galactic core; fall
+    // back to looking down the arm if none is present yet.
+    const core = this.universe.nearest(this.vehicle.position, 'blackhole');
+    const look = core ? core.position : new Vector3(-26000, 0, 0);
+    this.vehicle.faceTowards(look);
+    this.camera.position.copyFrom(this.vehicle.position);
+    this.camera.setTarget(look.clone());
+    this.universe.updatePlayer(this.vehicle.position);
+    this.gearbox.select('impulse');
+  }
+
   /** Copies the universe seed so a friend can visit the same worlds. */
   private copySeed(): void {
     const seed = String(this.universe.opts.seed);
@@ -2027,14 +2115,38 @@ export class App {
 
         this.flightHud.setDescent?.(this.descentInto.interior, fall.state);
 
+        // ---- the neon horizon warning, once you are inside ----
+        if (fall.state.phase !== 'outside' && !this.horizonWarned) {
+          this.horizonWarned = true;
+          this.flightHud.notify(HORIZON_WARNING);
+        }
+
         // Reaching the bottom is the only way out, and where you come out
         // depends on the hole and on whether you threaded its singularity.
         if (fall.arrived) {
           const d = fall.arrived;
           this.descentInto.end();
+          this.horizonWarned = false;
           this.universe.leaveHorizon?.(bh.id);
-          this.shell.toast(d.blurb);
-          void this.enterRealm(d);
+
+          // ---- real-time wormhole risk ----
+          // No timers: a deterministic roll over the hole's seed and the
+          // warp factor at the moment of crossing decides whether the ship
+          // strands in an uncharted universe and must chart its way home
+          // through the procedural wormholes that thread that place.
+          const warpNow = this.gearbox.clampWarp(this.warpDrive.state().multiplier);
+          if (shouldStrand(bh.seed ?? 1, warpNow)) {
+            this.stranded = true;
+            this.strandedSeed = strandedWormholeSeed(bh.seed ?? 1);
+            this.shell.toast('You are stranded in an uncharted universe. ' +
+              'Find a wormhole and chart a way home.');
+            void this.enterDimension(
+              this.strandedSeed, strandedDepth(bh.seed ?? 1));
+          } else {
+            this.stranded = false;
+            this.shell.toast(d.blurb);
+            void this.enterRealm(d);
+          }
         }
       } else {
         if (this.descentInto.active) this.descentInto.end();
@@ -2453,10 +2565,24 @@ export class App {
               'Two points in space, sewn together.');
             this.shell.toast('Through the wormhole');
           } else if (trip.kind === 'dimension') {
-            this.onDiscovery('event', 'interstellar', '✨', 'The Gate',
-              'A wormhole opened onto somewhere that is not space.');
-            this.shell.toast('The gate gives way');
-            void this.enterDimension(trip.seed ?? 1, trip.depth ?? 0);
+            // If the player is stranded, a wormhole is the way HOME, not a
+            // door deeper into the multiverse.
+            if (this.stranded) {
+              this.stranded = false;
+              this.onDiscovery('event', 'escape', '🌍', 'Charting Home',
+                'You threaded the wormholes and found local space again.');
+              this.shell.toast('You charted a way home.');
+              this.vehicle.teleport(new Vector3(0, 0, 240));
+              this.vehicle.faceTowards(Vector3.Zero());
+              this.camera.position.copyFrom(this.vehicle.position);
+              this.camera.setTarget(Vector3.Zero());
+              void this.loadWorld('planetary');
+            } else {
+              this.onDiscovery('event', 'interstellar', '✨', 'The Gate',
+                'A wormhole opened onto somewhere that is not space.');
+              this.shell.toast('The gate gives way');
+              void this.enterDimension(trip.seed ?? 1, trip.depth ?? 0);
+            }
           }
         }
       }

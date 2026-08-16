@@ -89,6 +89,8 @@ interface ShellHooks {
     seed?: number;
   };
   onWarpTo: (id: string) => void;
+  /** SpaceEngine-style object search: type a name, warp beside it. */
+  onSearch: (query: string) => void;
   onGrab: () => void;
   onRelease: (thrown: boolean) => void;
   onSpawnRegion: (kind: string) => void;
@@ -875,6 +877,30 @@ export class Shell {
 
   private renderNavigator(b: HTMLElement): void {
     const u = this.hooks.getUniverse();
+
+    // ---- the object search, SpaceEngine-style ----
+    const search = document.createElement('div');
+    search.className = 'grp';
+    search.innerHTML = '<div class="grp-h">Object Search</div>';
+    const row = document.createElement('div');
+    row.className = 'objsearch';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'objSearch';
+    input.placeholder = 'BLACK HOLE · EARTH · SUN';
+    input.spellcheck = false;
+    const go = document.createElement('button');
+    go.className = 'btn';
+    go.textContent = '⌕';
+    go.title = 'Search and warp';
+    const run = () => this.hooks.onSearch(input.value);
+    go.onclick = run;
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') run();
+    });
+    row.append(input, go);
+    search.appendChild(row);
+    b.appendChild(search);
 
     // ---- where you are ----
     const here = document.createElement('div');

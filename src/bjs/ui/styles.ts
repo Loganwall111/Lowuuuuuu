@@ -59,6 +59,15 @@ body[data-photo="1"] .hud,
 body[data-photo="1"] .fhud,
 body[data-photo="1"] .sonar-cursor{ display:none !important; }
 .wm-win.wm-pinned{ box-shadow:0 0 0 1px var(--acc), var(--shadow); }
+.objsearch{display:flex;gap:6px;align-items:center;}
+.objsearch input{flex:1;min-width:0;padding:8px 10px;font-size:12px;color:var(--txt);
+  background:rgba(10,16,28,.7);border:1px solid color-mix(in srgb,var(--acc) 24%,transparent);
+  border-radius:6px;font-family:inherit;letter-spacing:.06em;text-transform:uppercase;}
+.objsearch input::placeholder{color:color-mix(in srgb,var(--acc) 45%,transparent);}
+.objsearch input:focus{outline:none;border-color:var(--acc);
+  box-shadow:0 0 12px color-mix(in srgb,var(--acc) 35%,transparent);}
+.objsearch .btn{flex:0 0 auto;min-width:34px;padding:8px;}
+
 .wm-b.on{ background:var(--acc); color:#04121f; }
 @keyframes wmIn{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
 .wm-win.wm-dragging{transition:none;box-shadow:0 26px 70px rgba(0,0,0,.7);}
@@ -431,6 +440,11 @@ body[data-photo="1"] .sonar-cursor{ display:none !important; }
 .fh-desc-phase{font-size:12px;letter-spacing:3px;text-transform:uppercase;
   color:#ffd9a8;text-shadow:0 0 18px rgba(255,170,80,.55);font-weight:700;}
 .fh-desc-sub{font-size:10px;letter-spacing:1.2px;color:var(--dim);margin-top:3px;}
+/* The neon horizon warning, telemetry-style, while inside a hole. */
+.fh-desc-warn{font-size:8.5px;letter-spacing:.14em;color:var(--acc);
+  text-shadow:0 0 10px color-mix(in srgb,var(--acc) 60%,transparent);
+  margin-top:5px;text-transform:uppercase;}
+.fh-desc-warn:empty{display:none;}
 .fh-desc-bar{height:4px;margin-top:7px;background:rgba(255,190,120,.14);
   overflow:hidden;}
 .fh-desc-bar i{display:block;height:100%;
