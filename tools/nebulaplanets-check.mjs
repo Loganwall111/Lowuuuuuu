@@ -220,8 +220,11 @@ console.log('\n--- 2b. every OTHER galaxy has coloured gas inside it too ---');
   ok('there are many galaxies to fill', cells.length > 100, cells.length + ' galaxies');
 
   const tints = new Set(cells.map((c) => c.tint.join(',')));
-  ok('the star clusters really do only carry a handful of tints',
-    tints.size <= 4, tints.size + ' distinct tints — this is why gas was needed');
+  // A handful of tints used to be the whole problem; the grid is now a full
+  // spectrum, so every galaxy carries its own colour before the gas even
+  // adds its emission species on top.
+  ok('every other galaxy carries its own colour now',
+    tints.size >= 5 && tints.size <= 9, tints.size + ' distinct tints');
 
   ok('a per-galaxy gas budget is defined', gfield.FAR_GAS_PER > 0,
     String(gfield.FAR_GAS_PER));

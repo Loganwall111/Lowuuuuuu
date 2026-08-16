@@ -46,8 +46,9 @@ export const FINAL_COORDINATE =
 export const FINAL_DIGITS = FINAL_COORDINATE.length;
 
 export type VerseId =
-  | 'universe' | 'metaverse' | 'codeverse' | 'squareverse'
-  | 'octagonverse' | 'tripleverse' | 'edge' | 'mandelbrot' | 'cubefield';
+  | 'universe' | 'metaverse' | 'prismverse' | 'codeverse' | 'squareverse'
+  | 'clockverse' | 'octagonverse' | 'tripleverse' | 'edge'
+  | 'mandelbrot' | 'cubefield';
 
 export interface Verse {
   id: VerseId;
@@ -87,43 +88,55 @@ export const VERSES: Verse[] = [
   {
     id: 'metaverse', name: 'The Metaverse',
     tagline: 'Technology all the way down. The machines do not look up.',
-    depth: 24, tint: [0.05, 0.24, 0.26], medium: 'technology',
+    depth: 36, tint: [0.05, 0.24, 0.26], medium: 'technology',
     density: 1.6, symmetry: 4, strangeness: 0.2
+  },
+  {
+    id: 'prismverse', name: 'The Prismverse',
+    tagline: 'Five-fold light, split until the sky is a spectrum of edges.',
+    depth: 66, tint: [0.16, 0.05, 0.32], medium: 'geometry',
+    density: 1.4, symmetry: 5, strangeness: 0.3
   },
   {
     id: 'codeverse', name: 'The Codeverse',
     tagline: 'It was all running on something. This is the something.',
-    depth: 48, tint: [0.04, 0.20, 0.08], medium: 'code',
+    depth: 90, tint: [0.04, 0.20, 0.08], medium: 'code',
     density: 2.2, symmetry: 0, strangeness: 0.35
   },
   {
     id: 'squareverse', name: 'The Squareverse',
     tagline: 'Everything here has four sides. Everything.',
-    depth: 96, tint: [0.24, 0.14, 0.05], medium: 'geometry',
+    depth: 128, tint: [0.24, 0.14, 0.05], medium: 'geometry',
     density: 1.3, symmetry: 4, strangeness: 0.5
+  },
+  {
+    id: 'clockverse', name: 'The Clockverse',
+    tagline: 'Twelve directions, all ticking. It is always precisely now.',
+    depth: 168, tint: [0.05, 0.30, 0.22], medium: 'technology',
+    density: 1.7, symmetry: 12, strangeness: 0.55
   },
   {
     id: 'octagonverse', name: 'The Octagonverse',
     tagline: 'Eight-fold, endlessly. It hums at a frequency you can feel.',
-    depth: 160, tint: [0.20, 0.06, 0.28], medium: 'geometry',
+    depth: 208, tint: [0.20, 0.06, 0.28], medium: 'geometry',
     density: 1.5, symmetry: 8, strangeness: 0.62
   },
   {
     id: 'tripleverse', name: 'The Tripleverse',
     tagline: 'Three of everything, including you, briefly.',
-    depth: 240, tint: [0.28, 0.18, 0.04], medium: 'geometry',
+    depth: 268, tint: [0.28, 0.18, 0.04], medium: 'geometry',
     density: 1.8, symmetry: 3, strangeness: 0.74
   },
   {
     id: 'edge', name: 'The Edge of Reality',
     tagline: 'The entire universe, seen side-on. It is a single string.',
-    depth: 320, tint: [0.30, 0.30, 0.34], medium: 'string',
+    depth: 330, tint: [0.30, 0.30, 0.34], medium: 'string',
     density: 1, symmetry: 0, strangeness: 0.85
   },
   {
     id: 'mandelbrot', name: 'The Mandelbrot Set',
     tagline: 'A fractal you can fly into. It has no bottom.',
-    depth: 380, tint: [0.10, 0.04, 0.26], medium: 'fractal',
+    depth: 386, tint: [0.10, 0.04, 0.26], medium: 'fractal',
     density: 2.6, symmetry: 0, strangeness: 0.93
   },
   {

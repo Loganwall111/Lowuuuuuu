@@ -34,6 +34,7 @@ import { ImpactorSystem, type ImpactTarget } from '../systems/ImpactorSystem';
 import { THROWABLES, throwableById } from '../systems/ThrowableSystem';
 import { SettlerSystem } from '../systems/SettlerSystem';
 import { AsteroidBeltSystem } from '../systems/AsteroidBelts';
+import { OrbitTraffic } from '../systems/OrbitTraffic';
 import type { SolidSphere } from '../systems/PlanetLanding';
 
 /* --------------------------- planet shader --------------------------- */
@@ -508,6 +509,8 @@ export class PlanetaryWorld implements World {
   private light!: PointLight;
   private stars!: Mesh;
   private belts = new AsteroidBeltSystem();
+  /** Earth's orbital neighbourhood: the ISS, satellites, Hubble, Webb, Apollo. */
+  private orbitTraffic = new OrbitTraffic();
   private t = 0;
 
   private p = { timeScale: 1.0, detail: 1.0, clouds: 1.0, lights: 1.0, exposure: 1.0, orbitSpeed: 1.0 };
@@ -523,6 +526,8 @@ export class PlanetaryWorld implements World {
     // for the lifetime of the world rather than spun up on first use.
     this.settlers.attach(scene);
     this.belts.attach(scene);
+    this.orbitTraffic.attach(scene);
+    this.orbitTraffic.build();
 
     this.impactor.attach(scene, (e) => {
       this.lastImpactNote =
@@ -919,6 +924,12 @@ export class PlanetaryWorld implements World {
       }
     }
     this.settlers.update(dt);
+    // Earth's orbital neighbourhood - the ISS, the satellites, Apollo - rides
+    // along with the inhabited world as it circles the star.
+    if (home) {
+      this.orbitTraffic.update(dt * Math.max(0.05, this.p.timeScale),
+        home.mesh.getAbsolutePosition());
+    }
   }
 
   /** The planets, described the way the impact maths needs them. */
@@ -969,6 +980,8 @@ export class PlanetaryWorld implements World {
         });
       }
     }
+    // The Apollo command module is a place you can land on and walk around.
+    for (const s of this.orbitTraffic.solids()) out.push(s);
     return out;
   }
 
@@ -1050,6 +1063,7 @@ export class PlanetaryWorld implements World {
     this.impactor.dispose();
     this.settlers.dispose();
     this.belts.detach();
+    this.orbitTraffic.dispose();
     this.bodies.forEach((b) => { b.root.dispose(false, true); b.mat.dispose(); });
     this.bodies = [];
     this.star?.dispose();

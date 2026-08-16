@@ -132,16 +132,34 @@ export function galaxyInCell(ix: number, iy: number, iz: number): GalaxyCell {
     ? 'anomaly'
     : roll < ANOMALY_CHANCE + ELLIPTICAL_CHANCE ? 'elliptical' : 'photoreal';
 
-  // Colour: most galaxies are warm white to gold, some blue starbursts.
+  // Colour: a wide, seeded spectrum. Most galaxies are warm white to gold,
+  // but the rest run the whole band - blue starbursts, teal, magenta, green
+  // and violet - so no two galaxies in the sky read as the same object.
+  // The Milky Way keeps its own photoreal palette; this is for every OTHER
+  // galaxy, whose tint leans its gas colour one way or another.
   const cool = chan(h, 6);
+  const hue = chan(h, 10);
+  // Each tint is a LEAN, not a paint: saturated enough to read as a coloured
+  // galaxy, soft enough that the emission gas still carries its own species
+  // (teal, crimson, orange) on top rather than being washed out.
   const tint: [number, number, number] = klass === 'anomaly'
     // The neon variety announces itself from a distance.
     ? [1.0, 0.42, 0.86]
-    : cool > 0.72
-      ? [0.62, 0.74, 1.0]
-      : cool < 0.16
-        ? [1.0, 0.62, 0.42]
-        : [1.0, 0.90, 0.76];
+    : hue < 0.14
+      ? [1.0, 0.90, 0.76]           // warm white, the classic disc
+      : hue < 0.28
+        ? [0.72, 0.80, 1.0]         // blue starburst
+        : hue < 0.42
+          ? [1.0, 0.72, 0.55]       // orange
+          : hue < 0.56
+            ? [0.62, 0.88, 0.82]    // teal
+            : hue < 0.70
+              ? [0.86, 0.66, 0.86]  // magenta
+              : hue < 0.84
+                ? [0.78, 0.88, 0.68]// green
+                : cool > 0.5
+                  ? [0.72, 0.74, 1.0]   // violet-blue
+                  : [1.0, 0.82, 0.62];  // deep gold
   return {
     ix, iy, iz,
     x: (ix + jx) * CELL_SIZE,

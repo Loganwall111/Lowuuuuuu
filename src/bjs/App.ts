@@ -42,6 +42,8 @@ import { StarFieldRenderer } from './systems/StarFieldRenderer';
 import { PlanetField } from './systems/PlanetField';
 import { SpaceDust } from './systems/SpaceDust';
 import { CometRenderer } from './systems/CometSystem';
+import { WormholeField } from './systems/WormholeField';
+import { AlienTraffic } from './systems/AlienTraffic';
 import {
   DiscoveryLog, Milestones, Challenges, CHALLENGES, MILESTONES, type CodexKind
 } from './systems/Progression';
@@ -220,6 +222,10 @@ export class App {
   spaceDust = new SpaceDust();
   /** Comets on real elliptical orbits around the nearest star. */
   comets = new CometRenderer();
+  /** Traversable wormholes threading the universe, placed by the seed. */
+  wormholes = new WormholeField();
+  /** Very rare, very large alien ships that pass through on their own. */
+  alienTraffic = new AlienTraffic();
 
   /* ---------------- purpose: discovery, milestones, challenges ------------- */
   /** The field guide: everything the player has discovered, logged once. */
@@ -410,7 +416,7 @@ export class App {
           ?? (cur?.kind === 'blackhole' ? cur : null);
         const hereEco = cur ? this.ecologies.get(cur.id) : null;
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...this.planetField.stats(), ...this.spaceDust.stats(), ...this.comets.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}), ...this.discoveries.stats(), ...this.milestones.stats(), ...this.challenges.stats(), ...this.civilization.stats(), ...this.nova.stats(), ...this.feeding.stats(), ...(hereEco?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...this.planetField.stats(), ...this.spaceDust.stats(), ...this.comets.stats(), ...this.wormholes.stats(), ...this.alienTraffic.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}), ...this.discoveries.stats(), ...this.milestones.stats(), ...this.challenges.stats(), ...this.civilization.stats(), ...this.nova.stats(), ...this.feeding.stats(), ...(hereEco?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -1060,6 +1066,16 @@ export class App {
       this.comets.dispose();
       this.comets.attach(this.scene);
       void this.comets.build();
+
+      // Wormholes and the rare alien traffic are universe-wide too, so they
+      // are rebuilt against the fresh scene exactly like the sky.
+      this.wormholes.dispose();
+      this.wormholes.attach(this.scene);
+      this.wormholes.build(this.universe.opts.seed);
+
+      this.alienTraffic.dispose();
+      this.alienTraffic.attach(this.scene, this.universe.opts.seed);
+      this.alienTraffic.build();
 
       // loadWorld purges every mesh, so the shells must be rebuilt with it.
       this.layeredSky.dispose();
@@ -2321,6 +2337,10 @@ export class App {
         this.zeroVec.setAll(0);
         this.comets.update(dt, star ? star.position : this.zeroVec, eye);
       }
+      // Wormholes iris open and their gate frames rotate; rare alien ships
+      // cruise their arc.
+      this.wormholes.update(dt, eye);
+      this.alienTraffic.update(dt, eye);
 
       // Each background shell slides toward the eye by its own lock factor,
       // so near stars sweep past and far ones hold station.
@@ -2407,6 +2427,30 @@ export class App {
         if (trip) {
           this.camera.position.copyFrom(this.vehicle.position);
           this.shell.toast('Through the portal');
+        }
+      }
+
+      // ---- ambient wormholes ----
+      // Fly into a bridge and you emerge light-years away, speed preserved;
+      // an Interstellar gate hands you into a generated dimension.
+      if (this.vehicle.mode !== 'orbit') {
+        const trip = this.wormholes.tryTransit({
+          position: this.vehicle.position,
+          velocity: this.vehicle.velocity,
+          radius: 1.2
+        });
+        if (trip) {
+          if (trip.kind === 'moved') {
+            this.camera.position.copyFrom(this.vehicle.position);
+            this.onDiscovery('event', 'wormhole', '🌀', 'Wormhole',
+              'Two points in space, sewn together.');
+            this.shell.toast('Through the wormhole');
+          } else if (trip.kind === 'dimension') {
+            this.onDiscovery('event', 'interstellar', '✨', 'The Gate',
+              'A wormhole opened onto somewhere that is not space.');
+            this.shell.toast('The gate gives way');
+            void this.enterDimension(trip.seed ?? 1, trip.depth ?? 0);
+          }
         }
       }
 
