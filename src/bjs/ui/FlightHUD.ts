@@ -223,6 +223,13 @@ export class FlightHUD {
         }).join('')}</div>
       </div>
       <div class="fhud-notice" id="fhNotice"></div>
+      <div class="fhud-anomaly" id="fhAnomaly">
+        <span class="fh-qa-k">DEEP FIELD ANOMALY</span>
+        <b id="fhQaClass">QUANTUM SIGNATURE</b>
+        <span id="fhQaId">QA-00000000</span>
+        <div class="fh-qa-wave"><i id="fhQaSignal"></i></div>
+        <small id="fhQaRange">—</small>
+      </div>
 
       <div class="fhud-descent" id="fhDescent">
         <div class="fh-desc-phase" id="fhDescPhase">FALLING</div>
@@ -383,6 +390,27 @@ export class FlightHUD {
 
   private noticeTimer: number | null = null;
 
+  /** Drives the dedicated anomaly sensor projected into the upper visor. */
+  setAnomaly(q: {
+    detected: boolean; visual: boolean; id: string; klass: string;
+    distance: number; signal: number; phase: number;
+  } | null): void {
+    const panel = this.root?.querySelector<HTMLElement>('#fhAnomaly');
+    if (!panel) return;
+    const on = !!q?.detected;
+    panel.classList.toggle('on', on);
+    panel.classList.toggle('visual', !!q?.visual);
+    if (!q || !on) return;
+    this.put('fhQaClass', q.klass);
+    this.put('fhQaId', q.id);
+    this.put('fhQaRange', formatDistance(q.distance) + ' // SIGNAL ' + Math.round(q.signal * 100) + '%');
+    const bar = this.root.querySelector<HTMLElement>('#fhQaSignal');
+    if (bar) {
+      bar.style.width = Math.max(2, q.signal * 100).toFixed(1) + '%';
+      bar.style.opacity = (.55 + q.phase * .45).toFixed(2);
+    }
+  }
+
   /** Writes only when the value actually changed. */
   private put(id: string, text: string): void {
     if (this.cache.get(id) === text) return;
@@ -524,9 +552,11 @@ export class FlightHUD {
     if (!panel) return;
     if (!plan || !state || state.phase === 'outside') {
       panel.classList.remove('on', 'singular');
+      this.root.classList.remove('descending');
       return;
     }
     panel.classList.add('on');
+    this.root.classList.add('descending');
     panel.classList.toggle('singular',
       state.phase === 'singularity' || state.phase === 'darkness');
 

@@ -95,6 +95,9 @@ export class SpaceAudio {
   private staticFilter: BiquadFilterNode | null = null;
   private staticGain: GainNode | null = null;
 
+  private anomalyOsc: OscillatorNode | null = null;
+  private anomalyGain: GainNode | null = null;
+
   settings: AudioSettings;
   started = false;
   /** Set when the browser refused to give us audio, so the UI can say so. */
@@ -193,6 +196,18 @@ export class SpaceAudio {
       subOsc.start();
       this.subOsc = subOsc; this.subGain = subGain;
 
+      // ---- quantum anomaly heterodyne ----
+      // A restrained triangle tone represents suit sensors translating an
+      // impossible spacetime frequency into the audible range.
+      const anomalyOsc = ctx.createOscillator();
+      anomalyOsc.type = 'triangle'; anomalyOsc.frequency.value = 118;
+      const anomalyGain = ctx.createGain(); anomalyGain.gain.value = 0;
+      const anomalyBp = ctx.createBiquadFilter();
+      anomalyBp.type = 'bandpass'; anomalyBp.frequency.value = 540; anomalyBp.Q.value = 9;
+      anomalyOsc.connect(anomalyBp); anomalyBp.connect(anomalyGain); anomalyGain.connect(master);
+      anomalyOsc.start();
+      this.anomalyOsc = anomalyOsc; this.anomalyGain = anomalyGain;
+
       this.started = true;
       return true;
     } catch {
@@ -229,6 +244,8 @@ export class SpaceAudio {
     singularityDistance?: number;
     /** 0-1, how crowded the local star field is. */
     starDensity?: number;
+    /** 0-1, suit sensor strength of a macro-sector quantum anomaly. */
+    anomaly?: number;
   }): void {
     if (!this.started || !this.ctx) return;
     const s = this.settings;
@@ -253,6 +270,11 @@ export class SpaceAudio {
     // more of the low end is filtered away, leaving only the fine hiss.
     this.ramp(this.staticFilter?.frequency, 2200 + dens * 5200, 0.7);
 
+    // anomaly heterodyne: quiet at acquisition, harmonically urgent close in
+    const anomaly = Math.max(0, Math.min(1, state.anomaly ?? 0));
+    this.ramp(this.anomalyGain?.gain, anomaly * anomaly * .065 * gate, .45);
+    this.ramp(this.anomalyOsc?.frequency, 118 + anomaly * 260, .6);
+
     // singularity
     const g = singularityGain(state.singularityDistance ?? Infinity, s);
     this.ramp(this.subGain?.gain, s.singularity * 0.3 * g * gate, 0.35);
@@ -274,7 +296,7 @@ export class SpaceAudio {
   dispose(): void {
     try {
       this.humOsc?.stop(); this.warpSrc?.stop();
-      this.subOsc?.stop(); this.staticSrc?.stop();
+      this.subOsc?.stop(); this.staticSrc?.stop(); this.anomalyOsc?.stop();
     } catch { /* already stopped */ }
     try { void this.ctx?.close?.(); } catch { /* already closed */ }
     this.ctx = null; this.started = false;

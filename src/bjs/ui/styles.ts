@@ -666,6 +666,30 @@ body.sonar-on textarea{cursor:text !important;}
   opacity:0;transition:opacity .16s ease,transform .16s ease;}
 .fhud-notice.on{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* Macro-sector anomaly sensor: a narrow holographic blade projected from
+   the visor crown. It only exists when the procedural field is in range. */
+.fhud-anomaly{position:absolute;left:50%;top:112px;width:min(360px,54vw);
+  transform:translateX(-50%) perspective(500px) rotateX(-8deg) scaleY(.2);
+  padding:8px 18px 9px;text-align:center;opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(10,20,48,.72) 18%,rgba(18,12,54,.76) 82%,transparent);
+  border-top:1px solid rgba(0,240,255,.28);border-bottom:1px solid rgba(118,87,255,.3);
+  clip-path:polygon(8% 0,92% 0,100% 50%,92% 100%,8% 100%,0 50%);
+  transition:opacity .4s ease,transform .55s cubic-bezier(.2,1.4,.3,1);}
+.fhud-anomaly.on{opacity:.86;transform:translateX(-50%) perspective(500px) rotateX(0) scaleY(1);
+  animation:fhQaGlitch 7s steps(1) infinite;}
+.fhud-anomaly.visual{opacity:1;filter:drop-shadow(0 0 14px rgba(118,87,255,.52));}
+.fhud.descending .fhud-anomaly{opacity:0;transform:translateX(-50%) scaleY(.2);}
+.fhud-anomaly span,.fhud-anomaly b,.fhud-anomaly small{display:block;text-transform:uppercase;}
+.fh-qa-k{font-size:7px;letter-spacing:.34em;color:rgba(130,210,255,.52);}
+.fhud-anomaly b{font-size:12px;letter-spacing:.24em;color:#e9e4ff;margin:3px 0;
+  text-shadow:-1px 0 #7657ff,1px 0 #00f0ff,0 0 16px rgba(118,87,255,.7);}
+#fhQaId{font-size:7px;letter-spacing:.18em;color:rgba(180,205,255,.48);}
+.fh-qa-wave{height:2px;margin:6px auto 4px;width:82%;background:rgba(255,255,255,.08);overflow:hidden;}
+.fh-qa-wave i{display:block;height:100%;background:linear-gradient(90deg,#00f0ff,#7657ff,#fff);
+  box-shadow:0 0 10px #7657ff;transition:width .25s ease;}
+.fhud-anomaly small{font-size:7.5px;letter-spacing:.12em;color:#a9c8ec;}
+@keyframes fhQaGlitch{0%,93%,100%{translate:0 0}94%{translate:2px 0}95%{translate:-1px 0}}
+
 /* focus mode dims instruments but never hides them */
 body[data-focus="1"] .fhud{opacity:.42;}
 

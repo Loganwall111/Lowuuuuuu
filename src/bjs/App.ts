@@ -89,6 +89,7 @@ import { TidalField } from './systems/TidalField';
 import { RegionTides, describeRegionTide } from './systems/RegionTides';
 import { CosmicSky } from './systems/CosmicSky';
 import { SkyProbe } from './systems/SkyProbe';
+import { QuantumAnomalySystem } from './systems/QuantumAnomalySystem';
 import { GalaxyField } from './systems/GalaxyField';
 import { warmupShaders } from './systems/ShaderWarmup';
 import { SHIP as TIDAL_SHIP, ROCKY_PLANET } from './systems/GameModes';
@@ -382,6 +383,8 @@ export class App {
   sonarCursor = new SonarCursor();
   /** Pulsars, quasars, comets, clusters and the rest of the catalog. */
   celestials = new CelestialRenderer();
+  /** Sector-scale spacetime cathedrals, rebuilt deterministically forever. */
+  quantumAnomaly = new QuantumAnomalySystem(this.universe.opts.seed);
   /** The procedural sky dome. Shares its GLSL with the hole raymarcher. */
   cosmicSky = new CosmicSky();
   /** Live 360 cubemap of the sky, for reflections and ambient light. */
@@ -1181,9 +1184,11 @@ export class App {
       this.galaxyField.attach(this.scene, this.camera);
       void this.galaxyField.build();
 
-      // loadWorld purges every mesh, so the holes must be rebuilt too.
+      // loadWorld purges every mesh, so the holes and sector anomaly must be rebuilt too.
       this.holeField.dispose();
       this.holeField.attach(this.scene);
+      this.quantumAnomaly.dispose();
+      this.quantumAnomaly.attach(this.scene, this.universe.opts.seed);
 
       this.shell.setWorld(w);
 
@@ -2042,11 +2047,17 @@ export class App {
             if (m.inside) dens = Math.min(1, m.depth);
           }
           const holeD = bh ? Vector3.Distance(eyeNow, bh.position) : Infinity;
+          const anomalySignal = this.quantumAnomaly.update(dt, eyeNow);
+          if (this.quantumAnomaly.consumeDetection()) {
+            const q = this.quantumAnomaly.telemetry();
+            if (q) this.flightHud.notify('ANOMALOUS SPACETIME SIGNATURE // ' + q.klass);
+          }
           this.audio.update({
             speed: this.vehicle.flySpeed * Math.abs(input.forward),
             warpCharge: this.warpDrive.charge,
             starDensity: dens,
-            singularityDistance: holeD
+            singularityDistance: holeD,
+            anomaly: anomalySignal
           });
           // The score and the satellite's own hum run off the same frame
           // and the same hole distance, so the wind and the rumble agree.
@@ -2763,6 +2774,7 @@ export class App {
             hazard = Math.max(0, Math.min(1, 1 - (d - hr) / Math.max(hr * 8, 1e-3)));
           }
         }
+        this.flightHud.setAnomaly(this.quantumAnomaly.telemetry());
         this.flightHud.update({
           x: eye.x, y: eye.y, z: eye.z,
           heading: att.yaw,
