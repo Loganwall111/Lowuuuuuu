@@ -33,6 +33,16 @@
 // this one, nothing post-processed can ever appear.
 import '@babylonjs/core/Shaders/postprocess.vertex';
 
+// Built-in mesh materials are also tree-shaken in Babylon 9. Without these,
+// StandardMaterial and our custom celestial shader try to fetch .fx files at
+// runtime. Vite answers unknown .fx URLs with index.html, which then gets
+// concatenated into GLSL as "<!DOCTYPE html>" and explodes every material.
+import '@babylonjs/core/Shaders/default.vertex';
+import '@babylonjs/core/Shaders/default.fragment';
+// CelestialRenderer uses these includes directly in its custom shader.
+import '@babylonjs/core/Shaders/ShadersInclude/instancesDeclaration';
+import '@babylonjs/core/Shaders/ShadersInclude/instancesVertex';
+
 // Straight blit, used to copy between render targets.
 import '@babylonjs/core/Shaders/pass.fragment';
 
@@ -63,6 +73,8 @@ import { ShaderStore } from '@babylonjs/core/Engines/shaderStore';
 
 /** Shaders that must exist before any post-process can draw. */
 export const REQUIRED_SHADERS = [
+  'defaultVertexShader',
+  'defaultPixelShader',
   'postprocessVertexShader',
   'passPixelShader',
   'extractHighlightsPixelShader',

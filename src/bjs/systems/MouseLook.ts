@@ -154,7 +154,19 @@ export class MouseLook {
 
   /** Requests pointer lock for continuous look without holding the button. */
   requestLock(): void {
-    try { this.el?.requestPointerLock?.(); } catch { /* unsupported */ }
+    try {
+      // Browsers reject (asynchronously) once transient user activation has
+      // expired. Loading-screen completion is timer-driven, so defer to the
+      // existing canvas-click handler instead of creating an unhandled
+      // NotAllowedError that the global boot guard mistakes for a failure.
+      const activation = (navigator as unknown as { userActivation?: { isActive?: boolean } })
+        .userActivation;
+      if (activation && !activation.isActive) return;
+      const result = this.el?.requestPointerLock?.() as unknown as Promise<void> | void;
+      if (result && typeof (result as Promise<void>).catch === 'function') {
+        void (result as Promise<void>).catch(() => { /* next click retries */ });
+      }
+    } catch { /* unsupported */ }
   }
 
   exitLock(): void {

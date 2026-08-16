@@ -86,7 +86,9 @@ uniform float chroma[MAX_HOLES];
 uniform vec3  tint[MAX_HOLES];
 uniform float holeOn[MAX_HOLES];    // 0 = this slot is unused
 uniform float aspect;
-uniform float active;       // 0 disables the whole pass
+uniform float lensActive;   // 0 disables the whole pass
+// Compatibility note: the old check read active < 0.5; lensActive uses
+// the same idle bypass without colliding with the WebGL2 reserved word.
 
 /**
  * Folds a sample coordinate back inside the frame.
@@ -102,7 +104,7 @@ vec2 mirrorUV(vec2 p){
 void main(void){
   vec2 uv = vUV;
 
-  if (active < 0.5){
+  if (lensActive < 0.5){
     gl_FragColor = texture2D(textureSampler, uv);
     return;
   }
@@ -318,7 +320,7 @@ export class LensFX {
         'universalLens', 'universalLens',
         ['holeUV', 'holeR', 'strength', 'falloff', 'ringAmt', 'ringRadius',
          'symmetry', 'distortion', 'twist', 'chroma', 'tint', 'holeOn',
-         'lensR', 'aspect', 'active'],
+         'lensR', 'aspect', 'lensActive'],
         null, 1.0, camera
       );
       this.scene = scene;
@@ -386,7 +388,7 @@ export class LensFX {
         // gives 0/0. See SafeUniforms.
         effect.setFloat('aspect',
           eng ? safeAspect(eng.getRenderWidth(), eng.getRenderHeight()) : 16 / 9);
-        effect.setFloat('active', this.on && this.intensity > 0.001 ? 1 : 0);
+        effect.setFloat('lensActive', this.on && this.intensity > 0.001 ? 1 : 0);
       };
     } catch (e) {
       // Never let a missing post-process stop the sim rendering.
