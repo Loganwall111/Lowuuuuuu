@@ -45,6 +45,8 @@ export interface ModeCapabilities {
   destruction: boolean;
   /** Spawning bodies out of nothing. */
   spawning: boolean;
+  /** Raising, lowering and flooding a planet's terrain by hand. */
+  sculpting: boolean;
   /** Falling through a horizon into the dimensions beyond. */
   enterHoles: boolean;
   /** Flying, landing and walking. Always true; both modes are open world. */
@@ -77,6 +79,7 @@ export const MODES: Record<GameMode, ModeInfo> = {
       spaghettification: false,
       destruction: false,
       spawning: false,
+      sculpting: false,
       enterHoles: true,
       travel: true
     }
@@ -98,6 +101,7 @@ export const MODES: Record<GameMode, ModeInfo> = {
       spaghettification: true,
       destruction: true,
       spawning: true,
+      sculpting: true,
       enterHoles: true,
       travel: true
     }

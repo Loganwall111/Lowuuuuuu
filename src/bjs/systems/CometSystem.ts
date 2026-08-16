@@ -224,6 +224,42 @@ export class CometRenderer {
     this.tailMesh?.setEnabled(v);
   }
 
+  /**
+   * The comet nearest a point, or null when none are built or in range.
+   * Exposed so the gravity tractor can find a comet to steer.
+   */
+  nearestTo(
+    pos: Vector3, maxDist = Infinity
+  ): { id: string; spec: CometSpec; distance: number; x: number; y: number; z: number } | null {
+    if (!this.built) return null;
+    let best: { id: string; spec: CometSpec; distance: number; x: number; y: number; z: number } | null = null;
+    for (const spec of this.specs) {
+      const st = cometState(spec, this.t);
+      const wx = this.focus.x + st.x;
+      const wy = this.focus.y + st.y;
+      const wz = this.focus.z + st.z;
+      const d = Math.hypot(wx - pos.x, wy - pos.y, wz - pos.z);
+      if (d <= maxDist && (!best || d < best.distance)) {
+        best = { id: spec.id, spec, distance: d, x: wx, y: wy, z: wz };
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Bends a comet's orbit by a phase offset - the gravity tractor.
+   *
+   * The offset is applied to the orbital phase, so the comet stays on a
+   * valid ellipse while its position along it changes, which is exactly what
+   * a gentle gravitational nudge does.
+   */
+  deflect(id: string, dPhase: number): boolean {
+    const spec = this.specs.find((s) => s.id === id);
+    if (!spec || !Number.isFinite(dPhase)) return false;
+    spec.phase = (spec.phase + dPhase) % (Math.PI * 2);
+    return true;
+  }
+
   /** Points the comet family at a star and advances the clock. */
   update(dt: number, focus: Vector3, eye: Vector3): void {
     if (!this.built || !this.scene) return;

@@ -17,6 +17,12 @@
 
 import { HydraulicSystem } from './HydraulicSystem';
 import { speciesFor, type Species } from './LifeSystem';
+import {
+  applySculpt, surfaceToGrid, type SculptTool
+} from './SculptSystem';
+import {
+  tidalLocked, subStellarPoint, subsurfaceOcean, weatherFor
+} from './WorldDynamics';
 
 /** How detailed a planet's surface grid is. */
 export const SURFACE_GRID = 96;
@@ -51,6 +57,14 @@ export interface SurfaceProfile {
   /** Deepest ocean depth in world units. */
   oceanDepth: number;
   species: Species[];
+  /** A frozen world can hide a liquid ocean beneath its ice. */
+  subsurfaceOcean: boolean;
+  /** How deep that hidden ocean sits, world units. */
+  subsurfaceDepth: number;
+  /** Close-in worlds keep one face toward their star. */
+  tidalLocked: boolean;
+  /** The (u, v) of the sub-stellar point on a locked world. */
+  subStellar: [number, number];
 }
 
 export interface PlanetSurface {
@@ -93,6 +107,10 @@ export function profileFor(seed: number, exotic = false): SurfaceProfile {
     exotic: { sea: 0.35, rain: 1.0, ero: 0.35, depth: 18 }
   }[climate];
 
+  // The world's deeper character: subsurface oceans, tidal locking, weather.
+  const sub = subsurfaceOcean(seed, climate);
+  const locked = climate !== 'exotic' && tidalLocked(seed, 12 + rng() * 70);
+
   return {
     climate,
     seaLevel: Math.max(0, Math.min(1, base.sea + (rng() - 0.5) * 0.16)),
@@ -107,7 +125,11 @@ export function profileFor(seed: number, exotic = false): SurfaceProfile {
       seed ^ 0x5f3759df,
       climate === 'frozen' ? 2 : 2 + Math.floor(rng() * 5),
       climate
-    )
+    ),
+    subsurfaceOcean: sub.present,
+    subsurfaceDepth: sub.depth,
+    tidalLocked: locked,
+    subStellar: subStellarPoint(seed)
   };
 }
 
@@ -196,6 +218,35 @@ export class PlanetSurfaceSystem {
 
     // Fill everything below sea level: this planet's actual ocean.
     hydro.setSeaLevel(profile.seaLevel);
+  }
+
+  /**
+   * Sculpts the surface of a planet.
+   *
+   * The `normal` is the outward surface direction at the player's feet; it
+   * maps through the equirectangular projection to the heightfield cell
+   * where the stroke lands. The hydraulic solver then erodes and drains it
+   * on the next step, so the world responds to the stroke like a world, not
+   * like a paint program.
+   */
+  sculpt(
+    id: string, tool: SculptTool,
+    nx: number, ny: number, nz: number,
+    radius: number, strength: number
+  ): boolean {
+    const s = this.surfaces.get(id);
+    if (!s) return false;
+    const g = surfaceToGrid(nx, ny, nz, s.hydro.size);
+    applySculpt(s.hydro, tool, g.x, g.y, radius, strength);
+    return true;
+  }
+
+  /** The current weather on a planet at time t, for fog and telemetry. */
+  weather(id: string, t: number): { kind: string; visibility: number } {
+    const s = this.surfaces.get(id);
+    if (!s) return { kind: 'clear', visibility: 1 };
+    const w = weatherFor(s.seed, s.profile.climate, t);
+    return { kind: w.kind, visibility: w.visibility };
   }
 
   /** Spawns a tornado on a planet. Returns it so callers can track it. */

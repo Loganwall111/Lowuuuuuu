@@ -291,6 +291,8 @@ interface Body {
   angle: number;
   spin: number;
   name: string;
+  /** PlanetKind of this body, for gas-giant / habitable distinctions. */
+  type: number;
   moons: { pivot: TransformNode; mesh: Mesh; speed: number }[];
 }
 
@@ -712,7 +714,7 @@ export class PlanetaryWorld implements World {
         orbitR: cfg.orbit, visualR: cfg.r, orbitSpeed: cfg.speed,
         angle: Math.random() * Math.PI * 2,
         spin: 0.15 + Math.random() * 0.35,
-        name: cfg.name, moons: []
+        name: cfg.name, type: cfg.type, moons: []
       };
 
       if (cfg.atmo) {
@@ -955,7 +957,9 @@ export class PlanetaryWorld implements World {
         id: b.name, x: p.x, y: p.y, z: p.z,
         radius: b.visualR,
         mass: 60 + 400 * Math.pow(b.visualR / EARTH_VISUAL_R, 3),
-        habitable: b.name === INHABITED
+        habitable: b.name === INHABITED,
+        // Gas giants are dived, not landed: the landing key reroutes.
+        gas: b.type === PlanetKind.Gas
       });
       for (const m of b.moons) {
         const mp = m.mesh.getAbsolutePosition();

@@ -45,6 +45,13 @@ import { CivilizationSystem } from './systems/CivilizationSystem';
 import { EcologySystem } from './systems/EcologySystem';
 import { SupernovaSystem } from './systems/SupernovaSystem';
 import { BlackHoleFeeding } from './systems/BlackHoleFeeding';
+import { sculptTool, SCULPT_TOOLS, type SculptTool } from './systems/SculptSystem';
+import { GasDive } from './systems/GasDive';
+import { seasonLabel, precessionAngle } from './systems/GalacticSeasons';
+import { findDeepestOverlap, mergeResult } from './systems/PlanetCollision';
+import { tractorStrength, deflectFrom } from './systems/GravityTractor';
+import { TimeRewind } from './systems/TimeRewind';
+import { derelictLog } from './systems/DerelictLog';
 import { LayeredSky } from './systems/LayeredSky';
 import { HoleFieldRenderer } from './systems/HoleFieldRenderer';
 import { SpaceAudio } from './systems/SpaceAudio';
@@ -233,6 +240,18 @@ export class App {
   private versesReached = new Set<string>();
   /** Photomode: hide every layer of UI for a clean frame. */
   private photoMode = false;
+  /** Rolling buffer of the player's motion, for the rewind key. */
+  rewind = new TimeRewind();
+  /** The gas-giant dive in progress, if any. */
+  private gasDive: GasDive | null = null;
+  /** Whether the gravity tractor is currently pulling a comet. */
+  private tractorOn = false;
+  /** The active sculpt tool (sandbox). */
+  private sculptTool: SculptTool = 'raise';
+  /** Time since the universe began, for seasons and weather. */
+  private universeAge = 0;
+  /** Last season label announced, so each one is toasted once. */
+  private lastSeason = '';
   /**
    * The anonymous background haze, in three parallaxing shells. Sits behind
    * starField, which draws the real reachable regions - together they give
@@ -623,6 +642,16 @@ export class App {
       if (e.key.toLowerCase() === 'p' && !e.repeat) this.togglePhotoMode();
       // U copies the universe seed so a friend can visit the same worlds.
       if (e.key.toLowerCase() === 'u' && !e.repeat) this.copySeed();
+      // I dives into the nearest gas giant; O boards the nearest derelict.
+      if (e.key.toLowerCase() === 'i' && !e.repeat) this.startGasDive();
+      if (e.key.toLowerCase() === 'o' && !e.repeat) this.boardDerelict();
+      // Backspace rewinds the last few seconds of motion.
+      if (e.key === 'Backspace' && !e.repeat) {
+        e.preventDefault();
+        this.doRewind();
+      }
+      // Sculpt tools cycle with J; [ and ] apply the current tool.
+      if (e.key.toLowerCase() === 'j' && !e.repeat) this.cycleSculptTool();
       // 1/2/3 shift the gearbox. Applied instantly, on the keypress, so a
       // gear change lands on the very next frame rather than waiting for
       // anything to spool.
@@ -1312,6 +1341,11 @@ export class App {
       this.shell.toast('Too far from the surface to land');
       return;
     }
+    // A gas giant has no surface: the landing key dives instead.
+    if (s.gas) {
+      this.startGasDive();
+      return;
+    }
     this.setControlMode('walk');
     this.shell.toast('Landed on ' + s.id);
     this.onMilestone('first-landing');
@@ -1383,6 +1417,69 @@ export class App {
     this.shell.toast(this.photoMode
       ? 'Photomode on — press P to return'
       : 'Photomode off');
+  }
+
+  /** Dives into the nearest gas giant, if there is one close enough. */
+  private startGasDive(): void {
+    if (this.gasDive) {
+      this.gasDive = null;
+      this.shell.toast('Gas dive ended');
+      return;
+    }
+    const solids = this.solidSpheres();
+    const gas = solids.filter((s) => s.gas);
+    if (!gas.length) { this.shell.toast('No gas giant nearby to dive'); return; }
+    const p = this.vehicle.position;
+    const target = gas.reduce((best, s) => {
+      const d = Math.hypot(p.x - s.x, p.y - s.y, p.z - s.z);
+      return !best || d < best.d ? { s, d } : best;
+    }, null as { s: typeof gas[number]; d: number } | null);
+    if (!target) return;
+    if (target.d > target.s.radius * 6) {
+      this.shell.toast('Too far from ' + target.s.id + ' to dive');
+      return;
+    }
+    this.gasDive = new GasDive(24, target.s.radius * 4);
+    this.onMilestone('first-dive');
+    this.onDiscovery('event', 'dive:' + target.s.id, '🪐', 'Into the Storm',
+      'Falling through the cloud decks of ' + target.s.id + '.');
+    this.shell.toast('Diving into ' + target.s.id);
+  }
+
+  /** Boards the nearest derelict, reading its found log. */
+  private boardDerelict(): void {
+    const eye = this.vehicle.position;
+    let best: { body: { seed?: number; id?: string }; d: number } | null = null;
+    for (const c of this.celestials.live) {
+      if (c.kind !== 'derelict') continue;
+      const d = Math.hypot(c.x - eye.x, c.y - eye.y, c.z - eye.z);
+      if (d > c.radius * 4) continue;
+      if (!best || d < best.d) best = { body: c, d };
+    }
+    if (!best) { this.shell.toast('No derelict within reach'); return; }
+    const log = derelictLog((best.body.seed ?? 1) >>> 0);
+    this.onDiscovery('event', 'derelict:' + log.title, '🛸', log.title, log.body);
+    this.onMilestone('first-derelict');
+    this.shell.toast('🛸 ' + log.title + ' — ' + log.crew + ' · ' + log.fate);
+  }
+
+  /** Rewinds the player a short way along their own path. */
+  private doRewind(): void {
+    if (!this.can('timeTravel')) return this.needSandbox('Time rewind');
+    const r = this.rewind.rewind(1.5);
+    if (!r) { this.shell.toast('Nothing to rewind'); return; }
+    this.vehicle.position.set(r.state.x, r.state.y, r.state.z);
+    this.vehicle.velocity.set(r.state.vx, r.state.vy, r.state.vz);
+    this.camera.position.copyFrom(this.vehicle.position);
+    this.shell.toast('Rewound ' + r.rewound.toFixed(1) + 's');
+  }
+
+  /** Cycles the active sculpt brush and announces it. */
+  private cycleSculptTool(): void {
+    const idx = SCULPT_TOOLS.findIndex((t) => t.id === this.sculptTool);
+    this.sculptTool = SCULPT_TOOLS[(idx + 1) % SCULPT_TOOLS.length].id;
+    const t = sculptTool(this.sculptTool);
+    this.shell.toast(t.glyph + ' Sculpt tool: ' + t.label);
   }
 
   /** Copies the universe seed so a friend can visit the same worlds. */
@@ -1817,6 +1914,19 @@ export class App {
         const surf = this.surfaces.acquire(here.id, here.seed ?? 1);
         this.surfaces.step(here.id, dt);
 
+        // ---- sandbox: sculpt the world beneath your feet ----
+        // [ applies the current brush, ] always lowers. The stroke lands on
+        // the surface point under the walker and the hydrology erodes it in.
+        if (this.can('sculpting') && this.vehicle.mode === 'walk' &&
+            (this.keys.has('[') || this.keys.has(']'))) {
+          const pg = this.groundProbe(this.vehicle.position.x, this.vehicle.position.z);
+          if (pg && pg.normal) {
+            const tool: SculptTool = this.keys.has('[') ? this.sculptTool : 'lower';
+            this.surfaces.sculpt(here.id, tool,
+              pg.normal.x, pg.normal.y, pg.normal.z, 4, 0.7);
+          }
+        }
+
         // Native life enters the field guide the first time you meet it.
         for (const sp of surf.profile.species) {
           this.onDiscovery('species', 'sp:' + here.id + ':' + sp.name,
@@ -1865,6 +1975,82 @@ export class App {
         const boost = Math.max(nv.flash * 1.5, feed.flare * 1.2);
         if (boost > 0.01) {
           this.postfx.set('bloom', Math.min(2, 0.55 + boost));
+        }
+      }
+
+      // ---- the long clock: galactic seasons and weather ----
+      if (!this.paused) {
+        this.universeAge += dt;
+        const label = seasonLabel(this.universeAge);
+        if (label !== this.lastSeason && this.universeAge > 1) {
+          this.lastSeason = label;
+          this.shell.toast('🌌 Season: ' + label);
+        }
+      }
+
+      // ---- gravity tractor: steer a comet with your ship ----
+      if (this.keys.has('y') && !this.paused) {
+        const near = this.comets.nearestTo(this.vehicle.position, 260);
+        if (near) {
+          const ship = { mass: 90, x: this.vehicle.position.x, y: this.vehicle.position.y, z: this.vehicle.position.z };
+          const comet = { mass: 1, x: near.x, y: near.y, z: near.z };
+          const pull = tractorStrength(ship, comet, 260);
+          if (pull > 0.01) {
+            const dPhase = deflectFrom(pull, dt);
+            this.comets.deflect(near.id, dPhase);
+            if (!this.tractorOn) {
+              this.tractorOn = true;
+              this.shell.toast('🧲 Gravity tractor engaged');
+            }
+          }
+        } else if (this.tractorOn) {
+          this.tractorOn = false;
+        }
+      } else if (this.tractorOn) {
+        this.tractorOn = false;
+      }
+
+      // ---- gas dive: falling through the cloud decks ----
+      if (this.gasDive && !this.paused) {
+        this.gasDive.step(dt);
+        for (const layer of this.gasDive.drainEvents()) {
+          this.shell.toast('🪐 Entering the ' + layer);
+        }
+      }
+
+      // ---- planet collisions: two worlds become one ----
+      {
+        const solids: Array<{ id: string; name: string; x: number; y: number; z: number; radius: number; mass: number }> = [];
+        for (const r of this.universe.regions) {
+          if ((r.kind === 'planet' || r.kind === 'ocean' || r.kind === 'terrain') &&
+              r.surfaceRadius && r.surfaceRadius > 0) {
+            solids.push({
+              id: r.id, name: r.name,
+              x: r.position.x, y: r.position.y, z: r.position.z,
+              radius: r.surfaceRadius, mass: r.mass
+            });
+          }
+        }
+        const overlap = findDeepestOverlap(solids);
+        if (overlap && overlap.depth > 0.4) {
+          const a = this.universe.byId(overlap.a.id);
+          const b = this.universe.byId(overlap.b.id);
+          if (a && b) {
+            const keep = (a.surfaceRadius ?? 0) >= (b.surfaceRadius ?? 0) ? a : b;
+            const drop = keep === a ? b : a;
+            const merged = mergeResult(overlap.a, overlap.b);
+            keep.surfaceRadius = merged.radius;
+            keep.mass = merged.mass;
+            keep.radius = merged.radius * 4.5;
+            this.universe.removeRegion(drop.id);
+            this.postfx.set('bloom', 2);
+            this.onMilestone('first-collision');
+            this.onDiscovery('event', 'merge:' + keep.id, '💥', 'Two Become One',
+              keep.name + ' swallowed ' + drop.name + ' and grew.');
+            this.shell.toast('💥 ' + keep.name + ' and ' + drop.name +
+              ' collided — ' + keep.name + ' is now larger');
+            this.shell.refreshAll?.();
+          }
         }
       }
 
@@ -1957,6 +2143,12 @@ export class App {
       // Each background shell slides toward the eye by its own lock factor,
       // so near stars sweep past and far ones hold station.
       this.layeredSky.update(eye);
+      // Galactic precession: the backdrop very slowly wheels, so the sky is
+      // never the same sky for long, the way a real night sky precesses.
+      {
+        const ang = precessionAngle(this.universeAge);
+        for (const m of this.layeredSky.shellMeshes) m.rotation.y = ang;
+      }
       // Mirror the main camera and apply coordinate-bound nebular fog, so
       // crossing the galactic plane actually fills the cockpit with gas.
       this.galaxyField.update(eye, this.camera.getTarget(), this.scene);
@@ -2116,6 +2308,29 @@ export class App {
       // which shows up as the black hole's disk sliding off its horizon
       // while turning or when a panel resizes the canvas.
       (this.world as any)?.syncCamera?.(this.ctx);
+
+      // ---- time rewind: record the motion so it can be scrubbed ----
+      this.rewind.record(
+        this.vehicle.position.x, this.vehicle.position.y, this.vehicle.position.z,
+        this.vehicle.velocity.x, this.vehicle.velocity.y, this.vehicle.velocity.z);
+
+      // ---- weather you fly through: dust, blizzards and rain bands ----
+      // Only when walking on a world, so it never fights the galaxy fog or
+      // the descent medium that own the space in between.
+      if (this.vehicle.mode === 'walk' && this.universe.current) {
+        const w = this.surfaces.weather(this.universe.current.id, this.universeAge);
+        if (w.kind !== 'clear') {
+          this.scene.fogMode = Scene.FOGMODE_EXP2;
+          this.scene.fogDensity = (1 - w.visibility) * 0.006;
+          this.scene.fogColor = w.kind === 'dust'
+            ? new Color3(0.85, 0.6, 0.34)
+            : w.kind === 'blizzard'
+              ? new Color3(0.9, 0.94, 1.0)
+              : new Color3(0.55, 0.62, 0.72);
+        } else {
+          this.scene.fogMode = Scene.FOGMODE_NONE;
+        }
+      }
 
       this.scene.render();
 

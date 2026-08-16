@@ -31,6 +31,8 @@ export interface SolidSphere {
   mass: number;
   /** Habitable worlds get gentler, more welcoming landing behaviour. */
   habitable?: boolean;
+  /** Gas giants have no surface to land on; they are dived, not landed. */
+  gas?: boolean;
 }
 
 /** A resolved contact: which sphere, which direction it pushed, how deep. */

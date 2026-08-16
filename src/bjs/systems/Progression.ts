@@ -78,6 +78,9 @@ export const MILESTONES: Milestone[] = [
   { id: 'first-aurora', glyph: '🌈', title: 'Northern Lights', blurb: 'See auroras on a living world.' },
   { id: 'first-species', glyph: '🧬', title: 'Biologist', blurb: 'Discover alien life.' },
   { id: 'first-contact', glyph: '📡', title: 'The Signal', blurb: 'A civilization reaches the radio age.' },
+  { id: 'first-derelict', glyph: '🛸', title: 'Wreckage', blurb: 'Board a derelict and read its log.' },
+  { id: 'first-collision', glyph: '💥', title: 'Two Become One', blurb: 'Watch two worlds collide and merge.' },
+  { id: 'first-dive', glyph: '🪐', title: 'Into the Storm', blurb: 'Dive into a gas giant.' },
   { id: 'all-verses', glyph: '🚪', title: 'Beyond Everything', blurb: 'Reach every verse.' }
 ];
 
