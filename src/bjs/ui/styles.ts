@@ -1035,6 +1035,48 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 .vc-node:hover{color:#fff;border-color:var(--acc);
   box-shadow:0 0 16px color-mix(in srgb,var(--acc) 45%,transparent);}
 
+/* ---- the in-game pause menu (Escape) ---- */
+.pause-menu{position:fixed;inset:0;z-index:200;display:none;place-items:center;
+  background:radial-gradient(ellipse at center,rgba(4,8,16,.55),rgba(2,4,10,.82));
+  pointer-events:none;}
+.pause-menu.on{display:grid;pointer-events:auto;}
+.pause-panel{width:min(420px,88vw);max-height:84vh;overflow-y:auto;
+  padding:22px 24px 24px;
+  background:linear-gradient(165deg,rgba(12,20,38,.94),rgba(6,11,22,.9));
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid color-mix(in srgb,var(--acc) 26%,transparent);border-radius:14px;
+  box-shadow:0 26px 80px rgba(0,0,0,.7), 0 0 0 1px color-mix(in srgb,var(--acc) 10%,transparent);
+  animation:wmIn .16s cubic-bezier(.2,.8,.3,1);}
+.pause-head{font-size:15px;font-weight:800;letter-spacing:.4em;text-transform:uppercase;
+  text-align:center;color:var(--acc);text-shadow:0 0 18px color-mix(in srgb,var(--acc) 55%,transparent);
+  margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid color-mix(in srgb,var(--acc) 18%,transparent);}
+.pause-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.pause-btn{flex:1;min-width:0;padding:9px 10px;font-size:11px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:rgba(200,225,255,.8);cursor:pointer;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0));
+  border:1px solid color-mix(in srgb,var(--acc) 22%,transparent);border-radius:8px;font-family:inherit;
+  transition:all .13s ease;}
+.pause-btn:hover{color:#fff;border-color:var(--acc);
+  box-shadow:0 0 14px color-mix(in srgb,var(--acc) 35%,transparent);}
+.pause-btn.pri{background:linear-gradient(180deg,#00cfff 0%,#1f8be8 100%);
+  color:#04121f;border-color:transparent;}
+.pause-btn.on{background:color-mix(in srgb,var(--acc) 22%,transparent);color:#fff;}
+.pause-body{margin-top:6px;}
+.pause-grp{margin-bottom:14px;}
+.pause-label{font-size:9px;letter-spacing:.22em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--acc) 70%,transparent);margin-bottom:7px;}
+.pause-grp input[type="range"]{width:100%;height:3px;appearance:none;
+  background:linear-gradient(90deg,var(--acc) 50%,rgba(255,255,255,.10) 50%);border-radius:2px;}
+.pause-grp input[type="range"]::-webkit-slider-thumb{appearance:none;width:12px;height:12px;
+  border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);cursor:pointer;}
+.pause-stat{display:flex;justify-content:space-between;gap:10px;padding:5px 2px;
+  font-size:11px;color:rgba(190,215,245,.75);border-bottom:1px solid rgba(120,170,240,.08);}
+.pause-stat b{color:#eaf4ff;font-variant-numeric:tabular-nums;}
+.pause-stat.you{color:var(--acc);}
+.pause-stat.you b{color:var(--acc);text-shadow:0 0 8px color-mix(in srgb,var(--acc) 55%,transparent);}
+.pause-note{font-size:10px;color:var(--dim);line-height:1.5;padding:8px 10px;
+  border-left:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 6%,transparent);border-radius:6px;}
+
 /* --- the suit rails --- */
 /* No full-width bar any more: the rails are transparent docks over the
    scene, so the galaxy stays readable behind every button. */

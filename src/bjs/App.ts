@@ -48,6 +48,8 @@ import { resolveSearch } from './systems/ObjectSearch';
 import {
   shouldStrand, strandedDepth, strandedWormholeSeed, HORIZON_WARNING
 } from './systems/VoidNavigation';
+import { PauseMenu } from './ui/PauseMenu';
+import { leaderboard, playerScore } from './systems/Leaderboard';
 import {
   DiscoveryLog, Milestones, Challenges, CHALLENGES, MILESTONES, type CodexKind
 } from './systems/Progression';
@@ -264,6 +266,31 @@ export class App {
   private altHeld = false;
   /** True once the horizon warning has been shown for the current fall. */
   private horizonWarned = false;
+  /** The in-game Escape menu. */
+  pauseMenu = new PauseMenu({
+    onResume: () => { this.pauseMenu.close(); this.paused = false; },
+    onSetting: (k, v) => this.applyPauseSetting(k, v),
+    onQuality: (name) => this.applyQuality(name as QualityName),
+    onSave: () => { this.saveNow(); },
+    onQuitSave: () => {
+      this.saveNow();
+      this.pauseMenu.close();
+      this.paused = false;
+      this.shell.toast('Saved. Safe to close — the autosave will catch you next time.');
+    },
+    dashboard: () => ({
+      ...this.universe.stats(),
+      ...this.discoveries.stats(),
+      ...this.milestones.stats(),
+      ...this.challenges.stats()
+    }),
+    leaderboard: () => leaderboard(this.universe.opts.seed, {
+      distance: this.vehicle.odometer,
+      discoveries: this.discoveries.countOf(),
+      milestones: this.milestones.count,
+      challenges: this.challenges.completedCount
+    })
+  });
   /** Rolling buffer of the player's motion, for the rewind key. */
   rewind = new TimeRewind();
   /** The gas-giant dive in progress, if any. */
@@ -614,6 +641,9 @@ export class App {
     // hidden until the player presses Play and enters.
     this.flightHud.setVisible(false);
     this.sonarCursor.mount();
+    // The Escape menu (settings / performance / save / dashboard /
+    // leaderboard) is mounted now, revealed only while playing.
+    this.pauseMenu.mount();
     // The cursor reflects what the zoom control is doing, so the spyglass
     // has a visible state rather than only changing the field of view.
     this.sonarCursor.setState(this.mouse.zoomScale > 1.05 ? 'zoom' : 'idle');
@@ -706,6 +736,15 @@ export class App {
       }
       // Sculpt tools cycle with J; [ and ] apply the current tool.
       if (e.key.toLowerCase() === 'j' && !e.repeat) this.cycleSculptTool();
+      // Escape opens the in-game pause menu once the intro is over; during
+      // the intro, Escape still skips it (handled by the overlay).
+      if (e.key === 'Escape') {
+        if (this.intro.state.done) {
+          e.preventDefault();
+          this.pauseMenu.toggle();
+          this.paused = this.pauseMenu.isOpen;
+        }
+      }
       // 1/2/3 shift the gearbox. Applied instantly, on the keypress, so a
       // gear change lands on the very next frame rather than waiting for
       // anything to spool.
@@ -770,6 +809,30 @@ export class App {
         this.shell.toast('Quit — this is the desktop. Fly back any time.');
       }
     });
+  }
+
+  /** Applies one live setting from the Escape menu's Settings section. */
+  private applyPauseSetting(key: string, value: number): void {
+    if (key === 'fov') {
+      this.camera.fov = Math.max(0.6, Math.min(1.4, value));
+    } else if (key === 'bloom' || key === 'grain' || key === 'chromatic') {
+      this.postfx.set(key, value);
+    } else if (key.startsWith('hud:')) {
+      this.flightHud.setTheme(key.slice(4) as 'suit' | 'satellite' | 'legacy');
+    }
+  }
+
+  /** Saves the current world state under the name of the place you are in. */
+  private saveNow(): void {
+    const w = this.world as any;
+    const here = this.universe.current;
+    const name = here ? here.name : 'Deep Space';
+    if (w && typeof w.captureState === 'function') {
+      this.saves.save(name, w.id, w.captureState());
+      this.shell.toast('Saved: ' + name);
+    } else {
+      this.shell.toast('Nothing to save here yet');
+    }
   }
 
   /**
