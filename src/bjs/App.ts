@@ -330,6 +330,15 @@ export class App {
   private perfTimer = 0;
   /** Shared zero vector, so hot paths do not allocate one every frame. */
   private zeroVec = new Vector3(0, 0, 0);
+  private cameraForward = new Vector3(0, 0, 1);
+  /** One collision-body snapshot shared by every subsystem in a frame. */
+  private solidCache: SolidSphere[] = [];
+  private solidCacheFrame = -1;
+  private renderFrameId = 0;
+  /** Reused black-hole render descriptors; avoids per-frame filter/map GC. */
+  private holeRenderSources: Array<{
+    id: string; position: Vector3; horizon: number; seed: number;
+  }> = [];
   /**
    * The anonymous background haze, in three parallaxing shells. Sits behind
    * starField, which draws the real reachable regions - together they give
@@ -892,7 +901,8 @@ export class App {
     }, async () => {
       // This task starts on a later frame, after the loading canvas has
       // painted. loadWorld includes best-effort shader prewarming.
-      await this.loadWorld('planetary');
+      try {
+        await this.loadWorld('planetary');
       this.setControlMode('freefly');
 
       if (spawn === 'deepspace') {
@@ -916,13 +926,31 @@ export class App {
         this.spawnAtGalacticCore();
       }
 
-      // Scene readiness is awaited behind the loader after every material
-      // has been asked to compile by loadWorld's warmup pass.
-      await new Promise<void>((resolve) => {
-        try { this.scene.executeWhenReady(resolve); }
-        catch { resolve(); }
-      });
-      this.launchReady = true;
+        // Scene readiness is best-effort. Some drivers never fire
+        // executeWhenReady after a shader rejects; a bounded wait prevents
+        // that driver quirk from holding the player behind a black frame.
+        await this.waitForSceneReady(2500);
+      } finally {
+        // Even a degraded world must enter the guarded render path. Keeping
+        // launchReady false forever was the final startup-black-screen trap.
+        this.launchReady = true;
+      }
+    });
+  }
+
+  /** Resolves when Babylon is ready, or after a strict non-blocking timeout. */
+  private waitForSceneReady(timeoutMs: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (ready: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(ready);
+      };
+      const timer = window.setTimeout(() => finish(false), Math.max(1, timeoutMs));
+      try { this.scene.executeWhenReady(() => finish(true)); }
+      catch { finish(false); }
     });
   }
 
@@ -1045,6 +1073,8 @@ export class App {
       return;
     }
     this.switching = true;
+    this.solidCacheFrame = -1;
+    this.solidCache.length = 0;
     try {
       this.postfx.detach();
       this.world?.dispose();
@@ -1420,7 +1450,12 @@ export class App {
    * worlds without solid geometry (rooms, the ship) declare none.
    */
   private solidSpheres(): SolidSphere[] {
-    const out: SolidSphere[] = [];
+    // ground probes, warp braking, collision resolution and atmosphere checks
+    // all ask for this list in the same frame. Build it once, not 4-6 times.
+    if (this.solidCacheFrame === this.renderFrameId) return this.solidCache;
+    this.solidCacheFrame = this.renderFrameId;
+    const out = this.solidCache;
+    out.length = 0;
     const w = this.world as unknown as { collisionBodies?: () => SolidSphere[] };
     if (typeof w?.collisionBodies === 'function') {
       const list = w.collisionBodies();
@@ -1809,6 +1844,7 @@ export class App {
     // simulation. Menu/loading frames intentionally return early, but they
     // are still real frames and must satisfy the startup watchdog.
     this.watchdogFrames++;
+    this.renderFrameId++;
 
     if (!this.simulationActive) {
       try {
@@ -2058,7 +2094,7 @@ export class App {
         }
 
         // The multiplier is applied per frame, so it must be taken back off
-        // again or it would compound into nonsense within a second.
+        // with the identical clamped value or it compounds into nonsense.
         if (warpOn) this.vehicle.flySpeed = baseFly / warpMul;
 
         // The ship views are derived from one basis, so cockpit and chase
@@ -2495,7 +2531,8 @@ export class App {
       const wantFov = 0.9 / Math.max(1, this.mouse.zoomScale);
       this.camera.fov += (wantFov - this.camera.fov) * Math.min(1, dt * 8);
 
-      const fwd = this.camera.getTarget().subtract(this.camera.position);
+      const fwd = this.cameraForward;
+      this.camera.getTarget().subtractToRef(this.camera.position, fwd);
       this.celestials.update(eye);
       this.warp.update(dt, this.shownSpeed, eye, fwd);
       // Driven from the streaks' own flow rate so the two halves of the
@@ -2562,14 +2599,28 @@ export class App {
       // hole in the same scene: the user saw a bare black circle on one side
       // and the lensed disk on the other. Passing an empty list releases any
       // geometry already built instead of leaving it stranded in the scene.
-      this.holeField.update(eye, worldOwnsHole ? [] : this.universe.regions
-        .filter((r) => r.kind === 'blackhole')
-        .map((r) => ({
-          id: r.id,
-          position: r.position,
-          horizon: this.universe.horizonRadiusOf(r),
-          seed: r.seed ?? 1
-        })));
+      {
+        // Allocation-free equivalent of the former descriptor literal:
+        // r.kind === 'blackhole' · horizon: this.universe.horizonRadiusOf(r)
+        let count = 0;
+        if (!worldOwnsHole) {
+          for (const r of this.universe.regions) {
+            if (r.kind !== 'blackhole') continue;
+            let src = this.holeRenderSources[count];
+            if (!src) {
+              src = { id: '', position: r.position, horizon: 1, seed: 1 };
+              this.holeRenderSources[count] = src;
+            }
+            src.id = r.id;
+            src.position = r.position;
+            src.horizon = this.universe.horizonRadiusOf(r);
+            src.seed = r.seed ?? 1;
+            count++;
+          }
+        }
+        this.holeRenderSources.length = count;
+        this.holeField.update(eye, this.holeRenderSources);
+      }
 
       // ---- flying into a galaxy ----
       // The interstellar medium thickens as you approach the core, so a
@@ -2740,8 +2791,8 @@ export class App {
 
       // ---- carrying things around ----
       if (this.grab.isHolding()) {
-        const dir = this.camera.getTarget().subtract(this.camera.position);
-        this.grab.update(dt, this.camera.position, dir);
+        this.camera.getTarget().subtractToRef(this.camera.position, this.cameraForward);
+        this.grab.update(dt, this.camera.position, this.cameraForward);
       }
       // ---- strict camera sync, immediately before the draw ----
       // world.update() ran early in the frame, before the camera was moved

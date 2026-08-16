@@ -112,6 +112,16 @@ export class WarpSystem {
   private mat: StandardMaterial | null = null;
   private streaks: Streak[] = [];
   private data: Float32Array | null = null;
+  // Scratch math reused on every update. At 60 fps these replace more than
+  // 400 short-lived vector/matrix objects per second during warp.
+  private fwdScratch = new Vector3(0, 0, 1);
+  private upScratch = new Vector3(0, 1, 0);
+  private rightScratch = new Vector3(1, 0, 0);
+  private trueUpScratch = new Vector3(0, 1, 0);
+  private quatScratch = new Quaternion();
+  private scaleScratch = new Vector3(1, 1, 1);
+  private posScratch = new Vector3();
+  private matrixScratch = Matrix.Identity();
   /** 0..1 how engaged the effect currently is. */
   private amount = 0;
   private enabled = true;
@@ -206,21 +216,29 @@ export class WarpSystem {
     }
     this.mesh.setEnabled(true);
 
-    const fwd = forward.lengthSquared() > 1e-9 ? forward.normalize() : new Vector3(0, 0, 1);
-    // Build a frame around the view direction to place streaks in.
-    const up = Math.abs(fwd.y) > 0.95 ? new Vector3(1, 0, 0) : new Vector3(0, 1, 0);
-    const right = Vector3.Cross(up, fwd).normalize();
-    const trueUp = Vector3.Cross(fwd, right).normalize();
+    const fwd = this.fwdScratch;
+    if (forward.lengthSquared() > 1e-9) forward.normalizeToRef(fwd);
+    else fwd.set(0, 0, 1);
+    // Build a frame around the view direction without transient vectors.
+    const up = this.upScratch;
+    if (Math.abs(fwd.y) > 0.95) up.set(1, 0, 0);
+    else up.set(0, 1, 0);
+    const right = this.rightScratch;
+    Vector3.CrossToRef(up, fwd, right);
+    right.normalize();
+    const trueUp = this.trueUpScratch;
+    Vector3.CrossToRef(fwd, right, trueUp);
+    trueUp.normalize();
 
     // Apparent flow, not raw speed: see the note at the top of the file.
     const flowRate = apparentFlow(speed, this.opts);
     this.lastFlow = flowRate;
     const travel = flowRate * dt;
     const depth = this.opts.depth;
-    const q = new Quaternion();
-    const scale = new Vector3(1, 1, 1);
-    const pos = new Vector3();
-    const m = Matrix.Identity();
+    const q = this.quatScratch;
+    const scale = this.scaleScratch;
+    const pos = this.posScratch;
+    const m = this.matrixScratch;
 
     // Point every streak along the direction of travel.
     Quaternion.FromLookDirectionRHToRef(fwd, trueUp, q);

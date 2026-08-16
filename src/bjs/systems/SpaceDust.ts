@@ -61,6 +61,7 @@ export class SpaceDust {
   private mesh: Mesh | null = null;
   private lastEye = new Vector3(1e12, 1e12, 1e12);
   private seed = 0x9d1c4e77;
+  private generation = 0;
 
   constructor(opts: Partial<SpaceDustOptions> = {}) {
     this.opts = { ...DEFAULT_DUST, ...opts };
@@ -76,6 +77,7 @@ export class SpaceDust {
   async build(): Promise<void> {
     const scene = this.scene;
     if (!scene || this.pcs) return;
+    const generation = ++this.generation;
 
     const pcs = new PointsCloudSystem('spaceDust', this.opts.size, scene);
     pcs.addPoints(this.opts.count, (p: any) => {
@@ -85,6 +87,10 @@ export class SpaceDust {
 
     const mesh = await pcs.buildMeshAsync();
     if (!mesh) return;
+    if (generation !== this.generation || scene !== this.scene) {
+      try { mesh.dispose(); pcs.dispose(); } catch { /* superseded */ }
+      return;
+    }
 
     mesh.renderingGroupId = 0;
     mesh.isPickable = false;
@@ -163,6 +169,7 @@ export class SpaceDust {
   }
 
   dispose(): void {
+    this.generation++;
     try { this.pcs?.dispose(); } catch { /* already gone */ }
     try { this.mesh?.dispose(); } catch { /* already gone */ }
     this.pcs = null;

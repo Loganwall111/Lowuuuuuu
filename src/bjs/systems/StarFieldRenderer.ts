@@ -46,6 +46,7 @@ export class StarFieldRenderer {
   private mesh: Mesh | null = null;
   private lastEye = new Vector3(1e12, 1e12, 1e12);
   private built = 0;
+  private generation = 0;
   /** Points currently drawn. */
   count = 0;
 
@@ -103,6 +104,7 @@ export class StarFieldRenderer {
 
     const samples = visibleSky(objects, eye, this.opts.budget);
     this.dispose(false);
+    const generation = ++this.generation;
 
     if (!samples.length) { this.count = 0; return; }
 
@@ -124,8 +126,12 @@ export class StarFieldRenderer {
     });
 
     void pcs.buildMeshAsync().then((mesh) => {
-      this.mesh = mesh;
       if (!mesh) return;
+      if (generation !== this.generation || scene !== this.scene) {
+        try { mesh.dispose(); pcs.dispose(); } catch { /* superseded build */ }
+        return;
+      }
+      this.mesh = mesh;
       mesh.renderingGroupId = 0;
       // The sky must never occlude anything. Points were writing opaque
       // depth at their shell radius, so real geometry behind that shell was
@@ -160,6 +166,7 @@ export class StarFieldRenderer {
   }
 
   dispose(full = true): void {
+    this.generation++;
     try { this.mesh?.dispose(); } catch { /* already gone */ }
     try { this.pcs?.dispose(); } catch { /* already gone */ }
     this.mesh = null;

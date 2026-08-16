@@ -145,6 +145,7 @@ export class LayeredSky {
   private meshes: Mesh[] = [];
   private specs: ShellSpec[];
   private seed: number;
+  private generation = 0;
   /** Points currently drawn, across all shells. */
   count = 0;
   /** Shell meshes, exposed so callers can verify their render state. */
@@ -163,6 +164,7 @@ export class LayeredSky {
   async build(): Promise<void> {
     const scene = this.scene;
     if (!scene || this.systems.length) return;
+    const generation = ++this.generation;
 
     for (let si = 0; si < this.specs.length; si++) {
       const spec = this.specs[si];
@@ -236,6 +238,10 @@ export class LayeredSky {
       }
 
       const mesh = await pcs.buildMeshAsync();
+      if (generation !== this.generation || scene !== this.scene) {
+        try { mesh?.dispose(); pcs.dispose(); } catch { /* superseded build */ }
+        return;
+      }
       if (mesh) {
         this.applySkyState(mesh);
         mesh.metadata = { shell: spec.name, lock: spec.lock };
@@ -301,6 +307,7 @@ export class LayeredSky {
   }
 
   dispose(): void {
+    this.generation++;
     for (const p of this.systems) { try { p.dispose(); } catch { /* already gone */ } }
     this.systems = [];
     this.meshes = [];

@@ -157,6 +157,7 @@ export class CometRenderer {
   private t = 0;
   private on = true;
   private built = false;
+  private generation = 0;
 
   get count(): number { return this.specs.length; }
 
@@ -167,6 +168,7 @@ export class CometRenderer {
   async build(seed = 0x5eedc0de): Promise<void> {
     const scene = this.scene;
     if (!scene || this.built) return;
+    const generation = ++this.generation;
     this.specs = cometSpecs(seed);
 
     try {
@@ -194,6 +196,10 @@ export class CometRenderer {
         p.color = new Color4(0, 0, 0, 0);
       });
       const tail = await pcs.buildMeshAsync();
+      if (generation !== this.generation || scene !== this.scene) {
+        try { tail?.dispose(); pcs.dispose(); head.dispose(); hm.dispose(); } catch { /* superseded */ }
+        return;
+      }
       if (tail) {
         tail.renderingGroupId = 0;
         tail.isPickable = false;
@@ -344,6 +350,7 @@ export class CometRenderer {
   }
 
   dispose(): void {
+    this.generation++;
     try { this.headMesh?.dispose(); } catch { /* gone */ }
     try { this.headMat?.dispose(); } catch { /* gone */ }
     try { this.tailPcs?.dispose(); } catch { /* gone */ }

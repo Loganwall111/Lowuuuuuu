@@ -177,6 +177,7 @@ export class VerseRenderer {
   private mesh: Mesh | null = null;
   private builtId: string | null = null;
   private serial = 0;
+  private generation = 0;
   /** Points currently drawn. */
   count = 0;
 
@@ -194,6 +195,8 @@ export class VerseRenderer {
     if (this.builtId === verse.id) return false;
 
     this.clear();
+    const generation = ++this.generation;
+    const scene = this.scene;
     const pts = versePoints(verse, Math.floor(700 * verse.density), span, seed);
     if (!pts.length) { this.builtId = verse.id; return true; }
 
@@ -203,8 +206,12 @@ export class VerseRenderer {
       particle.color = pts[i].color;
     });
     void pcs.buildMeshAsync().then((mesh) => {
-      this.mesh = mesh;
       if (!mesh) return;
+      if (generation !== this.generation || scene !== this.scene) {
+        try { mesh.dispose(); pcs.dispose(); } catch { /* superseded build */ }
+        return;
+      }
+      this.mesh = mesh;
       mesh.isPickable = false;
       mesh.applyFog = false;
       mesh.alwaysSelectAsActiveMesh = true;
@@ -237,6 +244,7 @@ export class VerseRenderer {
   }
 
   clear(): void {
+    this.generation++;
     try { this.mesh?.dispose(); } catch { /* gone */ }
     try { this.pcs?.dispose(); } catch { /* gone */ }
     this.mesh = null;

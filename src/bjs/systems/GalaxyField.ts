@@ -271,6 +271,7 @@ export class GalaxyField {
   /** Class of the galaxy the fog volume is currently representing. */
   private fogClass: string = HOME_CLASS;
   private fogTime = 0;
+  private fogCamScratch = new Vector3();
   private meshes: Mesh[] = [];
   private built = false;
 
@@ -865,8 +866,8 @@ export class GalaxyField {
         const cz = inHost ? host.galaxy.z : GALAXY_CENTER[2];
         const klass = inHost ? host.galaxy.klass : HOME_CLASS;
 
-        this.fogMat.setVector3('camPos',
-          new Vector3(eye.x - cx, eye.y - cy, eye.z - cz));
+        this.fogCamScratch.set(eye.x - cx, eye.y - cy, eye.z - cz);
+        this.fogMat.setVector3('camPos', this.fogCamScratch);
         // Only pushed when it changes: a uniform write per frame is cheap,
         // but a needless one on every galaxy is still waste.
         if (klass !== this.fogClass) {

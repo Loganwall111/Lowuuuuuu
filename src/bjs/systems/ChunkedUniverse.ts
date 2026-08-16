@@ -416,7 +416,9 @@ export class ChunkStreamer {
       }
     }
 
-    for (const key of [...this.chunks.keys()]) {
+    // Map iterators remain valid while deleting the current entry; avoid
+    // materialising a temporary key array on every cell boundary crossing.
+    for (const key of this.chunks.keys()) {
       if (!wanted.has(key)) this.chunks.delete(key);
     }
     return true;
@@ -436,7 +438,9 @@ export class ChunkStreamer {
 
   clear(): void {
     this.chunks.clear();
-    this.lastCoord = { cx: NaN, cy: NaN, cz: NaN };
+    this.lastCoord.cx = NaN;
+    this.lastCoord.cy = NaN;
+    this.lastCoord.cz = NaN;
   }
 
   stats(): Record<string, string> {

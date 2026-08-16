@@ -26,6 +26,7 @@ export const LOADING_MATRIX = [
   'TANKS IN HASH!'
 ] as const;
 
+const LOADING_TELEMETRY_TEXT = LOADING_TELEMETRY.join('\n');
 const DURATION = 10.8;
 const MATRIX_END = 2.05;
 const SHATTER_END = 4.35;
@@ -61,6 +62,9 @@ export class LoadingScreenManager {
   private speechDone = true;
   private lastTyped = '';
   private spoken = false;
+  /** Frost is deliberately 15 fps; high-frequency grain was starving WebGL. */
+  private lastFrostDraw = -Infinity;
+  private frostCleared = false;
   private resizeHandler = () => this.resize();
   private keyHandler = (e: KeyboardEvent) => {
     // Loading is an atomic transition. Consume bypass keys so neither the
@@ -83,6 +87,8 @@ export class LoadingScreenManager {
     // Speech begins with Stage 4 (not while the player is still choosing a
     // mode on the menu, and not over the earlier matrix diagnostics).
     this.spoken = false;
+    this.lastFrostDraw = -Infinity;
+    this.frostCleared = false;
     window.addEventListener('resize', this.resizeHandler, { passive: true });
     window.addEventListener('keydown', this.keyHandler);
     this.startAt = performance.now();
@@ -266,13 +272,19 @@ export class LoadingScreenManager {
     }
     g.globalCompositeOperation = 'source-over';
 
-    // Frost grain and descending melt droplets. Alpha collapses as the suit
-    // heats the pane, while droplets stretch under simulated surface tension.
-    fg.clearRect(0, 0, frost.width, frost.height);
+    // Frost is a secondary veil, so update it at 15 fps instead of forcing
+    // tens of thousands of 2D draw calls alongside every WebGL frame.
     const heat = Math.max(0, Math.min(1, (t - 2.55) / 3.45));
-    if (heat < 1) {
+    if (heat >= 1) {
+      if (!this.frostCleared) {
+        fg.clearRect(0, 0, frost.width, frost.height);
+        this.frostCleared = true;
+      }
+    } else if (t - this.lastFrostDraw >= 1 / 15) {
+      this.lastFrostDraw = t;
+      fg.clearRect(0, 0, frost.width, frost.height);
       fg.fillStyle = `rgba(185,220,255,${.055 * (1 - heat)})`;
-      const cell = 7;
+      const cell = 12;
       for (let y = 0; y < h; y += cell) {
         for (let x = 0; x < w; x += cell) {
           const n = Math.sin(x * 12.9898 + y * 78.233 + Math.floor(t * 9)) * 43758.5453;
@@ -321,9 +333,8 @@ export class LoadingScreenManager {
 
     // Character-level typewriter, including the exact line punctuation.
     const telemetryT = Math.max(0, t - 5.55);
-    const all = LOADING_TELEMETRY.join('\n');
-    const chars = Math.min(all.length, Math.floor(telemetryT * 46));
-    const typed = all.slice(0, chars);
+    const chars = Math.min(LOADING_TELEMETRY_TEXT.length, Math.floor(telemetryT * 46));
+    const typed = LOADING_TELEMETRY_TEXT.slice(0, chars);
     if (typed !== this.lastTyped) {
       this.lastTyped = typed;
       const ticker = el.querySelector<HTMLElement>('#omniTicker');
