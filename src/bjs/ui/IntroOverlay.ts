@@ -194,8 +194,24 @@ export const INTRO_CSS = `
 /* The play button is the first thing anyone touches, so it is built like a
    piece of hardware: a bevelled plate with its own light, a sweeping sheen,
    and a bracket frame that charges up on hover. */
-.intro-modes{ display:flex; gap:16px; margin-top:22px; flex-wrap:wrap;
-  justify-content:center; }
+.intro-modes{ display:flex; flex-direction:column; gap:14px; margin-top:24px;
+  align-items:center; }
+/* The doors assemble one after another, bottom to top. */
+.intro-modes > *{ animation:introDoor .5s cubic-bezier(.2,.8,.2,1) both; }
+.intro-modes > *:nth-child(1){ animation-delay:.35s; }
+.intro-modes > *:nth-child(2){ animation-delay:.44s; }
+.intro-modes > *:nth-child(3){ animation-delay:.53s; }
+.intro-modes > *:nth-child(4){ animation-delay:.62s; }
+@keyframes introDoor{
+  from{ opacity:0; transform:translateY(16px) scale(.96); }
+  to{ opacity:1; transform:translateY(0) scale(1); } }
+/* A subtle scanline texture inside every door, so they read as machined
+   plates rather than flat gradients. */
+.intro-play::after{
+  content:''; position:absolute; inset:0; pointer-events:none; opacity:.25;
+  background:repeating-linear-gradient(180deg,
+    rgba(255,255,255,.06) 0 1px, transparent 1px 4px);
+  mix-blend-mode:screen;}
 .intro-play{
   position:relative; padding:16px 34px 15px;
   min-width:250px; display:flex; flex-direction:column; gap:5px;
@@ -395,8 +411,8 @@ export const INTRO_CSS = `
 .intro-grid{position:absolute;left:-10%;right:-10%;bottom:-6px;height:32vh;
   pointer-events:none;opacity:.30;
   background-image:
-    linear-gradient(rgba(255,180,60,.16) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,180,60,.16) 1px, transparent 1px);
+    linear-gradient(rgba(80,180,255,.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80,180,255,.16) 1px, transparent 1px);
   background-size:52px 52px;
   transform:perspective(620px) rotateX(63deg);transform-origin:bottom;
   -webkit-mask-image:linear-gradient(180deg,transparent,#000 70%);
@@ -407,16 +423,16 @@ export const INTRO_CSS = `
 /* Top-left identity, like the boot logo of a launch screen. */
 .intro-brand{position:absolute;left:28px;top:22px;z-index:4;
   font-size:11px;letter-spacing:.32em;text-transform:uppercase;
-  color:rgba(255,226,170,.72);}
-.intro-brand b{color:var(--acc,#ffb020);font-weight:800;text-shadow:0 0 14px rgba(255,180,40,.6);}
+  color:rgba(150,215,255,.72);}
+.intro-brand b{color:var(--acc,#3fc4ff);font-weight:800;text-shadow:0 0 14px rgba(80,180,255,.6);}
 
 /* A spinning hex emblem above the logotype - the studio mark. */
 .intro-emblem{width:66px;height:66px;position:relative;display:grid;place-items:center;
   margin-bottom:-4px;}
 .intro-emblem::before{content:'';position:absolute;inset:0;
   clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
-  background:linear-gradient(135deg,#ffd28a 0%,#ff9a3c 55%,#ff6a2a 100%);
-  box-shadow:0 0 34px rgba(255,150,40,.45);}
+  background:linear-gradient(135deg,#9fd6ff 0%,#4fb6ff 55%,#2f7de8 100%);
+  box-shadow:0 0 34px rgba(70,160,255,.45);}
 .intro-emblem span{position:absolute;inset:4px;
   clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
   background:#0a0e18;animation:introEmblem 26s linear infinite;}
@@ -424,7 +440,7 @@ export const INTRO_CSS = `
 
 /* The accent line that sweeps open under the logotype. */
 .intro-kicker{display:block;width:min(440px,62vw);height:2px;margin-top:-8px;
-  background:linear-gradient(90deg,transparent,var(--acc,#ffb020),transparent);
+  background:linear-gradient(90deg,transparent,var(--acc,#3fc4ff),transparent);
   transform:scaleX(0);transform-origin:center;
   animation:introKicker 1.1s .45s cubic-bezier(.2,.8,.2,1) forwards;}
 @keyframes introKicker{ to{transform:scaleX(1)} }
@@ -433,66 +449,103 @@ export const INTRO_CSS = `
 .intro-info{position:absolute;left:28px;bottom:22px;z-index:4;display:flex;gap:16px;
   font-size:10px;letter-spacing:.16em;text-transform:uppercase;
   color:rgba(205,222,255,.42);}
-.intro-info-ver{color:rgba(255,210,140,.6);}
+.intro-info-ver{color:rgba(140,210,255,.6);}
 
 /* --- amber recolour: the mark, the badge, the buttons --- */
 .intro-title h1{
-  background:linear-gradient(180deg,#ffffff 0%,#ffe0b0 46%,#ffb020 80%,#ff8a2a 100%);
+  background:linear-gradient(180deg,#ffffff 0%,#cfe9ff 46%,#3fc4ff 80%,#3f8bff 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   animation:introGlowAmber 6s ease-in-out infinite alternate;
-  text-shadow:0 0 70px rgba(255,170,50,.4);
+  text-shadow:0 0 70px rgba(90,180,255,.4);
 }
 @keyframes introGlowAmber{
-  from{ text-shadow:0 0 46px rgba(255,180,60,.30); }
-  to{ text-shadow:0 0 96px rgba(255,160,40,.6); }
+  from{ text-shadow:0 0 46px rgba(90,180,255,.30); }
+  to{ text-shadow:0 0 96px rgba(70,170,255,.6); }
 }
-.intro-sub{ color:#ffd9a0; text-shadow:0 0 18px rgba(255,160,60,.4); }
-.ir-badge{ color:#2a1500; background:linear-gradient(180deg,#ffd28a,#ff9a3c);
-  box-shadow:0 0 22px rgba(255,160,50,.55); }
-.ir-name{ color:#ffc87a; }
+.intro-sub{ color:#bcd9ff; text-shadow:0 0 18px rgba(80,170,255,.4); }
+.ir-badge{ color:#04121f; background:linear-gradient(180deg,#9fd6ff,#4fb6ff);
+  box-shadow:0 0 22px rgba(80,170,255,.55); }
+.ir-name{ color:#9fc6ff; }
 
 .intro-play{
   background:
     linear-gradient(180deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,0) 42%),
-    linear-gradient(180deg,#ffc24a 0%,#ff9a2a 46%,#e86a12 100%);
-  text-shadow:0 1px 0 rgba(60,20,0,.55), 0 0 24px rgba(255,190,90,.7);
+    linear-gradient(180deg,#59bfff 0%,#2f8be8 46%,#1a5cc0 100%);
+  text-shadow:0 1px 0 rgba(60,20,0,.55), 0 0 24px rgba(120,200,255,.7);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.6),
     inset 0 -2px 0 rgba(90,30,0,.55),
-    0 12px 38px rgba(230,120,20,.5),
-    0 0 0 1px rgba(255,190,110,.4);
+    0 12px 38px rgba(40,130,230,.5),
+    0 0 0 1px rgba(120,200,255,.4);
 }
 .intro-play:hover{
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.75),
     inset 0 -2px 0 rgba(90,30,0,.5),
-    0 20px 52px rgba(255,140,30,.65),
-    0 0 0 1px rgba(255,210,140,.6),
-    0 0 70px rgba(255,150,40,.5);
+    0 20px 52px rgba(60,150,255,.65),
+    0 0 0 1px rgba(140,210,255,.6),
+    0 0 70px rgba(70,160,255,.5);
 }
 /* Sandbox reads as the hotter, riskier door. */
 .intro-play-sandbox{
   background:
     linear-gradient(180deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,0) 42%),
-    linear-gradient(180deg,#ff7a3c 0%,#f05520 46%,#c2330c 100%);
+    linear-gradient(180deg,#6f6bff 0%,#5a4ae0 46%,#3a2aa8 100%);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.55),
     inset 0 -2px 0 rgba(70,15,0,.55),
-    0 12px 34px rgba(230,80,20,.5),
-    0 0 0 1px rgba(255,170,120,.4);
+    0 12px 34px rgba(90,70,230,.5),
+    0 0 0 1px rgba(150,140,255,.4);
 }
 .intro-play-sandbox:hover{
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.7),
     inset 0 -2px 0 rgba(70,15,0,.5),
-    0 18px 48px rgba(250,100,30,.62),
-    0 0 0 1px rgba(255,190,150,.55),
-    0 0 60px rgba(250,110,40,.45);
+    0 18px 48px rgba(110,90,250,.62),
+    0 0 0 1px rgba(170,160,255,.55),
+    0 0 60px rgba(110,90,250,.45);
 }
-.intro-aux{ background:linear-gradient(180deg,rgba(52,46,30,.72),rgba(30,24,14,.72));
-  border-color:rgba(255,180,90,.26); color:#f2d6a8; }
-.intro-aux:hover{ border-color:rgba(255,200,120,.5); color:#fff; }
-.intro-skip{ border-color:rgba(255,180,90,.32); color:#f0d2a6; }
+.intro-aux{ background:linear-gradient(180deg,rgba(18,30,50,.72),rgba(10,18,34,.72));
+  border-color:rgba(110,170,240,.26); color:#bcd9ff; }
+.intro-aux:hover{ border-color:rgba(140,200,255,.5); color:#fff; }
+.intro-skip{ border-color:rgba(110,170,240,.32); color:#bcd9ff; }
+
+/* ---- title-screen settings panel ---- */
+.intro-settings-panel{
+  position:relative; width:min(430px,84vw); margin-top:20px; text-align:left;
+  padding:16px 18px 18px;
+  background:linear-gradient(160deg,rgba(10,18,34,.96),rgba(6,11,22,.92));
+  border:1px solid rgba(110,170,240,.24); border-radius:10px;
+  box-shadow:0 24px 70px rgba(0,0,0,.65), 0 0 0 1px rgba(80,160,255,.08);
+  animation:introDoor .3s cubic-bezier(.2,.8,.2,1);
+}
+.is-head{ font-size:13px; font-weight:800; letter-spacing:.28em;
+  text-transform:uppercase; color:#cfe9ff; padding-bottom:10px;
+  border-bottom:1px solid rgba(120,170,240,.16); margin-bottom:12px; }
+.is-grp{ margin-bottom:12px; }
+.is-label{ font-size:9px; letter-spacing:.22em; text-transform:uppercase;
+  color:rgba(150,200,250,.5); margin-bottom:6px; }
+.is-row{ display:flex; gap:8px; }
+.is-btn{
+  flex:1; padding:8px 10px; font-size:11px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; cursor:pointer; color:rgba(190,220,255,.7);
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0));
+  border:1px solid rgba(110,170,240,.18); border-radius:6px;
+  font-family:inherit; transition:all .14s ease;
+}
+.is-btn:hover{ color:#eaf4ff; border-color:rgba(150,205,255,.5); }
+.is-btn.on{
+  color:#04121f; background:linear-gradient(180deg,#9fd6ff,#3f8fe8);
+  border-color:transparent; box-shadow:0 0 16px rgba(70,160,255,.45);
+}
+.is-close{
+  width:100%; margin-top:4px; padding:9px; font-size:11px; font-weight:700;
+  letter-spacing:.22em; text-transform:uppercase; cursor:pointer;
+  color:rgba(190,220,255,.75); background:rgba(20,34,56,.7);
+  border:1px solid rgba(110,170,240,.22); border-radius:6px; font-family:inherit;
+  transition:all .14s ease;
+}
+.is-close:hover{ color:#fff; border-color:rgba(150,205,255,.5); }
 
 .intro-hide{ display:none !important; }
 `;
@@ -501,12 +554,17 @@ export interface IntroHooks {
   onPlay(mode: string): void;
   onSkip(): void;
   onAdvance(): void;
+  /** Optional: applies a quality preset from the title-screen settings. */
+  onSettingsQuality?(name: string): void;
+  /** Optional: switches the HUD theme from the title-screen settings. */
+  onSettingsHudTheme?(id: string): void;
 }
 
 export class IntroOverlay {
   private root: HTMLDivElement;
   private titleCard: HTMLDivElement;
   private patchPanel: HTMLDivElement | null = null;
+  private settingsPanel: HTMLDivElement;
   private talk: HTMLDivElement;
   private prompt: HTMLDivElement;
   private seq: IntroSequence;
@@ -591,7 +649,19 @@ export class IntroOverlay {
     notes.onclick = () => this.togglePatchNotes();
     modes.appendChild(notes);
 
+    // A real settings door: quality and HUD skin, live on the title screen.
+    const settings = document.createElement('button');
+    settings.className = 'intro-aux intro-settings';
+    settings.innerHTML = '<b>⚙ Settings</b><i>Graphics &amp; interface</i>';
+    settings.onclick = () => this.toggleSettings();
+    modes.appendChild(settings);
+
     this.titleCard.appendChild(modes);
+
+    // The settings panel, collapsed until asked for.
+    this.settingsPanel = document.createElement('div');
+    this.settingsPanel.className = 'intro-settings-panel intro-hide';
+    this.titleCard.appendChild(this.settingsPanel);
 
     // The notes panel itself, collapsed until asked for. Built once and
     // shown/hidden rather than rebuilt, so opening it is instant.
@@ -680,6 +750,60 @@ export class IntroOverlay {
     if (!this.patchPanel) return false;
     const showing = this.patchPanel.classList.toggle('intro-hide');
     return !showing;
+  }
+
+  /** Opens (or closes) the title-screen settings panel. */
+  toggleSettings(): boolean {
+    if (!this.settingsPanel) return false;
+    if (this.settingsPanel.classList.contains('intro-hide')) {
+      this.buildSettings();
+      this.settingsPanel.classList.remove('intro-hide');
+      // A settings panel is a different context than the notes; keep only
+      // one open at a time.
+      this.patchPanel?.classList.add('intro-hide');
+      return true;
+    }
+    this.settingsPanel.classList.add('intro-hide');
+    return false;
+  }
+
+  /** Builds the settings controls once, wired to the app hooks. */
+  private buildSettings(): void {
+    const p = this.settingsPanel;
+    if (p.childElementCount) return;
+    p.innerHTML =
+      '<div class="is-head">Settings</div>' +
+      '<div class="is-grp">' +
+      '<div class="is-label">Quality</div>' +
+      '<div class="is-row">' +
+      '<button class="is-btn" data-q="low">Low</button>' +
+      '<button class="is-btn on" data-q="high">High</button>' +
+      '<button class="is-btn" data-q="ultra">Ultra</button>' +
+      '</div></div>' +
+      '<div class="is-grp">' +
+      '<div class="is-label">HUD Skin</div>' +
+      '<div class="is-row">' +
+      '<button class="is-btn on" data-hud="suit">Exosuit</button>' +
+      '<button class="is-btn" data-hud="satellite">Satellite</button>' +
+      '<button class="is-btn" data-hud="legacy">Legacy</button>' +
+      '</div></div>' +
+      '<button class="is-close">Close</button>';
+    p.querySelectorAll<HTMLElement>('[data-q]').forEach((b) => {
+      b.onclick = () => {
+        p.querySelectorAll<HTMLElement>('[data-q]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        this.hooks.onSettingsQuality?.(b.dataset.q ?? 'high');
+      };
+    });
+    p.querySelectorAll<HTMLElement>('[data-hud]').forEach((b) => {
+      b.onclick = () => {
+        p.querySelectorAll<HTMLElement>('[data-hud]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        this.hooks.onSettingsHudTheme?.(b.dataset.hud ?? 'suit');
+      };
+    });
+    (p.querySelector('.is-close') as HTMLElement).onclick = () =>
+      p.classList.add('intro-hide');
   }
 
   /** True while the notes are on screen. Used by the tests. */

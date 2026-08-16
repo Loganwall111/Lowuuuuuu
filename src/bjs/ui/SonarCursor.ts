@@ -31,7 +31,7 @@ export interface SonarCursorOptions {
 
 export const DEFAULT_SONAR: SonarCursorOptions = {
   size: 34,
-  accent: '#ffb020'
+  accent: '#3fc4ff'
 };
 
 /**
@@ -45,16 +45,24 @@ export function sonarCursorSVG(o: SonarCursorOptions = DEFAULT_SONAR): string {
   const c = s / 2;
   const r = c * 0.52;
   const tick = c * 0.30;
+  // A finer targeting reticle: an open ring, a crosshair, and a diamond core
+  // instead of a plain dot - the "lock-on" look without any image files.
+  const dia = r * 0.42;
   return '<svg xmlns="http://www.w3.org/2000/svg" width="' + s + '" height="' + s
     + '" viewBox="0 0 ' + s + ' ' + s + '">'
     + '<circle cx="' + c + '" cy="' + c + '" r="' + r.toFixed(2)
-    + '" fill="none" stroke="' + o.accent + '" stroke-width="1.2" opacity="0.85"/>'
-    + '<circle cx="' + c + '" cy="' + c + '" r="1.5" fill="' + o.accent + '"/>'
+    + '" fill="none" stroke="' + o.accent + '" stroke-width="1.1" opacity="0.8"/>'
+    + '<circle cx="' + c + '" cy="' + c + '" r="' + (r * 0.36).toFixed(2)
+    + '" fill="none" stroke="' + o.accent + '" stroke-width="0.7" opacity="0.45"/>'
+    + '<path d="M' + c.toFixed(2) + ' ' + (c - dia).toFixed(2) + ' L'
+    + (c + dia).toFixed(2) + ' ' + c.toFixed(2) + ' L' + c.toFixed(2) + ' ' + (c + dia).toFixed(2)
+    + ' L' + (c - dia).toFixed(2) + ' ' + c.toFixed(2) + ' Z'
+    + '" fill="none" stroke="' + o.accent + '" stroke-width="1" opacity="0.95"/>'
     + '<path d="M' + c + ' ' + (c - r - tick).toFixed(2) + 'V' + (c - r * 0.55).toFixed(2)
     + 'M' + c + ' ' + (c + r + tick).toFixed(2) + 'V' + (c + r * 0.55).toFixed(2)
     + 'M' + (c - r - tick).toFixed(2) + ' ' + c + 'H' + (c - r * 0.55).toFixed(2)
     + 'M' + (c + r + tick).toFixed(2) + ' ' + c + 'H' + (c + r * 0.55).toFixed(2)
-    + '" stroke="' + o.accent + '" stroke-width="1.2" opacity="0.9"/>'
+    + '" stroke="' + o.accent + '" stroke-width="1.1" opacity="0.9"/>'
     + '</svg>';
 }
 

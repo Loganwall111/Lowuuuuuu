@@ -47,10 +47,16 @@ export const DEFAULT_POSTFX: PostFXSettings = {
   // which lifted dark tones by up to 190% and made planets glare white.
   exposure: 1.0,
   contrast: 1.08,
-  vignette: 0.26,
-  grain: 0.85,
+  vignette: 0.24,
+  // Crystal clarity. The film-grain and chromatic-aberration passes used to
+  // read as a vintage VHS filter bleeding over the whole frame, tinting the
+  // void where no gas or dust exists. Deep space is a light-swallowing
+  // vacuum, so both are off by default: colour lives only in the real
+  // procedural gas and stellar dust, never in a screen-wide fuzz. They stay
+  // exposed as sliders for anyone who genuinely wants the analogue look.
+  grain: 0,
   sharpen: 0.46,
-  chromatic: 1.2,
+  chromatic: 0,
   fxaa: 1,
   bloomKernel: 112,
   bloomScale: 0.85

@@ -525,6 +525,11 @@ export class App {
 
     this.shell.progress(35, 'creating scene');
     this.scene = new Scene(this.engine);
+    // Explicit clear: flying high above or below the galactic plane must
+    // never leave a stale viewport buffer, which read as black flashes when
+    // the camera moved outside the galaxy mesh bounds. Clearing every frame
+    // guarantees the backdrop layers repaint regardless of camera height.
+    this.scene.autoClear = true;
     // INK-BLACK VACUUM.
     //
     // Deep intergalactic space is a true light-swallowing black, so distant
@@ -694,7 +699,16 @@ export class App {
         this.shell.onMenuClosed();
       },
       onSkip: () => this.finishIntro(),
-      onAdvance: () => this.advanceIntro()
+      onAdvance: () => this.advanceIntro(),
+      onSettingsQuality: (name) => {
+        const map: Record<string, QualityName> = {
+          low: 'performance', high: 'high', ultra: 'cinematic'
+        };
+        this.applyQuality(map[name] ?? 'high');
+      },
+      onSettingsHudTheme: (id) => {
+        this.flightHud.setTheme(id as 'suit' | 'satellite' | 'legacy');
+      }
     });
   }
 
@@ -1593,12 +1607,12 @@ export class App {
     if (this.perfTier === tier) return;
     this.perfTier = tier;
     if (tier === 0) {
-      this.postfx.set('grain', 0.85);
-      this.postfx.set('chromatic', 1.2);
+      this.postfx.set('grain', 0);
+      this.postfx.set('chromatic', 0);
       this.postfx.set('bloomKernel', 112);
     } else if (tier === 1) {
       this.postfx.set('grain', 0);
-      this.postfx.set('chromatic', 0.6);
+      this.postfx.set('chromatic', 0);
       this.postfx.set('bloomKernel', 64);
     } else {
       this.postfx.set('grain', 0);

@@ -201,7 +201,7 @@ export class Shell {
       else if (k === '3') this.wm.Toggle('telemetry');
       else if (k === '4') this.wm.Toggle('presets');
       else if (k === '5') this.wm.Toggle('graphics');
-      else if (k === 'h') this.wm.CloseAll();
+      else if (k === 'h') this.toggleCinematic();
       else if (k === ' ') { e.preventDefault(); this.togglePause(); }
       else if (k === 'r') this.hooks.onReset();
     });
@@ -268,34 +268,43 @@ export class Shell {
     this.topbar = document.createElement('div');
     // The tool bar belongs to the game, not to the main menu: it starts
     // hidden and is revealed the moment the player enters (onMenuClosed).
+    //
+    // Instead of a horizontal strip across the top, it is now two vertical
+    // "suit rails" docked to the lower left and right edges - the cockpit
+    // controls of the armor, exactly where the hands would reach them.
     this.topbar.className = 'topbar hidden';
     this.topbar.innerHTML = `
-      <div class="brand">
-        <div class="brand-dot"></div>
-        <div><div class="brand-name">UNLIMITED</div><div class="brand-sub">Possibilities Sandbox</div></div>
+      <div class="rail rail-l">
+        <div class="brand">
+          <div class="brand-dot"></div>
+          <div><div class="brand-name">UNLIMITED</div><div class="brand-sub">Possibilities Sandbox</div></div>
+        </div>
+        <div class="modesw" id="modeSwitch" title="Explorer explores; Sandbox has full physics (M)">
+          <button class="modesw-b" data-gm="explorer">🔭</button>
+          <button class="modesw-b" data-gm="sandbox">🌌</button>
+        </div>
+        <div class="rail-group">
+          <button class="iconbtn" id="w-controls" title="Controls (1)">🎛</button>
+          <button class="iconbtn" id="w-objects"  title="Objects (2)">🧰</button>
+          <button class="iconbtn" id="w-library"  title="World Library (6)">🗂</button>
+          <button class="iconbtn" id="w-telemetry" title="Telemetry (3)">📊</button>
+          <button class="iconbtn" id="w-presets"  title="Presets (4)">✨</button>
+          <button class="iconbtn" id="w-graphics" title="Graphics (5)">🎨</button>
+          <button class="iconbtn" id="w-snapshots" title="Snapshots (7)">📸</button>
+          <button class="iconbtn" id="w-view" title="View &amp; Interface (8)">🖥</button>
+          <button class="iconbtn" id="w-pilot" title="Pilot &amp; Explore (9)">🚀</button>
+          <button class="iconbtn" id="w-navigator" title="Universe (N)">🌌</button>
+          <button class="iconbtn" id="w-lens" title="Gravitational Lens">🔭</button>
+        </div>
       </div>
-      <div class="spacer"></div>
-      <div class="modesw" id="modeSwitch" title="Explorer explores; Sandbox has full physics (M)">
-        <button class="modesw-b" data-gm="explorer">🔭 Explorer</button>
-        <button class="modesw-b" data-gm="sandbox">🌌 Sandbox</button>
+      <div class="rail rail-r">
+        <button class="iconbtn" id="btnPause" title="Pause / Resume (Space)">⏸</button>
+        <button class="iconbtn" id="btnFocus" title="Focus mode - hide all panels (F)">👁</button>
+        <button class="iconbtn" id="btnTile" title="Tile panels to the screen edges (T)">▤</button>
+        <button class="iconbtn" id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
+        <button class="iconbtn" id="btnRedo" title="Redo (Ctrl+Shift+Z)">↷</button>
+        <button class="iconbtn" id="btnReset" title="Reset layout & sim (R)">↺</button>
       </div>
-      <button class="iconbtn" id="btnPause" title="Pause / Resume (Space)">⏸</button>
-      <button class="iconbtn" id="w-controls" title="Controls (1)">🎛</button>
-      <button class="iconbtn" id="w-objects"  title="Objects (2)">🧰</button>
-      <button class="iconbtn" id="w-library"  title="World Library (6)">🗂</button>
-      <button class="iconbtn" id="w-telemetry" title="Telemetry (3)">📊</button>
-      <button class="iconbtn" id="w-presets"  title="Presets (4)">✨</button>
-      <button class="iconbtn" id="w-graphics" title="Graphics (5)">🎨</button>
-      <button class="iconbtn" id="btnFocus"   title="Focus mode - hide all panels (F)">👁</button>
-      <button class="iconbtn" id="btnTile"    title="Tile panels to the screen edges (T)">▤</button>
-      <button class="iconbtn" id="btnUndo"    title="Undo (Ctrl+Z)">↶</button>
-      <button class="iconbtn" id="btnRedo"    title="Redo (Ctrl+Shift+Z)">↷</button>
-      <button class="iconbtn" id="w-snapshots" title="Snapshots (7)">📸</button>
-      <button class="iconbtn" id="w-view" title="View &amp; Interface (8)">🖥</button>
-      <button class="iconbtn" id="w-pilot" title="Pilot &amp; Explore (9)">🚀</button>
-      <button class="iconbtn" id="w-navigator" title="Universe (N)">🌌</button>
-      <button class="iconbtn" id="w-lens" title="Gravitational Lens (L)">🔭</button>
-      <button class="iconbtn" id="btnReset"   title="Reset layout & sim (R)">↺</button>
     `;
     document.body.appendChild(this.topbar);
 
@@ -353,6 +362,24 @@ export class Shell {
     b.textContent = this.paused ? '▶' : '⏸';
     b.classList.toggle('on', this.paused);
     this.hooks.onPause(this.paused);
+  }
+
+  /**
+   * H: the cinematic toggle.
+   *
+   * Pressing H drops every panel and the suit rails, leaving only the armor
+   * visor metrics over a completely clean view of the galaxy. Pressing it
+   * again brings the interface back. Engaging it also closes the panels so
+   * nothing is left half-open behind the clean view.
+   */
+  private cinematic = false;
+  private toggleCinematic(): void {
+    this.cinematic = !this.cinematic;
+    document.body.dataset.cinematic = this.cinematic ? '1' : '0';
+    if (this.cinematic) this.wm.CloseAll();
+    this.toast(this.cinematic
+      ? 'Cinematic view — press H to restore the interface'
+      : 'Interface restored');
   }
 
   /**

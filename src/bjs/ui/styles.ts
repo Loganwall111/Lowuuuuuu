@@ -3,7 +3,7 @@ export const UI_CSS = `
   --bg:#05070d; --panel:rgba(16,20,30,.82); --panel-solid:#11141d;
   --line:rgba(255,255,255,.10); --line2:rgba(255,255,255,.06);
   --txt:#e8edf7; --dim:#8b95ad; --dim2:#5d6679;
-  --acc:#ffb020; --acc2:#ff7a3d; --ok:#3ddb8f; --warn:#ff5a45;
+  --acc:#3fc4ff; --acc2:#3f6bff; --ok:#3ddb8f; --warn:#ff5a45;
   --r:6px; --r2:4px;
   --shadow:0 14px 38px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.35);
   /* UI density + see-through: the sim must always stay readable behind panels */
@@ -86,10 +86,16 @@ body[data-photo="1"] .sonar-cursor{ display:none !important; }
 
 /* ============ top bar ============ */
 .topbar{
-  position:fixed;top:0;left:0;right:0;height:56px;z-index:80;display:flex;align-items:center;
-  gap:10px;padding:0 14px;pointer-events:none;
+  position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;
+  justify-content:space-between;padding:0 8px 16px;pointer-events:none;
+  transition:opacity .5s ease;
 }
 .topbar > *{pointer-events:auto}
+/* The two suit rails: vertical cockpit controls docked at the lower edges. */
+.rail{display:flex;flex-direction:column;gap:8px;align-items:stretch;}
+.rail-l{align-items:flex-start;}
+.rail-r{align-items:flex-end;}
+.rail-group{display:grid;grid-template-columns:repeat(2,auto);gap:6px;}
 .brand{display:flex;align-items:center;gap:9px;padding:6px 15px 6px 11px;
   background:linear-gradient(180deg,rgba(16,24,40,.9),rgba(10,15,26,.9));
   backdrop-filter:blur(20px);border:1px solid rgba(140,190,255,.22);box-shadow:var(--shadow);
@@ -262,10 +268,10 @@ body[data-photo="1"] .sonar-cursor{ display:none !important; }
 .fh-hdg-inner{position:absolute;top:0;left:0;height:20px;width:0;
   will-change:transform;transition:transform .08s linear;}
 .fh-hdg-tick{position:absolute;top:0;width:0;height:14px;
-  border-left:1px solid rgba(255,190,70,.30);}
-.fh-hdg-tick.lbl{border-left-color:rgba(255,205,90,.55);height:16px;}
+  border-left:1px solid rgba(90,190,255,.30);}
+.fh-hdg-tick.lbl{border-left-color:rgba(120,205,255,.55);height:16px;}
 .fh-hdg-tick i{position:absolute;left:4px;top:1px;font-style:normal;
-  font-size:8px;letter-spacing:.06em;color:rgba(255,215,130,.66);white-space:nowrap;}
+  font-size:8px;letter-spacing:.06em;color:rgba(150,215,255,.66);white-space:nowrap;}
 .fh-pitch{position:absolute;left:50%;top:50%;width:150px;height:220px;
   transform:translate(-50%,-50%);overflow:hidden;
   -webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);
@@ -273,20 +279,20 @@ body[data-photo="1"] .sonar-cursor{ display:none !important; }
 .fh-pitch-inner{position:absolute;top:0;left:0;width:150px;height:0;
   will-change:transform;transition:transform .08s linear;}
 .fh-ladder-line{position:absolute;left:0;width:150px;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,190,70,.34) 24%,
-    rgba(255,190,70,.34) 76%,transparent);}
+  background:linear-gradient(90deg,transparent,rgba(90,190,255,.34) 24%,
+    rgba(90,190,255,.34) 76%,transparent);}
 .fh-ladder-line span{position:absolute;right:2px;top:-4px;font-size:8px;
-  color:rgba(255,205,120,.5);letter-spacing:.04em;}
+  color:rgba(120,205,255,.5);letter-spacing:.04em;}
 .fh-ladder-line.zero{height:2px;
   background:linear-gradient(90deg,transparent,var(--acc) 12%,var(--acc) 88%,transparent);
   box-shadow:0 0 10px color-mix(in srgb,var(--acc) 55%,transparent);}
 .fh-horizon{position:absolute;left:50%;top:50%;width:190px;height:2px;
   transform:translate(-50%,-50%);
-  background:linear-gradient(90deg,transparent,rgba(255,200,90,.4),transparent);}
+  background:linear-gradient(90deg,transparent,rgba(90,200,255,.4),transparent);}
 .fh-fd{position:absolute;left:50%;top:50%;width:0;height:0;
   transform:translate(-50%,-50%);
   border-left:7px solid transparent;border-right:7px solid transparent;
-  border-bottom:10px solid rgba(255,200,90,.65);filter:drop-shadow(0 0 5px rgba(255,170,40,.4));}
+  border-bottom:10px solid rgba(90,200,255,.65);filter:drop-shadow(0 0 5px rgba(70,180,255,.4));}
 
 /* ---- exosuit (powered armor) framing ---- */
 /* The helmet visor: an angular mask at the screen edges that reads as
@@ -311,19 +317,19 @@ body[data-photo="1"] .sonar-cursor{ display:none !important; }
   box-shadow:0 0 14px color-mix(in srgb,var(--acc) 55%,transparent);}
 .fv-side.l{left:16px;}.fv-side.r{right:16px;}
 .fv-pylon{position:absolute;top:50%;width:14px;height:120px;transform:translateY(-50%);
-  border:1px solid rgba(255,180,60,.22);
-  background:linear-gradient(180deg,rgba(255,170,60,.08),rgba(255,120,40,.02));}
+  border:1px solid rgba(80,180,255,.22);
+  background:linear-gradient(180deg,rgba(80,170,255,.08),rgba(60,140,255,.02));}
 .fv-pylon.l{left:6px;clip-path:polygon(0 0,100% 8%,100% 92%,0 100%);}
 .fv-pylon.r{right:6px;clip-path:polygon(0 8%,100% 0,100% 100%,0 92%);}
 
 /* The suit vitals: a reactor core ring on the left, armor + life support
    stacked under it. Only the exosuit theme shows them. */
-.fhud-suit .fhud-vitals{display:flex;position:absolute;left:40px;top:50%;
+.fhud-suit .fhud-vitals{display:flex;position:absolute;left:92px;top:50%;
   transform:translateY(-50%);flex-direction:column;gap:16px;align-items:center;}
 .fh-reactor{position:relative;width:78px;height:78px;border-radius:50%;
   display:grid;place-items:center;
-  background:rgba(10,14,22,.55);border:1px solid rgba(255,180,60,.24);
-  box-shadow:0 0 30px rgba(255,150,40,.12), inset 0 0 18px rgba(0,0,0,.5);}
+  background:rgba(10,14,22,.55);border:1px solid rgba(80,180,255,.24);
+  box-shadow:0 0 30px rgba(60,150,255,.12), inset 0 0 18px rgba(0,0,0,.5);}
 .fh-reactor i{position:absolute;inset:7px;border-radius:50%;
   background:conic-gradient(var(--acc) 0deg, rgba(255,255,255,.06) 0deg);
   -webkit-mask:radial-gradient(circle,transparent 58%,#000 60%);
@@ -331,23 +337,23 @@ body[data-photo="1"] .sonar-cursor{ display:none !important; }
 .fh-reactor::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;
   background:var(--acc);box-shadow:0 0 12px var(--acc);}
 .fh-reactor span{position:absolute;bottom:-16px;font-size:8px;letter-spacing:.28em;
-  color:rgba(255,205,130,.66);text-transform:uppercase;}
+  color:rgba(140,205,255,.66);text-transform:uppercase;}
 .fh-suit-block{width:150px;padding:8px 12px 9px;
   background:linear-gradient(135deg,rgba(14,16,24,.72),rgba(8,10,16,.55));
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid rgba(255,180,60,.18);
+  border:1px solid rgba(80,180,255,.18);
   clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);}
-.fh-bar-armor i{background:linear-gradient(90deg,#ff9a3c,#ffd9a8);}
+.fh-bar-armor i{background:linear-gradient(90deg,#4fb6ff,#bfe4ff);}
 .fh-suit-rows{display:flex;gap:10px;margin-top:7px;justify-content:space-between;
-  font-size:8.5px;letter-spacing:.1em;color:rgba(255,205,140,.55);text-transform:uppercase;}
-.fh-suit-rows b{color:#ffe3b0;font-weight:700;letter-spacing:.02em;}
+  font-size:8.5px;letter-spacing:.1em;color:rgba(140,205,255,.55);text-transform:uppercase;}
+.fh-suit-rows b{color:#cfe9ff;font-weight:700;letter-spacing:.02em;}
 /* The suit still wears the satellite corner brackets, in the amber accent. */
-.fhud-suit .fh-corner{border-color:rgba(255,180,60,.4);}
-.fhud-suit .fh-scan{background:linear-gradient(180deg,transparent,rgba(255,180,60,.10),transparent);}
+.fhud-suit .fh-corner{border-color:rgba(80,180,255,.4);}
+.fhud-suit .fh-scan{background:linear-gradient(180deg,transparent,rgba(80,180,255,.10),transparent);}
 
-.fhud-left{position:absolute;left:20px;bottom:88px;display:flex;
+.fhud-left{position:absolute;left:92px;bottom:88px;display:flex;
   flex-direction:column;gap:10px;align-items:flex-start;}
-.fhud-right{position:absolute;right:20px;bottom:88px;display:flex;
+.fhud-right{position:absolute;right:92px;bottom:88px;display:flex;
   flex-direction:column;gap:10px;align-items:stretch;min-width:212px;}
 
 .fh-block{position:relative;padding:8px 14px 9px;
@@ -401,7 +407,7 @@ body[data-photo="1"] .sonar-cursor{ display:none !important; }
 .fh-desc-bar{height:4px;margin-top:7px;background:rgba(255,190,120,.14);
   overflow:hidden;}
 .fh-desc-bar i{display:block;height:100%;
-  background:linear-gradient(90deg,#ff9a3c,#ffd9a8);
+  background:linear-gradient(90deg,#4fb6ff,#bfe4ff);
   box-shadow:0 0 14px rgba(255,150,60,.75);transition:width .12s linear;}
 /* the way back, shown as its own closing aperture */
 .fh-desc-exit{font-size:9.5px;letter-spacing:1px;color:#8fa8ce;margin-top:5px;}
@@ -430,29 +436,33 @@ body.sonar-on textarea{cursor:text !important;}
 .sonar-cursor span{position:absolute;left:50%;top:50%;
   transform:translate(-50%,-50%);}
 .sc-ring{width:18px;height:18px;border-radius:50%;
-  border:1.2px solid color-mix(in srgb,var(--acc) 85%,transparent);
-  box-shadow:0 0 8px color-mix(in srgb,var(--acc) 45%,transparent);}
-.sc-dot{width:3px;height:3px;border-radius:50%;background:var(--acc);
-  box-shadow:0 0 6px var(--acc);}
+  border:1px solid color-mix(in srgb,var(--acc) 90%,transparent);
+  box-shadow:0 0 10px color-mix(in srgb,var(--acc) 55%,transparent),
+             0 0 0 1px color-mix(in srgb,var(--acc) 22%,transparent);}
+/* The core is a diamond, not a dot - the lock-on look. */
+.sc-dot{width:5px;height:5px;border-radius:0;background:var(--acc);
+  transform:translate(-50%,-50%) rotate(45deg);
+  box-shadow:0 0 7px var(--acc),0 0 14px color-mix(in srgb,var(--acc) 60%,transparent);}
 /* The sweep: a conic wedge rotating inside the ring, like a radar trace. */
 .sc-sweep{width:18px;height:18px;border-radius:50%;
   background:conic-gradient(from 0deg,
-    color-mix(in srgb,var(--acc) 40%,transparent) 0deg,
-    transparent 62deg,transparent 360deg);
-  animation:scSweep 2.6s linear infinite;opacity:.75;}
+    color-mix(in srgb,var(--acc) 50%,transparent) 0deg,
+    transparent 54deg,transparent 360deg);
+  animation:scSweep 2.2s linear infinite;opacity:.85;}
 @keyframes scSweep{to{transform:translate(-50%,-50%) rotate(360deg);}}
-/* Four tracking ticks outside the ring. */
-.sc-tick{width:1.2px;height:5px;background:color-mix(in srgb,var(--acc) 80%,transparent);}
+/* Four tracking ticks outside the ring, with tiny corner heads. */
+.sc-tick{width:1px;height:5px;background:color-mix(in srgb,var(--acc) 90%,transparent);
+  box-shadow:0 0 5px color-mix(in srgb,var(--acc) 60%,transparent);}
 .sc-tick.n{transform:translate(-50%,-50%) translateY(-13px);}
 .sc-tick.s{transform:translate(-50%,-50%) translateY(13px);}
-.sc-tick.w{width:5px;height:1.2px;transform:translate(-50%,-50%) translateX(-13px);}
-.sc-tick.e{width:5px;height:1.2px;transform:translate(-50%,-50%) translateX(13px);}
+.sc-tick.w{width:5px;height:1px;transform:translate(-50%,-50%) translateX(-13px);}
+.sc-tick.e{width:5px;height:1px;transform:translate(-50%,-50%) translateX(13px);}
 /* Click ping: expands and fades once, then waits for the next click. */
 .sc-ping{width:18px;height:18px;border-radius:50%;
-  border:1.2px solid var(--acc);opacity:0;}
+  border:1px solid var(--acc);opacity:0;}
 .sc-ping.go{animation:scPing .5s ease-out 1;}
 @keyframes scPing{
-  0%{opacity:.8;transform:translate(-50%,-50%) scale(.55);}
+  0%{opacity:.9;transform:translate(-50%,-50%) scale(.55);}
   100%{opacity:0;transform:translate(-50%,-50%) scale(2.6);}
 }
 /* State variants. Colour carries the meaning, geometry stays constant so
@@ -921,25 +931,18 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 @keyframes fhPulse{0%,100%{opacity:.44}50%{opacity:.60}}
 .fhud-reticle{animation:fhPulse 4.5s ease-in-out infinite;}
 
-/* --- the top ring bar --- */
+/* --- the suit rails --- */
+/* No full-width bar any more: the rails are transparent docks over the
+   scene, so the galaxy stays readable behind every button. */
 .topbar{
-  background:linear-gradient(180deg,rgba(10,16,30,.92),rgba(8,12,22,.72));
-  border-bottom:1px solid rgba(125,180,255,.18);
-  backdrop-filter:blur(18px) saturate(140%);
-  -webkit-backdrop-filter:blur(18px) saturate(140%);
-  transition:transform .55s cubic-bezier(.2,.8,.2,1), opacity .5s ease;
+  background:transparent;
 }
-/* The tool bar stays off the title screen and slides in once the player
-   enters the game. */
-.topbar.hidden{
-  transform:translateY(-130%); opacity:0; pointer-events:none;
-}
-.topbar::after{
-  content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;
-  background:linear-gradient(90deg,transparent,
-    color-mix(in srgb,var(--acc) 55%,transparent) 30%,
-    color-mix(in srgb,var(--acc2) 55%,transparent) 70%,transparent);
-  pointer-events:none;}
+/* The rails stay off the title screen and fade in once the player enters. */
+.topbar.hidden{ opacity:0; pointer-events:none; }
+/* Cinematic mode (H): the rails and every panel drop away, leaving only the
+   armor visor metrics over a clean view of the universe. */
+body[data-cinematic="1"] .topbar,
+body[data-cinematic="1"] .wm-layer{ display:none !important; }
 
 /* Reduced motion: the pulse is decorative, so drop it on request. */
 @media (prefers-reduced-motion: reduce){

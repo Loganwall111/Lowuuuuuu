@@ -323,6 +323,10 @@ export class HoleFieldRenderer {
     quad.position.copyFrom(spec.position);
     quad.isPickable = false;
     quad.applyFog = false;
+    // Always drawn: a hole's lensing quad must never be frustum-culled when
+    // the camera pitches far above the galactic plane, or the backdrop
+    // behind it flickers out of existence.
+    quad.alwaysSelectAsActiveMesh = true;
     // Drawn after opaque geometry so it composites over the sky behind it.
     quad.renderingGroupId = 1;
 
