@@ -33,6 +33,8 @@ export interface SolidSphere {
   habitable?: boolean;
   /** Gas giants have no surface to land on; they are dived, not landed. */
   gas?: boolean;
+  /** Linear RGB sky tint, for habitable worlds with a real atmosphere. */
+  sky?: [number, number, number];
 }
 
 /** A resolved contact: which sphere, which direction it pushed, how deep. */

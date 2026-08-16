@@ -250,6 +250,8 @@ export class App {
   private versesReached = new Set<string>();
   /** Photomode: hide every layer of UI for a clean frame. */
   private photoMode = false;
+  /** True while the walker stands under a habitable world's sky. */
+  private walkSky = false;
   /** Rolling buffer of the player's motion, for the rewind key. */
   rewind = new TimeRewind();
   /** The gas-giant dive in progress, if any. */
@@ -1319,6 +1321,11 @@ export class App {
       this.camera.detachControl();
       // start the vehicle where the camera already is, so the view does not jump
       this.vehicle.teleport(this.camera.position.clone());
+    }
+    // Lifting off a habitable world drops the blue sky back to space-black.
+    if (m !== 'walk' && this.walkSky) {
+      this.walkSky = false;
+      if (this.scene) this.scene.clearColor = new Color4(0, 0, 0, 1);
     }
     this.shell.setControlMode?.(m);
   }
@@ -2567,6 +2574,30 @@ export class App {
         } else {
           this.scene.fogMode = Scene.FOGMODE_NONE;
         }
+      }
+
+      // ---- a habitable world has a real sky ----
+      // Standing on Earth the clear colour is that world's blue, fading
+      // back to space-black the moment you lift off. This is the difference
+      // between "on a planet" and "next to a painted sphere in the dark".
+      if (this.vehicle.mode === 'walk') {
+        let sky: [number, number, number] | null = null;
+        for (const s of this.solidSpheres()) {
+          if (s.sky && Math.hypot(
+            this.vehicle.position.x - s.x,
+            this.vehicle.position.y - s.y,
+            this.vehicle.position.z - s.z) < s.radius * 3) {
+            sky = s.sky;
+            break;
+          }
+        }
+        if (sky) {
+          this.scene.clearColor = new Color4(sky[0], sky[1], sky[2], 1);
+        } else if (this.walkSky) {
+          this.walkSky = false;
+          this.scene.clearColor = new Color4(0, 0, 0, 1);
+        }
+        this.walkSky = !!sky;
       }
 
       // ---- transient collision effects fade and are disposed ----

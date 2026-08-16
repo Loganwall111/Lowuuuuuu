@@ -46,6 +46,12 @@ export function orbitPosition(
 /** The ISS's own inclination, as a reference point for the field. */
 export const ISS_ORBIT: Orbit = { radius: 1.6, inclination: 0.9, speed: 0.35, phase: 0 };
 
+/** A GPS-style constellation: six planes, four satellites each. */
+export const GPS_PLANES = 6;
+export const GPS_PER_PLANE = 4;
+/** The named stations and eyes humanity has put up, in orbit order. */
+export const NAMED_STATIONS = ['ISS', 'Skylab', 'Mir', 'Tiangong', 'Hubble', 'Webb', 'Apollo'];
+
 /** Deterministic 0..1 hash. */
 function hash01(seed: number): number {
   let h = seed >>> 0 || 1;
@@ -80,12 +86,26 @@ export class OrbitTraffic {
     const scene = this.scene;
     if (!scene || this.built) return;
 
-    // ---- the ISS: modules, a truss and four solar wings ----
+    // ---- the ISS: modules, a truss and four solar wings. Solid, so you
+    //      can fly out, match its orbit and walk along it. ----
     this.artifacts.push({
       id: 'ISS',
       orbit: { ...ISS_ORBIT },
       root: this.buildISS(scene),
-      solid: null
+      solid: { id: 'ISS', x: 0, y: 0, z: 0, radius: 0.7, mass: 0.05 }
+    });
+
+    // ---- the other stations: Skylab, Mir, Tiangong ----
+    const stationDefs: Array<[string, number, number]> = [
+      ['Skylab', 1.45, 0.7], ['Mir', 1.5, 0.55], ['Tiangong', 1.35, 0.6]
+    ];
+    stationDefs.forEach(([id, radius, incl], i) => {
+      this.artifacts.push({
+        id,
+        orbit: { radius, inclination: incl, speed: 0.32 + i * 0.03, phase: i * 1.7 },
+        root: this.buildStation(scene, id),
+        solid: { id, x: 0, y: 0, z: 0, radius: 0.5, mass: 0.03 }
+      });
     });
 
     // ---- the satellite field: small bodies with two panels each ----
@@ -118,6 +138,23 @@ export class OrbitTraffic {
       root: this.buildTelescope(scene, 'webb', true),
       solid: null
     });
+
+    // ---- the GPS constellation: six planes, four satellites each ----
+    for (let p = 0; p < GPS_PLANES; p++) {
+      for (let k = 0; k < GPS_PER_PLANE; k++) {
+        this.artifacts.push({
+          id: 'GPS-' + p + '-' + k,
+          orbit: {
+            radius: 1.2,
+            inclination: 0.96 + (p * 0.08),
+            speed: 0.38,
+            phase: (k / GPS_PER_PLANE) * Math.PI * 2 + p * 0.5
+          },
+          root: this.buildSatellite(scene, 'gps' + p + k, 0.5),
+          solid: null
+        });
+      }
+    }
 
     // ---- the Apollo stack: command module, service module, LM ----
     const apollo = this.buildApollo(scene);
@@ -177,6 +214,34 @@ export class OrbitTraffic {
       panel.rotation.y = i * Math.PI;
       panel.position.x = (i === 0 ? 0.22 : -0.22);
       panel.material = gold;
+    }
+    return root;
+  }
+
+  /** A small station: a habitat drum, a few modules and a solar truss. */
+  private buildStation(scene: Scene, id: string): TransformNode {
+    const root = new TransformNode(id, scene);
+    const m = new StandardMaterial(id + 'M', scene);
+    m.diffuseColor = new Color3(0.88, 0.9, 0.93);
+    m.specularColor = new Color3(0.4, 0.4, 0.45);
+
+    const drum = MeshBuilder.CreateCylinder(id + 'D', { diameter: 0.34, height: 0.5, tessellation: 12 }, scene);
+    drum.parent = root;
+    drum.material = m;
+    const mod = MeshBuilder.CreateBox(id + 'X', { size: 0.16 }, scene);
+    mod.parent = root;
+    mod.position.x = 0.3;
+    mod.material = m;
+
+    const gold = new StandardMaterial(id + 'G', scene);
+    gold.diffuseColor = new Color3(0.75, 0.5, 0.2);
+    gold.emissiveColor = new Color3(0.25, 0.15, 0.04);
+    for (let i = 0; i < 2; i++) {
+      const wing = MeshBuilder.CreatePlane(id + 'W' + i, { size: 0.7 }, scene);
+      wing.parent = root;
+      wing.rotation.y = i * Math.PI;
+      wing.position.x = (i === 0 ? -0.6 : 0.6);
+      wing.material = gold;
     }
     return root;
   }

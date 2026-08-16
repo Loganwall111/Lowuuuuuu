@@ -35,6 +35,7 @@ import { THROWABLES, throwableById } from '../systems/ThrowableSystem';
 import { SettlerSystem } from '../systems/SettlerSystem';
 import { AsteroidBeltSystem } from '../systems/AsteroidBelts';
 import { OrbitTraffic } from '../systems/OrbitTraffic';
+import { stellarColor, STAR_LIFETIME } from '../systems/StellarLifecycle';
 import type { SolidSphere } from '../systems/PlanetLanding';
 
 /* --------------------------- planet shader --------------------------- */
@@ -823,6 +824,16 @@ export class PlanetaryWorld implements World {
     this.starMat.setVector3('camPos', cp);
     this.starMat.setFloat('time', this.t);
     this.star.rotation.y += dt * 0.02;
+    // The home star ages on the long clock: main sequence, a slow swell
+    // into a red giant, then a collapse into whatever its mass leaves
+    // behind. Colour and size drift with the phase, so the sky of the home
+    // system is a place that changes rather than a fixed photograph.
+    {
+      const life = stellarColor(7, this.t);
+      this.starMat.setColor3('tintA', new Color3(...life.tintA));
+      this.starMat.setColor3('tintB', new Color3(...life.tintB));
+      this.star.scaling.setAll(Math.max(0.02, life.size));
+    }
     // The corona boils and its streamers drift outward, so it must be fed
     // time as well as the camera.
     const cmat = (this as any)._coronaMat as ShaderMaterial;
@@ -970,7 +981,9 @@ export class PlanetaryWorld implements World {
         mass: 60 + 400 * Math.pow(b.visualR / EARTH_VISUAL_R, 3),
         habitable: b.name === INHABITED,
         // Gas giants are dived, not landed: the landing key reroutes.
-        gas: b.type === PlanetKind.Gas
+        gas: b.type === PlanetKind.Gas,
+        // Earth's own sky: a deep blue you can stand under.
+        sky: b.name === INHABITED ? [0.08, 0.17, 0.34] : undefined
       });
       for (const m of b.moons) {
         const mp = m.mesh.getAbsolutePosition();

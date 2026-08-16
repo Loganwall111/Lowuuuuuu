@@ -40,6 +40,10 @@ export type CelestialKind =
   | 'crystal-field'   // refractive shards, an oddity
   | 'derelict'        // an abandoned structure
   | 'wormhole-mouth'  // one end of a tunnel
+  | 'hypernova'       // a star that ended louder than a supernova
+  | 'kilonova'        // the afterglow of two neutron stars merging
+  | 'stellar-engine'  // a star being dragged across the sky on purpose
+  | 'ringworld'       // a star girdled by an engineered ring
   | 'dyson-swarm';    // a star being harvested
 
 export interface CelestialSpec {
@@ -203,6 +207,30 @@ export const CELESTIALS: Record<CelestialKind, CelestialSpec> = {
     minRadius: 30, maxRadius: 80, luminosity: 0.55,
     tint: [0.72, 0.46, 1.00], mass: 1800, massive: true,
     blurb: 'A hole in the geometry. The far side is somewhere else entirely.'
+  },
+  'hypernova': {
+    kind: 'hypernova', label: 'Hypernova', glyph: '✦', weight: 4,
+    minRadius: 320, maxRadius: 1100, luminosity: 0.92,
+    tint: [0.75, 0.85, 1.00], mass: 300, massive: false,
+    blurb: 'The loudest way a star can die. The light is still leaving.'
+  },
+  'kilonova': {
+    kind: 'kilonova', label: 'Kilonova', glyph: '❋', weight: 5,
+    minRadius: 160, maxRadius: 520, luminosity: 0.9,
+    tint: [1.00, 0.56, 0.62], mass: 260, massive: false,
+    blurb: 'Two dead stars, merged. The sky here is molten gold and rose.'
+  },
+  'stellar-engine': {
+    kind: 'stellar-engine', label: 'Stellar Engine', glyph: '⟐', weight: 3,
+    minRadius: 70, maxRadius: 180, luminosity: 0.6,
+    tint: [0.62, 1.00, 0.90], mass: 3400, massive: true,
+    blurb: 'A star being moved on purpose. Someone is steering it.'
+  },
+  'ringworld': {
+    kind: 'ringworld', label: 'Ringworld', glyph: '⊚', weight: 4,
+    minRadius: 140, maxRadius: 380, luminosity: 0.55,
+    tint: [0.92, 0.70, 0.42], mass: 900, massive: false,
+    blurb: 'A star with a ring of night and day wrapped around it.'
   },
   'dyson-swarm': {
     kind: 'dyson-swarm', label: 'Dyson Swarm', glyph: '⌾', weight: 2,
