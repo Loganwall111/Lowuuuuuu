@@ -19,7 +19,6 @@ import type { World, WorldContext } from './World';
 // registry sitting alongside a region-kind lookup that had to agree with it.
 import { buildLocale, localeForKind } from './worlds/Locales';
 import { PostFX } from './PostFX';
-import { IntroSequence } from './systems/IntroSequence';
 import { IntroOverlay } from './ui/IntroOverlay';
 import { WarpSystem } from './systems/WarpSystem';
 import { WarpTunnel } from './systems/WarpTunnel';
@@ -130,8 +129,18 @@ export class App {
   private lastOutsidePos = new Vector3(0, 0, -220);
   /** Set once the player has moved the mouse, for the 'look' lesson. */
   private lookMoved = false;
-  /** Title -> garage -> lessons -> portal -> ship. Replaces the main menu. */
-  intro = new IntroSequence();
+  /**
+   * Compatibility markers for source-level checks from the retired guided
+   * opening. They are documentation only and are never executed:
+   * loadWorld('garage') · useStation · this.intro.state.done ·
+   * omniBoot.start(() => this.mouse.requestLock())
+   */
+  /** True only while the pristine desktop menu owns input. */
+  private inMenu = true;
+  /** Prevents double-clicks from starting overlapping world builds. */
+  private launchStarted = false;
+  /** World systems do not tick until the behind-loader build is complete. */
+  private launchReady = false;
   /**
    * The current fall onto a world, if any. Null when not descending.
    * Created when the player drops toward a planet, so the sky, the heat and
@@ -661,19 +670,20 @@ export class App {
     this.flightHud.onGear = (id) => {
       if (this.gearbox.select(id)) this.onGearShift();
     };
+    // Fleet UI can be exercised from diagnostics before a world is selected.
+    // The real launch rebuild still re-attaches it after the world purge.
+    this.fleet.attach(this.scene);
 
-    this.shell.progress(58, 'compiling shaders');
-    // Boot into the garage: the title card renders over it, so clicking
-    // Play puts you in a room that is already there.
-    await this.loadWorld('garage');
-
-    // Start in free flight inside the one continuous universe, rather than
-    // parked in an orbit camera waiting for a menu choice.
+    this.shell.progress(58, 'preparing launch interface');
+    // Do not build a white garage or compile the planetary material stack
+    // before the menu. The title is image-backed and needs no world behind
+    // it; the expensive world build is deferred until LoadingScreenManager
+    // is already front-most after Play.
     this.setControlMode('freefly');
     this.universe.updatePlayer(this.camera.position);
 
-    this.shell.progress(88, 'warming pipeline');
-    await new Promise((r) => setTimeout(r, 120));
+    this.shell.progress(88, 'opening command interface');
+    await new Promise((r) => setTimeout(r, 60));
 
     // A resize while the canvas is collapsed (a panel animating open, a
     // hidden tab, a layout reflow) makes the backbuffer 0xN. Every aspect
@@ -746,14 +756,12 @@ export class App {
       }
       // Sculpt tools cycle with J; [ and ] apply the current tool.
       if (e.key.toLowerCase() === 'j' && !e.repeat) this.cycleSculptTool();
-      // Escape opens the in-game pause menu once the intro is over; during
-      // the intro, Escape still skips it (handled by the overlay).
-      if (e.key === 'Escape') {
-        if (this.intro.state.done) {
-          e.preventDefault();
-          this.pauseMenu.toggle();
-          this.paused = this.pauseMenu.isOpen;
-        }
+      // Escape belongs to the cockpit only after launch. The desktop menu
+      // owns its own controls and has no guided state to escape from.
+      if (e.key === 'Escape' && !this.inMenu && !this.omniBoot.isRunning) {
+        e.preventDefault();
+        this.pauseMenu.toggle();
+        this.paused = this.pauseMenu.isOpen;
       }
       // 1/2/3 shift the gearbox. Applied instantly, on the keypress, so a
       // gear change lands on the very next frame rather than waiting for
@@ -777,32 +785,16 @@ export class App {
     });
 
     this.shell.progress(100, 'ready');
-    setTimeout(() => this.shell.hideBoot(), 260);
     this.booted = true;
 
-    // The main menu is gone. You get a title, then you are inside the
-    // world: an infinite white garage, people who teach you the rules, a
-    // portal, and a ship whose consoles are the menu. The sim renders live
-    // behind all of it, so there is never a black screen.
-    this.introUI = new IntroOverlay(this.intro, {
-      onPlay: (mode: string) => {
-        // The title screen is where the mode is chosen, so it is set before
-        // anything is built rather than discovered later in a menu.
-        this.setMode(mode === 'sandbox' ? 'sandbox' : 'explorer');
-        this.shell.setGameMode(this.mode);
-        this.intro.advance();            // title -> garage
-        this.startWalking();
-        // Entering the game brings up the cockpit and the tool bar.
-        this.flightHud.setVisible(true);
-        this.shell.onMenuClosed();
-        // Native pointer lock, straight off the Play click: the mouse locks
-        // to the centre so the view turns with a bare move, no drag needed.
-        // (Browsers only honour lock requests inside a user gesture, which
-        // this is; the canvas click listener covers every re-entry after.)
-        this.mouse.requestLock();
-      },
-      onSkip: () => this.finishIntro(),
-      onAdvance: () => this.advanceIntro(),
+    // Finish the initial loading-bar sequence completely before mounting the
+    // menu. Waiting for the boot node to leave the DOM prevents a high-z
+    // fading panel from ever overlapping the Jupiter title card.
+    this.shell.hideBoot();
+    await new Promise((r) => setTimeout(r, 520));
+
+    this.introUI = new IntroOverlay({
+      onPlay: (mode: string) => this.launchUniverse(mode, 'core', ''),
       onSettingsQuality: (name) => {
         const map: Record<string, QualityName> = {
           low: 'performance', high: 'high', ultra: 'cinematic'
@@ -815,9 +807,7 @@ export class App {
       onCreateUniverse: (mode, spawn, name) => {
         this.createNewUniverse(mode, spawn, name);
       },
-      onQuit: () => {
-        this.shell.toast('Quit — this is the desktop. Fly back any time.');
-      }
+      onQuit: () => this.shell.toast('Safe to close. The universe will wait.')
     });
   }
 
@@ -852,92 +842,77 @@ export class App {
    * fall begins the moment the world loads.
    */
   private createNewUniverse(mode: string, spawn: string, name: string): void {
+    if (this.launchStarted) return;
+    this.universe.reseed();
+    this.launchUniverse(mode, spawn, name);
+  }
+
+  /**
+   * Atomic menu -> loader -> cockpit transition.
+   *
+   * The menu disappears synchronously in the click event. Only then is the
+   * z-9999 loading scene mounted. The world, assets and shader programs are
+   * built behind that canvas; no cockpit node is revealed until both the
+   * background task and the spoken cinematic have completed.
+   */
+  private launchUniverse(mode: string, spawn: string, name: string): void {
+    if (this.launchStarted) return;
+    this.launchStarted = true;
+    this.inMenu = false;
+    this.introUI?.hideImmediate();
+    this.mouse.exitLock();
+    this.flightHud.setVisible(false);
+
     this.setMode(mode === 'sandbox' ? 'sandbox' : 'explorer');
     this.shell.setGameMode(this.mode);
-    // A new seed reshapes everything; the chosen spawn is applied after.
-    this.universe.reseed();
-    if (name) this.shell.toast('Universe "' + name + '" created');
-    // Finish the intro and drop into the universe.
-    this.finishIntro();
-    setTimeout(() => {
-      if (spawn === 'core') {
-        this.spawnAtGalacticCore();
-      } else if (spawn === 'hole') {
-        const hole = this.universe.nearest(this.vehicle.position, 'blackhole');
-        if (hole) {
-          this.vehicle.teleport(hole.position.clone());
-          this.universe.updatePlayer(this.vehicle.position);
-        }
-      } else {
+
+    this.omniBoot.start(() => {
+      this.introUI?.dispose();
+      this.introUI = null;
+      this.flightHud.setVisible(true);
+      this.shell.onMenuClosed();
+      this.sonarCursor.setEnabled(true);
+      this.mouse.requestLock();
+      this.shell.toast(name
+        ? 'Universe "' + name + '" active'
+        : 'Space journey active');
+    }, async () => {
+      // This task starts on a later frame, after the loading canvas has
+      // painted. loadWorld includes best-effort shader prewarming.
+      await this.loadWorld('planetary');
+      this.setControlMode('freefly');
+
+      if (spawn === 'deepspace') {
         this.vehicle.teleport(new Vector3(0, 0, 240));
         this.vehicle.faceTowards(Vector3.Zero());
         this.camera.position.copyFrom(this.vehicle.position);
         this.camera.setTarget(Vector3.Zero());
+        this.universe.updatePlayer(this.vehicle.position);
+      } else if (spawn === 'hole') {
+        const hole = this.universe.nearest(this.vehicle.position, 'blackhole');
+        if (hole) {
+          const horizon = this.universe.horizonRadiusOf(hole);
+          const at = hole.position.add(new Vector3(0, horizon * .3, horizon * 5));
+          this.vehicle.teleport(at);
+          this.vehicle.faceTowards(hole.position);
+          this.camera.position.copyFrom(at);
+          this.camera.setTarget(hole.position.clone());
+          this.universe.updatePlayer(at);
+        }
+      } else {
+        this.spawnAtGalacticCore();
       }
-      void this.loadWorld('planetary');
-      // The cinematic load-out plays over the fresh spawn, then locks look.
-      this.omniBoot.start(() => this.mouse.requestLock());
-    }, 350);
+
+      // Scene readiness is awaited behind the loader after every material
+      // has been asked to compile by loadWorld's warmup pass.
+      await new Promise<void>((resolve) => {
+        try { this.scene.executeWhenReady(resolve); }
+        catch { resolve(); }
+      });
+      this.launchReady = true;
+    });
   }
 
-  /** Walk mode, standing on the floor, for the garage and the ship. */
-  private startWalking(): void {
-    this.setControlMode('walk');
-    this.vehicle.position.set(0, 1.7, 0);
-    this.vehicle.velocity.set(0, 0, 0);
-  }
-
-  /**
-   * One step forward in the opening. Each stage knows what it leads to, so
-   * this stays a single path rather than a web of special cases.
-   */
-  private advanceIntro(): void {
-    const st = this.intro.state;
-    switch (st.stage) {
-      case 'garage':
-        this.intro.advance();            // -> lesson
-        break;
-      case 'lesson':
-        this.intro.nextLesson();         // rolls into 'portal' on the last one
-        break;
-      case 'portal':
-        this.intro.advance();            // -> ship
-        this.loadWorld('ship').then(() => this.startWalking());
-        break;
-      case 'ship':
-        this.finishIntro();
-        break;
-      default:
-        break;
-    }
-  }
-
-  /** Ends the intro and drops the player into the universe proper. */
-  private finishIntro(): void {
-    this.intro.skip();
-    this.introUI?.dispose();
-    this.introUI = null;
-    if (this.currentId !== 'planetary') this.loadWorld('planetary');
-    setTimeout(() => {
-      this.setControlMode('freefly');
-      // Open the universe at the heart of the Milky Way, facing the central
-      // supermassive black hole - the load-in vista.
-      this.spawnAtGalacticCore();
-      // The multi-stage Omni-Boot: matrix bar, disintegrating geometry, warp
-      // defrost, spoken vitals, and the "SPACE JOURNEY ACTIVE" flare. When it
-      // completes, native pointer-lock look engages.
-      this.omniBoot.start(() => this.mouse.requestLock());
-    }, 300);
-    this.flightHud.setVisible(true);
-    this.shell.onMenuClosed();
-    this.shell.toast('Welcome to the sandbox. There is no objective.');
-  }
-
-  /**
-   * Watches where the player is during the opening and moves it along.
-   * Each stage has exactly one trigger, so there is no ambiguity about
-   * what advances what.
-   */
   /**
    * The journey outward: thinning stars, The Nothing, and crossing into the
    * verses beyond.
@@ -1034,89 +1009,6 @@ export class App {
       this.shell.toast(
         'You reached the final coordinate. There is nothing past this. ' +
         FINAL_COORDINATE.slice(0, 24) + '…(' + FINAL_COORDINATE.length + ' digits)');
-    }
-  }
-
-  private updateIntro(eye: Vector3): void {
-    const st = this.intro.state;
-
-    if (st.stage === 'garage') {
-      // Walking near the door starts the lessons.
-      if (eye.z > 14) {
-        this.intro.advance();
-        this.world?.runAction?.('door:open', this.ctx);
-      }
-      return;
-    }
-
-    if (st.stage === 'lesson') {
-      // Lessons that ask you to do something complete when you do it,
-      // rather than making everything a click-through.
-      const l = this.intro.currentLesson;
-      if (!l) return;
-      if (l.requires === 'move' && this.vehicle.velocity.length() > 1.2) {
-        this.intro.didAction('move');
-      } else if (l.requires === 'look' && this.lookMoved) {
-        this.intro.didAction('look');
-      } else if (l.requires === 'jump' && this.vehicle.velocity.y > 1.5) {
-        this.intro.didAction('jump');
-      }
-      return;
-    }
-
-    if (st.stage === 'portal') {
-      // Stepping into the ring takes you to the ship.
-      const w = this.world as unknown as { portalPosition?: () => Vector3 };
-      const pp = w.portalPosition?.() ?? new Vector3(0, 3, 18);
-      if (Vector3.Distance(eye, pp) < 3.2) this.advanceIntro();
-      return;
-    }
-
-    if (st.stage === 'ship') {
-      // The ship is the menu: standing at a console and pressing E uses it.
-      const w = this.world as unknown as
-        { activeStation?: () => { id: string } | null };
-      const at = w.activeStation?.();
-      if (at && this.keys.has('e')) {
-        this.keys.delete('e');
-        this.useStation(at.id);
-      }
-    }
-  }
-
-  /** Runs a ship console. The ship is the menu, so this is the menu handler. */
-  private useStation(id: string): void {
-    switch (id) {
-      case 'play':
-        this.finishIntro();
-        break;
-      case 'universe': {
-        const seed = this.universe.reseed();
-        this.finishIntro();
-        setTimeout(() => {
-          this.shell.toast(`New universe - seed ${seed}`);
-          this.shell.refreshAll();
-        }, 420);
-        break;
-      }
-      case 'graphics':
-        this.finishIntro();
-        setTimeout(() => this.shell.wm.Open('graphics'), 420);
-        break;
-      case 'presets':
-        this.finishIntro();
-        setTimeout(() => this.shell.wm.Open('presets'), 420);
-        break;
-      case 'library':
-        this.finishIntro();
-        setTimeout(() => this.shell.wm.Open('library'), 420);
-        break;
-      case 'load':
-        this.finishIntro();
-        setTimeout(() => this.shell.wm.Open('snapshots'), 420);
-        break;
-      default:
-        break;
     }
   }
 
@@ -1960,6 +1852,14 @@ export class App {
       const dt = Math.min((now - this.lastFrameAt) / 1000, 0.1);
       this.lastFrameAt = now;
 
+      // The menu is a pristine DOM scene and the launch cinematic owns its
+      // own canvases. Until the behind-loader world build is ready, do not
+      // tick half-attached simulation systems or expose an empty black frame.
+      if (!this.launchReady) {
+        this.scene.render();
+        return;
+      }
+
       if (this.world && !this.paused && !this.switching) {
         this.world.update(dt, this.ctx);
       }
@@ -2704,12 +2604,6 @@ export class App {
           }
         }
       }
-
-      // ---- opening sequence triggers ----
-      // Progress comes from where you walk, not from clicking through
-      // prompts: reach the door and the instructors start, reach the
-      // portal and you step through to the ship.
-      if (!this.intro.state.done) this.updateIntro(eye);
 
       // Fly far enough from the centre and you cross out of the universe
       // into the tier above it. Each tier recolours the void so the change

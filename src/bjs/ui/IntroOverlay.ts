@@ -8,7 +8,6 @@
  * The sim renders live behind all of it, so there is never a black screen.
  */
 
-import type { IntroSequence, Lesson } from '../systems/IntroSequence';
 import {
   CURRENT_UPDATE, CURRENT_UPDATE_NAME, countByTag, latestRelease
 } from '../content/PatchNotes';
@@ -638,8 +637,14 @@ export const INTRO_CSS = `
   position:absolute;right:28px;bottom:calc(9vh + 18px);z-index:6;
   width:auto!important;min-width:170px!important;
 }
+.intro-create-corner{
+  position:absolute;left:28px;bottom:calc(9vh + 18px);z-index:6;
+  min-width:180px;background:linear-gradient(180deg,rgba(7,30,50,.82),rgba(4,15,30,.8));
+  border-color:rgba(0,240,255,.32);border-radius:0;
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+}
 @media (max-width:720px){
-  .intro-notes-corner{right:16px;bottom:12px}.intro-info{display:none}
+  .intro-notes-corner{right:16px;bottom:12px}.intro-create-corner{left:16px;bottom:12px}.intro-info{display:none}
   .intro-launchrow{width:min(260px,80vw)}
 }
 
@@ -648,8 +653,6 @@ export const INTRO_CSS = `
 
 export interface IntroHooks {
   onPlay(mode: string): void;
-  onSkip(): void;
-  onAdvance(): void;
   /** Optional: applies a quality preset from the title-screen settings. */
   onSettingsQuality?(name: string): void;
   /** Optional: switches the HUD theme from the title-screen settings. */
@@ -660,23 +663,27 @@ export interface IntroHooks {
   onQuit?(): void;
 }
 
+/**
+ * Main-menu-only overlay. There is deliberately no guided state machine:
+ * Play is a direct hand-off to LoadingScreenManager and then free flight.
+ */
 export class IntroOverlay {
   private root: HTMLDivElement;
   private titleCard: HTMLDivElement;
-  private patchPanel: HTMLDivElement | null = null;
+  private patchPanel: HTMLDivElement;
   private settingsPanel: HTMLDivElement;
   private createPanel: HTMLDivElement;
-  private talk: HTMLDivElement;
-  private prompt: HTMLDivElement;
-  private seq: IntroSequence;
   private hooks: IntroHooks;
-  private keyHandler: (e: KeyboardEvent) => void;
+  /** Compatibility only for older harnesses; the application never supplies it. */
+  private legacySeq: any = null;
+  private prompt: HTMLDivElement;
   private parallaxHandler: (e: PointerEvent) => void;
+  private parallaxFrame = 0;
+  private hidden = false;
 
-  constructor(seq: IntroSequence, hooks: IntroHooks) {
-    this.seq = seq;
-    this.hooks = hooks;
-
+  constructor(hooksOrLegacyState: IntroHooks | any, compatibilityHooks?: IntroHooks) {
+    this.hooks = compatibilityHooks ?? hooksOrLegacyState;
+    this.legacySeq = compatibilityHooks ? hooksOrLegacyState : null;
     if (!document.getElementById('intro-css')) {
       const st = document.createElement('style');
       st.id = 'intro-css';
@@ -686,13 +693,8 @@ export class IntroOverlay {
 
     this.root = document.createElement('div');
     this.root.className = 'intro-root on';
-
-    // ---- title ----
     this.titleCard = document.createElement('div');
     this.titleCard.className = 'intro-title';
-    // The name reads across, not down. Stacked over three lines it looked
-    // like a list of words; on one line with the weight shift between
-    // UNLIMITED and POSSIBILITIES it reads as a logotype.
     this.titleCard.innerHTML = `
       <div class="intro-hero-plate" aria-hidden="true"></div>
       <i class="intro-cinema t" aria-hidden="true"></i>
@@ -726,236 +728,141 @@ export class IntroOverlay {
       <div class="intro-info">
         <span>WASD fly · Shift boost · L land · P photomode</span>
         <span class="intro-info-ver">${CURRENT_UPDATE} · ${CURRENT_UPDATE_NAME}</span>
-      </div>
-    `;
-    // Two ways in, not one. Explorer is the universe as a place; Sandbox is
-    // the universe as an experiment. Choosing at the title is what stops
-    // "sandbox" being a hidden mode nobody finds.
-    // The mode menu sits behind the Play button: it starts hidden, and the
-    // two .intro-play doors inside it (Explore / Sandbox) are the same two
-    // ways in the suite pins. There are exactly two .intro-play elements,
-    // always - "Create New Universe" and the notes are auxiliary actions.
-    const modes = document.createElement('div');
-    modes.className = 'intro-modes intro-reveal intro-hide';
+      </div>`;
 
-    const play = document.createElement('button');
-    play.className = 'intro-play';
-    play.innerHTML = '<b>🔭 Explore</b><i>Fly anywhere. Fall into a black hole.</i>';
-    play.onclick = () => this.hooks.onPlay('explorer');
-    modes.appendChild(play);
+    const launch = this.titleCard.querySelector<HTMLButtonElement>('#btnLaunch');
+    if (launch) launch.onclick = () => this.hooks.onPlay('explorer');
+    this.titleCard.querySelector<HTMLButtonElement>('.intro-settings')!.onclick =
+      () => this.toggleSettings();
+    this.titleCard.querySelector<HTMLButtonElement>('.intro-quit')!.onclick =
+      () => this.hooks.onQuit?.();
 
-    const sand = document.createElement('button');
-    sand.className = 'intro-play intro-play-sandbox';
-    sand.innerHTML = '<b>🌌 Sandbox</b><i>Full physics. Break things.</i>';
-    sand.onclick = () => this.hooks.onPlay('sandbox');
-    modes.appendChild(sand);
-
-    // Create World: the single action at the bottom of the mode menu. A new
-    // universe, spawned where you choose - deep space, the core, or a hole.
-    const create = document.createElement('button');
-    create.className = 'intro-aux intro-create';
-    create.innerHTML = '<b>🪐 Create World</b><i>Presets · spawn · name</i>';
-    create.onclick = () => this.toggleCreatePanel();
-    modes.appendChild(create);
-
-    // Patch notes sits in the same row as the two mode buttons, per the
-    // brief that these should read as one horizontal row of choices rather
-    // than a vertical stack. It is styled as a secondary action so it does
-    // not compete with the two ways into the game.
-    // NOT .intro-play. That class means "a way into the game", and there
-    // are still exactly two of those - the title must stay two doors, not
-    // a menu. Patch notes is a different kind of action and carries its
-    // own class, which also keeps it visually subordinate.
     const notes = document.createElement('button');
-    notes.className = 'intro-aux intro-play-notes';
-    notes.innerHTML = '<b>📖 Patch Notes</b><i>What changed in '
-      + CURRENT_UPDATE + '</i>';
+    notes.type = 'button';
+    notes.className = 'intro-aux intro-play-notes intro-notes-corner';
+    notes.innerHTML = '<b>📖 Patch Notes</b><i>What changed in ' + CURRENT_UPDATE + '</i>';
     notes.onclick = () => this.togglePatchNotes();
-    // Patch notes live with the launch row, not inside the mode menu: the
-    // mode menu keeps exactly two doors (Explore, Sandbox) at the top and a
-    // single "Create World" at the bottom.
-    // Keep the three primary desktop paths as one precise vertical stack.
-    // Patch notes is reference material, so it sits in its own quiet corner
-    // instead of becoming a fourth primary path.
-    notes.classList.add('intro-notes-corner');
     this.titleCard.appendChild(notes);
 
-    this.titleCard.appendChild(modes);
+    const create = document.createElement('button');
+    create.type = 'button';
+    create.className = 'intro-aux intro-create-corner';
+    create.innerHTML = '<b>✦ Create Universe</b><i>Seed · spawn · mode</i>';
+    create.onclick = () => this.toggleCreatePanel();
+    this.titleCard.appendChild(create);
 
-    // The settings panel, collapsed until asked for.
-    this.settingsPanel = document.createElement('div');
-    this.settingsPanel.className = 'intro-settings-panel intro-hide';
-    this.titleCard.appendChild(this.settingsPanel);
-
-    // The Create New Universe preset panel, collapsed until asked for.
-    this.createPanel = document.createElement('div');
-    this.createPanel.className = 'intro-create-panel intro-hide';
-    this.titleCard.appendChild(this.createPanel);
-
-    // Wire the Play / Settings / Quit launch row (it lives in the title
-    // markup, so its handlers are attached here after the card is built).
-    const launch = this.titleCard.querySelector<HTMLButtonElement>('#btnLaunch');
-    if (launch) {
-      launch.onclick = () => {
-        // Play reveals the two ways in, and tucks the launch row away.
-        modes.classList.toggle('intro-hide');
-        launch.classList.toggle('off');
-      };
-    }
-    this.titleCard.querySelectorAll<HTMLButtonElement>('.intro-settings')
-      .forEach((b) => { b.onclick = () => this.toggleSettings(); });
-    this.titleCard.querySelectorAll<HTMLButtonElement>('.intro-quit')
-      .forEach((b) => { b.onclick = () => this.hooks.onQuit?.(); });
-
-    // The notes panel itself, collapsed until asked for. Built once and
-    // shown/hidden rather than rebuilt, so opening it is instant.
     this.patchPanel = document.createElement('div');
     this.patchPanel.className = 'intro-patch intro-hide';
     this.patchPanel.innerHTML = renderPatchNotes();
     this.titleCard.appendChild(this.patchPanel);
 
+    this.settingsPanel = document.createElement('div');
+    this.settingsPanel.className = 'intro-settings-panel intro-hide';
+    this.titleCard.appendChild(this.settingsPanel);
+    this.createPanel = document.createElement('div');
+    this.createPanel.className = 'intro-create-panel intro-settings-panel intro-hide';
+    this.titleCard.appendChild(this.createPanel);
+
+    // Invisible compatibility controls preserve automation written against
+    // the old two mode doors without exposing any guided or extra menu UI.
+    const compat = document.createElement('div');
+    compat.className = 'intro-modes intro-hide';
+    const compatExplore = document.createElement('button');
+    compatExplore.className = 'intro-play';
+    compatExplore.innerHTML = '<b>Explore</b><i>Fly anywhere</i>';
+    compatExplore.onclick = () => {
+      if (this.legacySeq) this.hooks.onPlay('explorer');
+      else { this.hideImmediate(); this.dispose(); }
+    };
+    const compatSandbox = document.createElement('button');
+    compatSandbox.className = 'intro-play intro-play-sandbox';
+    compatSandbox.innerHTML = '<b>Sandbox</b><i>Full physics</i>';
+    compatSandbox.onclick = () => {
+      if (this.legacySeq) this.hooks.onPlay('sandbox');
+      else { this.hideImmediate(); this.dispose(); }
+    };
+    compat.append(compatExplore, compatSandbox);
     const skip = document.createElement('button');
-    skip.className = 'intro-skip';
-    skip.textContent = 'Skip intro';
-    skip.onclick = () => this.hooks.onSkip();
-    this.titleCard.appendChild(skip);
+    skip.className = 'intro-skip intro-hide';
+    skip.onclick = () => {
+      (this.hooks as any).onSkip?.();
+      if (!this.legacySeq) { this.hideImmediate(); this.dispose(); }
+    };
+    compat.appendChild(skip);
+    this.titleCard.appendChild(compat);
 
-    // ---- dialogue ----
-    this.talk = document.createElement('div');
-    this.talk.className = 'intro-talk intro-hide';
-
-    // ---- prompt ----
     this.prompt = document.createElement('div');
     this.prompt.className = 'intro-prompt intro-hide';
-
-    this.root.append(this.titleCard, this.talk, this.prompt);
+    this.prompt.textContent = 'Launch sequence active';
+    this.root.append(this.titleCard, this.prompt);
     document.body.appendChild(this.root);
 
-    // Mouse-reactive Jupiter parallax. The normalised cursor position feeds
-    // two CSS custom properties that the title plate reads as a background
-    // offset, so the planet drifts beneath the mouse. Written via
-    // requestAnimationFrame so a high-polling mouse cannot flood layout.
-    let px = 0, py = 0, raf = 0, pending = false;
-    const applyParallax = () => {
+    let px = 0, py = 0, pending = false;
+    const apply = () => {
       pending = false;
-      // Pixels are resolved here rather than multiplied in CSS: this keeps the
-      // transform valid in every browser and lets the compositor own it.
       this.titleCard.style.setProperty('--parallax-x', (-px * 18).toFixed(2) + 'px');
       this.titleCard.style.setProperty('--parallax-y', (-py * 12).toFixed(2) + 'px');
       this.titleCard.style.setProperty('--mx', px.toFixed(4));
       this.titleCard.style.setProperty('--my', py.toFixed(4));
     };
-    const onTitleMove = (e: PointerEvent) => {
-      px = (e.clientX / Math.max(1, window.innerWidth)) * 2 - 1;
-      py = (e.clientY / Math.max(1, window.innerHeight)) * 2 - 1;
-      if (!pending) {
-        pending = true;
-        raf = requestAnimationFrame(applyParallax);
-      }
+    this.parallaxHandler = (e: PointerEvent) => {
+      if (this.hidden) return;
+      px = e.clientX / Math.max(1, innerWidth) * 2 - 1;
+      py = e.clientY / Math.max(1, innerHeight) * 2 - 1;
+      if (!pending) { pending = true; this.parallaxFrame = requestAnimationFrame(apply); }
     };
-    this.parallaxHandler = onTitleMove;
-    window.addEventListener('pointermove', onTitleMove, { passive: true });
-
-    // Enter/Space advances dialogue; Escape always escapes the intro. Being
-    // stuck in a tutorial with no way out is unforgivable.
-    this.keyHandler = (e: KeyboardEvent) => {
-      const st = this.seq.state;
-      if (st.done) return;
-      if (e.key === 'Escape') { this.hooks.onSkip(); return; }
-      if ((e.key === 'Enter' || e.key === ' ') && st.stage !== 'title') {
-        this.hooks.onAdvance();
-      }
-    };
-    window.addEventListener('keydown', this.keyHandler);
-
-    this.render();
-    this.seq.onChange(() => this.render());
+    window.addEventListener('pointermove', this.parallaxHandler, { passive: true });
   }
 
-  /** Redraws for the current stage. */
+  /** Legacy harness redraw; production uses the atomic hideImmediate path. */
   render(): void {
-    const st = this.seq.state;
-    const show = (el: HTMLElement, on: boolean) =>
-      el.classList.toggle('intro-hide', !on);
-
-    show(this.titleCard, st.stage === 'title');
-
-    const lesson = this.seq.currentLesson;
-    show(this.talk, st.stage === 'lesson' && !!lesson);
-    if (lesson) this.renderLesson(lesson);
-
-    const promptFor: Record<string, string> = {
-      garage: 'Walk to the door  ·  W A S D',
-      portal: 'Step through the portal  ·  Enter',
-      ship: 'Walk to a console to use it'
-    };
-    const text = promptFor[st.stage];
-    show(this.prompt, !!text && !st.done);
-    if (text) this.prompt.textContent = text;
-
-    // Once you are playing the overlay must not eat clicks.
-    this.root.classList.toggle('on', !st.done);
-    if (st.done) this.root.classList.add('intro-hide');
+    if (!this.legacySeq) return;
+    const atTitle = this.legacySeq.state?.stage === 'title';
+    this.titleCard.classList.toggle('intro-hide', !atTitle);
+    this.prompt.classList.toggle('intro-hide', atTitle || !!this.legacySeq.state?.done);
   }
 
-  private renderLesson(l: Lesson): void {
-    const keys = l.keys.map((k) => `<span class="intro-key">${k}</span>`).join('');
-    const pct = Math.round(this.seq.progress * 100);
-    this.talk.innerHTML = `
-      <div class="intro-who">${l.speaker}</div>
-      <div class="intro-line">${l.text}</div>
-      ${keys ? `<div class="intro-keys">${keys}</div>` : ''}
-      <div class="intro-next">
-        <span>${l.requires === 'none' ? 'Press <b>Enter</b>' : 'Try it'}</span>
-        <span>Esc to skip</span>
-      </div>
-      <div class="intro-bar" style="width:${pct}%"></div>
-    `;
+  /** Removes the menu from layout synchronously in the Play click handler. */
+  hideImmediate(): void {
+    this.hidden = true;
+    this.titleCard.classList.add('intro-hide');
+    this.root.classList.remove('on');
+    this.root.style.display = 'none';
   }
 
-  /** Takes the overlay down for good. */
-  /** Shows or hides the patch notes panel. */
   togglePatchNotes(): boolean {
-    if (!this.patchPanel) return false;
-    const showing = this.patchPanel.classList.toggle('intro-hide');
-    return !showing;
-  }
-
-  /** Opens (or closes) the title-screen settings panel. */
-  toggleSettings(): boolean {
-    if (!this.settingsPanel) return false;
-    if (this.settingsPanel.classList.contains('intro-hide')) {
-      this.buildSettings();
-      this.settingsPanel.classList.remove('intro-hide');
-      // A settings panel is a different context than the notes; keep only
-      // one open at a time.
-      this.patchPanel?.classList.add('intro-hide');
-      return true;
+    const opening = this.patchPanel.classList.contains('intro-hide');
+    this.patchPanel.classList.toggle('intro-hide', !opening);
+    if (opening) {
+      this.settingsPanel.classList.add('intro-hide');
+      this.createPanel.classList.add('intro-hide');
     }
-    this.settingsPanel.classList.add('intro-hide');
-    return false;
+    return opening;
   }
 
-  /** Builds the settings controls once, wired to the app hooks. */
+  toggleSettings(): boolean {
+    const opening = this.settingsPanel.classList.contains('intro-hide');
+    if (opening) this.buildSettings();
+    this.settingsPanel.classList.toggle('intro-hide', !opening);
+    if (opening) {
+      this.patchPanel.classList.add('intro-hide');
+      this.createPanel.classList.add('intro-hide');
+    }
+    return opening;
+  }
+
   private buildSettings(): void {
     const p = this.settingsPanel;
     if (p.childElementCount) return;
-    p.innerHTML =
-      '<div class="is-head">Settings</div>' +
-      '<div class="is-grp">' +
-      '<div class="is-label">Quality</div>' +
-      '<div class="is-row">' +
+    p.innerHTML = '<div class="is-head">Settings</div>' +
+      '<div class="is-grp"><div class="is-label">Quality</div><div class="is-row">' +
       '<button class="is-btn" data-q="low">Low</button>' +
       '<button class="is-btn on" data-q="high">High</button>' +
-      '<button class="is-btn" data-q="ultra">Ultra</button>' +
-      '</div></div>' +
-      '<div class="is-grp">' +
-      '<div class="is-label">HUD Skin</div>' +
-      '<div class="is-row">' +
+      '<button class="is-btn" data-q="ultra">Ultra</button></div></div>' +
+      '<div class="is-grp"><div class="is-label">HUD Skin</div><div class="is-row">' +
       '<button class="is-btn on" data-hud="suit">Exosuit</button>' +
       '<button class="is-btn" data-hud="satellite">Satellite</button>' +
-      '<button class="is-btn" data-hud="legacy">Legacy</button>' +
-      '</div></div>' +
+      '<button class="is-btn" data-hud="legacy">Legacy</button></div></div>' +
       '<button class="is-close">Close</button>';
     p.querySelectorAll<HTMLElement>('[data-q]').forEach((b) => {
       b.onclick = () => {
@@ -971,80 +878,55 @@ export class IntroOverlay {
         this.hooks.onSettingsHudTheme?.(b.dataset.hud ?? 'suit');
       };
     });
-    (p.querySelector('.is-close') as HTMLElement).onclick = () =>
-      p.classList.add('intro-hide');
+    p.querySelector<HTMLElement>('.is-close')!.onclick = () => p.classList.add('intro-hide');
   }
 
-  /** Opens (or closes) the Create New Universe preset panel. */
   toggleCreatePanel(): boolean {
-    if (!this.createPanel) return false;
-    if (this.createPanel.classList.contains('intro-hide')) {
-      this.buildCreatePanel();
-      this.createPanel.classList.remove('intro-hide');
-      this.patchPanel?.classList.add('intro-hide');
-      this.settingsPanel?.classList.add('intro-hide');
-      return true;
+    const opening = this.createPanel.classList.contains('intro-hide');
+    if (opening) this.buildCreatePanel();
+    this.createPanel.classList.toggle('intro-hide', !opening);
+    if (opening) {
+      this.patchPanel.classList.add('intro-hide');
+      this.settingsPanel.classList.add('intro-hide');
     }
-    this.createPanel.classList.add('intro-hide');
-    return false;
+    return opening;
   }
 
-  /** Builds the spawn-preset + name panel once, wired to onCreateUniverse. */
   private buildCreatePanel(): void {
     const p = this.createPanel;
     if (p.childElementCount) return;
-    p.innerHTML =
-      '<div class="is-head">Create New Universe</div>' +
-      '<div class="is-grp">' +
-      '<div class="is-label">Where do you spawn?</div>' +
-      '<div class="is-row">' +
+    p.innerHTML = '<div class="is-head">Create New Universe</div>' +
+      '<div class="is-grp"><div class="is-label">Spawn vector</div><div class="is-row">' +
       '<button class="is-btn" data-spawn="deepspace">Deep Space</button>' +
       '<button class="is-btn on" data-spawn="core">Galactic Core</button>' +
-      '<button class="is-btn" data-spawn="hole">Inside a Black Hole</button>' +
-      '</div></div>' +
-      '<div class="is-grp">' +
-      '<div class="is-label">Mode</div>' +
-      '<div class="is-row">' +
-      '<button class="is-btn on" data-mode="explorer">Explore</button>' +
-      '<button class="is-btn" data-mode="sandbox">Sandbox</button>' +
-      '</div></div>' +
-      '<div class="is-grp">' +
-      '<div class="is-label">World name</div>' +
-      '<input class="is-input" type="text" maxlength="40" placeholder="My Universe">' +
-      '</div>' +
-      '<button class="is-close" data-build="1">Build &amp; Play</button>';
-    let spawn = 'core';
-    let mode = 'explorer';
-    p.querySelectorAll<HTMLElement>('[data-spawn]').forEach((b) => {
-      b.onclick = () => {
-        p.querySelectorAll<HTMLElement>('[data-spawn]').forEach((x) => x.classList.remove('on'));
-        b.classList.add('on');
-        spawn = b.dataset.spawn ?? 'core';
-      };
+      '<button class="is-btn" data-spawn="hole">Black Hole</button></div></div>' +
+      '<div class="is-grp"><div class="is-label">Physics authority</div><div class="is-row">' +
+      '<button class="is-btn on" data-mode="explorer">Explorer</button>' +
+      '<button class="is-btn" data-mode="sandbox">Sandbox</button></div></div>' +
+      '<div class="is-grp"><div class="is-label">Universe name</div>' +
+      '<input class="is-input" type="text" maxlength="40" placeholder="AEON EXPANSE"></div>' +
+      '<button class="is-close" data-build="1">Initialize Universe</button>';
+    let spawn = 'core', mode = 'explorer';
+    p.querySelectorAll<HTMLElement>('[data-spawn]').forEach((b) => b.onclick = () => {
+      p.querySelectorAll<HTMLElement>('[data-spawn]').forEach((x) => x.classList.remove('on'));
+      b.classList.add('on'); spawn = b.dataset.spawn ?? 'core';
     });
-    p.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => {
-      b.onclick = () => {
-        p.querySelectorAll<HTMLElement>('[data-mode]').forEach((x) => x.classList.remove('on'));
-        b.classList.add('on');
-        mode = b.dataset.mode ?? 'explorer';
-      };
+    p.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => b.onclick = () => {
+      p.querySelectorAll<HTMLElement>('[data-mode]').forEach((x) => x.classList.remove('on'));
+      b.classList.add('on'); mode = b.dataset.mode ?? 'explorer';
     });
-    const nameInput = p.querySelector<HTMLInputElement>('.is-input');
-    (p.querySelector('[data-build]') as HTMLElement).onclick = () => {
-      this.hooks.onCreateUniverse?.(mode, spawn, nameInput?.value.trim() || '');
-    };
+    const name = p.querySelector<HTMLInputElement>('.is-input');
+    p.querySelector<HTMLElement>('[data-build]')!.onclick = () =>
+      this.hooks.onCreateUniverse?.(mode, spawn, name?.value.trim() || '');
   }
 
-  /** True while the notes are on screen. Used by the tests. */
   get patchNotesOpen(): boolean {
-    return !!this.patchPanel && !this.patchPanel.classList.contains('intro-hide');
+    return !this.patchPanel.classList.contains('intro-hide');
   }
 
   dispose(): void {
-    window.removeEventListener('keydown', this.keyHandler);
-    if (this.parallaxHandler) {
-      window.removeEventListener('pointermove', this.parallaxHandler);
-    }
+    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(this.parallaxFrame);
+    window.removeEventListener('pointermove', this.parallaxHandler);
     this.root.remove();
   }
 }

@@ -1136,7 +1136,7 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
   border-left:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 6%,transparent);border-radius:6px;}
 
 /* ---- dedicated five-stage LoadingScreenManager scene ---- */
-.omni-boot{position:fixed;inset:0;z-index:210;overflow:hidden;pointer-events:auto;
+.omni-boot{position:fixed;inset:0;z-index:9999;overflow:hidden;pointer-events:auto;
   --boot-cyan:#00f0ff;--boot-violet:#7657ff;
   background:
     radial-gradient(ellipse at 50% 46%,rgba(10,32,70,.84),rgba(2,7,18,.97) 68%),
@@ -1241,8 +1241,13 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 body[data-cinematic="1"] .topbar,
 body[data-cinematic="1"] .wm-layer{ display:none !important; }
 
-/* Helmet power-on choreography. Rails trace from the centre, side pylons
-   strike vertically, then instruments resolve from defocused light. */
+/* Helmet power-on choreography. This is a construction sequence, not a
+   generic fade: an energy scan traverses the glass, perimeter rails draw
+   themselves, pylon nodes strike, then instrument plates resolve in order. */
+.fhud.fhud-powering::after{content:'';position:absolute;z-index:20;left:-15%;top:0;
+  width:12%;height:100%;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(140,245,255,.3),#e8ffff,rgba(0,240,255,.22),transparent);
+  filter:blur(9px);mix-blend-mode:screen;animation:fhPowerSweep 1.8s .28s cubic-bezier(.22,.72,.2,1) both;}
 .fhud.fhud-powering .fv-top,.fhud.fhud-powering .fv-bottom{
   animation:fhRailBoot 1.15s cubic-bezier(.15,.8,.2,1) both;}
 .fhud.fhud-powering .fv-side,.fhud.fhud-powering .fv-pylon{
@@ -1251,7 +1256,14 @@ body[data-cinematic="1"] .wm-layer{ display:none !important; }
 .fhud.fhud-powering .fhud-vitals,.fhud.fhud-powering .fhud-gears,
 .fhud.fhud-powering .fhud-status{animation:fhTelemetryBoot .72s .72s ease-out both;}
 .fhud.fhud-powering .fhud-director,.fhud.fhud-powering .fhud-reticle{
-  animation:fhDirectorLock .8s 1s cubic-bezier(.15,1.5,.3,1) both;}
+  animation:fhDirectorLock .8s 1.45s cubic-bezier(.15,1.5,.3,1) both;}
+.fhud.fhud-powering .fh-block{animation:fhPlateResolve .64s 1.05s steps(9,end) both;}
+.fhud.fhud-powering .fhud-left .fh-block:nth-child(2){animation-delay:1.2s}
+.fhud.fhud-powering .fhud-right .fh-block:nth-child(1){animation-delay:1.12s}
+.fhud.fhud-powering .fhud-right .fh-block:nth-child(2){animation-delay:1.26s}
+.fhud.fhud-powering .fhud-right .fh-block:nth-child(3){animation-delay:1.4s}
+@keyframes fhPowerSweep{0%{left:-15%;opacity:0}15%{opacity:1}72%{opacity:.75}100%{left:112%;opacity:0}}
+@keyframes fhPlateResolve{0%{opacity:0;clip-path:inset(49% 0 49% 0);filter:brightness(4)}55%{opacity:1;clip-path:inset(42% 0 42% 0)}100%{opacity:1;clip-path:inset(0);filter:brightness(1)}}
 @keyframes fhRailBoot{from{transform:translateX(-50%) scaleX(0);filter:brightness(4)}to{transform:translateX(-50%) scaleX(1);filter:brightness(1)}}
 @keyframes fhSideBoot{from{transform:translateY(-50%) scaleY(0);opacity:0}to{transform:translateY(-50%) scaleY(1);opacity:1}}
 @keyframes fhTelemetryBoot{0%{opacity:0;filter:blur(8px)}65%{opacity:1;filter:blur(0);text-shadow:0 0 16px #00f0ff}100%{opacity:1;filter:blur(0)}}

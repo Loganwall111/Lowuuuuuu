@@ -57,20 +57,26 @@ export class LoadingScreenManager {
   private startAt = 0;
   private raf = 0;
   private onDone: (() => void) | null = null;
+  private backgroundDone = true;
+  private speechDone = true;
   private lastTyped = '';
   private spoken = false;
   private resizeHandler = () => this.resize();
   private keyHandler = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' || e.key === 'Enter') this.finish();
+    // Loading is an atomic transition. Consume bypass keys so neither the
+    // menu nor pause layer can surface over the active cinematic.
+    if (e.key === 'Escape' || e.key === 'Enter') e.preventDefault();
   };
 
   get isRunning(): boolean { return this.running; }
 
   /** Starts once. A second request cannot layer two load scenes together. */
-  start(onDone?: () => void): void {
+  start(onDone?: () => void, backgroundTask?: () => Promise<void>): void {
     if (this.running || this.el) return;
     this.running = true;
     this.onDone = onDone ?? null;
+    this.backgroundDone = !backgroundTask;
+    this.speechDone = false;
     this.build();
     this.resize();
     this.seedGeometry();
@@ -81,6 +87,14 @@ export class LoadingScreenManager {
     window.addEventListener('keydown', this.keyHandler);
     this.startAt = performance.now();
     this.raf = requestAnimationFrame(this.tick);
+
+    // Give the browser one complete paint with the z-9999 canvas before any
+    // synchronous shader compiler work can occupy the main thread.
+    if (backgroundTask) window.setTimeout(() => {
+      void Promise.resolve().then(backgroundTask).catch((e) => {
+        console.warn('Background launch preparation was degraded:', e);
+      }).finally(() => { this.backgroundDone = true; });
+    }, 50);
   }
 
   private build(): void {
@@ -113,8 +127,7 @@ export class LoadingScreenManager {
         </div>
         <div class="omni-engage"><small>FLIGHT CONTROL // ONLINE</small>SPACE JOURNEY ACTIVE</div>
       </section>
-      <button class="omni-skip" type="button">HOLD FAST · ENTER TO BYPASS</button>`;
-    root.querySelector<HTMLButtonElement>('.omni-skip')!.onclick = () => this.finish();
+      <div class="omni-skip">BACKGROUND STREAM // SYNCHRONIZED</div>`;
     document.body.appendChild(root);
     this.el = root;
     this.fx = root.querySelector('.omni-canvas');
@@ -169,8 +182,10 @@ export class LoadingScreenManager {
     try {
       const synth = window.speechSynthesis;
       const U = window.SpeechSynthesisUtterance;
-      if (!synth || !U) return;
+      if (!synth || !U) { this.speechDone = true; return; }
       const u = new U(LOADING_TELEMETRY.map((x) => x.replace(/\.\.\.$/, '.')).join(' '));
+      u.onend = () => { this.speechDone = true; };
+      u.onerror = () => { this.speechDone = true; };
       u.pitch = 0.9;
       u.rate = 0.82;
       u.volume = 0.95;
@@ -183,6 +198,7 @@ export class LoadingScreenManager {
       synth.speak(u);
     } catch {
       // Kiosk/headless browsers often omit speech synthesis. Never block boot.
+      this.speechDone = true;
     }
   }
 
@@ -191,7 +207,10 @@ export class LoadingScreenManager {
     const t = (now - this.startAt) / 1000;
     this.draw(t);
     this.drive(t);
-    if (t < DURATION) this.raf = requestAnimationFrame(this.tick);
+    const ready = t >= DURATION && this.backgroundDone && this.speechDone;
+    // Speech engines and GPU drivers are external systems. A hard ceiling
+    // guarantees neither can strand the player on the loading scene.
+    if (!ready && t < 28) this.raf = requestAnimationFrame(this.tick);
     else this.finish();
   };
 

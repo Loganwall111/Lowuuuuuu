@@ -599,7 +599,7 @@ export class FlightHUD {
       // projected telemetry and the targeting director lock into alignment.
       void this.root.offsetWidth;
       this.root.classList.add('fhud-powering');
-      window.setTimeout(() => this.root?.classList.remove('fhud-powering'), 1900);
+      window.setTimeout(() => this.root?.classList.remove('fhud-powering'), 2900);
     }
   }
 
