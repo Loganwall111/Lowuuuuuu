@@ -1063,6 +1063,36 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 .vc-node:hover{color:#fff;border-color:var(--acc);
   box-shadow:0 0 16px color-mix(in srgb,var(--acc) 45%,transparent);}
 
+/* Visor integration pass: controls sit directly on the cyan perimeter rails,
+   not inside webpage panels. Top owns orbital/time controls, side pylons own
+   world parameters, and the lower brace owns reset/pause. */
+.vc-top{top:15px;padding:0 42px 3px;gap:22px;background:transparent;
+  backdrop-filter:none;-webkit-backdrop-filter:none;border:0;border-bottom:1px solid #00f0ff;
+  border-radius:0;clip-path:none;box-shadow:0 5px 14px rgba(0,240,255,.12);}
+.vc-rail-cap{position:absolute;left:50%;top:11px;transform:translateX(-50%);
+  font-size:7px;letter-spacing:.3em;color:rgba(0,240,255,.42);white-space:nowrap;}
+.vc-top .vc-ctl{transform:translateY(16px);padding:2px 8px 4px;
+  background:linear-gradient(180deg,rgba(2,12,24,.78),rgba(2,12,24,.18));}
+.vc-side{position:absolute;top:50%;transform:translateY(-50%);display:flex;
+  flex-direction:column;gap:30px;pointer-events:auto;}
+.vc-side::before{content:'';position:absolute;top:-42px;bottom:-42px;width:1px;
+  background:linear-gradient(transparent,#00f0ff 18%,#00f0ff 82%,transparent);
+  box-shadow:0 0 11px rgba(0,240,255,.55);}
+.vc-left{left:11px}.vc-right{right:11px}
+.vc-left::before{left:0}.vc-right::before{right:0}
+.vc-side .vc-ctl{min-width:80px;padding:5px 7px;background:rgba(2,12,24,.28);}
+.vc-left .vc-ctl{align-items:flex-start}.vc-right .vc-ctl{align-items:flex-end}
+.vc-ctl input[type="range"]{height:1px;background:linear-gradient(90deg,#00f0ff 0 50%,rgba(0,240,255,.16) 50%);
+  box-shadow:0 0 5px rgba(0,240,255,.34);}
+.vc-ctl input[type="range"]::-webkit-slider-thumb{width:7px;height:13px;border-radius:0;
+  clip-path:polygon(50% 0,100% 30%,100% 70%,50% 100%,0 70%,0 30%);background:#d8fcff;}
+.vc-bottom{bottom:15px;padding:0 54px;border-top:1px solid #00f0ff;
+  box-shadow:0 -5px 14px rgba(0,240,255,.12);}
+.vc-node{transform:translateY(-13px);padding:5px 13px;background:rgba(2,12,24,.45);
+  backdrop-filter:none;-webkit-backdrop-filter:none;border:0;border-bottom:1px solid rgba(0,240,255,.45);
+  border-radius:0;clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);}
+@media(max-width:760px){.vc-side{display:none}.vc-top{max-width:86vw}.vc-top .vc-ctl:nth-of-type(n+3){display:none}}
+
 /* ---- the in-game pause menu (Escape) ---- */
 .pause-menu{position:fixed;inset:0;z-index:200;display:none;place-items:center;
   background:radial-gradient(ellipse at center,rgba(4,8,16,.55),rgba(2,4,10,.82));
@@ -1105,60 +1135,98 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 .pause-note{font-size:10px;color:var(--dim);line-height:1.5;padding:8px 10px;
   border-left:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 6%,transparent);border-radius:6px;}
 
-/* ---- the omni-boot cinematic load-out ---- */
+/* ---- dedicated five-stage LoadingScreenManager scene ---- */
 .omni-boot{position:fixed;inset:0;z-index:210;overflow:hidden;pointer-events:auto;
-  /* A lit boot veil, never black: the loading scene reads through the frost
-     instead of cutting to a dark void for a few seconds. */
-  background:radial-gradient(ellipse at center,rgba(10,24,48,.62),rgba(4,12,28,.82));
-  opacity:1;transition:opacity .5s ease;}
-.omni-boot.fading{opacity:0;pointer-events:none;}
-.omni-canvas{position:absolute;inset:0;width:100%;height:100%;}
-.omni-warp{position:absolute;inset:0;
+  --boot-cyan:#00f0ff;--boot-violet:#7657ff;
   background:
-    radial-gradient(circle at 50% 50%, rgba(0,240,255,.14) 0%, transparent 55%),
-    repeating-conic-gradient(from 0deg, rgba(0,240,255,.04) 0deg 1.5deg, transparent 1.5deg 6deg);
-  filter:blur(6px);animation:omniDefrost 4.4s ease forwards;}
+    radial-gradient(ellipse at 50% 46%,rgba(10,32,70,.84),rgba(2,7,18,.97) 68%),
+    #030713;color:#dff8ff;opacity:1;transition:opacity .56s ease;
+  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;isolation:isolate;}
+.omni-boot.fading{opacity:0;pointer-events:none;}
+.omni-canvas,.omni-frost{position:absolute;inset:0;width:100%;height:100%;}
+.omni-canvas{z-index:2;filter:drop-shadow(0 0 6px rgba(0,240,255,.48));}
+.omni-frost{z-index:3;mix-blend-mode:screen;opacity:.9;}
+.omni-warp{position:absolute;inset:-18%;z-index:1;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 50%,rgba(180,230,255,.22) 0 1%,transparent 18%),
+    repeating-conic-gradient(from 0deg at 50% 50%,rgba(0,240,255,.055) 0deg .7deg,transparent .8deg 5deg);
+  transform:scale(1.35);filter:blur(22px) saturate(170%);
+  animation:omniDefrost 6.15s cubic-bezier(.17,.72,.12,1) forwards;}
+.omni-warp i{position:absolute;inset:0;background:
+  repeating-radial-gradient(circle at center,transparent 0 20px,rgba(115,83,255,.055) 22px 23px);
+  animation:omniWarpPulse .22s linear infinite;}
 @keyframes omniDefrost{
-  0%{filter:blur(22px);opacity:1;}
-  70%{filter:blur(8px);opacity:.75;}
-  100%{filter:blur(0px);opacity:.15;}}
-.omni-grid{position:absolute;inset:0;opacity:.25;
-  background-image:
-    linear-gradient(rgba(0,240,255,.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,240,255,.12) 1px, transparent 1px);
-  background-size:44px 44px;
-  transform:perspective(500px) rotateX(52deg);transform-origin:bottom;
-  -webkit-mask-image:linear-gradient(180deg,transparent,#000 70%);
-  mask-image:linear-gradient(180deg,transparent,#000 70%);
-  animation:omniGrid 2.4s linear infinite;}
-@keyframes omniGrid{ from{background-position:0 0} to{background-position:0 44px} }
-.omni-stage{position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:18px;}
-.omni-matrix{display:flex;flex-direction:column;align-items:center;gap:7px;
-  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;}
-.omni-line{font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--acc);
-  text-shadow:0 0 10px color-mix(in srgb,var(--acc) 60%,transparent);}
-.omni-line.dim{color:color-mix(in srgb,var(--acc) 55%,transparent);font-size:10px;letter-spacing:.28em;}
-.omni-line.accent{color:#c3b4ff;text-shadow:0 0 12px rgba(150,110,255,.6);}
-.omni-count{font-size:26px;font-weight:800;letter-spacing:.5em;color:#eaf4ff;}
-.omni-bar{width:min(420px,72vw);height:3px;margin-top:6px;overflow:hidden;border-radius:2px;
-  background:rgba(255,255,255,.10);}
-.omni-bar i{display:block;height:100%;width:0;
-  background:linear-gradient(90deg,#00f0ff,#7c5cff);box-shadow:0 0 14px rgba(0,240,255,.6);}
-.omni-ticker{display:flex;flex-direction:column;align-items:center;gap:3px;min-height:150px;
-  font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(190,215,245,.7);
-  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;}
-.omni-ticker div:last-child{color:var(--acc);text-shadow:0 0 8px color-mix(in srgb,var(--acc) 50%,transparent);}
-.omni-engage{font-size:clamp(18px,3.4vw,34px);font-weight:900;letter-spacing:.42em;text-transform:uppercase;
-  color:transparent;opacity:0;transform:scale(.92);
-  background:linear-gradient(180deg,#fff,#00f0ff 55%,#2f6bff);
-  -webkit-background-clip:text;background-clip:text;
-  filter:drop-shadow(0 0 24px rgba(0,240,255,.5));
-  transition:opacity .4s ease, transform .4s cubic-bezier(.2,.9,.3,1.4);}
-.omni-boot.engage .omni-engage{opacity:1;transform:scale(1);}
-@media (prefers-reduced-motion: reduce){
-  .omni-canvas,.omni-warp,.omni-grid{animation:none;opacity:.2;}
-}
+  0%,25%{filter:blur(26px) saturate(190%);transform:scale(1.5);opacity:.62}
+  55%{filter:blur(12px) saturate(170%);transform:scale(1.18);opacity:.92}
+  100%{filter:blur(0) saturate(115%);transform:scale(1);opacity:.22}}
+@keyframes omniWarpPulse{to{transform:scale(1.028);opacity:.5}}
+.omni-grid{position:absolute;inset:0;z-index:0;opacity:.22;
+  background-image:linear-gradient(rgba(0,240,255,.1) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,240,255,.1) 1px,transparent 1px);
+  background-size:46px 46px;transform:perspective(560px) rotateX(58deg);
+  transform-origin:bottom;mask-image:linear-gradient(transparent,#000 76%);
+  animation:omniGrid 1.5s linear infinite;}
+@keyframes omniGrid{to{background-position:0 46px}}
+.omni-vignette{position:absolute;inset:0;z-index:5;pointer-events:none;
+  box-shadow:inset 0 0 180px rgba(0,0,0,.92),inset 0 0 0 1px rgba(0,240,255,.1);
+  background:repeating-linear-gradient(180deg,transparent 0 3px,rgba(0,0,0,.09) 3px 4px);}
+.omni-chrome{position:absolute;z-index:8;left:25px;right:25px;top:20px;
+  display:flex;justify-content:space-between;padding:7px 11px;
+  border-top:1px solid rgba(0,240,255,.38);font-size:8px;letter-spacing:.3em;
+  color:rgba(155,220,255,.6);text-transform:uppercase;}
+.omni-chrome::before,.omni-chrome::after{content:'';position:absolute;top:-1px;width:54px;height:6px;
+  border-top:2px solid var(--boot-cyan);filter:drop-shadow(0 0 5px var(--boot-cyan));}
+.omni-chrome::before{left:0;border-left:1px solid var(--boot-cyan)}
+.omni-chrome::after{right:0;border-right:1px solid var(--boot-cyan)}
+.omni-stage{position:absolute;inset:0;z-index:7;display:grid;place-items:center;pointer-events:none;}
+.omni-matrix{display:flex;flex-direction:column;align-items:center;gap:8px;
+  transition:opacity .3s ease,transform .45s cubic-bezier(.2,.8,.2,1);}
+.omni-matrix small{font-size:8px;letter-spacing:.34em;color:rgba(170,215,255,.45);margin-bottom:9px;}
+.omni-line{font-size:clamp(9px,1vw,13px);letter-spacing:.36em;text-transform:uppercase;
+  color:var(--boot-cyan);text-shadow:0 0 10px rgba(0,240,255,.75);}
+.omni-line.dim{font-size:9px;color:rgba(150,205,255,.58);letter-spacing:.25em;}
+.omni-line.accent{color:#bbaeff;text-shadow:0 0 16px rgba(118,87,255,.9);}
+.omni-count{font-size:clamp(24px,4vw,48px);font-weight:200;letter-spacing:.5em;
+  color:#f2fbff;text-shadow:0 0 24px rgba(0,240,255,.62);}
+.omni-bar{position:relative;width:min(520px,72vw);height:4px;margin-top:10px;
+  background:rgba(120,170,220,.12);border-left:1px solid var(--boot-cyan);
+  border-right:1px solid var(--boot-violet);box-shadow:0 0 0 1px rgba(0,240,255,.08);}
+.omni-bar i{display:block;height:100%;width:0;transition:width .08s linear;
+  background:linear-gradient(90deg,var(--boot-cyan),#3c9cff 56%,var(--boot-violet));
+  box-shadow:0 0 14px rgba(0,240,255,.9),0 0 32px rgba(118,87,255,.55);}
+.omni-bar b{position:absolute;right:0;top:11px;font-size:8px;letter-spacing:.2em;
+  color:rgba(190,225,255,.66);font-weight:500;}
+.omni-telemetry{position:absolute;left:50%;top:50%;width:min(760px,84vw);height:min(230px,36vh);
+  transform:translate(-50%,-50%);display:flex;opacity:0;transition:opacity .35s ease;}
+.omni-bracket{width:36px;border-top:1px solid rgba(0,240,255,.45);
+  border-bottom:1px solid rgba(0,240,255,.45);}
+.omni-bracket.l{border-left:2px solid var(--boot-cyan)}
+.omni-bracket.r{border-right:2px solid var(--boot-cyan)}
+.omni-ticker{flex:1;overflow:hidden;white-space:pre-line;padding:24px 30px;
+  font-size:clamp(9px,1.15vw,13px);line-height:1.9;letter-spacing:.24em;text-align:center;
+  color:rgba(205,235,255,.86);text-transform:uppercase;text-shadow:0 0 9px rgba(0,240,255,.5);
+  background:linear-gradient(90deg,transparent,rgba(3,15,35,.36),transparent);}
+.omni-ticker::after{content:'_';color:var(--boot-cyan);animation:omniCursor .48s steps(1) infinite;}
+@keyframes omniCursor{50%{opacity:0}}
+.omni-engage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.7);
+  display:flex;flex-direction:column;gap:12px;align-items:center;white-space:nowrap;
+  font-size:clamp(20px,4vw,52px);font-weight:900;letter-spacing:.32em;text-transform:uppercase;
+  color:transparent;opacity:0;background:linear-gradient(180deg,#fff,var(--boot-cyan) 58%,#547cff);
+  -webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 24px rgba(0,240,255,.8));
+  transition:opacity .18s ease,transform .55s cubic-bezier(.14,1.5,.4,1);}
+.omni-engage small{font-size:8px;letter-spacing:.42em;color:#9eefff;-webkit-text-fill-color:#9eefff;}
+.omni-boot.engage .omni-engage{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.stage-shatter .omni-matrix,.stage-defrost .omni-matrix{opacity:0;transform:scale(1.35);}
+.stage-vitals .omni-matrix,.stage-engage .omni-matrix{opacity:0;transform:scale(.7);}
+.stage-vitals .omni-telemetry{opacity:1;}
+.stage-engage .omni-telemetry{opacity:0;}
+.stage-engage .omni-vignette{animation:omniFlare .8s ease-out both;}
+@keyframes omniFlare{0%{background:rgba(180,240,255,.9)}100%{background:transparent}}
+.omni-skip{position:absolute;z-index:10;right:25px;bottom:20px;padding:7px 10px;
+  color:rgba(165,210,245,.4);background:transparent;border:0;border-bottom:1px solid rgba(0,240,255,.2);
+  font:8px/1 'JetBrains Mono',monospace;letter-spacing:.2em;cursor:pointer;pointer-events:auto;}
+.omni-skip:hover{color:#dffaff;border-color:var(--boot-cyan)}
+@media (prefers-reduced-motion:reduce){.omni-warp,.omni-grid,.omni-warp i{animation:none}.omni-boot{transition:none}}
 
 /* --- the suit rails --- */
 /* No full-width bar any more: the rails are transparent docks over the
@@ -1172,6 +1240,22 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
    armor visor metrics over a clean view of the universe. */
 body[data-cinematic="1"] .topbar,
 body[data-cinematic="1"] .wm-layer{ display:none !important; }
+
+/* Helmet power-on choreography. Rails trace from the centre, side pylons
+   strike vertically, then instruments resolve from defocused light. */
+.fhud.fhud-powering .fv-top,.fhud.fhud-powering .fv-bottom{
+  animation:fhRailBoot 1.15s cubic-bezier(.15,.8,.2,1) both;}
+.fhud.fhud-powering .fv-side,.fhud.fhud-powering .fv-pylon{
+  animation:fhSideBoot .9s .24s cubic-bezier(.15,.8,.2,1) both;}
+.fhud.fhud-powering .fhud-left,.fhud.fhud-powering .fhud-right,
+.fhud.fhud-powering .fhud-vitals,.fhud.fhud-powering .fhud-gears,
+.fhud.fhud-powering .fhud-status{animation:fhTelemetryBoot .72s .72s ease-out both;}
+.fhud.fhud-powering .fhud-director,.fhud.fhud-powering .fhud-reticle{
+  animation:fhDirectorLock .8s 1s cubic-bezier(.15,1.5,.3,1) both;}
+@keyframes fhRailBoot{from{transform:translateX(-50%) scaleX(0);filter:brightness(4)}to{transform:translateX(-50%) scaleX(1);filter:brightness(1)}}
+@keyframes fhSideBoot{from{transform:translateY(-50%) scaleY(0);opacity:0}to{transform:translateY(-50%) scaleY(1);opacity:1}}
+@keyframes fhTelemetryBoot{0%{opacity:0;filter:blur(8px)}65%{opacity:1;filter:blur(0);text-shadow:0 0 16px #00f0ff}100%{opacity:1;filter:blur(0)}}
+@keyframes fhDirectorLock{0%{opacity:0;filter:blur(5px);scale:1.7}100%{opacity:1;filter:blur(0);scale:1}}
 
 /* Reduced motion: the pulse is decorative, so drop it on request. */
 @media (prefers-reduced-motion: reduce){

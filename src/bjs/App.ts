@@ -49,7 +49,7 @@ import {
   shouldStrand, strandedDepth, strandedWormholeSeed, HORIZON_WARNING
 } from './systems/VoidNavigation';
 import { PauseMenu } from './ui/PauseMenu';
-import { OmniBoot } from './ui/OmniBoot';
+import { LoadingScreenManager } from './ui/LoadingScreenManager';
 import { leaderboard, playerScore } from './systems/Leaderboard';
 import {
   DiscoveryLog, Milestones, Challenges, CHALLENGES, MILESTONES, type CodexKind
@@ -292,8 +292,8 @@ export class App {
       challenges: this.challenges.completedCount
     })
   });
-  /** The multi-stage cinematic load-out that plays on entering the sandbox. */
-  omniBoot = new OmniBoot();
+  /** The dedicated multi-stage loading scene that plays before flight. */
+  omniBoot = new LoadingScreenManager();
   /** Rolling buffer of the player's motion, for the rewind key. */
   rewind = new TimeRewind();
   /** The gas-giant dive in progress, if any. */

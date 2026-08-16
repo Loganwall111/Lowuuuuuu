@@ -591,7 +591,16 @@ export class FlightHUD {
   /** Hides or shows the whole HUD. */
   setVisible(on: boolean): void {
     this.visible = on;
-    if (this.root) this.root.style.display = on ? '' : 'none';
+    if (!this.root) return;
+    this.root.style.display = on ? '' : 'none';
+    this.root.classList.remove('fhud-powering');
+    if (on) {
+      // Replay the physical visor power-on: rails trace first, then pylons,
+      // projected telemetry and the targeting director lock into alignment.
+      void this.root.offsetWidth;
+      this.root.classList.add('fhud-powering');
+      window.setTimeout(() => this.root?.classList.remove('fhud-powering'), 1900);
+    }
   }
 
   isVisible(): boolean { return this.visible; }

@@ -485,11 +485,17 @@ export class Shell {
     if (!this.visorConsole) return;
     const w = this.world;
     const params = w?.getParams?.() ?? [];
-    const top = params.slice(0, 6);
+    const top = params.slice(0, 2);
+    const side = params.slice(2, 6);
+    const left = side.filter((_, i) => i % 2 === 0);
+    const right = side.filter((_, i) => i % 2 === 1);
     this.visorConsole.innerHTML =
       '<div class="vc-top">' +
+        '<span class="vc-rail-cap">ORBITAL CONTROL</span>' +
         top.map((p) => this.visorSlider(p)).join('') +
       '</div>' +
+      '<div class="vc-side vc-left">' + left.map((p) => this.visorSlider(p)).join('') + '</div>' +
+      '<div class="vc-side vc-right">' + right.map((p) => this.visorSlider(p)).join('') + '</div>' +
       '<div class="vc-bottom">' +
         '<button class="vc-node" data-vc="pause">' +
           (this.paused ? '▶ Resume' : '⏸ Pause') + '</button>' +

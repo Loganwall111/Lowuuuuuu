@@ -609,6 +609,40 @@ export const INTRO_CSS = `
 .intro-launch i{ font-size:10px; letter-spacing:.06em; font-style:normal;
   text-transform:none; opacity:.86; font-weight:600; }
 
+/* The Jupiter artwork is a dedicated compositor layer. Its transform is
+   driven by normalised pointer coordinates, so this is real parallax rather
+   than a repaint-heavy background-position trick. */
+.intro-hero-plate{
+  position:absolute; inset:-5%; z-index:0; pointer-events:none;
+  background-image:url('/art/menu-hero.jpg'); background-size:cover;
+  background-position:center; will-change:transform;
+  transform:scale(1.08) translate(var(--parallax-x,0px),var(--parallax-y,0px));
+  transition:transform 90ms linear;
+}
+.intro-title > :not(.intro-hero-plate){ z-index:4; }
+.intro-title::before,.intro-title::after{ z-index:1; }
+/* Desktop primary navigation: Play / Settings / Quit are one centered
+   vertical control spine, echoing the reference cockpit's central stack. */
+.intro-launchrow{
+  flex-direction:column; flex-wrap:nowrap; width:260px; gap:10px;
+  margin-top:16px; z-index:5;
+}
+.intro-launchrow > button{ width:100%; min-width:260px; }
+.intro-launchrow .intro-aux{
+  padding:12px 22px 11px; border-radius:0;
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+  background:linear-gradient(90deg,rgba(5,18,38,.76),rgba(20,54,88,.72),rgba(5,18,38,.76));
+  border-color:rgba(0,240,255,.3);
+}
+.intro-notes-corner{
+  position:absolute;right:28px;bottom:calc(9vh + 18px);z-index:6;
+  width:auto!important;min-width:170px!important;
+}
+@media (max-width:720px){
+  .intro-notes-corner{right:16px;bottom:12px}.intro-info{display:none}
+  .intro-launchrow{width:min(260px,80vw)}
+}
+
 .intro-hide{ display:none !important; }
 `;
 
@@ -660,6 +694,7 @@ export class IntroOverlay {
     // like a list of words; on one line with the weight shift between
     // UNLIMITED and POSSIBILITIES it reads as a logotype.
     this.titleCard.innerHTML = `
+      <div class="intro-hero-plate" aria-hidden="true"></div>
       <i class="intro-cinema t" aria-hidden="true"></i>
       <i class="intro-cinema b" aria-hidden="true"></i>
       <i class="intro-scan" aria-hidden="true"></i>
@@ -739,8 +774,11 @@ export class IntroOverlay {
     // Patch notes live with the launch row, not inside the mode menu: the
     // mode menu keeps exactly two doors (Explore, Sandbox) at the top and a
     // single "Create World" at the bottom.
-    const launchRow = this.titleCard.querySelector('.intro-launchrow');
-    if (launchRow) launchRow.appendChild(notes);
+    // Keep the three primary desktop paths as one precise vertical stack.
+    // Patch notes is reference material, so it sits in its own quiet corner
+    // instead of becoming a fourth primary path.
+    notes.classList.add('intro-notes-corner');
+    this.titleCard.appendChild(notes);
 
     this.titleCard.appendChild(modes);
 
@@ -800,6 +838,10 @@ export class IntroOverlay {
     let px = 0, py = 0, raf = 0, pending = false;
     const applyParallax = () => {
       pending = false;
+      // Pixels are resolved here rather than multiplied in CSS: this keeps the
+      // transform valid in every browser and lets the compositor own it.
+      this.titleCard.style.setProperty('--parallax-x', (-px * 18).toFixed(2) + 'px');
+      this.titleCard.style.setProperty('--parallax-y', (-py * 12).toFixed(2) + 'px');
       this.titleCard.style.setProperty('--mx', px.toFixed(4));
       this.titleCard.style.setProperty('--my', py.toFixed(4));
     };
