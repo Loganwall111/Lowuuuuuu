@@ -314,13 +314,12 @@ void main(void){
   // giant translucent bubble sitting around the hole, which is exactly
   // what it looked like.
   //
-  // At 0.22..0.75 the lensed sky is gone by about 7 radii, inside the
-  // disk's own outer edge of 9, so nothing extends past the object you
-  // can actually see. The Einstein ring and the wrap around the shadow
-  // are untouched, because there the bend is 0.4-0.7 and still saturates.
+  // The lens contribution now starts only where bending is optically
+  // meaningful. This confines the effect to the Einstein ring and removes
+  // the low-alpha circular carrier that read as a glass bubble.
   float lensedSky = 0.0;
   if (!captured){
-    lensedSky = smoothstep(0.22, 0.75, totalBend) * transmit;
+    lensedSky = smoothstep(0.32, 0.80, totalBend) * transmit;
     col += skyAlongRay(escapeDir) * lensedSky;
   }
 

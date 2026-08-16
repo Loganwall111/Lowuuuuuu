@@ -120,7 +120,7 @@ export const GAS_COUNT = 9000;
  * that goes inside it. 343 galaxies x 34 = ~11,700 points, against the
  * 39,000 the home galaxy already costs.
  */
-export const FAR_GAS_PER = 34;
+export const FAR_GAS_PER = 60;
 /** Star points per distant galaxy. The gas offset depends on this. */
 export const FAR_STAR_PER = 26;
 
@@ -136,7 +136,9 @@ const REFERENCE_HEIGHT = 1080;
  * (2600..3700) so the fog encloses the stars rather than cutting through
  * them.
  */
-const FOG_SHELL_R = 3850;
+// Comfortable far-plane margin prevents the camera-facing shell from
+// grazing maxZ during extreme pitch/warp frames (the flashing black circle).
+const FOG_SHELL_R = 3400;
 
 /**
  * A galaxy sized to span FIELD_INNER..FIELD_OUTER in real coordinates.
@@ -543,13 +545,13 @@ export class GalaxyField {
           (c[0] * 0.86 + g.tint[0] * 0.14) * b,
           (c[1] * 0.86 + g.tint[1] * 0.14) * b,
           (c[2] * 0.86 + g.tint[2] * 0.14) * b,
-          Math.min(0.42, dens * 0.5));
+          Math.min(0.28, dens * 0.34));
       });
       const gasMesh = await gasCloud.buildMeshAsync();
       // Larger than the star points for the same reason the home galaxy's
       // gas is: haze has to cover area to read as haze. Still far below the
       // size where additive stacking clips.
-      this.applyState(gasMesh, 9.0);
+      this.applyState(gasMesh, 14.0);
       gasMesh.setEnabled(this.visible);
       this.farGasCloud = gasCloud;
       this.farGasMesh = gasMesh;
@@ -575,7 +577,7 @@ export class GalaxyField {
     try {
       registerGalaxyFogShader();
       const shell = MeshBuilder.CreateSphere(
-        'galaxyFog', { diameter: FOG_SHELL_R * 2, segments: 16 }, scene);
+        'galaxyFog', { diameter: FOG_SHELL_R * 2, segments: 24 }, scene);
       shell.flipFaces(true);          // seen from inside
 
       const mat = new ShaderMaterial('galaxyFogM', scene, GALAXY_FOG_SHADER, {

@@ -616,8 +616,16 @@ export const INTRO_CSS = `
   background-image:url('/art/menu-hero.jpg'); background-size:cover;
   background-position:center; will-change:transform;
   transform:scale(1.08) translate(var(--parallax-x,0px),var(--parallax-y,0px));
-  transition:transform 90ms linear;
+  transition:transform 90ms linear; overflow:hidden;
 }
+.intro-hero-plate::after{
+  content:'';position:absolute;inset:0;mix-blend-mode:screen;opacity:.72;
+  background:
+    radial-gradient(circle at calc(50% - var(--parallax-x,0px)) calc(42% - var(--parallax-y,0px)),rgba(130,210,255,.16),transparent 18%),
+    linear-gradient(112deg,transparent 35%,rgba(130,210,255,.07) 48%,transparent 60%);
+  animation:introOpticSweep 11s ease-in-out infinite alternate;
+}
+@keyframes introOpticSweep{from{filter:hue-rotate(-4deg) brightness(.94)}to{filter:hue-rotate(8deg) brightness(1.08)}}
 .intro-title > :not(.intro-hero-plate){ z-index:4; }
 .intro-title::before,.intro-title::after{ z-index:1; }
 /* Desktop primary navigation: Play / Settings / Quit are one centered
@@ -726,7 +734,7 @@ export class IntroOverlay {
       <i class="intro-centerline" aria-hidden="true"></i>
       <p class="intro-sub">Create · Experiment · Break · Observe</p>
       <div class="intro-info">
-        <span>WASD fly · Shift boost · L land · P photomode</span>
+        <span>WASD fly · P portals · F10 photomode · L land</span>
         <span class="intro-info-ver">${CURRENT_UPDATE} · ${CURRENT_UPDATE_NAME}</span>
       </div>`;
 

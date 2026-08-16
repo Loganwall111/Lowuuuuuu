@@ -592,6 +592,13 @@ export class FlightHUD {
       : 'the way back has closed');
   }
 
+  /** Energises the visor frame while a traversable aperture pair is open. */
+  setPortalLink(on: boolean, crossWorld = false): void {
+    if (!this.root) return;
+    this.root.classList.toggle('portal-open', on);
+    this.root.classList.toggle('portal-crossworld', on && crossWorld);
+  }
+
   /** Shows or hides one group. */
   /**
    * Switches instrument skin.

@@ -258,6 +258,15 @@ body[data-cinematic="1"] .visor-console{ display:none !important; }
 .fhud.warping .fhud-canopy{
   box-shadow:inset 0 0 220px rgba(90,120,255,.30),
              inset 0 -40px 120px rgba(150,110,255,.16);}
+/* Opening a traversable fold reroutes violet energy through the helmet
+   perimeter, making the mechanic legible without adding another box. */
+.fhud.portal-open .fv-side,.fhud.portal-open .fv-pylon{
+  filter:hue-rotate(58deg) brightness(1.35);
+  animation:fhPortalRail 1.25s ease-in-out infinite alternate;}
+.fhud.portal-crossworld .fv-top,.fhud.portal-crossworld .fv-bottom{
+  background:linear-gradient(90deg,transparent,#7657ff,#00f0ff,#7657ff,transparent);}
+.fhud.portal-open .fh-arc{stroke:#9d7cff;filter:drop-shadow(0 0 4px #7657ff);}
+@keyframes fhPortalRail{from{opacity:.55}to{opacity:1;box-shadow:0 0 24px rgba(118,87,255,.8)}}
 
 /* ---- holographic instrument look ---- */
 /* Panels are glass plates lit from the edge, like a projected interface.

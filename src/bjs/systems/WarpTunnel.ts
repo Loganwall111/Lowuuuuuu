@@ -124,6 +124,16 @@ void main(void){
   vec3 tint = mix(tintNear, tintFar, smoothstep(0.08, 0.8, r));
   acc += tint * tunnel * amount * 2.6;
 
+  // Distance-triggered compression fronts: thin luminous shells crossing
+  // the canopy as the drive folds another volume of space. They are tied to
+  // travelled phase, not clock time, so cutting thrust freezes them exactly.
+  float frontPos = fract(phase * 0.075) * 1.28;
+  float front = exp(-abs(r - frontPos) * 72.0)
+              * smoothstep(0.05, 0.22, r) * (1.0 - smoothstep(0.9, 1.3, r));
+  float echoPos = fract(phase * 0.075 + 0.47) * 1.28;
+  float echo = exp(-abs(r - echoPos) * 46.0) * 0.38;
+  acc += mix(tintNear, vec3(0.72,0.48,1.0), r) * (front + echo) * amount * 0.72;
+
   // ---- vignette ------------------------------------------------------
   // The walls closing in. Subtle - it frames the rush without pretending
   // to be damage or a filter.

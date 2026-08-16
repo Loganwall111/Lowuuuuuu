@@ -91,7 +91,7 @@ export const DISK_OUTER = 9.0;
  * every hole - the "giant floating bubble". 12 leaves a comfortable margin
  * past the disk while ending the quad before it can wash the sky.
  */
-export const QUAD_RADII = 12;
+export const QUAD_RADII = 10.5;
 
 interface LiveHole {
   id: string;

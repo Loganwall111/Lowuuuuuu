@@ -184,10 +184,10 @@ const float DUST_CUT = 0.85;
 const float WHITE = 1.15;
 /** Filmic toe. Faint gas must resolve to BLACK rather than to the grey
  *  that gamma would otherwise lift it to. */
-const float TOE = 0.042;
+const float TOE = 0.055;
 /** Post-integration saturation recovery: summing many hues along a ray
  *  averages toward grey, so the dominant hue is pushed back afterwards. */
-const float SATURATION_RECOVERY = 0.35;
+const float SATURATION_RECOVERY = 0.48;
 
 /** Half-thickness of the slab the march is clipped to. */
 const float SLAB_H = 0.12;

@@ -31,7 +31,8 @@ import { StationSystem } from './systems/StationSystem';
 import { CosmicScaleSystem } from './systems/CosmicScaleSystem';
 import { inspectFrame, showBlackScreenReport } from './RenderWatchdog';
 import { ElevatorSystem } from './systems/ElevatorSystem';
-import { PortalGunSystem } from './systems/PortalGunSystem';
+import { PortalGunSystem, type Portal } from './systems/PortalGunSystem';
+import { PortalVisualSystem } from './systems/PortalVisualSystem';
 import { Descent, EARTHLIKE } from './systems/DescentSystem';
 import { missingShaders } from './ShaderRegistry';
 import { WarpDrive, galacticMedium } from './systems/DeepSkySystem';
@@ -371,6 +372,12 @@ export class App {
   elevators = new ElevatorSystem();
   /** Two holes in the universe, and the walk between them. */
   portalGun = new PortalGunSystem();
+  portalVisual = new PortalVisualSystem();
+  private portalRoute = 0;
+  private portalEndpoints: Array<Portal | null> = [null, null];
+  private portalTraveller = {
+    position: this.vehicle.position, velocity: this.vehicle.velocity, radius: 1.2
+  };
   /** Zoom out far enough and you leave the universe entirely. */
   cosmicScale = new CosmicScaleSystem();
   /** Procedural space stations you can dock with and walk inside. */
@@ -767,8 +774,10 @@ export class App {
       // L lands on the nearest planet / lifts off again. Guarded against key
       // repeat so holding it cannot flip between modes every frame.
       if (e.key.toLowerCase() === 'l' && !e.repeat) this.toggleLand();
-      // P toggles photomode: every layer of UI drops away for a clean frame.
-      if (e.key.toLowerCase() === 'p' && !e.repeat) this.togglePhotoMode();
+      // P tears open a paired route through space/reality. Photomode moved to
+      // F10 so the signature traversal mechanic owns the easiest key.
+      if (e.key.toLowerCase() === 'p' && !e.repeat) this.openPortalRoute();
+      if (e.key === 'F10' && !e.repeat) this.togglePhotoMode();
       // U copies the universe seed so a friend can visit the same worlds.
       if (e.key.toLowerCase() === 'u' && !e.repeat) this.copySeed();
       // I dives into the nearest gas giant; O boards the nearest derelict.
@@ -1189,6 +1198,8 @@ export class App {
       this.holeField.attach(this.scene);
       this.quantumAnomaly.dispose();
       this.quantumAnomaly.attach(this.scene, this.universe.opts.seed);
+      this.portalVisual.dispose();
+      this.portalVisual.attach(this.scene);
 
       this.shell.setWorld(w);
 
@@ -1574,12 +1585,49 @@ export class App {
     }
   }
 
-  /** Photomode: drop every UI layer so the view is a clean frame. */
+  /** Opens a deterministic portal route in the direction of travel. */
+  private openPortalRoute(): void {
+    if (this.inMenu || this.omniBoot.isRunning || !this.launchReady) return;
+    const fwd = this.cameraForward;
+    this.camera.getTarget().subtractToRef(this.camera.position, fwd);
+    if (fwd.lengthSquared() < 1e-8) fwd.set(0, 0, 1);
+    else fwd.normalize();
+    const entry = this.vehicle.position.add(fwd.scale(18));
+    const entryNormal = fwd.scale(-1);
+    const route = this.portalRoute++ % 3;
+    let exit: Vector3, worldId: string, label: string;
+    if (route === 1) {
+      exit = new Vector3(0, 3, -8); worldId = 'dimension'; label = 'UNKNOWN DIMENSION';
+    } else if (route === 2) {
+      exit = this.vehicle.position.add(new Vector3(260000, 18000, -130000));
+      worldId = 'planetary'; label = 'DEEP UNIVERSE';
+    } else {
+      const places = this.universe.activeRegions(this.vehicle.position, 16);
+      const target = places.find((r) => r.id !== this.universe.current?.id);
+      if (target) {
+        const out = target.position.subtract(this.vehicle.position);
+        const n = out.lengthSquared() > 1e-8 ? out.normalize() : new Vector3(0, 0, 1);
+        exit = target.position.subtract(n.scale(Math.max(target.radius * 1.5, 24)));
+        worldId = localeForKind(target.kind).id; label = target.name;
+      } else {
+        exit = this.vehicle.position.add(fwd.scale(5200));
+        worldId = this.currentId; label = 'LOCAL FOLD';
+      }
+    }
+    this.portalGun.fire('a', entry, entryNormal, this.currentId, 3.2);
+    this.portalGun.fire('b', exit, fwd, worldId, 3.2);
+    this.portalEndpoints[0] = this.portalGun.a; this.portalEndpoints[1] = this.portalGun.b;
+    this.portalVisual.update(0, this.portalEndpoints, this.currentId);
+    this.flightHud.notify('PORTAL ROUTE LOCKED // ' + label);
+    this.shell.toast('P Aperture linked to ' + label);
+  }
+
+  /** Photomode: drop every UI layer so the view is a clean frame (F10). */
   private togglePhotoMode(): void {
     this.photoMode = !this.photoMode;
     document.body.dataset.photo = this.photoMode ? '1' : '0';
     this.shell.toast(this.photoMode
-      ? 'Photomode on — press P to return'
+      ? 'Photomode on — press F10 to return'
       : 'Photomode off');
   }
 
@@ -2675,17 +2723,24 @@ export class App {
         }
       }
 
-      // The portal gun works on the player like anything else: walk into
-      // one and you come out of the other, carrying your momentum.
+      // Portal apertures are physical holograms in whichever locale owns
+      // each endpoint. The traveller object is persistent so cooldown state
+      // survives frames instead of being defeated by a fresh object literal.
+      this.portalEndpoints[0] = this.portalGun.a; this.portalEndpoints[1] = this.portalGun.b;
+      this.portalVisual.update(dt, this.portalEndpoints, this.currentId);
       if (this.portalGun.linked && this.vehicle.mode !== 'orbit') {
-        const trip = this.portalGun.tryTeleport({
-          position: this.vehicle.position,
-          velocity: this.vehicle.velocity,
-          radius: 1.2
-        }, dt);
+        this.portalTraveller.position = this.vehicle.position;
+        this.portalTraveller.velocity = this.vehicle.velocity;
+        const trip = this.portalGun.tryTeleport(this.portalTraveller, dt);
         if (trip) {
           this.camera.position.copyFrom(this.vehicle.position);
           this.shell.toast('Through the portal');
+          if (trip.worldId !== this.currentId) {
+            void this.loadWorld(trip.worldId).then(() => {
+              this.camera.position.copyFrom(this.vehicle.position);
+              this.portalVisual.update(0, this.portalEndpoints, this.currentId);
+            });
+          }
         }
       }
 
@@ -2775,6 +2830,7 @@ export class App {
           }
         }
         this.flightHud.setAnomaly(this.quantumAnomaly.telemetry());
+        this.flightHud.setPortalLink(this.portalGun.linked, this.portalGun.bridgesWorlds());
         this.flightHud.update({
           x: eye.x, y: eye.y, z: eye.z,
           heading: att.yaw,

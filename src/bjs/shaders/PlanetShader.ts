@@ -243,6 +243,27 @@ void main(void){
   float upness = n.y * 0.5 + 0.5;
   col += albedo * mix(vec3(0.012, 0.016, 0.030), vec3(0.030, 0.038, 0.062), upness);
 
+  // Microfacet response for solid terrain. Previously every continent,
+  // glacier and crater was equally chalk-matte; a restrained GGX lobe gives
+  // ice, basalt and exposed rock the grazing highlights seen in orbital film.
+  vec3 Hs = normalize(L + V);
+  float ndv = max(dot(n, V), 0.001);
+  float ndhS = max(dot(n, Hs), 0.0);
+  float vdh = max(dot(V, Hs), 0.0);
+  float alpha = max(0.035, rough * rough);
+  float a2 = alpha * alpha;
+  float denom = ndhS * ndhS * (a2 - 1.0) + 1.0;
+  float Dggx = a2 / max(3.14159 * denom * denom, 1e-4);
+  float kggx = (rough + 1.0) * (rough + 1.0) * 0.125;
+  float Gv = ndv / (ndv * (1.0 - kggx) + kggx);
+  float Gl = lam / (lam * (1.0 - kggx) + kggx + 1e-4);
+  vec3 F0 = mix(vec3(0.025), vec3(0.12,0.16,0.20), step(1.5, ptype) * (1.0 - step(2.5, ptype)));
+  vec3 Fs = F0 + (1.0 - F0) * pow(1.0 - vdh, 5.0);
+  vec3 terrainSpec = Dggx * Gv * Gl * Fs / max(4.0 * ndv * max(lam, .001), 1e-4);
+  col += terrainSpec * sunCol * lam * (1.0 - specMask) * 0.42;
+  // Small-scale relief self-occludes valleys, grounding the procedural height.
+  col *= 1.0 - clamp(length(grad) * 0.018, 0.0, 0.16) * (1.0 - specMask);
+
   if (specMask > 0.01){
     // ---------------------------- deep water ----------------------------
     // Real oceans are not a blue surface with a highlight. Light that enters
