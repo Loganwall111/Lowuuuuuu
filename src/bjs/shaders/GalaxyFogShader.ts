@@ -100,6 +100,8 @@ uniform float density;
 uniform float time;
 /** How far the ray is allowed to travel, galaxy units. */
 uniform float marchFar;
+/** Adaptive ray budget: 16 emergency, 28 balanced, 48 cinematic. */
+uniform float marchSteps;
 
 // ----------------------------------------------------------- structure
 
@@ -456,7 +458,8 @@ void main(void) {
   }
   if (t1 <= t0) { gl_FragColor = vec4(0.0); return; }
 
-  float dt = (t1 - t0) / float(STEPS);
+  float steps = clamp(marchSteps, 8.0, float(STEPS));
+  float dt = (t1 - t0) / steps;
 
   // Dither the entry point, or the fixed step lays down visible concentric
   // shells - the classic raymarch banding artefact.
@@ -468,6 +471,7 @@ void main(void) {
   vec3 trans = vec3(1.0);
 
   for (int i = 0; i < STEPS; i++){
+    if (float(i) >= steps) break;
     float s = t0 + (float(i) + jitter) * dt;
     vec3 pos = camPos + dir * s;
 

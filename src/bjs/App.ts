@@ -280,6 +280,9 @@ export class App {
   private stranded = false;
   /** The seed of the stranding, so the way home is deterministic. */
   private strandedSeed = 0;
+  /** Destination is remembered at the old threshold but opened only deep inside. */
+  private pendingInteriorDestination: InteriorDestination | null = null;
+  private deepGateDelivered = false;
   /** True while the Left-Alt gesture is held (cursor reappears). */
   private altHeld = false;
   /** True once the horizon warning has been shown for the current fall. */
@@ -1392,6 +1395,24 @@ export class App {
    * than rolls, so they are requested by id; everything else is a procedural
    * dimension seeded from the hole.
    */
+  private crossDeepInteriorGate(d: InteriorDestination): void {
+    const veil = document.createElement('div');
+    veil.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none;' +
+      'background:radial-gradient(circle,#dffcff 0%,#496dff 12%,#02040b 58%);' +
+      'opacity:0;transition:opacity 1.8s ease';
+    document.body.appendChild(veil);
+    requestAnimationFrame(() => { veil.style.opacity = '1'; });
+    window.setTimeout(() => {
+      const holeId = this.universe.insideHorizon?.id;
+      this.descentInto.end();
+      if (holeId) this.universe.leaveHorizon?.(holeId);
+      void this.enterRealm(d).finally(() => {
+        veil.style.transition = 'opacity 1.4s ease'; veil.style.opacity = '0';
+        window.setTimeout(() => veil.remove(), 1500);
+      });
+    }, 1900);
+  }
+
   async enterRealm(d: InteriorDestination): Promise<void> {
     await this.loadWorld('dimension');
     const w = this.world as any;
@@ -2360,16 +2381,20 @@ export class App {
         // Reaching the bottom is the only way out, and where you come out
         // depends on the hole and on whether you threaded its singularity.
         if (fall.arrived) {
-          // Retired compatibility path was enterRealm(d); it is intentionally
-          // not executed because a horizon is now a continuous place.
-          // A horizon is a place, not a countdown-triggered level change.
-          // Hold the completed interior open indefinitely: the exterior
-          // universe remains visible through the closing lookback aperture,
-          // and the player decides where to fly next via real gates/portals.
-          this.shell.toast('Interior gate stabilized — turn around to see the universe behind you');
+          this.pendingInteriorDestination = fall.arrived;
+          this.shell.toast('Deep interior reached — continue forward to open the far gate');
+        }
+        const plan = this.descentInto.interior;
+        const gateDepth = plan ? plan.depth * (plan.gargantua ? 1.15 : 8) : Infinity;
+        if (!this.deepGateDelivered && this.pendingInteriorDestination &&
+            this.descentInto.distance >= gateDepth) {
+          this.deepGateDelivered = true;
+          this.crossDeepInteriorGate(this.pendingInteriorDestination);
         }
       } else {
         if (this.descentInto.active) this.descentInto.end();
+        this.pendingInteriorDestination = null;
+        this.deepGateDelivered = false;
         if (typeof w?.setInterior === 'function') {
           w.setInterior(0, new Vector3(0, 0, -1));
         }
@@ -2615,7 +2640,9 @@ export class App {
             if (!r || r.kind !== 'blackhole' || r === inside) continue;
             const hr = this.universe.horizonRadiusOf(r);
             // Only worth doing when you are close enough to notice.
-            if (Vector3.Distance(eye, r.position) >= hr * 260) continue;
+            // Screen-space lensing is only a near-horizon correction. At
+            // long range it looked like a camera-following/inverted overlay.
+            if (Vector3.Distance(eye, r.position) >= hr * 35) continue;
             lensing.push({ center: r.position, horizon: hr, profile: r.lens ?? null });
           }
           if (lensing.length) {
