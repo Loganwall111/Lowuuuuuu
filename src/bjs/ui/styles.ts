@@ -109,37 +109,42 @@ body[data-cinematic="1"] .visor-console{ display:none !important; }
   transition:opacity .5s ease;
 }
 .topbar > *{pointer-events:auto}
-/* The command center: every toggle, shrunk and gathered into one centred
-   cluster the armour keeps at its chest - a dashboard, not a toolbar. */
+/* The command center: every toggle, shrunk and run in a single horizontal
+   strip along the very bottom of the visor, framed by two blue lines and
+   an outer glow line - a console rail, not a toolbar. */
 .cmd-center{
-  position:relative;display:flex;flex-direction:column;align-items:center;gap:9px;
-  padding:12px 16px 13px;pointer-events:auto;
-  background:linear-gradient(180deg,rgba(10,16,28,.72),rgba(6,10,18,.48));
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;
+  width:min(1120px,96vw);padding:9px 20px 10px;pointer-events:auto;
+  background:linear-gradient(180deg,rgba(10,16,28,.68),rgba(6,10,18,.42));
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-  border:1px solid color-mix(in srgb,var(--acc) 26%,transparent);
-  border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.5);
+  border-top:1px solid color-mix(in srgb,var(--acc) 55%,transparent);
+  border-bottom:1px solid color-mix(in srgb,var(--acc) 55%,transparent);
+  box-shadow:
+    0 18px 50px rgba(0,0,0,.5),
+    0 0 0 1px color-mix(in srgb,var(--acc) 18%,transparent);
 }
+/* A second, softer blue line just outside the two hard rails. */
+.cmd-center::before{content:'';position:absolute;left:0;right:0;top:-4px;height:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--acc) 40%,transparent),transparent);
+  pointer-events:none;}
 .cmd-brand{display:flex;align-items:center;gap:8px;
-  padding:4px 12px 4px 8px;background:rgba(14,22,38,.5);
+  padding:3px 12px 3px 8px;background:rgba(14,22,38,.5);
   border:1px solid rgba(140,190,255,.18);border-radius:8px;}
-.cmd-brand .brand-name{font-size:11px;letter-spacing:.26em;font-weight:700;}
-.cmd-brand .brand-sub{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim2);}
+.cmd-brand .brand-name{font-size:10px;letter-spacing:.26em;font-weight:700;}
+.cmd-brand .brand-sub{font-size:7.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim2);}
 .cmd-modes{display:flex;gap:5px;}
-.cmd-modes .modesw-b{padding:3px 10px;font-size:12px;border-radius:6px;}
-/* The toggle grid: small, evenly spaced, every control in reach. */
-.cmd-grid{display:grid;grid-template-columns:repeat(6,auto);gap:6px;}
-.cmd-grid .iconbtn{width:28px;height:28px;font-size:13px;}
-/* Decorative marks around the cluster: a slowly rotating dashed ring and
-   four corner brackets, so it reads as machined armour, not a menu. */
-.cmd-ring{position:absolute;inset:-10px;border:1px dashed color-mix(in srgb,var(--acc) 30%,transparent);
-  border-radius:16px;pointer-events:none;animation:cmdSpin 40s linear infinite;}
-@keyframes cmdSpin{ to{transform:rotate(360deg)} }
-.cmd-mark{position:absolute;width:12px;height:12px;pointer-events:none;
+.cmd-modes .modesw-b{padding:2px 9px;font-size:11px;border-radius:6px;}
+/* The toggle row: one line, every control in reach, centred. */
+.cmd-grid{display:flex;flex-wrap:nowrap;gap:5px;justify-content:center;}
+.cmd-grid .iconbtn{width:26px;height:26px;font-size:12px;}
+/* Corner brackets around the strip, so it reads as machined armour. */
+.cmd-ring{display:none;}
+.cmd-mark{position:absolute;width:11px;height:11px;pointer-events:none;
   border-color:var(--acc);border-style:solid;}
-.cmd-mark.tl{top:-4px;left:-4px;border-width:1.5px 0 0 1.5px;}
-.cmd-mark.tr{top:-4px;right:-4px;border-width:1.5px 1.5px 0 0;}
-.cmd-mark.bl{bottom:-4px;left:-4px;border-width:0 0 1.5px 1.5px;}
-.cmd-mark.br{bottom:-4px;right:-4px;border-width:0 1.5px 1.5px 0;}
+.cmd-mark.tl{top:-3px;left:-3px;border-width:1.5px 0 0 1.5px;}
+.cmd-mark.tr{top:-3px;right:-3px;border-width:1.5px 1.5px 0 0;}
+.cmd-mark.bl{bottom:-3px;left:-3px;border-width:0 0 1.5px 1.5px;}
+.cmd-mark.br{bottom:-3px;right:-3px;border-width:0 1.5px 1.5px 0;}
 
 .brand{display:flex;align-items:center;gap:9px;padding:6px 15px 6px 11px;
   background:linear-gradient(180deg,rgba(16,24,40,.9),rgba(10,15,26,.9));
@@ -867,17 +872,40 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
   color:#c3b4ff;letter-spacing:.6px;font-weight:700;text-transform:uppercase}
 
 /* ============ boot / loading ============ */
-.boot{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:var(--bg);
+.boot{position:fixed;inset:0;z-index:200;display:grid;place-items:center;
+  background:radial-gradient(ellipse at 50% 40%,rgba(10,22,44,.9),rgba(3,7,16,.98));
   transition:opacity .45s ease;}
 .boot.gone{opacity:0;pointer-events:none}
 .boot-in{text-align:center}
+/* The mech's own boot: a glowing suit helmet with a rotating scan line. */
+.boot-helm{position:relative;width:64px;height:64px;margin:0 auto 18px;
+  border-radius:50%;border:1.5px solid color-mix(in srgb,var(--acc) 55%,transparent);
+  box-shadow:0 0 26px color-mix(in srgb,var(--acc) 35%,transparent),
+    inset 0 0 18px color-mix(in srgb,var(--acc) 20%,transparent);}
+.boot-helm i{position:absolute;inset:7px;border-radius:50%;
+  border:1px dashed color-mix(in srgb,var(--acc) 45%,transparent);
+  animation:cmdSpin 12s linear infinite;}
+.boot-helm span{position:absolute;left:50%;top:6px;width:2px;height:52px;
+  transform:translateX(-50%);background:linear-gradient(180deg,var(--acc),transparent);
+  animation:cmdSpin 3.4s linear infinite;}
 .boot-name{font-size:26px;font-weight:800;letter-spacing:9px;
   background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;
   background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
-.boot-sub{font-size:10.5px;color:var(--dim2);letter-spacing:3.5px;text-transform:uppercase;margin-bottom:24px}
+.boot-sub{font-size:10.5px;color:var(--dim2);letter-spacing:3.5px;text-transform:uppercase;margin-bottom:22px}
+/* The staged boot lines: each lights up as its threshold is crossed. */
+.boot-seq{display:flex;flex-direction:column;gap:5px;margin-bottom:18px;
+  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;}
+.boot-line{font-size:10px;letter-spacing:.3em;text-transform:uppercase;
+  color:rgba(90,120,160,.35);transition:color .3s ease, text-shadow .3s ease;}
+.boot-line.on{color:var(--acc);text-shadow:0 0 10px color-mix(in srgb,var(--acc) 55%,transparent);}
 .boot-bar{width:230px;height:2.5px;border-radius:3px;background:rgba(255,255,255,.10);overflow:hidden;margin:0 auto}
 .boot-fill{height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));
   transition:width .3s ease}
+.boot-cal{margin-top:16px;font-size:12px;font-weight:800;letter-spacing:.4em;text-transform:uppercase;
+  color:transparent;opacity:0;transform:scale(.94);
+  transition:opacity .4s ease, transform .4s cubic-bezier(.2,.9,.3,1.4);
+  background:linear-gradient(180deg,#fff,var(--acc));-webkit-background-clip:text;background-clip:text;}
+.boot-cal.on{opacity:1;transform:scale(1);}
 .boot-msg{font-size:10.5px;color:var(--dim);margin-top:12px;height:14px;letter-spacing:.5px}
 .boot-err{font-size:11.5px;color:#ffb4b4;max-width:460px;margin:14px auto 0;line-height:1.6;
   background:rgba(229,72,77,.10);border:1px solid rgba(229,72,77,.35);border-radius:10px;padding:11px 14px;
@@ -1079,7 +1107,9 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 
 /* ---- the omni-boot cinematic load-out ---- */
 .omni-boot{position:fixed;inset:0;z-index:210;overflow:hidden;pointer-events:auto;
-  background:radial-gradient(ellipse at center,rgba(4,8,18,.82),rgba(1,3,8,.96));
+  /* A lit boot veil, never black: the loading scene reads through the frost
+     instead of cutting to a dark void for a few seconds. */
+  background:radial-gradient(ellipse at center,rgba(10,24,48,.62),rgba(4,12,28,.82));
   opacity:1;transition:opacity .5s ease;}
 .omni-boot.fading{opacity:0;pointer-events:none;}
 .omni-canvas{position:absolute;inset:0;width:100%;height:100%;}

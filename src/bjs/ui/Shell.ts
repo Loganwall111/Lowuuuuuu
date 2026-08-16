@@ -218,10 +218,17 @@ export class Shell {
     this.boot.className = 'boot';
     this.boot.innerHTML = `
       <div class="boot-in">
+        <div class="boot-helm" aria-hidden="true"><i></i><span></span></div>
         <div class="boot-name">UNLIMITED POSSIBILITIES</div>
-        <div class="boot-sub">Universe Sandbox</div>
+        <div class="boot-sub">Bound to the Stars</div>
+        <div class="boot-seq">
+          <div class="boot-line" data-step="35">LOADING SYSTEM</div>
+          <div class="boot-line" data-step="58">TRANSMITTING DEVICE</div>
+          <div class="boot-line" data-step="88">DEVICE OPEN</div>
+        </div>
         <div class="boot-bar"><div class="boot-fill" id="bootFill"></div></div>
         <div class="boot-msg" id="bootMsg">initialising</div>
+        <div class="boot-cal" id="bootCal">SYSTEMS CALIBRATED</div>
       </div>`;
     document.body.appendChild(this.boot);
   }
@@ -231,6 +238,13 @@ export class Shell {
     const m = document.getElementById('bootMsg');
     if (f) f.style.width = pct + '%';
     if (m) m.textContent = msg;
+    // Light each boot stage as its threshold is crossed, and flare the
+    // final "SYSTEMS CALIBRATED" line at full charge.
+    this.boot?.querySelectorAll<HTMLElement>('.boot-line').forEach((l) => {
+      l.classList.toggle('on', pct >= Number(l.dataset.step));
+    });
+    const cal = this.boot?.querySelector<HTMLElement>('#bootCal');
+    if (cal) cal.classList.toggle('on', pct >= 100);
   }
 
   /** Removes the boot overlay from the DOM entirely. Safe to call repeatedly. */
@@ -437,13 +451,13 @@ export class Shell {
     document.body.appendChild(this.hud);
   }
 
-  /** Called once the main menu is dismissed: reveal the default panel set. */
+  /** Called once the main menu is dismissed: reveal the cockpit, clean. */
   onMenuClosed(): void {
-    // The tool bar lives in the game, not on the title screen.
+    // The cockpit lives in the game, not on the title screen. The config
+    // panels stay closed - the player starts with a clean visor and opens
+    // them from the command center when they want them.
     this.topbar?.classList.remove('hidden');
     this.visorConsole?.classList.remove('hidden');
-    this.wm.Open('controls');
-    this.wm.Open('objects');
   }
 
   /* -------------------------- the visor console -------------------------- */

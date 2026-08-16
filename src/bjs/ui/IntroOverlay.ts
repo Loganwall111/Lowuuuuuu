@@ -194,6 +194,15 @@ export const INTRO_CSS = `
   margin:0; font-size:clamp(11px,1.5vw,15px); letter-spacing:.42em;
   text-transform:uppercase; color:#9fb2d8; text-align:center;
 }
+/* The single blue line through the middle of the title. */
+.intro-centerline{display:block;width:min(560px,70vw);height:2px;margin:0 0 16px;
+  background:linear-gradient(90deg,transparent,var(--acc,#00f0ff),transparent);
+  box-shadow:0 0 16px color-mix(in srgb,var(--acc,#00f0ff) 55%,transparent);
+  transform:scaleX(0);transform-origin:center;
+  animation:introKicker 1.1s .4s cubic-bezier(.2,.8,.2,1) forwards;}
+/* The single Create World action sits apart, at the bottom of the menu. */
+.intro-modes .intro-create{ margin-top:22px; padding:13px 30px 12px; }
+.intro-modes .intro-create b{ font-size:14px; letter-spacing:.2em; }
 /* The play button is the first thing anyone touches, so it is built like a
    piece of hardware: a bevelled plate with its own light, a sweeping sheen,
    and a bracket frame that charges up on hover. */
@@ -677,6 +686,7 @@ export class IntroOverlay {
         <button type="button" class="intro-aux intro-quit">
           <b>⏻ Quit</b><i>Return to the desktop</i></button>
       </div>
+      <i class="intro-centerline" aria-hidden="true"></i>
       <p class="intro-sub">Create · Experiment · Break · Observe</p>
       <div class="intro-info">
         <span>WASD fly · Shift boost · L land · P photomode</span>
@@ -705,11 +715,11 @@ export class IntroOverlay {
     sand.onclick = () => this.hooks.onPlay('sandbox');
     modes.appendChild(sand);
 
-    // Create New Universe: the preset flow. A new universe, spawned where
-    // you choose - deep space, the galactic core, or inside a black hole.
+    // Create World: the single action at the bottom of the mode menu. A new
+    // universe, spawned where you choose - deep space, the core, or a hole.
     const create = document.createElement('button');
     create.className = 'intro-aux intro-create';
-    create.innerHTML = '<b>🪐 Create New Universe</b><i>Presets · spawn · name</i>';
+    create.innerHTML = '<b>🪐 Create World</b><i>Presets · spawn · name</i>';
     create.onclick = () => this.toggleCreatePanel();
     modes.appendChild(create);
 
@@ -726,7 +736,11 @@ export class IntroOverlay {
     notes.innerHTML = '<b>📖 Patch Notes</b><i>What changed in '
       + CURRENT_UPDATE + '</i>';
     notes.onclick = () => this.togglePatchNotes();
-    modes.appendChild(notes);
+    // Patch notes live with the launch row, not inside the mode menu: the
+    // mode menu keeps exactly two doors (Explore, Sandbox) at the top and a
+    // single "Create World" at the bottom.
+    const launchRow = this.titleCard.querySelector('.intro-launchrow');
+    if (launchRow) launchRow.appendChild(notes);
 
     this.titleCard.appendChild(modes);
 

@@ -111,7 +111,7 @@ export class OmniBoot {
       const w = window as unknown as {
         speechSynthesis?: { speak: (u: unknown) => void; cancel?: () => void; getVoices?: () => Array<{ lang: string; name: string }> };
         SpeechSynthesisUtterance?: new (text: string) => {
-          pitch: number; rate: number; voice: unknown; text: string;
+          pitch: number; rate: number; voice: unknown; text: string; volume: number;
         };
       };
       const synth = w.speechSynthesis;
@@ -120,11 +120,17 @@ export class OmniBoot {
 
       const text = OMNI_TICKER_LINES.map((l) => l.replace(/\.\.\.$/, '.')).join(' ');
       const u = new U(text);
-      u.pitch = 1.05;       // bright, but not cartoonish
-      u.rate = 0.95;        // measured, deliberate
+      // The Subnautica register: a calm, measured, slightly low and breathy
+      // shipboard AI - slow, unhurried, and cool rather than bright.
+      u.pitch = 0.9;
+      u.rate = 0.82;
+      u.volume = 0.95;
       const voices = synth.getVoices?.() ?? [];
-      // Prefer a female US English voice - the classic shipboard AI register.
-      const pick = voices.find((v) => /female|samantha|zira|aria|jenny|google us english/i.test(v.name))
+      // Prefer the deeper, calmer female voices the big sandbox games use;
+      // fall back to any English voice, then to the system default.
+      const pick = voices.find((v) => /samantha|zira|aria|jenny|karen|veena|moira|google uk english female/i.test(v.name))
+        ?? voices.find((v) => /en[-_]gb/i.test(v.lang))
+        ?? voices.find((v) => /female|google us english/i.test(v.name))
         ?? voices.find((v) => /en[-_]us/i.test(v.lang))
         ?? voices[0];
       if (pick) u.voice = pick;

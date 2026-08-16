@@ -681,8 +681,12 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
     /\.intro-logo\{[\s\S]{0,120}display:flex/.test(introSrc));
   ok('the mode row is horizontal',
     /\.intro-modes\{ display:flex/.test(introSrc));
-  ok('patch notes sits in the same row as the mode buttons',
-    /modes\.appendChild\(notes\)/.test(introSrc));
+  // The mode menu is now two doors on top and a single Create World at the
+  // bottom; patch notes moved to the launch row, but it is still a
+  // subordinate auxiliary action rather than a third way into the game.
+  ok('patch notes stays a subordinate auxiliary, not a third door',
+    /notes\.className = 'intro-aux/.test(introSrc) &&
+    !/modes\.appendChild\(notes\)/.test(introSrc));
   // The title must stay "two doors, not a menu": .intro-play means a way
   // INTO the game, and adding a third would quietly break that rule.
   ok('patch notes is NOT a third way into the game',

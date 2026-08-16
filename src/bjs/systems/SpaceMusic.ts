@@ -70,19 +70,20 @@ export interface MusicSettings {
 
 export const DEFAULT_MUSIC: MusicSettings = {
   volume: 0.34,
-  // A2. Deliberately low: the score sits under everything else rather
-  // than competing with it.
-  rootHz: 110,
+  // E2. Deep enough to sit in the chest rather than the ear - the vast,
+  // underwater register a Subnautica-style score lives in.
+  rootHz: 82.4,
   scale: 'aeolian',
-  // Slow. This is ambient, not a melody - a note every four seconds or so
-  // gives each one room to bloom and decay.
-  notePeriod: 4.2,
-  attack: 1.8,
-  release: 3.4,
+  // Very sparse: a note every five-and-a-bit seconds, with a long bloom,
+  // so the melody drifts rather than plays - the difference between a
+  // "soundtrack" and an ambient pressure.
+  notePeriod: 5.4,
+  attack: 2.8,
+  release: 5.2,
   humVolume: 0.22,
-  // 42 Hz. Felt more than heard, which is the point of framing it as the
+  // 34 Hz. Felt more than heard, which is the point of framing it as the
   // satellite's own vibration.
-  humHz: 42,
+  humHz: 34,
   vibration: 0.18,
   windVolume: 0.30,
   windRange: 2600
@@ -244,7 +245,26 @@ export class SpaceMusic {
       // ---- music bus ----
       const mg = c.createGain();
       mg.gain.value = this.musicOn ? this.settings.volume : 0;
-      mg.connect(c.destination);
+      // A low-pass and a long feedback echo give the sparse notes a vast,
+      // underwater tail - the Subnautica trick of making two soft notes
+      // fill a whole chamber instead of plinking in a dry room.
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 1800;
+      lp.Q.value = 0.4;
+      const echo = c.createDelay(4.0);
+      echo.delayTime.value = 0.66;
+      const fb = c.createGain();
+      fb.gain.value = 0.38;
+      const wet = c.createGain();
+      wet.gain.value = 0.55;
+      mg.connect(lp);
+      lp.connect(c.destination);
+      lp.connect(echo);
+      echo.connect(fb);
+      fb.connect(echo);
+      echo.connect(wet);
+      wet.connect(c.destination);
       this.musicGain = mg;
 
       // ---- satellite hum ----
@@ -352,30 +372,31 @@ export class SpaceMusic {
     if (this.sinceNote >= period) {
       this.sinceNote = 0;
       this.degree = nextDegree(this.degree, this.rnd);
-      this.playNote(degreeToHz(this.degree, this.settings));
-      // A fifth below, sometimes, for weight.
+      // A soft sine pad for the body of the score...
+      this.playNote(degreeToHz(this.degree, this.settings), 1, 'sine');
+      // ...and a low triangle a fifth below, sometimes, for weight.
       if (this.rnd() < 0.34) {
-        this.playNote(degreeToHz(this.degree - 4, this.settings), 0.5);
+        this.playNote(degreeToHz(this.degree - 4, this.settings), 0.5, 'triangle');
       }
     }
   }
 
   /**
-   * One note: a sine with a long swell and a long decay.
+   * One note: a soft oscillator with a long swell and a long decay.
    *
    * Nodes are created per note and disposed when it ends. That sounds
    * wasteful but is exactly how the Web Audio API is meant to be used -
    * an OscillatorNode is a one-shot, and reusing one means managing
    * envelope state by hand for no benefit.
    */
-  private playNote(hz: number, level = 1): void {
+  private playNote(hz: number, level = 1, type: 'sine' | 'triangle' = 'sine'): void {
     const c = this.ctx;
     if (!c || !this.musicGain) return;
     try {
       const osc = c.createOscillator();
-      // Triangle has a few odd harmonics, so it reads as an instrument
-      // rather than as a test tone, while staying soft.
-      osc.type = 'triangle';
+      // Sine reads as a distant pad, triangle as a faint bell with a few
+      // odd harmonics - both soft, neither a test tone.
+      osc.type = type;
       osc.frequency.value = Math.max(20, hz);
 
       const g = c.createGain();
