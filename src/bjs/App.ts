@@ -791,8 +791,10 @@ export class App {
         e.preventDefault();
         this.doRewind();
       }
-      // Sculpt tools cycle with J; [ and ] apply the current tool.
-      if (e.key.toLowerCase() === 'j' && !e.repeat) this.cycleSculptTool();
+      // J lands on the world under the centre reticle. Sculpt cycling moved
+      // to K so landing remains a universal flight action.
+      if (e.key.toLowerCase() === 'j' && !e.repeat) this.landReticleTarget();
+      if (e.key.toLowerCase() === 'k' && !e.repeat) this.cycleSculptTool();
       // Escape belongs to the cockpit only after launch. The desktop menu
       // owns its own controls and has no guided state to escape from.
       if (e.key === 'Escape' && !this.inMenu && !this.omniBoot.isRunning) {
@@ -1498,6 +1500,43 @@ export class App {
       }
     }
     return out;
+  }
+
+  /** Lands on the solid world aligned with the centre reticle. */
+  private landReticleTarget(): void {
+    if (this.vehicle.mode === 'walk') { this.toggleLand(); return; }
+    const fwd = this.cameraForward;
+    this.camera.getTarget().subtractToRef(this.camera.position, fwd);
+    if (fwd.lengthSquared() < 1e-8) return;
+    fwd.normalize();
+    const eye = this.vehicle.position;
+    let best: { s: SolidSphere; along: number; miss: number } | null = null;
+    for (const s of this.solidSpheres()) {
+      if (s.id === 'the sun' || s.gas) continue;
+      const dx = s.x - eye.x, dy = s.y - eye.y, dz = s.z - eye.z;
+      const along = dx * fwd.x + dy * fwd.y + dz * fwd.z;
+      if (along <= 0) continue;
+      const d2 = dx * dx + dy * dy + dz * dz;
+      const miss = Math.sqrt(Math.max(0, d2 - along * along));
+      // The apparent disc gets a forgiving 35% targeting halo.
+      if (miss > s.radius * 1.35) continue;
+      if (!best || along < best.along) best = { s, along, miss };
+    }
+    if (!best) { this.shell.toast('No landable world under reticle'); return; }
+    const s = best.s;
+    const distance = Math.hypot(eye.x - s.x, eye.y - s.y, eye.z - s.z) - s.radius;
+    if (distance > Math.max(80, s.radius * 8)) {
+      this.shell.toast('Target locked: ' + s.id + ' — approach before landing');
+      return;
+    }
+    const nx = eye.x - s.x, ny = eye.y - s.y, nz = eye.z - s.z;
+    const len = Math.max(1e-6, Math.hypot(nx, ny, nz));
+    this.vehicle.teleport(new Vector3(
+      s.x + nx / len * (s.radius + 1.7),
+      s.y + ny / len * (s.radius + 1.7),
+      s.z + nz / len * (s.radius + 1.7)));
+    this.setControlMode('walk');
+    this.shell.toast('Landed on ' + s.id + ' — galaxy overhead');
   }
 
   /**
@@ -2299,14 +2338,18 @@ export class App {
           w.setInterior(fall.state.inside, exitDir);
           if (bh.lens && typeof w.setLens === 'function') w.setLens(bh.lens);
         }
+        const stableExit = fall.state.complete
+          ? Math.max(0.14, fall.state.exitWindow) : fall.state.exitWindow;
         if (typeof w?.setDescent === 'function') {
           w.setDescent({
             ...this.descentInto.shaderState(),
+            exitWindow: stableExit,
             fallDir: fallDir.lengthSquared() > 1e-9 ? fallDir : new Vector3(0, 0, 1)
           });
         }
 
-        this.flightHud.setDescent?.(this.descentInto.interior, fall.state);
+        this.flightHud.setDescent?.(this.descentInto.interior,
+          { ...fall.state, exitWindow: stableExit });
 
         // ---- the neon horizon warning, once you are inside ----
         if (fall.state.phase !== 'outside' && !this.horizonWarned) {
@@ -2317,29 +2360,13 @@ export class App {
         // Reaching the bottom is the only way out, and where you come out
         // depends on the hole and on whether you threaded its singularity.
         if (fall.arrived) {
-          const d = fall.arrived;
-          this.descentInto.end();
-          this.horizonWarned = false;
-          this.universe.leaveHorizon?.(bh.id);
-
-          // ---- real-time wormhole risk ----
-          // No timers: a deterministic roll over the hole's seed and the
-          // warp factor at the moment of crossing decides whether the ship
-          // strands in an uncharted universe and must chart its way home
-          // through the procedural wormholes that thread that place.
-          const warpNow = this.gearbox.clampWarp(this.warpDrive.state().multiplier);
-          if (shouldStrand(bh.seed ?? 1, warpNow)) {
-            this.stranded = true;
-            this.strandedSeed = strandedWormholeSeed(bh.seed ?? 1);
-            this.shell.toast('You are stranded in an uncharted universe. ' +
-              'Find a wormhole and chart a way home.');
-            void this.enterDimension(
-              this.strandedSeed, strandedDepth(bh.seed ?? 1));
-          } else {
-            this.stranded = false;
-            this.shell.toast(d.blurb);
-            void this.enterRealm(d);
-          }
+          // Retired compatibility path was enterRealm(d); it is intentionally
+          // not executed because a horizon is now a continuous place.
+          // A horizon is a place, not a countdown-triggered level change.
+          // Hold the completed interior open indefinitely: the exterior
+          // universe remains visible through the closing lookback aperture,
+          // and the player decides where to fly next via real gates/portals.
+          this.shell.toast('Interior gate stabilized — turn around to see the universe behind you');
         }
       } else {
         if (this.descentInto.active) this.descentInto.end();
@@ -2591,8 +2618,13 @@ export class App {
             if (Vector3.Distance(eye, r.position) >= hr * 260) continue;
             lensing.push({ center: r.position, horizon: hr, profile: r.lens ?? null });
           }
-          if (lensing.length) this.lensfx.trackMany(lensing, this.camera);
-          else this.lensfx.clear();
+          if (lensing.length) {
+            lensing.sort((a, b) => Vector3.DistanceSquared(eye, a.center)
+              - Vector3.DistanceSquared(eye, b.center));
+            // Only the nearest physical aperture lenses the cockpit. Distant
+            // holes remain destinations, not screen-locked duplicate rings.
+            this.lensfx.trackMany(lensing.slice(0, 1), this.camera);
+          } else this.lensfx.clear();
         }
       }
 

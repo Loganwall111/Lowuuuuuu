@@ -68,7 +68,9 @@ export interface HoleFieldOptions {
 export const DEFAULT_HOLEFIELD: HoleFieldOptions = {
   buildWithin: 320,
   releaseBeyond: 460,
-  maxLive: 6
+  // One physically nearest aperture at a time. Rendering a cluster of
+  // billboard lenses made several identical holes appear to follow the view.
+  maxLive: 1
 };
 
 /** Disk inner edge, as a multiple of the horizon radius. */

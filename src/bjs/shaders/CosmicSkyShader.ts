@@ -354,9 +354,11 @@ vec3 cosmicSky(vec3 dir, float medium, float symmetry, vec3 tint,
     // stuck copy of itself. Only the faintest deep-field grain remains,
     // which is unresolved distant galaxies rather than our own.
     col = skyStars(d, 0.16, 42.0, t) * 1.5;
-    col += skyDeepField(d, t) * 0.6;
+    // Distant galaxies are real projected point fields. The old low-frequency
+    // deep-field noise made enormous pastel islands that followed the camera.
+    // Keep ordinary vacuum black and let actual galaxies provide structure.
     // Interplanetary dust: a faint warm cone along the ecliptic.
-    col += skyZodiacal(d) * 0.5;
+    col += skyZodiacal(d) * 0.18;
   } else if (medium < 1.5){
     // Technology: a cold structural grid over deep field.
     col = skyStars(d, 0.08, 38.0, t) * 0.7;

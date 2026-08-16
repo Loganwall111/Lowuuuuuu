@@ -573,18 +573,20 @@ export class FlightHUD {
     // The neon horizon warning, printed the whole time you are inside.
     this.put('fhDescWarn',
       state.phase !== 'outside'
-        ? 'WARNING: HORIZON CROSSED. EVENT HORIZON BOUNDS STABLE. MULTIVERSE ISOLATION IMPACT IMMINENT.'
+        ? 'HORIZON CROSSED // EXTERIOR LOOKBACK ACTIVE // INTERIOR GATE STABLE.'
         : '');
 
     const sub = state.phase === 'singularity'
-      ? 'hold your line to pass through it'
+      ? 'interior aperture stable — free navigation'
       : state.phase === 'nested'
-        ? 'a second lens is opening ahead'
-        : formatDistance(state.remaining) + ' to the far side';
+        ? 'a second lens is visible below'
+        : 'event horizon interior — look back toward the exterior universe';
     this.put('fhDescSub', sub);
 
+    // This is spatial telemetry, not a countdown. The bar represents the
+    // still-visible lookback aperture rather than time remaining.
     const bar = this.root.querySelector('#fhDescBar') as HTMLElement | null;
-    if (bar) bar.style.width = Math.round(state.progress * 100) + '%';
+    if (bar) bar.style.width = Math.round(state.exitWindow * 100) + '%';
 
     this.putHtml('fhDescExit', state.exitWindow > 0.02
       ? 'the way back is still open — <b>' +

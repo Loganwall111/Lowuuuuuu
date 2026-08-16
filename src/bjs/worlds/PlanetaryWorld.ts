@@ -516,11 +516,26 @@ export class PlanetaryWorld implements World {
   /** The ten-thousand-object TLE satellite cloud around Earth. */
   private tleTraffic = new TleTraffic();
   private t = 0;
+  private systemCenter = new Vector3();
+  private localPlanets: PlanetCfg[] = PLANETS;
+  private inhabitedName = INHABITED;
+  private referenceRadius = EARTH_VISUAL_R;
 
   private p = { timeScale: 1.0, detail: 1.0, clouds: 1.0, lights: 1.0, exposure: 1.0, orbitSpeed: 1.0 };
 
   async build(ctx: WorldContext): Promise<void> {
     const scene = ctx.scene;
+    this.systemCenter.copyFrom(ctx.focus?.position ?? Vector3.Zero());
+    if (ctx.focus) {
+      const cell = 260000;
+      this.localPlanets = planetsForCell(
+        Math.floor(ctx.focus.position.x / cell),
+        Math.floor(ctx.focus.position.y / cell),
+        Math.floor(ctx.focus.position.z / cell));
+    } else this.localPlanets = PLANETS;
+    const inhabited = this.localPlanets.find((p) => p.inhabited) ?? this.localPlanets[0];
+    this.inhabitedName = inhabited?.name ?? INHABITED;
+    this.referenceRadius = inhabited?.r ?? EARTH_VISUAL_R;
     // INK-BLACK VACUUM. All the colour in ordinary space comes from the
     // galaxy fog volume, never from the clear colour - lifting this to fake
     // a "space blue" washes the whole frame and buries the faint stars.
@@ -563,6 +578,7 @@ export class PlanetaryWorld implements World {
 
     // ---- central star ----
     this.star = MeshBuilder.CreateSphere('star', { diameter: 9, segments: 64 }, scene);
+    this.star.position.copyFrom(this.systemCenter);
     this.starMat = new ShaderMaterial('starM', scene, PLANET_SHADER, {
       attributes: ['position', 'normal', 'uv'],
       uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time', 'seed',
@@ -585,7 +601,7 @@ export class PlanetaryWorld implements World {
     // vertex: a star's surface relief would read as a lumpy disc.
     this.starMat.setFloat('displace', 0);
     this.starMat.setFloat('displaceScale', 0);
-    this.starMat.setVector3('sunPos', Vector3.Zero());
+    this.starMat.setVector3('sunPos', this.systemCenter);
     this.starMat.setColor3('tintA', new Color3(1.0, 0.55, 0.12));
     this.starMat.setColor3('tintB', new Color3(1.0, 0.98, 0.86));
     this.star.material = this.starMat;
@@ -626,6 +642,8 @@ export class PlanetaryWorld implements World {
     cm.backFaceCulling = false;
     cm.disableDepthWrite = true;
     corona.material = cm;
+    corona.position.copyFrom(this.systemCenter);
+    cm.setVector3('starCenter', this.systemCenter);
     corona.isPickable = false;
     corona.renderingGroupId = 0;
     (this as any)._coronaMat = cm;
@@ -652,6 +670,7 @@ export class PlanetaryWorld implements World {
     gm.backFaceCulling = false;
     gm.disableDepthWrite = true;
     glare.material = gm;
+    glare.position.copyFrom(this.systemCenter);
     glare.isPickable = false;
     glare.billboardMode = 7;   // always faces the camera
     (this as any)._glareMat = gm;
@@ -668,7 +687,7 @@ export class PlanetaryWorld implements World {
       // is free to put a giant in the innermost slot, in which case the
       // supposed inner worlds all orbit OUTSIDE it and the gap inverts to
       // nothing, which is why no belt was being created at all.
-      const sorted = [...PLANETS].sort((p1, p2) => p1.orbit - p2.orbit);
+      const sorted = [...this.localPlanets].sort((p1, p2) => p1.orbit - p2.orbit);
       let lastInner = sorted.length ? sorted[0].orbit : 40;
       let gapOuter = lastInner * 1.8;
       let widest = 0;
@@ -682,7 +701,7 @@ export class PlanetaryWorld implements World {
       }
       if (gapOuter > lastInner * 1.15) {
         this.belts.add({
-          centre: Vector3.Zero(),
+          centre: this.systemCenter.clone(),
           inner: lastInner * 1.12,
           outer: gapOuter * 0.86,
           count: 1100,
@@ -695,12 +714,12 @@ export class PlanetaryWorld implements World {
       }
     }
 
-    this.light = new PointLight('sunLight', Vector3.Zero(), scene);
+    this.light = new PointLight('sunLight', this.systemCenter.clone(), scene);
     this.light.intensity = 2.2;
     this.light.range = 900;
 
     // ---- planets ----
-    PLANETS.forEach((cfg, i) => {
+    this.localPlanets.forEach((cfg, i) => {
       const root = new TransformNode('root_' + cfg.name, scene);
       // Earth gets the highest tessellation: it is the world players look at
       // longest, and the extra vertices are what let its real terrain relief
@@ -837,7 +856,7 @@ export class PlanetaryWorld implements World {
       this.bodies.push(body);
     });
 
-    ctx.setCameraTarget(Vector3.Zero(), 62);
+    ctx.setCameraTarget(this.systemCenter, 62);
   }
 
   update(dt: number, ctx: WorldContext): void {
@@ -894,11 +913,14 @@ export class PlanetaryWorld implements World {
 
     for (const b of this.bodies) {
       b.angle += dt * b.orbitSpeed * 0.12 * this.p.timeScale * this.p.orbitSpeed;
-      b.root.position.set(Math.cos(b.angle) * b.orbitR, 0, Math.sin(b.angle) * b.orbitR);
+      b.root.position.set(
+        this.systemCenter.x + Math.cos(b.angle) * b.orbitR,
+        this.systemCenter.y,
+        this.systemCenter.z + Math.sin(b.angle) * b.orbitR);
       b.mesh.rotation.y += dt * b.spin * this.p.timeScale;
 
       b.mat.setVector3('camPos', cp);
-      b.mat.setVector3('sunPos', Vector3.Zero());
+      b.mat.setVector3('sunPos', this.systemCenter);
       b.mat.setFloat('time', this.t);
       // Distance-adaptive detail: as the camera closes on a world, the noise
       // octaves deepen so up-close terrain resolves into real relief instead
@@ -909,7 +931,7 @@ export class PlanetaryWorld implements World {
         const k = Math.max(0, Math.min(1, 1 - (d - b.visualR) / Math.max(b.visualR * 2.4, 1)));
         // Earth resolves an extra octave of detail up close: its terrain is
         // the one the player inspects, so it is allowed to cost more.
-        const homeBoost = b.name === INHABITED ? 1.35 : 1;
+        const homeBoost = b.name === this.inhabitedName ? 1.35 : 1;
         const boost = (1 + k * 1.6) * homeBoost;
         b.mat.setFloat('detail', this.p.detail * boost);
       }
@@ -917,14 +939,14 @@ export class PlanetaryWorld implements World {
       // Keyed to the system's inhabited world, whichever one that turned out
       // to be. Hard-coding the old literal name here meant the night side of
       // every planet stayed dark once the roster became procedural.
-      b.mat.setFloat('cityLights', b.name === INHABITED ? this.p.lights : 0);
+      b.mat.setFloat('cityLights', b.name === this.inhabitedName ? this.p.lights : 0);
       // The Exposure slider existed in the options panel but was never sent
       // to the shader, so dragging it did nothing at all.
       b.mat.setFloat('exposure', this.p.exposure);
 
       if (b.atmoMat) {
         b.atmoMat.setVector3('camPos', cp);
-        b.atmoMat.setVector3('sunPos', Vector3.Zero());
+        b.atmoMat.setVector3('sunPos', this.systemCenter);
         // The aurora curtains drift on the same clock as the weather.
         b.atmoMat.setFloat('time', this.t);
         // The planet orbits, so the centre the raymarch integrates around
@@ -935,7 +957,7 @@ export class PlanetaryWorld implements World {
       }
       for (const mm of ((b as any).moonMats || []) as ShaderMaterial[]) {
         mm.setVector3('camPos', cp);
-        mm.setVector3('sunPos', Vector3.Zero());
+        mm.setVector3('sunPos', this.systemCenter);
         mm.setFloat('time', this.t);
         mm.setFloat('detail', this.p.detail);
         mm.setFloat('cloudAmt', 0);
@@ -951,7 +973,7 @@ export class PlanetaryWorld implements World {
 
     // The inhabited world carries its people with it as it orbits, so they
     // stay on the ground rather than being left behind in empty space.
-    const home = this.bodies.find((x) => x.name === INHABITED);
+    const home = this.bodies.find((x) => x.name === this.inhabitedName);
     if (home) {
       if (!this.settlers.settlers.length) {
         this.settlers.populate(
@@ -993,8 +1015,8 @@ export class PlanetaryWorld implements World {
       // thirty times the binding energy. So the gas giants genuinely shrug
       // off what shatters the little rocky worlds, rather than every planet
       // being equally destructible.
-      mass: 5.97e24 * Math.pow(b.visualR / EARTH_VISUAL_R, 3),
-      physicalRadius: 6.371e6 * (b.visualR / EARTH_VISUAL_R)
+      mass: 5.97e24 * Math.pow(b.visualR / this.referenceRadius, 3),
+      physicalRadius: 6.371e6 * (b.visualR / this.referenceRadius)
     }));
   }
 
@@ -1016,12 +1038,12 @@ export class PlanetaryWorld implements World {
       out.push({
         id: b.name, x: p.x, y: p.y, z: p.z,
         radius: b.visualR,
-        mass: 60 + 400 * Math.pow(b.visualR / EARTH_VISUAL_R, 3),
-        habitable: b.name === INHABITED,
+        mass: 60 + 400 * Math.pow(b.visualR / this.referenceRadius, 3),
+        habitable: b.name === this.inhabitedName,
         // Gas giants are dived, not landed: the landing key reroutes.
         gas: b.type === PlanetKind.Gas,
         // Earth's own sky: a deep blue you can stand under.
-        sky: b.name === INHABITED ? [0.08, 0.17, 0.34] : undefined
+        sky: b.name === this.inhabitedName ? [0.08, 0.17, 0.34] : undefined
       });
       for (const m of b.moons) {
         const mp = m.mesh.getAbsolutePosition();
