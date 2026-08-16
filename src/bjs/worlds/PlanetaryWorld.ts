@@ -35,6 +35,7 @@ import { THROWABLES, throwableById } from '../systems/ThrowableSystem';
 import { SettlerSystem } from '../systems/SettlerSystem';
 import { AsteroidBeltSystem } from '../systems/AsteroidBelts';
 import { OrbitTraffic } from '../systems/OrbitTraffic';
+import { TleTraffic } from '../systems/TleTraffic';
 import { stellarColor, STAR_LIFETIME } from '../systems/StellarLifecycle';
 import type { SolidSphere } from '../systems/PlanetLanding';
 
@@ -512,6 +513,8 @@ export class PlanetaryWorld implements World {
   private belts = new AsteroidBeltSystem();
   /** Earth's orbital neighbourhood: the ISS, satellites, Hubble, Webb, Apollo. */
   private orbitTraffic = new OrbitTraffic();
+  /** The ten-thousand-object TLE satellite cloud around Earth. */
+  private tleTraffic = new TleTraffic();
   private t = 0;
 
   private p = { timeScale: 1.0, detail: 1.0, clouds: 1.0, lights: 1.0, exposure: 1.0, orbitSpeed: 1.0 };
@@ -529,6 +532,8 @@ export class PlanetaryWorld implements World {
     this.belts.attach(scene);
     this.orbitTraffic.attach(scene);
     this.orbitTraffic.build();
+    this.tleTraffic.attach(scene);
+    void this.tleTraffic.build();
 
     this.impactor.attach(scene, (e) => {
       this.lastImpactNote =
@@ -960,10 +965,12 @@ export class PlanetaryWorld implements World {
     }
     this.settlers.update(dt);
     // Earth's orbital neighbourhood - the ISS, the satellites, Apollo - rides
-    // along with the inhabited world as it circles the star.
+    // along with the inhabited world as it circles the star, and the full
+    // ten-thousand-object TLE cloud wears Earth like its real shell.
     if (home) {
-      this.orbitTraffic.update(dt * Math.max(0.05, this.p.timeScale),
-        home.mesh.getAbsolutePosition());
+      const homePos = home.mesh.getAbsolutePosition();
+      this.orbitTraffic.update(dt * Math.max(0.05, this.p.timeScale), homePos);
+      this.tleTraffic.update(homePos);
     }
   }
 
@@ -1101,6 +1108,7 @@ export class PlanetaryWorld implements World {
     this.settlers.dispose();
     this.belts.detach();
     this.orbitTraffic.dispose();
+    this.tleTraffic.dispose();
     this.bodies.forEach((b) => { b.root.dispose(false, true); b.mat.dispose(); });
     this.bodies = [];
     this.star?.dispose();
