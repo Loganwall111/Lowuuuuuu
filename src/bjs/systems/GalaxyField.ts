@@ -278,6 +278,7 @@ export class GalaxyField {
   private fogCamScratch = new Vector3();
   private meshes: Mesh[] = [];
   private built = false;
+  private performanceTier = 0;
 
   /** Total points placed. */
   count = 0;
@@ -567,6 +568,7 @@ export class GalaxyField {
       }
       gasMesh.setVerticesData('pointSize', gasSizes, false, 1);
       gasMesh.setEnabled(this.visible);
+      if (this.performanceTier >= 1) gasMesh.setEnabled(false);
       this.farGasCloud = gasCloud;
       this.farGasMesh = gasMesh;
 
@@ -642,7 +644,7 @@ export class GalaxyField {
 
       this.fogMesh = shell;
       this.fogMat = mat;
-      shell.setEnabled(this.visible);
+      shell.setEnabled(this.visible && this.performanceTier < 2);
     } catch (e) {
       // No fog is survivable; a black screen is not.
       console.warn('Volumetric galaxy fog unavailable:', e);
@@ -841,13 +843,23 @@ export class GalaxyField {
    * 39,000 real stars hanging in it would mean flying through the matrix
    * with our galaxy still visible behind the data streams.
    */
+  /** Sheds only the expensive volume layers; real galaxy stars stay visible. */
+  setPerformanceTier(tier: number): void {
+    this.performanceTier = Math.max(0, Math.min(2, tier | 0));
+    try { this.fogMesh?.setEnabled(this.visible && this.performanceTier < 2); } catch { /* gone */ }
+    try { this.farGasMesh?.setEnabled(this.visible && this.performanceTier < 1); } catch { /* gone */ }
+  }
+
   setVisible(on: boolean): void {
     for (const m of this.meshes) {
       try { m.setEnabled(on); } catch { /* disposed */ }
     }
     try { this.farMesh?.setEnabled(on); } catch { /* disposed */ }
-    try { this.farGasMesh?.setEnabled(on); } catch { /* disposed */ }
-    try { this.fogMesh?.setEnabled(on); } catch { /* disposed */ }
+    try {
+      this.farGasMesh?.setEnabled(on);
+      if (this.performanceTier >= 1) this.farGasMesh?.setEnabled(false);
+    } catch { /* disposed */ }
+    try { this.fogMesh?.setEnabled(on && this.performanceTier < 2); } catch { /* disposed */ }
     this.visible = on;
   }
 
@@ -937,6 +949,7 @@ export class GalaxyField {
     // A hidden galaxy must not leave its fog behind, or the Codeverse
     // inherits nebula haze from a Milky Way that is not being drawn.
     if (!this.visible) { scene.fogMode = 0; return; }
+    if (this.performanceTier >= 2) { scene.fogMode = 0; return; }
     const f = fogStateAt(eye.x, eye.y, eye.z);
     if (f.density > 0.001) {
       // Scene fog now only tints NEARBY GEOMETRY - ships, planets, debris -

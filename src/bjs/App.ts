@@ -1090,6 +1090,7 @@ export class App {
     this.switching = true;
     this.solidCacheFrame = -1;
     this.solidCache.length = 0;
+    const sceneBuilds: Promise<unknown>[] = [];
     try {
       this.postfx.detach();
       this.world?.dispose();
@@ -1167,12 +1168,12 @@ export class App {
       // Same for the drifting canopy motes.
       this.spaceDust.dispose();
       this.spaceDust.attach(this.scene);
-      void this.spaceDust.build();
+      sceneBuilds.push(this.spaceDust.build());
 
       // And the comet traffic, rebuilt per world like every other sky layer.
       this.comets.dispose();
       this.comets.attach(this.scene);
-      void this.comets.build();
+      sceneBuilds.push(this.comets.build());
 
       // Wormholes and the rare alien traffic are universe-wide too, so they
       // are rebuilt against the fresh scene exactly like the sky.
@@ -1187,14 +1188,14 @@ export class App {
       // loadWorld purges every mesh, so the shells must be rebuilt with it.
       this.layeredSky.dispose();
       this.layeredSky.attach(this.scene);
-      void this.layeredSky.build();
+      sceneBuilds.push(this.layeredSky.build());
 
       // The real galaxy. Its own camera covers 500..200000 so a 50,000-unit
       // structure does not have to fit inside the main camera's 4,000-unit
       // far plane, which would clip it entirely.
       this.galaxyField.dispose();
       this.galaxyField.attach(this.scene, this.camera);
-      void this.galaxyField.build();
+      sceneBuilds.push(this.galaxyField.build());
 
       // loadWorld purges every mesh, so the holes and sector anomaly must be rebuilt too.
       this.holeField.dispose();
@@ -1205,6 +1206,11 @@ export class App {
       this.portalVisual.attach(this.scene);
 
       this.shell.setWorld(w);
+
+      // Do not release the cinematic onto an empty scene. Point-cloud and
+      // galaxy builds used to continue after LoadingScreenManager faded,
+      // producing the reported black view and 2 fps buffer-upload storm.
+      await Promise.allSettled(sceneBuilds);
 
       // Compile the expensive programs now, while the loading screen is
       // still up. The hole raymarcher in particular is a very large
@@ -1798,16 +1804,26 @@ export class App {
       this.postfx.set('grain', 0);
       this.postfx.set('chromatic', 0);
       this.postfx.set('bloomKernel', 112);
+      if (!this.bloomClamped) this.postfx.set('bloom', QUALITY[this.quality.current].bloom ? .55 : 0);
+      this.galaxyField.setPerformanceTier(0);
+      try { this.engine.setHardwareScalingLevel(this.quality.scaling); } catch { /* disposed */ }
     } else if (tier === 1) {
       this.postfx.set('grain', 0);
       this.postfx.set('chromatic', 0);
-      this.postfx.set('bloomKernel', 64);
+      this.postfx.set('bloomKernel', 48);
+      this.galaxyField.setPerformanceTier(1);
+      try { this.engine.setHardwareScalingLevel(Math.max(1.25, this.quality.scaling)); } catch { /* disposed */ }
     } else {
+      // Emergency path for the reported 2 fps case: keep stars and planets,
+      // shed the full-screen volume/copy passes, and halve pixel pressure.
       this.postfx.set('grain', 0);
       this.postfx.set('chromatic', 0);
-      this.postfx.set('bloomKernel', 48);
+      this.postfx.set('bloom', 0);
+      this.postfx.set('bloomKernel', 32);
+      this.galaxyField.setPerformanceTier(2);
+      try { this.engine.setHardwareScalingLevel(Math.max(1.8, this.quality.scaling)); } catch { /* disposed */ }
     }
-    this.shell?.toast(tier === 0 ? 'Graphics restored' : 'Performance mode');
+    this.shell?.toast(tier === 0 ? 'Graphics restored' : tier === 2 ? 'Emergency frame recovery' : 'Performance mode');
   }
 
   /**
@@ -2934,12 +2950,14 @@ export class App {
       // adaptive resolution defends the framerate
       const newScale = this.quality.sample(dt);
       if (newScale !== null) {
-        try { this.engine.setHardwareScalingLevel(newScale); } catch { /* ignore */ }
+        const guardedScale = this.perfTier >= 2 ? Math.max(1.8, newScale)
+          : this.perfTier === 1 ? Math.max(1.25, newScale) : newScale;
+        try { this.engine.setHardwareScalingLevel(guardedScale); } catch { /* ignore */ }
       }
 
       // ---- performance governor: shed post effects when fps drops ----
       this.perfTimer += dt;
-      if (this.perfTimer >= 0.6) {
+      if (this.perfTimer >= 0.25) {
         this.perfTimer = 0;
         const fps = this.engine.getFps();
         const tier = fps < 26 ? 2 : fps < 42 ? 1 : 0;

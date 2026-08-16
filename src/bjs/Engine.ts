@@ -38,10 +38,10 @@ export async function createEngine(canvas: HTMLCanvasElement): Promise<EngineBoo
     failIfMajorPerformanceCaveat: false
   });
 
-  // Cap the initial Retina load. Adaptive quality may raise fidelity later,
-  // but compiling shaders while driving a 2x backbuffer caused 10-12 fps
-  // startup and made raw mouse input feel delayed despite compositor cursors.
-  engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, 1.5));
+  // Start at native CSS resolution. The previous inverse-DPR value silently
+  // supersampled the full raymarched universe at 1.5-2x during launch, which
+  // is why the menu was smooth but gameplay collapsed to 2 fps.
+  engine.setHardwareScalingLevel(1);
 
   const gl = engine._gl as WebGL2RenderingContext | undefined;
   const ver = engine.webGLVersion === 2 ? 'WebGL2' : 'WebGL1';
