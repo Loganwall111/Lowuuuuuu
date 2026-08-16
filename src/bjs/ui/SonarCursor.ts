@@ -31,7 +31,7 @@ export interface SonarCursorOptions {
 
 export const DEFAULT_SONAR: SonarCursorOptions = {
   size: 34,
-  accent: '#3fc4ff'
+  accent: '#00f0ff'
 };
 
 /**

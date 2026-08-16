@@ -548,6 +548,15 @@ export class App {
     // Free-fly detaches the arc camera, so the mouse must drive the vehicle
     // directly or there is no way to look around or zoom.
     this.mouse.attach(canvas as unknown as HTMLElement);
+    // Native pointer lock: clicking the canvas locks the mouse to the centre
+    // so the view turns with a bare mouse move, no click-and-drag required.
+    // Pointer lock only takes effect inside a user gesture, which a click is.
+    canvas.addEventListener('click', () => {
+      if (this.vehicle.mode === 'freefly' || this.vehicle.mode === 'fly' ||
+          this.vehicle.mode === 'walk') {
+        this.mouse.requestLock();
+      }
+    });
     this.camera.minZ = 0.05;
     this.camera.maxZ = 4000;
     this.camera.lowerRadiusLimit = 3;
@@ -697,6 +706,11 @@ export class App {
         // Entering the game brings up the cockpit and the tool bar.
         this.flightHud.setVisible(true);
         this.shell.onMenuClosed();
+        // Native pointer lock, straight off the Play click: the mouse locks
+        // to the centre so the view turns with a bare move, no drag needed.
+        // (Browsers only honour lock requests inside a user gesture, which
+        // this is; the canvas click listener covers every re-entry after.)
+        this.mouse.requestLock();
       },
       onSkip: () => this.finishIntro(),
       onAdvance: () => this.advanceIntro(),

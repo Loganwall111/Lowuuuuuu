@@ -110,14 +110,17 @@ export const INTRO_CSS = `
   from{ text-shadow:0 0 42px rgba(90,150,255,.26); }
   to{ text-shadow:0 0 86px rgba(110,170,255,.55); }
 }
-/* The hero plate drifts very slowly behind the text - a living backdrop
-   rather than a frozen photograph. */
+/* The hero plate sways beneath the mouse. The Jupiter face drifts and
+   warps directly under the pointer, driven by --mx/--my set in JS from the
+   normalised cursor position - a subtle, live parallax rather than a fixed
+   photograph. The plate is overscaled slightly so it never runs out of
+   edge while it drifts. */
 .intro-title{
-  animation:introKenBurns 40s ease-in-out infinite alternate;
-}
-@keyframes introKenBurns{
-  from{ background-position:center 46%, center 46%; }
-  to{ background-position:center 54%, center 54%; }
+  background-size:112% auto, cover;
+  background-position:
+    calc(50% + var(--mx, 0) * 16px) calc(46% + var(--my, 0) * 12px),
+    center center;
+  will-change:background-position;
 }
 /* Cinematic letterbox bars, so the menu reads as a film frame. */
 .intro-cinema{
@@ -424,7 +427,7 @@ export const INTRO_CSS = `
 .intro-brand{position:absolute;left:28px;top:22px;z-index:4;
   font-size:11px;letter-spacing:.32em;text-transform:uppercase;
   color:rgba(150,215,255,.72);}
-.intro-brand b{color:var(--acc,#3fc4ff);font-weight:800;text-shadow:0 0 14px rgba(80,180,255,.6);}
+.intro-brand b{color:var(--acc,#00f0ff);font-weight:800;text-shadow:0 0 14px rgba(80,180,255,.6);}
 
 /* A spinning hex emblem above the logotype - the studio mark. */
 .intro-emblem{width:66px;height:66px;position:relative;display:grid;place-items:center;
@@ -440,7 +443,7 @@ export const INTRO_CSS = `
 
 /* The accent line that sweeps open under the logotype. */
 .intro-kicker{display:block;width:min(440px,62vw);height:2px;margin-top:-8px;
-  background:linear-gradient(90deg,transparent,var(--acc,#3fc4ff),transparent);
+  background:linear-gradient(90deg,transparent,var(--acc,#00f0ff),transparent);
   transform:scaleX(0);transform-origin:center;
   animation:introKicker 1.1s .45s cubic-bezier(.2,.8,.2,1) forwards;}
 @keyframes introKicker{ to{transform:scaleX(1)} }
@@ -453,7 +456,7 @@ export const INTRO_CSS = `
 
 /* --- amber recolour: the mark, the badge, the buttons --- */
 .intro-title h1{
-  background:linear-gradient(180deg,#ffffff 0%,#cfe9ff 46%,#3fc4ff 80%,#3f8bff 100%);
+  background:linear-gradient(180deg,#ffffff 0%,#cfe9ff 46%,#00f0ff 80%,#2f6bff 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   animation:introGlowAmber 6s ease-in-out infinite alternate;
   text-shadow:0 0 70px rgba(90,180,255,.4);
@@ -470,7 +473,7 @@ export const INTRO_CSS = `
 .intro-play{
   background:
     linear-gradient(180deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,0) 42%),
-    linear-gradient(180deg,#59bfff 0%,#2f8be8 46%,#1a5cc0 100%);
+    linear-gradient(180deg,#00cfff 0%,#1f8be8 46%,#155cc0 100%);
   text-shadow:0 1px 0 rgba(60,20,0,.55), 0 0 24px rgba(120,200,255,.7);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.6),
@@ -570,6 +573,7 @@ export class IntroOverlay {
   private seq: IntroSequence;
   private hooks: IntroHooks;
   private keyHandler: (e: KeyboardEvent) => void;
+  private parallaxHandler: (e: PointerEvent) => void;
 
   constructor(seq: IntroSequence, hooks: IntroHooks) {
     this.seq = seq;
@@ -686,6 +690,27 @@ export class IntroOverlay {
 
     this.root.append(this.titleCard, this.talk, this.prompt);
     document.body.appendChild(this.root);
+
+    // Mouse-reactive Jupiter parallax. The normalised cursor position feeds
+    // two CSS custom properties that the title plate reads as a background
+    // offset, so the planet drifts beneath the mouse. Written via
+    // requestAnimationFrame so a high-polling mouse cannot flood layout.
+    let px = 0, py = 0, raf = 0, pending = false;
+    const applyParallax = () => {
+      pending = false;
+      this.titleCard.style.setProperty('--mx', px.toFixed(4));
+      this.titleCard.style.setProperty('--my', py.toFixed(4));
+    };
+    const onTitleMove = (e: PointerEvent) => {
+      px = (e.clientX / Math.max(1, window.innerWidth)) * 2 - 1;
+      py = (e.clientY / Math.max(1, window.innerHeight)) * 2 - 1;
+      if (!pending) {
+        pending = true;
+        raf = requestAnimationFrame(applyParallax);
+      }
+    };
+    this.parallaxHandler = onTitleMove;
+    window.addEventListener('pointermove', onTitleMove, { passive: true });
 
     // Enter/Space advances dialogue; Escape always escapes the intro. Being
     // stuck in a tutorial with no way out is unforgivable.
@@ -813,6 +838,9 @@ export class IntroOverlay {
 
   dispose(): void {
     window.removeEventListener('keydown', this.keyHandler);
+    if (this.parallaxHandler) {
+      window.removeEventListener('pointermove', this.parallaxHandler);
+    }
     this.root.remove();
   }
 }

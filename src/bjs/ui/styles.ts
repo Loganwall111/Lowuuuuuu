@@ -3,7 +3,7 @@ export const UI_CSS = `
   --bg:#05070d; --panel:rgba(16,20,30,.82); --panel-solid:#11141d;
   --line:rgba(255,255,255,.10); --line2:rgba(255,255,255,.06);
   --txt:#e8edf7; --dim:#8b95ad; --dim2:#5d6679;
-  --acc:#3fc4ff; --acc2:#3f6bff; --ok:#3ddb8f; --warn:#ff5a45;
+  --acc:#00f0ff; --acc2:#2f6bff; --ok:#3ddb8f; --warn:#ff5a45;
   --r:6px; --r2:4px;
   --shadow:0 14px 38px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.35);
   /* UI density + see-through: the sim must always stay readable behind panels */
@@ -27,7 +27,8 @@ body{font:14px/1.45 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,s
   position:absolute;pointer-events:auto;display:none;flex-direction:column;
   background:var(--panel);backdrop-filter:blur(22px) saturate(140%);
   -webkit-backdrop-filter:blur(22px) saturate(140%);
-  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+  border:1px solid color-mix(in srgb,var(--acc) 26%,var(--line));
+  border-radius:var(--r);box-shadow:var(--shadow);
   min-width:172px;max-height:calc(100vh - 96px);overflow:hidden;
   /* A panel may never be wide enough to cover the middle of the screen. */
   max-width:min(300px,26vw);
@@ -36,6 +37,12 @@ body{font:14px/1.45 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,s
   background:var(--panel-dyn);
   transition:opacity .35s ease, background .2s ease;
 }
+/* The neon pylon chamfer: a lit left edge and a glass inner glow, so the
+   panels read as cockpit hardware rather than web-page boxes. */
+.wm-win::before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:2px;
+  background:linear-gradient(180deg,var(--acc),transparent);opacity:.85;pointer-events:none;}
+.wm-win::after{content:'';position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 22px color-mix(in srgb,var(--acc) 7%,transparent);}
 /* Panels fade back when you are not using them, so they never hide the sim. */
 body[data-idle="1"] .wm-win:not(:hover):not(.wm-pinned){ opacity:var(--idle-alpha); }
 body[data-idle="1"] .wm-win:not(:hover):not(.wm-pinned) .wm-body{ pointer-events:none; }
@@ -348,8 +355,28 @@ body[data-photo="1"] .sonar-cursor{ display:none !important; }
   font-size:8.5px;letter-spacing:.1em;color:rgba(140,205,255,.55);text-transform:uppercase;}
 .fh-suit-rows b{color:#cfe9ff;font-weight:700;letter-spacing:.02em;}
 /* The suit still wears the satellite corner brackets, in the amber accent. */
-.fhud-suit .fh-corner{border-color:rgba(80,180,255,.4);}
-.fhud-suit .fh-scan{background:linear-gradient(180deg,transparent,rgba(80,180,255,.10),transparent);}
+.fhud-suit .fh-corner{border-color:color-mix(in srgb,var(--acc) 45%,transparent);}
+.fhud-suit .fh-scan{background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--acc) 12%,transparent),transparent);}
+
+/* ---- the scrolling hex diagnostic matrix ---- */
+/* Two vertical machine streams down the visor edges: the suit's own data,
+   present only in the exosuit theme and never occluding the view. */
+.fhud-hex{display:none;}
+.fhud-suit .fhud-hex{display:block;position:absolute;inset:0;pointer-events:none;
+  overflow:hidden;}
+.fh-hex{position:absolute;top:0;bottom:0;width:13px;overflow:hidden;
+  font-style:normal;font-size:8px;line-height:1.9;letter-spacing:0;
+  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color:color-mix(in srgb,var(--acc) 55%,transparent);
+  text-shadow:0 0 6px color-mix(in srgb,var(--acc) 45%,transparent);
+  writing-mode:vertical-rl;white-space:nowrap;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);
+  mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);}
+.fh-hex.l{left:20px;animation:fhHexScroll 22s linear infinite;}
+.fh-hex.r{right:20px;animation:fhHexScroll 29s linear infinite reverse;}
+@keyframes fhHexScroll{
+  from{transform:translateY(0);}
+  to{transform:translateY(-50%);}}
 
 .fhud-left{position:absolute;left:92px;bottom:88px;display:flex;
   flex-direction:column;gap:10px;align-items:flex-start;}

@@ -137,6 +137,8 @@ export class FlightHUD {
     el.className = 'fhud ' + hudTheme(this.theme).className;
     const ticks = this.headingTicksHtml();
     const bars = this.pitchBarsHtml();
+    const hexL = this.hexStream(0);
+    const hexR = this.hexStream(1);
     el.innerHTML = `
       <!-- Cockpit canopy: a glass layer blended over the scene, so the
            instruments read as projected on the inside of a ship's window
@@ -149,6 +151,12 @@ export class FlightHUD {
         <span class="fv-top"></span><span class="fv-bottom"></span>
         <span class="fv-side l"></span><span class="fv-side r"></span>
         <span class="fv-pylon l"></span><span class="fv-pylon r"></span>
+      </div>
+
+      <!-- Scrolling hex diagnostic matrix down each visor edge: the suit's
+           own machine stream, scrolling past as a living perimeter. -->
+      <div class="fhud-hex" aria-hidden="true">
+        <i class="fh-hex l">${hexL}</i><i class="fh-hex r">${hexR}</i>
       </div>
 
       <!-- Suit vitals: reactor power core, armor integrity, life support.
@@ -306,6 +314,22 @@ export class FlightHUD {
       out += '<div class="fh-ladder-line' + (deg === 0 ? ' zero' : '') +
         '" style="top:calc(50% - ' + (deg * 4) + 'px)">' +
         '<span>' + Math.abs(deg) + '</span></div>';
+    }
+    return out;
+  }
+
+  /**
+   * A long scrolling stream of hex bytes for the visor perimeter.
+   *
+   * Deterministic per column so the two edges never read as the same line.
+   */
+  private hexStream(seed: number): string {
+    let out = '';
+    let s = (seed * 2654435761 + 0x9e3779b9) >>> 0;
+    const HEX = '0123456789ABCDEF';
+    for (let i = 0; i < 96; i++) {
+      s = Math.imul(s ^ (s >>> 15), 2246822519) >>> 0;
+      out += HEX[(s >> 4) & 15] + HEX[s & 15] + ' ';
     }
     return out;
   }

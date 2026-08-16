@@ -116,6 +116,18 @@ export const MIN_DEPTH = 4200;
 export const MAX_DEPTH = 26000;
 
 /**
+ * How deep Gargantua is, in world units.
+ *
+ * Deliberately far beyond the ordinary range. The Interstellar hole is a
+ * journey, not a doorway: drifting in without thrusting takes roughly eight
+ * minutes of absolute blackness before the Library resolves, and even a
+ * hard burn inward only shortens that to a few minutes. That is the
+ * long-timeline void crossing - you sink through the dark on the hole's
+ * own schedule, and the universe you left is a receding window behind you.
+ */
+export const GARGANTUA_DEPTH = 70000;
+
+/**
  * Works out the interior of one hole.
  *
  * Deterministic: the same hole always has the same depth, the same nested
@@ -126,10 +138,11 @@ export function interiorPlan(seed: number): InteriorPlan {
   const r = rng(s ^ 0x9e3779b9);
   const gargantua = isGargantua(s);
 
-  // Gargantua is deep even by these standards.
+  // Gargantua is deep even by these standards: a long-timeline void
+  // crossing that outlasts every ordinary hole by a wide margin.
   const span = MAX_DEPTH - MIN_DEPTH;
   const depth = gargantua
-    ? MAX_DEPTH * (0.85 + r() * 0.15)
+    ? GARGANTUA_DEPTH * (0.85 + r() * 0.15)
     : MIN_DEPTH + r() * span;
 
   const nested = !gargantua && r() < NESTED_CHANCE;

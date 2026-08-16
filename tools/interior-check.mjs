@@ -15,7 +15,8 @@ const f = `/tmp/interior-${Date.now()}.mjs`;
 fs.writeFileSync(f, out.outputFiles[0].text);
 const {
   interiorPlan, fallState, destinationFor, throughSingularity, describeFall,
-  isGargantua, GARGANTUA_CHANCE, NESTED_CHANCE, MIN_DEPTH, MAX_DEPTH
+  isGargantua, GARGANTUA_CHANCE, NESTED_CHANCE, MIN_DEPTH, MAX_DEPTH,
+  GARGANTUA_DEPTH
 } = await import(f);
 
 let pass = 0, fail = 0;
@@ -35,7 +36,11 @@ console.log('\n— the interior is deep enough to be a journey —');
      'shallowest ' + Math.round(min));
   ok('the user asked for "very very very deep": the shallowest is over 4000',
      min > 4000, String(Math.round(min)));
-  ok('depth is bounded, so a fall always ends', max <= MAX_DEPTH * 1.01,
+  // Gargantua is the long-timeline void: deliberately far deeper than the
+  // ordinary range, so an idle fall through it lasts minutes. It is still
+  // bounded, just by its own constant, which keeps every fall finite.
+  ok('depth is bounded, so a fall always ends',
+     max <= GARGANTUA_DEPTH * 1.01,
      'deepest ' + Math.round(max));
   ok('depths vary between holes', new Set(depths.map((d) => Math.round(d))).size > 3000);
 }

@@ -86,6 +86,8 @@ uniform float singularity;    // brightness of the white point, 0..1
 uniform vec3  fallDir;        // the direction you are falling, i.e. deeper in
 // Gargantua only: the interior goes black before the Library resolves.
 uniform float darkness;
+// Slow phase for the gravitational hue that drifts through the darkness.
+uniform float voidHue;
 
 ${GLSL_NOISE}
 
@@ -443,8 +445,12 @@ void main(void){
 
       // ---- Gargantua: darkness before the Library ----
       // Not a fade to a colour; a fade to nothing, so the arrival lands in
-      // total black exactly as the user described.
-      col *= 1.0 - clamp(darkness, 0.0, 1.0);
+      // total black exactly as the user described. But the blackness is not
+      // inert: a very faint gravitational hue drifts through it as you sink,
+      // so the void slowly warps and shifts instead of sitting dead still.
+      float dk = clamp(darkness, 0.0, 1.0);
+      vec3 voidTint = 0.5 + 0.5 * cos(6.28318 * (voidHue + vec3(0.0, 0.33, 0.67)));
+      col *= (1.0 - dk) + dk * voidTint * 0.05;
     }
   }
 
@@ -556,7 +562,7 @@ export class BlackHoleWorld implements World {
         'lensMode', 'lensFalloff', 'ringAmt', 'ringRadius', 'lensSymmetry',
         'lensDistortion', 'lensTwist', 'lensChroma', 'lensTint', 'lensSoftness',
         'insideAmt', 'exitDir', 'exitWindow', 'nestedLens', 'singularity',
-        'fallDir', 'darkness',
+        'fallDir', 'darkness', 'voidHue',
         'diskInner', 'diskOuter', 'diskTilt', 'exposure', 'lensStrength', 'horizonCover',
         'diskBright', 'dopplerAmt', 'diskThickness', 'diskTemp'
       ]
@@ -692,6 +698,9 @@ export class BlackHoleWorld implements World {
     this.mat.setFloat('nestedLens', safeFloat(this.nestedLens, 0));
     this.mat.setFloat('singularity', safeFloat(this.singularityDot, 0));
     this.mat.setFloat('darkness', safeFloat(this.darkness, 0));
+    // The gravitational hue drifts on a very slow clock, so the darkness
+    // shifts through faint violet and deep blue rather than sitting inert.
+    this.mat.setFloat('voidHue', (this.t * 0.02) % 1.0);
     this.mat.setVector3('fallDir', this.fallDirection);
     this.mat.setFloat('spin', this.p.spin);
     this.mat.setFloat('horizonCover',
