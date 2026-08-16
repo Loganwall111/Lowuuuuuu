@@ -562,7 +562,7 @@ export class PlanetaryWorld implements World {
       attributes: ['position', 'normal', 'uv'],
       uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time', 'seed',
                  'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights',
-                 'radius', 'isStar', ...PLANET_MAP_UNIFORMS],
+                 'radius', 'isStar', 'displace', 'displaceScale', ...PLANET_MAP_UNIFORMS],
       samplers: PLANET_MAP_SAMPLERS
     });
     // Stars are self-luminous and take the isStar path, but the uniform must
@@ -576,6 +576,10 @@ export class PlanetaryWorld implements World {
     this.starMat.setFloat('cloudAmt', 0);
     this.starMat.setFloat('cityLights', 0);
     this.starMat.setFloat('radius', 4.5);
+    // The photosphere is granulated in the fragment, not displaced in the
+    // vertex: a star's surface relief would read as a lumpy disc.
+    this.starMat.setFloat('displace', 0);
+    this.starMat.setFloat('displaceScale', 0);
     this.starMat.setVector3('sunPos', Vector3.Zero());
     this.starMat.setColor3('tintA', new Color3(1.0, 0.55, 0.12));
     this.starMat.setColor3('tintB', new Color3(1.0, 0.98, 0.86));
@@ -700,7 +704,7 @@ export class PlanetaryWorld implements World {
         attributes: ['position', 'normal', 'uv'],
         uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time',
                    'seed', 'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights', 'radius', 'isStar',
-                   'habitable', ...PLANET_MAP_UNIFORMS],
+                   'habitable', 'displace', 'displaceScale', ...PLANET_MAP_UNIFORMS],
         samplers: PLANET_MAP_SAMPLERS
       });
       applyPlanetMap(mat, cfg.type as PlanetKind, scene, Math.floor(i * 2654435761 + 101));
@@ -713,6 +717,13 @@ export class PlanetaryWorld implements World {
       // Only the inhabited world gets the lush atmospheric limb; every other
       // body keeps the thin, desaturated, "dead rock" haze.
       mat.setFloat('habitable', cfg.inhabited ? 1 : 0);
+      // Real terrain relief, scaled to the body's own radius. Gas giants
+      // stay smooth: their surface is a fluid band system, not rock.
+      const displaceScale = cfg.type === PlanetKind.Gas
+        ? 0 : cfg.r * (cfg.type === PlanetKind.Rocky ? 0.05
+            : cfg.type === PlanetKind.Lava ? 0.04 : 0.06);
+      mat.setFloat('displace', cfg.type === PlanetKind.Gas ? 0 : 1);
+      mat.setFloat('displaceScale', displaceScale);
       mesh.material = mat;
 
       const body: Body = {
@@ -793,7 +804,7 @@ export class PlanetaryWorld implements World {
           attributes: ['position', 'normal', 'uv'],
           uniforms: ['world', 'worldViewProjection', 'camPos', 'sunPos', 'time',
                      'seed', 'ptype', 'tintA', 'tintB', 'detail', 'cloudAmt', 'cityLights', 'radius', 'isStar',
-                     'habitable', ...PLANET_MAP_UNIFORMS],
+                     'habitable', 'displace', 'displaceScale', ...PLANET_MAP_UNIFORMS],
           samplers: PLANET_MAP_SAMPLERS
         });
         mm.setFloat('useMap', 0);
@@ -805,6 +816,10 @@ export class PlanetaryWorld implements World {
         mm.setColor3('tintB', new Color3(0.62, 0.60, 0.57));
         mm.setFloat('radius', mr);
         mm.setFloat('isStar', 0);
+        // Moons are lumpy, airless rock: real relief, a touch more relative
+        // to their small radius so it reads from close range.
+        mm.setFloat('displace', 1);
+        mm.setFloat('displaceScale', mr * 0.06);
         moon.material = mm;
         body.moons.push({ pivot, mesh: moon, speed: 0.5 + Math.random() * 0.9 });
         (body as any).moonMats = [...((body as any).moonMats || []), mm];
@@ -876,7 +891,16 @@ export class PlanetaryWorld implements World {
       b.mat.setVector3('camPos', cp);
       b.mat.setVector3('sunPos', Vector3.Zero());
       b.mat.setFloat('time', this.t);
-      b.mat.setFloat('detail', this.p.detail);
+      // Distance-adaptive detail: as the camera closes on a world, the noise
+      // octaves deepen so up-close terrain resolves into real relief instead
+      // of a flat, hollow-looking ghost mesh. The boost is smooth, so there
+      // is no pop as you cross the threshold.
+      {
+        const d = Vector3.Distance(cp, b.mesh.getAbsolutePosition());
+        const k = Math.max(0, Math.min(1, 1 - (d - b.visualR) / Math.max(b.visualR * 2.4, 1)));
+        const boost = 1 + k * 1.6;
+        b.mat.setFloat('detail', this.p.detail * boost);
+      }
       b.mat.setFloat('cloudAmt', this.p.clouds);
       // Keyed to the system's inhabited world, whichever one that turned out
       // to be. Hard-coding the old literal name here meant the night side of

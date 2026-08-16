@@ -83,6 +83,21 @@ export function warmMaterial(
 }
 
 /**
+ * The material-name prefixes that gate the expensive programs.
+ *
+ * Every raymarcher and procedural shader is covered - the black hole field,
+ * planets and moons, atmospheres, the corona and glare, the sky dome, the
+ * galaxy fog volume and its soft points, the celestial/planet-field bodies,
+ * wormhole mouths, and the Singularity world's own raymarcher. Warming them
+ * on the loading screen (rather than the frame they first enter view) is
+ * what removes the boot and hyper-warp black-screen freeze.
+ */
+export const WARMUP_PREFIXES = [
+  'holeField', 'm_', 'am_', 'mm', 'coronaM', 'glareM', 'cosmicSkyM',
+  'galaxyFogM', 'galaxyPtM', 'celestialBody', 'wh', 'bh', 'portal'
+];
+
+/**
  * Warm every material in the scene whose name matches one of the given
  * prefixes.
  *
@@ -91,7 +106,7 @@ export function warmMaterial(
  */
 export async function warmupShaders(
   scene: Scene | null,
-  prefixes: string[] = ['holeField', 'm_', 'coronaM', 'glareM', 'cosmicSkyM'],
+  prefixes: string[] = WARMUP_PREFIXES,
   timeout = WARMUP_TIMEOUT_MS
 ): Promise<WarmupReport> {
   const started = Date.now();

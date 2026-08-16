@@ -148,6 +148,7 @@ export class Shell {
   private topbar!: HTMLDivElement;
   private hud!: HTMLDivElement;
   private boot!: HTMLDivElement;
+  private visorConsole!: HTMLDivElement;
 
   constructor(hooks: ShellHooks) {
     this.hooks = hooks;
@@ -164,6 +165,7 @@ export class Shell {
     this.buildBoot();
     this.buildTopbar();
     this.buildHud();
+    this.buildVisorConsole();
     this.registerWindows();
 
     this.wm.onChange(() => this.syncTopbar());
@@ -417,6 +419,7 @@ export class Shell {
     this.worldId = w.id;
     this.wm.refresh('controls');
     this.wm.refresh('telemetry');
+    this.renderVisorConsole();
   }
 
   /* -------------------------------- HUD -------------------------------- */
@@ -437,8 +440,79 @@ export class Shell {
   onMenuClosed(): void {
     // The tool bar lives in the game, not on the title screen.
     this.topbar?.classList.remove('hidden');
+    this.visorConsole?.classList.remove('hidden');
     this.wm.Open('controls');
     this.wm.Open('objects');
+  }
+
+  /* -------------------------- the visor console -------------------------- */
+
+  /**
+   * The cockpit-integrated parameter console.
+   *
+   * The world's simulation parameters - time scale, orbital rate, surface
+   * detail, clouds, city lights, exposure - are mirrored out of the panels
+   * and into the armour's own visor: a row of compact pylon sliders along
+   * the top edge, with Reset World and Pause as physical nodes at the
+   * bottom. It is an overlay, never a replacement: the panels still hold
+   * every control, this just puts the ones you use while flying where the
+   * suit would keep them.
+   */
+  private buildVisorConsole(): void {
+    this.visorConsole = document.createElement('div');
+    this.visorConsole.className = 'visor-console hidden';
+    document.body.appendChild(this.visorConsole);
+    this.renderVisorConsole();
+  }
+
+  /** Rebuilds the console from the current world's parameter + action set. */
+  private renderVisorConsole(): void {
+    if (!this.visorConsole) return;
+    const w = this.world;
+    const params = w?.getParams?.() ?? [];
+    const top = params.slice(0, 6);
+    this.visorConsole.innerHTML =
+      '<div class="vc-top">' +
+        top.map((p) => this.visorSlider(p)).join('') +
+      '</div>' +
+      '<div class="vc-bottom">' +
+        '<button class="vc-node" data-vc="pause">' +
+          (this.paused ? '▶ Resume' : '⏸ Pause') + '</button>' +
+        '<button class="vc-node" data-vc="reset">↺ Reset World</button>' +
+      '</div>';
+    // Rebind the live handlers after replacing innerHTML.
+    this.visorConsole.querySelectorAll<HTMLInputElement>('[data-vc-slider]')
+      .forEach((s) => {
+        const key = s.dataset.vcSlider!;
+        const p = params.find((x) => x.key === key);
+        const out = this.visorConsole.querySelector('[data-vc-val="' + key + '"]');
+        s.oninput = () => {
+          const v = parseFloat(s.value);
+          const fmt = (p?.step ?? 1) >= 1 ? String(Math.round(v)) : v.toFixed(2);
+          if (out) out.textContent = fmt + (p?.unit ? ' ' + p.unit : '');
+          this.hooks.onParam(key, v);
+        };
+      });
+    this.visorConsole.querySelector('[data-vc="pause"]')
+      ?.addEventListener('click', () => {
+        this.togglePause();
+        this.renderVisorConsole();
+      });
+    this.visorConsole.querySelector('[data-vc="reset"]')
+      ?.addEventListener('click', () => this.hooks.onReset());
+  }
+
+  /** One compact pylon slider, for the visor row. */
+  private visorSlider(p: { key: string; label: string; min: number; max: number; step: number; value: number; unit?: string }): string {
+    const fmt = (p.step >= 1 ? String(Math.round(p.value)) : p.value.toFixed(2));
+    return '<label class="vc-ctl">' +
+      '<span class="vc-l">' + p.label + '</span>' +
+      '<input type="range" data-vc-slider="' + p.key + '"' +
+        ' min="' + p.min + '" max="' + p.max + '" step="' + p.step + '"' +
+        ' value="' + p.value + '">' +
+      '<span class="vc-v" data-vc-val="' + p.key + '">' + fmt +
+        (p.unit ? ' ' + p.unit : '') + '</span>' +
+      '</label>';
   }
 
   /**
@@ -859,6 +933,7 @@ export class Shell {
   /** Re-renders every open panel (after undo/redo changes world state). */
   refreshAll(): void {
     ['controls', 'telemetry', 'snapshots', 'objects'].forEach((id) => this.wm.refresh(id));
+    this.renderVisorConsole();
   }
 
   /** Reflects the active control mode in the UI. */

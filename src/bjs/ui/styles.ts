@@ -57,7 +57,9 @@ body[data-photo="1"] .topbar,
 body[data-photo="1"] .wm-layer,
 body[data-photo="1"] .hud,
 body[data-photo="1"] .fhud,
+body[data-photo="1"] .visor-console,
 body[data-photo="1"] .sonar-cursor{ display:none !important; }
+body[data-cinematic="1"] .visor-console{ display:none !important; }
 .wm-win.wm-pinned{ box-shadow:0 0 0 1px var(--acc), var(--shadow); }
 .objsearch{display:flex;gap:6px;align-items:center;}
 .objsearch input{flex:1;min-width:0;padding:8px 10px;font-size:12px;color:var(--txt);
@@ -971,6 +973,40 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 /* the reticle gets a slow breathing pulse so the frame never feels frozen */
 @keyframes fhPulse{0%,100%{opacity:.44}50%{opacity:.60}}
 .fhud-reticle{animation:fhPulse 4.5s ease-in-out infinite;}
+
+/* ---- the cockpit visor console ---- */
+/* The world's live parameters, melted into the armour itself: a frosted
+   glass row of pylon sliders across the top edge, and Reset/Pause as
+   physical nodes along the bottom. Overlay only - never replaces panels. */
+.visor-console{position:fixed;inset:0;z-index:56;pointer-events:none;}
+.visor-console.hidden{display:none;}
+.vc-top{position:absolute;left:50%;top:10px;transform:translateX(-50%);
+  display:flex;gap:14px;align-items:flex-end;
+  padding:8px 18px 9px;
+  background:linear-gradient(180deg,rgba(10,16,28,.66),rgba(6,10,18,.40));
+  backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
+  border:1px solid color-mix(in srgb,var(--acc) 22%,transparent);
+  border-radius:10px;pointer-events:auto;
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);}
+.vc-ctl{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:86px;}
+.vc-l{font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--acc) 70%,transparent);}
+.vc-v{font-size:9px;color:rgba(210,235,255,.8);font-variant-numeric:tabular-nums;}
+.vc-ctl input[type="range"]{width:84px;height:2px;appearance:none;background:
+  linear-gradient(90deg,var(--acc) var(--pct,50%),rgba(255,255,255,.10) var(--pct,50%));
+  border-radius:2px;outline:none;cursor:pointer;}
+.vc-ctl input[type="range"]::-webkit-slider-thumb{appearance:none;width:10px;height:10px;
+  border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);cursor:pointer;}
+.vc-bottom{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
+  display:flex;gap:8px;pointer-events:auto;}
+.vc-node{padding:7px 16px;font-size:10px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:#cfe9ff;cursor:pointer;font-family:inherit;
+  background:linear-gradient(180deg,rgba(14,22,36,.62),rgba(8,12,22,.42));
+  backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
+  border:1px solid color-mix(in srgb,var(--acc) 30%,transparent);border-radius:8px;
+  transition:all .13s ease;}
+.vc-node:hover{color:#fff;border-color:var(--acc);
+  box-shadow:0 0 16px color-mix(in srgb,var(--acc) 45%,transparent);}
 
 /* --- the suit rails --- */
 /* No full-width bar any more: the rails are transparent docks over the

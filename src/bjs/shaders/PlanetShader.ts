@@ -28,16 +28,34 @@ attribute vec3 normal;
 attribute vec2 uv;
 uniform mat4 world;
 uniform mat4 worldViewProjection;
+uniform float seed;
+uniform float detail;
+/** 1 = displace vertices into real terrain relief, 0 = smooth sphere. */
+uniform float displace;
+/** How much relief to apply, in world units (a fraction of the radius). */
+uniform float displaceScale;
 varying vec3 vPos;
 varying vec3 vNrm;
 varying vec3 vWorld;
 varying vec2 vUV;
+
+${GLSL_NOISE}
+
 void main(void){
-  vPos = position;
+  vec3 pos = position;
+  if (displace > 0.5){
+    // Real mountains, not a painted bump map. The SAME noise field the
+    // fragment shades from is used to lift the vertices, so the silhouette
+    // and the surface colour agree and the world has genuine relief that
+    // reads up close instead of a flat, hollow-looking ghost mesh.
+    float h = fbm(position * (6.0 + detail * 5.0) + seed * 37.0, 6, 2.1, 0.55);
+    pos = position + normal * (h * displaceScale);
+  }
+  vPos = pos;
   vNrm = normalize(mat3(world[0].xyz, world[1].xyz, world[2].xyz) * normal);
-  vWorld = (world * vec4(position, 1.0)).xyz;
+  vWorld = (world * vec4(pos, 1.0)).xyz;
   vUV = uv;
-  gl_Position = worldViewProjection * vec4(position, 1.0);
+  gl_Position = worldViewProjection * vec4(pos, 1.0);
 }
 `;
 
