@@ -1077,6 +1077,59 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 .pause-note{font-size:10px;color:var(--dim);line-height:1.5;padding:8px 10px;
   border-left:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 6%,transparent);border-radius:6px;}
 
+/* ---- the omni-boot cinematic load-out ---- */
+.omni-boot{position:fixed;inset:0;z-index:210;overflow:hidden;pointer-events:auto;
+  background:radial-gradient(ellipse at center,rgba(4,8,18,.82),rgba(1,3,8,.96));
+  opacity:1;transition:opacity .5s ease;}
+.omni-boot.fading{opacity:0;pointer-events:none;}
+.omni-canvas{position:absolute;inset:0;width:100%;height:100%;}
+.omni-warp{position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(0,240,255,.14) 0%, transparent 55%),
+    repeating-conic-gradient(from 0deg, rgba(0,240,255,.04) 0deg 1.5deg, transparent 1.5deg 6deg);
+  filter:blur(6px);animation:omniDefrost 4.4s ease forwards;}
+@keyframes omniDefrost{
+  0%{filter:blur(22px);opacity:1;}
+  70%{filter:blur(8px);opacity:.75;}
+  100%{filter:blur(0px);opacity:.15;}}
+.omni-grid{position:absolute;inset:0;opacity:.25;
+  background-image:
+    linear-gradient(rgba(0,240,255,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,240,255,.12) 1px, transparent 1px);
+  background-size:44px 44px;
+  transform:perspective(500px) rotateX(52deg);transform-origin:bottom;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 70%);
+  mask-image:linear-gradient(180deg,transparent,#000 70%);
+  animation:omniGrid 2.4s linear infinite;}
+@keyframes omniGrid{ from{background-position:0 0} to{background-position:0 44px} }
+.omni-stage{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;}
+.omni-matrix{display:flex;flex-direction:column;align-items:center;gap:7px;
+  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;}
+.omni-line{font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--acc);
+  text-shadow:0 0 10px color-mix(in srgb,var(--acc) 60%,transparent);}
+.omni-line.dim{color:color-mix(in srgb,var(--acc) 55%,transparent);font-size:10px;letter-spacing:.28em;}
+.omni-line.accent{color:#c3b4ff;text-shadow:0 0 12px rgba(150,110,255,.6);}
+.omni-count{font-size:26px;font-weight:800;letter-spacing:.5em;color:#eaf4ff;}
+.omni-bar{width:min(420px,72vw);height:3px;margin-top:6px;overflow:hidden;border-radius:2px;
+  background:rgba(255,255,255,.10);}
+.omni-bar i{display:block;height:100%;width:0;
+  background:linear-gradient(90deg,#00f0ff,#7c5cff);box-shadow:0 0 14px rgba(0,240,255,.6);}
+.omni-ticker{display:flex;flex-direction:column;align-items:center;gap:3px;min-height:150px;
+  font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(190,215,245,.7);
+  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;}
+.omni-ticker div:last-child{color:var(--acc);text-shadow:0 0 8px color-mix(in srgb,var(--acc) 50%,transparent);}
+.omni-engage{font-size:clamp(18px,3.4vw,34px);font-weight:900;letter-spacing:.42em;text-transform:uppercase;
+  color:transparent;opacity:0;transform:scale(.92);
+  background:linear-gradient(180deg,#fff,#00f0ff 55%,#2f6bff);
+  -webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 24px rgba(0,240,255,.5));
+  transition:opacity .4s ease, transform .4s cubic-bezier(.2,.9,.3,1.4);}
+.omni-boot.engage .omni-engage{opacity:1;transform:scale(1);}
+@media (prefers-reduced-motion: reduce){
+  .omni-canvas,.omni-warp,.omni-grid{animation:none;opacity:.2;}
+}
+
 /* --- the suit rails --- */
 /* No full-width bar any more: the rails are transparent docks over the
    scene, so the galaxy stays readable behind every button. */

@@ -49,6 +49,7 @@ import {
   shouldStrand, strandedDepth, strandedWormholeSeed, HORIZON_WARNING
 } from './systems/VoidNavigation';
 import { PauseMenu } from './ui/PauseMenu';
+import { OmniBoot } from './ui/OmniBoot';
 import { leaderboard, playerScore } from './systems/Leaderboard';
 import {
   DiscoveryLog, Milestones, Challenges, CHALLENGES, MILESTONES, type CodexKind
@@ -291,6 +292,8 @@ export class App {
       challenges: this.challenges.completedCount
     })
   });
+  /** The multi-stage cinematic load-out that plays on entering the sandbox. */
+  omniBoot = new OmniBoot();
   /** Rolling buffer of the player's motion, for the rewind key. */
   rewind = new TimeRewind();
   /** The gas-giant dive in progress, if any. */
@@ -606,6 +609,13 @@ export class App {
       }
     });
     this.camera.minZ = 0.05;
+    // The far plane stays tight on purpose. Every backdrop layer (sky dome,
+    // galaxy, starfields, dust) lives on a proxy shell INSIDE 4000 units,
+    // so distance can never clip it; a 50,000,000-unit far plane against a
+    // 0.05 near plane would be a 1e9 depth ratio that z-fights the whole
+    // scene. Black flashes at extreme range are frustum culling, not far-
+    // plane clipping, and that is fixed by alwaysSelectAsActiveMesh + the
+    // per-frame autoClear, both pinned by the test suite.
     this.camera.maxZ = 4000;
     this.camera.lowerRadiusLimit = 3;
     this.camera.upperRadiusLimit = 800;
@@ -865,6 +875,8 @@ export class App {
         this.camera.setTarget(Vector3.Zero());
       }
       void this.loadWorld('planetary');
+      // The cinematic load-out plays over the fresh spawn, then locks look.
+      this.omniBoot.start(() => this.mouse.requestLock());
     }, 350);
   }
 
@@ -911,6 +923,10 @@ export class App {
       // Open the universe at the heart of the Milky Way, facing the central
       // supermassive black hole - the load-in vista.
       this.spawnAtGalacticCore();
+      // The multi-stage Omni-Boot: matrix bar, disintegrating geometry, warp
+      // defrost, spoken vitals, and the "SPACE JOURNEY ACTIVE" flare. When it
+      // completes, native pointer-lock look engages.
+      this.omniBoot.start(() => this.mouse.requestLock());
     }, 300);
     this.flightHud.setVisible(true);
     this.shell.onMenuClosed();
