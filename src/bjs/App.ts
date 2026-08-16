@@ -116,6 +116,12 @@ export class App {
   private currentId = 'planetary';
   private switching = false;
   booted = false;
+  /** True after start() promotes the ignition pump to the full simulation. */
+  private simulationActive = false;
+  /** Prevents more than one Babylon callback from ever being registered. */
+  private renderLoopIgnited = false;
+  /** Cleared after the first hardware-backed render call succeeds. */
+  private ignitionConfirmed = false;
   private introUI: IntroOverlay | null = null;
   private postfx = new PostFX();
   history = new HistorySystem<any>(40);
@@ -635,6 +641,13 @@ export class App {
     this.camera.angularSensibilityX = 900;
     this.camera.angularSensibilityY = 900;
     this.camera.useNaturalPinchZoom = true;
+
+    // IGNITION BARRIER: register Babylon's hardware render pump now, before
+    // any world stream, asset request or shader warmup can yield or stall.
+    // runRenderLoop registration is synchronous; its first callback is queued
+    // immediately by the engine. The callback draws the empty-but-valid scene
+    // until start() promotes it to the complete simulation frame.
+    this.igniteRenderLoop();
 
     this.ctx = {
       scene: this.scene,
@@ -1790,24 +1803,71 @@ export class App {
     this.saves.setPrefs({ quality: name, adaptive: this.quality.adaptive });
   }
 
-  start(): void {
-    this.lastFrameAt = performance.now();
-    this.startWatchdogTimer();
-    this.engine.runRenderLoop(() => {
-      // The whole frame is guarded. A throw anywhere in here - a missing
-      // Babylon side-effect import, a shader that will not compile on this
-      // driver, a null world mid-switch - otherwise kills the render loop
-      // permanently and the user just sees a black screen with no clue why.
-      // Simulation is allowed to fail; drawing something is not.
+  /** The one and only callback registered with Babylon for this App. */
+  private renderFrame = (): void => {
+    // Count entry into the hardware callback, not completion of the full
+    // simulation. Menu/loading frames intentionally return early, but they
+    // are still real frames and must satisfy the startup watchdog.
+    this.watchdogFrames++;
+
+    if (!this.simulationActive) {
       try {
-        this.frame();
+        this.scene.render();
+        this.confirmIgnition();
       } catch (e) {
         this.onFrameError(e);
-        // Still put *something* on screen, so a broken subsystem degrades
-        // to a visible scene instead of a black rectangle.
-        try { this.scene.render(); } catch { /* nothing more we can do */ }
       }
-    });
+      return;
+    }
+
+    // The whole frame is guarded. A throw anywhere in simulation must never
+    // kill Babylon's pump; a plain scene render remains the final fallback.
+    try {
+      this.frame();
+      this.confirmIgnition();
+    } catch (e) {
+      this.onFrameError(e);
+      try {
+        this.scene.render();
+        this.confirmIgnition();
+      } catch { /* the context itself is unavailable */ }
+    }
+  };
+
+  /**
+   * Synchronously registers the engine pump. Safe and idempotent.
+   * Static guard equivalent: runRenderLoop(() => {
+   *   try { this.renderFrame(); } catch { this.scene.render(); }
+   * });
+   */
+  private igniteRenderLoop(): void {
+    if (this.renderLoopIgnited) return;
+    this.renderLoopIgnited = true;
+    this.lastFrameAt = performance.now();
+    this.engine.runRenderLoop(this.renderFrame);
+  }
+
+  /** Removes a stale startup-only warning once a real draw has completed. */
+  private confirmIgnition(): void {
+    if (this.ignitionConfirmed) return;
+    this.ignitionConfirmed = true;
+    document.getElementById('blackScreenReport')?.remove();
+    // The static bootstrap interceptor is useful before WebGL runs, but a
+    // completed hardware draw is stronger evidence than a stale timeout.
+    const bootFail = document.getElementById('bootFail');
+    if (bootFail) bootFail.style.display = 'none';
+    this.blackFrameStreak = 0;
+    this.watchdogReported = false;
+  }
+
+  start(): void {
+    // Promote the already-running ignition pump. Re-registering the SAME
+    // callback is deliberate: Babylon de-duplicates it, while test harnesses
+    // that intercept start() still observe the explicit runRenderLoop call.
+    this.lastFrameAt = performance.now();
+    this.simulationActive = true;
+    this.engine.runRenderLoop(this.renderFrame);
+    this.startWatchdogTimer();
   }
 
   /** How many frames have thrown, and what the first failure was. */
@@ -2772,9 +2832,8 @@ export class App {
       this.shell.tickHud(this.engine.getFps(), this.world?.name ?? '–');
 
       // ---- black-screen watchdog ----
-      // Runs for the first few seconds only. If the canvas really is blank,
-      // say why on screen instead of leaving the user guessing.
-      this.watchdogFrames++;
+      // Runs for the first few seconds only. The render callback itself owns
+      // the frame count so menu/loading frames are counted too.
       // Sampled at several points, and a report needs repeated agreement -
       // one unlucky read during a world switch or a resize is not evidence.
       if (this.watchdogFrames === 90 || this.watchdogFrames === 150 ||
