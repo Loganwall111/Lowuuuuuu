@@ -702,7 +702,11 @@ export class PlanetaryWorld implements World {
     // ---- planets ----
     PLANETS.forEach((cfg, i) => {
       const root = new TransformNode('root_' + cfg.name, scene);
-      const mesh = MeshBuilder.CreateSphere(cfg.name, { diameter: cfg.r * 2, segments: 96 }, scene);
+      // Earth gets the highest tessellation: it is the world players look at
+      // longest, and the extra vertices are what let its real terrain relief
+      // and cloud deck resolve instead of reading as a smooth cartoon ball.
+      const segments = cfg.inhabited ? 160 : 96;
+      const mesh = MeshBuilder.CreateSphere(cfg.name, { diameter: cfg.r * 2, segments }, scene);
       mesh.parent = root;
 
       const mat = new ShaderMaterial('m_' + cfg.name, scene, PLANET_SHADER, {
@@ -903,7 +907,10 @@ export class PlanetaryWorld implements World {
       {
         const d = Vector3.Distance(cp, b.mesh.getAbsolutePosition());
         const k = Math.max(0, Math.min(1, 1 - (d - b.visualR) / Math.max(b.visualR * 2.4, 1)));
-        const boost = 1 + k * 1.6;
+        // Earth resolves an extra octave of detail up close: its terrain is
+        // the one the player inspects, so it is allowed to cost more.
+        const homeBoost = b.name === INHABITED ? 1.35 : 1;
+        const boost = (1 + k * 1.6) * homeBoost;
         b.mat.setFloat('detail', this.p.detail * boost);
       }
       b.mat.setFloat('cloudAmt', this.p.clouds);
@@ -970,7 +977,7 @@ export class PlanetaryWorld implements World {
     if (home) {
       const homePos = home.mesh.getAbsolutePosition();
       this.orbitTraffic.update(dt * Math.max(0.05, this.p.timeScale), homePos);
-      this.tleTraffic.update(homePos);
+      this.tleTraffic.update(homePos, dt);
     }
   }
 

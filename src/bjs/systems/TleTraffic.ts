@@ -37,6 +37,9 @@ export class TleTraffic {
   private positions: Float32Array | null = null;
   private colors: Float32Array | null = null;
   private built = false;
+  /** Seconds between full re-propagations; 10k birds at 60fps is 600k
+   *  sqrt/atan2 a second, which is real frame cost for no visual gain. */
+  private acc = 0;
 
   get count(): number { return this.records.length; }
 
@@ -89,12 +92,20 @@ export class TleTraffic {
    * home world's centre. A satellite's km position is scaled down to world
    * units, so the geostationary belt sits ~7 units out and LEO hugs the
    * planet, exactly as it should.
+   *
+   * Re-propagation is throttled: orbital motion at these scales is far
+   * slower than a frame, so a ~2 Hz update is indistinguishable from a
+   * per-frame one and costs a fraction of the CPU.
    */
-  update(center: Vector3): void {
+  update(center: Vector3, dt = 0): void {
     const mesh = this.mesh;
     const pos = this.positions;
     const col = this.colors;
     if (!mesh || !pos || !col || !this.records.length) return;
+
+    this.acc += Number.isFinite(dt) ? Math.max(0, dt) : 0;
+    if (this.acc < 0.5) return;
+    this.acc = 0;
 
     const now = new Date();
     const scratch: [number, number, number] = [0, 0, 0];

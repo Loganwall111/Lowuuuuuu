@@ -278,16 +278,19 @@ export class Shell {
     // controls of the armor, exactly where the hands would reach them.
     this.topbar.className = 'topbar hidden';
     this.topbar.innerHTML = `
-      <div class="rail rail-l">
-        <div class="brand">
+      <div class="cmd-center">
+        <i class="cmd-ring" aria-hidden="true"></i>
+        <i class="cmd-mark tl"></i><i class="cmd-mark tr"></i>
+        <i class="cmd-mark bl"></i><i class="cmd-mark br"></i>
+        <div class="cmd-brand">
           <div class="brand-dot"></div>
-          <div><div class="brand-name">UNLIMITED</div><div class="brand-sub">Possibilities Sandbox</div></div>
+          <div><div class="brand-name">UNLIMITED</div><div class="brand-sub">Command Center</div></div>
         </div>
-        <div class="modesw" id="modeSwitch" title="Explorer explores; Sandbox has full physics (M)">
+        <div class="cmd-modes" id="modeSwitch" title="Explorer explores; Sandbox has full physics (M)">
           <button class="modesw-b" data-gm="explorer">🔭</button>
           <button class="modesw-b" data-gm="sandbox">🌌</button>
         </div>
-        <div class="rail-group">
+        <div class="cmd-grid">
           <button class="iconbtn" id="w-controls" title="Controls (1)">🎛</button>
           <button class="iconbtn" id="w-objects"  title="Objects (2)">🧰</button>
           <button class="iconbtn" id="w-library"  title="World Library (6)">🗂</button>
@@ -299,15 +302,13 @@ export class Shell {
           <button class="iconbtn" id="w-pilot" title="Pilot &amp; Explore (9)">🚀</button>
           <button class="iconbtn" id="w-navigator" title="Universe (N)">🌌</button>
           <button class="iconbtn" id="w-lens" title="Gravitational Lens">🔭</button>
+          <button class="iconbtn" id="btnPause" title="Pause / Resume (Space)">⏸</button>
+          <button class="iconbtn" id="btnFocus" title="Focus mode - hide all panels (F)">👁</button>
+          <button class="iconbtn" id="btnTile" title="Tile panels (T)">▤</button>
+          <button class="iconbtn" id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
+          <button class="iconbtn" id="btnRedo" title="Redo (Ctrl+Shift+Z)">↷</button>
+          <button class="iconbtn" id="btnReset" title="Reset layout & sim (R)">↺</button>
         </div>
-      </div>
-      <div class="rail rail-r">
-        <button class="iconbtn" id="btnPause" title="Pause / Resume (Space)">⏸</button>
-        <button class="iconbtn" id="btnFocus" title="Focus mode - hide all panels (F)">👁</button>
-        <button class="iconbtn" id="btnTile" title="Tile panels to the screen edges (T)">▤</button>
-        <button class="iconbtn" id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
-        <button class="iconbtn" id="btnRedo" title="Redo (Ctrl+Shift+Z)">↷</button>
-        <button class="iconbtn" id="btnReset" title="Reset layout & sim (R)">↺</button>
       </div>
     `;
     document.body.appendChild(this.topbar);

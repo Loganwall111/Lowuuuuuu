@@ -102,18 +102,45 @@ body[data-cinematic="1"] .visor-console{ display:none !important; }
 }
 .wm-dockbtn:hover{border-color:var(--acc);color:#fff}
 
-/* ============ top bar ============ */
+/* ============ command center ============ */
 .topbar{
   position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;
-  justify-content:space-between;padding:0 8px 16px;pointer-events:none;
+  justify-content:center;padding:0 8px 12px;pointer-events:none;
   transition:opacity .5s ease;
 }
 .topbar > *{pointer-events:auto}
-/* The two suit rails: vertical cockpit controls docked at the lower edges. */
-.rail{display:flex;flex-direction:column;gap:8px;align-items:stretch;}
-.rail-l{align-items:flex-start;}
-.rail-r{align-items:flex-end;}
-.rail-group{display:grid;grid-template-columns:repeat(2,auto);gap:6px;}
+/* The command center: every toggle, shrunk and gathered into one centred
+   cluster the armour keeps at its chest - a dashboard, not a toolbar. */
+.cmd-center{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:9px;
+  padding:12px 16px 13px;pointer-events:auto;
+  background:linear-gradient(180deg,rgba(10,16,28,.72),rgba(6,10,18,.48));
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid color-mix(in srgb,var(--acc) 26%,transparent);
+  border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.5);
+}
+.cmd-brand{display:flex;align-items:center;gap:8px;
+  padding:4px 12px 4px 8px;background:rgba(14,22,38,.5);
+  border:1px solid rgba(140,190,255,.18);border-radius:8px;}
+.cmd-brand .brand-name{font-size:11px;letter-spacing:.26em;font-weight:700;}
+.cmd-brand .brand-sub{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim2);}
+.cmd-modes{display:flex;gap:5px;}
+.cmd-modes .modesw-b{padding:3px 10px;font-size:12px;border-radius:6px;}
+/* The toggle grid: small, evenly spaced, every control in reach. */
+.cmd-grid{display:grid;grid-template-columns:repeat(6,auto);gap:6px;}
+.cmd-grid .iconbtn{width:28px;height:28px;font-size:13px;}
+/* Decorative marks around the cluster: a slowly rotating dashed ring and
+   four corner brackets, so it reads as machined armour, not a menu. */
+.cmd-ring{position:absolute;inset:-10px;border:1px dashed color-mix(in srgb,var(--acc) 30%,transparent);
+  border-radius:16px;pointer-events:none;animation:cmdSpin 40s linear infinite;}
+@keyframes cmdSpin{ to{transform:rotate(360deg)} }
+.cmd-mark{position:absolute;width:12px;height:12px;pointer-events:none;
+  border-color:var(--acc);border-style:solid;}
+.cmd-mark.tl{top:-4px;left:-4px;border-width:1.5px 0 0 1.5px;}
+.cmd-mark.tr{top:-4px;right:-4px;border-width:1.5px 1.5px 0 0;}
+.cmd-mark.bl{bottom:-4px;left:-4px;border-width:0 0 1.5px 1.5px;}
+.cmd-mark.br{bottom:-4px;right:-4px;border-width:0 1.5px 1.5px 0;}
+
 .brand{display:flex;align-items:center;gap:9px;padding:6px 15px 6px 11px;
   background:linear-gradient(180deg,rgba(16,24,40,.9),rgba(10,15,26,.9));
   backdrop-filter:blur(20px);border:1px solid rgba(140,190,255,.22);box-shadow:var(--shadow);
