@@ -2397,17 +2397,10 @@ export class App {
         const exitDir = back.lengthSquared() > 1e-9 ? back : new Vector3(0, 0, -1);
         const fallDir = bh.position.subtract(this.lastOutsidePos);
 
-        if (this.interiorCommitted) {
-          // The horizon is not a ghost sphere to fly through. Pin the camera
-          // just inside the entry side while proper interior distance grows.
-          const hr = this.universe.horizonRadiusOf(bh);
-          const n = back.lengthSquared() > 1e-9 ? back.normalize() : new Vector3(0, 0, 1);
-          const anchor = bh.position.add(n.scale(hr * 0.62));
-          this.vehicle.position.copyFrom(anchor);
-          this.vehicle.velocity.setAll(0);
-          this.camera.position.copyFrom(anchor);
-          this.camera.setTarget(this.vehicle.lookTarget());
-        }
+        // Once committed, UniverseState keeps the horizon latched even after
+        // the camera crosses the coordinate centre. Do not pin or zero the
+        // vehicle here: W must continue to produce real cockpit motion while
+        // proper interior time advances toward the far gate.
 
         if (typeof w?.setInterior === 'function') {
           w.setInterior(visualFall.inside, exitDir);

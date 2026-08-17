@@ -176,7 +176,7 @@ const float K_DUST = 26.0;
 /** Overall extinction scale. */
 const float SIGMA = 0.00006;
 /** Overall emission scale. */
-const float EMIT = 0.000035;
+const float EMIT = 0.000014;
 /** How much of a sample's own light a dust lane blocks. Extinction alone
  *  only dims what is BEHIND a lane; this is what makes a lane also blank
  *  the gas it runs through, producing hard dark filaments. */
