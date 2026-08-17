@@ -287,6 +287,8 @@ export class App {
   /** Twenty minutes of deliberate inward flight opens the far gate. */
   private interiorTravelSeconds = 0;
   private interiorCommitted = false;
+  /** Seamless handoff from an open-world hole quad to the interior raymarch. */
+  private promotingHorizon = false;
   /** True while the Left-Alt gesture is held (cursor reappears). */
   private altHeld = false;
   /** True once the horizon warning has been shown for the current fall. */
@@ -2124,8 +2126,11 @@ export class App {
         this.scene.render();
         return;
       }
+      // World promotion disposes/rebuilds GPU resources asynchronously. Keep
+      // the last preserved frame instead of drawing a half-purged black scene.
+      if (this.switching) return;
 
-      if (this.world && !this.paused && !this.switching) {
+      if (this.world && !this.paused) {
         this.world.update(dt, this.ctx);
       }
 
@@ -2313,6 +2318,27 @@ export class App {
       const prevRegion = this.universe.current?.id ?? null;
       this.universe.updatePlayer(eye);
       const cur = this.universe.current;
+      const crossedOpenWorldHole = this.universe.insideHorizon;
+      if (crossedOpenWorldHole && !worldOwnsHole && !this.promotingHorizon) {
+        this.promotingHorizon = true;
+        this.ctx.focus = {
+          position: crossedOpenWorldHole.position.clone(),
+          radius: crossedOpenWorldHole.radius,
+          mass: crossedOpenWorldHole.mass,
+          seed: crossedOpenWorldHole.seed
+        };
+        // Defer until this frame has finished using its current scene. The
+        // player/camera coordinates are preserved, so this is a renderer
+        // promotion, not a teleport or a loading-screen transition.
+        window.setTimeout(() => {
+          void this.loadWorld('blackhole').finally(() => {
+            this.promotingHorizon = false;
+            this.camera.position.copyFrom(this.vehicle.position);
+            this.camera.setTarget(this.vehicle.lookTarget());
+          });
+        }, 0);
+      }
+      const horizonOwnsHole = worldOwnsHole || !!crossedOpenWorldHole;
       if ((cur?.id ?? null) !== prevRegion) {
         // arriving somewhere is just a position change, not a level load
         this.shell.onRegionChanged?.(cur);
@@ -2778,7 +2804,7 @@ export class App {
         // Allocation-free equivalent of the former descriptor literal:
         // r.kind === 'blackhole' · horizon: this.universe.horizonRadiusOf(r)
         let count = 0;
-        if (!worldOwnsHole) {
+        if (!horizonOwnsHole) {
           for (const r of this.universe.regions) {
             if (r.kind !== 'blackhole') continue;
             let src = this.holeRenderSources[count];
