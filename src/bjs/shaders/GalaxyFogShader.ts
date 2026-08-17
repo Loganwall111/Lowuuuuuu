@@ -519,9 +519,9 @@ void main(void) {
   // the core cannot bleach: a naive clamp() would drive (1.03, 0.93, 0.74)
   // to (1.00, 0.93, 0.74) and shift it toward white.
   float pk = max(col.r, max(col.g, col.b));
-  // Preserve hue but reserve display headroom for stars and black-hole disks.
-  // A 1.0-normalised galactic core becomes white after gamma and bloom.
-  if (pk > 0.42) col *= 0.42 / pk;
+  // Preserve hue but reserve aggressive display headroom for stars and
+  // black-hole disks. Even a .42 linear core became white after gamma+bloom.
+  if (pk > 0.12) col *= 0.12 / pk;
 
   col = pow(max(col, 0.0), vec3(1.0 / 2.2));
 

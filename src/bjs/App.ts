@@ -659,7 +659,11 @@ export class App {
     // Native pointer lock: clicking the canvas locks the mouse to the centre
     // so the view turns with a bare mouse move, no click-and-drag required.
     // Pointer lock only takes effect inside a user gesture, which a click is.
+    canvas.tabIndex = 0;
     canvas.addEventListener('click', () => {
+      // A previously focused range/number control otherwise keeps receiving
+      // W and makes flight appear frozen even though the render loop is live.
+      try { canvas.focus({ preventScroll: true }); } catch { canvas.focus(); }
       if (document.body.dataset.inputMode === 'ipad') return;
       if (this.vehicle.mode === 'freefly' || this.vehicle.mode === 'fly' ||
           this.vehicle.mode === 'walk') {
@@ -759,8 +763,13 @@ export class App {
 
     // ---- vehicle input. Ignored while typing into a field. ----
     const typing = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+      const t = e.target as HTMLInputElement | null;
+      if (!t) return false;
+      if (t.tagName === 'TEXTAREA' || t.isContentEditable) return true;
+      if (t.tagName !== 'INPUT') return false;
+      // Range, checkbox and button controls must not capture flight keys
+      // after a click. Only fields that genuinely accept typed characters do.
+      return ['text', 'search', 'number', 'email', 'url', 'password'].includes(t.type);
     };
     // Audio may only begin inside a user gesture, so arm it on the first
     // interaction of any kind and then stop listening.
@@ -2386,7 +2395,8 @@ export class App {
         // Interior distance is proper time, not the camera's Euclidean pass
         // through a sphere. Continuous W takes twenty real minutes; coasting
         // advances only faintly, so the journey is deliberate but never dead.
-        this.interiorTravelSeconds += dt * (this.thrusting ? 1 : 0.05);
+        this.interiorTravelSeconds += dt *
+          ((this.thrusting || this.keys.has('w') || this.keys.has('arrowup')) ? 1 : 0.05);
         const journey = Math.max(0, Math.min(1, this.interiorTravelSeconds / 1200));
         const visualFall = interiorPlanNow
           ? fallState(interiorPlanNow, interiorPlanNow.depth * journey)
@@ -2401,7 +2411,8 @@ export class App {
         // the camera crosses the coordinate centre. Guarantee a visible
         // proper-motion response to W even though the interior shader's
         // twenty-minute progression is intentionally very slow.
-        if (this.interiorCommitted && this.thrusting) {
+        const interiorThrust = this.thrusting || this.keys.has('w') || this.keys.has('arrowup');
+        if (this.interiorCommitted && interiorThrust) {
           const target = this.vehicle.lookTarget();
           target.subtractToRef(this.vehicle.position, this.cameraForward);
           if (this.cameraForward.lengthSquared() > 1e-8) {
