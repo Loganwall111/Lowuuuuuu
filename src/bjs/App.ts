@@ -2398,9 +2398,20 @@ export class App {
         const fallDir = bh.position.subtract(this.lastOutsidePos);
 
         // Once committed, UniverseState keeps the horizon latched even after
-        // the camera crosses the coordinate centre. Do not pin or zero the
-        // vehicle here: W must continue to produce real cockpit motion while
-        // proper interior time advances toward the far gate.
+        // the camera crosses the coordinate centre. Guarantee a visible
+        // proper-motion response to W even though the interior shader's
+        // twenty-minute progression is intentionally very slow.
+        if (this.interiorCommitted && this.thrusting) {
+          const target = this.vehicle.lookTarget();
+          target.subtractToRef(this.vehicle.position, this.cameraForward);
+          if (this.cameraForward.lengthSquared() > 1e-8) {
+            this.cameraForward.normalize();
+            this.vehicle.position.addInPlace(
+              this.cameraForward.scale(Math.max(35, this.vehicle.flySpeed * .4) * dt));
+            this.camera.position.copyFrom(this.vehicle.position);
+            this.camera.setTarget(this.vehicle.lookTarget());
+          }
+        }
 
         if (typeof w?.setInterior === 'function') {
           w.setInterior(visualFall.inside, exitDir);
