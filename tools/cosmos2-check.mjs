@@ -160,14 +160,15 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
     !/MeshBuilder|ShaderMaterial|BlackHoleWorld/.test(holeRend));
   ok('the pass lenses the actual rendered frame',
     /texture2D\(textureSampler,sourceUv\)/.test(holeFrag));
-  ok('the influence has a smooth outer fade',
-    /smoothstep\(influence\*\.78,influence,r\)/.test(holeFrag));
+  ok('the influence reaches zero before its boundary without a bubble seam',
+    /smoothstep\(influence\*\.42,influence\*\.90,r\)/.test(holeFrag));
   ok('the Einstein ring remains a distinct critical curve',
     /critical=horizon\*1\.52/.test(holeFrag));
   ok('the ring duplicates real background light', /vec3 secondary=texture2D/.test(holeFrag));
   ok('the event horizon is opaque black',
-    /mix\(lensed\+gas,vec3\(0\.\),shadow\)/.test(holeFrag));
-  ok('the output alpha is always one', /gl_FragColor=vec4\(col,1\.\)/.test(holeFrag));
+    /warped=mix\(warped,vec3\(0\.\),shadow\)/.test(holeFrag));
+  ok('the output alpha is always one',
+    /gl_FragColor=vec4\(max\(col,vec3\(0\.\)\),1\.\)/.test(holeFrag));
   ok('spawn-safe engagement is local', /buildWithin: 64/.test(holeRend));
   ok('the renderer cannot move universe coordinates', !/loadWorld|warpTo|position\.copyFrom/.test(holeRend));
 }

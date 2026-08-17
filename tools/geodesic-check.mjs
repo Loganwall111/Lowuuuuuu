@@ -15,14 +15,14 @@ ok('Schwarzschild bending falls with radius',/pow\(max\(rho2,1e-10\),1\.5\)/.tes
 ok('Kerr frame dragging depends on spin',/float drag=spin\*horizon\*horizon/.test(frag));
 ok('the critical curve is physical and continuous',/critical=horizon\*1\.52/.test(frag));
 ok('the Einstein ring contains a secondary background image',/vec3 secondary=texture2D/.test(frag));
-ok('the horizon is an opaque overwrite',/col=mix\(lensed\+gas,vec3\(0\.\),shadow\)/.test(frag));
-ok('fragment alpha is always opaque',/gl_FragColor=vec4\(col,1\.\)/.test(frag));
+ok('the horizon is an opaque overwrite',/warped=mix\(warped,vec3\(0\.\),shadow\)/.test(frag));
+ok('fragment alpha is always opaque',/gl_FragColor=vec4\(max\(col,vec3\(0\.\)\),1\.\)/.test(frag));
 ok('disk and shadow share the same screen-space centre',/vec2 d=vUV-center/.test(frag));
 ok('the disk has seeded turbulent filaments',/fbm\(vec2\(a\*2\.7\+seed/.test(frag));
 ok('the disk carries relativistic Doppler asymmetry',
   /beta\*radial\.x\*sign\(spin\)/.test(frag) && /doppler=pow\(dop,3\.\)/.test(frag));
 ok('the lens is aspect corrected',/resolution\.x\/max\(1\.,resolution\.y\)/.test(frag));
-ok('influence fades before the pass boundary',/smoothstep\(influence\*\.78,influence,r\)/.test(frag));
+ok('influence fades before the pass boundary',/smoothstep\(influence\*\.42,influence\*\.90,r\)/.test(frag));
 ok('there is no private synthetic star field',!/float star\s*=/.test(frag));
 ok('the renderer contains no black-hole MeshBuilder',!renderer.includes('MeshBuilder'));
 ok('the renderer is a full-screen PostProcess',renderer.includes('new PostProcess'));

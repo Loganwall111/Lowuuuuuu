@@ -203,7 +203,7 @@ export class PlanetField {
       const tint = planetTint(s.id, s.kind);
       // A gentle per-world brightness variation in the alpha channel, which
       // the shared shader multiplies against the limb-darkened body.
-      const lum = 0.72 + hash01(s.id + 'lum') * 0.28;
+      const lum = 0.34 + hash01(s.id + 'lum') * 0.22;
       colors[i * 4 + 0] = tint[0];
       colors[i * 4 + 1] = tint[1];
       colors[i * 4 + 2] = tint[2];

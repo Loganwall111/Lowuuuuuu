@@ -51,9 +51,15 @@ void main(){
 
  // The universe behind is visible only while the camera is truly aligned to
  // the recorded exit direction. This is a soft causal aperture, never a
- // whole-screen restoration of the exterior renderer.
- float ap=.22*(1.-depth*.58);
- float back=(1.-smoothstep(ap,ap+.065,r))*lookback;
+ // whole-screen restoration of the exterior renderer. The aperture is large
+ // enough to reacquire while steering, with a second gravitationally warped
+ // image around it so the old universe remains spatially legible.
+ float ap=.42*(1.-depth*.52);
+ float back=(1.-smoothstep(ap,ap+.075,r))*lookback;
+ float backHalo=smoothstep(ap*.72,ap,r)*(1.-smoothstep(ap+.055,ap+.30,r))*lookback;
+ vec2 backUv=.5+(vUV-.5)*(1.+backHalo*.9);
+ vec3 bentExterior=texture2D(textureSampler,clamp(backUv,vec2(.001),vec2(.999))).rgb;
+ col=mix(col,bentExterior,backHalo*.68);
  col=mix(col,exterior,back);
 
  // A destination condenses continuously near voyage completion while the

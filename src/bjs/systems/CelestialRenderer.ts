@@ -49,7 +49,8 @@ attribute vec3 position;
 attribute vec3 normal;
 attribute vec4 bodyColor;
 uniform mat4 viewProjection;
-uniform mat4 world;
+// world is supplied exactly once by <instancesDeclaration>. Declaring it
+// here as well is a WebGL2 redefinition error when instancing is disabled.
 // Supplied explicitly rather than relying on an engine-injected
 // vEyePosition, which is only defined for the built-in material paths.
 uniform vec3 eyePos;

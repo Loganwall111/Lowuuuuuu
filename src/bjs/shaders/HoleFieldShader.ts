@@ -64,6 +64,10 @@ void main(){
   if(r>influence){gl_FragColor=vec4(scene.rgb,1.);return;}
 
   vec2 radial=d/max(r,1e-7);
+  // All bending reaches exactly zero before the effect boundary. Without
+  // this field taper the differently sampled/graded interior ended at a
+  // circular seam—the translucent bubble reported around every hole.
+  float lensFade=1.-smoothstep(influence*.42,influence*.90,r);
 
   // Integrate the weak-field null-geodesic deflection in 32 affine steps.
   // The accumulated 2Rs/b term is the Schwarzschild Einstein bend; frame
@@ -76,8 +80,8 @@ void main(){
     float rho2=impact*impact+horizon*horizon*z*z;
     deflect+=(2.*horizon*horizon*impact/pow(max(rho2,1e-10),1.5))/32.;
   }
-  deflect*=horizon*7.2;
-  float drag=spin*horizon*horizon/max(r*r,horizon*horizon)*.16;
+  deflect*=horizon*7.2*lensFade;
+  float drag=spin*horizon*horizon/max(r*r,horizon*horizon)*.16*lensFade;
   float cs=cos(drag),sn=sin(drag);
   vec2 dragged=vec2(radial.x*cs-radial.y*sn,radial.x*sn+radial.y*cs);
   vec2 sourceD=dragged*(r+deflect);
@@ -94,6 +98,16 @@ void main(){
   vec2 mirrorUv=center+vec2(radial.x*mirroredR/aspect,radial.y*mirroredR);
   vec3 secondary=texture2D(textureSampler,clamp(mirrorUv,vec2(.001),vec2(.999))).rgb;
   lensed=mix(lensed,secondary,einstein*.82);
+
+  // A higher-order photon image wraps the opposite hemisphere back around
+  // the shadow. This is narrow and dimmer than the primary Einstein image,
+  // matching the repeated images produced by near-critical null geodesics.
+  float photonCritical=horizon*1.30;
+  float photonRing=exp(-pow((r-photonCritical)/max(horizon*.055,.0007),2.));
+  float tertiaryR=critical+abs(r-photonCritical)*4.8;
+  vec2 tertiaryUv=center-vec2(radial.x*tertiaryR/aspect,radial.y*tertiaryR);
+  vec3 tertiary=texture2D(textureSampler,clamp(tertiaryUv,vec2(.001),vec2(.999))).rgb;
+  lensed=mix(lensed,tertiary,photonRing*.58);
 
   // Relativistic accretion volume. It is evaluated in the same pass and
   // shares the exact same centre, so disk, shadow and lens cannot separate.
@@ -115,19 +129,19 @@ void main(){
   vec3 cool=vec3(.95,.20,.035), hot=vec3(1.,.88,.56);
   vec3 gas=mix(cool,hot,clamp(temperature,0.,1.));
   gas*=radialBand*beam*filaments*diskBright*(.18+.34*doppler);
-  gas=min(gas,vec3(2.4));
+  // Tone-map emitted gas only. Re-tonemapping the already graded background
+  // inside a circular coverage mask was the visible grey/purple bubble.
+  gas=tonemapACES(min(gas,vec3(2.4)));
 
   // Exactly opaque event horizon. Ordered edge masks are defined on every
   // GLSL implementation and alpha is always one.
   float shadowRadius=horizon*1.08;
   float shadow=1.-smoothstep(shadowRadius,shadowRadius+max(horizon*.08,.0008),r);
-  vec3 col=mix(lensed+gas,vec3(0.),shadow);
-  float coverage=1.-smoothstep(influence*.78,influence,r);
-  col=mix(scene.rgb,col,coverage);
-  col=min(col,vec3(1.6));
-  col=tonemapACES(col);
-  col=clamp(col,0.0,1.0);
-  gl_FragColor=vec4(col,1.);
+  vec3 warped=mix(scene.rgb,lensed,lensFade)+gas;
+  warped=mix(warped,vec3(0.),shadow);
+  float coverage=max(shadow,max(lensFade,radialBand));
+  vec3 col=mix(scene.rgb,warped,clamp(coverage,0.,1.));
+  gl_FragColor=vec4(max(col,vec3(0.)),1.);
 }`;
 
 export const HOLE_FIELD_FRAG=FRAG;

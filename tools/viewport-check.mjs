@@ -20,12 +20,13 @@ ok('the Doppler boost is clamped to a physically reachable value', (() => {
   const m = hole.match(/clamp\(dop,\.2,([\d.]+)\)/);
   return m && Number(m[1]) <= 2.6;
 })());
-ok('brightness cannot run away before tone mapping',
-  /col=min\(col,vec3\([\d.]+\)\)/.test(hole));
-ok('a named ACES curve is applied to the final colour',
-  /vec3 tonemapACES\(vec3 x\)/.test(hole) && /col=tonemapACES\(col\)/.test(hole));
-ok('the output is clamped after tone mapping',
-  /col=clamp\(col,0\.0,1\.0\)/.test(hole));
+ok('emission cannot run away before tone mapping',
+  /gas=tonemapACES\(min\(gas,vec3\([\d.]+\)\)\)/.test(hole));
+ok('the named ACES curve is applied only to emitted gas',
+  /vec3 tonemapACES\(vec3 x\)/.test(hole) &&
+  /gas=tonemapACES/.test(hole) && !/col=tonemapACES/.test(hole));
+ok('the already graded universe is never tone-mapped a second time',
+  /vec3 warped=mix\(scene\.rgb,lensed,lensFade\)\+gas/.test(hole));
 ok('the disk edge dissolves with zero slope, not a hard rim',
   /outerRamp \* outerRamp/.test(hole));
 
@@ -49,7 +50,7 @@ ok('the disk edge dissolves with zero slope, not a hard rim',
   const aces = (x) => (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14);
   // The shader's own pre-clamp ceiling, read from source so the test
   // cannot drift from the thing it is checking.
-  const ceil = Number((hole.match(/col=min\(col,vec3\(([\d.]+)\)\)/) || [0, 1.6])[1]);
+  const ceil = Number((hole.match(/min\(gas,vec3\(([\d.]+)\)\)/) || [0, 2.4])[1]);
   const shade = (v) => aces(Math.min(v, ceil));
   const raw = integrate(cap);
   ok('integrated emission stays in tonemappable range', raw < 24, raw.toFixed(1));

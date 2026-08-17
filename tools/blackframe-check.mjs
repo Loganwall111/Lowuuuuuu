@@ -31,6 +31,7 @@ const intro = readFileSync(new URL('../src/bjs/ui/IntroOverlay.ts', import.meta.
 const skySafety = readFileSync(new URL('../src/bjs/systems/SkySafetyPass.ts', import.meta.url), 'utf8');
 const holeShader = readFileSync(new URL('../src/bjs/shaders/HoleFieldShader.ts', import.meta.url), 'utf8');
 const holeRenderer = readFileSync(new URL('../src/bjs/systems/HoleFieldRenderer.ts', import.meta.url), 'utf8');
+const celestial = readFileSync(new URL('../src/bjs/systems/CelestialRenderer.ts', import.meta.url), 'utf8');
 
 console.log('\nblack frame: drawing, but nothing visible');
 ok('the extreme-sky shader avoids the WebGL2 reserved word active',
@@ -44,6 +45,8 @@ ok('the singularity shader also avoids the reserved word active',
 ok('the singularity lens compiles lazily and fails open',
   /ensurePass\(\)/.test(holeRenderer) && /onEffectErrorObservable/.test(holeRenderer) &&
   /this\.pass\?\.dispose\(\)/.test(holeRenderer));
+ok('the instanced celestial shader declares world exactly once through its include',
+  !/uniform mat4 world;/.test(celestial) && /#include<instancesDeclaration>/.test(celestial));
 
 /* ------------- 1. HDR must be conditional on real capability ------------ */
 

@@ -2103,7 +2103,7 @@ export class App {
     }
     // effects follow the preset; each set() is individually guarded in PostFX
     this.postfx.set('bloom', p.bloom ? 0.55 : 0);
-    this.postfx.set('grain', p.grain ? 3.0 : 0);
+    this.postfx.set('grain', 0);
     this.postfx.set('chromatic', p.chromatic ? 2.0 : 0);
     this.postfx.set('sharpen', p.sharpen ? 0.25 : 0);
     this.postfx.set('fxaa', p.fxaa ? 1 : 0);
@@ -2573,7 +2573,10 @@ export class App {
         const viewLen = Math.max(1e-6, this.cameraForward.length());
         const exitLen = Math.max(1e-6, exitDir.length());
         const lookDot = Vector3.Dot(this.cameraForward, exitDir) / (viewLen * exitLen);
-        const lookAim = Math.max(0, Math.min(1, (lookDot - .55) / .40));
+        // Begin revealing across the rear hemisphere and reach full strength
+        // well before pixel-perfect alignment, so mouse steering can actually
+        // find the universe behind the horizon.
+        const lookAim = Math.max(0, Math.min(1, (lookDot + .12) / .62));
         // Exterior holes only borrow the canonical opaque core response; they
         // never replace the universe with BlackHoleWorld's private sky. The
         // native continuum owns the post-horizon viewport in-place.
