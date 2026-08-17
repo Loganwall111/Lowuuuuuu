@@ -84,12 +84,11 @@ console.log('\n— every backdrop layer is permanently drawn —');
       src.includes('alwaysSelectAsActiveMesh = true'),
       'flying high above the galactic plane must never cull this layer');
   }
-  // The canonical material uses one clip-space triangle, never a billboard.
+  // The rewritten singularity is a full-screen post-process. It has no mesh
+  // or billboard to frustum-cull and therefore cannot become a floating card.
   const hole = read('src/bjs/systems/HoleFieldRenderer.ts');
-  ok('the unified hole lens is a culling-proof canonical material',
-    hole.includes('WORKING_SINGULARITY_FRAG') &&
-    hole.includes('alwaysSelectAsActiveMesh=true') &&
-    !hole.includes('MeshBuilder'));
+  ok('the unified hole lens is a culling-proof full-screen pass',
+    hole.includes('new PostProcess') && !hole.includes('MeshBuilder'));
 }
 
 console.log('\n— the entry still hands the player to the multiverse —');

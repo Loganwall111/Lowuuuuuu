@@ -47,6 +47,7 @@ const PAIRS = [
    ['src/bjs/worlds/PlanetaryWorld.ts', 'src/bjs/worlds/SandboxWorld.ts', 'src/bjs/PlanetMaps.ts']],
   ['src/bjs/worlds/PlanetaryWorld.ts', 'ATMO_VERT', 'ATMO_FRAG', ['src/bjs/worlds/PlanetaryWorld.ts']],
   ['src/bjs/shaders/PortalShader.ts', 'PORTAL_VERT', 'PORTAL_FRAG', ['src/bjs/systems/PortalSystem.ts']],
+  ['src/bjs/shaders/HoleFieldShader.ts', 'VERT', 'FRAG', ['src/bjs/systems/HoleFieldRenderer.ts']],
   ['src/bjs/shaders/SunShader.ts', 'CORONA_VERT', 'CORONA_FRAG', ['src/bjs/worlds/PlanetaryWorld.ts']],
   ['src/bjs/shaders/SunShader.ts', 'GLARE_VERT', 'GLARE_FRAG', ['src/bjs/worlds/PlanetaryWorld.ts']]
 ];

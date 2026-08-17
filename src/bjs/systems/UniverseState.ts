@@ -283,8 +283,8 @@ export class UniverseState {
       });
     };
 
-    if (!near('ocean', 900)) place('ocean', 'Home II', '🌊', 260, 34);
-    if (!near('terrain', 900)) place('terrain', 'Home III', '⛰', 400, 30);
+    if (!near('ocean', 900)) place('ocean', 'Home II', '🌊', 320, 58);
+    if (!near('terrain', 900)) place('terrain', 'Home III', '⛰', 520, 52);
     // The player must always have a black hole within reach, or the whole
     // singularity half of the game is gated behind a long random search.
     // But a lone hole floating in empty space is exactly the "random
@@ -323,7 +323,9 @@ export class UniverseState {
       const kindRoll = rng();
       const kind: RegionKind = kindRoll < 0.25 ? 'ocean'
         : kindRoll < 0.55 ? 'terrain' : 'planet';
-      const surface = 18 + rng() * 42;
+      // Planetary bodies use a larger astronomical presentation scale so
+      // perspective growth is readable over interplanetary approach.
+      const surface = 34 + rng() * 72;
       const inclination = (rng() - 0.5) * 0.24;
       this.regions.push({
         id: this.nextId('pl'),

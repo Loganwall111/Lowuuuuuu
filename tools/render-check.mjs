@@ -528,16 +528,16 @@ console.log('\n— travelling to a black hole —');
   const src = read('src/bjs/systems/HoleFieldRenderer.ts');
   // Shadow, disk and lens are projected from one region into one full-screen
   // pass. There is no transform or blend surface that can drift.
-  ok('a moved hole is rebound by a single call',
-    /setVector3\('holePos',nearest\.position\)/.test(src) && /this\.active\.spec=nearest/.test(src));
-  ok('the hole uses the canonical fullscreen material',
-    /new ShaderMaterial/.test(src) && /depthFunction=519/.test(src));
+  ok('a moved hole is reprojected by a single call',
+    /Vector3\.Project/.test(src) && /this\.active\.spec = nearest/.test(src));
+  ok('the hole composites as a depthless post-process',
+    /new PostProcess/.test(src) && !/disableDepthWrite/.test(src));
   ok('the pass uses opaque overwrite rather than mesh blending',
     !/needAlphaBlending|alphaMode/.test(src));
   ok('holes are released once out of range',
-    /if\(!nearest\)/.test(src) && /this\.active=null;this\.mesh\.setEnabled\(false\)/.test(src));
+    /if \(!nearest\)/.test(src) && /this\.active = null/.test(src));
   ok('the release threshold exceeds the build threshold, avoiding thrash',
-    /buildWithin:64/.test(src) && /releaseBeyond:84/.test(src));
+    /buildWithin: 64/.test(src) && /releaseBeyond: 84/.test(src));
 
   const app = read('src/bjs/App.ts');
   ok('the app owns a hole field', app.includes('new HoleFieldRenderer()'));
@@ -793,8 +793,8 @@ console.log('\n— every black hole is raymarched, never geometry —');
     'a real accretion disk is volumetric, not a solid ring of geometry');
   ok('the hole field builds no glow sphere',
     !/CreateSphere/.test(hfr));
-  ok('the hole field renders through the exact canonical shader material',
-    /WORKING_SINGULARITY_FRAG/.test(hfr) && /ShaderMaterial/.test(hfr) && !/MeshBuilder/.test(hfr));
+  ok('the hole field renders through a full-screen shader pass',
+    /PostProcess/.test(hfr) && !/ShaderMaterial|MeshBuilder/.test(hfr));
 
   // Each hole must carry its own look, or they are all the same object.
   // A missing file must FAIL, not crash the run and hide every later check.

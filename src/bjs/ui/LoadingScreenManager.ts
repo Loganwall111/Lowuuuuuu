@@ -195,8 +195,11 @@ export class LoadingScreenManager {
       const u = new U(LOADING_TELEMETRY.map((x) => x.replace(/\.\.\.$/, '.')).join(' '));
       u.onend = () => { this.speechDone = true; };
       u.onerror = () => { this.speechDone = true; };
-      u.pitch = 0.9;
-      u.rate = 0.82;
+      // A calm feminine mission-controller register. Named feminine system
+      // voices are preferred below; pitch/rate keep generic fallbacks from
+      // dropping into the former low masculine delivery.
+      u.pitch = 1.12;
+      u.rate = 0.88;
       u.volume = 0.95;
       const voices = synth.getVoices?.() ?? [];
       const pick = voices.find((v) => /samantha|zira|aria|jenny|karen|veena|moira/i.test(v.name))

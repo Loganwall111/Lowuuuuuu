@@ -890,6 +890,18 @@ export class App {
       onSettingsHudTheme: (id) => {
         this.flightHud.setTheme(id as 'suit' | 'satellite' | 'legacy');
       },
+      onSettingsMusic: (enabled, volume) => {
+        this.music.setVolume(volume);
+        this.music.setMusicEnabled(enabled);
+      },
+      onSettingsControl: (key, value) => {
+        if (key === 'sensitivity' && typeof value === 'number') {
+          this.mouse.opts.sensitivity = 0.0022 * Math.max(.5, Math.min(2, value));
+        } else if (key === 'reducedMotion') {
+          document.body.dataset.reducedMotion = value ? '1' : '0';
+          this.warpTunnel.setEnabled(!value);
+        }
+      },
       onCreateUniverse: (mode, spawn, name) => {
         this.createNewUniverse(mode, spawn, name);
       },
@@ -2523,19 +2535,14 @@ export class App {
         const exitLen = Math.max(1e-6, exitDir.length());
         const lookDot = Vector3.Dot(this.cameraForward, exitDir) / (viewLen * exitLen);
         const lookAim = Math.max(0, Math.min(1, (lookDot - .55) / .40));
-        // The exact material used by the known-good Singularity locale now
-        // owns every open-world exterior and interior pixel. HorizonContinuum
-        // remains attached as a zero-intensity safety carrier, so there can
-        // never be two competing black-hole materials in one frame.
+        // Exterior holes only borrow the canonical opaque core response; they
+        // never replace the universe with BlackHoleWorld's private sky. The
+        // native continuum owns the post-horizon viewport in-place.
+        const continuumDepth = 0.16 + journey * 0.84;
+        this.horizonContinuum.update(
+          dt, continuumDepth, stableExit * lookAim, bh.seed ?? 1);
         const visualDarkness = interiorPlanNow?.gargantua
           ? Math.max(0, Math.min(1, (visualFall.progress - .82) / .18)) : 0;
-        this.holeField.setInterior({
-          inside: visualFall.inside, exitWindow: stableExit,
-          nestedLens: visualFall.nestedLens, singularity: visualFall.singularity,
-          darkness: visualDarkness, exitDir,
-          fallDir: fallDir.lengthSquared() > 1e-9 ? fallDir : new Vector3(0, 0, 1)
-        });
-        this.horizonContinuum.update(dt, 0, 0, bh.seed ?? 1);
         if (typeof w?.setDescent === 'function') {
           w.setDescent({
             inside: visualFall.inside,
@@ -2570,7 +2577,6 @@ export class App {
         this.deepGateDelivered = false;
         this.interiorTravelSeconds = 0;
         this.interiorCommitted = false;
-        this.holeField.setInterior(null);
         this.horizonContinuum.update(dt, 0, 0, 0);
         if (typeof w?.setInterior === 'function') {
           w.setInterior(0, new Vector3(0, 0, -1));
@@ -2885,21 +2891,9 @@ export class App {
         // Allocation-free equivalent of the former descriptor literal:
         // r.kind === 'blackhole' · horizon: this.universe.horizonRadiusOf(r)
         let count = 0;
-        if (!worldOwnsHole) {
-          // A swept warp crossing can leave the source chunk in one frame;
-          // keep the captured singularity as material owner regardless of
-          // streaming, then append other nearby holes without duplicating it.
-          const captured = this.universe.insideHorizon;
-          if (captured) {
-            let src = this.holeRenderSources[count];
-            if (!src) src = this.holeRenderSources[count] =
-              { id: '', position: captured.position, horizon: 1, seed: 1 };
-            src.id = captured.id; src.position = captured.position;
-            src.horizon = this.universe.horizonRadiusOf(captured);
-            src.seed = captured.seed ?? 1; count++;
-          }
+        if (!horizonOwnsHole) {
           for (const r of this.universe.regions) {
-            if (r.kind !== 'blackhole' || r.id === captured?.id) continue;
+            if (r.kind !== 'blackhole') continue;
             let src = this.holeRenderSources[count];
             if (!src) {
               src = { id: '', position: r.position, horizon: 1, seed: 1 };

@@ -347,17 +347,17 @@ function makeRegion(
     case 'ocean':
       return { id, kind, name, glyph: '🌊', position,
         radius: 62 + rng() * 40, mass: 240 + rng() * 220,
-        surfaceRadius: 30 + rng() * 16,
+        surfaceRadius: 46 + rng() * 34,
         seed: (hashChunk(cx, cy, cz, i * 47 + 17) % 100000) };
     case 'terrain':
       return { id, kind, name, glyph: '⛰', position,
         radius: 62 + rng() * 40, mass: 240 + rng() * 220,
-        surfaceRadius: 30 + rng() * 16,
+        surfaceRadius: 46 + rng() * 34,
         seed: (hashChunk(cx, cy, cz, i * 53 + 19) % 100000) };
     default:
       return { id, kind: 'planet', name, glyph: '🪐', position,
         radius: 54 + rng() * 44, mass: 200 + rng() * 260,
-        surfaceRadius: 26 + rng() * 18,
+        surfaceRadius: 42 + rng() * 38,
         seed: (hashChunk(cx, cy, cz, i * 59 + 23) % 100000) };
   }
 }

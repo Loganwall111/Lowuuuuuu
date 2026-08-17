@@ -523,8 +523,8 @@ export const INTRO_CSS = `
 
 /* ---- title-screen settings panel ---- */
 .intro-settings-panel{
-  position:relative; width:min(430px,84vw); margin-top:20px; text-align:left;
-  padding:16px 18px 18px;
+  position:relative; width:min(520px,88vw); margin-top:20px; text-align:left;
+  max-height:72vh; overflow:auto; padding:16px 18px 18px;
   background:linear-gradient(160deg,rgba(10,18,34,.96),rgba(6,11,22,.92));
   border:1px solid rgba(110,170,240,.24); border-radius:10px;
   box-shadow:0 24px 70px rgba(0,0,0,.65), 0 0 0 1px rgba(80,160,255,.08);
@@ -565,6 +565,9 @@ export const INTRO_CSS = `
 .is-input::placeholder{ color:rgba(150,200,250,.4); }
 .is-input:focus{ outline:none; border-color:var(--acc,#00f0ff);
   box-shadow:0 0 12px rgba(0,240,255,.25); }
+.is-label input[type="range"]{width:100%;margin-top:8px;accent-color:#36cfff;}
+.is-help{font-size:10px;line-height:1.65;color:rgba(190,220,255,.68);
+  padding:9px 10px;border-left:2px solid rgba(54,207,255,.5);background:rgba(20,50,80,.22);}
 
 /* The launch row: Play / Settings / Quit, centred and moved up. */
 .intro-launchrow{ display:flex; gap:14px; align-items:center; justify-content:center;
@@ -674,6 +677,9 @@ export interface IntroHooks {
   onSettingsQuality?(name: string): void;
   /** Optional: switches the HUD theme from the title-screen settings. */
   onSettingsHudTheme?(id: string): void;
+  /** Music can be previewed and mixed before launch. */
+  onSettingsMusic?(enabled: boolean, volume: number): void;
+  onSettingsControl?(key: string, value: number | boolean): void;
   /** Optional: builds a fresh universe at the chosen spawn preset. */
   onCreateUniverse?(mode: string, spawn: string, name: string): void;
   /** Optional: the Quit button, which returns to the desktop. */
@@ -880,6 +886,16 @@ export class IntroOverlay {
       '<button class="is-btn on" data-hud="suit">Exosuit</button>' +
       '<button class="is-btn" data-hud="satellite">Satellite</button>' +
       '<button class="is-btn" data-hud="legacy">Legacy</button></div></div>' +
+      '<div class="is-grp"><div class="is-label">Audio</div><div class="is-row">' +
+      '<button class="is-btn on" data-music="on">Music On</button>' +
+      '<button class="is-btn" data-music="off">Music Off</button></div>' +
+      '<label class="is-label">Music Volume <input data-volume type="range" min="0" max="1" step="0.05" value="0.46"></label></div>' +
+      '<div class="is-grp"><div class="is-label">Flight & Camera</div>' +
+      '<label class="is-label">Mouse Sensitivity <input data-sensitivity type="range" min="0.5" max="2" step="0.1" value="1"></label>' +
+      '<div class="is-row"><button class="is-btn" data-motion="reduced">Reduced VFX</button>' +
+      '<button class="is-btn on" data-motion="full">Full VFX</button></div></div>' +
+      '<div class="is-grp"><div class="is-label">Controls</div>' +
+      '<div class="is-help">WASD flight · 1/2/3 speed gears · F5 external ship · P portal · J land · Left-Alt cursor</div></div>' +
       '<button class="is-close">Close</button>';
     p.querySelectorAll<HTMLElement>('[data-q]').forEach((b) => {
       b.onclick = () => {
@@ -893,6 +909,24 @@ export class IntroOverlay {
         p.querySelectorAll<HTMLElement>('[data-hud]').forEach((x) => x.classList.remove('on'));
         b.classList.add('on');
         this.hooks.onSettingsHudTheme?.(b.dataset.hud ?? 'suit');
+      };
+    });
+    const volume = p.querySelector<HTMLInputElement>('[data-volume]')!;
+    p.querySelectorAll<HTMLElement>('[data-music]').forEach((b) => {
+      b.onclick = () => {
+        p.querySelectorAll<HTMLElement>('[data-music]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        this.hooks.onSettingsMusic?.(b.dataset.music === 'on', Number(volume.value));
+      };
+    });
+    volume.oninput = () => this.hooks.onSettingsMusic?.(true, Number(volume.value));
+    const sensitivity = p.querySelector<HTMLInputElement>('[data-sensitivity]')!;
+    sensitivity.oninput = () => this.hooks.onSettingsControl?.('sensitivity', Number(sensitivity.value));
+    p.querySelectorAll<HTMLElement>('[data-motion]').forEach((b) => {
+      b.onclick = () => {
+        p.querySelectorAll<HTMLElement>('[data-motion]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        this.hooks.onSettingsControl?.('reducedMotion', b.dataset.motion === 'reduced');
       };
     });
     p.querySelector<HTMLElement>('.is-close')!.onclick = () => p.classList.add('intro-hide');

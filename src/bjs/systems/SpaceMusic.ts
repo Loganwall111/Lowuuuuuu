@@ -69,7 +69,9 @@ export interface MusicSettings {
 }
 
 export const DEFAULT_MUSIC: MusicSettings = {
-  volume: 0.34,
+  // Present enough to carry exploration, while retaining headroom for HUD
+  // warnings and portal transients.
+  volume: 0.46,
   // E2. Deep enough to sit in the chest rather than the ear - the vast,
   // underwater register a Subnautica-style score lives in.
   rootHz: 82.4,
@@ -197,6 +199,13 @@ export class SpaceMusic {
     this.musicOn = v;
     if (this.musicGain && this.ctx) {
       this.ramp(this.musicGain.gain, v ? this.settings.volume : 0, 0.6);
+    }
+  }
+
+  setVolume(v: number): void {
+    this.settings.volume = Math.max(0, Math.min(1, Number.isFinite(v) ? v : .46));
+    if (this.musicGain && this.ctx && this.musicOn) {
+      this.ramp(this.musicGain.gain, this.settings.volume, .25);
     }
   }
 

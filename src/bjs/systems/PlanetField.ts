@@ -45,9 +45,11 @@ export interface PlanetFieldOptions {
 }
 
 export const DEFAULT_PLANET_FIELD: PlanetFieldOptions = {
-  range: 3600,
-  rebuildAfter: 220,
-  maxBodies: 140
+  // Real geometry takes over well before a world is visibly a disc, and its
+  // transform is refreshed often enough that approach growth is continuous.
+  range: 18000,
+  rebuildAfter: 18,
+  maxBodies: 180
 };
 
 /** Base colour per world kind, linear RGB 0..1. */
@@ -155,10 +157,15 @@ export class PlanetField {
    */
   update(regions: readonly {
     id: string; kind: string; position: Vector3; surfaceRadius?: number;
+    orbitParentId?: string;
   }[], eye: Vector3): boolean {
     if (!this.mesh || !this.on) return false;
     this.mat?.setVector3('eyePos', eye);
-    if (Vector3.Distance(eye, this.lastBuild) < this.opts.rebuildAfter) {
+    // Orbiting worlds move even while the viewer is still. Their instance
+    // matrices therefore refresh continuously; static fields retain the
+    // distance throttle.
+    const liveOrbits = regions.some((r) => !!r.orbitParentId);
+    if (!liveOrbits && Vector3.Distance(eye, this.lastBuild) < this.opts.rebuildAfter) {
       return false;
     }
     this.lastBuild.copyFrom(eye);

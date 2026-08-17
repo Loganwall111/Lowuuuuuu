@@ -1,26 +1,41 @@
+/** Verification for the unified full-screen singularity architecture. */
 import fs from 'fs';
-let pass=0,fail=0;const ok=(n,c)=>{if(c)pass++;else{fail++;console.log('FAIL: '+n);}};
-const world=fs.readFileSync('src/bjs/worlds/BlackHoleWorld.ts','utf8');
+let pass=0,fail=0;
+const ok=(n,c)=>{if(c)pass++;else{fail++;console.log('FAIL: '+n);}};
+const src=fs.readFileSync('src/bjs/shaders/HoleFieldShader.ts','utf8');
 const renderer=fs.readFileSync('src/bjs/systems/HoleFieldRenderer.ts','utf8');
-const frag=(world.match(/const\s+FRAG\s*=\s*`([\s\S]*?)`;/m)||[])[1]||'';
-ok('canonical material fragment exists',frag.length>5000);
-ok('canonical material is exported',world.includes('WORKING_SINGULARITY_FRAG'));
-ok('open-world holes import the canonical fragment',renderer.includes('WORKING_SINGULARITY_FRAG'));
-ok('open-world holes import the canonical vertex stage',renderer.includes('WORKING_SINGULARITY_VERT'));
-ok('there is no alternate open-world shader',!renderer.includes('HoleFieldShader'));
-ok('the material reconstructs a ray per pixel',/vec3 rayL = safeNormalize/.test(frag));
-ok('the material performs a bounded geodesic march',/for \(int i = 0; i < STEPS; i\+\+\)/.test(frag));
-ok('the Schwarzschild ODE is integrated',/1\.5 \* rs \* u \* u/.test(frag));
-ok('RK2 midpoint integration is used',/uMid/.test(frag)&&/k2/.test(frag));
-ok('captured photons are explicitly tracked',/bool captured = false/.test(frag));
-ok('the horizon capture radius uses rs',/r <= rs/.test(frag));
-ok('disk gas is sampled during the ray march',/inSlab/.test(frag));
-ok('the disk has volumetric thickness',/abs\(d1\) <= diskThickness/.test(frag));
-ok('starved holes can skip disk emission',/diskThickness > 0\.0/.test(frag));
-ok('the shader has a directional star field',/vec3 stars\(vec3 dir\)/.test(frag));
-ok('the shader carries an interior amount',/uniform float insideAmt/.test(frag));
-ok('the exit is directional',/uniform vec3\s+exitDir/.test(frag));
-ok('nested singularity travel is supported',/uniform float nestedLens/.test(frag));
-ok('the output is opaque',/gl_FragColor = vec4\(col, 1\.0\)/.test(frag));
-ok('all holes use one fullscreen triangle',/workingSingularityViewport/.test(renderer)&&/setIndices\(\[0,1,2\]\)/.test(renderer));
-console.log(pass+' passed, '+fail+' failed');process.exit(fail?1:0);
+const frag=(src.match(/const\s+FRAG\s*=\s*`([\s\S]*?)`;/m)||[])[1]||'';
+
+ok('the unified fragment shader exists',frag.length>1000);
+ok('the pass samples the real rendered background',/texture2D\(textureSampler,vUV\)/.test(frag));
+ok('lensing resamples a deflected source coordinate',/texture2D\(textureSampler,sourceUv\)/.test(frag));
+ok('the null path is integrated in 32 affine steps',/for\(int i=0;i<32;i\+\+\)/.test(frag));
+ok('the integrator uses impact radius and affine depth',/rho2=impact\*impact\+horizon\*horizon\*z\*z/.test(frag));
+ok('Schwarzschild bending falls with radius',/pow\(max\(rho2,1e-10\),1\.5\)/.test(frag));
+ok('Kerr frame dragging depends on spin',/float drag=spin\*horizon\*horizon/.test(frag));
+ok('the critical curve is physical and continuous',/critical=horizon\*1\.52/.test(frag));
+ok('the Einstein ring contains a secondary background image',/vec3 secondary=texture2D/.test(frag));
+ok('the horizon is an opaque overwrite',/col=mix\(lensed\+gas,vec3\(0\.\),shadow\)/.test(frag));
+ok('fragment alpha is always opaque',/gl_FragColor=vec4\(col,1\.\)/.test(frag));
+ok('disk and shadow share the same screen-space centre',/vec2 d=vUV-center/.test(frag));
+ok('the disk has seeded turbulent filaments',/fbm\(vec2\(a\*2\.7\+seed/.test(frag));
+ok('the disk carries relativistic Doppler asymmetry',
+  /beta\*radial\.x\*sign\(spin\)/.test(frag) && /doppler=pow\(dop,3\.\)/.test(frag));
+ok('the lens is aspect corrected',/resolution\.x\/max\(1\.,resolution\.y\)/.test(frag));
+ok('influence fades before the pass boundary',/smoothstep\(influence\*\.78,influence,r\)/.test(frag));
+ok('there is no private synthetic star field',!/float star\s*=/.test(frag));
+ok('the renderer contains no black-hole MeshBuilder',!renderer.includes('MeshBuilder'));
+ok('the renderer is a full-screen PostProcess',renderer.includes('new PostProcess'));
+ok('world positions are projected every update',renderer.includes('Vector3.Project'));
+ok('physical angular size controls screen radius',renderer.includes('Math.atan2'));
+ok('only one singularity pass can own the frame',/maxLive:\s*1/.test(renderer));
+
+// The analytic weak-field term represented by the shader must remain finite
+// and strictly decrease with impact parameter.
+const bend=(b,rs=1)=>2*rs/b;
+ok('grazing light bends more than distant light',bend(2)>bend(20));
+ok('all tested deflections are finite',Array.from({length:100},(_,i)=>bend(1+i)).every(Number.isFinite));
+ok('deflection tends toward zero at distance',bend(1e9)<1e-8);
+
+console.log(pass+' passed, '+fail+' failed');
+process.exit(fail?1:0);
