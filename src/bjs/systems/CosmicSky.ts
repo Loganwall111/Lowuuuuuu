@@ -145,7 +145,10 @@ export class CosmicSky {
       dome.renderingGroupId = 0;
       dome.isPickable = false;
       dome.applyFog = false;
-      dome.infiniteDistance = false;
+      // Translation-free sky matrix. Copying a 300,000,000-unit camera
+      // coordinate into a Float32 world transform destroys the dome radius
+      // and collapses the whole background to black.
+      dome.infiniteDistance = true;
       // The dome surrounds the camera; culling it is wasted work and can
       // pop the whole sky out of view.
       dome.alwaysSelectAsActiveMesh = true;
@@ -208,9 +211,10 @@ export class CosmicSky {
     this.time += step;
     this.state.zoom = advanceZoom(this.state.zoom, step, thrusting, this.state.medium);
     if (this.dome && eye) {
-      // Locked to the eye, so the sky is unreachable no matter how far you
-      // fly. Parallax comes from the star shells in front of it.
-      this.dome.position.copyFrom(eye);
+      // infiniteDistance removes camera translation in the view matrix. Keep
+      // the mesh at a small local origin so extreme universe coordinates can
+      // never quantize its vertices or radius away.
+      this.dome.position.setAll(0);
     }
     this.apply();
   }

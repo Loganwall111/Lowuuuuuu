@@ -121,7 +121,9 @@ export class StarFieldRenderer {
       const dir = o.position.subtract(eye);
       const len = dir.length();
       const unit = len > 1e-6 ? dir.scale(1 / len) : new Vector3(0, 0, 1);
-      particle.position = unit.scale(shell).add(eye);
+      // Store camera-local shell coordinates. Absolute positions hundreds of
+      // millions of units wide collapse to identical Float32 vertices.
+      particle.position = unit.scale(shell);
       particle.color = s.color;
     });
 
@@ -141,6 +143,8 @@ export class StarFieldRenderer {
       mesh.isPickable = false;
       mesh.applyFog = false;
       mesh.alwaysSelectAsActiveMesh = true;
+      mesh.infiniteDistance = true;
+      mesh.position.setAll(0);
       const m = mesh.material as any;
       if (m) {
         m.disableLighting = true;

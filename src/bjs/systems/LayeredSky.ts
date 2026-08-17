@@ -299,10 +299,20 @@ export class LayeredSky {
    * Cheap: three transform writes, no geometry touched.
    */
   update(eye: Vector3): void {
+    const extreme = Math.max(Math.abs(eye.x), Math.abs(eye.y), Math.abs(eye.z)) > 1e6;
     for (const mesh of this.meshes) {
       const lock = (mesh.metadata?.lock as number) ?? 0;
       if (lock <= 0) continue;
-      mesh.position.set(eye.x * lock, eye.y * lock, eye.z * lock);
+      if (extreme) {
+        // At intergalactic coordinates Float32 cannot represent the shell's
+        // hundreds-of-unit radius next to the camera's hundreds of millions.
+        // Translation-free mode trades tiny parallax for a guaranteed sky.
+        mesh.infiniteDistance = true;
+        mesh.position.setAll(0);
+      } else {
+        mesh.infiniteDistance = false;
+        mesh.position.set(eye.x * lock, eye.y * lock, eye.z * lock);
+      }
     }
   }
 

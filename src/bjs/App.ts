@@ -944,7 +944,7 @@ export class App {
   private createNewUniverse(mode: string, spawn: string, name: string): void {
     if (this.launchStarted) return;
     this.universe.reseed();
-    this.launchUniverse(mode, spawn, name);
+    this.launchUniverse(mode, spawn, name, true);
   }
 
   /**
@@ -955,7 +955,7 @@ export class App {
    * built behind that canvas; no cockpit node is revealed until both the
    * background task and the spoken cinematic have completed.
    */
-  private launchUniverse(mode: string, spawn: string, name: string): void {
+  private launchUniverse(mode: string, spawn: string, name: string, prologue = false): void {
     if (this.launchStarted) return;
     this.launchStarted = true;
     this.inMenu = false;
@@ -1020,7 +1020,7 @@ export class App {
         await new Promise<void>((resolve) => requestAnimationFrame(() =>
           requestAnimationFrame(() => resolve())));
       }
-    });
+    }, prologue);
   }
 
   /** Resolves when Babylon is ready, or after a strict non-blocking timeout. */

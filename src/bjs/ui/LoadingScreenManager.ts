@@ -62,6 +62,7 @@ export class LoadingScreenManager {
   private speechDone = true;
   private lastTyped = '';
   private spoken = false;
+  private prologueDuration = 0;
   /** Frost is deliberately 15 fps; high-frequency grain was starving WebGL. */
   private lastFrostDraw = -Infinity;
   private frostCleared = false;
@@ -75,9 +76,10 @@ export class LoadingScreenManager {
   get isRunning(): boolean { return this.running; }
 
   /** Starts once. A second request cannot layer two load scenes together. */
-  start(onDone?: () => void, backgroundTask?: () => Promise<void>): void {
+  start(onDone?: () => void, backgroundTask?: () => Promise<void>, prologue = false): void {
     if (this.running || this.el) return;
     this.running = true;
+    this.prologueDuration = prologue ? 15.5 : 0;
     this.onDone = onDone ?? null;
     this.backgroundDone = !backgroundTask;
     this.speechDone = false;
@@ -109,6 +111,14 @@ export class LoadingScreenManager {
     root.setAttribute('role', 'status');
     root.setAttribute('aria-live', 'polite');
     root.innerHTML = `
+      <div class="prologue" aria-hidden="true">
+        <div class="pro-earth"><i class="pro-sun"></i><i class="pro-terrain"></i><i class="pro-pilot"></i><i class="pro-rocket"></i></div>
+        <div class="pro-matrix"><i>10110100&nbsp;AEON&nbsp;01101001<br>EARTH // BIOSPHERE FAILURE<br>11001010&nbsp;TIMELINE&nbsp;00110111<br>YEAR 2189 // LAST LAUNCH<br>01010111&nbsp;EVACUATE&nbsp;10100101</i></div>
+        <div class="pro-wormhole"><i></i><i></i><i></i><i></i><b></b></div>
+        <div class="pro-helmet"><i class="pro-hand left"></i><i class="pro-hand right"></i><b class="pro-cross">+</b></div>
+        <div class="pro-white"><strong>UNLIMITED<br><em>POSSIBILITIES</em><small>SANDBOX</small></strong></div>
+        <div class="pro-caption">THE LAST PILOT // EARTH DEPARTURE</div>
+      </div>
       <div class="omni-warp" aria-hidden="true"><i></i></div>
       <canvas class="omni-frost" aria-hidden="true"></canvas>
       <canvas class="omni-canvas" aria-hidden="true"></canvas>
@@ -222,16 +232,20 @@ export class LoadingScreenManager {
   private tick = (now: number): void => {
     if (!this.el) return;
     const t = (now - this.startAt) / 1000;
-    this.draw(t);
-    this.drive(t);
+    const sequenceT = Math.max(0, t - this.prologueDuration);
+    if (this.prologueDuration > 0 && t < this.prologueDuration) this.drivePrologue(t);
+    else {
+      this.draw(sequenceT);
+      this.drive(sequenceT);
+    }
     // Speech may degrade after a generous ceiling, but the world build may
     // not: removing the veil over a half-built scene was the startup black
     // screen. Keep the animated loader present until GPU/scene preparation
     // has genuinely returned.
-    if (t >= 24) this.speechDone = true;
-    const ready = t >= DURATION && this.backgroundDone && this.speechDone;
+    if (sequenceT >= 24) this.speechDone = true;
+    const ready = sequenceT >= DURATION && this.backgroundDone && this.speechDone;
     if (!ready) {
-      if (t >= DURATION && !this.backgroundDone) {
+      if (sequenceT >= DURATION && !this.backgroundDone) {
         const phase = this.el.querySelector<HTMLElement>('#omniPhase');
         const skip = this.el.querySelector<HTMLElement>('.omni-skip');
         if (phase) phase.textContent = '05 WORLD STREAM';
@@ -240,6 +254,18 @@ export class LoadingScreenManager {
       this.raf = requestAnimationFrame(this.tick);
     } else this.finish();
   };
+
+  private drivePrologue(t: number): void {
+    const el=this.el;if(!el)return;
+    const stage=t<4?'earth':t<7?'matrix':t<10.5?'wormhole':t<13.3?'hands':'title';
+    el.className='omni-boot loading-screen-manager prologue-active pro-'+stage;
+    const caption=el.querySelector<HTMLElement>('.pro-caption');
+    if(caption)caption.textContent=stage==='earth'?'THE LAST PILOT // EARTH DEPARTURE'
+      :stage==='matrix'?'TIMELINE CORRUPTION // FUTURE EARTH EXPOSED'
+        :stage==='wormhole'?'UNKNOWN APERTURE // TRAJECTORY LOST'
+          :stage==='hands'?'EXOSUIT BODY-MAP // ASSEMBLING'
+            :'UNLIMITED POSSIBILITIES // NEW UNIVERSE';
+  }
 
   private draw(t: number): void {
     const c = this.fx, frost = this.frost;

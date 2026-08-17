@@ -1179,6 +1179,49 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
   border-left:2px solid var(--acc);background:color-mix(in srgb,var(--acc) 6%,transparent);border-radius:6px;}
 
 /* ---- dedicated five-stage LoadingScreenManager scene ---- */
+/* ---- one-time new-universe cinematic prologue ---- */
+.prologue{display:none;position:absolute;inset:0;z-index:30;overflow:hidden;background:#040711;color:#dffaff;perspective:900px;}
+.prologue-active .prologue{display:block}.prologue-active>.omni-warp,.prologue-active>.omni-frost,
+.prologue-active>.omni-canvas,.prologue-active>.omni-grid,.prologue-active>.omni-vignette,
+.prologue-active>.omni-orbitals,.prologue-active>.omni-systemcards,.prologue-active>.omni-chrome,
+.prologue-active>.omni-stage,.prologue-active>.omni-skip{display:none!important}
+.pro-earth{position:absolute;inset:0;background:radial-gradient(circle at 78% 18%,#ffdca0 0 2%,transparent 13%),
+ linear-gradient(#142d5a 0 48%,#392d29 49%,#100d0d 100%);transition:filter 1s}
+.pro-terrain{position:absolute;left:-20%;right:-20%;bottom:-25%;height:65%;transform:rotateX(62deg);
+ background:repeating-linear-gradient(90deg,transparent 0 48px,rgba(255,160,90,.18) 49px 50px),
+ repeating-linear-gradient(0deg,#221713 0 34px,#4b3025 35px 36px);box-shadow:0 -30px 90px #d66b35}
+.pro-pilot{position:absolute;left:20%;bottom:24%;width:18px;height:62px;background:#111827;border:2px solid #77cfff;
+ border-radius:45% 45% 20% 20%;animation:proWalk 1.1s steps(4) infinite;box-shadow:0 0 18px #25aaff}
+.pro-pilot:before{content:'';position:absolute;width:22px;height:22px;border-radius:50%;left:-4px;top:-20px;background:#17243a;border:2px solid #8edcff}
+.pro-rocket{position:absolute;left:70%;bottom:18%;width:42px;height:155px;clip-path:polygon(50% 0,88% 25%,88% 78%,100% 100%,55% 87%,0 100%,12% 78%,12% 25%);
+ background:linear-gradient(90deg,#4d5560,#f2f6ff 42%,#8f9fb4);box-shadow:0 0 35px #fff}
+.pro-rocket:after{content:'';position:absolute;left:12px;right:12px;bottom:-90px;height:110px;background:linear-gradient(#fff,#37dfff,#ff6b16,transparent);filter:blur(4px)}
+.pro-earth .pro-rocket{animation:proLaunch 4s cubic-bezier(.55,.05,.75,.35) both}
+.pro-matrix{position:absolute;inset:0;opacity:0;background:rgba(0,8,2,.72);display:grid;place-items:center;color:#27ff63;font:18px/2 monospace;text-shadow:0 0 12px #00ff55}
+.pro-matrix:before{content:'';position:absolute;inset:-50% 0;background:repeating-linear-gradient(90deg,transparent 0 24px,rgba(0,255,70,.18) 25px 27px);animation:matrixDrop .55s linear infinite}
+.pro-matrix i{font-style:normal;letter-spacing:.28em;text-align:center;z-index:2}
+.pro-wormhole{position:absolute;inset:0;display:grid;place-items:center;opacity:0;background:radial-gradient(circle,#b9ffff 0 2%,#2d19a0 8%,#050516 38%,#000 70%)}
+.pro-wormhole i{position:absolute;width:18vmin;height:18vmin;border:8px solid #54f3ff;border-radius:50%;box-shadow:0 0 28px #18cfff,inset 0 0 30px #913cff;animation:proTunnel 1.35s linear infinite}
+.pro-wormhole i:nth-child(2){animation-delay:-.3s}.pro-wormhole i:nth-child(3){animation-delay:-.6s}.pro-wormhole i:nth-child(4){animation-delay:-.9s}
+.pro-wormhole b{width:4px;height:75vh;background:#fff;box-shadow:0 0 30px 12px #6cf;transform:rotate(55deg)}
+.pro-helmet{position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at center,transparent 0 48%,rgba(0,4,12,.94) 72%),linear-gradient(90deg,rgba(0,220,255,.12),transparent 20% 80%,rgba(0,220,255,.12));}
+.pro-hand{position:absolute;bottom:10%;width:24%;height:42%;background:repeating-linear-gradient(45deg,#79eaff 0 8px,#165a8f 9px 16px);clip-path:polygon(5% 100%,0 62%,12% 34%,20% 40%,25% 8%,34% 5%,40% 37%,48% 0,56% 4%,56% 39%,67% 9%,75% 15%,70% 49%,100% 65%,88% 100%);filter:drop-shadow(0 0 15px #00d8ff);image-rendering:pixelated}
+.pro-hand.left{left:8%;transform:rotate(16deg);animation:handLeft 2.7s steps(18) both}.pro-hand.right{right:8%;transform:scaleX(-1) rotate(16deg);animation:handRight 2.7s steps(18) both}
+.pro-cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:32px monospace;color:#8effff;text-shadow:0 0 16px #0ff}
+.pro-white{position:absolute;inset:0;opacity:0;background:white;display:grid;place-items:center;color:#07101e;text-align:center}
+.pro-white strong{font:800 clamp(30px,6vw,86px)/.9 Inter,sans-serif;letter-spacing:.2em}.pro-white em{font-style:normal;color:#176fd0}.pro-white small{display:block;font-size:.22em;letter-spacing:.8em;margin-top:24px}
+.pro-caption{position:absolute;left:0;right:0;bottom:6%;z-index:50;text-align:center;font:9px monospace;letter-spacing:.45em;color:#a9eaff;text-shadow:0 0 12px #0cf}
+.pro-matrix .pro-earth,.pro-wormhole .pro-earth{filter:saturate(.2)}
+.pro-matrix .pro-matrix,.pro-matrix>.pro-matrix{opacity:1}.pro-matrix .pro-earth{filter:sepia(1) hue-rotate(70deg) brightness(.35)}
+.prologue-active.pro-matrix .pro-matrix{opacity:1}.prologue-active.pro-matrix .pro-earth{filter:sepia(1) saturate(.4) brightness(.3)}
+.prologue-active.pro-wormhole .pro-wormhole{opacity:1}.prologue-active.pro-wormhole .pro-earth{opacity:0}
+.prologue-active.pro-hands .pro-helmet{opacity:1}.prologue-active.pro-hands .pro-earth{opacity:0}
+.prologue-active.pro-title .pro-white{opacity:1;animation:titleFlash 2.2s ease-out both}.prologue-active.pro-title .pro-earth{opacity:0}
+@keyframes proWalk{50%{transform:translateX(15vw) rotate(3deg)}}@keyframes proLaunch{0%,45%{transform:translateY(0)}100%{transform:translateY(-135vh) scale(.5)}}
+@keyframes matrixDrop{to{transform:translateY(28px)}}@keyframes proTunnel{0%{transform:translateZ(-700px) scale(.2);opacity:0}30%{opacity:1}100%{transform:translateZ(300px) scale(5);opacity:0}}
+@keyframes handLeft{0%{opacity:0;transform:translate(-30vw,20vh) rotate(16deg)}100%{opacity:1;transform:translate(18vw,0) rotate(2deg)}}
+@keyframes handRight{0%{opacity:0;transform:translate(30vw,20vh) scaleX(-1) rotate(16deg)}100%{opacity:1;transform:translate(-18vw,0) scaleX(-1) rotate(2deg)}}
+@keyframes titleFlash{0%{opacity:0}12%{opacity:1}72%{opacity:1}100%{opacity:0}}
 .omni-boot{position:fixed;inset:0;z-index:9999;overflow:hidden;pointer-events:auto;
   --boot-cyan:#00f0ff;--boot-violet:#7657ff;
   background:
