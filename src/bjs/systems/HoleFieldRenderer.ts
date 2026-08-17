@@ -26,7 +26,7 @@
  * you leave, so an endless universe does not accumulate anything.
  */
 
-import { Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { Vector3, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import { mediumId } from '../shaders/CosmicSkyShader';
 import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
@@ -119,6 +119,10 @@ export class HoleFieldRenderer {
   private scene: Scene | null = null;
   private live = new Map<string, LiveHole>();
   private t = 0;
+  private faceDir = new Vector3(0, 0, 1);
+  private faceUp = new Vector3(0, 1, 0);
+  private faceQuat = new Quaternion();
+  private skyTint = new Vector3();
 
   constructor(opts: Partial<HoleFieldOptions> = {}) {
     this.opts = { ...DEFAULT_HOLEFIELD, ...opts };
@@ -211,13 +215,17 @@ export class HoleFieldRenderer {
 
   /** Points a hole's quad at the viewer and updates its uniforms. */
   private orient(lh: LiveHole, eye: Vector3): void {
-    const toEye = eye.subtract(lh.center);
-    const d = toEye.length();
+    eye.subtractToRef(lh.center, this.faceDir);
+    const d = this.faceDir.length();
     if (d > 1e-6) {
-      // Billboard: the quad always faces the camera, so the raymarched hole
-      // is never seen edge-on. The shader works in world space, so the quad
-      // is only a canvas - rotating it does not rotate the physics.
-      lh.quad.lookAt(eye);
+      this.faceDir.scaleInPlace(1 / d);
+      // Absolute orientation from the stationary hole centre every frame.
+      // No Euler accumulation, no lookAt pole singularity, no somersault.
+      if (Math.abs(this.faceDir.y) > .985) this.faceUp.set(0, 0, 1);
+      else this.faceUp.set(0, 1, 0);
+      Quaternion.FromLookDirectionLHToRef(this.faceDir, this.faceUp, this.faceQuat);
+      if (!lh.quad.rotationQuaternion) lh.quad.rotationQuaternion = new Quaternion();
+      lh.quad.rotationQuaternion.copyFrom(this.faceQuat);
     }
     lh.mat.setVector3('camPos', eye);
     lh.mat.setVector3('holePos', lh.center);
@@ -230,7 +238,8 @@ export class HoleFieldRenderer {
     const sky = this.sky;
     lh.mat.setFloat('skyMedium', mediumId(sky.medium));
     lh.mat.setFloat('skySymmetry', sky.symmetry > 0 ? sky.symmetry : 4);
-    lh.mat.setVector3('skyTint', new Vector3(sky.tint[0], sky.tint[1], sky.tint[2]));
+    this.skyTint.set(sky.tint[0], sky.tint[1], sky.tint[2]);
+    lh.mat.setVector3('skyTint', this.skyTint);
     lh.mat.setFloat('skyStrangeness', sky.strangeness);
     lh.mat.setFloat('skyZoom', sky.zoom);
   }

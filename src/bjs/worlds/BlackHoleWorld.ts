@@ -718,9 +718,11 @@ export class BlackHoleWorld implements World {
     this.mat.setFloat('diskOuter',
       Math.max(dIn + 1e-3, safeFloat(this.p.diskOuter * this.p.mass, 16)));
     this.mat.setFloat('diskTilt', this.p.diskTilt);
-    this.mat.setFloat('exposure', this.p.exposure);
+    this.mat.setFloat('exposure', Math.min(this.p.exposure, 0.72));
     this.mat.setFloat('lensStrength', this.p.lens);
-    this.mat.setFloat('diskBright', this.p.diskBright);
+    // Integrated volume emission accumulates over many geodesic steps; feed
+    // a calibrated radiance, not UI brightness directly, to avoid white-out.
+    this.mat.setFloat('diskBright', this.p.diskBright * 0.22);
     this.mat.setFloat('dopplerAmt', this.p.doppler);
     // Thickness is in Schwarzschild radii in the profile; the shader works in
     // world units, so scale by the mass exactly as the disk radii are.

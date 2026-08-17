@@ -621,6 +621,7 @@ export class App {
     // the camera moved outside the galaxy mesh bounds. Clearing every frame
     // guarantees the backdrop layers repaint regardless of camera height.
     this.scene.autoClear = true;
+    this.scene.autoClearDepthAndStencil = true;
     // INK-BLACK VACUUM.
     //
     // Deep intergalactic space is a true light-swallowing black, so distant
@@ -1000,7 +1001,11 @@ export class App {
     // Core and the rest, the sky is a different reality and the Milky Way
     // must not be hanging in it. Driven from the same verse state as the
     // dome, so the two can never disagree about which reality this is.
-    this.galaxyField.setVisible(verse.medium === 'stars');
+    // BlackHoleWorld owns a full-screen geodesic sky. Drawing the galaxy fog
+    // sphere over it caused the white accumulation sheet and diagonal clip.
+    // Compatibility baseline: this.galaxyField.setVisible(verse.medium === 'stars')
+    this.galaxyField.setVisible(
+      verse.medium === 'stars' && this.world?.ownsBlackHole !== true);
 
     this.holeField.setSky({
       medium: verse.medium,
@@ -2982,6 +2987,7 @@ export class App {
       // camera height or orientation, so the viewport can never stall on a
       // stale buffer and flicker black above or below the galactic plane.
       if (!this.scene.autoClear) this.scene.autoClear = true;
+      if (!this.scene.autoClearDepthAndStencil) this.scene.autoClearDepthAndStencil = true;
 
       this.scene.render();
 
