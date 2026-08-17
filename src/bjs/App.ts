@@ -93,6 +93,7 @@ import { TidalField } from './systems/TidalField';
 import { RegionTides, describeRegionTide } from './systems/RegionTides';
 import { CosmicSky } from './systems/CosmicSky';
 import { SkyProbe } from './systems/SkyProbe';
+import { SkySafetyPass } from './systems/SkySafetyPass';
 import { QuantumAnomalySystem } from './systems/QuantumAnomalySystem';
 import { GalaxyField } from './systems/GalaxyField';
 import { warmupShaders } from './systems/ShaderWarmup';
@@ -411,6 +412,8 @@ export class App {
   quantumAnomaly = new QuantumAnomalySystem(this.universe.opts.seed);
   /** The procedural sky dome. Shares its GLSL with the hole raymarcher. */
   cosmicSky = new CosmicSky();
+  /** Coordinate-invariant final sky fill at extreme universe positions. */
+  skySafety = new SkySafetyPass();
   /** Live 360 cubemap of the sky, for reflections and ambient light. */
   skyProbe = new SkyProbe();
   /** Whether the player is holding forward, for the fractal zoom. */
@@ -1202,6 +1205,9 @@ export class App {
         // Lensing is a property of the universe, not of one world, so it is
         // re-attached with the pipeline every time. It must remain last.
         this.lensfx.attach(this.scene, this.camera);
+        // Last in the chain: only fills numerically black pixels at extreme
+        // coordinates and stands down in intentional horizon/dimension voids.
+        this.skySafety.attach(this.scene, this.camera);
       }
       // The sky is a property of the universe, not of the post-process
       // chain, so it attaches even when post-processing is unavailable.
@@ -2407,6 +2413,8 @@ export class App {
       // you hold forward - so flying "into" the Mandelbrot really descends
       // into it rather than scaling a picture of it.
       this.cosmicSky.update(dt, eye, this.thrusting);
+      this.skySafety.update(dt, eye.x, eye.y, eye.z,
+        this.universe.insideHorizon === null && this.world?.id !== 'dimension');
       // Keep the cubemap centred on the viewer and re-capture only when the
       // sky has actually changed - a new verse, or a fractal zoom step big
       // enough to see. A still sky costs nothing after the first frame.

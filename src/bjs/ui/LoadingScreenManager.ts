@@ -1,3 +1,5 @@
+import { Prologue3D } from './Prologue3D';
+
 /**
  * LoadingScreenManager — a self-contained five-act transition scene.
  *
@@ -63,6 +65,7 @@ export class LoadingScreenManager {
   private lastTyped = '';
   private spoken = false;
   private prologueDuration = 0;
+  private prologue3d: Prologue3D | null = null;
   /** Frost is deliberately 15 fps; high-frequency grain was starving WebGL. */
   private lastFrostDraw = -Infinity;
   private frostCleared = false;
@@ -84,6 +87,10 @@ export class LoadingScreenManager {
     this.backgroundDone = !backgroundTask;
     this.speechDone = false;
     this.build();
+    if (prologue && this.el) {
+      const canvas=this.el.querySelector<HTMLCanvasElement>('.pro-3d');
+      if(canvas){this.prologue3d=new Prologue3D();this.prologue3d.start(canvas);}
+    }
     this.resize();
     this.seedGeometry();
     // Speech begins with Stage 4 (not while the player is still choosing a
@@ -112,6 +119,7 @@ export class LoadingScreenManager {
     root.setAttribute('aria-live', 'polite');
     root.innerHTML = `
       <div class="prologue" aria-hidden="true">
+        <canvas class="pro-3d"></canvas>
         <div class="pro-earth"><i class="pro-sun"></i><i class="pro-terrain"></i><i class="pro-pilot"></i><i class="pro-rocket"></i></div>
         <div class="pro-matrix"><i>10110100&nbsp;AEON&nbsp;01101001<br>EARTH // BIOSPHERE FAILURE<br>11001010&nbsp;TIMELINE&nbsp;00110111<br>YEAR 2189 // LAST LAUNCH<br>01010111&nbsp;EVACUATE&nbsp;10100101</i></div>
         <div class="pro-wormhole"><i></i><i></i><i></i><i></i><b></b></div>
@@ -399,6 +407,7 @@ export class LoadingScreenManager {
     window.removeEventListener('resize', this.resizeHandler);
     window.removeEventListener('keydown', this.keyHandler);
     const done = this.onDone;
+    this.prologue3d?.dispose();this.prologue3d=null;
     this.onDone = null;
     this.running = false;
     const old = this.el;
@@ -416,6 +425,7 @@ export class LoadingScreenManager {
     cancelAnimationFrame(this.raf);
     window.removeEventListener('resize', this.resizeHandler);
     window.removeEventListener('keydown', this.keyHandler);
+    this.prologue3d?.dispose();this.prologue3d=null;
     this.el?.remove();
     this.el = null;
     this.fx = null;

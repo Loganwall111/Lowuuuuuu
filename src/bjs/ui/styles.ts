@@ -1181,7 +1181,9 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 /* ---- dedicated five-stage LoadingScreenManager scene ---- */
 /* ---- one-time new-universe cinematic prologue ---- */
 .prologue{display:none;position:absolute;inset:0;z-index:30;overflow:hidden;background:#040711;color:#dffaff;perspective:900px;}
-.prologue-active .prologue{display:block}.prologue-active>.omni-warp,.prologue-active>.omni-frost,
+.prologue-active .prologue{display:block}.pro-3d{position:absolute;inset:0;width:100%;height:100%;z-index:2;display:block;}
+.pro-earth,.pro-wormhole,.pro-helmet{z-index:1}.pro-matrix{z-index:3}.pro-white{z-index:5}.pro-caption{z-index:8}
+.prologue-active>.omni-warp,.prologue-active>.omni-frost,
 .prologue-active>.omni-canvas,.prologue-active>.omni-grid,.prologue-active>.omni-vignette,
 .prologue-active>.omni-orbitals,.prologue-active>.omni-systemcards,.prologue-active>.omni-chrome,
 .prologue-active>.omni-stage,.prologue-active>.omni-skip{display:none!important}
