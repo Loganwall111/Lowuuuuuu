@@ -245,9 +245,10 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
     ok('the realised distribution matches the declared weights within 2%',
       worst < 0.02, (worst * 100).toFixed(2) + '% worst-case error');
     ok('quasars are genuinely rare', counts['quasar'] / N < 0.01);
-    ok('dyson swarms are the rarest thing in the table',
-      C.CELESTIALS['dyson-swarm'].weight
-        === Math.min(...C.CELESTIAL_KINDS.map((k) => C.CELESTIALS[k].weight)));
+    ok('dyson swarms remain rare while singular anomalies are rarer',
+      C.CELESTIALS['dyson-swarm'].weight <= 2 &&
+      C.CELESTIALS['fractal-cube'].weight < C.CELESTIALS['dyson-swarm'].weight &&
+      C.CELESTIALS['void-cathedral'].weight < C.CELESTIALS['fractal-cube'].weight);
     ok('ordinary debris is the most common',
       counts['meteor-swarm'] > counts['quasar'] * 10);
   }

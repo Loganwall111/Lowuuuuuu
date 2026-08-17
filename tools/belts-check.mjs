@@ -198,16 +198,17 @@ const grid = await load('src/bjs/systems/IntergalacticGrid.ts');
         const q = grid.galaxyInCell(i, j, k).klass;
         c[q] = (c[q] || 0) + 1; n++;
       }
-  ok('all three galaxy classes occur',
-    c.photoreal > 0 && c.elliptical > 0 && c.anomaly > 0);
+  ok('all seven galaxy classes occur',
+    ['photoreal','barred','flocculent','lenticular','irregular','elliptical','anomaly']
+      .every((k) => c[k] > 0));
   // The user asked for the neon anomaly to be "like a one percent". That
   // number is deliberate and must not drift.
   ok('the neon anomaly stays about one percent',
     c.anomaly / n > 0.004 && c.anomaly / n < 0.02);
   ok('spirals remain the most common galaxy',
     c.photoreal > c.elliptical && c.photoreal > c.anomaly);
-  ok('ellipticals are a substantial minority',
-    c.elliptical / n > 0.2 && c.elliptical / n < 0.5);
+  ok('ellipticals remain a substantial minority among the expanded classes',
+    c.elliptical / n > 0.15 && c.elliptical / n < 0.3);
 
   const a = grid.galaxyInCell(3, 1, 2).klass;
   ok('a given cell always yields the same class',

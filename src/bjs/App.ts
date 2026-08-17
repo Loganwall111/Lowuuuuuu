@@ -2380,6 +2380,8 @@ export class App {
       // geometry hole field and the screen-space lens must stand down when it
       // does, or the scene gets a second hole and a grey wash over the core.
       const worldOwnsHole = this.world?.ownsBlackHole === true;
+      // Planet positions are live orbital state, not static generation data.
+      this.universe.advanceOrbits(dt);
       const prevRegion = this.universe.current?.id ?? null;
       this.universe.updatePlayer(eye);
       const cur = this.universe.current;

@@ -509,13 +509,32 @@ export class GalaxyField {
           if (rr2 > g.radius) {
             const f = g.radius / rr2; lx *= f; ly *= f; lz *= f;
           }
-        } else {
-          const rr = g.radius * (0.08 + t * 0.92);
-          const arm = Math.floor(rnd() * 2) * Math.PI;
-          const wind = g.winding * 2.6;
-          const ang = arm + Math.log(1 + t * 6) * wind + (rnd() - 0.5) * 0.9;
+        } else if (g.klass === 'irregular') {
+          // Lopsided starburst cloud with no privileged axis or clean arms.
+          const rr = g.radius * Math.pow(rnd(), .52);
+          const ang = rnd() * Math.PI * 2;
+          const lobe = .62 + .38 * Math.sin(ang * 3 + g.seed);
+          lx = Math.cos(ang) * rr * lobe + (rnd() - .5) * g.radius * .16;
+          lz = Math.sin(ang) * rr + (rnd() - .5) * g.radius * .16;
+          ly = (rnd() - .5) * g.radius * .22;
+        } else if (g.klass === 'lenticular') {
+          // Old smooth disc: a bright lens and bulge, but no spiral arms.
+          const rr = g.radius * Math.pow(rnd(), .82);
+          const ang = rnd() * Math.PI * 2;
           lx = Math.cos(ang) * rr;
           lz = Math.sin(ang) * rr;
+          ly = (rnd() - .5) * g.radius * (.035 + .11 * (1 - t));
+        } else {
+          const rr = g.radius * (0.08 + t * 0.92);
+          const armCount = g.klass === 'flocculent' ? 6 : 2;
+          const arm = Math.floor(rnd() * armCount) * Math.PI * 2 / armCount;
+          const wind = g.winding * (g.klass === 'barred' ? 2.1 : 2.8);
+          const ang = arm + Math.log(1 + t * 6) * wind +
+            (rnd() - 0.5) * (g.klass === 'flocculent' ? 1.25 : .72);
+          lx = Math.cos(ang) * rr;
+          lz = Math.sin(ang) * rr;
+          // Barred spirals stretch their inner gas through the nucleus.
+          if (g.klass === 'barred' && t < .30) lx *= 2.25;
           ly = (rnd() - 0.5) * g.radius * 0.06;
         }
 

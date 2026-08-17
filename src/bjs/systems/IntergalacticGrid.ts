@@ -45,7 +45,9 @@ export const GALAXY_RADIUS = 50000;
 export const DETAIL_RANGE = GALAXY_RADIUS * 2.6;
 
 /** How a galaxy is coloured and structured. */
-export type GalaxyClass = 'photoreal' | 'elliptical' | 'anomaly';
+export type GalaxyClass =
+  | 'photoreal' | 'barred' | 'flocculent' | 'lenticular' | 'irregular'
+  | 'elliptical' | 'anomaly';
 
 /**
  * Share of galaxies that are ellipticals.
@@ -54,7 +56,7 @@ export type GalaxyClass = 'photoreal' | 'elliptical' | 'anomaly';
  * roughly spheroidal swarms. Having them alongside the spirals is what
  * stops every galaxy in the sky looking like the same object rotated.
  */
-export const ELLIPTICAL_CHANCE = 0.34;
+export const ELLIPTICAL_CHANCE = 0.19;
 
 /**
  * Share of galaxies that are the neon magenta/teal variety.
@@ -128,9 +130,12 @@ export function galaxyInCell(ix: number, iy: number, iz: number): GalaxyCell {
   // Classification comes off its own hash channel, so it is independent of
   // size, tilt and tint - a rare galaxy is not also always a big bright one.
   const roll = chan(h, 9);
-  const klass: GalaxyClass = roll < ANOMALY_CHANCE
-    ? 'anomaly'
-    : roll < ANOMALY_CHANCE + ELLIPTICAL_CHANCE ? 'elliptical' : 'photoreal';
+  const klass: GalaxyClass = roll < ANOMALY_CHANCE ? 'anomaly'
+    : roll < .20 ? 'elliptical'
+      : roll < .31 ? 'lenticular'
+        : roll < .51 ? 'barred'
+          : roll < .64 ? 'flocculent'
+            : roll < .72 ? 'irregular' : 'photoreal';
 
   // Colour: a wide, seeded spectrum. Most galaxies are warm white to gold,
   // but the rest run the whole band - blue starbursts, teal, magenta, green

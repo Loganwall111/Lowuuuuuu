@@ -632,7 +632,16 @@ export const INTRO_CSS = `
    vertical control spine, echoing the reference cockpit's central stack. */
 .intro-launchrow{
   flex-direction:column; flex-wrap:nowrap; width:260px; gap:10px;
-  margin-top:16px; z-index:5;
+  margin-top:16px; z-index:5; position:relative; padding:22px 24px 24px;
+  background:linear-gradient(180deg,rgba(3,14,30,.42),rgba(4,10,24,.72));
+  border:1px solid rgba(90,205,255,.18);
+  box-shadow:inset 0 0 42px rgba(30,120,220,.08),0 24px 80px rgba(0,0,0,.36);
+  clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px);
+  backdrop-filter:blur(12px) saturate(1.25);
+}
+.intro-launchrow::before{
+  content:'DEEP FIELD COMMAND';position:absolute;top:6px;left:0;right:0;
+  text-align:center;font:600 8px/1 monospace;letter-spacing:.34em;color:rgba(130,225,255,.56);
 }
 .intro-launchrow > button{ width:100%; min-width:260px; }
 .intro-launchrow .intro-aux{

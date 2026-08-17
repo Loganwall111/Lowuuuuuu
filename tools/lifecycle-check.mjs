@@ -72,8 +72,9 @@ console.log('\n— the celestial zoo grew, and its rules held —');
     new Set(kinds.map((k) => C.CELESTIALS[k].label)).size === kinds.length);
   ok('total weight still matches the table',
     C.TOTAL_WEIGHT === kinds.reduce((s, k) => s + C.CELESTIALS[k].weight, 0));
-  ok('dyson swarms are still the rarest',
-    C.CELESTIALS['dyson-swarm'].weight === Math.min(...kinds.map((k) => C.CELESTIALS[k].weight)));
+  ok('new singular anomalies are rarer than dyson swarms',
+    C.CELESTIALS['void-cathedral'].weight < C.CELESTIALS['fractal-cube'].weight &&
+    C.CELESTIALS['fractal-cube'].weight < C.CELESTIALS['dyson-swarm'].weight);
   ok('ordinary debris is still the most common',
     C.CELESTIALS['meteor-swarm'].weight === Math.max(...kinds.map((k) => C.CELESTIALS[k].weight)));
   ok('quasars stay genuinely rare',

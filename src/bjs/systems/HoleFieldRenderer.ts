@@ -22,7 +22,11 @@ import {
 
 export interface HoleSpec { id:string; position:Vector3; horizon:number; seed:number; }
 export interface HoleFieldOptions { buildWithin:number; releaseBeyond:number; maxLive:number; }
-export const DEFAULT_HOLEFIELD:HoleFieldOptions={buildWithin:320,releaseBeyond:460,maxLive:1};
+// The canonical material synthesizes a complete lensed sky, so it must only
+// engage when the hole is genuinely the focus of approach. The former 320-rs
+// radius activated the nearby guaranteed core at the spawn point and replaced
+// normal space with its purple interior sky.
+export const DEFAULT_HOLEFIELD:HoleFieldOptions={buildWithin:64,releaseBeyond:84,maxLive:1};
 export const DISK_INNER=2.6,DISK_OUTER=9.0,QUAD_RADII=11.5;
 export function radiiAway(eye:Vector3,h:HoleSpec):number{
  return Vector3.Distance(eye,h.position)/Math.max(h.horizon,1e-6);
@@ -87,7 +91,10 @@ export class HoleFieldRenderer{
   else this.active.spec=nearest;
   const cam=this.scene.activeCamera;if(!cam){this.mesh.setEnabled(false);return;}
   const to=nearest.position.subtract(eye);
-  if(this.interior.inside<=0&&Vector3.Dot(to,cam.getForwardRay(1).direction)<=0){this.mesh.setEnabled(false);return;}
+  if(this.interior.inside<=0){
+   const alignment=Vector3.Dot(to.normalize(),cam.getForwardRay(1).direction);
+   if(alignment<.42){this.mesh.setEnabled(false);return;}
+  }
   this.mesh.setEnabled(true);this.t+=Math.max(0,this.scene.getEngine().getDeltaTime()/1000);
   cam.computeWorldMatrix();
   this.mat.setVector3('camPos',cam.position);

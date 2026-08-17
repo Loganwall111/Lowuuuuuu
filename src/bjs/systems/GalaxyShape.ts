@@ -18,6 +18,8 @@
  * testable without a GPU.
  */
 
+import type { GalaxyClass } from './IntergalacticGrid';
+
 /** Where a generated star belongs structurally. */
 export type StarClass = 'arm' | 'bulge' | 'halo';
 
@@ -456,7 +458,7 @@ export function photorealColor(
  * One entry point so no call site has to know which look is in play.
  */
 export function galaxyGasColor(
-  klass: 'photoreal' | 'elliptical' | 'anomaly',
+  klass: GalaxyClass,
   density: number, x: number, y: number, z: number, cfg: GalaxyConfig = MILKY_WAY
 ): [number, number, number] {
   if (klass === 'anomaly') return nebulaColor(density, x, y, z, cfg);

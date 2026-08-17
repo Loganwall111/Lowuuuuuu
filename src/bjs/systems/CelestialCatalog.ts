@@ -44,7 +44,13 @@ export type CelestialKind =
   | 'kilonova'        // the afterglow of two neutron stars merging
   | 'stellar-engine'  // a star being dragged across the sky on purpose
   | 'ringworld'       // a star girdled by an engineered ring
-  | 'dyson-swarm';    // a star being harvested
+  | 'dyson-swarm'     // a star being harvested
+  | 'fractal-cube'    // recursive alien geometry, extremely rare
+  | 'artificial-world'// planet-scale machine civilization
+  | 'living-planet'   // biosphere behaving as one organism
+  | 'archive-moon'    // ancient computational moon
+  | 'void-cathedral'  // non-Euclidean deep-space megastructure
+  | 'quasar-jet';     // active nucleus with relativistic polar beams
 
 export interface CelestialSpec {
   kind: CelestialKind;
@@ -237,6 +243,42 @@ export const CELESTIALS: Record<CelestialKind, CelestialSpec> = {
     minRadius: 200, maxRadius: 560, luminosity: 0.74,
     tint: [1.00, 0.78, 0.36], mass: 5200, massive: true,
     blurb: 'A star most of the way through being taken apart on purpose.'
+  },
+  'fractal-cube': {
+    kind: 'fractal-cube', label: 'Recursive Fractal Cube', glyph: '⬡', weight: 0.35,
+    minRadius: 480, maxRadius: 2400, luminosity: 0.42,
+    tint: [0.16, 0.92, 1.00], mass: 12000, massive: true,
+    blurb: 'A rotating cube containing smaller copies of itself beyond sensor resolution.'
+  },
+  'artificial-world': {
+    kind: 'artificial-world', label: 'Artificial Civilization World', glyph: '◉', weight: 0.8,
+    minRadius: 120, maxRadius: 460, luminosity: 0.58,
+    tint: [0.24, 0.78, 1.00], mass: 6400, massive: true,
+    blurb: 'A planet assembled layer by layer, its night side entirely urban.'
+  },
+  'living-planet': {
+    kind: 'living-planet', label: 'Living Planet', glyph: '❈', weight: 0.65,
+    minRadius: 90, maxRadius: 340, luminosity: 0.38,
+    tint: [0.30, 1.00, 0.54], mass: 2900, massive: true,
+    blurb: 'One biosphere, one nervous system, and perhaps one planetary thought.'
+  },
+  'archive-moon': {
+    kind: 'archive-moon', label: 'Archive Moon', glyph: '◫', weight: 0.5,
+    minRadius: 70, maxRadius: 230, luminosity: 0.34,
+    tint: [0.72, 0.56, 1.00], mass: 1800, massive: true,
+    blurb: 'A moon converted into memory by a civilization no longer present.'
+  },
+  'void-cathedral': {
+    kind: 'void-cathedral', label: 'Void Cathedral', glyph: '♜', weight: 0.22,
+    minRadius: 600, maxRadius: 3200, luminosity: 0.24,
+    tint: [0.52, 0.22, 0.92], mass: 9000, massive: false,
+    blurb: 'Impossible arches whose interior angles do not sum to this universe.'
+  },
+  'quasar-jet': {
+    kind: 'quasar-jet', label: 'Polar Quasar', glyph: '⇅', weight: 0.55,
+    minRadius: 900, maxRadius: 4200, luminosity: 1.0,
+    tint: [0.58, 0.78, 1.00], mass: 18000, massive: true,
+    blurb: 'A feeding galactic nucleus firing twin relativistic beams across the void.'
   }
 };
 

@@ -85,6 +85,12 @@ export interface Region {
   playerMade?: boolean;
   /** True for the one supermassive hole at a galaxy's centre. */
   galacticCore?: boolean;
+  /** Deterministic live orbit around another region. */
+  orbitParentId?: string;
+  orbitRadius?: number;
+  orbitPhase?: number;
+  orbitRate?: number;
+  orbitInclination?: number;
 }
 
 export interface UniverseOptions {
@@ -160,6 +166,7 @@ export class UniverseState {
   private latchedHorizonId: string | null = null;
 
   private seq = 0;
+  private orbitalTime = 0;
 
   constructor(opts: Partial<UniverseOptions> = {}) {
     this.opts = { ...DEFAULT_UNIVERSE, ...opts };
@@ -187,6 +194,7 @@ export class UniverseState {
   generate(): void {
     this.regions = [];
     this.seq = 0;
+    this.orbitalTime = 0;
     const rng = makeRng(this.opts.seed);
     const { spacing, extent } = this.opts;
 
@@ -316,17 +324,23 @@ export class UniverseState {
       const kind: RegionKind = kindRoll < 0.25 ? 'ocean'
         : kindRoll < 0.55 ? 'terrain' : 'planet';
       const surface = 18 + rng() * 42;
+      const inclination = (rng() - 0.5) * 0.24;
       this.regions.push({
         id: this.nextId('pl'),
         kind,
         name: sys.name + ' ' + 'IVXLC'.charAt(i % 5) + (i + 1),
         glyph: kind === 'ocean' ? '🌊' : kind === 'terrain' ? '⛰' : '🪐',
-        position: at.add(new Vector3(Math.cos(ang) * orbit, (rng() - 0.5) * 40,
-          Math.sin(ang) * orbit)),
+        position: at.add(new Vector3(Math.cos(ang) * orbit,
+          Math.sin(ang) * orbit * Math.sin(inclination), Math.sin(ang) * orbit)),
         radius: surface * 4.5,
         mass: 60 + rng() * 400,
         seed: Math.floor(rng() * 0xffffffff) >>> 0,
-        surfaceRadius: surface
+        surfaceRadius: surface,
+        orbitParentId: sys.id,
+        orbitRadius: orbit,
+        orbitPhase: ang,
+        orbitRate: 0.012 * Math.pow(120 / orbit, 1.5),
+        orbitInclination: inclination
       });
     }
     return sys;
@@ -355,15 +369,19 @@ export class UniverseState {
   }
 
   addNebula(at: Vector3, rng: () => number): Region {
+    const types = ['Emission', 'Reflection', 'Dark Molecular', 'Supernova Veil',
+      'Bipolar', 'Wolf-Rayet', 'Proto-Planetary', 'Ionized Oxygen'];
+    const subtype = types[Math.floor(rng() * types.length) % types.length];
     const r: Region = {
       id: this.nextId('neb'),
       kind: 'nebula',
-      name: nameFor(rng) + ' Nebula',
+      name: nameFor(rng) + ' ' + subtype + ' Nebula',
       glyph: '🌫',
       position: at.clone(),
       radius: 1400,
       mass: 0,
-      seed: Math.floor(rng() * 0xffffffff) >>> 0
+      seed: Math.floor(rng() * 0xffffffff) >>> 0,
+      data: { subtype, turbulence: rng(), ionization: rng(), filamentScale: rng() }
     };
     this.regions.push(r);
     return r;
@@ -498,6 +516,25 @@ export class UniverseState {
       .sort((a, b) => a.d - b.d)
       .slice(0, budget)
       .map((x) => x.r);
+  }
+
+  /** Advances every authored planetary orbit from deterministic parameters. */
+  advanceOrbits(dt: number): void {
+    if (!Number.isFinite(dt) || dt <= 0) return;
+    this.orbitalTime += Math.min(dt, 0.1);
+    const byId = new Map(this.regions.map((r) => [r.id, r]));
+    for (const r of this.regions) {
+      if (!r.orbitParentId || !(r.orbitRadius! > 0)) continue;
+      const parent = byId.get(r.orbitParentId);
+      if (!parent) continue;
+      const a = (r.orbitPhase ?? 0) + this.orbitalTime * (r.orbitRate ?? 0);
+      const radius = r.orbitRadius!;
+      const inc = r.orbitInclination ?? 0;
+      r.position.set(
+        parent.position.x + Math.cos(a) * radius,
+        parent.position.y + Math.sin(a) * radius * Math.sin(inc),
+        parent.position.z + Math.sin(a) * radius);
+    }
   }
 
   /**

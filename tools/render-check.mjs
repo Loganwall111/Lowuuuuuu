@@ -537,7 +537,7 @@ console.log('\n— travelling to a black hole —');
   ok('holes are released once out of range',
     /if\(!nearest\)/.test(src) && /this\.active=null;this\.mesh\.setEnabled\(false\)/.test(src));
   ok('the release threshold exceeds the build threshold, avoiding thrash',
-    /buildWithin:320/.test(src) && /releaseBeyond:460/.test(src));
+    /buildWithin:64/.test(src) && /releaseBeyond:84/.test(src));
 
   const app = read('src/bjs/App.ts');
   ok('the app owns a hole field', app.includes('new HoleFieldRenderer()'));
