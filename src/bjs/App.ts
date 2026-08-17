@@ -2441,7 +2441,12 @@ export class App {
           if (bh.lens && typeof w.setLens === 'function') w.setLens(bh.lens);
         }
         const stableExit = Math.max(0.10, visualFall.exitWindow);
-        this.horizonContinuum.update(dt, journey, stableExit, bh.seed ?? 1);
+        this.camera.getTarget().subtractToRef(this.camera.position, this.cameraForward);
+        const viewLen = Math.max(1e-6, this.cameraForward.length());
+        const exitLen = Math.max(1e-6, exitDir.length());
+        const lookDot = Vector3.Dot(this.cameraForward, exitDir) / (viewLen * exitLen);
+        const lookAim = Math.max(0, Math.min(1, (lookDot - .55) / .40));
+        this.horizonContinuum.update(dt, journey, stableExit * lookAim, bh.seed ?? 1);
         if (typeof w?.setDescent === 'function') {
           const visualDarkness = interiorPlanNow?.gargantua
             ? Math.max(0, Math.min(1, (visualFall.progress - .82) / .18)) : 0;

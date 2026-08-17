@@ -14,7 +14,7 @@ uniform float depth;
 uniform float lookback;
 uniform float phase;
 uniform float destinationSeed;
-uniform float aspect;
+uniform vec2 u_resolution;
 
 float hash21(vec2 p){
   p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);
@@ -28,21 +28,32 @@ float fbm(vec2 p){float s=0.0,a=.5;for(int i=0;i<5;i++){s+=noise(p)*a;p=p*2.03+1
 
 void main(){
   vec4 oldScene=texture2D(textureSampler,vUV);
-  if(depth<.0005){gl_FragColor=oldScene;return;}
-  vec2 q=vUV-.5;q.x*=aspect;
+  if(depth<.0005){gl_FragColor=vec4(oldScene.rgb,1.0);return;}
+
+  // Pixel coordinates normalized by the SHORT canvas axis. This stays round
+  // on ultrawide desktop, portrait iPad, Retina, and dynamically scaled RTs.
+  vec2 q=(gl_FragCoord.xy*2.0-u_resolution.xy)
+        /max(1.0,min(u_resolution.x,u_resolution.y));
   float r=length(q),ang=atan(q.y,q.x);
 
-  // The horizon grows from the physical centre into an ink volume.
-  float throat=depth*1.38;
-  float swallow=smoothstep(.82-throat,.12-throat,r);
+  // The horizon grows from the physical centre into an ink volume. Never use
+  // reversed smoothstep edges: GLSL leaves that undefined and ANGLE rendered
+  // the result as the broken geometric arc visible in the screenshot.
+  float coreRadius=mix(.12,1.72,smoothstep(0.0,.92,depth));
+  float solidCore=1.0-smoothstep(coreRadius,coreRadius+.10,r);
   float spiral=fbm(vec2(ang*1.7+phase*.035,log(r+.035)*3.0-phase*.06));
-  float fluid=smoothstep(.26,.82,spiral)*smoothstep(.8,.12,r);
-  float ink=clamp(swallow*.92+fluid*depth*.42,0.0,1.0);
+  float fluid=smoothstep(.34,.78,spiral)
+             *(1.0-smoothstep(coreRadius+.05,coreRadius+.72,r));
+  float ink=clamp(solidCore+fluid*depth*.38,0.0,1.0);
   vec3 col=mix(oldScene.rgb,vec3(0.0),ink);
+  // Absolute singularity: no star, fog, dust, or previous-frame color may
+  // survive inside the core under any blend mode.
+  col*=1.0-solidCore;
 
-  // Looking back keeps a real aperture onto the scene just left.
-  float aperture=mix(.04,.34,lookback)*(1.0-depth*.55);
-  float backWindow=smoothstep(aperture+.035,aperture,r)*lookback;
+  // Looking backward opens a separate, soft aperture only when App confirms
+  // the camera is actually aimed toward the exterior direction.
+  float aperture=mix(.05,.28,lookback)*(1.0-depth*.55);
+  float backWindow=(1.0-smoothstep(aperture,aperture+.055,r))*lookback;
   col=mix(col,oldScene.rgb,backWindow);
 
   // The destination condenses out of darkness only in the latter voyage.
@@ -59,7 +70,7 @@ void main(){
 
   // Never flash white: the continuum is light-absorbing by definition.
   col=min(col,vec3(.72));
-  gl_FragColor=vec4(col,oldScene.a);
+  gl_FragColor=vec4(col,1.0);
 }`;
 
 let registered=false;
@@ -78,13 +89,13 @@ export class HorizonContinuum {
     if(this.pp)return;
     register();
     this.pp=new PostProcess(HORIZON_CONTINUUM_EFFECT,HORIZON_CONTINUUM_EFFECT,
-      ['depth','lookback','phase','destinationSeed','aspect'],null,1,camera,
+      ['depth','lookback','phase','destinationSeed','u_resolution'],null,1,camera,
       Texture.BILINEAR_SAMPLINGMODE,scene.getEngine(),false);
     this.pp.onApply=(e)=>{
       const eng=scene.getEngine();
       e.setFloat('depth',this.depth);e.setFloat('lookback',this.lookback);
       e.setFloat('phase',this.phase);e.setFloat('destinationSeed',this.seed);
-      e.setFloat('aspect',(eng.getRenderWidth()||1)/Math.max(1,eng.getRenderHeight()||1));
+      e.setFloat2('u_resolution',eng.getRenderWidth()||1,eng.getRenderHeight()||1);
     };
   }
   update(dt:number,depth:number,lookback:number,seed:number):void{
