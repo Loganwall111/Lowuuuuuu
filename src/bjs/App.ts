@@ -84,7 +84,7 @@ import {
 } from './systems/VehicleSystem';
 import { UniverseState } from './systems/UniverseState';
 import { MODES, can, type GameMode } from './systems/GameModes';
-import type { InteriorDestination } from './systems/HoleInterior';
+import { fallState, type InteriorDestination } from './systems/HoleInterior';
 import { HoleDescent } from './systems/HoleDescent';
 import { TidalField } from './systems/TidalField';
 import { RegionTides, describeRegionTide } from './systems/RegionTides';
@@ -2349,6 +2349,14 @@ export class App {
         this.descentInto.begin(bh.id, bh.seed ?? 1, eye, bh.position);
         this.onMilestone('first-horizon');
         const fall = this.descentInto.update(dt, eye);
+        const interiorPlanNow = this.descentInto.interior;
+        const deepFactor = interiorPlanNow?.gargantua ? 1.15 : 8;
+        // Stretch the visual/physical interior across the entire deep voyage.
+        // The old state reached "arrived" after one eighth of the requested
+        // distance and blacked the frame while travel continued invisibly.
+        const visualFall = interiorPlanNow
+          ? fallState(interiorPlanNow, this.descentInto.distance / deepFactor)
+          : fall.state;
 
         // the exit is the direction back toward where we came from
         const back = this.lastOutsidePos.subtract(bh.position);
@@ -2356,36 +2364,37 @@ export class App {
         const fallDir = bh.position.subtract(this.lastOutsidePos);
 
         if (typeof w?.setInterior === 'function') {
-          w.setInterior(fall.state.inside, exitDir);
+          w.setInterior(visualFall.inside, exitDir);
           if (bh.lens && typeof w.setLens === 'function') w.setLens(bh.lens);
         }
-        const stableExit = fall.state.complete
-          ? Math.max(0.14, fall.state.exitWindow) : fall.state.exitWindow;
+        const stableExit = Math.max(0.10, visualFall.exitWindow);
         if (typeof w?.setDescent === 'function') {
+          const visualDarkness = interiorPlanNow?.gargantua
+            ? Math.max(0, Math.min(1, (visualFall.progress - .82) / .18)) : 0;
           w.setDescent({
-            ...this.descentInto.shaderState(),
+            inside: visualFall.inside,
             exitWindow: stableExit,
+            nestedLens: visualFall.nestedLens,
+            singularity: visualFall.singularity,
+            darkness: visualDarkness,
             fallDir: fallDir.lengthSquared() > 1e-9 ? fallDir : new Vector3(0, 0, 1)
           });
         }
 
         this.flightHud.setDescent?.(this.descentInto.interior,
-          { ...fall.state, exitWindow: stableExit });
+          { ...visualFall, exitWindow: stableExit });
 
         // ---- the neon horizon warning, once you are inside ----
-        if (fall.state.phase !== 'outside' && !this.horizonWarned) {
+        if (visualFall.phase !== 'outside' && !this.horizonWarned) {
           this.horizonWarned = true;
           this.flightHud.notify(HORIZON_WARNING);
         }
 
         // Reaching the bottom is the only way out, and where you come out
         // depends on the hole and on whether you threaded its singularity.
-        if (fall.arrived) {
-          this.pendingInteriorDestination = fall.arrived;
-          this.shell.toast('Deep interior reached — continue forward to open the far gate');
-        }
+        if (fall.arrived) this.pendingInteriorDestination = fall.arrived;
         const plan = this.descentInto.interior;
-        const gateDepth = plan ? plan.depth * (plan.gargantua ? 1.15 : 8) : Infinity;
+        const gateDepth = plan ? plan.depth * deepFactor : Infinity;
         if (!this.deepGateDelivered && this.pendingInteriorDestination &&
             this.descentInto.distance >= gateDepth) {
           this.deepGateDelivered = true;
@@ -2610,49 +2619,16 @@ export class App {
         }
       }
 
-      // ---- gravitational lensing, wherever you happen to be ----
-      // BlackHoleWorld integrates photon paths properly for its own view;
-      // this bends whatever is actually on screen as you fly past a hole in
-      // any world, which is what makes it feel like one universe.
-      {
-        // A world that raymarches its own hole already draws a physically
-        // correct black core. The screen-space shadow floors at
-        // col*0.06 + tint*0.035 - linear (0.035,0.022,0.010), a warm grey -
-        // so painting it on top turned the core grey instead of black.
-        if (worldOwnsHole) {
-          this.lensfx.clear();
-        } else {
-          // EVERY hole in range bends the sky, not just the closest one.
-          // With a single lens, a binary pair or a cluster left all but one
-          // hole sitting on a dead-straight starfield - the giveaway that
-          // the effect was a decal on one object rather than a property of
-          // the space itself.
-          const lensing: Array<{ center: Vector3; horizon: number; profile: LensProfile | null }> = [];
-          const inside = this.universe.insideHorizon;
-          if (inside) {
-            lensing.push({
-              center: inside.position,
-              horizon: this.universe.horizonRadiusOf(inside),
-              profile: inside.lens ?? null
-            });
-          }
-          for (const r of this.universe.regions) {
-            if (!r || r.kind !== 'blackhole' || r === inside) continue;
-            const hr = this.universe.horizonRadiusOf(r);
-            // Only worth doing when you are close enough to notice.
-            // Screen-space lensing is only a near-horizon correction. At
-            // long range it looked like a camera-following/inverted overlay.
-            if (Vector3.Distance(eye, r.position) >= hr * 35) continue;
-            lensing.push({ center: r.position, horizon: hr, profile: r.lens ?? null });
-          }
-          if (lensing.length) {
-            lensing.sort((a, b) => Vector3.DistanceSquared(eye, a.center)
-              - Vector3.DistanceSquared(eye, b.center));
-            // Only the nearest physical aperture lenses the cockpit. Distant
-            // holes remain destinations, not screen-locked duplicate rings.
-            this.lensfx.trackMany(lensing.slice(0, 1), this.camera);
-          } else this.lensfx.clear();
-        }
+      // ---- gravitational lensing ----
+      // Open-universe holes are already raymarched in HoleFieldRenderer. A
+      // second screen-space remap inverted the entire frame and made the hole
+      // appear camera-locked during WASD translation, so it is intentionally
+      // disabled. Compatibility API remains: this.lensfx.trackMany(lensing, this.camera).
+      if (worldOwnsHole) {
+        this.lensfx.clear();
+      } else {
+        // HoleFieldRenderer already performs the physical geodesic bend.
+        this.lensfx.clear();
       }
 
       // ---- speed, distance and the warp effect ----
