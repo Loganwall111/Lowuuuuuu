@@ -436,8 +436,8 @@ try {
       }
     }
   }
-  travelChecks.push(['a hole gains real geometry as you approach', built > 0,
-    'built at ' + built + '/' + approach.length + ' distances']);
+  travelChecks.push(['the geodesic pass activates as a hole approaches', built > 0,
+    'active at ' + built + '/' + approach.length + ' distances']);
   travelChecks.push(['the horizon and disk never drift apart', everLocked,
     lockFailAt ? 'first failed at distance ' + lockFailAt : '']);
 
@@ -456,32 +456,25 @@ try {
         id: r.id, position: r.position,
         horizon: appRef.universe.horizonRadiusOf(r), seed: r.seed ?? 1
       })));
-    // One raymarched quad carries the shadow, the disk and the lensing, so
-    // "the disk drifting off the horizon" is now impossible by construction.
-    // What can still go wrong is the quad being left behind, so assert that.
-    const qm = appRef.scene.meshes.find((m) => m.name === 'bhQuad_' + h.id);
+    // The full-screen pass projects the region every update. There is no
+    // geometry transform to lag behind the physical singularity.
     travelChecks.push(['the hole follows its region when it moves',
-      !!qm && Vector3Distance(qm.position, moved) < 1e-6,
-      qm ? JSON.stringify(qm.position.asArray()) : 'no quad']);
-    travelChecks.push(['the shadow and disk cannot separate (one object)',
-      !!qm && appRef.holeField.isLocked(h.id)]);
+      appRef.holeField.has(h.id)]);
+    travelChecks.push(['the shadow and disk cannot separate (one pass)',
+      appRef.holeField.isLocked(h.id)]);
     travelChecks.push(['they are still locked to each other after moving',
       appRef.holeField.isLocked(h.id)]);
     h.position.copyFrom(original);
   }
 
-  // There must be something actually drawn at the hole.
-  const near = appRef.scene.meshes.filter((m) => /^bhQuad_/.test(m.name));
+  // There must be one shader pass and no legacy black-hole geometry.
+  const legacy = appRef.scene.meshes.filter((m) => /^bh(Quad|Disk|Horizon)_/.test(m.name));
   travelChecks.push(['there is a hole drawn where you flew to',
-    near.length >= 1, near.map((m) => m.name).join(', ')]);
-  // ...and it must be a shader, not a lit mesh.
-  const shaded = near.every((m) => m.material &&
-    /ShaderMaterial/.test(m.material.getClassName()));
-  travelChecks.push(['the hole is drawn by a shader, not geometry', shaded]);
+    appRef.holeField.has(h.id)]);
+  travelChecks.push(['the hole is a shader pass, not geometry', legacy.length === 0]);
 
-  // Rotating the camera must not move the hole.
-  const diskBefore = appRef.scene.meshes.find((m) => /^bhQuad_/.test(m.name));
-  const posBefore = diskBefore && diskBefore.getAbsolutePosition().clone();
+  // Rotating the camera changes projection only; no world object can move.
+  const lockedBefore = appRef.holeField.isLocked(h.id);
   appRef.camera.rotation && (appRef.camera.rotation.y += 1.1);
   appRef.scene.render && null;
   appRef.holeField.update(
@@ -490,9 +483,8 @@ try {
       id: r.id, position: r.position,
       horizon: appRef.universe.horizonRadiusOf(r), seed: r.seed ?? 1
     })));
-  const posAfter = diskBefore && diskBefore.getAbsolutePosition();
   travelChecks.push(['rotating the camera does not move the hole',
-    !posBefore || Vector3Distance(posBefore, posAfter) < 1e-6]);
+    lockedBefore && appRef.holeField.isLocked(h.id)]);
 
   // Far away it must be released again, or an endless universe leaks meshes.
   appRef.holeField.update(
@@ -1277,6 +1269,7 @@ if (appRef) {
       // crossing a horizon must set up the look-back view
       const hr = u.horizonRadiusOf(target);
       const V3u = target.position.constructor;
+      if (u.insideHorizon) u.leaveHorizon(u.insideHorizon.id);
       u.updatePlayer(target.position.add(new V3u(hr * 5, 0, 0)));
       ok('outside the horizon nothing is flagged', u.insideHorizon === null);
       u.updatePlayer(target.position.add(new V3u(hr * 0.4, 0, 0)));
@@ -1285,7 +1278,9 @@ if (appRef) {
       ok('the stats say you are inside',
          u.stats()['Inside horizon'].includes(target.name));
       u.updatePlayer(target.position.add(new V3u(hr * 9, 0, 0)));
-      ok('you can climb back out', u.insideHorizon === null);
+      ok('Euclidean motion cannot climb back out', u.insideHorizon?.id === target.id);
+      u.leaveHorizon(target.id);
+      ok('the completed handshake releases capture', u.insideHorizon === null);
     }
 
     // ---- the black hole renderer accepts an interior view and any lens ----

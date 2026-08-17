@@ -23,6 +23,25 @@ import { ChunkStreamer } from './ChunkedUniverse';
  * path pass through the hole", which is the difference between catching
  * a crossing and tunnelling straight through it at warp.
  */
+export function segmentSphereFirstHit(
+  a: Vector3, b: Vector3, center: Vector3, radius: number
+): number | null {
+  const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z;
+  const ox=a.x-center.x, oy=a.y-center.y, oz=a.z-center.z;
+  const aa=dx*dx+dy*dy+dz*dz;
+  const cc=ox*ox+oy*oy+oz*oz-radius*radius;
+  if (cc <= 0) return 0;
+  if (!(aa > 1e-12)) return null;
+  const bb=2*(ox*dx+oy*dy+oz*dz);
+  const disc=bb*bb-4*aa*cc;
+  if (disc < 0) return null;
+  const root=Math.sqrt(disc);
+  const t0=(-bb-root)/(2*aa), t1=(-bb+root)/(2*aa);
+  if (t0 >= 0 && t0 <= 1) return t0;
+  if (t1 >= 0 && t1 <= 1) return t1;
+  return null;
+}
+
 export function segmentPointDistance(a: Vector3, b: Vector3, p: Vector3): number {
   const abx = b.x - a.x, aby = b.y - a.y, abz = b.z - a.z;
   const apx = p.x - a.x, apy = p.y - a.y, apz = p.z - a.z;
@@ -508,94 +527,28 @@ export class UniverseState {
     inside.sort((a, b) => a.radius - b.radius);
     this.current = inside[0] ?? null;
 
-    // ---- horizon crossing ----
-    //
-    // SWEPT, not sampled. The old test asked "is the ship inside the
-    // horizon RIGHT NOW", which is only ever evaluated at frame
-    // boundaries. A horizon is ~90 units across; under warp the ship
-    // covers 142,500 units in a single frame. It was therefore outside
-    // the hole before the step and outside it after, and the player flew
-    // straight through and out the far side without ever being detected
-    // as inside - the "it bounces me out" bug.
-    //
-    // The segment from the previous position to this one is tested
-    // instead, so a crossing cannot be missed however fast you are going.
-    const bh = inside.find((r) => r.kind === 'blackhole')
-      ?? this.sweptHole(this.lastPlayerPos, pos);
-    if (bh) {
-      const horizon = this.horizonRadiusOf(bh);
-      const endD = Vector3.Distance(pos, bh.position);
-      const sweptD = segmentPointDistance(this.lastPlayerPos, pos, bh.position);
-
-      // The sweep is for ENTERING, never for leaving.
-      //
-      // If it applied both ways, climbing out would re-trigger: the path
-      // from just inside the horizon to well outside it still passes
-      // close to the centre, so its closest approach is small and the
-      // player would be flagged as inside forever. Once we are already
-      // inside, only the endpoint matters - that is what lets you get out
-      // and look back, which is the whole point of going in.
-      const wasInside = this.insideHorizon?.id === bh.id;
-      const d = wasInside ? endD : Math.min(endD, sweptD);
-      if (d <= horizon) {
-        this.insideHorizon = bh;
-        // 0 at the horizon, 1 at the singularity
-        this.horizonDepth = Math.max(0, Math.min(1, 1 - d / Math.max(horizon, 1e-3)));
-      } else if (this.insideHorizon?.id === bh.id) {
-        // ---- RELEASE, and why it is not just "endD > horizon" ----
-        //
-        // That was the "I still cannot get inside" bug. The swept test
-        // above correctly CATCHES the crossing, but a single frame at
-        // deep-space cruise covers 204 units and a horizon is only 9-90
-        // units across. So the frame after capture, the ship's own
-        // inertia had already carried the endpoint back outside, this
-        // branch fired, and the descent was torn down one frame after it
-        // began. Capture worked perfectly and was immediately undone.
-        //
-        // The distinction that matters is whether the player was ever
-        // REALLY in there. Two cases have to be told apart:
-        //
-        //   climb-out  the ship occupied a point inside the horizon, and
-        //              is now moving out under control, a small fraction
-        //              of a horizon per frame. This must release - being
-        //              able to go in, look around and come back out is
-        //              the whole point.
-        //
-        //   flythrough the ship was only ever caught by the SWEEP. It was
-        //              outside before the step and outside after it, and
-        //              merely passed through at a speed that covers many
-        //              horizons per frame. This must NOT release: it is
-        //              someone flying into a black hole, and they should
-        //              end up inside it.
-        //
-        // What separates them is WHERE THE STEP STARTED. A climb-out
-        // begins at a point inside the horizon, because that is where the
-        // player was standing. A flythrough begins outside it - the ship
-        // was caught mid-segment by the sweep and never occupied an
-        // interior point at a frame boundary at all.
-        //
-        // This is checked rather than step size, because a fast climb-out
-        // from just inside a small horizon and a slow flythrough of a
-        // large one can have identical step lengths.
-        const startedInside =
-          Vector3.Distance(this.lastPlayerPos, bh.position) <= horizon;
-        if (startedInside) {
-          if (this.latchedHorizonId !== bh.id) {
-            this.insideHorizon = null;
-            this.horizonDepth = 0;
-          } else {
-            this.horizonDepth = 1;
-          }
-        } else {
-          // Still captured. Hold at the singularity end of the scale: the
-          // ship is past the centre and the fall should continue rather
-          // than the player being spat back out into open space.
-          this.horizonDepth = 1;
+    // ---- unified irreversible horizon capture ----
+    // Solve the segment/sphere quadratic, not a frame-end proximity sample.
+    // Once a future-directed worldline intersects an event horizon it cannot
+    // become exterior again; only leaveHorizon(), after the non-Euclidean
+    // destination handshake, may release this latch.
+    if (this.insideHorizon && this.latchedHorizonId === this.insideHorizon.id) {
+      this.horizonDepth = Math.max(this.horizonDepth, 1);
+    } else {
+      const endpointHole = inside.find((r) => r.kind === 'blackhole') ?? null;
+      const bh = endpointHole ?? this.sweptHole(this.lastPlayerPos, pos);
+      if (bh) {
+        const horizon = this.horizonRadiusOf(bh);
+        const endD = Vector3.Distance(pos, bh.position);
+        const hit = segmentSphereFirstHit(this.lastPlayerPos, pos, bh.position, horizon);
+        if (endD <= horizon || hit !== null) {
+          this.insideHorizon = bh;
+          this.latchedHorizonId = bh.id;
+          this.horizonDepth = endD <= horizon
+            ? Math.max(0, Math.min(1, 1-endD/Math.max(horizon,1e-3)))
+            : 1;
         }
       }
-    } else if (this.insideHorizon && this.latchedHorizonId !== this.insideHorizon.id) {
-      this.insideHorizon = null;
-      this.horizonDepth = 0;
     }
 
     return this.current;
@@ -609,12 +562,12 @@ export class UniverseState {
    */
   private sweptHole(a: Vector3, b: Vector3): Region | null {
     let best: Region | null = null;
-    let bestD = Infinity;
+    let firstT = Infinity;
     for (const r of this.regions) {
       if (r.kind !== 'blackhole') continue;
-      const d = segmentPointDistance(a, b, r.position);
-      if (d <= this.horizonRadiusOf(r) && d < bestD) {
-        bestD = d;
+      const t = segmentSphereFirstHit(a, b, r.position, this.horizonRadiusOf(r));
+      if (t !== null && t < firstT) {
+        firstT = t;
         best = r;
       }
     }

@@ -152,136 +152,62 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
 }
 
 /* ================================================================
-   3. BLACK HOLES — the giant floating bubble
+   3. BLACK HOLES — unified pass, no floating bubble geometry
    ================================================================ */
 {
-  const m = holeFrag.match(/smoothstep\(([\d.]+), ([\d.]+), totalBend\)/);
-  ok('the lensed-sky threshold is present and parseable', !!m);
-  const lo = m ? Number(m[1]) : 0, hi = m ? Number(m[2]) : 1;
-  const qm = holeRend.match(/QUAD_RADII = (\d+)/);
-  const QUAD = qm ? Number(qm[1]) : 0;
-  const dm = holeRend.match(/DISK_OUTER = ([\d.]+)/);
-  const DISK_OUTER = dm ? Number(dm[1]) : 0;
-
-  const ss = (a, b, x) => {
-    const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
-    return t * t * (3 - 2 * t);
-  };
-  // Weak-field deflection for an escaping ray at impact parameter b, in
-  // horizon radii. This is the physics the shader is approximating.
-  const alphaAt = (b) => {
-    const bend = 2 / b;
-    const rim = 1 - ss(0.86, 1.0, b / QUAD);
-    return ss(lo, hi, bend) * 0.92 * Math.max(0, rim);
-  };
-
-  ok('THE BUG: the old 0.05..0.55 threshold left the quad opaque 20 radii out',
-    (() => {
-      const oldA = ss(0.05, 0.55, 2 / 20) * 0.92;
-      return oldA > 0.02;
-    })(), 'old alpha at 20 radii was ' + (ss(0.05, 0.55, 2 / 20) * 0.92).toFixed(3));
-
-  ok('the lensed sky is gone before the disk outer edge',
-    alphaAt(DISK_OUTER) < 0.01,
-    'alpha at ' + DISK_OUTER + ' radii = ' + alphaAt(DISK_OUTER).toFixed(4));
-  ok('nothing is emitted at the quad rim', alphaAt(QUAD) < 1e-4);
-  ok('the halo has ended by 8 radii', alphaAt(8) < 0.02);
-  ok('the Einstein ring is UNTOUCHED: strong lensing still saturates',
-    alphaAt(2.6) > 0.8, 'alpha at the photon ring = ' + alphaAt(2.6).toFixed(3));
-  ok('lensing is still strong at 3 radii', alphaAt(3) > 0.7);
-  ok('alpha falls monotonically outward', (() => {
-    let prev = 2;
-    for (let b = 2.6; b <= QUAD; b += 0.4) {
-      const a = alphaAt(b);
-      if (a > prev + 1e-9) return false;
-      prev = a;
-    }
-    return true;
-  })());
-  ok('the quad is no wider than it needs to be',
-    QUAD > DISK_OUTER && QUAD <= DISK_OUTER * 1.6,
-    'quad ' + QUAD + ' vs disk outer ' + DISK_OUTER);
-  ok('the quad shrank from the old 26 radii', QUAD < 26);
-  ok('the change is explained where the number lives',
-    /bubble/i.test(holeRend));
+  ok('the renderer is a full-screen post-process',
+    /new PostProcess/.test(holeRend));
+  ok('all legacy black-hole geometry is absent',
+    !/MeshBuilder|CreatePlane|bhQuad_/.test(holeRend));
+  ok('the pass lenses the actual rendered frame',
+    /texture2D\(textureSampler,sourceUv\)/.test(holeFrag));
+  ok('the influence has a smooth outer fade',
+    /smoothstep\(influence\*\.78,influence,r\)/.test(holeFrag));
+  ok('the Einstein ring remains a distinct critical curve',
+    /critical=horizon\*1\.52/.test(holeFrag));
+  ok('the ring duplicates real background light',
+    /vec3 secondary=texture2D/.test(holeFrag));
+  ok('the event horizon is opaque black',
+    /mix\(lensed\+gas,vec3\(0\.\),shadow\)/.test(holeFrag));
+  ok('the output alpha is always one',
+    /gl_FragColor=vec4\(col,1\.\)/.test(holeFrag));
+  ok('the old oversized quad constant is gone',
+    !/QUAD_RADII = 26/.test(holeRend));
+  ok('the reason for removing cards is documented', /bubble/i.test(holeRend));
 }
 
 /* ================================================================
-   4. BLACK HOLES — you could not get inside
+   4. BLACK HOLES — exact, irreversible worldline capture
    ================================================================ */
 {
-  ok('release depends on where the step STARTED, not only where it ended',
-    /const startedInside =/.test(uniSrc));
-  ok('a climb-out is one that begins at an interior point',
-    /Vector3\.Distance\(this\.lastPlayerPos, bh\.position\) <= horizon/.test(uniSrc));
-  ok('only a genuine climb-out releases', /if \(startedInside\)/.test(uniSrc));
-  ok('a fast flythrough stays captured', /this\.horizonDepth = 1;/.test(uniSrc));
-  ok('the reason is recorded next to the code', /inertia/i.test(uniSrc));
+  ok('capture solves the segment-sphere quadratic',
+    /segmentSphereFirstHit/.test(uniSrc) && /bb\*bb-4\*aa\*cc/.test(uniSrc));
+  ok('the earliest crossing parameter is selected', /t < firstT/.test(uniSrc));
+  ok('capture latches at the crossing itself',
+    /this\.latchedHorizonId = bh\.id/.test(uniSrc));
+  ok('only the destination handshake has a release method',
+    /leaveHorizon\(id: string\)/.test(uniSrc));
+  ok('the causal reason is recorded next to the code', /future-directed worldline/i.test(uniSrc));
 
   const U = await bundle('src/bjs/systems/UniverseState.ts');
   const u = new U.UniverseState({ seed: 12345 });
   const hole = u.regions.find((r) => r.kind === 'blackhole');
   ok('the universe contains a black hole to test with', !!hole);
-
   if (hole) {
-    const hz = u.horizonRadiusOf(hole);
-    // A real Vector3, cloned from the hole. Spreading one yields its
-    // private _x/_y/_z fields and no methods, which silently produces a
-    // useless object - the harness must build them properly.
-    const at = (x) => {
-      const v = hole.position.clone();
-      v.x = x;
-      return v;
-    };
-    // Approach from far out, then step straight through the centre at a
-    // speed that used to defeat capture entirely.
-    u.updatePlayer(at(hole.position.x - 4000));
-    ok('starts outside the horizon', u.insideHorizon === null,
-      'inside=' + (u.insideHorizon?.id ?? 'null'));
-
-    // One frame at deep-space cruise: 204 units, far bigger than the
-    // horizon. This is the exact case that used to fail.
-    const step = 204;
-    let x = hole.position.x - hz - step * 0.5;
-    u.updatePlayer(at(x));
-    x += step;
-    u.updatePlayer(at(x));
-    ok('a fast pass through the horizon is CAUGHT',
-      u.insideHorizon?.id === hole.id,
-      'horizon radius ' + hz.toFixed(1) + ', step ' + step);
-
-    // The next frame carries the ship past the far side. It must NOT be
-    // released - that was the bug.
-    x += step;
-    u.updatePlayer(at(x));
-    ok('inertia past the far side does NOT eject you',
-      u.insideHorizon?.id === hole.id);
-    ok('the fall is reported at full depth while captured',
-      u.horizonDepth === 1);
-
-    x += step;
-    u.updatePlayer(at(x));
-    ok('still captured several frames later', u.insideHorizon?.id === hole.id);
-
-    // A deliberate, slow climb out must still work. Steps must be well
-    // under the horizon radius, which is what marks it as controlled.
+    const hz=u.horizonRadiusOf(hole);
+    const V=hole.position.constructor;
+    const at=(x)=>new V(x,hole.position.y,hole.position.z);
+    const step=hz*8;
+    let x=hole.position.x-hz-step*.5;
+    u.updatePlayer(at(x)); x+=step; u.updatePlayer(at(x));
+    ok('a frame-spanning flythrough is caught',u.insideHorizon?.id===hole.id);
+    x+=step;u.updatePlayer(at(x));
+    ok('crossing the coordinate centre cannot eject the craft',u.insideHorizon?.id===hole.id);
+    for(let i=0;i<20;i++){x+=step;u.updatePlayer(at(x));}
+    ok('capture remains stable many frames later',u.insideHorizon?.id===hole.id);
     u.leaveHorizon(hole.id);
-    u.updatePlayer(at(hole.position.x));
-    ok('re-entering at rest captures again', u.insideHorizon?.id === hole.id);
-    const small = Math.max(0.5, hz * 0.2);
-    let cx = hole.position.x;
-    let steps = 0;
-    for (let i = 0; i < 400 && u.insideHorizon; i++) {
-      cx += small;
-      u.updatePlayer(at(cx));
-      steps++;
-    }
-    ok('a slow, controlled climb-out DOES release you',
-      u.insideHorizon === null,
-      'still inside after ' + steps + ' steps of ' + small.toFixed(1)
-      + ' (horizon ' + hz.toFixed(1) + ')');
-    ok('the controlled climb-out took a sane number of steps',
-      steps > 0 && steps < 60, steps + ' steps');
+    ok('the explicit destination handshake releases capture',u.insideHorizon===null);
+    ok('handshake release resets depth',u.horizonDepth===0);
   }
 }
 

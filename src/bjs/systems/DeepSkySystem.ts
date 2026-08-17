@@ -65,7 +65,9 @@ export const LUMINOSITY: Record<string, number> = {
   galaxy: 4.2e9,
   nebula: 6.0e8,
   'star-system': 9.0e6,
-  blackhole: 2.2e6,   // the accretion disc, not the hole
+  // Singularities are exclusively rendered by UnifiedSingularityRenderer.
+  // A second luminous point here was the legacy floating core/bubble.
+  blackhole: 0,
   dimension: 1.4e6,
   ocean: 2.0e4,
   terrain: 1.6e4,

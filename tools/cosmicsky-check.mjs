@@ -37,16 +37,15 @@ const glsl = (shaderSrc.match(/COSMIC_SKY_GLSL\s*=\s*`([\s\S]*?)`;/m) || [])[1] 
 
 // ------------------------------------------------------ the sky is shared
 ok('the sky GLSL is exported for reuse', glsl.length > 500);
-ok('the black hole shader compiles the same sky function', (() => {
+ok('the black hole lens samples the exact rendered sky frame', (() => {
   const hole = fs.readFileSync('src/bjs/shaders/HoleFieldShader.ts', 'utf8');
-  return hole.includes('COSMIC_SKY_GLSL') && hole.includes('cosmicSky(');
+  return hole.includes('textureSampler') && hole.includes('sourceUv');
 })());
 ok('the sky dome and the hole use one entry point',
   /vec3 cosmicSky\(vec3 dir/.test(glsl));
-ok('the hole binds the sky uniforms', (() => {
+ok('the hole cannot diverge from sky uniforms', (() => {
   const r = fs.readFileSync('src/bjs/systems/HoleFieldRenderer.ts', 'utf8');
-  return ['skyMedium', 'skySymmetry', 'skyTint', 'skyStrangeness', 'skyZoom']
-    .every((u) => r.includes("'" + u + "'"));
+  return r.includes("'textureSampler'") && !r.includes("'skyMedium'");
 })());
 ok('the app drives sky and holes from the same verse state', (() => {
   const app = fs.readFileSync('src/bjs/App.ts', 'utf8');

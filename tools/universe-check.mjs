@@ -159,10 +159,12 @@ console.log('\n— crossing a black hole horizon —');
   u.updatePlayer(bh.position.add(new Vector3(hr * 0.1, 0, 0)));
   ok('falling deeper increases depth', u.horizonDepth > shallow);
 
-  // and you can come back out
+  // An event horizon is causal: Euclidean motion cannot climb back out.
   u.updatePlayer(bh.position.add(new Vector3(hr * 5, 0, 0)));
-  ok('leaving the horizon clears the inside state', u.insideHorizon === null);
-  ok('depth resets on exit', u.horizonDepth === 0);
+  ok('crossing remains latched past the coordinate centre', u.insideHorizon?.id === bh.id);
+  u.leaveHorizon(bh.id);
+  ok('only the destination handshake releases the horizon', u.insideHorizon === null);
+  ok('depth resets after the handshake', u.horizonDepth === 0);
 }
 
 console.log('\n— every black hole has its own lens —');

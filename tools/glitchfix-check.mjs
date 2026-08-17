@@ -139,21 +139,19 @@ ok('star points stay small too', (() => {
 // A horizon is ~20-90 units; at warp the ship covers 142,500 units per
 // frame, so it was outside before the step and outside after.
 ok('the horizon test is swept, not sampled',
-  /segmentPointDistance/.test(uni) && /sweptHole/.test(uni));
+  /segmentSphereFirstHit/.test(uni) && /sweptHole/.test(uni));
 ok('the previous position is retained for the sweep',
   /lastPlayerPos/.test(uni));
-ok('the tunnelling cause is recorded',
-  /SWEPT, not sampled/.test(uni) && /142,500/.test(uni));
-ok('closest approach along the step is what is tested',
-  /segmentPointDistance\(this\.lastPlayerPos, pos, bh\.position\)/.test(uni));
-// The sweep must apply to ENTERING only. Applied both ways, climbing out
-// re-triggers: the path from just inside to well outside still passes
-// close to the centre, so the player would be trapped inside forever.
-ok('the sweep does not apply when leaving',
-  /const wasInside = this\.insideHorizon\?\.id === bh\.id/.test(uni) &&
-  /wasInside \? endD :/.test(uni));
-ok('being able to get out and look back is protected',
-  /that is what lets you get out|look back/.test(uni));
+ok('the tunnelling cause is solved by a segment-sphere quadratic',
+  /bb\*bb-4\*aa\*cc/.test(uni));
+ok('the first physical intersection along the step is tested',
+  /segmentSphereFirstHit\(this\.lastPlayerPos, pos, bh\.position, horizon\)/.test(uni));
+// Future-directed horizon crossing is irreversible; ordinary coordinate
+// motion can never become an accidental release path.
+ok('capture is latched at the exact crossing',
+  /this\.latchedHorizonId = bh\.id/.test(uni));
+ok('only the destination handshake can release capture',
+  /leaveHorizon\(id: string\)/.test(uni));
 
 {
   const out = '/tmp/usx-' + Date.now() + '.mjs';

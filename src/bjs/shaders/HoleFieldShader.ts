@@ -1,365 +1,137 @@
 /**
- * HoleFieldShader — a black hole you fly past, traced rather than modelled.
+ * Unified screen-space Schwarzschild/Kerr lens.
  *
- * This is the same physics BlackHoleWorld uses, packaged to run on a single
- * camera-facing quad so any number of holes can exist in the open universe
- * at once.
- *
- * Why a shader and not geometry: a black hole has no surface. What you see
- * is the absence of light in directions where photons fall in, ringed by
- * light that came from BEHIND the hole and was bent around it. A mesh cannot
- * express that - an opaque sphere hides the very lensing that makes a black
- * hole look like one. So the fragment shader integrates the photon path for
- * every pixel and decides whether that ray escapes, hits the disk, or is
- * captured.
- *
- * The disk is a volume, not a plane. Sampling a single plane crossing gives
- * an infinitely thin sheet that vanishes edge-on; here the march accumulates
- * emission through a slab of gas with real vertical thickness.
+ * This pass owns every open-universe black-hole pixel. It replaces the old
+ * camera-facing plane/card architecture: there is no mesh edge, billboard,
+ * translucent bubble, or second black disc to drift away from the lens.
  */
+export const HOLE_FIELD_SHADER = 'unifiedSingularity';
 
-import { Effect } from '@babylonjs/core/Materials/effect';
-import { COSMIC_SKY_GLSL } from './CosmicSkyShader';
-
-export const HOLE_FIELD_SHADER = 'holeField';
-
-const VERT = `
+// Retained for standalone shader verification; Babylon's PostProcess supplies
+// its equivalent full-screen vertex stage at runtime.
+export const VERT = `
 precision highp float;
-attribute vec3 position;
-attribute vec2 uv;
-uniform mat4 worldViewProjection;
-uniform mat4 world;
+attribute vec2 position;
 varying vec2 vUV;
-varying vec3 vWorld;
-void main(void){
-  vUV = uv;
-  vWorld = (world * vec4(position, 1.0)).xyz;
-  gl_Position = worldViewProjection * vec4(position, 1.0);
-}
+void main(){vUV=position*.5+.5;gl_Position=vec4(position,0.,1.);}
 `;
 
-const FRAG = `
+export const FRAG = `
 precision highp float;
-
 varying vec2 vUV;
-varying vec3 vWorld;
-
-uniform vec3  camPos;
-uniform vec3  holePos;
+uniform sampler2D textureSampler;
+uniform vec2 center;
+uniform vec2 resolution;
+uniform float horizon;
 uniform float time;
-
-uniform float rs;             // horizon radius, world units
-uniform float quadRadius;     // half-width of the carrier quad
-uniform float horizonCover;   // shadow size relative to rs
-
-uniform float diskInner;      // world units
-uniform float diskOuter;      // world units
-uniform float diskThickness;  // vertical half-thickness, world units. 0 = none
-uniform float diskBright;     // 0 = this hole has NO accretion disk
-uniform float diskTilt;
+uniform float active;
 uniform float spin;
-uniform float dopplerAmt;
-uniform float diskTemp;
-uniform float turbulence;
+uniform float diskInner;
+uniform float diskOuter;
+uniform float diskTilt;
+uniform float diskBright;
+uniform float temperature;
+uniform float seed;
 
-// ---------------------------------------------------------------- noise
-float hash13(vec3 p){
-  p = fract(p * 0.1031);
-  p += dot(p, p.yzx + 33.33);
-  return fract((p.x + p.y) * p.z);
+float hash21(vec2 p){
+  p=fract(p*vec2(123.34,456.21));
+  p+=dot(p,p+45.32);
+  return fract(p.x*p.y);
 }
-
-float noise3(vec3 p){
-  vec3 i = floor(p);
-  vec3 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  float n000 = hash13(i + vec3(0.0, 0.0, 0.0));
-  float n100 = hash13(i + vec3(1.0, 0.0, 0.0));
-  float n010 = hash13(i + vec3(0.0, 1.0, 0.0));
-  float n110 = hash13(i + vec3(1.0, 1.0, 0.0));
-  float n001 = hash13(i + vec3(0.0, 0.0, 1.0));
-  float n101 = hash13(i + vec3(1.0, 0.0, 1.0));
-  float n011 = hash13(i + vec3(0.0, 1.0, 1.0));
-  float n111 = hash13(i + vec3(1.0, 1.0, 1.0));
-  return mix(
-    mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
-    mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y), f.z);
+float noise(vec2 p){
+  vec2 i=floor(p),f=fract(p); f=f*f*(3.0-2.0*f);
+  return mix(mix(hash21(i),hash21(i+vec2(1.,0.)),f.x),
+             mix(hash21(i+vec2(0.,1.)),hash21(i+vec2(1.,1.)),f.x),f.y);
 }
-
-float fbm3(vec3 p){
-  float a = 0.5, s = 0.0;
-  for (int i = 0; i < 4; i++){
-    s += a * noise3(p);
-    p *= 2.03;
-    a *= 0.5;
-  }
-  return s;
+float fbm(vec2 p){
+  float n=0.,a=.5;
+  for(int i=0;i<5;i++){n+=noise(p)*a;p=p*2.03+17.7;a*=.5;}
+  return n;
 }
-
-// ------------------------------------------------------------- disk colour
-// Returns emission and writes coverage into alpha.
-vec3 diskColor(float r, float ang, float height, out float alpha){
-  float t = clamp((r - diskInner) / max(diskOuter - diskInner, 1e-4), 0.0, 1.0);
-
-  // Differential rotation: inner gas laps outer gas, which is what smears
-  // the turbulence into spiral filaments instead of static blobs.
-  float rr = max(r, diskInner * 0.5);
-  float kepler = pow(diskInner / rr, 1.5);
-  float swirl = ang + time * spin * kepler * 1.6;
-
-  vec3 q = vec3(cos(swirl) * r, height * 2.0, sin(swirl) * r) * (2.4 / max(diskOuter, 1e-3));
-  float n = fbm3(q * 3.0);
-  float n2 = fbm3(q * 7.0 + 11.3);
-
-  float dens = mix(1.0, n * 1.6, clamp(turbulence, 0.0, 1.0));
-  dens *= 0.35 + 1.65 * clamp(kepler, 0.0, 1.0);
-  dens *= 1.0 + 0.35 * kepler * (n2 - 0.5);
-
-  // Hot inside, cool outside, biased by this hole's temperature so an
-  // ancient cold disk and a blazar do not share a palette.
-  float heat = pow(clamp((1.0 - t) * max(diskTemp, 0.01), 0.0, 1.0), 2.2);
-  vec3 hot  = vec3(1.0, 0.98, 0.94);
-  vec3 mid  = vec3(1.0, 0.62, 0.22);
-  vec3 cool = vec3(0.72, 0.16, 0.04);
-  vec3 col = mix(cool, mid, heat);
-  col = mix(col, hot, pow(heat, 2.6));
-
-  // Soft ragged edges rather than a hard rim.
-  float inner = smoothstep(0.0, 0.12, t);
-  // Dissolve organically into the starfield. The old 0.55->1.0 ramp still
-  // had gradient left at the very edge, which read as a sharp white
-  // outline against space; squaring a longer ramp takes the density to
-  // zero smoothly with zero slope at the boundary.
-  float outerRamp = 1.0 - smoothstep(0.42, 1.0, t);
-  float outer = outerRamp * outerRamp;
-  outer *= 0.55 + 0.45 * n2;
-  alpha = clamp(dens * inner * outer * 1.5, 0.0, 1.0);
-  return col * dens * diskBright;
-}
-
-// ------------------------------------------------------------------ the sky
-/**
- * The sky, shared verbatim with the background dome.
- *
- * This is the "dynamic cubemap" requirement, met without a cubemap. A cube
- * map is a function from direction to colour; capturing one would mean six
- * extra renders per frame and would cap the sky at the cube's resolution -
- * worst exactly at an Einstein ring, where a tiny patch of sky is magnified
- * enormously and would smear into texels. Compiling the SAME function into
- * both shaders is infinitely sharp, free to "capture", and cannot go stale:
- * the hole and the background are the same maths by construction.
- *
- * The practical payoff is that a hole in the Codeverse warps matrix rain,
- * and a hole in the Fractal Core warps Mandelbrot spirals, with no plumbing.
- */
-${COSMIC_SKY_GLSL}
-
-uniform float skyMedium;
-uniform float skySymmetry;
-uniform vec3  skyTint;
-uniform float skyStrangeness;
-uniform float skyZoom;
-
-/* Cinematic ACES filmic curve, shared by the disk and the lensed sky. */
 vec3 tonemapACES(vec3 x){
-  return (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14);
+  return (x*(2.51*x+.03))/(x*(2.43*x+.59)+.14);
 }
 
-vec3 skyAlongRay(vec3 dir){
-  return cosmicSky(dir, skyMedium, skySymmetry, skyTint, skyStrangeness,
-                   time, skyZoom);
-}
+void main(){
+  vec4 scene=texture2D(textureSampler,vUV);
+  if(active<.5 || horizon<.000001){gl_FragColor=vec4(scene.rgb,1.);return;}
 
-void main(void){
-  // Ray from the eye through this fragment of the quad.
-  vec3 ro = camPos - holePos;
-  vec3 rd = normalize(vWorld - camPos);
+  float aspect=resolution.x/max(1.,resolution.y);
+  vec2 d=vUV-center;
+  d.x*=aspect;
+  float r=length(d);
+  float influence=horizon*11.5;
+  if(r>influence){gl_FragColor=vec4(scene.rgb,1.);return;}
 
-  float r0 = max(length(ro), 1e-4);
-  vec3 er = normalize(ro);
-  vec3 nrm = cross(er, rd);
-  float nl = length(nrm);
+  vec2 radial=d/max(r,1e-7);
 
-  vec3 col = vec3(0.0);
-  float transmit = 1.0;
-  bool captured = false;
-  // Where this fragment's light ultimately comes from, and how far the
-  // geodesic swung to get there.
-  vec3 escapeDir = rd;
-  float totalBend = 0.0;
-
-  // Disk basis.
-  vec3 dn = normalize(vec3(sin(diskTilt), cos(diskTilt), 0.0));
-  vec3 ref = abs(dn.z) < 0.9 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-  vec3 dx = normalize(cross(dn, ref));
-  vec3 dz = normalize(cross(dn, dx));
-
-  if (nl < 1e-5){
-    // Exactly radial: straight in, no orbital plane to work with.
-    captured = true;
-  } else {
-    nrm /= nl;
-    vec3 et = normalize(cross(nrm, er));
-
-    // u = 1/r parameterised by orbital angle. RK2 on u'' = -u + 1.5 rs u^2,
-    // which is the Schwarzschild null geodesic in the orbital plane.
-    float u = 1.0 / r0;
-    float dru = dot(rd, er);
-    float dtu = dot(rd, et);
-    float du = -u * (dru / max(dtu, 1e-4));
-
-    float phi = 0.0;
-    float dphi = 0.035;
-    vec3 prevPos = ro;
-    vec3 prevPrev = ro;
-    escapeDir = rd;
-
-    for (int i = 0; i < 160; i++){
-      float k1 = -u + 1.5 * rs * u * u;
-      float uMid  = u  + du * dphi * 0.5;
-      float duMid = du + k1 * dphi * 0.5;
-      float k2 = -uMid + 1.5 * rs * uMid * uMid;
-      u  += duMid * dphi;
-      du += k2 * dphi;
-      phi += dphi;
-
-      if (u <= 0.0) break;                       // escaped
-      float r = 1.0 / u;
-      if (r <= rs * horizonCover){ captured = true; break; }
-
-      vec3 p = (er * cos(phi) + et * sin(phi)) * r;
-
-      // The ray's CURRENT heading, in world space. Once it stops bending
-      // this is the direction it flies off toward, and that is the patch of
-      // sky this fragment shows. Tracking it is what lets a fragment near
-      // the rim - whose geodesic has swung through a large angle - display
-      // sky from behind the hole, which is the whole point of lensing.
-      escapeDir = normalize(p - prevPos);
-      totalBend = phi;
-
-      if (r > quadRadius * 2.2) break;           // left the region we draw
-
-      // ---- volumetric disk ----
-      // Accumulate through a slab of real thickness rather than testing a
-      // single plane crossing, which would be a sheet of zero depth.
-      if (diskBright > 0.0 && diskThickness > 0.0){
-        float h1 = dot(p, dn);
-        float h0 = dot(prevPos, dn);
-        bool crossed = h0 * h1 < 0.0;
-        bool inSlab = abs(h1) <= diskThickness;
-        if (crossed || inSlab){
-          vec3 hit = crossed ? mix(prevPos, p, h0 / (h0 - h1)) : p;
-          float hr = length(hit);
-          if (hr > diskInner && hr < diskOuter){
-            float hgt = 1.0 - clamp(abs(dot(hit, dn)) / diskThickness, 0.0, 1.0);
-            float ang = atan(dot(hit, dz), dot(hit, dx));
-            float a;
-            vec3 dc = diskColor(hr, ang, dot(hit, dn), a);
-
-            // Relativistic beaming: gas coming toward you is brighter and
-            // bluer. This is why a real disk is lopsided.
-            vec3 orbit = normalize(cross(dn, hit));
-            float vmag = sqrt(max(rs / (2.0 * hr), 0.0));
-            vec3 toCam = normalize(camPos - holePos - hit);
-            float beta = dot(orbit * vmag, -toCam);
-            float dop = 1.0 / max(1.0 - beta, 0.05);
-            // THE WHITE BUBBLE.
-            // Surface brightness beams as D^3, but D was clamped at 4.0,
-            // giving 4^3 = 64x. Accumulated over ~60 in-slab steps that
-            // drove col to ~68, far past anything a tonemapper can pull
-            // back, so the whole disk saturated into one white blob.
-            // Orbital speed is bounded by physics: beta = sqrt(rs/2r), so
-            // even at 1.5rs beta is 0.577 and the true D is 2.36. Clamping
-            // D to 2.4 keeps every physically reachable value and discards
-            // only the runaway.
-            float boost = pow(clamp(dop, 0.2, 2.4), 3.0 * dopplerAmt);
-            vec3 shift = beta > 0.0
-              ? mix(dc, vec3(0.75, 0.88, 1.0) * (dc.r + dc.g + dc.b) * 0.5,
-                    clamp(beta * 1.6 * dopplerAmt, 0.0, 0.85))
-              : mix(dc, vec3(1.0, 0.35, 0.12) * (dc.r + dc.g + dc.b) * 0.45,
-                    clamp(-beta * 1.4 * dopplerAmt, 0.0, 0.8));
-
-            float w = a * mix(0.35, 1.0, hgt) * (crossed ? 1.0 : 0.55);
-            col += transmit * shift * boost * w;
-            transmit *= (1.0 - clamp(w, 0.0, 1.0) * 0.92);
-            if (transmit < 0.02) break;
-          }
-        }
-      }
-
-      prevPrev = prevPos;
-      prevPos = p;
-      // Widen the step as the ray escapes, so distant stretches are cheap.
-      dphi = 0.035 * (1.0 + smoothstep(rs * 6.0, rs * 60.0, r) * 3.5);
-    }
+  // Integrate the weak-field null-geodesic deflection in 32 affine steps.
+  // The accumulated 2Rs/b term is the Schwarzschild Einstein bend; frame
+  // dragging adds the signed Kerr term rather than rotating a texture card.
+  float impact=max(r,horizon*.82);
+  float deflect=0.;
+  for(int i=0;i<32;i++){
+    float s=(float(i)+.5)/32.;
+    float z=(s*2.-1.)*7.;
+    float rho2=impact*impact+horizon*horizon*z*z;
+    deflect+=(2.*horizon*horizon*impact/pow(max(rho2,1e-10),1.5))/32.;
   }
+  deflect*=horizon*7.2;
+  float drag=spin*horizon*horizon/max(r*r,horizon*horizon)*.16;
+  float cs=cos(drag),sn=sin(drag);
+  vec2 dragged=vec2(radial.x*cs-radial.y*sn,radial.x*sn+radial.y*cs);
+  vec2 sourceD=dragged*(r+deflect);
+  vec2 sourceUv=center+vec2(sourceD.x/aspect,sourceD.y);
+  sourceUv=clamp(sourceUv,vec2(.001),vec2(.999));
+  vec3 lensed=texture2D(textureSampler,sourceUv).rgb;
 
-  // ---- the lensed sky ----
-  // An escaping ray carries light from whatever it is pointing at once it
-  // has finished bending. Adding it here is what puts a genuinely warped
-  // starfield INSIDE the hole's own render, including the two things a
-  // screen-space pass can never produce: multiple images of one star, and
-  // the sky wrapped tightly around the shadow's rim.
-  //
-  // Weighted by how far the geodesic actually swung, so that far from the
-  // hole - where the ray is essentially straight and the real starfield
-  // behind the quad is already correct - this contributes nothing and
-  // cannot double the stars. It fades in exactly where the deflection
-  // becomes real, which is also where the flat background is most wrong.
-  // THE THRESHOLDS ARE WHY THERE IS NO LONGER A BUBBLE. At 0.05..0.55 a
-  // ray only 20 horizon radii out - where the true deflection is a
-  // fraction of a degree and the real starfield behind the quad is
-  // already correct - still scored 0.028 and made the quad 2.6% opaque.
-  // Across a disc 20 radii wide that is not a subtle wash: it reads as a
-  // giant translucent bubble sitting around the hole, which is exactly
-  // what it looked like.
-  //
-  // The lens contribution now starts only where bending is optically
-  // meaningful. This confines the effect to the Einstein ring and removes
-  // the low-alpha circular carrier that read as a glass bubble.
-  float lensedSky = 0.0;
-  if (!captured){
-    lensedSky = smoothstep(0.32, 0.80, totalBend) * transmit;
-    col += skyAlongRay(escapeDir) * lensedSky;
-  }
+  // A second geodesic image condenses at the critical curve, forming a
+  // continuous Einstein ring from real background light rather than glow.
+  float critical=horizon*1.52;
+  float ringWidth=max(horizon*.11,.0012);
+  float einstein=exp(-pow((r-critical)/ringWidth,2.));
+  float mirroredR=critical+abs(r-critical)*2.4;
+  vec2 mirrorUv=center+vec2(radial.x*mirroredR/aspect,radial.y*mirroredR);
+  vec3 secondary=texture2D(textureSampler,clamp(mirrorUv,vec2(.001),vec2(.999))).rgb;
+  lensed=mix(lensed,secondary,einstein*.82);
 
-  // Coverage. Captured rays are pure shadow: fully opaque black, which is
-  // what actually occludes the stars behind the hole. Everything else
-  // contributes only the light it picked up, so the sky shows through.
-  float lum = clamp(max(max(col.r, col.g), col.b), 0.0, 1.0);
-  // Where the sky is being drawn lensed, the quad must be opaque enough to
-  // hide the UNBENT background behind it, or both are visible at once and
-  // the stars appear doubled.
-  float alpha = captured ? 1.0 : max(lum, lensedSky * 0.92);
+  // Relativistic accretion volume. It is evaluated in the same pass and
+  // shares the exact same centre, so disk, shadow and lens cannot separate.
+  float a=atan(d.y,d.x)+time*(.025+.045*spin);
+  float tilt=max(.13,abs(sin(diskTilt)));
+  float elliptical=length(vec2(d.x,d.y/tilt));
+  float din=horizon*diskInner;
+  float dout=horizon*diskOuter;
+  float outerRamp=1.-smoothstep(dout-horizon,dout,elliptical);
+  float radialBand=smoothstep(din,din+horizon*.65,elliptical)
+    *outerRamp * outerRamp;
+  float turbulence=fbm(vec2(a*2.7+seed*19.,elliptical/max(horizon,.00001)*.44-time*.08));
+  float filaments=.32+.68*smoothstep(.28,.82,turbulence);
+  float beam=pow(max(0.,1.-abs(d.y)/(horizon*(.35+tilt*.7))),3.2);
+  float beta=clamp(abs(spin)*sqrt(horizon/(2.*max(elliptical,horizon*1.5))),0.,.58);
+  float dop=1./max(.2,1.-beta*radial.x*sign(spin));
+  dop=clamp(dop,.2,1.8);
+  float doppler=pow(dop,3.);
+  vec3 cool=vec3(.95,.20,.035), hot=vec3(1.,.88,.56);
+  vec3 gas=mix(cool,hot,clamp(temperature,0.,1.));
+  gas*=radialBand*beam*filaments*diskBright*(.18+.34*doppler);
+  gas=min(gas,vec3(2.4));
 
-  // Fade the quad's own rim so its square edge is never visible.
-  vec2 d = (vUV - 0.5) * 2.0;
-  float edge = 1.0 - smoothstep(0.86, 1.0, length(d));
-  alpha *= edge;
+  // Exactly opaque event horizon. Ordered edge masks are defined on every
+  // GLSL implementation and alpha is always one.
+  float shadowRadius=horizon*1.08;
+  float shadow=1.-smoothstep(shadowRadius,shadowRadius+max(horizon*.08,.0008),r);
+  vec3 col=mix(lensed+gas,vec3(0.),shadow);
+  float coverage=1.-smoothstep(influence*.78,influence,r);
+  col=mix(scene.rgb,col,coverage);
+  col=min(col,vec3(1.6));
+  col=tonemapACES(col);
+  col=clamp(col,0.0,1.0);
+  gl_FragColor=vec4(col,1.);
+}`;
 
-  // Tone map so a bright disk does not clip to a flat white blob. The
-  // pre-clamp bounds the integrated emission before ACES sees it: the
-  // curve is only well behaved on sane input, and an unbounded sum will
-  // saturate it no matter how good the curve is.
-  // 4.0, not 8.0: ACES already saturates at 8 (aces(8) = 1.003), so a
-  // higher ceiling only guarantees the brightest gas clips to flat white
-  // and loses all internal structure. At 4.0 the peak maps to 0.973,
-  // leaving headroom so hot and cool gas stay distinguishable.
-  col = min(col, vec3(4.0));
-  col = tonemapACES(col);
-  col = clamp(col, 0.0, 1.2);
-  col = pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2));
+export const HOLE_FIELD_FRAG=FRAG;
 
-  gl_FragColor = vec4(col * (captured ? 0.0 : 1.0), clamp(alpha, 0.0, 1.0));
-}
-`;
-
-let registered = false;
-
-/** Puts the hole-field shader in Babylon's store exactly once. */
-export function registerHoleFieldShader(): void {
-  if (registered) return;
-  Effect.ShadersStore[HOLE_FIELD_SHADER + 'VertexShader'] = VERT;
-  Effect.ShadersStore[HOLE_FIELD_SHADER + 'FragmentShader'] = FRAG;
-  registered = true;
+export function registerHoleFieldShader(store: Record<string,string>): void {
+  store[HOLE_FIELD_SHADER+'FragmentShader']=FRAG;
 }

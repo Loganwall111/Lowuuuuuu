@@ -522,21 +522,20 @@ console.log('\n— travelling to a black hole —');
   ok('an unattached renderer is safe to update',
     (hf.update(new Vector3(0, 0, 0), [spec]), true));
   ok('an unattached renderer draws nothing', hf.count === 0);
-  ok('isLocked is vacuously true for a hole that does not exist',
-    hf.isLocked('nope') === true);
+  ok('isLocked rejects a hole that does not exist',
+    hf.isLocked('nope') === false);
 
   const src = read('src/bjs/systems/HoleFieldRenderer.ts');
-  // A hole is now ONE object - a quad carrying the raymarcher - so the
-  // horizon and the disk are the same thing and cannot be moved apart. The
-  // old three-mesh assertions are replaced by the property that matters.
-  ok('a hole is moved by a single call',
-    /private place\(/.test(src) && /quad\.position\.copyFrom\(to\)/.test(src));
-  ok('the hole composites over the scene without writing depth',
-    /disableDepthWrite = true/.test(src) && /alphaMode = 2/.test(src));
-  ok('blending is armed rather than left to alpha === 1',
-    /alpha = 0\.999/.test(src) && /needAlphaBlending/.test(src));
+  // Shadow, disk and lens are projected from one region into one full-screen
+  // pass. There is no transform or blend surface that can drift.
+  ok('a moved hole is reprojected by a single call',
+    /Vector3\.Project/.test(src) && /this\.active\.spec = nearest/.test(src));
+  ok('the hole composites as a depthless post-process',
+    /new PostProcess/.test(src) && !/disableDepthWrite/.test(src));
+  ok('the pass uses opaque overwrite rather than mesh blending',
+    !/needAlphaBlending|alphaMode/.test(src));
   ok('holes are released once out of range',
-    /releaseBeyond/.test(src) && /this\.live\.delete\(id\)/.test(src));
+    /if \(!nearest\)/.test(src) && /this\.active = null/.test(src));
   ok('the release threshold exceeds the build threshold, avoiding thrash',
     /buildWithin: 320/.test(src) && /releaseBeyond: 460/.test(src));
 
@@ -794,8 +793,8 @@ console.log('\n— every black hole is raymarched, never geometry —');
     'a real accretion disk is volumetric, not a solid ring of geometry');
   ok('the hole field builds no glow sphere',
     !/CreateSphere/.test(hfr));
-  ok('the hole field renders through a shader material',
-    /ShaderMaterial/.test(hfr));
+  ok('the hole field renders through a full-screen shader pass',
+    /PostProcess/.test(hfr) && !/ShaderMaterial|MeshBuilder/.test(hfr));
 
   // Each hole must carry its own look, or they are all the same object.
   // A missing file must FAIL, not crash the run and hide every later check.

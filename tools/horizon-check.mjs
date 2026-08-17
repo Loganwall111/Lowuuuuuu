@@ -75,9 +75,8 @@ console.log('\n— the scene always clears, so the viewport cannot stall —');
 console.log('\n— every backdrop layer is permanently drawn —');
 {
   const systems = [
-    'CosmicSky', 'VerseRenderer', 'HoleFieldRenderer', 'GalaxyField',
-    'StarFieldRenderer', 'LayeredSky', 'CelestialRenderer', 'PlanetField',
-    'SpaceDust', 'CometSystem'
+    'CosmicSky', 'VerseRenderer', 'GalaxyField', 'StarFieldRenderer',
+    'LayeredSky', 'CelestialRenderer', 'PlanetField', 'SpaceDust', 'CometSystem'
   ];
   for (const s of systems) {
     const src = read('src/bjs/systems/' + s + '.ts');
@@ -85,9 +84,11 @@ console.log('\n— every backdrop layer is permanently drawn —');
       src.includes('alwaysSelectAsActiveMesh = true'),
       'flying high above the galactic plane must never cull this layer');
   }
-  // The raymarched hole quad specifically must never be culled.
-  ok('the hole lens quad is always drawn',
-    /quad\.alwaysSelectAsActiveMesh\s*=\s*true/.test(read('src/bjs/systems/HoleFieldRenderer.ts')));
+  // The rewritten singularity is a full-screen post-process. It has no mesh
+  // or billboard to frustum-cull and therefore cannot become a floating card.
+  const hole = read('src/bjs/systems/HoleFieldRenderer.ts');
+  ok('the unified hole lens is a culling-proof full-screen pass',
+    hole.includes('new PostProcess') && !hole.includes('MeshBuilder'));
 }
 
 console.log('\n— the entry still hands the player to the multiverse —');
