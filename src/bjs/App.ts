@@ -283,6 +283,9 @@ export class App {
   /** Destination is remembered at the old threshold but opened only deep inside. */
   private pendingInteriorDestination: InteriorDestination | null = null;
   private deepGateDelivered = false;
+  /** Twenty minutes of deliberate inward flight opens the far gate. */
+  private interiorTravelSeconds = 0;
+  private interiorCommitted = false;
   /** True while the Left-Alt gesture is held (cursor reappears). */
   private altHeld = false;
   /** True once the horizon warning has been shown for the current fall. */
@@ -2354,22 +2357,38 @@ export class App {
         this.descentInto.begin(bh.id, bh.seed ?? 1, eye, bh.position);
         // A deliberate forward burn commits to the interior; a pilot who
         // immediately reverses at the lip may still climb back out.
-        if (this.thrusting) this.universe.latchHorizon(bh.id);
+        if (this.thrusting) {
+          this.universe.latchHorizon(bh.id);
+          this.interiorCommitted = true;
+        }
         this.onMilestone('first-horizon');
         const fall = this.descentInto.update(dt, eye);
         const interiorPlanNow = this.descentInto.interior;
-        const deepFactor = interiorPlanNow?.gargantua ? 1.15 : 8;
-        // Stretch the visual/physical interior across the entire deep voyage.
-        // The old state reached "arrived" after one eighth of the requested
-        // distance and blacked the frame while travel continued invisibly.
+        // Interior distance is proper time, not the camera's Euclidean pass
+        // through a sphere. Continuous W takes twenty real minutes; coasting
+        // advances only faintly, so the journey is deliberate but never dead.
+        this.interiorTravelSeconds += dt * (this.thrusting ? 1 : 0.05);
+        const journey = Math.max(0, Math.min(1, this.interiorTravelSeconds / 1200));
         const visualFall = interiorPlanNow
-          ? fallState(interiorPlanNow, this.descentInto.distance / deepFactor)
+          ? fallState(interiorPlanNow, interiorPlanNow.depth * journey)
           : fall.state;
 
         // the exit is the direction back toward where we came from
         const back = this.lastOutsidePos.subtract(bh.position);
         const exitDir = back.lengthSquared() > 1e-9 ? back : new Vector3(0, 0, -1);
         const fallDir = bh.position.subtract(this.lastOutsidePos);
+
+        if (this.interiorCommitted) {
+          // The horizon is not a ghost sphere to fly through. Pin the camera
+          // just inside the entry side while proper interior distance grows.
+          const hr = this.universe.horizonRadiusOf(bh);
+          const n = back.lengthSquared() > 1e-9 ? back.normalize() : new Vector3(0, 0, 1);
+          const anchor = bh.position.add(n.scale(hr * 0.62));
+          this.vehicle.position.copyFrom(anchor);
+          this.vehicle.velocity.setAll(0);
+          this.camera.position.copyFrom(anchor);
+          this.camera.setTarget(this.vehicle.lookTarget());
+        }
 
         if (typeof w?.setInterior === 'function') {
           w.setInterior(visualFall.inside, exitDir);
@@ -2401,10 +2420,8 @@ export class App {
         // Reaching the bottom is the only way out, and where you come out
         // depends on the hole and on whether you threaded its singularity.
         if (fall.arrived) this.pendingInteriorDestination = fall.arrived;
-        const plan = this.descentInto.interior;
-        const gateDepth = plan ? plan.depth * deepFactor : Infinity;
         if (!this.deepGateDelivered && this.pendingInteriorDestination &&
-            this.descentInto.distance >= gateDepth) {
+            this.interiorTravelSeconds >= 1200) {
           this.deepGateDelivered = true;
           this.crossDeepInteriorGate(this.pendingInteriorDestination);
         }
@@ -2412,6 +2429,8 @@ export class App {
         if (this.descentInto.active) this.descentInto.end();
         this.pendingInteriorDestination = null;
         this.deepGateDelivered = false;
+        this.interiorTravelSeconds = 0;
+        this.interiorCommitted = false;
         if (typeof w?.setInterior === 'function') {
           w.setInterior(0, new Vector3(0, 0, -1));
         }

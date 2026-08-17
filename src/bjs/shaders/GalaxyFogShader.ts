@@ -137,7 +137,7 @@ const float BULGE_CUT_OUT = 0.34;
 /** The blazing nucleus at the dead centre. */
 const float NUCLEUS_RE = 0.013;
 const float NUCLEUS_POW = 1.10;
-const float NUCLEUS_GAIN = 4.8;
+const float NUCLEUS_GAIN = 5.2;
 
 /** Dust lane frequency, phase offset from the arm ridge, and profile. */
 const float DUST_FREQ = 3.2;
@@ -176,7 +176,7 @@ const float K_DUST = 26.0;
 /** Overall extinction scale. */
 const float SIGMA = 0.00006;
 /** Overall emission scale. */
-const float EMIT = 0.00011;
+const float EMIT = 0.000035;
 /** How much of a sample's own light a dust lane blocks. Extinction alone
  *  only dims what is BEHIND a lane; this is what makes a lane also blank
  *  the gas it runs through, producing hard dark filaments. */
