@@ -75,6 +75,7 @@ import {
 import { VerseRenderer } from './systems/VerseRenderer';
 import { FlightHUD } from './ui/FlightHUD';
 import { SonarCursor } from './ui/SonarCursor';
+import { MobileControls } from './ui/MobileControls';
 import { THROWABLES, computeImpact, throwableById } from './systems/ThrowableSystem';
 import { HistorySystem } from './systems/HistorySystem';
 import { SaveSystem } from './systems/SaveSystem';
@@ -406,6 +407,17 @@ export class App {
   private thrusting = false;
   /** Mouse look + wheel throttle, the other half of free flight. */
   mouse = new MouseLook();
+  /** iPad-only touch cockpit; desktop never mounts this DOM. */
+  mobileControls = new MobileControls({
+    key: (key, down) => down ? this.keys.add(key) : this.keys.delete(key),
+    look: (dx, dy) => this.mouse.injectLook(dx, dy),
+    throttle: (dir) => this.mouse.setThrottle(this.mouse.throttleScale * Math.exp(dir * .28)),
+    action: (name) => {
+      if (name === 'land') this.landReticleTarget();
+      else if (name === 'portal') this.openPortalRoute();
+      else this.togglePhotoMode();
+    }
+  });
   /** Every planet's own terrain, water, weather and life. */
   surfaces = new PlanetSurfaceSystem();
   /** Streaking starfield when the throttle is wound up. */
@@ -417,6 +429,7 @@ export class App {
 
   async init(): Promise<void> {
     const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
+    document.body.dataset.playing = '0';
 
     this.shell = new Shell({
       onWorld: (id) => this.loadWorld(id),
@@ -647,6 +660,7 @@ export class App {
     // so the view turns with a bare mouse move, no click-and-drag required.
     // Pointer lock only takes effect inside a user gesture, which a click is.
     canvas.addEventListener('click', () => {
+      if (document.body.dataset.inputMode === 'ipad') return;
       if (this.vehicle.mode === 'freefly' || this.vehicle.mode === 'fly' ||
           this.vehicle.mode === 'walk') {
         this.mouse.requestLock();
@@ -702,6 +716,9 @@ export class App {
     // hidden until the player presses Play and enters.
     this.flightHud.setVisible(false);
     this.sonarCursor.mount();
+    this.mobileControls.mount();
+    // Native cursor/lock has no role on iPad; touch look is authoritative.
+    if (document.body.dataset.inputMode === 'ipad') this.sonarCursor.setEnabled(false);
     // The Escape menu (settings / performance / save / dashboard /
     // leaderboard) is mounted now, revealed only while playing.
     this.pauseMenu.mount();
@@ -916,9 +933,11 @@ export class App {
       this.introUI?.dispose();
       this.introUI = null;
       this.flightHud.setVisible(true);
+      document.body.dataset.playing = '1';
       this.shell.onMenuClosed();
-      this.sonarCursor.setEnabled(true);
-      this.mouse.requestLock();
+      const ipad = document.body.dataset.inputMode === 'ipad';
+      this.sonarCursor.setEnabled(!ipad);
+      if (!ipad) this.mouse.requestLock();
       this.shell.toast(name
         ? 'Universe "' + name + '" active'
         : 'Space journey active');

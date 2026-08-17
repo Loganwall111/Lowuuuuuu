@@ -70,6 +70,14 @@ export class MouseLook {
     this.throttle = Math.max(0.05, Math.min(20, Number.isFinite(v) ? v : 1));
   }
 
+  /** Feeds compositor touch-pad deltas into the same raw look accumulator. */
+  injectLook(dx: number, dy: number): void {
+    if (!this.enabled) return;
+    const cap = (v: number) => Math.max(-400, Math.min(400, Number.isFinite(v) ? v : 0));
+    this.dx = cap(this.dx + cap(dx));
+    this.dy = cap(this.dy + cap(dy));
+  }
+
   /**
    * Binds to a canvas. Safe to call again; the previous binding is removed.
    */

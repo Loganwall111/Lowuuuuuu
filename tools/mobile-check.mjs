@@ -1,0 +1,17 @@
+import { build } from 'esbuild';
+import fs from 'fs';
+const out=await build({entryPoints:['src/bjs/ui/MobileControls.ts'],bundle:true,format:'esm',write:false,logLevel:'error'});
+const f=`/tmp/mobile-${Date.now()}.mjs`;fs.writeFileSync(f,out.outputFiles[0].text);
+const {isIPadDevice}=await import(f);
+let p=0,q=0;const ok=(n,c)=>{c?(p++,console.log('  PASS  '+n)):(q++,console.log('  FAIL  '+n));};
+const nav=(userAgent,platform,maxTouchPoints)=>({userAgent,platform,maxTouchPoints});
+ok('classic iPad is detected',isIPadDevice(nav('Mozilla/5.0 (iPad; CPU OS 17_0)','iPad',5)));
+ok('modern desktop-UA iPad is detected',isIPadDevice(nav('Mozilla/5.0 (Macintosh)','MacIntel',5)));
+ok('Mac desktop stays desktop',!isIPadDevice(nav('Mozilla/5.0 (Macintosh)','MacIntel',0)));
+ok('Windows PC stays desktop',!isIPadDevice(nav('Mozilla/5.0 (Windows NT 10.0)','Win32',0)));
+ok('Android phone does not get iPad layout',!isIPadDevice(nav('Mozilla/5.0 (Linux; Android 14)','Linux armv8',5)));
+const app=fs.readFileSync('src/bjs/App.ts','utf8');
+ok('app mounts mobile controls',app.includes('this.mobileControls.mount()'));
+ok('touch look feeds raw mouse look',app.includes('this.mouse.injectLook'));
+ok('desktop pointer lock remains',app.includes('this.mouse.requestLock()'));
+console.log(`\n${p} passed, ${q} failed`);process.exit(q?1:0);
