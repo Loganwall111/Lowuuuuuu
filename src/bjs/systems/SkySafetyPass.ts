@@ -10,7 +10,7 @@ const FRAG=`
 precision highp float;
 varying vec2 vUV;
 uniform sampler2D textureSampler;
-uniform float active;
+uniform float u_skyEnabled;
 uniform float seed;
 uniform float phase;
 uniform vec2 resolution;
@@ -19,7 +19,7 @@ float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h
 float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(p);p=p*2.03+17.7;a*=.5;}return v;}
 void main(){
  vec4 base=texture2D(textureSampler,vUV);
- if(active<.5){gl_FragColor=vec4(base.rgb,1.);return;}
+ if(u_skyEnabled<.5){gl_FragColor=vec4(base.rgb,1.);return;}
  float asp=resolution.x/max(1.,resolution.y);vec2 p=(vUV-.5)*vec2(asp,1.);
  float band=exp(-pow((p.y+sin(p.x*2.1+seed*6.28)*.11)/.24,2.));
  float cloud=fbm(p*3.4+seed*31.7);
@@ -28,19 +28,41 @@ void main(){
  vec2 grid=vUV*vec2(620.,350.);vec2 cell=floor(grid),q=fract(grid)-.5;
  float rnd=h(cell+seed*997.);float star=step(.9915,rnd)*exp(-dot(q,q)*(120.+rnd*260.));
  vec3 st=mix(vec3(.55,.72,1.),vec3(1.,.76,.48),h(cell+13.))*star*(.6+rnd*2.4);
- // Preserve anything the real renderer produced. The fallback only fills
- // pixels that are numerically black, so HUD/world geometry is untouched.
  float lum=max(base.r,max(base.g,base.b));float missing=1.-smoothstep(.002,.018,lum);
- vec3 col=base.rgb+(fallback+st)*missing;
- gl_FragColor=vec4(col,1.);
+ gl_FragColor=vec4(base.rgb+(fallback+st)*missing,1.);
 }`;
 let registered=false;
 export class SkySafetyPass{
- private pp:PostProcess|null=null;private active=0;private seed=0;private phase=0;
- attach(scene:Scene,camera:Camera):void{this.dispose();if(!registered){Effect.ShadersStore[NAME+'FragmentShader']=FRAG;registered=true;}
-  this.pp=new PostProcess(NAME,NAME,['active','seed','phase','resolution'],null,1,camera,Texture.BILINEAR_SAMPLINGMODE,scene.getEngine(),false);
-  this.pp.onApply=(e)=>{const g=scene.getEngine();e.setFloat('active',this.active);e.setFloat('seed',this.seed);e.setFloat('phase',this.phase);e.setFloat2('resolution',g.getRenderWidth()||1,g.getRenderHeight()||1);};}
- update(dt:number,x:number,y:number,z:number,allow=true):void{const extreme=Math.max(Math.abs(x),Math.abs(y),Math.abs(z));this.active=allow&&extreme>1e6?1:0;this.seed=((Math.floor(x/260000)^Math.floor(z/260000))>>>0)%997/997;this.phase+=Math.max(0,dt);}
- get enabled():boolean{return this.active>0;}
- dispose():void{this.pp?.dispose();this.pp=null;}
+ private pp:PostProcess|null=null;private scene:Scene|null=null;private camera:Camera|null=null;
+ private active=0;private seed=0;private phase=0;private errorObserver:any=null;private failed=false;
+ /** Store dependencies only. Compilation is lazy and never touches startup. */
+ attach(scene:Scene,camera:Camera):void{this.dispose();this.scene=scene;this.camera=camera;}
+ private ensure():void{
+  const scene=this.scene,camera=this.camera;if(this.pp||this.failed||!scene||!camera)return;
+  try{
+   if(!registered){Effect.ShadersStore[NAME+'FragmentShader']=FRAG;registered=true;}
+   const engine=scene.getEngine();
+   this.errorObserver=engine.onEffectErrorObservable.add(({effect,errors})=>{
+    let source='';try{const fx=effect as any;source=fx.getFragmentShaderSource?.()??fx._fragmentSourceCode??String(fx.name??'');}catch{}
+    if(!source.includes('u_skyEnabled'))return;
+    this.failed=true;this.active=0;
+    console.warn('Extreme sky safety shader disabled; base scene preserved:',errors);
+    // Removing a failed post-process from the camera chain is the fail-open
+    // behavior. Leaving it attached is what blacked the entire game.
+    setTimeout(()=>{this.pp?.dispose();this.pp=null;},0);
+   });
+   this.pp=new PostProcess(NAME,NAME,['u_skyEnabled','seed','phase','resolution'],null,1,camera,Texture.BILINEAR_SAMPLINGMODE,engine,false);
+   this.pp.onApply=(e)=>{const g=scene.getEngine();e.setFloat('u_skyEnabled',this.active);e.setFloat('seed',this.seed);e.setFloat('phase',this.phase);e.setFloat2('resolution',g.getRenderWidth()||1,g.getRenderHeight()||1);};
+  }catch(e){this.failed=true;this.active=0;console.warn('Extreme sky safety unavailable; base scene preserved:',e);this.pp?.dispose();this.pp=null;}
+ }
+ update(dt:number,x:number,y:number,z:number,allow=true):void{
+  const extreme=Math.max(Math.abs(x),Math.abs(y),Math.abs(z));this.active=allow&&extreme>1e6&&!this.failed?1:0;
+  this.seed=((Math.floor(x/260000)^Math.floor(z/260000))>>>0)%997/997;this.phase+=Math.max(0,dt);
+  if(this.active)this.ensure();
+ }
+ get enabled():boolean{return this.active>0&&!this.failed;}
+ dispose():void{
+  if(this.errorObserver&&this.scene){try{this.scene.getEngine().onEffectErrorObservable.remove(this.errorObserver);}catch{}}
+  this.errorObserver=null;this.pp?.dispose();this.pp=null;this.scene=null;this.camera=null;this.failed=false;this.active=0;
+ }
 }

@@ -28,8 +28,15 @@ const ok = (name, cond, detail) => {
 const postfx = readFileSync(new URL('../src/bjs/PostFX.ts', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/bjs/App.ts', import.meta.url), 'utf8');
 const intro = readFileSync(new URL('../src/bjs/ui/IntroOverlay.ts', import.meta.url), 'utf8');
+const skySafety = readFileSync(new URL('../src/bjs/systems/SkySafetyPass.ts', import.meta.url), 'utf8');
 
 console.log('\nblack frame: drawing, but nothing visible');
+ok('the extreme-sky shader avoids the WebGL2 reserved word active',
+  !/uniform float active\s*;/.test(skySafety) && /uniform float u_skyEnabled/.test(skySafety));
+ok('the optional safety shader compiles lazily rather than during launch',
+  /if\(this\.active\)this\.ensure\(\)/.test(skySafety));
+ok('a failed optional sky pass removes itself from the camera chain',
+  /onEffectErrorObservable/.test(skySafety) && /this\.pp\?\.dispose\(\)/.test(skySafety));
 
 /* ------------- 1. HDR must be conditional on real capability ------------ */
 

@@ -14,12 +14,16 @@ import { GlowLayer } from '@babylonjs/core/Layers/glowLayer';
 
 export class Prologue3D {
  private engine:Engine|null=null;private scene:Scene|null=null;private camera:FreeCamera|null=null;
+ private canvas:HTMLCanvasElement|null=null;private errorObserver:any=null;private startupTimer=0;private rendered=false;
  private startAt=0;private pilot:TransformNode|null=null;private rocket:TransformNode|null=null;
  private ground:Mesh|null=null;private matrix:Mesh[]=[];private rings:Mesh[]=[];private hands:Mesh[]=[];
  start(canvas:HTMLCanvasElement):boolean{
   try{
+   this.canvas=canvas;this.rendered=false;
    this.engine=new Engine(canvas,true,{alpha:true,stencil:true,preserveDrawingBuffer:false});
+   this.errorObserver=this.engine.onEffectErrorObservable.add(({errors})=>this.degrade(errors));
    const scene=this.scene=new Scene(this.engine);scene.clearColor=new Color4(.018,.035,.075,1);
+   scene.onAfterRenderObservable.addOnce(()=>{this.rendered=true;clearTimeout(this.startupTimer);});
    scene.fogMode=Scene.FOGMODE_EXP2;scene.fogDensity=.008;scene.fogColor=new Color3(.06,.1,.18);
    const cam=this.camera=new FreeCamera('prologueCamera',new Vector3(0,5,-18),scene);cam.setTarget(new Vector3(0,3,12));cam.fov=.86;
    const hemi=new HemisphericLight('proHemi',new Vector3(.2,1,-.2),scene);hemi.intensity=.72;hemi.diffuse=new Color3(.52,.7,1);
@@ -27,6 +31,7 @@ export class Prologue3D {
    const glow=new GlowLayer('proGlow',scene,{blurKernelSize:48});glow.intensity=.75;
    this.buildTerrain(scene);this.buildPilot(scene);this.buildRocket(scene);this.buildMatrix(scene);this.buildWormhole(scene);this.buildHands(scene);
    this.startAt=performance.now();this.engine.runRenderLoop(()=>this.render());
+   this.startupTimer=window.setTimeout(()=>{if(!this.rendered)this.degrade('no 3D frame within 1.5s');},1500);
    addEventListener('resize',this.resize,{passive:true});return true;
   }catch(e){console.warn('3D prologue degraded to CSS cinematic:',e);this.dispose();return false;}
  }
@@ -56,6 +61,10 @@ export class Prologue3D {
  private phaseWormhole(t:number):void{this.ground?.setEnabled(false);this.pilot?.setEnabled(false);this.rocket?.setEnabled(false);this.setGroup(this.matrix,false);this.setGroup(this.rings,true);for(let i=0;i<this.rings.length;i++){const r=this.rings[i];r.rotation.z+=.008*(i%2?1:-1);r.scaling.setAll(.7+Math.sin(t*2+i)*.04);}if(this.camera){this.camera.position.set(0,4,12+t*24);this.camera.setTarget(new Vector3(0,4,120));}}
  private phaseHands(t:number):void{this.setGroup(this.rings,false);if(this.camera){this.camera.position.set(0,0,0);this.camera.setTarget(new Vector3(0,0,5));}const amount=Math.min(1,t/2.25);for(const b of this.hands){const md=b.metadata as {side:number,index:number};const on=md.index/70<amount;b.setEnabled(on);if(on)b.position.x+=-md.side*.006*(1+t*1.2);}}
  private setGroup(a:Mesh[],on:boolean):void{for(const m of a)m.setEnabled(on);}
+ private degrade(reason:string):void{console.warn('3D prologue failed open to cinematic fallback:',reason);if(this.canvas)this.canvas.style.display='none';setTimeout(()=>this.dispose(false),0);}
  private resize=()=>this.engine?.resize();
- dispose():void{removeEventListener('resize',this.resize);try{this.engine?.stopRenderLoop();this.scene?.dispose();this.engine?.dispose();}catch{}this.engine=null;this.scene=null;}
+ dispose(clearCanvas=true):void{removeEventListener('resize',this.resize);clearTimeout(this.startupTimer);
+  if(this.errorObserver&&this.engine){try{this.engine.onEffectErrorObservable.remove(this.errorObserver);}catch{}}
+  this.errorObserver=null;try{this.engine?.stopRenderLoop();this.scene?.dispose();this.engine?.dispose();}catch{}
+  this.engine=null;this.scene=null;if(clearCanvas)this.canvas=null;}
 }
