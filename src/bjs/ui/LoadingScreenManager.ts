@@ -82,7 +82,7 @@ export class LoadingScreenManager {
   start(onDone?: () => void, backgroundTask?: () => Promise<void>, prologue = false): void {
     if (this.running || this.el) return;
     this.running = true;
-    this.prologueDuration = prologue ? 15.5 : 0;
+    this.prologueDuration = prologue ? 42 : 0;
     this.onDone = onDone ?? null;
     this.backgroundDone = !backgroundTask;
     this.speechDone = false;
@@ -265,7 +265,7 @@ export class LoadingScreenManager {
 
   private drivePrologue(t: number): void {
     const el=this.el;if(!el)return;
-    const stage=t<4?'earth':t<7?'matrix':t<10.5?'wormhole':t<13.3?'hands':'title';
+    const stage=t<10?'earth':t<18?'matrix':t<27?'wormhole':t<35?'hands':'title';
     el.className='omni-boot loading-screen-manager prologue-active pro-'+stage;
     const caption=el.querySelector<HTMLElement>('.pro-caption');
     if(caption)caption.textContent=stage==='earth'?'THE LAST PILOT // EARTH DEPARTURE'

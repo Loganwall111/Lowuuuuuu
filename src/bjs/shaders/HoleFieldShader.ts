@@ -24,7 +24,7 @@ uniform vec2 center;
 uniform vec2 resolution;
 uniform float horizon;
 uniform float time;
-uniform float active;
+uniform float u_holeEnabled;
 uniform float spin;
 uniform float diskInner;
 uniform float diskOuter;
@@ -54,7 +54,7 @@ vec3 tonemapACES(vec3 x){
 
 void main(){
   vec4 scene=texture2D(textureSampler,vUV);
-  if(active<.5 || horizon<.000001){gl_FragColor=vec4(scene.rgb,1.);return;}
+  if(u_holeEnabled<.5 || horizon<.000001){gl_FragColor=vec4(scene.rgb,1.);return;}
 
   float aspect=resolution.x/max(1.,resolution.y);
   vec2 d=vUV-center;

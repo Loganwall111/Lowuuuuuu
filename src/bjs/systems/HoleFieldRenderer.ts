@@ -59,6 +59,8 @@ export class HoleFieldRenderer {
   private resolution = new Vector2(1, 1);
   private screenHorizon = 0;
   private t = 0;
+  private failed = false;
+  private errorObserver: any = null;
 
   // Kept for API compatibility with verse updates. The new pass lenses the
   // already-rendered scene itself, so it never needs to synthesize a second
@@ -76,30 +78,56 @@ export class HoleFieldRenderer {
   attach(scene: Scene): void {
     this.dispose();
     this.scene = scene;
+    this.failed = false;
     registerHoleFieldShader(Effect.ShadersStore);
-    const camera = scene.activeCamera;
-    if (!camera) return;
-    // Babylon automatically binds the previous frame as 'textureSampler'.
-    this.pass = new PostProcess(
-      HOLE_FIELD_SHADER, HOLE_FIELD_SHADER,
-      ['center', 'resolution', 'horizon', 'time', 'active', 'spin',
-        'diskInner', 'diskOuter', 'diskTilt', 'diskBright', 'temperature', 'seed'],
-      null, 1, camera, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
-    this.pass.onApply = (fx) => {
-      const a = this.active;
-      fx.setFloat2('center', this.center.x, this.center.y);
-      fx.setFloat2('resolution', this.resolution.x, this.resolution.y);
-      fx.setFloat('horizon', this.screenHorizon);
-      fx.setFloat('time', this.t);
-      fx.setFloat('active', a ? 1 : 0);
-      fx.setFloat('spin', a?.profile.spin ?? 0);
-      fx.setFloat('diskInner', a?.profile.diskInner ?? DISK_INNER);
-      fx.setFloat('diskOuter', a?.profile.diskOuter ?? DISK_OUTER);
-      fx.setFloat('diskTilt', a?.profile.diskTilt ?? .5);
-      fx.setFloat('diskBright', a?.profile.diskBright ?? 0);
-      fx.setFloat('temperature', a?.profile.temperature ?? .5);
-      fx.setFloat('seed', ((a?.spec.seed ?? 0) % 997) / 997);
-    };
+    const engine = scene.getEngine();
+    this.errorObserver = engine.onEffectErrorObservable.add(({ effect, errors }) => {
+      let source = '';
+      try {
+        const fx = effect as any;
+        source = fx.getFragmentShaderSource?.() ?? fx._fragmentSourceCode ?? String(fx.name ?? '');
+      } catch { /* unavailable source */ }
+      if (!source.includes('u_holeEnabled')) return;
+      this.failed = true;
+      this.active = null;
+      console.warn('Black-hole lens shader disabled; base universe preserved:', errors);
+      setTimeout(() => { this.pass?.dispose(); this.pass = null; }, 0);
+    });
+  }
+
+  /** Compiles only when a visible nearby hole actually needs the effect. */
+  private ensurePass(): void {
+    const scene = this.scene;
+    const camera = scene?.activeCamera;
+    if (this.pass || this.failed || !scene || !camera) return;
+    try {
+      // PostProcess automatically binds the previous frame as 'textureSampler'.
+      this.pass = new PostProcess(
+        HOLE_FIELD_SHADER, HOLE_FIELD_SHADER,
+        ['center', 'resolution', 'horizon', 'time', 'u_holeEnabled', 'spin',
+          'diskInner', 'diskOuter', 'diskTilt', 'diskBright', 'temperature', 'seed'],
+        null, 1, camera, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
+      this.pass.onApply = (fx) => {
+        const a = this.active;
+        fx.setFloat2('center', this.center.x, this.center.y);
+        fx.setFloat2('resolution', this.resolution.x, this.resolution.y);
+        fx.setFloat('horizon', this.screenHorizon);
+        fx.setFloat('time', this.t);
+        fx.setFloat('u_holeEnabled', a ? 1 : 0);
+        fx.setFloat('spin', a?.profile.spin ?? 0);
+        fx.setFloat('diskInner', a?.profile.diskInner ?? DISK_INNER);
+        fx.setFloat('diskOuter', a?.profile.diskOuter ?? DISK_OUTER);
+        fx.setFloat('diskTilt', a?.profile.diskTilt ?? .5);
+        fx.setFloat('diskBright', a?.profile.diskBright ?? 0);
+        fx.setFloat('temperature', a?.profile.temperature ?? .5);
+        fx.setFloat('seed', ((a?.spec.seed ?? 0) % 997) / 997);
+      };
+    } catch (e) {
+      this.failed = true;
+      this.pass?.dispose();
+      this.pass = null;
+      console.warn('Black-hole lens unavailable; base universe preserved:', e);
+    }
   }
 
   get count(): number { return this.active ? 1 : 0; }
@@ -120,7 +148,7 @@ export class HoleFieldRenderer {
   update(eye: Vector3, holes: readonly HoleSpec[]): void {
     const scene = this.scene;
     const camera = scene?.activeCamera;
-    if (!scene || !camera || !this.pass) return;
+    if (!scene || !camera || this.failed) return;
     this.t += Math.max(0, scene.getEngine().getDeltaTime() / 1000);
 
     let nearest: HoleSpec | null = null;
@@ -147,6 +175,9 @@ export class HoleFieldRenderer {
     } else {
       this.active.spec = nearest;
     }
+
+    this.ensurePass();
+    if (!this.pass) return;
 
     const engine = scene.getEngine();
     const width = Math.max(1, engine.getRenderWidth());
@@ -175,10 +206,16 @@ export class HoleFieldRenderer {
   }
 
   dispose(): void {
+    if (this.errorObserver && this.scene) {
+      try { this.scene.getEngine().onEffectErrorObservable.remove(this.errorObserver); }
+      catch { /* engine already disposed */ }
+    }
+    this.errorObserver = null;
     this.pass?.dispose();
     this.pass = null;
     this.active = null;
     this.scene = null;
     this.screenHorizon = 0;
+    this.failed = false;
   }
 }

@@ -29,6 +29,8 @@ const postfx = readFileSync(new URL('../src/bjs/PostFX.ts', import.meta.url), 'u
 const app = readFileSync(new URL('../src/bjs/App.ts', import.meta.url), 'utf8');
 const intro = readFileSync(new URL('../src/bjs/ui/IntroOverlay.ts', import.meta.url), 'utf8');
 const skySafety = readFileSync(new URL('../src/bjs/systems/SkySafetyPass.ts', import.meta.url), 'utf8');
+const holeShader = readFileSync(new URL('../src/bjs/shaders/HoleFieldShader.ts', import.meta.url), 'utf8');
+const holeRenderer = readFileSync(new URL('../src/bjs/systems/HoleFieldRenderer.ts', import.meta.url), 'utf8');
 
 console.log('\nblack frame: drawing, but nothing visible');
 ok('the extreme-sky shader avoids the WebGL2 reserved word active',
@@ -37,6 +39,11 @@ ok('the optional safety shader compiles lazily rather than during launch',
   /if\(this\.active\)this\.ensure\(\)/.test(skySafety));
 ok('a failed optional sky pass removes itself from the camera chain',
   /onEffectErrorObservable/.test(skySafety) && /this\.pp\?\.dispose\(\)/.test(skySafety));
+ok('the singularity shader also avoids the reserved word active',
+  !/uniform float active\s*;/.test(holeShader) && /uniform float u_holeEnabled/.test(holeShader));
+ok('the singularity lens compiles lazily and fails open',
+  /ensurePass\(\)/.test(holeRenderer) && /onEffectErrorObservable/.test(holeRenderer) &&
+  /this\.pass\?\.dispose\(\)/.test(holeRenderer));
 
 /* ------------- 1. HDR must be conditional on real capability ------------ */
 
