@@ -122,8 +122,8 @@ ok('the report is still shown if recovery does not help',
 
 ok('the hero plate is actually used by the title card',
    /menu-hero\.jpg/.test(intro));
-ok('the artwork is behind the title, not merely shipped',
-   /background-image:/.test(intro) && /url\('\/art\/menu-hero\.jpg'\)/.test(intro));
+ok('the base-path-safe artwork is behind the title, not merely shipped',
+   /background-image:/.test(intro) && /url\('art\/menu-hero\.jpg'\)/.test(intro));
 ok('the plate covers the card',
    /background-size:\s*cover/.test(intro));
 ok('there is a non-black fallback colour if the image fails',

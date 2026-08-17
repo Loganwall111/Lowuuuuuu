@@ -98,7 +98,7 @@ console.log('— no full-screen overlay may be an opaque black curtain —');
   // legibility wash over a real image rather than the only thing on screen.
   // The rule that matters is therefore "the card is never black", not "the
   // scrim is faint": a heavier wash over artwork is still a lit picture.
-  const hasArtwork = /background-image:[\s\S]*?url\('\/art\/menu-hero\.jpg'\)/.test(titleBlock);
+  const hasArtwork = /background-image:[\s\S]*?url\('art\/menu-hero\.jpg'\)/.test(titleBlock);
   ok('the title card has real artwork behind it', hasArtwork);
 
   const limit = hasArtwork ? 0.85 : 0.7;

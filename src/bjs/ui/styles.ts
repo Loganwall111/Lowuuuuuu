@@ -1213,6 +1213,19 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
 .omni-vignette{position:absolute;inset:0;z-index:5;pointer-events:none;
   box-shadow:inset 0 0 180px rgba(0,0,0,.92),inset 0 0 0 1px rgba(0,240,255,.1);
   background:repeating-linear-gradient(180deg,transparent 0 3px,rgba(0,0,0,.09) 3px 4px);}
+.omni-orbitals{position:absolute;z-index:6;left:50%;top:50%;width:min(58vw,760px);aspect-ratio:1;
+  transform:translate(-50%,-50%);opacity:.22;pointer-events:none;}
+.omni-orbitals i{position:absolute;inset:8%;border:1px solid rgba(0,235,255,.28);border-radius:50%;
+  border-left-color:transparent;border-bottom-color:rgba(140,90,255,.45);animation:omniOrbit 12s linear infinite;}
+.omni-orbitals i:nth-child(2){inset:21%;animation-duration:8s;animation-direction:reverse;border-top-style:dashed;}
+.omni-orbitals i:nth-child(3){inset:35%;animation-duration:5s;border-right-style:dashed;}
+.omni-orbitals b{position:absolute;inset:48%;border:1px solid rgba(160,235,255,.8);transform:rotate(45deg);box-shadow:0 0 22px #00d8ff;}
+.omni-systemcards{position:absolute;z-index:8;left:24px;right:24px;bottom:58px;display:grid;
+  grid-template-columns:repeat(4,1fr);gap:8px;pointer-events:none;}
+.omni-systemcards span{padding:8px 10px;border-top:1px solid rgba(0,235,255,.24);font:7px/1.2 monospace;
+  letter-spacing:.16em;color:rgba(170,215,245,.48);background:linear-gradient(90deg,rgba(0,180,255,.06),transparent);}
+.omni-systemcards b{display:block;margin-top:4px;color:rgba(90,240,255,.78);font-size:8px;}
+@keyframes omniOrbit{to{transform:rotate(360deg)}}
 .omni-chrome{position:absolute;z-index:8;left:25px;right:25px;top:20px;
   display:flex;justify-content:space-between;padding:7px 11px;
   border-top:1px solid rgba(0,240,255,.38);font-size:8px;letter-spacing:.3em;
@@ -1269,7 +1282,8 @@ input[type=range]::-moz-range-thumb{width:7px;height:16px;border-radius:1px;
   color:rgba(165,210,245,.4);background:transparent;border:0;border-bottom:1px solid rgba(0,240,255,.2);
   font:8px/1 'JetBrains Mono',monospace;letter-spacing:.2em;cursor:pointer;pointer-events:auto;}
 .omni-skip:hover{color:#dffaff;border-color:var(--boot-cyan)}
-@media (prefers-reduced-motion:reduce){.omni-warp,.omni-grid,.omni-warp i{animation:none}.omni-boot{transition:none}}
+@media (max-width:720px){.omni-systemcards{grid-template-columns:1fr 1fr}.omni-systemcards span:nth-child(n+3){display:none}.omni-orbitals{width:92vw}}
+@media (prefers-reduced-motion:reduce){.omni-warp,.omni-grid,.omni-warp i,.omni-orbitals i{animation:none}.omni-boot{transition:none}}
 
 /* --- the suit rails --- */
 /* No full-width bar any more: the rails are transparent docks over the

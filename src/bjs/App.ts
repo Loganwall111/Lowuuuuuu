@@ -880,7 +880,7 @@ export class App {
     await new Promise((r) => setTimeout(r, 520));
 
     this.introUI = new IntroOverlay({
-      onPlay: (mode: string) => this.launchUniverse(mode, 'core', ''),
+      onPlay: (mode: string) => this.launchUniverse(mode, 'deepspace', ''),
       onSettingsQuality: (name) => {
         const map: Record<string, QualityName> = {
           low: 'performance', high: 'high', ultra: 'cinematic'
@@ -1012,6 +1012,11 @@ export class App {
         // Even a degraded world must enter the guarded render path. Keeping
         // launchReady false forever was the final startup-black-screen trap.
         this.launchReady = true;
+        // Keep the cinematic opaque until the hardware loop has had two
+        // opportunities to present the completed scene. This closes the
+        // one-frame black gap between loader removal and first flight frame.
+        await new Promise<void>((resolve) => requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolve())));
       }
     });
   }

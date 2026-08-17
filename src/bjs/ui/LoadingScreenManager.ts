@@ -114,6 +114,11 @@ export class LoadingScreenManager {
       <canvas class="omni-canvas" aria-hidden="true"></canvas>
       <div class="omni-grid" aria-hidden="true"></div>
       <div class="omni-vignette" aria-hidden="true"></div>
+      <div class="omni-orbitals" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
+      <div class="omni-systemcards" aria-hidden="true">
+        <span>GRAVITY SOLVER<b>ONLINE</b></span><span>DIMENSION BUS<b>STANDBY</b></span>
+        <span>STELLAR STREAM<b>LOCKED</b></span><span>HULL TELEMETRY<b>NOMINAL</b></span>
+      </div>
       <div class="omni-chrome" aria-hidden="true">
         <span>AEON // EXOSUIT OS</span><span id="omniPhase">01 MATRIX LINK</span>
       </div>
@@ -219,11 +224,21 @@ export class LoadingScreenManager {
     const t = (now - this.startAt) / 1000;
     this.draw(t);
     this.drive(t);
+    // Speech may degrade after a generous ceiling, but the world build may
+    // not: removing the veil over a half-built scene was the startup black
+    // screen. Keep the animated loader present until GPU/scene preparation
+    // has genuinely returned.
+    if (t >= 24) this.speechDone = true;
     const ready = t >= DURATION && this.backgroundDone && this.speechDone;
-    // Speech engines and GPU drivers are external systems. A hard ceiling
-    // guarantees neither can strand the player on the loading scene.
-    if (!ready && t < 28) this.raf = requestAnimationFrame(this.tick);
-    else this.finish();
+    if (!ready) {
+      if (t >= DURATION && !this.backgroundDone) {
+        const phase = this.el.querySelector<HTMLElement>('#omniPhase');
+        const skip = this.el.querySelector<HTMLElement>('.omni-skip');
+        if (phase) phase.textContent = '05 WORLD STREAM';
+        if (skip) skip.textContent = 'GPU PIPELINES // FINALIZING DESTINATION';
+      }
+      this.raf = requestAnimationFrame(this.tick);
+    } else this.finish();
   };
 
   private draw(t: number): void {

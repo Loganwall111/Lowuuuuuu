@@ -66,7 +66,7 @@ export const INTRO_CSS = `
   background-image:
     radial-gradient(ellipse at 50% 45%,
       rgba(10,16,34,.30) 0%, rgba(7,12,26,.58) 55%, rgba(5,9,20,.78) 100%),
-    url('/art/menu-hero.jpg');
+    url('art/menu-hero.jpg');
   background-size:cover, cover;
   background-position:center center, center center;
   background-repeat:no-repeat, no-repeat;
@@ -616,7 +616,7 @@ export const INTRO_CSS = `
    than a repaint-heavy background-position trick. */
 .intro-hero-plate{
   position:absolute; inset:-5%; z-index:0; pointer-events:none;
-  background-image:url('/art/menu-hero.jpg'); background-size:cover;
+  background-image:url('art/menu-hero.jpg'); background-size:cover;
   background-position:center; will-change:transform;
   transform:scale(1.08) translate(var(--parallax-x,0px),var(--parallax-y,0px));
   transition:transform 90ms linear; overflow:hidden;
@@ -668,6 +668,25 @@ export const INTRO_CSS = `
   .intro-launchrow{width:min(260px,80vw)}
 }
 
+/* True menu pages: opening Settings, World Library or Updates removes the
+   landing controls instead of stacking another window over them. */
+.intro-title.intro-subpage > .intro-brand,
+.intro-title.intro-subpage > .intro-emblem,
+.intro-title.intro-subpage > .intro-logo,
+.intro-title.intro-subpage > .intro-kicker,
+.intro-title.intro-subpage > .intro-release,
+.intro-title.intro-subpage > .intro-launchrow,
+.intro-title.intro-subpage > .intro-centerline,
+.intro-title.intro-subpage > .intro-sub,
+.intro-title.intro-subpage > .intro-info,
+.intro-title.intro-subpage > .intro-notes-corner,
+.intro-title.intro-subpage > .intro-create-corner{opacity:0;pointer-events:none;}
+.intro-title.intro-subpage > .intro-settings-panel,
+.intro-title.intro-subpage > .intro-patch{
+  position:absolute;left:50%;top:50%;z-index:10;margin:0;
+  transform:translate(-50%,-50%);width:min(760px,88vw);max-height:72vh;
+}
+.intro-title.intro-subpage::after{background:rgba(2,6,16,.66);backdrop-filter:blur(9px);}
 .intro-hide{ display:none !important; }
 `;
 
@@ -770,13 +789,18 @@ export class IntroOverlay {
     const create = document.createElement('button');
     create.type = 'button';
     create.className = 'intro-aux intro-create-corner';
-    create.innerHTML = '<b>✦ Create Universe</b><i>Seed · spawn · mode</i>';
+    create.innerHTML = '<b>✦ World Library</b><i>Load · create · spawn</i>';
     create.onclick = () => this.toggleCreatePanel();
     this.titleCard.appendChild(create);
 
     this.patchPanel = document.createElement('div');
     this.patchPanel.className = 'intro-patch intro-hide';
-    this.patchPanel.innerHTML = renderPatchNotes();
+    this.patchPanel.innerHTML = renderPatchNotes() +
+      '<button class="is-close" data-patch-back="1">Back to Main Menu</button>';
+    this.patchPanel.querySelector<HTMLElement>('[data-patch-back]')!.onclick = () => {
+      this.patchPanel.classList.add('intro-hide');
+      this.setSubpage(false);
+    };
     this.titleCard.appendChild(this.patchPanel);
 
     this.settingsPanel = document.createElement('div');
@@ -853,9 +877,15 @@ export class IntroOverlay {
     this.root.style.display = 'none';
   }
 
+  private setSubpage(open: boolean, page = ''): void {
+    this.titleCard.classList.toggle('intro-subpage', open);
+    this.titleCard.dataset.page = open ? page : '';
+  }
+
   togglePatchNotes(): boolean {
     const opening = this.patchPanel.classList.contains('intro-hide');
     this.patchPanel.classList.toggle('intro-hide', !opening);
+    this.setSubpage(opening, 'updates');
     if (opening) {
       this.settingsPanel.classList.add('intro-hide');
       this.createPanel.classList.add('intro-hide');
@@ -867,6 +897,7 @@ export class IntroOverlay {
     const opening = this.settingsPanel.classList.contains('intro-hide');
     if (opening) this.buildSettings();
     this.settingsPanel.classList.toggle('intro-hide', !opening);
+    this.setSubpage(opening, 'settings');
     if (opening) {
       this.patchPanel.classList.add('intro-hide');
       this.createPanel.classList.add('intro-hide');
@@ -929,13 +960,17 @@ export class IntroOverlay {
         this.hooks.onSettingsControl?.('reducedMotion', b.dataset.motion === 'reduced');
       };
     });
-    p.querySelector<HTMLElement>('.is-close')!.onclick = () => p.classList.add('intro-hide');
+    p.querySelector<HTMLElement>('.is-close')!.onclick = () => {
+      p.classList.add('intro-hide');
+      this.setSubpage(false);
+    };
   }
 
   toggleCreatePanel(): boolean {
     const opening = this.createPanel.classList.contains('intro-hide');
     if (opening) this.buildCreatePanel();
     this.createPanel.classList.toggle('intro-hide', !opening);
+    this.setSubpage(opening, 'worlds');
     if (opening) {
       this.patchPanel.classList.add('intro-hide');
       this.settingsPanel.classList.add('intro-hide');
@@ -946,21 +981,23 @@ export class IntroOverlay {
   private buildCreatePanel(): void {
     const p = this.createPanel;
     if (p.childElementCount) return;
-    p.innerHTML = '<div class="is-head">Create New Universe</div>' +
+    p.innerHTML = '<div class="is-head">World Library &amp; New Universe</div>' +
+      '<div class="is-help">Choose a safe starting vector or initialize a new procedural universe. Existing autosave data remains untouched.</div>' +
       '<div class="is-grp"><div class="is-label">Spawn vector</div><div class="is-row">' +
-      '<button class="is-btn" data-spawn="deepspace">Deep Space</button>' +
-      '<button class="is-btn on" data-spawn="core">Galactic Core</button>' +
+      '<button class="is-btn on" data-spawn="deepspace">Home Orbit</button>' +
+      '<button class="is-btn" data-spawn="core">Galactic Core</button>' +
       '<button class="is-btn" data-spawn="hole">Black Hole</button></div></div>' +
       '<div class="is-grp"><div class="is-label">Physics authority</div><div class="is-row">' +
       '<button class="is-btn on" data-mode="explorer">Explorer</button>' +
       '<button class="is-btn" data-mode="sandbox">Sandbox</button></div></div>' +
       '<div class="is-grp"><div class="is-label">Universe name</div>' +
       '<input class="is-input" type="text" maxlength="40" placeholder="AEON EXPANSE"></div>' +
-      '<button class="is-close" data-build="1">Initialize Universe</button>';
-    let spawn = 'core', mode = 'explorer';
+      '<button class="is-close" data-build="1">Initialize Universe</button>' +
+      '<button class="is-close" data-world-back="1">Back to Main Menu</button>';
+    let spawn = 'deepspace', mode = 'explorer';
     p.querySelectorAll<HTMLElement>('[data-spawn]').forEach((b) => b.onclick = () => {
       p.querySelectorAll<HTMLElement>('[data-spawn]').forEach((x) => x.classList.remove('on'));
-      b.classList.add('on'); spawn = b.dataset.spawn ?? 'core';
+      b.classList.add('on'); spawn = b.dataset.spawn ?? 'deepspace';
     });
     p.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => b.onclick = () => {
       p.querySelectorAll<HTMLElement>('[data-mode]').forEach((x) => x.classList.remove('on'));
@@ -969,6 +1006,10 @@ export class IntroOverlay {
     const name = p.querySelector<HTMLInputElement>('.is-input');
     p.querySelector<HTMLElement>('[data-build]')!.onclick = () =>
       this.hooks.onCreateUniverse?.(mode, spawn, name?.value.trim() || '');
+    p.querySelector<HTMLElement>('[data-world-back]')!.onclick = () => {
+      p.classList.add('intro-hide');
+      this.setSubpage(false);
+    };
   }
 
   get patchNotesOpen(): boolean {
