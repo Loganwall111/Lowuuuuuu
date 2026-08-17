@@ -87,6 +87,7 @@ import { UniverseState } from './systems/UniverseState';
 import { MODES, can, type GameMode } from './systems/GameModes';
 import { fallState, type InteriorDestination } from './systems/HoleInterior';
 import { HoleDescent } from './systems/HoleDescent';
+import { HorizonContinuum } from './systems/HorizonContinuum';
 import { TidalField } from './systems/TidalField';
 import { RegionTides, describeRegionTide } from './systems/RegionTides';
 import { CosmicSky } from './systems/CosmicSky';
@@ -212,6 +213,8 @@ export class App {
 
   /** The fall through a horizon, when one is in progress. */
   descentInto = new HoleDescent();
+  /** Seamless visual volume between exterior space and the far dimension. */
+  horizonContinuum = new HorizonContinuum();
   /** Individual meshes being torn apart, in sandbox mode. */
   tidal = new TidalField();
   /** Whole worlds being dragged in and shredded, in sandbox mode. */
@@ -287,8 +290,8 @@ export class App {
   /** Twenty minutes of deliberate inward flight opens the far gate. */
   private interiorTravelSeconds = 0;
   private interiorCommitted = false;
-  /** Seamless handoff from an open-world hole quad to the interior raymarch. */
-  private promotingHorizon = false;
+  /** True while the far-dimensional renderer is being exchanged under ink. */
+  private continuumCrossing = false;
   /** True while the Left-Alt gesture is held (cursor reappears). */
   private altHeld = false;
   /** True once the horizon warning has been shown for the current fall. */
@@ -1166,6 +1169,8 @@ export class App {
         // the lens it would sit flat on a warped image and read as an
         // overlay pasted on top.
         this.warpTunnel.attach(this.scene, this.camera);
+        // Horizon volume sits after warp light and before optional lensing.
+        this.horizonContinuum.attach(this.scene, this.camera);
         // Lensing is a property of the universe, not of one world, so it is
         // re-attached with the pipeline every time. It must remain last.
         this.lensfx.attach(this.scene, this.camera);
@@ -1434,21 +1439,19 @@ export class App {
    * dimension seeded from the hole.
    */
   private crossDeepInteriorGate(d: InteriorDestination): void {
-    const veil = document.createElement('div');
-    veil.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none;' +
-      'background:radial-gradient(circle,#dffcff 0%,#496dff 12%,#02040b 58%);' +
-      'opacity:0;transition:opacity 1.8s ease';
-    document.body.appendChild(veil);
-    requestAnimationFrame(() => { veil.style.opacity = '1'; });
-    window.setTimeout(() => {
-      const holeId = this.universe.insideHorizon?.id;
-      this.descentInto.end();
-      if (holeId) this.universe.leaveHorizon?.(holeId);
-      void this.enterRealm(d).finally(() => {
-        veil.style.transition = 'opacity 1.4s ease'; veil.style.opacity = '0';
-        window.setTimeout(() => veil.remove(), 1500);
-      });
-    }, 1900);
+    if (this.continuumCrossing) return;
+    this.continuumCrossing = true;
+    this.horizonContinuum.holdForDestination();
+    const holeId = this.universe.insideHorizon?.id;
+    this.descentInto.end();
+    if (holeId) this.universe.leaveHorizon?.(holeId);
+    // The continuum is already opaque and already showing the destination.
+    // Exchange geometry behind it, then dissolve the ink—no DOM veil, flash,
+    // loading manager, camera reset, or visible coordinate cut.
+    void this.enterRealm(d).finally(() => {
+      this.continuumCrossing = false;
+      this.horizonContinuum.revealDestination();
+    });
   }
 
   async enterRealm(d: InteriorDestination): Promise<void> {
@@ -2319,25 +2322,8 @@ export class App {
       this.universe.updatePlayer(eye);
       const cur = this.universe.current;
       const crossedOpenWorldHole = this.universe.insideHorizon;
-      if (crossedOpenWorldHole && !worldOwnsHole && !this.promotingHorizon) {
-        this.promotingHorizon = true;
-        this.ctx.focus = {
-          position: crossedOpenWorldHole.position.clone(),
-          radius: crossedOpenWorldHole.radius,
-          mass: crossedOpenWorldHole.mass,
-          seed: crossedOpenWorldHole.seed
-        };
-        // Defer until this frame has finished using its current scene. The
-        // player/camera coordinates are preserved, so this is a renderer
-        // promotion, not a teleport or a loading-screen transition.
-        window.setTimeout(() => {
-          void this.loadWorld('blackhole').finally(() => {
-            this.promotingHorizon = false;
-            this.camera.position.copyFrom(this.vehicle.position);
-            this.camera.setTarget(this.vehicle.lookTarget());
-          });
-        }, 0);
-      }
+      // The open-world card stops at the horizon; HorizonContinuum takes over
+      // in the SAME world with no renderer promotion or coordinate reset.
       const horizonOwnsHole = worldOwnsHole || !!crossedOpenWorldHole;
       if ((cur?.id ?? null) !== prevRegion) {
         // arriving somewhere is just a position change, not a level load
@@ -2455,6 +2441,7 @@ export class App {
           if (bh.lens && typeof w.setLens === 'function') w.setLens(bh.lens);
         }
         const stableExit = Math.max(0.10, visualFall.exitWindow);
+        this.horizonContinuum.update(dt, journey, stableExit, bh.seed ?? 1);
         if (typeof w?.setDescent === 'function') {
           const visualDarkness = interiorPlanNow?.gargantua
             ? Math.max(0, Math.min(1, (visualFall.progress - .82) / .18)) : 0;
@@ -2491,6 +2478,7 @@ export class App {
         this.deepGateDelivered = false;
         this.interiorTravelSeconds = 0;
         this.interiorCommitted = false;
+        this.horizonContinuum.update(dt, 0, 0, 0);
         if (typeof w?.setInterior === 'function') {
           w.setInterior(0, new Vector3(0, 0, -1));
         }
