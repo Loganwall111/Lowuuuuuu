@@ -8,12 +8,16 @@
  * make a black hole follow the camera.
  */
 import { Matrix, Vector2, Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { Effect } from '@babylonjs/core/Materials/effect';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { PostProcess } from '@babylonjs/core/PostProcesses/postProcess';
 import type { Scene } from '@babylonjs/core/scene';
 import { holeProfile, type HoleProfile } from './HoleProfiles';
 import { rollAnomaly } from './BlackHoleBody';
+import {
+  LENS_MODE_ID, LENS_ORDER, LENS_PROFILES, type LensProfile
+} from './LensProfiles';
 import { HOLE_FIELD_SHADER, registerHoleFieldShader } from '../shaders/HoleFieldShader';
 
 export interface HoleSpec {
@@ -21,6 +25,7 @@ export interface HoleSpec {
   position: Vector3;
   horizon: number;
   seed: number;
+  lens?: LensProfile;
 }
 
 export interface HoleFieldOptions {
@@ -47,6 +52,7 @@ export function radiiAway(eye: Vector3, hole: HoleSpec): number {
 interface ActiveSingularity {
   spec: HoleSpec;
   profile: HoleProfile;
+  lens: LensProfile;
   anomaly: boolean;
 }
 
@@ -57,6 +63,7 @@ export class HoleFieldRenderer {
   private active: ActiveSingularity | null = null;
   private center = new Vector2(-10, -10);
   private resolution = new Vector2(1, 1);
+  private lensTint = new Color3(1, 1, 1);
   private screenHorizon = 0;
   private t = 0;
   private failed = false;
@@ -105,7 +112,10 @@ export class HoleFieldRenderer {
       this.pass = new PostProcess(
         HOLE_FIELD_SHADER, HOLE_FIELD_SHADER,
         ['center', 'resolution', 'horizon', 'time', 'u_holeEnabled', 'spin',
-          'diskInner', 'diskOuter', 'diskTilt', 'diskBright', 'temperature', 'seed'],
+          'diskInner', 'diskOuter', 'diskTilt', 'diskBright', 'temperature', 'seed',
+          'lensMode', 'lensStrength', 'lensFalloff', 'ringAmount', 'ringRadius',
+          'lensSymmetry', 'lensDistortion', 'lensTwist', 'lensChroma',
+          'lensTint', 'lensSoftness'],
         null, 1, camera, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
       this.pass.onApply = (fx) => {
         const a = this.active;
@@ -121,6 +131,19 @@ export class HoleFieldRenderer {
         fx.setFloat('diskBright', a?.profile.diskBright ?? 0);
         fx.setFloat('temperature', a?.profile.temperature ?? .5);
         fx.setFloat('seed', ((a?.spec.seed ?? 0) % 997) / 997);
+        const l = a?.lens ?? LENS_PROFILES.schwarzschild;
+        fx.setFloat('lensMode', LENS_MODE_ID[l.mode] ?? 0);
+        fx.setFloat('lensStrength', l.strength);
+        fx.setFloat('lensFalloff', l.falloff);
+        fx.setFloat('ringAmount', l.ring);
+        fx.setFloat('ringRadius', l.ringRadius);
+        fx.setFloat('lensSymmetry', l.symmetry);
+        fx.setFloat('lensDistortion', l.distortion);
+        fx.setFloat('lensTwist', l.twist);
+        fx.setFloat('lensChroma', l.chroma);
+        this.lensTint.set(l.tint[0], l.tint[1], l.tint[2]);
+        fx.setColor3('lensTint', this.lensTint);
+        fx.setFloat('lensSoftness', l.softness);
       };
     } catch (e) {
       this.failed = true;
@@ -170,10 +193,13 @@ export class HoleFieldRenderer {
       this.active = {
         spec: nearest,
         profile: holeProfile(nearest.seed),
+        lens: nearest.lens ?? LENS_PROFILES[
+          LENS_ORDER[(nearest.seed >>> 0) % LENS_ORDER.length]],
         anomaly: rollAnomaly(nearest.seed)
       };
     } else {
       this.active.spec = nearest;
+      if (nearest.lens) this.active.lens = nearest.lens;
     }
 
     this.ensurePass();

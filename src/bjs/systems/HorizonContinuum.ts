@@ -19,6 +19,7 @@ varying vec2 vUV;
 uniform sampler2D textureSampler;
 uniform float depth;
 uniform float lookback;
+uniform float deepward;
 uniform float phase;
 uniform float destinationSeed;
 uniform vec2 u_resolution;
@@ -62,6 +63,17 @@ void main(){
  col=mix(col,bentExterior,backHalo*.68);
  col=mix(col,exterior,back);
 
+ // Turn 180 degrees from the exit and the geometry becomes visibly
+ // deep-facing: nested lightless folds and a faint central tidal vortex,
+ // rather than the same screen-space blackness in every direction.
+ float deepCore=1.-smoothstep(.10,.44,r);
+ float deepFold=exp(-pow((r-(.32+depth*.18))/.055,2.));
+ float deepNoise=fbm(vec2(a*2.8-phase*.018,log(r+.03)*3.6+phase*.025));
+ vec3 deepCol=vec3(.001,.004,.009)+vec3(.008,.018,.032)*deepNoise;
+ deepCol+=vec3(.018,.026,.05)*deepFold*(1.-depth*.55);
+ deepCol*=1.-deepCore*.94;
+ col=mix(col,deepCol,deepward*(1.-back));
+
  // A destination condenses continuously near voyage completion while the
  // opaque volume remains the carrier. There is no blink or intermediate sky.
  float arrive=smoothstep(.70,.995,depth);
@@ -72,7 +84,7 @@ void main(){
  vec2 cell=floor((vUV+destinationSeed)*vec2(480.,270.));
  vec2 fp=fract((vUV+destinationSeed)*vec2(480.,270.))-.5;
  float star=step(.994,h(cell))*exp(-dot(fp,fp)*220.);
- col+=(neb+vec3(.55,.72,1.)*star)*arrive*(1.-back);
+ col+=(neb+vec3(.55,.72,1.)*star)*arrive*(1.-back)*mix(.18,1.,deepward);
  col=min(col,vec3(.68));
  gl_FragColor=vec4(col,1.0);
 }`;
@@ -81,19 +93,20 @@ function register(){if(registered)return;Effect.ShadersStore[HORIZON_CONTINUUM_E
 
 export class HorizonContinuum{
  private pp:PostProcess|null=null; private depth=0; private target=0;
- private lookback=0; private phase=0; private seed=0; private exiting=false;
+ private lookback=0; private deepward=0; private phase=0; private seed=0; private exiting=false;
  attach(scene:Scene,camera:Camera):void{
   if(this.pp)return;register();
   this.pp=new PostProcess(HORIZON_CONTINUUM_EFFECT,HORIZON_CONTINUUM_EFFECT,
-   ['depth','lookback','phase','destinationSeed','u_resolution'],null,1,camera,
+   ['depth','lookback','deepward','phase','destinationSeed','u_resolution'],null,1,camera,
    Texture.BILINEAR_SAMPLINGMODE,scene.getEngine(),false);
   this.pp.onApply=(e)=>{const g=scene.getEngine();e.setFloat('depth',this.depth);
-   e.setFloat('lookback',this.lookback);e.setFloat('phase',this.phase);
+   e.setFloat('lookback',this.lookback);e.setFloat('deepward',this.deepward);e.setFloat('phase',this.phase);
    e.setFloat('destinationSeed',this.seed);e.setFloat2('u_resolution',g.getRenderWidth()||1,g.getRenderHeight()||1);};
  }
- update(dt:number,depth:number,lookback:number,seed:number):void{
+ update(dt:number,depth:number,lookback:number,seed:number,deepward=0):void{
   if(!this.exiting)this.target=Math.max(0,Math.min(1,depth));
-  this.lookback=Math.max(0,Math.min(1,lookback));this.seed=(seed%997)/997;
+  this.lookback=Math.max(0,Math.min(1,lookback));
+  this.deepward=Math.max(0,Math.min(1,deepward));this.seed=(seed%997)/997;
   this.phase+=Math.max(0,dt)*(1+this.target*2.);
   // Entry is immediate; destination reveal may ease without exposing a frame.
   if(this.target>0&&this.depth<=0)this.depth=this.target;

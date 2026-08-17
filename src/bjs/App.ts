@@ -357,7 +357,7 @@ export class App {
   private renderFrameId = 0;
   /** Reused black-hole render descriptors; avoids per-frame filter/map GC. */
   private holeRenderSources: Array<{
-    id: string; position: Vector3; horizon: number; seed: number;
+    id: string; position: Vector3; horizon: number; seed: number; lens?: LensProfile;
   }> = [];
   /**
    * The anonymous background haze, in three parallaxing shells. Sits behind
@@ -2577,12 +2577,13 @@ export class App {
         // well before pixel-perfect alignment, so mouse steering can actually
         // find the universe behind the horizon.
         const lookAim = Math.max(0, Math.min(1, (lookDot + .12) / .62));
+        const deepAim = Math.max(0, Math.min(1, (-lookDot + .10) / .68));
         // Exterior holes only borrow the canonical opaque core response; they
         // never replace the universe with BlackHoleWorld's private sky. The
         // native continuum owns the post-horizon viewport in-place.
         const continuumDepth = 0.16 + journey * 0.84;
         this.horizonContinuum.update(
-          dt, continuumDepth, stableExit * lookAim, bh.seed ?? 1);
+          dt, continuumDepth, stableExit * lookAim, bh.seed ?? 1, deepAim);
         const visualDarkness = interiorPlanNow?.gargantua
           ? Math.max(0, Math.min(1, (visualFall.progress - .82) / .18)) : 0;
         if (typeof w?.setDescent === 'function') {
@@ -2967,6 +2968,7 @@ export class App {
             src.position = r.position;
             src.horizon = this.universe.horizonRadiusOf(r);
             src.seed = r.seed ?? 1;
+            src.lens = r.lens;
             count++;
           }
         }

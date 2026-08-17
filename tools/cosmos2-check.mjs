@@ -162,8 +162,8 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
     /texture2D\(textureSampler,sourceUv\)/.test(holeFrag));
   ok('the influence reaches zero before its boundary without a bubble seam',
     /smoothstep\(influence\*\.42,influence\*\.90,r\)/.test(holeFrag));
-  ok('the Einstein ring remains a distinct critical curve',
-    /critical=horizon\*1\.52/.test(holeFrag));
+  ok('the Einstein ring remains a distinct profile-driven critical curve',
+    /critical=horizon\*max\(1\.05,ringRadius\)/.test(holeFrag));
   ok('the ring duplicates real background light', /vec3 secondary=texture2D/.test(holeFrag));
   ok('the event horizon is opaque black',
     /warped=mix\(warped,vec3\(0\.\),shadow\)/.test(holeFrag));

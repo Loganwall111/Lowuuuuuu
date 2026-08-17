@@ -12,8 +12,10 @@ ok('lensing resamples a deflected source coordinate',/texture2D\(textureSampler,
 ok('the null path is integrated in 32 affine steps',/for\(int i=0;i<32;i\+\+\)/.test(frag));
 ok('the integrator uses impact radius and affine depth',/rho2=impact\*impact\+horizon\*horizon\*z\*z/.test(frag));
 ok('Schwarzschild bending falls with radius',/pow\(max\(rho2,1e-10\),1\.5\)/.test(frag));
-ok('Kerr frame dragging depends on spin',/float drag=spin\*horizon\*horizon/.test(frag));
-ok('the critical curve is physical and continuous',/critical=horizon\*1\.52/.test(frag));
+ok('Kerr frame dragging depends on spin and supports procedural twist',
+  /float drag=\(spin\*\.16\+lensTwist\*\.12\)\*horizon\*horizon/.test(frag));
+ok('the critical curve is profile-driven and continuous',
+  /critical=horizon\*max\(1\.05,ringRadius\)/.test(frag));
 ok('the Einstein ring contains a secondary background image',/vec3 secondary=texture2D/.test(frag));
 ok('the horizon is an opaque overwrite',/warped=mix\(warped,vec3\(0\.\),shadow\)/.test(frag));
 ok('fragment alpha is always opaque',/gl_FragColor=vec4\(max\(col,vec3\(0\.\)\),1\.\)/.test(frag));

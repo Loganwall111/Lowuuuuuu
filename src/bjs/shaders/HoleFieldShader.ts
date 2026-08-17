@@ -32,6 +32,18 @@ uniform float diskTilt;
 uniform float diskBright;
 uniform float temperature;
 uniform float seed;
+// Full procedural lens vocabulary—every authored and generated variant.
+uniform float lensMode;
+uniform float lensStrength;
+uniform float lensFalloff;
+uniform float ringAmount;
+uniform float ringRadius;
+uniform float lensSymmetry;
+uniform float lensDistortion;
+uniform float lensTwist;
+uniform float lensChroma;
+uniform vec3 lensTint;
+uniform float lensSoftness;
 
 float hash21(vec2 p){
   p=fract(p*vec2(123.34,456.21));
@@ -64,6 +76,20 @@ void main(){
   if(r>influence){gl_FragColor=vec4(scene.rgb,1.);return;}
 
   vec2 radial=d/max(r,1e-7);
+  float theta=atan(radial.y,radial.x);
+  vec2 lensRadial=radial;
+  // Shattered and kaleidoscope lenses fold the source direction into
+  // deterministic wedges; the physical hole remains anchored in world space.
+  if(lensMode>5.5&&lensMode<7.5&&lensSymmetry>1.){
+    float sector=6.2831853/lensSymmetry;
+    float local=mod(theta+sector*.5,sector)-sector*.5;
+    if(lensMode>6.5)local=abs(local);
+    else local=floor((theta+sector*.5)/sector)*sector;
+    lensRadial=vec2(cos(local),sin(local));
+  }
+  float angularShape=lensSymmetry>1.
+    ? 1.+cos(theta*lensSymmetry)*lensDistortion*.14 : 1.;
+  float effectiveR=max(r*angularShape,1e-7);
   // All bending reaches exactly zero before the effect boundary. Without
   // this field taper the differently sampled/graded interior ended at a
   // circular seam—the translucent bubble reported around every hole.
@@ -72,7 +98,7 @@ void main(){
   // Integrate the weak-field null-geodesic deflection in 32 affine steps.
   // The accumulated 2Rs/b term is the Schwarzschild Einstein bend; frame
   // dragging adds the signed Kerr term rather than rotating a texture card.
-  float impact=max(r,horizon*.82);
+  float impact=max(effectiveR,horizon*.82);
   float deflect=0.;
   for(int i=0;i<32;i++){
     float s=(float(i)+.5)/32.;
@@ -80,20 +106,29 @@ void main(){
     float rho2=impact*impact+horizon*horizon*z*z;
     deflect+=(2.*horizon*horizon*impact/pow(max(rho2,1e-10),1.5))/32.;
   }
-  deflect*=horizon*7.2*lensFade;
-  float drag=spin*horizon*horizon/max(r*r,horizon*horizon)*.16*lensFade;
+  float falloffShape=pow(max(horizon/max(effectiveR,horizon*.25),.02),lensFalloff-1.);
+  deflect*=horizon*7.2*lensFade*lensStrength*falloffShape;
+  if(lensMode>8.5&&lensMode<9.5)deflect*=1.+sin(effectiveR/max(horizon,.0001)*5.)*.32*lensDistortion;
+  float drag=(spin*.16+lensTwist*.12)*horizon*horizon/
+    max(effectiveR*effectiveR,horizon*horizon)*lensFade;
   float cs=cos(drag),sn=sin(drag);
-  vec2 dragged=vec2(radial.x*cs-radial.y*sn,radial.x*sn+radial.y*cs);
+  vec2 dragged=vec2(lensRadial.x*cs-lensRadial.y*sn,lensRadial.x*sn+lensRadial.y*cs);
   vec2 sourceD=dragged*(r+deflect);
   vec2 sourceUv=center+vec2(sourceD.x/aspect,sourceD.y);
   sourceUv=clamp(sourceUv,vec2(.001),vec2(.999));
   vec3 lensed=texture2D(textureSampler,sourceUv).rgb;
+  if(lensChroma>.001){
+    vec2 chromaOff=vec2(dragged.x/aspect,dragged.y)*horizon*.075*lensChroma*lensFade;
+    lensed.r=texture2D(textureSampler,clamp(sourceUv+chromaOff,vec2(.001),vec2(.999))).r;
+    lensed.b=texture2D(textureSampler,clamp(sourceUv-chromaOff,vec2(.001),vec2(.999))).b;
+  }
+  lensed*=mix(vec3(1.),lensTint,.22*clamp(abs(lensStrength),0.,2.));
 
   // A second geodesic image condenses at the critical curve, forming a
   // continuous Einstein ring from real background light rather than glow.
-  float critical=horizon*1.52;
-  float ringWidth=max(horizon*.11,.0012);
-  float einstein=exp(-pow((r-critical)/ringWidth,2.));
+  float critical=horizon*max(1.05,ringRadius);
+  float ringWidth=max(horizon*mix(.055,.19,clamp(lensSoftness,0.,1.)),.0012);
+  float einstein=exp(-pow((effectiveR-critical)/ringWidth,2.))*ringAmount;
   float mirroredR=critical+abs(r-critical)*2.4;
   vec2 mirrorUv=center+vec2(radial.x*mirroredR/aspect,radial.y*mirroredR);
   vec3 secondary=texture2D(textureSampler,clamp(mirrorUv,vec2(.001),vec2(.999))).rgb;
@@ -103,7 +138,7 @@ void main(){
   // the shadow. This is narrow and dimmer than the primary Einstein image,
   // matching the repeated images produced by near-critical null geodesics.
   float photonCritical=horizon*1.30;
-  float photonRing=exp(-pow((r-photonCritical)/max(horizon*.055,.0007),2.));
+  float photonRing=exp(-pow((effectiveR-photonCritical)/max(horizon*.055,.0007),2.))*ringAmount;
   float tertiaryR=critical+abs(r-photonCritical)*4.8;
   vec2 tertiaryUv=center-vec2(radial.x*tertiaryR/aspect,radial.y*tertiaryR);
   vec3 tertiary=texture2D(textureSampler,clamp(tertiaryUv,vec2(.001),vec2(.999))).rgb;
@@ -136,7 +171,8 @@ void main(){
   // Exactly opaque event horizon. Ordered edge masks are defined on every
   // GLSL implementation and alpha is always one.
   float shadowRadius=horizon*1.08;
-  float shadow=1.-smoothstep(shadowRadius,shadowRadius+max(horizon*.08,.0008),r);
+  float shadowEdge=max(horizon*(.035+lensSoftness*.28),.0008);
+  float shadow=1.-smoothstep(shadowRadius,shadowRadius+shadowEdge,effectiveR);
   vec3 warped=mix(scene.rgb,lensed,lensFade)+gas;
   warped=mix(warped,vec3(0.),shadow);
   float coverage=max(shadow,max(lensFade,radialBand));
