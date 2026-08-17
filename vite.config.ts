@@ -21,7 +21,9 @@ const proxyPort = process.env.HMR_CLIENT_PORT
   : undefined;
 
 export default defineConfig({
-  base: '/',
+  // GitHub Pages serves this repository from /Low/. Local and Arena builds
+  // remain root-relative unless the deployment workflow opts into that base.
+  base: process.env.VITE_BASE_PATH || '/',
   build: {
     target: 'esnext',
     outDir: 'dist',
