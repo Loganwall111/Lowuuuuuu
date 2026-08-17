@@ -41,7 +41,8 @@ ok('the galaxy spans a real distance', (() => {
   const o = src.match(/FIELD_OUTER = (\d+)/);
   return i && o && Number(i[1]) >= 2000 && Number(o[1]) >= 50000;
 })());
-ok('the star count survives the move to 3D', /STAR_COUNT = 30000/.test(src));
+ok('the 3D galaxy keeps a dense but non-grainy star budget',
+  /STAR_COUNT = 14000/.test(src) && /applyState\(starMesh, 1\.35\)/.test(src));
 ok('the gas arrays survive too', /GAS_COUNT = 9000/.test(src));
 ok('stars follow the shared logarithmic spiral', /galaxyStar\(/.test(src));
 // Colour now goes through galaxyGasColor(), which dispatches to the

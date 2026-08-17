@@ -111,7 +111,7 @@ export function proxyRadius(trueDist: number, radius = GALAXY_RADIUS_REF): numbe
 export const GALAXY_RADIUS_REF = 50000;
 
 /** How many stars and gas puffs the field is built from. */
-export const STAR_COUNT = 30000;
+export const STAR_COUNT = 14000;
 export const GAS_COUNT = 9000;
 /**
  * Gas points per distant galaxy.
@@ -387,7 +387,7 @@ export class GalaxyField {
       // the old 2.0px the stars thinned to a faint scatter and the band that
       // is the single most recognisable thing about Earth's night sky never
       // formed. A galaxy is a band of light, not a field of dust motes.
-      this.applyState(starMesh, 2.8);
+      this.applyState(starMesh, 1.35);
       this.clouds.push(stars);
       this.meshes.push(starMesh);
 

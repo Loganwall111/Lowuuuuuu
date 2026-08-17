@@ -23,8 +23,8 @@ void main(){
  float asp=resolution.x/max(1.,resolution.y);vec2 p=(vUV-.5)*vec2(asp,1.);
  float band=exp(-pow((p.y+sin(p.x*2.1+seed*6.28)*.11)/.24,2.));
  float cloud=fbm(p*3.4+seed*31.7);
- vec3 fallback=mix(vec3(.004,.008,.022),vec3(.055,.035,.105),cloud)*(.45+band*1.35);
- fallback+=vec3(.04,.12,.18)*pow(cloud,3.)*band*.7;
+ vec3 fallback=mix(vec3(.001,.003,.010),vec3(.014,.010,.035),cloud)*(.24+band*.58);
+ fallback+=vec3(.008,.026,.045)*pow(cloud,4.)*band*.42;
  vec2 grid=vUV*vec2(620.,350.);vec2 cell=floor(grid),q=fract(grid)-.5;
  float rnd=h(cell+seed*997.);float star=step(.9915,rnd)*exp(-dot(q,q)*(120.+rnd*260.));
  vec3 st=mix(vec3(.55,.72,1.),vec3(1.,.76,.48),h(cell+13.))*star*(.6+rnd*2.4);

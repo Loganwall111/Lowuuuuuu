@@ -68,6 +68,7 @@ export class SpaceDust {
   }
 
   get isBuilt(): boolean { return this.mesh !== null; }
+  setEnabled(on: boolean): void { this.mesh?.setEnabled(on); }
 
   attach(scene: Scene): void {
     this.scene = scene;

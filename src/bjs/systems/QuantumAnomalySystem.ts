@@ -109,7 +109,7 @@ export class QuantumAnomalySystem {
 
   telemetry(): QuantumTelemetry | null { return this.last; }
 
-  update(dt: number, eye: Vector3): number {
+  update(dt: number, eye: Vector3, renderVisual = true): number {
     if (!this.scene) return 0;
     this.t += Math.max(0, Math.min(.1, Number.isFinite(dt) ? dt : 0));
     const sx = Math.round((Number.isFinite(eye.x) ? eye.x : 0) / ANOMALY_SECTOR_SIZE);
@@ -124,7 +124,10 @@ export class QuantumAnomalySystem {
     const distance = Vector3.Distance(eye, s.center);
     const signal = Math.max(0, Math.min(1, 1 - distance / ANOMALY_SENSOR_RANGE));
     const detected = signal > 0;
-    const visual = distance < ANOMALY_VISUAL_RANGE;
+    // Large absolute transforms lose metre-scale precision in WebGL. Keep
+    // telemetry procedural at any coordinate, but suppress unstable physical
+    // rings when the caller enters translation-free deep-space rendering.
+    const visual = renderVisual && distance < ANOMALY_VISUAL_RANGE;
     if (detected && !this.wasDetected) this.detectionPulse = true;
     this.wasDetected = detected;
     if (visual && !this.core) this.buildGeometry(s);

@@ -1071,8 +1071,9 @@ export class App {
     // BlackHoleWorld owns a full-screen geodesic sky. Drawing the galaxy fog
     // sphere over it caused the white accumulation sheet and diagonal clip.
     // Compatibility baseline: this.galaxyField.setVisible(verse.medium === 'stars')
+    const precisionSafe = Math.max(Math.abs(eye.x), Math.abs(eye.y), Math.abs(eye.z)) < 1e6;
     this.galaxyField.setVisible(
-      verse.medium === 'stars' && this.world?.ownsBlackHole !== true);
+      verse.medium === 'stars' && this.world?.ownsBlackHole !== true && precisionSafe);
 
     this.holeField.setSky({
       medium: verse.medium,
@@ -2104,8 +2105,11 @@ export class App {
     // effects follow the preset; each set() is individually guarded in PostFX
     this.postfx.set('bloom', p.bloom ? 0.55 : 0);
     this.postfx.set('grain', 0);
-    this.postfx.set('chromatic', p.chromatic ? 2.0 : 0);
-    this.postfx.set('sharpen', p.sharpen ? 0.25 : 0);
+    // Keep the retail image clean. Chromatic offset and sharpening turn dense
+    // point stars into dark outlined rings that read as full-screen grain.
+    // Both remain available as manual sliders, but presets leave them off.
+    this.postfx.set('chromatic', 0);
+    this.postfx.set('sharpen', 0);
     this.postfx.set('fxaa', p.fxaa ? 1 : 0);
     this.saves.setPrefs({ quality: name, adaptive: this.quality.adaptive });
   }
@@ -2318,7 +2322,9 @@ export class App {
             if (m.inside) dens = Math.min(1, m.depth);
           }
           const holeD = bh ? Vector3.Distance(eyeNow, bh.position) : Infinity;
-          const anomalySignal = this.quantumAnomaly.update(dt, eyeNow);
+          const precisionSafe = Math.max(
+            Math.abs(eyeNow.x), Math.abs(eyeNow.y), Math.abs(eyeNow.z)) < 1e6;
+          const anomalySignal = this.quantumAnomaly.update(dt, eyeNow, precisionSafe);
           if (this.quantumAnomaly.consumeDetection()) {
             const q = this.quantumAnomaly.telemetry();
             if (q) this.flightHud.notify('ANOMALOUS SPACETIME SIGNATURE // ' + q.klass);
@@ -2864,7 +2870,17 @@ export class App {
 
       const fwd = this.cameraForward;
       this.camera.getTarget().subtractToRef(this.camera.position, fwd);
-      this.celestials.update(eye);
+      const precisionSafeScene = Math.max(
+        Math.abs(eye.x), Math.abs(eye.y), Math.abs(eye.z)) < 1e6;
+      // Coordinate-bound meshes cannot retain metre-scale precision beside
+      // billion-unit transforms. Beyond the threshold, translation-free sky
+      // shaders remain active while unstable geometry is cleanly suppressed.
+      this.celestials.setEnabled(precisionSafeScene);
+      this.planetField.setEnabled(precisionSafeScene);
+      this.comets.setEnabled(precisionSafeScene);
+      this.spaceDust.setEnabled(precisionSafeScene);
+      this.warp.setEnabled(precisionSafeScene);
+      if (precisionSafeScene) this.celestials.update(eye);
       this.warp.update(dt, this.shownSpeed, eye, fwd);
       // Driven from the streaks' own flow rate so the two halves of the
       // effect advance together instead of sliding against each other.
@@ -2892,12 +2908,12 @@ export class App {
       this.starField.update(
         StarFieldRenderer.toSkyObjects(this.universe.regions), eye);
       // The nearby worlds stop being points and become growing spheres.
-      this.planetField.update(this.universe.regions, eye);
+      if (precisionSafeScene) this.planetField.update(this.universe.regions, eye);
       // The canopy motes drift and reseed as you travel.
-      this.spaceDust.update(eye);
+      if (precisionSafeScene) this.spaceDust.update(eye);
       // Comets orbit whichever star the player is nearest. The zero fallback
       // reuses one vector so the no-star case never allocates per frame.
-      {
+      if (precisionSafeScene) {
         const star = this.universe.nearest(eye, 'star-system');
         this.zeroVec.setAll(0);
         this.comets.update(dt, star ? star.position : this.zeroVec, eye);
