@@ -483,6 +483,10 @@ void main(void){
 }
 `;
 
+// The working Singularity locale is the canonical material for every hole.
+// Open-world rendering imports these exact shader strings—never a lookalike.
+export { VERT as WORKING_SINGULARITY_VERT, FRAG as WORKING_SINGULARITY_FRAG };
+
 export class BlackHoleWorld implements World {
   id = 'blackhole';
   // This world raymarches the hole, disk and lensing from one position, so

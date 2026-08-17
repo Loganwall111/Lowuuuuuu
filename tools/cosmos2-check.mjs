@@ -33,7 +33,7 @@ const bundle = async (entry) => {
 const app = read('src/bjs/App.ts');
 const warpSrc = read('src/bjs/systems/WarpSystem.ts');
 const tunnelSrc = read('src/bjs/systems/WarpTunnel.ts');
-const holeFrag = read('src/bjs/shaders/HoleFieldShader.ts');
+const holeFrag = read('src/bjs/worlds/BlackHoleWorld.ts');
 const holeRend = read('src/bjs/systems/HoleFieldRenderer.ts');
 const uniSrc = read('src/bjs/systems/UniverseState.ts');
 const hudSrc = read('src/bjs/ui/FlightHUD.ts');
@@ -152,28 +152,21 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
 }
 
 /* ================================================================
-   3. BLACK HOLES — unified pass, no floating bubble geometry
+   3. BLACK HOLES — canonical working material clone
    ================================================================ */
 {
-  ok('the renderer is a full-screen post-process',
-    /new PostProcess/.test(holeRend));
-  ok('all legacy black-hole geometry is absent',
-    !/MeshBuilder|CreatePlane|bhQuad_/.test(holeRend));
-  ok('the pass lenses the actual rendered frame',
-    /texture2D\(textureSampler,sourceUv\)/.test(holeFrag));
-  ok('the influence has a smooth outer fade',
-    /smoothstep\(influence\*\.78,influence,r\)/.test(holeFrag));
-  ok('the Einstein ring remains a distinct critical curve',
-    /critical=horizon\*1\.52/.test(holeFrag));
-  ok('the ring duplicates real background light',
-    /vec3 secondary=texture2D/.test(holeFrag));
-  ok('the event horizon is opaque black',
-    /mix\(lensed\+gas,vec3\(0\.\),shadow\)/.test(holeFrag));
-  ok('the output alpha is always one',
-    /gl_FragColor=vec4\(col,1\.\)/.test(holeFrag));
-  ok('the old oversized quad constant is gone',
-    !/QUAD_RADII = 26/.test(holeRend));
-  ok('the reason for removing cards is documented', /bubble/i.test(holeRend));
+  ok('the renderer imports the working Singularity fragment',
+    /WORKING_SINGULARITY_FRAG/.test(holeRend));
+  ok('the renderer imports the working Singularity vertex stage',
+    /WORKING_SINGULARITY_VERT/.test(holeRend));
+  ok('all open-world holes use a ShaderMaterial', /new ShaderMaterial/.test(holeRend));
+  ok('there is no alternate HoleField shader', !/HoleFieldShader/.test(holeRend));
+  ok('the clone is one fullscreen triangle', /workingSingularityViewport/.test(holeRend));
+  ok('the canonical material integrates geodesics', /1\.5 \* rs \* u \* u/.test(holeFrag));
+  ok('the canonical material raymarches disk volume', /inSlab/.test(holeFrag));
+  ok('the canonical event horizon is opaque', /vec4\(col, 1\.0\)/.test(holeFrag));
+  ok('world position is bound directly to holePos', /setVector3\('holePos',nearest\.position\)/.test(holeRend));
+  ok('the clone rationale is documented', /exact vertex\/fragment material/.test(holeRend));
 }
 
 /* ================================================================

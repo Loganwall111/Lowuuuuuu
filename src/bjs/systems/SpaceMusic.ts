@@ -374,9 +374,13 @@ export class SpaceMusic {
       this.degree = nextDegree(this.degree, this.rnd);
       // A soft sine pad for the body of the score...
       this.playNote(degreeToHz(this.degree, this.settings), 1, 'sine');
-      // ...and a low triangle a fifth below, sometimes, for weight.
-      if (this.rnd() < 0.34) {
-        this.playNote(degreeToHz(this.degree - 4, this.settings), 0.5, 'triangle');
+      // Layered orchestral voicing: a quiet third and fifth bloom behind the
+      // lead, while an occasional sub-octave supplies cinematic weight. The
+      // voices share the long envelope, so this remains a score—not arpeggio.
+      this.playNote(degreeToHz(this.degree + 2, this.settings), 0.28, 'sine');
+      this.playNote(degreeToHz(this.degree + 4, this.settings), 0.17, 'triangle');
+      if (this.rnd() < 0.42) {
+        this.playNote(degreeToHz(this.degree - 7, this.settings), 0.46, 'triangle');
       }
     }
   }

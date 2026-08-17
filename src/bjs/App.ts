@@ -232,6 +232,9 @@ export class App {
   fleet = new Fleet();
   /** Which way you are looking at your ship. */
   shipViewMode: ViewMode = 'chase';
+  private f5ThirdPerson = false;
+  private playerShipMeshes: Mesh[] = [];
+  private playerShipThrusters: StandardMaterial[] = [];
   private insideGalaxy = false;
   /** True while the horizon-approach glare clamp is holding bloom down. */
   private bloomClamped = false;
@@ -819,6 +822,12 @@ export class App {
       // F10 so the signature traversal mechanic owns the easiest key.
       if (e.key.toLowerCase() === 'p' && !e.repeat) this.openPortalRoute();
       if (e.key === 'F10' && !e.repeat) this.togglePhotoMode();
+      // F5 toggles a clean external ship camera. Prevent the browser refresh
+      // so the perspective switch is immediate and never destroys the run.
+      if (e.key === 'F5' && !e.repeat) {
+        e.preventDefault();
+        this.toggleF5ThirdPerson();
+      }
       // U copies the universe seed so a friend can visit the same worlds.
       if (e.key.toLowerCase() === 'u' && !e.repeat) this.copySeed();
       // I dives into the nearest gas giant; O boards the nearest derelict.
@@ -1248,6 +1257,7 @@ export class App {
       // loadWorld purges every mesh, so the holes and sector anomaly must be rebuilt too.
       this.holeField.dispose();
       this.holeField.attach(this.scene);
+      this.buildPlayerShipVisual();
       this.quantumAnomaly.dispose();
       this.quantumAnomaly.attach(this.scene, this.universe.opts.seed);
       this.portalVisual.dispose();
@@ -1739,6 +1749,46 @@ export class App {
     this.shell.toast(this.photoMode
       ? 'Photomode on — press F10 to return'
       : 'Photomode off');
+  }
+
+  private toggleF5ThirdPerson(): void {
+    this.f5ThirdPerson = !this.f5ThirdPerson;
+    document.body.dataset.thirdperson = this.f5ThirdPerson ? '1' : '0';
+    this.playerShipMeshes.forEach((m) => m.setEnabled(this.f5ThirdPerson));
+    this.flightHud.setVisible(!this.f5ThirdPerson);
+    this.shell.toast(this.f5ThirdPerson
+      ? 'EXTERNAL SHIP CAMERA // F5 TO RETURN'
+      : 'MECHSUIT VISOR RESTORED');
+  }
+
+  /** Procedural player craft used by the F5 chase camera. */
+  private buildPlayerShipVisual(): void {
+    this.playerShipMeshes = []; this.playerShipThrusters = [];
+    const hull = new StandardMaterial('playerHullM', this.scene);
+    hull.diffuseColor = new Color3(.035,.07,.11); hull.specularColor = new Color3(.35,.8,1);
+    hull.emissiveColor = new Color3(.008,.05,.075);
+    const body = MeshBuilder.CreateBox('playerShipBody', { width:7,height:2.2,depth:16 }, this.scene);
+    body.material=hull; body.rotationQuaternion=this.vehicle.orientation.clone();
+    const wing = (name:string,x:number) => {
+      const m=MeshBuilder.CreateBox(name,{width:8,height:.45,depth:6},this.scene);
+      m.parent=body;m.position.set(x,0,-1);m.material=hull;return m;
+    };
+    const left=wing('playerShipWingL',-5), right=wing('playerShipWingR',5);
+    const canopy=MeshBuilder.CreateSphere('playerShipCanopy',{diameter:3.2,segments:20},this.scene);
+    canopy.parent=body;canopy.position.set(0,1.45,2.5);
+    const glass=new StandardMaterial('playerCanopyM',this.scene);
+    glass.diffuseColor=new Color3(.01,.08,.12);glass.emissiveColor=new Color3(0,.18,.25);
+    glass.alpha=.72;canopy.material=glass;
+    const parts=[body,left,right,canopy];
+    for(const x of [-2.25,2.25]){
+      const jet=MeshBuilder.CreateCylinder('playerThruster'+x,{diameter:1.35,height:1.5,tessellation:20},this.scene);
+      jet.parent=body;jet.position.set(x,0,-8.5);jet.rotation.x=Math.PI/2;
+      const jm=new StandardMaterial('playerThrusterM'+x,this.scene);
+      jm.diffuseColor=Color3.Black();jm.emissiveColor=new Color3(0,.3,.65);jet.material=jm;
+      this.playerShipThrusters.push(jm);parts.push(jet);
+    }
+    this.playerShipMeshes=parts;
+    parts.forEach((m)=>{m.isPickable=false;m.setEnabled(this.f5ThirdPerson);});
   }
 
   /** Dives into the nearest gas giant, if there is one close enough. */
@@ -2282,15 +2332,27 @@ export class App {
 
         // The ship views are derived from one basis, so cockpit and chase
         // can never disagree about where the ship is pointing.
-        if (this.shipViewMode !== 'chase' && this.vehicle.mode === 'fly') {
+        if (this.vehicle.mode === 'fly' &&
+            (this.f5ThirdPerson || this.shipViewMode !== 'chase')) {
           const fwd = this.vehicle.lookTarget().subtract(this.vehicle.position);
-          const view = shipView(this.shipViewMode, this.vehicle.position,
+          const mode = this.f5ThirdPerson ? 'chase' : this.shipViewMode;
+          const view = shipView(mode, this.vehicle.position,
                                 fwd, new Vector3(0, 1, 0), 26);
           this.camera.position.copyFrom(view.position);
           this.camera.setTarget(view.target);
+          this.camera.fov = view.fov;
         } else {
           this.camera.position.copyFrom(this.vehicle.position);
           this.camera.setTarget(this.vehicle.lookTarget());
+          this.camera.fov = .92;
+        }
+        const playerHull = this.playerShipMeshes[0];
+        if (playerHull) {
+          playerHull.position.copyFrom(this.vehicle.position);
+          playerHull.rotationQuaternion = this.vehicle.orientation.clone();
+          const glow = this.thrusting ? 1 : .12;
+          this.playerShipThrusters.forEach((m) =>
+            m.emissiveColor.set(0, .32 * glow, .9 * glow));
         }
       }
 
@@ -2407,9 +2469,22 @@ export class App {
         // Interior distance is proper time, not the camera's Euclidean pass
         // through a sphere. Continuous W takes twenty real minutes; coasting
         // advances only faintly, so the journey is deliberate but never dead.
-        this.interiorTravelSeconds += dt *
-          ((this.thrusting || this.keys.has('w') || this.keys.has('arrowup')) ? 1 : 0.05);
-        const journey = Math.max(0, Math.min(1, this.interiorTravelSeconds / 1200));
+        const forwardHeld = this.thrusting || this.keys.has('w') || this.keys.has('arrowup');
+        const holeSeed = (bh.seed ?? 1) >>> 0;
+        // Each singularity has stable proper depth: twenty to thirty real
+        // minutes under ordinary thrust. An engaged Warp DR compresses that
+        // same path to a deterministic fifteen-to-ninety-second traversal.
+        const normalInteriorSeconds = 1200 + (holeSeed % 601);
+        const warpInteriorSeconds = 15 + (holeSeed % 76);
+        const warpState = this.warpDrive.state();
+        const warpInterior = forwardHeld && this.gearbox.warpAllowed &&
+          warpState.engaged && warpState.multiplier > 2;
+        const properRate = warpInterior
+          ? normalInteriorSeconds / warpInteriorSeconds
+          : (forwardHeld ? 1 : 0.05);
+        this.interiorTravelSeconds += dt * properRate;
+        const journey = Math.max(0, Math.min(1,
+          this.interiorTravelSeconds / normalInteriorSeconds));
         const visualFall = interiorPlanNow
           ? fallState(interiorPlanNow, interiorPlanNow.depth * journey)
           : fall.state;
@@ -2446,13 +2521,20 @@ export class App {
         const exitLen = Math.max(1e-6, exitDir.length());
         const lookDot = Vector3.Dot(this.cameraForward, exitDir) / (viewLen * exitLen);
         const lookAim = Math.max(0, Math.min(1, (lookDot - .55) / .40));
-        // Crossing the physical surface immediately establishes an opaque
-        // throat; the remaining 84% then unfolds over the deep voyage.
-        const continuumDepth = 0.16 + journey * 0.84;
-        this.horizonContinuum.update(dt, continuumDepth, stableExit * lookAim, bh.seed ?? 1);
+        // The exact material used by the known-good Singularity locale now
+        // owns every open-world exterior and interior pixel. HorizonContinuum
+        // remains attached as a zero-intensity safety carrier, so there can
+        // never be two competing black-hole materials in one frame.
+        const visualDarkness = interiorPlanNow?.gargantua
+          ? Math.max(0, Math.min(1, (visualFall.progress - .82) / .18)) : 0;
+        this.holeField.setInterior({
+          inside: visualFall.inside, exitWindow: stableExit,
+          nestedLens: visualFall.nestedLens, singularity: visualFall.singularity,
+          darkness: visualDarkness, exitDir,
+          fallDir: fallDir.lengthSquared() > 1e-9 ? fallDir : new Vector3(0, 0, 1)
+        });
+        this.horizonContinuum.update(dt, 0, 0, bh.seed ?? 1);
         if (typeof w?.setDescent === 'function') {
-          const visualDarkness = interiorPlanNow?.gargantua
-            ? Math.max(0, Math.min(1, (visualFall.progress - .82) / .18)) : 0;
           w.setDescent({
             inside: visualFall.inside,
             exitWindow: stableExit,
@@ -2476,7 +2558,7 @@ export class App {
         // depends on the hole and on whether you threaded its singularity.
         if (fall.arrived) this.pendingInteriorDestination = fall.arrived;
         if (!this.deepGateDelivered && this.pendingInteriorDestination &&
-            this.interiorTravelSeconds >= 1200) {
+            this.interiorTravelSeconds >= normalInteriorSeconds) {
           this.deepGateDelivered = true;
           this.crossDeepInteriorGate(this.pendingInteriorDestination);
         }
@@ -2486,6 +2568,7 @@ export class App {
         this.deepGateDelivered = false;
         this.interiorTravelSeconds = 0;
         this.interiorCommitted = false;
+        this.holeField.setInterior(null);
         this.horizonContinuum.update(dt, 0, 0, 0);
         if (typeof w?.setInterior === 'function') {
           w.setInterior(0, new Vector3(0, 0, -1));
@@ -2800,9 +2883,21 @@ export class App {
         // Allocation-free equivalent of the former descriptor literal:
         // r.kind === 'blackhole' · horizon: this.universe.horizonRadiusOf(r)
         let count = 0;
-        if (!horizonOwnsHole) {
+        if (!worldOwnsHole) {
+          // A swept warp crossing can leave the source chunk in one frame;
+          // keep the captured singularity as material owner regardless of
+          // streaming, then append other nearby holes without duplicating it.
+          const captured = this.universe.insideHorizon;
+          if (captured) {
+            let src = this.holeRenderSources[count];
+            if (!src) src = this.holeRenderSources[count] =
+              { id: '', position: captured.position, horizon: 1, seed: 1 };
+            src.id = captured.id; src.position = captured.position;
+            src.horizon = this.universe.horizonRadiusOf(captured);
+            src.seed = captured.seed ?? 1; count++;
+          }
           for (const r of this.universe.regions) {
-            if (r.kind !== 'blackhole') continue;
+            if (r.kind !== 'blackhole' || r.id === captured?.id) continue;
             let src = this.holeRenderSources[count];
             if (!src) {
               src = { id: '', position: r.position, horizon: 1, seed: 1 };

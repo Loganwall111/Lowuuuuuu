@@ -60,6 +60,14 @@ body[data-photo="1"] .fhud,
 body[data-photo="1"] .visor-console,
 body[data-photo="1"] .sonar-cursor{ display:none !important; }
 body[data-cinematic="1"] .visor-console{ display:none !important; }
+/* F5 external camera removes the entire mechsuit overlay, not flight control. */
+body[data-thirdperson="1"] .topbar,
+body[data-thirdperson="1"] .wm-layer,
+body[data-thirdperson="1"] .wm-dock,
+body[data-thirdperson="1"] .hud,
+body[data-thirdperson="1"] .fhud,
+body[data-thirdperson="1"] .visor-console,
+body[data-thirdperson="1"] .sonar-cursor{ display:none !important; }
 .wm-win.wm-pinned{ box-shadow:0 0 0 1px var(--acc), var(--shadow); }
 .objsearch{display:flex;gap:6px;align-items:center;}
 .objsearch input{flex:1;min-width:0;padding:8px 10px;font-size:12px;color:var(--txt);
