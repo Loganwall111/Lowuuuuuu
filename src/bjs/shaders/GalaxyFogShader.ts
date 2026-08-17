@@ -128,7 +128,7 @@ const float BULGE_RE = 0.055;
  *  real bulge has. */
 const float BULGE_POW = 0.62;
 /** Peak brightness of the bulge. */
-const float BULGE_GAIN = 6.0;
+const float BULGE_GAIN = 4.4;
 /** Where the bulge starts being truncated, and where it ends. WITHOUT
  *  THIS the profile's tail never reaches zero and lights the whole sky. */
 const float BULGE_CUT_IN = 0.14;
@@ -137,7 +137,7 @@ const float BULGE_CUT_OUT = 0.34;
 /** The blazing nucleus at the dead centre. */
 const float NUCLEUS_RE = 0.013;
 const float NUCLEUS_POW = 1.10;
-const float NUCLEUS_GAIN = 7.5;
+const float NUCLEUS_GAIN = 4.8;
 
 /** Dust lane frequency, phase offset from the arm ridge, and profile. */
 const float DUST_FREQ = 3.2;

@@ -588,10 +588,8 @@ export class FlightHUD {
     const bar = this.root.querySelector('#fhDescBar') as HTMLElement | null;
     if (bar) bar.style.width = Math.round(state.exitWindow * 100) + '%';
 
-    this.putHtml('fhDescExit', state.exitWindow > 0.02
-      ? 'the way back is still open — <b>' +
-        Math.round(state.exitWindow * 100) + '%</b>'
-      : 'the way back has closed');
+    this.putHtml('fhDescExit',
+      'EXTERIOR APERTURE VISIBLE — TURN AROUND TO LOOK BACK');
   }
 
   /** Energises the visor frame while a traversable aperture pair is open. */

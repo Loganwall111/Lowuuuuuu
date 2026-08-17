@@ -11,10 +11,9 @@
 import { Scene } from '@babylonjs/core/scene';
 import { Vector3, Matrix } from '@babylonjs/core/Maths/math.vector';
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
-import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
 import { Effect } from '@babylonjs/core/Materials/effect';
-import type { Mesh } from '@babylonjs/core/Meshes/mesh';
+import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { GLSL_NOISE } from '../Noise';
 import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 import { rollAnomaly, ANOMALY_COVER, STANDARD_COVER } from '../systems/BlackHoleBody';
@@ -570,7 +569,13 @@ export class BlackHoleWorld implements World {
     this.mat.backFaceCulling = false;
     this.mat.depthFunction = 519; // ALWAYS
 
-    this.quad = MeshBuilder.CreatePlane('bhQuad', { size: 2 }, scene);
+    // One oversized fullscreen triangle, not a two-triangle plane. The plane
+    // exposed a hard diagonal when one half took a divergent interior branch
+    // on ANGLE drivers (the exact black/grey wedge in the screenshot).
+    this.quad = new Mesh('bhQuad', scene);
+    this.quad.setVerticesData('position', [-1, -1, 0, 3, -1, 0, -1, 3, 0], false, 3);
+    this.quad.setVerticesData('uv', [0, 0, 2, 0, 0, 2], false, 2);
+    this.quad.setIndices([0, 1, 2]);
     this.quad.material = this.mat;
     this.quad.infiniteDistance = true;
     this.quad.isPickable = false;
@@ -602,7 +607,8 @@ export class BlackHoleWorld implements World {
     if (ctx.focus && Number.isFinite(ctx.focus.seed)) {
       const hp = holeProfile(ctx.focus.seed as number);
       this.holeKind = hp.label;
-      this.p.diskBright = hp.diskBright;
+      // Keep the accretion side below display white; bloom supplies the aura.
+      this.p.diskBright = hp.diskBright * 0.45;
       this.p.diskInner = hp.diskInner;
       this.p.diskOuter = hp.diskOuter;
       this.p.diskThickness = hp.diskThickness;

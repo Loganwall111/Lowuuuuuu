@@ -488,7 +488,7 @@ body[data-cinematic="1"] .visor-console{ display:none !important; }
   text-shadow:0 0 10px color-mix(in srgb,var(--acc) 60%,transparent);
   margin-top:5px;text-transform:uppercase;}
 .fh-desc-warn:empty{display:none;}
-.fh-desc-bar{height:4px;margin-top:7px;background:rgba(255,190,120,.14);
+.fh-desc-bar{display:none;height:4px;margin-top:7px;background:rgba(255,190,120,.14);
   overflow:hidden;}
 .fh-desc-bar i{display:block;height:100%;
   background:linear-gradient(90deg,#4fb6ff,#bfe4ff);

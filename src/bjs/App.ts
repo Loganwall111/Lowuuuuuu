@@ -2347,6 +2347,9 @@ export class App {
 
       if (bh && this.can('enterHoles')) {
         this.descentInto.begin(bh.id, bh.seed ?? 1, eye, bh.position);
+        // A deliberate forward burn commits to the interior; a pilot who
+        // immediately reverses at the lip may still climb back out.
+        if (this.thrusting) this.universe.latchHorizon(bh.id);
         this.onMilestone('first-horizon');
         const fall = this.descentInto.update(dt, eye);
         const interiorPlanNow = this.descentInto.interior;

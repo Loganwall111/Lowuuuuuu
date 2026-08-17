@@ -137,6 +137,8 @@ export class UniverseState {
   /** False until the first updatePlayer, so frame one has no phantom sweep. */
   private playerStarted = false;
   horizonDepth = 0;
+  /** Once gameplay begins an interior descent, geometry can no longer eject it. */
+  private latchedHorizonId: string | null = null;
 
   private seq = 0;
 
@@ -422,6 +424,7 @@ export class UniverseState {
       this.insideHorizon = null;
       this.horizonDepth = 0;
     }
+    if (this.latchedHorizonId === id) this.latchedHorizonId = null;
     return true;
   }
 
@@ -433,11 +436,16 @@ export class UniverseState {
    * coordinates have not changed. Without this the next frame would start a
    * fresh fall into the hole they just came out of.
    */
+  latchHorizon(id: string): void {
+    if (this.insideHorizon?.id === id) this.latchedHorizonId = id;
+  }
+
   leaveHorizon(id: string): void {
     if (this.insideHorizon?.id === id) {
       this.insideHorizon = null;
       this.horizonDepth = 0;
     }
+    if (this.latchedHorizonId === id) this.latchedHorizonId = null;
   }
 
   byId(id: string): Region | null {
@@ -572,8 +580,12 @@ export class UniverseState {
         const startedInside =
           Vector3.Distance(this.lastPlayerPos, bh.position) <= horizon;
         if (startedInside) {
-          this.insideHorizon = null;
-          this.horizonDepth = 0;
+          if (this.latchedHorizonId !== bh.id) {
+            this.insideHorizon = null;
+            this.horizonDepth = 0;
+          } else {
+            this.horizonDepth = 1;
+          }
         } else {
           // Still captured. Hold at the singularity end of the scale: the
           // ship is past the centre and the fall should continue rather
@@ -581,7 +593,7 @@ export class UniverseState {
           this.horizonDepth = 1;
         }
       }
-    } else if (this.insideHorizon) {
+    } else if (this.insideHorizon && this.latchedHorizonId !== this.insideHorizon.id) {
       this.insideHorizon = null;
       this.horizonDepth = 0;
     }
