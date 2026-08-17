@@ -45,7 +45,10 @@ export type DimensionTrait =
   | 'crystalline' | 'void' | 'fractal' | 'jellyfish' | 'clockwork'
   | 'paper' | 'neon' | 'bone' | 'fungal' | 'oceanic' | 'molten'
   | 'glitched' | 'monochrome' | 'giant' | 'miniature' | 'mirror'
-  | 'library' | 'tesseract' | 'dust' | 'streaming';
+  | 'library' | 'tesseract' | 'dust' | 'streaming'
+  | 'eyes' | 'god-rays' | 'lightning' | 'bubbles' | 'anatomical'
+  | 'colossal-walls' | 'cosmic-gods' | 'gravity-ocean' | 'choir'
+  | 'glass' | 'garden' | 'storm' | 'ribbons' | 'cities' | 'bioluminescent';
 
 export const ALL_TRAITS: DimensionTrait[] = [
   'psychedelic', 'flesh', 'bloodstream', 'neural', 'cubist',
@@ -53,7 +56,10 @@ export const ALL_TRAITS: DimensionTrait[] = [
   'crystalline', 'void', 'fractal', 'jellyfish', 'clockwork',
   'paper', 'neon', 'bone', 'fungal', 'oceanic', 'molten',
   'glitched', 'monochrome', 'giant', 'miniature', 'mirror',
-  'library', 'tesseract', 'dust', 'streaming'
+  'library', 'tesseract', 'dust', 'streaming', 'eyes', 'god-rays',
+  'lightning', 'bubbles', 'anatomical', 'colossal-walls', 'cosmic-gods',
+  'gravity-ocean', 'choir', 'glass', 'garden', 'storm', 'ribbons',
+  'cities', 'bioluminescent'
 ];
 
 /** Themed archetypes. Depth biases which of these can appear. */
@@ -78,6 +84,79 @@ interface Archetype {
    */
   summonedOnly?: boolean;
 }
+
+const STRANGE_PALETTES: [number, number, number][][] = [
+  [[.05,.65,1],[.1,1,.72],[.75,.2,1],[.9,.95,1]],
+  [[1,.18,.45],[.48,.02,.18],[1,.72,.5],[.22,.01,.08]],
+  [[.12,.22,.8],[.45,.9,1],[.02,.05,.2],[.8,.3,1]],
+  [[.95,.72,.18],[1,.3,.05],[.3,.08,.02],[1,.95,.62]],
+  [[.2,1,.45],[.02,.3,.18],[.7,1,.2],[.05,.08,.06]],
+  [[.72,.75,.86],[.12,.15,.24],[1,1,1],[.38,.22,.55]],
+  [[.9,.2,1],[.05,.9,.95],[.2,.02,.35],[1,.65,.95]],
+  [[.08,.08,.12],[.35,.38,.5],[.75,.78,.9],[.01,.01,.02]]
+];
+
+const STRANGE_REALM_DEFS: Array<[string,string,DimensionTrait[],string]> = [
+  ['ocular-sea','The Ocular Sea',['eyes','oceanic','giant'],'Every horizon is watching.'],
+  ['body-infinite','The Body Infinite',['anatomical','flesh','bloodstream'],'Galaxies circulate through an anatomy without an edge.'],
+  ['alveolar-reach','The Alveolar Reach',['anatomical','bubbles','flesh'],'Blue stellar alveoli breathe around the ship.'],
+  ['cathedral-veins','Cathedral of Veins',['anatomical','colossal-walls','neon'],'Living arches carry rivers of light.'],
+  ['giant-wall','The Giant Wall',['colossal-walls','giant','void'],'A structure larger than the visible universe blocks half the sky.'],
+  ['godsgrave','Godsgrave',['cosmic-gods','giant','dust'],'Dead cosmic gods have become constellations.'],
+  ['bubble-ocean','The Bubble Ocean',['bubbles','gravity-ocean','bioluminescent'],'A buoyant blue sea hangs in vacuum as continent-sized spheres.'],
+  ['lantern-leviathans','Lantern Leviathans',['jellyfish','bioluminescent','giant'],'Transparent leviathans pulse between liquid stars.'],
+  ['mirror-rain','Mirror Rain',['mirror','liquid','ribbons'],'Every falling drop reflects a different universe.'],
+  ['gravity-orchard','The Gravity Orchard',['garden','inverted-gravity','giant'],'Planets grow like fruit from invisible branches.'],
+  ['neon-monsoon','Neon Monsoon',['storm','lightning','neon'],'Charged colour falls sideways forever.'],
+  ['glass-desert','The Glass Desert',['glass','crystalline','giant'],'Dunes refract suns that have not risen yet.'],
+  ['singing-vacuum','The Singing Vacuum',['choir','void','neural'],'Empty space resonates in impossible chords.'],
+  ['ribbon-world','Ribbon World',['ribbons','fractal','liquid'],'Matter exists only as endlessly folded streamers.'],
+  ['city-without-end','City Without End',['cities','colossal-walls','neon'],'Every star is a window and every void a street.'],
+  ['dreaming-engine','The Dreaming Engine',['clockwork','neural','tesseract'],'A machine is dreaming this dimension in real time.'],
+  ['chromatic-abyss','Chromatic Abyss',['psychedelic','void','god-rays'],'Darkness splits into impossible spectra.'],
+  ['coral-stars','The Coral Stars',['garden','oceanic','bioluminescent'],'Reefs grow between suns in a tide without water.'],
+  ['insect-moon','The Insect Moon',['giant','cities','bone'],'A moon-sized organism carries a civilization on its shell.'],
+  ['whale-fall','Whale-Fall Cosmos',['cosmic-gods','oceanic','fungal'],'Life feeds on a creature whose ribs span galaxies.'],
+  ['upside-sky','The Upside Sky',['upside-down','gravity-ocean','oceanic'],'The ocean is above; stars sink into it.'],
+  ['teeth-horizon','The Teeth Horizon',['bone','colossal-walls','flesh'],'The edge of sight opens and closes.'],
+  ['hand-universe','The Hand Universe',['anatomical','giant','neural'],'Five cosmic filaments curl around a central palm.'],
+  ['cathedral-organ','The Cathedral Organ',['choir','anatomical','colossal-walls'],'Planetary pipes play with gravitational pressure.'],
+  ['time-reef','The Time Reef',['time-reversed','garden','crystalline'],'Events calcify here before they happen.'],
+  ['memory-weather','Memory Weather',['storm','neural','mirror'],'Old moments arrive as luminous weather fronts.'],
+  ['electric-forest','The Electric Forest',['garden','lightning','neon'],'Branching plasma trees root in magnetic fields.'],
+  ['sapphire-flood','The Sapphire Flood',['gravity-ocean','liquid','bubbles'],'An endless blue flood ignores gravity and shore.'],
+  ['amber-machine','The Amber Machine',['clockwork','glass','giant'],'Ancient gears are suspended in solid golden light.'],
+  ['infinite-nursery','The Infinite Nursery',['bubbles','garden','miniature'],'New universes hatch inside translucent cells.'],
+  ['ghost-fleet-sea','Ghost Fleet Sea',['oceanic','cities','void'],'Silent vessels sail a sea made from dark matter.'],
+  ['woven-space','Woven Space',['ribbons','paper','fractal'],'Distance is cloth and wormholes are loose threads.'],
+  ['hollow-sun-garden','Hollow Sun Garden',['garden','molten','tesseract'],'Forests grow on the inner walls of empty suns.'],
+  ['mobius-biosphere','Möbius Biosphere',['garden','tesseract','inverted-gravity'],'The ecosystem has only one continuous side.'],
+  ['prism-graveyard','Prism Graveyard',['glass','bone','crystalline'],'Extinct realities remain as refractive monuments.'],
+  ['astral-synapse','Astral Synapse',['neural','lightning','giant'],'Stars fire as neurons across a cosmic brain.'],
+  ['colossus-procession','The Colossus Procession',['cosmic-gods','giant','cities'],'World-sized figures walk toward an unknown ceremony.'],
+  ['galaxy-gods','The Galaxy Gods',['cosmic-gods','god-rays','giant'],'Colossal beings wear spiral galaxies as living bodies.'],
+  ['eye-choir','The Eye Choir',['eyes','choir','bubbles'],'Billions of eyes sing whenever the ship moves.'],
+  ['skin-of-worlds','The Skin of Worlds',['anatomical','flesh','cities'],'Civilizations inhabit pores in a universe-sized membrane.'],
+  ['storm-archive','The Storm Archive',['storm','library','lightning'],'Every lightning fork records a lost history.'],
+  ['liquid-constellations','Liquid Constellations',['liquid','gravity-ocean','god-rays'],'The constellations flow around the hull like luminous water.']
+];
+
+const STRANGE_REALMS: Archetype[] = [
+  {
+    id:'balge',name:'The Balge',glyph:'⚡',
+    traits:['god-rays','lightning','psychedelic','neon','storm'],
+    palette:[[.02,.65,1],[.05,1,.48],[.72,.12,1],[1,.9,.25]],
+    fogDensity:.055,ambient:.95,minDepth:0,
+    blurb:'A cognitive storm of god-rays beneath a permanent polar vortex.',
+    summonedOnly:true
+  },
+  ...STRANGE_REALM_DEFS.map((d,i)=>({
+    id:d[0],name:d[1],glyph:i%5===0?'◉':i%5===1?'✦':i%5===2?'⬡':i%5===3?'☍':'❈',
+    traits:d[2],palette:STRANGE_PALETTES[i%STRANGE_PALETTES.length],
+    fogDensity:.008+(i%7)*.007,ambient:.28+(i%6)*.1,minDepth:i%6,
+    blurb:d[3]
+  }))
+];
 
 const ARCHETYPES: Archetype[] = [
   {
@@ -172,6 +251,8 @@ const ARCHETYPES: Archetype[] = [
     blurb: 'You have gone deep enough to arrive before things began.'
   },
 
+  ...STRANGE_REALMS,
+
   /* --------------------- summoned-only destinations --------------------- */
 
   {
@@ -253,6 +334,21 @@ const SHAPE_SETS: Record<string, string[]> = {
   tesseract: ['box', 'plane', 'octahedron'],
   dust: ['grain', 'grain', 'grain', 'icosphere'],
   streaming: ['grain', 'disc', 'blob'],
+  eyes: ['sphere', 'sphere', 'dome', 'disc'],
+  'god-rays': ['cylinder', 'plane', 'tube'],
+  lightning: ['tube', 'tube', 'torusknot'],
+  bubbles: ['sphere', 'sphere', 'dome'],
+  anatomical: ['tube', 'capsule', 'blob'],
+  'colossal-walls': ['plane', 'box', 'box'],
+  'cosmic-gods': ['icosphere', 'capsule', 'torusknot'],
+  'gravity-ocean': ['disc', 'sphere', 'blob'],
+  choir: ['torus', 'tube', 'sphere'],
+  glass: ['octahedron', 'icosphere', 'plane'],
+  garden: ['dome', 'cylinder', 'torusknot'],
+  storm: ['tube', 'grain', 'icosphere'],
+  ribbons: ['tube', 'plane', 'torusknot'],
+  cities: ['box', 'cylinder', 'plane'],
+  bioluminescent: ['sphere', 'dome', 'tube'],
   default: ['sphere', 'box', 'torus', 'capsule']
 };
 
@@ -265,7 +361,10 @@ function pick<T>(rng: () => number, arr: T[]): T {
  * Depth increases as the player falls further through nested black holes; it
  * unlocks stranger archetypes and eventually pushes time backwards.
  */
+export const BALGE_SEED = hashSeed('exclusive:the-balge:v1');
+
 export function generateDimension(seed: number, depth = 0): DimensionSpec {
+  if ((seed >>> 0) === BALGE_SEED) return namedDimension('balge', BALGE_SEED, depth);
   const rng = makeRng(seed);
   const d = Math.max(0, Math.floor(depth));
 

@@ -43,6 +43,7 @@ import { PlanetField } from './systems/PlanetField';
 import { SpaceDust } from './systems/SpaceDust';
 import { CometRenderer } from './systems/CometSystem';
 import { WormholeField } from './systems/WormholeField';
+import { DimensionalDriftSystem } from './systems/DimensionalDriftSystem';
 import { AlienTraffic } from './systems/AlienTraffic';
 import { resolveSearch } from './systems/ObjectSearch';
 import {
@@ -255,6 +256,7 @@ export class App {
   comets = new CometRenderer();
   /** Traversable wormholes threading the universe, placed by the seed. */
   wormholes = new WormholeField();
+  dimensionalDrifts = new DimensionalDriftSystem();
   /** Very rare, very large alien ships that pass through on their own. */
   alienTraffic = new AlienTraffic();
 
@@ -521,7 +523,7 @@ export class App {
           ?? (cur?.kind === 'blackhole' ? cur : null);
         const hereEco = cur ? this.ecologies.get(cur.id) : null;
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...this.planetField.stats(), ...this.spaceDust.stats(), ...this.comets.stats(), ...this.wormholes.stats(), ...this.alienTraffic.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}), ...this.discoveries.stats(), ...this.milestones.stats(), ...this.challenges.stats(), ...this.civilization.stats(), ...this.nova.stats(), ...this.feeding.stats(), ...(hereEco?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...this.planetField.stats(), ...this.spaceDust.stats(), ...this.comets.stats(), ...this.wormholes.stats(), ...this.dimensionalDrifts.stats(), ...this.alienTraffic.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}), ...this.discoveries.stats(), ...this.milestones.stats(), ...this.challenges.stats(), ...this.civilization.stats(), ...this.nova.stats(), ...this.feeding.stats(), ...(hereEco?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -1254,6 +1256,8 @@ export class App {
       this.wormholes.dispose();
       this.wormholes.attach(this.scene);
       this.wormholes.build(this.universe.opts.seed);
+      this.dimensionalDrifts.dispose();
+      this.dimensionalDrifts.attach(this.scene, this.universe.opts.seed);
 
       this.alienTraffic.dispose();
       this.alienTraffic.attach(this.scene, this.universe.opts.seed);
@@ -1294,10 +1298,20 @@ export class App {
       // hitch, and anything drawn before its program is ready can fall
       // back to flat magenta. Best-effort: never awaited into a failure.
       try {
-        const warm = await warmupShaders(this.scene);
-        if (warm.failed.length) {
+        const warmTask = warmupShaders(this.scene);
+        const warm = await Promise.race([
+          warmTask.then((result) => ({ result, timedOut: false })),
+          new Promise<{ result: null; timedOut: true }>((resolve) =>
+            window.setTimeout(() => resolve({ result: null, timedOut: true }), 1500))
+        ]);
+        if (warm.timedOut) {
+          // Compilation continues in the driver's own queue; it may not hold
+          // the menu/loading handshake hostage or expose a black frame.
+          console.warn('Shader warmup exceeded 1.5s; continuing asynchronously.');
+          void warmTask.catch((e) => console.warn('Deferred shader warmup:', e));
+        } else if (warm.result?.failed.length) {
           console.warn('Shader warmup incomplete:',
-            warm.failed.map((f) => f.name).join(', '));
+            warm.result.failed.map((f) => f.name).join(', '));
         }
       } catch (e) {
         console.warn('Shader warmup skipped:', e);
@@ -2033,15 +2047,27 @@ export class App {
    * opening. Called once, when the intro hands over to the universe proper.
    */
   private spawnAtGalacticCore(): void {
-    this.vehicle.teleport(new Vector3(0, 1500, 5000));
-    // Face whichever hole the universe seeded as the galactic core; fall
-    // back to looking down the arm if none is present yet.
-    const core = this.universe.nearest(this.vehicle.position, 'blackhole');
-    const look = core ? core.position : new Vector3(-26000, 0, 0);
+    // Spawn relative to an ACTUAL generated galaxy. The former hardcoded
+    // (0,1500,5000) coordinate was not tied to any rendered galaxy and could
+    // leave every finite sky layer behind, producing the reported HUD-over-
+    // black frame. Sit just inside the nearest galaxy's luminous outskirts.
+    const origin = Vector3.Zero();
+    const galaxy = this.universe.nearest(origin, 'galaxy');
+    const look = galaxy?.position.clone() ?? origin;
+    const radius = Math.max(900, galaxy?.radius ?? 2200);
+    const at = look.add(new Vector3(radius * .18, radius * .12, radius * .78));
+    this.vehicle.teleport(at);
     this.vehicle.faceTowards(look);
-    this.camera.position.copyFrom(this.vehicle.position);
+    this.camera.position.copyFrom(at);
     this.camera.setTarget(look.clone());
-    this.universe.updatePlayer(this.vehicle.position);
+    this.universe.streamAround(at);
+    this.universe.updatePlayer(at);
+    // Prime the destination-dependent layers before the loading veil leaves.
+    this.starField.rebuild(
+      StarFieldRenderer.toSkyObjects(this.universe.regions), at);
+    this.planetField.update(this.universe.regions, at);
+    this.layeredSky.update(at);
+    this.galaxyField.update(at, look, this.scene);
     this.gearbox.select('impulse');
   }
 
@@ -2867,6 +2893,28 @@ export class App {
       // Wormholes iris open and their gate frames rotate; rare alien ships
       // cruise their arc.
       this.wormholes.update(dt, eye);
+      {
+        const host = this.universe.nearest(eye, 'star-system');
+        this.dimensionalDrifts.update(dt, eye, host?.position ?? null,
+          this.planetField.live.map((p) => ({
+            id:p.id,position:p.position,surfaceRadius:p.surfaceRadius
+          })));
+        const driftArrival = this.dimensionalDrifts.tryTransit({
+          position:this.vehicle.position,velocity:this.vehicle.velocity
+        });
+        if (driftArrival) {
+          const at = driftArrival.position.add(new Vector3(
+            0, driftArrival.surfaceRadius * 2.4, driftArrival.surfaceRadius * 3.2));
+          this.vehicle.teleport(at);
+          this.vehicle.faceTowards(driftArrival.position);
+          this.camera.position.copyFrom(at);
+          this.camera.setTarget(driftArrival.position.clone());
+          this.universe.streamAround(at);
+          this.universe.updatePlayer(at);
+          this.flightHud.notify('DIMENSIONAL DRIFT TRANSIT // PLANET LOCK');
+          this.shell.toast('Drift arrival: ' + driftArrival.id);
+        }
+      }
       this.alienTraffic.update(dt, eye);
 
       // Each background shell slides toward the eye by its own lock factor,

@@ -140,6 +140,7 @@ export class DimensionWorld implements World {
     for (let i = 0; i < count; i++) {
       this.drifters.push(this.makeDrifter(rng, i));
     }
+    this.buildSignatureVfx(rng);
 
     // ---- exits: tears you can fall through ----
     for (let i = 0; i < TEAR_COUNT; i++) this.tears.push(this.makeTear(rng, i));
@@ -149,6 +150,57 @@ export class DimensionWorld implements World {
     this.gate.arm(this.tearGates());
 
     this.name = s.glyph + ' ' + s.name;
+  }
+
+  /** Authored procedural signatures layered over the generic dimension zoo. */
+  private buildSignatureVfx(rng: () => number): void {
+    if (!this.spec.traits.includes('god-rays')) return;
+    const scene = this.ctx.scene;
+    const makeMat = (name: string, c: Color3, alpha: number) => {
+      const m = new StandardMaterial(name, scene);
+      m.diffuseColor = Color3.Black(); m.specularColor = Color3.Black();
+      m.emissiveColor = c; m.alpha = alpha; m.disableLighting = true;
+      m.backFaceCulling = false; return m;
+    };
+    const blue = makeMat('balgeBlue', new Color3(.02,.65,1), .86);
+    const green = makeMat('balgeGreen', new Color3(.02,1,.42), .82);
+    // Permanent polar vortex at the highest matrix coordinate.
+    for (let i = 0; i < 4; i++) {
+      const v = MeshBuilder.CreateTorusKnot('balgeVortex' + i, {
+        radius: 22 + i * 7, tube: 1.2 + i * .35,
+        radialSegments: 96, tubularSegments: 20, p: 2 + (i % 2), q: 3 + i
+      }, scene);
+      v.position.set(0, 125 + i * 3, 0); v.material = i % 2 ? green : blue;
+      v.isPickable = false;
+      this.drifters.push({ mesh:v, spin:new Vector3(.08,.35+i*.09,.04),
+        orbit:0,orbitSpeed:0,bobAmp:2,bobPhase:i,base:v.position.clone() });
+    }
+    // Cascading lightning forks emitted from the vortex into the dimension.
+    for (let i = 0; i < 22; i++) {
+      const first = new Vector3((rng()-.5)*18,125,(rng()-.5)*18);
+      const points: Vector3[] = [first];
+      const end = new Vector3((rng()-.5)*230,-40-rng()*80,(rng()-.5)*230);
+      for (let k = 1; k <= 10; k++) {
+        const t = k / 10;
+        points.push(Vector3.Lerp(first, end, t).add(new Vector3(
+          (rng()-.5)*14*(1-t),(rng()-.5)*8,(rng()-.5)*14*(1-t))));
+      }
+      const bolt = MeshBuilder.CreateTube('balgeLightning'+i,
+        { path:points,radius:.22+rng()*.34,tessellation:6 },scene);
+      bolt.material=i%3?blue:green;bolt.isPickable=false;
+      this.drifters.push({mesh:bolt,spin:Vector3.Zero(),orbit:0,orbitSpeed:0,
+        bobAmp:1+rng()*2,bobPhase:rng()*6.28,base:bolt.position.clone()});
+    }
+    // Volumetric-looking shafts fill the view without dark vacuum gaps.
+    for (let i = 0; i < 14; i++) {
+      const ray=MeshBuilder.CreateCylinder('balgeRay'+i,
+        {height:260,diameterTop:.4,diameterBottom:12+rng()*22,tessellation:18},scene);
+      ray.position.set((rng()-.5)*180,20,(rng()-.5)*180);
+      ray.material=makeMat('balgeRayM'+i,i%2?new Color3(0,.8,1):new Color3(0,1,.38),.12);
+      ray.isPickable=false;
+      this.drifters.push({mesh:ray,spin:new Vector3(0,(rng()-.5)*.08,0),orbit:0,
+        orbitSpeed:0,bobAmp:4,bobPhase:rng()*6.28,base:ray.position.clone()});
+    }
   }
 
   /** Builds one inhabitant using the dimension's shape vocabulary. */

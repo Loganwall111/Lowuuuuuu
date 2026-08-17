@@ -114,11 +114,12 @@ console.log('\n— raw pointer deltas, gesture lock, no timers —');
       !/setTimeout|setInterval/.test(src));
   }
 
-  // The spawn targets the galactic core.
-  ok('the game spawns at the core coordinates',
-    app.includes('0, 1500, 5000'));
-  ok('and faces the central supermassive black hole',
-    app.includes("nearest(this.vehicle.position, 'blackhole')"));
+  // Core spawn must derive from an actual rendered galaxy, never an empty
+  // hardcoded coordinate that leaves all finite sky layers behind.
+  ok('the game spawns relative to a generated galactic core',
+    app.includes("nearest(origin, 'galaxy')") && !app.includes('teleport(new Vector3(0, 1500, 5000))'));
+  ok('and primes the destination sky before reveal',
+    app.includes('this.starField.rebuild(') && app.includes('this.galaxyField.update(at, look'));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

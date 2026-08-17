@@ -28,7 +28,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { Scene } from '@babylonjs/core/scene';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { PortalSystem } from './PortalSystem';
-import { generateDimension } from './DimensionSystem';
+import { BALGE_SEED, generateDimension, namedDimension } from './DimensionSystem';
 
 export type WormholeType = 'bridge' | 'ring' | 'interstellar' | 'cosmic-tear';
 
@@ -148,6 +148,11 @@ export class WormholeField {
         if (spec.type === 'cosmic-tear') {
           tear.lensStrength = 4.6;
           tear.throatMass = 2.8;
+          // The Balge is not in the ordinary dimension roll. Only a naturally
+          // rare Cosmic Tear can select it, and only some tears do so.
+          if (((spec.seed >>> 3) % 5) === 0) {
+            tear.destination = namedDimension('balge', BALGE_SEED, 6);
+          }
         } else {
           // The tesseract dressing belongs only to the ordinary gate. A
           // Cosmic Tear is entirely lensing, with no manufactured frame.
