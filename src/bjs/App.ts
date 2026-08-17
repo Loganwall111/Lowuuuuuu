@@ -2395,12 +2395,12 @@ export class App {
 
       if (bh && this.can('enterHoles')) {
         this.descentInto.begin(bh.id, bh.seed ?? 1, eye, bh.position);
-        // A deliberate forward burn commits to the interior; a pilot who
-        // immediately reverses at the lip may still climb back out.
-        if (this.thrusting) {
-          this.universe.latchHorizon(bh.id);
-          this.interiorCommitted = true;
-        }
+        // Physical horizon contact is irreversible. The swept test may
+        // catch the entire entry between two frames, so commitment cannot
+        // depend on a sampled thrust flag (or the next frame can eject a
+        // coasting/high-speed craft on the far side of the sphere).
+        this.universe.latchHorizon(bh.id);
+        this.interiorCommitted = true;
         this.onMilestone('first-horizon');
         const fall = this.descentInto.update(dt, eye);
         const interiorPlanNow = this.descentInto.interior;
@@ -2446,7 +2446,10 @@ export class App {
         const exitLen = Math.max(1e-6, exitDir.length());
         const lookDot = Vector3.Dot(this.cameraForward, exitDir) / (viewLen * exitLen);
         const lookAim = Math.max(0, Math.min(1, (lookDot - .55) / .40));
-        this.horizonContinuum.update(dt, journey, stableExit * lookAim, bh.seed ?? 1);
+        // Crossing the physical surface immediately establishes an opaque
+        // throat; the remaining 84% then unfolds over the deep voyage.
+        const continuumDepth = 0.16 + journey * 0.84;
+        this.horizonContinuum.update(dt, continuumDepth, stableExit * lookAim, bh.seed ?? 1);
         if (typeof w?.setDescent === 'function') {
           const visualDarkness = interiorPlanNow?.gargantua
             ? Math.max(0, Math.min(1, (visualFall.progress - .82) / .18)) : 0;

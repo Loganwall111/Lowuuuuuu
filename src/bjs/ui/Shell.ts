@@ -307,6 +307,7 @@ export class Shell {
         <div class="cmd-grid">
           <button class="iconbtn" id="w-controls" title="Controls (1)">🎛</button>
           <button class="iconbtn" id="w-objects"  title="Objects (2)">🧰</button>
+          <button class="iconbtn" id="w-spawn" title="Spawn every object">✚</button>
           <button class="iconbtn" id="w-library"  title="World Library (6)">🗂</button>
           <button class="iconbtn" id="w-telemetry" title="Telemetry (3)">📊</button>
           <button class="iconbtn" id="w-presets"  title="Presets (4)">✨</button>
@@ -344,7 +345,7 @@ export class Shell {
     });
     this.setGameMode(this.hooks.getGameMode?.() ?? 'explorer');
 
-    (['controls', 'objects', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
+    (['controls', 'objects', 'spawn', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id) as HTMLButtonElement | null;
       if (btn) btn.onclick = () => this.wm.Toggle(id);
     });
@@ -369,7 +370,7 @@ export class Shell {
   }
 
   private syncTopbar(): void {
-    (['controls', 'objects', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
+    (['controls', 'objects', 'spawn', 'telemetry', 'presets', 'graphics', 'snapshots', 'view', 'pilot', 'navigator', 'lens'] as const).forEach((id) => {
       const btn = this.topbar.querySelector('#w-' + id);
       btn?.classList.toggle('on', this.wm.IsVisible(id));
     });
@@ -415,6 +416,7 @@ export class Shell {
     // The navigator matters most here: it owns create/grab/throw, so leaving
     // it stale left dead buttons on screen after a switch.
     this.wm.refresh('objects');
+    this.wm.refresh('spawn');
     this.wm.refresh('controls');
     this.wm.refresh('navigator');
   }
@@ -613,6 +615,15 @@ export class Shell {
     this.wm.register({
       id: 'objects', title: 'Objects', glyph: '🧰',
       x: 1, y: 0.10, width: 232, height: 520,
+      render: (b) => this.renderObjects(b)
+    });
+
+    // Dedicated spawn catalogue: planets, stars, remnants, galaxies,
+    // quasars, black holes, structures and experimental objects all remain
+    // searchable in one place, independent of the inspector-oriented tray.
+    this.wm.register({
+      id: 'spawn', title: 'Spawn', glyph: '✚',
+      x: 0.5, y: 0.10, width: 250, height: 560,
       render: (b) => this.renderObjects(b)
     });
 
@@ -1732,7 +1743,7 @@ export class Shell {
       const btn = document.createElement('button');
       btn.className = 'btn' + (this.objScale === sc.value ? ' pri' : '');
       btn.textContent = sc.label;
-      btn.onclick = () => { this.objScale = sc.value; this.wm.refresh('objects'); };
+      btn.onclick = () => { this.objScale = sc.value; this.wm.refresh('objects'); this.wm.refresh('spawn'); };
       srow.appendChild(btn);
     });
     sg.appendChild(srow);
