@@ -110,6 +110,36 @@ void main(void){
 
   vec3 sky = destinationSky(bent, destSeed);
 
+  // Cosmic tears exceed an ordinary wormhole's lens strength. Their image
+  // is folded through nested critical curves: each fold is another virtual
+  // image of the destination, producing a violent Droste-like infinity of
+  // gravitationally mirrored skies rather than a decorative energy portal.
+  float tear = smoothstep(1.72, 2.18, lensStrength);
+  vec3 mirrors = vec3(0.0);
+  float mirrorWeight = 0.0;
+  for (int m = 1; m <= 6; m++) {
+    float fm = float(m);
+    float foldR = abs(fract(r * fm * 2.35 - time * .013 * fm) * 2.0 - 1.0);
+    float foldA = abs(fract((atan(p.y,p.x) / 6.2831853) * fm + .5) * 2.0 - 1.0);
+    vec3 reflected = normalize(bent * (1.0 + foldR * .55)
+      + radial * (foldA - .5) * deflect * (.16 + fm * .025)
+      - n * (.035 * fm));
+    float w = tear * (1.0 / (1.0 + fm * .42))
+      * (0.35 + 0.65 * smoothstep(.15,.92,foldR));
+    mirrors += destinationSky(reflected, destSeed + fm * .071) * w;
+    mirrorWeight += w;
+  }
+  sky = mix(sky, mirrors / max(.001, mirrorWeight), tear * .86);
+
+  // Nested caustics pile up at six separate critical curves.
+  float caustics = 0.0;
+  for (int cidx = 1; cidx <= 6; cidx++) {
+    float fc = float(cidx);
+    float critical = abs(fract(r * fc * 1.71 - time * .008 * fc) - .5);
+    caustics += tear * exp(-critical * critical * (900.0 + fc * 110.0)) / fc;
+  }
+  sky += rimColor * caustics * 1.35;
+
   // ---- Einstein ring: light piled up at the rim ----
   float ring = smoothstep(0.86, 0.98, r) * (1.0 - smoothstep(0.98, 1.0, r));
   sky += rimColor * ring * 2.6 * lensStrength;

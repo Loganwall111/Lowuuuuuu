@@ -253,12 +253,12 @@ export function generateChunk(
       origin.y + rng() * chunkSize,
       origin.z + rng() * chunkSize);
 
-    // What kind of thing it is depends on how crowded the neighbourhood is:
-    // Galaxies cluster in dense regions. Black holes are NOT scattered
-    // through the void any more - a supermassive singularity belongs at the
-    // centre of a galaxy, so 'galaxy' carries one implicitly and the loose
-    // 'blackhole' rolls are gone. This is what stopped holes appearing as
-    // random sparkles in otherwise empty intergalactic space.
+    // What kind of thing it is depends on how crowded the neighbourhood is.
+    // Galaxy-centre holes are exclusively supermassive and are emitted by
+    // the lattice below. A tiny separate population of stellar/intermediate
+    // remnants may occur in nebular nurseries or isolated deep space; their
+    // lower mass and sub-percent roll keep them exceptional rather than
+    // scattering fake galactic cores everywhere.
     const roll = rng();
     let kind: RegionKind;
     if (field > 0.72) {
@@ -272,15 +272,25 @@ export function generateChunk(
       // singularity, that is exactly what was scattering black holes above
       // and below the visible disc. Galaxies come from the lattice
       // (galaxiesNear) and nowhere else.
-      kind = roll < 0.64 ? 'nebula' : 'star-system';
+      kind = roll < 0.008 ? 'blackhole'
+        : roll < 0.648 ? 'nebula' : 'star-system';
     } else if (field > 0.34) {
-      kind = roll < 0.58 ? 'star-system' : roll < 0.76 ? 'nebula' : 'planet';
+      kind = roll < 0.004 ? 'blackhole'
+        : roll < 0.582 ? 'star-system' : roll < 0.762 ? 'nebula' : 'planet';
     } else {
-      kind = roll < 0.50 ? 'star-system' : roll < 0.70 ? 'planet'
-        : roll < 0.86 ? 'ocean' : 'terrain';
+      kind = roll < 0.002 ? 'blackhole'
+        : roll < 0.501 ? 'star-system' : roll < 0.701 ? 'planet'
+          : roll < 0.861 ? 'ocean' : 'terrain';
     }
 
     const made = makeRegion(kind, pos, rng, cx, cy, cz, i);
+    if (kind === 'blackhole') {
+      // Explicitly not a galaxy core: these are collapsed stars and rare
+      // intermediate remnants, never supermassive central singularities.
+      made.galacticCore = false;
+      made.name = (field > .64 ? 'Nebular remnant ' : 'Rogue remnant ')
+        + made.name.replace(' Singularity', '');
+    }
     regions.push(made);
 
   }

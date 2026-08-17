@@ -45,7 +45,16 @@ void main(){
   float fluid=smoothstep(.34,.78,spiral)
              *(1.0-smoothstep(coreRadius+.05,coreRadius+.72,r));
   float ink=clamp(solidCore+fluid*depth*.38,0.0,1.0);
-  vec3 col=mix(oldScene.rgb,vec3(0.0),ink);
+
+  // Past the horizon, space is not the exterior scene with a black circle
+  // pasted over it. The camera is immersed in a light-absorbing volume.
+  // Establish that volume across the entire viewport as soon as capture is
+  // committed; only the directional look-back aperture below can recover
+  // the universe that was left behind.
+  float volumeInk=.965*smoothstep(.015,.16,depth);
+  vec3 inkGrain=vec3(.004,.007,.011)*fluid*(1.0-depth);
+  vec3 col=oldScene.rgb*(1.0-volumeInk)+inkGrain;
+  col=mix(col,vec3(0.0),ink);
   // Absolute singularity: no star, fog, dust, or previous-frame color may
   // survive inside the core under any blend mode.
   col*=1.0-solidCore;

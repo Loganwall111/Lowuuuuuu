@@ -28,8 +28,9 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import type { Scene } from '@babylonjs/core/scene';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { PortalSystem } from './PortalSystem';
+import { generateDimension } from './DimensionSystem';
 
-export type WormholeType = 'bridge' | 'ring' | 'interstellar';
+export type WormholeType = 'bridge' | 'ring' | 'interstellar' | 'cosmic-tear';
 
 export interface WormholeSpec {
   id: string;
@@ -73,9 +74,12 @@ export function wormholeSpecs(seed: number, count = WORMHOLE_COUNT): WormholeSpe
     const roll = hash01(s + 1);
     const type: WormholeType =
       out.length === gateIndex ? 'interstellar'
-        : roll < 0.18 ? 'interstellar'
-          : roll < 0.36 ? 'ring'
-            : 'bridge';
+        // Cosmic Tears are genuinely exceptional: no guaranteed instance,
+        // and only a 2.5% roll among an already sparse wormhole field.
+        : roll < 0.025 ? 'cosmic-tear'
+          : roll < 0.18 ? 'interstellar'
+            : roll < 0.36 ? 'ring'
+              : 'bridge';
 
     const place = (off: number): [number, number, number] => {
       const r = 500 + hash01(s + off) * 5500;
@@ -86,7 +90,7 @@ export function wormholeSpecs(seed: number, count = WORMHOLE_COUNT): WormholeSpe
     };
 
     const [ax, ay, az] = place(2);
-    if (type === 'interstellar') {
+    if (type === 'interstellar' || type === 'cosmic-tear') {
       out.push({
         id: 'wh' + out.length, type, ax, ay, az,
         bx: ax, by: ay, bz: az, radius: 7 + hash01(s + 3) * 5, seed: s
@@ -133,13 +137,22 @@ export class WormholeField {
       const a: [number, number, number] = [spec.ax, spec.ay, spec.az];
       const b: [number, number, number] = [spec.bx, spec.by, spec.bz];
 
-      if (spec.type === 'interstellar') {
-        // A tear: a see-through mouth opening onto a generated dimension.
+      if (spec.type === 'interstellar' || spec.type === 'cosmic-tear') {
+        // A one-sided tear opens onto a deterministic procedural dimension.
+        // Cosmic Tears receive supercritical mass so the portal shader folds
+        // the destination into repeated, infinitely receding lens images.
         const facing = new Vector3(0, 0, 1);
-        this.portals.createTear(
-          new Vector3(spec.ax, spec.ay, spec.az), facing, spec.radius);
-        // The tesseract dressing: a glowing golden sphere + halo ring.
-        this.buildOrb(scene, spec);
+        const tear = this.portals.createTear(
+          new Vector3(spec.ax, spec.ay, spec.az), facing, spec.radius,
+          generateDimension(spec.seed >>> 0, 0));
+        if (spec.type === 'cosmic-tear') {
+          tear.lensStrength = 4.6;
+          tear.throatMass = 2.8;
+        } else {
+          // The tesseract dressing belongs only to the ordinary gate. A
+          // Cosmic Tear is entirely lensing, with no manufactured frame.
+          this.buildOrb(scene, spec);
+        }
         continue;
       }
 
