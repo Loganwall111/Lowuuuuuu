@@ -686,22 +686,12 @@ export class App {
     // bound to the rendering canvas container, where raw-delta hardware
     // pointer lock and drag-look both live.
     this.mouse.attach(canvas as unknown as HTMLElement);
-    // If the environment refuses pointer lock (cross-origin preview iframes
-    // often deny the permission policy), MouseLook switches to free steer:
-    // bare mouse movement turns the view from the same hardware deltas.
-    // Announce the switch once so the player knows the mouse is live.
-    this.mouse.onSteerUnlocked = () => {
-      try {
-        this.shell.toast('Pointer lock unavailable — move the mouse to look');
-      } catch { /* shell may not be mounted yet */ }
-    };
     // Native pointer lock: clicking the canvas container locks the mouse to
-    // the centre so the view turns with a bare mouse move, no click-and-drag
-    // required. While locked, the browser's raw movementX/movementY hardware
-    // deltas map 1:1 onto the camera's look-at steering matrices
-    // (rotation.y / rotation.x) and are fully decoupled from Keplerian
-    // planet positions. Pointer lock only takes effect inside a user
-    // gesture, which a click is.
+    // the centre when the environment allows it. The look engine itself is
+    // lock-independent — it steers from hardware movementX/movementY deltas
+    // whether or not the browser granted a lock, so iframe security
+    // contexts cannot freeze the view. Pointer lock only takes effect
+    // inside a user gesture, which a click is.
     canvas.tabIndex = 0;
     canvas.addEventListener('click', () => {
       // A previously focused range/number control otherwise keeps receiving
@@ -2426,33 +2416,22 @@ export class App {
         }
 
         const look = this.mouse.consume(dt);
-        // ---- EXCLUSIVE RAW-DELTA LOOK STEERING (pointer lock / free steer) ----
-        // While pointer-locked the browser reports absolute movementX/Y
-        // hardware deltas; when pointer lock is refused (embedded previews)
-        // free steer supplies the same hardware deltas from bare mouse
-        // movement. Either way, map them strictly onto the look-at steering
-        // matrices: X -> camera.rotation.y and Y -> camera.rotation.x,
-        // applied as absolute radians to the vehicle heading the camera is
-        // rebuilt from every frame. This is 1:1 pixel-to-angle steering with
-        // NO rate integration and NO matching of mouse coordinates to screen
-        // pixels or background shader tracking arrays — the mouse can only
-        // pivot the view, so the starfield and every planet stay perfectly
-        // still while you turn to gaze at the Milky Way.
-        if (this.mouse.isLocked || this.mouse.freeSteer) {
-          const steer = this.mouse.consumeSteer();
-          if (Math.abs(steer.yaw) > 1e-6 || Math.abs(steer.pitch) > 1e-6) {
-            this.vehicle.steerLook(steer.yaw, steer.pitch);
-            this.lookMoved = true;
-          }
+        // ---- LOOK-VECTOR STEERING (hardware deltas, lock-independent) ----
+        // consumeSteer() drains the raw movementX/movementY lane accumulated
+        // by every pointermove. The deltas map 1:1 onto the look-vector
+        // orientation angles (camera.rotation.y for X, camera.rotation.x for
+        // Y) and are applied to the vehicle heading the camera is rebuilt
+        // from every frame — identically whether pointer lock was granted,
+        // refused by an iframe security context, or absent entirely. No rate
+        // integration, no screen-pixel matching, no background coupling:
+        // the mouse can only pivot the view, so the starfield and every
+        // planet stay perfectly rigid while you turn toward the Milky Way.
+        const steer = this.mouse.consumeSteer();
+        if (Math.abs(steer.yaw) > 1e-6 || Math.abs(steer.pitch) > 1e-6) {
+          this.vehicle.steerLook(steer.yaw, steer.pitch);
+          this.lookMoved = true;
         }
-        // Arrow keys still work: whichever the player is using wins. The
-        // rate lane is drag-only so locked/free-steer steering cannot
-        // double-apply.
-        if (!this.mouse.isLocked && !this.mouse.freeSteer) {
-          if (Math.abs(look.yaw) > 1e-4) input.yaw = look.yaw;
-          if (Math.abs(look.pitch) > 1e-4) input.pitch = look.pitch;
-        }
-        // The 'look around' lesson completes when you actually look around.
+        // The 'look around' lesson also completes on legacy rate look.
         if (Math.abs(look.yaw) + Math.abs(look.pitch) > 0.02) this.lookMoved = true;
         const baseFly = this.vehicle.flySpeed;
         this.vehicle.update(dt, input, this.groundProbe);
