@@ -24,6 +24,7 @@ import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
+import { toRenderRef } from './RenderOrigin';
 
 /** One class of vessel. */
 export interface ShipClass {
@@ -274,7 +275,7 @@ export class Fleet {
           'ship-' + v.id,
           { width: size * 0.34, height: size * 0.22, depth: size },
           this.scene);
-        mesh.position.copyFrom(v.position);
+        toRenderRef(v.position,mesh.position);
         mesh.isPickable = false;
         const mat = this.materialFor(cls);
         if (mat) mesh.material = mat;
@@ -365,7 +366,7 @@ export class Fleet {
       v.position.addInPlace(v.velocity.scale(dt));
 
       if (v.mesh) {
-        v.mesh.position.copyFrom(v.position);
+        toRenderRef(v.position,v.mesh.position);
         // Face the way it is travelling, so a moving fleet looks like one.
         if (v.velocity.lengthSquared() > 1e-4) {
           const f = v.velocity.normalize();

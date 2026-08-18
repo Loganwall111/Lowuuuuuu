@@ -6,6 +6,7 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
 import type { Portal } from './PortalGunSystem';
+import { toRenderRef } from './RenderOrigin';
 
 interface Aperture { key: string; root: Mesh; rings: Mesh[]; mats: StandardMaterial[]; }
 
@@ -13,6 +14,7 @@ export class PortalVisualSystem {
   private scene: Scene | null = null;
   private live = new Map<string, Aperture>();
   private target = new Vector3();
+  private local = new Vector3();
   private t = 0;
 
   attach(scene: Scene): void { this.dispose(); this.scene = scene; }
@@ -74,8 +76,9 @@ export class PortalVisualSystem {
   private place(a: Aperture, p: Portal): void {
     // Babylon discs face +Z. lookAt establishes the portal normal.
     p.position.addToRef(p.normal, this.target);
-    a.root.position.copyFrom(p.position); a.root.lookAt(this.target);
-    for (const r of a.rings) { r.position.copyFrom(p.position); r.lookAt(this.target); }
+    toRenderRef(p.position,this.local);toRenderRef(this.target,this.target);
+    a.root.position.copyFrom(this.local); a.root.lookAt(this.target);
+    for (const r of a.rings) { r.position.copyFrom(this.local); r.lookAt(this.target); }
   }
 
   private destroy(a: Aperture): void {

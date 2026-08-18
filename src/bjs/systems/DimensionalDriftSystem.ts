@@ -6,6 +6,7 @@ import type { LinesMesh } from '@babylonjs/core/Meshes/linesMesh';
 import type { Scene } from '@babylonjs/core/scene';
 import { PortalSystem, type Portal } from './PortalSystem';
 import { generateDimension, makeRng } from './DimensionSystem';
+import { toRender } from './RenderOrigin';
 
 export interface DriftDestination { id:string; position:Vector3; surfaceRadius:number; }
 interface ActiveDrift {
@@ -46,9 +47,9 @@ export class DimensionalDriftSystem {
     const at=star.add(dir.scale(320+rng()*520));
     const portal=this.portals.createTear(at,dir.scale(-1),18,generateDimension(seed,1));
     portal.lensStrength=3.4;portal.throatMass=2.1;
-    const points:Vector3[]=[];
+    const localAt=toRender(at);const points:Vector3[]=[];
     for(let i=0;i<=40;i++){const a=i/40*Math.PI*2;const rr=19*(.78+rng()*.42);
-      points.push(new Vector3(at.x+Math.cos(a)*rr,at.y+Math.sin(a)*rr,at.z));}
+      points.push(new Vector3(localAt.x+Math.cos(a)*rr,localAt.y+Math.sin(a)*rr,localAt.z));}
     const frame=MeshBuilder.CreateLines('dimensionalDrift',{points,updatable:false},this.scene);
     frame.color=new Color3(.15,.92,1);frame.alpha=1;frame.isPickable=false;
     const picked=destinations.length

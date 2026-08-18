@@ -30,6 +30,7 @@ import type { Scene } from '@babylonjs/core/scene';
 import {
   bodiesNear, DEFAULT_FIELD, type CelestialBody, type FieldOptions
 } from './CelestialCatalog';
+import { renderOrigin } from './RenderOrigin';
 
 export const CELESTIAL_EFFECT = 'celestialBody';
 
@@ -129,6 +130,7 @@ export class CelestialRenderer {
   private mesh: Mesh | null = null;
   private mat: ShaderMaterial | null = null;
   private lastBuild = new Vector3(1e12, 1e12, 1e12);
+  private localEye = new Vector3();
   private on = true;
   /** Bodies currently realised. */
   live: CelestialBody[] = [];
@@ -172,6 +174,7 @@ export class CelestialRenderer {
     m.material = mat;
     m.isPickable = false;
     m.alwaysSelectAsActiveMesh = true;
+    m.metadata={...(m.metadata??{}),floatingOriginManaged:true};
     m.renderingGroupId = 0;
     m.setEnabled(this.on);
 
@@ -189,7 +192,9 @@ export class CelestialRenderer {
     if (!this.mesh || !this.on) return false;
     // The eye moves every frame even when the instance set does not, so
     // this is written unconditionally, before the rebuild early-out.
-    this.mat?.setVector3('eyePos', eye);
+    const origin = renderOrigin();
+    this.localEye.set(eye.x-origin.x,eye.y-origin.y,eye.z-origin.z);
+    this.mat?.setVector3('eyePos', this.localEye);
     if (Vector3.Distance(eye, this.lastBuild) < this.opts.rebuildAfter) {
       return false;
     }
@@ -225,7 +230,7 @@ export class CelestialRenderer {
     for (let i = 0; i < n; i++) {
       const b = found[i];
       scale.set(b.radius, b.radius, b.radius);
-      pos.set(b.x, b.y, b.z);
+      pos.set(b.x-origin.x,b.y-origin.y,b.z-origin.z);
       Matrix.ComposeToRef(scale, q, pos, tmp);
       tmp.copyToArray(matrices, i * 16);
       colors[i * 4 + 0] = b.tint[0];

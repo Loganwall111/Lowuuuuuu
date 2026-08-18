@@ -15,6 +15,7 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
 import { hashChunk } from './ChunkedUniverse';
+import { toRenderRef } from './RenderOrigin';
 
 export const ANOMALY_SECTOR_SIZE = 260000;
 export const ANOMALY_SENSOR_RANGE = 140000;
@@ -85,6 +86,7 @@ export class QuantumAnomalySystem {
   private rings: Mesh[] = [];
   private mats: StandardMaterial[] = [];
   private core: Mesh | null = null;
+  private localCenter = new Vector3();
   private t = 0;
   private last: QuantumTelemetry | null = null;
   private wasDetected = false;
@@ -149,12 +151,13 @@ export class QuantumAnomalySystem {
     if (!scene) return;
     const cyan = new Color3(0, .94, 1);
     const violet = new Color3(.46, .22, 1);
+    toRenderRef(s.center, this.localCenter);
     for (let i = 0; i < 5; i++) {
       const ring = MeshBuilder.CreateTorus('quantumRing' + i, {
         diameter: s.radius * (1 + i * .19), thickness: 2.2 + i * .75,
         tessellation: 96
       }, scene);
-      ring.position.copyFrom(s.center);
+      ring.position.copyFrom(this.localCenter);
       ring.rotation.set(i * .47, i * .71, i * .29);
       ring.isPickable = false;
       ring.alwaysSelectAsActiveMesh = true;
@@ -178,7 +181,7 @@ export class QuantumAnomalySystem {
     const core = MeshBuilder.CreateTorus('quantumCore', {
       diameter: s.radius * .28, thickness: 1.4, tessellation: 96
     }, scene);
-    core.position.copyFrom(s.center);
+    core.position.copyFrom(this.localCenter);
     core.rotation.x = Math.PI * .5;
     core.isPickable = false;
     core.alwaysSelectAsActiveMesh = true;

@@ -38,6 +38,7 @@ import { OrbitTraffic } from '../systems/OrbitTraffic';
 import { TleTraffic } from '../systems/TleTraffic';
 import { stellarColor, STAR_LIFETIME } from '../systems/StellarLifecycle';
 import type { SolidSphere } from '../systems/PlanetLanding';
+import { renderOrigin, toRenderRef } from '../systems/RenderOrigin';
 
 /* --------------------------- planet shader --------------------------- */
 
@@ -517,6 +518,7 @@ export class PlanetaryWorld implements World {
   private tleTraffic = new TleTraffic();
   private t = 0;
   private systemCenter = new Vector3();
+  private logicalSystemCenter = new Vector3();
   private localPlanets: PlanetCfg[] = PLANETS;
   private inhabitedName = INHABITED;
   private referenceRadius = EARTH_VISUAL_R;
@@ -525,7 +527,8 @@ export class PlanetaryWorld implements World {
 
   async build(ctx: WorldContext): Promise<void> {
     const scene = ctx.scene;
-    this.systemCenter.copyFrom(ctx.focus?.position ?? Vector3.Zero());
+    this.logicalSystemCenter.copyFrom(ctx.focus?.position ?? Vector3.Zero());
+    toRenderRef(this.logicalSystemCenter,this.systemCenter);
     if (ctx.focus) {
       const cell = 260000;
       this.localPlanets = planetsForCell(
@@ -856,10 +859,11 @@ export class PlanetaryWorld implements World {
       this.bodies.push(body);
     });
 
-    ctx.setCameraTarget(this.systemCenter, 62);
+    ctx.setCameraTarget(this.logicalSystemCenter, 62);
   }
 
   update(dt: number, ctx: WorldContext): void {
+    toRenderRef(this.logicalSystemCenter,this.systemCenter);
     this.t += dt * this.p.timeScale;
     const cam = ctx.camera;
     const cp = cam.position;
@@ -1028,15 +1032,16 @@ export class PlanetaryWorld implements World {
    */
   collisionBodies(): SolidSphere[] {
     const out: SolidSphere[] = [];
+    const origin=renderOrigin();
     const starPos = this.star ? this.star.getAbsolutePosition() : Vector3.Zero();
     out.push({
-      id: 'the sun', x: starPos.x, y: starPos.y, z: starPos.z,
+      id:'the sun',x:starPos.x+origin.x,y:starPos.y+origin.y,z:starPos.z+origin.z,
       radius: 4.5, mass: 120000, habitable: false
     });
     for (const b of this.bodies) {
       const p = b.mesh.getAbsolutePosition();
       out.push({
-        id: b.name, x: p.x, y: p.y, z: p.z,
+        id:b.name,x:p.x+origin.x,y:p.y+origin.y,z:p.z+origin.z,
         radius: b.visualR,
         mass: 60 + 400 * Math.pow(b.visualR / this.referenceRadius, 3),
         habitable: b.name === this.inhabitedName,
@@ -1048,13 +1053,13 @@ export class PlanetaryWorld implements World {
       for (const m of b.moons) {
         const mp = m.mesh.getAbsolutePosition();
         out.push({
-          id: b.name + ' moon', x: mp.x, y: mp.y, z: mp.z,
+          id:b.name+' moon',x:mp.x+origin.x,y:mp.y+origin.y,z:mp.z+origin.z,
           radius: b.visualR * 0.2, mass: 1, habitable: false
         });
       }
     }
     // The Apollo command module is a place you can land on and walk around.
-    for (const s of this.orbitTraffic.solids()) out.push(s);
+    for(const s of this.orbitTraffic.solids())out.push({...s,x:s.x+origin.x,y:s.y+origin.y,z:s.z+origin.z});
     return out;
   }
 

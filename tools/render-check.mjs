@@ -91,8 +91,9 @@ console.log('\n— the disk stays locked to the horizon —');
   ok('the sync happens after world.update, not inside it',
     iSync > app.indexOf('this.world.update(dt'));
 
-  ok('the hole centre is bound as a uniform every frame',
-    bh.includes("setVector3('holePos', this.center)"));
+  ok('the hole centre is rebound in floating-origin space every frame',
+    bh.includes('toRenderRef(this.center, this.localCenter)') &&
+    bh.includes("setVector3('holePos', this.localCenter)"));
   ok('holePos is declared in the shader', /uniform vec3\s+holePos/.test(bh));
   ok('holePos is listed on the material', /'holePos'/.test(bh));
   ok('the ray origin is hole-relative, so the disk cannot drift',

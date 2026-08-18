@@ -34,6 +34,7 @@ import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import type { Scene } from '@babylonjs/core/scene';
+import { renderOrigin } from './RenderOrigin';
 
 export interface WarpOptions {
   /** Speed at which streaks begin to appear, in world units/sec. */
@@ -164,6 +165,7 @@ export class WarpSystem {
     m.material = mat;
     m.isPickable = false;
     m.alwaysSelectAsActiveMesh = true;
+    m.metadata={...(m.metadata??{}),floatingOriginManaged:true};
     m.infiniteDistance = false;
     m.setEnabled(false);
     // Never let streaks be culled or occlude UI-critical geometry.
@@ -243,6 +245,7 @@ export class WarpSystem {
     // Point every streak along the direction of travel.
     Quaternion.FromLookDirectionRHToRef(fwd, trueUp, q);
 
+    const origin=renderOrigin();
     for (let i = 0; i < this.streaks.length; i++) {
       const st = this.streaks[i];
       // Move backwards past the camera.
@@ -265,9 +268,9 @@ export class WarpSystem {
       scale.set(thin, thin, st.len);
 
       pos.set(
-        eye.x + right.x * st.off.x + trueUp.x * st.off.y + fwd.x * st.off.z,
-        eye.y + right.y * st.off.x + trueUp.y * st.off.y + fwd.y * st.off.z,
-        eye.z + right.z * st.off.x + trueUp.z * st.off.y + fwd.z * st.off.z
+        eye.x-origin.x+right.x*st.off.x+trueUp.x*st.off.y+fwd.x*st.off.z,
+        eye.y-origin.y+right.y*st.off.x+trueUp.y*st.off.y+fwd.y*st.off.z,
+        eye.z-origin.z+right.z*st.off.x+trueUp.z*st.off.y+fwd.z*st.off.z
       );
 
       Matrix.ComposeToRef(scale, q, pos, m);

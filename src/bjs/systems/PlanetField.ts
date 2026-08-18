@@ -26,6 +26,7 @@ import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
 import type { Scene } from '@babylonjs/core/scene';
 import { registerCelestialShader, CELESTIAL_EFFECT } from './CelestialRenderer';
+import { renderOrigin } from './RenderOrigin';
 
 /** A region that has a solid, walkable surface. */
 export interface PlanetFieldSource {
@@ -121,6 +122,7 @@ export class PlanetField {
     m.material = mat;
     m.isPickable = false;
     m.alwaysSelectAsActiveMesh = true;
+    m.metadata={...(m.metadata??{}),floatingOriginManaged:true};
     m.renderingGroupId = 0;
     m.setEnabled(this.on);
 
@@ -193,10 +195,11 @@ export class PlanetField {
     const pos = new Vector3();
     const tmp = Matrix.Identity();
 
+    const origin = renderOrigin();
     for (let i = 0; i < n; i++) {
       const s = found[i];
       scale.set(s.surfaceRadius, s.surfaceRadius, s.surfaceRadius);
-      pos.copyFrom(s.position);
+      pos.set(s.position.x-origin.x,s.position.y-origin.y,s.position.z-origin.z);
       Matrix.ComposeToRef(scale, q, pos, tmp);
       tmp.copyToArray(matrices, i * 16);
 

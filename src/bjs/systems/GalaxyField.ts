@@ -43,6 +43,7 @@ import { PointsCloudSystem } from '@babylonjs/core/Particles/pointsCloudSystem';
 import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
+import { renderOrigin } from './RenderOrigin';
 import {
   GALAXY_POINT_SHADER, registerGalaxyPointShader
 } from '../shaders/GalaxyPointShader';
@@ -753,8 +754,9 @@ export class GalaxyField {
         data[i * 3 + 2] = dz * k;
       }
       mesh.updateVerticesData('position', data, false, false);
-      // The proxy is built around the eye, so the mesh itself sits there.
-      mesh.position.copyFrom(eye);
+      // The proxy is built around the eye in camera-local render space.
+      const origin=renderOrigin();
+      mesh.position.set(eye.x-origin.x,eye.y-origin.y,eye.z-origin.z);
       // Its bounds are now the shell, not the galaxy.
       mesh.refreshBoundingInfo();
     } catch {
@@ -899,7 +901,8 @@ export class GalaxyField {
     if (this.fogMesh && this.fogMat) {
       this.fogTime += 1 / 60;
       try {
-        this.fogMesh.position.copyFrom(eye);
+        const origin=renderOrigin();
+        this.fogMesh.position.set(eye.x-origin.x,eye.y-origin.y,eye.z-origin.z);
 
         // ---- WHICH GALAXY IS THIS FOG? ----
         //

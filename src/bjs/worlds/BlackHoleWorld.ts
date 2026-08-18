@@ -19,6 +19,7 @@ import type { World, WorldContext, WorldParam, WorldAction } from '../World';
 import { rollAnomaly, ANOMALY_COVER, STANDARD_COVER } from '../systems/BlackHoleBody';
 import { safeFloat, safeAspect } from '../SafeUniforms';
 import { holeProfile } from '../systems/HoleProfiles';
+import { toRenderRef } from '../systems/RenderOrigin';
 import {
   LENS_PROFILES, LENS_ORDER, LENS_MODE_ID, LENS_FIELDS, cloneProfile,
   sanitizeProfile, randomAlienProfile, describeProfile,
@@ -666,7 +667,8 @@ export class BlackHoleWorld implements World {
     // Lock the raymarched hole to the physical horizon position every single
     // frame. The shader works in world space, so if this is ever stale the
     // disk and the horizon separate.
-    this.mat.setVector3('holePos', this.center);
+    toRenderRef(this.center, this.localCenter);
+    this.mat.setVector3('holePos', this.localCenter);
   }
 
   /**
@@ -677,6 +679,7 @@ export class BlackHoleWorld implements World {
    * large universe, not a standalone scene that owns the origin.
    */
   center = Vector3.Zero();
+  private localCenter = Vector3.Zero();
 
   update(dt: number, ctx: WorldContext): void {
     this.t += dt;

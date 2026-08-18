@@ -159,6 +159,22 @@ ok('its intensity eases down with the same curve',
   })());
 }
 
+// --------------------------------------------- double precision / local GPU
+{
+  const origin=read('src/bjs/systems/RenderOrigin.ts');
+  ok('the simulation keeps a dedicated double-precision render origin',
+    /const ORIGIN = new Vector3/.test(origin));
+  ok('GPU positions subtract the render origin without changing world data',
+    /world\.x - ORIGIN\.x/.test(origin) && /toWorldRef/.test(origin));
+  ok('origin shifts are quantized instead of changing every frame',
+    /FLOATING_ORIGIN_GRID = 100000/.test(origin));
+  ok('the camera is synchronized in rebased render coordinates',
+    /setRenderCamera/.test(app) && /syncFloatingOrigin/.test(app));
+  ok('precision-sensitive meshes stay enabled under floating origin',
+    /this\.celestials\.setEnabled\(true\)/.test(app) &&
+    /this\.planetField\.setEnabled\(true\)/.test(app));
+}
+
 // ---------------------------------------------------------- the warmup
 ok('shaders are pre-compiled during the load',
   /warmupShaders\(this\.scene\)/.test(app));

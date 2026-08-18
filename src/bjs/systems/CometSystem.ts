@@ -28,6 +28,7 @@ import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
 import { PointsCloudSystem } from '@babylonjs/core/Particles/pointsCloudSystem';
 import type { Scene } from '@babylonjs/core/scene';
 import { registerCelestialShader, CELESTIAL_EFFECT } from './CelestialRenderer';
+import { renderOrigin } from './RenderOrigin';
 
 export interface CometSpec {
   id: string;
@@ -154,6 +155,7 @@ export class CometRenderer {
   private tailMesh: Mesh | null = null;
   private specs: CometSpec[] = [];
   private focus = new Vector3(0, 0, 0);
+  private localEye = new Vector3();
   private t = 0;
   private on = true;
   private built = false;
@@ -185,6 +187,7 @@ export class CometRenderer {
       head.material = hm;
       head.isPickable = false;
       head.alwaysSelectAsActiveMesh = true;
+      head.metadata={...(head.metadata??{}),floatingOriginManaged:true};
       head.renderingGroupId = 0;
       this.headMesh = head;
       this.headMat = hm;
@@ -205,6 +208,7 @@ export class CometRenderer {
         tail.isPickable = false;
         tail.applyFog = false;
         tail.alwaysSelectAsActiveMesh = true;
+        tail.metadata={...(tail.metadata??{}),floatingOriginManaged:true};
         const m = tail.material as any;
         if (m) {
           m.disableLighting = true;
@@ -281,10 +285,11 @@ export class CometRenderer {
     const pos = new Vector3();
     const tmp = Matrix.Identity();
 
+    const origin=renderOrigin();
     for (let i = 0; i < n; i++) {
       const st = cometState(this.specs[i], this.t);
       scale.set(this.specs[i].head, this.specs[i].head, this.specs[i].head);
-      pos.set(focus.x + st.x, focus.y + st.y, focus.z + st.z);
+      pos.set(focus.x+st.x-origin.x,focus.y+st.y-origin.y,focus.z+st.z-origin.z);
       Matrix.ComposeToRef(scale, q, pos, tmp);
       tmp.copyToArray(matrices, i * 16);
       const t = this.specs[i].tint;
@@ -298,7 +303,8 @@ export class CometRenderer {
     try {
       this.headMesh?.thinInstanceSetBuffer('matrix', matrices, 16, true);
       this.headMesh?.thinInstanceSetBuffer('bodyColor', colors, 4, true);
-      this.headMat?.setVector3('eyePos', eye);
+      this.localEye.set(eye.x-origin.x,eye.y-origin.y,eye.z-origin.z);
+      this.headMat?.setVector3('eyePos', this.localEye);
     } catch { /* disposed mid-frame */ }
 
     this.writeTails(eye);
@@ -313,6 +319,7 @@ export class CometRenderer {
     if (!data || !col) return;
 
     const f = this.focus;
+    const origin=renderOrigin();
     for (let i = 0; i < this.specs.length; i++) {
       const st = cometState(this.specs[i], this.t);
       const hx = f.x + st.x, hy = f.y + st.y, hz = f.z + st.z;
@@ -327,9 +334,9 @@ export class CometRenderer {
         const px = hx + st.tx * u * len + jitter * spread * 0.3;
         const py = hy + st.ty * u * len + jitter * spread;
         const pz = hz + st.tz * u * len + jitter * spread * 0.3;
-        data[idx * 3] = px;
-        data[idx * 3 + 1] = py;
-        data[idx * 3 + 2] = pz;
+        data[idx * 3] = px-origin.x;
+        data[idx * 3 + 1] = py-origin.y;
+        data[idx * 3 + 2] = pz-origin.z;
         const fade = Math.pow(1 - u, 1.6) * (0.35 + st.activity * 0.65);
         col[idx * 4] = tint[0];
         col[idx * 4 + 1] = tint[1];

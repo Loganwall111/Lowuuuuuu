@@ -19,6 +19,7 @@ import {
   LENS_MODE_ID, LENS_ORDER, LENS_PROFILES, type LensProfile
 } from './LensProfiles';
 import { HOLE_FIELD_SHADER, registerHoleFieldShader } from '../shaders/HoleFieldShader';
+import { toRenderRef } from './RenderOrigin';
 
 export interface HoleSpec {
   id: string;
@@ -64,6 +65,7 @@ export class HoleFieldRenderer {
   private center = new Vector2(-10, -10);
   private resolution = new Vector2(1, 1);
   private lensTint = new Color3(1, 1, 1);
+  private localHole = new Vector3();
   private screenHorizon = 0;
   private t = 0;
   private failed = false;
@@ -220,8 +222,9 @@ export class HoleFieldRenderer {
     }
 
     const viewport = camera.viewport.toGlobal(width, height);
+    toRenderRef(nearest.position, this.localHole);
     const projected = Vector3.Project(
-      nearest.position, Matrix.Identity(), scene.getTransformMatrix(), viewport);
+      this.localHole, Matrix.Identity(), scene.getTransformMatrix(), viewport);
     this.center.set(projected.x / width, projected.y / height);
 
     // Convert the physical angular radius into vertical viewport UV units.

@@ -18,6 +18,7 @@ import { Color3 } from '@babylonjs/core/Maths/math.color';
 import { Matrix, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
+import { renderOrigin } from './RenderOrigin';
 import type { Scene } from '@babylonjs/core/scene';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 
@@ -158,6 +159,7 @@ export class AsteroidBeltSystem {
       proto.material = mat;
       proto.isPickable = false;
       proto.alwaysSelectAsActiveMesh = true;
+      proto.metadata={...(proto.metadata??{}),floatingOriginManaged:true};
 
       const matrices = new Float32Array(rocks.length * 16);
       const belt: LiveBelt = { mesh: proto, rocks, centre: spec.centre.clone(), matrices };
@@ -174,13 +176,14 @@ export class AsteroidBeltSystem {
   private writeMatrices(belt: LiveBelt): void {
     const q = Quaternion.Identity();
     const m = Matrix.Identity();
+    const origin=renderOrigin();
     for (let i = 0; i < belt.rocks.length; i++) {
       const k = belt.rocks[i];
       const [x, y, z] = rockPosition(k);
       Quaternion.RotationYawPitchRollToRef(k.tilt, k.tilt * 0.7, 0, q);
       Matrix.ComposeToRef(
         new Vector3(k.scale, k.scale, k.scale), q,
-        new Vector3(belt.centre.x + x, belt.centre.y + y, belt.centre.z + z), m);
+        new Vector3(belt.centre.x+x-origin.x,belt.centre.y+y-origin.y,belt.centre.z+z-origin.z),m);
       m.copyToArray(belt.matrices, i * 16);
     }
   }

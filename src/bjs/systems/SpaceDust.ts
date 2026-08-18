@@ -24,6 +24,7 @@ import { Color4 } from '@babylonjs/core/Maths/math.color';
 import { PointsCloudSystem } from '@babylonjs/core/Particles/pointsCloudSystem';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
+import { renderOrigin } from './RenderOrigin';
 
 export interface SpaceDustOptions {
   /** How many motes are alive at once. */
@@ -97,6 +98,7 @@ export class SpaceDust {
     mesh.isPickable = false;
     mesh.applyFog = false;
     mesh.alwaysSelectAsActiveMesh = true;
+    mesh.metadata={...(mesh.metadata??{}),floatingOriginManaged:true};
 
     const m = mesh.material as any;
     if (m) {
@@ -124,6 +126,7 @@ export class SpaceDust {
     const rand = rng((this.seed = (this.seed + 7919) >>> 0));
     const colors = this.mesh.getVerticesData('color');
 
+    const origin=renderOrigin();
     for (let i = 0; i < this.opts.count; i++) {
       // Uniform direction on the sphere.
       const u = rand() * 2 - 1;
@@ -136,9 +139,9 @@ export class SpaceDust {
       const t = Math.cbrt(rand());
       const r = this.opts.inner + (this.opts.outer - this.opts.inner) * t;
 
-      data[i * 3] = eye.x + dx * r;
-      data[i * 3 + 1] = eye.y + dy * r;
-      data[i * 3 + 2] = eye.z + dz * r;
+      data[i * 3] = eye.x-origin.x+dx*r;
+      data[i * 3 + 1] = eye.y-origin.y+dy*r;
+      data[i * 3 + 2] = eye.z-origin.z+dz*r;
 
       if (colors) {
         // Faint blue-white dust, occasionally a warm mote or a bright spark.

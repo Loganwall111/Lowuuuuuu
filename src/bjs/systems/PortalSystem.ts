@@ -22,6 +22,7 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import type { Scene } from '@babylonjs/core/scene';
 import { PORTAL_SHADER, PORTAL_VERT, PORTAL_FRAG } from '../shaders/PortalShader';
 import { generateDimension, tearSideways, type DimensionSpec } from './DimensionSystem';
+import { toRenderRef } from './RenderOrigin';
 
 export type PortalKind = 'wormhole' | 'tear';
 
@@ -235,7 +236,7 @@ export class PortalSystem {
           }
         }
         // the disc always faces the viewer enough to be visible
-        m.mesh.position.copyFrom(m.position);
+        toRenderRef(m.position, m.mesh.position);
       }
     }
   }

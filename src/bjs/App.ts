@@ -94,6 +94,9 @@ import { RegionTides, describeRegionTide } from './systems/RegionTides';
 import { CosmicSky } from './systems/CosmicSky';
 import { SkyProbe } from './systems/SkyProbe';
 import { SkySafetyPass } from './systems/SkySafetyPass';
+import {
+  followRenderOrigin, renderOrigin, resetRenderOrigin, toRenderRef, toWorldRef
+} from './systems/RenderOrigin';
 import { QuantumAnomalySystem } from './systems/QuantumAnomalySystem';
 import { GalaxyField } from './systems/GalaxyField';
 import { warmupShaders } from './systems/ShaderWarmup';
@@ -351,6 +354,9 @@ export class App {
   /** Shared zero vector, so hot paths do not allocate one every frame. */
   private zeroVec = new Vector3(0, 0, 0);
   private cameraForward = new Vector3(0, 0, 1);
+  private renderCameraPos = new Vector3();
+  private renderCameraTarget = new Vector3();
+  private logicalCameraPos = new Vector3();
   /** One collision-body snapshot shared by every subsystem in a frame. */
   private solidCache: SolidSphere[] = [];
   private solidCacheFrame = -1;
@@ -520,7 +526,8 @@ export class App {
       // ---- one continuous universe ----
       getUniverse: () => {
         const eye = this.vehicle.mode === 'orbit'
-          ? this.camera.position : this.vehicle.position;
+          ? toWorldRef(this.camera.position, this.logicalCameraPos)
+          : this.vehicle.position;
         const cur = this.universe.current;
         const bh = this.universe.insideHorizon
           ?? (cur?.kind === 'blackhole' ? cur : null);
@@ -549,10 +556,11 @@ export class App {
         // so the rule lives in exactly one place.
         if (!this.can('grabbing')) return this.needSandbox('Moving objects');
         const dir = this.camera.getTarget().subtract(this.camera.position);
+        const logicalEye = toWorldRef(this.camera.position, this.logicalCameraPos);
         const candidates: Grabbable[] = this.universe.regions.map((r) => ({
           id: r.id, name: r.name, position: r.position, radius: r.radius
         }));
-        const got = this.grab.grab(this.camera.position, dir, candidates);
+        const got = this.grab.grab(logicalEye, dir, candidates);
         this.shell.toast(got ? 'Holding ' + got.name : 'Nothing under the cursor');
       },
 
@@ -565,7 +573,8 @@ export class App {
         if (!this.can('spawning')) return this.needSandbox('Creating bodies');
         // place it in front of the camera, at a sensible distance
         const dir = this.camera.getTarget().subtract(this.camera.position).normalize();
-        const at = this.camera.position.add(dir.scale(400));
+        const logicalEye = toWorldRef(this.camera.position, this.logicalCameraPos);
+        const at = logicalEye.add(dir.scale(400));
         const r = kind === 'blackhole'
           ? this.universe.spawnBlackHole(at)
           : this.universe.spawnStarSystem(at);
@@ -645,6 +654,7 @@ export class App {
 
     this.shell.progress(35, 'creating scene');
     this.scene = new Scene(this.engine);
+    resetRenderOrigin();
     // Explicit clear: flying high above or below the galactic plane must
     // never leave a stale viewport buffer, which read as black flashes when
     // the camera moved outside the galaxy mesh bounds. Clearing every frame
@@ -717,7 +727,8 @@ export class App {
       // it owns the origin.
       focus: null,
       setCameraTarget: (t: Vector3, r: number) => {
-        this.camera.setTarget(t.clone());
+        toRenderRef(t, this.renderCameraTarget);
+        this.camera.setTarget(this.renderCameraTarget);
         this.camera.radius = r;
         this.camera.upperRadiusLimit = Math.max(r * 12, 400);
       },
@@ -756,7 +767,7 @@ export class App {
     // it; the expensive world build is deferred until LoadingScreenManager
     // is already front-most after Play.
     this.setControlMode('freefly');
-    this.universe.updatePlayer(this.camera.position);
+    this.universe.updatePlayer(toWorldRef(this.camera.position, this.logicalCameraPos));
 
     this.shell.progress(88, 'opening command interface');
     await new Promise((r) => setTimeout(r, 60));
@@ -991,8 +1002,8 @@ export class App {
       if (spawn === 'deepspace') {
         this.vehicle.teleport(new Vector3(0, 0, 240));
         this.vehicle.faceTowards(Vector3.Zero());
-        this.camera.position.copyFrom(this.vehicle.position);
-        this.camera.setTarget(Vector3.Zero());
+        this.syncFloatingOrigin();
+        this.setRenderCamera(this.vehicle.position, Vector3.Zero());
         this.universe.updatePlayer(this.vehicle.position);
       } else if (spawn === 'hole') {
         const hole = this.universe.nearest(this.vehicle.position, 'blackhole');
@@ -1001,8 +1012,8 @@ export class App {
           const at = hole.position.add(new Vector3(0, horizon * .3, horizon * 5));
           this.vehicle.teleport(at);
           this.vehicle.faceTowards(hole.position);
-          this.camera.position.copyFrom(at);
-          this.camera.setTarget(hole.position.clone());
+          this.syncFloatingOrigin();
+          this.setRenderCamera(at, hole.position);
           this.universe.updatePlayer(at);
         }
       } else {
@@ -1071,9 +1082,8 @@ export class App {
     // BlackHoleWorld owns a full-screen geodesic sky. Drawing the galaxy fog
     // sphere over it caused the white accumulation sheet and diagonal clip.
     // Compatibility baseline: this.galaxyField.setVisible(verse.medium === 'stars')
-    const precisionSafe = Math.max(Math.abs(eye.x), Math.abs(eye.y), Math.abs(eye.z)) < 1e6;
     this.galaxyField.setVisible(
-      verse.medium === 'stars' && this.world?.ownsBlackHole !== true && precisionSafe);
+      verse.medium === 'stars' && this.world?.ownsBlackHole !== true);
 
     this.holeField.setSky({
       medium: verse.medium,
@@ -1346,7 +1356,10 @@ export class App {
       }
       if (queued !== this.currentId || queuedRegion) {
         await this.loadWorld(queued);
-        if (queuedRegion) this.camera.setTarget(queuedRegion.position.clone());
+        if (queuedRegion) {
+          toRenderRef(queuedRegion.position, this.renderCameraTarget);
+          this.camera.setTarget(this.renderCameraTarget);
+        }
       }
     }
   }
@@ -1368,7 +1381,8 @@ export class App {
 
   private nearestHole(): Region | null {
     const eye = this.vehicle.mode === 'orbit'
-      ? this.camera.position : this.vehicle.position;
+      ? toWorldRef(this.camera.position, this.logicalCameraPos)
+      : this.vehicle.position;
     return this.universe.nearest(eye, 'blackhole');
   }
 
@@ -1402,7 +1416,8 @@ export class App {
       ? this.universe.horizonRadiusOf(r) * 8
       : Math.max(r.radius * 1.35, (r.surfaceRadius ?? 10) * 4);
     const from = this.vehicle.mode === 'orbit'
-      ? this.camera.position : this.vehicle.position;
+      ? toWorldRef(this.camera.position, this.logicalCameraPos)
+      : this.vehicle.position;
     const dir = from.subtract(r.position);
     const n = dir.lengthSquared() > 1e-6
       ? dir.normalize() : new Vector3(0, 0.25, -1).normalize();
@@ -1414,8 +1429,8 @@ export class App {
     // alone is undone on the next frame and the player ends up facing the
     // way they came.
     this.vehicle.faceTowards(r.position);
-    this.camera.position.copyFrom(dest);
-    this.camera.setTarget(r.position.clone());
+    this.syncFloatingOrigin();
+    this.setRenderCamera(dest, r.position);
     this.universe.updatePlayer(dest);
     this.shell.toast('Arrived at ' + r.glyph + ' ' + r.name);
     this.shell.refreshAll?.();
@@ -1444,7 +1459,8 @@ export class App {
       // this one - otherwise an earlier, slower load steals the camera back
       // from the place the player actually asked for last.
       if (this.pendingRegion === r || this.pendingRegion === null) {
-        this.camera.setTarget(r.position.clone());
+        toRenderRef(r.position, this.renderCameraTarget);
+        this.camera.setTarget(this.renderCameraTarget);
       }
     });
   }
@@ -1546,8 +1562,9 @@ export class App {
       this.camera.attachControl(canvas as HTMLCanvasElement, true);
     } else {
       this.camera.detachControl();
-      // start the vehicle where the camera already is, so the view does not jump
-      this.vehicle.teleport(this.camera.position.clone());
+      // Start at the camera's logical universe coordinate, not its rebased
+      // GPU-local transform.
+      this.vehicle.teleport(toWorldRef(this.camera.position, this.logicalCameraPos).clone());
     }
     // Lifting off a habitable world drops the blue sky back to space-black.
     if (m !== 'walk' && this.walkSky) {
@@ -1880,7 +1897,8 @@ export class App {
     if (!r) { this.shell.toast('Nothing to rewind'); return; }
     this.vehicle.position.set(r.state.x, r.state.y, r.state.z);
     this.vehicle.velocity.set(r.state.vx, r.state.vy, r.state.vz);
-    this.camera.position.copyFrom(this.vehicle.position);
+    this.syncFloatingOrigin();
+    this.setRenderCamera(this.vehicle.position, this.vehicle.lookTarget());
     this.shell.toast('Rewound ' + r.rewound.toFixed(1) + 's');
   }
 
@@ -2039,8 +2057,8 @@ export class App {
       // The home system: teleport to a standoff and face the star.
       this.vehicle.teleport(new Vector3(0, 0, 240));
       this.vehicle.faceTowards(new Vector3(0, 0, 0));
-      this.camera.position.copyFrom(this.vehicle.position);
-      this.camera.setTarget(new Vector3(0, 0, 0));
+      this.syncFloatingOrigin();
+      this.setRenderCamera(this.vehicle.position, Vector3.Zero());
       this.universe.updatePlayer(this.vehicle.position);
       void this.loadWorld('planetary');
       this.shell.toast('Arrived at ' + target.name);
@@ -2053,6 +2071,23 @@ export class App {
    * the central supermassive black hole - the "load in and be breathless"
    * opening. Called once, when the intro hands over to the universe proper.
    */
+  /** Rebase GPU transforms while preserving every logical universe coordinate. */
+  private syncFloatingOrigin(): void {
+    const delta = followRenderOrigin(this.vehicle.position);
+    if (!delta) return;
+    for (const mesh of this.scene.meshes) {
+      if(mesh.parent||mesh.infiniteDistance||mesh.metadata?.floatingOriginExempt||mesh.metadata?.floatingOriginManaged)continue;
+      mesh.position.subtractInPlace(delta);
+    }
+  }
+
+  private setRenderCamera(worldPosition: Vector3, worldTarget: Vector3): void {
+    toRenderRef(worldPosition, this.renderCameraPos);
+    toRenderRef(worldTarget, this.renderCameraTarget);
+    this.camera.position.copyFrom(this.renderCameraPos);
+    this.camera.setTarget(this.renderCameraTarget);
+  }
+
   private spawnAtGalacticCore(): void {
     // Spawn relative to an ACTUAL generated galaxy. The former hardcoded
     // (0,1500,5000) coordinate was not tied to any rendered galaxy and could
@@ -2065,8 +2100,8 @@ export class App {
     const at = look.add(new Vector3(radius * .18, radius * .12, radius * .78));
     this.vehicle.teleport(at);
     this.vehicle.faceTowards(look);
-    this.camera.position.copyFrom(at);
-    this.camera.setTarget(look.clone());
+    this.syncFloatingOrigin();
+    this.setRenderCamera(at, look);
     this.universe.streamAround(at);
     this.universe.updatePlayer(at);
     // Prime the destination-dependent layers before the loading veil leaves.
@@ -2322,9 +2357,7 @@ export class App {
             if (m.inside) dens = Math.min(1, m.depth);
           }
           const holeD = bh ? Vector3.Distance(eyeNow, bh.position) : Infinity;
-          const precisionSafe = Math.max(
-            Math.abs(eyeNow.x), Math.abs(eyeNow.y), Math.abs(eyeNow.z)) < 1e6;
-          const anomalySignal = this.quantumAnomaly.update(dt, eyeNow, precisionSafe);
+          const anomalySignal=this.quantumAnomaly.update(dt,eyeNow,true);
           if (this.quantumAnomaly.consumeDetection()) {
             const q = this.quantumAnomaly.telemetry();
             if (q) this.flightHud.notify('ANOMALOUS SPACETIME SIGNATURE // ' + q.klass);
@@ -2385,6 +2418,8 @@ export class App {
         // with the identical clamped value or it compounds into nonsense.
         if (warpOn) this.vehicle.flySpeed = baseFly / warpMul;
 
+        this.syncFloatingOrigin();
+
         // The ship views are derived from one basis, so cockpit and chase
         // can never disagree about where the ship is pointing.
         if (this.vehicle.mode === 'fly' &&
@@ -2393,17 +2428,15 @@ export class App {
           const mode = this.f5ThirdPerson ? 'chase' : this.shipViewMode;
           const view = shipView(mode, this.vehicle.position,
                                 fwd, new Vector3(0, 1, 0), 26);
-          this.camera.position.copyFrom(view.position);
-          this.camera.setTarget(view.target);
+          this.setRenderCamera(view.position, view.target);
           this.camera.fov = view.fov;
         } else {
-          this.camera.position.copyFrom(this.vehicle.position);
-          this.camera.setTarget(this.vehicle.lookTarget());
+          this.setRenderCamera(this.vehicle.position, this.vehicle.lookTarget());
           this.camera.fov = .92;
         }
         const playerHull = this.playerShipMeshes[0];
         if (playerHull) {
-          playerHull.position.copyFrom(this.vehicle.position);
+          toRenderRef(this.vehicle.position, playerHull.position);
           playerHull.rotationQuaternion = this.vehicle.orientation.clone();
           const glow = this.thrusting ? 1 : .12;
           this.playerShipThrusters.forEach((m) =>
@@ -2413,7 +2446,7 @@ export class App {
 
       // ---- one continuous universe: where am I, and what is near me ----
       const eye = this.vehicle.mode === 'orbit'
-        ? this.camera.position
+        ? toWorldRef(this.camera.position, this.logicalCameraPos)
         : this.vehicle.position;
       // The sky follows the camera and, in the Fractal Core, magnifies while
       // you hold forward - so flying "into" the Mandelbrot really descends
@@ -2565,8 +2598,7 @@ export class App {
             this.cameraForward.normalize();
             this.vehicle.position.addInPlace(
               this.cameraForward.scale(Math.max(35, this.vehicle.flySpeed * .4) * dt));
-            this.camera.position.copyFrom(this.vehicle.position);
-            this.camera.setTarget(this.vehicle.lookTarget());
+            this.setRenderCamera(this.vehicle.position, this.vehicle.lookTarget());
           }
         }
 
@@ -2870,17 +2902,14 @@ export class App {
 
       const fwd = this.cameraForward;
       this.camera.getTarget().subtractToRef(this.camera.position, fwd);
-      const precisionSafeScene = Math.max(
-        Math.abs(eye.x), Math.abs(eye.y), Math.abs(eye.z)) < 1e6;
-      // Coordinate-bound meshes cannot retain metre-scale precision beside
-      // billion-unit transforms. Beyond the threshold, translation-free sky
-      // shaders remain active while unstable geometry is cleanly suppressed.
-      this.celestials.setEnabled(precisionSafeScene);
-      this.planetField.setEnabled(precisionSafeScene);
-      this.comets.setEnabled(precisionSafeScene);
-      this.spaceDust.setEnabled(precisionSafeScene);
-      this.warp.setEnabled(precisionSafeScene);
-      if (precisionSafeScene) this.celestials.update(eye);
+      // All coordinate-bound renderers consume the shared floating origin,
+      // so their physical meshes remain enabled at arbitrary coordinates.
+      this.celestials.setEnabled(true);
+      this.planetField.setEnabled(true);
+      this.comets.setEnabled(true);
+      this.spaceDust.setEnabled(true);
+      this.warp.setEnabled(true);
+      this.celestials.update(eye);
       this.warp.update(dt, this.shownSpeed, eye, fwd);
       // Driven from the streaks' own flow rate so the two halves of the
       // effect advance together instead of sliding against each other.
@@ -2908,12 +2937,12 @@ export class App {
       this.starField.update(
         StarFieldRenderer.toSkyObjects(this.universe.regions), eye);
       // The nearby worlds stop being points and become growing spheres.
-      if (precisionSafeScene) this.planetField.update(this.universe.regions, eye);
+      this.planetField.update(this.universe.regions, eye);
       // The canopy motes drift and reseed as you travel.
-      if (precisionSafeScene) this.spaceDust.update(eye);
+      this.spaceDust.update(eye);
       // Comets orbit whichever star the player is nearest. The zero fallback
       // reuses one vector so the no-star case never allocates per frame.
-      if (precisionSafeScene) {
+      {
         const star = this.universe.nearest(eye, 'star-system');
         this.zeroVec.setAll(0);
         this.comets.update(dt, star ? star.position : this.zeroVec, eye);
@@ -2935,8 +2964,8 @@ export class App {
             0, driftArrival.surfaceRadius * 2.4, driftArrival.surfaceRadius * 3.2));
           this.vehicle.teleport(at);
           this.vehicle.faceTowards(driftArrival.position);
-          this.camera.position.copyFrom(at);
-          this.camera.setTarget(driftArrival.position.clone());
+          this.syncFloatingOrigin();
+          this.setRenderCamera(at, driftArrival.position);
           this.universe.streamAround(at);
           this.universe.updatePlayer(at);
           this.flightHud.notify('DIMENSIONAL DRIFT TRANSIT // PLANET LOCK');
@@ -3044,11 +3073,13 @@ export class App {
         this.portalTraveller.velocity = this.vehicle.velocity;
         const trip = this.portalGun.tryTeleport(this.portalTraveller, dt);
         if (trip) {
-          this.camera.position.copyFrom(this.vehicle.position);
+          this.syncFloatingOrigin();
+          this.setRenderCamera(this.vehicle.position, this.vehicle.lookTarget());
           this.shell.toast('Through the portal');
           if (trip.worldId !== this.currentId) {
             void this.loadWorld(trip.worldId).then(() => {
-              this.camera.position.copyFrom(this.vehicle.position);
+              this.syncFloatingOrigin();
+              this.setRenderCamera(this.vehicle.position, this.vehicle.lookTarget());
               this.portalVisual.update(0, this.portalEndpoints, this.currentId);
             });
           }
@@ -3066,7 +3097,8 @@ export class App {
         });
         if (trip) {
           if (trip.kind === 'moved') {
-            this.camera.position.copyFrom(this.vehicle.position);
+            this.syncFloatingOrigin();
+            this.setRenderCamera(this.vehicle.position, this.vehicle.lookTarget());
             this.onDiscovery('event', 'wormhole', '🌀', 'Wormhole',
               'Two points in space, sewn together.');
             this.shell.toast('Through the wormhole');
@@ -3080,8 +3112,8 @@ export class App {
               this.shell.toast('You charted a way home.');
               this.vehicle.teleport(new Vector3(0, 0, 240));
               this.vehicle.faceTowards(Vector3.Zero());
-              this.camera.position.copyFrom(this.vehicle.position);
-              this.camera.setTarget(Vector3.Zero());
+              this.syncFloatingOrigin();
+              this.setRenderCamera(this.vehicle.position, Vector3.Zero());
               void this.loadWorld('planetary');
             } else {
               this.onDiscovery('event', 'interstellar', '✨', 'The Gate',
@@ -3171,7 +3203,8 @@ export class App {
       // ---- carrying things around ----
       if (this.grab.isHolding()) {
         this.camera.getTarget().subtractToRef(this.camera.position, this.cameraForward);
-        this.grab.update(dt, this.camera.position, this.cameraForward);
+        toWorldRef(this.camera.position, this.logicalCameraPos);
+        this.grab.update(dt, this.logicalCameraPos, this.cameraForward);
       }
       // ---- strict camera sync, immediately before the draw ----
       // world.update() ran early in the frame, before the camera was moved
