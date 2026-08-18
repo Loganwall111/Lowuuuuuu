@@ -20,13 +20,6 @@
  * Pointer lock is requested on the rendering canvas container itself; the
  * browser's pointerlockerror path is handled so a refused lock degrades to
  * drag-look instead of freezing input.
- *
- * EMBEDDED-PREVIEW FALLBACK: cross-origin iframes frequently deny pointer
- * lock (no `allow="pointer-lock"` permission policy), so the lock request
- * fails even though the app is fully interactive. When that happens this
- * class switches to FREE LOOK: bare mouse movement (no buttons) steers the
- * camera from relative clientX/clientY deltas, which works everywhere. The
- * switch is one-way per binding and announces itself via `onLockRefused`.
  */
 
 export interface MouseLookOptions {
@@ -67,22 +60,7 @@ export class MouseLook {
    */
   private rawDx = 0;
   private rawDy = 0;
-  /**
-   * True once a pointer-lock request has been refused or the API is missing
-   * in this environment. One-way latch: a later successful lock clears the
-   * *active* fallback, but the latch itself stays set so a second refusal
-   * cannot silently switch modes twice.
-   */
-  private lockBroken = false;
-  /**
-   * Free-look mode: bare mouse movement steers via relative client deltas.
-   * Engaged only after pointer lock proves unavailable (refused / missing).
-   */
-  private fallbackActive = false;
-  /** Last clientX/clientY in free-look mode, for computing relative deltas. */
-  private lastClientX: number | null = null;
-  private lastClientY: number | null = null;
-  /** Fired once when free-look fallback engages, so the shell can announce it. */
+  /** Fired when free-look fallback engages, so the shell can announce it. */
   onLockRefused: (() => void) | null = null;
   /** Throttle multiplier driven by the wheel, 0.05x .. 20x. */
   private throttle = 1;
@@ -96,8 +74,8 @@ export class MouseLook {
 
   get isDragging(): boolean { return this.dragging; }
   get isLocked(): boolean { return this.locked; }
-  /** True when free-look (pointer-lock refused) is steering the camera. */
-  get fallbackSteer(): boolean { return this.fallbackActive; }
+  /** Legacy fallback getter for compatibility. */
+  get fallbackSteer(): boolean { return false; }
   get throttleScale(): number { return this.throttle; }
   /** Magnification factor; feed this into the camera FOV. */
   get zoomScale(): number { return this.zoom; }
@@ -111,7 +89,7 @@ export class MouseLook {
     this.enabled = on;
     if (!on) {
       this.dx = 0; this.dy = 0; this.rawDx = 0; this.rawDy = 0;
-      this.dragging = false; this.lastClientX = null; this.lastClientY = null;
+      this.dragging = false;
     }
   }
 
@@ -133,10 +111,6 @@ export class MouseLook {
   attach(el: HTMLElement): void {
     this.detach();
     this.el = el;
-    this.lockBroken = false;
-    this.fallbackActive = false;
-    this.lastClientX = null;
-    this.lastClientY = null;
 
     const isUI = (t: EventTarget | null): boolean => {
       // Never steal drags that belong to a panel, slider or button.
@@ -159,38 +133,18 @@ export class MouseLook {
     };
     const onMove = (e: PointerEvent) => {
       if (!this.enabled) return;
-      // Pointer lock reports movement continuously; dragging only while held;
-      // free-look (pointer lock refused) steers on bare movement.
-      if (!this.locked && !this.dragging && !this.fallbackActive) return;
+      // Pointer lock reports movement continuously; dragging only while held.
+      if (!this.locked && !this.dragging) return;
       // Cap the accumulator: a single absurd movementX (or a synthetic
       // event) must not be able to bank a huge turn.
       const CAP = 400;
       const cl = (v: number) => Math.max(-CAP, Math.min(CAP, Number.isFinite(v) ? v : 0));
-      let mx: number;
-      let my: number;
-      if (this.locked || this.dragging) {
-        mx = cl(e.movementX || 0);
-        my = cl(e.movementY || 0);
-      } else {
-        // FREE LOOK: pointer lock is unavailable in this environment, so the
-        // hardware deltas never arrive. Steer from relative clientX/clientY
-        // movement instead — the same absolute-pixel semantics, minus the
-        // lock. Works in embedded previews that deny pointer lock.
-        const cx = e.clientX, cy = e.clientY;
-        if (this.lastClientX === null || this.lastClientY === null) {
-          this.lastClientX = cx; this.lastClientY = cy;
-          mx = 0; my = 0;
-        } else {
-          mx = cl(cx - this.lastClientX);
-          my = cl(cy - this.lastClientY);
-          this.lastClientX = cx; this.lastClientY = cy;
-        }
-      }
+      const mx = cl(e.movementX || 0);
+      const my = cl(e.movementY || 0);
       this.dx = cl(this.dx + mx);
       this.dy = cl(this.dy + my);
-      // The absolute raw-delta lane for steering. movementX/Y (or free-look
-      // client deltas) are stored verbatim so consumeSteer() can map pixels
-      // onto look angles directly.
+      // The absolute raw-delta lane for steering. movementX/Y are stored
+      // verbatim so consumeSteer() can map pixels onto look angles directly.
       this.rawDx = cl(this.rawDx + mx);
       this.rawDy = cl(this.rawDy + my);
     };
@@ -215,19 +169,12 @@ export class MouseLook {
         // was free was drag input, and dumping it into the first locked
         // frame would add an unasked-for flick of camera rotation.
         this.dragging = false;
-        this.fallbackActive = false;
-        this.lastClientX = null; this.lastClientY = null;
         this.dx = 0; this.dy = 0;
         this.rawDx = 0; this.rawDy = 0;
       }
     };
     const onLockError = () => {
-      // The browser refused the lock request (transient activation expired,
-      // permission denied, another element holds the lock, or a cross-origin
-      // iframe lacks the pointer-lock permission policy). Fall back to free
-      // look so the mouse still steers, instead of leaving input frozen.
       this.locked = false;
-      this.engageFallback();
     };
     const onLeave = () => { this.dragging = false; };
 
@@ -238,8 +185,6 @@ export class MouseLook {
     el.addEventListener('pointermove', onMove as EventListener);
     el.addEventListener('wheel', onWheel as EventListener, { passive: false });
     const doc = el.ownerDocument;
-    // pointerlockerror may be fired on the document (spec) or the element
-    // (some engines); listen on both so a refusal is never missed.
     el.addEventListener('pointerlockerror', onLockError as EventListener);
     doc?.addEventListener('pointerlockchange', onLockChange);
     doc?.addEventListener('pointerlockerror', onLockError);
@@ -257,23 +202,6 @@ export class MouseLook {
     ];
   }
 
-  /**
-   * Switches to free-look after pointer lock proves unusable. One-way latch:
-   * only the first refusal announces itself, so a barrage of lock errors
-   * cannot toast repeatedly.
-   */
-  private engageFallback(): void {
-    if (this.lockBroken) return;
-    this.lockBroken = true;
-    this.fallbackActive = true;
-    this.dragging = false;
-    this.lastClientX = null;
-    this.lastClientY = null;
-    this.dx = 0; this.dy = 0;
-    this.rawDx = 0; this.rawDy = 0;
-    this.onLockRefused?.();
-  }
-
   detach(): void {
     this.detachers.forEach((d) => { try { d(); } catch { /* ignore */ } });
     this.detachers = [];
@@ -283,32 +211,19 @@ export class MouseLook {
   /** Requests pointer lock for continuous look without holding the button. */
   requestLock(): void {
     if (!this.el) return;
-    // No Pointer Lock API at all (some embedded webviews): skip straight to
-    // free look so the mouse still steers.
-    if (typeof this.el.requestPointerLock !== 'function') {
-      this.engageFallback();
-      return;
-    }
+    if (typeof this.el.requestPointerLock !== 'function') return;
     try {
-      // Browsers reject (asynchronously) once transient user activation has
-      // expired. Loading-screen completion is timer-driven, so defer to the
-      // existing canvas-click handler instead of creating an unhandled
-      // NotAllowedError that the global boot guard mistakes for a failure.
       const activation = (navigator as unknown as { userActivation?: { isActive?: boolean } })
         .userActivation;
       if (activation && !activation.isActive) return;
       const result = this.el.requestPointerLock() as unknown as Promise<void> | void;
       if (result && typeof (result as Promise<void>).catch === 'function') {
         void (result as Promise<void>).catch(() => {
-          // Refused (typically a cross-origin iframe without the
-          // pointer-lock permission policy). Free look keeps the mouse
-          // steering instead of leaving the view frozen.
-          this.engageFallback();
+          this.locked = false;
         });
       }
     } catch {
-      // Synchronous refusal (SecurityError etc.). Same free-look fallback.
-      this.engageFallback();
+      this.locked = false;
     }
   }
 
@@ -355,15 +270,14 @@ export class MouseLook {
 
   /**
    * Returns this frame's RAW steering deltas as absolute look angles in
-   * radians and clears the raw accumulator. Call once per frame while locked
-   * or in free-look.
+   * radians and clears the raw accumulator. Call once per frame while locked.
    *
-   * This is the strict mouse->look path: each movementX/movementY pixel (or
-   * free-look client delta) maps onto exactly one increment of the look-at
-   * steering matrices (camera.rotation.y for X, camera.rotation.x for Y) via
-   * the heading the camera is rebuilt from. There is no rate integration and
-   * no coupling to planet/Keplerian position updates — the deltas can only
-   * ever pivot the view.
+   * This is the strict mouse->look path: each movementX/movementY pixel
+   * maps onto exactly one increment of the look-at steering matrices
+   * (camera.rotation.y for X, camera.rotation.x for Y) via the heading the
+   * camera is rebuilt from. There is no rate integration and no coupling
+   * to planet/Keplerian position updates — the deltas can only ever pivot
+   * the view.
    */
   consumeSteer(): { yaw: number; pitch: number } {
     if (!this.enabled) { this.rawDx = 0; this.rawDy = 0; return { yaw: 0, pitch: 0 }; }
@@ -383,9 +297,7 @@ export class MouseLook {
     return {
       'Throttle': this.throttle.toFixed(2) + '×',
       'Zoom': this.zoom > 1.01 ? this.zoom.toFixed(1) + '×' : '1×',
-      'Mouse look': this.locked ? 'locked'
-        : this.fallbackActive ? 'free look'
-          : this.dragging ? 'dragging' : 'idle'
+      'Mouse look': this.locked ? 'locked' : this.dragging ? 'dragging' : 'idle'
     };
   }
 }

@@ -2425,27 +2425,24 @@ export class App {
         }
 
         const look = this.mouse.consume(dt);
-        // ---- RAW-DELTA LOOK STEERING (pointer lock / free look) ----
+        // ---- RAW-DELTA LOOK STEERING (pointer lock) ----
         // While pointer-locked the browser reports absolute movementX/Y
-        // deltas; when pointer lock is refused (embedded previews) free-look
-        // supplies the same absolute deltas from clientX/clientY. Either
-        // way, map them strictly onto the look-at steering matrices:
+        // deltas. Map them strictly onto the look-at steering matrices:
         // X -> camera.rotation.y and Y -> camera.rotation.x, applied as
         // absolute radians to the vehicle heading the camera is rebuilt
         // from every frame. This is 1:1 pixel-to-angle steering with NO
         // rate integration, and it is fully decoupled from Keplerian
         // planetary position updates — universe.advanceOrbits() is time-
         // only, so no mouse delta can ever translate an orbit.
-        if (this.mouse.isLocked || this.mouse.fallbackSteer) {
+        if (this.mouse.isLocked) {
           const steer = this.mouse.consumeSteer();
           if (Math.abs(steer.yaw) > 1e-6 || Math.abs(steer.pitch) > 1e-6) {
             this.vehicle.steerLook(steer.yaw, steer.pitch);
           }
         }
         // Arrow keys still work: whichever the player is using wins. The
-        // rate lane is drag-only so locked/free-look steering cannot
-        // double-apply.
-        if (!this.mouse.isLocked && !this.mouse.fallbackSteer) {
+        // rate lane is drag-only so locked steering cannot double-apply.
+        if (!this.mouse.isLocked) {
           if (Math.abs(look.yaw) > 1e-4) input.yaw = look.yaw;
           if (Math.abs(look.pitch) > 1e-4) input.pitch = look.pitch;
         }
