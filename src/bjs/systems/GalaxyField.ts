@@ -662,6 +662,10 @@ export class GalaxyField {
       shell.applyFog = false;
       shell.alwaysSelectAsActiveMesh = true;
       shell.infiniteDistance = false;
+      // The fog shell re-positions itself from the eye every frame in
+      // render-local coordinates, so the floating-origin rebase must not
+      // shift it a second time.
+      shell.metadata = { ...(shell.metadata ?? {}), floatingOriginManaged: true };
 
       this.fogMesh = shell;
       this.fogMat = mat;
@@ -784,6 +788,9 @@ export class GalaxyField {
     mesh.isPickable = false;
     mesh.applyFog = false;
     mesh.alwaysSelectAsActiveMesh = true;
+    // The proxy remaps itself into render-local space around the eye every
+    // frame (projectOne), so the floating-origin rebase must not shift it.
+    mesh.metadata = { ...(mesh.metadata ?? {}), floatingOriginManaged: true };
 
     // ---- soft points instead of hard squares ----
     //

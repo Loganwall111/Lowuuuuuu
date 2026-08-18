@@ -2475,8 +2475,15 @@ export class App {
 
         // The ship views are derived from one basis, so cockpit and chase
         // can never disagree about where the ship is pointing.
-        if (this.vehicle.mode === 'fly' &&
-            (this.f5ThirdPerson || this.shipViewMode !== 'chase')) {
+        // F5 (external camera) works in EVERY flight mode — free-fly and
+        // ship flight alike — so toggling it always switches to a real
+        // third-person chase view behind the craft. The player ship hull is
+        // only shown while the external camera is active; it is never
+        // rendered inside the first-person view.
+        const wantsExternal = this.f5ThirdPerson ||
+          (this.vehicle.mode === 'fly' && this.shipViewMode !== 'chase');
+        if ((this.vehicle.mode === 'fly' || this.vehicle.mode === 'freefly') &&
+            wantsExternal) {
           const fwd = this.vehicle.lookTarget().subtract(this.vehicle.position);
           const mode = this.f5ThirdPerson ? 'chase' : this.shipViewMode;
           const view = shipView(mode, this.vehicle.position,
@@ -2486,15 +2493,6 @@ export class App {
         } else {
           this.setRenderCamera(this.vehicle.position, this.vehicle.lookTarget());
           this.camera.fov = .92;
-        }
-        // The camera's look-at steering matrices are kept authoritative:
-        // rotation.y (X axis) and rotation.x (Y axis) mirror the heading
-        // the view was rebuilt from, so the raw mouse deltas always own the
-        // look even though ArcRotateCamera derives its view from setTarget.
-        {
-          const att = this.vehicle.attitude();
-          this.camera.rotation.y = att.yaw;
-          this.camera.rotation.x = att.pitch;
         }
         const playerHull = this.playerShipMeshes[0];
         if (playerHull) {

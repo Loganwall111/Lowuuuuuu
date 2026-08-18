@@ -27,6 +27,7 @@ import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import { PointsCloudSystem } from '@babylonjs/core/Particles/pointsCloudSystem';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Scene } from '@babylonjs/core/scene';
+import { renderOrigin } from './RenderOrigin';
 import {
   MILKY_WAY, galaxyStar, observerPosition, projectToShell,
   sampleNebulaPoint, nebulaColor, projectToShell as projectGas
@@ -244,7 +245,13 @@ export class LayeredSky {
       }
       if (mesh) {
         this.applySkyState(mesh);
-        mesh.metadata = { shell: spec.name, lock: spec.lock };
+        mesh.metadata = {
+          shell: spec.name, lock: spec.lock,
+          // The shells re-position themselves from the eye every frame in
+          // render-local coordinates (see update()), so the floating-origin
+          // rebase must never subtract a delta from them too.
+          floatingOriginManaged: true
+        };
         this.meshes.push(mesh);
       }
       this.systems.push(pcs);
@@ -297,9 +304,17 @@ export class LayeredSky {
   /**
    * Slides each shell toward the eye by its lock factor, producing parallax.
    * Cheap: three transform writes, no geometry touched.
+   *
+   * Shell positions are RENDER-LOCAL: the world eye is offset by the shared
+   * floating origin before scaling, so the shells stay centred on the camera
+   * at every universe coordinate and a floating-origin rebase (which moves
+   * the render origin to keep Float32 precision) can never make the sky jump
+   * or clip. The stars remain perfectly rigid in world space; only the
+   * camera-relative parallax offset is applied here.
    */
   update(eye: Vector3): void {
     const extreme = Math.max(Math.abs(eye.x), Math.abs(eye.y), Math.abs(eye.z)) > 1e6;
+    const origin = renderOrigin();
     for (const mesh of this.meshes) {
       const lock = (mesh.metadata?.lock as number) ?? 0;
       if (lock <= 0) continue;
@@ -311,7 +326,10 @@ export class LayeredSky {
         mesh.position.setAll(0);
       } else {
         mesh.infiniteDistance = false;
-        mesh.position.set(eye.x * lock, eye.y * lock, eye.z * lock);
+        mesh.position.set(
+          (eye.x - origin.x) * lock,
+          (eye.y - origin.y) * lock,
+          (eye.z - origin.z) * lock);
       }
     }
   }
