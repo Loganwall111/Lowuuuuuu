@@ -61,6 +61,9 @@ export class MouseLook {
   private enabled = true;
   private el: HTMLElement | null = null;
   private detachers: Array<() => void> = [];
+  /** Diagnostic counters: whether hardware deltas are actually arriving. */
+  private lookEvents = 0;
+  private lastDeltaRad = 0;
 
   get isDragging(): boolean { return this.dragging; }
   get isLocked(): boolean { return this.locked; }
@@ -128,6 +131,7 @@ export class MouseLook {
       const cl = (v: number) => Math.max(-CAP, Math.min(CAP, Number.isFinite(v) ? v : 0));
       const mx = cl(e.movementX || 0);
       const my = cl(e.movementY || 0);
+      if (mx !== 0 || my !== 0) this.lookEvents++;
       this.rawDx = cl(this.rawDx + mx);
       this.rawDy = cl(this.rawDy + my);
       // Legacy rate lane: only while locked or dragging.
@@ -262,6 +266,7 @@ export class MouseLook {
     let yaw = cap(this.rawDx * s);
     let pitch = cap(this.rawDy * s);
     if (this.opts.invertY) pitch = -pitch;
+    this.lastDeltaRad = Math.abs(yaw) + Math.abs(pitch);
     this.rawDx = 0;
     this.rawDy = 0;
     return { yaw, pitch };
@@ -271,7 +276,13 @@ export class MouseLook {
     return {
       'Throttle': this.throttle.toFixed(2) + '×',
       'Zoom': this.zoom > 1.01 ? this.zoom.toFixed(1) + '×' : '1×',
-      'Mouse look': this.locked ? 'locked' : this.dragging ? 'dragging' : 'live'
+      'Mouse look': this.locked ? 'locked' : this.dragging ? 'dragging' : 'live',
+      // Diagnostics: proves whether the browser is delivering hardware
+      // movementX/movementY deltas at all (0 events = deltas never arrive,
+      // e.g. Safari without pointer lock).
+      'Look events': String(this.lookEvents),
+      'Look delta': this.lastDeltaRad > 0
+        ? this.lastDeltaRad.toFixed(3) + ' rad' : '0'
     };
   }
 }
