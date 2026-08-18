@@ -919,6 +919,9 @@ export class App {
       onSettingsControl: (key, value) => {
         if (key === 'sensitivity' && typeof value === 'number') {
           this.mouse.opts.sensitivity = 0.0022 * Math.max(.5, Math.min(2, value));
+        } else if(key==='webgpu'){
+          try{if(value)localStorage.setItem('low-webgpu-optin','1');else{localStorage.removeItem('low-webgpu-optin');sessionStorage.removeItem('low-force-webgl');}
+            this.shell.toast('Renderer preference saved — reload to apply');}catch{}
         } else if (key === 'reducedMotion') {
           document.body.dataset.reducedMotion = value ? '1' : '0';
           this.warpTunnel.setEnabled(!value);

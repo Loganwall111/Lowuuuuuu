@@ -921,6 +921,9 @@ export class IntroOverlay {
       '<button class="is-btn on" data-music="on">Music On</button>' +
       '<button class="is-btn" data-music="off">Music Off</button></div>' +
       '<label class="is-label">Music Volume <input data-volume type="range" min="0" max="1" step="0.05" value="0.46"></label></div>' +
+      '<div class="is-grp"><div class="is-label">Rendering Backend</div><div class="is-row">' +
+      '<button class="is-btn on" data-backend="webgl">Stable WebGL2</button>' +
+      '<button class="is-btn" data-backend="webgpu">WebGPU Preview</button></div></div>' +
       '<div class="is-grp"><div class="is-label">Flight & Camera</div>' +
       '<label class="is-label">Mouse Sensitivity <input data-sensitivity type="range" min="0.5" max="2" step="0.1" value="1"></label>' +
       '<div class="is-row"><button class="is-btn" data-motion="reduced">Reduced VFX</button>' +
@@ -951,6 +954,13 @@ export class IntroOverlay {
       };
     });
     volume.oninput = () => this.hooks.onSettingsMusic?.(true, Number(volume.value));
+    p.querySelectorAll<HTMLElement>('[data-backend]').forEach((b)=>{
+      b.onclick=()=>{
+        p.querySelectorAll<HTMLElement>('[data-backend]').forEach((x)=>x.classList.remove('on'));
+        b.classList.add('on');
+        this.hooks.onSettingsControl?.('webgpu',b.dataset.backend==='webgpu');
+      };
+    });
     const sensitivity = p.querySelector<HTMLInputElement>('[data-sensitivity]')!;
     sensitivity.oninput = () => this.hooks.onSettingsControl?.('sensitivity', Number(sensitivity.value));
     p.querySelectorAll<HTMLElement>('[data-motion]').forEach((b) => {

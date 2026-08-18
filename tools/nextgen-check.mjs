@@ -6,7 +6,10 @@ const patch=read('src/bjs/content/PatchNotes.ts'),origin=read('src/bjs/systems/R
 ok('full Babylon core is pinned to newest stable 9.21.2',pkg.dependencies['@babylonjs/core']==='^9.21.2');
 ok('Inspector v2 matches the full engine',pkg.dependencies['@babylonjs/inspector']==='^9.21.2');
 ok('Babylon Lite is not installed',!Object.keys(pkg.dependencies).some(k=>/babylonjs\/lite/.test(k)));
-ok('WebGPU is attempted first',/WebGPUEngine\.CreateAsync/.test(engine)&&/IsSupportedAsync/.test(engine));
+ok('full WebGPU backend is available through capability-gated preview',
+  /WebGPUEngine\.CreateAsync/.test(engine)&&/IsSupportedAsync/.test(engine)&&/webgpu-optin/.test(engine));
+ok('stable full-engine WebGL2 remains the production default',
+  /if\(!requested\)return null/.test(engine)&&/new Engine\(canvas/.test(engine));
 ok('standard full Engine remains the fallback',/new Engine\(canvas/.test(engine));
 ok('WebGPU failure is caught without blocking WebGL',/WebGPU initialization degraded to WebGL2/.test(engine));
 ok('runtime WebGPU errors trigger one-session WebGL recovery',/low-force-webgl/.test(engine)&&/location\.reload/.test(app));

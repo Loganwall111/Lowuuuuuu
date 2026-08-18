@@ -36,7 +36,7 @@ export const RELEASES: PatchRelease[] = [
     name: 'THE NEXT GENERATION UPDATE',
     tagline: 'Full Babylon.js 9.21, WebGPU-first rendering, floating worlds, and a rebuilt multiverse.',
     entries: [
-      { title:'WebGPU-first full-engine renderer',tag:'improved',body:'The complete standard Babylon.js engine now attempts WebGPU first and falls back safely to WebGL2. No Babylon Lite runtime or data-model migration is used.' },
+      { title:'Full-engine WebGPU preview',tag:'improved',body:'The complete standard Babylon.js engine includes an opt-in WebGPU backend and a stable WebGL2 default. Driver or bind-group failures recover to WebGL2; no Babylon Lite runtime or data-model migration is used.' },
       { title:'Next Generation Render Graph',tag:'new',body:'A four-stage Babylon Node Render Graph companion now validates Base Geometry, Deep Sky, Singularity Volume, and Final Composite dependencies while the standard Scene graph preserves every custom shader and gameplay system.' },
       { title:'Floating-origin universe',tag:'new',body:'True universe coordinates remain double precision while every GPU-facing planet, fleet, portal, comet, anomaly, galaxy and black hole is rendered near a quantized local origin. Billion-unit travel no longer requires hiding physical meshes.' },
       { title:'All black-hole families restored',tag:'improved',body:'Twelve lens laws and seven physical accretion families now drive the open-world renderer, including ringless, shattered, kaleidoscopic, repulsive, rippled and prismatic singularities.' },

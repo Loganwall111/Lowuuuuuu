@@ -10,6 +10,13 @@ import './ShaderRegistry';
 export interface EngineBoot { engine: AbstractEngine; backend: string; webgpu: boolean; }
 
 async function tryWebGPU(canvas:HTMLCanvasElement):Promise<EngineBoot|null>{
+  // WebGPU remains available as an explicit Next Generation preview while
+  // the hand-written GLSL material library is certified one pipeline at a
+  // time. Shipping it unconditionally caused invalid D3D bind groups and a
+  // black frame on otherwise capable Windows GPUs.
+  let requested=false;
+  try{requested=new URLSearchParams(location.search).get('webgpu')==='1'||localStorage.getItem('low-webgpu-optin')==='1';}catch{}
+  if(!requested)return null;
   try{if(sessionStorage.getItem('low-force-webgl')==='1')return null;}catch{}
   if(!(globalThis.navigator as any)?.gpu)return null;
   try{
