@@ -225,7 +225,7 @@ export class HoleFieldRenderer {
     toRenderRef(nearest.position, this.localHole);
     const projected = Vector3.Project(
       this.localHole, Matrix.Identity(), scene.getTransformMatrix(), viewport);
-    this.center.set(projected.x / width, projected.y / height);
+    this.center.set(projected.x / width, 1 - projected.y / height);
 
     // Convert the physical angular radius into vertical viewport UV units.
     // This makes approach growth geometric, independent of canvas aspect.

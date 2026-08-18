@@ -565,24 +565,17 @@ export class UniverseState {
    * Updates where the player is. Returns the region they are now in, which
    * is what the UI shows instead of a tab.
    */
-  updatePlayer(pos: Vector3): Region | null {
+  updatePlayer(pos: Vector3, isTeleport = false): Region | null {
     // Keep the previous position before overwriting it: the horizon test
     // below needs the segment travelled, not just where we ended up.
-    //
-    // On the FIRST call there is no previous position - playerPos is still
-    // the zero vector - so the "segment travelled" would be a line from the
-    // world origin to wherever the player actually is. That line can pass
-    // straight through a black hole the player is nowhere near, and the
-    // swept test would report them as already inside its horizon on frame
-    // one. Seeding both endpoints to the true starting position makes the
-    // first step a zero-length segment, which can only ever be inside a
-    // horizon the player genuinely is inside.
-    if (!this.playerStarted) {
+    if (!this.playerStarted || isTeleport || Vector3.DistanceSquared(this.playerPos, pos) > 1e8) {
       this.playerStarted = true;
       this.playerPos.copyFrom(pos);
+      this.lastPlayerPos.copyFrom(pos);
+    } else {
+      this.lastPlayerPos.copyFrom(this.playerPos);
+      this.playerPos.copyFrom(pos);
     }
-    this.lastPlayerPos.copyFrom(this.playerPos);
-    this.playerPos.copyFrom(pos);
     const inside = this.containing(pos);
     // the smallest containing region wins, so a planet beats its star system
     inside.sort((a, b) => a.radius - b.radius);
@@ -597,7 +590,9 @@ export class UniverseState {
       this.horizonDepth = Math.max(this.horizonDepth, 1);
     } else {
       const endpointHole = inside.find((r) => r.kind === 'blackhole') ?? null;
-      const bh = endpointHole ?? this.sweptHole(this.lastPlayerPos, pos);
+      const isActuallyInside = endpointHole &&
+        Vector3.Distance(pos, endpointHole.position) <= this.horizonRadiusOf(endpointHole);
+      const bh = isActuallyInside ? endpointHole : this.sweptHole(this.lastPlayerPos, pos);
       if (bh) {
         const horizon = this.horizonRadiusOf(bh);
         const endD = Vector3.Distance(pos, bh.position);

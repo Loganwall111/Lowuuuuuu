@@ -108,6 +108,7 @@ export class HorizonContinuum{
   this.lookback=Math.max(0,Math.min(1,lookback));
   this.deepward=Math.max(0,Math.min(1,deepward));this.seed=(seed%997)/997;
   this.phase+=Math.max(0,dt)*(1+this.target*2.);
+  if(this.target<=0){this.depth=0;return;}
   // Entry is immediate; destination reveal may ease without exposing a frame.
   if(this.target>0&&this.depth<=0)this.depth=this.target;
   else this.depth+=(this.target-this.depth)*Math.min(1,Math.max(0,dt)*3.5);

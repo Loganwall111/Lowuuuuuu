@@ -1027,7 +1027,7 @@ export class App {
         this.vehicle.faceTowards(Vector3.Zero());
         this.syncFloatingOrigin();
         this.setRenderCamera(this.vehicle.position, Vector3.Zero());
-        this.universe.updatePlayer(this.vehicle.position);
+        this.universe.updatePlayer(this.vehicle.position, true);
       } else if (spawn === 'hole') {
         const hole = this.universe.nearest(this.vehicle.position, 'blackhole');
         if (hole) {
@@ -1037,7 +1037,7 @@ export class App {
           this.vehicle.faceTowards(hole.position);
           this.syncFloatingOrigin();
           this.setRenderCamera(at, hole.position);
-          this.universe.updatePlayer(at);
+          this.universe.updatePlayer(at, true);
         }
       } else {
         this.spawnAtGalacticCore();
@@ -2147,7 +2147,7 @@ export class App {
     this.syncFloatingOrigin();
     this.setRenderCamera(at, look);
     this.universe.streamAround(at);
-    this.universe.updatePlayer(at);
+    this.universe.updatePlayer(at, true);
     // Prime the destination-dependent layers before the loading veil leaves.
     this.starField.rebuild(
       StarFieldRenderer.toSkyObjects(this.universe.regions), at);
