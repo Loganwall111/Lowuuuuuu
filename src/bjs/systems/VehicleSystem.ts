@@ -272,6 +272,13 @@ export class VehicleController {
     const { fwd, right, up } = this.axes();
     const speed = this.flySpeed * (i.boost ? this.flyBoost : 1) * (i.brake ? 0.08 : 1);
 
+    // CLEAN LOCAL TRANSLATION TRACKING: the craft's translation is computed
+    // purely in its own local frame from the look-derived axes. `fwd` is the
+    // camera's true forward look vector, so W sails the ship in a straight
+    // line toward the crosshairs and S engages the reverse vector; A/D
+    // strafe along `right` and R/F climb along `up`. No key input ever
+    // writes into sky/starfield/shader state, so the background cannot move
+    // no matter how the player translates.
     const move = Vector3.Zero();
     move.addInPlace(fwd.scale(i.forward));
     move.addInPlace(right.scale(i.right));
@@ -493,7 +500,21 @@ export class VehicleController {
   }
 }
 
-/** Maps a keyboard state set into a VehicleInput. */
+/**
+ * Maps a keyboard state set into a VehicleInput.
+ *
+ * RIGID-BODY KEYBOARD CONTRACT — W/S/A/D ONLY translate the player craft in
+ * its own local frame; they are never routed to post-process or background
+ * shader uniform blocks, and they never touch starfield/sky coordinates:
+ *   - W — forward propulsion along the camera's TRUE forward look vector
+ *         (the heading yaw/pitch the view is rebuilt from), so the ship
+ *         sails in a straight line toward the crosshairs;
+ *   - S — clean reverse thrust (negative forward vector);
+ *   - A/D — horizontal side-strafe velocity along the craft's local right
+ *         axis, so the starfield stays perfectly still while the ship slides;
+ *   - R/F — vertical translation along the craft's local up axis.
+ * Yaw/pitch are fed by look input (pointer lock / arrows), never by W/S/A/D.
+ */
 export function inputFromKeys(keys: Set<string>): VehicleInput {
   const on = (k: string) => keys.has(k);
   const ax = (pos: string, neg: string) => (on(pos) ? 1 : 0) - (on(neg) ? 1 : 0);

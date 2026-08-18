@@ -686,21 +686,13 @@ export class App {
     // bound to the rendering canvas container, where raw-delta hardware
     // pointer lock and drag-look both live.
     this.mouse.attach(canvas as unknown as HTMLElement);
-    // If the environment refuses pointer lock (cross-origin preview iframes
-    // often deny the permission policy), MouseLook switches to free look:
-    // bare mouse movement steers the camera with relative deltas. Announce
-    // the switch once so the player knows the mouse is live.
-    this.mouse.onLockRefused = () => {
-      try {
-        this.shell.toast('Pointer lock unavailable — free mouse look active');
-      } catch { /* shell may not be mounted yet */ }
-    };
     // Native pointer lock: clicking the canvas container locks the mouse to
     // the centre so the view turns with a bare mouse move, no click-and-drag
-    // required. While locked, movementX/movementY deltas map 1:1 onto the
-    // camera's look-at steering matrices (rotation.y / rotation.x) and are
-    // fully decoupled from Keplerian planet positions. Pointer lock only
-    // takes effect inside a user gesture, which a click is.
+    // required. While locked, the browser's raw movementX/movementY hardware
+    // deltas map 1:1 onto the camera's look-at steering matrices
+    // (rotation.y / rotation.x) and are fully decoupled from Keplerian
+    // planet positions. Pointer lock only takes effect inside a user
+    // gesture, which a click is.
     canvas.tabIndex = 0;
     canvas.addEventListener('click', () => {
       // A previously focused range/number control otherwise keeps receiving
@@ -2425,27 +2417,25 @@ export class App {
         }
 
         const look = this.mouse.consume(dt);
-        // ---- RAW-DELTA LOOK STEERING (pointer lock / free look) ----
+        // ---- EXCLUSIVE RAW-DELTA LOOK STEERING (hardware pointer lock) ----
         // While pointer-locked the browser reports absolute movementX/Y
-        // deltas; when pointer lock is refused (embedded previews) free-look
-        // supplies the same absolute deltas from clientX/clientY. Either
-        // way, map them strictly onto the look-at steering matrices:
-        // X -> camera.rotation.y and Y -> camera.rotation.x, applied as
-        // absolute radians to the vehicle heading the camera is rebuilt
-        // from every frame. This is 1:1 pixel-to-angle steering with NO
-        // rate integration, and it is fully decoupled from Keplerian
-        // planetary position updates — universe.advanceOrbits() is time-
-        // only, so no mouse delta can ever translate an orbit.
-        if (this.mouse.isLocked || this.mouse.fallbackSteer) {
+        // hardware deltas. Map them strictly onto the look-at steering
+        // matrices: X -> camera.rotation.y and Y -> camera.rotation.x,
+        // applied as absolute radians to the vehicle heading the camera is
+        // rebuilt from every frame. This is 1:1 pixel-to-angle steering with
+        // NO rate integration and NO matching of mouse coordinates to screen
+        // pixels or background shader tracking arrays — the mouse can only
+        // pivot the view, so the starfield and every planet stay perfectly
+        // still while you turn to gaze at the Milky Way.
+        if (this.mouse.isLocked) {
           const steer = this.mouse.consumeSteer();
           if (Math.abs(steer.yaw) > 1e-6 || Math.abs(steer.pitch) > 1e-6) {
             this.vehicle.steerLook(steer.yaw, steer.pitch);
           }
         }
         // Arrow keys still work: whichever the player is using wins. The
-        // rate lane is drag-only so locked/free-look steering cannot
-        // double-apply.
-        if (!this.mouse.isLocked && !this.mouse.fallbackSteer) {
+        // rate lane is drag-only so locked steering cannot double-apply.
+        if (!this.mouse.isLocked) {
           if (Math.abs(look.yaw) > 1e-4) input.yaw = look.yaw;
           if (Math.abs(look.pitch) > 1e-4) input.pitch = look.pitch;
         }
