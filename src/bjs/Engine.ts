@@ -10,6 +10,7 @@ import './ShaderRegistry';
 export interface EngineBoot { engine: AbstractEngine; backend: string; webgpu: boolean; }
 
 async function tryWebGPU(canvas:HTMLCanvasElement):Promise<EngineBoot|null>{
+  try{if(sessionStorage.getItem('low-force-webgl')==='1')return null;}catch{}
   if(!(globalThis.navigator as any)?.gpu)return null;
   try{
     const {WebGPUEngine}=await import('@babylonjs/core/Engines/webgpuEngine');

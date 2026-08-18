@@ -9,6 +9,8 @@ ok('Babylon Lite is not installed',!Object.keys(pkg.dependencies).some(k=>/babyl
 ok('WebGPU is attempted first',/WebGPUEngine\.CreateAsync/.test(engine)&&/IsSupportedAsync/.test(engine));
 ok('standard full Engine remains the fallback',/new Engine\(canvas/.test(engine));
 ok('WebGPU failure is caught without blocking WebGL',/WebGPU initialization degraded to WebGL2/.test(engine));
+ok('runtime WebGPU errors trigger one-session WebGL recovery',/low-force-webgl/.test(engine)&&/location\.reload/.test(app));
+ok('WebGPU planet samplers receive a synchronous fallback binding',/bindPlanetMapFallback/.test(read('src/bjs/PlanetMaps.ts')));
 ok('the Babylon Node Render Graph is instantiated',/new NodeRenderGraph/.test(graph));
 ok('render graph preserves the standard Scene graph',/set as a validated companion|standard Scene retained/.test(graph));
 for(const id of ['A','B','C','D'])ok('render node '+id+' is declared',new RegExp("id:'"+id+"'").test(graph));

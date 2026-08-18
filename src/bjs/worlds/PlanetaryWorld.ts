@@ -13,7 +13,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
-import { applyPlanetMap, PLANET_MAP_UNIFORMS, PLANET_MAP_SAMPLERS } from '../PlanetMaps';
+import { applyPlanetMap, bindPlanetMapFallback, PLANET_MAP_UNIFORMS, PLANET_MAP_SAMPLERS } from '../PlanetMaps';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Effect } from '@babylonjs/core/Materials/effect';
 import { PointLight } from '@babylonjs/core/Lights/pointLight';
@@ -589,8 +589,9 @@ export class PlanetaryWorld implements World {
                  'radius', 'isStar', 'displace', 'displaceScale', ...PLANET_MAP_UNIFORMS],
       samplers: PLANET_MAP_SAMPLERS
     });
-    // Stars are self-luminous and take the isStar path, but the uniform must
-    // still be bound or the sampler reads garbage.
+    // WebGPU validates bind groups before dynamic branches, so even a
+    // procedural star needs a harmless sampler binding.
+    bindPlanetMapFallback(this.starMat,scene);
     this.starMat.setFloat('useMap', 0);
     this.starMat.setFloat('oceanDepth', 0);
     this.starMat.setFloat('isStar', 1);
@@ -838,6 +839,7 @@ export class PlanetaryWorld implements World {
                      'habitable', 'displace', 'displaceScale', ...PLANET_MAP_UNIFORMS],
           samplers: PLANET_MAP_SAMPLERS
         });
+        bindPlanetMapFallback(mm,scene);
         mm.setFloat('useMap', 0);
         mm.setFloat('oceanDepth', 0);
         mm.setFloat('habitable', 0);

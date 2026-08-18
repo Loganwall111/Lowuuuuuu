@@ -13,6 +13,7 @@
 
 import type { Scene } from '@babylonjs/core/scene';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
+import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture';
 import type { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
 import { PlanetKind } from './shaders/PlanetShader';
 
@@ -118,6 +119,15 @@ export function rollExotic(seed: number, chance = EXOTIC_CHANCE): ExoticSurface 
 
 /** Cache per scene so twenty planets of one kind share a single upload. */
 const cache = new WeakMap<Scene, Map<string, Texture>>();
+const fallbackCache = new WeakMap<Scene, RawTexture>();
+
+/** WebGPU requires every declared sampler to have a live binding, even when
+ * a shader branch does not sample it. WebGL tolerated the old unbound state. */
+export function bindPlanetMapFallback(mat: ShaderMaterial, scene: Scene): void {
+  let tex=fallbackCache.get(scene);
+  if(!tex){tex=RawTexture.CreateRGBATexture(new Uint8Array([255,255,255,255]),1,1,scene,false,false,Texture.NEAREST_SAMPLINGMODE);fallbackCache.set(scene,tex);}
+  mat.setTexture('albedoMap',tex);
+}
 
 function get(scene: Scene, url: string): Texture {
   let byUrl = cache.get(scene);
@@ -146,6 +156,7 @@ export function applyPlanetMap(
   seed?: number,
   chance = EXOTIC_CHANCE
 ): boolean {
+  bindPlanetMapFallback(mat,scene);
   const exotic = seed === undefined ? null : rollExotic(seed, chance);
   const url = exotic ? exotic.url : variantFor(kind, seed ?? 0);
 

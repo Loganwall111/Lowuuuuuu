@@ -2264,6 +2264,12 @@ export class App {
         this.shell.toast('Render error - see console. The view may be degraded.');
       } catch { /* shell may not be up yet */ }
     }
+    // WebGPU validation failures invalidate command buffers rather than
+    // throwing a recoverable draw error. After repeated failures, reload once
+    // into the full Babylon WebGL2 fallback instead of leaving a black canvas.
+    if(this.webgpuBackend&&this.frameErrors===3){
+      try{sessionStorage.setItem('low-force-webgl','1');this.shell.toast('WebGPU compatibility fallback — restarting renderer');setTimeout(()=>location.reload(),80);}catch{}
+    }
     // A subsystem that fails every frame gets switched off rather than
     // spamming, so the rest of the sim keeps running.
     if (this.frameErrors === 120) {
