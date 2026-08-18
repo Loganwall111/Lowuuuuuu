@@ -264,6 +264,10 @@ void main(void){
 
     float phi = 0.0;
     // step size: fine near the hole, coarse far away
+    // FULL QUALITY (WORKING_SINGULARITY_FRAG): 320 RK2 geodesic steps is the
+    // canonical hyper-realistic setting on every backend, WebGPU included.
+    // Nothing in the pipeline may lower this count for a particular engine;
+    // the async WebGPUEngine context compiles and runs the same fragment.
     const int STEPS = 320;
     // azimuth of this ray around the hole, used by the alien lens shapes
     float rayAng = atan(dot(dir, et), dot(dir, er));

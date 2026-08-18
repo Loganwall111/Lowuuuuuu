@@ -111,9 +111,11 @@ vec3 skyStars(vec3 d, float density, float scaleBase, float t){
           float dist = length(f - g - j);
           float star = exp(-dist * dist * 260.0);
           float temp = skyHash(id + 5.5);
-          // Atmospheric scintillation: real stars shimmer faintly. Every star
-          // carries its own phase, so the sky twinkles rather than pulsing.
-          star *= 0.86 + 0.14 * sin(t * 2.4 + h * 51.0 + temp * 23.0);
+          // RIGID STARFIELD: stars are fixed background coordinates. The old
+          // time-based scintillation (sin(t * ...)) modulated every star's
+          // brightness with the clock, which made the whole sky dome pulse
+          // like a heartbeat. No time term touches star coordinates here, so
+          // the background stays perfectly smooth, crisp and resting.
           // Most stars are cool. An even spread of colour reads as confetti.
           vec3 tint = temp < 0.74
             ? vec3(1.0, 0.70 + temp * 0.32, 0.52 + temp * 0.42)

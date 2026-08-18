@@ -287,6 +287,24 @@ export class VehicleController {
   }
 
   /**
+   * Applies absolute look-steering deltas (radians) directly to the heading
+   * angles — the same yaw/pitch the camera's look-at rotation is derived
+   * from — so one raw mouse delta maps 1:1 onto camera.rotation.y / .x.
+   *
+   * Used by pointer-locked raw-delta mouse look. The deltas are ANGLES, not
+   * rates: they are applied once, clamped, and never integrated, so a single
+   * event cannot compound into an ever-faster spin. Because they touch only
+   * the heading, they are fully decoupled from Keplerian orbit updates —
+   * nothing about the mouse can move a planet.
+   */
+  steerLook(yawDelta: number, pitchDelta: number): void {
+    if (!Number.isFinite(yawDelta) || !Number.isFinite(pitchDelta)) return;
+    this.yaw += yawDelta;
+    this.pitch = Math.max(-1.5533, Math.min(1.5533, this.pitch + pitchDelta));
+    this.orientation = Quaternion.RotationYawPitchRoll(this.yaw, this.pitch, this.roll);
+  }
+
+  /**
    * Sets a sensible cruising speed for the scale you are working at, so the
    * same controls work for inspecting a pebble and crossing a galaxy.
    */

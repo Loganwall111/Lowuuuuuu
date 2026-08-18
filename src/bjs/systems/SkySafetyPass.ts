@@ -12,7 +12,6 @@ varying vec2 vUV;
 uniform sampler2D textureSampler;
 uniform float u_skyEnabled;
 uniform float seed;
-uniform float phase;
 uniform vec2 resolution;
 float h(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1)),f.x),f.y);}
@@ -21,7 +20,11 @@ void main(){
  vec4 base=texture2D(textureSampler,vUV);
  if(u_skyEnabled<.5){gl_FragColor=vec4(base.rgb,1.);return;}
  float asp=resolution.x/max(1.,resolution.y);vec2 p=(vUV-.5)*vec2(asp,1.);
- float band=exp(-pow((p.y+sin(p.x*2.1+seed*6.28)*.11)/.24,2.));
+ // RIGID SKY DOME: the galactic band is a stationary matrix pass. The old
+ // sine-wave wobble displaced the band (and with it the whole background
+ // starfield) every frame, which read as a heartbeat bounce; there is no
+ // time-based transform on these coordinates, so stars hold perfectly still.
+ float band=exp(-pow(p.y/.24,2.));
  float cloud=fbm(p*3.4+seed*31.7);
  vec3 fallback=mix(vec3(.001,.003,.010),vec3(.014,.010,.035),cloud)*(.24+band*.58);
  fallback+=vec3(.008,.026,.045)*pow(cloud,4.)*band*.42;
@@ -34,7 +37,7 @@ void main(){
 let registered=false;
 export class SkySafetyPass{
  private pp:PostProcess|null=null;private scene:Scene|null=null;private camera:Camera|null=null;
- private active=0;private seed=0;private phase=0;private errorObserver:any=null;private failed=false;
+ private active=0;private seed=0;private errorObserver:any=null;private failed=false;
  /** Store dependencies only. Compilation is lazy and never touches startup. */
  attach(scene:Scene,camera:Camera):void{this.dispose();this.scene=scene;this.camera=camera;}
  private ensure():void{
@@ -51,13 +54,13 @@ export class SkySafetyPass{
     // behavior. Leaving it attached is what blacked the entire game.
     setTimeout(()=>{this.pp?.dispose();this.pp=null;},0);
    });
-   this.pp=new PostProcess(NAME,NAME,['u_skyEnabled','seed','phase','resolution'],null,1,camera,Texture.BILINEAR_SAMPLINGMODE,engine,false);
-   this.pp.onApply=(e)=>{const g=scene.getEngine();e.setFloat('u_skyEnabled',this.active);e.setFloat('seed',this.seed);e.setFloat('phase',this.phase);e.setFloat2('resolution',g.getRenderWidth()||1,g.getRenderHeight()||1);};
+   this.pp=new PostProcess(NAME,NAME,['u_skyEnabled','seed','resolution'],null,1,camera,Texture.BILINEAR_SAMPLINGMODE,engine,false);
+   this.pp.onApply=(e)=>{const g=scene.getEngine();e.setFloat('u_skyEnabled',this.active);e.setFloat('seed',this.seed);e.setFloat2('resolution',g.getRenderWidth()||1,g.getRenderHeight()||1);};
   }catch(e){this.failed=true;this.active=0;console.warn('Extreme sky safety unavailable; base scene preserved:',e);this.pp?.dispose();this.pp=null;}
  }
  update(dt:number,x:number,y:number,z:number,allow=true):void{
   const extreme=Math.max(Math.abs(x),Math.abs(y),Math.abs(z));this.active=allow&&extreme>1e6&&!this.failed?1:0;
-  this.seed=((Math.floor(x/260000)^Math.floor(z/260000))>>>0)%997/997;this.phase+=Math.max(0,dt);
+  this.seed=((Math.floor(x/260000)^Math.floor(z/260000))>>>0)%997/997;
   if(this.active)this.ensure();
  }
  get enabled():boolean{return this.active>0&&!this.failed;}

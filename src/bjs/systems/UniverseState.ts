@@ -220,11 +220,16 @@ export class UniverseState {
           iz * spacing + (rng() - 0.5) * spacing * 0.6);
         // SINGULARITIES BELONG AT GALACTIC CENTRES.
         //
-        // Black holes used to be scattered across this lattice at 16% of
-        // occupied cells, which put them adrift in empty intergalactic
-        // space with nothing around them. Real supermassive holes sit at
-        // the centre of a galaxy, so that is the only place the lattice
-        // may create one; addGalaxy() places the hole at its own core.
+        // Supermassive cores sit at the exact centre of every galaxy and are
+        // emitted exclusively by addGalaxy(). On top of that, a deliberately
+        // rare separate population of intermediate-mass remnants roams deep
+        // space — the density weight climbs from 0.2% near the home system
+        // to 0.8% at the lattice edge, exactly matching the chunked deep-
+        // space generator, so a rogue/nebular black hole is an exceptional
+        // find rather than the 16%-of-cells scattering of the old layout.
+        const rogueWeight = 0.002 + 0.006 *
+          Math.min(1, Math.max(0, p.length() / (extent * 1.42)));
+        if (rng() < rogueWeight) { this.addRogueBlackHole(p, rng); continue; }
         const roll = rng();
         if (roll < 0.68) this.addStarSystem(p, rng);
         else if (roll < 0.86) this.addNebula(p, rng);
@@ -367,6 +372,23 @@ export class UniverseState {
       lens: profile
     };
     this.regions.push(r);
+    return r;
+  }
+
+  /**
+   * A rare intermediate-mass black hole adrift in deep space — explicitly
+   * NOT a galaxy core. These are the collapsed remnants that wander between
+   * systems and lurk in nebular nurseries: lower mass than a supermassive
+   * core, never pinned to the galactic plane, and exceptional at the 0.2% to
+   * 0.8% density weights used by both the authored lattice and the chunked
+   * deep-space generator.
+   */
+  addRogueBlackHole(at: Vector3, rng: () => number): Region {
+    const r = this.addBlackHole(at, rng);
+    r.galacticCore = false;
+    r.mass = 3000 + rng() * 12000;
+    r.name = (rng() < 0.5 ? 'Nebular remnant ' : 'Rogue remnant ')
+      + r.name.replace(' Singularity', '');
     return r;
   }
 

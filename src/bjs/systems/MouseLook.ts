@@ -6,11 +6,20 @@
  * zoom at all. That reads as being stuck.
  *
  * This supplies the missing half of the controls:
- *  - drag, or pointer-lock, to look around
+ *  - drag, or raw-delta hardware pointer-lock, to look around
  *  - the wheel to throttle up and down
  *
- * It produces normalised look axes the VehicleSystem already understands,
- * so nothing downstream needs to change.
+ * Two look lanes feed the same camera:
+ *  - `consume()`  — normalised -1..1 look axes for drag mode (and the
+ *                   compatibility API VehicleSystem understands);
+ *  - `consumeSteer()` — ABSOLUTE raw-delta steering for pointer lock: each
+ *                   movementX/movementY pixel maps 1:1 onto the look-at
+ *                   steering matrices (camera.rotation.y / camera.rotation.x)
+ *                   and can never touch planet positions or orbit updates.
+ *
+ * Pointer lock is requested on the rendering canvas container itself; the
+ * browser's pointerlockerror path is handled so a refused lock degrades to
+ * drag-look instead of freezing input.
  */
 
 export interface MouseLookOptions {
@@ -40,6 +49,17 @@ export class MouseLook {
   /** Accumulated look this frame, consumed by `consume()`. */
   private dx = 0;
   private dy = 0;
+  /**
+   * Raw pointer-lock deltas, consumed by `consumeSteer()`.
+   *
+   * Kept separate from the rate accumulator so pointer-lock steering can map
+   * one raw pixel delta onto one absolute camera-rotation angle. This is the
+   * hardware path: movementX/movementY are copied in verbatim (clamped only
+   * against synthetic/garbage events) and never reinterpreted as velocity,
+   * so a locked mouse pivots the look matrices 1:1.
+   */
+  private rawDx = 0;
+  private rawDy = 0;
   /** Throttle multiplier driven by the wheel, 0.05x .. 20x. */
   private throttle = 1;
   /** Optical zoom, 1 = normal, higher = magnified. Shift+wheel. */
@@ -63,7 +83,7 @@ export class MouseLook {
 
   setEnabled(on: boolean): void {
     this.enabled = on;
-    if (!on) { this.dx = 0; this.dy = 0; this.dragging = false; }
+    if (!on) { this.dx = 0; this.dy = 0; this.rawDx = 0; this.rawDy = 0; this.dragging = false; }
   }
 
   setThrottle(v: number): void {
@@ -112,8 +132,15 @@ export class MouseLook {
       // event) must not be able to bank a huge turn.
       const CAP = 400;
       const cl = (v: number) => Math.max(-CAP, Math.min(CAP, Number.isFinite(v) ? v : 0));
-      this.dx = cl(this.dx + cl(e.movementX || 0));
-      this.dy = cl(this.dy + cl(e.movementY || 0));
+      const mx = cl(e.movementX || 0);
+      const my = cl(e.movementY || 0);
+      this.dx = cl(this.dx + mx);
+      this.dy = cl(this.dy + my);
+      // The absolute raw-delta lane for pointer lock. movementX/Y are the
+      // hardware deltas the browser reports while locked; they are stored
+      // verbatim so consumeSteer() can map pixels onto look angles directly.
+      this.rawDx = cl(this.rawDx + mx);
+      this.rawDy = cl(this.rawDy + my);
     };
     const onWheel = (e: WheelEvent) => {
       if (!this.enabled || isUI(e.target)) return;
@@ -131,6 +158,20 @@ export class MouseLook {
     const onLockChange = () => {
       const d = el.ownerDocument;
       this.locked = !!d && d.pointerLockElement === el;
+      if (this.locked) {
+        // Fresh lock = fresh deltas. Anything accumulated while the cursor
+        // was free was drag input, and dumping it into the first locked
+        // frame would add an unasked-for flick of camera rotation.
+        this.dragging = false;
+        this.dx = 0; this.dy = 0;
+        this.rawDx = 0; this.rawDy = 0;
+      }
+    };
+    const onLockError = () => {
+      // The browser refused the lock request (transient activation expired,
+      // permission denied, another element holds the lock). Fall back to
+      // drag-look without breaking anything; the next click retries.
+      this.locked = false;
     };
     const onLeave = () => { this.dragging = false; };
 
@@ -142,6 +183,7 @@ export class MouseLook {
     el.addEventListener('wheel', onWheel as EventListener, { passive: false });
     const doc = el.ownerDocument;
     doc?.addEventListener('pointerlockchange', onLockChange);
+    doc?.addEventListener('pointerlockerror', onLockError);
 
     this.detachers = [
       () => el.removeEventListener('pointerdown', onDown as EventListener),
@@ -150,7 +192,8 @@ export class MouseLook {
       () => el.removeEventListener('pointerleave', onLeave),
       () => el.removeEventListener('pointermove', onMove as EventListener),
       () => el.removeEventListener('wheel', onWheel as EventListener),
-      () => doc?.removeEventListener('pointerlockchange', onLockChange)
+      () => doc?.removeEventListener('pointerlockchange', onLockChange),
+      () => doc?.removeEventListener('pointerlockerror', onLockError)
     ];
   }
 
@@ -216,6 +259,31 @@ export class MouseLook {
     if (Math.abs(this.dy) < 0.01) this.dy = 0;
 
     return out;
+  }
+
+  /**
+   * Returns this frame's RAW pointer-lock deltas as absolute look angles in
+   * radians and clears the raw accumulator. Call once per frame while locked.
+   *
+   * This is the strict mouse->look path: each movementX/movementY pixel maps
+   * onto exactly one increment of the look-at steering matrices
+   * (camera.rotation.y for X, camera.rotation.x for Y) via the heading the
+   * camera is rebuilt from. There is no rate integration and no coupling to
+   * planet/Keplerian position updates — the deltas can only ever pivot the
+   * view.
+   */
+  consumeSteer(): { yaw: number; pitch: number } {
+    if (!this.enabled) { this.rawDx = 0; this.rawDy = 0; return { yaw: 0, pitch: 0 }; }
+    const s = this.opts.sensitivity * (this.locked ? this.opts.lockedBoost : 1);
+    // A single absurd (or synthetic) delta is clamped so a violent flick
+    // turns the view, it does not whip it.
+    const cap = (v: number) => Math.max(-0.6, Math.min(0.6, Number.isFinite(v) ? v : 0));
+    let yaw = cap(this.rawDx * s);
+    let pitch = cap(this.rawDy * s);
+    if (this.opts.invertY) pitch = -pitch;
+    this.rawDx = 0;
+    this.rawDy = 0;
+    return { yaw, pitch };
   }
 
   stats(): Record<string, string> {

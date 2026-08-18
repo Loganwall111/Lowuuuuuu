@@ -96,6 +96,10 @@ void main(){
   float lensFade=1.-smoothstep(influence*.42,influence*.90,r);
 
   // Integrate the weak-field null-geodesic deflection in 32 affine steps.
+  // FULL 32-STEP QUALITY IS UNCONDITIONAL: this is the canonical geodesic
+  // pass shared by every backend, including the asynchronous WebGPUEngine
+  // context. There is no reduced-step variant anywhere in the pipeline, so
+  // WebGPU renders the identical 32-step affine integration as WebGL2.
   // The accumulated 2Rs/b term is the Schwarzschild Einstein bend; frame
   // dragging adds the signed Kerr term rather than rotating a texture card.
   float impact=max(effectiveR,horizon*.82);

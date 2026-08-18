@@ -682,11 +682,16 @@ export class App {
     this.camera = new ArcRotateCamera('cam', -Math.PI / 2, 1.14, 60, Vector3.Zero(), this.scene);
     this.camera.attachControl(canvas, true);
     // Free-fly detaches the arc camera, so the mouse must drive the vehicle
-    // directly or there is no way to look around or zoom.
+    // directly or there is no way to look around or zoom. The MouseLook is
+    // bound to the rendering canvas container, where raw-delta hardware
+    // pointer lock and drag-look both live.
     this.mouse.attach(canvas as unknown as HTMLElement);
-    // Native pointer lock: clicking the canvas locks the mouse to the centre
-    // so the view turns with a bare mouse move, no click-and-drag required.
-    // Pointer lock only takes effect inside a user gesture, which a click is.
+    // Native pointer lock: clicking the canvas container locks the mouse to
+    // the centre so the view turns with a bare mouse move, no click-and-drag
+    // required. While locked, movementX/movementY deltas map 1:1 onto the
+    // camera's look-at steering matrices (rotation.y / rotation.x) and are
+    // fully decoupled from Keplerian planet positions. Pointer lock only
+    // takes effect inside a user gesture, which a click is.
     canvas.tabIndex = 0;
     canvas.addEventListener('click', () => {
       // A previously focused range/number control otherwise keeps receiving
@@ -2411,9 +2416,27 @@ export class App {
         }
 
         const look = this.mouse.consume(dt);
-        // Arrow keys still work: whichever the player is using wins.
-        if (Math.abs(look.yaw) > 1e-4) input.yaw = look.yaw;
-        if (Math.abs(look.pitch) > 1e-4) input.pitch = look.pitch;
+        // ---- RAW-DELTA LOOK STEERING (hardware pointer lock) ----
+        // While pointer-locked the browser reports absolute movementX/Y
+        // deltas. Map them strictly onto the look-at steering matrices:
+        // X -> camera.rotation.y and Y -> camera.rotation.x, applied as
+        // absolute radians to the vehicle heading the camera is rebuilt
+        // from every frame. This is 1:1 pixel-to-angle steering with NO
+        // rate integration, and it is fully decoupled from Keplerian
+        // planetary position updates — universe.advanceOrbits() is time-
+        // only, so no mouse delta can ever translate an orbit.
+        if (this.mouse.isLocked) {
+          const steer = this.mouse.consumeSteer();
+          if (Math.abs(steer.yaw) > 1e-6 || Math.abs(steer.pitch) > 1e-6) {
+            this.vehicle.steerLook(steer.yaw, steer.pitch);
+          }
+        }
+        // Arrow keys still work: whichever the player is using wins. The
+        // rate lane is drag-only so locked steering cannot double-apply.
+        if (!this.mouse.isLocked) {
+          if (Math.abs(look.yaw) > 1e-4) input.yaw = look.yaw;
+          if (Math.abs(look.pitch) > 1e-4) input.pitch = look.pitch;
+        }
         // The 'look around' lesson completes when you actually look around.
         if (Math.abs(look.yaw) + Math.abs(look.pitch) > 0.02) this.lookMoved = true;
         const baseFly = this.vehicle.flySpeed;
@@ -2469,6 +2492,15 @@ export class App {
         } else {
           this.setRenderCamera(this.vehicle.position, this.vehicle.lookTarget());
           this.camera.fov = .92;
+        }
+        // The camera's look-at steering matrices are kept authoritative:
+        // rotation.y (X axis) and rotation.x (Y axis) mirror the heading
+        // the view was rebuilt from, so the raw mouse deltas always own the
+        // look even though ArcRotateCamera derives its view from setTarget.
+        {
+          const att = this.vehicle.attitude();
+          this.camera.rotation.y = att.yaw;
+          this.camera.rotation.x = att.pitch;
         }
         const playerHull = this.playerShipMeshes[0];
         if (playerHull) {
