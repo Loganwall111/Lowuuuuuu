@@ -100,6 +100,8 @@ import {
 import { QuantumAnomalySystem } from './systems/QuantumAnomalySystem';
 import { GalaxyField } from './systems/GalaxyField';
 import { warmupShaders } from './systems/ShaderWarmup';
+import { NextGenRenderGraph } from './systems/NextGenRenderGraph';
+import { renderPoolStats } from './systems/RenderResourcePool';
 import { SHIP as TIDAL_SHIP, ROCKY_PLANET } from './systems/GameModes';
 import { GrabSystem, type Grabbable } from './systems/GrabSystem';
 import {
@@ -133,6 +135,8 @@ export class App {
   private ignitionConfirmed = false;
   private introUI: IntroOverlay | null = null;
   private postfx = new PostFX();
+  private nextGenGraph = new NextGenRenderGraph();
+  private webgpuBackend = false;
   history = new HistorySystem<any>(40);
   saves = new SaveSystem();
   quality = new QualitySystem('high');
@@ -533,7 +537,7 @@ export class App {
           ?? (cur?.kind === 'blackhole' ? cur : null);
         const hereEco = cur ? this.ecologies.get(cur.id) : null;
         return {
-          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...this.planetField.stats(), ...this.spaceDust.stats(), ...this.comets.stats(), ...this.wormholes.stats(), ...this.dimensionalDrifts.stats(), ...this.alienTraffic.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}), ...this.discoveries.stats(), ...this.milestones.stats(), ...this.challenges.stats(), ...this.civilization.stats(), ...this.nova.stats(), ...this.feeding.stats(), ...(hereEco?.stats() ?? {}) },
+          stats: { ...this.universe.stats(), ...this.grab.stats(), ...this.surfaces.stats(), ...this.warp.stats(), ...this.warpTunnel.stats(), ...this.nextGenGraph.stats(), ...renderPoolStats(), ...this.celestials.stats(), ...this.mouse.stats(), ...this.lensfx.stats(), ...this.cosmicSky.stats(), ...this.skyProbe.stats(), ...this.galaxyField.stats(), ...this.planetField.stats(), ...this.spaceDust.stats(), ...this.comets.stats(), ...this.wormholes.stats(), ...this.dimensionalDrifts.stats(), ...this.alienTraffic.stats(), ...(this.stations?.stats() ?? {}), ...this.cosmicScale.stats(), ...this.elevators.stats(), ...this.portalGun.stats(), ...(this.descent?.stats() ?? {}), ...this.discoveries.stats(), ...this.milestones.stats(), ...this.challenges.stats(), ...this.civilization.stats(), ...this.nova.stats(), ...this.feeding.stats(), ...(hereEco?.stats() ?? {}) },
           current: cur
             ? { id: cur.id, name: cur.name, glyph: cur.glyph, kind: cur.kind }
             : null,
@@ -650,6 +654,7 @@ export class App {
     this.shell.progress(12, 'starting graphics engine');
     const boot = await createEngine(canvas);
     this.engine = boot.engine;
+    this.webgpuBackend = boot.webgpu;
     this.shell.setBackend(boot.backend);
 
     this.shell.progress(35, 'creating scene');
@@ -838,6 +843,7 @@ export class App {
       // F10 so the signature traversal mechanic owns the easiest key.
       if (e.key.toLowerCase() === 'p' && !e.repeat) this.openPortalRoute();
       if (e.key === 'F10' && !e.repeat) this.togglePhotoMode();
+      if (e.key === 'F9' && !e.repeat) { e.preventDefault(); void this.toggleInspectorV2(); }
       // F5 toggles a clean external ship camera. Prevent the browser refresh
       // so the perspective switch is immediate and never destroys the run.
       if (e.key === 'F5' && !e.repeat) {
@@ -1302,6 +1308,7 @@ export class App {
       this.portalVisual.attach(this.scene);
 
       this.shell.setWorld(w);
+      void this.nextGenGraph.attach(this.scene, this.webgpuBackend);
 
       // Do not release the cinematic onto an empty scene. Point-cloud and
       // galaxy builds used to continue after LoadingScreenManager faded,
@@ -1795,6 +1802,26 @@ export class App {
     this.portalVisual.update(0, this.portalEndpoints, this.currentId);
     this.flightHud.notify('PORTAL ROUTE LOCKED // ' + label);
     this.shell.toast('P Aperture linked to ' + label);
+  }
+
+  /** Inspector v2 is loaded on demand, never in the gameplay bundle path. */
+  private async toggleInspectorV2(): Promise<void> {
+    try {
+      // Inspector v2 is intentionally external to the production graph. The
+      // npm package supplies CLI/bridge tooling; F9 loads the matching ESM
+      // bundle only on demand, preventing React/Fluent UI from adding tens of
+      // megabytes to normal gameplay.
+      const inspectorUrl='https://esm.sh/@babylonjs/inspector@9.21.2?bundle';
+      await import(/* @vite-ignore */ inspectorUrl);
+      if (this.scene.debugLayer.isVisible()) this.scene.debugLayer.hide();
+      else await this.scene.debugLayer.show({
+        embedMode: true, overlay: true, showExplorer: true, showInspector: true,
+        globalRoot: document.body
+      });
+    } catch (e) {
+      console.warn('Inspector v2 unavailable:', e);
+      this.shell.toast('Inspector unavailable on this device');
+    }
   }
 
   /** Photomode: drop every UI layer so the view is a clean frame (F10). */

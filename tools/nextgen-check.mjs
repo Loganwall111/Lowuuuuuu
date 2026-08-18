@@ -1,0 +1,25 @@
+import fs from 'node:fs';
+let pass=0,fail=0;const ok=(n,c)=>{if(c)pass++;else{fail++;console.log('FAIL: '+n);}};const read=p=>fs.readFileSync(p,'utf8');
+const pkg=JSON.parse(read('package.json')),engine=read('src/bjs/Engine.ts'),app=read('src/bjs/App.ts');
+const graph=read('src/bjs/systems/NextGenRenderGraph.ts'),hole=read('src/bjs/shaders/HoleFieldShader.ts');
+const patch=read('src/bjs/content/PatchNotes.ts'),origin=read('src/bjs/systems/RenderOrigin.ts');
+ok('full Babylon core is pinned to newest stable 9.21.2',pkg.dependencies['@babylonjs/core']==='^9.21.2');
+ok('Inspector v2 matches the full engine',pkg.dependencies['@babylonjs/inspector']==='^9.21.2');
+ok('Babylon Lite is not installed',!Object.keys(pkg.dependencies).some(k=>/babylonjs\/lite/.test(k)));
+ok('WebGPU is attempted first',/WebGPUEngine\.CreateAsync/.test(engine)&&/IsSupportedAsync/.test(engine));
+ok('standard full Engine remains the fallback',/new Engine\(canvas/.test(engine));
+ok('WebGPU failure is caught without blocking WebGL',/WebGPU initialization degraded to WebGL2/.test(engine));
+ok('the Babylon Node Render Graph is instantiated',/new NodeRenderGraph/.test(graph));
+ok('render graph preserves the standard Scene graph',/set as a validated companion|standard Scene retained/.test(graph));
+for(const id of ['A','B','C','D'])ok('render node '+id+' is declared',new RegExp("id:'"+id+"'").test(graph));
+ok('Inspector v2 is loaded dynamically outside the production graph',
+  /@babylonjs\/inspector@9\.21\.2\?bundle/.test(app)&&/@vite-ignore/.test(app));
+ok('F9 toggles Inspector v2',/e\.key === 'F9'/.test(app));
+ok('32-step geodesic integration remains',/for\(int i=0;i<32;i\+\+\)/.test(hole));
+ok('floating origin remains active',/followRenderOrigin/.test(app)&&/FLOATING_ORIGIN_GRID/.test(origin));
+ok('staging buffer pooling is integrated',/pooledFloat32/.test(read('src/bjs/systems/CometSystem.ts')));
+ok('Update 3 is The Next Generation Update',/CURRENT_UPDATE = 'UPDATE 3'/.test(patch)&&/THE NEXT GENERATION UPDATE/.test(patch));
+ok('F5 external camera remains',/e\.key === 'F5'/.test(app));
+ok('twenty minute base infall remains',/1200 \+ \(holeSeed % 601\)/.test(app));
+ok('Cosmic Tears remain at 2.5 percent',/roll < 0\.025 \? 'cosmic-tear'/.test(read('src/bjs/systems/WormholeField.ts')));
+console.log(pass+' passed, '+fail+' failed');process.exit(fail?1:0);

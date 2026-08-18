@@ -27,10 +27,29 @@ export interface PatchRelease {
   entries: PatchEntry[];
 }
 
-export const CURRENT_UPDATE = 'UPDATE 2';
-export const CURRENT_UPDATE_NAME = 'BETTER COSMOS';
+export const CURRENT_UPDATE = 'UPDATE 3';
+export const CURRENT_UPDATE_NAME = 'THE NEXT GENERATION UPDATE';
 
 export const RELEASES: PatchRelease[] = [
+  {
+    version: '3',
+    name: 'THE NEXT GENERATION UPDATE',
+    tagline: 'Full Babylon.js 9.21, WebGPU-first rendering, floating worlds, and a rebuilt multiverse.',
+    entries: [
+      { title:'WebGPU-first full-engine renderer',tag:'improved',body:'The complete standard Babylon.js engine now attempts WebGPU first and falls back safely to WebGL2. No Babylon Lite runtime or data-model migration is used.' },
+      { title:'Next Generation Render Graph',tag:'new',body:'A four-stage Babylon Node Render Graph companion now validates Base Geometry, Deep Sky, Singularity Volume, and Final Composite dependencies while the standard Scene graph preserves every custom shader and gameplay system.' },
+      { title:'Floating-origin universe',tag:'new',body:'True universe coordinates remain double precision while every GPU-facing planet, fleet, portal, comet, anomaly, galaxy and black hole is rendered near a quantized local origin. Billion-unit travel no longer requires hiding physical meshes.' },
+      { title:'All black-hole families restored',tag:'improved',body:'Twelve lens laws and seven physical accretion families now drive the open-world renderer, including ringless, shattered, kaleidoscopic, repulsive, rippled and prismatic singularities.' },
+      { title:'Non-Euclidean interiors',tag:'improved',body:'Turn backward to see the universe you left, sideways into horizon flow, or deeper toward nested folds and the destination. Twenty-to-thirty-minute ordinary descents and Warp DR compression remain intact.' },
+      { title:'Cosmic Tears and The Balge',tag:'new',body:'Rare gravitationally mirrored tears can cross the universe or reach more than fifty procedural dimensions, including the lightning-filled Balge and its polar energy vortex.' },
+      { title:'Self-healing Dimensional Drifts',tag:'new',body:'Temporary jagged rifts now open near star systems, preview another procedural planet, transport the ship, then stitch themselves closed and fade to exactly zero.' },
+      { title:'Seven galaxy classes',tag:'improved',body:'Photoreal, barred, flocculent, lenticular, irregular, elliptical and anomaly galaxies use distinct structures, gas layouts, nuclei and dust behavior.' },
+      { title:'Living orbital cosmos',tag:'improved',body:'Planets orbit their stars, asteroid belts shear on Keplerian curves, comets follow ellipses, fleets navigate, accretion disks rotate and real TLE satellites propagate continuously.' },
+      { title:'Real-time 3D universe prologue',tag:'new',body:'Creating a universe can play a dedicated Babylon scene with terrain, pilot, rocket, Matrix transformation, wormhole flight, voxel hands, white flash and title reveal. Rejoining skips it.' },
+      { title:'Inspector v2 diagnostics',tag:'new',body:'Press F9 to load Babylon Inspector v2 on demand with scene, mesh, material, camera, texture and render-graph diagnostics without adding Inspector cost to normal gameplay.' },
+      { title:'Clean cinematic image',tag:'fixed',body:'Film grain, chromatic aberration and sharpening remain available but default off. Celestial duplicate uniforms, reserved GLSL words, black frames, lens bubbles and overbright planet instances were corrected.' }
+    ]
+  },
   {
     version: '2',
     name: 'BETTER COSMOS',

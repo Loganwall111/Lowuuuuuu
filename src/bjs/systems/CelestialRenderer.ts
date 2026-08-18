@@ -31,6 +31,7 @@ import {
   bodiesNear, DEFAULT_FIELD, type CelestialBody, type FieldOptions
 } from './CelestialCatalog';
 import { renderOrigin } from './RenderOrigin';
+import { pooledFloat32, releasePoolPrefix } from './RenderResourcePool';
 
 export const CELESTIAL_EFFECT = 'celestialBody';
 
@@ -220,8 +221,8 @@ export class CelestialRenderer {
       return true;
     }
 
-    const matrices = new Float32Array(n * 16);
-    const colors = new Float32Array(n * 4);
+    const matrices=pooledFloat32('celestials:matrices',n*16);
+    const colors=pooledFloat32('celestials:colors',n*4);
     const q = Quaternion.Identity();
     const scale = new Vector3(1, 1, 1);
     const pos = new Vector3();
@@ -256,5 +257,6 @@ export class CelestialRenderer {
     this.mesh = null;
     this.mat = null;
     this.live = [];
+    releasePoolPrefix('celestials:');
   }
 }

@@ -29,6 +29,7 @@ import { PointsCloudSystem } from '@babylonjs/core/Particles/pointsCloudSystem';
 import type { Scene } from '@babylonjs/core/scene';
 import { registerCelestialShader, CELESTIAL_EFFECT } from './CelestialRenderer';
 import { renderOrigin } from './RenderOrigin';
+import { pooledFloat32, releasePoolPrefix } from './RenderResourcePool';
 
 export interface CometSpec {
   id: string;
@@ -224,9 +225,10 @@ export class CometRenderer {
       this.built = true;
     } catch (e) {
       console.warn('Comet traffic unavailable:', e);
-      this.built = false;
-    }
+    this.built = false;
+    releasePoolPrefix('comets:');
   }
+}
 
   setEnabled(v: boolean): void {
     this.on = v;
@@ -278,8 +280,8 @@ export class CometRenderer {
     this.focus.copyFrom(focus);
 
     const n = this.specs.length;
-    const matrices = new Float32Array(n * 16);
-    const colors = new Float32Array(n * 4);
+    const matrices = pooledFloat32('comets:matrices',n*16);
+    const colors = pooledFloat32('comets:colors',n*4);
     const q = Quaternion.Identity();
     const scale = new Vector3(1, 1, 1);
     const pos = new Vector3();

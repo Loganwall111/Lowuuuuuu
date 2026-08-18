@@ -27,6 +27,7 @@ import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial';
 import type { Scene } from '@babylonjs/core/scene';
 import { registerCelestialShader, CELESTIAL_EFFECT } from './CelestialRenderer';
 import { renderOrigin } from './RenderOrigin';
+import { pooledFloat32, releasePoolPrefix } from './RenderResourcePool';
 
 /** A region that has a solid, walkable surface. */
 export interface PlanetFieldSource {
@@ -188,8 +189,8 @@ export class PlanetField {
       return true;
     }
 
-    const matrices = new Float32Array(n * 16);
-    const colors = new Float32Array(n * 4);
+    const matrices=pooledFloat32('planets:matrices',n*16);
+    const colors=pooledFloat32('planets:colors',n*4);
     const q = Quaternion.Identity();
     const scale = new Vector3(1, 1, 1);
     const pos = new Vector3();
@@ -229,5 +230,6 @@ export class PlanetField {
     this.mat = null;
     this.live = [];
     this.scene = null;
+    releasePoolPrefix('planets:');
   }
 }

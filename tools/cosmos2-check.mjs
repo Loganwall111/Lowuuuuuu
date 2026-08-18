@@ -578,23 +578,20 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
    ================================================================ */
 {
   const P = await bundle('src/bjs/content/PatchNotes.ts');
-  ok('the update is named', P.CURRENT_UPDATE === 'UPDATE 2');
-  ok('the release is BETTER COSMOS', P.CURRENT_UPDATE_NAME === 'BETTER COSMOS');
+  ok('Update 3 is current', P.CURRENT_UPDATE === 'UPDATE 3');
+  ok('the release is THE NEXT GENERATION UPDATE',
+    P.CURRENT_UPDATE_NAME === 'THE NEXT GENERATION UPDATE');
   const r = P.latestRelease();
   ok('the release has a tagline', r.tagline.length > 10);
   ok('there are several entries', r.entries.length >= 6, r.entries.length + ' entries');
   ok('every entry is complete', r.entries.every((e) =>
     e.title.length > 3 && e.body.length > 30
     && ['new', 'fixed', 'improved'].includes(e.tag)));
-  ok('the notes cover the warp fix',
-    r.entries.some((e) => /warp/i.test(e.title) && e.tag === 'fixed'));
-  ok('the notes cover the bubble fix',
-    r.entries.some((e) => /bubble/i.test(e.title)));
-  ok('the notes cover black hole entry',
-    r.entries.some((e) => /inside a black hole/i.test(e.title)));
-  ok('the notes cover the satellite HUD',
-    r.entries.some((e) => /satellite/i.test(e.title)));
-  ok('the notes cover sound', r.entries.some((e) => /sound/i.test(e.title)));
+  ok('the notes cover WebGPU',r.entries.some((e)=>/WebGPU/i.test(e.title+e.body)));
+  ok('the notes cover Node Render Graph',r.entries.some((e)=>/Render Graph/i.test(e.title)));
+  ok('the notes cover floating origin',r.entries.some((e)=>/Floating-origin/i.test(e.title)));
+  ok('the notes cover black-hole variants',r.entries.some((e)=>/black-hole families/i.test(e.title)));
+  ok('the notes cover Inspector v2',r.entries.some((e)=>/Inspector v2/i.test(e.title)));
   const c = P.countByTag(r);
   ok('the tag counts add up',
     c.new + c.fixed + c.improved === r.entries.length);
@@ -632,8 +629,9 @@ const shellSrc = read('src/bjs/ui/Shell.ts');
 
   // The panel markup must actually contain the release.
   const html = (await bundle('src/bjs/ui/IntroOverlay.ts')).renderPatchNotes();
-  ok('the rendered panel names the update', html.includes('UPDATE 2'));
-  ok('the rendered panel names the release', html.includes('BETTER COSMOS'));
+  ok('the rendered panel names Update 3', html.includes('UPDATE 3'));
+  ok('the rendered panel names the Next Generation release',
+    html.includes('THE NEXT GENERATION UPDATE'));
   ok('the rendered panel lists every entry',
     r.entries.every((e) => html.includes(e.title.replace(/&/g, '&amp;'))));
   ok('the rendered panel tags each entry',

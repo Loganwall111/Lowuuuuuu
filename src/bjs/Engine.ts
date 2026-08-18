@@ -1,48 +1,49 @@
-/**
- * Engine — Babylon.js 9 boot layer.
- *
- * NOTE ON BACKEND: every world in this project is shaded with hand-written
- * GLSL (ray-marched geodesics, Gerstner surfaces, procedural planet shaders).
- * WebGPU cannot consume GLSL without shipping the twgsl transpiler, and the
- * struct-array + dFdx usage here does not survive that path cleanly. WebGL2
- * is therefore the deliberate target — it supports every feature these
- * shaders need (derivatives, float render targets, 320-iteration loops).
- */
-
+/** Full Babylon.js engine bootstrap: WebGPU first, WebGL2 fail-safe. */
 import { Engine } from '@babylonjs/core/Engines/engine';
 import type { AbstractEngine } from '@babylonjs/core/Engines/abstractEngine';
 
 import '@babylonjs/core/Materials/standardMaterial';
 import '@babylonjs/core/Rendering/depthRendererSceneComponent';
-// Ray is a side-effect import in Babylon's tree-shaken build. Anything that
-// picks - scene.pick, createPickingRay, camera.getForwardRay - throws without
-// it, and a throw inside the render loop leaves a permanently black canvas.
 import '@babylonjs/core/Culling/ray';
-// Registers every post-process shader. Post-processing draws nothing at all
-// without these, which presents as a completely black screen; see
-// ShaderRegistry.ts for the full explanation.
 import './ShaderRegistry';
 
-export interface EngineBoot {
-  engine: AbstractEngine;
-  backend: string;
+export interface EngineBoot { engine: AbstractEngine; backend: string; webgpu: boolean; }
+
+async function tryWebGPU(canvas:HTMLCanvasElement):Promise<EngineBoot|null>{
+  if(!(globalThis.navigator as any)?.gpu)return null;
+  try{
+    const {WebGPUEngine}=await import('@babylonjs/core/Engines/webgpuEngine');
+    const supported=await Promise.race([
+      WebGPUEngine.IsSupportedAsync,
+      new Promise<boolean>((resolve)=>setTimeout(()=>resolve(false),900))
+    ]);
+    if(!supported)return null;
+    const create=WebGPUEngine.CreateAsync(canvas,{
+      antialias:true,adaptToDeviceRatio:false,powerPreference:'high-performance',
+      enableAllFeatures:false,enableGPUDebugMarkers:false
+    });
+    const result=await Promise.race([
+      create.then((engine)=>({engine,timedOut:false as const})),
+      new Promise<{engine:null;timedOut:true}>((resolve)=>
+        setTimeout(()=>resolve({engine:null,timedOut:true}),3500))
+    ]);
+    if(result.timedOut||!result.engine){void create.then((late)=>late.dispose()).catch(()=>{});return null;}
+    result.engine.setHardwareScalingLevel(1);
+    return{engine:result.engine as AbstractEngine,backend:'WebGPU · Full Babylon.js',webgpu:true};
+  }catch(e){console.warn('WebGPU initialization degraded to WebGL2:',e);return null;}
 }
 
 export async function createEngine(canvas: HTMLCanvasElement): Promise<EngineBoot> {
+  const modern=await tryWebGPU(canvas);if(modern)return modern;
   const engine = new Engine(canvas, true, {
-    preserveDrawingBuffer: true,
+    preserveDrawingBuffer: false,
     stencil: true,
     powerPreference: 'high-performance',
     antialias: true,
     disableWebGL2Support: false,
     failIfMajorPerformanceCaveat: false
   });
-
-  // Start at native CSS resolution. The previous inverse-DPR value silently
-  // supersampled the full raymarched universe at 1.5-2x during launch, which
-  // is why the menu was smooth but gameplay collapsed to 2 fps.
   engine.setHardwareScalingLevel(1);
-
   const gl = engine._gl as WebGL2RenderingContext | undefined;
   const ver = engine.webGLVersion === 2 ? 'WebGL2' : 'WebGL1';
   let label = ver;
@@ -53,6 +54,5 @@ export async function createEngine(canvas: HTMLCanvasElement): Promise<EngineBoo
       if (r) label = `${ver} · ${r.replace(/\s*\(.*?\)\s*/g, ' ').trim().slice(0, 22)}`;
     }
   } catch { /* renderer string is optional */ }
-
-  return { engine: engine as unknown as AbstractEngine, backend: label };
+  return { engine:engine as AbstractEngine,backend:label,webgpu:false };
 }
