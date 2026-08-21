@@ -161,7 +161,8 @@ public class WitherStormWorldConfig extends SavedData {
 
       for(int i = 0; i < CLUSTER_STAGES.length; ++i) {
          ClusterStage stage = CLUSTER_STAGES[i];
-         key(stage.key(), "Biggest random cluster radius in " + stage.label(), (double)0.0F, (double)8.0F, true, (c) -> (double)c.clusterStageMax[i], (c, v) -> c.clusterStageMax[i] = (int)v);
+         final int idx = i;
+         key(stage.key(), "Biggest random cluster radius in " + stage.label(), (double)0.0F, (double)8.0F, true, (c) -> (double)c.clusterStageMax[idx], (c, v) -> c.clusterStageMax[idx] = (int)v);
       }
 
       key("beamClusterInterval", "Ticks between beam-spawned clusters", (double)20.0F, (double)400.0F, true, (c) -> (double)c.beamClusterInterval, (c, v) -> c.beamClusterInterval = (int)v);
