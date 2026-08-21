@@ -147,3 +147,5 @@ head/tentacle/severed rendering, and the Rocket Retriever / Formidibomb items.
   all client code in `src/main/java` (main source set), which needs the client Minecraft
   classes. Split source sets removed them from the main classpath. Fixed by removing
   `splitEnvironmentSourceSets()`.
+
+- **`compileJava` — `missing return statement` (SeveredWitherStorm.java:14923, then latent in WitherStormDevourer.java + WitherStormP4.java)**: Vineflower ran out of memory and left 3 very large model `createBodyLayer()` methods as bytecode comments only. Reconstructed all three from the bytecode dumps with a JVM stack/local-slot interpreter (`tools/reconstruct_models_generic.py`). Verified the generated part trees match each class's constructor `getChild()` exactly (67/67, 302/302, 3/3 parts) and box/pose counts match the bytecode. Added the missing geom imports. **Green build reached at commit `04f1e48`.**
