@@ -43,9 +43,20 @@ public enum WitherStormPhase {
    /**
     * Number of absorbed/consumed units required to leave a given main phase.
     * Phase 0-3 ramp up slowly, phase 4+ requires far more (the storm is huge then).
+    *
+    * When {@link WitherStormWorldConfig#infinitePhases} is enabled, phases above the
+    * Devourer keep scaling forever (procedural/infinite growth) so the storm can grow
+    * until the world is consumed. Each cycle multiplies the requirement by
+    * {@code phaseScalePerCycle}.
     */
    public static int requirement(int mainPhase, WitherStormWorldConfig config) {
       double mod = config.phaseRequirementModifier;
+      if (config.infinitePhases != 0 && mainPhase >= 6) {
+         // Infinite procedural phases: cycle 0 = the Devourer, then scale forever.
+         int cycle = mainPhase - 6;
+         double base = config.phase5Requirement * mod;
+         return (int) (base * Math.pow(config.phaseScalePerCycle, cycle));
+      }
       switch (mainPhase) {
          case 0: return (int) (25.0 * mod);
          case 1: return (int) (50.0 * mod);
@@ -58,6 +69,28 @@ public enum WitherStormPhase {
 
    /** Highest naturally reachable phase (before the formidibomb finale). */
    public static final double MAX_NATURAL = 5.9999;
-   /** Devourer ceiling. */
+   /** Devourer ceiling (unless infinite procedural phases are on). */
    public static final double MAX_DEVOURER = 6.99;
+
+   /**
+    * The maximum phase the storm can reach given the config.
+    * With infinite phases it is effectively unbounded (capped at a large but finite
+    * value so health/scale don't overflow); otherwise it is the Devourer ceiling.
+    */
+   public static double ceiling(WitherStormWorldConfig config) {
+      return config.infinitePhases != 0 ? 100.0 : MAX_DEVOURER;
+   }
+
+   /**
+    * Display label for a phase value (used by the HUD/config). Handles infinite
+    * phases by naming cycles above the Devourer.
+    */
+   public static String label(double phase) {
+      int main = mainOf(phase);
+      if (main < 6) {
+         return "Phase " + main + "." + (int) Math.floor((phase - main) * 10);
+      }
+      int cycle = main - 6;
+      return cycle == 0 ? "Devourer" : "Cycle " + cycle;
+   }
 }

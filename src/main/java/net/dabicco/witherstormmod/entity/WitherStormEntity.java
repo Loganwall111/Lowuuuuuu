@@ -1,5 +1,12 @@
 package net.dabicco.witherstormmod.entity;
 
+import com.mojang.datafixers.util.Pair;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.dabicco.witherstormmod.ModItems;
 import net.dabicco.witherstormmod.ModSounds;
@@ -18,8 +25,13 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -133,6 +145,14 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    private int moveGoalTimer;
    private Player cachedNearest;
 
+   // Structure / town hunting (the storm tours and levels built places, like the show).
+   private BlockPos structureTarget;
+   private boolean structureArrived;
+   private int structureDwellTicks;
+   private int structureSearchAt;
+   private final Set<Long> structuresVisited = new HashSet<>();
+   private static final TagKey<Structure> STORM_TARGETS = TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("dabywitherstormmod", "storm_targets"));
+
    // Snatch / ability state
    private int snatchTicks;
    private int snatchHits;
@@ -223,10 +243,19 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    /** Absorb 'amount' of material; grow toward the next phase when the threshold is hit. */
    public void addSubGrowth(int amount) {
-      if (this.phase >= MAX_DEVOURER_PHASE - 0.001) {
+      WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
+
+      // EXPERIMENTAL instant growth: grow far faster and continuously.
+      if (config.instantGrowth != 0 && amount > 0) {
+         amount = Math.max(1, (int) Math.round(amount * config.instantGrowthRate));
+      }
+
+      double ceiling = WitherStormPhase.ceiling(config);
+      if (this.phase >= ceiling - 0.001) {
+         // At the (effectively unbounded) ceiling; keep eating but stop scaling.
          return;
       }
-      WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
+
       this.subGrowth += amount;
       this.entityData.set(SUBGROWTH_DATA, this.subGrowth);
       int mainPhase = WitherStormPhase.mainOf(this.phase);
@@ -240,15 +269,16 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
 
       if (this.subGrowth >= req) {
-         if (mainPhase + 1 >= WitherStormPhase.mainOf(MAX_NATURAL_PHASE) + 1) {
+         double next = mainPhase + 1.0;
+         if (config.infinitePhases != 0) {
+            // Keep growing forever; the storm only stops if it is actually killed.
+            this.phase = next;
+         } else if (next >= WitherStormPhase.mainOf(MAX_NATURAL_PHASE) + 1) {
+            // Cap at the natural Devourer ceiling (before the formidibomb finale).
             this.phase = MAX_NATURAL_PHASE;
-            this.subGrowth = 0;
-            this.entityData.set(SUBGROWTH_DATA, 0);
-            this.entityData.set(PHASE_DATA, (float) this.phase);
-            this.entityData.set(PHASE4_DATA, true);
-            return;
+         } else {
+            this.phase = next;
          }
-         this.phase = mainPhase + 1.0;
          this.roarAllHeads(true);
          if (this.phase >= 4.0 && !this.phase4) {
             this.enterPhase4();
@@ -657,6 +687,14 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             break;
          }
          default: {
+            WitherStormWorldConfig cfg = WitherStormConfigs.get(server);
+            // Structure / town hunting: prefer leveling a built place over drifting.
+            if (cfg.structureHunt != 0 && this.isPhase4()) {
+               Vec3 structGoal = this.structureGoal(server, cfg);
+               if (structGoal != null) {
+                  return structGoal;
+               }
+            }
             if (--this.chaseTimer <= 0) {
                this.moveMode = MoveMode.CHASING;
                return nearest != null ? nearest.position() : null;
@@ -665,6 +703,76 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          }
       }
       return nearest != null ? nearest.position() : null;
+   }
+
+   /**
+    * Town / structure hunting: the storm flies to a nearby built structure, hovers over
+    * it tearing it apart for a dwell period, then moves on. Mirrors the show's signature
+    * "the storm levels villages and towns."
+    */
+   private Vec3 structureGoal(ServerLevel server, WitherStormWorldConfig cfg) {
+      if (this.structureTarget == null) {
+         if (this.tickCount < this.structureSearchAt) {
+            return null;
+         }
+         this.structureSearchAt = this.tickCount + 400;
+         this.structureTarget = this.findNextStructure(server, cfg);
+         if (this.structureTarget == null) {
+            return null;
+         }
+         this.structureDwellTicks = cfg.structureDwellSeconds * 20;
+         this.structureArrived = false;
+         return Vec3.atCenterOf(this.structureTarget);
+      }
+
+      // We have a target. Once close enough, dwell and let the abilities tear it down.
+      if (!this.structureArrived && this.distanceToSqr(Vec3.atCenterOf(this.structureTarget)) < 40.0 * 40.0) {
+         this.structureArrived = true;
+         this.structuresVisited.add(this.structureTarget.asLong());
+         if (this.structuresVisited.size() > 64) {
+            this.structuresVisited.clear();
+         }
+      }
+      if (--this.structureDwellTicks <= 0) {
+         this.structureTarget = null;
+         this.structureArrived = false;
+         return null;
+      }
+      return Vec3.atCenterOf(this.structureTarget);
+   }
+
+   private BlockPos findNextStructure(ServerLevel server, WitherStormWorldConfig cfg) {
+      Registry<Structure> registry = server.registryAccess().lookupOrThrow(Registries.STRUCTURE);
+      Optional<HolderSet.Named<Structure>> tag = registry.get(STORM_TARGETS);
+      if (tag.isEmpty()) {
+         return null;
+      }
+      List<Holder<Structure>> wanted = new ArrayList<>();
+      tag.get().forEach(wanted::add);
+      if (wanted.isEmpty()) {
+         return null;
+      }
+      HolderSet.Direct<Structure> set = HolderSet.direct(wanted);
+      BlockPos here = this.blockPosition();
+      int radius = cfg.structureHuntRadius;
+      Pair<BlockPos, Holder<Structure>> hit = server.getChunkSource().getGenerator().findNearestMapStructure(server, set, here, radius, false);
+      if (hit == null) {
+         return null;
+      }
+      BlockPos pos = hit.getFirst();
+      if (this.structuresVisited.contains(pos.asLong())) {
+         // Already hit this one; look further out in a spiral of offsets.
+         for (int i = 1; i <= 4; ++i) {
+            double ang = i * (Math.PI / 2.0);
+            BlockPos from = here.offset((int) (Math.cos(ang) * radius * 2), 0, (int) (Math.sin(ang) * radius * 2));
+            Pair<BlockPos, Holder<Structure>> farHit = server.getChunkSource().getGenerator().findNearestMapStructure(server, set, from, radius, false);
+            if (farHit != null && !this.structuresVisited.contains(farHit.getFirst().asLong())) {
+               return farHit.getFirst();
+            }
+         }
+         return null;
+      }
+      return pos;
    }
 
    private void phase4Movement(ServerLevel server) {

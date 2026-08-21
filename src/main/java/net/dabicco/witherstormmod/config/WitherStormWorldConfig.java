@@ -77,6 +77,38 @@ public class WitherStormWorldConfig extends SavedData {
    public int endermanSiegeTentacleSpeed = 260;
    public int endermanSiegeBeamEats = 1;
    public int targetingMode = 0;
+
+   // --- Clean-rewrite additions (Phase 2 features) ---
+   // Instant growth / experimental procedural phases.
+   public int instantGrowth = 0;
+   public double instantGrowthRate = 3.0;
+   public int infinitePhases = 0;
+   public double phaseScalePerCycle = 1.5;
+   // Structure / town hunting.
+   public int structureHunt = 1;
+   public int structureHuntRadius = 96;
+   public int structureDwellSeconds = 180;
+   public int maxStructuresPerRaid = 4;
+   // Portals.
+   public int portalHunt = 1;
+   public int portalPunchInterval = 20;
+   // Tentacle mechanics.
+   public int tentacleSlam = 1;
+   public int tentacleSlamRadius = 8;
+   public int tentacleThroughPortal = 1;
+   // Music + atmosphere.
+   public double bossMusicRange = 160.0;
+   public int atmosphere = 1;
+   public double stormFogIntensity = 1.0;
+   public double stormFogR = 0.25;
+   public double stormFogG = 0.12;
+   public double stormFogB = 0.35;
+   // Far Lands end-of-world chaos maze.
+   public int farLandsMaze = 0;
+   public double farLandsDistance = 30000.0;
+   // Colored biome fogs (green / bluish-turquoise).
+   public int biomeFogs = 1;
+
    public static final String[] TARGETING_LABELS = new String[]{"Ultimate", "Natural", "Nearest", "Group", "Structures"};
    public static final Map<String, Key> KEYS = new LinkedHashMap();
    public static final Codec<WitherStormWorldConfig> CODEC;
@@ -221,6 +253,30 @@ public class WitherStormWorldConfig extends SavedData {
       keyToggle("witheredMobs", "Fully corrupted mobs turn Withered and gain manipulation powers", (c) -> (double)c.witheredMobs, (c, v) -> c.witheredMobs = (int)v);
       key("witheredMax", "How many Withered mobs may exist at once (higher = busier and heavier)", (double)1.0F, (double)64.0F, true, (c) -> (double)c.witheredMax, (c, v) -> c.witheredMax = (int)v);
       key("witheredMaxCaves", "Of those, how many may have turned underground (kept low on purpose)", (double)0.0F, (double)32.0F, true, (c) -> (double)c.witheredMaxCaves, (c, v) -> c.witheredMaxCaves = (int)v);
+
+      // --- Clean-rewrite additions (Phase 2 features) ---
+      keyToggle("instantGrowth", "EXPERIMENTAL: the storm grows continuously and much faster, endlessly consuming until stopped. Unlocks infinite procedural phases.", (c) -> (double)c.instantGrowth, (c, v) -> c.instantGrowth = (int)v);
+      key("instantGrowthRate", "How much faster growth is while instant growth is on (multiplier)", (double)1.0F, (double)20.0F, false, (c) -> c.instantGrowthRate, (c, v) -> c.instantGrowthRate = v);
+      keyToggle("infinitePhases", "EXPERIMENTAL: phases keep scaling forever instead of capping at the Devourer. The storm grows until the world is consumed.", (c) -> (double)c.infinitePhases, (c, v) -> c.infinitePhases = (int)v);
+      key("phaseScalePerCycle", "How much each extra phase cycle above the Devourer multiplies growth requirements by", (double)1.1F, (double)4.0F, false, (c) -> c.phaseScalePerCycle, (c, v) -> c.phaseScalePerCycle = v);
+      keyToggle("structureHunt", "The storm actively seeks out and levels built structures, towns and villages (like the show)", (c) -> (double)c.structureHunt, (c, v) -> c.structureHunt = (int)v);
+      key("structureHuntRadius", "How far ahead it looks for a structure to target, in chunks", (double)16.0F, (double)512.0F, true, (c) -> (double)c.structureHuntRadius, (c, v) -> c.structureHuntRadius = (int)v);
+      key("structureDwellSeconds", "How long it stays and tears a structure apart", (double)20.0F, (double)900.0F, true, (c) -> (double)c.structureDwellSeconds, (c, v) -> c.structureDwellSeconds = (int)v);
+      key("maxStructuresPerRaid", "How many structures it will level in one hunt before wandering off", (double)1.0F, (double)64.0F, true, (c) -> (double)c.maxStructuresPerRaid, (c, v) -> c.maxStructuresPerRaid = (int)v);
+      keyToggle("portalHunt", "The storm punches through nether portals to drag players in the Nether back (a Story Mode signature)", (c) -> (double)c.portalHunt, (c, v) -> c.portalHunt = (int)v);
+      key("portalPunchInterval", "Seconds between portal punches", (double)10.0F, (double)600.0F, true, (c) -> (double)c.portalPunchInterval, (c, v) -> c.portalPunchInterval = (int)v);
+      keyToggle("tentacleSlam", "Body tentacles slam through blocks and slap players across the face (like the show)", (c) -> (double)c.tentacleSlam, (c, v) -> c.tentacleSlam = (int)v);
+      key("tentacleSlamRadius", "How wide a tentacle slam carves, in blocks", (double)1.0F, (double)24.0F, true, (c) -> (double)c.tentacleSlamRadius, (c, v) -> c.tentacleSlamRadius = (int)v);
+      keyToggle("tentacleThroughPortal", "Tentacles can reach through portals and pull players out", (c) -> (double)c.tentacleThroughPortal, (c, v) -> c.tentacleThroughPortal = (int)v);
+      key("bossMusicRange", "Radius (blocks) in which the boss music plays. Fades out beyond it.", (double)32.0F, (double)1000.0F, false, (c) -> c.bossMusicRange, (c, v) -> c.bossMusicRange = v);
+      keyToggle("atmosphere", "Purple-dark sky, colored fog and world lighting near the storm", (c) -> (double)c.atmosphere, (c, v) -> c.atmosphere = (int)v);
+      key("stormFogIntensity", "How strong the storm's purple fog is near it", (double)0.0F, (double)2.0F, false, (c) -> c.stormFogIntensity, (c, v) -> c.stormFogIntensity = v);
+      key("stormFogR", "Storm fog red channel", (double)0.0F, (double)1.0F, false, (c) -> c.stormFogR, (c, v) -> c.stormFogR = v);
+      key("stormFogG", "Storm fog green channel", (double)0.0F, (double)1.0F, false, (c) -> c.stormFogG, (c, v) -> c.stormFogG = v);
+      key("stormFogB", "Storm fog blue channel (0.35 = purple)", (double)0.0F, (double)1.0F, false, (c) -> c.stormFogB, (c, v) -> c.stormFogB = v);
+      keyToggle("farLandsMaze", "EXPERIMENTAL: near the Far Lands the storm warps the terrain into a gigantic end-of-the-world chaos maze", (c) -> (double)c.farLandsMaze, (c, v) -> c.farLandsMaze = (int)v);
+      key("farLandsDistance", "Distance from spawn at which the chaos maze begins to warp terrain", (double)3000.0F, (double)100000.0F, false, (c) -> c.farLandsDistance, (c, v) -> c.farLandsDistance = v);
+      keyToggle("biomeFogs", "Distinct colored fog per area/biome (green in the swampy zones, bluish-turquoise in others) like the show's biomes", (c) -> (double)c.biomeFogs, (c, v) -> c.biomeFogs = (int)v);
       CODEC = Codec.unboundedMap(Codec.STRING, Codec.DOUBLE).xmap((map) -> {
          WitherStormWorldConfig cfg = new WitherStormWorldConfig();
          map.forEach((name, value) -> {
