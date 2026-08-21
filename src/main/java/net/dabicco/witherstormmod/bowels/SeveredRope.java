@@ -1,6 +1,5 @@
 package net.dabicco.witherstormmod.bowels;
 
-import [Lnet.minecraft.world.phys.Vec3;;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
@@ -19,7 +18,7 @@ public final class SeveredRope {
    private final double[] length;
 
    public SeveredRope(Vec3[] worldPoints, Vec3 launch) {
-      this.now = (Vec3[])((Vec3;)worldPoints).clone();
+      this.now = worldPoints.clone();
       this.was = new Vec3[worldPoints.length];
       this.length = new double[Math.max(0, worldPoints.length - 1)];
 
