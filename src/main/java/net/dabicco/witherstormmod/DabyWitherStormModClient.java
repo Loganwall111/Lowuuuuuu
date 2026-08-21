@@ -1,19 +1,23 @@
 package net.dabicco.witherstormmod;
 
+import net.dabicco.witherstormmod.client.FormidibombFlash;
+import net.dabicco.witherstormmod.client.StormDeathCinematic;
 import net.dabicco.witherstormmod.client.renderer.BlackHoleRenderer;
 import net.dabicco.witherstormmod.client.renderer.WitherStormClusterRenderer;
 import net.dabicco.witherstormmod.entity.ModEntityTypes;
 import net.dabicco.witherstormmod.entity.model.ModEntityModelLayers;
 import net.dabicco.witherstormmod.entity.renderer.WitherStormRenderer;
+import net.dabicco.witherstormmod.network.StormDeathPayload;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.HudElementRegistry;
 
 /**
  * Clean client entrypoint for the rewritten mod.
  *
- * Registers entity renderers and model layers. Only the renderers for entities whose
- * classes actually exist are registered. As the user adds Blockbench models, the
- * corresponding layer registration goes into {@link ModEntityModelLayers}.
+ * Registers entity renderers, model layers, networking receivers and HUD overlays.
+ * Only the renderers for entities whose classes actually exist are registered.
  */
 public class DabyWitherStormModClient implements ClientModInitializer {
    @Override
@@ -27,5 +31,12 @@ public class DabyWitherStormModClient implements ClientModInitializer {
 
       // Model layers (Blockbench models are added by the user; see ModEntityModelLayers).
       ModEntityModelLayers.registerModelLayers();
+
+      // Networking receivers.
+      ClientPlayNetworking.registerGlobalReceiver(StormDeathPayload.TYPE, StormDeathPayload::handleClient);
+
+      // HUD overlays (white-flash cinematic + formidibomb flash).
+      HudElementRegistry.addLast(DabyWitherStormMod.id("storm_death"), StormDeathCinematic::render);
+      HudElementRegistry.addLast(DabyWitherStormMod.id("formidibomb_flash"), FormidibombFlash::render);
    }
 }

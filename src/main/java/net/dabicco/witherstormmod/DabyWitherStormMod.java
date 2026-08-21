@@ -1,7 +1,9 @@
 package net.dabicco.witherstormmod;
 
 import net.dabicco.witherstormmod.entity.ModEntityTypes;
+import net.dabicco.witherstormmod.network.StormDeathPayload;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,9 @@ public class DabyWitherStormMod implements ModInitializer {
       // Entities + attributes.
       ModEntityTypes.registerModEntityTypes();
       ModEntityTypes.registerAttributes();
+
+      // Networking payloads.
+      PayloadTypeRegistry.clientboundPlay().register(StormDeathPayload.TYPE, StormDeathPayload.CODEC);
 
       LOGGER.info("Daby's Wither Storm initialized");
    }

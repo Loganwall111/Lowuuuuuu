@@ -11,6 +11,7 @@ import net.dabicco.witherstormmod.entity.ability.TractorBeamAbility;
 import net.dabicco.witherstormmod.config.WitherStormConfigs;
 import net.dabicco.witherstormmod.config.WitherStormWorldConfig;
 import net.dabicco.witherstormmod.entity.cluster.WitherStormClusterEntity;
+import net.dabicco.witherstormmod.network.StormDeathPayload;
 import net.dabicco.witherstormmod.network.WitherStormPositionPacket;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -1012,6 +1013,42 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
       if (!this.suppressLoot) {
          this.spawnAtLocation(level, new ItemStack(ModItems.WITHERED_NETHER_STAR));
+      }
+      // Finale cinematic (matches the video): white pulse -> pure white -> huge explosion,
+      // plus purple glass shards flying out and a big shockwave. Only for the giant phase-4+ storm.
+      if (this.phase4) {
+         this.playDeathCinematic(level);
+      }
+   }
+
+   /**
+    * Server-side part of the death cinematic. Sends the white-flash payload to nearby
+    * players, spawns purple glass-shard particles, and throws a large explosion so the
+    * world-shaking blast matches the show. The pure-white hold / glitch overlay is drawn
+    * on the client by {@link StormDeathCinematic}.
+    */
+   private void playDeathCinematic(ServerLevel level) {
+      double x = this.getX();
+      double y = this.getY();
+      double z = this.getZ();
+
+      // Bigger-than-normal explosion (this is the storm dying).
+      level.explode(this, x, y, z, 14.0F, true, net.minecraft.world.level.ExplosionInteraction.TNT);
+
+      // Purple glass shards bursting out in all directions.
+      for (int i = 0; i < 120; ++i) {
+         double dx = (this.random.nextDouble() - 0.5) * 2.0;
+         double dy = this.random.nextDouble() * 1.6;
+         double dz = (this.random.nextDouble() - 0.5) * 2.0;
+         level.sendParticles(net.minecraft.core.particles.ParticleTypes.ITEM, true, true, x, y + this.getBbHeight() * 0.5, z, 1, dx, dy, dz, 0.25);
+      }
+
+      // Screen flash + glitch to nearby viewers.
+      StormDeathPayload payload = new StormDeathPayload(x, y, z, true);
+      for (ServerPlayer p : level.players()) {
+         if (p.distanceToSqr(x, y, z) <= 160.0 * 160.0) {
+            ServerPlayNetworking.send(p, payload);
+         }
       }
    }
 
