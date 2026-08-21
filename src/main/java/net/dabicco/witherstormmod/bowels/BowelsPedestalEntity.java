@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -193,8 +194,8 @@ public class BowelsPedestalEntity extends Entity {
    private ClusterMesh bake(boolean pedestal) {
       Level var3 = this.level();
       if (var3 instanceof ClientLevel clientLevel) {
-         ArrayList var5 = new ArrayList();
-         ArrayList states = new ArrayList();
+         ArrayList<BlockPos> var5 = new ArrayList<>();
+         ArrayList<BlockState> states = new ArrayList<>();
          if (pedestal) {
             BowelsEndRoom.collectPedestal(this.getSeed(), var5, states);
          } else {
