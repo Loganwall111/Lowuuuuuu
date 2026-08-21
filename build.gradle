@@ -18,8 +18,11 @@ repositories {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    // Using "mojmap" official mappings for easier debugging
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    // The mod (and the restored decompiled classes) is written with Mojang OFFICIAL
+    // mappings (see META-INF/MANIFEST.MF "Fabric-Mapping-Namespace: official").
+    // Yarn would rename classes/methods and break every import, so we must use
+    // official Mojang mappings here.
+    mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     // Fabric API. This is technically optional, but you are advised to have it.
