@@ -510,15 +510,6 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("The Enderman Siege", "endermanSiege", "endermanSiegeCount", "endermanSiegeSeconds", "endermanSiegeDistance", "endermanSiegeSlowdown", "endermanSiegeTentacleSpeed", "endermanSiegeBeamEats");
       this.serverSection("Cave Rumble", "caveRumble", "caveRumbleInterval", "caveRumbleDuration", "caveRumbleIntensity");
       this.serverSection("Nether Scaling", "netherScale", "netherScaleInterval", "netherScaleRandom");
-      // --- Phase 2 (clean rewrite) ---
-      this.serverSection("Instant Growth (Experimental)", "instantGrowth", "instantGrowthRate", "infinitePhases", "phaseScalePerCycle");
-      this.serverSection("Town & Structure Hunt", "structureHunt", "structureHuntRadius", "structureDwellSeconds", "maxStructuresPerRaid");
-      this.serverSection("Portals", "portalHunt", "portalPunchInterval");
-      this.serverSection("Tentacle Slams", "tentacleSlam", "tentacleSlamRadius", "tentacleThroughPortal");
-      this.serverSection("Boss Music", "bossMusicRange");
-      this.serverSection("Atmosphere", "atmosphere", "stormFogIntensity", "stormFogR", "stormFogG", "stormFogB");
-      this.serverSection("Far Lands Chaos Maze (Experimental)", "farLandsMaze", "farLandsDistance");
-      this.serverSection("Biome Fogs", "biomeFogs");
    }
 
    private void master(String title) {
