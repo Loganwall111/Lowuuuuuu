@@ -55,6 +55,10 @@ public class HunchbackGrowth extends EntityModel<WitherStormRenderState> {
       return phase < 2.2 ? 0 : Math.min(5, 1 + (int)Math.floor((phase - 2.2) / 0.04 + 1.0E-6));
    }
 
+   public ModelPart root() {
+      return this.root;
+   }
+
    public void setupAnim(WitherStormRenderState state) {
       this.root.getAllParts().forEach(ModelPart::resetPose);
       int shown = growthCountFor(state.phase);

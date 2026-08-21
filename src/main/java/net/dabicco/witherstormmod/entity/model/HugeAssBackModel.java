@@ -25,6 +25,10 @@ public class HugeAssBackModel extends EntityModel<WitherStormRenderState> {
       this.hugeassback = root.getChild("hugeassback");
    }
 
+   public ModelPart root() {
+      return this.root;
+   }
+
    public void setupAnim(WitherStormRenderState state) {
    }
 
