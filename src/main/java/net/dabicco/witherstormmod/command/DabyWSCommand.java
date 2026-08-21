@@ -515,7 +515,8 @@ public class DabyWSCommand {
                   source.sendFailure(Component.literal("§cCouldn't start the probe there."));
                   return 0;
                } else {
-                  source.sendSuccess(() -> Component.literal("§aPortal probe started at " + portal.toShortString()), true);
+                  final BlockPos probePortal = portal;
+                  source.sendSuccess(() -> Component.literal("§aPortal probe started at " + probePortal.toShortString()), true);
                   return 1;
                }
             }
@@ -558,7 +559,9 @@ public class DabyWSCommand {
                }
 
                int cracks = heart.getCracks();
-               source.sendSuccess(() -> Component.literal("Bowels advanced: " + cracks + "/4 (" + cleared + " Withered cleared)"), true);
+               final int fCracks = cracks;
+               final int fCleared = cleared;
+               source.sendSuccess(() -> Component.literal("Bowels advanced: " + fCracks + "/4 (" + fCleared + " Withered cleared)"), true);
                return 1;
             }
          }
@@ -634,7 +637,8 @@ public class DabyWSCommand {
 
             return 0;
          } else {
-            source.sendSuccess(() -> Component.literal(moved == 1 ? "Down you go." : "Down they go (" + moved + ")."), true);
+            final int fMoved = moved;
+            source.sendSuccess(() -> Component.literal(fMoved == 1 ? "Down you go." : "Down they go (" + fMoved + ")."), true);
             return moved;
          }
       }
