@@ -1,6 +1,7 @@
 package net.dabicco.witherstormmod;
 
 import net.dabicco.witherstormmod.client.FormidibombFlash;
+import net.dabicco.witherstormmod.client.StormAtmosphere;
 import net.dabicco.witherstormmod.client.StormDeathCinematic;
 import net.dabicco.witherstormmod.client.renderer.BlackHoleRenderer;
 import net.dabicco.witherstormmod.client.renderer.WitherStormClusterRenderer;
@@ -31,6 +32,10 @@ public class DabyWitherStormModClient implements ClientModInitializer {
 
       // Model layers (Blockbench models are added by the user; see ModEntityModelLayers).
       ModEntityModelLayers.registerModelLayers();
+
+      // Atmosphere + world-space VFX (sky darkening, distant storm, formidibomb blast,
+      // withered glows). The mixin-dependent bloom pipeline is wired when mixins return.
+      StormAtmosphere.register();
 
       // Networking receivers.
       ClientPlayNetworking.registerGlobalReceiver(StormDeathPayload.TYPE, StormDeathPayload::handleClient);
