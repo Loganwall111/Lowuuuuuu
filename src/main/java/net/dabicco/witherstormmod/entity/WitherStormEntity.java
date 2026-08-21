@@ -3,6 +3,8 @@ package net.dabicco.witherstormmod.entity;
 import java.util.UUID;
 import net.dabicco.witherstormmod.ModItems;
 import net.dabicco.witherstormmod.ModSounds;
+import net.dabicco.witherstormmod.entity.ability.StormAbilitySet;
+import net.dabicco.witherstormmod.entity.ability.SuperSkullAbility;
 import net.dabicco.witherstormmod.config.WitherStormConfigs;
 import net.dabicco.witherstormmod.config.WitherStormWorldConfig;
 import net.dabicco.witherstormmod.entity.cluster.WitherStormClusterEntity;
@@ -138,6 +140,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    private int siegeTicks;
    private int siegeSpawned;
 
+   // Abilities (phase-gated powers)
+   private final StormAbilitySet abilities = new StormAbilitySet();
+
    // Spawn / collapse
    private int spawnFreezeTicks;
    private int spawnFreezeTotalTicks;
@@ -146,6 +151,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    public WitherStormEntity(EntityType<? extends WitherStormEntity> type, Level level) {
       super(type, level);
+      this.abilities.add(new SuperSkullAbility());
    }
 
    // ------------------------------------------------------------------ data
@@ -591,6 +597,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.tickSiege(server);
       this.tickSnatch(server);
       this.tickSpawnAnimation(server);
+      this.abilities.tick(this, server);
 
       // Broadcast position so the distant renderer + HUD work.
       if (this.tickCount % 2 == 0) {
