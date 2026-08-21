@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "#  ",
+    "## ",
+    "###"
+  ],
+  "key": {
+    "#": "dabywitherstormmod:withered_cobblestone"
+  },
+  "result": {
+    "id": "dabywitherstormmod:withered_cobblestone_stairs",
+    "count": 4
+  }
+}

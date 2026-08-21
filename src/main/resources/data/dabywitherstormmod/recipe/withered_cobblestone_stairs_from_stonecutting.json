@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": "dabywitherstormmod:withered_cobblestone",
+  "result": {
+    "id": "dabywitherstormmod:withered_cobblestone_stairs",
+    "count": 1
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " P ",
+    "EDE",
+    "III"
+  ],
+  "key": {
+    "P": "minecraft:repeater",
+    "E": "dabywitherstormmod:command_essence",
+    "D": "minecraft:redstone",
+    "I": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "dabywitherstormmod:command_circuit",
+    "count": 1
+  }
+}

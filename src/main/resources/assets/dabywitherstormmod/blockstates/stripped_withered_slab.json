@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "dabywitherstormmod:block/stripped_withered_slab"
+    },
+    "type=top": {
+      "model": "dabywitherstormmod:block/stripped_withered_slab_top"
+    },
+    "type=double": {
+      "model": "dabywitherstormmod:block/stripped_withered_planks"
+    }
+  }
+}
