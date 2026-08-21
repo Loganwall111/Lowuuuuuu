@@ -16,3 +16,4 @@ mod/
 
 # ffmpeg.exe + build source shipped inside the mod's assets — dev artifacts, not runtime assets
 src/main/resources/assets/dabywitherstormmod/sounds/ffmpeg/
+__pycache__/
