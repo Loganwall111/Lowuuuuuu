@@ -945,6 +945,53 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    }
 
    public void carveAlong(float[] points) {
+      Level var5 = this.level();
+      if (!CARVE_ENABLED) {
+         this.carveStatus("disabled");
+         return;
+      }
+
+      if (var5 instanceof ServerLevel server) {
+         if (this.isCollapsed() || this.phase < TENTACLE_CARVE_PHASE) {
+            this.carveStatus("ignored (phase " + this.phase + ")");
+            return;
+         }
+
+         long now = server.getGameTime();
+         if (now - this.lastCarveTick < (long)CARVE_INTERVAL) {
+            return;
+         }
+
+         // `points` is a flat list of world-space (x, y, z) triples traced along the
+         // tentacle tips. Carve a sphere around each one, projected down onto the
+         // ground so we shred terrain rather than open sky. A small per-call cap keeps
+         // the network payload from being abusable.
+         int cap = 48;
+         int broken = 0;
+         int processed = 0;
+         for(int i = 0; i + 2 < points.length && processed < cap; i += 3, ++processed) {
+            double x = (double)points[i];
+            double y = (double)points[i + 1];
+            double z = (double)points[i + 2];
+            BlockPos column = new BlockPos(Mth.floor(x), 0, Mth.floor(z));
+            if (!server.hasChunkAt(column)) {
+               continue;
+            }
+
+            int groundY = server.getHeightmapPos(Types.MOTION_BLOCKING, column).getY();
+            double carveY = y;
+            if (carveY > (double)groundY + 6.0) {
+               carveY = (double)groundY + 1.0;
+            }
+
+            broken += this.carveSphere(server, new Vec3(x, carveY, z), TENTACLE_RADIUS);
+         }
+
+         if (broken > 0) {
+            this.lastCarveTick = now;
+            this.carveStatus("carved " + broken + " blocks");
+         }
+      }
    }
 
    private int carveSphere(ServerLevel server, Vec3 centre, double radius) {
@@ -2601,6 +2648,23 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    }
 
    private void cocoonTick(Player ultimate) {
+      // Phase 3 cocoon behaviour: the storm stops duelling like a Wither and becomes
+      // a slow, dormant, absorbing mass. It bobs gently in place and periodically lets
+      // out a low, drawn-out growl with a puff of dark motes to sell the "wrapping" feel.
+      // Movement during this window is already handled by phase3Hover(), so this only
+      // adds the audio/atmosphere layer to avoid fighting the movement code.
+      Level var3 = this.level();
+      if (var3 instanceof ServerLevel server && !this.isPhase4() && this.phase >= 3.0 && this.phase < 4.0) {
+         if (this.tickCount % 40 == 0) {
+            server.playSound((Entity)null, this.getX(), this.getY(), this.getZ(), ModSounds.STORM_GROW, SoundSource.HOSTILE, 5.0F, 0.82F);
+         }
+
+         if (this.tickCount % 5 == 0 && this.random.nextInt(4) == 0) {
+            Vec3 c = this.getBoundingBox().getCenter();
+            server.sendParticles(AURA_MOTE, c.x + (this.random.nextDouble() - 0.5) * 4.0, c.y + this.random.nextDouble() * 2.0, c.z + (this.random.nextDouble() - 0.5) * 4.0, 1, 0.0, -0.02, 0.0, 0.5);
+         }
+
+      }
    }
 
    private double tickTentacleGrab(WitherStormWorldConfig cfg, double normalY) {
