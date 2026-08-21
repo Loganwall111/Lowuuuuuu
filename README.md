@@ -32,12 +32,38 @@ mod/                      Full raw extraction of the jar (gitignored; reference 
 
 ## Building (on a machine with Java 25 + network access to Fabric/Maven)
 
+The repo ships with the **Gradle wrapper** (`gradlew`, `gradlew.bat`,
+`gradle/wrapper/gradle-wrapper.properties`). Only the wrapper **jar** needs fetching
+once (it is a ~43 KB binary and can't be committed as text). Two ways:
+
+```bash
+# A) One-shot script (recommended) — downloads gradle-wrapper.jar:
+bash tools/setup-gradle-wrapper.sh
+
+# B) If you already have any Gradle 8+/9+ installed:
+gradle wrapper --gradle-version 9.5.1
+```
+
+Then:
+
 ```bash
 # 1. Make sure fabric_version + yarn_mappings are set in gradle.properties
 # 2. Build
-gradle build
+./gradlew build            # Linux / macOS
+# gradlew.bat build        # Windows
 # output: build/libs/dabywitherstormmod-1.9.60-26.2-beta.jar
 ```
+
+> `gradle-wrapper.properties` pins **Gradle 9.5.1** (matches the original jar's
+> `Fabric-Gradle-Version`). If Fabric Loom 1.17.19 needs a newer Gradle, bump the
+> version there and re-run the setup script.
+
+## Recovering the "missing" classes from the original jar
+
+See **`tools/restore-missing-classes.sh`** — it decompiles
+`dabywitherstormmod-1.9.60-26.2-beta.zip` and drops the 129 missing `.java` files back
+into `src/main/java`, unblocking the mixins, models, renderers and items the clean
+rewrite needs to compile fully.
 
 ## The rewrite
 
