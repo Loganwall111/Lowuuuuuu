@@ -108,3 +108,30 @@ full bloom, precise shadow silhouette) cannot be enabled.
 As the missing classes come back and the next phases land, the storm will visually and
 mechanically approach the video. The foundation (phase machine, ability framework,
 config, structure-hunt, death cinematic) is in place.
+
+---
+
+## HOW TO RESTORE THE MISSING CLASSES (recently updated)
+
+Every missing class still exists as a `.class` file inside the **original jar**,
+which has been restored to the repo root:
+
+    dabywitherstormmod-1.9.60-26.2-beta.zip
+
+**Steps (run on a machine with Java 25 + internet, not the Arena sandbox):**
+
+```bash
+# 1. Make sure the jar is present (it is committed):
+git checkout 4287fad -- dabywitherstormmod-1.9.60-26.2-beta.zip
+
+# 2. Decompile the jar and copy the missing classes into the source tree:
+bash tools/restore-missing-classes.sh
+
+# 3. Build; paste any compile errors and I'll fix them:
+gradle build
+```
+
+This restores all 14 mixins, the 11 model classes, the 11 entity renderers, the
+entity/state + withered + item + menu + nether + network classes. That unblocks the
+glossy clouds / volumetric fog / bloom / shadow silhouette / skybox, the
+head/tentacle/severed rendering, and the Rocket Retriever / Formidibomb items.
