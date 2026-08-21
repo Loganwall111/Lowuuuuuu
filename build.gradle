@@ -23,12 +23,16 @@ repositories {
 }
 
 loom {
-	splitEnvironmentSourceSets()
+	// NOTE: do NOT use splitEnvironmentSourceSets() here. This mod keeps all of its
+	// code (including the client-only renderers/models in src/main/java) in the MAIN
+	// source set, and those classes reference net.minecraft.client.* directly.
+	// With split source sets, net.minecraft.client.* is only on the `client` source
+	// set's classpath, so the main source set fails with "package net.minecraft.client
+	// does not exist". The original mod was built without split source sets.
 
 	mods {
 		"dabywitherstormmod" {
 			sourceSet sourceSets.main
-			sourceSet sourceSets.client
 		}
 	}
 }
