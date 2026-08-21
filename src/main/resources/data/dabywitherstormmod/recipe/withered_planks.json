@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    "dabywitherstormmod:withered_log"
+  ],
+  "result": {
+    "id": "dabywitherstormmod:withered_planks",
+    "count": 4
+  }
+}

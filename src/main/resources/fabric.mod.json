@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "dabywitherstormmod",
+	"version": "1.9.60-26.2-beta",
+	"name": "Dabicco's Wither Storm Mod",
+	"description": "Adds The Wither Storm from Minecraft: Story Mode: a mutant wither that grows through several phases, flattens your world as it consumes it, and hunts you across it. Possessed enemies, deep configuration, multiplayer support, and a proper final boss fight. No matter how far you go, you cannot escape The Wither Storm.",
+	"authors": [
+		"Dabicco - Lead Programmer",
+		"Joeyready - Textures, Blocks, Items & Build"
+	],
+	"contact": {
+		"homepage": "https://discord.gg/eKDqAmSPzj",
+		"issues": "https://discord.gg/eKDqAmSPzj"
+	},
+	"license": "MIT",
+	"icon": "assets/dabywitherstormmod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.dabicco.witherstormmod.DabyWitherStormMod"
+		],
+		"client": [
+			"net.dabicco.witherstormmod.DabyWitherStormModClient"
+		],
+		"modmenu": [
+			"net.dabicco.witherstormmod.client.ModMenuIntegration"
+		]
+	},
+	"mixins": [
+		"dabywitherstormmod.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
