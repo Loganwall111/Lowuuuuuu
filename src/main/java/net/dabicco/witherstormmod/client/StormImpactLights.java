@@ -149,7 +149,7 @@ public final class StormImpactLights {
                               }
                            }
 
-                           for(ClientDistantStormManager.StormData storm : DabyWSClientConfig.distantStorms ? ClientDistantStormManager.all() : List.of()) {
+                           for(ClientDistantStormManager.StormData storm : DabyWSClientConfig.distantStorms ? ClientDistantStormManager.all() : List.<ClientDistantStormManager.StormData>of()) {
                               if (mc.level.getEntity(storm.entityId) == null) {
                                  for(int i = 0; i < storm.beamActive.length; ++i) {
                                     if (storm.beamActive[i]) {

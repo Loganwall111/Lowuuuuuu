@@ -1086,14 +1086,10 @@ public class WitherStormClusterEntity extends Entity {
       this.radius = input.getIntOr("Radius", this.radius);
       this.blocks.clear();
       this.blockOffsets.clear();
-      Optional var10000 = input.read("Blocks", BlockState.CODEC.listOf());
-      List var10001 = this.blocks;
-      Objects.requireNonNull(var10001);
-      var10000.ifPresent(var10001::addAll);
-      var10000 = input.read("Offsets", BlockPos.CODEC.listOf());
-      var10001 = this.blockOffsets;
-      Objects.requireNonNull(var10001);
-      var10000.ifPresent(var10001::addAll);
+      Optional<List<BlockState>> blocksOpt = input.read("Blocks", BlockState.CODEC.listOf());
+      blocksOpt.ifPresent(this.blocks::addAll);
+      Optional<List<BlockPos>> offsetsOpt = input.read("Offsets", BlockPos.CODEC.listOf());
+      offsetsOpt.ifPresent(this.blockOffsets::addAll);
       if (!this.blocks.isEmpty() && this.blockOffsets.size() == this.blocks.size()) {
          this.recomputeFaceVisibility();
          String storm = input.getStringOr("StormUUID", "");

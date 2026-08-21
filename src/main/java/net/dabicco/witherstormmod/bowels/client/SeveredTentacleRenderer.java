@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-public class SeveredTentacleRenderer extends EntityRenderer<SeveredTentacleEntity, State> {
+public class SeveredTentacleRenderer extends EntityRenderer<SeveredTentacleRenderer.State> {
    private final EntityModelSet modelSet;
 
    protected AABB getBoundingBoxForCulling(SeveredTentacleEntity entity) {

@@ -984,7 +984,7 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-      BowelsHeartEntity heart = source.getEntity();
+      Entity heart = source.getEntity();
       if (heart instanceof LivingEntity attacker) {
          if (attacker instanceof Player rider) {
             if (ridingAny(this.level(), rider)) {

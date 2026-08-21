@@ -71,7 +71,7 @@ public final class StormSpawnPlatform {
       if (overworld == null) {
          return false;
       } else {
-         StructureTemplate template = (StructureTemplate)overworld.getStructureManager().get(STRUCTURE).orElse((Object)null);
+         StructureTemplate template = overworld.getStructureManager().get(STRUCTURE).orElse(null);
          if (template == null) {
             return false;
          } else {
@@ -197,7 +197,7 @@ public final class StormSpawnPlatform {
          if (Files.exists(marker, new LinkOption[0])) {
             loadTowerBox(marker);
          } else {
-            StructureTemplate template = (StructureTemplate)overworld.getStructureManager().get(STRUCTURE).orElse((Object)null);
+            StructureTemplate template = overworld.getStructureManager().get(STRUCTURE).orElse(null);
             if (template == null) {
                DabyWitherStormMod.LOGGER.warn("[storm platform] structure {} not found; not placing", STRUCTURE);
             } else {

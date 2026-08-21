@@ -889,7 +889,7 @@ public class WitherStormHeadEntity extends Entity {
                      boolean eat = WitherStormConfigs.get(server).mobPickup != 0 && this.level().getEntity(this.getStormId()) instanceof WitherStormEntity;
                      WitherStormEntity ws = eat ? (WitherStormEntity)this.level().getEntity(this.getStormId()) : null;
                      if (ws != null) {
-                        for(LivingEntity v : new ArrayList(this.victims)) {
+                        for(LivingEntity v : new ArrayList<>(this.victims)) {
                            if (!(v instanceof Player)) {
                               ws.doomMob(v);
                               this.victims.remove(v);

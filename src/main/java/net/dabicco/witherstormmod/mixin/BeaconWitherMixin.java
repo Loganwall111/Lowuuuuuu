@@ -125,13 +125,13 @@ public abstract class BeaconWitherMixin implements WitheredBeacon {
                level.sendBlockUpdated(pos, state, state, 3);
             }
 
-            ((BeaconWitherMixin)beacon).dabyws$boost(level, pos);
+            ((WitheredBeacon)beacon).dabyws$boost(level, pos);
          }
       }
    }
 
    @Unique
-   private void dabyws$boost(Level level, BlockPos pos) {
+   public void dabyws$boost(Level level, BlockPos pos) {
       if (this.levels > 0) {
          BeaconBlockEntity self = (BeaconBlockEntity)(Object)this;
          WitheredBeacon flags = (WitheredBeacon)self;
@@ -153,7 +153,7 @@ public abstract class BeaconWitherMixin implements WitheredBeacon {
    }
 
    @Unique
-   private void dabyws$give(List<Player> players, Holder<MobEffect> effect, int duration, int amplifier) {
+   public void dabyws$give(List<Player> players, Holder<MobEffect> effect, int duration, int amplifier) {
       for (Player player : players) {
          player.addEffect(new MobEffectInstance(effect, duration, amplifier, true, true));
       }

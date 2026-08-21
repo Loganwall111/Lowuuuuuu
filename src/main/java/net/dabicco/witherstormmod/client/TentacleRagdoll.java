@@ -271,7 +271,7 @@ public final class TentacleRagdoll {
    public static Matrix4f parentTransform(ModelPart modelRoot, ModelPart target, Quaternionf outQ) {
       List<ModelPart> path = (List)((Map)PATHS.computeIfAbsent(modelRoot, (rx) -> new HashMap())).computeIfAbsent(target, (t) -> {
          List<ModelPart> acc = new ArrayList();
-         return findPath(modelRoot, t, acc) ? acc : List.of();
+         return findPath(modelRoot, t, acc) ? acc : List.<ModelPart>of();
       });
       if (path.isEmpty()) {
          return null;

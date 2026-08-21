@@ -13,6 +13,6 @@ public class ModComponents {
    }
 
    static {
-      RETRIEVER_CONTENTS = DataComponentType.builder().persistent(RetrieverContents.CODEC).networkSynchronized(RetrieverContents.STREAM_CODEC).cacheEncoding().build();
+      RETRIEVER_CONTENTS = DataComponentType.<RetrieverContents>builder().persistent(RetrieverContents.CODEC).networkSynchronized(RetrieverContents.STREAM_CODEC).cacheEncoding().build();
    }
 }

@@ -1,5 +1,8 @@
 package net.dabicco.witherstormmod.beacon;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+
 public interface WitheredBeacon {
    boolean dabyws$isWithered();
 
@@ -8,4 +11,7 @@ public interface WitheredBeacon {
    boolean dabyws$isAffected();
 
    void dabyws$setAffected(boolean var1);
+
+   /** Unique method exposed so the static tick inject can boost a withered beacon. */
+   void dabyws$boost(Level level, BlockPos pos);
 }

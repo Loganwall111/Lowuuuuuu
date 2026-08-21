@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 
-public class BowelsPedestalRenderer extends EntityRenderer<BowelsPedestalEntity, State> {
+public class BowelsPedestalRenderer extends EntityRenderer<BowelsPedestalRenderer.State> {
    public BowelsPedestalRenderer(EntityRendererProvider.Context context) {
       super(context);
    }

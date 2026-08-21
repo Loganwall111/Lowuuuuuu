@@ -160,7 +160,7 @@ public final class CubeReveal {
          }
 
          Arrays.sort(byHeight, (a, bx) -> Float.compare(((CubeBox)boxes.get(a)).height(), ((CubeBox)boxes.get(bx)).height()));
-         PriorityQueue<Integer> frontier = new PriorityQueue((a, bx) -> Float.compare(((CubeBox)boxes.get(a)).height(), ((CubeBox)boxes.get(bx)).height()));
+         PriorityQueue<Integer> frontier = new PriorityQueue<>((a, bx) -> Float.compare(((CubeBox)boxes.get(a)).height(), ((CubeBox)boxes.get(bx)).height()));
          float lowest = ((CubeBox)boxes.get(byHeight[0])).height();
 
          for(Integer i : byHeight) {

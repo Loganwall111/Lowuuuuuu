@@ -153,7 +153,7 @@ public class DabyWitherStormModClient implements ClientModInitializer {
       ItemTooltipCallback.EVENT.register((ItemTooltipCallback)(stack, context, flag, lines) -> {
          PotionContents contents = (PotionContents)stack.get(DataComponents.POTION_CONTENTS);
          if (contents != null) {
-            Holder<Potion> potion = (Holder)contents.potion().orElse((Object)null);
+            Holder<Potion> potion = contents.potion().orElse(null);
             if (ModPotions.isHyperInvisibility(potion)) {
                lines.add(Component.literal("Shields you from the eyes of dastardly beasts...").withStyle(ChatFormatting.DARK_PURPLE).withStyle(ChatFormatting.ITALIC));
             }

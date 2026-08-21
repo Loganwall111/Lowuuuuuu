@@ -40,8 +40,8 @@ public class ClientConfigCommandHandler {
             case 2:
                mc.player.sendSystemMessage(Component.literal("Wither Storm client config (only you):").withStyle(ChatFormatting.AQUA));
 
-               for(DabyWSClientConfig.Key key : DabyWSClientConfig.KEYS.values()) {
-                  mc.player.sendSystemMessage(Component.literal("  " + key.name() + " = ").withStyle(ChatFormatting.GRAY).append(Component.literal(format(key, key.get().getAsDouble())).withStyle(ChatFormatting.WHITE)));
+               for(DabyWSClientConfig.Key k : DabyWSClientConfig.KEYS.values()) {
+                  mc.player.sendSystemMessage(Component.literal("  " + k.name() + " = ").withStyle(ChatFormatting.GRAY).append(Component.literal(format(k, k.get().getAsDouble())).withStyle(ChatFormatting.WHITE)));
                }
                break;
             case 3:

@@ -56,7 +56,7 @@ public class DistantStormRenderer {
          float frac = optimize ? 0.0F : mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
          long gt = mc.level.getGameTime();
          float now = (float)(gt % 100000L) + frac;
-         EntityRenderer<WitherStormEntity, WitherStormRenderState> stormRenderer = mc.getEntityRenderDispatcher().getRenderer(proxyStorm);
+         EntityRenderer<WitherStormEntity, WitherStormRenderState> stormRenderer = (EntityRenderer) mc.getEntityRenderDispatcher().getRenderer(proxyStorm);
          float dt = Mth.clamp(mc.getDeltaTracker().getRealtimeDeltaTicks(), 0.0F, 4.0F);
          float ease = 1.0F - (float)Math.exp((double)(-dt * 3.5F));
          float maxTurn = 7.0F * dt;
@@ -184,7 +184,7 @@ public class DistantStormRenderer {
    }
 
    private static void submitDistantSevered(Minecraft mc, ClientDistantStormManager.StormData d, PoseStack pose, SubmitNodeCollector consumers, LevelRenderContext ctx, Vec3 renderRel, double squash, float frac, float now, float ease, float maxTurn) {
-      EntityRenderer<SeveredWitherStormEntity, SeveredWitherStormRenderState> sevRenderer = mc.getEntityRenderDispatcher().getRenderer(proxySevered[0]);
+      EntityRenderer<SeveredWitherStormEntity, SeveredWitherStormRenderState> sevRenderer = (EntityRenderer) mc.getEntityRenderDispatcher().getRenderer(proxySevered[0]);
 
       for(WitherStormPositionPacket.SeveredData s : d.severed) {
          if (mc.level == null || mc.level.getEntity(s.entityId()) == null) {
