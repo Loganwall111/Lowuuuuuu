@@ -1,103 +1,85 @@
-# Missing source classes (must be restored before the mod can compile)
+# Missing source classes — status & what still needs re-decompiling
 
-The decompiled source in `src/main/java/` is **incomplete**. The project cannot
-compile in its current state because **52 classes** that the present files import
-and reference have no `.java` source. These are *not* optional — classes such as
-`SigeonNetwork`, `WitherStormEntity`, and `ModItems` directly depend on them.
+This file tracks the source classes the decompiled `src/main/java` is missing.
+A first audit found 52 classes via `import` statements; a second, deeper audit
+found **more** classes that are referenced only by **same-package** name (so no
+`import` line exists), most importantly the model classes. Several have now been
+reconstructed. The rest fall into two groups: those that can be reconstructed
+from their consumers, and those that **cannot be reproduced without the original
+bytecode/source**.
 
-> These were almost certainly just missed by the decompiler/export step. Re-decompile
-> the original jar (`dabywitherstormmod-1.9.60-26.2-beta`) and drop the missing files
-> into the matching package folders below, or re-export the full source tree.
+## ✅ Reconstructed (committed)
 
-## The missing files, by package
+| Class | Package | Confidence | Source of truth |
+|---|---|---|---|
+| `StormRemovedPacket` | network | High | `SigeonNetwork`, `WitherStormEntity`, `StormSkyDarken` |
+| `WitherStormPositionPacket` (+`HeadData`,`SeveredData`) | network | High | `SigeonNetwork`, `ClientDistantStormManager`, `DistantStormRenderer`, `WitherStormEntity` |
+| `TentaclePathPayload` | network | High | `SigeonNetwork` |
+| `CaveRumblePayload` | network | High | `CaveRumble`, `BowelsBoss`, `CaveRumbleClient` |
+| `CommandBlockPowerPayload` | network | High | `BowelsHeartEntity`, client handler |
+| `FormidibombFlashPayload` | network | High | `FormidibombEntity`, `FormidibombFlash` |
+| `SpawnStructurePayload` | network | High | `DabyWitherStormMod`, client handler |
+| `WitherSicknessPayload` | network | High | `WitherSickness`, `ClientSicknessManager` |
+| `WitheredCastPayload` | network | High | `ClientWitheredManager` |
+| `ActionButtonPayload` | network | High | `BowelsActionKeys`, `ActionButtons` |
+| `WitherStormRenderState` | entity.state | High | `SnatchGrab`, `TentaclePhysics`, `StormModelPreview`, `DistantStormRenderer`, models |
+| `WitherStormHeadRenderState` | entity.state | High | `DistantStormRenderer`, `BowelsMawRenderer` |
+| `SeveredWitherStormRenderState` | entity.state | High | `StormModelPreview`, `DistantStormRenderer` |
+| `WitherStormClusterRenderState` | entity.state | High | `WitherStormClusterRenderer` |
+| `BlackHoleRenderState` | entity.state | High | `BlackHoleRenderer` |
+| `DarkenedMovingBlockRenderState` | entity.state | High | `WitherStormClusterRenderer` |
+| `ModMenus` | menu | Medium | Fabric `MenuTypeRegistry` / `FabricMenuTypeBuilder` API |
+| `FurnaceFilterMenu` | menu | Medium | `FurnaceFilterBlockEntity.createMenu`, `FurnaceFilterScreen` |
+| `NetherScaleManager` | nether | Medium | `DabyWSCommand.trigger`, `NetherScaleEntity` |
 
-### `net.dabicco.witherstormmod.network` (10) — networking payloads/packets
-- `ActionButtonPayload`
-- `CaveRumblePayload`
-- `CommandBlockPowerPayload`
-- `FormidibombFlashPayload`
-- `SpawnStructurePayload`
-- `StormRemovedPacket`
-- `TentaclePathPayload`
-- `WitherSicknessPayload`
-- `WitherStormPositionPacket`
-- `WitheredCastPayload`
+All reconstructed files follow the mod's existing patterns (e.g. the
+`RegistryFriendlyByteBuf` + `StreamCodec` payload pattern from
+`ClusterBlocksPayload`/`SyncWitherStormConfigPayload`) and match the exact field
+names/accessors the present code calls.
 
-### `net.dabicco.witherstormmod.mixin` (14) — mixin accessors / invokers
-- `CubePolygonsAccessor`
-- `FireworkRocketEntityAccessor`
-- `GameRendererAccessor`
-- `ItemTintSourcesAccessor`
-- `LevelRendererTargetsAccessor`
-- `LivingEntitySwimAccessor`
-- `ModelPartAccessor`
-- `ModelPartCubesAccessor`
-- `RangeSelectItemModelPropertiesAccessor`
-- `RenderPipelinesAccessor`
-- `RenderTypeInvoker`
-- `SelectItemModelPropertiesAccessor`
-- `SoundBufferAccessor`
-- `WitherBossAccessor`
+## ⛔ Cannot be reconstructed without the original source/bytecode
 
-### `net.dabicco.witherstormmod.entity.renderer` (11) — entity renderers
-- `CrossDimensionalRenderer`
-- `FormidibombRenderer`
-- `GrabTentacleRenderer`
-- `GrappledTntRenderer`
-- `NetherScaleRenderer`
-- `SeveredWitherStormRenderer`
-- `SuperSkullRenderer`
-- `SuperTntRenderer`
-- `WitherStormHeadRenderer`
-- `WitherStormRenderer`
-- `WitheredBlockRenderer`
+These are the real blockers. They cannot be written correctly from usage sites:
 
-### `net.dabicco.witherstormmod.entity.state` (6) — entity render states
-- `BlackHoleRenderState`
-- `DarkenedMovingBlockRenderState`
-- `SeveredWitherStormRenderState`
-- `WitherStormClusterRenderState`
-- `WitherStormHeadRenderState`
-- `WitherStormRenderState`
+### 1. The model classes — `entity.model` (11 files)
+These are **BlockBench-generated** geometry: thousands of lines of `addBox(...)`
+cube definitions. They are data, not logic, and cannot be recreated by hand.
+Referenced from `ModEntityModelLayers.registerModelLayers()`:
 
-### `net.dabicco.witherstormmod.item` (4) — items
-- `FormidibombItem`
-- `RetrieverContents`
-- `RetrieverTooltip`
-- `RocketRetrieverItem`
-
-### `net.dabicco.witherstormmod.menu` (2) — screens/menus
-- `FurnaceFilterMenu`
-- `ModMenus`
-
-### `net.dabicco.witherstormmod.entity.withered` (2) — withered-mob systems
-- `WitheredBlockEntity`
-- `WitheredMobs`
-
-### `net.dabicco.witherstormmod.entity.model` (2)
+- `SuperSkull`
+- `WitherCommandBlock`
+- `WitherStormP4`
+- `WitherStormDevourer`
+- `WitherStormTentaclesDevourer`
+- `StormCoverModel`
+- `WitherStormHead` (also needs `createGlowLayer`, `createEyeGlowLayer`, `upperJaw()`)
+- `WitherStormGrowth5`
+- `WitherStormTentacles5`
 - `Tentacle`
-- `WitherStormHead`
+- `SeveredWitherStorm`
 
-### `net.dabicco.witherstormmod.nether` (1)
-- `NetherScaleManager`
+### 2. The mixin accessors/invokers — `mixin` (14 files)
+These target **unmodified Minecraft classes** and need the exact obfuscated
+field/method mapping names for MC 26.2. Guessing them will fail at runtime even if
+they compile. (Requires the real mappings / original source.)
 
-## Quick check
+`CubePolygonsAccessor`, `FireworkRocketEntityAccessor`, `GameRendererAccessor`,
+`ItemTintSourcesAccessor`, `LevelRendererTargetsAccessor`, `LivingEntitySwimAccessor`,
+`ModelPartAccessor`, `ModelPartCubesAccessor`, `RangeSelectItemModelPropertiesAccessor`,
+`RenderPipelinesAccessor`, `RenderTypeInvoker`, `SelectItemModelPropertiesAccessor`,
+`SoundBufferAccessor`, `WitherBossAccessor`.
 
-A file is "missing" if its simple name is imported anywhere in `src/main/java` but
-there is no matching `*.java`. The full list above was generated by scanning every
-`import net.dabicco.witherstormmod.*` across the source tree.
+### 3. Depends on the models above, so also blocked until they're restored
+- **renderer** (11): `WitherStormRenderer`, `WitherStormHeadRenderer`, `SeveredWitherStormRenderer`,
+  `CrossDimensionalRenderer`, `FormidibombRenderer`, `GrabTentacleRenderer`, `GrappledTntRenderer`,
+  `NetherScaleRenderer`, `SuperSkullRenderer`, `SuperTntRenderer`, `WitheredBlockRenderer`
+- **entity.withered** (2): `WitheredMobs`, `WitheredBlockEntity`
+- **item** (4): `FormidibombItem`, `RocketRetrieverItem`, `RetrieverContents`, `RetrieverTooltip`
 
-## Note on the feature work already added
+## Recommended next step
 
-Two genuine, self-contained feature gaps in `WitherStormEntity.java` have been
-implemented (they don't depend on the missing classes):
-
-- **`carveAlong(float[])`** — the destructive ground-carving pass. Carves terrain
-  spheres (`TENTACLE_RADIUS`) under each world-space point along the tentacle tips,
-  throttled by `CARVE_INTERVAL` and capped per call. Gated behind `CARVE_ENABLED`.
-- **`cocoonTick(Player)`** — phase-3 cocoon atmosphere: low growl cadence + dark
-  particle motes while the storm is a dormant, absorbing mass (movement already
-  handled by `phase3Hover()`).
-
-To turn the carving on once the project compiles, set `CARVE_ENABLED = true` in
-`WitherStormEntity.java` and `TentacleMeasure.ENABLED = true` in `TentacleMeasure.java`.
+Re-decompile the original jar and restore **at minimum** the 11 model classes and
+14 mixins above (they are the hard blockers). Once those are back, the renderer /
+item / withered classes can be reconstructed from their now-present consumers, or
+re-decompiled alongside. The 19 reconstructed classes here can then be validated
+against the real sources and corrected if any field name differs.
