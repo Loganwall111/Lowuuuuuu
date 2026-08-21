@@ -220,7 +220,7 @@ public final class TentaclePhysics {
    }
 
    private static Map<String, ModelPart> children(ModelPart part) {
-      return ((ModelPartAccessor)part).getChildren();
+      return ((ModelPartAccessor)(Object)part).getChildren();
    }
 
    private static void collect(ModelPart part, List<Chain> out) {

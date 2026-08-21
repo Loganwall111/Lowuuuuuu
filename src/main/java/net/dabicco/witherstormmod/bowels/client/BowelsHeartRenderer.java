@@ -15,7 +15,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 
-public class BowelsHeartRenderer extends EntityRenderer<BowelsHeartRenderer.State> {
+public class BowelsHeartRenderer extends EntityRenderer<BowelsHeartEntity, BowelsHeartRenderer.State> {
    private final BowelsCrackModel cracks;
 
    public BowelsHeartRenderer(EntityRendererProvider.Context context) {

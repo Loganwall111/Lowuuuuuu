@@ -334,11 +334,11 @@ public final class CubeReveal {
    }
 
    private static List<ModelPart.Cube> cubesOf(ModelPart part) {
-      return ((ModelPartCubesAccessor)part).dabyws$getCubes();
+      return ((ModelPartCubesAccessor)(Object)part).dabyws$getCubes();
    }
 
    private static Map<String, ModelPart> childrenOf(ModelPart part) {
-      return ((ModelPartAccessor)part).getChildren();
+      return ((ModelPartAccessor)(Object)part).getChildren();
    }
 
    public static void render(ModelPart root, PoseStack poseStack, VertexConsumer consumer, int light, int overlay, int color, float progress, boolean bottomUpInWorld, boolean dropSheets) {

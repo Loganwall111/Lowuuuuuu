@@ -27,15 +27,15 @@ public class ClientConfigCommandHandler {
                mc.player.sendSystemMessage(line);
                break;
             case 1:
-               DabyWSClientConfig.Key key = (DabyWSClientConfig.Key)DabyWSClientConfig.KEYS.get(payload.key());
-               if (key == null) {
+               DabyWSClientConfig.Key key1 = (DabyWSClientConfig.Key)DabyWSClientConfig.KEYS.get(payload.key());
+               if (key1 == null) {
                   return;
                }
 
-               double clamped = key.clamp(payload.value());
-               key.set().accept(clamped);
+               double clamped = key1.clamp(payload.value());
+               key1.set().accept(clamped);
                DabyWSClientConfig.save();
-               mc.player.sendSystemMessage(Component.literal("[client] " + key.name() + " set to ").withStyle(ChatFormatting.GRAY).append(Component.literal(format(key, clamped)).withStyle(ChatFormatting.GREEN)).append(Component.literal(" (only affects you)").withStyle(ChatFormatting.DARK_GRAY)));
+               mc.player.sendSystemMessage(Component.literal("[client] " + key1.name() + " set to ").withStyle(ChatFormatting.GRAY).append(Component.literal(format(key1, clamped)).withStyle(ChatFormatting.GREEN)).append(Component.literal(" (only affects you)").withStyle(ChatFormatting.DARK_GRAY)));
                break;
             case 2:
                mc.player.sendSystemMessage(Component.literal("Wither Storm client config (only you):").withStyle(ChatFormatting.AQUA));

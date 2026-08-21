@@ -2714,7 +2714,7 @@ public class WitherStormTentaclesDevourer extends EntityModel<WitherStormRenderS
    }
 
    private static Map<String, ModelPart> children(ModelPart part) {
-      return ((ModelPartAccessor)part).getChildren();
+      return ((ModelPartAccessor)(Object)part).getChildren();
    }
 
    public void setupAnim(WitherStormRenderState state) {

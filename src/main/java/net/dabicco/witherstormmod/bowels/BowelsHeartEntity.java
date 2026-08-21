@@ -153,7 +153,7 @@ public class BowelsHeartEntity extends Entity {
                   this.stance = wantStance;
 
                   for(BowelsTentacleEntity limb : server.getEntitiesOfClass(BowelsTentacleEntity.class, this.getBoundingBox().inflate((double)24.0F), BowelsTentacleEntity::isGuard)) {
-                     limb.setStance(want, true);
+                     limb.setStance(wantStance, true);
                   }
                }
             }

@@ -17,7 +17,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
-public class BowelsTentacleRenderer extends EntityRenderer<BowelsTentacleRenderer.State> {
+public class BowelsTentacleRenderer extends EntityRenderer<BowelsTentacleEntity, BowelsTentacleRenderer.State> {
    public static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/entity/phase_4_assets.png");
    private final EntityModelSet modelSet;
 

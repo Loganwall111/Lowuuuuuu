@@ -50,9 +50,9 @@ public class ModEntityTypes {
       GRAB_TENTACLE = register("grab_tentacle", Builder.of(GrabTentacleEntity::new, MobCategory.MISC).sized(3.0F, 3.0F).clientTrackingRange(10000).updateInterval(1));
       CROSS_DIMENSIONAL = register("cross_dimensional", Builder.of(CrossDimensionalEntity::new, MobCategory.MISC).sized(1.0F, 1.0F).clientTrackingRange(10000).updateInterval(1));
       NETHER_SCALE = register("nether_scale", Builder.of(NetherScaleEntity::new, MobCategory.MISC).sized(1.0F, 1.0F).clientTrackingRange(10000).updateInterval(1));
-      SUPER_TNT = register("super_tnt", Builder.of((EntityType<? extends SuperTntEntity> t, Level l) -> new SuperTntEntity(t, l), MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10000).updateInterval(10).fireImmune());
-      FORMIDIBOMB = register("formidibomb", Builder.of((EntityType<? extends FormidibombEntity> t, Level l) -> new FormidibombEntity(t, l), MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10000).updateInterval(1).fireImmune());
-      GRAPPLED_TNT = register("grappled_tnt", Builder.of((EntityType<? extends GrappledTntEntity> t, Level l) -> new GrappledTntEntity(t, l), MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10000).updateInterval(1).fireImmune());
+      SUPER_TNT = register("super_tnt", Builder.of((EntityType<SuperTntEntity> t, Level l) -> new SuperTntEntity(t, l), MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10000).updateInterval(10).fireImmune());
+      FORMIDIBOMB = register("formidibomb", Builder.of((EntityType<FormidibombEntity> t, Level l) -> new FormidibombEntity(t, l), MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10000).updateInterval(1).fireImmune());
+      GRAPPLED_TNT = register("grappled_tnt", Builder.of((EntityType<GrappledTntEntity> t, Level l) -> new GrappledTntEntity(t, l), MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10000).updateInterval(1).fireImmune());
       BLACK_HOLE = register("black_hole", Builder.of(BlackHoleEntity::new, MobCategory.MISC).sized(2.0F, 2.0F).clientTrackingRange(10000).updateInterval(1));
       WITHERED_BLOCK = register("withered_block", Builder.of(WitheredBlockEntity::new, MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1));
       SEVERED_WITHER_STORM = register("severed_wither_storm", Builder.of(SeveredWitherStormEntity::new, MobCategory.MISC).sized(0.9F, 3.5F).clientTrackingRange(10000).updateInterval(1));

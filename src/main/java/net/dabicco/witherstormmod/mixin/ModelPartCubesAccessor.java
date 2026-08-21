@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin({ModelPart.class})
-public interface ModelPartCubesAccessor extends ModelPart {
+public interface ModelPartCubesAccessor {
    @Accessor("cubes")
    List<Cube> dabyws$getCubes();
 }
