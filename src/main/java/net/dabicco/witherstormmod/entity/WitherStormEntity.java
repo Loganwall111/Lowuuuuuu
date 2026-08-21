@@ -3,8 +3,10 @@ package net.dabicco.witherstormmod.entity;
 import java.util.UUID;
 import net.dabicco.witherstormmod.ModItems;
 import net.dabicco.witherstormmod.ModSounds;
+import net.dabicco.witherstormmod.entity.ability.BlockClusterAbility;
 import net.dabicco.witherstormmod.entity.ability.StormAbilitySet;
 import net.dabicco.witherstormmod.entity.ability.SuperSkullAbility;
+import net.dabicco.witherstormmod.entity.ability.TornadoAbility;
 import net.dabicco.witherstormmod.entity.ability.TractorBeamAbility;
 import net.dabicco.witherstormmod.config.WitherStormConfigs;
 import net.dabicco.witherstormmod.config.WitherStormWorldConfig;
@@ -154,6 +156,8 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       super(type, level);
       this.abilities.add(new SuperSkullAbility());
       this.abilities.add(new TractorBeamAbility());
+      this.abilities.add(new BlockClusterAbility());
+      this.abilities.add(new TornadoAbility());
    }
 
    // ------------------------------------------------------------------ data
