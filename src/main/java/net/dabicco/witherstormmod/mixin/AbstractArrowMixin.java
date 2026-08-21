@@ -32,7 +32,7 @@ public abstract class AbstractArrowMixin {
       at = {@At("HEAD")}
    )
    private void dabyws$weakenWitheredArrows(Entity owner, CallbackInfo ci) {
-      AbstractArrow self = (AbstractArrow)this;
+      AbstractArrow self = (AbstractArrow)(Object)this;
       if (self.getOwner() == null) {
          if (owner instanceof LivingEntity living && WitheredMobs.isWithered(living)) {
             self.setBaseDamage(0.6);

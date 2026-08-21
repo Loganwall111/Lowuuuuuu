@@ -118,7 +118,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       cancellable = true
    )
    private void dabyws$turnedBox(Vec3 feet, CallbackInfoReturnable<AABB> cir) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       if (self instanceof LivingEntity) {
          Direction gravity = BowelsFrame.boxAxis(self);
          if (gravity != Direction.DOWN) {
@@ -134,7 +134,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       ordinal = 0
    )
    private Vec3 dabyws$intoWorld(Vec3 movement) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       Direction gravity = BowelsFrame.active(self);
       if (gravity == null) {
          return movement;
@@ -153,7 +153,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       at = {@At("RETURN")}
    )
    private void dabyws$backToFrame(MoverType type, Vec3 movement, CallbackInfo ci) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       Direction gravity = BowelsFrame.active(self);
       if (gravity != null) {
          self.setDeltaMovement(BowelsFrame.toFrame(gravity, self.getDeltaMovement()));
@@ -189,7 +189,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       cancellable = true
    )
    private void dabyws$noVanillaStep(CallbackInfoReturnable<Float> cir) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       if (BowelsFrame.boxAxis(self) != Direction.DOWN) {
          cir.setReturnValue(0.0F);
       }
@@ -202,7 +202,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       ordinal = 1
    )
    private double dabyws$fellAlongPull(double y) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       Direction gravity = BowelsFrame.boxAxis(self);
       if (gravity == Direction.DOWN) {
          return y;
@@ -219,7 +219,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       ordinal = 0
    )
    private boolean dabyws$groundInFrame(boolean onGround) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       if (!(self instanceof LivingEntity)) {
          return onGround;
       } else {
@@ -239,7 +239,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       cancellable = true
    )
    private void dabyws$supportInFrame(boolean onGround, Vec3 movement, CallbackInfo ci) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       Direction gravity = BowelsFrame.boxAxis(self);
       if (gravity != Direction.DOWN) {
          ci.cancel();
@@ -255,7 +255,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       cancellable = true
    )
    private void dabyws$eye(CallbackInfoReturnable<Vec3> cir) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       Direction gravity = BowelsFrame.boxAxis(self);
       if (gravity != Direction.DOWN) {
          cir.setReturnValue(BowelsFrame.eye(gravity, self.position(), (double)self.getEyeHeight()));
@@ -268,7 +268,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       cancellable = true
    )
    private void dabyws$eyeY(CallbackInfoReturnable<Double> cir) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       Direction gravity = BowelsFrame.boxAxis(self);
       if (gravity != Direction.DOWN) {
          cir.setReturnValue(BowelsFrame.eye(gravity, self.position(), (double)self.getEyeHeight()).y);
@@ -281,7 +281,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       cancellable = true
    )
    private void dabyws$eyeAt(float partialTick, CallbackInfoReturnable<Vec3> cir) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       Direction gravity = BowelsFrame.boxAxis(self);
       if (gravity != Direction.DOWN) {
          cir.setReturnValue(BowelsFrame.eye(gravity, self.getPosition(partialTick), (double)self.getEyeHeight()));
@@ -294,7 +294,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       cancellable = true
    )
    private void dabyws$turnedLook(float xRot, float yRot, CallbackInfoReturnable<Vec3> cir) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       if (BowelsFrame.active(self) == null) {
          Direction gravity = BowelsFrame.boxAxis(self);
          if (gravity != Direction.DOWN) {
@@ -309,7 +309,7 @@ public abstract class BowelsEntityMixin implements BowelsBody {
       cancellable = true
    )
    private void dabyws$noFallDamage(double dropped, boolean onGround, BlockState state, BlockPos pos, CallbackInfo ci) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       if (BowelsGravity.isBowels(self.level())) {
          self.resetFallDistance();
          ci.cancel();

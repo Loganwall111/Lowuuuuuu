@@ -653,9 +653,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
                }
 
                if (this.tickCount % 2 == 0) {
-                  Level gameTime = this.level();
-                  if (gameTime instanceof ServerLevel) {
-                     ServerLevel sl = (ServerLevel)gameTime;
+                  Level lvl = this.level();
+                  if (lvl instanceof ServerLevel) {
+                     ServerLevel sl = (ServerLevel)lvl;
                      long gameTime = sl.getGameTime();
                      WitherStormPositionPacket.HeadData[] heads = new WitherStormPositionPacket.HeadData[3];
 
@@ -3750,8 +3750,8 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
                break;
             default:
                Player u = this.getUltimateTarget();
-               Player n = this.nearestTargetable();
-               var10000 = this.isTargetable(u) ? u.position() : (n != null ? n.position() : null);
+               Player nn = this.nearestTargetable();
+               var10000 = this.isTargetable(u) ? u.position() : (nn != null ? nn.position() : null);
          }
 
          return var10000;
@@ -3853,7 +3853,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       if (!(var2 instanceof ServerLevel server)) {
          return null;
       } else {
-         ArrayList var9 = new ArrayList();
+         ArrayList<Player> var9 = new ArrayList();
 
          for(Player p : this.targetablePlayers()) {
             if (p.distanceToSqr(this) < (double)9216.0F) {
@@ -3910,9 +3910,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       Optional<HolderSet.Named<Structure>> tag = registry.get(STORM_TARGETS);
       List<Holder<Structure>> wanted = new ArrayList();
       if (tag.isPresent()) {
-         HolderSet.Named var10000 = (HolderSet.Named)tag.get();
+         HolderSet.Named<Structure> named = (HolderSet.Named<Structure>)tag.get();
          Objects.requireNonNull(wanted);
-         var10000.forEach(wanted::add);
+         named.forEach(wanted::add);
       }
 
       if (wanted.isEmpty()) {

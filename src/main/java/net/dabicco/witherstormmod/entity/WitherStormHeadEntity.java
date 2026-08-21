@@ -1623,8 +1623,8 @@ public class WitherStormHeadEntity extends Entity {
                ArmorStand stand = (ArmorStand)type;
                stand.discard();
             } else {
-               Holder.Reference<DamageType> type = server.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(this.chompDamageOverride != null ? this.chompDamageOverride : CHOMP_DAMAGE);
-               this.suckedEntity.hurtServer(server, new DamageSource(type, this), Float.MAX_VALUE);
+               Holder.Reference<DamageType> damageType = server.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(this.chompDamageOverride != null ? this.chompDamageOverride : CHOMP_DAMAGE);
+               this.suckedEntity.hurtServer(server, new DamageSource(damageType, this), Float.MAX_VALUE);
             }
          }
 
@@ -1823,7 +1823,7 @@ public class WitherStormHeadEntity extends Entity {
             this.retargetCooldown = 20;
             AABB searchBox = this.getBoundingBox().inflate(searchRange);
             List<LivingEntity> candidates = this.level().getEntitiesOfClass(LivingEntity.class, searchBox, (e) -> {
-               boolean var10000;
+               boolean acceptable;
                if (e.isAlive() && !(e instanceof WitherStormEntity)) {
                   label55: {
                      if (e instanceof Player) {
@@ -1859,14 +1859,14 @@ public class WitherStormHeadEntity extends Entity {
                      }
 
                      if ((ownerStorm == null || !this.isAbsorbingFood(ownerStorm, e)) && !WitheredMobs.isWithered(e) && !WitherSickness.isTurning(e) && !(e instanceof IronGolem)) {
-                        var10000 = true;
-                        return var10000;
+                        acceptable = true;
+                        return acceptable;
                      }
                   }
                }
 
-               var10000 = false;
-               return var10000;
+               acceptable = false;
+               return acceptable;
             });
             List<WitherStormHeadEntity> siblings = this.level().getEntitiesOfClass(WitherStormHeadEntity.class, this.getBoundingBox().inflate((double)96.0F), (h) -> h != this && h.getStormId() == this.getStormId());
             List<LivingEntity> eligible = new ArrayList();

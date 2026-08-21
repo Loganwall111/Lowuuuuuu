@@ -21,7 +21,7 @@ public abstract class TitleScreenConfigNoticeMixin {
    private void dabyws$configResetNotice(CallbackInfo ci) {
       if (DabyWSClientConfig.consumeRestructureNotice()) {
          Minecraft mc = Minecraft.getInstance();
-         Screen title = (TitleScreen)this;
+         Screen title = (TitleScreen)(Object)this;
          mc.setScreenAndShow(
             new ConfirmScreen(
                accepted -> mc.setScreenAndShow(title),

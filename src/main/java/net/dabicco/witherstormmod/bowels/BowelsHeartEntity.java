@@ -148,9 +148,9 @@ public class BowelsHeartEntity extends Entity {
             ServerLevel server = (ServerLevel)want;
             if (--this.stanceIn <= 0) {
                this.stanceIn = 5;
-               int want = BowelsBoss.guardStance(server, this);
-               if (want != this.stance) {
-                  this.stance = want;
+               int wantStance = BowelsBoss.guardStance(server, this);
+               if (wantStance != this.stance) {
+                  this.stance = wantStance;
 
                   for(BowelsTentacleEntity limb : server.getEntitiesOfClass(BowelsTentacleEntity.class, this.getBoundingBox().inflate((double)24.0F), BowelsTentacleEntity::isGuard)) {
                      limb.setStance(want, true);

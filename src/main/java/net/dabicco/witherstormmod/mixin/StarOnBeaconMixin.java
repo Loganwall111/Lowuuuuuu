@@ -24,7 +24,7 @@ public abstract class StarOnBeaconMixin {
       at = {@At("TAIL")}
    )
    private void dabyws$offerToBeacon(CallbackInfo ci) {
-      ItemEntity self = (ItemEntity)this;
+      ItemEntity self = (ItemEntity)(Object)this;
       if (!self.level().isClientSide() && !self.isRemoved()) {
          if (self.getItem().is(ModItems.WITHERED_NETHER_STAR)) {
             if (self.onGround()) {

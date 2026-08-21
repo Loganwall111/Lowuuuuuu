@@ -25,7 +25,7 @@ public abstract class WitheredDustConnectMixin {
       at = {@At("HEAD")}
    )
    private void dabyws$rememberWhoIsAsking(BlockGetter level, BlockPos pos, Direction direction, boolean canSurvive, CallbackInfoReturnable<RedstoneSide> cir) {
-      DABYWS$ASKING.set((Block)this);
+      DABYWS$ASKING.set((Block)(Object)this);
    }
 
    @Inject(

@@ -25,7 +25,7 @@ public abstract class BowelsLocalPlayerMixin {
       cancellable = true
    )
    private void dabyws$unstickInFrame(double x, double z, CallbackInfo ci) {
-      LocalPlayer self = (LocalPlayer)this;
+      LocalPlayer self = (LocalPlayer)(Object)this;
       Direction gravity = BowelsFrame.active(self);
       if (gravity != null) {
          ci.cancel();
@@ -76,7 +76,7 @@ public abstract class BowelsLocalPlayerMixin {
       at = {@At("HEAD")}
    )
    private void dabyws$intoFrame(CallbackInfo ci) {
-      LocalPlayer self = (LocalPlayer)this;
+      LocalPlayer self = (LocalPlayer)(Object)this;
       this.dabyws$holdForTurnover(self);
       this.dabyws$centreInDrop(self);
       boolean outer = BowelsFrame.active(self) == null;
@@ -95,7 +95,7 @@ public abstract class BowelsLocalPlayerMixin {
       at = {@At("RETURN")}
    )
    private void dabyws$outOfFrame(CallbackInfo ci) {
-      LocalPlayer self = (LocalPlayer)this;
+      LocalPlayer self = (LocalPlayer)(Object)this;
       BowelsTrace.record(self, 5, self.getDeltaMovement(), true);
       BowelsFrame.stepOut(self);
       if (BowelsFrame.active(self) == null) {
