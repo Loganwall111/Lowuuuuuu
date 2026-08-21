@@ -42,6 +42,8 @@ public final class StormAtmosphere {
          Vec3 cam = client.gameRenderer.getMainCamera().getPosition();
          float partial = client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
          StormSkyDarken.update(cam, partial);
+         // Particles sucked up from the ground along active tractor beams (video).
+         BeamMoteSpawner.tick(client);
       }
    }
 }
