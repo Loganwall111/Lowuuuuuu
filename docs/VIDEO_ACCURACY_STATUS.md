@@ -135,3 +135,15 @@ This restores all 14 mixins, the 11 model classes, the 11 entity renderers, the
 entity/state + withered + item + menu + nether + network classes. That unblocks the
 glossy clouds / volumetric fog / bloom / shadow silhouette / skybox, the
 head/tentacle/severed rendering, and the Rocket Retriever / Formidibomb items.
+
+---
+
+## BUILD FIX LOG
+
+- **`compileJava` — 6 errors (SeveredRope.java)**: Vineflower decompile mangling
+  (`import [Lnet.minecraft...Vec3;;` and `(Vec3;)` cast). Fixed.
+- **`compileJava` — 100 errors ("package net.minecraft.client does not exist")**:
+  root cause was `loom { splitEnvironmentSourceSets() }` in build.gradle. This mod keeps
+  all client code in `src/main/java` (main source set), which needs the client Minecraft
+  classes. Split source sets removed them from the main classpath. Fixed by removing
+  `splitEnvironmentSourceSets()`.
