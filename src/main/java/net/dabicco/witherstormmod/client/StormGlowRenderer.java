@@ -45,6 +45,23 @@ public final class StormGlowRenderer {
       consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z).setColor(rgb[0], rgb[1], rgb[2], alpha).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
    }
 
+   /**
+    * Far-away purple pulse for the final stages (video). The storm glows with a
+    * pulsing purple aura that is visible from very far away, growing with phase.
+    */
+   public static void submitDistantPulse(PoseStack poseStack, SubmitNodeCollector collector, Vec3 centre, Vec3 view, float phase, float gameTimeTicks) {
+      if (phase < 4.0F) {
+         return;
+      }
+      double radius = 6.0 + (phase - 4.0) * 3.0;
+      float pulse = 0.85F + 0.15F * Mth.sin(gameTimeTicks * 0.08F);
+      float amount = Mth.clamp((phase - 4.0F) / 2.0F, 0.0F, 1.0F) * pulse;
+      float[] sizes = new float[]{1.0F, 0.65F, 0.35F};
+      float[] alphas = new float[]{0.25F, 0.45F, 0.7F};
+      int[][] colours = new int[][]{{80, 30, 120}, {60, 20, 100}, {40, 15, 80}};
+      submitLight(poseStack, collector, centre, view, radius, sizes, alphas, colours, amount);
+   }
+
    public static float nightFactor(Level level) {
       long t = level.getOverworldClockTime() % 24000L;
       if (t >= 12500L && t <= 23500L) {

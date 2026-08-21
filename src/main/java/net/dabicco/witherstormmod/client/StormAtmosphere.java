@@ -44,6 +44,8 @@ public final class StormAtmosphere {
          StormSkyDarken.update(cam, partial);
          // Particles sucked up from the ground along active tractor beams (video).
          BeamMoteSpawner.tick(client);
+         // Boss music, fading with distance to the storm (video).
+         StormMusic.tick(client);
       }
    }
 }

@@ -120,6 +120,10 @@ public class DistantStormRenderer {
                   StormDebris.submit(pose, consumers, now, 15728880, (float)d.phase5Ticks, (float)d.phase58Ticks, d.entityId, d.phase >= 6.0F, 0.0F);
                   StormDebris.submitEarly(pose, consumers, now, 15728880, d.phase, d.entityId);
 
+                  // Far-away purple pulse / aura on the final stages (video).
+                  Vec3 stormView = renderRel.normalize();
+                  StormGlowRenderer.submitDistantPulse(pose, consumers, Vec3.ZERO, stormView, d.phase, now);
+
                   pose.popPose();
                   double yawRad = Math.toRadians((double)d.dispYaw);
                   double cos = Math.cos(yawRad);

@@ -13,6 +13,7 @@ import net.dabicco.witherstormmod.ModSounds;
 import net.dabicco.witherstormmod.entity.ability.BlockClusterAbility;
 import net.dabicco.witherstormmod.entity.ability.StormAbilitySet;
 import net.dabicco.witherstormmod.entity.ability.SuperSkullAbility;
+import net.dabicco.witherstormmod.entity.ability.TentacleSlamAbility;
 import net.dabicco.witherstormmod.entity.ability.TornadoAbility;
 import net.dabicco.witherstormmod.entity.ability.TractorBeamAbility;
 import net.dabicco.witherstormmod.config.WitherStormConfigs;
@@ -179,6 +180,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.abilities.add(new TractorBeamAbility());
       this.abilities.add(new BlockClusterAbility());
       this.abilities.add(new TornadoAbility());
+      this.abilities.add(new TentacleSlamAbility());
    }
 
    // ------------------------------------------------------------------ data
