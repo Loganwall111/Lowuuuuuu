@@ -11,32 +11,42 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class FurnaceFilterMenu extends AbstractContainerMenu {
-   private static final int CONTAINER_SIZE = 2;
    private final Container container;
    private final ContainerData data;
 
-   // Client-side reconstruction: the server sends the menu data, so a placeholder
-   // container is fine here; the real contents come from the block entity on the server.
-   public FurnaceFilterMenu(int syncId, Inventory inv) {
-      this(syncId, inv, new SimpleContainer(2), new SimpleContainerData(1));
+   public FurnaceFilterMenu(int id, Inventory playerInv) {
+      this(id, playerInv, new SimpleContainer(2), new SimpleContainerData(1));
    }
 
-   public FurnaceFilterMenu(int syncId, Inventory inv, Container container, ContainerData data) {
-      super(ModMenus.FURNACE_FILTER, syncId);
+   public FurnaceFilterMenu(int id, Inventory playerInv, Container container, ContainerData data) {
+      super(ModMenus.FURNACE_FILTER, id);
       checkContainerSize(container, 2);
       this.container = container;
       this.data = data;
-      this.addSlot(new Slot(container, 0, 56, 34));
-      this.addSlot(new Slot(container, 1, 116, 34));
+      container.startOpen(playerInv.player);
+      this.addSlot(new Slot(container, 0, 56, 35) {
+         public boolean mayPickup(Player p) {
+            return false;
+         }
 
-      for(int row = 0; row < 3; ++row) {
-         for(int col = 0; col < 9; ++col) {
-            this.addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+         public boolean mayPlace(ItemStack s) {
+            return false;
+         }
+      });
+      this.addSlot(new Slot(container, 1, 116, 35) {
+         public boolean mayPlace(ItemStack s) {
+            return false;
+         }
+      });
+
+      for (int r = 0; r < 3; r++) {
+         for (int c = 0; c < 9; c++) {
+            this.addSlot(new Slot(playerInv, c + r * 9 + 9, 8 + c * 18, 84 + r * 18));
          }
       }
 
-      for(int col = 0; col < 9; ++col) {
-         this.addSlot(new Slot(inv, col, 8 + col * 18, 142));
+      for (int c = 0; c < 9; c++) {
+         this.addSlot(new Slot(playerInv, c, 8 + c * 18, 142));
       }
 
       this.addDataSlots(data);
@@ -47,30 +57,35 @@ public class FurnaceFilterMenu extends AbstractContainerMenu {
    }
 
    public ItemStack quickMoveStack(Player player, int index) {
-      ItemStack itemstack = ItemStack.EMPTY;
-      Slot slot = this.slots.get(index);
+      ItemStack result = ItemStack.EMPTY;
+      Slot slot = (Slot)this.slots.get(index);
       if (slot != null && slot.hasItem()) {
-         ItemStack slotStack = slot.getItem();
-         itemstack = slotStack.copy();
-         if (index < 2) {
-            if (!this.moveItemStackTo(slotStack, 2, this.slots.size(), true)) {
-               return ItemStack.EMPTY;
-            }
-         } else if (!this.moveItemStackTo(slotStack, 0, 2, false)) {
+         ItemStack stack = slot.getItem();
+         result = stack.copy();
+         if (index >= 2) {
             return ItemStack.EMPTY;
          }
 
-         if (slotStack.isEmpty()) {
+         if (!this.moveItemStackTo(stack, 2, this.slots.size(), true)) {
+            return ItemStack.EMPTY;
+         }
+
+         if (stack.isEmpty()) {
             slot.setByPlayer(ItemStack.EMPTY);
          } else {
             slot.setChanged();
          }
       }
 
-      return itemstack;
+      return result;
    }
 
    public boolean stillValid(Player player) {
       return this.container.stillValid(player);
+   }
+
+   public void removed(Player player) {
+      super.removed(player);
+      this.container.stopOpen(player);
    }
 }

@@ -1,27 +1,28 @@
 package net.dabicco.witherstormmod.network;
 
 import net.dabicco.witherstormmod.client.ClientWitheredManager;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.ClientPayloadContext;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.Context;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type;
 import net.minecraft.resources.Identifier;
 
-public record WitheredCastPayload(int casterId, int ability, String command, int targetId, int duration) implements CustomPacketPayload {
-   public static final CustomPacketPayload.Type<WitheredCastPayload> TYPE = new CustomPacketPayload.Type(Identifier.fromNamespaceAndPath("dabywitherstormmod", "withered_cast"));
-   public static final StreamCodec<RegistryFriendlyByteBuf, WitheredCastPayload> CODEC = StreamCodec.of((buf, payload) -> {
-      buf.writeVarInt(payload.casterId());
-      buf.writeVarInt(payload.ability());
-      buf.writeUtf(payload.command());
-      buf.writeVarInt(payload.targetId());
-      buf.writeVarInt(payload.duration());
-   }, (buf) -> new WitheredCastPayload(buf.readVarInt(), buf.readVarInt(), buf.readUtf(), buf.readVarInt(), buf.readVarInt()));
+public record WitheredCastPayload(int casterId, int ability, int duration, String command, int targetId) implements CustomPacketPayload {
+   public static final Type<WitheredCastPayload> TYPE = new Type(Identifier.fromNamespaceAndPath("dabywitherstormmod", "withered_cast"));
+   public static final StreamCodec<RegistryFriendlyByteBuf, WitheredCastPayload> CODEC = StreamCodec.of((buf, pkt) -> {
+      buf.writeVarInt(pkt.casterId());
+      buf.writeVarInt(pkt.ability());
+      buf.writeVarInt(pkt.duration());
+      buf.writeUtf(pkt.command(), 160);
+      buf.writeVarInt(pkt.targetId() + 1);
+   }, buf -> new WitheredCastPayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(160), buf.readVarInt() - 1));
 
-   public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+   public Type<? extends CustomPacketPayload> type() {
       return TYPE;
    }
 
-   public static void handleClient(WitheredCastPayload payload, ClientPayloadContext context) {
+   public static void handleClient(WitheredCastPayload payload, Context context) {
       context.client().execute(() -> ClientWitheredManager.onCast(payload));
    }
 }

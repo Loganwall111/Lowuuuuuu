@@ -1,26 +1,20 @@
 package net.dabicco.witherstormmod.entity.state;
 
 import net.dabicco.witherstormmod.client.PreviewScene;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 
-public class SeveredWitherStormRenderState extends EntityRenderState {
-   public EntityType<?> entityType;
-   public PreviewScene preview;
-   public int stormId;
+public class SeveredWitherStormRenderState extends LivingEntityRenderState {
+   public float bodyRoll;
    public float phase;
    public boolean mirrored;
-   public int side = 1;
+   public float idleTimeTicks;
+   public int stormId;
+   public int bodyLight;
    public float collapseTicks = -1.0F;
    public float droop;
+   public int side = 1;
    public float slopePitch;
    public float slopeRoll;
-   public float bodyRot;
-   public float yRot;
-   public float xRot;
-   public float bodyRoll;
-   public float idleTimeTicks;
-   public float ageInTicks;
-   public int bodyLight;
-   public final float[] groundBias = new float[3];
+   public final float[] groundBias = new float[8];
+   public PreviewScene preview;
 }
