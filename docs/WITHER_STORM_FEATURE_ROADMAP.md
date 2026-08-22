@@ -193,3 +193,12 @@ Remaining planned batches (each pushed and auto-built by Actions):
   `berserkSlamInterval` — below a health fraction the Devourer slams far more often.
 - **Batch 12 — Config-screen sections** (`7a92cd2`, green): new server config sections surface all
   the new growth/slam/raid/death/berserk toggles in the in-game Wither Storm config screen.
+- **Batch 13 — Biome-Tinted Storm Fog** (`e878844`, fixed `465b590`, green): client config
+  `biomeFogTint`/`biomeFogStrength`; the storm fog blends back toward the biome's own fog
+  colour, scaled by storm proximity. (First push used Biome.getFogColor() which isn't
+  reliably present in MC 26.x; rewrote to capture the incoming fog colour in the mixin.)
+- **Batch 14 — Procedural Story-Mode Buildings** (`2884980`, fixed `247561a`, green): new
+  `structures/StructureBuilder` generates buildings from code (no Blockbench/.nbt needed):
+  beacon, house, portal ruin, church. `/storm build <type>` builds one at the player.
+  (First push silently omitted the new file because the .gitignore `build/` rule also matched
+  the source package named `build/`; renamed to `structures`.)
