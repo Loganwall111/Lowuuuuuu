@@ -1006,6 +1006,10 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
    }
 
+   public void forceTentacleSlam() {
+      this.tentacleSlamCooldown = 0;
+   }
+
    public static Vec3 headOffset(int index, boolean devourer) {
       Vec3 off = HEAD_OFFSETS[index];
       if (devourer) {

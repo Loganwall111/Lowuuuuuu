@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
@@ -148,6 +149,7 @@ public class DabyWSCommand {
 
    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
       dispatcher.register((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal("dabyws").then(Commands.literal("locate").executes((ctx) -> locateTower((CommandSourceStack)ctx.getSource())))).then(Commands.literal("maws").executes((ctx) -> mawReadout((CommandSourceStack)ctx.getSource())))).then(((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal("tower").requires(DabyWSCommand::mayEditServerConfig)).executes((ctx) -> towerStatus((CommandSourceStack)ctx.getSource()))).then(Commands.literal("status").executes((ctx) -> towerStatus((CommandSourceStack)ctx.getSource())))).then(Commands.literal("mark").executes((ctx) -> towerMark((CommandSourceStack)ctx.getSource())))).then(Commands.literal("place").executes((ctx) -> towerPlace((CommandSourceStack)ctx.getSource()))))).then(((LiteralArgumentBuilder)Commands.literal("bowels").executes((ctx) -> bowelsEnter((CommandSourceStack)ctx.getSource(), List.of(((CommandSourceStack)ctx.getSource()).getPlayerOrException())))).then(((RequiredArgumentBuilder)Commands.argument("targets", EntityArgument.entities()).requires(DabyWSCommand::mayEditServerConfig)).then(Commands.literal("enter").executes((ctx) -> bowelsEnter((CommandSourceStack)ctx.getSource(), EntityArgument.getEntities(ctx, "targets"))))))).then(((LiteralArgumentBuilder)Commands.literal("spawn").executes((ctx) -> spawnWitherStorm(ctx))).then(((LiteralArgumentBuilder)Commands.literal("blackhole").executes((ctx) -> spawnBlackHoleCountdown(ctx))).then(Commands.literal("now").executes((ctx) -> spawnBlackHoleNow(ctx)))))).then(Commands.literal("blackhole").then(Commands.literal("getmass").executes((ctx) -> getBlackHoleMass(ctx))))).then(((LiteralArgumentBuilder)Commands.literal("setphase").then(Commands.argument("phase", FloatArgumentType.floatArg(0.0F, 10.0F)).executes((ctx) -> setPhase(ctx, FloatArgumentType.getFloat(ctx, "phase"))))).then(Commands.argument("targets", EntityArgument.entities()).then(Commands.argument("phase", FloatArgumentType.floatArg(0.0F, 10.0F)).executes((ctx) -> setPhaseSelected(ctx, FloatArgumentType.getFloat(ctx, "phase"))))))).then(((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal("movement").requires(DabyWSCommand::mayEditServerConfig)).then(((RequiredArgumentBuilder)((RequiredArgumentBuilder)((RequiredArgumentBuilder)Commands.argument("targets", EntityArgument.entities()).then(((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal("ultimateTarget").then(Commands.literal("get").executes(DabyWSCommand::movementTargetGet))).then(Commands.literal("set").then(Commands.argument("player", EntityArgument.player()).executes(DabyWSCommand::movementTargetSet)))).then(Commands.literal("clear").executes(DabyWSCommand::movementTargetClear))).then(Commands.literal("reroll").executes(DabyWSCommand::movementTargetReroll)))).then(Commands.literal("setChasing").then(Commands.argument("chasing", BoolArgumentType.bool()).executes((ctx) -> movementSetChasing(ctx, BoolArgumentType.getBool(ctx, "chasing")))))).then(Commands.literal("distract").executes(DabyWSCommand::movementDistract))).then(Commands.literal("status").executes(DabyWSCommand::movementStatus)))).then(((LiteralArgumentBuilder)Commands.literal("targeting").then(Commands.literal("get").executes(DabyWSCommand::targetingGet))).then(Commands.literal("set").then(Commands.argument("mode", StringArgumentType.word()).suggests(TARGETING_MODES).executes(DabyWSCommand::targetingSet)))))).then(((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal("test").requires(DabyWSCommand::mayEditServerConfig)).then(Commands.literal("netherscale").executes(DabyWSCommand::testNetherScale))).then(Commands.literal("portalprobe").executes(DabyWSCommand::testPortalProbe))).then(Commands.literal("bowelsadvance").executes(DabyWSCommand::testBowelsAdvance)))).then(((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal("config").executes(DabyWSCommand::openConfigGui)).then(((LiteralArgumentBuilder)Commands.literal("server").then(((LiteralArgumentBuilder)Commands.literal("get").executes(DabyWSCommand::listServerConfig)).then(Commands.argument("key", StringArgumentType.word()).suggests(SERVER_KEYS).executes((ctx) -> getServerConfig(ctx, StringArgumentType.getString(ctx, "key")))))).then(((LiteralArgumentBuilder)Commands.literal("set").requires(DabyWSCommand::mayEditServerConfig)).then(Commands.argument("key", StringArgumentType.word()).suggests(SERVER_KEYS).then(Commands.argument("value", DoubleArgumentType.doubleArg()).executes((ctx) -> setServerConfig(ctx, StringArgumentType.getString(ctx, "key"), DoubleArgumentType.getDouble(ctx, "value")))))))).then(((LiteralArgumentBuilder)Commands.literal("client").then(((LiteralArgumentBuilder)Commands.literal("get").executes((ctx) -> clientConfigAction(ctx, 2, "", (double)0.0F))).then(Commands.argument("key", StringArgumentType.word()).suggests(CLIENT_KEYS).executes((ctx) -> clientConfigAction(ctx, 0, StringArgumentType.getString(ctx, "key"), (double)0.0F))))).then(Commands.literal("set").then(Commands.argument("key", StringArgumentType.word()).suggests(CLIENT_KEYS).then(Commands.argument("value", DoubleArgumentType.doubleArg()).executes((ctx) -> clientConfigAction(ctx, 1, StringArgumentType.getString(ctx, "key"), DoubleArgumentType.getDouble(ctx, "value")))))))));
+      registerExtra(dispatcher);
    }
 
    public static void registerTick() {
@@ -285,6 +287,53 @@ public class DabyWSCommand {
       }
 
       return count;
+   }
+
+   private static int growStorms(CommandContext<CommandSourceStack> ctx, int amount) throws CommandSyntaxException {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      int count = 0;
+
+      for(WitherStormEntity ws : getStorms(ctx)) {
+         ws.addSubGrowth(amount);
+         source.sendSuccess(() -> {
+            String var10000 = stormLabel(ws);
+            return Component.literal(var10000 + ": grew by §e" + amount);
+         }, true);
+         ++count;
+      }
+
+      return count;
+   }
+
+   private static int slamStorms(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      int count = 0;
+
+      for(WitherStormEntity ws : getStorms(ctx)) {
+         ws.forceTentacleSlam();
+         source.sendSuccess(() -> {
+            String var10000 = stormLabel(ws);
+            return Component.literal(var10000 + ": tentacle slam triggered");
+         }, true);
+         ++count;
+      }
+
+      return count;
+   }
+
+   private static void registerExtra(CommandDispatcher<CommandSourceStack> dispatcher) {
+      dispatcher.register(Commands.literal("storm")
+         .then(Commands.literal("grow").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .then(Commands.argument("amount", IntegerArgumentType.integer(1, 1000000))
+                  .executes((ctx) -> growStorms(ctx, IntegerArgumentType.getInteger(ctx, "amount"))))))
+         .then(Commands.literal("slam").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .executes((ctx) -> slamStorms(ctx))))
+         .then(Commands.literal("phase")
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .then(Commands.argument("phase", FloatArgumentType.floatArg(0.0F, 10.0F))
+                  .executes((ctx) -> setPhaseSelected(ctx, FloatArgumentType.getFloat(ctx, "phase")))))));
    }
 
    private static List<WitherStormEntity> getStorms(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
