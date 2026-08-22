@@ -1,5 +1,6 @@
 package net.dabicco.witherstormmod.mixin;
 
+import net.dabicco.witherstormmod.client.FarLandsHaze;
 import net.dabicco.witherstormmod.client.SpawnTowerGloom;
 import net.dabicco.witherstormmod.client.StormFog;
 import net.dabicco.witherstormmod.client.StormSkyDarken;
@@ -38,7 +39,8 @@ public class FogRendererMixin {
    private void dabyws$towerFog(Camera camera, int renderDistance, DeltaTracker delta, float f, ClientLevel level, CallbackInfoReturnable<FogData> cir) {
       float scale = SpawnTowerGloom.fogScale();
       float storm = StormFog.fogScale();
-      float combined = Math.min(scale, storm);
+      float farLands = FarLandsHaze.fogScale(camera.getPosition().x, camera.getPosition().z);
+      float combined = Math.min(scale, Math.min(storm, farLands));
       if (!(combined >= 0.999F)) {
          FogData data = (FogData)cir.getReturnValue();
          if (data != null) {

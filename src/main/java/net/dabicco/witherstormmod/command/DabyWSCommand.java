@@ -41,6 +41,7 @@ import net.dabicco.witherstormmod.entity.withered.WitheredMobs;
 import net.dabicco.witherstormmod.nether.NetherScaleManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.dabicco.witherstormmod.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -53,6 +54,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
@@ -321,6 +323,38 @@ public class DabyWSCommand {
       return count;
    }
 
+   private static int roarStorms(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      int count = 0;
+
+      for(WitherStormEntity ws : getStorms(ctx)) {
+         if (ws.level() instanceof ServerLevel server) {
+            ws.roarAllHeads(true);
+            server.playSound((Entity)null, ws.getX(), ws.getY(), ws.getZ(), ModSounds.HEAD_POWERFUL_ROAR, SoundSource.HOSTILE, 7.0F, 1.0F);
+         }
+         source.sendSuccess(() -> {
+            String var10000 = stormLabel(ws);
+            return Component.literal(var10000 + ": roared");
+         }, true);
+         ++count;
+      }
+
+      return count;
+   }
+
+   private static int stormStatus(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      int count = 0;
+
+      for(WitherStormEntity ws : getStorms(ctx)) {
+         String var10000 = stormLabel(ws);
+         source.sendSuccess(() -> Component.literal(var10000 + ": phase §e" + String.format(Locale.ROOT, "%.2f", ws.getPhase()) + "§r, sub-growth §e" + ws.getSubGrowth()), false);
+         ++count;
+      }
+
+      return count;
+   }
+
    private static void registerExtra(CommandDispatcher<CommandSourceStack> dispatcher) {
       dispatcher.register(Commands.literal("storm")
          .then(Commands.literal("grow").requires(DabyWSCommand::mayEditServerConfig)
@@ -330,6 +364,12 @@ public class DabyWSCommand {
          .then(Commands.literal("slam").requires(DabyWSCommand::mayEditServerConfig)
             .then(Commands.argument("targets", EntityArgument.entities())
                .executes((ctx) -> slamStorms(ctx))))
+         .then(Commands.literal("roar").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .executes((ctx) -> roarStorms(ctx))))
+         .then(Commands.literal("status")
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .executes((ctx) -> stormStatus(ctx))))
          .then(Commands.literal("phase")
             .then(Commands.argument("targets", EntityArgument.entities())
                .then(Commands.argument("phase", FloatArgumentType.floatArg(0.0F, 10.0F))
