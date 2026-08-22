@@ -1,5 +1,6 @@
 package net.dabicco.witherstormmod.mixin;
 
+import net.dabicco.witherstormmod.client.BiomeStormFog;
 import net.dabicco.witherstormmod.client.FarLandsHaze;
 import net.dabicco.witherstormmod.client.SpawnTowerGloom;
 import net.dabicco.witherstormmod.client.StormFog;
@@ -30,6 +31,13 @@ public class FogRendererMixin {
          color.x = color.x * (1.0F - darken) + StormSkyDarken.fogR() * darken;
          color.y = color.y * (1.0F - darken) + StormSkyDarken.fogG() * darken;
          color.z = color.z * (1.0F - darken) + StormSkyDarken.fogB() * darken;
+      }
+
+      float biomeBlend = BiomeStormFog.strength();
+      if (biomeBlend > 0.0F) {
+         color.x = color.x * (1.0F - biomeBlend) + BiomeStormFog.tintR() * biomeBlend;
+         color.y = color.y * (1.0F - biomeBlend) + BiomeStormFog.tintG() * biomeBlend;
+         color.z = color.z * (1.0F - biomeBlend) + BiomeStormFog.tintB() * biomeBlend;
       }
    }
 

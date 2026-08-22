@@ -624,6 +624,8 @@ public class WitherStormConfigScreen extends Screen {
       this.clientRow("farLandsHaze", "Far-Lands Haze", (BooleanSupplier)null);
       this.clientRow("farLandsDistance", "Far-Lands Distance", () -> !DabyWSClientConfig.farLandsHaze);
       this.clientRow("farLandsStrength", "Far-Lands Strength", () -> !DabyWSClientConfig.farLandsHaze);
+      this.clientRow("biomeFogTint", "Biome-Tinted Storm Fog", (BooleanSupplier)null);
+      this.clientRow("biomeFogStrength", "Biome Fog Strength", () -> !DabyWSClientConfig.biomeFogTint);
       this.clientRow("cloudDarkenStrength", "Darken Clouds", (BooleanSupplier)null);
       this.clientRow("cloudColorR", "Cloud Colour: Red", () -> DabyWSClientConfig.cloudDarkenStrength <= (double)0.0F);
       this.clientRow("cloudColorG", "Cloud Colour: Green", () -> DabyWSClientConfig.cloudDarkenStrength <= (double)0.0F);

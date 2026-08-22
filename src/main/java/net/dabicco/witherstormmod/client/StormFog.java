@@ -23,9 +23,20 @@ public final class StormFog {
          return 1.0F;
       }
 
+      float t = closeness();
+      if (t <= 0.0F) {
+         return 1.0F;
+      }
+
+      float scale = (float)(1.0 - (double)t * DabyWSClientConfig.stormFogStrength);
+      return Math.max(scale, 0.05F);
+   }
+
+   /** Proximity (0..1) to the nearest storm: 0 = far, 1 = right on top of it. */
+   public static float closeness() {
       Minecraft mc = Minecraft.getInstance();
       if (mc.level == null || mc.player == null) {
-         return 1.0F;
+         return 0.0F;
       }
 
       Vec3 cam = mc.player.position();
@@ -50,12 +61,10 @@ public final class StormFog {
       }
 
       if (best >= Double.MAX_VALUE) {
-         return 1.0F;
+         return 0.0F;
       }
 
       double dist = Math.sqrt(best);
-      double t = 1.0 - Math.min(1.0, dist / CLOSE_RADIUS);
-      float scale = (float)(1.0 - t * DabyWSClientConfig.stormFogStrength);
-      return Math.max(scale, 0.05F);
+      return (float)Math.max(0.0, 1.0 - dist / CLOSE_RADIUS);
    }
 }

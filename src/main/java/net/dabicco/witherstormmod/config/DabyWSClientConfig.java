@@ -48,6 +48,8 @@ public class DabyWSClientConfig {
    public static boolean farLandsHaze = false;
    public static double farLandsDistance = (double)4000.0F;
    public static double farLandsStrength = (double)0.8F;
+   public static boolean biomeFogTint = false;
+   public static double biomeFogStrength = (double)0.5F;
    public static boolean separateFogColor = true;
    public static double skyDarkenR = 0.126;
    public static double skyDarkenG = 0.055;
@@ -437,6 +439,8 @@ public class DabyWSClientConfig {
       key("farLandsHaze", "Far-lands haze: the further you travel from the world origin, the thicker the purple haze closes in, giving that lonely Story-Mode far-lands feel.", (double)0.0F, (double)1.0F, true, () -> farLandsHaze ? (double)1.0F : (double)0.0F, (v) -> farLandsHaze = v >= (double)0.5F);
       key("farLandsDistance", "Blocks from the world origin at which the far-lands haze starts to close in.", (double)500.0F, (double)100000.0F, true, () -> farLandsDistance, (v) -> farLandsDistance = v);
       key("farLandsStrength", "How thick the far-lands haze gets at extreme distance.", (double)0.0F, (double)1.0F, false, () -> farLandsStrength, (v) -> farLandsStrength = v);
+      key("biomeFogTint", "Biome-tinted storm fog: the storm's purple fog takes on the colour of the biome it is devouring.", (double)0.0F, (double)1.0F, true, () -> biomeFogTint ? (double)1.0F : (double)0.0F, (v) -> biomeFogTint = v >= (double)0.5F);
+      key("biomeFogStrength", "How strongly the storm fog blends toward the biome's colour.", (double)0.0F, (double)1.0F, false, () -> biomeFogStrength, (v) -> biomeFogStrength = v);
       key("skyDarkenR", "", (double)0.0F, (double)1.0F, false, () -> skyDarkenR, (v) -> skyDarkenR = v);
       key("skyDarkenG", "", (double)0.0F, (double)1.0F, false, () -> skyDarkenG, (v) -> skyDarkenG = v);
       key("skyDarkenB", "", (double)0.0F, (double)1.0F, false, () -> skyDarkenB, (v) -> skyDarkenB = v);
