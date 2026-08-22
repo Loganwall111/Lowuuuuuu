@@ -143,3 +143,24 @@ This is Story Mode's signature finale: the player enters the Wither Storm's inte
 4. Then run the polish pass in Phase 7.
 
 *Asset inventory and the full class catalogue are under `src/main/resources/assets/dabywitherstormmod/` and the extracted `mod/` tree.*
+
+---
+
+## FEATURE DELIVERY LOG (cloud build green at every entry)
+
+- **Batch 1 — Instant/Infinite Growth + Tentacle Slams** (`88b9e53`, green): new world-config
+  toggles `instantGrowth` + `instantGrowthRate`, `infinitePhases` + `phaseCeiling`, and
+  `tentacleSlam` + `tentacleSlamInterval` + `tentacleSlamRadius`. Instant growth multiplies
+  every bit of eaten growth (`WitherStormEntity.addSubGrowth`); infinite phases lifts the
+  phase ceiling (`growthCeiling()`); tentacle slams carve a crater with `carveSphere`,
+  damage + fling nearby living entities, and run every phase via the server `aiStep` branch.
+- **Batch 2 — `/storm` control command** (`dea3576`, green): clean, separate command tree —
+  `/storm grow <targets> <amount>`, `/storm slam <targets>`, `/storm phase <targets> <phase>`.
+  Adds `WitherStormEntity.forceTentacleSlam()`. Kept out of the giant single-line `dabyws`
+  chain to avoid breaking it.
+
+Remaining planned batches (each pushed and auto-built by Actions):
+  Atmosphere tuning (storm fog / purple aura, boss-music range is already configurable as
+  `stormMusicRange`), far-lands haze, biome-tinted fogs, story-structure raids + portal
+  raids, death cinematic, Story Mode building mechanics, and textures/assets (require
+  externally-produced artwork).
