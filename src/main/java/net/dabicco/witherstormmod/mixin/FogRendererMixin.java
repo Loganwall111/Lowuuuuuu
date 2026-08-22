@@ -25,6 +25,9 @@ public class FogRendererMixin {
       at = {@At("TAIL")}
    )
    private void dabyws$darkenSky(Camera camera, float partialTick, ClientLevel level, int renderDistance, float darkenAmount, Vector4f color, CallbackInfo ci) {
+      float origR = color.x;
+      float origG = color.y;
+      float origB = color.z;
       StormSkyDarken.update(camera.position(), partialTick);
       float darken = StormSkyDarken.factor();
       if (!(darken <= 0.0F)) {
@@ -35,9 +38,9 @@ public class FogRendererMixin {
 
       float biomeBlend = BiomeStormFog.strength();
       if (biomeBlend > 0.0F) {
-         color.x = color.x * (1.0F - biomeBlend) + BiomeStormFog.tintR() * biomeBlend;
-         color.y = color.y * (1.0F - biomeBlend) + BiomeStormFog.tintG() * biomeBlend;
-         color.z = color.z * (1.0F - biomeBlend) + BiomeStormFog.tintB() * biomeBlend;
+         color.x = color.x * (1.0F - biomeBlend) + origR * biomeBlend;
+         color.y = color.y * (1.0F - biomeBlend) + origG * biomeBlend;
+         color.z = color.z * (1.0F - biomeBlend) + origB * biomeBlend;
       }
    }
 
