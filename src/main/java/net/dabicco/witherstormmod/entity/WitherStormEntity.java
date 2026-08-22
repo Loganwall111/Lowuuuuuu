@@ -1091,6 +1091,26 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       Vec3 centre = new Vec3((double)this.structureTarget.getX() + 0.5, (double)this.structureTarget.getY() + 0.5, (double)this.structureTarget.getZ() + 0.5);
       this.carveSphere(server, centre, radius);
       server.playSound((Entity)null, centre.x, centre.y, centre.z, ModSounds.STORM_THUMP, SoundSource.HOSTILE, 5.0F, 0.8F);
+
+      // rip chunks out of the building as flying clusters so the structure visibly
+      // breaks open and its pieces climb to the storm instead of just vanishing
+      int tears = Math.min(8, Math.max(0, cfg.structureTearClusters));
+
+      for(int i = 0; i < tears; ++i) {
+         BlockPos tear = this.structureTarget.offset(this.random.nextInt(9) - 4, this.random.nextInt(5), this.random.nextInt(9) - 4);
+         if (!server.getBlockState(tear).isAir() && !(server.getBlockState(tear).getDestroySpeed(server, tear) < 0.0F)) {
+            WitherStormClusterEntity cluster = new WitherStormClusterEntity(ModEntityTypes.WITHER_STORM_CLUSTER, server);
+            cluster.setOrigin(tear);
+            int clusterRadius = this.random.nextInt(3);
+            cluster.setRadius(clusterRadius);
+            BlockPos spawnPos = WitherStormClusterEntity.adjustSpawnOrigin(tear, clusterRadius);
+            cluster.setPos((double)spawnPos.getX() + (double)0.5F, (double)spawnPos.getY() + (double)0.5F, (double)spawnPos.getZ() + (double)0.5F);
+            cluster.absorbBlocks(tear);
+            cluster.setTargetStorm(this);
+            server.addFreshEntity(cluster);
+            WitherStormClusterEntity.syncBlocksToTracking(cluster);
+         }
+      }
    }
 
    public static Vec3 headOffset(int index, boolean devourer) {

@@ -213,3 +213,18 @@ Remaining planned batches (each pushed and auto-built by Actions):
   `tools/reconstruct_addgrowths.py` (addGrowths3 -> growth9-11, addGrowths4 -> growth12-14).
   The cloud build confirms the mod compiles; the same fix restores the runtime so the
   title screen and the Wither Storm's hunchback growth render correctly.
+
+## Batch 15 — MCSM Atmosphere (done this batch)
+
+- Twinkling starfield skybox (Storm Nights / Every Night modes).
+- Orbiting MCSM cloud-deck slabs reacting to phase palette + pulse.
+- Atmospheric pulse (air-mass purple-blue glare, phase 5+), heartbeat option.
+- Phase 5.8+ cataclysm: blue-purple halo ring + white under-halo, black rim glare,
+  turquoise/green cluster ejecta sparks.
+- Phase fog palettes: turquoise at 5, purple-black at 5.8+.
+- OG Obsidian Gloss storm skins + obsidian-purple command block tiles (client cycle).
+- Structure-raid tear clusters (buildings break open; chunks fly to the storm).
+- Config: "Skybox & Atmosphere" master section, "Find settings" search, Cinematic preset.
+
+Still queued for the next batch: bbmodel→Java stage-model port, NPC characters and
+Endertown contents, per-phase animation overhaul.

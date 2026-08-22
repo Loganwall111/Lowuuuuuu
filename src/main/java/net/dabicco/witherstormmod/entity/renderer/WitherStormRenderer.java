@@ -48,11 +48,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.dabicco.witherstormmod.client.StormSkins;
 
 public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherStormRenderState, EntityModel<WitherStormRenderState>> {
-   private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/entity/wither_storm.png");
-   private static final Identifier DEVOURER_TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/entity/devourer_assets.png");
-   private static final Identifier PHASE_4_TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/entity/phase_4_assets.png");
    private final StormCoverModel coverModel;
    private final WitherCommandBlock commandBlockModel;
    private final WitherStormP4 stormP4Model;
@@ -620,7 +618,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
             this.previewShadowPass ? this.hunchbackShadowModel : this.hunchbackModel,
             state,
             poseStack,
-            this.pieceType(PHASE_4_TEXTURE),
+            this.pieceType(StormSkins.phase4()),
             state.lightCoords,
             OverlayTexture.NO_OVERLAY,
             this.pieceTint(),
@@ -652,7 +650,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          poseStack.mulPose(Axis.XP.rotationDegrees(36.0F));
          poseStack.scale(0.42F, 0.42F, 0.42F);
          submitNodeCollector.submitModel(
-            tentacle, state, poseStack, this.pieceType(PHASE_4_TEXTURE), state.lightCoords, OverlayTexture.NO_OVERLAY, this.pieceTint(), null, 0, null
+            tentacle, state, poseStack, this.pieceType(StormSkins.phase4()), state.lightCoords, OverlayTexture.NO_OVERLAY, this.pieceTint(), null, 0, null
          );
          poseStack.popPose();
       }
@@ -701,7 +699,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
                state.idleTimeTicks,
                state.devourer,
                early,
-               PHASE_4_TEXTURE
+               StormSkins.phase4()
             );
       }
    }
@@ -856,7 +854,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
 
          TentacleMeasure.measure(poseStack, this.devourerTentaclesModel, state.stormId);
          submitNodeCollector.submitModel(
-            devTentacles, state, poseStack, this.pieceType(DEVOURER_TEXTURE), state.lightCoords, OverlayTexture.NO_OVERLAY, this.pieceTint(), null, 0, null
+            devTentacles, state, poseStack, this.pieceType(StormSkins.devourer()), state.lightCoords, OverlayTexture.NO_OVERLAY, this.pieceTint(), null, 0, null
          );
       } else {
          poseStack.translate(0.0, 6.0, 1.25);
@@ -912,7 +910,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          this.miniHeadModel,
          headState,
          poseStack,
-         FoglessRenderTypes.bodyCutout(PHASE_4_TEXTURE),
+         FoglessRenderTypes.bodyCutout(StormSkins.phase4()),
          state.lightCoords,
          OverlayTexture.NO_OVERLAY,
          -1,
@@ -924,7 +922,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          this.miniHeadGlowModel,
          headState,
          poseStack,
-         RenderTypes.eyes(PHASE_4_TEXTURE),
+         RenderTypes.eyes(StormSkins.phase4()),
          15728880,
          OverlayTexture.NO_OVERLAY,
          WitherStormHeadRenderer.glowTint(),
@@ -984,9 +982,9 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
 
    public Identifier getTextureLocation(WitherStormRenderState state) {
       if (state.devourer) {
-         return DEVOURER_TEXTURE;
+         return StormSkins.devourer();
       } else {
-         return state.phase4 ? PHASE_4_TEXTURE : TEXTURE;
+         return state.phase4 ? StormSkins.phase4() : StormSkins.legacy();
       }
    }
 }

@@ -16,9 +16,9 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.dabicco.witherstormmod.client.StormSkins;
 
 public class NetherScaleRenderer extends EntityRenderer<NetherScaleEntity, NetherScaleRenderState> {
-   private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/entity/phase_4_assets.png");
    private static final int FULL_BRIGHT = 15728880;
    private static final float VISUAL_LIFT = 70.0F;
    private static final float ROOT_OFFSET_X = 2.3125F;
@@ -80,7 +80,7 @@ public class NetherScaleRenderer extends EntityRenderer<NetherScaleEntity, Nethe
          scratch.xRot = 0.0F;
          scratch.lightCoords = 15728880;
          collector.submitModel(
-            this.tentaclesModel, scratch, poseStack, FoglessRenderTypes.bodyCutout(TEXTURE), 15728880, OverlayTexture.NO_OVERLAY, -1, null, 0, null
+            this.tentaclesModel, scratch, poseStack, FoglessRenderTypes.bodyCutout(StormSkins.phase4()), 15728880, OverlayTexture.NO_OVERLAY, -1, null, 0, null
          );
          poseStack.popPose();
       }
