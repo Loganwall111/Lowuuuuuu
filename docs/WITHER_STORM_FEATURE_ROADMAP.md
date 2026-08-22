@@ -202,3 +202,14 @@ Remaining planned batches (each pushed and auto-built by Actions):
   beacon, house, portal ruin, church. `/storm build <type>` builds one at the player.
   (First push silently omitted the new file because the .gitignore `build/` rule also matched
   the source package named `build/`; renamed to `structures`.)
+
+## CRITICAL RUNTIME FIX (black screen at launch)
+- **Root cause** (`4ec01a9`, green): the game launched to a black screen with
+  `NoSuchElementException: Can't find part growth9 at HunchbackGrowth.<init>` because
+  `addGrowths3`/`addGrowths4` were the two methods Vineflower OOM'd on (bytecode-only,
+  void => compiled as no-ops), so the `growth9..growth14` model parts were never built and
+  entity-renderer creation failed, aborting the resource reload and leaving the title
+  screen black. Reconstructed both methods from their bytecode via
+  `tools/reconstruct_addgrowths.py` (addGrowths3 -> growth9-11, addGrowths4 -> growth12-14).
+  The cloud build confirms the mod compiles; the same fix restores the runtime so the
+  title screen and the Wither Storm's hunchback growth render correctly.
