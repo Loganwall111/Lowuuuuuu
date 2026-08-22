@@ -375,6 +375,38 @@ public class DabyWSCommand {
       return count;
    }
 
+   private static int healStorms(CommandContext<CommandSourceStack> ctx, float amount) throws CommandSyntaxException {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      int count = 0;
+
+      for(WitherStormEntity ws : getStorms(ctx)) {
+         ws.heal(amount);
+         source.sendSuccess(() -> {
+            String var10000 = stormLabel(ws);
+            return Component.literal(var10000 + ": healed §e" + amount);
+         }, true);
+         ++count;
+      }
+
+      return count;
+   }
+
+   private static int killStorms(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      int count = 0;
+
+      for(WitherStormEntity ws : getStorms(ctx)) {
+         ws.kill();
+         source.sendSuccess(() -> {
+            String var10000 = stormLabel(ws);
+            return Component.literal(var10000 + ": destroyed (death blast fired)");
+         }, true);
+         ++count;
+      }
+
+      return count;
+   }
+
    private static int spawnStormAtPhase(CommandContext<CommandSourceStack> ctx, float phase) {
       CommandSourceStack source = (CommandSourceStack)ctx.getSource();
       ServerPlayer player = source.getPlayer();
@@ -453,6 +485,13 @@ public class DabyWSCommand {
          .then(Commands.literal("spawn").requires(DabyWSCommand::mayEditServerConfig)
             .then(Commands.argument("phase", FloatArgumentType.floatArg(0.0F, 10.0F))
                .executes((ctx) -> spawnStormAtPhase(ctx, FloatArgumentType.getFloat(ctx, "phase")))))
+         .then(Commands.literal("heal").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .then(Commands.argument("amount", FloatArgumentType.floatArg(0.0F, 5000.0F))
+                  .executes((ctx) -> healStorms(ctx, FloatArgumentType.getFloat(ctx, "amount"))))))
+         .then(Commands.literal("kill").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .executes((ctx) -> killStorms(ctx))))
          .then(Commands.literal("preset").requires(DabyWSCommand::mayEditServerConfig)
             .then(Commands.argument("name", StringArgumentType.word())
                .executes((ctx) -> stormPreset(ctx, StringArgumentType.getString(ctx, "name")))))
