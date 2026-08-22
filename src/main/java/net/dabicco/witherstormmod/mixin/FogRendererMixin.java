@@ -9,6 +9,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.client.renderer.fog.FogRenderer;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,7 +40,8 @@ public class FogRendererMixin {
    private void dabyws$towerFog(Camera camera, int renderDistance, DeltaTracker delta, float f, ClientLevel level, CallbackInfoReturnable<FogData> cir) {
       float scale = SpawnTowerGloom.fogScale();
       float storm = StormFog.fogScale();
-      float farLands = FarLandsHaze.fogScale(camera.getPosition().x, camera.getPosition().z);
+      Vec3 camPos = camera.position();
+      float farLands = FarLandsHaze.fogScale(camPos.x, camPos.z);
       float combined = Math.min(scale, Math.min(storm, farLands));
       if (!(combined >= 0.999F)) {
          FogData data = (FogData)cir.getReturnValue();
