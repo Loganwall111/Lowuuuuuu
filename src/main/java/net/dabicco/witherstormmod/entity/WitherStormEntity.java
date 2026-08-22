@@ -1018,7 +1018,12 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          return;
       }
 
-      this.tentacleSlamCooldown = cfg.tentacleSlamInterval;
+      int interval = cfg.tentacleSlamInterval;
+      if (cfg.berserk != 0 && this.isDevourer() && this.getMaxHealth() > 0.0F && this.getHealth() / this.getMaxHealth() < (float)cfg.berserkHealth) {
+         interval = cfg.berserkSlamInterval;
+      }
+
+      this.tentacleSlamCooldown = interval;
       double radius = cfg.tentacleSlamRadius;
       int bx = Mth.floor(this.getX());
       int bz = Mth.floor(this.getZ());
