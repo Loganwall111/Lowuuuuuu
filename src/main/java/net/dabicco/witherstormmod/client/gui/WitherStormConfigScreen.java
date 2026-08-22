@@ -513,6 +513,9 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("The Enderman Siege", "endermanSiege", "endermanSiegeCount", "endermanSiegeSeconds", "endermanSiegeDistance", "endermanSiegeSlowdown", "endermanSiegeTentacleSpeed", "endermanSiegeBeamEats");
       this.serverSection("Cave Rumble", "caveRumble", "caveRumbleInterval", "caveRumbleDuration", "caveRumbleIntensity");
       this.serverSection("Nether Scaling", "netherScale", "netherScaleInterval", "netherScaleRandom");
+      this.serverSection("New Growth Features", "instantGrowth", "instantGrowthRate", "infinitePhases", "phaseCeiling");
+      this.serverSection("Tentacle Slams & Raids", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "structureRaid", "structureRaidInterval", "structureRaidRadius");
+      this.serverSection("Death & Berserk", "deathBlast", "deathBlastRadius", "berserk", "berserkHealth", "berserkSlamInterval");
    }
 
    private void master(String title) {
