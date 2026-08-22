@@ -77,6 +77,13 @@ public class WitherStormWorldConfig extends SavedData {
    public int endermanSiegeTentacleSpeed = 260;
    public int endermanSiegeBeamEats = 1;
    public int targetingMode = 0;
+   public int instantGrowth = 0;
+   public double instantGrowthRate = (double)4.0F;
+   public int infinitePhases = 0;
+   public double phaseCeiling = (double)7.0F;
+   public int tentacleSlam = 1;
+   public int tentacleSlamInterval = 260;
+   public double tentacleSlamRadius = (double)12.0F;
    public static final String[] TARGETING_LABELS = new String[]{"Ultimate", "Natural", "Nearest", "Group", "Structures"};
    public static final Map<String, Key> KEYS = new LinkedHashMap();
    public static final Codec<WitherStormWorldConfig> CODEC;
@@ -187,6 +194,13 @@ public class WitherStormWorldConfig extends SavedData {
       key("distractionDuration", "Seconds a distraction lasts", (double)10.0F, (double)600.0F, true, (c) -> (double)c.distractionDurationSeconds, (c, v) -> c.distractionDurationSeconds = (int)v);
       key("distractionRange", "How far away the random distraction point lands", (double)32.0F, (double)512.0F, true, (c) -> (double)c.distractionRange, (c, v) -> c.distractionRange = (int)v);
       keyCycle("targetingMode", "How the storm chooses where to go: Ultimate (fixed target), Natural (decides for itself), Nearest player, Group, or Structures (tours built structures and levels them)", TARGETING_LABELS, (c) -> (double)c.targetingMode, (c, v) -> c.targetingMode = (int)v);
+      keyToggle("instantGrowth", "The storm grows from every scrap of block it pulls in, charging through the early phases almost instantly", (c) -> (double)c.instantGrowth, (c, v) -> c.instantGrowth = (int)v);
+      key("instantGrowthRate", "Instant-growth multiplier applied to every bit of growth the storm eats (higher = it races through phases)", (double)1.0F, (double)100.0F, false, (c) -> c.instantGrowthRate, (c, v) -> c.instantGrowthRate = v);
+      keyToggle("infinitePhases", "Experimental: lift the phase ceiling so the storm keeps growing past 6.99 with no hard cap (its body may not have art past 6.1, but it keeps eating and getting stronger)", (c) -> (double)c.infinitePhases, (c, v) -> c.infinitePhases = (int)v);
+      key("phaseCeiling", "Highest phase the storm may reach when Infinite Phases is on", (double)6.0F, (double)30.0F, true, (c) -> (double)c.phaseCeiling, (c, v) -> c.phaseCeiling = v);
+      keyToggle("tentacleSlam", "The storm hammers its tentacles into the ground, caving in a crater and flinging everything nearby", (c) -> (double)c.tentacleSlam, (c, v) -> c.tentacleSlam = (int)v);
+      key("tentacleSlamInterval", "Ticks between tentacle slams", (double)60.0F, (double)1200.0F, true, (c) -> (double)c.tentacleSlamInterval, (c, v) -> c.tentacleSlamInterval = (int)v);
+      key("tentacleSlamRadius", "Radius of a tentacle slam crater and its blast", (double)3.0F, (double)24.0F, true, (c) -> (double)c.tentacleSlamRadius, (c, v) -> c.tentacleSlamRadius = (int)v);
       keyToggle("netherScale", "A giant tentacle swoops through the Nether at players hiding there (phase 5.1+)", (c) -> (double)c.netherScale, (c, v) -> c.netherScale = (int)v);
       key("netherScaleInterval", "Base seconds a player must linger in the Nether before a scaling can hit", (double)30.0F, (double)3600.0F, true, (c) -> (double)c.netherScaleInterval, (c, v) -> c.netherScaleInterval = (int)v);
       key("netherScaleRandom", "Extra random seconds added on top of the base interval", (double)0.0F, (double)600.0F, true, (c) -> (double)c.netherScaleRandom, (c, v) -> c.netherScaleRandom = (int)v);

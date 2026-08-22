@@ -261,6 +261,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    private int siegeStage;
    private int siegeTicks;
    private int siegeSpawned;
+   private int tentacleSlamCooldown;
    private static final Map<UUID, Integer> CAUGHT_ENDERMEN;
    private static long caughtTickedAt;
    private static final int ENDERMAN_CAUGHT_TICKS = 34;
@@ -971,6 +972,40 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       return broken;
    }
 
+   private void tentacleSlamTick(ServerLevel server) {
+      WitherStormWorldConfig cfg = WitherStormConfigs.get(server);
+      if (cfg.tentacleSlam == 0 || this.phase < 3.0) {
+         this.tentacleSlamCooldown = 0;
+         return;
+      }
+
+      if (this.tentacleSlamCooldown > 0) {
+         --this.tentacleSlamCooldown;
+         return;
+      }
+
+      this.tentacleSlamCooldown = cfg.tentacleSlamInterval;
+      double radius = cfg.tentacleSlamRadius;
+      int bx = Mth.floor(this.getX());
+      int bz = Mth.floor(this.getZ());
+      int groundY = server.getHeight(Types.MOTION_BLOCKING, bx, bz);
+      Vec3 centre = new Vec3(this.getX(), (double)groundY, this.getZ());
+      this.carveSphere(server, centre, radius);
+      server.playSound((Entity)null, centre.x, centre.y, centre.z, ModSounds.STORM_THUMP_LARGE, SoundSource.HOSTILE, 6.0F, 0.75F + this.random.nextFloat() * 0.3F);
+
+      AABB box = new AABB(centre.x - radius, centre.y - 1.0, centre.z - radius, centre.x + radius, centre.y + radius * 1.6, centre.z + radius);
+      List<LivingEntity> victims = server.getEntitiesOfClass(LivingEntity.class, box, (e) -> e != this && e.isAlive());
+
+      for (LivingEntity victim : victims) {
+         double dx = victim.getX() - centre.x;
+         double dz = victim.getZ() - centre.z;
+         double dist = Math.sqrt(dx * dx + dz * dz) + 1.0E-4;
+         double falloff = Math.max(0.0, 1.0 - dist / radius);
+         victim.hurtServer(server, server.damageSources().mobAttack(this), (float)(2.0 + 9.0 * falloff));
+         victim.setDeltaMovement(victim.getDeltaMovement().add(dx / dist * 1.3 * falloff, 0.5 + 0.5 * falloff, dz / dist * 1.3 * falloff));
+      }
+   }
+
    public static Vec3 headOffset(int index, boolean devourer) {
       Vec3 off = HEAD_OFFSETS[index];
       if (devourer) {
@@ -981,6 +1016,10 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    }
 
    private double growthCeiling() {
+      WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
+      if (config.infinitePhases != 0) {
+         return config.phaseCeiling;
+      }
       return this.isDevourer() ? 6.99 : 5.9999;
    }
 
@@ -1283,6 +1322,10 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       } else if (this.spawnFreezeTicks > 0) {
          this.setDeltaMovement(Vec3.ZERO);
       } else {
+         if (this.level() instanceof ServerLevel server) {
+            this.tentacleSlamTick(server);
+         }
+
          if (!this.isPhase4()) {
             super.aiStep();
             if (!this.isCollapsed()) {
@@ -1332,6 +1375,10 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
          if (config.fastGrowthToSixOne != 0 && this.phase >= (double)6.0F && this.phase < 6.1) {
             amount = Math.max(1, (int)Math.round((double)(amount * config.fastGrowthToSixOneSpeed) / (double)100.0F));
+         }
+
+         if (config.instantGrowth != 0) {
+            amount = Math.max(1, (int)Math.round((double)amount * config.instantGrowthRate));
          }
 
          this.subGrowth += amount;
