@@ -172,3 +172,13 @@ Remaining planned batches (each pushed and auto-built by Actions):
   `structureRaidInterval` + `structureRaidRadius`. While the storm tours built structures
   (Structures targeting mode) it actively levels its current target, caving chunks out of
   it on a timer via `carveSphere`. Runs in the server `aiStep` branch.
+- **Batch 5 — Far-Lands Haze + `/storm roar/status`** (`9ea6c4b` fixed by `d9e0fdf`, green): client
+  config `farLandsHaze`/`farLandsDistance`/`farLandsStrength`; new `client/FarLandsHaze` closes
+  the fog in as you travel from world origin. FogRendererMixin now combines tower gloom, storm
+  proximity fog and far-lands haze. Also `/storm roar <targets>` and `/storm status <targets>`.
+  (Batch 5's first push failed on a wrong `camera.getPosition()` call; fixed to `camera.position()`.)
+- **Batch 6 — Phase-up Shockwave + `/storm consume`** (`9a83ff2`, green): every integer phase-up
+  emits a damaging/flinging shockwave (bigger in Devourer form); `consumeBlocks(server, radius)`
+  carves a sphere into storm growth; `/storm consume <targets> <radius>`.
+- **Batch 7 — `/storm preset`** (`221eefc`, green): one-shot presets `instant`, `raid`,
+  `apocalypse` that flip the new feature toggles in one command and sync clients.
