@@ -28,7 +28,7 @@ import net.dabicco.witherstormmod.SigeonNetwork;
 import net.dabicco.witherstormmod.StormSpawnPlatform;
 import net.dabicco.witherstormmod.bowels.BowelsHeartEntity;
 import net.dabicco.witherstormmod.bowels.BowelsMawEntity;
-import net.dabicco.witherstormmod.build.StructureBuilder;
+import net.dabicco.witherstormmod.structures.StructureBuilder;
 import net.dabicco.witherstormmod.config.ClientConfigCommandPayload;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.dabicco.witherstormmod.config.WitherStormConfigs;
