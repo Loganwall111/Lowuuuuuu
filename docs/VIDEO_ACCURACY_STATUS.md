@@ -149,3 +149,12 @@ head/tentacle/severed rendering, and the Rocket Retriever / Formidibomb items.
   `splitEnvironmentSourceSets()`.
 
 - **`compileJava` — `missing return statement` (SeveredWitherStorm.java:14923, then latent in WitherStormDevourer.java + WitherStormP4.java)**: Vineflower ran out of memory and left 3 very large model `createBodyLayer()` methods as bytecode comments only. Reconstructed all three from the bytecode dumps with a JVM stack/local-slot interpreter (`tools/reconstruct_models_generic.py`). Verified the generated part trees match each class's constructor `getChild()` exactly (67/67, 302/302, 3/3 parts) and box/pose counts match the bytecode. Added the missing geom imports. **Green build reached at commit `04f1e48`.**
+
+- **Full clean build — GREEN (first cloud build)**: The GitHub Actions workflow
+  (`.github/workflows/build.yml`) now builds on every push. Its first full clean
+  compile hit a `java.lang.StackOverflowError` inside javac's `TransTypes`
+  generic-translation pass. Root cause: the huge single-chain `createBodyLayer()`
+  model expressions (thousands of chained `addBox()` calls) make javac recurse
+  deeper than the default JVM thread stack. Fixed by forking the Java compiler
+  with `-Xss64m` in `build.gradle`. Confirmed `conclusion: success` on commit
+  `d40b808`; a mod jar is uploaded as the `dabywitherstormmod` artifact on every run.
