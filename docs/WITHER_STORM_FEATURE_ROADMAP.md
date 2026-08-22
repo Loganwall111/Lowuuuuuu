@@ -182,3 +182,14 @@ Remaining planned batches (each pushed and auto-built by Actions):
   carves a sphere into storm growth; `/storm consume <targets> <radius>`.
 - **Batch 7 — `/storm preset`** (`221eefc`, green): one-shot presets `instant`, `raid`,
   `apocalypse` that flip the new feature toggles in one command and sync clients.
+- **Batch 8 — Storm Death Blast** (`a3ece34`, green): world-config `deathBlast`/`deathBlastRadius`.
+  On destruction the storm detonates, carving a huge crater, playing the Formidibomb explosion +
+  explosion particle, and flinging/damaging everything in a radius via a `die(DamageSource)` override.
+- **Batch 9 — `/storm spawn <phase>`** (`18ee8da`, green): spawn a fresh storm at a chosen phase.
+- **Batch 10 — `/storm heal|kill`** (`ca76f73`, fixed `0e52832`, green): heal restores health; kill
+  destroys via `die(damageSources().genericKill())` so the death blast fires. (First push used
+  `LivingEntity.kill()` which doesn't exist in this MC; fixed.)
+- **Batch 11 — Devourer Berserk Rage** (`a530b3e`, green): config `berserk`/`berserkHealth`/
+  `berserkSlamInterval` — below a health fraction the Devourer slams far more often.
+- **Batch 12 — Config-screen sections** (`7a92cd2`, green): new server config sections surface all
+  the new growth/slam/raid/death/berserk toggles in the in-game Wither Storm config screen.
