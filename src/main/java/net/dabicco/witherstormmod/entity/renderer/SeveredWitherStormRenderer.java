@@ -22,9 +22,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 import net.minecraft.world.phys.AABB;
+import net.dabicco.witherstormmod.client.StormSkins;
 
 public class SeveredWitherStormRenderer extends MobRenderer<SeveredWitherStormEntity, SeveredWitherStormRenderState, SeveredWitherStorm> {
-   private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/entity/devourer_assets.png");
    private static final float BODY_SCALE = 1.1009175F;
    private static final double COLLAPSE_PIVOT_Y = 12.0;
    private static final float DEBRIS_SCALE = 0.42F;
@@ -152,7 +152,7 @@ public class SeveredWitherStormRenderer extends MobRenderer<SeveredWitherStormEn
                state.idleTimeTicks,
                true,
                false,
-               TEXTURE
+               StormSkins.devourer()
             );
       }
    }
@@ -207,6 +207,6 @@ public class SeveredWitherStormRenderer extends MobRenderer<SeveredWitherStormEn
    }
 
    public Identifier getTextureLocation(SeveredWitherStormRenderState state) {
-      return TEXTURE;
+      return StormSkins.devourer();
    }
 }

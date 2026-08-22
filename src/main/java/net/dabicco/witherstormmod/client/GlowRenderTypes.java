@@ -20,6 +20,8 @@ import net.minecraft.resources.Identifier;
 public final class GlowRenderTypes {
    private static RenderPipeline pipeline;
    private static final Map<Identifier, RenderType> TYPES = new HashMap();
+   private static RenderPipeline translucentPipeline;
+   private static final Map<Identifier, RenderType> TRANSLUCENT_TYPES = new HashMap();
    private static RenderPipeline markPipeline;
    private static final Map<Identifier, RenderType> MARK_TYPES = new HashMap();
    private static final Map<Identifier, RenderType> BLOOM_TYPES = new HashMap();
@@ -91,6 +93,19 @@ public final class GlowRenderTypes {
 
    public static RenderType glow(Identifier texture) {
       return (RenderType)TYPES.computeIfAbsent(texture, (tex) -> RenderTypeInvoker.dabyws$create("dabywitherstormmod:storm_glow:" + String.valueOf(tex), RenderSetup.builder(pipeline()).withTexture("Sampler0", tex).createRenderSetup()));
+   }
+
+   /** Fogless alpha-blended (non-additive) layer for dark translucent moods: cloud decks, rim glare. */
+   public static RenderType translucent(Identifier texture) {
+      return (RenderType)TRANSLUCENT_TYPES.computeIfAbsent(texture, (tex) -> RenderTypeInvoker.dabyws$create("dabywitherstormmod:storm_translucent:" + String.valueOf(tex), RenderSetup.builder(translucentPipeline()).withTexture("Sampler0", tex).createRenderSetup()));
+   }
+
+   private static RenderPipeline translucentPipeline() {
+      if (translucentPipeline == null) {
+         translucentPipeline = RenderPipeline.builder(new RenderPipeline.Snippet[]{RenderPipelinesAccessor.dabyws$entityEmissiveSnippet()}).withLocation(id("pipeline/storm_translucent")).withVertexShader(id("core/fogless_entity")).withFragmentShader(id("core/fogless_entity")).withShaderDefine("NO_OVERLAY").withShaderDefine("NO_CARDINAL_LIGHTING").withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false)).withCull(false).build();
+      }
+
+      return translucentPipeline;
    }
 
    private static Identifier id(String path) {

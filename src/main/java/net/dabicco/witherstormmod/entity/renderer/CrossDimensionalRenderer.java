@@ -17,9 +17,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.dabicco.witherstormmod.client.StormSkins;
 
 public class CrossDimensionalRenderer extends EntityRenderer<CrossDimensionalEntity, CrossDimensionalRenderState> {
-   private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/entity/phase_4_assets.png");
    private static final int FULL_BRIGHT = 15728880;
    private static final float MODEL_YAW_FIX = -90.0F;
    private final Tentacle tentacleModel;
@@ -69,7 +69,7 @@ public class CrossDimensionalRenderer extends EntityRenderer<CrossDimensionalEnt
          scratch.xRot = 0.0F;
          scratch.phase = 5.0;
          collector.submitModel(
-            this.tentacleModel, scratch, poseStack, RenderTypes.entityCutout(TEXTURE), 15728880, OverlayTexture.NO_OVERLAY, -1, null, 0, null
+            this.tentacleModel, scratch, poseStack, RenderTypes.entityCutout(StormSkins.phase4()), 15728880, OverlayTexture.NO_OVERLAY, -1, null, 0, null
          );
          poseStack.popPose();
       }

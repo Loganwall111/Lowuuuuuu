@@ -22,6 +22,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -44,6 +45,11 @@ public class WitherStormConfigScreen extends Screen {
    private int maxScroll;
    private boolean draggingScrollbar;
    private final List<Row> rows;
+   private String currentMasterTitle;
+   private String currentSectionTitle;
+   private EditBox searchBox;
+   private String searchQuery = "";
+   private int searchPos;
    private final List<AbstractWidget> chrome;
    private final List<String> tabKeys;
    private final Map<String, List<String>> masterKeys;
@@ -432,6 +438,23 @@ public class WitherStormConfigScreen extends Screen {
          }
 
          this.addChrome(Button.builder(Component.literal("Done"), (b) -> this.onClose()).bounds(barCentre - 102, this.height - 27, 204, 20).build());
+         if (this.searchBox == null) {
+            this.searchBox = new EditBox(this.font, 0, 0, 204, 20, Component.literal("Find settings"));
+            this.searchBox.setMaxLength(64);
+            this.searchBox.setValue(this.searchQuery);
+            this.searchBox.setHint(Component.literal("Find settings..."));
+            this.searchBox.setResponder((text) -> {
+               if (!text.equals(this.searchQuery)) {
+                  this.searchQuery = text;
+                  this.rebuild();
+               }
+            });
+            this.searchBox.setFocused(false);
+            this.searchBox.setCanLoseFocus(true);
+         }
+
+         this.searchBox.setPosition(barCentre - 314, this.height - 27);
+         this.addChrome(this.searchBox);
          if (this.previewVisible()) {
             int half = (this.previewWidth() - 4) / 2;
             this.addChrome(Button.builder(Component.literal(PHASE_LABELS[Mth.clamp(this.previewPhase, 0, PHASE_LABELS.length - 1)]), (b) -> {
@@ -514,7 +537,7 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("Cave Rumble", "caveRumble", "caveRumbleInterval", "caveRumbleDuration", "caveRumbleIntensity");
       this.serverSection("Nether Scaling", "netherScale", "netherScaleInterval", "netherScaleRandom");
       this.serverSection("New Growth Features", "instantGrowth", "instantGrowthRate", "infinitePhases", "phaseCeiling");
-      this.serverSection("Tentacle Slams & Raids", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "structureRaid", "structureRaidInterval", "structureRaidRadius");
+      this.serverSection("Tentacle Slams & Raids", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "structureRaid", "structureRaidInterval", "structureRaidRadius", "structureTearClusters");
       this.serverSection("Death & Berserk", "deathBlast", "deathBlastRadius", "berserk", "berserkHealth", "berserkSlamInterval");
    }
 
@@ -526,6 +549,8 @@ public class WitherStormConfigScreen extends Screen {
       this.rows.add(WitherStormConfigScreen.Row.header(title, 0));
       this.skipCurrentMaster = this.collapsed.contains(title);
       this.skipCurrentSection = true;
+      this.currentMasterTitle = title;
+      this.currentSectionTitle = title;
       this.currentMasterKeys = (List)this.masterKeys.computeIfAbsent(title, (k) -> new ArrayList());
    }
 
@@ -540,6 +565,8 @@ public class WitherStormConfigScreen extends Screen {
          this.rows.add(WitherStormConfigScreen.Row.header(title, this.currentMasterKeys == null ? 0 : 1));
          this.skipCurrentSection = this.collapsed.contains(title);
       }
+
+      this.currentSectionTitle = title;
    }
 
    private void serverSection(String title, String... keyNames) {
@@ -590,6 +617,7 @@ public class WitherStormConfigScreen extends Screen {
 
       }));
       this.header("Storm Rendering");
+      this.clientRow("stormSkin", "Storm Skin", (BooleanSupplier)null);
       this.clientRow("legacyHeads", "Legacy Heads", (BooleanSupplier)null);
       this.clientRow("distantStorms", "Distant Storms", (BooleanSupplier)null);
       this.clientRow("distantFog", "Distant Storm Haze", (BooleanSupplier)null);
@@ -686,6 +714,43 @@ public class WitherStormConfigScreen extends Screen {
       this.clientRow("stormMusicVolume", "Music Volume", () -> !DabyWSClientConfig.stormMusic);
       this.clientRow("stormMusicRange", "Music Range", () -> !DabyWSClientConfig.stormMusic);
       this.clientRow("stormMusicCaveCutoff", "Cave Silence", () -> !DabyWSClientConfig.stormMusic);
+      this.master("Skybox & Atmosphere");
+      this.header("Skybox Stars");
+      this.clientRow("stormStars", "Skybox Stars", (BooleanSupplier)null);
+      this.clientRow("starDensity", "Star Density", (BooleanSupplier)null);
+      this.clientRow("starTwinkleSpeed", "Twinkle Speed", (BooleanSupplier)null);
+      this.clientRow("starBrightness", "Star Brightness", (BooleanSupplier)null);
+      this.header("MCSM Cloud Deck");
+      this.clientRow("stormCloudDeck", "Cloud Deck", (BooleanSupplier)null);
+      this.clientRow("stormCloudCoverage", "Deck Coverage", (BooleanSupplier)null);
+      this.clientRow("stormCloudAltitude", "Deck Altitude", (BooleanSupplier)null);
+      this.clientRow("stormCloudPaletteMix", "Deck Palette Mix", (BooleanSupplier)null);
+      this.header("The Pulse");
+      this.clientRow("atmospherePulse", "Atmospheric Pulse", (BooleanSupplier)null);
+      this.clientRow("pulseStrength", "Pulse Strength", (BooleanSupplier)null);
+      this.clientRow("pulsePeriod", "Pulse Period", (BooleanSupplier)null);
+      this.clientRow("pulseSize", "Pulse Reach", (BooleanSupplier)null);
+      this.clientRow("pulseHeartbeat", "Pulse Heartbeat", (BooleanSupplier)null);
+      this.clientRow("pulseHeartbeatVolume", "Heartbeat Volume", () -> !DabyWSClientConfig.pulseHeartbeat);
+      this.clientRow("pulseHeartbeatRange", "Heartbeat Range", () -> !DabyWSClientConfig.pulseHeartbeat);
+      this.header("Cataclysm Halos (Phase 5.8+)");
+      this.clientRow("cataclysmHalos", "Cataclysm Halo Pair", (BooleanSupplier)null);
+      this.clientRow("haloStrength", "Halo Strength", (BooleanSupplier)null);
+      this.header("Black Glare & Ejecta");
+      this.clientRow("blackGlare", "Black Glare Ring", (BooleanSupplier)null);
+      this.clientRow("blackGlareStrength", "Glare Strength", (BooleanSupplier)null);
+      this.clientRow("glareEjecta", "Cluster Ejecta", (BooleanSupplier)null);
+      this.clientRow("ejectaRate", "Ejecta Rate", (BooleanSupplier)null);
+      this.clientRow("ejectaBrightness", "Ejecta Brightness", (BooleanSupplier)null);
+      this.header("Phase Colour Palettes");
+      this.clientRow("phaseFogPalettes", "Phase Fog Palettes", (BooleanSupplier)null);
+      this.clientRow("paletteStrength", "Palette Strength", (BooleanSupplier)null);
+      this.clientRow("turquoiseFogR", "Phase-5 Fog: Red", (BooleanSupplier)null);
+      this.clientRow("turquoiseFogG", "Phase-5 Fog: Green", (BooleanSupplier)null);
+      this.clientRow("turquoiseFogB", "Phase-5 Fog: Blue", (BooleanSupplier)null);
+      this.clientRow("cataclysmFogR", "Phase-5.8 Fog: Red", (BooleanSupplier)null);
+      this.clientRow("cataclysmFogG", "Phase-5.8 Fog: Green", (BooleanSupplier)null);
+      this.clientRow("cataclysmFogB", "Phase-5.8 Fog: Blue", (BooleanSupplier)null);
       this.buildPerformanceRows();
    }
 
@@ -790,11 +855,30 @@ public class WitherStormConfigScreen extends Screen {
    }
 
    private void addRowWidget(Row row) {
-      if (!this.skipCurrentMaster && !this.skipCurrentSection) {
-         this.rows.add(row);
-         int indent = this.currentMasterKeys == null ? 0 : 10;
-         row.createWidget(this.rowX() + indent, this.rowWidth() - indent);
-         this.addWidget(row.widget);
+      if (this.searching() ? !this.rowMatchesSearch(row) : this.skipCurrentMaster || this.skipCurrentSection) {
+         return;
+      }
+
+      this.rows.add(row);
+      int indent = this.currentMasterKeys == null ? 0 : 10;
+      row.createWidget(this.rowX() + indent, this.rowWidth() - indent);
+      this.addWidget(row.widget);
+   }
+
+   private boolean searching() {
+      return !this.searchQuery.isBlank();
+   }
+
+   private boolean rowMatchesSearch(Row row) {
+      String q = this.searchQuery.toLowerCase(java.util.Locale.ROOT);
+      if (row.label != null && row.label.toLowerCase(java.util.Locale.ROOT).contains(q)) {
+         return true;
+      } else if (row.desc != null && row.desc.toLowerCase(java.util.Locale.ROOT).contains(q)) {
+         return true;
+      } else if (this.currentSectionTitle != null && this.currentSectionTitle.toLowerCase(java.util.Locale.ROOT).contains(q)) {
+         return true;
+      } else {
+         return this.currentMasterTitle != null && this.currentMasterTitle.toLowerCase(java.util.Locale.ROOT).contains(q);
       }
    }
 

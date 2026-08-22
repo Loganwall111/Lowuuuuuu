@@ -107,9 +107,43 @@ public class DabyWSClientConfig {
    public static final String[] BLOOM_DEBUG_LABELS = new String[]{"Off", "1 Source", "2 Scene Depth", "3 Bloom Depth", "4 Depth Mask", "5 Blur H", "6 Blur V", "7 Wide H", "8 Final Bloom", "9 UV Align"};
    public static boolean bloomMaskToStorm = true;
    public static double effectsPreset = (double)1.0F;
-   public static final String[] PRESET_LABELS = new String[]{"Custom", "MCSM", "Legacy Java"};
+   public static final String[] PRESET_LABELS = new String[]{"Custom", "MCSM", "Legacy Java", "Cinematic"};
    public static boolean beamInnerFaces = false;
    public static double debrisSize = (double)1.0F;
+   public static double stormSkin = (double)0.0F;
+   public static final String[] SKIN_LABELS = new String[]{"Classic", "Obsidian Gloss (OG)"};
+   public static double stormStars = (double)1.0F;
+   public static final String[] STAR_LABELS = new String[]{"Off", "Storm Nights", "Every Night"};
+   public static double starDensity = (double)1.0F;
+   public static double starTwinkleSpeed = (double)1.0F;
+   public static double starBrightness = (double)1.0F;
+   public static double stormCloudDeck = (double)1.0F;
+   public static final String[] CLOUD_DECK_LABELS = new String[]{"Off", "Subtle", "Dense"};
+   public static double stormCloudCoverage = (double)1.0F;
+   public static double stormCloudAltitude = (double)0.0F;
+   public static double stormCloudPaletteMix = 0.85;
+   public static boolean atmospherePulse = true;
+   public static double pulseStrength = (double)1.0F;
+   public static double pulsePeriod = (double)4.0F;
+   public static double pulseSize = (double)1.0F;
+   public static boolean cataclysmHalos = true;
+   public static double haloStrength = (double)1.0F;
+   public static boolean blackGlare = true;
+   public static double blackGlareStrength = (double)1.0F;
+   public static boolean glareEjecta = true;
+   public static double ejectaRate = (double)1.0F;
+   public static double ejectaBrightness = (double)1.0F;
+   public static boolean pulseHeartbeat = false;
+   public static double pulseHeartbeatVolume = (double)1.0F;
+   public static double pulseHeartbeatRange = (double)512.0F;
+   public static boolean phaseFogPalettes = true;
+   public static double paletteStrength = 0.85;
+   public static double turquoiseFogR = 0.031;
+   public static double turquoiseFogG = 0.42;
+   public static double turquoiseFogB = 0.36;
+   public static double cataclysmFogR = 0.055;
+   public static double cataclysmFogG = 0.028;
+   public static double cataclysmFogB = 0.10;
    public static boolean configOpened = false;
    public static boolean bossbarNotched = true;
    public static boolean clusterVolumetricLighting = false;
@@ -146,6 +180,7 @@ public class DabyWSClientConfig {
    public static final String RESET_VERSION = "Beta 1.9.33";
    private static final Map<String, Double> PRESET_MCSM;
    private static final Map<String, Double> PRESET_LEGACY;
+   private static final Map<String, Double> PRESET_CINEMATIC;
    private static final Gson GSON;
    private static boolean wipedByRestructure;
 
@@ -209,6 +244,7 @@ public class DabyWSClientConfig {
       switch (preset) {
          case 1 -> var10000 = PRESET_MCSM;
          case 2 -> var10000 = PRESET_LEGACY;
+         case 3 -> var10000 = PRESET_CINEMATIC;
          default -> var10000 = null;
       }
 
@@ -242,7 +278,7 @@ public class DabyWSClientConfig {
    }
 
    public static void refreshPreset() {
-      for(int preset = 1; preset <= 2; ++preset) {
+      for(int preset = 1; preset <= 3; ++preset) {
          Map<String, Double> values = presetValues(preset);
          boolean match = true;
 
@@ -428,7 +464,38 @@ public class DabyWSClientConfig {
       key("infectedMobSoundVolume", "", (double)0.0F, (double)2.0F, false, () -> infectedMobSoundVolume, (v) -> infectedMobSoundVolume = v);
       key("devourerDebrisGlow", "Let the phase-6 violet debris feed the bloom.", (double)0.0F, (double)1.0F, true, () -> devourerDebrisGlow ? (double)1.0F : (double)0.0F, (v) -> devourerDebrisGlow = v >= (double)0.5F);
       key("debrisAmount", "How much wreckage orbits the storm.", (double)0.0F, (double)2.0F, false, () -> debrisAmount, (v) -> debrisAmount = v);
-      key("debrisSize", "", 0.2, (double)2.0F, false, () -> debrisSize, (v) -> debrisSize = v);
+      key("debrisSize", "Size of the wreckage blocks caught in the tractor beams.", 0.2, (double)3.0F, false, () -> debrisSize, (v) -> debrisSize = v);
+      keyCycle("stormSkin", "Obsidian Gloss is the OG MCSM skin: shiny near-black flesh with a purple sheen, and the command block belly redrawn as obsidian-purple tiles instead of vanilla orange. Classic keeps the plain textures.", SKIN_LABELS, () -> stormSkin, (v) -> stormSkin = (double)Math.round(v));
+      keyCycle("stormStars", "A dome of twinkling stars in the blacked-out sky. Storm Nights shows it only while a phase-5+ storm has eaten the light; Every Night replaces the vanilla sky every night.", STAR_LABELS, () -> stormStars, (v) -> stormStars = (double)Math.round(v));
+      key("starDensity", "How many stars fill the dome.", 0.25, (double)2.0F, false, () -> starDensity, (v) -> starDensity = v);
+      key("starTwinkleSpeed", "How fast the stars twinkle.", (double)0.0F, (double)4.0F, false, () -> starTwinkleSpeed, (v) -> starTwinkleSpeed = v);
+      key("starBrightness", "Overall star brightness.", (double)0.0F, (double)2.0F, false, () -> starBrightness, (v) -> starBrightness = v);
+      keyCycle("stormCloudDeck", "MCSM-style weather slabs slowly orbiting the storm instead of a flat dark sky.", CLOUD_DECK_LABELS, () -> stormCloudDeck, (v) -> stormCloudDeck = (double)Math.round(v));
+      key("stormCloudCoverage", "How much of the sky around the storm the deck covers.", 0.25, (double)2.0F, false, () -> stormCloudCoverage, (v) -> stormCloudCoverage = v);
+      key("stormCloudAltitude", "Push the whole deck up or down.", -40.0, (double)40.0F, false, () -> stormCloudAltitude, (v) -> stormCloudAltitude = v);
+      key("stormCloudPaletteMix", "How much the deck follows the phase palette versus your manual cloud colour.", (double)0.0F, (double)1.0F, false, () -> stormCloudPaletteMix, (v) -> stormCloudPaletteMix = v);
+      key("atmospherePulse", "The purple-blue glare breathing in the air around a late-phase storm - part of the atmosphere, bigger than the body.", (double)0.0F, (double)1.0F, true, () -> atmospherePulse ? (double)1.0F : (double)0.0F, (v) -> atmospherePulse = v >= (double)0.5F);
+      key("pulseStrength", "How bright the pulse burns at its peak.", (double)0.0F, (double)2.0F, false, () -> pulseStrength, (v) -> pulseStrength = v);
+      key("pulsePeriod", "Seconds between pulse peaks.", (double)1.0F, (double)10.0F, false, () -> pulsePeriod, (v) -> pulsePeriod = v);
+      key("pulseSize", "How far the glow reaches past the body.", 0.5, (double)2.0F, false, () -> pulseSize, (v) -> pulseSize = v);
+      key("cataclysmHalos", "From phase 5.8: the blue-purple halo ring around the area plus the original white halo under the body.", (double)0.0F, (double)1.0F, true, () -> cataclysmHalos ? (double)1.0F : (double)0.0F, (v) -> cataclysmHalos = v >= (double)0.5F);
+      key("haloStrength", "Brightness of the cataclysm halo pair.", (double)0.0F, (double)2.0F, false, () -> haloStrength, (v) -> haloStrength = v);
+      key("blackGlare", "The black-purple glare ring hugging the storm's silhouette.", (double)0.0F, (double)1.0F, true, () -> blackGlare ? (double)1.0F : (double)0.0F, (v) -> blackGlare = v >= (double)0.5F);
+      key("blackGlareStrength", "How dark the rim glare goes.", (double)0.0F, (double)2.0F, false, () -> blackGlareStrength, (v) -> blackGlareStrength = v);
+      key("glareEjecta", "Turquoise and green cluster sparks ejecting from the glare ring.", (double)0.0F, (double)1.0F, true, () -> glareEjecta ? (double)1.0F : (double)0.0F, (v) -> glareEjecta = v >= (double)0.5F);
+      key("ejectaRate", "How many cluster sparks burst off the rim.", (double)0.0F, (double)3.0F, false, () -> ejectaRate, (v) -> ejectaRate = v);
+      key("ejectaBrightness", "Brightness of the ejecta sparks.", (double)0.0F, (double)2.0F, false, () -> ejectaBrightness, (v) -> ejectaBrightness = v);
+      key("pulseHeartbeat", "A deep thump from the nearest storm on every pulse peak.", (double)0.0F, (double)1.0F, true, () -> pulseHeartbeat ? (double)1.0F : (double)0.0F, (v) -> pulseHeartbeat = v >= (double)0.5F);
+      key("pulseHeartbeatVolume", "Loudness of the pulse heartbeat.", (double)0.0F, (double)2.0F, false, () -> pulseHeartbeatVolume, (v) -> pulseHeartbeatVolume = v);
+      key("pulseHeartbeatRange", "How far the heartbeat carries.", (double)128.0F, (double)1024.0F, false, () -> pulseHeartbeatRange, (v) -> pulseHeartbeatRange = v);
+      key("phaseFogPalettes", "Let the storm's phase recolour the sky: turquoise fog at phase 5, purple-black from phase 5.8 on.", (double)0.0F, (double)1.0F, true, () -> phaseFogPalettes ? (double)1.0F : (double)0.0F, (v) -> phaseFogPalettes = v >= (double)0.5F);
+      key("paletteStrength", "How far the phase palettes override your manual colours.", (double)0.0F, (double)1.0F, false, () -> paletteStrength, (v) -> paletteStrength = v);
+      key("turquoiseFogR", "Phase-5 turquoise fog anchor.", (double)0.0F, (double)1.0F, false, () -> turquoiseFogR, (v) -> turquoiseFogR = v);
+      key("turquoiseFogG", "", (double)0.0F, (double)1.0F, false, () -> turquoiseFogG, (v) -> turquoiseFogG = v);
+      key("turquoiseFogB", "", (double)0.0F, (double)1.0F, false, () -> turquoiseFogB, (v) -> turquoiseFogB = v);
+      key("cataclysmFogR", "Phase-5.8+ purple-black fog anchor.", (double)0.0F, (double)1.0F, false, () -> cataclysmFogR, (v) -> cataclysmFogR = v);
+      key("cataclysmFogG", "", (double)0.0F, (double)1.0F, false, () -> cataclysmFogG, (v) -> cataclysmFogG = v);
+      key("cataclysmFogB", "", (double)0.0F, (double)1.0F, false, () -> cataclysmFogB, (v) -> cataclysmFogB = v);
       key("skyDarkenIntensity", "How much a late-phase storm darkens the sky.", (double)0.0F, (double)1.0F, false, () -> skyDarkenIntensity, (v) -> skyDarkenIntensity = v);
       key("separateFogColor", "Give the fog its own colour instead of the sky's.", (double)0.0F, (double)1.0F, true, () -> separateFogColor ? (double)1.0F : (double)0.0F, (v) -> separateFogColor = v >= (double)0.5F);
       key("fogColorR", "", (double)0.0F, (double)1.0F, false, () -> fogColorR, (v) -> fogColorR = v);
@@ -529,8 +596,9 @@ public class DabyWSClientConfig {
       }
 
       loadedVersion = 13;
-      PRESET_MCSM = Map.of("reverseShading", (double)1.0F, "bloomStrength", (double)2.0F, "beamOpacity", 0.6, "beamColorR", 0.3, "beamColorG", 0.22, "beamColorB", (double)1.0F);
+      PRESET_MCSM = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.8), Map.entry("phaseFogPalettes", (double)1.0F));
       PRESET_LEGACY = Map.of("reverseShading", (double)0.0F, "bloomStrength", (double)1.0F, "beamOpacity", 0.74, "beamColorR", 0.52, "beamColorG", 0.46, "beamColorB", (double)1.0F);
+      PRESET_CINEMATIC = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStars", (double)2.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("pulseStrength", 1.3), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("haloStrength", 1.2), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("ejectaRate", 1.4), Map.entry("pulseHeartbeat", (double)1.0F), Map.entry("debrisSize", (double)2.0F), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
       GSON = (new GsonBuilder()).setPrettyPrinting().create();
    }
 

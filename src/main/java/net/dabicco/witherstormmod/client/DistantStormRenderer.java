@@ -25,7 +25,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 public class DistantStormRenderer {
-   private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/entity/phase_4_assets.png");
    private static final double SQUASH_DISTANCE_MAX = (double)768.0F;
    private static final float SMOOTH = 0.25F;
    private static final float SMOOTH_RATE = 3.5F;
@@ -168,8 +167,8 @@ public class DistantStormRenderer {
                      pose.mulPose(Axis.XP.rotationDegrees(headPitch));
                      pose.scale(6.0F, 6.0F, 6.0F);
                      pose.translate((double)0.0F, (double)-1.25F, (double)0.0F);
-                     consumers.submitModel(headModel, headState, pose, FoglessRenderTypes.bodyCutout(TEXTURE), 15728880, OverlayTexture.NO_OVERLAY, -1, (TextureAtlasSprite)null, 0, (ModelFeatureRenderer.CrumblingOverlay)null);
-                     consumers.submitModel(headGlowModel, headState, pose, FoglessRenderTypes.eyes(TEXTURE), 15728880, OverlayTexture.NO_OVERLAY, WitherStormHeadRenderer.glowTint(), (TextureAtlasSprite)null, 0, (ModelFeatureRenderer.CrumblingOverlay)null);
+                     consumers.submitModel(headModel, headState, pose, FoglessRenderTypes.bodyCutout(StormSkins.phase4()), 15728880, OverlayTexture.NO_OVERLAY, -1, (TextureAtlasSprite)null, 0, (ModelFeatureRenderer.CrumblingOverlay)null);
+                     consumers.submitModel(headGlowModel, headState, pose, FoglessRenderTypes.eyes(StormSkins.phase4()), 15728880, OverlayTexture.NO_OVERLAY, WitherStormHeadRenderer.glowTint(), (TextureAtlasSprite)null, 0, (ModelFeatureRenderer.CrumblingOverlay)null);
                      pose.popPose();
                   }
 
@@ -264,8 +263,8 @@ public class DistantStormRenderer {
                pose.scale(hs.headScale, hs.headScale, hs.headScale);
                pose.translate((double)0.0F, (double)-1.25F, (double)0.0F);
                WitherStormHeadRenderer.setDevourerTint(true);
-               consumers.submitModel(headModel, hs, pose, FoglessRenderTypes.bodyCutout(TEXTURE), 15728880, OverlayTexture.NO_OVERLAY, -1, (TextureAtlasSprite)null, 0, (ModelFeatureRenderer.CrumblingOverlay)null);
-               consumers.submitModel(headGlowModel, hs, pose, FoglessRenderTypes.eyes(TEXTURE), 15728880, OverlayTexture.NO_OVERLAY, WitherStormHeadRenderer.glowTint(), (TextureAtlasSprite)null, 0, (ModelFeatureRenderer.CrumblingOverlay)null);
+               consumers.submitModel(headModel, hs, pose, FoglessRenderTypes.bodyCutout(StormSkins.phase4()), 15728880, OverlayTexture.NO_OVERLAY, -1, (TextureAtlasSprite)null, 0, (ModelFeatureRenderer.CrumblingOverlay)null);
+               consumers.submitModel(headGlowModel, hs, pose, FoglessRenderTypes.eyes(StormSkins.phase4()), 15728880, OverlayTexture.NO_OVERLAY, WitherStormHeadRenderer.glowTint(), (TextureAtlasSprite)null, 0, (ModelFeatureRenderer.CrumblingOverlay)null);
                WitherStormHeadRenderer.setDevourerTint(false);
                pose.popPose();
             }
