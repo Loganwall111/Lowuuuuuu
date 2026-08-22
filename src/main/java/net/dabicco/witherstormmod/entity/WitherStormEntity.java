@@ -352,6 +352,39 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
    }
 
+   public void die(DamageSource source) {
+      super.die(source);
+      if (this.level() instanceof ServerLevel server) {
+         this.deathBlast(server);
+      }
+   }
+
+   private void deathBlast(ServerLevel server) {
+      WitherStormWorldConfig cfg = WitherStormConfigs.get(server);
+      if (cfg.deathBlast == 0) {
+         return;
+      }
+
+      double radius = cfg.deathBlastRadius;
+      Vec3 centre = this.position();
+      this.carveSphere(server, centre, radius);
+      server.playSound((Entity)null, centre.x, centre.y, centre.z, ModSounds.FORMIDIBOMB_EXPLOSION, SoundSource.HOSTILE, 8.0F, 1.0F);
+      server.sendParticles(ParticleTypes.EXPLOSION_EMITTER, centre.x, centre.y, centre.z, 1, 0.0, 0.0, 0.0, 0.0);
+
+      double rSq = radius * radius;
+      for (LivingEntity victim : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius), (e) -> e != this && e.isAlive())) {
+         double dx = victim.getX() - centre.x;
+         double dz = victim.getZ() - centre.z;
+         double d = dx * dx + dz * dz;
+         if (d <= rSq && d > 1.0E-4) {
+            double dist = Math.sqrt(d);
+            double falloff = 1.0 - dist / radius;
+            victim.hurtServer(server, server.damageSources().mobAttack(this), (float)(4.0 + 16.0 * falloff));
+            victim.setDeltaMovement(victim.getDeltaMovement().add(dx / dist * 2.2 * falloff, 0.9 * falloff, dz / dist * 2.2 * falloff));
+         }
+      }
+   }
+
    public int getCoverPlates() {
       return BowelsPortal.platesFor(this.getPhase());
    }

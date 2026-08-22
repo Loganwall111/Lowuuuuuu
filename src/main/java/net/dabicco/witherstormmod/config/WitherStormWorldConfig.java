@@ -87,6 +87,8 @@ public class WitherStormWorldConfig extends SavedData {
    public int structureRaid = 1;
    public int structureRaidInterval = 200;
    public double structureRaidRadius = (double)8.0F;
+   public int deathBlast = 1;
+   public double deathBlastRadius = (double)24.0F;
    public static final String[] TARGETING_LABELS = new String[]{"Ultimate", "Natural", "Nearest", "Group", "Structures"};
    public static final Map<String, Key> KEYS = new LinkedHashMap();
    public static final Codec<WitherStormWorldConfig> CODEC;
@@ -207,6 +209,8 @@ public class WitherStormWorldConfig extends SavedData {
       keyToggle("structureRaid", "While the storm is touring built structures (Structures targeting), it actively levels them, caving chunks out of the target as it dwells", (c) -> (double)c.structureRaid, (c, v) -> c.structureRaid = (int)v);
       key("structureRaidInterval", "Ticks between structure-raid caved-ins", (double)60.0F, (double)600.0F, true, (c) -> (double)c.structureRaidInterval, (c, v) -> c.structureRaidInterval = (int)v);
       key("structureRaidRadius", "Radius of each structure-raid caved-in", (double)2.0F, (double)16.0F, true, (c) -> (double)c.structureRaidRadius, (c, v) -> c.structureRaidRadius = (int)v);
+      keyToggle("deathBlast", "When the storm is finally destroyed, it detonates in a cataclysmic blast, caving a huge crater and flinging everything around it (the story's final explosion)", (c) -> (double)c.deathBlast, (c, v) -> c.deathBlast = (int)v);
+      key("deathBlastRadius", "Radius of the storm's death blast crater and its damage", (double)4.0F, (double)64.0F, true, (c) -> (double)c.deathBlastRadius, (c, v) -> c.deathBlastRadius = (int)v);
       keyToggle("netherScale", "A giant tentacle swoops through the Nether at players hiding there (phase 5.1+)", (c) -> (double)c.netherScale, (c, v) -> c.netherScale = (int)v);
       key("netherScaleInterval", "Base seconds a player must linger in the Nether before a scaling can hit", (double)30.0F, (double)3600.0F, true, (c) -> (double)c.netherScaleInterval, (c, v) -> c.netherScaleInterval = (int)v);
       key("netherScaleRandom", "Extra random seconds added on top of the base interval", (double)0.0F, (double)600.0F, true, (c) -> (double)c.netherScaleRandom, (c, v) -> c.netherScaleRandom = (int)v);
