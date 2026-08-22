@@ -375,6 +375,45 @@ public class DabyWSCommand {
       return count;
    }
 
+   private static int stormPreset(CommandContext<CommandSourceStack> ctx, String name) {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      WitherStormWorldConfig cfg = WitherStormConfigs.get(source.getLevel());
+      switch (name) {
+         case "instant":
+            cfg.instantGrowth = 1;
+            cfg.instantGrowthRate = 4.0;
+            cfg.infinitePhases = 1;
+            cfg.phaseCeiling = 10.0;
+            break;
+         case "raid":
+            cfg.structureRaid = 1;
+            cfg.targetingMode = 4;
+            cfg.tentacleSlam = 1;
+            cfg.tentacleSlamInterval = 180;
+            break;
+         case "apocalypse":
+            cfg.instantGrowth = 1;
+            cfg.instantGrowthRate = 4.0;
+            cfg.infinitePhases = 1;
+            cfg.phaseCeiling = 15.0;
+            cfg.structureRaid = 1;
+            cfg.targetingMode = 4;
+            cfg.tentacleSlam = 1;
+            cfg.tentacleSlamInterval = 160;
+            cfg.phase4Requirement = 1200;
+            cfg.phase5Requirement = 4000;
+            break;
+         default:
+            source.sendFailure(Component.literal("Unknown preset: " + name + " (instant | raid | apocalypse)"));
+            return 0;
+      }
+
+      cfg.markChanged();
+      SigeonNetwork.broadcastSync(source.getLevel());
+      source.sendSuccess(() -> Component.literal("[server] Applied preset §e" + name), true);
+      return 1;
+   }
+
    private static void registerExtra(CommandDispatcher<CommandSourceStack> dispatcher) {
       dispatcher.register(Commands.literal("storm")
          .then(Commands.literal("grow").requires(DabyWSCommand::mayEditServerConfig)
@@ -391,6 +430,9 @@ public class DabyWSCommand {
             .then(Commands.argument("targets", EntityArgument.entities())
                .then(Commands.argument("radius", IntegerArgumentType.integer(1, 64))
                   .executes((ctx) -> consumeStorms(ctx, IntegerArgumentType.getInteger(ctx, "radius"))))))
+         .then(Commands.literal("preset").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("name", StringArgumentType.word())
+               .executes((ctx) -> stormPreset(ctx, StringArgumentType.getString(ctx, "name")))))
          .then(Commands.literal("status")
             .then(Commands.argument("targets", EntityArgument.entities())
                .executes((ctx) -> stormStatus(ctx))))
