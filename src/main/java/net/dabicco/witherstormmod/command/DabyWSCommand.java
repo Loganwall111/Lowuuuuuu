@@ -28,6 +28,7 @@ import net.dabicco.witherstormmod.SigeonNetwork;
 import net.dabicco.witherstormmod.StormSpawnPlatform;
 import net.dabicco.witherstormmod.bowels.BowelsHeartEntity;
 import net.dabicco.witherstormmod.bowels.BowelsMawEntity;
+import net.dabicco.witherstormmod.build.StructureBuilder;
 import net.dabicco.witherstormmod.config.ClientConfigCommandPayload;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.dabicco.witherstormmod.config.WitherStormConfigs;
@@ -429,6 +430,23 @@ public class DabyWSCommand {
       return 0;
    }
 
+   private static int stormBuild(CommandContext<CommandSourceStack> ctx, String type) {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      ServerPlayer player = source.getPlayer();
+      if (player == null) {
+         source.sendFailure(Component.literal("Must be a player to build here"));
+         return 0;
+      }
+      int placed = StructureBuilder.build(source.getLevel(), player.blockPosition(), type);
+      if (placed == 0) {
+         source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church)"));
+         return 0;
+      }
+      int count = placed;
+      source.sendSuccess(() -> Component.literal("Built §e" + type + "§r (" + count + " blocks) in front of you."), true);
+      return 1;
+   }
+
    private static int stormPreset(CommandContext<CommandSourceStack> ctx, String name) {
       CommandSourceStack source = (CommandSourceStack)ctx.getSource();
       WitherStormWorldConfig cfg = WitherStormConfigs.get(source.getLevel());
@@ -497,6 +515,9 @@ public class DabyWSCommand {
          .then(Commands.literal("preset").requires(DabyWSCommand::mayEditServerConfig)
             .then(Commands.argument("name", StringArgumentType.word())
                .executes((ctx) -> stormPreset(ctx, StringArgumentType.getString(ctx, "name")))))
+         .then(Commands.literal("build").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("type", StringArgumentType.word())
+               .executes((ctx) -> stormBuild(ctx, StringArgumentType.getString(ctx, "type")))))
          .then(Commands.literal("status")
             .then(Commands.argument("targets", EntityArgument.entities())
                .executes((ctx) -> stormStatus(ctx))))
