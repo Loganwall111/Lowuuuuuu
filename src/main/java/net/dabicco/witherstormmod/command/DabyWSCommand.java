@@ -396,7 +396,9 @@ public class DabyWSCommand {
       int count = 0;
 
       for(WitherStormEntity ws : getStorms(ctx)) {
-         ws.kill();
+         if (ws.level() instanceof ServerLevel server) {
+            ws.die(server.damageSources().genericKill());
+         }
          source.sendSuccess(() -> {
             String var10000 = stormLabel(ws);
             return Component.literal(var10000 + ": destroyed (death blast fired)");
