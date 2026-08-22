@@ -375,6 +375,26 @@ public class DabyWSCommand {
       return count;
    }
 
+   private static int spawnStormAtPhase(CommandContext<CommandSourceStack> ctx, float phase) {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      ServerPlayer player = source.getPlayer();
+      ServerLevel level = source.getLevel();
+      if (level instanceof ServerLevel) {
+         WitherStormEntity entity = (WitherStormEntity)ModEntityTypes.WITHER_STORM.create(level, EntitySpawnReason.COMMAND);
+         if (entity != null) {
+            Vec3 spawnPos = player.position().add((double)0.0F, (double)2.0F, (double)0.0F);
+            entity.setPos(spawnPos);
+            entity.setPhaseExact((double)phase);
+            level.addFreshEntity(entity);
+            source.sendSuccess(() -> Component.literal("Wither Storm spawned at phase §e" + phase), true);
+            return 1;
+         }
+      }
+
+      source.sendFailure(Component.literal("Failed to spawn Wither Storm"));
+      return 0;
+   }
+
    private static int stormPreset(CommandContext<CommandSourceStack> ctx, String name) {
       CommandSourceStack source = (CommandSourceStack)ctx.getSource();
       WitherStormWorldConfig cfg = WitherStormConfigs.get(source.getLevel());
@@ -430,6 +450,9 @@ public class DabyWSCommand {
             .then(Commands.argument("targets", EntityArgument.entities())
                .then(Commands.argument("radius", IntegerArgumentType.integer(1, 64))
                   .executes((ctx) -> consumeStorms(ctx, IntegerArgumentType.getInteger(ctx, "radius"))))))
+         .then(Commands.literal("spawn").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("phase", FloatArgumentType.floatArg(0.0F, 10.0F))
+               .executes((ctx) -> spawnStormAtPhase(ctx, FloatArgumentType.getFloat(ctx, "phase")))))
          .then(Commands.literal("preset").requires(DabyWSCommand::mayEditServerConfig)
             .then(Commands.argument("name", StringArgumentType.word())
                .executes((ctx) -> stormPreset(ctx, StringArgumentType.getString(ctx, "name")))))
