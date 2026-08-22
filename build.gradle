@@ -73,6 +73,14 @@ processResources {
 tasks.withType(JavaCompile).configureEach {
 	it.options.encoding = "UTF-8"
 	it.options.release = 25
+
+	// The decompiled Blockbench model classes contain single expressions with
+	// thousands of chained calls (e.g. WitherStormP4.createBodyLayer / HugeAssBackModel).
+	// javac's TransTypes generic-translation pass recurses through that whole chain and
+	// overflows the default JVM thread stack with a StackOverflowError. Compile in a
+	// forked JVM with a large stack so those deep expressions translate successfully.
+	it.options.fork = true
+	it.options.forkOptions.jvmArgs = ["-Xss64m"]
 }
 
 java {
