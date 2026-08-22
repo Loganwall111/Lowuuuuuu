@@ -262,6 +262,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    private int siegeTicks;
    private int siegeSpawned;
    private int tentacleSlamCooldown;
+   private int raidCooldown;
    private static final Map<UUID, Integer> CAUGHT_ENDERMEN;
    private static long caughtTickedAt;
    private static final int ENDERMAN_CAUGHT_TICKS = 34;
@@ -1010,6 +1011,25 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.tentacleSlamCooldown = 0;
    }
 
+   private void raidStructureTick(ServerLevel server) {
+      WitherStormWorldConfig cfg = WitherStormConfigs.get(server);
+      if (cfg.structureRaid == 0 || this.structureTarget == null || !this.structureArrived) {
+         this.raidCooldown = 0;
+         return;
+      }
+
+      if (this.raidCooldown > 0) {
+         --this.raidCooldown;
+         return;
+      }
+
+      this.raidCooldown = cfg.structureRaidInterval;
+      double radius = 3.0 + this.random.nextDouble() * cfg.structureRaidRadius;
+      Vec3 centre = new Vec3((double)this.structureTarget.getX() + 0.5, (double)this.structureTarget.getY() + 0.5, (double)this.structureTarget.getZ() + 0.5);
+      this.carveSphere(server, centre, radius);
+      server.playSound((Entity)null, centre.x, centre.y, centre.z, ModSounds.STORM_THUMP, SoundSource.HOSTILE, 5.0F, 0.8F);
+   }
+
    public static Vec3 headOffset(int index, boolean devourer) {
       Vec3 off = HEAD_OFFSETS[index];
       if (devourer) {
@@ -1328,6 +1348,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       } else {
          if (this.level() instanceof ServerLevel server) {
             this.tentacleSlamTick(server);
+            this.raidStructureTick(server);
          }
 
          if (!this.isPhase4()) {
