@@ -43,6 +43,8 @@ public class DabyWSClientConfig {
    public static double fogColorR = 0.19;
    public static double fogColorG = 0.07;
    public static double fogColorB = 0.275;
+   public static boolean stormFog = false;
+   public static double stormFogStrength = (double)0.85F;
    public static boolean separateFogColor = true;
    public static double skyDarkenR = 0.126;
    public static double skyDarkenG = 0.055;
@@ -427,6 +429,8 @@ public class DabyWSClientConfig {
       key("fogColorR", "", (double)0.0F, (double)1.0F, false, () -> fogColorR, (v) -> fogColorR = v);
       key("fogColorG", "", (double)0.0F, (double)1.0F, false, () -> fogColorG, (v) -> fogColorG = v);
       key("fogColorB", "", (double)0.0F, (double)1.0F, false, () -> fogColorB, (v) -> fogColorB = v);
+      key("stormFog", "Storm proximity fog: the closer you get to the storm, the thicker the purple haze closes in around you.", (double)0.0F, (double)1.0F, true, () -> stormFog ? (double)1.0F : (double)0.0F, (v) -> stormFog = v >= (double)0.5F);
+      key("stormFogStrength", "How thick the storm's proximity fog gets up close (0 = no effect).", (double)0.0F, (double)1.0F, false, () -> stormFogStrength, (v) -> stormFogStrength = v);
       key("skyDarkenR", "", (double)0.0F, (double)1.0F, false, () -> skyDarkenR, (v) -> skyDarkenR = v);
       key("skyDarkenG", "", (double)0.0F, (double)1.0F, false, () -> skyDarkenG, (v) -> skyDarkenG = v);
       key("skyDarkenB", "", (double)0.0F, (double)1.0F, false, () -> skyDarkenB, (v) -> skyDarkenB = v);
