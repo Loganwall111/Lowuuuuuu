@@ -164,3 +164,11 @@ Remaining planned batches (each pushed and auto-built by Actions):
   `stormMusicRange`), far-lands haze, biome-tinted fogs, story-structure raids + portal
   raids, death cinematic, Story Mode building mechanics, and textures/assets (require
   externally-produced artwork).
+- **Batch 3 — Storm Proximity Fog** (`d9c8b5d`, green): client-config `stormFog` +
+  `stormFogStrength` (default off). New `client/StormFog` computes a fog multiplier from
+  distance to the nearest storm (real entity or distant-storm data); `FogRendererMixin`
+  multiplies fog start/end by it, so the purple haze closes in as you approach.
+- **Batch 4 — Structure Raids** (`b650588`, green): world-config `structureRaid` +
+  `structureRaidInterval` + `structureRaidRadius`. While the storm tours built structures
+  (Structures targeting mode) it actively levels its current target, caving chunks out of
+  it on a timer via `carveSphere`. Runs in the server `aiStep` branch.
