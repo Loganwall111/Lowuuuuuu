@@ -1011,6 +1011,31 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.tentacleSlamCooldown = 0;
    }
 
+   public int consumeBlocks(ServerLevel server, int radius) {
+      int broken = this.carveSphere(server, this.position(), (double)radius);
+      if (broken > 0) {
+         this.addSubGrowth(broken / 4 + 1);
+         server.playSound((Entity)null, this.getX(), this.getY(), this.getZ(), ModSounds.CLUSTER_FX, SoundSource.HOSTILE, 5.0F, 0.8F);
+      }
+      return broken;
+   }
+
+   private void phaseUpShockwave(ServerLevel server) {
+      double radius = this.isDevourer() ? 20.0 : 12.0;
+      double rSq = radius * radius;
+      for (LivingEntity victim : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius), (e) -> e != this && e.isAlive())) {
+         double dx = victim.getX() - this.getX();
+         double dz = victim.getZ() - this.getZ();
+         double d = dx * dx + dz * dz;
+         if (d <= rSq && d > 1.0E-4) {
+            double dist = Math.sqrt(d);
+            double falloff = 1.0 - dist / radius;
+            victim.hurtServer(server, server.damageSources().mobAttack(this), (float)(1.0 + 4.0 * falloff));
+            victim.setDeltaMovement(victim.getDeltaMovement().add(dx / dist * 1.1 * falloff, 0.35 * falloff, dz / dist * 1.1 * falloff));
+         }
+      }
+   }
+
    private void raidStructureTick(ServerLevel server) {
       WitherStormWorldConfig cfg = WitherStormConfigs.get(server);
       if (cfg.structureRaid == 0 || this.structureTarget == null || !this.structureArrived) {
@@ -1438,6 +1463,10 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             this.roarAllHeads(true);
             if (this.phase >= (double)4.0F && !this.phase4) {
                this.enterPhase4();
+            }
+
+            if (this.level() instanceof ServerLevel phaseServer) {
+               this.phaseUpShockwave(phaseServer);
             }
 
             this.subGrowth = 0;

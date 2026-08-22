@@ -355,6 +355,26 @@ public class DabyWSCommand {
       return count;
    }
 
+   private static int consumeStorms(CommandContext<CommandSourceStack> ctx, int radius) throws CommandSyntaxException {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      int count = 0;
+
+      for(WitherStormEntity ws : getStorms(ctx)) {
+         int broken = 0;
+         if (ws.level() instanceof ServerLevel server) {
+            broken = ws.consumeBlocks(server, radius);
+         }
+         final int fb = broken;
+         source.sendSuccess(() -> {
+            String var10000 = stormLabel(ws);
+            return Component.literal(var10000 + ": consumed §e" + fb + "§r blocks");
+         }, true);
+         ++count;
+      }
+
+      return count;
+   }
+
    private static void registerExtra(CommandDispatcher<CommandSourceStack> dispatcher) {
       dispatcher.register(Commands.literal("storm")
          .then(Commands.literal("grow").requires(DabyWSCommand::mayEditServerConfig)
@@ -367,6 +387,10 @@ public class DabyWSCommand {
          .then(Commands.literal("roar").requires(DabyWSCommand::mayEditServerConfig)
             .then(Commands.argument("targets", EntityArgument.entities())
                .executes((ctx) -> roarStorms(ctx))))
+         .then(Commands.literal("consume").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .then(Commands.argument("radius", IntegerArgumentType.integer(1, 64))
+                  .executes((ctx) -> consumeStorms(ctx, IntegerArgumentType.getInteger(ctx, "radius"))))))
          .then(Commands.literal("status")
             .then(Commands.argument("targets", EntityArgument.entities())
                .executes((ctx) -> stormStatus(ctx))))
