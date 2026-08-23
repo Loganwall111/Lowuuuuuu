@@ -101,3 +101,12 @@ Examples include:
 - `this one is accurate.png`
 
 Those should be treated as **archive artifacts**, not proof that they belong in the final live renderer path.
+
+## Windows compatibility note
+
+Two recovered archive filenames originally contained `:` and were renamed in the committed resource tree for Windows/git compatibility:
+
+- `1:1 flesh.png` → `1_1_flesh.png`
+- `this is 1:1 too.png` → `this_is_1_1_too.png`
+
+`tools/extract_bbmodel_textures.py` now applies those same safe renames during extraction so the files do not reappear with invalid Windows path characters on future reruns.

@@ -27,6 +27,11 @@ SKIP_NAMES = {
     "hold the elevator!.png",
 }
 
+WINDOWS_SAFE_RENAMES = {
+    "1:1 flesh.png": "1_1_flesh.png",
+    "this is 1:1 too.png": "this_is_1_1_too.png",
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -50,7 +55,8 @@ def iter_bbmodels(root: Path) -> Iterable[Path]:
 
 
 def preferred_name(raw_name: str) -> str:
-    return Path(raw_name).name
+    name = Path(raw_name).name
+    return WINDOWS_SAFE_RENAMES.get(name, name)
 
 
 def write_unique_png(out_dir: Path, raw_name: str, payload: bytes) -> Path:
