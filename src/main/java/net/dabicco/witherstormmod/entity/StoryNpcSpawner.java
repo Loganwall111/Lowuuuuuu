@@ -58,7 +58,7 @@ public final class StoryNpcSpawner {
          mob.setCustomName(Component.literal(names.get(i)));
          mob.setCustomNameVisible(true);
          mob.setPersistenceRequired();
-         mob.moveTo((double)at.getX() + 0.5D, (double)at.getY(), (double)at.getZ() + 0.5D, random.nextFloat() * 360.0F, 0.0F);
+        mob.snapTo((double)at.getX() + 0.5D, (double)at.getY(), (double)at.getZ() + 0.5D, random.nextFloat() * 360.0F, 0.0F);
          if (server.addFreshEntity(mob)) {
             spawned++;
          }
