@@ -6,7 +6,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
 public record SyncWitherStormConfigPayload(double[] values, boolean canEdit) implements CustomPacketPayload {
-   public static final CustomPacketPayload.Type<SyncWitherStormConfigPayload> TYPE = new CustomPacketPayload.Type(Identifier.fromNamespaceAndPath("witherstormmod", "sync_config"));
+   public static final CustomPacketPayload.Type<SyncWitherStormConfigPayload> TYPE = new CustomPacketPayload.Type(Identifier.fromNamespaceAndPath("devouringstorms", "sync_config"));
    public static final StreamCodec<RegistryFriendlyByteBuf, SyncWitherStormConfigPayload> CODEC = StreamCodec.of((buf, payload) -> {
       buf.writeVarInt(payload.values().length);
 

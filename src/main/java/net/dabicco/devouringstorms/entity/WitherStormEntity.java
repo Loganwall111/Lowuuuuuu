@@ -21,6 +21,7 @@ import net.dabicco.devouringstorms.ModEffects;
 import net.dabicco.devouringstorms.ModItems;
 import net.dabicco.devouringstorms.ModSounds;
 import net.dabicco.devouringstorms.StormProfiler;
+import net.dabicco.devouringstorms.client.ClientConfigCache;
 import net.dabicco.devouringstorms.client.GroundProbe;
 import net.dabicco.devouringstorms.config.WitherStormConfigs;
 import net.dabicco.devouringstorms.config.WitherStormWorldConfig;
@@ -30,6 +31,7 @@ import net.dabicco.devouringstorms.mixin.WitherBossAccessor;
 import net.dabicco.devouringstorms.network.StormPulsePayload;
 import net.dabicco.devouringstorms.network.StormRemovedPacket;
 import net.dabicco.devouringstorms.network.WitherStormPositionPacket;
+import net.dabicco.devouringstorms.network.FormidibombFlashPayload;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
@@ -372,6 +374,14 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.carveSphere(server, centre, radius);
       server.playSound((Entity)null, centre.x, centre.y, centre.z, ModSounds.FORMIDIBOMB_EXPLOSION, SoundSource.HOSTILE, 8.0F, 1.0F);
       server.sendParticles(ParticleTypes.EXPLOSION_EMITTER, centre.x, centre.y, centre.z, 1, 0.0, 0.0, 0.0, 0.0);
+      double flashRangeSq = 4000000.0;
+      FormidibombFlashPayload flash = new FormidibombFlashPayload(centre.x, centre.y, centre.z);
+
+      for(ServerPlayer viewer : server.players()) {
+         if (viewer.distanceToSqr(centre.x, centre.y, centre.z) <= flashRangeSq) {
+            ServerPlayNetworking.send(viewer, flash);
+         }
+      }
 
       double rSq = radius * radius;
       for (LivingEntity victim : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius), (e) -> e != this && e.isAlive())) {
@@ -574,6 +584,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       super.onSyncedDataUpdated(key);
       if (key == PHASE_DATA && this.level().isClientSide()) {
          this.phase = (double)(Float)this.entityData.get(PHASE_DATA);
+         if (this.phase4) {
+            this.refreshDimensions();
+         }
       }
 
       if (key == PHASE4_DATA) {
@@ -879,13 +892,46 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          return new Vec3((double)0.0F, 3.05, 0.14);
       } else {
          float h = this.hatchProgress();
-         Vec3 full = headOffset(index, this.isDevourerForm());
+         Vec3 full = scaledHeadOffset(index, this.isDevourerForm(), this.growthScaleFactor());
          return h >= 0.999F ? full : new Vec3(Mth.lerp((double)h, (double)0.0F, full.x), Mth.lerp((double)h, 3.05, full.y), Mth.lerp((double)h, 0.14, full.z));
       }
    }
 
    public float headScaleFor(int index) {
-      return !this.isPhase4() ? 1.35F : Mth.lerp(this.hatchProgress(), 1.35F, 6.0F);
+      float base = !this.isPhase4() ? 1.35F : Mth.lerp(this.hatchProgress(), 1.35F, 6.0F);
+      return base * (float)this.growthScaleFactor();
+   }
+
+   private boolean infiniteGrowthEnabled() {
+      return this.level().isClientSide() ? ClientConfigCache.cfg.infiniteGrowth != 0 : WitherStormConfigs.get(this.level()).infiniteGrowth != 0;
+   }
+
+   private double growthScaleFactor() {
+      return growthScaleForPhase(this.phase, this.infiniteGrowthEnabled());
+   }
+
+   public static double clientGrowthScaleForPhase(double phase) {
+      return growthScaleForPhase(phase, ClientConfigCache.cfg.infiniteGrowth != 0);
+   }
+
+   public static double growthScaleForPhase(double phase, boolean infiniteGrowth) {
+      if (!infiniteGrowth) {
+         return 1.0;
+      } else {
+         double extra = Math.max(0.0, phase - 5.8);
+         if (extra <= 0.0) {
+            return 1.0;
+         } else {
+            double fast = Math.min(extra, 8.0) * 0.14;
+            double slow = Math.max(0.0, extra - 8.0) * 0.05;
+            return Math.min(4.5, 1.0 + fast + slow);
+         }
+      }
+   }
+
+   private static Vec3 scaledHeadOffset(int index, boolean devourer, double growthScale) {
+      Vec3 off = headOffset(index, devourer);
+      return growthScale <= 1.001 ? off : new Vec3(off.x * growthScale, off.y * growthScale, off.z * growthScale);
    }
 
    public float hatchProgress() {
@@ -1543,6 +1589,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
                this.entityData.set(PHASE_DATA, (float)this.phase);
                this.entityData.set(PHASE4_DATA, true);
                this.updatePhase5Stamp(this.phase);
+               this.refreshDimensions();
                return;
             }
 
@@ -1563,6 +1610,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          this.entityData.set(PHASE_DATA, (float)this.phase);
          this.entityData.set(PHASE4_DATA, this.phase >= (double)4.0F);
          this.updatePhase5Stamp(this.phase);
+         if (this.phase >= (double)4.0F) {
+            this.refreshDimensions();
+         }
       }
    }
 
@@ -1660,6 +1710,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.entityData.set(PHASE_DATA, (float)value);
       this.entityData.set(PHASE4_DATA, this.phase4);
       this.updatePhase5Stamp(value);
+      if (this.phase4) {
+         this.refreshDimensions();
+      }
    }
 
    private long elapsedSince(long stamp) {
@@ -1819,6 +1872,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.entityData.set(SUBGROWTH_DATA, this.subGrowth);
       this.phase = (double)mainPhase + fraction;
       this.entityData.set(PHASE_DATA, (float)this.phase);
+      if (this.phase4) {
+         this.refreshDimensions();
+      }
    }
 
    public boolean isPhase4() {
@@ -2606,7 +2662,12 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    }
 
    protected EntityDimensions getDefaultDimensions(Pose pose) {
-      return this.phase4 ? PHASE_4_DIMENSIONS : super.getDefaultDimensions(pose);
+      if (!this.phase4) {
+         return super.getDefaultDimensions(pose);
+      } else {
+         float scale = (float)this.growthScaleFactor();
+         return scale <= 1.001F ? PHASE_4_DIMENSIONS : EntityDimensions.scalable(10.0F * scale, 30.0F * scale);
+      }
    }
 
    protected AABB makeBoundingBox(Vec3 position) {
@@ -3380,7 +3441,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
                   head = this.spawnHead(server, i);
                }
 
-               Vec3 offset = headOffset(i, this.isDevourer());
+               Vec3 offset = scaledHeadOffset(i, this.isDevourer(), this.growthScaleFactor());
                double py = offset.y * cosP - offset.z * sinP;
                double pz = offset.y * sinP + offset.z * cosP;
                double rx = offset.x * cosR - py * sinR;
@@ -3465,6 +3526,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       double yaw = Math.toRadians((double)this.getYRot());
       Vec3 forward = new Vec3(-Math.sin(yaw), (double)0.0F, Math.cos(yaw));
       Vec3 body = this.position().add((double)0.0F, h * 0.55, (double)0.0F);
+      double scale = this.growthScaleFactor();
       double bodyR;
       double backOff;
       double backR;
@@ -3495,6 +3557,14 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          backBackOff = (double)0.0F;
          backBackR = (double)0.0F;
          body = this.position().add((double)0.0F, h * 0.6, (double)0.0F);
+      }
+
+      if (this.isPhase4() && scale > 1.0) {
+         bodyR *= scale;
+         backOff *= scale;
+         backR *= scale;
+         backBackOff *= scale;
+         backBackR *= scale;
       }
 
       if (point.distanceTo(body) <= bodyR) {

@@ -472,7 +472,7 @@ public class DevouringStormsClientConfig {
       key("starDensity", "How many stars fill the dome.", 0.25, (double)2.0F, false, () -> starDensity, (v) -> starDensity = v);
       key("starTwinkleSpeed", "How fast the stars twinkle.", (double)0.0F, (double)4.0F, false, () -> starTwinkleSpeed, (v) -> starTwinkleSpeed = v);
       key("starBrightness", "Overall star brightness.", (double)0.0F, (double)2.0F, false, () -> starBrightness, (v) -> starBrightness = v);
-      keyCycle("stormCloudDeck", "MCSM-style weather slabs slowly orbiting the storm instead of a flat dark sky.", CLOUD_DECK_LABELS, () -> stormCloudDeck, (v) -> stormCloudDeck = (double)Math.round(v));
+      keyCycle("stormCloudDeck", "MCSM-style weather slabs that replace the vanilla cloud pass around an active storm instead of leaving the normal Minecraft cloud look in place.", CLOUD_DECK_LABELS, () -> stormCloudDeck, (v) -> stormCloudDeck = (double)Math.round(v));
       key("stormCloudCoverage", "How much of the sky around the storm the deck covers.", 0.25, (double)2.0F, false, () -> stormCloudCoverage, (v) -> stormCloudCoverage = v);
       key("stormCloudAltitude", "Push the whole deck up or down.", -40.0, (double)40.0F, false, () -> stormCloudAltitude, (v) -> stormCloudAltitude = v);
       key("stormCloudPaletteMix", "How much the deck follows the phase palette versus your manual cloud colour.", (double)0.0F, (double)1.0F, false, () -> stormCloudPaletteMix, (v) -> stormCloudPaletteMix = v);
@@ -490,7 +490,7 @@ public class DevouringStormsClientConfig {
       key("pulseHeartbeat", "Play the deep command pulse thump when the one-shot event fires nearby.", (double)0.0F, (double)1.0F, true, () -> pulseHeartbeat ? (double)1.0F : (double)0.0F, (v) -> pulseHeartbeat = v >= (double)0.5F);
       key("pulseHeartbeatVolume", "Loudness of the command pulse thump.", (double)0.0F, (double)2.0F, false, () -> pulseHeartbeatVolume, (v) -> pulseHeartbeatVolume = v);
       key("pulseHeartbeatRange", "How far the command pulse thump carries.", (double)128.0F, (double)1024.0F, false, () -> pulseHeartbeatRange, (v) -> pulseHeartbeatRange = v);
-      key("phaseFogPalettes", "Let the storm's phase recolour the sky: turquoise fog at phase 5, purple-black from phase 5.8 on.", (double)0.0F, (double)1.0F, true, () -> phaseFogPalettes ? (double)1.0F : (double)0.0F, (v) -> phaseFogPalettes = v >= (double)0.5F);
+      key("phaseFogPalettes", "Let the storm's phase recolour the sky with the screenshot-matched handoff: green at phase 4.5, turquoise at phase 5, then a later pink/purple drift before the deep cataclysm gloom.", (double)0.0F, (double)1.0F, true, () -> phaseFogPalettes ? (double)1.0F : (double)0.0F, (v) -> phaseFogPalettes = v >= (double)0.5F);
       key("paletteStrength", "How far the phase palettes override your manual colours.", (double)0.0F, (double)1.0F, false, () -> paletteStrength, (v) -> paletteStrength = v);
       key("turquoiseFogR", "Phase-5 turquoise fog anchor.", (double)0.0F, (double)1.0F, false, () -> turquoiseFogR, (v) -> turquoiseFogR = v);
       key("turquoiseFogG", "", (double)0.0F, (double)1.0F, false, () -> turquoiseFogG, (v) -> turquoiseFogG = v);

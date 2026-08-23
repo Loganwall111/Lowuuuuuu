@@ -10,7 +10,7 @@ public record ClientConfigCommandPayload(int mode, String key, double value) imp
    public static final int MODE_SET = 1;
    public static final int MODE_LIST = 2;
    public static final int MODE_OPEN_GUI = 3;
-   public static final CustomPacketPayload.Type<ClientConfigCommandPayload> TYPE = new CustomPacketPayload.Type(Identifier.fromNamespaceAndPath("witherstormmod", "client_config_command"));
+   public static final CustomPacketPayload.Type<ClientConfigCommandPayload> TYPE = new CustomPacketPayload.Type(Identifier.fromNamespaceAndPath("devouringstorms", "client_config_command"));
    public static final StreamCodec<RegistryFriendlyByteBuf, ClientConfigCommandPayload> CODEC = StreamCodec.of((buf, payload) -> {
       buf.writeVarInt(payload.mode());
       buf.writeUtf(payload.key());

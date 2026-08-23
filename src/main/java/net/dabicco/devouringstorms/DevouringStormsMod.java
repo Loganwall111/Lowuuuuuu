@@ -51,7 +51,7 @@ public class DevouringStormsMod implements ModInitializer {
    private static final Map<UUID, Boolean> insideTower = new HashMap();
    public static final String MOD_ID = "devouringstorms";
    public static final Logger LOGGER = LoggerFactory.getLogger("devouringstorms");
-   private static final Logger BRAND = LoggerFactory.getLogger("DabiccosWitherStorm");
+   private static final Logger BRAND = LoggerFactory.getLogger("LoganWallDevouringStorms");
 
    public void onInitialize() {
       PayloadTypeRegistry.clientboundPlay().register(ClusterBlocksPayload.TYPE, ClusterBlocksPayload.CODEC);
@@ -81,7 +81,7 @@ public class DevouringStormsMod implements ModInitializer {
       ModEntityTypes.registerAttributes();
       ModBowelsEntities.register();
       String version = (String)FabricLoader.getInstance().getModContainer("devouringstorms").map((c) -> c.getMetadata().getVersion().getFriendlyString()).orElse("unknown version");
-      BRAND.info("Dabicco's Wither Storm Mod - {}", version);
+      BRAND.info("Logan Wall's Devouring Storms - {}", version);
       CommandRegistrationCallback.EVENT.register((CommandRegistrationCallback)(dispatcher, registryAccess, environment) -> DevouringStormsCommand.register(dispatcher));
       SigeonNetwork.register();
       StrippableBlockRegistry.register(ModBlocks.WITHERED_LOG, ModBlocks.STRIPPED_WITHERED_LOG);

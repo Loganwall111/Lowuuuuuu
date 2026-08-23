@@ -18,6 +18,6 @@ public class WitherStormConfigs {
    }
 
    static {
-      TYPE = new SavedDataType(Identifier.fromNamespaceAndPath("witherstormmod", "dabiccos_wither_storm"), WitherStormWorldConfig::new, WitherStormWorldConfig.CODEC, DataFixTypes.LEVEL);
+      TYPE = new SavedDataType(Identifier.fromNamespaceAndPath("devouringstorms", "devouring_storms_world"), WitherStormWorldConfig::new, WitherStormWorldConfig.CODEC, DataFixTypes.LEVEL);
    }
 }

@@ -721,18 +721,28 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       }
    }
 
+   private static float growthScale(WitherStormRenderState state) {
+      return (float)WitherStormEntity.clientGrowthScaleForPhase(state.phase);
+   }
+
+   private static double auraRadius(WitherStormRenderState state) {
+      return (26.0 + 9.0 * Math.max(0.0, state.phase - 4.0)) * (double)growthScale(state);
+   }
+
    private void submitNightLight(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
       float night = Math.min(state.nightFactor, 1.0F);
+      float phaseRamp = Mth.clamp((float)((state.phase - 4.9) / 0.7), 0.0F, 1.0F);
+      float daylightBacklight = 0.18F * phaseRamp;
       float strength = (float)DevouringStormsClientConfig.stormGlowStrength * state.collapseFade;
-      if (!(night <= 0.01F) && !(strength <= 0.01F)) {
+      if (!(strength <= 0.01F) && !(night <= 0.01F && daylightBacklight <= 0.01F)) {
          float pulse = 0.92F + 0.08F * Mth.sin((double)(state.idleTimeTicks * 0.05F));
-         float amount = night * strength * pulse;
+         float amount = (daylightBacklight + night * 0.85F) * strength * pulse;
          Vec3 view = new Vec3(state.worldX - camera.pos.x, state.worldY - camera.pos.y, state.worldZ - camera.pos.z);
          double dist = view.length();
          if (!(dist < 1.0E-4)) {
             view = view.scale(1.0 / dist);
-            double radius = 26.0 + 9.0 * Math.max(0.0, state.phase - 4.0);
-            Vec3 centre = new Vec3(0.0, radius * 0.55, 0.0).add(view.scale(radius * 0.9));
+            double radius = auraRadius(state);
+            Vec3 centre = new Vec3(0.0, radius * 0.56, 0.0).add(view.scale(-radius * 0.78));
             StormGlowRenderer.submitLight(poseStack, collector, centre, view, radius, NIGHT_LAYER_SIZES, NIGHT_LAYER_ALPHAS, NIGHT_LAYER_COLOURS, amount);
          }
       }
@@ -742,12 +752,12 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || state.phase < 5.0) {
          return;
       }
-      float ramp = Mth.clamp((float)((state.phase - 5.0) / 0.8), 0.0F, 1.0F);
+      float ramp = Mth.clamp((float)((state.phase - 5.0) / 0.7), 0.0F, 1.0F);
       float amount = (float)DevouringStormsClientConfig.haloStrength * ramp * state.collapseFade;
       if (amount <= 0.004F) {
          return;
       }
-      double bodyR = 12.0 + Math.max(0.0, state.phase - 4.0) * 3.6;
+      double bodyR = (12.0 + Math.max(0.0, state.phase - 4.0) * 3.6) * (double)growthScale(state);
       float[] ring = StormPalettes.haloRingColor(new float[3]);
       float[] under = StormPalettes.haloUnderColor(new float[3]);
       int rr = (int)(ring[0] * 255.0F);
@@ -763,10 +773,10 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       if (state.bodyRoll != 0.0F) {
          poseStack.mulPose(Axis.ZN.rotationDegrees(state.bodyRoll));
       }
-      poseStack.translate(0.0, bodyR * 0.72, -bodyR * 0.95);
-      submitHaloPlane(collector, poseStack, bodyR * 1.45, bodyR * 1.05, rr, rg, rb, (int)(205.0F * amount), GlowRenderTypes.glow(HALO_TEXTURE));
-      submitHaloPlane(collector, poseStack, bodyR * 1.95, bodyR * 1.30, rr, rg, rb, (int)(90.0F * amount), GlowRenderTypes.translucent(HALO_TEXTURE));
-      submitHaloPlane(collector, poseStack, bodyR * 0.92, bodyR * 0.72, ur, ug, ub, (int)(186.0F * amount), GlowRenderTypes.glow(HALO_TEXTURE));
+      poseStack.translate(0.0, bodyR * 0.78, -bodyR * 0.86);
+      submitHaloPlane(collector, poseStack, bodyR * 1.58, bodyR * 1.15, rr, rg, rb, (int)(205.0F * amount), GlowRenderTypes.glow(HALO_TEXTURE));
+      submitHaloPlane(collector, poseStack, bodyR * 2.12, bodyR * 1.45, rr, rg, rb, (int)(90.0F * amount), GlowRenderTypes.translucent(HALO_TEXTURE));
+      submitHaloPlane(collector, poseStack, bodyR * 0.98, bodyR * 0.76, ur, ug, ub, (int)(186.0F * amount), GlowRenderTypes.glow(HALO_TEXTURE));
       poseStack.popPose();
    }
 
@@ -780,9 +790,10 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          return;
       }
       view = view.scale(1.0 / dist);
-      double radius = (26.0 + 9.0 * Math.max(0.0, state.phase - 4.0)) * (0.9 + 0.35 * state.collapseWhiteout);
-      float amount = state.collapseWhiteout * state.collapseFade * 1.25F;
-      StormGlowRenderer.submitLight(poseStack, collector, new Vec3(0.0, radius * 0.52, 0.0), view, radius, COLLAPSE_GLOW_SIZES, COLLAPSE_GLOW_ALPHAS, COLLAPSE_GLOW_COLOURS, amount);
+      double radius = auraRadius(state) * (0.95 + 0.40 * state.collapseWhiteout);
+      float amount = state.collapseWhiteout * state.collapseFade * 1.45F;
+      Vec3 centre = new Vec3(0.0, radius * 0.56, 0.0).add(view.scale(-radius * 0.62));
+      StormGlowRenderer.submitLight(poseStack, collector, centre, view, radius, COLLAPSE_GLOW_SIZES, COLLAPSE_GLOW_ALPHAS, COLLAPSE_GLOW_COLOURS, amount);
    }
 
    private static void submitHaloPlane(SubmitNodeCollector collector, PoseStack poseStack, double halfW, double halfH, int r, int g, int b, int a, RenderType type) {
@@ -1017,7 +1028,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
             poseStack.translate(0.0, 17.0, 0.0);
          }
 
-         float bodyScale = (state.devourer ? 1.1009175F : 2.0F) * state.hatch;
+         float bodyScale = (state.devourer ? 1.1009175F : 2.0F) * state.hatch * growthScale(state);
          poseStack.scale(bodyScale, bodyScale, bodyScale);
          poseStack.translate(0.0, 6.0, 0.0);
       } else {

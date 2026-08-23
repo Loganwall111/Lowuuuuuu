@@ -4,7 +4,7 @@ This repository is the **clean rewrite** of **Devouring Storms**, a modernized F
 
 **Original jar source:** `dabywitherstormmod-1.9.60-26.2-beta.zip` (Fabric, Minecraft 26.2, Java 25)
 **Current mod id / artifact:** `devouringstorms`
-**License:** MIT — see `LICENSE` (© 2026 Dabicco).
+**License:** MIT — see `LICENSE` (© 2026 Logan Wall).
 
 ---
 
@@ -70,5 +70,4 @@ into `src/main/java`.
 
 ## Credits
 
-- **Dabicco** — Lead Programmer
-- **Joeyready** — Textures, Blocks, Items & Build
+- **Logan Wall** — Project ownership, direction, rebrand and integration

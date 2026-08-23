@@ -128,8 +128,9 @@ public final class StormSkyDarken {
       }
 
       // palette phase: pick the dominant nearby storm by proximity/ownership,
-      // but preserve its actual phase so distant phase-5 storms stay turquoise
-      // instead of being incorrectly downgraded back into early purple.
+      // but preserve its real phase so the handoff follows the screenshot notes:
+      // phase 4 stays normal, phase 4.5 turns green, phase 5 goes turquoise,
+      // then only later does the sky drift pink/purple.
       float phaseTarget = 0.0F;
       float blendTarget = 0.0F;
       float bestScore = 0.0F;
@@ -147,7 +148,8 @@ public final class StormSkyDarken {
 
             proximity = Mth.clamp(proximity, 0.0F, 1.0F);
             if (proximity > 0.05F) {
-               float stage = Mth.clamp((d.phase - 4.5F) / 1.6F, 0.25F, 1.0F);
+               float stage = Mth.clamp((d.phase - 4.35F) / 1.35F, 0.0F, 1.0F);
+               stage = 0.12F + 0.88F * stage * stage * (3.0F - 2.0F * stage);
                float score = proximity * stage;
                if (score > bestScore) {
                   bestScore = score;

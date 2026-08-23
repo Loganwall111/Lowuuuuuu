@@ -19,7 +19,7 @@ import net.minecraft.world.phys.Vec3;
  * Slab placement is derived statelessly from a per-storm hash so nothing is
  * stored and slabs never pop in or out: every frame every slab lands exactly
  * where its orbit says it should be. Colours follow {@link StormPalettes} so
- * the deck flushes purple -> turquoise -> cataclysm-purple with the phase.
+ * the deck flushes green -> turquoise -> pink/purple -> cataclysm with phase.
  */
 public final class StormCloudDeck {
    private static final Identifier SLAB = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/mcsm_cloud.png");
@@ -32,7 +32,7 @@ public final class StormCloudDeck {
    /** Whether the stylized MCSM deck should take over from vanilla clouds right now. */
    public static boolean replacesVanillaClouds() {
       int mode = (int)Math.round(DevouringStormsClientConfig.stormCloudDeck);
-      return mode > 0 && StormSkyDarken.paletteBlend() > 0.12F && StormSkyDarken.palettePhase() >= 4.5F;
+      return mode > 0 && StormSkyDarken.paletteBlend() > 0.05F && StormSkyDarken.palettePhase() >= 4.45F;
    }
 
    /** cheap deterministic hash -> [0,1) */
@@ -67,10 +67,10 @@ public final class StormCloudDeck {
       collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(SLAB), (pose, consumer) -> {
          float[] col = new float[3];
          for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-            if (d.phase < 4.5F) {
+            if (d.phase < 4.45F) {
                continue;
             }
-            float phaseRamp = Mth.clamp((d.phase - 4.5F) / 0.7F, 0.0F, 1.0F);
+            float phaseRamp = Mth.clamp((d.phase - 4.45F) / 0.9F, 0.0F, 1.0F);
             double spread = 130.0 + 90.0 * Math.min(d.phase, 6.0);
             int slabs = Mth.clamp((int)(26.0F * coverage * (mode >= 2 ? 1.7F : 1.0F) * (0.55F + 0.45F * phaseRamp)), 4, 72);
             StormPalettes.cloudColor(d.phase, col);

@@ -30,7 +30,7 @@ public class ScreenHighlightMixin {
                return;
             }
 
-            wanted = "Dabicco's Wither Storm";
+            wanted = "Devouring Storms";
          }
 
          for (GuiEventListener child : screen.children()) {

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.Random;
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
+import net.dabicco.devouringstorms.entity.WitherStormEntity;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -51,13 +52,16 @@ public final class StormPresenceFX {
 
    /** Approximate visual body radius for a phase (rough phase->size mapping used for glow anchoring). */
    private static double bodyRadius(float phase) {
+      double base;
       if (phase < 4.0F) {
-         return 4.0 + phase * 1.5;
+         base = 4.0 + phase * 1.5;
+      } else if (phase < 5.0F) {
+         base = 10.0 + (phase - 4.0F) * 12.0;
+      } else {
+         base = 22.0 + Math.min(phase - 5.0F, 1.99F) * 9.0;
       }
-      if (phase < 5.0F) {
-         return 10.0 + (phase - 4.0F) * 12.0;
-      }
-      return 22.0 + Math.min(phase - 5.0F, 1.99F) * 9.0;
+
+      return base * WitherStormEntity.clientGrowthScaleForPhase(phase);
    }
 
    public static void submit(LevelRenderContext ctx) {

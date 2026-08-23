@@ -6,43 +6,41 @@ import net.minecraft.util.Mth;
 /**
  * StormPalettes — phase-driven colour science for the whole atmosphere.
  *
- * Every ambient effect (fog, the pulse, the halo pair, the cloud deck, the
- * starfield, the ejecta tint) reads its colour from here so the world around a
- * storm changes together as the storm climbs through its phases:
+ * The user's latest screenshot notes asked for a later, slower colour handoff:
+ * the world should stay normal through phase 4, turn green at roughly 4.5,
+ * swing turquoise at phase 5, then only start drifting pink/purple after 5.4
+ * before finally collapsing into the deep cataclysm palette.
  *
- *   phase < 4.5   the classic dark-purple gloom.
- *   phase  4.5-5.5 the upper sky and cloud mass swing turquoise, matching the
- *                 user's MCSM refs once the giant form is taking over.
- *   phase  5.8+   the "cataclysm" palette: purple-black gloom, blue-purple
- *                 halo ring plus the white under-halo, black rim glare with
- *                 turquoise/green clusters ejecting from the silhouette.
- *
- * The palette is only consulted when the client config allows it;
- * {@link #strength()} scales how far it overrides the user's manual colours.
+ * We keep every atmosphere reader centralized here so fog, sky, clouds, pulses,
+ * halos and star tint all answer the same phase curve.
  */
 public final class StormPalettes {
    /** Fog anchors. */
-   private static final float[] FOG_PURPLE = {0.19F, 0.07F, 0.275F};
+   private static final float[] FOG_GREEN = {0.10F, 0.30F, 0.15F};
    private static final float[] FOG_TURQUOISE = {0.031F, 0.42F, 0.36F};
+   private static final float[] FOG_PINK = {0.26F, 0.11F, 0.28F};
    private static final float[] FOG_CATACLYSM = {0.055F, 0.028F, 0.10F};
 
-   /** Upper sky / dome anchors, tuned to the user's MCSM refs. */
-   private static final float[] SKY_PURPLE = {0.126F, 0.055F, 0.194F};
+   /** Upper sky / dome anchors, tuned to the screenshot progression. */
+   private static final float[] SKY_GREEN = {0.16F, 0.36F, 0.20F};
    private static final float[] SKY_TURQUOISE = {0.090F, 0.46F, 0.50F};
+   private static final float[] SKY_PINK = {0.31F, 0.14F, 0.33F};
    private static final float[] SKY_CATACLYSM = {0.040F, 0.018F, 0.072F};
 
    /** Pulse shells. */
-   private static final float[] PULSE_EARLY = {0.42F, 0.33F, 0.95F};
+   private static final float[] PULSE_GREEN = {0.58F, 0.80F, 0.42F};
    private static final float[] PULSE_FIVE = {0.38F, 0.52F, 0.98F};
+   private static final float[] PULSE_PINK = {0.76F, 0.34F, 0.86F};
    private static final float[] PULSE_CATACLYSM = {0.48F, 0.20F, 0.72F};
 
-   /** Halo pair (phase 5.8+). */
+   /** Halo pair (late phase 5+). */
    private static final float[] HALO_RING = {0.36F, 0.46F, 1.0F};
    private static final float[] HALO_UNDER = {0.92F, 0.94F, 1.0F};
 
    /** Cloud deck tint. */
-   private static final float[] CLOUD_PURPLE = {0.115F, 0.095F, 0.135F};
+   private static final float[] CLOUD_GREEN = {0.09F, 0.14F, 0.10F};
    private static final float[] CLOUD_TURQUOISE = {0.05F, 0.22F, 0.20F};
+   private static final float[] CLOUD_PINK = {0.14F, 0.08F, 0.15F};
    private static final float[] CLOUD_CATACLYSM = {0.045F, 0.030F, 0.080F};
 
    /** Starfield. */
@@ -63,59 +61,84 @@ public final class StormPalettes {
       return Mth.clamp((float)DevouringStormsClientConfig.paletteStrength, 0.0F, 1.0F);
    }
 
-   /** Blend weights for a phase: [0] = purple anchor, [1] = turquoise, [2] = cataclysm. */
+   /** Blend weights: [0] = green, [1] = turquoise, [2] = pink/purple, [3] = cataclysm. */
    public static void stageWeights(double phase, float[] w) {
-      float turquoise = smoothPhase(phase, 4.5F, 5.5F);
-      float cataclysm = smoothPhase(phase, 5.8F, 6.15F);
-      turquoise *= 1.0F - cataclysm;
-      float purple = Math.max(0.0F, 1.0F - turquoise - cataclysm);
-      w[0] = purple;
-      w[1] = turquoise;
-      w[2] = cataclysm;
+      for (int i = 0; i < w.length; i++) {
+         w[i] = 0.0F;
+      }
+      if (w.length < 4) {
+         return;
+      }
+      if (phase <= 4.5) {
+         w[0] = 1.0F;
+         return;
+      }
+      if (phase < 5.0) {
+         float t = smoothPhase(phase, 4.5F, 5.0F);
+         w[0] = 1.0F - t;
+         w[1] = t;
+         return;
+      }
+      if (phase < 5.4) {
+         w[1] = 1.0F;
+         return;
+      }
+      if (phase < 5.8) {
+         float t = smoothPhase(phase, 5.4F, 5.8F);
+         w[1] = 1.0F - t;
+         w[2] = t;
+         return;
+      }
+      if (phase < 6.15) {
+         float t = smoothPhase(phase, 5.8F, 6.15F);
+         w[2] = 1.0F - t;
+         w[3] = t;
+         return;
+      }
+      w[3] = 1.0F;
    }
 
    private static float smoothPhase(double phase, float start, float end) {
-      return Mth.clamp((float)((phase - (double)start) / (double)(end - start)), 0.0F, 1.0F);
+      float t = Mth.clamp((float)((phase - (double)start) / (double)(end - start)), 0.0F, 1.0F);
+      return t * t * (3.0F - 2.0F * t);
    }
 
-   private static float[] tri(double phase, float[] a, float[] b, float[] c, float[] out) {
-      float[] w = new float[3];
+   private static float[] curve(double phase, float[] a, float[] b, float[] c, float[] d, float[] out) {
+      float[] w = new float[4];
       stageWeights(phase, w);
-      out[0] = a[0] * w[0] + b[0] * w[1] + c[0] * w[2];
-      out[1] = a[1] * w[0] + b[1] * w[1] + c[1] * w[2];
-      out[2] = a[2] * w[0] + b[2] * w[1] + c[2] * w[2];
+      out[0] = a[0] * w[0] + b[0] * w[1] + c[0] * w[2] + d[0] * w[3];
+      out[1] = a[1] * w[0] + b[1] * w[1] + c[1] * w[2] + d[1] * w[3];
+      out[2] = a[2] * w[0] + b[2] * w[1] + c[2] * w[2] + d[2] * w[3];
       return out;
    }
 
    /** Fog colour for a phase, honouring the user's manual anchors when present. */
    public static float[] fogColor(double phase, float[] out) {
-      float[] purple = FOG_PURPLE;
-      float[] teal = FOG_TURQUOISE;
-      float[] cata = FOG_CATACLYSM;
+      float[] green = FOG_GREEN;
+      float[] teal = new float[]{(float)DevouringStormsClientConfig.turquoiseFogR, (float)DevouringStormsClientConfig.turquoiseFogG, (float)DevouringStormsClientConfig.turquoiseFogB};
+      float[] pink = brighten(teal, FOG_PINK, 0.58F);
+      float[] cata = new float[]{(float)DevouringStormsClientConfig.cataclysmFogR, (float)DevouringStormsClientConfig.cataclysmFogG, (float)DevouringStormsClientConfig.cataclysmFogB};
       if (DevouringStormsClientConfig.separateFogColor) {
-         purple = new float[]{(float)DevouringStormsClientConfig.fogColorR, (float)DevouringStormsClientConfig.fogColorG, (float)DevouringStormsClientConfig.fogColorB};
+         green = brighten(new float[]{(float)DevouringStormsClientConfig.fogColorR, (float)DevouringStormsClientConfig.fogColorG, (float)DevouringStormsClientConfig.fogColorB}, FOG_GREEN, 0.72F);
       }
-      teal = new float[]{(float)DevouringStormsClientConfig.turquoiseFogR, (float)DevouringStormsClientConfig.turquoiseFogG, (float)DevouringStormsClientConfig.turquoiseFogB};
-      cata = new float[]{(float)DevouringStormsClientConfig.cataclysmFogR, (float)DevouringStormsClientConfig.cataclysmFogG, (float)DevouringStormsClientConfig.cataclysmFogB};
-      return tri(phase, purple, teal, cata, out);
+      return curve(phase, green, teal, pink, cata, out);
    }
 
    /** Pulse shell colour for a phase. */
    public static float[] pulseColor(double phase, float[] out) {
-      return tri(phase, PULSE_EARLY, PULSE_FIVE, PULSE_CATACLYSM, out);
+      return curve(phase, PULSE_GREEN, PULSE_FIVE, PULSE_PINK, PULSE_CATACLYSM, out);
    }
 
    /** Cloud deck tint for a phase. */
    public static float[] cloudColor(double phase, float[] out) {
-      return tri(phase, CLOUD_PURPLE, CLOUD_TURQUOISE, CLOUD_CATACLYSM, out);
+      return curve(phase, CLOUD_GREEN, CLOUD_TURQUOISE, CLOUD_PINK, CLOUD_CATACLYSM, out);
    }
 
    /** Upper-sky / dome tint for a phase, keeping all Batch 17 colour edits centralized here. */
    public static float[] skyColor(double phase, float[] out) {
-      float[] purple = brighten(new float[]{(float)DevouringStormsClientConfig.skyDarkenR, (float)DevouringStormsClientConfig.skyDarkenG, (float)DevouringStormsClientConfig.skyDarkenB}, SKY_PURPLE, 0.35F);
       float[] teal = brighten(new float[]{(float)DevouringStormsClientConfig.turquoiseFogR, (float)DevouringStormsClientConfig.turquoiseFogG, (float)DevouringStormsClientConfig.turquoiseFogB}, SKY_TURQUOISE, 0.62F);
       float[] cata = brighten(new float[]{(float)DevouringStormsClientConfig.cataclysmFogR, (float)DevouringStormsClientConfig.cataclysmFogG, (float)DevouringStormsClientConfig.cataclysmFogB}, SKY_CATACLYSM, 0.35F);
-      return tri(phase, purple, teal, cata, out);
+      return curve(phase, SKY_GREEN, teal, SKY_PINK, cata, out);
    }
 
    private static float[] brighten(float[] base, float[] anchor, float amount) {
