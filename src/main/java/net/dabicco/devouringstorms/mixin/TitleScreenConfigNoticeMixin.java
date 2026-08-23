@@ -25,9 +25,9 @@ public abstract class TitleScreenConfigNoticeMixin {
          mc.setScreenAndShow(
             new ConfirmScreen(
                accepted -> mc.setScreenAndShow(title),
-               Component.literal("Wither Storm settings were reset"),
+               Component.literal("Devouring Storms settings were reset"),
                Component.literal(
-                  "Your configuration file was reset as of Beta 1.9.33.\n\nThe config was reorganised, so your saved settings no longer matched it. Please recheck the Client and Experimental tabs."
+                  "Your configuration file was reset as of Beta 1.9.33.\n\nThe control layout was reorganised, so your saved settings no longer matched it. Please recheck the Client and Experimental tabs."
                ),
                CommonComponents.GUI_OK,
                CommonComponents.GUI_OK

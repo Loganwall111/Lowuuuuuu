@@ -50,6 +50,7 @@ This file is the current truth for how closely the mod matches the user's MCSM r
 | Flat MCSM storm cloud deck | ⚠️ | Implemented, but not runtime-checked here. |
 | Black rim glare + ejecta | ✅ | Present in `StormPresenceFX`. |
 | One-shot command pulse bloom | ⚠️ | Implemented in `StormPulseFX`; needs feel/timing check in game. |
+| Optional summon shockwave | ⚠️ | New first-summon purple shockwave path is wired through `StormPulsePayload`, `StormPulseFX`, summon flow, and command spawning. It is off by default and still needs runtime tuning. |
 | Permanent attached halo | ⚠️ | Implemented in `WitherStormRenderer`, with the purple halo now held back until later phase 5 so early takeover stays less prematurely violet. Needs composition check against screenshots/video. |
 | White death bloom / vanish | ⚠️ | Implemented in renderer state/tint flow; needs in-game confirmation. |
 
@@ -63,7 +64,9 @@ This file is the current truth for how closely the mod matches the user's MCSM r
 | Java package namespace | ✅ | Source now lives under `net.dabicco.devouringstorms`. |
 | Main entrypoint classes | ✅ | `DevouringStormsMod` and `DevouringStormsModClient`. |
 | Artifact / project naming | ✅ | Gradle project/artifact names now use `devouringstorms`. |
-| Visible branding strings | ✅ | Fabric metadata and item-group branding now say **Devouring Storms**. |
+| Visible branding strings | ⚠️ | Main config/control-center text, reset notice, metadata author label, and command-facing branding are being moved to **Devouring Storms**; a broader sweep still remains for full consistency. |
+| Main menu branding pass | ⚠️ | New custom title-screen overlay/logo/icon path is in source, but still needs in-game visual validation and likely refinement once the official user-supplied logo can be integrated directly. |
+| Command naming | ⚠️ | New root command path is `devouringstorms`, while legacy `dabyws` is still kept as a compatibility alias for now. |
 | Historical original-jar references | ✅ | Kept intentionally as `dabywitherstormmod-1.9.60-26.2-beta.zip` where they refer to the preserved upstream binary. |
 
 ---
@@ -99,8 +102,9 @@ This file is the current truth for how closely the mod matches the user's MCSM r
 
 ## Honest remaining gaps after this pass
 
-1. **Playable validation is still outstanding.** The pulse timing, halo placement, white collapse timing, and cloud takeover all need real in-game eyes.
+1. **Playable validation is still outstanding.** The menu overlay, Ctrl+O shortcut, summon shockwave feel, halo placement, white collapse timing, and cloud takeover all need real in-game eyes.
 2. **Recovered Stage A-D textures are preserved, but not yet fully repacked into the current atlas expectations.**
-3. **`docs/VIDEO_ACCURACY_STATUS.md` is now current for the source tree, but not yet backed by a local Minecraft launch in this sandbox.**
+3. **The new Story-Mode structure expansion is still code-side scaffolding, not a full authored world set.** The new `undertown`, `watchtower`, `courtyard`, and `street` generators need taste-testing in play.
+4. **`docs/VIDEO_ACCURACY_STATUS.md` is now current for the source tree, but not yet backed by a local Minecraft launch in this sandbox.**
 
 In short: the source pass is now materially further along and the old stale blocker text has been cleared, but the final acceptance for Batch 17 still depends on a successful build plus in-game visual verification.

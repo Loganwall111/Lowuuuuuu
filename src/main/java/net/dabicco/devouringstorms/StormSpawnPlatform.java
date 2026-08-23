@@ -174,7 +174,7 @@ public final class StormSpawnPlatform {
       try {
          String[] parts = Files.readString(marker).trim().split("\\s+");
          if (parts.length < 6) {
-            DevouringStormsMod.LOGGER.warn("[storm platform] this world's marker has no coordinates in it (written by an older build). The tower is out there but the mod cannot see it, so its dust, gloom and music are all off. Stand in the tower and run /dabyws tower mark, or /dabyws tower place to build a fresh one where you stand.");
+            DevouringStormsMod.LOGGER.warn("[storm platform] this world's marker has no coordinates in it (written by an older build). The tower is out there but the mod cannot see it, so its dust, gloom and music are all off. Stand in the tower and run /devouringstorms tower mark, or /devouringstorms tower place to build a fresh one where you stand.");
             return;
          }
 

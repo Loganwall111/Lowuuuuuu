@@ -38,7 +38,7 @@ public class ClientConfigCommandHandler {
                mc.player.sendSystemMessage(Component.literal("[client] " + key1.name() + " set to ").withStyle(ChatFormatting.GRAY).append(Component.literal(format(key1, clamped)).withStyle(ChatFormatting.GREEN)).append(Component.literal(" (only affects you)").withStyle(ChatFormatting.DARK_GRAY)));
                break;
             case 2:
-               mc.player.sendSystemMessage(Component.literal("Wither Storm client config (only you):").withStyle(ChatFormatting.AQUA));
+               mc.player.sendSystemMessage(Component.literal("Devouring Storms client config (only you):").withStyle(ChatFormatting.AQUA));
 
                for(DevouringStormsClientConfig.Key k : DevouringStormsClientConfig.KEYS.values()) {
                   mc.player.sendSystemMessage(Component.literal("  " + k.name() + " = ").withStyle(ChatFormatting.GRAY).append(Component.literal(format(k, k.get().getAsDouble())).withStyle(ChatFormatting.WHITE)));

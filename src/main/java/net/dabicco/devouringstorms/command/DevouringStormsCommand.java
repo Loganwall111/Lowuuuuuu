@@ -916,7 +916,7 @@ public class DevouringStormsCommand {
    private static int listServerConfig(CommandContext<CommandSourceStack> ctx) {
       CommandSourceStack source = (CommandSourceStack)ctx.getSource();
       WitherStormWorldConfig cfg = WitherStormConfigs.get(source.getLevel());
-      source.sendSuccess(() -> Component.literal("Wither Storm server config:").withStyle(ChatFormatting.GOLD), false);
+      source.sendSuccess(() -> Component.literal("Devouring Storms server config:").withStyle(ChatFormatting.GOLD), false);
 
       for(WitherStormWorldConfig.Key key : WitherStormWorldConfig.KEYS.values()) {
          source.sendSuccess(() -> Component.literal("  " + key.name() + " = ").withStyle(ChatFormatting.GRAY).append(Component.literal(formatValue(key, key.get().applyAsDouble(cfg))).withStyle(ChatFormatting.WHITE)), false);
