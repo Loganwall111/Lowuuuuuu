@@ -461,7 +461,7 @@ public class DevouringStormsCommand {
       int placed = StructureBuilder.build(source.getLevel(), player.blockPosition(), type);
       if ((type.equals("town") || type.equals("endertown")) && placed > 0) StoryNpcSpawner.populate(source.getLevel(), player.blockPosition(), WitherStormConfigs.get(source.getLevel()).townNpcPopulation);
       if (placed == 0) {
-         source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church | town | endertown)"));
+         source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church | town | endertown | undertown | under_town | watchtower | courtyard | street)"));
          return 0;
       }
       int count = placed;
