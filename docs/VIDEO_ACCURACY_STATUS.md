@@ -19,10 +19,10 @@ This file is the current truth for how closely the mod matches the user's MCSM r
 | Item | Status | Notes |
 |---|---|---|
 | 0. Recover original textures from BBModels/resources | ✅ | Recovery pass completed; extracted textures are preserved under `src/main/resources/assets/devouringstorms/textures/entity/`. See `docs/BATCH_17_ASSET_AUDIT.md`. |
-| 1. Storm sky / palette / dome rework | ⚠️ | `StormPalettes`, `StormSkyDarken`, `StormStarfield`, and `SkyRendererMixin` now aim for the screenshot-led progression: normal phase 4, green at 4.5, turquoise at 5.0, then a later pink/purple drift into cataclysm. It still needs in-game comparison against the references. |
+| 1. Storm sky / palette / dome rework | ⚠️ | `StormPalettes`, `StormSkyDarken`, `StormStarfield`, `SkyRendererMixin`, and the new `StormSkyCanopy` now aim for the screenshot-led progression: normal phase 4, green at 4.5, turquoise at 5.0, then a later pink/purple drift into cataclysm, with an upper-sky canopy helping the top of the sky fully fade over without manual slider cranking. It still needs in-game comparison against the references. |
 | 2. Split permanent HALO from one-shot PULSE | ⚠️ | Completed in source. Permanent halo now rides with `WitherStormRenderer`; one-shot pulse is server-driven through `StormPulsePayload` + `StormPulseFX`. Needs runtime tuning/verification. |
 | 3. Restore glowing white death dissolve | ⚠️ | Main body + severed halves now have collapse whiteout/fade state in their render states/renderers. Visual timing still needs a real in-game check. |
-| 4. Replace vanilla clouds with stylized MCSM cloud layer | ⚠️ | `StormCloudDeck` and `CloudColorMixin` now handle storm cloud takeover, but the exact runtime mixin/descriptor behavior still could not be validated locally. |
+| 4. Replace vanilla clouds with stylized MCSM cloud layer | ⚠️ | `StormCloudDeck`, `StormSkyCanopy`, and `CloudColorMixin` now handle storm cloud takeover with blocky slabs, a pale inner core, and stronger upper-sky coverage, but the exact runtime mixin/descriptor behavior still could not be validated locally. |
 | 5. Update this document once coherent/playable | ✅ | This file now reflects the current source checkpoint honestly rather than the earlier stale blocker list. |
 
 ---

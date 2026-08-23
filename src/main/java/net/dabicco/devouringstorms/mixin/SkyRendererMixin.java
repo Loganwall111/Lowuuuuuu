@@ -2,6 +2,7 @@ package net.dabicco.devouringstorms.mixin;
 
 import net.dabicco.devouringstorms.client.StormSkyDarken;
 import net.minecraft.client.Camera;
+import net.minecraft.util.Mth;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SkyRenderer;
 import net.minecraft.client.renderer.state.level.SkyRenderState;
@@ -18,10 +19,12 @@ public class SkyRendererMixin {
    )
    private void dabyws$darkenSkyDome(ClientLevel level, float partialTick, Camera camera, SkyRenderState state, CallbackInfo ci) {
       float darken = StormSkyDarken.factor();
-      if (!(darken <= 0.0F)) {
-         float keep = 1.0F - darken;
-         state.skyColor = blendToFloor(state.skyColor, darken);
-         state.sunriseAndSunsetColor = blendToFloor(state.sunriseAndSunsetColor, darken);
+      float palette = StormSkyDarken.paletteBlend();
+      float dome = Mth.clamp(darken * 0.72F + palette * 0.52F, 0.0F, 1.0F);
+      if (!(dome <= 0.0F)) {
+         float keep = 1.0F - Mth.clamp(darken * 0.88F, 0.0F, 1.0F);
+         state.skyColor = blendToFloor(state.skyColor, dome);
+         state.sunriseAndSunsetColor = blendToFloor(state.sunriseAndSunsetColor, Mth.clamp(dome * 0.82F, 0.0F, 1.0F));
          state.starBrightness *= keep;
          state.rainBrightness *= keep;
       }

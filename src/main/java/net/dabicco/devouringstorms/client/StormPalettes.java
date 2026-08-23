@@ -37,11 +37,11 @@ public final class StormPalettes {
    private static final float[] HALO_RING = {0.36F, 0.46F, 1.0F};
    private static final float[] HALO_UNDER = {0.92F, 0.94F, 1.0F};
 
-   /** Cloud deck tint. */
-   private static final float[] CLOUD_GREEN = {0.09F, 0.14F, 0.10F};
-   private static final float[] CLOUD_TURQUOISE = {0.05F, 0.22F, 0.20F};
-   private static final float[] CLOUD_PINK = {0.14F, 0.08F, 0.15F};
-   private static final float[] CLOUD_CATACLYSM = {0.045F, 0.030F, 0.080F};
+   /** Cloud deck tint: pale early slabs, then the phase-5 purple story-cloud look. */
+   private static final float[] CLOUD_GREEN = {0.26F, 0.31F, 0.28F};
+   private static final float[] CLOUD_TURQUOISE = {0.30F, 0.26F, 0.38F};
+   private static final float[] CLOUD_PINK = {0.34F, 0.24F, 0.40F};
+   private static final float[] CLOUD_CATACLYSM = {0.11F, 0.08F, 0.16F};
 
    /** Starfield. */
    private static final float[] STAR_WHITE = {0.90F, 0.92F, 1.0F};

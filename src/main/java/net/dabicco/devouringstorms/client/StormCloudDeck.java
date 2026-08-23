@@ -12,17 +12,21 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * StormCloudDeck — the wall of heavy slabs drifting around a storm, the way
- * MCSM draws the weather mass: big soft slabs slowly orbiting the storm at
- * different radii and altitudes instead of a flat sky texture.
+ * StormCloudDeck — the blocky Story-Mode weather mass that replaces vanilla
+ * clouds around an active storm.
  *
- * Slab placement is derived statelessly from a per-storm hash so nothing is
- * stored and slabs never pop in or out: every frame every slab lands exactly
- * where its orbit says it should be. Colours follow {@link StormPalettes} so
- * the deck flushes green -> turquoise -> pink/purple -> cataclysm with phase.
+ * The user asked for two things this pass:
+ *  - the deck should read as MCSM's chunky slabs instead of vanilla clouds
+ *  - those slabs should carry a slightly white inner body rather than being
+ *    flatly dyed all the way through, while turning visibly purple as phase 5
+ *    begins.
+ *
+ * We therefore draw each slab as a tinted outer shell plus a smaller brighter
+ * inner sheet, and a separate upper-sky canopy now fills the top of the sky so
+ * the storm colour reaches full strength without requiring manual config tweaks.
  */
 public final class StormCloudDeck {
-   private static final Identifier SLAB = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/mcsm_cloud.png");
+   static final Identifier SLAB = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/mcsm_cloud.png");
    private static final int FULL_BRIGHT = 15728880;
    private static final double MAX_VIEW_DIST = 900.0;
 
@@ -32,7 +36,7 @@ public final class StormCloudDeck {
    /** Whether the stylized MCSM deck should take over from vanilla clouds right now. */
    public static boolean replacesVanillaClouds() {
       int mode = (int)Math.round(DevouringStormsClientConfig.stormCloudDeck);
-      return mode > 0 && StormSkyDarken.paletteBlend() > 0.05F && StormSkyDarken.palettePhase() >= 4.45F;
+      return mode > 0 && StormSkyDarken.paletteBlend() > 0.03F && StormSkyDarken.palettePhase() >= 4.25F;
    }
 
    /** cheap deterministic hash -> [0,1) */
@@ -42,6 +46,54 @@ public final class StormCloudDeck {
       h *= 1274126177;
       h ^= h >>> 16;
       return (float)(h & 0xFFFF) / 65536.0F;
+   }
+
+   static float smooth(float value, float start, float end) {
+      float t = Mth.clamp((value - start) / (end - start), 0.0F, 1.0F);
+      return t * t * (3.0F - 2.0F * t);
+   }
+
+   static void colorsForPhase(float phase, float[] outer, float[] inner) {
+      float[] tint = StormPalettes.cloudColor(phase, new float[3]);
+      float purple = smooth(phase, 4.95F, 5.35F);
+      float cataclysm = smooth(phase, 5.75F, 6.15F);
+      float purpleR = Mth.lerp(cataclysm, 0.42F, 0.19F);
+      float purpleG = Mth.lerp(cataclysm, 0.34F, 0.13F);
+      float purpleB = Mth.lerp(cataclysm, 0.55F, 0.30F);
+      outer[0] = Mth.lerp(purple, tint[0], purpleR);
+      outer[1] = Mth.lerp(purple, tint[1], purpleG);
+      outer[2] = Mth.lerp(purple, tint[2], purpleB);
+
+      float whiteMix = Mth.lerp(cataclysm, 0.72F, 0.35F);
+      inner[0] = Mth.lerp(whiteMix, outer[0], 0.96F);
+      inner[1] = Mth.lerp(whiteMix, outer[1], 0.97F);
+      inner[2] = Mth.lerp(whiteMix, outer[2], 1.0F);
+   }
+
+   static void slab(
+      VertexConsumer consumer,
+      PoseStack.Pose pose,
+      double x,
+      double y,
+      double z,
+      double halfLen,
+      double halfWid,
+      double rot,
+      int r,
+      int g,
+      int b,
+      int a
+   ) {
+      double cosR = Math.cos(rot);
+      double sinR = Math.sin(rot);
+      double ux = cosR * halfLen;
+      double uz = sinR * halfLen;
+      double vx = -sinR * halfWid;
+      double vz = cosR * halfWid;
+      vertex(consumer, pose, x - ux - vx, y, z - uz - vz, 0.0F, 0.0F, r, g, b, a);
+      vertex(consumer, pose, x + ux - vx, y, z + uz - vz, 1.0F, 0.0F, r, g, b, a);
+      vertex(consumer, pose, x + ux + vx, y, z + uz + vz, 1.0F, 1.0F, r, g, b, a);
+      vertex(consumer, pose, x - ux + vx, y, z - uz + vz, 0.0F, 1.0F, r, g, b, a);
    }
 
    public static void submit(LevelRenderContext ctx) {
@@ -61,30 +113,27 @@ public final class StormCloudDeck {
       PoseStack poseStack = ctx.poseStack();
       SubmitNodeCollector collector = ctx.submitNodeCollector();
       float paletteClaim = Mth.clamp(StormSkyDarken.paletteBlend(), 0.0F, 1.0F);
-      float baseAlpha = (mode >= 2 ? 0.16F : 0.105F) * Mth.lerp(paletteClaim, 0.75F, 1.15F);
-      float paletteMix = Mth.lerp(paletteClaim, (float)DevouringStormsClientConfig.stormCloudPaletteMix * 0.5F, (float)DevouringStormsClientConfig.stormCloudPaletteMix);
+      float baseAlpha = (mode >= 2 ? 0.18F : 0.12F) * Mth.lerp(paletteClaim, 0.82F, 1.18F);
 
       collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(SLAB), (pose, consumer) -> {
-         float[] col = new float[3];
+         float[] outer = new float[3];
+         float[] inner = new float[3];
+
          for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-            if (d.phase < 4.45F) {
+            if (d.phase < 4.25F) {
                continue;
             }
-            float phaseRamp = Mth.clamp((d.phase - 4.45F) / 0.9F, 0.0F, 1.0F);
-            double spread = 130.0 + 90.0 * Math.min(d.phase, 6.0);
-            int slabs = Mth.clamp((int)(26.0F * coverage * (mode >= 2 ? 1.7F : 1.0F) * (0.55F + 0.45F * phaseRamp)), 4, 72);
-            StormPalettes.cloudColor(d.phase, col);
-            // mix toward the user's vanilla cloud tint when palette mixing is partial
-            float cr = Mth.lerp(paletteMix, (float)DevouringStormsClientConfig.cloudColorR, col[0]);
-            float cg = Mth.lerp(paletteMix, (float)DevouringStormsClientConfig.cloudColorG, col[1]);
-            float cb = Mth.lerp(paletteMix, (float)DevouringStormsClientConfig.cloudColorB, col[2]);
-            // gentle pulse-synced breathing so the deck answers the storm's pulse
-            float period = (float)Math.max(0.5, DevouringStormsClientConfig.pulsePeriod);
-            float breathe = 0.5F + 0.5F * Mth.sin((nowSec / period + (d.entityId % 977) * 0.6183F) * (float)(Math.PI * 2.0));
-            float lum = 1.0F + 0.18F * breathe * (float)DevouringStormsClientConfig.pulseStrength;
-            int r = (int)(Mth.clamp(cr * lum, 0.0F, 1.0F) * 255.0F);
-            int g = (int)(Mth.clamp(cg * lum, 0.0F, 1.0F) * 255.0F);
-            int b = (int)(Mth.clamp(cb * lum, 0.0F, 1.0F) * 255.0F);
+            float phaseRamp = smooth(d.phase, 4.25F, 5.05F);
+            double spread = 130.0 + 90.0 * Math.min(d.phase, 6.0F);
+            int slabs = Mth.clamp((int)(28.0F * coverage * (mode >= 2 ? 1.8F : 1.0F) * (0.45F + 0.55F * phaseRamp)), 6, 84);
+            colorsForPhase(d.phase, outer, inner);
+            float outerLum = 0.82F + 0.12F * Mth.sin((nowSec / Math.max(0.5F, (float)DevouringStormsClientConfig.pulsePeriod) + (d.entityId % 977) * 0.6183F) * (float)(Math.PI * 2.0));
+            int or = (int)(Mth.clamp(outer[0] * outerLum, 0.0F, 1.0F) * 255.0F);
+            int og = (int)(Mth.clamp(outer[1] * outerLum, 0.0F, 1.0F) * 255.0F);
+            int ob = (int)(Mth.clamp(outer[2] * outerLum, 0.0F, 1.0F) * 255.0F);
+            int ir = (int)(Mth.clamp(inner[0], 0.0F, 1.0F) * 255.0F);
+            int ig = (int)(Mth.clamp(inner[1], 0.0F, 1.0F) * 255.0F);
+            int ib = (int)(Mth.clamp(inner[2], 0.0F, 1.0F) * 255.0F);
 
             for (int i = 0; i < slabs; i++) {
                double rad = (0.45 + 0.8 * hash01(d.entityId, i, 1)) * spread;
@@ -93,33 +142,25 @@ public final class StormCloudDeck {
                double ang = ang0 + nowSec * drift;
                double x = d.dispX + Math.cos(ang) * rad;
                double z = d.dispZ + Math.sin(ang) * rad;
-               double alt = (hash01(d.entityId, i, 5) - 0.35) * (50.0 + 30.0 * Math.min(d.phase, 6.0)) + (float)DevouringStormsClientConfig.stormCloudAltitude;
+               double alt = (hash01(d.entityId, i, 5) - 0.35) * (50.0 + 30.0 * Math.min(d.phase, 6.0F)) + (float)DevouringStormsClientConfig.stormCloudAltitude;
                double y = d.dispY - 20.0 + alt + Math.sin(nowSec * 0.05 * (0.5 + hash01(d.entityId, i, 6)) + hash01(d.entityId, i, 7) * 6.28) * 4.0;
-
                double dist = cam.distanceTo(new Vec3(x, y, z));
                if (dist > MAX_VIEW_DIST) {
                   continue;
                }
                float distFade = dist < 60.0 ? (float)(dist / 60.0) : Mth.clamp(1.0F - (float)((dist - 650.0) / 250.0), 0.0F, 1.0F);
-               float alpha = baseAlpha * phaseRamp * (0.55F + 0.45F * hash01(d.entityId, i, 8)) * distFade;
-               int a = (int)(alpha * 255.0F);
-               if (a <= 2) {
+               float alpha = baseAlpha * phaseRamp * (0.58F + 0.42F * hash01(d.entityId, i, 8)) * distFade;
+               int outerA = (int)(alpha * 255.0F);
+               int innerA = (int)(outerA * 0.62F);
+               if (outerA <= 2) {
                   continue;
                }
 
-               double halfLen = 22.0 + 60.0 * hash01(d.entityId, i, 9);
-               double halfWid = 9.0 + 22.0 * hash01(d.entityId, i, 10);
+               double halfLen = 24.0 + 68.0 * hash01(d.entityId, i, 9);
+               double halfWid = 10.0 + 26.0 * hash01(d.entityId, i, 10);
                double rot = hash01(d.entityId, i, 11) * Math.PI * 2.0 + nowSec * drift * 1.7;
-               double cosR = Math.cos(rot);
-               double sinR = Math.sin(rot);
-               double ux = cosR * halfLen;
-               double uz = sinR * halfLen;
-               double vx = -sinR * halfWid;
-               double vz = cosR * halfWid;
-               vertex(consumer, pose, x - ux - vx, y, z - uz - vz, 0.0F, 0.0F, r, g, b, a);
-               vertex(consumer, pose, x + ux - vx, y, z + uz - vz, 1.0F, 0.0F, r, g, b, a);
-               vertex(consumer, pose, x + ux + vx, y, z + uz + vz, 1.0F, 1.0F, r, g, b, a);
-               vertex(consumer, pose, x - ux + vx, y, z - uz + vz, 0.0F, 1.0F, r, g, b, a);
+               slab(consumer, pose, x, y, z, halfLen, halfWid, rot, or, og, ob, outerA);
+               slab(consumer, pose, x, y + 0.12, z, halfLen * 0.72, halfWid * 0.62, rot, ir, ig, ib, innerA);
             }
          }
       });

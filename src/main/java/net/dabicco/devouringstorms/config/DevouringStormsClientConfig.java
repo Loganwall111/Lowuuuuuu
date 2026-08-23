@@ -56,7 +56,7 @@ public class DevouringStormsClientConfig {
    public static double skyDarkenR = 0.126;
    public static double skyDarkenG = 0.055;
    public static double skyDarkenB = 0.194;
-   public static double skyDarkenIntensity = 0.6;
+   public static double skyDarkenIntensity = 0.84;
    public static double eyeColorR = 0.74;
    public static double eyeColorG = 0.8;
    public static double eyeColorB = (double)1.0F;
@@ -90,8 +90,8 @@ public class DevouringStormsClientConfig {
    public static double stormShadowR = 0.42;
    public static double stormShadowG = 0.46;
    public static double stormShadowB = 0.58;
-   public static double skyDarkenLighting = 0.72;
-   public static double cloudDarkenStrength = 0.9;
+   public static double skyDarkenLighting = 0.82;
+   public static double cloudDarkenStrength = 1.0;
    public static double cloudColorR = 0.115;
    public static double cloudColorG = 0.095;
    public static double cloudColorB = 0.105;
@@ -119,11 +119,11 @@ public class DevouringStormsClientConfig {
    public static double starDensity = (double)1.0F;
    public static double starTwinkleSpeed = (double)1.0F;
    public static double starBrightness = (double)1.0F;
-   public static double stormCloudDeck = (double)1.0F;
+   public static double stormCloudDeck = (double)2.0F;
    public static final String[] CLOUD_DECK_LABELS = new String[]{"Off", "Subtle", "Dense"};
-   public static double stormCloudCoverage = (double)1.0F;
+   public static double stormCloudCoverage = 1.35;
    public static double stormCloudAltitude = (double)0.0F;
-   public static double stormCloudPaletteMix = 0.85;
+   public static double stormCloudPaletteMix = 1.0;
    public static boolean atmospherePulse = true;
    public static double pulseStrength = (double)1.0F;
    public static double pulsePeriod = (double)4.0F;
@@ -139,7 +139,7 @@ public class DevouringStormsClientConfig {
    public static double pulseHeartbeatVolume = (double)1.0F;
    public static double pulseHeartbeatRange = (double)512.0F;
    public static boolean phaseFogPalettes = true;
-   public static double paletteStrength = 0.85;
+   public static double paletteStrength = 1.0;
    public static double turquoiseFogR = 0.031;
    public static double turquoiseFogG = 0.42;
    public static double turquoiseFogB = 0.36;
@@ -472,7 +472,7 @@ public class DevouringStormsClientConfig {
       key("starDensity", "How many stars fill the dome.", 0.25, (double)2.0F, false, () -> starDensity, (v) -> starDensity = v);
       key("starTwinkleSpeed", "How fast the stars twinkle.", (double)0.0F, (double)4.0F, false, () -> starTwinkleSpeed, (v) -> starTwinkleSpeed = v);
       key("starBrightness", "Overall star brightness.", (double)0.0F, (double)2.0F, false, () -> starBrightness, (v) -> starBrightness = v);
-      keyCycle("stormCloudDeck", "MCSM-style weather slabs that replace the vanilla cloud pass around an active storm instead of leaving the normal Minecraft cloud look in place.", CLOUD_DECK_LABELS, () -> stormCloudDeck, (v) -> stormCloudDeck = (double)Math.round(v));
+      keyCycle("stormCloudDeck", "MCSM-style blocky cloud slabs with a pale inner body that replace the vanilla cloud pass around an active storm, plus the big upper-sky canopy that makes the storm colour fully take over the top of the sky.", CLOUD_DECK_LABELS, () -> stormCloudDeck, (v) -> stormCloudDeck = (double)Math.round(v));
       key("stormCloudCoverage", "How much of the sky around the storm the deck covers.", 0.25, (double)2.0F, false, () -> stormCloudCoverage, (v) -> stormCloudCoverage = v);
       key("stormCloudAltitude", "Push the whole deck up or down.", -40.0, (double)40.0F, false, () -> stormCloudAltitude, (v) -> stormCloudAltitude = v);
       key("stormCloudPaletteMix", "How much the deck follows the phase palette versus your manual cloud colour.", (double)0.0F, (double)1.0F, false, () -> stormCloudPaletteMix, (v) -> stormCloudPaletteMix = v);
@@ -498,7 +498,7 @@ public class DevouringStormsClientConfig {
       key("cataclysmFogR", "Phase-5.8+ purple-black fog anchor.", (double)0.0F, (double)1.0F, false, () -> cataclysmFogR, (v) -> cataclysmFogR = v);
       key("cataclysmFogG", "", (double)0.0F, (double)1.0F, false, () -> cataclysmFogG, (v) -> cataclysmFogG = v);
       key("cataclysmFogB", "", (double)0.0F, (double)1.0F, false, () -> cataclysmFogB, (v) -> cataclysmFogB = v);
-      key("skyDarkenIntensity", "How much a late-phase storm darkens the sky.", (double)0.0F, (double)1.0F, false, () -> skyDarkenIntensity, (v) -> skyDarkenIntensity = v);
+      key("skyDarkenIntensity", "How much the storm claims the sky dome and top of the sky once the atmospheric takeover starts.", (double)0.0F, (double)1.0F, false, () -> skyDarkenIntensity, (v) -> skyDarkenIntensity = v);
       key("separateFogColor", "Give the fog its own colour instead of the sky's.", (double)0.0F, (double)1.0F, true, () -> separateFogColor ? (double)1.0F : (double)0.0F, (v) -> separateFogColor = v >= (double)0.5F);
       key("fogColorR", "", (double)0.0F, (double)1.0F, false, () -> fogColorR, (v) -> fogColorR = v);
       key("fogColorG", "", (double)0.0F, (double)1.0F, false, () -> fogColorG, (v) -> fogColorG = v);
@@ -600,9 +600,9 @@ public class DevouringStormsClientConfig {
       }
 
       loadedVersion = 13;
-      PRESET_MCSM = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.8), Map.entry("phaseFogPalettes", (double)1.0F));
+      PRESET_MCSM = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("stormCloudCoverage", 1.35), Map.entry("stormCloudPaletteMix", (double)1.0F), Map.entry("skyDarkenIntensity", 0.84), Map.entry("skyDarkenLighting", 0.82), Map.entry("cloudDarkenStrength", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.8), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
       PRESET_LEGACY = Map.of("reverseShading", (double)0.0F, "bloomStrength", (double)1.0F, "beamOpacity", 0.74, "beamColorR", 0.52, "beamColorG", 0.46, "beamColorB", (double)1.0F);
-      PRESET_CINEMATIC = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStars", (double)2.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("pulseStrength", 1.3), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("haloStrength", 1.2), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("ejectaRate", 1.4), Map.entry("pulseHeartbeat", (double)1.0F), Map.entry("debrisSize", (double)2.0F), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
+      PRESET_CINEMATIC = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStars", (double)2.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("stormCloudCoverage", 1.55), Map.entry("stormCloudPaletteMix", (double)1.0F), Map.entry("skyDarkenIntensity", 0.9), Map.entry("skyDarkenLighting", 0.86), Map.entry("cloudDarkenStrength", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("pulseStrength", 1.3), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("haloStrength", 1.2), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("ejectaRate", 1.4), Map.entry("pulseHeartbeat", (double)1.0F), Map.entry("debrisSize", (double)2.0F), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
       GSON = (new GsonBuilder()).setPrettyPrinting().create();
    }
 
