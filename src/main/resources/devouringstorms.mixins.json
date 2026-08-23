@@ -60,6 +60,7 @@
     "RangeSelectItemModelPropertiesAccessor",
     "RenderPipelinesAccessor",
     "RenderTypeInvoker",
+    "ScreenControlShortcutMixin",
     "ScreenHighlightMixin",
     "ScreenInvoker",
     "SelectItemModelPropertiesAccessor",
