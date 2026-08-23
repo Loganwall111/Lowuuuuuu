@@ -1,26 +1,63 @@
 package net.dabicco.witherstormmod.entity;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Random;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.network.chat.Component;
 
-/** Places named, persistent villagers around a generated Story Mode town. */
-public final class StoryNpcSpawner {
- private static final String[] NAMES={"Jesse","Petra","Axel","Olivia","Lukas","Radar","Ivor","Gabriel","Ellegaard","Magnus","Soren","Harper","Jack","Nurm","Stacy","Stampy","Dan","Sparklez","Binta","Wink","Fangirl","Nell","Em","Otto"};
- private StoryNpcSpawner() {}
- public static void populate(ServerLevel server, BlockPos centre, int count) {
-  ArrayList<String> names=new ArrayList<>(Arrays.asList(NAMES)); Collections.shuffle(names, new Random(server.getRandom().nextLong()));
-  for(int i=0;i<count;i++) { double a=server.getRandom().nextDouble()*Math.PI*2; int r=6+server.getRandom().nextInt(15); int x=centre.getX()+(int)Math.round(Math.cos(a)*r), z=centre.getZ()+(int)Math.round(Math.sin(a)*r); BlockPos at=new BlockPos(x,server.getHeight(Heightmap.Types.MOTION_BLOCKING,x,z),z); Mob mob=(Mob)BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.withDefaultNamespace("villager")).create(server, EntitySpawnReason.STRUCTURE); if(mob==null) continue; mob.finalizeSpawn(server,server.getCurrentDifficultyAt(at),EntitySpawnReason.STRUCTURE,(SpawnGroupData)null); mob.setCustomName(Component.literal(names.get(i%names.size()))); mob.setCustomNameVisible(true); mob.setPersistenceRequired(); mob.moveTo(at.getX() + .5, at.getY(), at.getZ() + .5, server.getRandom().nextFloat()*360F, 0); server.addFreshEntity(mob); }
- }
+public class StoryNpcSpawner {
+    private static final String[] NAMES = new String[]{
+        "Jesse", "Petra", "Axel", "Olivia", "Lukas", "Radar", "Ivor", "Gabriel",
+        "Ellegaard", "Magnus", "Soren", "Harper", "Jack", "Nurm", "Lluna", "Stacy",
+        "Stampy", "DanTDM", "Lizzie", "Winslow", "Boren", "Porkchop", "Nell", "Isa", "Milo"
+    };
+
+    private StoryNpcSpawner() {
+    }
+
+    public static int spawn(ServerLevel server, BlockPos pos, int amount) {
+        if (amount <= 0) {
+            return 0;
+        }
+        
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.tryParse("witherstormmod:storymode"));
+        if (type == null) {
+            return 0;
+        }
+
+        RandomSource random = server.getRandom();
+        List<String> names = new ArrayList<>(List.of(NAMES));
+        Collections.shuffle(names, new java.util.Random(random.nextLong()));
+        int spawned = 0;
+
+        for (int i = 0; i < amount && spawned < names.size(); ++i) {
+            double x = pos.getX() + random.nextInt(16) - 8;
+            double z = pos.getZ() + random.nextInt(16) - 8;
+            int y = server.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int)x, (int)z);
+            BlockPos spawnPos = new BlockPos((int)x, y, (int)z);
+
+            if (SpawnPlacements.checkSpawnRules(type, server, MobSpawnType.STRUCTURE, spawnPos, server.getRandom())) {
+                // Logic can go here if needed
+            }
+
+            SpawnGroupData groupData = null;
+            // The type.spawn method requires explicit double casting to clear up the method overload match error
+            groupData = type.spawn(server, null, groupData, spawnPos, MobSpawnType.STRUCTURE, true, false);
+            
+            if (groupData != null) {
+                spawned++;
+            }
+        }
+        return spawned;
+    }
 }
+
