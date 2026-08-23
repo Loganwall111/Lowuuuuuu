@@ -88,6 +88,7 @@ public class WitherStormWorldConfig extends SavedData {
    public int structureRaidInterval = 200;
    public double structureRaidRadius = (double)8.0F;
    public int structureTearClusters = 3;
+   public int townNpcPopulation = 10;
    public int deathBlast = 1;
    public double deathBlastRadius = (double)24.0F;
    public int berserk = 1;
@@ -215,6 +216,7 @@ public class WitherStormWorldConfig extends SavedData {
       key("structureRaidRadius", "Radius of each structure-raid caved-in", (double)2.0F, (double)16.0F, true, (c) -> (double)c.structureRaidRadius, (c, v) -> c.structureRaidRadius = (int)v);
       key("structureTearClusters", "Chunks ripped out of a raided structure as flying clusters per raid - the building visibly breaks open and its pieces fly up to the storm", (double)0.0F, (double)8.0F, true, (c) -> (double)c.structureTearClusters, (c, v) -> c.structureTearClusters = (int)v);
       keyToggle("deathBlast", "When the storm is finally destroyed, it detonates in a cataclysmic blast, caving a huge crater and flinging everything around it (the story's final explosion)", (c) -> (double)c.deathBlast, (c, v) -> c.deathBlast = (int)v);
+      key("townNpcPopulation", "Named Story Mode villagers placed when building a town", 0, 20, true, c -> (double)c.townNpcPopulation, (c,v) -> c.townNpcPopulation=(int)v);
       key("deathBlastRadius", "Radius of the storm's death blast crater and its damage", (double)4.0F, (double)64.0F, true, (c) -> (double)c.deathBlastRadius, (c, v) -> c.deathBlastRadius = (int)v);
       keyToggle("berserk", "When the Devourer is wounded below a health threshold it flies into a rage, slamming its tentacles far more often (the desperate final act)", (c) -> (double)c.berserk, (c, v) -> c.berserk = (int)v);
       key("berserkHealth", "Health fraction (0-1) below which the Devourer goes berserk", 0.1, (double)0.9F, false, (c) -> c.berserkHealth, (c, v) -> c.berserkHealth = v);

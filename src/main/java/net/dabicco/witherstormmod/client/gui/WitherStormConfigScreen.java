@@ -537,6 +537,7 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("Cave Rumble", "caveRumble", "caveRumbleInterval", "caveRumbleDuration", "caveRumbleIntensity");
       this.serverSection("Nether Scaling", "netherScale", "netherScaleInterval", "netherScaleRandom");
       this.serverSection("New Growth Features", "instantGrowth", "instantGrowthRate", "infinitePhases", "phaseCeiling");
+      this.serverSection("Story-Mode Towns", "townNpcPopulation");
       this.serverSection("Tentacle Slams & Raids", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "structureRaid", "structureRaidInterval", "structureRaidRadius", "structureTearClusters");
       this.serverSection("Death & Berserk", "deathBlast", "deathBlastRadius", "berserk", "berserkHealth", "berserkSlamInterval");
    }
@@ -760,6 +761,9 @@ public class WitherStormConfigScreen extends Screen {
 
    private void buildExperimentalRows() {
       this.master("Animation & Motion Maths");
+      this.header("Per-Phase Animation");
+      this.clientRow("phaseAnim", "Enable Per-Phase Animation", (BooleanSupplier)null);
+      this.clientRow("phaseAnimStrength", "Profile Strength", () -> !DabyWSClientConfig.phaseAnim);
       this.header("Tentacle Motion");
       this.clientRow("tentacleIdleSpeed", "Idle Speed", (BooleanSupplier)null);
       this.clientRow("tentacleWaveTravel", "Wave Travel", (BooleanSupplier)null);

@@ -15,6 +15,7 @@ import net.dabicco.witherstormmod.client.ClientConfigCache;
 import net.dabicco.witherstormmod.client.SnatchGrab;
 import net.dabicco.witherstormmod.client.TentacleRagdoll;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
+import net.dabicco.witherstormmod.entity.animation.PhaseStormAnim;
 import net.dabicco.witherstormmod.entity.BigTentacleShape;
 import net.dabicco.witherstormmod.entity.CollapseAnim;
 import net.dabicco.witherstormmod.entity.animation.WitherStormTentacles5Animation;
@@ -1880,6 +1881,7 @@ public class WitherStormTentacles5 extends EntityModel<WitherStormRenderState> {
    }
 
    public void setupAnim(WitherStormRenderState state) {
+      PhaseStormAnim.setPhase((float)state.phase);
       float droop = CollapseAnim.droop(state.collapseTicks);
       float live = 1.0F - droop;
       this.root.getAllParts().forEach(ModelPart::resetPose);
@@ -2014,10 +2016,10 @@ public class WitherStormTentacles5 extends EntityModel<WitherStormRenderState> {
    public static void bigIdleMath(List<ModelPart> chain, float timeTicks, int idx, float weight) {
       int n = chain.size();
       if (n != 0) {
-         float speed = (float)DabyWSClientConfig.tentacleIdleSpeed;
-         float travel = (float)DabyWSClientConfig.tentacleWaveTravel;
-         float depth = (float)DabyWSClientConfig.bigTentacleCurlDepth;
-         float breath = (float)DabyWSClientConfig.bigTentacleHangBreath;
+         float speed = (float)DabyWSClientConfig.tentacleIdleSpeed * PhaseStormAnim.speed();
+         float travel = (float)DabyWSClientConfig.tentacleWaveTravel * PhaseStormAnim.speed();
+         float depth = (float)DabyWSClientConfig.bigTentacleCurlDepth * PhaseStormAnim.depth();
+         float breath = (float)DabyWSClientConfig.bigTentacleHangBreath * PhaseStormAnim.breath();
          float t = timeTicks * 0.026F * speed + (float)idx * 2.3F;
          float side = 1.0F;
          float heave = (Mth.sin((double)(t * 0.61F + (float)idx * 1.7F)) * 0.1F + Mth.sin((double)(t * 0.27F + 2.4F)) * 0.05F) * breath;
@@ -2068,9 +2070,9 @@ public class WitherStormTentacles5 extends EntityModel<WitherStormRenderState> {
    }
 
    public static void smallIdle(List<ModelPart> chain, float timeTicks, int tentacleIdx, float weight) {
-      float speed = (float)DabyWSClientConfig.tentacleIdleSpeed;
-      float travel = (float)DabyWSClientConfig.tentacleWaveTravel;
-      float depth = (float)DabyWSClientConfig.tentacleCurlDepth;
+      float speed = (float)DabyWSClientConfig.tentacleIdleSpeed * PhaseStormAnim.speed();
+      float travel = (float)DabyWSClientConfig.tentacleWaveTravel * PhaseStormAnim.speed();
+      float depth = (float)DabyWSClientConfig.tentacleCurlDepth * PhaseStormAnim.depth();
       float cross = (float)DabyWSClientConfig.tentacleCrossAxis;
       float t = timeTicks * 0.022F * speed + (float)tentacleIdx * 2.3F;
 

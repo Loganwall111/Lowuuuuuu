@@ -29,6 +29,7 @@ import net.dabicco.witherstormmod.StormSpawnPlatform;
 import net.dabicco.witherstormmod.bowels.BowelsHeartEntity;
 import net.dabicco.witherstormmod.bowels.BowelsMawEntity;
 import net.dabicco.witherstormmod.structures.StructureBuilder;
+import net.dabicco.witherstormmod.entity.StoryNpcSpawner;
 import net.dabicco.witherstormmod.config.ClientConfigCommandPayload;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.dabicco.witherstormmod.config.WitherStormConfigs;
@@ -438,8 +439,9 @@ public class DabyWSCommand {
          return 0;
       }
       int placed = StructureBuilder.build(source.getLevel(), player.blockPosition(), type);
+      if ((type.equals("town") || type.equals("endertown")) && placed > 0) StoryNpcSpawner.populate(source.getLevel(), player.blockPosition(), WitherStormConfigs.get(source.getLevel()).townNpcPopulation);
       if (placed == 0) {
-         source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church)"));
+         source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church | town | endertown)"));
          return 0;
       }
       int count = placed;
