@@ -254,6 +254,7 @@ public class DevouringStormsCommand {
             entity.setPos(spawnPos);
             entity.setPhase((double)0.0F);
             level.addFreshEntity(entity);
+            entity.triggerSummonShockwave(level);
             source.sendSuccess(() -> Component.literal("Wither Storm spawned at " + String.valueOf(spawnPos)), true);
             return 1;
          }

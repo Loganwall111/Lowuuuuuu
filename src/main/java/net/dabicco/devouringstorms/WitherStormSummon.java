@@ -72,6 +72,7 @@ public final class WitherStormSummon {
          storm.setPos((double)c.getX() + (double)0.5F, (double)below.getY(), (double)c.getZ() + (double)0.5F);
          storm.beginSpawnFreeze();
          level.addFreshEntity(storm);
+         storm.triggerSummonShockwave(level);
          ModAdvancements.grantNearby(level, storm, "nothing_built");
       }
    }

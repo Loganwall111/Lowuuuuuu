@@ -128,6 +128,9 @@ public class DevouringStormsClientConfig {
    public static double pulseStrength = (double)1.0F;
    public static double pulsePeriod = (double)4.0F;
    public static double pulseSize = (double)1.0F;
+   public static boolean summonShockwave = false;
+   public static double summonShockwaveStrength = 1.15;
+   public static double summonShockwaveSize = 1.2;
    public static boolean cataclysmHalos = true;
    public static double haloStrength = (double)1.0F;
    public static boolean blackGlare = true;
@@ -480,6 +483,9 @@ public class DevouringStormsClientConfig {
       key("pulseStrength", "How bright the one-shot pulse burns at its peak.", (double)0.0F, (double)2.0F, false, () -> pulseStrength, (v) -> pulseStrength = v);
       key("pulsePeriod", "How long the one-shot pulse lingers and blooms before fading.", (double)1.0F, (double)10.0F, false, () -> pulsePeriod, (v) -> pulsePeriod = v);
       key("pulseSize", "How far the one-shot pulse reaches past the storm body.", 0.5, (double)2.0F, false, () -> pulseSize, (v) -> pulseSize = v);
+      key("summonShockwave", "Optional first-summon purple shockwave burst. Off by default.", (double)0.0F, (double)1.0F, true, () -> summonShockwave ? (double)1.0F : (double)0.0F, (v) -> summonShockwave = v >= (double)0.5F);
+      key("summonShockwaveStrength", "Brightness of that first-summon shockwave.", (double)0.0F, (double)2.0F, false, () -> summonShockwaveStrength, (v) -> summonShockwaveStrength = v);
+      key("summonShockwaveSize", "How far the first-summon shockwave expands.", 0.5, (double)3.0F, false, () -> summonShockwaveSize, (v) -> summonShockwaveSize = v);
       key("cataclysmHalos", "Permanent phase-driven halo attached to the storm's back and middle once late growth starts.", (double)0.0F, (double)1.0F, true, () -> cataclysmHalos ? (double)1.0F : (double)0.0F, (v) -> cataclysmHalos = v >= (double)0.5F);
       key("haloStrength", "Brightness of the attached storm halo.", (double)0.0F, (double)2.0F, false, () -> haloStrength, (v) -> haloStrength = v);
       key("blackGlare", "The black-purple glare ring hugging the storm's silhouette.", (double)0.0F, (double)1.0F, true, () -> blackGlare ? (double)1.0F : (double)0.0F, (v) -> blackGlare = v >= (double)0.5F);

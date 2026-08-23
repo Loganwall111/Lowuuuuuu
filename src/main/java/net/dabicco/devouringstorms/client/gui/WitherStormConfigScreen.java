@@ -734,6 +734,10 @@ public class WitherStormConfigScreen extends Screen {
       this.clientRow("pulseHeartbeat", "Pulse Heartbeat", (BooleanSupplier)null);
       this.clientRow("pulseHeartbeatVolume", "Heartbeat Volume", () -> !DevouringStormsClientConfig.pulseHeartbeat);
       this.clientRow("pulseHeartbeatRange", "Heartbeat Range", () -> !DevouringStormsClientConfig.pulseHeartbeat);
+      this.header("Summon Shockwave");
+      this.clientRow("summonShockwave", "First-Summon Shockwave", (BooleanSupplier)null);
+      this.clientRow("summonShockwaveStrength", "Shockwave Strength", () -> !DevouringStormsClientConfig.summonShockwave);
+      this.clientRow("summonShockwaveSize", "Shockwave Size", () -> !DevouringStormsClientConfig.summonShockwave);
       this.header("Cataclysm Halos (Phase 5.8+)");
       this.clientRow("cataclysmHalos", "Cataclysm Halo Pair", (BooleanSupplier)null);
       this.clientRow("haloStrength", "Halo Strength", (BooleanSupplier)null);

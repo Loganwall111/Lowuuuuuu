@@ -1195,6 +1195,10 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.broadcastCommandPulse(server);
    }
 
+   public void triggerSummonShockwave(ServerLevel server) {
+      this.broadcastSummonShockwave(server);
+   }
+
    private void maybeTriggerCommandPulse(ServerLevel server) {
       if (!this.commandPulseFired && this.phase >= 5.9 && this.nearbyPulseStormCount(server) >= 3) {
          this.commandPulseFired = true;
@@ -1208,12 +1212,20 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    private void broadcastCommandPulse(ServerLevel server) {
       Vec3 focus = this.position().add(0.0, this.getBbHeight() * 0.42, 0.0);
-      StormPulsePayload payload = new StormPulsePayload(this.getId(), focus.x, focus.y, focus.z, (float)this.phase);
+      StormPulsePayload payload = new StormPulsePayload(this.getId(), focus.x, focus.y, focus.z, (float)this.phase, 0);
       for (ServerPlayer player : PlayerLookup.level(server)) {
          ServerPlayNetworking.send(player, payload);
       }
       server.playSound((Entity)null, focus.x, focus.y, focus.z, ModSounds.CB_POWER, SoundSource.HOSTILE, 5.5F, 0.82F);
       server.playSound((Entity)null, focus.x, focus.y, focus.z, ModSounds.STORM_THUMP_LARGE, SoundSource.HOSTILE, 5.0F, 0.64F);
+   }
+
+   private void broadcastSummonShockwave(ServerLevel server) {
+      Vec3 focus = this.position().add(0.0, this.getBbHeight() * 0.36, 0.0);
+      StormPulsePayload payload = new StormPulsePayload(this.getId(), focus.x, focus.y, focus.z, 5.62F, 1);
+      for (ServerPlayer player : PlayerLookup.level(server)) {
+         ServerPlayNetworking.send(player, payload);
+      }
    }
 
    public float collapseTicks() {
