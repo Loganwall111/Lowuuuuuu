@@ -9,6 +9,7 @@ import java.util.HashMap;
 import net.dabicco.devouringstorms.BowelsPortal;
 import net.dabicco.devouringstorms.client.CubeReveal;
 import net.dabicco.devouringstorms.client.FoglessRenderTypes;
+import net.dabicco.devouringstorms.client.GlowRenderTypes;
 import net.dabicco.devouringstorms.client.GroundProbe;
 import net.dabicco.devouringstorms.client.PreviewScene;
 import net.dabicco.devouringstorms.client.StormDebris;
@@ -104,6 +105,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    private static final int PORTAL_ALPHA_OPEN = 170;
    private static final Identifier PORTAL_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tractor_beam.png");
    private static final Identifier HALO_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_ring.png");
+   private static final Identifier PHASE4_EMISSIVE_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/phase_4_assets_e.png");
    private static final float[] COLLAPSE_GLOW_SIZES = new float[]{0.9F, 1.25F, 1.7F};
    private static final float[] COLLAPSE_GLOW_ALPHAS = new float[]{0.52F, 0.24F, 0.10F};
    private static final int[][] COLLAPSE_GLOW_COLOURS = new int[][]{{255, 255, 255}, {242, 240, 255}, {222, 214, 255}};
@@ -140,6 +142,13 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       int g = (int)Mth.lerp(white, (float)(argb >> 8 & 255), 255.0F);
       int b = (int)Mth.lerp(white, (float)(argb & 255), 255.0F);
       return a << 24 | r << 16 | g << 8 | b;
+   }
+
+   private static int scaleTint(int argb, float f) {
+      int r = Math.min(255, (int)((float)(argb >> 16 & 0xFF) * f));
+      int g = Math.min(255, (int)((float)(argb >> 8 & 0xFF) * f));
+      int b = Math.min(255, (int)((float)(argb & 0xFF) * f));
+      return argb & 0xFF000000 | r << 16 | g << 8 | b;
    }
 
    private static void applyChangeoverShake(PoseStack poseStack, WitherStormRenderState state) {
@@ -729,6 +738,22 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       return (26.0 + 9.0 * Math.max(0.0, state.phase - 4.0)) * (double)growthScale(state);
    }
 
+   private static float phase4EmissiveGain(WitherStormRenderState state) {
+      float hatch = Mth.clamp(state.hatch, 0.0F, 1.0F);
+      float late = Mth.clamp((float)((state.phase - 4.75) / 0.95), 0.0F, 1.0F);
+      float whiteout = Mth.clamp(state.collapseWhiteout * 0.85F, 0.0F, 0.85F);
+      return (0.26F + late * 0.28F + whiteout) * hatch * state.collapseFade;
+   }
+
+   private static int phase4EmissiveTint(WitherStormRenderState state) {
+      float late = Mth.clamp((float)((state.phase - 4.85) / 0.85), 0.0F, 1.0F);
+      float[] cloud = StormPalettes.cloudColor(state.phase, new float[3]);
+      float r = Mth.lerp(late * 0.7F, 0.97F, Mth.clamp(cloud[0] + 0.16F, 0.0F, 1.0F));
+      float g = Mth.lerp(late * 0.55F, 0.97F, Mth.clamp(cloud[1] + 0.10F, 0.0F, 1.0F));
+      float b = Mth.lerp(late * 0.82F, 0.99F, Mth.clamp(cloud[2] + 0.18F, 0.0F, 1.0F));
+      return 0xFF000000 | (int)(r * 255.0F) << 16 | (int)(g * 255.0F) << 8 | (int)(b * 255.0F);
+   }
+
    private void submitNightLight(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
       float night = Math.min(state.nightFactor, 1.0F);
       float phaseRamp = Mth.clamp((float)((state.phase - 4.9) / 0.7), 0.0F, 1.0F);
@@ -1055,6 +1080,24 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          poseStack.pushPose();
          poseStack.translate(0.0F, -1.501F, 0.0F);
          this.submitCover(poseStack, this.frameCollector, state);
+         if (state.phase4 && !state.devourer && !this.previewShadowPass) {
+            float emit = phase4EmissiveGain(state);
+            if (emit > 0.02F) {
+               this.frameCollector.order(3)
+                  .submitModel(
+                     this.stormP4Model,
+                     state,
+                     poseStack,
+                     GlowRenderTypes.emitterMark(PHASE4_EMISSIVE_TEXTURE),
+                     15728880,
+                     OverlayTexture.NO_OVERLAY,
+                     scaleTint(phase4EmissiveTint(state), emit),
+                     null,
+                     0,
+                     null
+                  );
+            }
+         }
          poseStack.popPose();
       }
    }
