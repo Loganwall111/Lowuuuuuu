@@ -97,9 +97,21 @@ public final class StormSkyDarken {
    }
 
    public static void update(Vec3 cameraPos, float partialTick) {
+      var storms = ClientDistantStormManager.all();
+      if (storms.isEmpty()) {
+         displayed += (0.0F - displayed) * 0.22F;
+         if (displayed < 0.002F) {
+            displayed = 0.0F;
+         }
+
+         palettePhase = 0.0F;
+         paletteBlend = 0.0F;
+         return;
+      }
+
       float target = 0.0F;
 
-      for(ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
+      for(ClientDistantStormManager.StormData d : storms) {
          if (!((double)d.phase < (double)5.0F)) {
             double dx = d.dispX - cameraPos.x;
             double dy = d.dispY - cameraPos.y;
@@ -135,7 +147,7 @@ public final class StormSkyDarken {
       float blendTarget = 0.0F;
       float bestScore = 0.0F;
 
-      for(ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
+      for(ClientDistantStormManager.StormData d : storms) {
          double dx = d.dispX - cameraPos.x;
          double dy = d.dispY - cameraPos.y;
          double dz = d.dispZ - cameraPos.z;

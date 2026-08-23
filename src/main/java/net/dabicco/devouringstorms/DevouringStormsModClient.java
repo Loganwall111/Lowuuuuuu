@@ -269,6 +269,13 @@ public class DevouringStormsModClient implements ClientModInitializer {
       ClientPlayNetworking.registerGlobalReceiver(FormidibombFlashPayload.TYPE, FormidibombFlashPayload::handleClient);
       HudElementRegistry.addLast(DevouringStormsMod.id("formidibomb_flash"), FormidibombFlash::render);
       HudElementRegistry.addLast(DevouringStormsMod.id("bowels_frame"), BowelsHud::render);
+      ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+         ClientDistantStormManager.clear();
+         StormPresenceFX.clear();
+         StormPulseFX.clear();
+         StormSkyDarken.clear();
+         SpawnTowerGloom.clear();
+      });
       ClientPlayConnectionEvents.DISCONNECT.register((ClientPlayConnectionEvents.Disconnect)(handler, client) -> {
          ClientDistantStormManager.clear();
          ClientSicknessManager.clear();
@@ -276,6 +283,7 @@ public class DevouringStormsModClient implements ClientModInitializer {
          StormPresenceFX.clear();
          StormPulseFX.clear();
          StormSkyDarken.clear();
+         SpawnTowerGloom.clear();
       });
       StormAmbienceSound[] ambience = new StormAmbienceSound[]{null};
       BeamHumSound[] beamHum = new BeamHumSound[]{null};
@@ -285,6 +293,11 @@ public class DevouringStormsModClient implements ClientModInitializer {
          if (client.level == null) {
             ambience[0] = null;
             beamHum[0] = null;
+            ClientDistantStormManager.clear();
+            StormPresenceFX.clear();
+            StormPulseFX.clear();
+            StormSkyDarken.clear();
+            SpawnTowerGloom.clear();
          } else {
             BeamMoteSpawner.tick(client);
             StormLoopSounds.tick(client);

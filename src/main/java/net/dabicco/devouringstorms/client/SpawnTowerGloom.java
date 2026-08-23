@@ -16,6 +16,10 @@ public final class SpawnTowerGloom {
       heart = inside ? new Vec3(x, floorY, z) : null;
    }
 
+   public static void clear() {
+      heart = null;
+   }
+
    public static float factor() {
       if (heart == null) {
          return 0.0F;
