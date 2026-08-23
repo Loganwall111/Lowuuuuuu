@@ -26,6 +26,7 @@ public final class StructureBuilder {
          case "portal" -> {
             return portalRuin(server, origin);
          }
+         case "town", "endertown" -> { return town(server, origin); }
          case "church" -> {
             return church(server, origin);
          }
@@ -38,6 +39,9 @@ public final class StructureBuilder {
    private static void set(ServerLevel server, BlockPos pos, BlockState state) {
       server.setBlock(pos, state, 2);
    }
+
+   private static int town(ServerLevel server, BlockPos o) { int n=well(server,o); int[][] a={{14,0},{-14,0},{0,14},{0,-14},{10,10},{-10,-10}}; for(int[] v:a)n+=house(server,o.offset(v[0],0,v[1])); return n+church(server,o.offset(18,0,10))+beacon(server,o.offset(-18,0,12))+portalRuin(server,o.offset(18,0,-16)); }
+   private static int well(ServerLevel s, BlockPos o) { int n=0; for(int x=-2;x<=2;x++)for(int z=-2;z<=2;z++) { if(Math.abs(x)==2||Math.abs(z)==2){set(s,o.offset(x,0,z),Blocks.COBBLESTONE.defaultBlockState());n++;} } set(s,o,Blocks.WATER.defaultBlockState()); return n+1; }
 
    private static int beacon(ServerLevel server, BlockPos origin) {
       int placed = 0;

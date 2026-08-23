@@ -16,6 +16,8 @@ import java.util.function.DoubleSupplier;
 import net.fabricmc.loader.api.FabricLoader;
 
 public class DabyWSClientConfig {
+   public static boolean phaseAnim = true;
+   public static double phaseAnimStrength = 1.0;
    public static boolean tentaclePhysics = false;
    public static boolean distantStorms = true;
    public static boolean distantFog = true;
@@ -218,7 +220,7 @@ public class DabyWSClientConfig {
    }
 
    public static boolean isLocked(String keyName) {
-      return keyName.equals("scaledSubphaseGrowth") && !filledSubphases;
+      return (keyName.equals("scaledSubphaseGrowth") && !filledSubphases) || (keyName.equals("phaseAnimStrength") && !phaseAnim);
    }
 
    private static void key(String name, String description, double min, double max, boolean toggle, DoubleSupplier get, DoubleConsumer set) {
@@ -557,6 +559,8 @@ public class DabyWSClientConfig {
       key("bossbarNotched", "", (double)0.0F, (double)1.0F, true, () -> bossbarNotched ? (double)1.0F : (double)0.0F, (v) -> bossbarNotched = v >= (double)0.5F);
       keyCycle("bossbarColor", "", BOSSBAR_COLOR_LABELS, () -> bossbarColor, (v) -> bossbarColor = (double)Math.round(v));
       keyCycle("nameStyle", "Classic: Commanded Wither, then The Wither Storm. Cracker's: Wither Storm for both. Legacy: Wither (Wither Storm), then The Wither Storm.", NAME_STYLE_LABELS, () -> nameStyle, (v) -> nameStyle = (double)Math.round(v));
+      key("phaseAnim", "Apply a phase-driven animation profile to storm tentacles.", 0, 1, true, () -> phaseAnim ? 1 : 0, v -> phaseAnim = v >= .5);
+      key("phaseAnimStrength", "Strength of the per-phase animation profile.", 0, 2, false, () -> phaseAnimStrength, v -> phaseAnimStrength = v);
       key("tentacleIdleSpeed", "Speed of the sine that drives every tentacle idle. 1 is stock; above about 2 the limbs read as flailing rather than swimming.", 0.1, (double)3.0F, false, () -> tentacleIdleSpeed, (v) -> tentacleIdleSpeed = v);
       key("tentacleWaveTravel", "How much the bend lags from one bone to the next. 0 bends each limb as a single arc with no travelling wave at all.", (double)0.0F, (double)2.0F, false, () -> tentacleWaveTravel, (v) -> tentacleWaveTravel = v);
       key("tentacleCurlDepth", "How far each small-tentacle bone bends. The bends compound down the chain, so small changes here are large on screen.", (double)0.25F, (double)2.5F, false, () -> tentacleCurlDepth, (v) -> tentacleCurlDepth = v);
