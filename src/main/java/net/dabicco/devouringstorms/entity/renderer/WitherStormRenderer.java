@@ -9,6 +9,7 @@ import java.util.HashMap;
 import net.dabicco.devouringstorms.BowelsPortal;
 import net.dabicco.devouringstorms.client.CubeReveal;
 import net.dabicco.devouringstorms.client.FoglessRenderTypes;
+import net.dabicco.devouringstorms.client.GlowRenderTypes;
 import net.dabicco.devouringstorms.client.GroundProbe;
 import net.dabicco.devouringstorms.client.PreviewScene;
 import net.dabicco.devouringstorms.client.StormDebris;
