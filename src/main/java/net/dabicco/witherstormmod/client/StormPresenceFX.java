@@ -33,6 +33,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class StormPresenceFX {
    private static final Identifier SOFT = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/entity/tractor_beam.png");
+   private static final Identifier PIECE_TEX = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/broken_piece.png");
+   private static final String[] PIECES = {"broken_piece_a", "broken_piece_b", "broken_piece_c", "broken_piece_d"};
    private static final Identifier HALO = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/halo_ring.png");
    private static final int FULL_BRIGHT = 15728880;
 
@@ -50,6 +52,8 @@ public final class StormPresenceFX {
    private static final float[] SVZ = new float[SPARKS];
    private static final int[] SLIFE = new int[SPARKS];
    private static final int[] SMAX = new int[SPARKS];
+   private static final float[] SROT = new float[SPARKS];
+   private static final float[] SROTV = new float[SPARKS];
    private static final int[] SKIND = new int[SPARKS];
    private static final Random RANDOM = new Random(7303L);
    private static float emitAcc;
@@ -153,7 +157,7 @@ public final class StormPresenceFX {
          collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(SOFT), (pose, consumer) -> {
             float[] c = new float[3];
             for (int i = 0; i < SPARKS; i++) {
-               if (SLIFE[i] <= 0) {
+               if (SLIFE[i] <= 0 || SKIND[i] == 3) {
                   continue;
                }
                float fade = (float)SLIFE[i] / (float)Math.max(1, SMAX[i]);
@@ -180,6 +184,12 @@ public final class StormPresenceFX {
                vertex(pose, consumer, at.subtract(right).add(up), 0.0F, 1.0F, r, g, b, a);
             }
          });
+         collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(PIECE_TEX), (pose, consumer) -> {
+            for (int i = 0; i < SPARKS; i++) if (SLIFE[i] > 0 && SKIND[i] == 3) {
+               float fade = (float)SLIFE[i] / Math.max(1, SMAX[i]);
+               BakedMesh.emit(consumer, pose, BakedMesh.mesh(PIECES[i % 4]), new Vec3(SX[i], SY[i], SZ[i]), SROT[i], SROT[i] * .71F, 1F + (i % 3) * .55F, 148,112,190,(int)(fade*240),FULL_BRIGHT);
+            }
+         });
       }
    }
 
@@ -201,6 +211,7 @@ public final class StormPresenceFX {
          SVX[i] *= 0.97F;
          SVZ[i] *= 0.97F;
          SVY[i] = SVY[i] * 0.97F - 0.055F;
+         SROT[i] += SROTV[i];
       }
 
       /* ejecta spawning from each late-phase storm's rim */
@@ -269,7 +280,8 @@ public final class StormPresenceFX {
          SVY[i] = (float)(0.06 + RANDOM.nextDouble() * 0.22);
          SMAX[i] = SLIFE[i] = 30 + RANDOM.nextInt(60);
          float pick = RANDOM.nextFloat();
-         SKIND[i] = pick < 0.55F ? 0 : (pick < 0.85F ? 1 : 2);
+         SKIND[i] = pick < .12F ? 3 : (pick < .60F ? 0 : (pick < .88F ? 1 : 2));
+         SROT[i] = RANDOM.nextFloat() * 360F; SROTV[i] = -8F + RANDOM.nextFloat() * 16F;
          return;
       }
    }
