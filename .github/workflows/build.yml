@@ -4,7 +4,6 @@ on:
   push:
     branches: [ main ]
   pull_request:
-  workflow_dispatch:
 
 concurrency:
   group: build-${{ github.ref }}
@@ -39,7 +38,7 @@ jobs:
       - name: Upload mod jar
         uses: actions/upload-artifact@v4
         with:
-          name: devouringstorms
+          name: dabywitherstormmod
           path: build/libs/*.jar
           if-no-files-found: error
           retention-days: 14
