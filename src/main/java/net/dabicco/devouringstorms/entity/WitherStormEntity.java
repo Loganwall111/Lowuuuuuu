@@ -660,6 +660,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
                }
 
                WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
+               this.tickInfiniteGrowth(config);
                this.updateUltimateTarget();
                if (!this.isPhase4()) {
                   Vec3 goal = this.resolveMoveGoal(config);
@@ -922,9 +923,10 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          if (extra <= 0.0) {
             return 1.0;
          } else {
-            double fast = Math.min(extra, 8.0) * 0.14;
-            double slow = Math.max(0.0, extra - 8.0) * 0.05;
-            return Math.min(4.5, 1.0 + fast + slow);
+            double early = Math.min(extra, 8.0) * 0.14;
+            double middle = Math.min(Math.max(0.0, extra - 8.0), 24.0) * 0.08;
+            double late = Math.max(0.0, extra - 32.0);
+            return 1.0 + early + middle + Math.sqrt(late) * 0.45;
          }
       }
    }
@@ -1173,7 +1175,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    private double growthCeiling() {
       WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
-      if (config.infinitePhases != 0) {
+      if (config.infinitePhases != 0 || config.infiniteGrowth != 0) {
          return config.phaseCeiling;
       }
       return this.isDevourer() ? 6.99 : 5.9999;
@@ -1563,6 +1565,17 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
 
       return var10000;
+   }
+
+   private void tickInfiniteGrowth(WitherStormWorldConfig config) {
+      if ((config.infinitePhases == 0 && config.infiniteGrowth == 0) || this.isCollapsed() || this.phase < 5.8 || this.phase >= this.growthCeiling() - 0.001 || this.tickCount % 20 != 0) {
+         return;
+      }
+
+      int secondsPerPhase = Math.max(1, config.infiniteGrowthSecondsPerPhase);
+      int requirement = growthRequirement((int)Math.floor(this.phase), config);
+      int passiveGrowth = Math.max(1, (int)Math.round((double)requirement / (double)secondsPerPhase));
+      this.addSubGrowth(passiveGrowth);
    }
 
    public void addSubGrowth(int amount) {
