@@ -28,6 +28,36 @@ public final class StormSkyDarken {
       return (float)DevouringStormsClientConfig.skyDarkenB;
    }
 
+   private static float latePurpleShift() {
+      float t = Mth.clamp((palettePhase - 5.4F) / 0.45F, 0.0F, 1.0F);
+      t = t * t * (3.0F - 2.0F * t);
+      return t * Math.max(displayed, paletteBlend);
+   }
+
+   public static float skyBaseR() {
+      return Mth.lerp(latePurpleShift(), 0.17F, floorR());
+   }
+
+   public static float skyBaseG() {
+      return Mth.lerp(latePurpleShift(), 0.18F, floorG());
+   }
+
+   public static float skyBaseB() {
+      return Mth.lerp(latePurpleShift(), 0.21F, floorB());
+   }
+
+   public static float cloudBaseR() {
+      return Mth.lerp(latePurpleShift(), 0.24F, (float)DevouringStormsClientConfig.cloudColorR);
+   }
+
+   public static float cloudBaseG() {
+      return Mth.lerp(latePurpleShift(), 0.26F, (float)DevouringStormsClientConfig.cloudColorG);
+   }
+
+   public static float cloudBaseB() {
+      return Mth.lerp(latePurpleShift(), 0.30F, (float)DevouringStormsClientConfig.cloudColorB);
+   }
+
    /** Smoothed phase driving this frame's atmosphere palette (0 when no storm is in range). */
    public static float palettePhase() {
       return palettePhase;
@@ -68,25 +98,25 @@ public final class StormSkyDarken {
    public static float skyR() {
       if (DevouringStormsClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.skyColor(palettePhase, new float[3]);
-         return Mth.lerp(StormPalettes.strength() * paletteBlend, floorR(), c[0]);
+         return Mth.lerp(StormPalettes.strength() * paletteBlend, skyBaseR(), c[0]);
       }
-      return floorR();
+      return skyBaseR();
    }
 
    public static float skyG() {
       if (DevouringStormsClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.skyColor(palettePhase, new float[3]);
-         return Mth.lerp(StormPalettes.strength() * paletteBlend, floorG(), c[1]);
+         return Mth.lerp(StormPalettes.strength() * paletteBlend, skyBaseG(), c[1]);
       }
-      return floorG();
+      return skyBaseG();
    }
 
    public static float skyB() {
       if (DevouringStormsClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.skyColor(palettePhase, new float[3]);
-         return Mth.lerp(StormPalettes.strength() * paletteBlend, floorB(), c[2]);
+         return Mth.lerp(StormPalettes.strength() * paletteBlend, skyBaseB(), c[2]);
       }
-      return floorB();
+      return skyBaseB();
    }
 
    private StormSkyDarken() {

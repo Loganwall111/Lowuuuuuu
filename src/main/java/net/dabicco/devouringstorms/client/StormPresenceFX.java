@@ -78,9 +78,9 @@ public final class StormPresenceFX {
          Vec3 centre = new Vec3(d.dispX, d.dispY, d.dispZ);
          double bodyR = bodyRadius(phase);
 
-         /* ---- black rim glare (phase 5+, drawn first so glow sits on top) ---- */
-         if (DevouringStormsClientConfig.blackGlare && phase >= 5.0F) {
-            float strength = (float)DevouringStormsClientConfig.blackGlareStrength * Mth.clamp((phase - 5.0F) / 0.8F, 0.35F, 1.0F);
+         /* ---- black rim glare (late phase 5+, drawn first so glow sits on top) ---- */
+         if (DevouringStormsClientConfig.blackGlare && phase >= 5.35F) {
+            float strength = (float)DevouringStormsClientConfig.blackGlareStrength * Mth.clamp((phase - 5.35F) / 0.45F, 0.0F, 1.0F);
             if (strength > 0.004F) {
                Vec3 view = centre.subtract(cam).normalize();
                quad(poseStack, collector, GlowRenderTypes.translucent(HALO), cam, centre, view, bodyR * 1.30, 4, 2, 7, (int)(strength * 235.0F));
@@ -155,10 +155,10 @@ public final class StormPresenceFX {
       /* ejecta spawning from each late-phase storm's rim */
       if (DevouringStormsClientConfig.glareEjecta) {
          for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-            if (d.phase < 4.5F) {
+            if (d.phase < 5.15F) {
                continue;
             }
-            float rate = (float)DevouringStormsClientConfig.ejectaRate * Mth.clamp((d.phase - 4.0F) / 1.8F, 0.15F, 1.0F);
+            float rate = (float)DevouringStormsClientConfig.ejectaRate * Mth.clamp((d.phase - 5.15F) / 0.65F, 0.0F, 1.0F);
             emitAcc += rate * 0.02F;
             while (emitAcc >= 1.0F) {
                emitAcc -= 1.0F;

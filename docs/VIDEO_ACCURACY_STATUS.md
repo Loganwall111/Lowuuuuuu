@@ -22,7 +22,7 @@ This file is the current truth for how closely the mod matches the user's MCSM r
 | 1. Storm sky / palette / dome rework | ⚠️ | `StormPalettes`, `StormSkyDarken`, `StormStarfield`, `SkyRendererMixin`, and the new `StormSkyCanopy` now aim for the screenshot-led progression: normal phase 4, green at 4.5, turquoise at 5.0, then a later pink/purple drift into cataclysm, with an upper-sky canopy helping the top of the sky fully fade over without manual slider cranking. Client join/leave now also hard-clear cached sky takeover state so fresh worlds do not inherit storm palette bleed. It still needs in-game comparison against the references. |
 | 2. Split permanent HALO from one-shot PULSE | ⚠️ | Completed in source. Permanent halo now rides with `WitherStormRenderer`; one-shot pulse is server-driven through `StormPulsePayload` + `StormPulseFX`. Needs runtime tuning/verification. |
 | 3. Restore glowing white death dissolve | ⚠️ | Main body + severed halves now have collapse whiteout/fade state in their render states/renderers, and phase-4 body rendering now also reuses `phase_4_assets_e.png` as a pale-to-purple emissive overlay. Visual timing still needs a real in-game check. |
-| 4. Replace vanilla clouds with stylized MCSM cloud layer | ⚠️ | `StormCloudDeck`, `StormSkyCanopy`, and `CloudColorMixin` now handle storm cloud takeover with blocky slabs, a pale inner core, and stronger upper-sky coverage, but the exact runtime mixin/descriptor behavior still could not be validated locally. |
+| 4. Replace vanilla clouds with stylized MCSM cloud layer | ⚠️ | `StormCloudDeck`, `StormSkyCanopy`, and `CloudColorMixin` now handle storm cloud takeover with blocky slabs, a pale inner core, stronger upper-sky coverage, and a later purple swing so early phase 5 can stay closer to turquoise. The exact runtime mixin/descriptor behavior still could not be validated locally. |
 | 5. Update this document once coherent/playable | ✅ | This file now reflects the current source checkpoint honestly rather than the earlier stale blocker list. |
 
 ---
@@ -50,7 +50,7 @@ This file is the current truth for how closely the mod matches the user's MCSM r
 | Flat MCSM storm cloud deck | ⚠️ | Implemented, but not runtime-checked here. |
 | Black rim glare + ejecta | ✅ | Present in `StormPresenceFX`. |
 | One-shot command pulse bloom | ⚠️ | Implemented in `StormPulseFX`; needs feel/timing check in game. |
-| Permanent attached halo | ⚠️ | Implemented in `WitherStormRenderer`; needs composition check against screenshots/video. |
+| Permanent attached halo | ⚠️ | Implemented in `WitherStormRenderer`, with the purple halo now held back until later phase 5 so early takeover stays less prematurely violet. Needs composition check against screenshots/video. |
 | White death bloom / vanish | ⚠️ | Implemented in renderer state/tint flow; needs in-game confirmation. |
 
 ---

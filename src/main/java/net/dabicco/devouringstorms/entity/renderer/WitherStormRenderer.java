@@ -746,7 +746,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    private static int phase4EmissiveTint(WitherStormRenderState state) {
-      float late = Mth.clamp((float)((state.phase - 4.85) / 0.85), 0.0F, 1.0F);
+      float late = Mth.clamp((float)((state.phase - 5.38) / 0.47), 0.0F, 1.0F);
       float[] cloud = StormPalettes.cloudColor(state.phase, new float[3]);
       float r = Mth.lerp(late * 0.7F, 0.97F, Mth.clamp(cloud[0] + 0.16F, 0.0F, 1.0F));
       float g = Mth.lerp(late * 0.55F, 0.97F, Mth.clamp(cloud[1] + 0.10F, 0.0F, 1.0F));
@@ -774,10 +774,10 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    private void submitAttachedHalo(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
-      if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || state.phase < 5.0) {
+      if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || state.phase < 5.35) {
          return;
       }
-      float ramp = Mth.clamp((float)((state.phase - 5.0) / 0.7), 0.0F, 1.0F);
+      float ramp = Mth.clamp((float)((state.phase - 5.35) / 0.55), 0.0F, 1.0F);
       float amount = (float)DevouringStormsClientConfig.haloStrength * ramp * state.collapseFade;
       if (amount <= 0.004F) {
          return;

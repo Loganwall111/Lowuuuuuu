@@ -55,6 +55,15 @@ public final class StormShadow {
       return cameraShadowSmooth;
    }
 
+   private static float latePurpleShift(double phase) {
+      float t = Mth.clamp((float)((phase - 5.4) / 0.45), 0.0F, 1.0F);
+      return t * t * (3.0F - 2.0F * t);
+   }
+
+   private static float shadowTint(double phase, float early, double late) {
+      return Mth.lerp(latePurpleShift(phase), early, (float)late);
+   }
+
    private static void updateCameraShadow(Vec3 eye, Vec3 sun, Vec3 middle, float extent, float strength) {
       Vec3 rel = eye.subtract(middle);
       double along = -rel.dot(sun);
@@ -181,7 +190,10 @@ public final class StormShadow {
                                  try {
                                     int size = (new Std140SizeCalculator()).putMat4f().putMat4f().putVec4().putMat4f().putVec4().putVec4().putMat4f().putVec4().get();
                                     ByteBuffer data = staging(size);
-                                    Std140Builder.intoBuffer(data).putMat4f(invViewProj).putMat4f(StormShadowMap.lightViewProj()).putVec4(strength * altitude, 0.0015F, 1.0F / StormShadowMap.resolution(), StormShadowMap.hasGround() ? 1.0F : 0.0F).putMat4f(viewProj).putVec4((float)sun.x, (float)sun.y, (float)sun.z, DevouringStormsClientConfig.stormSelfShadow ? 1.0F : 0.0F).putVec4((float)DevouringStormsClientConfig.stormShadowR, (float)DevouringStormsClientConfig.stormShadowG, (float)DevouringStormsClientConfig.stormShadowB, DevouringStormsClientConfig.stormShadow ? 1.0F : 0.0F).putMat4f(StormShadowMap.groundViewProj()).putVec4((float)DevouringStormsClientConfig.stormShadingContrast, DevouringStormsClientConfig.stormShadowSoftEdge ? 1.0F : 0.0F, 0.0F, 0.0F);
+                                    float shadowR = shadowTint(nearest.getPhase(), 0.36F, DevouringStormsClientConfig.stormShadowR);
+                                    float shadowG = shadowTint(nearest.getPhase(), 0.37F, DevouringStormsClientConfig.stormShadowG);
+                                    float shadowB = shadowTint(nearest.getPhase(), 0.40F, DevouringStormsClientConfig.stormShadowB);
+                                    Std140Builder.intoBuffer(data).putMat4f(invViewProj).putMat4f(StormShadowMap.lightViewProj()).putVec4(strength * altitude, 0.0015F, 1.0F / StormShadowMap.resolution(), StormShadowMap.hasGround() ? 1.0F : 0.0F).putMat4f(viewProj).putVec4((float)sun.x, (float)sun.y, (float)sun.z, DevouringStormsClientConfig.stormSelfShadow ? 1.0F : 0.0F).putVec4(shadowR, shadowG, shadowB, DevouringStormsClientConfig.stormShadow ? 1.0F : 0.0F).putMat4f(StormShadowMap.groundViewProj()).putVec4((float)DevouringStormsClientConfig.stormShadingContrast, DevouringStormsClientConfig.stormShadowSoftEdge ? 1.0F : 0.0F, 0.0F, 0.0F);
                                     data.rewind();
                                     GpuBuffer ubo = GpuBufferPool.write("dabyws shadow cfg", 128, data);
                                     RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "dabyws storm shadow", scene.getColorTextureView(), Optional.empty());

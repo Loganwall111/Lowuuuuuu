@@ -39,9 +39,9 @@ public abstract class CloudColorMixin {
          return color;
       } else {
          f = Mth.clamp(f, 0.0F, 1.0F);
-         float baseR = Mth.lerp(f, (float)ARGB.red(color) / 255.0F, (float)DevouringStormsClientConfig.cloudColorR);
-         float baseG = Mth.lerp(f, (float)ARGB.green(color) / 255.0F, (float)DevouringStormsClientConfig.cloudColorG);
-         float baseB = Mth.lerp(f, (float)ARGB.blue(color) / 255.0F, (float)DevouringStormsClientConfig.cloudColorB);
+         float baseR = Mth.lerp(f, (float)ARGB.red(color) / 255.0F, StormSkyDarken.cloudBaseR());
+         float baseG = Mth.lerp(f, (float)ARGB.green(color) / 255.0F, StormSkyDarken.cloudBaseG());
+         float baseB = Mth.lerp(f, (float)ARGB.blue(color) / 255.0F, StormSkyDarken.cloudBaseB());
          float[] storm = StormPalettes.cloudColor(StormSkyDarken.palettePhase(), new float[3]);
          float mix = Mth.clamp(Math.max(f, paletteBlend), 0.0F, 1.0F);
          float r = Mth.lerp(mix, baseR, storm[0]);

@@ -18,8 +18,8 @@ import net.minecraft.world.phys.Vec3;
  * The user asked for two things this pass:
  *  - the deck should read as MCSM's chunky slabs instead of vanilla clouds
  *  - those slabs should carry a slightly white inner body rather than being
- *    flatly dyed all the way through, while turning visibly purple as phase 5
- *    begins.
+ *    flatly dyed all the way through, while only turning visibly purple once
+ *    late phase 5 starts to drift that way.
  *
  * We therefore draw each slab as a tinted outer shell plus a smaller brighter
  * inner sheet, and a separate upper-sky canopy now fills the top of the sky so
@@ -55,8 +55,8 @@ public final class StormCloudDeck {
 
    static void colorsForPhase(float phase, float[] outer, float[] inner) {
       float[] tint = StormPalettes.cloudColor(phase, new float[3]);
-      float purple = smooth(phase, 4.95F, 5.35F);
-      float cataclysm = smooth(phase, 5.75F, 6.15F);
+      float purple = smooth(phase, 5.38F, 5.78F);
+      float cataclysm = smooth(phase, 5.90F, 6.18F);
       float purpleR = Mth.lerp(cataclysm, 0.42F, 0.19F);
       float purpleG = Mth.lerp(cataclysm, 0.34F, 0.13F);
       float purpleB = Mth.lerp(cataclysm, 0.55F, 0.30F);
