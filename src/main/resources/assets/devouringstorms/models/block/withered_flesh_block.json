@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "devouringstorms:block/withered_flesh_block"
+  }
+}

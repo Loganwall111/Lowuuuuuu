@@ -1,0 +1,80 @@
+{
+	"model": {
+		"type": "minecraft:model",
+		"model": "devouringstorms:item/formidibomb",
+		"tints": [
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 0
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 1
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 2
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 3
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 4
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 5
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 6
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 7
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 8
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 9
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 10
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 11
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 12
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 13
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 14
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 15
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 16
+			},
+			{
+				"type": "devouringstorms:formidibomb_light",
+				"light": 17
+			}
+		]
+	}
+}

@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "###"
+  ],
+  "key": {
+    "#": "devouringstorms:withered_stone"
+  },
+  "result": {
+    "id": "devouringstorms:withered_stone_slab",
+    "count": 6
+  }
+}

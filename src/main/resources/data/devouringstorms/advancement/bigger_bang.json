@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "devouringstorms:super_tnt"
+    },
+    "title": {
+      "translate": "advancements.devouringstorms.bigger_bang.title"
+    },
+    "description": {
+      "translate": "advancements.devouringstorms.bigger_bang.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "devouringstorms:super_tnt"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has"
+    ]
+  ],
+  "parent": "devouringstorms:withering_heights"
+}

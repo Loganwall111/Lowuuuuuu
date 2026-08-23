@@ -1,0 +1,16 @@
+{
+  "display": {
+    "icon": { "id": "minecraft:beacon" },
+    "title": { "translate": "advancements.devouringstorms.withered_beacon.title" },
+    "description": { "translate": "advancements.devouringstorms.withered_beacon.description" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": { "trigger": "minecraft:impossible" }
+  },
+  "requirements": [ [ "done" ] ],
+  "parent": "devouringstorms:another_begins"
+}

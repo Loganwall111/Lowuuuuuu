@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "TBT",
+    "LCL",
+    "TBT"
+  ],
+  "key": {
+    "T": "minecraft:tnt",
+    "B": "minecraft:blaze_powder",
+    "L": "minecraft:lava_bucket",
+    "C": "devouringstorms:control_panel"
+  },
+  "result": {
+    "id": "devouringstorms:super_tnt",
+    "count": 1
+  }
+}

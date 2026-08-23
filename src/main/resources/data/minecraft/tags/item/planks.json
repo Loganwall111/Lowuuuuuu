@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "dabywitherstormmod:withered_planks",
-    "dabywitherstormmod:stripped_withered_planks"
+    "devouringstorms:withered_planks",
+    "devouringstorms:stripped_withered_planks"
   ]
 }

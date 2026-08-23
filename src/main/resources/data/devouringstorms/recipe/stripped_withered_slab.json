@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "###"
+  ],
+  "key": {
+    "#": "devouringstorms:stripped_withered_planks"
+  },
+  "result": {
+    "id": "devouringstorms:stripped_withered_slab",
+    "count": 6
+  }
+}

@@ -18,7 +18,7 @@ bytecode/source**.
 | `CaveRumblePayload` | network | High | `CaveRumble`, `BowelsBoss`, `CaveRumbleClient` |
 | `CommandBlockPowerPayload` | network | High | `BowelsHeartEntity`, client handler |
 | `FormidibombFlashPayload` | network | High | `FormidibombEntity`, `FormidibombFlash` |
-| `SpawnStructurePayload` | network | High | `DabyWitherStormMod`, client handler |
+| `SpawnStructurePayload` | network | High | `DevouringStormsMod`, client handler |
 | `WitherSicknessPayload` | network | High | `WitherSickness`, `ClientSicknessManager` |
 | `WitheredCastPayload` | network | High | `ClientWitheredManager` |
 | `ActionButtonPayload` | network | High | `BowelsActionKeys`, `ActionButtons` |
@@ -30,7 +30,7 @@ bytecode/source**.
 | `DarkenedMovingBlockRenderState` | entity.state | High | `WitherStormClusterRenderer` |
 | `ModMenus` | menu | Medium | Fabric `MenuTypeRegistry` / `FabricMenuTypeBuilder` API |
 | `FurnaceFilterMenu` | menu | Medium | `FurnaceFilterBlockEntity.createMenu`, `FurnaceFilterScreen` |
-| `NetherScaleManager` | nether | Medium | `DabyWSCommand.trigger`, `NetherScaleEntity` |
+| `NetherScaleManager` | nether | Medium | `DevouringStormsCommand.trigger`, `NetherScaleEntity` |
 
 All reconstructed files follow the mod's existing patterns (e.g. the
 `RegistryFriendlyByteBuf` + `StreamCodec` payload pattern from

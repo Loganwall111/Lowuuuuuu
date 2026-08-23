@@ -35,7 +35,7 @@ loom {
 	// does not exist". The original mod was built without split source sets.
 
 	mods {
-		"dabywitherstormmod" {
+		"devouringstorms" {
 			sourceSet sourceSets.main
 		}
 	}

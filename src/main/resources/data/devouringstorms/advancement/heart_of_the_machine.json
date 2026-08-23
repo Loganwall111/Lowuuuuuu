@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "devouringstorms:control_panel"
+    },
+    "title": {
+      "translate": "advancements.devouringstorms.heart_of_the_machine.title"
+    },
+    "description": {
+      "translate": "advancements.devouringstorms.heart_of_the_machine.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "devouringstorms:control_panel"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has"
+    ]
+  ],
+  "parent": "devouringstorms:bigger_bang"
+}

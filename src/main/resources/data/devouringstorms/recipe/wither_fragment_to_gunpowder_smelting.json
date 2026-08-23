@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": "devouringstorms:wither_fragment",
+  "result": { "id": "minecraft:gunpowder" },
+  "experience": 0.3,
+  "cookingtime": 200
+}

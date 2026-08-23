@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "dabywitherstormmod",
+	"id": "devouringstorms",
 	"version": "1.9.60-26.2-beta",
-	"name": "Dabicco's Wither Storm Mod",
-	"description": "Adds The Wither Storm from Minecraft: Story Mode: a mutant wither that grows through several phases, flattens your world as it consumes it, and hunts you across it. Possessed enemies, deep configuration, multiplayer support, and a proper final boss fight. No matter how far you go, you cannot escape The Wither Storm.",
+	"name": "Devouring Storms",
+	"description": "Brings the Minecraft: Story Mode storm into modern Fabric: a mutant wither that grows through multiple phases, devours terrain and mobs, darkens the sky, and drives toward a proper final boss fight. No matter how far you go, you cannot escape the storm.",
 	"authors": [
 		"Dabicco - Lead Programmer",
 		"Joeyready - Textures, Blocks, Items & Build"
@@ -13,21 +13,21 @@
 		"issues": "https://discord.gg/eKDqAmSPzj"
 	},
 	"license": "MIT",
-	"icon": "assets/dabywitherstormmod/icon.png",
+	"icon": "assets/devouringstorms/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"net.dabicco.witherstormmod.DabyWitherStormMod"
+			"net.dabicco.devouringstorms.DevouringStormsMod"
 		],
 		"client": [
-			"net.dabicco.witherstormmod.DabyWitherStormModClient"
+			"net.dabicco.devouringstorms.DevouringStormsModClient"
 		],
 		"modmenu": [
-			"net.dabicco.witherstormmod.client.ModMenuIntegration"
+			"net.dabicco.devouringstorms.client.ModMenuIntegration"
 		]
 	},
 	"mixins": [
-		"dabywitherstormmod.mixins.json"
+		"devouringstorms.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.3",

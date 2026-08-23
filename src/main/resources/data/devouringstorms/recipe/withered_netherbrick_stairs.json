@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "#  ",
+    "## ",
+    "###"
+  ],
+  "key": {
+    "#": "devouringstorms:withered_netherbrick"
+  },
+  "result": {
+    "id": "devouringstorms:withered_netherbrick_stairs",
+    "count": 4
+  }
+}

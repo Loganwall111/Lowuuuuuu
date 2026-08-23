@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "devouringstorms:withered_planks"
+    },
+    "title": {
+      "translate": "advancements.devouringstorms.corrupted_carpentry.title"
+    },
+    "description": {
+      "translate": "advancements.devouringstorms.corrupted_carpentry.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "devouringstorms:withered_planks"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has"
+    ]
+  ],
+  "parent": "devouringstorms:bigger_bang"
+}

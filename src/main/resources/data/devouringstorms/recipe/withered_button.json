@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    "devouringstorms:withered_planks"
+  ],
+  "result": {
+    "id": "devouringstorms:withered_button",
+    "count": 1
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/button",
+  "textures": {
+    "texture": "devouringstorms:block/stripped_withered_planks"
+  }
+}

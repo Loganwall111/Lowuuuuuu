@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "devouringstorms:block/withered_log"
+    },
+    "axis=z": {
+      "model": "devouringstorms:block/withered_log",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "devouringstorms:block/withered_log",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

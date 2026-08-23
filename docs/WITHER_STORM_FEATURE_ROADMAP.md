@@ -1,6 +1,6 @@
 # Wither Storm — One-to-One Story Mode Replica: Feature & Implementation Roadmap
 
-**Project:** Dabicco's Wither Storm Mod `1.9.60-26.2-beta` (Fabric, Minecraft 26.2, Java 25)
+**Project:** Devouring Storms `1.9.60-26.2-beta` (Fabric, Minecraft 26.2, Java 25)
 **Goal:** Make the mod's Wither Storm a faithful, feature-complete replica of the *Minecraft: Story Mode* Wither Storm boss (as shown in the reference longplay), including its Story-Mode-accurate textures.
 
 > **Important context.** This repo contains the mod as a **compiled jar** (352 `.class` files, no Java source). This roadmap is written to be *directly executable* by anyone with the mod's **source code** on a machine that can run **Java 25 + Fabric Loader + Gradle (Fabric Loom)**. That environment cannot be provisioned inside this sandbox (no Java, no Gradle, and no network access to Maven Central / Fabric Maven / Mojang), so the *code* steps below are the blueprint for that environment.
@@ -142,7 +142,7 @@ This is Story Mode's signature finale: the player enters the Wither Storm's inte
 3. Implement, in order: **tornado core (Phase 3)** → **phase-transition cinematics (Phase 2)** → **final defeat cinematic (Phase 5)** → **Story Mode texture pack (Phase 6)**.
 4. Then run the polish pass in Phase 7.
 
-*Asset inventory and the full class catalogue are under `src/main/resources/assets/dabywitherstormmod/` and the extracted `mod/` tree.*
+*Asset inventory and the full class catalogue are under `src/main/resources/assets/devouringstorms/` and the extracted `mod/` tree.*
 
 ---
 

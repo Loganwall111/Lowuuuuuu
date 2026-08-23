@@ -1,0 +1,17 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "devouringstorms:item/control_panel",
+    "tints": [
+      { "type": "devouringstorms:panel_light", "light": 0 },
+      { "type": "devouringstorms:panel_light", "light": 1 },
+      { "type": "devouringstorms:panel_light", "light": 2 },
+      { "type": "devouringstorms:panel_light", "light": 3 },
+      { "type": "devouringstorms:panel_light", "light": 4 },
+      { "type": "devouringstorms:panel_light", "light": 5 },
+      { "type": "devouringstorms:panel_light", "light": 6 },
+      { "type": "devouringstorms:panel_light", "light": 7 },
+      { "type": "devouringstorms:panel_light", "light": 8 }
+    ]
+  }
+}

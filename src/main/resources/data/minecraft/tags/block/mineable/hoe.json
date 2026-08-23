@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "dabywitherstormmod:withered_flesh_block",
-    "dabywitherstormmod:torn_withered_flesh"
+    "devouringstorms:withered_flesh_block",
+    "devouringstorms:torn_withered_flesh"
   ]
 }

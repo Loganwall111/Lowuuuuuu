@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "dabywitherstormmod:withered_fence",
-    "dabywitherstormmod:stripped_withered_fence"
+    "devouringstorms:withered_fence",
+    "devouringstorms:stripped_withered_fence"
   ]
 }

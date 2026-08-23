@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:stonecutting",
-  "ingredient": "dabywitherstormmod:withered_netherbrick",
-  "result": {
-    "id": "dabywitherstormmod:withered_netherbrick_fence",
-    "count": 1
-  }
-}

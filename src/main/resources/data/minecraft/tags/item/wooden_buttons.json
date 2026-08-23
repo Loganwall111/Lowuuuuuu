@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "dabywitherstormmod:withered_button",
-    "dabywitherstormmod:stripped_withered_button"
+    "devouringstorms:withered_button",
+    "devouringstorms:stripped_withered_button"
   ]
 }

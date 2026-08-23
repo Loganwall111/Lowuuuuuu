@@ -1,0 +1,13 @@
+{
+  "type": "devouringstorms:bowels",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [],
+      "biome": "devouringstorms:bowels",
+      "lakes": false,
+      "features": false,
+      "structure_overrides": []
+    }
+  }
+}

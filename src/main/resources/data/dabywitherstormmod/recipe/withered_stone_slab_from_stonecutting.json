@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:stonecutting",
-  "ingredient": "dabywitherstormmod:withered_stone",
-  "result": {
-    "id": "dabywitherstormmod:withered_stone_slab",
-    "count": 2
-  }
-}

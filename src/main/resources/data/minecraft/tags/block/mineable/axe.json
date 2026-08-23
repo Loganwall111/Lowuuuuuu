@@ -1,16 +1,16 @@
 {
   "replace": false,
   "values": [
-    "dabywitherstormmod:stripped_withered_log",
-    "dabywitherstormmod:withered_planks",
-    "dabywitherstormmod:withered_stairs",
-    "dabywitherstormmod:withered_slab",
-    "dabywitherstormmod:withered_button",
-    "dabywitherstormmod:withered_fence",
-    "dabywitherstormmod:stripped_withered_planks",
-    "dabywitherstormmod:stripped_withered_stairs",
-    "dabywitherstormmod:stripped_withered_slab",
-    "dabywitherstormmod:stripped_withered_button",
-    "dabywitherstormmod:stripped_withered_fence"
+    "devouringstorms:stripped_withered_log",
+    "devouringstorms:withered_planks",
+    "devouringstorms:withered_stairs",
+    "devouringstorms:withered_slab",
+    "devouringstorms:withered_button",
+    "devouringstorms:withered_fence",
+    "devouringstorms:stripped_withered_planks",
+    "devouringstorms:stripped_withered_stairs",
+    "devouringstorms:stripped_withered_slab",
+    "devouringstorms:stripped_withered_button",
+    "devouringstorms:stripped_withered_fence"
   ]
 }

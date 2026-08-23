@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    "devouringstorms:withered_log"
+  ],
+  "result": {
+    "id": "devouringstorms:withered_planks",
+    "count": 4
+  }
+}

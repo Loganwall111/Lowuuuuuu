@@ -1,0 +1,485 @@
+{
+  "ambience_loop": {
+    "sounds": [
+      {
+        "name": "devouringstorms:ambience-loop",
+        "stream": true
+      }
+    ]
+  },
+  "infected_mob": {
+    "subtitle": "subtitles.devouringstorms.infected_mob",
+    "sounds": [
+      {
+        "name": "entity.wither.spawn",
+        "type": "event"
+      }
+    ]
+  },
+  "head_activate_beam": {
+    "sounds": [
+      "devouringstorms:head/activate-beam-1",
+      "devouringstorms:head/activate-beam-2",
+      "devouringstorms:head/activate-beam-3",
+      "devouringstorms:head/activate-beam-4",
+      "devouringstorms:head/activate-beam-5",
+      "devouringstorms:head/activate-beam-6"
+    ]
+  },
+  "head_beam_snap": {
+    "sounds": [
+      "devouringstorms:head/beam-snap_1",
+      "devouringstorms:head/beam-snap_2",
+      "devouringstorms:head/beam-snap_3"
+    ]
+  },
+  "head_beam_deactivate": {
+    "sounds": [
+      "devouringstorms:head/beam_deactivate"
+    ]
+  },
+  "head_beam_loop": {
+    "sounds": [
+      {
+        "name": "devouringstorms:head/beam_loop",
+        "stream": true
+      }
+    ]
+  },
+  "head_growl": {
+    "sounds": [
+      "devouringstorms:head/growl_1",
+      "devouringstorms:head/growl_2",
+      "devouringstorms:head/growl_3",
+      "devouringstorms:head/growl_4",
+      "devouringstorms:head/growl_5",
+      "devouringstorms:head/growl_6",
+      "devouringstorms:head/growl_7",
+      "devouringstorms:head/growl_8",
+      "devouringstorms:head/growl_9",
+      "devouringstorms:head/growl_10",
+      "devouringstorms:head/growl_11"
+    ]
+  },
+  "head_short_growl": {
+    "sounds": [
+      "devouringstorms:head/short-growl_1",
+      "devouringstorms:head/short-growl_2",
+      "devouringstorms:head/short-growl_3",
+      "devouringstorms:head/short-growl_4"
+    ]
+  },
+  "head_snarl": {
+    "sounds": [
+      "devouringstorms:head/snarl_1",
+      "devouringstorms:head/snarl_2",
+      "devouringstorms:head/snarl_3",
+      "devouringstorms:head/snarl_4",
+      "devouringstorms:head/snarl_5",
+      "devouringstorms:head/snarl_6",
+      "devouringstorms:head/snarl_7"
+    ]
+  },
+  "head_roar": {
+    "sounds": [
+      "devouringstorms:head/roar_1",
+      "devouringstorms:head/roar_2",
+      "devouringstorms:head/roar_3",
+      "devouringstorms:head/roar_4"
+    ]
+  },
+  "head_hurt": {
+    "sounds": [
+      "devouringstorms:head/hurt_1",
+      "devouringstorms:head/hurt_2"
+    ]
+  },
+  "head_stab_eye": {
+    "sounds": [
+      "devouringstorms:head/stab-eye_1",
+      "devouringstorms:head/stab-eye_2",
+      "devouringstorms:head/stab-eye_3"
+    ]
+  },
+  "head_shoot": {
+    "sounds": [
+      "devouringstorms:head/shoot_1",
+      "devouringstorms:head/shoot_2",
+      "devouringstorms:head/shoot_3",
+      "devouringstorms:head/shoot_4",
+      "devouringstorms:head/shoot_5",
+      "devouringstorms:head/shoot_6"
+    ]
+  },
+  "head_powerful_roar": {
+    "sounds": [
+      "devouringstorms:head/powerful_roar1",
+      "devouringstorms:head/powerful_roar2",
+      "devouringstorms:head/powerful_roar3"
+    ]
+  },
+  "tractor_beam_ground_loop": {
+    "sounds": [
+      {
+        "name": "devouringstorms:tractor-beam/tractor-loop1",
+        "stream": true
+      },
+      {
+        "name": "devouringstorms:tractor-beam/tractor-loop2",
+        "stream": true
+      },
+      {
+        "name": "devouringstorms:tractor-beam/tractor-loop3",
+        "stream": true
+      },
+      {
+        "name": "devouringstorms:tractor-beam/tractor-loop4",
+        "stream": true
+      },
+      {
+        "name": "devouringstorms:tractor-beam/tractor-loop5",
+        "stream": true
+      },
+      {
+        "name": "devouringstorms:tractor-beam/tractor-loop6",
+        "stream": true
+      }
+    ]
+  },
+  "tractor_beam_ground_disable": {
+    "sounds": [
+      "devouringstorms:tractor-beam/tractor-disable1",
+      "devouringstorms:tractor-beam/tractor-disable2"
+    ]
+  },
+  "storm_grow": {
+    "sounds": [
+      "devouringstorms:witherstorm/grow_1",
+      "devouringstorms:witherstorm/grow_2",
+      "devouringstorms:witherstorm/grow_3",
+      "devouringstorms:witherstorm/grow_4"
+    ]
+  },
+  "storm_tornado_loop": {
+    "sounds": [
+      {
+        "name": "devouringstorms:witherstorm/tornado-loop",
+        "stream": true
+      }
+    ]
+  },
+  "formidibomb_creation": {
+    "sounds": [
+      "devouringstorms:formidibomb/creation"
+    ]
+  },
+  "formidibomb_explosion": {
+    "sounds": [
+      {
+        "name": "devouringstorms:formidibomb/explosion",
+        "stream": true
+      }
+    ]
+  },
+  "formidibomb_distant_explosion": {
+    "sounds": [
+      {
+        "name": "devouringstorms:formidibomb/distant_explosion",
+        "stream": true
+      }
+    ]
+  },
+  "withered_sonic_charge": {
+    "subtitle": "subtitles.devouringstorms.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.warden.sonic_charge",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_sonic_boom": {
+    "subtitle": "subtitles.devouringstorms.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.warden.sonic_boom",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_ability": {
+    "subtitle": "subtitles.devouringstorms.withered_ability",
+    "sounds": [
+      {
+        "name": "block.beacon.activate",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_chime": {
+    "subtitle": "subtitles.devouringstorms.withered_ability",
+    "sounds": [
+      {
+        "name": "block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_stone_break": {
+    "subtitle": "subtitles.devouringstorms.withered_ability",
+    "sounds": [
+      {
+        "name": "block.stone.break",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_arrow_shoot": {
+    "subtitle": "subtitles.devouringstorms.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.arrow.shoot",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_ambient": {
+    "subtitle": "subtitles.devouringstorms.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.wither.ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_shoot": {
+    "subtitle": "subtitles.devouringstorms.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.wither.shoot",
+        "type": "event"
+      }
+    ]
+  },
+  "music_mini_a": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-mini-a",
+        "stream": true
+      }
+    ]
+  },
+  "music_mini_b": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-mini-b",
+        "stream": true
+      }
+    ]
+  },
+  "music_mini_c": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-mini-c",
+        "stream": true
+      }
+    ]
+  },
+  "music_main_a": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-main-a",
+        "stream": true
+      }
+    ]
+  },
+  "music_main_b": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-main-b",
+        "stream": true
+      }
+    ]
+  },
+  "music_main_c": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-main-c",
+        "stream": true
+      }
+    ]
+  },
+  "music_aftr_a": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-aftr-a",
+        "stream": true
+      }
+    ]
+  },
+  "music_aftr_b": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-aftr-b",
+        "stream": true
+      }
+    ]
+  },
+  "music_aftr_c": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-aftr-c",
+        "stream": true
+      }
+    ]
+  },
+  "music_distant_a": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-distant-a",
+        "stream": true
+      }
+    ]
+  },
+  "music_distant_b": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/wither-distant-b",
+        "stream": true
+      }
+    ]
+  },
+  "music_ivor": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/ivor",
+        "stream": true
+      }
+    ]
+  },
+  "music_bowels": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/bowels-loop",
+        "stream": true
+      }
+    ]
+  },
+  "music_final": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/finaltheme",
+        "stream": true
+      }
+    ]
+  },
+  "music_bowels_overlay": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/bowels-loop-overlay",
+        "stream": true
+      }
+    ]
+  },
+  "music_withergloop": {
+    "sounds": [
+      {
+        "name": "devouringstorms:music/withergloop",
+        "stream": true
+      }
+    ]
+  },
+  "cluster_fx": {
+    "sounds": [
+      "devouringstorms:cluster/cluster-fx-a",
+      "devouringstorms:cluster/cluster-fx-b",
+      "devouringstorms:cluster/cluster-fx-c",
+      "devouringstorms:cluster/cluster-fx-d",
+      "devouringstorms:cluster/cluster-fx-e",
+      "devouringstorms:cluster/cluster-fx-f"
+    ]
+  },
+  "head_chomp": {
+    "sounds": [
+      "devouringstorms:head/chomp1",
+      "devouringstorms:head/chomp2",
+      "devouringstorms:head/chomp3"
+    ]
+  },
+  "storm_thump": {
+    "sounds": [
+      "devouringstorms:witherstorm/thump-a",
+      "devouringstorms:witherstorm/thump-b",
+      "devouringstorms:witherstorm/thump-c"
+    ]
+  },
+  "storm_thump_large": {
+    "sounds": [
+      {
+        "name": "devouringstorms:witherstorm/large-thump"
+      }
+    ]
+  },
+  "cb_damage": {
+    "sounds": [
+      "devouringstorms:commandblock/cb-damage-a",
+      "devouringstorms:commandblock/cb-damage-b"
+    ]
+  },
+  "cb_damage_final": {
+    "sounds": [
+      {
+        "name": "devouringstorms:commandblock/cb-damage-final"
+      }
+    ]
+  },
+  "cb_destruct": {
+    "sounds": [
+      {
+        "name": "devouringstorms:commandblock/cb-destruct"
+      }
+    ]
+  },
+  "cb_hit": {
+    "sounds": [
+      "devouringstorms:commandblock/cb-hit-a",
+      "devouringstorms:commandblock/cb-hit-b"
+    ]
+  },
+  "cb_power": {
+    "sounds": [
+      {
+        "name": "devouringstorms:commandblock/cb-power"
+      }
+    ]
+  },
+  "cb_unpower": {
+    "sounds": [
+      {
+        "name": "devouringstorms:commandblock/cb-unpower"
+      }
+    ]
+  },
+  "cb_powerup_fx": {
+    "sounds": [
+      {
+        "name": "devouringstorms:commandblock/cb-powerup-fx"
+      }
+    ]
+  },
+  "cb_pulse_loop": {
+    "sounds": [
+      {
+        "name": "devouringstorms:commandblock/cb-pulse-loop",
+        "stream": true
+      }
+    ]
+  },
+  "cb_reactivate": {
+    "sounds": [
+      {
+        "name": "devouringstorms:commandblock/cb-reactivate"
+      }
+    ]
+  }
+}
