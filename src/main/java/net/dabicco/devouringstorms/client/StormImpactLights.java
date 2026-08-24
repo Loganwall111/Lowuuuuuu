@@ -17,6 +17,7 @@ import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Optional;
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
+import net.dabicco.devouringstorms.entity.WitherStormEntity;
 import net.dabicco.devouringstorms.entity.WitherStormHeadEntity;
 import net.dabicco.devouringstorms.mixin.RenderPipelinesAccessor;
 import net.minecraft.client.Minecraft;
@@ -52,8 +53,9 @@ public final class StormImpactLights {
    private StormImpactLights() {
    }
 
-   private static void offer(Vec3 end, float beamScale, float baseRadius, float coreDistance, Vec3 eye, double rangeSq) {
-      double distSq = eye.distanceToSqr(end);
+   private static void offer(Vec3 end, double yOffset, float beamScale, float baseRadius, float coreDistance, float r, float g, float b, float a, Vec3 eye, double rangeSq) {
+      Vec3 lit = end.add(0.0, yOffset, 0.0);
+      double distSq = eye.distanceToSqr(lit);
       if (!(distSq > rangeSq)) {
          ++far;
          float scale = Math.max(0.25F, beamScale);
@@ -78,23 +80,51 @@ public final class StormImpactLights {
          }
 
          int i = slot * 4;
-         POS[i] = (float)(end.x - eye.x);
-         POS[i + 1] = (float)(end.y + 1.15 - eye.y);
-         POS[i + 2] = (float)(end.z - eye.z);
+         POS[i] = (float)(lit.x - eye.x);
+         POS[i + 1] = (float)(lit.y - eye.y);
+         POS[i + 2] = (float)(lit.z - eye.z);
          POS[i + 3] = lightRadius;
-         COLOR[i] = tintR;
-         COLOR[i + 1] = tintG;
-         COLOR[i + 2] = tintB;
-         COLOR[i + 3] = tintA;
+         COLOR[i] = r;
+         COLOR[i + 1] = g;
+         COLOR[i + 2] = b;
+         COLOR[i + 3] = a;
          SHAPE[i] = coreDistance * (0.55F + 0.45F * scale);
          DIST[slot] = distSq;
+      }
+   }
+
+   private static float shadedBodyAmount(double phase, double expansionPhase) {
+      if (!StormSkins.shaded()) {
+         return 0.0F;
+      } else {
+         float phaseRamp = Mth.clamp((float)((Math.max(phase, expansionPhase) - 4.15) / 1.45), 0.0F, 1.0F);
+         float growth = Mth.clamp((float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(phase, expansionPhase)) - 0.9F, 0.0F, 1.0F);
+         return Math.max(phaseRamp, growth * 0.7F);
+      }
+   }
+
+   private static void offerStormBody(Vec3 centre, double phase, double expansionPhase, Vec3 eye, double rangeSq, float baseRadius, float brightness) {
+      float shaded = shadedBodyAmount(phase, expansionPhase);
+      if (!(shaded <= 0.01F)) {
+         float growth = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(phase, expansionPhase));
+         float[] pulse = StormPalettes.pulseColor(phase, new float[3]);
+         float[] halo = StormPalettes.haloUnderColor(new float[3]);
+         float[] cloud = StormPalettes.cloudColor(phase, new float[3]);
+         float r = Mth.clamp(Mth.lerp(0.36F, halo[0], pulse[0]) * (1.0F - 0.10F * DESATURATE), 0.0F, 1.0F);
+         float g = Mth.clamp(Mth.lerp(0.30F, halo[1], cloud[1]) * (1.0F - 0.20F * DESATURATE), 0.0F, 1.0F);
+         float b = Mth.clamp(Mth.lerp(0.24F, pulse[2], cloud[2]) + 0.08F, 0.0F, 1.0F);
+         float alpha = brightness * (0.34F + 0.28F * shaded);
+         float radius = baseRadius * (1.15F + shaded * 0.95F) * (0.85F + 0.25F * growth);
+         float core = CORE_DISTANCE * (1.35F + shaded * 0.55F);
+         double yOffset = 8.0 + Math.min(Math.max(phase, 4.0), 6.5) * 2.6 * (0.82 + 0.16 * growth);
+         offer(centre, yOffset, 1.0F + growth * 0.24F, radius, core, r, g, b, alpha, eye, rangeSq);
       }
    }
 
    private static void noteOverflow(int total) {
       if (total != lastOverflow) {
          lastOverflow = total;
-         System.out.println("[devouringstorms] " + total + " beam impact lights in range, showing the nearest 8");
+         System.out.println("[devouringstorms] " + total + " storm lights in range, showing the nearest 8");
       }
    }
 
@@ -143,8 +173,13 @@ public final class StormImpactLights {
                                  if (head.isBeamActive()) {
                                     Vec3 end = head.clientBeamEnd != null ? head.clientBeamEnd : head.getBeamEndExact();
                                     if (end != null) {
-                                       offer(end, head.beamScale(), radius, core, eye, rangeSq);
+                                       offer(end, HEIGHT_ABOVE_IMPACT, head.beamScale(), radius, core, tintR, tintG, tintB, tintA, eye, rangeSq);
                                     }
+                                 }
+                              } else if (entity instanceof WitherStormEntity) {
+                                 WitherStormEntity storm = (WitherStormEntity)entity;
+                                 if (storm.getPhase() >= 4.0F) {
+                                    offerStormBody(storm.position(), storm.getPhase(), storm.getExpansionPhase(), eye, rangeSq, radius, brightness);
                                  }
                               }
                            }
@@ -155,9 +190,13 @@ public final class StormImpactLights {
                                     if (storm.beamActive[i]) {
                                        Vec3 end = storm.dispBeamEnd[i] != null ? storm.dispBeamEnd[i] : storm.beamEnd[i];
                                        if (end != null) {
-                                          offer(end, 1.0F, radius, core, eye, rangeSq);
+                                          offer(end, HEIGHT_ABOVE_IMPACT, 1.0F, radius, core, tintR, tintG, tintB, tintA, eye, rangeSq);
                                        }
                                     }
+                                 }
+
+                                 if (storm.phase >= 4.0F) {
+                                    offerStormBody(new Vec3(storm.dispX, storm.dispY, storm.dispZ), storm.phase, storm.expansionPhase, eye, rangeSq, radius, brightness);
                                  }
                               }
                            }
@@ -220,7 +259,7 @@ public final class StormImpactLights {
                                  }
                               } catch (Exception e) {
                                  failed = true;
-                                 System.out.println("[devouringstorms] beam impact light DISABLED after an error: " + String.valueOf(e));
+                                 System.out.println("[devouringstorms] storm impact/body light DISABLED after an error: " + String.valueOf(e));
                                  e.printStackTrace();
                               }
 

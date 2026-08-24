@@ -740,37 +740,65 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       return (26.0 + 9.0 * Math.max(0.0, state.phase - 4.0)) * (double)growthScale(state);
    }
 
+   private static float shadedModelAmount(WitherStormRenderState state) {
+      if (!StormSkins.shaded()) {
+         return 0.0F;
+      } else {
+         float phaseRamp = Mth.clamp((float)((state.phase - 4.15) / 1.45), 0.0F, 1.0F);
+         float growth = Mth.clamp(growthScale(state) - 0.9F, 0.0F, 1.0F);
+         return Math.max(phaseRamp, growth * 0.7F) * state.collapseFade;
+      }
+   }
+
    private static float phase4EmissiveGain(WitherStormRenderState state) {
       float hatch = Mth.clamp(state.hatch, 0.0F, 1.0F);
       float late = Mth.clamp((float)((state.phase - 4.75) / 0.95), 0.0F, 1.0F);
       float whiteout = Mth.clamp(state.collapseWhiteout * 0.85F, 0.0F, 0.85F);
-      return (0.26F + late * 0.28F + whiteout) * hatch * state.collapseFade;
+      float shaded = shadedModelAmount(state);
+      return (0.26F + late * 0.28F + whiteout + shaded * 0.16F) * hatch * state.collapseFade;
    }
 
    private static int phase4EmissiveTint(WitherStormRenderState state) {
       float late = Mth.clamp((float)((state.phase - 5.38) / 0.47), 0.0F, 1.0F);
+      float shaded = shadedModelAmount(state) * 0.55F;
       float[] cloud = StormPalettes.cloudColor(state.phase, new float[3]);
-      float r = Mth.lerp(late * 0.7F, 0.97F, Mth.clamp(cloud[0] + 0.16F, 0.0F, 1.0F));
-      float g = Mth.lerp(late * 0.55F, 0.97F, Mth.clamp(cloud[1] + 0.10F, 0.0F, 1.0F));
-      float b = Mth.lerp(late * 0.82F, 0.99F, Mth.clamp(cloud[2] + 0.18F, 0.0F, 1.0F));
+      float r = Mth.lerp(late * 0.7F + shaded * 0.22F, 0.97F, Mth.clamp(cloud[0] + 0.16F, 0.0F, 1.0F));
+      float g = Mth.lerp(late * 0.55F + shaded * 0.16F, 0.97F, Mth.clamp(cloud[1] + 0.10F, 0.0F, 1.0F));
+      float b = Mth.lerp(late * 0.82F + shaded * 0.28F, 0.99F, Mth.clamp(cloud[2] + 0.18F, 0.0F, 1.0F));
       return 0xFF000000 | (int)(r * 255.0F) << 16 | (int)(g * 255.0F) << 8 | (int)(b * 255.0F);
+   }
+
+   private static int[][] nightLightColours(WitherStormRenderState state) {
+      if (!StormSkins.shaded()) {
+         return NIGHT_LAYER_COLOURS;
+      } else {
+         float[] halo = StormPalettes.haloUnderColor(new float[3]);
+         float[] pulse = StormPalettes.pulseColor(state.phase, new float[3]);
+         float[] cloud = StormPalettes.cloudColor(state.phase, new float[3]);
+         return new int[][]{
+            {(int)(Mth.lerp(0.42F, halo[0], pulse[0]) * 255.0F), (int)(Mth.lerp(0.42F, halo[1], pulse[1]) * 255.0F), (int)(Mth.lerp(0.42F, halo[2], pulse[2]) * 255.0F)},
+            {(int)(Mth.lerp(0.24F, pulse[0], cloud[0]) * 255.0F), (int)(Mth.lerp(0.24F, pulse[1], cloud[1]) * 255.0F), (int)(Mth.lerp(0.24F, pulse[2], cloud[2]) * 255.0F)},
+            {(int)(cloud[0] * 255.0F), (int)(cloud[1] * 255.0F), (int)(cloud[2] * 255.0F)}
+         };
+      }
    }
 
    private void submitNightLight(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
       float night = Math.min(state.nightFactor, 1.0F);
       float phaseRamp = Mth.clamp((float)((state.phase - 4.9) / 0.7), 0.0F, 1.0F);
-      float daylightBacklight = 0.18F * phaseRamp;
+      float shaded = shadedModelAmount(state);
+      float daylightBacklight = 0.18F * phaseRamp + shaded * (0.08F + 0.12F * phaseRamp);
       float strength = (float)DevouringStormsClientConfig.stormGlowStrength * state.collapseFade;
       if (!(strength <= 0.01F) && !(night <= 0.01F && daylightBacklight <= 0.01F)) {
          float pulse = 0.92F + 0.08F * Mth.sin((double)(state.idleTimeTicks * 0.05F));
-         float amount = (daylightBacklight + night * 0.85F) * strength * pulse;
+         float amount = (daylightBacklight + night * (StormSkins.shaded() ? 0.95F : 0.85F)) * strength * pulse;
          Vec3 view = new Vec3(state.worldX - camera.pos.x, state.worldY - camera.pos.y, state.worldZ - camera.pos.z);
          double dist = view.length();
          if (!(dist < 1.0E-4)) {
             view = view.scale(1.0 / dist);
-            double radius = auraRadius(state);
-            Vec3 centre = new Vec3(0.0, radius * 0.56, 0.0).add(view.scale(-radius * 0.78));
-            StormGlowRenderer.submitLight(poseStack, collector, centre, view, radius, NIGHT_LAYER_SIZES, NIGHT_LAYER_ALPHAS, NIGHT_LAYER_COLOURS, amount);
+            double radius = auraRadius(state) * (1.0 + shaded * 0.12);
+            Vec3 centre = new Vec3(0.0, radius * 0.56, 0.0).add(view.scale(-radius * (StormSkins.shaded() ? 0.72 : 0.78)));
+            StormGlowRenderer.submitLight(poseStack, collector, centre, view, radius, NIGHT_LAYER_SIZES, NIGHT_LAYER_ALPHAS, nightLightColours(state), amount);
          }
       }
    }

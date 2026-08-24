@@ -9,9 +9,10 @@ import net.minecraft.resources.Identifier;
  * uses the obsidian-purple command block tiles instead of vanilla's orange).
  *
  * The original textures are kept untouched; the OG variants are separate
- * *_og.png files and the active set is a client config choice. Batch 17 now
- * defaults new installs to the OG set so the mod boots into the more MCSM-like
- * presentation, while the classic look stays one click away.
+ * *_og.png files and the active set is a client config choice. The default now
+ * boots into the shaded MCSM presentation pass so the built-in model/texturing,
+ * coloured lighting and shadow styling all start closer to the Story Mode look,
+ * while the classic and plain OG looks stay one click away.
  */
 public final class StormSkins {
    private static final Identifier LEGACY_CLASSIC = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/wither_storm.png");
@@ -24,9 +25,19 @@ public final class StormSkins {
    private StormSkins() {
    }
 
-   /** true when the player picked the OG obsidian-gloss skins. */
+   /** 0 = Classic, 1 = OG textures, 2 = shaded MCSM presentation. */
+   public static int mode() {
+      return Math.max(0, Math.min(2, Math.round((float)DevouringStormsClientConfig.stormSkin)));
+   }
+
+   /** true when the player picked either OG MCSM texture-driven presentation mode. */
    public static boolean og() {
-      return Math.round(DevouringStormsClientConfig.stormSkin) >= 1;
+      return mode() >= 1;
+   }
+
+   /** true when the player asked for the shaded Blockbench-style presentation pass. */
+   public static boolean shaded() {
+      return mode() >= 2;
    }
 
    /** phase 0-3 body skin (the one carrying the command block belly). */

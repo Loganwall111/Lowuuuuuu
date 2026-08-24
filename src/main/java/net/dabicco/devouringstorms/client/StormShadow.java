@@ -63,7 +63,8 @@ public final class StormShadow {
    private static float shadowPaletteBlend(double phase) {
       float t = Mth.clamp((float)((phase - 4.45) / 1.35), 0.0F, 1.0F);
       t = t * t * (3.0F - 2.0F * t);
-      return DevouringStormsClientConfig.phaseFogPalettes ? t * StormPalettes.strength() : 0.0F;
+      float shaded = StormSkins.shaded() ? 0.16F : 0.0F;
+      return DevouringStormsClientConfig.phaseFogPalettes ? Math.min(1.0F, t * StormPalettes.strength() + shaded * t) : 0.0F;
    }
 
    private static float shadowTint(double phase, float early, double late) {
@@ -140,7 +141,7 @@ public final class StormShadow {
          if (!StormShadowMap.wanted()) {
             StormShadowMap.status("off: disabled in Effects, strength 0, a shader pack is active, or an earlier error switched it off");
          } else {
-            float strength = (float)DevouringStormsClientConfig.stormShadowStrength;
+            float strength = (float)DevouringStormsClientConfig.stormShadowStrength * (StormSkins.shaded() ? 1.12F : 1.0F);
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null) {
                Vec3 sun = sunDirection(mc);
