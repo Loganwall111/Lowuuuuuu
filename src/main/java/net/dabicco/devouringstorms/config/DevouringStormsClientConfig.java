@@ -115,6 +115,9 @@ public class DevouringStormsClientConfig {
    public static double stormSkin = (double)2.0F;
    public static final String[] SKIN_LABELS = new String[]{"Classic", "OG MCSM Textures", "Shaded MCSM Models (Default)"};
    public static boolean stormStageShells = true;
+   public static double shaderPackProfile = (double)0.0F;
+   public static final String[] SHADER_PACK_PROFILE_LABELS = new String[]{"Automatic", "Companion", "Punchy"};
+   public static double shaderPackEmissiveGain = (double)1.0F;
    public static double stormStars = (double)1.0F;
    public static final String[] STAR_LABELS = new String[]{"Off", "Storm Nights", "Every Night"};
    public static double starDensity = (double)1.0F;
@@ -477,6 +480,8 @@ public class DevouringStormsClientConfig {
       key("debrisSize", "Size of the wreckage blocks caught in the tractor beams.", 0.2, (double)3.0F, false, () -> debrisSize, (v) -> debrisSize = v);
       keyCycle("stormSkin", "Classic keeps the plain textures. OG MCSM Textures swaps in the built-in obsidian-gloss atlas set. Shaded MCSM Models keeps those OG atlases but also turns on the traced-BBModel style presentation pass: stronger palette shadows, coloured body lighting, and the more visibly shaded built-in storm look.", SKIN_LABELS, () -> stormSkin, (v) -> stormSkin = (double)Math.round(v));
       key("stormStageShells", "Use the direct shaded BBModel body-shell ports for the big Stage B/C/D storm forms. This is the geometry-bridge pass that puts those traced bodies into live gameplay without throwing away the current animation code.", (double)0.0F, (double)1.0F, true, () -> stormStageShells ? (double)1.0F : (double)0.0F, (v) -> stormStageShells = v >= (double)0.5F);
+      keyCycle("shaderPackProfile", "How Devouring Storms should present its emissive glow while an Iris/Oculus shader pack is active. Automatic follows your bloom level, Companion pushes a steadier MCSM-style glow, Punchy pushes it harder for flatter cel packs.", SHADER_PACK_PROFILE_LABELS, () -> shaderPackProfile, (v) -> shaderPackProfile = (double)Math.round(v));
+      key("shaderPackEmissiveGain", "Extra multiplier for storm eye, teeth and shaded-shell emissive punch while a shader pack is active.", 0.5, (double)2.0F, false, () -> shaderPackEmissiveGain, (v) -> shaderPackEmissiveGain = v);
       keyCycle("stormStars", "A dome of twinkling stars in the blacked-out sky. Storm Nights shows it only while a phase-5+ storm has eaten the light; Every Night replaces the vanilla sky every night.", STAR_LABELS, () -> stormStars, (v) -> stormStars = (double)Math.round(v));
       key("starDensity", "How many stars fill the dome.", 0.25, (double)2.0F, false, () -> starDensity, (v) -> starDensity = v);
       key("starTwinkleSpeed", "How fast the stars twinkle.", (double)0.0F, (double)4.0F, false, () -> starTwinkleSpeed, (v) -> starTwinkleSpeed = v);

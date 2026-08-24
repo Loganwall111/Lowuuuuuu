@@ -11,6 +11,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import net.dabicco.devouringstorms.client.ClientConfigCache;
+import net.dabicco.devouringstorms.client.ShaderPackCompat;
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
 import net.dabicco.devouringstorms.config.PendingWorldConfig;
 import net.dabicco.devouringstorms.config.RequestWitherStormConfigPayload;
@@ -717,6 +718,35 @@ public class WitherStormConfigScreen extends Screen {
       this.clientRow("stormMusicRange", "Music Range", () -> !DevouringStormsClientConfig.stormMusic);
       this.clientRow("stormMusicCaveCutoff", "Cave Silence", () -> !DevouringStormsClientConfig.stormMusic);
       this.master("Skybox & Atmosphere");
+      this.header("Iris / Shader Packs");
+      String shaderStatusLabel = "Iris / Shader Status: " + ShaderPackCompat.statusText();
+      this.addRowWidget(WitherStormConfigScreen.Row.button(shaderStatusLabel, "Opens Iris or Oculus' own shader-pack screen when that mod is present. This is the bridge into the built-in shader workflow so you can pick a pack, then come back here and tune the companion settings below for the Devouring Storms look.", () -> {
+         if (ShaderPackCompat.openMainScreen(this)) {
+            return;
+         }
+
+         if (ShaderPackCompat.installed()) {
+            String error = ShaderPackCompat.lastError();
+            this.setStatus(error.isEmpty() ? "Iris / Oculus was found, but its shader menu API was not available here" : "Iris / Oculus menu failed: " + error, -37266);
+         } else {
+            this.setStatus("Install Iris or Oculus to use the integrated shader menu button", -6381922);
+         }
+      }));
+      WitherStormConfigScreen.Row shaderToggle = WitherStormConfigScreen.Row.button("Toggle Shader Packs: " + (ShaderPackCompat.shadersEnabled() ? "§aON" : "§7OFF"), "Uses the Iris public API to enable or disable the current shader pack without leaving the Devouring Storms control screen.", () -> {
+         if (ShaderPackCompat.toggleShadersEnabled()) {
+            this.setStatus("Shader packs turned " + (ShaderPackCompat.shadersEnabled() ? "on" : "off"), -8591236);
+            this.rebuild();
+         } else if (ShaderPackCompat.installed()) {
+            String error = ShaderPackCompat.lastError();
+            this.setStatus(error.isEmpty() ? "This Iris / Oculus build does not expose shader toggling" : "Shader toggle failed: " + error, -37266);
+         } else {
+            this.setStatus("Install Iris or Oculus to toggle shader packs from this screen", -6381922);
+         }
+      });
+      shaderToggle.locked = () -> !ShaderPackCompat.canToggleShaders();
+      this.addRowWidget(shaderToggle);
+      this.clientRow("shaderPackProfile", "Shader Companion Profile", (BooleanSupplier)null);
+      this.clientRow("shaderPackEmissiveGain", "Shader Emissive Gain", (BooleanSupplier)null);
       this.header("Skybox Stars");
       this.clientRow("stormStars", "Skybox Stars", (BooleanSupplier)null);
       this.clientRow("starDensity", "Star Density", (BooleanSupplier)null);

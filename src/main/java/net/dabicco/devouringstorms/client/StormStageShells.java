@@ -80,7 +80,7 @@ public final class StormStageShells {
 
             for (Group group : shell.groups) {
                collector.submitCustomGeometry(poseStack, group.emissive ? GlowRenderTypes.emitterMark(group.texture) : FoglessRenderTypes.bodyCutout(group.texture), (pose, consumer) -> {
-                  emitGroup(consumer, pose, group, scale, r, g, b, group.emissive ? Math.max(baseA, emissiveBoost ? 220 : 180) : baseA, group.emissive ? FULL_BRIGHT : packedLight);
+                  emitGroup(consumer, pose, group, scale, r, g, b, group.emissive ? Math.max(baseA, ShaderPackCompat.emissiveAlphaFloor(emissiveBoost)) : baseA, group.emissive ? FULL_BRIGHT : packedLight);
                });
             }
          }

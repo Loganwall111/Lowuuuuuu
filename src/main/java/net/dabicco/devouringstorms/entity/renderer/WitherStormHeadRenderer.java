@@ -55,22 +55,7 @@ public class WitherStormHeadRenderer extends EntityRenderer<WitherStormHeadEntit
    private static final Map<Integer, float[]> JAW_LAG = new HashMap<>();
 
    private static float shaderGlowGain() {
-      if (!ShaderPackCompat.active()) {
-         return 1.0F;
-      } else {
-         int level = (int)Math.round(DevouringStormsClientConfig.bloomStrength);
-         switch (level) {
-            case 0:
-               return 0.75F;
-            case 1:
-               return 1.15F;
-            case 2:
-            default:
-               return 1.55F;
-            case 3:
-               return 2.1F;
-         }
-      }
+      return ShaderPackCompat.companionGlowGain();
    }
 
    public static void setDevourerTint(boolean on) {
