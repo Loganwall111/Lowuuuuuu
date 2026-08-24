@@ -106,8 +106,6 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    private static final int PORTAL_ALPHA_OPEN = 170;
    private static final Identifier PORTAL_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tractor_beam.png");
    private static final Identifier HALO_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_ring.png");
-   private static final Identifier BACKDROP_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tile_witherstormVortexABackdrop.png");
-   private static final Identifier BACKDROP_ALPHA_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tile_witherstormVortexABackdrop_alp.png");
    private static final Identifier VORTEX_RING_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tile_witherstormVortexA_alp.png");
    private static final Identifier PHASE4_EMISSIVE_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/phase_4_assets_e.png");
    private static final float[] COLLAPSE_GLOW_SIZES = new float[]{0.9F, 1.25F, 1.7F};
@@ -789,24 +787,24 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    private void submitNightLight(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+      if (DevouringStormsClientConfig.blackGlare && state.phase >= 5.0) {
+         return;
+      }
       float night = Math.min(state.nightFactor, 1.0F);
-      float phaseRamp = Mth.clamp((float)((state.phase - 4.9) / 0.7), 0.0F, 1.0F);
+      float phaseRamp = Mth.clamp((float)((state.phase - 4.0) / 0.6), 0.0F, 1.0F);
       float shaded = shadedModelAmount(state);
-      float daylightBacklight = 0.18F * phaseRamp + shaded * (0.08F + 0.12F * phaseRamp);
+      float daylightBacklight = 0.10F * phaseRamp + shaded * (0.04F + 0.08F * phaseRamp);
       float strength = (float)DevouringStormsClientConfig.stormGlowStrength * state.collapseFade;
       if (!(strength <= 0.01F) && !(night <= 0.01F && daylightBacklight <= 0.01F)) {
-         float pulse = 0.92F + 0.08F * Mth.sin((double)(state.idleTimeTicks * 0.05F));
-         float amount = (daylightBacklight + night * (StormSkins.shaded() ? 0.95F : 0.85F)) * strength * pulse;
-         float backdropClaim = DevouringStormsClientConfig.blackGlare ? StormPalettes.phaseAmount(state.phase, 5.0F, 5.45F) : 0.0F;
-         amount *= 1.0F - 0.45F * backdropClaim;
+         float pulse = 0.94F + 0.06F * Mth.sin((double)(state.idleTimeTicks * 0.04F));
+         float amount = (daylightBacklight + night * (StormSkins.shaded() ? 0.80F : 0.72F)) * strength * pulse;
          Vec3 view = new Vec3(state.worldX - camera.pos.x, state.worldY - camera.pos.y, state.worldZ - camera.pos.z);
          double dist = view.length();
          if (!(dist < 1.0E-4)) {
             view = view.scale(1.0 / dist);
-            double radius = auraRadius(state) * (1.0 + shaded * 0.12);
-            double backBias = StormSkins.shaded() ? Mth.lerp(backdropClaim, 0.72F, 0.92F) : Mth.lerp(backdropClaim, 0.78F, 0.96F);
-            Vec3 centre = new Vec3(0.0, radius * 0.56, 0.0).add(view.scale(-radius * backBias));
-            StormGlowRenderer.submitLight(poseStack, collector, centre, view, radius, NIGHT_LAYER_SIZES, NIGHT_LAYER_ALPHAS, nightLightColours(state), amount);
+            double radius = auraRadius(state) * (0.88 + shaded * 0.06);
+            Vec3 centre = new Vec3(0.0, radius * 0.48, 0.0).add(view.scale(-radius * (StormSkins.shaded() ? 0.82 : 0.86)));
+            StormGlowRenderer.submitLight(poseStack, collector, centre, view, radius, NIGHT_LAYER_SIZES, NIGHT_LAYER_ALPHAS, nightLightColours(state), amount * 0.62F);
          }
       }
    }
@@ -837,35 +835,71 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       if (this.previewShadowPass || !DevouringStormsClientConfig.blackGlare || state.phase < 4.0) {
          return;
       }
-      float ramp = StormPalettes.phaseAmount(state.phase, 4.55F, 5.05F);
-      float strength = (float)DevouringStormsClientConfig.blackGlareStrength * ramp * state.collapseFade;
+      float strength = (float)DevouringStormsClientConfig.blackGlareStrength * state.collapseFade * Mth.clamp((float)((state.phase - 4.0) / 0.32), 0.0F, 1.0F);
       if (strength <= 0.004F) {
          return;
       }
 
       float growth = growthScale(state);
       double bodyR = (12.0 + Math.max(0.0, state.phase - 4.0) * 3.6) * (double)growth;
-      float purple = StormPalettes.phaseAmount(state.phase, 5.02F, 5.36F);
-      float cataclysm = StormPalettes.phaseAmount(state.phase, 5.85F, 6.15F);
-      float phase6Rise = state.phase >= 6.0 ? 1.0F - Mth.clamp(state.hatch, 0.0F, 1.0F) * 0.68F : 1.0F;
-      float[] voidCol = StormPalettes.backdropVoidColor(state.phase, new float[3]);
-      float[] rimCol = StormPalettes.backdropRimColor(state.phase, new float[3]);
-      float[] warmCol = StormPalettes.backdropWarmColor(state.phase, new float[3]);
-      for (int i = 0; i < 3; i++) {
-         voidCol[i] *= phase6Rise;
-         rimCol[i] = Mth.lerp(cataclysm * 0.25F, rimCol[i], Math.max(rimCol[i], warmCol[i] * 0.72F));
-      }
-      int vr = (int)(Mth.clamp(voidCol[0], 0.0F, 1.0F) * 255.0F);
-      int vg = (int)(Mth.clamp(voidCol[1], 0.0F, 1.0F) * 255.0F);
-      int vb = (int)(Mth.clamp(voidCol[2], 0.0F, 1.0F) * 255.0F);
-      int rr = (int)(Mth.clamp(rimCol[0], 0.0F, 1.0F) * 255.0F);
-      int rg = (int)(Mth.clamp(rimCol[1], 0.0F, 1.0F) * 255.0F);
-      int rb = (int)(Mth.clamp(rimCol[2], 0.0F, 1.0F) * 255.0F);
-      int wr = (int)(Mth.clamp(warmCol[0], 0.0F, 1.0F) * 255.0F);
-      int wg = (int)(Mth.clamp(warmCol[1], 0.0F, 1.0F) * 255.0F);
-      int wb = (int)(Mth.clamp(warmCol[2], 0.0F, 1.0F) * 255.0F);
-      double baseW = bodyR * (3.2 + growth * 0.08);
-      double baseH = bodyR * (2.05 + growth * 0.05);
+      float phase4Halo = StormPalettes.phaseAmount(state.phase, 4.0F, 4.38F) * (1.0F - StormPalettes.phaseAmount(state.phase, 4.88F, 5.05F));
+      float turquoiseHalo = StormPalettes.phaseAmount(state.phase, 4.95F, 5.12F) * (1.0F - StormPalettes.phaseAmount(state.phase, 5.18F, 5.34F));
+      float purpleHalo = StormPalettes.phaseAmount(state.phase, 5.12F, 5.42F);
+      float blueHalo = StormPalettes.phaseAmount(state.phase, 5.48F, 5.72F);
+      float pinkHalo = StormPalettes.phaseAmount(state.phase, 5.45F, 5.95F);
+      float phase6Halo = StormPalettes.phaseAmount(state.phase, 5.95F, 6.18F);
+      float riseBlack = state.phase >= 6.0 ? 1.0F - Mth.clamp(state.hatch * 1.75F, 0.0F, 1.0F) : 0.0F;
+
+      float darkR = 0.04F;
+      float darkG = 0.03F;
+      float darkB = 0.06F;
+      darkR = Mth.lerp(turquoiseHalo * 0.65F, darkR, 0.02F);
+      darkG = Mth.lerp(turquoiseHalo * 0.65F, darkG, 0.08F);
+      darkB = Mth.lerp(turquoiseHalo * 0.65F, darkB, 0.10F);
+      darkR = Mth.lerp(purpleHalo, darkR, 0.06F);
+      darkG = Mth.lerp(purpleHalo, darkG, 0.02F);
+      darkB = Mth.lerp(purpleHalo, darkB, 0.13F);
+      darkR = Mth.lerp(blueHalo * 0.72F, darkR, 0.03F);
+      darkG = Mth.lerp(blueHalo * 0.72F, darkG, 0.05F);
+      darkB = Mth.lerp(blueHalo * 0.72F, darkB, 0.16F);
+      darkR = Mth.lerp(pinkHalo * 0.40F, darkR, 0.10F);
+      darkG = Mth.lerp(pinkHalo * 0.40F, darkG, 0.03F);
+      darkB = Mth.lerp(pinkHalo * 0.40F, darkB, 0.11F);
+      darkR = Mth.lerp(riseBlack, darkR, 0.0F);
+      darkG = Mth.lerp(riseBlack, darkG, 0.0F);
+      darkB = Mth.lerp(riseBlack, darkB, 0.0F);
+
+      float rimR = Mth.lerp(phase4Halo, 0.18F, 0.92F);
+      float rimG = Mth.lerp(phase4Halo, 0.24F, 0.96F);
+      float rimB = Mth.lerp(phase4Halo, 0.32F, 1.0F);
+      rimR = Mth.lerp(turquoiseHalo, rimR, 0.18F);
+      rimG = Mth.lerp(turquoiseHalo, rimG, 0.28F);
+      rimB = Mth.lerp(turquoiseHalo, rimB, 0.34F);
+      rimR = Mth.lerp(purpleHalo, rimR, 0.58F);
+      rimG = Mth.lerp(purpleHalo, rimG, 0.23F);
+      rimB = Mth.lerp(purpleHalo, rimB, 0.76F);
+      rimR = Mth.lerp(blueHalo, rimR, 0.30F);
+      rimG = Mth.lerp(blueHalo, rimG, 0.42F);
+      rimB = Mth.lerp(blueHalo, rimB, 0.98F);
+      rimR = Mth.lerp(pinkHalo, rimR, 0.96F);
+      rimG = Mth.lerp(pinkHalo, rimG, 0.42F);
+      rimB = Mth.lerp(pinkHalo, rimB, 0.84F);
+      rimR = Mth.lerp(riseBlack, rimR, 0.04F);
+      rimG = Mth.lerp(riseBlack, rimG, 0.04F);
+      rimB = Mth.lerp(riseBlack, rimB, 0.06F);
+
+      int dr = (int)(Mth.clamp(darkR, 0.0F, 1.0F) * 255.0F);
+      int dg = (int)(Mth.clamp(darkG, 0.0F, 1.0F) * 255.0F);
+      int db = (int)(Mth.clamp(darkB, 0.0F, 1.0F) * 255.0F);
+      int rr = (int)(Mth.clamp(rimR, 0.0F, 1.0F) * 255.0F);
+      int rg = (int)(Mth.clamp(rimG, 0.0F, 1.0F) * 255.0F);
+      int rb = (int)(Mth.clamp(rimB, 0.0F, 1.0F) * 255.0F);
+      int phase4A = (int)((36.0F + 52.0F * phase4Halo) * strength);
+      int darkA = (int)((42.0F + 78.0F * (turquoiseHalo + purpleHalo * 0.65F + phase6Halo * 0.35F)) * strength);
+      int rimA = (int)((28.0F + 64.0F * (phase4Halo + purpleHalo * 0.65F + blueHalo * 0.55F + pinkHalo * 0.45F + phase6Halo * 0.35F)) * strength);
+      int outerA = (int)((18.0F + 46.0F * (turquoiseHalo + purpleHalo + blueHalo * 0.7F + phase6Halo * 0.4F)) * strength);
+      double fillW = bodyR * (1.34 + phase6Halo * 0.12);
+      double fillH = bodyR * (0.98 + phase6Halo * 0.08);
 
       poseStack.pushPose();
       poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - state.bodyRot));
@@ -873,23 +907,33 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       if (state.bodyRoll != 0.0F) {
          poseStack.mulPose(Axis.ZN.rotationDegrees(state.bodyRoll));
       }
-      poseStack.translate(0.0, bodyR * 0.84, -bodyR * (1.58 + 0.15 * purple));
-      submitHaloPlane(collector, poseStack, baseW * 1.04, baseH * 1.02, vr, vg, vb, (int)(165.0F * strength), GlowRenderTypes.translucent(BACKDROP_TEXTURE));
-      submitHaloPlane(collector, poseStack, baseW * 1.28, baseH * 1.18, rr, rg, rb, (int)(138.0F * strength), GlowRenderTypes.translucent(BACKDROP_ALPHA_TEXTURE));
+      poseStack.translate(0.0, bodyR * 0.76, -bodyR * 1.02);
+      submitHaloPlane(collector, poseStack, fillW, fillH, dr, dg, db, darkA, GlowRenderTypes.translucent(PORTAL_TEXTURE));
+      submitHaloPlane(collector, poseStack, fillW * 1.12, fillH * 1.08, dr, dg, db, outerA, GlowRenderTypes.translucent(HALO_TEXTURE));
 
-      poseStack.pushPose();
-      poseStack.mulPose(Axis.YP.rotationDegrees(30.0F + purple * 8.0F));
-      submitHaloPlane(collector, poseStack, baseW * 0.96, baseH * 1.05, rr, rg, rb, (int)(92.0F * strength), GlowRenderTypes.translucent(BACKDROP_ALPHA_TEXTURE));
-      poseStack.popPose();
-      poseStack.pushPose();
-      poseStack.mulPose(Axis.YP.rotationDegrees(-30.0F - purple * 8.0F));
-      submitHaloPlane(collector, poseStack, baseW * 0.96, baseH * 1.05, rr, rg, rb, (int)(92.0F * strength), GlowRenderTypes.translucent(BACKDROP_ALPHA_TEXTURE));
-      poseStack.popPose();
-      if (purple > 0.01F || cataclysm > 0.01F) {
+      for (float yaw : new float[]{-28.0F, 28.0F}) {
          poseStack.pushPose();
-         poseStack.translate(0.0, -bodyR * 0.08, -bodyR * 0.06);
-         poseStack.mulPose(Axis.XP.rotationDegrees(-12.0F - cataclysm * 9.0F));
-         submitHaloPlane(collector, poseStack, baseW * 1.10, baseH * 0.90, wr, wg, wb, (int)((28.0F + cataclysm * 48.0F) * strength), GlowRenderTypes.translucent(BACKDROP_ALPHA_TEXTURE));
+         poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
+         submitHaloPlane(collector, poseStack, bodyR * 1.10, bodyR * 0.84, rr, rg, rb, rimA, GlowRenderTypes.translucent(HALO_TEXTURE));
+         poseStack.popPose();
+      }
+      if (phase4A > 2) {
+         submitHaloPlane(collector, poseStack, bodyR * 1.18, bodyR * 0.88, 238, 244, 255, phase4A, GlowRenderTypes.glow(HALO_TEXTURE));
+      }
+      if (phase6Halo > 0.01F) {
+         int riseMaskA = (int)((54.0F + riseBlack * 96.0F) * strength);
+         poseStack.pushPose();
+         poseStack.translate(0.0, -bodyR * 0.24, -bodyR * 0.08);
+         submitHaloPlane(collector, poseStack, bodyR * 1.28, bodyR * 0.36, 255, 112, 28, (int)((58.0F + 44.0F * phase6Halo) * strength), GlowRenderTypes.translucent(PORTAL_TEXTURE));
+         submitHaloPlane(collector, poseStack, bodyR * 1.10, bodyR * 0.24, 214, 28, 54, (int)((48.0F + 38.0F * phase6Halo) * strength), GlowRenderTypes.translucent(HALO_TEXTURE));
+         poseStack.popPose();
+         poseStack.pushPose();
+         poseStack.translate(0.0, bodyR * 0.18, 0.0);
+         submitHaloPlane(collector, poseStack, bodyR * 1.20, bodyR * 0.50, 152, 70, 232, (int)((42.0F + 44.0F * phase6Halo) * strength), GlowRenderTypes.translucent(HALO_TEXTURE));
+         poseStack.popPose();
+         poseStack.pushPose();
+         poseStack.translate(0.0, bodyR * 0.70, bodyR * 0.04);
+         submitHaloPlane(collector, poseStack, bodyR * 1.44, bodyR * 0.72, 10, 8, 14, riseMaskA, GlowRenderTypes.translucent(PORTAL_TEXTURE));
          poseStack.popPose();
       }
       if (DevouringStormsClientConfig.earlyVortexRings || state.phase >= 7.5) {
@@ -898,11 +942,11 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
             for (int layer = 0; layer < 3; layer++) {
                float lf = layer / 2.0F;
                poseStack.pushPose();
-               poseStack.translate(0.0, bodyR * (0.18 + lf * 0.44), -bodyR * (0.46 + lf * 0.28));
+               poseStack.translate(0.0, bodyR * (0.18 + lf * 0.44), -bodyR * (0.50 + lf * 0.24));
                poseStack.mulPose(Axis.YP.rotationDegrees(state.idleTimeTicks * (2.0F + layer * 0.55F) + layer * 57.0F));
-               submitHaloPlane(collector, poseStack, baseW * (0.88 + lf * 0.58), baseH * (0.56 + lf * 0.18), 18, 6, 32, (int)((58.0F + 22.0F * layer) * vortex * strength), GlowRenderTypes.translucent(VORTEX_RING_TEXTURE));
+               submitHaloPlane(collector, poseStack, bodyR * (1.22 + lf * 0.68), bodyR * (0.52 + lf * 0.18), 18, 6, 32, (int)((50.0F + 18.0F * layer) * vortex * strength), GlowRenderTypes.translucent(VORTEX_RING_TEXTURE));
                poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
-               submitHaloPlane(collector, poseStack, baseW * (0.88 + lf * 0.58), baseH * (0.56 + lf * 0.18), rr, rg, rb, (int)((42.0F + 18.0F * layer) * vortex * strength), GlowRenderTypes.translucent(VORTEX_RING_TEXTURE));
+               submitHaloPlane(collector, poseStack, bodyR * (1.22 + lf * 0.68), bodyR * (0.52 + lf * 0.18), rr, rg, rb, (int)((34.0F + 14.0F * layer) * vortex * strength), GlowRenderTypes.translucent(VORTEX_RING_TEXTURE));
                poseStack.popPose();
             }
          }
@@ -911,7 +955,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    private void submitAttachedHalo(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
-      if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || state.phase < 5.8) {
+      if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || DevouringStormsClientConfig.blackGlare || state.phase < 5.8) {
          return;
       }
       float ramp = Mth.clamp((float)((state.phase - 5.8) / 0.35), 0.0F, 1.0F);
@@ -921,13 +965,9 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       }
       double bodyR = (12.0 + Math.max(0.0, state.phase - 4.0) * 3.6) * (double)growthScale(state);
       float[] ring = StormPalettes.haloRingColor(new float[3]);
-      float[] under = StormPalettes.haloUnderColor(new float[3]);
       int rr = (int)(ring[0] * 255.0F);
       int rg = (int)(ring[1] * 255.0F);
       int rb = (int)(ring[2] * 255.0F);
-      int ur = (int)(under[0] * 255.0F);
-      int ug = (int)(under[1] * 255.0F);
-      int ub = (int)(under[2] * 255.0F);
 
       poseStack.pushPose();
       poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - state.bodyRot));
@@ -935,11 +975,10 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       if (state.bodyRoll != 0.0F) {
          poseStack.mulPose(Axis.ZN.rotationDegrees(state.bodyRoll));
       }
-      poseStack.translate(0.0, bodyR * 0.84, -bodyR * 1.18);
-      submitHaloPlane(collector, poseStack, bodyR * 1.72, bodyR * 1.22, rr, rg, rb, (int)(162.0F * amount), GlowRenderTypes.glow(HALO_TEXTURE));
-      submitHaloPlane(collector, poseStack, bodyR * 2.26, bodyR * 1.56, rr, rg, rb, (int)(72.0F * amount), GlowRenderTypes.translucent(HALO_TEXTURE));
+      poseStack.translate(0.0, bodyR * 0.82, -bodyR * 1.08);
+      submitHaloPlane(collector, poseStack, bodyR * 1.36, bodyR * 0.96, rr, rg, rb, (int)(82.0F * amount), GlowRenderTypes.translucent(HALO_TEXTURE));
       if (DevouringStormsClientConfig.bloomedBackdrop) {
-         submitHaloPlane(collector, poseStack, bodyR * 1.02, bodyR * 0.80, ur, ug, ub, (int)(148.0F * amount), GlowRenderTypes.glow(HALO_TEXTURE));
+         submitHaloPlane(collector, poseStack, bodyR * 0.90, bodyR * 0.62, 18, 10, 28, (int)(66.0F * amount), GlowRenderTypes.glow(HALO_TEXTURE));
       }
       poseStack.popPose();
    }

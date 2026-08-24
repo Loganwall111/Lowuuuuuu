@@ -90,24 +90,24 @@ public final class StormPalettes {
          w[1] = t;
          return;
       }
-      if (phase < 5.08) {
-         float t = smoothPhase(phase, 5.0F, 5.08F);
-         w[1] = 1.0F - t * 0.18F;
-         w[2] = t * 0.18F;
+      if (phase < 5.15) {
+         float t = smoothPhase(phase, 5.0F, 5.15F);
+         w[1] = 1.0F - t * 0.08F;
+         w[2] = t * 0.08F;
          return;
       }
       if (phase < 5.45) {
-         float t = smoothPhase(phase, 5.08F, 5.45F);
-         w[1] = 0.82F * (1.0F - t);
-         w[2] = 0.18F + 0.82F * t;
+         float t = smoothPhase(phase, 5.15F, 5.45F);
+         w[1] = 0.92F * (1.0F - t);
+         w[2] = 0.08F + 0.92F * t;
          return;
       }
-      if (phase < 5.85) {
+      if (phase < 5.95) {
          w[2] = 1.0F;
          return;
       }
       if (phase < 6.15) {
-         float t = smoothPhase(phase, 5.85F, 6.15F);
+         float t = smoothPhase(phase, 5.95F, 6.15F);
          w[2] = 1.0F - t;
          w[3] = t;
          return;

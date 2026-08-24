@@ -30,7 +30,7 @@ public final class StormSkyDarken {
    }
 
    private static float latePurpleShift() {
-      float t = StormPalettes.phaseAmount(palettePhase, 5.02F, 5.36F);
+      float t = StormPalettes.phaseAmount(palettePhase, 5.15F, 5.38F);
       return t * Math.max(displayed, paletteBlend);
    }
 

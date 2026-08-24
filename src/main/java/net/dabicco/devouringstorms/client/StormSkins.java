@@ -10,9 +10,8 @@ import net.minecraft.resources.Identifier;
  *
  * The original textures are kept untouched; the OG variants are separate
  * *_og.png files and the active set is a client config choice. The default now
- * boots into the shaded MCSM presentation pass so the built-in model/texturing,
- * coloured lighting and shadow styling all start closer to the Story Mode look,
- * while the classic and plain OG looks stay one click away.
+ * returns to the OG MCSM texture set on the existing animated models, while the
+ * bulkier shaded/BB-style presentation stays available as a separate preset.
  */
 public final class StormSkins {
    private static final Identifier LEGACY_CLASSIC = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/wither_storm.png");
