@@ -102,6 +102,7 @@ public class DistantStormRenderer {
                   proxyStorm.setXRot(d.dispPitch);
                   proxyStorm.clientSyncPose(d.dispRoll, d.phase >= 4.0F);
                   proxyStorm.clientSyncPhase(d.phase);
+                  proxyStorm.clientSyncExpansionPhase(d.expansionPhase);
                   proxyStorm.setOldPosAndRot();
                   proxyStorm.yBodyRotO = proxyStorm.yBodyRot;
                   proxyStorm.yHeadRotO = proxyStorm.yHeadRot;

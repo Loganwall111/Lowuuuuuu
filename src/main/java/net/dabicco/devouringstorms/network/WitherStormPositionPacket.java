@@ -17,6 +17,7 @@ public record WitherStormPositionPacket(
    float pitch,
    float roll,
    float phase,
+   float expansionPhase,
    int phase5Ticks,
    int phase58Ticks,
    int activeHeads,
@@ -40,6 +41,7 @@ public record WitherStormPositionPacket(
          buf.writeFloat(pkt.pitch);
          buf.writeFloat(pkt.roll);
          buf.writeFloat(pkt.phase);
+         buf.writeFloat(pkt.expansionPhase);
          buf.writeInt(pkt.phase5Ticks);
          buf.writeInt(pkt.phase58Ticks);
          buf.writeByte(pkt.activeHeads);
@@ -94,6 +96,7 @@ public record WitherStormPositionPacket(
          float pitch = buf.readFloat();
          float roll = buf.readFloat();
          float phase = buf.readFloat();
+         float expansionPhase = buf.readFloat();
          int phase5Ticks = buf.readInt();
          int phase58Ticks = buf.readInt();
          int activeHeads = buf.readByte();
@@ -163,6 +166,7 @@ public record WitherStormPositionPacket(
             pitch,
             roll,
             phase,
+            expansionPhase,
             phase5Ticks,
             phase58Ticks,
             activeHeads,

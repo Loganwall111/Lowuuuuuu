@@ -1,6 +1,7 @@
 package net.dabicco.devouringstorms.client;
 
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
+import net.dabicco.devouringstorms.entity.WitherStormEntity;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -143,13 +144,15 @@ public final class StormSkyDarken {
 
       for(ClientDistantStormManager.StormData d : storms) {
          if (!((double)d.phase < (double)5.0F)) {
+            float growthScale = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(d.phase, d.expansionPhase));
             double dx = d.dispX - cameraPos.x;
             double dy = d.dispY - cameraPos.y;
             double dz = d.dispZ - cameraPos.z;
             double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (!(dist > (double)420.0F)) {
+            double reach = 420.0 + Math.max(0.0F, growthScale - 1.0F) * 180.0;
+            if (!(dist > reach)) {
                float phaseRamp = (float)Mth.clamp(((double)d.phase - (double)5.0F) / 0.7999999999999998, (double)0.0F, (double)1.0F);
-               double frac = dist / (double)420.0F;
+               double frac = dist / reach;
                float proximity;
                if (frac <= 0.6) {
                   proximity = 1.0F;

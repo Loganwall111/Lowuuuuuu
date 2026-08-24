@@ -581,8 +581,11 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    public void clientSyncPhase(float phase) {
       this.phase = (double)phase;
-      this.expansionPhase = Math.max(this.expansionPhase, this.phase);
       this.entityData.set(PHASE_DATA, phase);
+   }
+
+   public void clientSyncExpansionPhase(float phase) {
+      this.expansionPhase = Math.max(this.phase, (double)phase);
       this.entityData.set(EXPANSION_PHASE_DATA, (float)this.expansionPhase);
    }
 
@@ -741,7 +744,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
                         }
                      }
 
-                     WitherStormPositionPacket pkt = new WitherStormPositionPacket(this.getId(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot(), (Float)this.entityData.get(BODY_ROLL), (float)this.phase, elapsedTicksSince(this.getPhase5AnimGameTime(), gameTime), elapsedTicksSince(this.getPhase58AnimGameTime(), gameTime), this.activeHeadCount(), heads, this.isCollapsed(), (int)Math.max(-1.0F, this.collapseTicks()), this.getSiegeStage(), this.siegeProgress(), this.collectSeveredData(sl));
+                     WitherStormPositionPacket pkt = new WitherStormPositionPacket(this.getId(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot(), (Float)this.entityData.get(BODY_ROLL), (float)this.phase, (float)this.expansionPhase, elapsedTicksSince(this.getPhase5AnimGameTime(), gameTime), elapsedTicksSince(this.getPhase58AnimGameTime(), gameTime), this.activeHeadCount(), heads, this.isCollapsed(), (int)Math.max(-1.0F, this.collapseTicks()), this.getSiegeStage(), this.siegeProgress(), this.collectSeveredData(sl));
 
                      for(ServerPlayer p : PlayerLookup.level(sl)) {
                         ServerPlayNetworking.send(p, pkt);

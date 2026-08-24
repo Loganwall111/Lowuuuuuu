@@ -2,6 +2,7 @@ package net.dabicco.devouringstorms.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
+import net.dabicco.devouringstorms.entity.WitherStormEntity;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -52,7 +53,8 @@ public final class StormSkyCanopy {
             }
 
             float phaseRamp = StormCloudDeck.smooth(d.phase, 4.35F, 5.25F);
-            float distFade = Mth.clamp(1.0F - (float)((stormDist - 180.0) / 850.0), 0.0F, 1.0F);
+            float growthScale = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(d.phase, d.expansionPhase));
+            float distFade = Mth.clamp(1.0F - (float)((stormDist - 180.0) / (850.0 + growthScale * 220.0)), 0.0F, 1.0F);
             float blend = Math.max(StormSkyDarken.paletteBlend(), distFade * 0.75F);
             if (phaseRamp * blend <= 0.01F) {
                continue;
@@ -76,10 +78,10 @@ public final class StormSkyCanopy {
 
             double anchorX = Mth.lerp(0.38, cam.x, d.dispX);
             double anchorZ = Mth.lerp(0.38, cam.z, d.dispZ);
-            double altitudeBase = Math.max(cam.y + 110.0, d.dispY + 95.0 + DevouringStormsClientConfig.stormCloudAltitude);
+            double altitudeBase = Math.max(cam.y + 110.0, d.dispY + (95.0 + growthScale * 18.0) + DevouringStormsClientConfig.stormCloudAltitude);
 
             for (int layer = 0; layer < 4; layer++) {
-               double radius = (220.0 + layer * 95.0) * (0.9 + 0.15 * layer) * Math.max(1.0, DevouringStormsClientConfig.stormCloudCoverage);
+               double radius = (220.0 + layer * 95.0) * (0.9 + 0.15 * layer) * Math.max(1.0, DevouringStormsClientConfig.stormCloudCoverage) * (0.9 + 0.38 * growthScale);
                double halfLen = radius * (1.05 + 0.12 * layer);
                double halfWid = radius * (0.42 + 0.05 * layer);
                double drift = (layer % 2 == 0 ? 1.0 : -1.0) * (0.0035 + layer * 0.0017);

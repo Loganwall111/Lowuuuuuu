@@ -3,6 +3,7 @@ package net.dabicco.devouringstorms.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
+import net.dabicco.devouringstorms.entity.WitherStormEntity;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -124,8 +125,9 @@ public final class StormCloudDeck {
                continue;
             }
             float phaseRamp = smooth(d.phase, 4.25F, 5.05F);
-            double spread = 130.0 + 90.0 * Math.min(d.phase, 6.0F);
-            int slabs = Mth.clamp((int)(28.0F * coverage * (mode >= 2 ? 1.8F : 1.0F) * (0.45F + 0.55F * phaseRamp)), 6, 84);
+            float growthScale = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(d.phase, d.expansionPhase));
+            double spread = (130.0 + 90.0 * Math.min(d.phase, 6.0F)) * (0.9 + 0.45 * growthScale);
+            int slabs = Mth.clamp((int)(28.0F * coverage * (mode >= 2 ? 1.8F : 1.0F) * (0.45F + 0.55F * phaseRamp) * Math.min(2.6F, 0.8F + growthScale * 0.6F)), 6, 160);
             colorsForPhase(d.phase, outer, inner);
             float outerLum = 0.82F + 0.12F * Mth.sin((nowSec / Math.max(0.5F, (float)DevouringStormsClientConfig.pulsePeriod) + (d.entityId % 977) * 0.6183F) * (float)(Math.PI * 2.0));
             int or = (int)(Mth.clamp(outer[0] * outerLum, 0.0F, 1.0F) * 255.0F);
@@ -142,8 +144,8 @@ public final class StormCloudDeck {
                double ang = ang0 + nowSec * drift;
                double x = d.dispX + Math.cos(ang) * rad;
                double z = d.dispZ + Math.sin(ang) * rad;
-               double alt = (hash01(d.entityId, i, 5) - 0.35) * (50.0 + 30.0 * Math.min(d.phase, 6.0F)) + (float)DevouringStormsClientConfig.stormCloudAltitude;
-               double y = d.dispY - 20.0 + alt + Math.sin(nowSec * 0.05 * (0.5 + hash01(d.entityId, i, 6)) + hash01(d.entityId, i, 7) * 6.28) * 4.0;
+               double alt = (hash01(d.entityId, i, 5) - 0.35) * (50.0 + 30.0 * Math.min(d.phase, 6.0F)) * (0.9 + 0.22 * growthScale) + (float)DevouringStormsClientConfig.stormCloudAltitude;
+               double y = d.dispY - 20.0 + alt + Math.sin(nowSec * 0.05 * (0.5 + hash01(d.entityId, i, 6)) + hash01(d.entityId, i, 7) * 6.28) * (4.0 + growthScale * 1.5);
                double dist = cam.distanceTo(new Vec3(x, y, z));
                if (dist > MAX_VIEW_DIST) {
                   continue;
@@ -156,8 +158,8 @@ public final class StormCloudDeck {
                   continue;
                }
 
-               double halfLen = 24.0 + 68.0 * hash01(d.entityId, i, 9);
-               double halfWid = 10.0 + 26.0 * hash01(d.entityId, i, 10);
+               double halfLen = (24.0 + 68.0 * hash01(d.entityId, i, 9)) * (0.95 + 0.32 * growthScale);
+               double halfWid = (10.0 + 26.0 * hash01(d.entityId, i, 10)) * (0.95 + 0.26 * growthScale);
                double rot = hash01(d.entityId, i, 11) * Math.PI * 2.0 + nowSec * drift * 1.7;
                slab(consumer, pose, x, y, z, halfLen, halfWid, rot, or, og, ob, outerA);
                slab(consumer, pose, x, y + 0.12, z, halfLen * 0.72, halfWid * 0.62, rot, ir, ig, ib, innerA);

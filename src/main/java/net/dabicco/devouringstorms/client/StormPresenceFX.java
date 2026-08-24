@@ -51,7 +51,7 @@ public final class StormPresenceFX {
    }
 
    /** Approximate visual body radius for a phase (rough phase->size mapping used for glow anchoring). */
-   private static double bodyRadius(float phase) {
+   private static double bodyRadius(float phase, float expansionPhase) {
       double base;
       if (phase < 4.0F) {
          base = 4.0 + phase * 1.5;
@@ -61,7 +61,7 @@ public final class StormPresenceFX {
          base = 22.0 + Math.min(phase - 5.0F, 1.99F) * 9.0;
       }
 
-      return base * WitherStormEntity.clientGrowthScaleForPhase(phase);
+      return base * WitherStormEntity.clientGrowthScaleForPhase(Math.max(phase, expansionPhase));
    }
 
    public static void submit(LevelRenderContext ctx) {
@@ -75,8 +75,9 @@ public final class StormPresenceFX {
 
       for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
          float phase = d.phase;
+         float expansionPhase = d.expansionPhase;
          Vec3 centre = new Vec3(d.dispX, d.dispY, d.dispZ);
-         double bodyR = bodyRadius(phase);
+         double bodyR = bodyRadius(phase, expansionPhase);
 
          /* ---- black rim glare (late phase 5+, drawn first so glow sits on top) ---- */
          if (DevouringStormsClientConfig.blackGlare && phase >= 5.35F) {
@@ -173,7 +174,7 @@ public final class StormPresenceFX {
          if (SLIFE[i] > 0) {
             continue;
          }
-         double bodyR = bodyRadius(d.phase);
+         double bodyR = bodyRadius(d.phase, d.expansionPhase);
          double theta = RANDOM.nextDouble() * Math.PI * 2.0;
          double ringBias = 0.55 + 0.45 * RANDOM.nextDouble();
          SX[i] = (float)(d.dispX + Math.cos(theta) * ringBias * bodyR);

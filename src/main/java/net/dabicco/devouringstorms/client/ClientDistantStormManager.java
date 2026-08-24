@@ -29,6 +29,7 @@ public class ClientDistantStormManager {
       d.pitch = p.pitch();
       d.roll = p.roll();
       d.phase = p.phase();
+      d.expansionPhase = p.expansionPhase();
       d.phase5Ticks = p.phase5Ticks();
       d.phase58Ticks = p.phase58Ticks();
       d.activeHeads = p.activeHeads();
@@ -125,6 +126,7 @@ public class ClientDistantStormManager {
       public float pitch;
       public float roll;
       public float phase;
+      public float expansionPhase;
       public int activeHeads = 3;
       public boolean collapsed;
       public int siegeStage;
