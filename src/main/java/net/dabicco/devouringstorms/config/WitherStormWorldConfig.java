@@ -53,6 +53,8 @@ public class WitherStormWorldConfig extends SavedData {
    public int voidCorruptionInterval = 40;
    public int voidCorruptionRadius = 28;
    public int voidCorruptionBursts = 10;
+   public int voidCorruptionGrass = 0;
+   public int voidCorruptionTrees = 0;
    public int mobsFlee = 1;
    public int headForgiveSeconds = 25;
    public int mobPickup = 1;
@@ -262,6 +264,8 @@ public class WitherStormWorldConfig extends SavedData {
       key("voidCorruptionInterval", "Ticks between terrain-corruption passes", (double)5.0F, (double)600.0F, true, (c) -> (double)c.voidCorruptionInterval, (c, v) -> c.voidCorruptionInterval = (int)v);
       key("voidCorruptionRadius", "How far from the storm those corruption passes can land, in blocks", (double)8.0F, (double)128.0F, true, (c) -> (double)c.voidCorruptionRadius, (c, v) -> c.voidCorruptionRadius = (int)v);
       key("voidCorruptionBursts", "How many random surface spots are corrupted each pass", (double)1.0F, (double)64.0F, true, (c) -> (double)c.voidCorruptionBursts, (c, v) -> c.voidCorruptionBursts = (int)v);
+      keyToggle("voidCorruptionGrass", "Optional expansion, off by default: scar surviving grass and ground cover with withered dust, mushrooms and wider rotten surface patches so the corruption reads more like infected land.", (c) -> (double)c.voidCorruptionGrass, (c, v) -> c.voidCorruptionGrass = (int)v);
+      keyToggle("voidCorruptionTrees", "Optional expansion, off by default: blacken nearby trees by stripping leaves and converting trunks / branches into withered logs around corruption strikes.", (c) -> (double)c.voidCorruptionTrees, (c, v) -> c.voidCorruptionTrees = (int)v);
       keyToggle("mobsFlee", "Nearby mobs panic and run away from the storm", (c) -> (double)c.mobsFlee, (c, v) -> c.mobsFlee = (int)v);
       key("headForgiveSeconds", "Breathing-room seconds after a head lets a player go", (double)0.0F, (double)600.0F, true, (c) -> (double)c.headForgiveSeconds, (c, v) -> c.headForgiveSeconds = (int)v);
       keyToggle("mobPickup", "Beams pull in and consume non-target mobs", (c) -> (double)c.mobPickup, (c, v) -> c.mobPickup = (int)v);

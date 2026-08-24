@@ -41,12 +41,12 @@ public final class StormCorruption {
          int y = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
          BlockPos pos = new BlockPos(x, y, z);
          if (level.hasChunkAt(pos)) {
-            corruptColumn(level, pos, late, random);
+            corruptColumn(level, pos, late, random, cfg);
          }
       }
    }
 
-   private static void corruptColumn(ServerLevel level, BlockPos pos, boolean late, RandomSource random) {
+   private static void corruptColumn(ServerLevel level, BlockPos pos, boolean late, RandomSource random, WitherStormWorldConfig cfg) {
       BlockPos cursor = pos;
 
       for(int i = 0; i < 4 && level.getBlockState(cursor).isAir(); ++i) {
@@ -66,6 +66,97 @@ public final class StormCorruption {
       } else if (!aboveState.isAir() && aboveState.canBeReplaced() && random.nextInt(4) == 0) {
          level.setBlock(above, ModBlocks.WITHERED_MUSHROOM.defaultBlockState(), 3);
       }
+
+      if (cfg.voidCorruptionGrass != 0) {
+         spreadSurfaceScars(level, cursor, late, random);
+      }
+
+      if (cfg.voidCorruptionTrees != 0) {
+         blackenTrees(level, cursor, late, random);
+      }
+   }
+
+   private static void spreadSurfaceScars(ServerLevel level, BlockPos origin, boolean late, RandomSource random) {
+      int radius = late ? 4 : 2;
+      for(int dx = -radius; dx <= radius; ++dx) {
+         for(int dz = -radius; dz <= radius; ++dz) {
+            if (dx * dx + dz * dz > radius * radius) {
+               continue;
+            }
+
+            if (random.nextInt(late ? 2 : 3) != 0) {
+               continue;
+            }
+
+            int x = origin.getX() + dx;
+            int z = origin.getZ() + dz;
+            BlockPos ground = new BlockPos(x, level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1, z);
+            if (!level.hasChunkAt(ground)) {
+               continue;
+            }
+
+            BlockState groundState = level.getBlockState(ground);
+            BlockState replacement = corruptSurfaceState(groundState, late);
+            if (replacement != null && !groundState.is(replacement.getBlock())) {
+               level.setBlock(ground, replacement, 3);
+            }
+
+            BlockPos above = ground.above();
+            BlockState aboveState = level.getBlockState(above);
+            if ((aboveState.isAir() || aboveState.canBeReplaced() || aboveState.is(Blocks.SNOW)) && random.nextInt(late ? 2 : 3) == 0) {
+               BlockState dust = ModBlocks.WITHERED_DUST.defaultBlockState();
+               BlockState growth = random.nextInt(late ? 3 : 5) == 0 ? ModBlocks.WITHERED_MUSHROOM.defaultBlockState() : dust;
+               if (growth.canSurvive(level, above) || growth.getBlock() == ModBlocks.WITHERED_MUSHROOM) {
+                  level.setBlock(above, growth, 3);
+               }
+            }
+         }
+      }
+   }
+
+   private static void blackenTrees(ServerLevel level, BlockPos origin, boolean late, RandomSource random) {
+      int radius = late ? 5 : 3;
+      int top = late ? 10 : 7;
+      for(int dx = -radius; dx <= radius; ++dx) {
+         for(int dz = -radius; dz <= radius; ++dz) {
+            if (dx * dx + dz * dz > radius * radius) {
+               continue;
+            }
+
+            for(int dy = -1; dy <= top; ++dy) {
+               BlockPos target = origin.offset(dx, dy, dz);
+               BlockState state = level.getBlockState(target);
+               if (state.isAir()) {
+                  continue;
+               }
+
+               if (state.is(BlockTags.LOGS)) {
+                  BlockState log = copyAxis(state, ModBlocks.WITHERED_LOG.defaultBlockState());
+                  if (!state.is(log.getBlock())) {
+                     level.setBlock(target, log, 3);
+                  }
+                  continue;
+               }
+
+               if (state.is(BlockTags.LEAVES) && random.nextInt(late ? 2 : 3) == 0) {
+                  level.setBlock(target, Blocks.AIR.defaultBlockState(), 3);
+               }
+            }
+         }
+      }
+   }
+
+   private static BlockState corruptSurfaceState(BlockState state, boolean late) {
+      if (state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT) || state.is(Blocks.COARSE_DIRT) || state.is(Blocks.ROOTED_DIRT) || state.is(Blocks.PODZOL) || state.is(Blocks.MYCELIUM) || state.is(Blocks.FARMLAND) || state.is(Blocks.MUD) || state.is(Blocks.CLAY)) {
+         return late ? ModBlocks.TORN_WITHERED_FLESH.defaultBlockState() : ModBlocks.WITHERED_FLESH_BLOCK.defaultBlockState();
+      }
+      if (state.is(Blocks.SAND) || state.is(Blocks.RED_SAND) || state.is(Blocks.SOUL_SAND) || state.is(Blocks.SOUL_SOIL)) {
+         return ModBlocks.WITHERED_SAND.defaultBlockState();
+      }
+      if (state.is(BlockTags.LOGS)) {
+         return copyAxis(state, ModBlocks.WITHERED_LOG.defaultBlockState());
+      }
+      return null;
    }
 
    private static BlockState corruptState(BlockState state, boolean late) {

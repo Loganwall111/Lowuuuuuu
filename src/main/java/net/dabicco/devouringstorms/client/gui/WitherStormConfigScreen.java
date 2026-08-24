@@ -531,7 +531,7 @@ public class WitherStormConfigScreen extends Screen {
       }
 
       this.serverSection("Max Cluster Size by Stage", stageKeys);
-      this.serverSection("Corruption & Behavior", "voidCorruption", "voidCorruptionInterval", "voidCorruptionRadius", "voidCorruptionBursts", "mobsFlee", "tentacleAwareness", "witherSickness", "witheredMobs", "witheredMax", "witheredMaxCaves");
+      this.serverSection("Corruption & Behavior", "voidCorruption", "voidCorruptionInterval", "voidCorruptionRadius", "voidCorruptionBursts", "voidCorruptionGrass", "voidCorruptionTrees", "mobsFlee", "tentacleAwareness", "witherSickness", "witheredMobs", "witheredMax", "witheredMaxCaves");
       this.serverSection("Atmosphere", "worldDarkening");
       this.serverSection("Formidibomb Aftermath", "postFormidibombChase", "postFormidibombChaseSpeed", "fastGrowthToSixOne", "fastGrowthToSixOneSpeed");
       this.serverSection("The Enderman Siege", "endermanSiege", "endermanSiegeCount", "endermanSiegeSeconds", "endermanSiegeDistance", "endermanSiegeSlowdown", "endermanSiegeTentacleSpeed", "endermanSiegeBeamEats");

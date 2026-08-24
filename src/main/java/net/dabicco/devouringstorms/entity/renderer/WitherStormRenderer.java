@@ -820,7 +820,8 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          return 0.0F;
       } else {
          float ramp = Mth.clamp((float)((state.phase - 4.15) / 0.55), 0.0F, 1.0F);
-         return ramp * state.hatch * state.collapseFade;
+         float devourerBoost = state.devourer ? 0.18F + 0.18F * StormPalettes.phaseAmount(state.phase, 6.0F, 6.25F) : 0.0F;
+         return Mth.clamp(ramp + devourerBoost, 0.0F, 1.0F) * state.hatch * state.collapseFade;
       }
    }
 

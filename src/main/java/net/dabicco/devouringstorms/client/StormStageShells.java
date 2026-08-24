@@ -48,7 +48,9 @@ public final class StormStageShells {
 
    public static float targetHeight(double phase) {
       if (phase >= 6.0) {
-         return 68.0F;
+         return 74.0F;
+      } else if (phase >= 5.8) {
+         return 66.0F;
       } else if (phase >= 5.0) {
          return 64.0F;
       } else {
@@ -58,9 +60,9 @@ public final class StormStageShells {
 
    public static float targetWidth(double phase) {
       if (phase >= 6.0) {
-         return 58.0F;
+         return 64.0F;
       } else if (phase >= 5.8) {
-         return 54.0F;
+         return 56.0F;
       } else if (phase >= 5.0) {
          return 50.0F;
       } else {
