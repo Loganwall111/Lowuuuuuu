@@ -15,6 +15,7 @@ import org.joml.Vector3f;
 
 public final class StormDebris {
    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tractor_beam.png");
+   private static final Identifier TOP_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/broken_piece.png");
    private static final int SWARM = 1600;
    private static final int RING = 900;
    private static final int DEV_EXTRA = 900;
@@ -72,7 +73,15 @@ public final class StormDebris {
    private static final float RING_GROW_SEC = 4.5F;
    private static final float RETRACT_TICKS = 90.0F;
    private static final int SWARM_CULL_PERCENT = 88;
+   private static final int TOP_SWARM = 240;
    private static final float SURVIVOR_SIZE = 0.45F;
+   private static final float[] TOP_RADIUS = new float[240];
+   private static final float[] TOP_ANGLE = new float[240];
+   private static final float[] TOP_HEIGHT = new float[240];
+   private static final float[] TOP_FALL = new float[240];
+   private static final float[] TOP_SIZE = new float[240];
+   private static final float[] TOP_SHADE = new float[240];
+   private static final float[] TOP_SPEED = new float[240];
    private static final HashMap<Integer, float[]> RING_HOME;
    private static final int GLOW_EVERY = 7;
    private static final float GLOW_GAIN = 0.18F;
@@ -214,6 +223,7 @@ public final class StormDebris {
       float retract = phase58Ticks < 0.0F ? 0.0F : Mth.clamp(phase58Ticks / 90.0F, 0.0F, 1.0F);
       float retractEase = retract * retract * (3.0F - 2.0F * retract);
       float orbitScale = Math.max(1.0F, growthScale);
+      float wallGrowth = Math.max(0.0F, orbitScale - 1.0F);
       float cubeScale = 1.0F + (orbitScale - 1.0F) * 0.55F;
       collector.submitCustomGeometry(poseStack, FoglessRenderTypes.bodyCutout(TEXTURE), (pose, consumer) -> {
          Vector3f cam = camLocal(pose);
@@ -239,6 +249,7 @@ public final class StormDebris {
                         }
 
                         radius = Mth.lerp(t * homeAmount, RADIUS[i], RTARGET[i]);
+                        radius *= 1.0F + wallGrowth * 0.85F;
                      }
 
                      float size = SIZE[i] * cubeBoost * (float)DevouringStormsClientConfig.debrisSize;
@@ -253,17 +264,23 @@ public final class StormDebris {
                      }
 
                      radius *= orbitScale;
-                     size *= cubeScale;
+                     size *= cubeScale * (isRing ? 1.0F + wallGrowth * 0.35F : 1.0F);
+                     if (settling) {
+                        radius = Mth.lerp(settle, radius, RADIUS[i] * 0.12F);
+                     }
+
                      float a = PHASE[i] + timeTicks * SPEED[i];
                      float ca = Mth.cos((double)a) * radius;
                      float sa = Mth.sin((double)a) * radius;
                      float x = UX[i] * ca + VX[i] * sa;
                      float y = (UY[i] * ca + VY[i] * sa + CY[i]) * orbitScale;
                      float z = UZ[i] * ca + VZ[i] * sa;
+                     float horizontal = Mth.sqrt(x * x + z * z);
+                     float flare = wallFlare(horizontal, wallGrowth, orbitScale, isRing);
+                     x *= flare;
+                     y += wallLift(horizontal, wallGrowth, orbitScale, isRing);
+                     z *= flare;
                      float shade = SHADE[i] * 255.0F;
-                     if (settling) {
-                        Mth.lerp(settle, radius, RADIUS[i] * 0.12F);
-                     }
 
                      int cr;
                      int cg;
@@ -283,6 +300,10 @@ public final class StormDebris {
          }
 
       });
+      if (wallGrowth > 0.02F) {
+         submitTopRain(poseStack, collector, timeTicks, orbitScale, wallGrowth, preview);
+      }
+
       if (violet && DevouringStormsClientConfig.devourerDebrisGlow) {
          if (!preview) {
             boolean ourBloom = StormBloom.wantsEntityTarget();
@@ -294,14 +315,25 @@ public final class StormDebris {
 
                   for(int i = glowFrom; i < drawCount; i += 7) {
                      if (!(TR[i] < 0.0F) && !(retractEase >= 1.0F)) {
+                        boolean isRing = RTARGET[i] >= 0.0F;
+                        float radius = RADIUS[i];
+                        if (isRing) {
+                           radius = RTARGET[i] * (1.0F + wallGrowth * 0.85F);
+                        }
+
+                        radius *= orbitScale;
                         float a = PHASE[i] + timeTicks * SPEED[i];
-                        float radius = RADIUS[i] * orbitScale;
                         float ca = Mth.cos((double)a) * radius;
                         float sa = Mth.sin((double)a) * radius;
                         float x = UX[i] * ca + VX[i] * sa;
                         float y = (UY[i] * ca + VY[i] * sa + CY[i]) * orbitScale;
                         float z = UZ[i] * ca + VZ[i] * sa;
-                        cube(pose, consumer, x, y, z, SIZE[i] * cubeScale, (int)(TR[i] * 0.18F), (int)(TG[i] * 0.18F), (int)(TB[i] * 0.18F), light, i, timeTicks, cam.x, cam.y, cam.z);
+                        float horizontal = Mth.sqrt(x * x + z * z);
+                        float flare = wallFlare(horizontal, wallGrowth, orbitScale, isRing);
+                        x *= flare;
+                        y += wallLift(horizontal, wallGrowth, orbitScale, isRing);
+                        z *= flare;
+                        cube(pose, consumer, x, y, z, SIZE[i] * cubeScale * (isRing ? 1.0F + wallGrowth * 0.35F : 1.0F), (int)(TR[i] * 0.18F), (int)(TG[i] * 0.18F), (int)(TB[i] * 0.18F), light, i, timeTicks, cam.x, cam.y, cam.z);
                      }
                   }
 
@@ -309,6 +341,60 @@ public final class StormDebris {
             }
          }
       }
+   }
+
+   private static float wallNorm(float horizontal, float orbitScale) {
+      return Mth.clamp(horizontal / (28.0F + orbitScale * 18.0F), 0.0F, 1.0F);
+   }
+
+   private static float wallFlare(float horizontal, float wallGrowth, float orbitScale, boolean ring) {
+      if (wallGrowth <= 0.0F) {
+         return 1.0F;
+      } else {
+         float norm = wallNorm(horizontal, orbitScale);
+         float base = ring ? 0.22F : 0.08F;
+         float edge = ring ? 0.32F : 0.14F;
+         return 1.0F + wallGrowth * (base + edge * norm);
+      }
+   }
+
+   private static float wallLift(float horizontal, float wallGrowth, float orbitScale, boolean ring) {
+      if (wallGrowth <= 0.0F) {
+         return 0.0F;
+      } else {
+         float norm = wallNorm(horizontal, orbitScale);
+         float vRise = horizontal * wallGrowth * (ring ? 0.18F : 0.10F);
+         float crown = wallGrowth * (5.0F + wallGrowth * 1.6F) * (0.25F + norm * (ring ? 1.45F : 0.85F));
+         return vRise + crown;
+      }
+   }
+
+   private static void submitTopRain(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, float orbitScale, float wallGrowth, boolean preview) {
+      float density = Mth.clamp(wallGrowth / 2.8F, 0.15F, 1.0F);
+      int drawCount = Mth.clamp((int)((float)TOP_SWARM * density), 24, TOP_SWARM);
+      float topBase = 34.0F * orbitScale + wallGrowth * 20.0F;
+      float topLift = 18.0F + wallGrowth * 28.0F;
+      float rainDepth = 10.0F + wallGrowth * 22.0F;
+      float topRadius = 26.0F * orbitScale + wallGrowth * 18.0F;
+      collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(TOP_TEXTURE), (pose, consumer) -> {
+         Vector3f cam = camLocal(pose);
+
+         for(int i = 0; i < drawCount; ++i) {
+            float spin = TOP_ANGLE[i] + timeTicks * TOP_SPEED[i];
+            float ring = TOP_RADIUS[i] * topRadius;
+            float flare = 1.0F + wallGrowth * (0.18F + TOP_HEIGHT[i] * 0.22F);
+            float x = Mth.cos((double)spin) * ring * flare;
+            float z = Mth.sin((double)spin) * ring * flare;
+            float loop = (TOP_FALL[i] + timeTicks * (0.011F + wallGrowth * 0.0015F)) % 1.0F;
+            float fall = loop * rainDepth * (0.7F + TOP_HEIGHT[i] * 1.4F);
+            float y = topBase + TOP_HEIGHT[i] * topLift - fall;
+            int shade = (int)(TOP_SHADE[i] * 255.0F);
+            int alpha = (int)(90.0F + 110.0F * density * (1.0F - loop * 0.35F));
+            float size = TOP_SIZE[i] * (0.8F + wallGrowth * 0.18F) * (preview ? 0.8F : 1.0F);
+            sprite(pose, consumer, x, y, z, size, size * 1.2F, shade, shade, shade, alpha, 15728880, cam.x, cam.y, cam.z);
+         }
+
+      });
    }
 
    private static Vector3f camLocal(PoseStack.Pose pose) {
@@ -333,6 +419,48 @@ public final class StormDebris {
       nrmX = n.x;
       nrmY = n.y;
       nrmZ = n.z;
+   }
+
+   private static void sprite(PoseStack.Pose pose, VertexConsumer consumer, float x, float y, float z, float halfW, float halfH, int r, int g, int b, int a, int light, float camX, float camY, float camZ) {
+      float vx = camX - x;
+      float vy = camY - y;
+      float vz = camZ - z;
+      float len = Mth.sqrt(vx * vx + vy * vy + vz * vz);
+      if (len < 1.0E-4F) {
+         return;
+      }
+
+      vx /= len;
+      vy /= len;
+      vz /= len;
+      float hintX = Math.abs(vy) > 0.98F ? 1.0F : 0.0F;
+      float hintY = Math.abs(vy) > 0.98F ? 0.0F : 1.0F;
+      float rx = vy * 0.0F - vz * hintY;
+      float ry = vz * hintX - vx * 0.0F;
+      float rz = vx * hintY - vy * hintX;
+      float rLen = Mth.sqrt(rx * rx + ry * ry + rz * rz);
+      if (rLen < 1.0E-4F) {
+         return;
+      }
+
+      rx = rx / rLen * halfW;
+      ry = ry / rLen * halfW;
+      rz = rz / rLen * halfW;
+      float ux = ry * vz - rz * vy;
+      float uy = rz * vx - rx * vz;
+      float uz = rx * vy - ry * vx;
+      float uLen = Mth.sqrt(ux * ux + uy * uy + uz * uz);
+      if (uLen < 1.0E-4F) {
+         return;
+      }
+
+      ux = ux / uLen * halfH;
+      uy = uy / uLen * halfH;
+      uz = uz / uLen * halfH;
+      consumer.addVertex(pose, x - rx - ux, y - ry - uy, z - rz - uz).setColor(r, g, b, a).setUv(0.0F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, 0.0F, 1.0F, 0.0F);
+      consumer.addVertex(pose, x + rx - ux, y + ry - uy, z + rz - uz).setColor(r, g, b, a).setUv(1.0F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, 0.0F, 1.0F, 0.0F);
+      consumer.addVertex(pose, x + rx + ux, y + ry + uy, z + rz + uz).setColor(r, g, b, a).setUv(1.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, 0.0F, 1.0F, 0.0F);
+      consumer.addVertex(pose, x - rx + ux, y - ry + uy, z - rz + uz).setColor(r, g, b, a).setUv(0.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose, 0.0F, 1.0F, 0.0F);
    }
 
    private static void cube(PoseStack.Pose pose, VertexConsumer c, float x, float y, float z, float h, int r, int g, int b, int light, int i, float t, float camX, float camY, float camZ) {
@@ -534,6 +662,16 @@ public final class StormDebris {
             RDELAY[i] = (float)k * 0.085F + r.nextFloat() * 0.05F;
             CY[i] = 8.0F + r.nextFloat() * 14.0F;
          }
+      }
+
+      for(int i = 0; i < TOP_SWARM; ++i) {
+         TOP_RADIUS[i] = 0.35F + r.nextFloat() * 0.75F;
+         TOP_ANGLE[i] = r.nextFloat() * ((float)Math.PI * 2.0F);
+         TOP_HEIGHT[i] = r.nextFloat();
+         TOP_FALL[i] = r.nextFloat();
+         TOP_SIZE[i] = 0.12F + r.nextFloat() * 0.28F;
+         TOP_SHADE[i] = 0.45F + r.nextFloat() * 0.45F;
+         TOP_SPEED[i] = (0.006F + r.nextFloat() * 0.018F) * (float)(r.nextBoolean() ? 1 : -1);
       }
 
       RING_HOME = new HashMap();

@@ -1209,7 +1209,12 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    private double growthCeiling() {
       WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
       if (config.infinitePhases != 0 || config.infiniteGrowth != 0) {
-         return config.phaseCeiling;
+         if (config.phaseCeiling <= 0.0) {
+            return Double.MAX_VALUE;
+         }
+
+         double floor = this.isDevourer() ? 6.99 : 5.9999;
+         return Math.max(floor, config.phaseCeiling);
       }
       return this.isDevourer() ? 6.99 : 5.9999;
    }
