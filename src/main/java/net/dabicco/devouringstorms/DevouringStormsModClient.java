@@ -26,6 +26,7 @@ import net.dabicco.devouringstorms.client.ClientWitheredManager;
 import net.dabicco.devouringstorms.client.CommandBlockPowerSound;
 import net.dabicco.devouringstorms.client.ControlPanelLightTint;
 import net.dabicco.devouringstorms.client.DistantStormRenderer;
+import net.dabicco.devouringstorms.client.StormCataclysmFX;
 import net.dabicco.devouringstorms.client.StormCloudDeck;
 import net.dabicco.devouringstorms.client.StormSkyCanopy;
 import net.dabicco.devouringstorms.client.StormPresenceFX;
@@ -217,6 +218,7 @@ public class DevouringStormsModClient implements ClientModInitializer {
       LevelRenderEvents.COLLECT_SUBMITS.register(StormStarfield::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormSkyCanopy::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormCloudDeck::submit);
+      LevelRenderEvents.COLLECT_SUBMITS.register(StormCataclysmFX::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPresenceFX::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPulseFX::render);
       ClientTickEvents.START_CLIENT_TICK.register(StormPresenceFX::tick);
