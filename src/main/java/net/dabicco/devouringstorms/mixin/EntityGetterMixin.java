@@ -2,6 +2,7 @@ package net.dabicco.devouringstorms.mixin;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.dabicco.devouringstorms.entity.WitherStormEntity;
 import net.dabicco.devouringstorms.entity.cluster.WitherStormClusterEntity;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -23,26 +24,35 @@ public interface EntityGetterMixin {
    )
    private void dabyws$clusterCollisions(Entity entity, AABB box, CallbackInfoReturnable<List<VoxelShape>> cir) {
       if (entity instanceof Player) {
-         List<WitherStormClusterEntity> clusters = entity.level().getEntitiesOfClass(WitherStormClusterEntity.class, box.inflate(1.0));
-         if (!clusters.isEmpty()) {
-            List<VoxelShape> base = (List<VoxelShape>)cir.getReturnValue();
-            List<VoxelShape> combined = null;
+         List<VoxelShape> base = (List<VoxelShape>)cir.getReturnValue();
+         List<VoxelShape> combined = null;
 
-            for (WitherStormClusterEntity cluster : clusters) {
-               for (AABB blockBox : cluster.getCollisionBoxes()) {
-                  if (blockBox.intersects(box)) {
-                     if (combined == null) {
-                        combined = new ArrayList<>(base);
-                     }
-
-                     combined.add(Shapes.create(blockBox));
+         for (WitherStormClusterEntity cluster : entity.level().getEntitiesOfClass(WitherStormClusterEntity.class, box.inflate(1.0))) {
+            for (AABB blockBox : cluster.getCollisionBoxes()) {
+               if (blockBox.intersects(box)) {
+                  if (combined == null) {
+                     combined = new ArrayList<>(base);
                   }
+
+                  combined.add(Shapes.create(blockBox));
                }
             }
+         }
 
-            if (combined != null) {
-               cir.setReturnValue(combined);
+         for (WitherStormEntity storm : entity.level().getEntitiesOfClass(WitherStormEntity.class, box.inflate(6.0))) {
+            for (AABB blockBox : storm.getBackCollisionBoxes()) {
+               if (blockBox.intersects(box)) {
+                  if (combined == null) {
+                     combined = new ArrayList<>(base);
+                  }
+
+                  combined.add(Shapes.create(blockBox));
+               }
             }
+         }
+
+         if (combined != null) {
+            cir.setReturnValue(combined);
          }
       }
    }

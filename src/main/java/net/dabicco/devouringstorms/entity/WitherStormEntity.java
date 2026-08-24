@@ -2767,6 +2767,37 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
    }
 
+   public List<AABB> getBackCollisionBoxes() {
+      if (!this.phase4 || this.isCollapsed() || this.visualGrowthPhase() < 5.0) {
+         return java.util.Collections.emptyList();
+      }
+
+      double growthScale = this.currentGrowthScale();
+      if (growthScale < 1.15) {
+         return java.util.Collections.emptyList();
+      }
+
+      EntityDimensions dims = this.getDimensions(this.getPose());
+      double width = dims.width();
+      double height = dims.height();
+      double yawRad = Math.toRadians((double)this.getYRot());
+      Vec3 forward = new Vec3(-Math.sin(yawRad), 0.0, Math.cos(yawRad));
+      Vec3 right = new Vec3(Math.cos(yawRad), 0.0, Math.sin(yawRad));
+      Vec3 centre = this.position();
+      double thickness = Math.max(1.5, growthScale * 1.7);
+      ArrayList<AABB> out = new ArrayList(5);
+      addSupportBox(out, centre.add(forward.scale(0.10 * width)), this.getY() + height * 0.84, width * 0.24, width * 0.24, thickness);
+      addSupportBox(out, centre.add(forward.scale(-0.10 * width)), this.getY() + height * 0.76, width * 0.34, width * 0.28, thickness);
+      addSupportBox(out, centre.add(forward.scale(-0.18 * width)).add(right.scale(width * 0.30)), this.getY() + height * 0.74, width * 0.24, width * 0.24, thickness);
+      addSupportBox(out, centre.add(forward.scale(-0.18 * width)).add(right.scale(-width * 0.30)), this.getY() + height * 0.74, width * 0.24, width * 0.24, thickness);
+      addSupportBox(out, centre.add(forward.scale(-0.38 * width)), this.getY() + height * 0.68, width * 0.28, width * 0.32, thickness);
+      return out;
+   }
+
+   private static void addSupportBox(List<AABB> out, Vec3 centre, double topY, double halfX, double halfZ, double thickness) {
+      out.add(new AABB(centre.x - halfX, topY - thickness, centre.z - halfZ, centre.x + halfX, topY, centre.z + halfZ));
+   }
+
    protected AABB makeBoundingBox(Vec3 position) {
       float t = this.collapseTicks();
       float down = CollapseAnim.down(t);

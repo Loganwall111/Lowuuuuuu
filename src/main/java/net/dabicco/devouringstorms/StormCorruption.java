@@ -25,10 +25,13 @@ public final class StormCorruption {
       }
 
       RandomSource random = level.getRandom();
-      int bursts = Math.max(1, cfg.voidCorruptionBursts);
+      double expansion = Math.max(storm.getPhase(), storm.getExpansionPhase());
+      double growthScale = storm.currentGrowthScale();
+      int bursts = Math.max(1, cfg.voidCorruptionBursts + Math.max(0, (int)Math.floor((growthScale - 1.0) * 3.0)));
       double phaseGain = storm.getPhase() >= 6.0 ? 1.4 : (storm.getPhase() >= 5.8 ? 1.2 : 1.0);
-      int radius = Math.max(6, (int)Math.round((double)cfg.voidCorruptionRadius * phaseGain));
-      boolean late = storm.getPhase() >= 5.8;
+      double spreadGain = 0.95 + Math.max(0.0, growthScale - 1.0) * 0.42 + Math.max(0.0, expansion - 5.8) * 0.05;
+      int radius = Math.max(6, (int)Math.round((double)cfg.voidCorruptionRadius * phaseGain * spreadGain));
+      boolean late = storm.getPhase() >= 5.8 || expansion >= 6.6;
 
       for(int i = 0; i < bursts; ++i) {
          double ang = random.nextDouble() * Math.PI * 2.0;
