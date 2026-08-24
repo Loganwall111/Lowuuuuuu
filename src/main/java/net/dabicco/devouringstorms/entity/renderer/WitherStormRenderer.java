@@ -739,6 +739,16 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       return (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(state.phase, state.expansionPhase));
    }
 
+   /** Overall body scale: capped shortly after late phase 5 so the whole storm stops ballooning. */
+   private static float bodyScale(WitherStormRenderState state) {
+      return (float)WitherStormEntity.clientBodyScaleForPhase(Math.max(state.phase, state.expansionPhase));
+   }
+
+   /** Outward back/cube-mass scale: keeps expanding forever past late phase 5 and through phase 6+. */
+   private static float backScale(WitherStormRenderState state) {
+      return (float)WitherStormEntity.clientBackScaleForPhase(Math.max(state.phase, state.expansionPhase));
+   }
+
    private static double auraRadius(WitherStormRenderState state) {
       return (26.0 + 9.0 * Math.max(0.0, state.phase - 4.0)) * (double)growthScale(state);
    }
@@ -1017,6 +1027,9 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    private void submitGrowth5(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector) {
       float GROWTH5_SCALE = 4.0F;
       float HUGE_BACK_SCALE = 1.72F;
+      // The huge back is the part that keeps expanding while the storm is held
+      // at late phase 5 (and keeps going through phase 6+ at the growth speed).
+      float HUGE_BACK_GROWTH = HUGE_BACK_SCALE * Math.max(1.0F, backScale(state));
       float GROWTH5_WIDE = 1.0F;
       float GROWTH5_UP = 4.0F;
       float GROWTH5_FORWARD = -6.5F;
@@ -1049,7 +1062,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
 
             if (hugeBackProgress(state.phase) > 0.0F) {
                poseStack.pushPose();
-               poseStack.scale(1.72F, 1.72F, 1.72F);
+               poseStack.scale(HUGE_BACK_GROWTH, HUGE_BACK_GROWTH, HUGE_BACK_GROWTH);
                StormShadowMap.capture(poseStack, this.hugeAssBackModel.root());
                poseStack.pushPose();
                this.applyBackMirror(poseStack, this.hugeAssBackMirrorModel.root());
@@ -1085,7 +1098,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          float hugeGrow = filled ? hugeBackProgress(state.phase) : (state.phase >= 5.8 && state.phase < 6.0 ? 1.0F : 0.0F);
          if (hugeGrow > 0.0F) {
             poseStack.pushPose();
-            poseStack.scale(1.72F, 1.72F, 1.72F);
+            poseStack.scale(HUGE_BACK_GROWTH, HUGE_BACK_GROWTH, HUGE_BACK_GROWTH);
             if (scaled) {
                this.submitScaled(
                   poseStack,
@@ -1235,7 +1248,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
             poseStack.translate(0.0, 17.0, 0.0);
          }
 
-         float bodyScale = (state.devourer ? 1.1009175F : 2.0F) * state.hatch * growthScale(state);
+         float bodyScale = (state.devourer ? 1.1009175F : 2.0F) * state.hatch * bodyScale(state);
          poseStack.scale(bodyScale, bodyScale, bodyScale);
          poseStack.translate(0.0, 6.0, 0.0);
       } else {

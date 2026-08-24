@@ -948,14 +948,41 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    }
 
    private double growthScaleFactor() {
-      return this.currentGrowthScale();
+      return bodyScaleForPhase(this.visualGrowthPhase(), this.infiniteGrowthEnabled());
+   }
+
+   private double backScaleFactor() {
+      return backScaleForPhase(this.visualGrowthPhase(), this.infiniteGrowthEnabled());
    }
 
    public static double clientGrowthScaleForPhase(double phase) {
       return growthScaleForPhase(phase, ClientConfigCache.cfg.infiniteGrowth != 0);
    }
 
+   public static double clientBodyScaleForPhase(double phase) {
+      return bodyScaleForPhase(phase, ClientConfigCache.cfg.infiniteGrowth != 0);
+   }
+
+   public static double clientBackScaleForPhase(double phase) {
+      return backScaleForPhase(phase, ClientConfigCache.cfg.infiniteGrowth != 0);
+   }
+
+   /**
+    * Full presence scale of the storm for a growth phase: drives aura radius,
+    * swarm reach, sky/cloud claim and back-mass thickness. Follows the outward
+    * back mass, so it keeps expanding for as long as the storm feeds past 5.
+    */
    public static double growthScaleForPhase(double phase, boolean infiniteGrowth) {
+      return expansionCurve(phase);
+   }
+
+   /**
+    * Overall body/head scale. Past late phase 5 the storm no longer just inflates
+    * its whole body: growth is redirected into the outward back/cube mass (see
+    * {@link #backScaleForPhase}), so the silhouette stops ballooning shortly
+    * after 5.8 while the back keeps expanding.
+    */
+   public static double bodyScaleForPhase(double phase, boolean infiniteGrowth) {
       if (!infiniteGrowth) {
          return 1.0;
       } else {
@@ -963,12 +990,30 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          if (extra <= 0.0) {
             return 1.0;
          } else {
-            double stageFive = Math.min(extra, 0.8) * 0.08;
-            double early = Math.min(Math.max(0.0, extra - 0.8), 8.0) * 0.14;
-            double middle = Math.min(Math.max(0.0, extra - 8.8), 24.0) * 0.08;
-            double late = Math.max(0.0, extra - 32.8);
-            return 1.0 + stageFive + early + middle + Math.sqrt(late) * 0.45;
+            return 1.0 + Math.min(extra, 0.8) * 0.08;
          }
+      }
+   }
+
+   /**
+    * Scale of the outward back/cube mass (huge-back shell + swarming ring).
+    * This is the part that keeps expanding forever once a storm is capped at
+    * late phase 5, and continues through phase 6+ at the speed modifier.
+    */
+   public static double backScaleForPhase(double phase, boolean infiniteGrowth) {
+      return expansionCurve(phase);
+   }
+
+   private static double expansionCurve(double phase) {
+      double extra = Math.max(0.0, phase - (double)5.0F);
+      if (extra <= 0.0) {
+         return 1.0;
+      } else {
+         double stageFive = Math.min(extra, 0.8) * 0.08;
+         double early = Math.min(Math.max(0.0, extra - 0.8), 8.0) * 0.14;
+         double middle = Math.min(Math.max(0.0, extra - 8.8), 24.0) * 0.08;
+         double late = Math.max(0.0, extra - 32.8);
+         return 1.0 + stageFive + early + middle + Math.sqrt(late) * 0.45;
       }
    }
 
@@ -1644,11 +1689,16 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    }
 
    private boolean infiniteGrowthLocksStage(WitherStormWorldConfig config) {
+      // Kept for config compatibility: the phase-5 lock is now always enforced
+      // (phase 6 is Formidibomb-only), so this only reports the old toggle.
       return config.infiniteGrowth != 0 && config.infiniteGrowthLocksStage != 0 && this.phase >= (double)5.0F;
    }
 
    private void syncExpansionPhase() {
-      this.expansionPhase = Math.max(this.phase, Math.min(this.expansionPhase, this.growthCeiling()));
+      // The expansion phase (outward back/cube mass) is deliberately unbounded:
+      // a storm capped at late phase 5 keeps expanding its back forever, and the
+      // growthCeiling/phaseCeiling only caps which PHASE the storm may reach.
+      this.expansionPhase = Math.max(this.phase, this.expansionPhase);
       this.entityData.set(EXPANSION_PHASE_DATA, (float)this.expansionPhase);
    }
 
@@ -1658,7 +1708,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
 
       double startPhase = config.infiniteGrowth != 0 ? (double)5.0F : 5.8;
-      if (this.phase < startPhase || this.visualGrowthPhase() >= this.growthCeiling() - 0.001) {
+      if (this.phase < startPhase || this.isDevourer() && this.phase >= this.growthCeiling() - 0.001) {
          return;
       }
 
@@ -1669,7 +1719,12 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    }
 
    public void addSubGrowth(int amount) {
-      if (!(this.visualGrowthPhase() >= this.growthCeiling() - 0.001)) {
+      // Phase 6 is Formidibomb-only. A storm capped at late phase 5 (or set to
+      // 5.5+) never promotes itself to 6 no matter how much it eats: past 5.0
+      // every point of growth is redirected into the outward back/cube mass
+      // (expansionPhase) so the back expands and expands instead of the whole
+      // storm turning into the devourer. Devourers (6+) keep growing normally.
+      if (!this.isDevourer() || !(this.phase >= this.growthCeiling() - 0.001)) {
          WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
          if (config.fastGrowthToSixOne != 0 && this.phase >= (double)6.0F && this.phase < 6.1) {
             amount = Math.max(1, (int)Math.round((double)(amount * config.fastGrowthToSixOneSpeed) / (double)100.0F));
@@ -1683,13 +1738,18 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          int mainPhase = (int)Math.floor(this.phase);
          int requirement = growthRequirement(mainPhase, config);
          double phaseBefore = this.phase;
-         boolean stageLocked = this.infiniteGrowthLocksStage(config);
-         if (config.infiniteGrowth != 0 && this.phase >= (double)5.0F) {
-            this.expansionPhase = Math.min(this.growthCeiling(), Math.max(this.expansionPhase, this.phase) + (double)amount / (double)requirement);
+         boolean devourer = this.isDevourer();
+         // Everything eaten past 5.0 grows the outward back mass. This is
+         // unbounded on purpose (the phase ceiling only caps the phase number)
+         // and its pace is the infiniteGrowthSpeed modifier.
+         if (this.phase >= (double)5.0F) {
+            this.expansionPhase = Math.max(this.expansionPhase, this.phase) + (double)amount / (double)requirement;
+            this.entityData.set(EXPANSION_PHASE_DATA, (float)this.expansionPhase);
          }
 
+         boolean hardLockFive = !devourer && this.phase >= (double)5.0F;
          this.subGrowth += amount;
-         if (stageLocked) {
+         if (hardLockFive) {
             this.subGrowth = Math.min(requirement, this.subGrowth);
          }
 
@@ -1706,7 +1766,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             }
          }
 
-         if (!stageLocked && this.subGrowth >= requirement) {
+         if (!hardLockFive && this.subGrowth >= requirement) {
             if ((double)mainPhase + (double)1.0F >= this.growthCeiling()) {
                this.phase = this.growthCeiling();
                this.subGrowth = 0;
@@ -3689,6 +3749,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       Vec3 forward = new Vec3(-Math.sin(yaw), (double)0.0F, Math.cos(yaw));
       Vec3 body = this.position().add((double)0.0F, h * 0.55, (double)0.0F);
       double scale = this.growthScaleFactor();
+      double backScale = this.backScaleFactor();
       double bodyR;
       double backOff;
       double backR;
@@ -3723,10 +3784,14 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
       if (this.isPhase4() && scale > 1.0) {
          bodyR *= scale;
-         backOff *= scale;
-         backR *= scale;
-         backBackOff *= scale;
-         backBackR *= scale;
+      }
+
+      if (this.isPhase4() && backScale > 1.0) {
+         // The outward back mass is what keeps expanding at late phase 5+.
+         backOff *= backScale;
+         backR *= backScale;
+         backBackOff *= backScale;
+         backBackR *= backScale;
       }
 
       if (point.distanceTo(body) <= bodyR) {
