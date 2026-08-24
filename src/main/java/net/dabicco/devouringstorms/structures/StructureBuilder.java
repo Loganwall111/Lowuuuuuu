@@ -3,7 +3,6 @@ package net.dabicco.devouringstorms.structures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -172,7 +171,7 @@ public final class StructureBuilder {
                set(server, pos, Blocks.WATER.defaultBlockState());
             } else {
                set(server, pos, Blocks.FARMLAND.defaultBlockState());
-               set(server, pos.above(), ((BlockState)Blocks.WHEAT.defaultBlockState().setValue(CropBlock.AGE, 7)));
+               set(server, pos.above(), Blocks.WHEAT.defaultBlockState());
                placed += 2;
                continue;
             }
