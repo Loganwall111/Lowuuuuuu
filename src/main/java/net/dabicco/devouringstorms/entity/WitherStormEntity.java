@@ -110,6 +110,7 @@ import net.minecraft.world.phys.HitResult.Type;
 public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    private int soundedPlates = -1;
    private boolean suppressLoot;
+   private boolean bowelsFinaleDeath;
    private static final EntityDataAccessor<Float> PHASE_DATA;
    private static final EntityDataAccessor<Boolean> PHASE4_DATA;
    private static final EntityDataAccessor<Integer> SIEGE_STAGE;
@@ -368,15 +369,19 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    private void deathBlast(ServerLevel server) {
       WitherStormWorldConfig cfg = WitherStormConfigs.get(server);
-      if (cfg.deathBlast == 0) {
+      boolean bowelsFinale = cfg.experimentalBowelsDeath != 0 && this.bowelsFinaleDeath;
+      if (!bowelsFinale && cfg.deathBlast == 0) {
          return;
       }
 
-      double radius = cfg.deathBlastRadius;
+      double radius = Math.max((double)4.0F, cfg.deathBlastRadius) * (bowelsFinale ? 1.85 : 1.0);
       Vec3 centre = this.position();
       this.carveSphere(server, centre, radius);
-      server.playSound((Entity)null, centre.x, centre.y, centre.z, ModSounds.FORMIDIBOMB_EXPLOSION, SoundSource.HOSTILE, 8.0F, 1.0F);
-      server.sendParticles(ParticleTypes.EXPLOSION_EMITTER, centre.x, centre.y, centre.z, 1, 0.0, 0.0, 0.0, 0.0);
+      if (bowelsFinale) {
+         this.broadcastCommandPulse(server);
+      }
+      server.playSound((Entity)null, centre.x, centre.y, centre.z, ModSounds.FORMIDIBOMB_EXPLOSION, SoundSource.HOSTILE, bowelsFinale ? 10.0F : 8.0F, bowelsFinale ? 0.78F : 1.0F);
+      server.sendParticles(ParticleTypes.EXPLOSION_EMITTER, centre.x, centre.y, centre.z, bowelsFinale ? 4 : 1, 0.0, 0.0, 0.0, 0.0);
       double flashRangeSq = 4000000.0;
       FormidibombFlashPayload flash = new FormidibombFlashPayload(centre.x, centre.y, centre.z);
 
@@ -387,6 +392,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
 
       double rSq = radius * radius;
+      double maxDamage = bowelsFinale ? 30.0 : 20.0;
+      double verticalBoost = bowelsFinale ? 1.35 : 0.9;
+      double horizontalBoost = bowelsFinale ? 3.3 : 2.2;
       for (LivingEntity victim : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius), (e) -> e != this && e.isAlive())) {
          double dx = victim.getX() - centre.x;
          double dz = victim.getZ() - centre.z;
@@ -394,8 +402,8 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          if (d <= rSq && d > 1.0E-4) {
             double dist = Math.sqrt(d);
             double falloff = 1.0 - dist / radius;
-            victim.hurtServer(server, server.damageSources().mobAttack(this), (float)(4.0 + 16.0 * falloff));
-            victim.setDeltaMovement(victim.getDeltaMovement().add(dx / dist * 2.2 * falloff, 0.9 * falloff, dz / dist * 2.2 * falloff));
+            victim.hurtServer(server, server.damageSources().mobAttack(this), (float)(4.0 + maxDamage * falloff));
+            victim.setDeltaMovement(victim.getDeltaMovement().add(dx / dist * horizontalBoost * falloff, verticalBoost * falloff, dz / dist * horizontalBoost * falloff));
          }
       }
    }
@@ -1225,6 +1233,12 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    public long getCollapseGameTime() {
       return (Long)this.entityData.get(COLLAPSE_GAME_TIME);
+   }
+
+   public void armBowelsFinaleDeath(ServerLevel server) {
+      if (WitherStormConfigs.get(server).experimentalBowelsDeath != 0) {
+         this.bowelsFinaleDeath = true;
+      }
    }
 
    public boolean isPostBombChasing() {

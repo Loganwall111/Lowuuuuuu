@@ -539,7 +539,7 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("New Growth Features", "instantGrowth", "instantGrowthRate", "infinitePhases", "infiniteGrowth", "infiniteGrowthLocksStage", "infiniteGrowthSecondsPerPhase", "phaseCeiling");
       this.serverSection("Story-Mode Towns", "townNpcPopulation", "townGuardPopulation", "townCatPopulation", "townPigPopulation");
       this.serverSection("Tentacle Slams & Raids", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "structureRaid", "structureRaidInterval", "structureRaidRadius", "structureTearClusters");
-      this.serverSection("Death & Berserk", "deathBlast", "deathBlastRadius", "berserk", "berserkHealth", "berserkSlamInterval");
+      this.serverSection("Death & Berserk", "deathBlast", "deathBlastRadius", "experimentalBowelsDeath", "berserk", "berserkHealth", "berserkSlamInterval");
    }
 
    private void master(String title) {

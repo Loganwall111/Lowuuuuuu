@@ -101,6 +101,7 @@ public class WitherStormWorldConfig extends SavedData {
    public int townPigPopulation = 1;
    public int deathBlast = 1;
    public double deathBlastRadius = (double)24.0F;
+   public int experimentalBowelsDeath = 0;
    public int berserk = 1;
    public double berserkHealth = (double)0.3F;
    public int berserkSlamInterval = 40;
@@ -229,6 +230,7 @@ public class WitherStormWorldConfig extends SavedData {
       key("structureRaidRadius", "Radius of each structure-raid caved-in", (double)2.0F, (double)16.0F, true, (c) -> (double)c.structureRaidRadius, (c, v) -> c.structureRaidRadius = (int)v);
       key("structureTearClusters", "Chunks ripped out of a raided structure as flying clusters per raid - the building visibly breaks open and its pieces fly up to the storm", (double)0.0F, (double)8.0F, true, (c) -> (double)c.structureTearClusters, (c, v) -> c.structureTearClusters = (int)v);
       keyToggle("deathBlast", "When the storm is finally destroyed, it detonates in a cataclysmic blast, caving a huge crater and flinging everything around it (the story's final explosion)", (c) -> (double)c.deathBlast, (c, v) -> c.deathBlast = (int)v);
+      keyToggle("experimentalBowelsDeath", "Experimental, off by default: if the storm is killed by the post-bowels finale, swap in a white-crack / purple-discharge death with a giant pixel shockwave and land-scouring blowout.", (c) -> (double)c.experimentalBowelsDeath, (c, v) -> c.experimentalBowelsDeath = (int)v);
       key("townNpcPopulation", "Named Story Mode villagers placed when building a town", 0, 20, true, c -> (double)c.townNpcPopulation, (c,v) -> c.townNpcPopulation=(int)v);
       key("townGuardPopulation", "How many iron golem town guards are placed with that town", 0, 6, true, c -> (double)c.townGuardPopulation, (c,v) -> c.townGuardPopulation=(int)v);
       key("townCatPopulation", "How many town cats appear around the roads and market", 0, 8, true, c -> (double)c.townCatPopulation, (c,v) -> c.townCatPopulation=(int)v);

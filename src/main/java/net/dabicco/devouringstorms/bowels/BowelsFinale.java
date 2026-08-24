@@ -2,6 +2,7 @@ package net.dabicco.devouringstorms.bowels;
 
 import java.util.UUID;
 import net.dabicco.devouringstorms.BowelsEndRoom;
+import net.dabicco.devouringstorms.config.WitherStormConfigs;
 import net.dabicco.devouringstorms.entity.WitherStormEntity;
 import net.dabicco.devouringstorms.entity.WitheredStarEntity;
 import net.dabicco.devouringstorms.network.CaveRumblePayload;
@@ -74,6 +75,9 @@ public final class BowelsFinale {
          for(ServerLevel other : server.getAllLevels()) {
             for(WitherStormEntity storm : other.getEntitiesOfClass(WitherStormEntity.class, new AABB((double)-3.0E7F, (double)-1000.0F, (double)-3.0E7F, (double)3.0E7F, (double)1000.0F, (double)3.0E7F))) {
                storm.setSuppressLoot(true);
+               if (WitherStormConfigs.get(other).experimentalBowelsDeath != 0) {
+                  storm.armBowelsFinaleDeath(other);
+               }
                storm.kill(other);
             }
          }
