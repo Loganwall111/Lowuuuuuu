@@ -722,6 +722,11 @@ public class WitherStormConfigScreen extends Screen {
       this.clientRow("starDensity", "Star Density", (BooleanSupplier)null);
       this.clientRow("starTwinkleSpeed", "Twinkle Speed", (BooleanSupplier)null);
       this.clientRow("starBrightness", "Star Brightness", (BooleanSupplier)null);
+      this.header("Global MCSM Visuals");
+      this.clientRow("globalMcsmVisuals", "Always-On MCSM Visuals", (BooleanSupplier)null);
+      this.clientRow("globalMcsmCloudDeck", "Use Cloud Deck Without A Storm", () -> !DevouringStormsClientConfig.globalMcsmVisuals);
+      this.clientRow("globalMcsmPhase", "Global Visual Phase", () -> !DevouringStormsClientConfig.globalMcsmVisuals);
+      this.clientRow("globalMcsmStrength", "Global Visual Strength", () -> !DevouringStormsClientConfig.globalMcsmVisuals);
       this.header("MCSM Cloud Deck");
       this.clientRow("stormCloudDeck", "Cloud Deck", (BooleanSupplier)null);
       this.clientRow("stormCloudCoverage", "Deck Coverage", (BooleanSupplier)null);

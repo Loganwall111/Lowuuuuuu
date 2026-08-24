@@ -39,7 +39,7 @@ public final class StormCloudDeck {
    /** Whether the stylized MCSM deck should take over from vanilla clouds right now. */
    public static boolean replacesVanillaClouds() {
       int mode = (int)Math.round(DevouringStormsClientConfig.stormCloudDeck);
-      return mode > 0 && StormSkyDarken.paletteBlend() > 0.03F && StormSkyDarken.palettePhase() >= 4.25F;
+      return mode > 0 && (StormSkyDarken.globalCloudDeckActive() || StormSkyDarken.paletteBlend() > 0.03F && StormSkyDarken.palettePhase() >= 4.25F);
    }
 
    /** cheap deterministic hash -> [0,1) */
@@ -148,10 +148,88 @@ public final class StormCloudDeck {
       hangingLeg(consumer, pose, x, topY + 0.08, z, halfSpan * 0.48, rot + Math.PI / 2.0, height * 0.72, innerR, innerG, innerB, (int)(innerA * 0.82F), 0);
    }
 
+   private static void renderField(
+      VertexConsumer consumer,
+      PoseStack.Pose pose,
+      Vec3 cam,
+      float nowSec,
+      int mode,
+      float coverage,
+      float baseAlpha,
+      int entityId,
+      float phase,
+      float expansionPhase,
+      double dispX,
+      double dispY,
+      double dispZ,
+      float presence,
+      float[] outer,
+      float[] inner
+   ) {
+      if (phase < 4.25F || presence <= 0.01F) {
+         return;
+      }
+      float phaseRamp = smooth(phase, 4.25F, 5.05F);
+      float growthScale = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(phase, expansionPhase));
+      double spread = (130.0 + 90.0 * Math.min(phase, 6.0F)) * (0.9 + 0.45 * growthScale);
+      int slabs = Mth.clamp((int)(28.0F * coverage * (mode >= 2 ? 1.8F : 1.0F) * (0.45F + 0.55F * phaseRamp) * Math.min(2.6F, 0.8F + growthScale * 0.6F) * (0.55F + 0.45F * presence)), 6, 160);
+      colorsForPhase(phase, outer, inner);
+      float outerLum = 0.82F + 0.12F * Mth.sin((nowSec / Math.max(0.5F, (float)DevouringStormsClientConfig.pulsePeriod) + (entityId % 977) * 0.6183F) * (float)(Math.PI * 2.0));
+      int or = (int)(Mth.clamp(outer[0] * outerLum, 0.0F, 1.0F) * 255.0F);
+      int og = (int)(Mth.clamp(outer[1] * outerLum, 0.0F, 1.0F) * 255.0F);
+      int ob = (int)(Mth.clamp(outer[2] * outerLum, 0.0F, 1.0F) * 255.0F);
+      int ir = (int)(Mth.clamp(inner[0], 0.0F, 1.0F) * 255.0F);
+      int ig = (int)(Mth.clamp(inner[1], 0.0F, 1.0F) * 255.0F);
+      int ib = (int)(Mth.clamp(inner[2], 0.0F, 1.0F) * 255.0F);
+
+      for (int i = 0; i < slabs; i++) {
+         double rad = (0.45 + 0.8 * hash01(entityId, i, 1)) * spread;
+         double ang0 = hash01(entityId, i, 2) * Math.PI * 2.0;
+         double drift = (0.004 + 0.012 * hash01(entityId, i, 3)) * (hash01(entityId, i, 4) < 0.5 ? -1.0 : 1.0);
+         double ang = ang0 + nowSec * drift;
+         double x = dispX + Math.cos(ang) * rad;
+         double z = dispZ + Math.sin(ang) * rad;
+         double alt = (hash01(entityId, i, 5) - 0.35) * (50.0 + 30.0 * Math.min(phase, 6.0F)) * (0.9 + 0.22 * growthScale) + (float)DevouringStormsClientConfig.stormCloudAltitude;
+         double y = dispY - 20.0 + alt + Math.sin(nowSec * 0.05 * (0.5 + hash01(entityId, i, 6)) + hash01(entityId, i, 7) * 6.28) * (4.0 + growthScale * 1.5);
+         double dist = cam.distanceTo(new Vec3(x, y, z));
+         if (dist > MAX_VIEW_DIST) {
+            continue;
+         }
+         float distFade = dist < 60.0 ? (float)(dist / 60.0) : Mth.clamp(1.0F - (float)((dist - 650.0) / 250.0), 0.0F, 1.0F);
+         float alpha = baseAlpha * presence * phaseRamp * (0.58F + 0.42F * hash01(entityId, i, 8)) * distFade;
+         int outerA = (int)(alpha * 255.0F);
+         int innerA = (int)(outerA * 0.68F);
+         if (outerA <= 2) {
+            continue;
+         }
+
+         double halfLen = (24.0 + 68.0 * hash01(entityId, i, 9)) * (0.95 + 0.32 * growthScale);
+         double halfWid = (10.0 + 26.0 * hash01(entityId, i, 10)) * (0.95 + 0.26 * growthScale);
+         double rot = hash01(entityId, i, 11) * Math.PI * 2.0 + nowSec * drift * 1.7;
+         slab(consumer, pose, x, y, z, halfLen, halfWid, rot, or, og, ob, outerA);
+         slab(consumer, pose, x, y + 0.12, z, halfLen * 0.72, halfWid * 0.62, rot, ir, ig, ib, innerA);
+
+         float legRamp = smooth(phase, 4.55F, 5.35F);
+         if (legRamp > 0.02F && hash01(entityId, i, 12) < (mode >= 2 ? 0.84F : 0.58F)) {
+            double along = (hash01(entityId, i, 13) - 0.5) * halfLen * 0.78;
+            double across = (hash01(entityId, i, 14) - 0.5) * halfWid * 0.60;
+            double legX = x + Math.cos(rot) * along - Math.sin(rot) * across;
+            double legZ = z + Math.sin(rot) * along + Math.cos(rot) * across;
+            double legHeight = (12.0 + 48.0 * hash01(entityId, i, 15)) * (0.88 + 0.42 * growthScale) * (0.55 + 0.45 * legRamp);
+            double legSpan = Math.max(5.5, Math.min(halfLen, halfWid) * (0.42 + 0.34 * hash01(entityId, i, 16)));
+            int legOuterA = (int)(outerA * (0.44F + 0.22F * legRamp));
+            int legInnerA = (int)(innerA * (0.42F + 0.24F * legRamp));
+            crossLegs(consumer, pose, legX, y - 0.06, legZ, legSpan, legHeight, rot, or, og, ob, ir, ig, ib, legOuterA, legInnerA);
+         }
+      }
+   }
+
    public static void submit(LevelRenderContext ctx) {
       Minecraft mc = Minecraft.getInstance();
       int mode = (int)Math.round(DevouringStormsClientConfig.stormCloudDeck);
-      if (mode <= 0 || mc.level == null || ClientDistantStormManager.all().isEmpty()) {
+      var storms = ClientDistantStormManager.all();
+      boolean global = StormSkyDarken.globalCloudDeckActive();
+      if (mode <= 0 || mc.level == null || storms.isEmpty() && !global) {
          return;
       }
       float coverage = (float)DevouringStormsClientConfig.stormCloudCoverage;
@@ -164,70 +242,21 @@ public final class StormCloudDeck {
       Vec3 cam = ctx.levelState().cameraRenderState.pos;
       PoseStack poseStack = ctx.poseStack();
       SubmitNodeCollector collector = ctx.submitNodeCollector();
-      float paletteClaim = Mth.clamp(StormSkyDarken.paletteBlend(), 0.0F, 1.0F);
+      float paletteClaim = Math.max(Mth.clamp(StormSkyDarken.paletteBlend(), 0.0F, 1.0F), StormSkyDarken.globalBlend());
       float baseAlpha = (mode >= 2 ? 0.21F : 0.14F) * Mth.lerp(paletteClaim, 0.82F, 1.24F);
 
       collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(SLAB), (pose, consumer) -> {
          float[] outer = new float[3];
          float[] inner = new float[3];
 
-         for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-            if (d.phase < 4.25F) {
-               continue;
-            }
-            float phaseRamp = smooth(d.phase, 4.25F, 5.05F);
-            float growthScale = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(d.phase, d.expansionPhase));
-            double spread = (130.0 + 90.0 * Math.min(d.phase, 6.0F)) * (0.9 + 0.45 * growthScale);
-            int slabs = Mth.clamp((int)(28.0F * coverage * (mode >= 2 ? 1.8F : 1.0F) * (0.45F + 0.55F * phaseRamp) * Math.min(2.6F, 0.8F + growthScale * 0.6F)), 6, 160);
-            colorsForPhase(d.phase, outer, inner);
-            float outerLum = 0.82F + 0.12F * Mth.sin((nowSec / Math.max(0.5F, (float)DevouringStormsClientConfig.pulsePeriod) + (d.entityId % 977) * 0.6183F) * (float)(Math.PI * 2.0));
-            int or = (int)(Mth.clamp(outer[0] * outerLum, 0.0F, 1.0F) * 255.0F);
-            int og = (int)(Mth.clamp(outer[1] * outerLum, 0.0F, 1.0F) * 255.0F);
-            int ob = (int)(Mth.clamp(outer[2] * outerLum, 0.0F, 1.0F) * 255.0F);
-            int ir = (int)(Mth.clamp(inner[0], 0.0F, 1.0F) * 255.0F);
-            int ig = (int)(Mth.clamp(inner[1], 0.0F, 1.0F) * 255.0F);
-            int ib = (int)(Mth.clamp(inner[2], 0.0F, 1.0F) * 255.0F);
+         for (ClientDistantStormManager.StormData d : storms) {
+            renderField(consumer, pose, cam, nowSec, mode, coverage, baseAlpha, d.entityId, d.phase, d.expansionPhase, d.dispX, d.dispY, d.dispZ, 1.0F, outer, inner);
+         }
 
-            for (int i = 0; i < slabs; i++) {
-               double rad = (0.45 + 0.8 * hash01(d.entityId, i, 1)) * spread;
-               double ang0 = hash01(d.entityId, i, 2) * Math.PI * 2.0;
-               double drift = (0.004 + 0.012 * hash01(d.entityId, i, 3)) * (hash01(d.entityId, i, 4) < 0.5 ? -1.0 : 1.0);
-               double ang = ang0 + nowSec * drift;
-               double x = d.dispX + Math.cos(ang) * rad;
-               double z = d.dispZ + Math.sin(ang) * rad;
-               double alt = (hash01(d.entityId, i, 5) - 0.35) * (50.0 + 30.0 * Math.min(d.phase, 6.0F)) * (0.9 + 0.22 * growthScale) + (float)DevouringStormsClientConfig.stormCloudAltitude;
-               double y = d.dispY - 20.0 + alt + Math.sin(nowSec * 0.05 * (0.5 + hash01(d.entityId, i, 6)) + hash01(d.entityId, i, 7) * 6.28) * (4.0 + growthScale * 1.5);
-               double dist = cam.distanceTo(new Vec3(x, y, z));
-               if (dist > MAX_VIEW_DIST) {
-                  continue;
-               }
-               float distFade = dist < 60.0 ? (float)(dist / 60.0) : Mth.clamp(1.0F - (float)((dist - 650.0) / 250.0), 0.0F, 1.0F);
-               float alpha = baseAlpha * phaseRamp * (0.58F + 0.42F * hash01(d.entityId, i, 8)) * distFade;
-               int outerA = (int)(alpha * 255.0F);
-               int innerA = (int)(outerA * 0.68F);
-               if (outerA <= 2) {
-                  continue;
-               }
-
-               double halfLen = (24.0 + 68.0 * hash01(d.entityId, i, 9)) * (0.95 + 0.32 * growthScale);
-               double halfWid = (10.0 + 26.0 * hash01(d.entityId, i, 10)) * (0.95 + 0.26 * growthScale);
-               double rot = hash01(d.entityId, i, 11) * Math.PI * 2.0 + nowSec * drift * 1.7;
-               slab(consumer, pose, x, y, z, halfLen, halfWid, rot, or, og, ob, outerA);
-               slab(consumer, pose, x, y + 0.12, z, halfLen * 0.72, halfWid * 0.62, rot, ir, ig, ib, innerA);
-
-               float legRamp = smooth(d.phase, 4.55F, 5.35F);
-               if (legRamp > 0.02F && hash01(d.entityId, i, 12) < (mode >= 2 ? 0.84F : 0.58F)) {
-                  double along = (hash01(d.entityId, i, 13) - 0.5) * halfLen * 0.78;
-                  double across = (hash01(d.entityId, i, 14) - 0.5) * halfWid * 0.60;
-                  double legX = x + Math.cos(rot) * along - Math.sin(rot) * across;
-                  double legZ = z + Math.sin(rot) * along + Math.cos(rot) * across;
-                  double legHeight = (12.0 + 48.0 * hash01(d.entityId, i, 15)) * (0.88 + 0.42 * growthScale) * (0.55 + 0.45 * legRamp);
-                  double legSpan = Math.max(5.5, Math.min(halfLen, halfWid) * (0.42 + 0.34 * hash01(d.entityId, i, 16)));
-                  int legOuterA = (int)(outerA * (0.44F + 0.22F * legRamp));
-                  int legInnerA = (int)(innerA * (0.42F + 0.24F * legRamp));
-                  crossLegs(consumer, pose, legX, y - 0.06, legZ, legSpan, legHeight, rot, or, og, ob, ir, ig, ib, legOuterA, legInnerA);
-               }
-            }
+         if (global) {
+            float phase = StormSkyDarken.globalPhase();
+            float strength = StormSkyDarken.globalBlend();
+            renderField(consumer, pose, cam, nowSec, mode, coverage, baseAlpha, 246810, phase, phase, cam.x, cam.y + 92.0 + (double)(phase - 4.5F) * 8.0, cam.z, strength, outer, inner);
          }
       });
    }

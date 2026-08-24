@@ -24,10 +24,84 @@ public final class StormSkyCanopy {
    private StormSkyCanopy() {
    }
 
+   private static void renderCanopy(
+      com.mojang.blaze3d.vertex.VertexConsumer consumer,
+      PoseStack.Pose pose,
+      Vec3 cam,
+      float nowSec,
+      int mode,
+      int entityId,
+      float phase,
+      float expansionPhase,
+      double dispX,
+      double dispY,
+      double dispZ,
+      float blend,
+      boolean fixedBlend,
+      float[] outer,
+      float[] inner
+   ) {
+      if (phase < 4.35F || blend <= 0.01F) {
+         return;
+      }
+
+      Vec3 centre = new Vec3(dispX, dispY, dispZ);
+      double stormDist = centre.distanceTo(cam);
+      if (stormDist > MAX_VIEW_DIST) {
+         return;
+      }
+
+      float phaseRamp = StormCloudDeck.smooth(phase, 4.35F, 5.25F);
+      float growthScale = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(phase, expansionPhase));
+      float distFade = Mth.clamp(1.0F - (float)((stormDist - 180.0) / (850.0 + growthScale * 220.0)), 0.0F, 1.0F);
+      float canopyBlend = fixedBlend ? blend : Math.max(blend, distFade * 0.75F);
+      if (phaseRamp * canopyBlend <= 0.01F) {
+         return;
+      }
+
+      StormCloudDeck.colorsForPhase(phase, outer, inner);
+      float[] sky = StormPalettes.skyColor(phase, new float[3]);
+      outer[0] = Mth.lerp(0.45F, outer[0], sky[0]);
+      outer[1] = Mth.lerp(0.45F, outer[1], sky[1]);
+      outer[2] = Mth.lerp(0.45F, outer[2], sky[2]);
+      inner[0] = Mth.lerp(0.32F, inner[0], 1.0F);
+      inner[1] = Mth.lerp(0.32F, inner[1], 1.0F);
+      inner[2] = Mth.lerp(0.32F, inner[2], 1.0F);
+
+      int or = (int)(Mth.clamp(outer[0], 0.0F, 1.0F) * 255.0F);
+      int og = (int)(Mth.clamp(outer[1], 0.0F, 1.0F) * 255.0F);
+      int ob = (int)(Mth.clamp(outer[2], 0.0F, 1.0F) * 255.0F);
+      int ir = (int)(Mth.clamp(inner[0], 0.0F, 1.0F) * 255.0F);
+      int ig = (int)(Mth.clamp(inner[1], 0.0F, 1.0F) * 255.0F);
+      int ib = (int)(Mth.clamp(inner[2], 0.0F, 1.0F) * 255.0F);
+
+      double anchorX = Mth.lerp(0.38, cam.x, dispX);
+      double anchorZ = Mth.lerp(0.38, cam.z, dispZ);
+      double altitudeBase = Math.max(cam.y + 110.0, dispY + (95.0 + growthScale * 18.0) + DevouringStormsClientConfig.stormCloudAltitude);
+
+      for (int layer = 0; layer < 4; layer++) {
+         double radius = (220.0 + layer * 95.0) * (0.9 + 0.15 * layer) * Math.max(1.0, DevouringStormsClientConfig.stormCloudCoverage) * (0.9 + 0.38 * growthScale);
+         double halfLen = radius * (1.05 + 0.12 * layer);
+         double halfWid = radius * (0.42 + 0.05 * layer);
+         double drift = (layer % 2 == 0 ? 1.0 : -1.0) * (0.0035 + layer * 0.0017);
+         double rot = nowSec * drift + entityId * 0.071 + layer * 0.9;
+         double y = altitudeBase + layer * 18.0 + Math.sin(nowSec * 0.03 + layer + entityId * 0.1) * 6.0;
+         int outerA = (int)(255.0F * phaseRamp * canopyBlend * (mode >= 2 ? 0.18F : 0.12F) * (1.0F - layer * 0.14F));
+         int innerA = (int)(outerA * 0.50F);
+         if (outerA <= 2) {
+            continue;
+         }
+         StormCloudDeck.slab(consumer, pose, anchorX, y, anchorZ, halfLen, halfWid, rot, or, og, ob, outerA);
+         StormCloudDeck.slab(consumer, pose, anchorX, y + 0.2 + layer * 0.03, anchorZ, halfLen * 0.72, halfWid * 0.66, rot, ir, ig, ib, innerA);
+      }
+   }
+
    public static void submit(LevelRenderContext ctx) {
       Minecraft mc = Minecraft.getInstance();
       int mode = (int)Math.round(DevouringStormsClientConfig.stormCloudDeck);
-      if (mode <= 0 || mc.level == null || ClientDistantStormManager.all().isEmpty()) {
+      var storms = ClientDistantStormManager.all();
+      boolean global = StormSkyDarken.globalCloudDeckActive();
+      if (mode <= 0 || mc.level == null || storms.isEmpty() && !global) {
          return;
       }
 
@@ -41,60 +115,13 @@ public final class StormSkyCanopy {
          float[] outer = new float[3];
          float[] inner = new float[3];
 
-         for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-            if (d.phase < 4.35F) {
-               continue;
-            }
+         for (ClientDistantStormManager.StormData d : storms) {
+            renderCanopy(consumer, pose, cam, nowSec, mode, d.entityId, d.phase, d.expansionPhase, d.dispX, d.dispY, d.dispZ, StormSkyDarken.paletteBlend(), false, outer, inner);
+         }
 
-            Vec3 centre = new Vec3(d.dispX, d.dispY, d.dispZ);
-            double stormDist = centre.distanceTo(cam);
-            if (stormDist > MAX_VIEW_DIST) {
-               continue;
-            }
-
-            float phaseRamp = StormCloudDeck.smooth(d.phase, 4.35F, 5.25F);
-            float growthScale = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(d.phase, d.expansionPhase));
-            float distFade = Mth.clamp(1.0F - (float)((stormDist - 180.0) / (850.0 + growthScale * 220.0)), 0.0F, 1.0F);
-            float blend = Math.max(StormSkyDarken.paletteBlend(), distFade * 0.75F);
-            if (phaseRamp * blend <= 0.01F) {
-               continue;
-            }
-
-            StormCloudDeck.colorsForPhase(d.phase, outer, inner);
-            float[] sky = StormPalettes.skyColor(d.phase, new float[3]);
-            outer[0] = Mth.lerp(0.45F, outer[0], sky[0]);
-            outer[1] = Mth.lerp(0.45F, outer[1], sky[1]);
-            outer[2] = Mth.lerp(0.45F, outer[2], sky[2]);
-            inner[0] = Mth.lerp(0.32F, inner[0], 1.0F);
-            inner[1] = Mth.lerp(0.32F, inner[1], 1.0F);
-            inner[2] = Mth.lerp(0.32F, inner[2], 1.0F);
-
-            int or = (int)(Mth.clamp(outer[0], 0.0F, 1.0F) * 255.0F);
-            int og = (int)(Mth.clamp(outer[1], 0.0F, 1.0F) * 255.0F);
-            int ob = (int)(Mth.clamp(outer[2], 0.0F, 1.0F) * 255.0F);
-            int ir = (int)(Mth.clamp(inner[0], 0.0F, 1.0F) * 255.0F);
-            int ig = (int)(Mth.clamp(inner[1], 0.0F, 1.0F) * 255.0F);
-            int ib = (int)(Mth.clamp(inner[2], 0.0F, 1.0F) * 255.0F);
-
-            double anchorX = Mth.lerp(0.38, cam.x, d.dispX);
-            double anchorZ = Mth.lerp(0.38, cam.z, d.dispZ);
-            double altitudeBase = Math.max(cam.y + 110.0, d.dispY + (95.0 + growthScale * 18.0) + DevouringStormsClientConfig.stormCloudAltitude);
-
-            for (int layer = 0; layer < 4; layer++) {
-               double radius = (220.0 + layer * 95.0) * (0.9 + 0.15 * layer) * Math.max(1.0, DevouringStormsClientConfig.stormCloudCoverage) * (0.9 + 0.38 * growthScale);
-               double halfLen = radius * (1.05 + 0.12 * layer);
-               double halfWid = radius * (0.42 + 0.05 * layer);
-               double drift = (layer % 2 == 0 ? 1.0 : -1.0) * (0.0035 + layer * 0.0017);
-               double rot = nowSec * drift + d.entityId * 0.071 + layer * 0.9;
-               double y = altitudeBase + layer * 18.0 + Math.sin(nowSec * 0.03 + layer + d.entityId * 0.1) * 6.0;
-               int outerA = (int)(255.0F * phaseRamp * blend * (mode >= 2 ? 0.18F : 0.12F) * (1.0F - layer * 0.14F));
-               int innerA = (int)(outerA * 0.50F);
-               if (outerA <= 2) {
-                  continue;
-               }
-               StormCloudDeck.slab(consumer, pose, anchorX, y, anchorZ, halfLen, halfWid, rot, or, og, ob, outerA);
-               StormCloudDeck.slab(consumer, pose, anchorX, y + 0.2 + layer * 0.03, anchorZ, halfLen * 0.72, halfWid * 0.66, rot, ir, ig, ib, innerA);
-            }
+         if (global) {
+            float phase = StormSkyDarken.globalPhase();
+            renderCanopy(consumer, pose, cam, nowSec, mode, 86420, phase, phase, cam.x, cam.y + 96.0 + (double)(phase - 4.5F) * 10.0, cam.z, StormSkyDarken.globalBlend(), true, outer, inner);
          }
       });
    }

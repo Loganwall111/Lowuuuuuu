@@ -64,6 +64,22 @@ public final class StormSkyDarken {
       return palettePhase;
    }
 
+   public static boolean globalVisualsActive() {
+      return DevouringStormsClientConfig.globalMcsmVisuals && DevouringStormsClientConfig.globalMcsmStrength > 0.01;
+   }
+
+   public static boolean globalCloudDeckActive() {
+      return globalVisualsActive() && DevouringStormsClientConfig.globalMcsmCloudDeck && Math.round((float)DevouringStormsClientConfig.stormCloudDeck) > 0;
+   }
+
+   public static float globalPhase() {
+      return Mth.clamp((float)DevouringStormsClientConfig.globalMcsmPhase, 4.5F, 6.15F);
+   }
+
+   public static float globalBlend() {
+      return globalVisualsActive() ? Mth.clamp((float)DevouringStormsClientConfig.globalMcsmStrength, 0.0F, 1.0F) : 0.0F;
+   }
+
    /** How strongly the phase palette should override the user's manual colours right now. */
    public static float paletteBlend() {
       return paletteBlend;
@@ -129,7 +145,12 @@ public final class StormSkyDarken {
 
    public static void update(Vec3 cameraPos, float partialTick) {
       var storms = ClientDistantStormManager.all();
-      if (storms.isEmpty()) {
+      float globalPhase = globalPhase();
+      float globalBlend = globalBlend();
+      float globalStage = Mth.clamp((globalPhase - 4.35F) / 1.35F, 0.0F, 1.0F);
+      globalStage = 0.12F + 0.88F * globalStage * globalStage * (3.0F - 2.0F * globalStage);
+      float globalTarget = globalBlend * globalStage * (float)DevouringStormsClientConfig.skyDarkenIntensity;
+      if (storms.isEmpty() && globalTarget <= 0.0F) {
          displayed += (0.0F - displayed) * 0.22F;
          if (displayed < 0.002F) {
             displayed = 0.0F;
@@ -140,7 +161,7 @@ public final class StormSkyDarken {
          return;
       }
 
-      float target = 0.0F;
+      float target = globalTarget;
 
       for(ClientDistantStormManager.StormData d : storms) {
          if (!((double)d.phase < (double)5.0F)) {
@@ -176,9 +197,9 @@ public final class StormSkyDarken {
       // but preserve its real phase so the handoff follows the screenshot notes:
       // phase 4 stays normal, phase 4.5 turns green, phase 5 goes turquoise,
       // then only later does the sky drift pink/purple.
-      float phaseTarget = 0.0F;
-      float blendTarget = 0.0F;
-      float bestScore = 0.0F;
+      float phaseTarget = globalBlend > 0.0F ? globalPhase : 0.0F;
+      float blendTarget = globalBlend;
+      float bestScore = globalBlend * globalStage;
 
       for(ClientDistantStormManager.StormData d : storms) {
          double dx = d.dispX - cameraPos.x;

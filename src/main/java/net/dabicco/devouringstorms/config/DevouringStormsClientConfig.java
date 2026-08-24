@@ -122,6 +122,10 @@ public class DevouringStormsClientConfig {
    public static double starBrightness = (double)1.0F;
    public static double stormCloudDeck = (double)2.0F;
    public static final String[] CLOUD_DECK_LABELS = new String[]{"Off", "Subtle", "Dense"};
+   public static boolean globalMcsmVisuals = false;
+   public static boolean globalMcsmCloudDeck = true;
+   public static double globalMcsmPhase = (double)5.0F;
+   public static double globalMcsmStrength = 0.72;
    public static double stormCloudCoverage = 1.35;
    public static double stormCloudAltitude = (double)0.0F;
    public static double stormCloudPaletteMix = 1.0;
@@ -478,6 +482,10 @@ public class DevouringStormsClientConfig {
       key("starTwinkleSpeed", "How fast the stars twinkle.", (double)0.0F, (double)4.0F, false, () -> starTwinkleSpeed, (v) -> starTwinkleSpeed = v);
       key("starBrightness", "Overall star brightness.", (double)0.0F, (double)2.0F, false, () -> starBrightness, (v) -> starBrightness = v);
       keyCycle("stormCloudDeck", "MCSM-style square cloud slabs with a bright white inner body and hanging faded cloud legs, replacing the vanilla cloud pass around an active storm while the big upper-sky canopy takes over the top of the sky.", CLOUD_DECK_LABELS, () -> stormCloudDeck, (v) -> stormCloudDeck = (double)Math.round(v));
+      key("globalMcsmVisuals", "Keep the MCSM sky takeover alive even with no storm summoned: the sky, fog, world-darkening and optional cloud deck stay active as a standalone visual mode. Off by default.", (double)0.0F, (double)1.0F, true, () -> globalMcsmVisuals ? (double)1.0F : (double)0.0F, (v) -> globalMcsmVisuals = v >= (double)0.5F);
+      key("globalMcsmCloudDeck", "When Global MCSM Visuals is on, keep the square cloud deck and top-sky canopy running around the player even without a storm entity.", (double)0.0F, (double)1.0F, true, () -> globalMcsmCloudDeck ? (double)1.0F : (double)0.0F, (v) -> globalMcsmCloudDeck = v >= (double)0.5F);
+      key("globalMcsmPhase", "Which MCSM phase palette the global visuals mode should imitate: 4.5 = green, 5.0 = turquoise, 5.4+ = pink/purple, 5.8+ = cataclysm.", 4.5, 6.15, false, () -> globalMcsmPhase, (v) -> globalMcsmPhase = v);
+      key("globalMcsmStrength", "How strongly that global palette claims the sky, clouds and world lighting when no storm is present.", (double)0.0F, (double)1.0F, false, () -> globalMcsmStrength, (v) -> globalMcsmStrength = v);
       key("stormCloudCoverage", "How much of the sky around the storm the deck covers.", 0.25, (double)2.0F, false, () -> stormCloudCoverage, (v) -> stormCloudCoverage = v);
       key("stormCloudAltitude", "Push the whole deck up or down.", -40.0, (double)40.0F, false, () -> stormCloudAltitude, (v) -> stormCloudAltitude = v);
       key("stormCloudPaletteMix", "How much the deck follows the phase palette versus your manual cloud colour.", (double)0.0F, (double)1.0F, false, () -> stormCloudPaletteMix, (v) -> stormCloudPaletteMix = v);
