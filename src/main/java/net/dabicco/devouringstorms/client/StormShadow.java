@@ -60,8 +60,29 @@ public final class StormShadow {
       return t * t * (3.0F - 2.0F * t);
    }
 
+   private static float shadowPaletteBlend(double phase) {
+      float t = Mth.clamp((float)((phase - 4.45) / 1.35), 0.0F, 1.0F);
+      t = t * t * (3.0F - 2.0F * t);
+      return DevouringStormsClientConfig.phaseFogPalettes ? t * StormPalettes.strength() : 0.0F;
+   }
+
    private static float shadowTint(double phase, float early, double late) {
       return Mth.lerp(latePurpleShift(phase), early, (float)late);
+   }
+
+   private static void shadowColor(double phase, float[] out) {
+      float baseR = shadowTint(phase, 0.36F, DevouringStormsClientConfig.stormShadowR);
+      float baseG = shadowTint(phase, 0.37F, DevouringStormsClientConfig.stormShadowG);
+      float baseB = shadowTint(phase, 0.40F, DevouringStormsClientConfig.stormShadowB);
+      float paletteMix = shadowPaletteBlend(phase);
+      float[] cloud = StormPalettes.cloudColor(phase, new float[3]);
+      float[] sky = StormPalettes.skyColor(phase, new float[3]);
+      float paletteR = Mth.clamp(0.18F + cloud[0] * 0.58F + sky[0] * 0.16F, 0.0F, 1.0F);
+      float paletteG = Mth.clamp(0.17F + cloud[1] * 0.50F + sky[1] * 0.10F, 0.0F, 1.0F);
+      float paletteB = Mth.clamp(0.26F + cloud[2] * 0.72F + sky[2] * 0.18F, 0.0F, 1.0F);
+      out[0] = Mth.lerp(paletteMix, baseR, paletteR);
+      out[1] = Mth.lerp(paletteMix, baseG, paletteG);
+      out[2] = Mth.lerp(paletteMix, baseB, paletteB);
    }
 
    private static void updateCameraShadow(Vec3 eye, Vec3 sun, Vec3 middle, float extent, float strength) {
@@ -190,10 +211,9 @@ public final class StormShadow {
                                  try {
                                     int size = (new Std140SizeCalculator()).putMat4f().putMat4f().putVec4().putMat4f().putVec4().putVec4().putMat4f().putVec4().get();
                                     ByteBuffer data = staging(size);
-                                    float shadowR = shadowTint(nearest.getPhase(), 0.36F, DevouringStormsClientConfig.stormShadowR);
-                                    float shadowG = shadowTint(nearest.getPhase(), 0.37F, DevouringStormsClientConfig.stormShadowG);
-                                    float shadowB = shadowTint(nearest.getPhase(), 0.40F, DevouringStormsClientConfig.stormShadowB);
-                                    Std140Builder.intoBuffer(data).putMat4f(invViewProj).putMat4f(StormShadowMap.lightViewProj()).putVec4(strength * altitude, 0.0015F, 1.0F / StormShadowMap.resolution(), StormShadowMap.hasGround() ? 1.0F : 0.0F).putMat4f(viewProj).putVec4((float)sun.x, (float)sun.y, (float)sun.z, DevouringStormsClientConfig.stormSelfShadow ? 1.0F : 0.0F).putVec4(shadowR, shadowG, shadowB, DevouringStormsClientConfig.stormShadow ? 1.0F : 0.0F).putMat4f(StormShadowMap.groundViewProj()).putVec4((float)DevouringStormsClientConfig.stormShadingContrast, DevouringStormsClientConfig.stormShadowSoftEdge ? 1.0F : 0.0F, 0.0F, 0.0F);
+                                    float[] shadow = new float[3];
+                                    shadowColor(nearest.getPhase(), shadow);
+                                    Std140Builder.intoBuffer(data).putMat4f(invViewProj).putMat4f(StormShadowMap.lightViewProj()).putVec4(strength * altitude, 0.0015F, 1.0F / StormShadowMap.resolution(), StormShadowMap.hasGround() ? 1.0F : 0.0F).putMat4f(viewProj).putVec4((float)sun.x, (float)sun.y, (float)sun.z, DevouringStormsClientConfig.stormSelfShadow ? 1.0F : 0.0F).putVec4(shadow[0], shadow[1], shadow[2], DevouringStormsClientConfig.stormShadow ? 1.0F : 0.0F).putMat4f(StormShadowMap.groundViewProj()).putVec4((float)DevouringStormsClientConfig.stormShadingContrast, DevouringStormsClientConfig.stormShadowSoftEdge ? 1.0F : 0.0F, 0.0F, 0.0F);
                                     data.rewind();
                                     GpuBuffer ubo = GpuBufferPool.write("dabyws shadow cfg", 128, data);
                                     RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "dabyws storm shadow", scene.getColorTextureView(), Optional.empty());

@@ -602,7 +602,7 @@ public class WitherStormConfigScreen extends Screen {
       }
 
       String[] var10001 = DevouringStormsClientConfig.PRESET_LABELS;
-      this.addRowWidget(WitherStormConfigScreen.Row.button("Preset: " + var10001[Mth.clamp(this.presetSelection, 0, DevouringStormsClientConfig.PRESET_LABELS.length - 1)], "A whole look in one setting. MCSM is the default. Legacy Java is the older, brighter look. Changing anything a preset covers drops you to Custom.", () -> {
+      this.addRowWidget(WitherStormConfigScreen.Row.button("Preset: " + var10001[Mth.clamp(this.presetSelection, 0, DevouringStormsClientConfig.PRESET_LABELS.length - 1)], "A whole look in one setting. MCSM OG is the built-in cloud, texture and model-facing preset. Legacy Java is the older, brighter look. Changing anything a preset covers drops you to Custom.", () -> {
          this.presetPickerOpen = true;
          this.rebuild();
       }));
@@ -613,13 +613,13 @@ public class WitherStormConfigScreen extends Screen {
             this.pendingPreset = this.presetSelection;
             this.rebuild();
          } else {
-            this.setStatus("Pick MCSM or Legacy Java first. Custom is just your own settings", -16307);
+            this.setStatus("Pick MCSM OG or Legacy Java first. Custom is just your own settings", -16307);
          }
 
       }));
       this.header("Storm Rendering");
-      this.clientRow("stormSkin", "Storm Skin", (BooleanSupplier)null);
-      this.clientRow("legacyHeads", "Legacy Heads", (BooleanSupplier)null);
+      this.clientRow("stormSkin", "OG Textures", (BooleanSupplier)null);
+      this.clientRow("legacyHeads", "Old Simplified Heads", (BooleanSupplier)null);
       this.clientRow("distantStorms", "Distant Storms", (BooleanSupplier)null);
       this.clientRow("distantFog", "Distant Storm Haze", (BooleanSupplier)null);
       this.clientRow("clusterVolumetricLighting", "Volumetric Cluster Lighting", (BooleanSupplier)null);

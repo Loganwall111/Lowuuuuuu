@@ -18,13 +18,15 @@ import net.minecraft.world.phys.Vec3;
  *
  * The user asked for two things this pass:
  *  - the deck should read as MCSM's chunky slabs instead of vanilla clouds
- *  - those slabs should carry a slightly white inner body rather than being
- *    flatly dyed all the way through, while only turning visibly purple once
- *    late phase 5 starts to drift that way.
+ *  - those slabs should carry a pink-leaning white inner body plus the long
+ *    hanging cloud legs seen in the references, fading away inside themselves
+ *    instead of ending as hard flat bars.
  *
  * We therefore draw each slab as a tinted outer shell plus a smaller brighter
- * inner sheet, and a separate upper-sky canopy now fills the top of the sky so
- * the storm colour reaches full strength without requiring manual config tweaks.
+ * inner sheet, then hang translucent crossed curtains from many slabs so the
+ * cloud mass trails downward in soft square legs. A separate upper-sky canopy
+ * still fills the top of the sky so the storm colour reaches full strength
+ * without requiring manual config tweaks.
  */
 public final class StormCloudDeck {
    static final Identifier SLAB = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/mcsm_cloud.png");
@@ -56,18 +58,18 @@ public final class StormCloudDeck {
 
    static void colorsForPhase(float phase, float[] outer, float[] inner) {
       float[] tint = StormPalettes.cloudColor(phase, new float[3]);
-      float purple = smooth(phase, 5.38F, 5.78F);
+      float purple = smooth(phase, 5.34F, 5.76F);
       float cataclysm = smooth(phase, 5.90F, 6.18F);
-      float purpleR = Mth.lerp(cataclysm, 0.42F, 0.19F);
-      float purpleG = Mth.lerp(cataclysm, 0.34F, 0.13F);
-      float purpleB = Mth.lerp(cataclysm, 0.55F, 0.30F);
+      float purpleR = Mth.lerp(cataclysm, 0.54F, 0.24F);
+      float purpleG = Mth.lerp(cataclysm, 0.41F, 0.16F);
+      float purpleB = Mth.lerp(cataclysm, 0.63F, 0.32F);
       outer[0] = Mth.lerp(purple, tint[0], purpleR);
       outer[1] = Mth.lerp(purple, tint[1], purpleG);
       outer[2] = Mth.lerp(purple, tint[2], purpleB);
 
-      float whiteMix = Mth.lerp(cataclysm, 0.72F, 0.35F);
-      inner[0] = Mth.lerp(whiteMix, outer[0], 0.96F);
-      inner[1] = Mth.lerp(whiteMix, outer[1], 0.97F);
+      float whiteMix = Mth.lerp(cataclysm, 0.84F, 0.44F);
+      inner[0] = Mth.lerp(whiteMix, outer[0], 0.98F);
+      inner[1] = Mth.lerp(whiteMix, outer[1], 0.985F);
       inner[2] = Mth.lerp(whiteMix, outer[2], 1.0F);
    }
 
@@ -97,6 +99,55 @@ public final class StormCloudDeck {
       vertex(consumer, pose, x - ux + vx, y, z - uz + vz, 0.0F, 1.0F, r, g, b, a);
    }
 
+   static void hangingLeg(
+      VertexConsumer consumer,
+      PoseStack.Pose pose,
+      double x,
+      double topY,
+      double z,
+      double halfSpan,
+      double rot,
+      double height,
+      int r,
+      int g,
+      int b,
+      int topA,
+      int bottomA
+   ) {
+      double cosR = Math.cos(rot);
+      double sinR = Math.sin(rot);
+      double ux = cosR * halfSpan;
+      double uz = sinR * halfSpan;
+      legVertex(consumer, pose, x - ux, topY, z - uz, 0.0F, 0.0F, r, g, b, topA);
+      legVertex(consumer, pose, x + ux, topY, z + uz, 1.0F, 0.0F, r, g, b, topA);
+      legVertex(consumer, pose, x + ux, topY - height, z + uz, 1.0F, 1.0F, r, g, b, bottomA);
+      legVertex(consumer, pose, x - ux, topY - height, z - uz, 0.0F, 1.0F, r, g, b, bottomA);
+   }
+
+   static void crossLegs(
+      VertexConsumer consumer,
+      PoseStack.Pose pose,
+      double x,
+      double topY,
+      double z,
+      double halfSpan,
+      double height,
+      double rot,
+      int outerR,
+      int outerG,
+      int outerB,
+      int innerR,
+      int innerG,
+      int innerB,
+      int outerA,
+      int innerA
+   ) {
+      hangingLeg(consumer, pose, x, topY, z, halfSpan, rot, height, outerR, outerG, outerB, outerA, 0);
+      hangingLeg(consumer, pose, x, topY, z, halfSpan * 0.92, rot + Math.PI / 2.0, height * 0.92, outerR, outerG, outerB, (int)(outerA * 0.86F), 0);
+      hangingLeg(consumer, pose, x, topY + 0.08, z, halfSpan * 0.56, rot, height * 0.76, innerR, innerG, innerB, innerA, 0);
+      hangingLeg(consumer, pose, x, topY + 0.08, z, halfSpan * 0.48, rot + Math.PI / 2.0, height * 0.72, innerR, innerG, innerB, (int)(innerA * 0.82F), 0);
+   }
+
    public static void submit(LevelRenderContext ctx) {
       Minecraft mc = Minecraft.getInstance();
       int mode = (int)Math.round(DevouringStormsClientConfig.stormCloudDeck);
@@ -114,7 +165,7 @@ public final class StormCloudDeck {
       PoseStack poseStack = ctx.poseStack();
       SubmitNodeCollector collector = ctx.submitNodeCollector();
       float paletteClaim = Mth.clamp(StormSkyDarken.paletteBlend(), 0.0F, 1.0F);
-      float baseAlpha = (mode >= 2 ? 0.18F : 0.12F) * Mth.lerp(paletteClaim, 0.82F, 1.18F);
+      float baseAlpha = (mode >= 2 ? 0.21F : 0.14F) * Mth.lerp(paletteClaim, 0.82F, 1.24F);
 
       collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(SLAB), (pose, consumer) -> {
          float[] outer = new float[3];
@@ -153,7 +204,7 @@ public final class StormCloudDeck {
                float distFade = dist < 60.0 ? (float)(dist / 60.0) : Mth.clamp(1.0F - (float)((dist - 650.0) / 250.0), 0.0F, 1.0F);
                float alpha = baseAlpha * phaseRamp * (0.58F + 0.42F * hash01(d.entityId, i, 8)) * distFade;
                int outerA = (int)(alpha * 255.0F);
-               int innerA = (int)(outerA * 0.62F);
+               int innerA = (int)(outerA * 0.68F);
                if (outerA <= 2) {
                   continue;
                }
@@ -163,6 +214,19 @@ public final class StormCloudDeck {
                double rot = hash01(d.entityId, i, 11) * Math.PI * 2.0 + nowSec * drift * 1.7;
                slab(consumer, pose, x, y, z, halfLen, halfWid, rot, or, og, ob, outerA);
                slab(consumer, pose, x, y + 0.12, z, halfLen * 0.72, halfWid * 0.62, rot, ir, ig, ib, innerA);
+
+               float legRamp = smooth(d.phase, 4.55F, 5.35F);
+               if (legRamp > 0.02F && hash01(d.entityId, i, 12) < (mode >= 2 ? 0.84F : 0.58F)) {
+                  double along = (hash01(d.entityId, i, 13) - 0.5) * halfLen * 0.78;
+                  double across = (hash01(d.entityId, i, 14) - 0.5) * halfWid * 0.60;
+                  double legX = x + Math.cos(rot) * along - Math.sin(rot) * across;
+                  double legZ = z + Math.sin(rot) * along + Math.cos(rot) * across;
+                  double legHeight = (12.0 + 48.0 * hash01(d.entityId, i, 15)) * (0.88 + 0.42 * growthScale) * (0.55 + 0.45 * legRamp);
+                  double legSpan = Math.max(5.5, Math.min(halfLen, halfWid) * (0.42 + 0.34 * hash01(d.entityId, i, 16)));
+                  int legOuterA = (int)(outerA * (0.44F + 0.22F * legRamp));
+                  int legInnerA = (int)(innerA * (0.42F + 0.24F * legRamp));
+                  crossLegs(consumer, pose, legX, y - 0.06, legZ, legSpan, legHeight, rot, or, og, ob, ir, ig, ib, legOuterA, legInnerA);
+               }
             }
          }
       });
@@ -170,5 +234,9 @@ public final class StormCloudDeck {
 
    private static void vertex(VertexConsumer consumer, PoseStack.Pose pose, double x, double y, double z, float u, float v, int r, int g, int b, int a) {
       consumer.addVertex(pose, (float)x, (float)y, (float)z).setColor(r, g, b, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
+   }
+
+   private static void legVertex(VertexConsumer consumer, PoseStack.Pose pose, double x, double y, double z, float u, float v, int r, int g, int b, int a) {
+      consumer.addVertex(pose, (float)x, (float)y, (float)z).setColor(r, g, b, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 0.0F, 1.0F);
    }
 }
