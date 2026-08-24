@@ -16,17 +16,10 @@ import net.minecraft.world.phys.Vec3;
  * StormCloudDeck — the blocky Story-Mode weather mass that replaces vanilla
  * clouds around an active storm.
  *
- * The user asked for two things this pass:
- *  - the deck should read as MCSM's chunky slabs instead of vanilla clouds
- *  - those slabs should carry a pink-leaning white inner body plus the long
- *    hanging cloud legs seen in the references, fading away inside themselves
- *    instead of ending as hard flat bars.
- *
- * We therefore draw each slab as a tinted outer shell plus a smaller brighter
- * inner sheet, then hang translucent crossed curtains from many slabs so the
- * cloud mass trails downward in soft square legs. A separate upper-sky canopy
- * still fills the top of the sky so the storm colour reaches full strength
- * without requiring manual config tweaks.
+ * The latest pass drops the old floating-strip look and instead builds each
+ * storm cloud from shallow voxel prisms: chunky tops, darker sides, and softer
+ * semi-transparent undersides so the mass feels like native Minecraft clouds
+ * that have been storm-tinted, not billboard slabs hanging in the air.
  */
 public final class StormCloudDeck {
    static final Identifier SLAB = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/mcsm_cloud.png");
@@ -73,7 +66,11 @@ public final class StormCloudDeck {
       inner[2] = Mth.lerp(whiteMix, outer[2], 1.0F);
    }
 
-   static void slab(
+   static void slab(VertexConsumer consumer, PoseStack.Pose pose, double x, double y, double z, double halfLen, double halfWid, double rot, int r, int g, int b, int a) {
+      cloudPrism(consumer, pose, x, y, z, halfLen, halfWid, 0.14, rot, r, g, b, a, a, a);
+   }
+
+   static void cloudPrism(
       VertexConsumer consumer,
       PoseStack.Pose pose,
       double x,
@@ -81,71 +78,45 @@ public final class StormCloudDeck {
       double z,
       double halfLen,
       double halfWid,
+      double halfTall,
       double rot,
       int r,
       int g,
       int b,
-      int a
+      int topA,
+      int sideA,
+      int bottomA
    ) {
+      if (topA <= 1 || halfLen <= 0.01 || halfWid <= 0.01 || halfTall <= 0.01) {
+         return;
+      }
+
       double cosR = Math.cos(rot);
       double sinR = Math.sin(rot);
       double ux = cosR * halfLen;
       double uz = sinR * halfLen;
       double vx = -sinR * halfWid;
       double vz = cosR * halfWid;
-      vertex(consumer, pose, x - ux - vx, y, z - uz - vz, 0.0F, 0.0F, r, g, b, a);
-      vertex(consumer, pose, x + ux - vx, y, z + uz - vz, 1.0F, 0.0F, r, g, b, a);
-      vertex(consumer, pose, x + ux + vx, y, z + uz + vz, 1.0F, 1.0F, r, g, b, a);
-      vertex(consumer, pose, x - ux + vx, y, z - uz + vz, 0.0F, 1.0F, r, g, b, a);
-   }
 
-   static void hangingLeg(
-      VertexConsumer consumer,
-      PoseStack.Pose pose,
-      double x,
-      double topY,
-      double z,
-      double halfSpan,
-      double rot,
-      double height,
-      int r,
-      int g,
-      int b,
-      int topA,
-      int bottomA
-   ) {
-      double cosR = Math.cos(rot);
-      double sinR = Math.sin(rot);
-      double ux = cosR * halfSpan;
-      double uz = sinR * halfSpan;
-      legVertex(consumer, pose, x - ux, topY, z - uz, 0.0F, 0.0F, r, g, b, topA);
-      legVertex(consumer, pose, x + ux, topY, z + uz, 1.0F, 0.0F, r, g, b, topA);
-      legVertex(consumer, pose, x + ux, topY - height, z + uz, 1.0F, 1.0F, r, g, b, bottomA);
-      legVertex(consumer, pose, x - ux, topY - height, z - uz, 0.0F, 1.0F, r, g, b, bottomA);
-   }
+      Vec3 t0 = new Vec3(x - ux - vx, y + halfTall, z - uz - vz);
+      Vec3 t1 = new Vec3(x + ux - vx, y + halfTall, z + uz - vz);
+      Vec3 t2 = new Vec3(x + ux + vx, y + halfTall, z + uz + vz);
+      Vec3 t3 = new Vec3(x - ux + vx, y + halfTall, z - uz + vz);
+      Vec3 b0 = new Vec3(x - ux - vx, y - halfTall, z - uz - vz);
+      Vec3 b1 = new Vec3(x + ux - vx, y - halfTall, z + uz - vz);
+      Vec3 b2 = new Vec3(x + ux + vx, y - halfTall, z + uz + vz);
+      Vec3 b3 = new Vec3(x - ux + vx, y - halfTall, z - uz + vz);
 
-   static void crossLegs(
-      VertexConsumer consumer,
-      PoseStack.Pose pose,
-      double x,
-      double topY,
-      double z,
-      double halfSpan,
-      double height,
-      double rot,
-      int outerR,
-      int outerG,
-      int outerB,
-      int innerR,
-      int innerG,
-      int innerB,
-      int outerA,
-      int innerA
-   ) {
-      hangingLeg(consumer, pose, x, topY, z, halfSpan, rot, height, outerR, outerG, outerB, outerA, 0);
-      hangingLeg(consumer, pose, x, topY, z, halfSpan * 0.92, rot + Math.PI / 2.0, height * 0.92, outerR, outerG, outerB, (int)(outerA * 0.86F), 0);
-      hangingLeg(consumer, pose, x, topY + 0.08, z, halfSpan * 0.56, rot, height * 0.76, innerR, innerG, innerB, innerA, 0);
-      hangingLeg(consumer, pose, x, topY + 0.08, z, halfSpan * 0.48, rot + Math.PI / 2.0, height * 0.72, innerR, innerG, innerB, (int)(innerA * 0.82F), 0);
+      face(consumer, pose, t0, t1, t2, t3, r, g, b, topA);
+      if (bottomA > 1) {
+         face(consumer, pose, b3, b2, b1, b0, r, g, b, bottomA);
+      }
+      if (sideA > 1) {
+         face(consumer, pose, t0, b0, b1, t1, r, g, b, sideA);
+         face(consumer, pose, t1, b1, b2, t2, r, g, b, sideA);
+         face(consumer, pose, t2, b2, b3, t3, r, g, b, sideA);
+         face(consumer, pose, t3, b3, b0, t0, r, g, b, sideA);
+      }
    }
 
    private static void renderField(
@@ -169,6 +140,7 @@ public final class StormCloudDeck {
       if (phase < 4.25F || presence <= 0.01F) {
          return;
       }
+
       float phaseRamp = smooth(phase, 4.25F, 5.05F);
       float growthScale = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(phase, expansionPhase));
       double spread = (130.0 + 90.0 * Math.min(phase, 6.0F)) * (0.9 + 0.45 * growthScale);
@@ -195,10 +167,11 @@ public final class StormCloudDeck {
          if (dist > MAX_VIEW_DIST) {
             continue;
          }
+
          float distFade = dist < 60.0 ? (float)(dist / 60.0) : Mth.clamp(1.0F - (float)((dist - 650.0) / 250.0), 0.0F, 1.0F);
          float alpha = baseAlpha * presence * phaseRamp * (0.58F + 0.42F * hash01(entityId, i, 8)) * distFade;
          int outerA = (int)(alpha * 255.0F);
-         int innerA = (int)(outerA * 0.68F);
+         int innerA = (int)(outerA * 0.70F);
          if (outerA <= 2) {
             continue;
          }
@@ -206,20 +179,34 @@ public final class StormCloudDeck {
          double halfLen = (24.0 + 68.0 * hash01(entityId, i, 9)) * (0.95 + 0.32 * growthScale);
          double halfWid = (10.0 + 26.0 * hash01(entityId, i, 10)) * (0.95 + 0.26 * growthScale);
          double rot = hash01(entityId, i, 11) * Math.PI * 2.0 + nowSec * drift * 1.7;
-         slab(consumer, pose, x, y, z, halfLen, halfWid, rot, or, og, ob, outerA);
-         slab(consumer, pose, x, y + 0.12, z, halfLen * 0.72, halfWid * 0.62, rot, ir, ig, ib, innerA);
+         double halfTall = (3.5 + 10.0 * hash01(entityId, i, 12)) * (0.95 + 0.22 * growthScale);
+         int outerSideA = (int)(outerA * 0.88F);
+         int outerBottomA = (int)(outerA * 0.36F);
+         cloudPrism(consumer, pose, x, y, z, halfLen, halfWid, halfTall, rot, or, og, ob, outerA, outerSideA, outerBottomA);
+
+         double innerAlong = (hash01(entityId, i, 13) - 0.5) * halfLen * 0.18;
+         double innerAcross = (hash01(entityId, i, 14) - 0.5) * halfWid * 0.16;
+         double innerX = x + Math.cos(rot) * innerAlong - Math.sin(rot) * innerAcross;
+         double innerZ = z + Math.sin(rot) * innerAlong + Math.cos(rot) * innerAcross;
+         cloudPrism(consumer, pose, innerX, y + halfTall * 0.24, innerZ, halfLen * 0.64, halfWid * 0.62, halfTall * 0.58, rot, ir, ig, ib, innerA, (int)(innerA * 0.84F), (int)(innerA * 0.20F));
 
          float legRamp = smooth(phase, 4.55F, 5.35F);
-         if (legRamp > 0.02F && hash01(entityId, i, 12) < (mode >= 2 ? 0.84F : 0.58F)) {
-            double along = (hash01(entityId, i, 13) - 0.5) * halfLen * 0.78;
-            double across = (hash01(entityId, i, 14) - 0.5) * halfWid * 0.60;
-            double legX = x + Math.cos(rot) * along - Math.sin(rot) * across;
-            double legZ = z + Math.sin(rot) * along + Math.cos(rot) * across;
-            double legHeight = (12.0 + 48.0 * hash01(entityId, i, 15)) * (0.88 + 0.42 * growthScale) * (0.55 + 0.45 * legRamp);
-            double legSpan = Math.max(5.5, Math.min(halfLen, halfWid) * (0.42 + 0.34 * hash01(entityId, i, 16)));
-            int legOuterA = (int)(outerA * (0.44F + 0.22F * legRamp));
-            int legInnerA = (int)(innerA * (0.42F + 0.24F * legRamp));
-            crossLegs(consumer, pose, legX, y - 0.06, legZ, legSpan, legHeight, rot, or, og, ob, ir, ig, ib, legOuterA, legInnerA);
+         if (legRamp > 0.02F && hash01(entityId, i, 15) < (mode >= 2 ? 0.92F : 0.72F)) {
+            int drops = 1 + (hash01(entityId, i, 16) < 0.42F ? 1 : 0) + (mode >= 2 && hash01(entityId, i, 17) < 0.18F ? 1 : 0);
+            for (int part = 0; part < drops; part++) {
+               double along = (hash01(entityId, i, 18 + part * 3) - 0.5) * halfLen * 0.72;
+               double across = (hash01(entityId, i, 19 + part * 3) - 0.5) * halfWid * 0.68;
+               double dropX = x + Math.cos(rot) * along - Math.sin(rot) * across;
+               double dropZ = z + Math.sin(rot) * along + Math.cos(rot) * across;
+               double dropHalfLen = Math.max(5.0, halfLen * (0.16 + 0.16 * hash01(entityId, i, 30 + part)));
+               double dropHalfWid = Math.max(4.0, halfWid * (0.22 + 0.18 * hash01(entityId, i, 34 + part)));
+               double dropHalfTall = (3.0 + 9.0 * hash01(entityId, i, 38 + part)) * (0.84 + 0.34 * growthScale) * (0.55 + 0.45 * legRamp);
+               double dropY = y - halfTall - dropHalfTall * (0.70 + part * 1.16);
+               int dropA = (int)(outerA * (0.56F + 0.18F * legRamp));
+               int dropInnerA = (int)(innerA * (0.42F + 0.20F * legRamp));
+               cloudPrism(consumer, pose, dropX, dropY, dropZ, dropHalfLen, dropHalfWid, dropHalfTall, rot, or, og, ob, dropA, (int)(dropA * 0.84F), (int)(dropA * 0.18F));
+               cloudPrism(consumer, pose, dropX, dropY + dropHalfTall * 0.22, dropZ, dropHalfLen * 0.58, dropHalfWid * 0.56, dropHalfTall * 0.50, rot, ir, ig, ib, dropInnerA, (int)(dropInnerA * 0.82F), (int)(dropInnerA * 0.12F));
+            }
          }
       }
    }
@@ -261,11 +248,20 @@ public final class StormCloudDeck {
       });
    }
 
-   private static void vertex(VertexConsumer consumer, PoseStack.Pose pose, double x, double y, double z, float u, float v, int r, int g, int b, int a) {
-      consumer.addVertex(pose, (float)x, (float)y, (float)z).setColor(r, g, b, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
+   private static void face(VertexConsumer consumer, PoseStack.Pose pose, Vec3 a, Vec3 b, Vec3 c, Vec3 d, int r, int g, int bl, int alpha) {
+      Vec3 normal = b.subtract(a).cross(c.subtract(a)).normalize();
+      vertex(consumer, pose, a, 0.0F, 0.0F, r, g, bl, alpha, normal);
+      vertex(consumer, pose, b, 1.0F, 0.0F, r, g, bl, alpha, normal);
+      vertex(consumer, pose, c, 1.0F, 1.0F, r, g, bl, alpha, normal);
+      vertex(consumer, pose, d, 0.0F, 1.0F, r, g, bl, alpha, normal);
    }
 
-   private static void legVertex(VertexConsumer consumer, PoseStack.Pose pose, double x, double y, double z, float u, float v, int r, int g, int b, int a) {
-      consumer.addVertex(pose, (float)x, (float)y, (float)z).setColor(r, g, b, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 0.0F, 1.0F);
+   private static void vertex(VertexConsumer consumer, PoseStack.Pose pose, Vec3 at, float u, float v, int r, int g, int b, int a, Vec3 normal) {
+      consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z)
+         .setColor(r, g, b, a)
+         .setUv(u, v)
+         .setOverlay(OverlayTexture.NO_OVERLAY)
+         .setLight(FULL_BRIGHT)
+         .setNormal(pose, (float)normal.x, (float)normal.y, (float)normal.z);
    }
 }

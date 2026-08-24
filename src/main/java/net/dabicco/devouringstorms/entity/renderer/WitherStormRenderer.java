@@ -810,12 +810,15 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    private static String stageShellName(WitherStormRenderState state) {
-      return state.phase4 && StormSkins.shaded() && DevouringStormsClientConfig.stormStageShells ? StormStageShells.shellForPhase(state.phase) : null;
+      return StormSkins.shaded() && DevouringStormsClientConfig.stormStageShells ? StormStageShells.shellForPhase(state.phase) : null;
    }
 
    private static float stageShellAlpha(WitherStormRenderState state) {
-      if (!StormSkins.shaded() || !DevouringStormsClientConfig.stormStageShells || !state.phase4) {
+      if (!StormSkins.shaded() || !DevouringStormsClientConfig.stormStageShells) {
          return 0.0F;
+      } else if (!state.phase4) {
+         float early = 0.34F + 0.18F * Mth.clamp((float)(state.phase / 3.0), 0.0F, 1.0F);
+         return early * state.collapseFade;
       } else {
          float ramp = Mth.clamp((float)((state.phase - 4.15) / 0.55), 0.0F, 1.0F);
          float devourerBoost = state.devourer ? 0.18F + 0.18F * StormPalettes.phaseAmount(state.phase, 6.0F, 6.25F) : 0.0F;

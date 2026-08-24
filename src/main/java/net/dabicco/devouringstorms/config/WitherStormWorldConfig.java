@@ -89,6 +89,7 @@ public class WitherStormWorldConfig extends SavedData {
    public int infiniteGrowth = 0;
    public int infiniteGrowthLocksStage = 1;
    public int infiniteGrowthSecondsPerPhase = 120;
+   public double infiniteGrowthSpeed = (double)1.0F;
    public double phaseCeiling = (double)0.0F;
    public int tentacleSlam = 1;
    public int tentacleSlamInterval = 260;
@@ -223,6 +224,7 @@ public class WitherStormWorldConfig extends SavedData {
       keyToggle("infiniteGrowth", "Experimental: keep increasing the storm's actual body expansion after phase 5 instead of letting the back growth and debris cloud plateau. Off by default.", (c) -> (double)c.infiniteGrowth, (c, v) -> c.infiniteGrowth = (int)v);
       keyToggle("infiniteGrowthLocksStage", "When Infinite Growth is on, keep phase 5 storms in phase 5 and phase 6 storms in phase 6 while their back growth, cube cloud and debris rings keep physically expanding. A Formidibomb can still force phase 5 into phase 6.", (c) -> (double)c.infiniteGrowthLocksStage, (c, v) -> c.infiniteGrowthLocksStage = (int)v);
       key("infiniteGrowthSecondsPerPhase", "When either infinite mode is on, how many seconds the storm should take to earn roughly one whole phase of passive growth on its own. With Infinite Growth, that same pace also drives the back and debris-cloud expansion.", (double)5.0F, (double)3600.0F, true, (c) -> (double)c.infiniteGrowthSecondsPerPhase, (c, v) -> c.infiniteGrowthSecondsPerPhase = (int)v);
+      key("infiniteGrowthSpeed", "Extra multiplier for late phase-5 / phase-6 outward growth. 1.0 = normal, lower slows the back-mass expansion, higher makes it spread much faster without auto-promoting phase 5 into phase 6.", 0.1, (double)10.0F, false, (c) -> c.infiniteGrowthSpeed, (c, v) -> c.infiniteGrowthSpeed = v);
       key("phaseCeiling", "Optional soft cap for Infinite Phases / Infinite Growth. Set this to 0 for truly uncapped growth; any positive value becomes the virtual phase cap for both numeric and physical expansion.", (double)0.0F, (double)9999.0F, true, (c) -> (double)c.phaseCeiling, (c, v) -> c.phaseCeiling = v);
       keyToggle("tentacleSlam", "The storm hammers its tentacles into the ground, caving in a crater and flinging everything nearby", (c) -> (double)c.tentacleSlam, (c, v) -> c.tentacleSlam = (int)v);
       key("tentacleSlamInterval", "Ticks between tentacle slams", (double)60.0F, (double)1200.0F, true, (c) -> (double)c.tentacleSlamInterval, (c, v) -> c.tentacleSlamInterval = (int)v);

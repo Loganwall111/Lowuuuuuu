@@ -41,8 +41,14 @@ public final class StormStageShells {
          return "stage_c_massive_shaded";
       } else if (phase >= 5.0) {
          return "stage_c_big_shaded";
+      } else if (phase >= 4.15) {
+         return "stage_c_small_shaded";
+      } else if (phase >= 1.6) {
+         return "stage_b_shaded";
+      } else if (phase >= 0.35) {
+         return "stage_b_forest_shaded";
       } else {
-         return phase >= 4.15 ? "stage_b_shaded" : null;
+         return null;
       }
    }
 
@@ -53,8 +59,12 @@ public final class StormStageShells {
          return 66.0F;
       } else if (phase >= 5.0) {
          return 64.0F;
+      } else if (phase >= 4.15) {
+         return 42.0F;
+      } else if (phase >= 1.6) {
+         return 22.0F;
       } else {
-         return 48.0F;
+         return 14.0F;
       }
    }
 
@@ -65,8 +75,12 @@ public final class StormStageShells {
          return 56.0F;
       } else if (phase >= 5.0) {
          return 50.0F;
+      } else if (phase >= 4.15) {
+         return 31.0F;
+      } else if (phase >= 1.6) {
+         return 15.0F;
       } else {
-         return 34.0F;
+         return 10.0F;
       }
    }
 

@@ -18,7 +18,9 @@ WINDOWS_SAFE_RENAMES = {
 }
 
 EXPORTS = {
+    "stage_b_forest_shaded": "src/main/resources/assets/devouringstorms/geo/Traced_shading_Textures/witherstormStageB Forest (with traced shading textures).bbmodel",
     "stage_b_shaded": "src/main/resources/assets/devouringstorms/geo/Traced_shading_Textures/witherstormStageB (with traced shading textures).bbmodel",
+    "stage_c_small_shaded": "src/main/resources/assets/devouringstorms/geo/Traced_shading_Textures/witherstormStageC_Small (with traced shading textures).bbmodel",
     "stage_c_big_shaded": "src/main/resources/assets/devouringstorms/geo/Traced_shading_Textures/witherstormStageC_Big (with traced shading textures).bbmodel",
     "stage_c_massive_shaded": "src/main/resources/assets/devouringstorms/geo/Traced_shading_Textures/witherstormStageC_Massive (with traced shading textures).bbmodel",
     "stage_d_center_massive_shaded": "src/main/resources/assets/devouringstorms/geo/Traced_shading_Textures/witherstormStageD_Center_Massive.bbmodel",

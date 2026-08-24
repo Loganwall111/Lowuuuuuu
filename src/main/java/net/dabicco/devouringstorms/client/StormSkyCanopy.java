@@ -91,8 +91,9 @@ public final class StormSkyCanopy {
          if (outerA <= 2) {
             continue;
          }
-         StormCloudDeck.slab(consumer, pose, anchorX, y, anchorZ, halfLen, halfWid, rot, or, og, ob, outerA);
-         StormCloudDeck.slab(consumer, pose, anchorX, y + 0.2 + layer * 0.03, anchorZ, halfLen * 0.72, halfWid * 0.66, rot, ir, ig, ib, innerA);
+         double halfTall = 8.0 + layer * 2.6;
+         StormCloudDeck.cloudPrism(consumer, pose, anchorX, y, anchorZ, halfLen, halfWid, halfTall, rot, or, og, ob, outerA, (int)(outerA * 0.84F), (int)(outerA * 0.22F));
+         StormCloudDeck.cloudPrism(consumer, pose, anchorX, y + halfTall * 0.24 + layer * 0.03, anchorZ, halfLen * 0.72, halfWid * 0.66, halfTall * 0.58, rot, ir, ig, ib, innerA, (int)(innerA * 0.78F), (int)(innerA * 0.10F));
       }
    }
 

@@ -1282,6 +1282,16 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
    }
 
+   private void broadcastSplitShockwave(ServerLevel server) {
+      Vec3 focus = this.position().add(0.0, this.getBbHeight() * 0.34, 0.0);
+      StormPulsePayload payload = new StormPulsePayload(this.getId(), focus.x, focus.y, focus.z, 6.0F, 2);
+      for (ServerPlayer player : PlayerLookup.level(server)) {
+         ServerPlayNetworking.send(player, payload);
+      }
+      server.playSound((Entity)null, focus.x, focus.y, focus.z, ModSounds.CB_POWER, SoundSource.HOSTILE, 6.0F, 0.72F);
+      server.playSound((Entity)null, focus.x, focus.y, focus.z, ModSounds.STORM_THUMP_LARGE, SoundSource.HOSTILE, 5.6F, 0.58F);
+   }
+
    public float collapseTicks() {
       long start = this.getCollapseGameTime();
       return start < 0L ? -1.0F : (float)(this.level().getGameTime() - start);
@@ -1303,6 +1313,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             this.expansionPhase = carriedExpansion;
             this.syncExpansionPhase();
          }
+         this.broadcastSplitShockwave(server);
          this.maybeTriggerCommandPulse(server);
          this.roarAllHeads(true);
          server.getServer().getPlayerList().getPlayers().forEach((player) -> player.sendSystemMessage(Component.literal("Phase 6+ is very experimental and under heavy development. Bug reports are appreciated, though.").withStyle(ChatFormatting.RED)));
@@ -1624,8 +1635,16 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       return var10000;
    }
 
+   private static int applyInfiniteGrowthSpeed(int amount, WitherStormWorldConfig config, double phase) {
+      if (amount <= 0 || config.infiniteGrowth == 0 || phase < 5.0) {
+         return amount;
+      }
+
+      return Math.max(1, (int)Math.round((double)amount * config.infiniteGrowthSpeed));
+   }
+
    private boolean infiniteGrowthLocksStage(WitherStormWorldConfig config) {
-      return config.infiniteGrowth != 0 && config.infiniteGrowthLocksStage != 0 && config.infinitePhases == 0 && this.phase >= (double)5.0F;
+      return config.infiniteGrowth != 0 && config.infiniteGrowthLocksStage != 0 && this.phase >= (double)5.0F;
    }
 
    private void syncExpansionPhase() {
@@ -1660,6 +1679,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             amount = Math.max(1, (int)Math.round((double)amount * config.instantGrowthRate));
          }
 
+         amount = applyInfiniteGrowthSpeed(amount, config, this.phase);
          int mainPhase = (int)Math.floor(this.phase);
          int requirement = growthRequirement(mainPhase, config);
          double phaseBefore = this.phase;
