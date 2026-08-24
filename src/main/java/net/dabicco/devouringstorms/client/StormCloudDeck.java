@@ -37,7 +37,12 @@ public final class StormCloudDeck {
 
    /** The MCSM clouds are the game's default cloud look, even with no storm anywhere. */
    public static boolean ambientCloudsActive() {
-      return DevouringStormsClientConfig.ambientMcsmClouds;
+      if (!DevouringStormsClientConfig.ambientMcsmClouds) {
+         return false;
+      }
+      // Only sky dimensions get the always-on deck - never the Nether's ceiling.
+      Minecraft mc = Minecraft.getInstance();
+      return mc.level != null && mc.level.dimensionType().hasSkyLight();
    }
 
    /** cheap deterministic hash -> [0,1) */

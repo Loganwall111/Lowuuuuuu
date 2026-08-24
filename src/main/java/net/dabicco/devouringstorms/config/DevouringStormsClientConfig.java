@@ -191,7 +191,7 @@ public class DevouringStormsClientConfig {
    public static final String[] NAME_STYLE_LABELS = new String[]{"Classic", "Cracker's", "Legacy"};
    public static final Map<String, Key> KEYS = new LinkedHashMap();
    private static final Map<String, Double> DEFAULTS = new LinkedHashMap();
-   private static final int CONFIG_VERSION = 13;
+   private static final int CONFIG_VERSION = 14;
    private static int loadedVersion;
    public static final String RESET_VERSION = "Beta 1.9.33";
    private static final Map<String, Double> PRESET_MCSM;
@@ -365,7 +365,7 @@ public class DevouringStormsClientConfig {
          if (loadedVersion < 13) {
             resetDefaults();
             wipedByRestructure = true;
-            loadedVersion = 13;
+            loadedVersion = 14;
             save();
          } else {
             if (loadedVersion < 3) {
@@ -397,7 +397,16 @@ public class DevouringStormsClientConfig {
                ((Key)KEYS.get("bloomMaskToStorm")).set().accept(defaultOf("bloomMaskToStorm"));
             }
 
-            loadedVersion = 13;
+            if (loadedVersion < 14) {
+               // Batch 17 master pass: mint-cyan teeth emissive, purple eyes,
+               // the legacy flat glare wall off by default, traced stage shells
+               // on for the shaded preset, and the always-on MCSM cloud deck.
+               for(String name : new String[]{"eyeColorR", "eyeColorG", "eyeColorB", "beamColorR", "beamColorG", "beamColorB"}) {
+                  ((Key)KEYS.get(name)).set().accept(defaultOf(name));
+               }
+            }
+
+            loadedVersion = 14;
             save();
          }
       }
@@ -412,7 +421,7 @@ public class DevouringStormsClientConfig {
 
       json.addProperty("effectsPreset", effectsPreset);
       json.addProperty("configOpened", configOpened);
-      json.addProperty("configVersion", 13);
+      json.addProperty("configVersion", 14);
 
       try {
          Files.writeString(file(), GSON.toJson(json));
@@ -626,7 +635,7 @@ public class DevouringStormsClientConfig {
          DEFAULTS.put(k.name(), k.get().getAsDouble());
       }
 
-      loadedVersion = 13;
+      loadedVersion = 14;
       PRESET_MCSM = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStageShells", (double)0.0F), Map.entry("legacyHeads", (double)0.0F), Map.entry("filledSubphases", (double)1.0F), Map.entry("flatbackFlipFix", (double)1.0F), Map.entry("mirrorBackDetail", (double)1.0F), Map.entry("stormModelShading", (double)1.0F), Map.entry("stormShadow", (double)1.0F), Map.entry("stormSelfShadow", (double)1.0F), Map.entry("stormShadowStrength", 0.60), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("stormCloudCoverage", 1.48), Map.entry("stormCloudPaletteMix", (double)1.0F), Map.entry("skyDarkenIntensity", 0.84), Map.entry("skyDarkenLighting", 0.82), Map.entry("cloudDarkenStrength", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)0.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.8), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
       PRESET_LEGACY = Map.of("reverseShading", (double)0.0F, "bloomStrength", (double)1.0F, "beamOpacity", 0.74, "beamColorR", 0.52, "beamColorG", 0.46, "beamColorB", (double)1.0F);
       PRESET_CINEMATIC = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)2.0F), Map.entry("stormStageShells", (double)1.0F), Map.entry("legacyHeads", (double)0.0F), Map.entry("filledSubphases", (double)1.0F), Map.entry("flatbackFlipFix", (double)1.0F), Map.entry("mirrorBackDetail", (double)1.0F), Map.entry("stormModelShading", (double)1.0F), Map.entry("stormShadow", (double)1.0F), Map.entry("stormSelfShadow", (double)1.0F), Map.entry("stormShadowStrength", 0.68), Map.entry("stormStars", (double)2.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("stormCloudCoverage", 1.62), Map.entry("stormCloudPaletteMix", (double)1.0F), Map.entry("skyDarkenIntensity", 0.9), Map.entry("skyDarkenLighting", 0.86), Map.entry("cloudDarkenStrength", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("pulseStrength", 1.3), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("haloStrength", 1.2), Map.entry("blackGlare", (double)0.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("ejectaRate", 1.4), Map.entry("pulseHeartbeat", (double)1.0F), Map.entry("debrisSize", (double)2.0F), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));

@@ -1,7 +1,7 @@
 # Devouring Storms — Video Accuracy & Completion Status
 
-Last updated: 2026-08-23
-Branch: `arena/01a02fba-lowuuuuuu`
+Last updated: 2026-08-24
+Branch: `arena/01a0354e-lowuuuuuu` (continuation of arena/01a02fba-lowuuuuuu, PR #12)
 
 This file is the current truth for how closely the mod matches the user's MCSM references.
 
@@ -24,6 +24,30 @@ This file is the current truth for how closely the mod matches the user's MCSM r
 | 3. Restore glowing white death dissolve | ⚠️ | Main body + severed halves now have collapse whiteout/fade state in their render states/renderers, and phase-4 body rendering now also reuses `phase_4_assets_e.png` as a pale-to-purple emissive overlay. Visual timing still needs a real in-game check. |
 | 4. Replace vanilla clouds with stylized MCSM cloud layer | ⚠️ | `StormCloudDeck`, `StormSkyCanopy`, and `CloudColorMixin` now handle storm cloud takeover with blocky slabs, a pale inner core, stronger upper-sky coverage, and a later purple swing so early phase 5 can stay closer to turquoise. The exact runtime mixin/descriptor behavior still could not be validated locally. |
 | 5. Update this document once coherent/playable | ✅ | This file now reflects the current source checkpoint honestly rather than the earlier stale blocker list. |
+
+
+---
+
+## Batch 17 master pass — round one + round two combined (2026-08-24)
+
+Continues from safe checkpoint `4c5fed7`. CI-validated per commit via the Build workflow (Java 25 / Gradle 9.5.1); the sandbox still cannot run Gradle locally (no JDK, blocked Maven/Gradle hosts), so GitHub Actions remains the compile gate.
+
+| Item | Status | Notes |
+|---|---|---|
+| Phase 6 is Formidibomb-only | ✅ | `addSubGrowth` hard-locks any non-devourer storm below 6.0 forever. Growth by eating at phase 5 / 5.5+ can never promote to 6. |
+| Late phase-5 growth goes to the BACK | ✅ | Everything eaten past 5.0 feeds `expansionPhase` (unbounded). Overall body/head scale is capped (`bodyScaleForPhase`) so the storm stops ballooning; the outward back/cube mass (`backScaleForPhase`) keeps expanding — huge-back shell, debris ring radii and grapple back volumes all grow. |
+| Growth speed modifier | ✅ | `infiniteGrowthSpeed` scales the back/outward expansion pace at late phase 5 AND continues unbounded through phase 6 at max settings. |
+| Traced BBModel shells actually load | ✅ | **Bug fix:** every stage shell JSON referenced textures with invalid Identifier characters (spaces / `!` / uppercase), so `Identifier.fromNamespaceAndPath` threw and ALL shaded shells silently failed to load. Assets renamed to identifier-safe names, the six shell JSONs rewired, the missing `hold_the_elevator` phase-6 texture extracted from `witherstormStageD_Center_Massive.bbmodel`, and both export tools hardened. |
+| Shaded preset vs OG default | ✅ | Default skin stays OG MCSM textures (`stormSkin=1`); the shaded BBModel presentation is preset 2 and now defaults its stage shells ON (`stormStageShells` only ever applies inside the shaded preset). |
+| Static bright center / pixelated wall removed | ✅ | `blackGlare` (the big flat backdrop planes) is now OFF by default and marked legacy. The replacement attached aura is camera-billboarded additive glow + translucent dark washes that ride the storm's silhouette and follow it across the sky — never a free-standing wall. |
+| Per-phase aura story | ⚠️ | Implemented: phase 4 blue-white ring of light; dark wash when turquoise fog starts (~5.0); black+purple aura 5.15-5.45 with drift toward blue at 5.5 (blue on faces, dark/light purple sides); phase 6 steady layered halos (orange underneath, red at the bottom, purple above red, black above purple); purple/dark-pink vortex rings at 7.5+/8. Needs in-game tuning against the videos. |
+| Phase-6 split "bang" | ✅ | Distinct one-shot `KIND_SPLIT` pulse (purple core + white ring + orange band, short strong timing) fired only by the Formidibomb split; rings now render on the additive no-depth-write glow pipeline. |
+| Aura/beam pipeline hygiene | ✅ | All aura passes use additive (`ONE, ONE`) or translucent pipelines with depth-write disabled and per-frame camera billboarding (`StormGlowRenderer.submitBillboardPlane`); pulse rings moved off `debugQuads`. |
+| Sky/fog timeline | ⚠️ | `stageWeights`: green 4.5, turquoise at 5.0 and purged again past 5.0, purple 5.15-5.45, pink-horizon mix 5.45-5.9, cosmic purple `#1A002B` at 5.95+; phase-6 crossing dips the sky black for ~4 s while the storm rises, then returns pinkish-purple. Needs in-game check. |
+| Default game clouds | ⚠️ | New `ambientMcsmClouds` (default ON): the chunky voxel deck renders as the game's normal clouds even with no storm — near-white by day, deep indigo/storm-blue at night, semi-transparent bottoms. Only the palette changes when a storm arrives. Needs in-game feel check. |
+| Teeth / eye emissives | ⚠️ | Teeth emissive tint default is mint-cyan (#7FFFD4→#00FFFF family), eyes stay glowing purple, both on full-bright emissive layers (existing). Config v14 migration resets the tint keys for existing users. |
+| Phase-6 big swarming cubes | ⚠️ | Devourer swarm cube sizes roughly doubled-plus with a biased-big distribution and reduced count — big cubes swarming the sides instead of a haze of purple/black dots. Needs in-game look. |
+| Shadows / terrain lighting | 🧩 | Built-in shadow map (`StormShadowMap`), beam impact lights (`beamImpactLight`, `StormImpactLights`), bloom and Iris companion bridge remain from earlier batches; defaults on. No new work this pass. |
 
 ---
 
