@@ -118,7 +118,7 @@ public class DevouringStormsClientConfig {
    public static double shaderPackProfile = (double)0.0F;
    public static final String[] SHADER_PACK_PROFILE_LABELS = new String[]{"Automatic", "Companion", "Punchy"};
    public static double shaderPackEmissiveGain = (double)1.0F;
-   public static double stormStars = (double)1.0F;
+   public static double stormStars = (double)2.0F;
    public static final String[] STAR_LABELS = new String[]{"Off", "Storm Nights", "Every Night"};
    public static double starDensity = (double)1.0F;
    public static double starTwinkleSpeed = (double)1.0F;
@@ -133,6 +133,7 @@ public class DevouringStormsClientConfig {
    public static double stormCloudAltitude = (double)0.0F;
    public static double stormCloudPaletteMix = 1.0;
    public static boolean ambientMcsmClouds = true;
+   public static boolean elevateVanillaClouds = true;
    public static boolean atmospherePulse = true;
    public static double pulseStrength = (double)1.0F;
    public static double pulsePeriod = (double)4.0F;
@@ -506,6 +507,7 @@ public class DevouringStormsClientConfig {
       key("stormCloudCoverage", "How much of the sky around the storm the deck covers.", 0.25, (double)2.0F, false, () -> stormCloudCoverage, (v) -> stormCloudCoverage = v);
       key("stormCloudAltitude", "Push the whole deck up or down.", -40.0, (double)40.0F, false, () -> stormCloudAltitude, (v) -> stormCloudAltitude = v);
       key("ambientMcsmClouds", "The chunky Story-Mode voxel clouds are the game's default cloud look even when no storm exists: neutral white by day, deep indigo / storm-blue at night, with semi-transparent bottoms you can see the sky through. When a storm actually arrives only the cloud/sky palette changes - the clouds themselves stay native.", (double)0.0F, (double)1.0F, true, () -> ambientMcsmClouds ? (double)1.0F : (double)0.0F, (v) -> ambientMcsmClouds = v >= (double)0.5F);
+      key("elevateVanillaClouds", "When the vanilla cloud renderer is active (ambient Story-Mode clouds off), lift its cloud plane from Y=192 up to Y=256 so it lines up with the elevated storm ceiling.", (double)0.0F, (double)1.0F, true, () -> elevateVanillaClouds ? (double)1.0F : (double)0.0F, (v) -> elevateVanillaClouds = v >= (double)0.5F);
       key("stormCloudPaletteMix", "How much the deck follows the phase palette versus your manual cloud colour.", (double)0.0F, (double)1.0F, false, () -> stormCloudPaletteMix, (v) -> stormCloudPaletteMix = v);
       key("atmospherePulse", "The one-shot command-block pulse event after the late-phase trigger moment.", (double)0.0F, (double)1.0F, true, () -> atmospherePulse ? (double)1.0F : (double)0.0F, (v) -> atmospherePulse = v >= (double)0.5F);
       key("pulseStrength", "How bright the one-shot pulse burns at its peak.", (double)0.0F, (double)2.0F, false, () -> pulseStrength, (v) -> pulseStrength = v);

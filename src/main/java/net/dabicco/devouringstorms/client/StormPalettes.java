@@ -101,8 +101,10 @@ public final class StormPalettes {
          w[1] = t;
          return;
       }
-      if (phase < 5.15) {
-         float t = smoothPhase(phase, 5.0F, 5.15F);
+      if (phase < 5.1) {
+         // the turquoise is purged quickly: it exists strictly through 4.5-5.0
+         // and is gone again by 5.1, handing off to the purple story
+         float t = smoothPhase(phase, 5.0F, 5.1F);
          w[1] = 1.0F - t;
          w[2] = t;
          return;

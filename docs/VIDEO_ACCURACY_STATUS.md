@@ -132,3 +132,67 @@ Continues from safe checkpoint `4c5fed7`. CI-validated per commit via the Build 
 4. **`docs/VIDEO_ACCURACY_STATUS.md` is now current for the source tree, but not yet backed by a local Minecraft launch in this sandbox.**
 
 In short: the source pass is now materially further along and the old stale blocker text has been cleared, but the final acceptance for Batch 17 still depends on a successful build plus in-game visual verification.
+
+---
+
+## Pass 2 — MCSM sky & cloud overhaul (2026-08-24)
+
+**Pass 1 recap (commit `20310cb`, CI green run `32787833767`):** all entity
+auras/rings/bangs are world-space gradient geometry (cylinders, backplates,
+flat rings) — camera-billboarded halos are gone from the codebase.
+
+**Pass 2 changes:**
+
+1. **`client/StormCloudDeck.java` (full rewrite)** — elevated blocky MCSM
+   ceiling: ambient deck anchored at Y = 258 (+`stormCloudAltitude`), snapped
+   to a 24-block world grid so the chunky silhouette is stable as you move.
+   Slabs are true shaded prisms now (`cloudPrismShaded`, 19-param): top faces
+   full-bright, side faces shaded by the real sun/moon vector
+   (`sunDirection` from the overworld clock), bottom faces deep ambient shadow
+   with reduced alpha (semi-transparent undersides). Storm decks keep wrapping
+   their storm but are spread tall and wide `(420+260·min(phase,7))·(0.9+0.5·growth)`.
+   Legacy 15-arg `cloudPrism` and 12-arg `slab` remain as delegating wrappers
+   for `StormCataclysmFX`.
+2. **`client/StormSkyCanopy.java` (full rewrite)** — the skybox is a multi-stop
+   gradient dome (world-space cylinder + zenith cap at r=640 around the
+   camera): day = warm pale-blue horizon → vibrant azure zenith; sunset =
+   glowing orange/pink horizon → deep teal → indigo (Season 2 palette); night
+   = bright cyan/teal horizon glow → deep cosmic blue zenith (the twinkling
+   starfield still layers on top). When a storm claims the sky the dome's
+   stops drift toward `StormPalettes` and a soft additive horizon back-glow
+   ring wraps the world (turquoise 5.0–5.1, purple/pink 5.12–5.98,
+   orange/red ≥5.9), silhouetting the storm body against glowing sky.
+3. **`client/StormPalettes.java`** — the turquoise fog window now closes at
+   **5.1** exactly (transition 5.0→5.1): from 5.1 upward the sky hands off to
+   the purple story with no residual teal haze.
+4. **Vanilla cloud shader override** — `assets/minecraft/shaders/core/`
+   `rendertype_clouds.vsh`/`.fsh` ship in the mod (fetched the exact vanilla
+   26.2 sources and kept the pipeline contract byte-compatible: same
+   `CloudInfo` UBO, `CloudFaces` buffer, fog outputs). Only the face shading
+   changed: tops crisp white, N/S sides soft shade, W/E sides sun-catching,
+   bottoms deep shadow at 55% alpha. Depth stays LEQUAL-equivalent with
+   translucent blending (reversed-Z engine semantics).
+5. **`mixin/VanillaCloudHeightMixin`** — lifts the vanilla cloud plane
+   192→256 when the vanilla renderer is active (ambient deck off). Uses
+   `@ModifyConstant(..., require = 0)` so it can never crash a boot: if the
+   constant isn't found it silently no-ops. Gated by new config key
+   `elevateVanillaClouds` (default on).
+6. **Built-in world texture pack** — `assets/minecraft/textures/` now carries
+   Story-Mode grass/foliage colormaps (lush saturated greens, warm-dry to
+   cool-wet gradient), `grass_block_side.png` with a baked green fringe, and
+   a tintable grayscale `short_grass.png`. Generator:
+   `tools/gen_builtin_resource_pack.py`. Being under `minecraft:` inside the
+   mod jar, they apply below any user resource pack.
+7. **Stars** — `stormStars` default moved to 2 (every night) so the twinkling
+   night starfield shows on the new night gradient by default.
+8. **Cleanup** — stale `infiniteGrowth` config description corrected (body
+   expansion is unbounded by default now; the toggle only adds whole-body
+   inflation past phase 5).
+
+**Verification in this sandbox:** all cross-file symbols were checked against
+the known-good HEAD sources (`StormSkyDarken`/`StormPalettes`/
+`ClientDistantStormManager.StormData`/`WitherStormEntity.clientGrowthScaleForPhase`
+/config fields/fabric `LevelRenderContext` API surface), brace/paren balance
+checked, all `cloudPrismShaded` (19) and legacy `cloudPrism` (15) call sites
+arg-counted, and the generated PNGs decoded back and sampled. CI remains the
+compile gate (no local JDK).

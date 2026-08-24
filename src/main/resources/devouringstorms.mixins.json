@@ -39,6 +39,7 @@
     "BowelsScreenEffectMixin",
     "CameraRumbleMixin",
     "CloudColorMixin",
+    "VanillaCloudHeightMixin",
     "CreateWorldGameTabMixin",
     "CubePolygonsAccessor",
     "FogRendererMixin",

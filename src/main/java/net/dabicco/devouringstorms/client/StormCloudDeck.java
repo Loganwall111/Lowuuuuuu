@@ -13,18 +13,29 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * StormCloudDeck — the blocky Story-Mode weather mass that replaces vanilla
- * clouds around an active storm.
+ * StormCloudDeck — the elevated Story-Mode cloud ceiling.
  *
- * The latest pass drops the old floating-strip look and instead builds each
- * storm cloud from shallow voxel prisms: chunky tops, darker sides, and softer
- * semi-transparent undersides so the mass feels like native Minecraft clouds
- * that have been storm-tinted, not billboard slabs hanging in the air.
+ * The deck renders a high, chunky, blocky voxel cloud grid (MCSM style) that
+ * lives far up in the atmosphere instead of hanging around the storm:
+ *
+ *  - the baseline deck sits at Y=258+, stretched far past the old render
+ *    bounds so the ceiling reads as a continuous sky without edge clipping;
+ *  - prisms snap to a coarse world grid so the layout reads as the classic
+ *    Story-Mode blocky cloud pattern rather than random blobs;
+ *  - faces are directionally lit from the celestial sun/moon vector: crisp
+ *    full-bright tops, softly shadowed sides, deep ambient-shadow bottoms
+ *    with a translucent fade that blends into the sky fog;
+ *  - with no storm anywhere this deck is the game's default cloud look
+ *    (near-white by day, deep indigo at night); a storm only retints it.
  */
 public final class StormCloudDeck {
    static final Identifier SLAB = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/mcsm_cloud.png");
    private static final int FULL_BRIGHT = 15728880;
-   private static final double MAX_VIEW_DIST = 900.0;
+   private static final double MAX_VIEW_DIST = 1800.0;
+   /** Baseline ceiling height for the always-on ambient deck. */
+   private static final double AMBIENT_CLOUD_Y = 258.0;
+   /** World grid (blocks) the chunky MCSM cloud pattern snaps to. */
+   private static final double GRID = 24.0;
 
    private StormCloudDeck() {
    }
@@ -46,7 +57,7 @@ public final class StormCloudDeck {
    }
 
    /** cheap deterministic hash -> [0,1) */
-   private static float hash01(int seed, int i, int slot) {
+   static float hash01(int seed, int i, int slot) {
       int h = seed * 7919 + i * 104729 + slot * 130363;
       h ^= h >>> 13;
       h *= 1274126177;
@@ -62,7 +73,7 @@ public final class StormCloudDeck {
    static void colorsForPhase(float phase, float[] outer, float[] inner) {
       float[] tint = StormPalettes.cloudColor(phase, new float[3]);
       float purple = smooth(phase, 5.14F, 5.48F);
-      float cataclysm = smooth(phase, 5.90F, 6.18F);
+      float cataclysm = smooth(phase, 5.9F, 6.18F);
       float purpleR = Mth.lerp(cataclysm, 0.54F, 0.24F);
       float purpleG = Mth.lerp(cataclysm, 0.41F, 0.16F);
       float purpleB = Mth.lerp(cataclysm, 0.63F, 0.32F);
@@ -76,10 +87,47 @@ public final class StormCloudDeck {
       inner[2] = Mth.lerp(whiteMix, outer[2], 1.0F);
    }
 
+   /**
+    * Normalized celestial light direction (points from the world toward the
+    * sun during the day and the moon at night) plus a brightness factor.
+    * The sun rides the vanilla east-west arc: noon at 6000, midnight 18000.
+    */
+   static double[] sunDirection(double overworldClock) {
+      double t = (overworldClock % 24000L) / 24000.0;
+      double ang = (t - 0.25) * Math.PI * 2.0;
+      double sy = Math.cos(ang);
+      double sx = Math.sin(ang);
+      double len = Math.sqrt(sx * sx + sy * sy);
+      if (len < 1.0E-4) {
+         return new double[]{0.0, 1.0, 0.0, 1.0};
+      }
+      sx /= len;
+      sy /= len;
+      // daylight strength: 1 at noon, 0 at night, smooth through dusk/dawn
+      double day = Mth.clamp((float)sy, 0.0F, 1.0F);
+      double moon = Mth.clamp((float)(-sy), 0.0F, 1.0F);
+      // at night the moon is up: light comes from the mirrored arc
+      double dirY = sy >= 0.0 ? sy : -sy;
+      double dirX = sx;
+      double bright = 0.34 + 0.66 * Math.max(day, moon * 0.7);
+      return new double[]{dirX, dirY, 0.0, bright};
+   }
+
+   /** Directional face shade for a unit side normal against the celestial vector. */
+   static float sideShade(double nx, double ny, double nz, double[] sun) {
+      float dot = (float)(nx * sun[0] + ny * sun[1] + nz * sun[2]);
+      float lit = Mth.clamp(dot, 0.0F, 1.0F);
+      return (0.60F + 0.40F * lit) * (float)sun[3];
+   }
+
    static void slab(VertexConsumer consumer, PoseStack.Pose pose, double x, double y, double z, double halfLen, double halfWid, double rot, int r, int g, int b, int a) {
       cloudPrism(consumer, pose, x, y, z, halfLen, halfWid, 0.14, rot, r, g, b, a, a, a);
    }
 
+   /**
+    * Legacy flat-shaded prism kept for compatibility; new deck geometry goes
+    * through {@link #cloudPrismShaded}.
+    */
    static void cloudPrism(
       VertexConsumer consumer,
       PoseStack.Pose pose,
@@ -97,9 +145,40 @@ public final class StormCloudDeck {
       int sideA,
       int bottomA
    ) {
+      cloudPrismShaded(consumer, pose, x, y, z, halfLen, halfWid, halfTall, rot, r, g, b, topA, sideA, bottomA, 0.0, 1.0, 0.0, 1.0);
+   }
+
+   /**
+    * Voxel cloud prism with directional lighting: tops stay full-bright, each
+    * side face is softly shadowed from the celestial sun/moon vector, and the
+    * bottom face drops into deep ambient shadow with a translucent fade that
+    * melts into the sky fog below the deck.
+    */
+   static void cloudPrismShaded(
+      VertexConsumer consumer,
+      PoseStack.Pose pose,
+      double x,
+      double y,
+      double z,
+      double halfLen,
+      double halfWid,
+      double halfTall,
+      double rot,
+      int r,
+      int g,
+      int b,
+      int topA,
+      int sideA,
+      int bottomA,
+      double sunX,
+      double sunY,
+      double sunZ,
+      double sunBright
+   ) {
       if (topA <= 1 || halfLen <= 0.01 || halfWid <= 0.01 || halfTall <= 0.01) {
          return;
       }
+      double[] sun = new double[]{sunX, sunY, sunZ, sunBright};
 
       double cosR = Math.cos(rot);
       double sinR = Math.sin(rot);
@@ -117,16 +196,35 @@ public final class StormCloudDeck {
       Vec3 b2 = new Vec3(x + ux + vx, y - halfTall, z + uz + vz);
       Vec3 b3 = new Vec3(x - ux + vx, y - halfTall, z - uz + vz);
 
+      // top: crisp full-bright white-ish cap
       face(consumer, pose, t0, t1, t2, t3, r, g, b, topA);
       if (bottomA > 1) {
-         face(consumer, pose, b3, b2, b1, b0, r, g, b, bottomA);
+         // bottom: deep ambient shadow + translucent fade into the sky fog
+         int br = (int)(r * 0.42F);
+         int bg = (int)(g * 0.44F);
+         int bb = (int)(b * 0.52F);
+         face(consumer, pose, b3, b2, b1, b0, br, bg, bb, bottomA);
       }
       if (sideA > 1) {
-         face(consumer, pose, t0, b0, b1, t1, r, g, b, sideA);
-         face(consumer, pose, t1, b1, b2, t2, r, g, b, sideA);
-         face(consumer, pose, t2, b2, b3, t3, r, g, b, sideA);
-         face(consumer, pose, t3, b3, b0, t0, r, g, b, sideA);
+         // four sides, each shaded by its own outward normal vs the sun arc
+         float sNv = sideShade(-sinR, 0.0, -cosR, sun);
+         float sUv = sideShade(cosR, 0.0, -sinR, sun);
+         float sPv = sideShade(sinR, 0.0, cosR, sun);
+         float sNu = sideShade(-cosR, 0.0, sinR, sun);
+         face(consumer, pose, t0, b0, b1, t1, sh(r, sNv), sh(g, sNv), sh(b, sNv), sideA);
+         face(consumer, pose, t1, b1, b2, t2, sh(r, sUv), sh(g, sUv), sh(b, sUv), sideA);
+         face(consumer, pose, t2, b2, b3, t3, sh(r, sPv), sh(g, sPv), sh(b, sPv), sideA);
+         face(consumer, pose, t3, b3, b0, t0, sh(r, sNu), sh(g, sNu), sh(b, sNu), sideA);
       }
+   }
+
+   private static int sh(int channel, float shade) {
+      return Mth.clamp((int)((float)channel * shade), 0, 255);
+   }
+
+   /** Snap a world coordinate onto the chunky MCSM cloud grid. */
+   private static double snapGrid(double v) {
+      return Math.round(v / GRID) * GRID;
    }
 
    private static void renderField(
@@ -153,10 +251,15 @@ public final class StormCloudDeck {
 
       float phaseRamp = smooth(phase, 4.25F, 5.05F);
       float growthScale = (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(phase, expansionPhase));
-      double spread = (130.0 + 90.0 * Math.min(phase, 6.0F)) * (0.9 + 0.45 * growthScale);
-      int slabs = Mth.clamp((int)(28.0F * coverage * (mode >= 2 ? 1.8F : 1.0F) * (0.45F + 0.55F * phaseRamp) * Math.min(2.6F, 0.8F + growthScale * 0.6F) * (0.55F + 0.45F * presence)), 6, 160);
+      // the weather mass stretches wide and HIGH around a storm: it is a
+      // ceiling above the storm now, not a low fog band
+      double spread = (420.0 + 260.0 * Math.min(phase, 7.0F)) * (0.9 + 0.5 * growthScale);
+      int slabs = Mth.clamp((int)(40.0F * coverage * (mode >= 2 ? 1.7F : 1.0F) * (0.5F + 0.5F * phaseRamp) * Math.min(2.4F, 0.9F + growthScale * 0.5F) * (0.55F + 0.45F * presence)), 8, 190);
       colorsForPhase(phase, outer, inner);
-      float outerLum = 0.82F + 0.12F * Mth.sin((nowSec / Math.max(0.5F, (float)DevouringStormsClientConfig.pulsePeriod) + (entityId % 977) * 0.6183F) * (float)(Math.PI * 2.0));
+      Minecraft mc = Minecraft.getInstance();
+      double clock = mc.level != null ? (double)mc.level.getOverworldClockTime() + (double)mc.getDeltaTracker().getGameTimeDeltaPartialTick(false) : 0.0;
+      double[] sun = sunDirection(clock);
+      float outerLum = 0.86F + 0.10F * Mth.sin((float)(nowSec / Math.max(0.5F, (float)DevouringStormsClientConfig.pulsePeriod) + (float)(entityId % 977) * 0.6183F) * (float)(Math.PI * 2.0));
       int or = (int)(Mth.clamp(outer[0] * outerLum, 0.0F, 1.0F) * 255.0F);
       int og = (int)(Mth.clamp(outer[1] * outerLum, 0.0F, 1.0F) * 255.0F);
       int ob = (int)(Mth.clamp(outer[2] * outerLum, 0.0F, 1.0F) * 255.0F);
@@ -165,57 +268,57 @@ public final class StormCloudDeck {
       int ib = (int)(Mth.clamp(inner[2], 0.0F, 1.0F) * 255.0F);
 
       for (int i = 0; i < slabs; i++) {
-         double rad = (0.45 + 0.8 * hash01(entityId, i, 1)) * spread;
+         double rad = (0.3 + 0.78 * hash01(entityId, i, 1)) * spread;
          double ang0 = hash01(entityId, i, 2) * Math.PI * 2.0;
-         double drift = (0.004 + 0.012 * hash01(entityId, i, 3)) * (hash01(entityId, i, 4) < 0.5 ? -1.0 : 1.0);
+         double drift = (0.0022 + 0.006 * hash01(entityId, i, 3)) * (hash01(entityId, i, 4) < 0.5 ? -1.0 : 1.0);
          double ang = ang0 + nowSec * drift;
-         double x = dispX + Math.cos(ang) * rad;
-         double z = dispZ + Math.sin(ang) * rad;
-         double alt = (hash01(entityId, i, 5) - 0.35) * (50.0 + 30.0 * Math.min(phase, 6.0F)) * (0.9 + 0.22 * growthScale) + (float)DevouringStormsClientConfig.stormCloudAltitude;
-         double y = dispY - 20.0 + alt + Math.sin(nowSec * 0.05 * (0.5 + hash01(entityId, i, 6)) + hash01(entityId, i, 7) * 6.28) * (4.0 + growthScale * 1.5);
+         double x = snapGrid(dispX + Math.cos(ang) * rad);
+         double z = snapGrid(dispZ + Math.sin(ang) * rad);
+         double alt = (40.0 + 130.0 * hash01(entityId, i, 5)) * (0.8 + 0.3 * Math.min(phase, 7.0F)) * (0.9 + 0.18 * growthScale);
+         double y = snapGrid(dispY + alt) + (double)DevouringStormsClientConfig.stormCloudAltitude;
          double dist = cam.distanceTo(new Vec3(x, y, z));
          if (dist > MAX_VIEW_DIST) {
             continue;
          }
 
-         float distFade = dist < 60.0 ? (float)(dist / 60.0) : Mth.clamp(1.0F - (float)((dist - 650.0) / 250.0), 0.0F, 1.0F);
-         float alpha = baseAlpha * presence * phaseRamp * (0.58F + 0.42F * hash01(entityId, i, 8)) * distFade;
+         float distFade = dist < 90.0 ? (float)(dist / 90.0) : Mth.clamp(1.0F - (float)((dist - 1250.0) / 550.0), 0.0F, 1.0F);
+         float alpha = baseAlpha * presence * phaseRamp * (0.62F + 0.38F * hash01(entityId, i, 8)) * distFade;
          int outerA = (int)(alpha * 255.0F);
-         int innerA = (int)(outerA * 0.70F);
+         int innerA = (int)(outerA * 0.7F);
          if (outerA <= 2) {
             continue;
          }
 
-         double halfLen = (24.0 + 68.0 * hash01(entityId, i, 9)) * (0.95 + 0.32 * growthScale);
-         double halfWid = (10.0 + 26.0 * hash01(entityId, i, 10)) * (0.95 + 0.26 * growthScale);
-         double rot = hash01(entityId, i, 11) * Math.PI * 2.0 + nowSec * drift * 1.7;
-         double halfTall = (3.5 + 10.0 * hash01(entityId, i, 12)) * (0.95 + 0.22 * growthScale);
-         int outerSideA = (int)(outerA * 0.88F);
-         int outerBottomA = (int)(outerA * 0.36F);
-         cloudPrism(consumer, pose, x, y, z, halfLen, halfWid, halfTall, rot, or, og, ob, outerA, outerSideA, outerBottomA);
+         double halfLen = (30.0 + 78.0 * hash01(entityId, i, 9)) * (0.95 + 0.3 * growthScale);
+         double halfWid = (12.0 + 30.0 * hash01(entityId, i, 10)) * (0.95 + 0.24 * growthScale);
+         double rot = Math.round((hash01(entityId, i, 11) * Math.PI * 2.0) / (Math.PI * 0.5)) * Math.PI * 0.5 + nowSec * drift * 1.2;
+         double halfTall = (4.0 + 12.0 * hash01(entityId, i, 12)) * (0.95 + 0.2 * growthScale);
+         int outerSideA = (int)(outerA * 0.9F);
+         int outerBottomA = (int)(outerA * 0.5F);
+         cloudPrismShaded(consumer, pose, x, y, z, halfLen, halfWid, halfTall, rot, or, og, ob, outerA, outerSideA, outerBottomA, sun[0], sun[1], sun[2], sun[3]);
 
          double innerAlong = (hash01(entityId, i, 13) - 0.5) * halfLen * 0.18;
          double innerAcross = (hash01(entityId, i, 14) - 0.5) * halfWid * 0.16;
          double innerX = x + Math.cos(rot) * innerAlong - Math.sin(rot) * innerAcross;
          double innerZ = z + Math.sin(rot) * innerAlong + Math.cos(rot) * innerAcross;
-         cloudPrism(consumer, pose, innerX, y + halfTall * 0.24, innerZ, halfLen * 0.64, halfWid * 0.62, halfTall * 0.58, rot, ir, ig, ib, innerA, (int)(innerA * 0.84F), (int)(innerA * 0.20F));
+         cloudPrismShaded(consumer, pose, innerX, y + halfTall * 0.24, innerZ, halfLen * 0.64, halfWid * 0.62, halfTall * 0.58, rot, ir, ig, ib, innerA, (int)(innerA * 0.86F), (int)(innerA * 0.36F), sun[0], sun[1], sun[2], sun[3]);
 
          float legRamp = smooth(phase, 4.55F, 5.35F);
-         if (legRamp > 0.02F && hash01(entityId, i, 15) < (mode >= 2 ? 0.92F : 0.72F)) {
-            int drops = 1 + (hash01(entityId, i, 16) < 0.42F ? 1 : 0) + (mode >= 2 && hash01(entityId, i, 17) < 0.18F ? 1 : 0);
+         if (legRamp > 0.02F && hash01(entityId, i, 15) < (mode >= 2 ? 0.9F : 0.7F)) {
+            int drops = 1 + (hash01(entityId, i, 16) < 0.42F ? 1 : 0);
             for (int part = 0; part < drops; part++) {
                double along = (hash01(entityId, i, 18 + part * 3) - 0.5) * halfLen * 0.72;
                double across = (hash01(entityId, i, 19 + part * 3) - 0.5) * halfWid * 0.68;
-               double dropX = x + Math.cos(rot) * along - Math.sin(rot) * across;
-               double dropZ = z + Math.sin(rot) * along + Math.cos(rot) * across;
-               double dropHalfLen = Math.max(5.0, halfLen * (0.16 + 0.16 * hash01(entityId, i, 30 + part)));
-               double dropHalfWid = Math.max(4.0, halfWid * (0.22 + 0.18 * hash01(entityId, i, 34 + part)));
-               double dropHalfTall = (3.0 + 9.0 * hash01(entityId, i, 38 + part)) * (0.84 + 0.34 * growthScale) * (0.55 + 0.45 * legRamp);
-               double dropY = y - halfTall - dropHalfTall * (0.70 + part * 1.16);
+               double dropX = snapGrid(x + Math.cos(rot) * along - Math.sin(rot) * across);
+               double dropZ = snapGrid(z + Math.sin(rot) * along + Math.cos(rot) * across);
+               double dropHalfLen = Math.max(6.0, halfLen * (0.16 + 0.16 * hash01(entityId, i, 30 + part)));
+               double dropHalfWid = Math.max(6.0, halfWid * (0.22 + 0.18 * hash01(entityId, i, 34 + part)));
+               double dropHalfTall = (3.0 + 10.0 * hash01(entityId, i, 38 + part)) * (0.84 + 0.3 * growthScale) * (0.55F + 0.45F * legRamp);
+               double dropY = y - halfTall - dropHalfTall * (0.7 + part * 1.1);
                int dropA = (int)(outerA * (0.56F + 0.18F * legRamp));
-               int dropInnerA = (int)(innerA * (0.42F + 0.20F * legRamp));
-               cloudPrism(consumer, pose, dropX, dropY, dropZ, dropHalfLen, dropHalfWid, dropHalfTall, rot, or, og, ob, dropA, (int)(dropA * 0.84F), (int)(dropA * 0.18F));
-               cloudPrism(consumer, pose, dropX, dropY + dropHalfTall * 0.22, dropZ, dropHalfLen * 0.58, dropHalfWid * 0.56, dropHalfTall * 0.50, rot, ir, ig, ib, dropInnerA, (int)(dropInnerA * 0.82F), (int)(dropInnerA * 0.12F));
+               int dropInnerA = (int)(innerA * (0.42F + 0.2F * legRamp));
+               cloudPrismShaded(consumer, pose, dropX, dropY, dropZ, dropHalfLen, dropHalfWid, dropHalfTall, rot, or, og, ob, dropA, (int)(dropA * 0.86F), (int)(dropA * 0.42F), sun[0], sun[1], sun[2], sun[3]);
+               cloudPrismShaded(consumer, pose, dropX, dropY + dropHalfTall * 0.22, dropZ, dropHalfLen * 0.58, dropHalfWid * 0.56, dropHalfTall * 0.5, rot, ir, ig, ib, dropInnerA, (int)(dropInnerA * 0.84F), (int)(dropInnerA * 0.34F), sun[0], sun[1], sun[2], sun[3]);
             }
          }
       }
@@ -241,7 +344,7 @@ public final class StormCloudDeck {
       PoseStack poseStack = ctx.poseStack();
       SubmitNodeCollector collector = ctx.submitNodeCollector();
       float paletteClaim = Math.max(Mth.clamp(StormSkyDarken.paletteBlend(), 0.0F, 1.0F), StormSkyDarken.globalBlend());
-      float baseAlpha = (mode >= 2 ? 0.21F : 0.14F) * Mth.lerp(paletteClaim, 0.82F, 1.24F);
+      float baseAlpha = (mode >= 2 ? 0.3F : 0.2F) * Mth.lerp(paletteClaim, 0.9F, 1.25F);
 
       collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(SLAB), (pose, consumer) -> {
          float[] outer = new float[3];
@@ -254,42 +357,30 @@ public final class StormCloudDeck {
          if (global) {
             float phase = StormSkyDarken.globalPhase();
             float strength = StormSkyDarken.globalBlend();
-            renderField(consumer, pose, cam, nowSec, mode, coverage, baseAlpha, 246810, phase, phase, cam.x, cam.y + 92.0 + (double)(phase - 4.5F) * 8.0, cam.z, strength, outer, inner);
+            renderField(consumer, pose, cam, nowSec, mode, coverage, baseAlpha, 246810, phase, phase, cam.x, AMBIENT_CLOUD_Y, cam.z, strength, outer, inner);
          }
 
-         // Default game clouds: with no storm around, the same chunky voxel
-         // language runs as the world's normal weather in neutral colours -
-         // Story-Mode-shaped clouds that feel native, not a temporary effect.
+         // Default game clouds: with no storm around, the elevated blocky deck
+         // runs as the world's normal ceiling in neutral colours.
          if (storms.isEmpty() && !global && ambient) {
             renderAmbient(consumer, pose, cam, nowSec, coverage, mc);
          }
       });
    }
 
-   /** Neutral day/night tint for the always-on MCSM cloud deck. */
+   /** Neutral day/night tint for the always-on MCSM cloud ceiling. */
    private static void renderAmbient(VertexConsumer consumer, PoseStack.Pose pose, Vec3 cam, float nowSec, float coverage, Minecraft mc) {
-      long t = mc.level.getOverworldClockTime() % 24000L;
-      float day;
-      if (t < 12500L) {
-         day = 1.0F;
-      } else if (t < 13500L) {
-         day = 1.0F - (float)(t - 12500L) / 1000.0F;
-      } else if (t < 22500L) {
-         day = 0.0F;
-      } else if (t < 23500L) {
-         day = (float)(t - 22500L) / 1000.0F;
-      } else {
-         day = 1.0F;
-      }
+      double clock = (double)mc.level.getOverworldClockTime() + (double)mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+      double[] sun = sunDirection(clock);
+      float dayBright = (float)sun[3];
 
-      float bright = 0.24F + 0.76F * day;
       // day: near-white with a hint of blue; night: deep indigo / storm-blue
-      float or = Mth.lerp(bright, 0.115F, 0.965F);
-      float og = Mth.lerp(bright, 0.115F, 0.975F);
-      float ob = Mth.lerp(bright, 0.165F, 0.995F);
-      float ir = Mth.lerp(bright, 0.16F, 0.99F);
-      float ig = Mth.lerp(bright, 0.15F, 0.995F);
-      float ib = Mth.lerp(bright, 0.235F, 1.0F);
+      float or = Mth.lerp(dayBright, 0.128F, 0.955F);
+      float og = Mth.lerp(dayBright, 0.126F, 0.965F);
+      float ob = Mth.lerp(dayBright, 0.185F, 0.985F);
+      float ir = Mth.lerp(dayBright, 0.175F, 0.99F);
+      float ig = Mth.lerp(dayBright, 0.165F, 0.995F);
+      float ib = Mth.lerp(dayBright, 0.245F, 1.0F);
       int orI = (int)(Mth.clamp(or, 0.0F, 1.0F) * 255.0F);
       int ogI = (int)(Mth.clamp(og, 0.0F, 1.0F) * 255.0F);
       int obI = (int)(Mth.clamp(ob, 0.0F, 1.0F) * 255.0F);
@@ -297,40 +388,40 @@ public final class StormCloudDeck {
       int igI = (int)(Mth.clamp(ig, 0.0F, 1.0F) * 255.0F);
       int ibI = (int)(Mth.clamp(ib, 0.0F, 1.0F) * 255.0F);
 
-      // anchor the field to a coarse world grid so the clouds feel world-fixed
-      double anchorX = Math.round(cam.x / 384.0) * 384.0;
-      double anchorZ = Math.round(cam.z / 384.0) * 384.0;
-      double cloudY = 132.0 + (double)DevouringStormsClientConfig.stormCloudAltitude * 2.0;
-      int slabs = Mth.clamp((int)(44.0F * coverage), 10, 110);
+      // world-anchored grid tiles so the ceiling feels fixed and endless
+      double anchorX = Math.round(cam.x / (GRID * 4.0)) * GRID * 4.0;
+      double anchorZ = Math.round(cam.z / (GRID * 4.0)) * GRID * 4.0;
+      double cloudY = AMBIENT_CLOUD_Y + (double)DevouringStormsClientConfig.stormCloudAltitude;
+      int slabs = Mth.clamp((int)(64.0F * coverage), 16, 170);
       int seed = 24601;
 
       for (int i = 0; i < slabs; i++) {
-         double rad = (0.18 + 0.92 * hash01(seed, i, 1)) * 340.0;
-         double drift = (0.0011 + 0.0022 * hash01(seed, i, 3)) * (hash01(seed, i, 4) < 0.5 ? -1.0 : 1.0);
+         double rad = (0.12 + 0.95 * hash01(seed, i, 1)) * 620.0;
+         double drift = (0.0016 + 0.003 * hash01(seed, i, 3)) * (hash01(seed, i, 4) < 0.5 ? -1.0 : 1.0);
          double ang = hash01(seed, i, 2) * Math.PI * 2.0 + nowSec * drift;
-         double x = anchorX + Math.cos(ang) * rad;
-         double z = anchorZ + Math.sin(ang) * rad;
-         double y = cloudY + (hash01(seed, i, 5) - 0.5) * 14.0 + Math.sin(nowSec * 0.02 + hash01(seed, i, 7) * 6.28) * 1.5;
+         double x = snapGrid(anchorX + Math.cos(ang) * rad);
+         double z = snapGrid(anchorZ + Math.sin(ang) * rad);
+         double y = snapGrid(cloudY + (hash01(seed, i, 5) - 0.5) * 36.0);
          double dist = cam.distanceTo(new Vec3(x, y, z));
          if (dist > MAX_VIEW_DIST) {
             continue;
          }
 
-         float distFade = dist < 70.0 ? (float)(dist / 70.0) : Mth.clamp(1.0F - (float)((dist - 640.0) / 260.0), 0.0F, 1.0F);
-         float alpha = 0.62F * (0.7F + 0.3F * hash01(seed, i, 8)) * distFade;
+         float distFade = dist < 110.0 ? (float)(dist / 110.0) : Mth.clamp(1.0F - (float)((dist - 1300.0) / 500.0), 0.0F, 1.0F);
+         float alpha = 0.6F * (0.72F + 0.28F * hash01(seed, i, 8)) * distFade;
          int outerA = (int)(alpha * 255.0F);
          if (outerA <= 2) {
             continue;
          }
 
-         double halfLen = (26.0 + 58.0 * hash01(seed, i, 9));
-         double halfWid = (12.0 + 22.0 * hash01(seed, i, 10));
-         double rot = hash01(seed, i, 11) * Math.PI * 2.0 + nowSec * drift * 1.4;
-         double halfTall = 3.5 + 6.5 * hash01(seed, i, 12);
-         // semi-transparent bottoms (~0.4-0.6 of the top alpha) so the sky
-         // shows through from below, chunky darker sides, solid tops
-         cloudPrism(consumer, pose, x, y, z, halfLen, halfWid, halfTall, rot, orI, ogI, obI, outerA, (int)(outerA * 0.88F), (int)(outerA * 0.52F));
-         cloudPrism(consumer, pose, x, y + halfTall * 0.26, z, halfLen * 0.62, halfWid * 0.6, halfTall * 0.55, rot, irI, igI, ibI, (int)(outerA * 0.6F), (int)(outerA * 0.5F), (int)(outerA * 0.3F));
+         double halfLen = 30.0 + 66.0 * hash01(seed, i, 9);
+         double halfWid = 14.0 + 26.0 * hash01(seed, i, 10);
+         double rot = Math.round((hash01(seed, i, 11) * Math.PI * 2.0) / (Math.PI * 0.5)) * Math.PI * 0.5 + nowSec * drift * 1.2;
+         double halfTall = 4.0 + 9.0 * hash01(seed, i, 12);
+         // tops bright, sides sun-shaded, bottoms deep shadow and translucent
+         // (0.5 alpha) so the sky shows through from below
+         cloudPrismShaded(consumer, pose, x, y, z, halfLen, halfWid, halfTall, rot, orI, ogI, obI, outerA, (int)(outerA * 0.92F), (int)(outerA * 0.5F), sun[0], sun[1], sun[2], sun[3]);
+         cloudPrismShaded(consumer, pose, x, y + halfTall * 0.26, z, halfLen * 0.62, halfWid * 0.6, halfTall * 0.55, rot, irI, igI, ibI, (int)(outerA * 0.62F), (int)(outerA * 0.52F), (int)(outerA * 0.3F), sun[0], sun[1], sun[2], sun[3]);
       }
    }
 
