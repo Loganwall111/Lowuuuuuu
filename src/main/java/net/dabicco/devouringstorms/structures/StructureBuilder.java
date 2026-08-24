@@ -3,7 +3,6 @@ package net.dabicco.devouringstorms.structures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -17,7 +16,7 @@ public final class StructureBuilder {
 
    /**
     * Build one of: beacon | house | portal | church | town | endertown |
-    * undertown | under_town | watchtower | courtyard | street | market | farm.
+    * undertown | watchtower | courtyard | street.
     */
    public static int build(ServerLevel server, BlockPos origin, String type) {
       return switch (type) {
@@ -30,8 +29,6 @@ public final class StructureBuilder {
          case "watchtower" -> watchtower(server, origin);
          case "courtyard" -> courtyard(server, origin);
          case "street" -> street(server, origin);
-         case "market" -> market(server, origin);
-         case "farm" -> farm(server, origin);
          default -> 0;
       };
    }
@@ -55,8 +52,6 @@ public final class StructureBuilder {
       n += portalRuin(server, o.offset(18, 0, -16));
       n += watchtower(server, o.offset(-22, 0, -20));
       n += courtyard(server, o.offset(-20, 0, 22));
-      n += market(server, o.offset(24, 0, 2));
-      n += farm(server, o.offset(-26, 0, 4));
       n += underTown(server, o);
       return n;
    }
@@ -127,63 +122,6 @@ public final class StructureBuilder {
 
       set(s, o, Blocks.WATER.defaultBlockState());
       return n + 1;
-   }
-
-   private static int market(ServerLevel server, BlockPos origin) {
-      int placed = 0;
-
-      for (int x = -5; x <= 5; x++) {
-         for (int z = -4; z <= 4; z++) {
-            set(server, origin.offset(x, 0, z), Math.abs(x) == 5 || Math.abs(z) == 4 ? Blocks.COBBLESTONE.defaultBlockState() : Blocks.SMOOTH_STONE.defaultBlockState());
-            placed++;
-         }
-      }
-
-      int[][] stalls = new int[][]{{-3, -1}, {0, 2}, {3, -1}};
-      BlockState[] cloth = new BlockState[]{Blocks.RED_WOOL.defaultBlockState(), Blocks.YELLOW_WOOL.defaultBlockState(), Blocks.BLUE_WOOL.defaultBlockState()};
-
-      for (int i = 0; i < stalls.length; i++) {
-         int sx = stalls[i][0];
-         int sz = stalls[i][1];
-
-         set(server, origin.offset(sx - 1, 1, sz), Blocks.OAK_FENCE.defaultBlockState());
-         set(server, origin.offset(sx + 1, 1, sz), Blocks.OAK_FENCE.defaultBlockState());
-         set(server, origin.offset(sx - 1, 2, sz), cloth[i]);
-         set(server, origin.offset(sx, 2, sz), cloth[i]);
-         set(server, origin.offset(sx + 1, 2, sz), cloth[i]);
-         set(server, origin.offset(sx, 1, sz), Blocks.BARREL.defaultBlockState());
-         placed += 6;
-      }
-
-      set(server, origin.offset(-4, 1, 3), Blocks.CHEST.defaultBlockState());
-      set(server, origin.offset(4, 1, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
-      return placed + 2;
-   }
-
-   private static int farm(ServerLevel server, BlockPos origin) {
-      int placed = 0;
-
-      for (int x = -5; x <= 5; x++) {
-         for (int z = -4; z <= 4; z++) {
-            BlockPos pos = origin.offset(x, 0, z);
-            if (Math.abs(x) == 5 || Math.abs(z) == 4) {
-               set(server, pos, Blocks.OAK_LOG.defaultBlockState());
-            } else if (x == 0) {
-               set(server, pos, Blocks.WATER.defaultBlockState());
-            } else {
-               set(server, pos, Blocks.FARMLAND.defaultBlockState());
-               set(server, pos.above(), ((BlockState)Blocks.WHEAT.defaultBlockState().setValue(CropBlock.AGE, 7)));
-               placed += 2;
-               continue;
-            }
-
-            placed++;
-         }
-      }
-
-      set(server, origin.offset(0, 1, -4), Blocks.OAK_FENCE.defaultBlockState());
-      set(server, origin.offset(0, 1, 4), Blocks.OAK_FENCE.defaultBlockState());
-      return placed + 2;
    }
 
    private static int underTown(ServerLevel server, BlockPos origin) {
