@@ -598,7 +598,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
             if (state.preview == null) {
                this.submitSkyBackdrop(state, poseStack, submitNodeCollector);
                this.submitNightLight(state, poseStack, submitNodeCollector, camera);
-               this.submitAttachedHalo(state, poseStack, submitNodeCollector);
+               this.submitStormAura(state, poseStack, submitNodeCollector, camera);
                this.submitCollapseGlow(state, poseStack, submitNodeCollector, camera);
             }
 
@@ -967,33 +967,169 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       poseStack.popPose();
    }
 
-   private void submitAttachedHalo(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
-      if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || DevouringStormsClientConfig.blackGlare || state.phase < 5.8) {
+   /**
+    * The attached Story-Mode aura: soft light that rides the storm's outer
+    * silhouette and follows it across the sky. Everything here is either an
+    * additive camera-billboarded glow layer or a translucent billboarded dark
+    * wash - both from pipelines that never write depth, so there are no boxy
+    * square artifacts and no free-standing pixelated wall in the world.
+    *
+    * Phase story (per the reference videos):
+    *  - phase 4: blue-white ring/halo made of just light around the edges
+    *  - ~5.0 when turquoise fog begins: a small dark/black wash at the sides
+    *    that makes the turquoise read blacker
+    *  - 5.15-5.45: black + purple aura light behind the storm, attached to the sky
+    *  - 5.45-5.7+: same aura but the light drifts from purple toward blue
+    *  - phase 6+ (post-split): steady layered halos - orange underneath,
+    *    red at the bottom, purple above the red, black above the purple.
+    *    Static/semantic: they stay put; only the one-shot split bang flashes.
+    */
+   private void submitStormAura(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+      if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || DevouringStormsClientConfig.blackGlare || state.phase < 4.0) {
          return;
       }
-      float ramp = Mth.clamp((float)((state.phase - 5.8) / 0.35), 0.0F, 1.0F);
-      float amount = (float)DevouringStormsClientConfig.haloStrength * ramp * state.collapseFade;
-      if (amount <= 0.004F) {
+      float strength = (float)DevouringStormsClientConfig.haloStrength * state.collapseFade;
+      if (strength <= 0.01F) {
          return;
       }
-      double bodyR = (12.0 + Math.max(0.0, state.phase - 4.0) * 3.6) * (double)growthScale(state);
-      float[] ring = StormPalettes.haloRingColor(new float[3]);
-      int rr = (int)(ring[0] * 255.0F);
-      int rg = (int)(ring[1] * 255.0F);
-      int rb = (int)(ring[2] * 255.0F);
+      Vec3 view = new Vec3(state.worldX - camera.pos.x, state.worldY - camera.pos.y, state.worldZ - camera.pos.z);
+      double dist = view.length();
+      if (dist < 1.0E-4) {
+         return;
+      }
+      view = view.scale(1.0 / dist);
 
-      poseStack.pushPose();
-      poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - state.bodyRot));
-      applyCollapse(poseStack, state, 17.0);
-      if (state.bodyRoll != 0.0F) {
-         poseStack.mulPose(Axis.ZN.rotationDegrees(state.bodyRoll));
+      float phase = (float)state.phase;
+      double radius = auraRadius(state);
+      // The light sits just behind the silhouette (from the camera's point of
+      // view) and is attached to the storm, so it moves when the storm moves.
+      Vec3 behind = view.scale(-radius * 0.84);
+      Vec3 centre = new Vec3(0.0, radius * 0.10, 0.0).add(behind);
+      float breathe = 0.92F + 0.08F * Mth.sin((double)(state.idleTimeTicks * 0.028F));
+
+      // --- window weights along the phase timeline ---
+      float phase4Ring = StormPalettes.phaseAmount(phase, 4.0F, 4.34F) * (1.0F - StormPalettes.phaseAmount(phase, 4.86F, 5.06F));
+      float tealDark = StormPalettes.phaseAmount(phase, 4.92F, 5.06F) * (1.0F - StormPalettes.phaseAmount(phase, 5.16F, 5.3F));
+      float purpleAura = StormPalettes.phaseAmount(phase, 5.1F, 5.3F);
+      float blueDrift = StormPalettes.phaseAmount(phase, 5.42F, 5.62F) * (1.0F - StormPalettes.phaseAmount(phase, 5.95F, 6.15F));
+      float phase6 = StormPalettes.phaseAmount(phase, 5.92F, 6.18F);
+
+      // --- phase 4: blue-white ring of pure light around the perimeter ---
+      if (phase4Ring > 0.01F) {
+         float amount = 0.55F * phase4Ring * strength;
+         StormGlowRenderer.submitLight(
+            poseStack,
+            collector,
+            centre,
+            view,
+            radius * 0.98,
+            new float[]{0.92F, 1.22F, 1.55F},
+            new float[]{0.34F, 0.16F, 0.07F},
+            new int[][]{{238, 246, 255}, {178, 210, 255}, {120, 165, 255}},
+            amount
+         );
       }
-      poseStack.translate(0.0, bodyR * 0.82, -bodyR * 1.08);
-      submitHaloPlane(collector, poseStack, bodyR * 1.36, bodyR * 0.96, rr, rg, rb, (int)(82.0F * amount), GlowRenderTypes.translucent(HALO_TEXTURE));
-      if (DevouringStormsClientConfig.bloomedBackdrop) {
-         submitHaloPlane(collector, poseStack, bodyR * 0.90, bodyR * 0.62, 18, 10, 28, (int)(66.0F * amount), GlowRenderTypes.glow(HALO_TEXTURE));
+
+      // --- turquoise start: small dark wash so the turquoise reads blacker ---
+      if (tealDark > 0.01F) {
+         int a = (int)(96.0F * tealDark * strength);
+         StormGlowRenderer.submitBillboardPlane(poseStack, collector, centre, view, radius * 1.06, radius * 0.78, 4, 16, 13, a, GlowRenderTypes.translucent(PORTAL_TEXTURE));
       }
-      poseStack.popPose();
+
+      // --- phase 5: black + purple aura behind the storm, drifting blue at 5.5 ---
+      if (purpleAura > 0.01F) {
+         float towardBlue = blueDrift * 0.85F;
+         int pr = (int)(Mth.lerp(towardBlue, 0.52F, 0.30F) * 255.0F);
+         int pg = (int)(Mth.lerp(towardBlue, 0.24F, 0.46F) * 255.0F);
+         int pb = (int)(Mth.lerp(towardBlue, 0.86F, 1.0F) * 255.0F);
+         float amount = (0.42F + 0.2F * purpleAura) * purpleAura * strength * breathe;
+         StormGlowRenderer.submitLight(
+            poseStack,
+            collector,
+            centre,
+            view,
+            radius * 1.04,
+            new float[]{0.9F, 1.2F, 1.52F},
+            new float[]{0.30F, 0.15F, 0.06F},
+            new int[][]{new int[]{pr, pg, pb}, new int[]{(int)(pr * 0.7F), (int)(pg * 0.7F), (int)(pb * 0.85F)}, new int[]{(int)(pr * 0.45F), (int)(pg * 0.45F), (int)(pb * 0.7F)}},
+            amount
+         );
+         // dark aura wash hugging the sides (black visual aura near the silhouette)
+         int darkA = (int)((108.0F + 34.0F * purpleAura) * (1.0F - blueDrift * 0.45F) * purpleAura * strength);
+         StormGlowRenderer.submitBillboardPlane(poseStack, collector, centre, view, radius * 1.12, radius * 0.86, 12, 5, 24, darkA, GlowRenderTypes.translucent(PORTAL_TEXTURE));
+         if (blueDrift > 0.01F) {
+            // 5.5+: blue on all faces, dark/light purple still on the sides
+            int blueA = (int)(70.0F * blueDrift * strength);
+            StormGlowRenderer.submitBillboardPlane(poseStack, collector, centre, view, radius * 1.2, radius * 0.92, 56, 96, 210, blueA, GlowRenderTypes.glow(HALO_TEXTURE));
+            int sideA = (int)(64.0F * blueDrift * strength);
+            StormGlowRenderer.submitBillboardPlane(poseStack, collector, centre, view, radius * 1.06, radius * 0.8, 30, 12, 60, sideA, GlowRenderTypes.translucent(PORTAL_TEXTURE));
+         }
+      }
+
+      // --- phase 6+: steady layered halo stack (semantic, no flashing) ---
+      if (phase6 > 0.01F) {
+         float steady = (0.86F + 0.14F * Mth.sin((double)(state.idleTimeTicks * 0.016F))) * phase6 * strength;
+         Vec3 lower = new Vec3(0.0, -radius * 0.52, 0.0).add(behind);
+         Vec3 low = new Vec3(0.0, -radius * 0.34, 0.0).add(behind);
+         Vec3 mid = new Vec3(0.0, -radius * 0.05, 0.0).add(behind);
+         Vec3 top = new Vec3(0.0, radius * 0.32, 0.0).add(behind);
+         // orange halo underneath the light
+         StormGlowRenderer.submitBillboardPlane(poseStack, collector, lower, view, radius * 1.2, radius * 0.2, 255, 138, 40, (int)(92.0F * steady), GlowRenderTypes.glow(HALO_TEXTURE));
+         // red halo at the bottom
+         StormGlowRenderer.submitBillboardPlane(poseStack, collector, low, view, radius * 1.28, radius * 0.24, 228, 44, 58, (int)(108.0F * steady), GlowRenderTypes.glow(HALO_TEXTURE));
+         // purple halo above the red
+         StormGlowRenderer.submitBillboardPlane(poseStack, collector, mid, view, radius * 1.3, radius * 0.3, 156, 74, 236, (int)(96.0F * steady), GlowRenderTypes.glow(HALO_TEXTURE));
+         // black halo above the purple
+         StormGlowRenderer.submitBillboardPlane(poseStack, collector, top, view, radius * 1.44, radius * 0.34, 8, 5, 14, (int)(118.0F * steady), GlowRenderTypes.translucent(PORTAL_TEXTURE));
+      }
+
+      // --- phase 7.5+/8: the ringed giant, purple + dark pink vortex rings ---
+      if (DevouringStormsClientConfig.earlyVortexRings || state.phase >= 7.5) {
+         float vortex = DevouringStormsClientConfig.earlyVortexRings ? Mth.clamp((float)((state.phase - 5.8) / 0.65), 0.0F, 1.0F) : Mth.clamp((float)((state.phase - 7.5) / 0.9), 0.0F, 1.0F);
+         if (vortex > 0.01F) {
+            for (int layer = 0; layer < 3; layer++) {
+               float lf = layer / 2.0F;
+               boolean darkPink = layer % 2 == 1;
+               int vr = darkPink ? 226 : 148;
+               int vg = darkPink ? 62 : 52;
+               int vb = darkPink ? 168 : 224;
+               Vec3 ringCentre = new Vec3(0.0, radius * (0.16 + lf * 0.4), -radius * (0.42 + lf * 0.22)).add(view.scale(-radius * 0.5));
+               submitAuraRing(poseStack, collector, state, ringCentre, radius * (1.1 + lf * 0.6), radius * (0.14 + lf * 0.05), vr, vg, vb, (int)((46.0F + 16.0F * layer) * vortex * strength));
+            }
+         }
+      }
+   }
+
+   /** Camera-facing thin ring band used by the late vortex layers. */
+   private static void submitAuraRing(PoseStack poseStack, SubmitNodeCollector collector, WitherStormRenderState state, Vec3 centre, double radius, double thickness, int r, int g, int b, int alpha) {
+      if (alpha <= 2 || radius <= 0.01) {
+         return;
+      }
+      double spin = state.idleTimeTicks * 0.031;
+      double rIn = radius - thickness * 0.5;
+      double rOut = radius + thickness * 0.5;
+      int steps = 26;
+      for (int i = 0; i < steps; i++) {
+         double a0 = Math.PI * 2.0 * (double)i / (double)steps + spin;
+         double a1 = Math.PI * 2.0 * (double)(i + 1) / (double)steps + spin;
+         double c0 = Math.cos(a0);
+         double s0 = Math.sin(a0);
+         double c1 = Math.cos(a1);
+         double s1 = Math.sin(a1);
+         int segAlpha = (int)((float)alpha * (0.72F + 0.28F * (float)Math.sin(a0 * 3.0)));
+         if (segAlpha > 2) {
+            Vec3 q0 = new Vec3(centre.x + c0 * rIn, centre.y + s0 * rIn * 0.32, centre.z + s0 * rIn);
+            Vec3 q1 = new Vec3(centre.x + c1 * rIn, centre.y + s1 * rIn * 0.32, centre.z + s1 * rIn);
+            Vec3 q2 = new Vec3(centre.x + c1 * rOut, centre.y + s1 * rOut * 0.32, centre.z + s1 * rOut);
+            Vec3 q3 = new Vec3(centre.x + c0 * rOut, centre.y + s0 * rOut * 0.32, centre.z + s0 * rOut);
+            collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(HALO_TEXTURE), (pose, consumer) -> {
+               consumer.addVertex(pose, (float)q0.x, (float)q0.y, (float)q0.z).setColor(r, g, b, segAlpha).setUv(0.0F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
+               consumer.addVertex(pose, (float)q1.x, (float)q1.y, (float)q1.z).setColor(r, g, b, segAlpha).setUv(1.0F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
+               consumer.addVertex(pose, (float)q2.x, (float)q2.y, (float)q2.z).setColor(r, g, b, segAlpha).setUv(1.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
+               consumer.addVertex(pose, (float)q3.x, (float)q3.y, (float)q3.z).setColor(r, g, b, segAlpha).setUv(0.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
+            });
+         }
+      }
    }
 
    private void submitCollapseGlow(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {

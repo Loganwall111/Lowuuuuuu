@@ -18,14 +18,16 @@ public final class StormPalettes {
    /** Fog anchors. */
    private static final float[] FOG_GREEN = {0.10F, 0.30F, 0.15F};
    private static final float[] FOG_TURQUOISE = {0.031F, 0.42F, 0.36F};
-   private static final float[] FOG_PINK = {0.26F, 0.11F, 0.28F};
-   private static final float[] FOG_CATACLYSM = {0.055F, 0.028F, 0.10F};
+   private static final float[] FOG_PURPLE = {0.23F, 0.09F, 0.30F};
+   private static final float[] FOG_PINK_HORIZON = {0.34F, 0.16F, 0.30F};
+   private static final float[] FOG_CATACLYSM = {0.102F, 0.0F, 0.169F};
 
    /** Upper sky / dome anchors, tuned to the screenshot progression. */
    private static final float[] SKY_GREEN = {0.16F, 0.36F, 0.20F};
    private static final float[] SKY_TURQUOISE = {0.090F, 0.46F, 0.50F};
-   private static final float[] SKY_PINK = {0.31F, 0.14F, 0.33F};
-   private static final float[] SKY_CATACLYSM = {0.040F, 0.018F, 0.072F};
+   private static final float[] SKY_PURPLE = {0.26F, 0.11F, 0.30F};
+   private static final float[] SKY_PINK_HORIZON = {0.36F, 0.17F, 0.33F};
+   private static final float[] SKY_CATACLYSM = {0.13F, 0.05F, 0.16F};
 
    /** Attached storm-back backdrop / glare bubble colours. */
    private static final float[] BACKDROP_VOID_WHITE = {0.90F, 0.90F, 0.95F};
@@ -72,7 +74,16 @@ public final class StormPalettes {
       return Mth.clamp((float)DevouringStormsClientConfig.paletteStrength, 0.0F, 1.0F);
    }
 
-   /** Blend weights: [0] = green, [1] = turquoise, [2] = pink/purple, [3] = cataclysm. */
+   /**
+    * Blend weights: [0] = green, [1] = turquoise, [2] = purple, [3] = cataclysm.
+    *
+    * Timeline (per the reference videos): phase 4 = regular sky, 4.5 = green,
+    * 5.0 = turquoise, turquoise is purged again right past 5.0, 5.15-5.45 =
+    * purple, 5.45-5.9 = pink shows around the horizon too (see
+    * {@link #pinkHorizonAmount}), 5.95+ = the dark cosmic purple night, which
+    * phase 6 keeps as a pinkish-purple sky (the sky only dips black for a few
+    * seconds while the split storm rises - handled in StormSkyDarken).
+    */
    public static void stageWeights(double phase, float[] w) {
       for (int i = 0; i < w.length; i++) {
          w[i] = 0.0F;
@@ -80,26 +91,20 @@ public final class StormPalettes {
       if (w.length < 4) {
          return;
       }
-      if (phase <= 4.5) {
+      if (phase <= 4.7) {
          w[0] = 1.0F;
          return;
       }
       if (phase < 5.0) {
-         float t = smoothPhase(phase, 4.5F, 5.0F);
+         float t = smoothPhase(phase, 4.7F, 5.0F);
          w[0] = 1.0F - t;
          w[1] = t;
          return;
       }
       if (phase < 5.15) {
          float t = smoothPhase(phase, 5.0F, 5.15F);
-         w[1] = 1.0F - t * 0.08F;
-         w[2] = t * 0.08F;
-         return;
-      }
-      if (phase < 5.45) {
-         float t = smoothPhase(phase, 5.15F, 5.45F);
-         w[1] = 0.92F * (1.0F - t);
-         w[2] = 0.08F + 0.92F * t;
+         w[1] = 1.0F - t;
+         w[2] = t;
          return;
       }
       if (phase < 5.95) {
@@ -113,6 +118,11 @@ public final class StormPalettes {
          return;
       }
       w[3] = 1.0F;
+   }
+
+   /** How much pink should bleed in around the horizon through 5.45-5.9. */
+   public static float pinkHorizonAmount(double phase) {
+      return phaseAmount(phase, 5.45F, 5.62F) * (1.0F - phaseAmount(phase, 5.88F, 5.96F));
    }
 
    private static float smoothPhase(double phase, float start, float end) {
@@ -133,12 +143,17 @@ public final class StormPalettes {
    public static float[] fogColor(double phase, float[] out) {
       float[] green = FOG_GREEN;
       float[] teal = new float[]{(float)DevouringStormsClientConfig.turquoiseFogR, (float)DevouringStormsClientConfig.turquoiseFogG, (float)DevouringStormsClientConfig.turquoiseFogB};
-      float[] pink = brighten(teal, FOG_PINK, 0.58F);
+      float[] pink = brighten(teal, FOG_PURPLE, 0.42F);
       float[] cata = new float[]{(float)DevouringStormsClientConfig.cataclysmFogR, (float)DevouringStormsClientConfig.cataclysmFogG, (float)DevouringStormsClientConfig.cataclysmFogB};
       if (DevouringStormsClientConfig.separateFogColor) {
          green = brighten(new float[]{(float)DevouringStormsClientConfig.fogColorR, (float)DevouringStormsClientConfig.fogColorG, (float)DevouringStormsClientConfig.fogColorB}, FOG_GREEN, 0.72F);
       }
-      return curve(phase, green, teal, pink, cata, out);
+      curve(phase, green, teal, pink, cata, out);
+      float pinkMix = pinkHorizonAmount(phase);
+      out[0] = Mth.lerp(pinkMix, out[0], FOG_PINK_HORIZON[0]);
+      out[1] = Mth.lerp(pinkMix, out[1], FOG_PINK_HORIZON[1]);
+      out[2] = Mth.lerp(pinkMix, out[2], FOG_PINK_HORIZON[2]);
+      return out;
    }
 
    /** Pulse shell colour for a phase. */
@@ -155,7 +170,12 @@ public final class StormPalettes {
    public static float[] skyColor(double phase, float[] out) {
       float[] teal = brighten(new float[]{(float)DevouringStormsClientConfig.turquoiseFogR, (float)DevouringStormsClientConfig.turquoiseFogG, (float)DevouringStormsClientConfig.turquoiseFogB}, SKY_TURQUOISE, 0.62F);
       float[] cata = brighten(new float[]{(float)DevouringStormsClientConfig.cataclysmFogR, (float)DevouringStormsClientConfig.cataclysmFogG, (float)DevouringStormsClientConfig.cataclysmFogB}, SKY_CATACLYSM, 0.35F);
-      return curve(phase, SKY_GREEN, teal, SKY_PINK, cata, out);
+      curve(phase, SKY_GREEN, teal, SKY_PURPLE, cata, out);
+      float pinkMix = pinkHorizonAmount(phase);
+      out[0] = Mth.lerp(pinkMix, out[0], SKY_PINK_HORIZON[0]);
+      out[1] = Mth.lerp(pinkMix, out[1], SKY_PINK_HORIZON[1]);
+      out[2] = Mth.lerp(pinkMix, out[2], SKY_PINK_HORIZON[2]);
+      return out;
    }
 
    private static float[] brighten(float[] base, float[] anchor, float amount) {

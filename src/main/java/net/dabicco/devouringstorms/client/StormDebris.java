@@ -137,7 +137,9 @@ public final class StormDebris {
    }
 
    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, float phase5Ticks, float phase58Ticks, int stormId, boolean devourer, float settle, float growthScale, boolean preview) {
-      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, settle, devourer ? 5880 : 2500, devourer, 2500, 1.0F, growthScale, preview);
+      // Phase 6 reads as BIG cubes swarming around the split storm's sides,
+      // not a haze of purple/black dots: fewer, much larger cubes.
+      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, settle, devourer ? 3800 : 2500, devourer, 2500, devourer ? 2.0F : 1.0F, growthScale, preview);
    }
 
    public static void submitEarly(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, float phase, int stormId) {
@@ -598,6 +600,7 @@ public final class StormDebris {
             boolean inner = r.nextFloat() < 0.65F;
             RADIUS[i] = inner ? 6.0F + r.nextFloat() * 12.0F : 14.0F + r.nextFloat() * 14.0F;
             RTARGET[i] = -1.0F;
+            SIZE[i] = 0.14F + r.nextFloat() * 0.34F;
          } else if (i >= 5540) {
             UX[i] = 1.0F;
             UY[i] = (r.nextFloat() - 0.5F) * 0.3F;
@@ -635,7 +638,7 @@ public final class StormDebris {
             CY[i] = 76.0F + 24.0F * out + (r.nextFloat() - 0.5F) * 12.0F;
             float[] var10000 = SPEED;
             var10000[i] *= 0.2F;
-            SIZE[i] = 0.09F + r.nextFloat() * 0.2F;
+            SIZE[i] = 0.12F + r.nextFloat() * 0.3F;
             RTARGET[i] = -1.0F;
          } else if (i >= 3400) {
             UX[i] = 1.0F;
@@ -650,7 +653,7 @@ public final class StormDebris {
             RTARGET[i] = -1.0F;
             float[] var25 = SPEED;
             var25[i] *= 0.35F;
-            SIZE[i] = 0.1F + r.nextFloat() * 0.24F;
+            SIZE[i] = 0.16F + r.nextFloat() * 0.45F;
          } else if (i < 1600) {
             boolean inner = r.nextFloat() < 0.65F;
             RADIUS[i] = inner ? 6.0F + r.nextFloat() * 12.0F : 14.0F + r.nextFloat() * 14.0F;

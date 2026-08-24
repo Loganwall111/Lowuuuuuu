@@ -32,7 +32,12 @@ public final class StormCloudDeck {
    /** Whether the stylized MCSM deck should take over from vanilla clouds right now. */
    public static boolean replacesVanillaClouds() {
       int mode = (int)Math.round(DevouringStormsClientConfig.stormCloudDeck);
-      return mode > 0 && (StormSkyDarken.globalCloudDeckActive() || StormSkyDarken.paletteBlend() > 0.03F && StormSkyDarken.palettePhase() >= 4.25F);
+      return mode > 0 && (ambientCloudsActive() || StormSkyDarken.globalCloudDeckActive() || StormSkyDarken.paletteBlend() > 0.03F && StormSkyDarken.palettePhase() >= 4.25F);
+   }
+
+   /** The MCSM clouds are the game's default cloud look, even with no storm anywhere. */
+   public static boolean ambientCloudsActive() {
+      return DevouringStormsClientConfig.ambientMcsmClouds;
    }
 
    /** cheap deterministic hash -> [0,1) */
@@ -216,7 +221,8 @@ public final class StormCloudDeck {
       int mode = (int)Math.round(DevouringStormsClientConfig.stormCloudDeck);
       var storms = ClientDistantStormManager.all();
       boolean global = StormSkyDarken.globalCloudDeckActive();
-      if (mode <= 0 || mc.level == null || storms.isEmpty() && !global) {
+      boolean ambient = ambientCloudsActive();
+      if (mode <= 0 || mc.level == null || storms.isEmpty() && !global && !ambient) {
          return;
       }
       float coverage = (float)DevouringStormsClientConfig.stormCloudCoverage;
@@ -245,7 +251,82 @@ public final class StormCloudDeck {
             float strength = StormSkyDarken.globalBlend();
             renderField(consumer, pose, cam, nowSec, mode, coverage, baseAlpha, 246810, phase, phase, cam.x, cam.y + 92.0 + (double)(phase - 4.5F) * 8.0, cam.z, strength, outer, inner);
          }
+
+         // Default game clouds: with no storm around, the same chunky voxel
+         // language runs as the world's normal weather in neutral colours -
+         // Story-Mode-shaped clouds that feel native, not a temporary effect.
+         if (storms.isEmpty() && !global && ambient) {
+            renderAmbient(consumer, pose, cam, nowSec, coverage, mc);
+         }
       });
+   }
+
+   /** Neutral day/night tint for the always-on MCSM cloud deck. */
+   private static void renderAmbient(VertexConsumer consumer, PoseStack.Pose pose, Vec3 cam, float nowSec, float coverage, Minecraft mc) {
+      long t = mc.level.getOverworldClockTime() % 24000L;
+      float day;
+      if (t < 12500L) {
+         day = 1.0F;
+      } else if (t < 13500L) {
+         day = 1.0F - (float)(t - 12500L) / 1000.0F;
+      } else if (t < 22500L) {
+         day = 0.0F;
+      } else if (t < 23500L) {
+         day = (float)(t - 22500L) / 1000.0F;
+      } else {
+         day = 1.0F;
+      }
+
+      float bright = 0.24F + 0.76F * day;
+      // day: near-white with a hint of blue; night: deep indigo / storm-blue
+      float or = Mth.lerp(bright, 0.115F, 0.965F);
+      float og = Mth.lerp(bright, 0.115F, 0.975F);
+      float ob = Mth.lerp(bright, 0.165F, 0.995F);
+      float ir = Mth.lerp(bright, 0.16F, 0.99F);
+      float ig = Mth.lerp(bright, 0.15F, 0.995F);
+      float ib = Mth.lerp(bright, 0.235F, 1.0F);
+      int orI = (int)(Mth.clamp(or, 0.0F, 1.0F) * 255.0F);
+      int ogI = (int)(Mth.clamp(og, 0.0F, 1.0F) * 255.0F);
+      int obI = (int)(Mth.clamp(ob, 0.0F, 1.0F) * 255.0F);
+      int irI = (int)(Mth.clamp(ir, 0.0F, 1.0F) * 255.0F);
+      int igI = (int)(Mth.clamp(ig, 0.0F, 1.0F) * 255.0F);
+      int ibI = (int)(Mth.clamp(ib, 0.0F, 1.0F) * 255.0F);
+
+      // anchor the field to a coarse world grid so the clouds feel world-fixed
+      double anchorX = Math.round(cam.x / 384.0) * 384.0;
+      double anchorZ = Math.round(cam.z / 384.0) * 384.0;
+      double cloudY = 132.0 + (double)DevouringStormsClientConfig.stormCloudAltitude * 2.0;
+      int slabs = Mth.clamp((int)(44.0F * coverage), 10, 110);
+      int seed = 24601;
+
+      for (int i = 0; i < slabs; i++) {
+         double rad = (0.18 + 0.92 * hash01(seed, i, 1)) * 340.0;
+         double drift = (0.0011 + 0.0022 * hash01(seed, i, 3)) * (hash01(seed, i, 4) < 0.5 ? -1.0 : 1.0);
+         double ang = hash01(seed, i, 2) * Math.PI * 2.0 + nowSec * drift;
+         double x = anchorX + Math.cos(ang) * rad;
+         double z = anchorZ + Math.sin(ang) * rad;
+         double y = cloudY + (hash01(seed, i, 5) - 0.5) * 14.0 + Math.sin(nowSec * 0.02 + hash01(seed, i, 7) * 6.28) * 1.5;
+         double dist = cam.distanceTo(new Vec3(x, y, z));
+         if (dist > MAX_VIEW_DIST) {
+            continue;
+         }
+
+         float distFade = dist < 70.0 ? (float)(dist / 70.0) : Mth.clamp(1.0F - (float)((dist - 640.0) / 260.0), 0.0F, 1.0F);
+         float alpha = 0.62F * (0.7F + 0.3F * hash01(seed, i, 8)) * distFade;
+         int outerA = (int)(alpha * 255.0F);
+         if (outerA <= 2) {
+            continue;
+         }
+
+         double halfLen = (26.0 + 58.0 * hash01(seed, i, 9));
+         double halfWid = (12.0 + 22.0 * hash01(seed, i, 10));
+         double rot = hash01(seed, i, 11) * Math.PI * 2.0 + nowSec * drift * 1.4;
+         double halfTall = 3.5 + 6.5 * hash01(seed, i, 12);
+         // semi-transparent bottoms (~0.4-0.6 of the top alpha) so the sky
+         // shows through from below, chunky darker sides, solid tops
+         cloudPrism(consumer, pose, x, y, z, halfLen, halfWid, halfTall, rot, orI, ogI, obI, outerA, (int)(outerA * 0.88F), (int)(outerA * 0.52F));
+         cloudPrism(consumer, pose, x, y + halfTall * 0.26, z, halfLen * 0.62, halfWid * 0.6, halfTall * 0.55, rot, irI, igI, ibI, (int)(outerA * 0.6F), (int)(outerA * 0.5F), (int)(outerA * 0.3F));
+      }
    }
 
    private static void face(VertexConsumer consumer, PoseStack.Pose pose, Vec3 a, Vec3 b, Vec3 c, Vec3 d, int r, int g, int bl, int alpha) {

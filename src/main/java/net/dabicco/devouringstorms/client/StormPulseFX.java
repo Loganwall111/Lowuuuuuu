@@ -11,8 +11,10 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance.Attenuation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -31,6 +33,8 @@ public final class StormPulseFX {
    private static final List<Pulse> ACTIVE = new ArrayList();
    private static final float[] LAYER_SIZES = new float[]{0.9F, 1.25F, 1.7F};
    private static final float[] LAYER_ALPHAS = new float[]{0.58F, 0.28F, 0.12F};
+   private static final Identifier RING_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_ring.png");
+   private static final int FULL_BRIGHT = 15728880;
 
    private StormPulseFX() {
    }
@@ -163,7 +167,7 @@ public final class StormPulseFX {
          out[i] = centre.add(right.scale(c * rOut)).add(upB.scale(s * rOut));
       }
 
-      collector.submitCustomGeometry(pose, RenderTypes.debugQuads(), (p, consumer) -> {
+      collector.submitCustomGeometry(pose, GlowRenderTypes.glow(RING_TEXTURE), (p, consumer) -> {
          for (int i = 0; i < SEGMENTS; ++i) {
             vertex(p, consumer, in[i], r, g, b, 0);
             vertex(p, consumer, in[i + 1], r, g, b, 0);
@@ -178,7 +182,8 @@ public final class StormPulseFX {
    }
 
    private static void vertex(PoseStack.Pose pose, VertexConsumer consumer, Vec3 at, int r, int g, int b, int alpha) {
-      consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z).setColor(r, g, b, alpha);
+      // additive glow pipeline: needs full entity vertex attrs, never writes depth
+      consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z).setColor(r, g, b, alpha).setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
    }
 
    private record Pulse(int entityId, Vec3 pos, float phase, int kind, long startMs) {

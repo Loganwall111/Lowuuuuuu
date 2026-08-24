@@ -24,12 +24,34 @@ from typing import Iterable
 SKIP_NAMES = {
     "placeholder again.png",
     "it was at that moment superman realized his fate.png",
-    "hold the elevator!.png",
 }
 
+# Minecraft resource locations only allow [a-z0-9_.-/]; the traced BBModel
+# texture names contain spaces, "!" and uppercase, so they are written under
+# identifier-safe names (the stage shell JSONs reference these safe names).
 WINDOWS_SAFE_RENAMES = {
     "1:1 flesh.png": "1_1_flesh.png",
     "this is 1:1 too.png": "this_is_1_1_too.png",
+    "hold the elevator!.png": "hold_the_elevator.png",
+    "it all comes tumbling down.png": "it_all_comes_tumbling_down.png",
+    "nice try wither weirdo.png": "nice_try_wither_weirdo.png",
+    "not white.png": "not_white.png",
+    "oh look theres another placeholder here too.png": "oh_look_theres_another_placeholder_here_too.png",
+    "theyre all accurate.png": "theyre_all_accurate.png",
+    "this one is accurate too.png": "this_one_is_accurate_too.png",
+    "this one is accurate.png": "this_one_is_accurate.png",
+    "this one is also accurate.png": "this_one_is_also_accurate.png",
+    "RECREATIONA-modified.png": "recreation_a_modified.png",
+    "RECREATIONB-modified.png": "recreation_b_modified.png",
+    "RECREATIONC-modified.png": "recreation_c_modified.png",
+    "color_6632B9.png": "color_6632b9.png",
+    "color_FF19FF.png": "color_ff19ff.png",
+    "skM0_witherstormStageA.png": "skm0_witherstormstagea.png",
+    "skM0_witherstormStageB.png": "skm0_witherstormstageb.png",
+    "skM0_witherstormCRibs.png": "skm0_witherstormstagecribs.png",
+    "skM0_witherstormStageDbloodA.png": "skm0_witherstormstagedblooda.png",
+    "skM0_witherstormStageDbloodB.png": "skm0_witherstormstagedbloodb.png",
+    "skM0_witherstormStageDbloodC.png": "skm0_witherstormstagedbloodc.png",
 }
 
 

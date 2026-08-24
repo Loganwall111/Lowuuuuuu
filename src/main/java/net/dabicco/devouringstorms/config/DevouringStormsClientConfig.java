@@ -57,9 +57,9 @@ public class DevouringStormsClientConfig {
    public static double skyDarkenG = 0.055;
    public static double skyDarkenB = 0.194;
    public static double skyDarkenIntensity = 0.84;
-   public static double eyeColorR = 0.74;
-   public static double eyeColorG = 0.8;
-   public static double eyeColorB = (double)1.0F;
+   public static double eyeColorR = 0.44;
+   public static double eyeColorG = (double)1.0F;
+   public static double eyeColorB = 0.88;
    public static double stormGlowStrength = (double)1.0F;
    public static boolean stormGlowFlip = false;
    public static double beamColorR = 0.3;
@@ -114,7 +114,7 @@ public class DevouringStormsClientConfig {
    public static double debrisSize = (double)1.0F;
    public static double stormSkin = (double)1.0F;
    public static final String[] SKIN_LABELS = new String[]{"Classic", "OG MCSM Textures (Default)", "Shaded MCSM Models"};
-   public static boolean stormStageShells = false;
+   public static boolean stormStageShells = true;
    public static double shaderPackProfile = (double)0.0F;
    public static final String[] SHADER_PACK_PROFILE_LABELS = new String[]{"Automatic", "Companion", "Punchy"};
    public static double shaderPackEmissiveGain = (double)1.0F;
@@ -132,6 +132,7 @@ public class DevouringStormsClientConfig {
    public static double stormCloudCoverage = 1.35;
    public static double stormCloudAltitude = (double)0.0F;
    public static double stormCloudPaletteMix = 1.0;
+   public static boolean ambientMcsmClouds = true;
    public static boolean atmospherePulse = true;
    public static double pulseStrength = (double)1.0F;
    public static double pulsePeriod = (double)4.0F;
@@ -141,7 +142,7 @@ public class DevouringStormsClientConfig {
    public static double summonShockwaveSize = 1.2;
    public static boolean cataclysmHalos = true;
    public static double haloStrength = (double)1.0F;
-   public static boolean blackGlare = true;
+   public static boolean blackGlare = false;
    public static double blackGlareStrength = (double)1.0F;
    public static boolean bloomedBackdrop = false;
    public static boolean earlyVortexRings = false;
@@ -156,9 +157,9 @@ public class DevouringStormsClientConfig {
    public static double turquoiseFogR = 0.031;
    public static double turquoiseFogG = 0.42;
    public static double turquoiseFogB = 0.36;
-   public static double cataclysmFogR = 0.055;
-   public static double cataclysmFogG = 0.028;
-   public static double cataclysmFogB = 0.10;
+   public static double cataclysmFogR = 0.102;
+   public static double cataclysmFogG = 0.0;
+   public static double cataclysmFogB = 0.169;
    public static boolean configOpened = false;
    public static boolean bossbarNotched = true;
    public static boolean clusterVolumetricLighting = false;
@@ -481,7 +482,7 @@ public class DevouringStormsClientConfig {
       key("debrisAmount", "How much wreckage orbits the storm.", (double)0.0F, (double)2.0F, false, () -> debrisAmount, (v) -> debrisAmount = v);
       key("debrisSize", "Size of the wreckage blocks caught in the tractor beams.", 0.2, (double)3.0F, false, () -> debrisSize, (v) -> debrisSize = v);
       keyCycle("stormSkin", "Classic keeps the plain textures. OG MCSM Textures is now the default and keeps the original dark black-purple story look on the current animated models. Shaded MCSM Models is the separate traced-BBModel-style presentation pass for players who want the bulkier shell look instead.", SKIN_LABELS, () -> stormSkin, (v) -> stormSkin = (double)Math.round(v));
-      key("stormStageShells", "Use the separate shaded BBModel body-shell overlay for the big Stage B/C/D storm forms. Off by default so the OG animated texture look stays the baseline presentation.", (double)0.0F, (double)1.0F, true, () -> stormStageShells ? (double)1.0F : (double)0.0F, (v) -> stormStageShells = v >= (double)0.5F);
+      key("stormStageShells", "Overlay the traced BBModel body shells (Stage B/C/D, straight from the Traced_shading_Textures sources) on the shaded model presentation. The shells only ever draw in the Shaded MCSM Models skin preset, so the OG animated texture look stays the baseline.", (double)0.0F, (double)1.0F, true, () -> stormStageShells ? (double)1.0F : (double)0.0F, (v) -> stormStageShells = v >= (double)0.5F);
       keyCycle("shaderPackProfile", "How Devouring Storms should present its emissive glow while an Iris/Oculus shader pack is active. Automatic follows your bloom level, Companion pushes a steadier MCSM-style glow, Punchy pushes it harder for flatter cel packs.", SHADER_PACK_PROFILE_LABELS, () -> shaderPackProfile, (v) -> shaderPackProfile = (double)Math.round(v));
       key("shaderPackEmissiveGain", "Extra multiplier for storm eye, teeth and shaded-shell emissive punch while a shader pack is active.", 0.5, (double)2.0F, false, () -> shaderPackEmissiveGain, (v) -> shaderPackEmissiveGain = v);
       keyCycle("stormStars", "A dome of twinkling stars in the blacked-out sky. Storm Nights shows it only while a phase-5+ storm has eaten the light; Every Night replaces the vanilla sky every night.", STAR_LABELS, () -> stormStars, (v) -> stormStars = (double)Math.round(v));
@@ -495,6 +496,7 @@ public class DevouringStormsClientConfig {
       key("globalMcsmStrength", "How strongly that global palette claims the sky, clouds and world lighting when no storm is present.", (double)0.0F, (double)1.0F, false, () -> globalMcsmStrength, (v) -> globalMcsmStrength = v);
       key("stormCloudCoverage", "How much of the sky around the storm the deck covers.", 0.25, (double)2.0F, false, () -> stormCloudCoverage, (v) -> stormCloudCoverage = v);
       key("stormCloudAltitude", "Push the whole deck up or down.", -40.0, (double)40.0F, false, () -> stormCloudAltitude, (v) -> stormCloudAltitude = v);
+      key("ambientMcsmClouds", "The chunky Story-Mode voxel clouds are the game's default cloud look even when no storm exists: neutral white by day, deep indigo / storm-blue at night, with semi-transparent bottoms you can see the sky through. When a storm actually arrives only the cloud/sky palette changes - the clouds themselves stay native.", (double)0.0F, (double)1.0F, true, () -> ambientMcsmClouds ? (double)1.0F : (double)0.0F, (v) -> ambientMcsmClouds = v >= (double)0.5F);
       key("stormCloudPaletteMix", "How much the deck follows the phase palette versus your manual cloud colour.", (double)0.0F, (double)1.0F, false, () -> stormCloudPaletteMix, (v) -> stormCloudPaletteMix = v);
       key("atmospherePulse", "The one-shot command-block pulse event after the late-phase trigger moment.", (double)0.0F, (double)1.0F, true, () -> atmospherePulse ? (double)1.0F : (double)0.0F, (v) -> atmospherePulse = v >= (double)0.5F);
       key("pulseStrength", "How bright the one-shot pulse burns at its peak.", (double)0.0F, (double)2.0F, false, () -> pulseStrength, (v) -> pulseStrength = v);
@@ -503,10 +505,10 @@ public class DevouringStormsClientConfig {
       key("summonShockwave", "Optional first-summon purple shockwave burst. Off by default.", (double)0.0F, (double)1.0F, true, () -> summonShockwave ? (double)1.0F : (double)0.0F, (v) -> summonShockwave = v >= (double)0.5F);
       key("summonShockwaveStrength", "Brightness of that first-summon shockwave.", (double)0.0F, (double)2.0F, false, () -> summonShockwaveStrength, (v) -> summonShockwaveStrength = v);
       key("summonShockwaveSize", "How far the first-summon shockwave expands.", 0.5, (double)3.0F, false, () -> summonShockwaveSize, (v) -> summonShockwaveSize = v);
-      key("cataclysmHalos", "Permanent late-stage halo planes attached behind the storm once the cataclysm look properly starts. The bright bloomed centre is now a separate toggle.", (double)0.0F, (double)1.0F, true, () -> cataclysmHalos ? (double)1.0F : (double)0.0F, (v) -> cataclysmHalos = v >= (double)0.5F);
-      key("haloStrength", "Brightness of those attached late-stage halo planes.", (double)0.0F, (double)2.0F, false, () -> haloStrength, (v) -> haloStrength = v);
-      key("blackGlare", "Attach the dark story-mode sky bubble behind the storm instead of drawing a simple flat glare over it. This is the main purple / black sky-backdrop effect.", (double)0.0F, (double)1.0F, true, () -> blackGlare ? (double)1.0F : (double)0.0F, (v) -> blackGlare = v >= (double)0.5F);
-      key("blackGlareStrength", "How strongly that attached sky bubble and phase glare claims the air behind the storm.", (double)0.0F, (double)2.0F, false, () -> blackGlareStrength, (v) -> blackGlareStrength = v);
+      key("cataclysmHalos", "Attached Story-Mode aura: a soft light halo that rides the storm's outer silhouette and follows it across the sky. Blue-white ring in phase 4, a dark black wash when the turquoise fog starts, a black/purple aura through phase 5, a drift toward blue at 5.5, and the layered orange/red/purple/black halo stack through phase 6+. Not a wall, never covers the storm.", (double)0.0F, (double)1.0F, true, () -> cataclysmHalos ? (double)1.0F : (double)0.0F, (v) -> cataclysmHalos = v >= (double)0.5F);
+      key("haloStrength", "Brightness of the attached aura halos.", (double)0.0F, (double)2.0F, false, () -> haloStrength, (v) -> haloStrength = v);
+      key("blackGlare", "Legacy look: the old big flat sky-bubble planes pinned behind the storm (the pixelated wall). Off by default - the new attached aura replaces it.", (double)0.0F, (double)1.0F, true, () -> blackGlare ? (double)1.0F : (double)0.0F, (v) -> blackGlare = v >= (double)0.5F);
+      key("blackGlareStrength", "How strongly the legacy sky-bubble planes claim the air behind the storm.", (double)0.0F, (double)2.0F, false, () -> blackGlareStrength, (v) -> blackGlareStrength = v);
       key("bloomedBackdrop", "Optional bloomed centre / black-hole style core for the late sky bubble. Off by default.", (double)0.0F, (double)1.0F, true, () -> bloomedBackdrop ? (double)1.0F : (double)0.0F, (v) -> bloomedBackdrop = v >= (double)0.5F);
       key("earlyVortexRings", "Let the huge 2D vortex rings and cataclysm sky column appear before the ultra-late 7.5+ range. Off by default.", (double)0.0F, (double)1.0F, true, () -> earlyVortexRings ? (double)1.0F : (double)0.0F, (v) -> earlyVortexRings = v >= (double)0.5F);
       key("glareEjecta", "Turquoise and green cluster sparks ejecting from the glare ring.", (double)0.0F, (double)1.0F, true, () -> glareEjecta ? (double)1.0F : (double)0.0F, (v) -> glareEjecta = v >= (double)0.5F);
@@ -625,9 +627,9 @@ public class DevouringStormsClientConfig {
       }
 
       loadedVersion = 13;
-      PRESET_MCSM = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStageShells", (double)0.0F), Map.entry("legacyHeads", (double)0.0F), Map.entry("filledSubphases", (double)1.0F), Map.entry("flatbackFlipFix", (double)1.0F), Map.entry("mirrorBackDetail", (double)1.0F), Map.entry("stormModelShading", (double)1.0F), Map.entry("stormShadow", (double)1.0F), Map.entry("stormSelfShadow", (double)1.0F), Map.entry("stormShadowStrength", 0.60), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("stormCloudCoverage", 1.48), Map.entry("stormCloudPaletteMix", (double)1.0F), Map.entry("skyDarkenIntensity", 0.84), Map.entry("skyDarkenLighting", 0.82), Map.entry("cloudDarkenStrength", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.8), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
+      PRESET_MCSM = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStageShells", (double)0.0F), Map.entry("legacyHeads", (double)0.0F), Map.entry("filledSubphases", (double)1.0F), Map.entry("flatbackFlipFix", (double)1.0F), Map.entry("mirrorBackDetail", (double)1.0F), Map.entry("stormModelShading", (double)1.0F), Map.entry("stormShadow", (double)1.0F), Map.entry("stormSelfShadow", (double)1.0F), Map.entry("stormShadowStrength", 0.60), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("stormCloudCoverage", 1.48), Map.entry("stormCloudPaletteMix", (double)1.0F), Map.entry("skyDarkenIntensity", 0.84), Map.entry("skyDarkenLighting", 0.82), Map.entry("cloudDarkenStrength", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)0.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.8), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
       PRESET_LEGACY = Map.of("reverseShading", (double)0.0F, "bloomStrength", (double)1.0F, "beamOpacity", 0.74, "beamColorR", 0.52, "beamColorG", 0.46, "beamColorB", (double)1.0F);
-      PRESET_CINEMATIC = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)2.0F), Map.entry("stormStageShells", (double)1.0F), Map.entry("legacyHeads", (double)0.0F), Map.entry("filledSubphases", (double)1.0F), Map.entry("flatbackFlipFix", (double)1.0F), Map.entry("mirrorBackDetail", (double)1.0F), Map.entry("stormModelShading", (double)1.0F), Map.entry("stormShadow", (double)1.0F), Map.entry("stormSelfShadow", (double)1.0F), Map.entry("stormShadowStrength", 0.68), Map.entry("stormStars", (double)2.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("stormCloudCoverage", 1.62), Map.entry("stormCloudPaletteMix", (double)1.0F), Map.entry("skyDarkenIntensity", 0.9), Map.entry("skyDarkenLighting", 0.86), Map.entry("cloudDarkenStrength", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("pulseStrength", 1.3), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("haloStrength", 1.2), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("ejectaRate", 1.4), Map.entry("pulseHeartbeat", (double)1.0F), Map.entry("debrisSize", (double)2.0F), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
+      PRESET_CINEMATIC = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)2.0F), Map.entry("stormStageShells", (double)1.0F), Map.entry("legacyHeads", (double)0.0F), Map.entry("filledSubphases", (double)1.0F), Map.entry("flatbackFlipFix", (double)1.0F), Map.entry("mirrorBackDetail", (double)1.0F), Map.entry("stormModelShading", (double)1.0F), Map.entry("stormShadow", (double)1.0F), Map.entry("stormSelfShadow", (double)1.0F), Map.entry("stormShadowStrength", 0.68), Map.entry("stormStars", (double)2.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("stormCloudCoverage", 1.62), Map.entry("stormCloudPaletteMix", (double)1.0F), Map.entry("skyDarkenIntensity", 0.9), Map.entry("skyDarkenLighting", 0.86), Map.entry("cloudDarkenStrength", (double)1.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("pulseStrength", 1.3), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("haloStrength", 1.2), Map.entry("blackGlare", (double)0.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("ejectaRate", 1.4), Map.entry("pulseHeartbeat", (double)1.0F), Map.entry("debrisSize", (double)2.0F), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
       GSON = (new GsonBuilder()).setPrettyPrinting().create();
    }
 

@@ -47,6 +47,13 @@ def quad_normal(a, b, c):
     return [r(nx / length), r(ny / length), r(nz / length)]
 
 
+def sanitize_tex_name(name):
+    cleaned = name.replace(" ", "_").replace("!", "").replace(":", "_").lower()
+    if cleaned != name:
+        print(f"  [sanitized texture name] {name!r} -> {cleaned!r}")
+    return cleaned
+
+
 def face_texture(tex):
     if tex is None:
         return None
@@ -85,6 +92,11 @@ def export_one(name: str, source_path: Path):
 
             tex_index = face_texture(face.get("texture"))
             tex = textures.get(tex_index)
+            # keep texture paths valid Identifier paths (Minecraft rejects
+            # spaces, "!", and uppercase in resource locations)
+            if tex is not None:
+                tex = dict(tex)
+                tex["name"] = sanitize_tex_name(tex["name"])
             if tex is None:
                 continue
 

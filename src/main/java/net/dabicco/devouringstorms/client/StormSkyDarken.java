@@ -16,6 +16,13 @@ public final class StormSkyDarken {
    private static float palettePhase;
    /** proximity/ownership of the current sky palette, 0 = no override, 1 = full storm takeover */
    private static float paletteBlend;
+   /**
+    * Phase 6's rise: when the dominant palette crosses into the split storm
+    * the whole sky dips black for a few seconds while the storm rises, then
+    * settles back into the pinkish-purple phase-6 look.
+    */
+   private static float riseBlack;
+   private static float lastPalettePhase;
 
    public static float floorR() {
       return (float)DevouringStormsClientConfig.skyDarkenR;
@@ -84,10 +91,20 @@ public final class StormSkyDarken {
       return paletteBlend;
    }
 
+   /** The phase-6 black-sky dip while the split storm rises (1 = fully black, decays over a few seconds). */
+   public static float riseBlack() {
+      return riseBlack * Math.min(1.0F, paletteBlend * 1.6F);
+   }
+
+   private static float applyRiseBlack(float value) {
+      float black = riseBlack();
+      return black <= 0.001F ? value : Mth.lerp(black, value, 0.012F);
+   }
+
    public static float fogR() {
       if (DevouringStormsClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.fogColor(palettePhase, new float[3]);
-         return Mth.lerp(StormPalettes.strength() * paletteBlend, DevouringStormsClientConfig.separateFogColor ? (float)DevouringStormsClientConfig.fogColorR : floorR(), c[0]);
+         return applyRiseBlack(Mth.lerp(StormPalettes.strength() * paletteBlend, DevouringStormsClientConfig.separateFogColor ? (float)DevouringStormsClientConfig.fogColorR : floorR(), c[0]));
       } else {
          return DevouringStormsClientConfig.separateFogColor ? (float)DevouringStormsClientConfig.fogColorR : floorR();
       }
@@ -96,7 +113,7 @@ public final class StormSkyDarken {
    public static float fogG() {
       if (DevouringStormsClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.fogColor(palettePhase, new float[3]);
-         return Mth.lerp(StormPalettes.strength() * paletteBlend, DevouringStormsClientConfig.separateFogColor ? (float)DevouringStormsClientConfig.fogColorG : floorG(), c[1]);
+         return applyRiseBlack(Mth.lerp(StormPalettes.strength() * paletteBlend, DevouringStormsClientConfig.separateFogColor ? (float)DevouringStormsClientConfig.fogColorG : floorG(), c[1]));
       } else {
          return DevouringStormsClientConfig.separateFogColor ? (float)DevouringStormsClientConfig.fogColorG : floorG();
       }
@@ -105,7 +122,7 @@ public final class StormSkyDarken {
    public static float fogB() {
       if (DevouringStormsClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.fogColor(palettePhase, new float[3]);
-         return Mth.lerp(StormPalettes.strength() * paletteBlend, DevouringStormsClientConfig.separateFogColor ? (float)DevouringStormsClientConfig.fogColorB : floorB(), c[2]);
+         return applyRiseBlack(Mth.lerp(StormPalettes.strength() * paletteBlend, DevouringStormsClientConfig.separateFogColor ? (float)DevouringStormsClientConfig.fogColorB : floorB(), c[2]));
       } else {
          return DevouringStormsClientConfig.separateFogColor ? (float)DevouringStormsClientConfig.fogColorB : floorB();
       }
@@ -114,7 +131,7 @@ public final class StormSkyDarken {
    public static float skyR() {
       if (DevouringStormsClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.skyColor(palettePhase, new float[3]);
-         return Mth.lerp(StormPalettes.strength() * paletteBlend, skyBaseR(), c[0]);
+         return applyRiseBlack(Mth.lerp(StormPalettes.strength() * paletteBlend, skyBaseR(), c[0]));
       }
       return skyBaseR();
    }
@@ -122,7 +139,7 @@ public final class StormSkyDarken {
    public static float skyG() {
       if (DevouringStormsClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.skyColor(palettePhase, new float[3]);
-         return Mth.lerp(StormPalettes.strength() * paletteBlend, skyBaseG(), c[1]);
+         return applyRiseBlack(Mth.lerp(StormPalettes.strength() * paletteBlend, skyBaseG(), c[1]));
       }
       return skyBaseG();
    }
@@ -130,7 +147,7 @@ public final class StormSkyDarken {
    public static float skyB() {
       if (DevouringStormsClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.skyColor(palettePhase, new float[3]);
-         return Mth.lerp(StormPalettes.strength() * paletteBlend, skyBaseB(), c[2]);
+         return applyRiseBlack(Mth.lerp(StormPalettes.strength() * paletteBlend, skyBaseB(), c[2]));
       }
       return skyBaseB();
    }
@@ -157,6 +174,9 @@ public final class StormSkyDarken {
 
          palettePhase = 0.0F;
          paletteBlend = 0.0F;
+         if (riseBlack > 0.0F) {
+            riseBlack = Math.max(0.0F, riseBlack - 0.05F);
+         }
          return;
       }
 
@@ -227,6 +247,15 @@ public final class StormSkyDarken {
 
       palettePhase += (phaseTarget - palettePhase) * (phaseTarget > palettePhase ? 0.060F : 0.040F);
       paletteBlend += (blendTarget - paletteBlend) * 0.055F;
+      // Phase-6 rise: crossing 5.9 blacks the sky out for a few seconds, then
+      // the black decays and the pinkish-purple phase-6 palette returns.
+      if (palettePhase >= 5.9F && lastPalettePhase < 5.9F) {
+         riseBlack = 1.0F;
+      }
+      lastPalettePhase = palettePhase;
+      if (riseBlack > 0.0F) {
+         riseBlack = Math.max(0.0F, riseBlack - 0.0125F);
+      }
       if (palettePhase < 0.01F) {
          palettePhase = 0.0F;
       }
@@ -240,5 +269,7 @@ public final class StormSkyDarken {
       displayed = 0.0F;
       palettePhase = 0.0F;
       paletteBlend = 0.0F;
+      riseBlack = 0.0F;
+      lastPalettePhase = 0.0F;
    }
 }
