@@ -69,6 +69,7 @@
     "SoundBufferAccessor",
     "SoundBufferLibraryMixin",
     "SoundEngineMixin",
+    "TitleScreenBrandingMixin",
     "TitleScreenConfigNoticeMixin",
     "VanillaMusicFadeMixin",
     "WorldOptionsScreenAccessor",

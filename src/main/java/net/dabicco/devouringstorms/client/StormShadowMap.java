@@ -249,6 +249,101 @@ public final class StormShadowMap {
       }
    }
 
+   public static void captureCustomQuads(PoseStack pose, float[] quads, float[] normals, float scale) {
+      if (wanted() && quads.length != 0 && normals.length != 0) {
+         try {
+            Matrix4f m = pose.last().pose();
+            Matrix3f nm = pose.last().normal();
+            float a00 = m.m00();
+            float a01 = m.m01();
+            float a02 = m.m02();
+            float a10 = m.m10();
+            float a11 = m.m11();
+            float a12 = m.m12();
+            float a20 = m.m20();
+            float a21 = m.m21();
+            float a22 = m.m22();
+            float a30 = m.m30();
+            float a31 = m.m31();
+            float a32 = m.m32();
+            float b00 = nm.m00();
+            float b01 = nm.m01();
+            float b02 = nm.m02();
+            float b10 = nm.m10();
+            float b11 = nm.m11();
+            float b12 = nm.m12();
+            float b20 = nm.m20();
+            float b21 = nm.m21();
+            float b22 = nm.m22();
+            int faces = Math.min(quads.length / 12, normals.length / 3);
+
+            for(int q = 0; q < faces; ++q) {
+               if (cullAway) {
+                  float nx = normals[q * 3];
+                  float ny = normals[q * 3 + 1];
+                  float nz = normals[q * 3 + 2];
+                  float tx = b00 * nx + b10 * ny + b20 * nz;
+                  float ty = b01 * nx + b11 * ny + b21 * nz;
+                  float tz = b02 * nx + b12 * ny + b22 * nz;
+                  if (tx * cullSunX + ty * cullSunY + tz * cullSunZ <= 0.0F) {
+                     continue;
+                  }
+               }
+
+               if (vertCount * 3 + 12 > verts.length) {
+                  verts = Arrays.copyOf(verts, verts.length * 2);
+               }
+
+               int base = q * 12;
+               for(int c = 0; c < 4; ++c) {
+                  float x = quads[base + c * 3] * scale;
+                  float y = quads[base + c * 3 + 1] * scale;
+                  float z = quads[base + c * 3 + 2] * scale;
+                  float wx = a00 * x + a10 * y + a20 * z + a30;
+                  float wy = a01 * x + a11 * y + a21 * z + a31;
+                  float wz = a02 * x + a12 * y + a22 * z + a32;
+                  verts[vertCount * 3] = wx;
+                  verts[vertCount * 3 + 1] = wy;
+                  verts[vertCount * 3 + 2] = wz;
+                  if (vertCount == 0) {
+                     maxX = wx;
+                     minX = wx;
+                     maxY = wy;
+                     minY = wy;
+                     maxZ = wz;
+                     minZ = wz;
+                  } else {
+                     if (wx < minX) {
+                        minX = wx;
+                     } else if (wx > maxX) {
+                        maxX = wx;
+                     }
+
+                     if (wy < minY) {
+                        minY = wy;
+                     } else if (wy > maxY) {
+                        maxY = wy;
+                     }
+
+                     if (wz < minZ) {
+                        minZ = wz;
+                     } else if (wz > maxZ) {
+                        maxZ = wz;
+                     }
+                  }
+
+                  ++vertCount;
+               }
+            }
+
+            haveGeometry = vertCount > 0;
+         } catch (Exception e) {
+            failed = true;
+            System.out.println("[devouringstorms] custom storm shadow capture FAILED, shadows off: " + String.valueOf(e));
+         }
+      }
+   }
+
    private static PartGeom geomFor(ModelPart part) {
       PartGeom hit = (PartGeom)GEOM.get(part);
       if (hit != null) {

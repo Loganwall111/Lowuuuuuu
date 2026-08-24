@@ -16,6 +16,7 @@ import net.dabicco.devouringstorms.client.StormDebris;
 import net.dabicco.devouringstorms.client.StormGlowRenderer;
 import net.dabicco.devouringstorms.client.StormPalettes;
 import net.dabicco.devouringstorms.client.StormShadowMap;
+import net.dabicco.devouringstorms.client.StormStageShells;
 import net.dabicco.devouringstorms.client.TentacleMeasure;
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
 import net.dabicco.devouringstorms.entity.CollapseAnim;
@@ -803,6 +804,27 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       }
    }
 
+   private static String stageShellName(WitherStormRenderState state) {
+      return state.phase4 && StormSkins.shaded() && DevouringStormsClientConfig.stormStageShells ? StormStageShells.shellForPhase(state.phase) : null;
+   }
+
+   private static float stageShellAlpha(WitherStormRenderState state) {
+      if (!StormSkins.shaded() || !DevouringStormsClientConfig.stormStageShells || !state.phase4) {
+         return 0.0F;
+      } else {
+         float ramp = Mth.clamp((float)((state.phase - 4.15) / 0.55), 0.0F, 1.0F);
+         return ramp * state.hatch * state.collapseFade;
+      }
+   }
+
+   private void submitStageShell(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
+      String shell = stageShellName(state);
+      float alpha = stageShellAlpha(state);
+      if (shell != null && alpha > 0.01F && !this.previewShadowPass) {
+         StormStageShells.submit(shell, state.phase, poseStack, collector, state.lightCoords, this.pieceTint(state), alpha, state.phase >= 5.0);
+      }
+   }
+
    private void submitAttachedHalo(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
       if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || state.phase < 5.35) {
          return;
@@ -1103,6 +1125,10 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          poseStack.translate(0.0F, -1.501F, 0.0F);
          this.model.setupAnim(state);
          StormShadowMap.capture(poseStack, this.model);
+         String shell = stageShellName(state);
+         if (shell != null) {
+            StormStageShells.captureShadow(shell, state.phase, poseStack);
+         }
          poseStack.popPose();
       }
 
@@ -1110,6 +1136,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          poseStack.pushPose();
          poseStack.translate(0.0F, -1.501F, 0.0F);
          this.submitCover(poseStack, this.frameCollector, state);
+         this.submitStageShell(state, poseStack, this.frameCollector);
          if (state.phase4 && !state.devourer && !this.previewShadowPass) {
             float emit = phase4EmissiveGain(state);
             if (emit > 0.02F) {

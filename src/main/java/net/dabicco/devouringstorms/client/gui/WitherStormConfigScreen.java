@@ -619,6 +619,7 @@ public class WitherStormConfigScreen extends Screen {
       }));
       this.header("Storm Rendering");
       this.clientRow("stormSkin", "Model / Texture Look", (BooleanSupplier)null);
+      this.clientRow("stormStageShells", "Shaded Stage Bodies", () -> Math.round((float)DevouringStormsClientConfig.stormSkin) < 2);
       this.clientRow("legacyHeads", "Old Simplified Heads", (BooleanSupplier)null);
       this.clientRow("distantStorms", "Distant Storms", (BooleanSupplier)null);
       this.clientRow("distantFog", "Distant Storm Haze", (BooleanSupplier)null);
