@@ -134,23 +134,30 @@ public final class StormPulseFX {
          Vec3 centre = rel.add(0.0, bodyR * (split ? 0.08 : summon ? 0.12 : 0.15), 0.0);
          StormGlowRenderer.submitLight(pose, collector, centre, view, radius, LAYER_SIZES, LAYER_ALPHAS, layerCols, split ? amount * 1.24F : summon ? amount * 1.08F : amount);
 
-         int alpha = (int)((split ? 220.0F : summon ? 210.0F : 180.0F) * fade);
-         ring(pose, collector, centre, view, radius * (split ? 0.82 : 0.96), radius * (split ? 0.14 : summon ? 0.22 : 0.18), layerCols[0][0], layerCols[0][1], layerCols[0][2], alpha);
-         ring(pose, collector, centre, view, radius * (split ? 1.04 : 1.18), radius * (split ? 0.08 : summon ? 0.12 : 0.10), 255, 255, 255, (int)((split ? 165.0F : summon ? 145.0F : 110.0F) * fade));
+         // the bang flashes and pulses: a fast flicker rides the fade so the
+         // purple shockwave reads as living light, not a static ring
+         float flicker = split ? 0.82F + 0.18F * Mth.sin((float)(System.currentTimeMillis() % 100000L) * 0.045F) : 1.0F;
+         int alpha = (int)((split ? 220.0F : summon ? 210.0F : 180.0F) * fade * flicker);
+         ring(pose, collector, centre, radius * (split ? 0.82 : 0.96), radius * (split ? 0.14 : summon ? 0.22 : 0.18), layerCols[0][0], layerCols[0][1], layerCols[0][2], alpha);
+         ring(pose, collector, centre, radius * (split ? 1.04 : 1.18), radius * (split ? 0.08 : summon ? 0.12 : 0.10), 255, 255, 255, (int)((split ? 165.0F : summon ? 145.0F : 110.0F) * fade * flicker));
          if (split) {
-            ring(pose, collector, centre, view, radius * 0.68, radius * 0.09, 255, 118, 34, (int)(132.0F * fade));
+            ring(pose, collector, centre, radius * 0.68, radius * 0.09, 255, 118, 34, (int)(132.0F * fade * flicker));
          }
       }
    }
 
-   private static void ring(PoseStack pose, SubmitNodeCollector collector, Vec3 centre, Vec3 viewDir, double radius, double thickness, int r, int g, int b, int alpha) {
+   /**
+    * A flat world-space gradient shockwave band ringing the storm in the
+    * horizontal plane - world-anchored geometry around the storm, never a
+    * camera-rotated quad, drawn on the additive no-depth-write glow pipeline.
+    */
+   private static void ring(PoseStack pose, SubmitNodeCollector collector, Vec3 centre, double radius, double thickness, int r, int g, int b, int alpha) {
       if (alpha <= 2 || radius <= 0.01 || thickness <= 0.001) {
          return;
       }
 
-      Vec3 up = Math.abs(viewDir.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
-      Vec3 right = viewDir.cross(up).normalize();
-      Vec3 upB = right.cross(viewDir).normalize();
+      Vec3 right = new Vec3(1.0, 0.0, 0.0);
+      Vec3 upB = new Vec3(0.0, 0.0, 1.0);
       double rIn = Math.max(0.0, radius - thickness * 0.5);
       double rMid = radius;
       double rOut = radius + thickness * 0.5;
