@@ -453,6 +453,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       state.phase4 = entity.isPhase4();
       state.devourer = entity.isDevourer();
       state.phase = entity.getPhase();
+      state.expansionPhase = entity.getExpansionPhase();
       if (entity.hasCover()) {
          state.portalCorners = BowelsPortal.corners(entity.getYRot());
          state.portalOpen = BowelsPortal.open(state.phase);
@@ -587,6 +588,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
                   state.stormId,
                   state.devourer,
                   debrisSettle(state.phase),
+                  growthScale(state),
                   state.preview != null
                );
             }
@@ -731,7 +733,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    private static float growthScale(WitherStormRenderState state) {
-      return (float)WitherStormEntity.clientGrowthScaleForPhase(state.phase);
+      return (float)WitherStormEntity.clientGrowthScaleForPhase(Math.max(state.phase, state.expansionPhase));
    }
 
    private static double auraRadius(WitherStormRenderState state) {

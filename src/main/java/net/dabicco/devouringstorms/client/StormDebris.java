@@ -120,11 +120,15 @@ public final class StormDebris {
    }
 
    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, float phase5Ticks, float phase58Ticks, int stormId, boolean devourer, float settle) {
-      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, devourer, settle, false);
+      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, devourer, settle, 1.0F, false);
    }
 
    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, float phase5Ticks, float phase58Ticks, int stormId, boolean devourer, float settle, boolean preview) {
-      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, settle, devourer ? 5880 : 2500, devourer, 2500, 1.0F, preview);
+      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, devourer, settle, 1.0F, preview);
+   }
+
+   public static void submit(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, float phase5Ticks, float phase58Ticks, int stormId, boolean devourer, float settle, float growthScale, boolean preview) {
+      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, settle, devourer ? 5880 : 2500, devourer, 2500, 1.0F, growthScale, preview);
    }
 
    public static void submitEarly(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, float phase, int stormId) {
@@ -184,23 +188,33 @@ public final class StormDebris {
    }
 
    public static void submitSeveredCloud(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, int id, float cubeBoost) {
-      submitSeveredCloud(poseStack, collector, timeTicks, light, id, cubeBoost, false);
+      submitSeveredCloud(poseStack, collector, timeTicks, light, id, cubeBoost, 1.0F, false);
    }
 
    public static void submitSeveredCloud(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, int id, float cubeBoost, boolean preview) {
-      submit(poseStack, collector, timeTicks, light, 6000.0F, -1.0F, id, 0.0F, 2500, true, 0, cubeBoost, preview);
+      submitSeveredCloud(poseStack, collector, timeTicks, light, id, cubeBoost, 1.0F, preview);
+   }
+
+   public static void submitSeveredCloud(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, int id, float cubeBoost, float growthScale, boolean preview) {
+      submit(poseStack, collector, timeTicks, light, 6000.0F, -1.0F, id, 0.0F, 2500, true, 0, cubeBoost, growthScale, preview);
    }
 
    private static void submit(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, float phase5Ticks, float phase58Ticks, int stormId, float settle, int drawCount, boolean violet, int glowFrom, float cubeBoost) {
-      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, settle, drawCount, violet, glowFrom, cubeBoost, false);
+      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, settle, drawCount, violet, glowFrom, cubeBoost, 1.0F, false);
    }
 
    private static void submit(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, float phase5Ticks, float phase58Ticks, int stormId, float settle, int drawCount, boolean violet, int glowFrom, float cubeBoost, boolean preview) {
+      submit(poseStack, collector, timeTicks, light, phase5Ticks, phase58Ticks, stormId, settle, drawCount, violet, glowFrom, cubeBoost, 1.0F, preview);
+   }
+
+   private static void submit(PoseStack poseStack, SubmitNodeCollector collector, float timeTicks, int light, float phase5Ticks, float phase58Ticks, int stormId, float settle, int drawCount, boolean violet, int glowFrom, float cubeBoost, float growthScale, boolean preview) {
       boolean ringActive = phase5Ticks >= 0.0F;
       float homeAmount = ringExtension(stormId, ringActive);
       float elapsedSec = ringActive ? phase5Ticks / 20.0F : 0.0F;
       float retract = phase58Ticks < 0.0F ? 0.0F : Mth.clamp(phase58Ticks / 90.0F, 0.0F, 1.0F);
       float retractEase = retract * retract * (3.0F - 2.0F * retract);
+      float orbitScale = Math.max(1.0F, growthScale);
+      float cubeScale = 1.0F + (orbitScale - 1.0F) * 0.55F;
       collector.submitCustomGeometry(poseStack, FoglessRenderTypes.bodyCutout(TEXTURE), (pose, consumer) -> {
          Vector3f cam = camLocal(pose);
          beginBatch(pose);
@@ -238,11 +252,13 @@ public final class StormDebris {
                         size = Mth.lerp(retractEase, size, size * 0.45F);
                      }
 
+                     radius *= orbitScale;
+                     size *= cubeScale;
                      float a = PHASE[i] + timeTicks * SPEED[i];
                      float ca = Mth.cos((double)a) * radius;
                      float sa = Mth.sin((double)a) * radius;
                      float x = UX[i] * ca + VX[i] * sa;
-                     float y = UY[i] * ca + VY[i] * sa + CY[i];
+                     float y = (UY[i] * ca + VY[i] * sa + CY[i]) * orbitScale;
                      float z = UZ[i] * ca + VZ[i] * sa;
                      float shade = SHADE[i] * 255.0F;
                      if (settling) {
@@ -279,13 +295,13 @@ public final class StormDebris {
                   for(int i = glowFrom; i < drawCount; i += 7) {
                      if (!(TR[i] < 0.0F) && !(retractEase >= 1.0F)) {
                         float a = PHASE[i] + timeTicks * SPEED[i];
-                        float radius = RADIUS[i];
+                        float radius = RADIUS[i] * orbitScale;
                         float ca = Mth.cos((double)a) * radius;
                         float sa = Mth.sin((double)a) * radius;
                         float x = UX[i] * ca + VX[i] * sa;
-                        float y = UY[i] * ca + VY[i] * sa + CY[i];
+                        float y = (UY[i] * ca + VY[i] * sa + CY[i]) * orbitScale;
                         float z = UZ[i] * ca + VZ[i] * sa;
-                        cube(pose, consumer, x, y, z, SIZE[i], (int)(TR[i] * 0.18F), (int)(TG[i] * 0.18F), (int)(TB[i] * 0.18F), light, i, timeTicks, cam.x, cam.y, cam.z);
+                        cube(pose, consumer, x, y, z, SIZE[i] * cubeScale, (int)(TR[i] * 0.18F), (int)(TG[i] * 0.18F), (int)(TB[i] * 0.18F), light, i, timeTicks, cam.x, cam.y, cam.z);
                      }
                   }
 

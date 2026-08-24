@@ -10,6 +10,7 @@ public class SeveredWitherStormRenderState extends LivingEntityRenderState {
    public float idleTimeTicks;
    public int stormId;
    public int bodyLight;
+   public float growthScale = 1.0F;
    public float collapseTicks = -1.0F;
    public float collapseWhiteout;
    public float collapseFade = 1.0F;

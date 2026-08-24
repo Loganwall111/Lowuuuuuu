@@ -83,6 +83,7 @@ public class SeveredWitherStormRenderer extends MobRenderer<SeveredWitherStormEn
       }
 
       state.bodyLight = state.lightCoords;
+      state.growthScale = entity.inheritedGrowthScale();
       state.collapseTicks = entity.hostCollapseTicks(partialTick);
       if (state.collapseTicks >= 0.0F) {
          state.collapseWhiteout = Mth.clamp((state.collapseTicks - 1000.0F) / 34.0F, 0.0F, 1.0F);
@@ -185,7 +186,7 @@ public class SeveredWitherStormRenderer extends MobRenderer<SeveredWitherStormEn
          poseStack.translate(state.mirrored ? -0.0F : 0.0F, 7.0F, 3.0F);
          poseStack.mulPose(Axis.YP.rotationDegrees(-bodyYaw));
          poseStack.scale(0.42F, 0.42F, 0.42F);
-         StormDebris.submitSeveredCloud(poseStack, collector, state.idleTimeTicks, state.bodyLight, state.stormId, 2.3809524F, state.preview != null);
+         StormDebris.submitSeveredCloud(poseStack, collector, state.idleTimeTicks, state.bodyLight, state.stormId, 2.3809524F, state.growthScale, state.preview != null);
          poseStack.popPose();
       }
    }
@@ -208,7 +209,8 @@ public class SeveredWitherStormRenderer extends MobRenderer<SeveredWitherStormEn
       }
 
       poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot));
-      poseStack.scale(1.1009175F, 1.1009175F, 1.1009175F);
+      float bodyScale = 1.1009175F * state.growthScale;
+      poseStack.scale(bodyScale, bodyScale, bodyScale);
       poseStack.translate(0.0, 6.0, 0.0);
       if (state.mirrored) {
          poseStack.scale(-1.0F, 1.0F, 1.0F);

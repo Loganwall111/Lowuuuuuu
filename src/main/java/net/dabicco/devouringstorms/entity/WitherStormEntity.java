@@ -114,6 +114,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    private static final EntityDataAccessor<Boolean> PHASE4_DATA;
    private static final EntityDataAccessor<Integer> SIEGE_STAGE;
    private static final EntityDataAccessor<Integer> SUBGROWTH_DATA;
+   private static final EntityDataAccessor<Float> EXPANSION_PHASE_DATA;
    private static final EntityDataAccessor<Long> SPAWN_ANIM_GAME_TIME;
    private static final EntityDataAccessor<Long> COLLAPSE_GAME_TIME;
    private static final EntityDataAccessor<Long> PHASE5_ANIM_GAME_TIME;
@@ -130,6 +131,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    private static final EntityDataAccessor<Float> BODY_ROLL;
    private static final EntityDataAccessor<Integer> SNATCH_ID;
    private double phase = (double)0.0F;
+   private double expansionPhase = (double)0.0F;
    private int subGrowth = 0;
    private int clusterCooldown;
    private UUID ultimateTargetUUID;
@@ -554,6 +556,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       builder.define(PHASE4_DATA, false);
       builder.define(SIEGE_STAGE, 0);
       builder.define(SUBGROWTH_DATA, 0);
+      builder.define(EXPANSION_PHASE_DATA, 0.0F);
       builder.define(SPAWN_ANIM_GAME_TIME, -1L);
       builder.define(PHASE5_ANIM_GAME_TIME, -1L);
       builder.define(MINI_HEAD_ANIM_GAME_TIME, -1L);
@@ -578,13 +581,23 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    public void clientSyncPhase(float phase) {
       this.phase = (double)phase;
+      this.expansionPhase = Math.max(this.expansionPhase, this.phase);
       this.entityData.set(PHASE_DATA, phase);
+      this.entityData.set(EXPANSION_PHASE_DATA, (float)this.expansionPhase);
    }
 
    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
       super.onSyncedDataUpdated(key);
       if (key == PHASE_DATA && this.level().isClientSide()) {
          this.phase = (double)(Float)this.entityData.get(PHASE_DATA);
+         this.expansionPhase = Math.max(this.expansionPhase, this.phase);
+         if (this.phase4) {
+            this.refreshDimensions();
+         }
+      }
+
+      if (key == EXPANSION_PHASE_DATA && this.level().isClientSide()) {
+         this.expansionPhase = Math.max(this.phase, (double)(Float)this.entityData.get(EXPANSION_PHASE_DATA));
          if (this.phase4) {
             this.refreshDimensions();
          }
@@ -911,8 +924,20 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       return this.level().isClientSide() ? ClientConfigCache.cfg.infiniteGrowth != 0 : WitherStormConfigs.get(this.level()).infiniteGrowth != 0;
    }
 
+   private double visualGrowthPhase() {
+      return Math.max(this.phase, this.expansionPhase);
+   }
+
+   public double getExpansionPhase() {
+      return this.expansionPhase;
+   }
+
+   public double currentGrowthScale() {
+      return growthScaleForPhase(this.visualGrowthPhase(), this.infiniteGrowthEnabled());
+   }
+
    private double growthScaleFactor() {
-      return growthScaleForPhase(this.phase, this.infiniteGrowthEnabled());
+      return this.currentGrowthScale();
    }
 
    public static double clientGrowthScaleForPhase(double phase) {
@@ -923,14 +948,15 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       if (!infiniteGrowth) {
          return 1.0;
       } else {
-         double extra = Math.max(0.0, phase - 5.8);
+         double extra = Math.max(0.0, phase - (double)5.0F);
          if (extra <= 0.0) {
             return 1.0;
          } else {
-            double early = Math.min(extra, 8.0) * 0.14;
-            double middle = Math.min(Math.max(0.0, extra - 8.0), 24.0) * 0.08;
-            double late = Math.max(0.0, extra - 32.0);
-            return 1.0 + early + middle + Math.sqrt(late) * 0.45;
+            double stageFive = Math.min(extra, 0.8) * 0.08;
+            double early = Math.min(Math.max(0.0, extra - 0.8), 8.0) * 0.14;
+            double middle = Math.min(Math.max(0.0, extra - 8.8), 24.0) * 0.08;
+            double late = Math.max(0.0, extra - 32.8);
+            return 1.0 + stageFive + early + middle + Math.sqrt(late) * 0.45;
          }
       }
    }
@@ -1249,7 +1275,12 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    public boolean formidibombed(ServerLevel server) {
       if (!(this.phase < (double)5.0F) && !this.isDevourer()) {
+         double carriedExpansion = this.expansionPhase;
          this.setPhaseExact((double)6.0F);
+         if (carriedExpansion > this.expansionPhase) {
+            this.expansionPhase = carriedExpansion;
+            this.syncExpansionPhase();
+         }
          this.maybeTriggerCommandPulse(server);
          this.roarAllHeads(true);
          server.getServer().getPlayerList().getPlayers().forEach((player) -> player.sendSystemMessage(Component.literal("Phase 6+ is very experimental and under heavy development. Bug reports are appreciated, though.").withStyle(ChatFormatting.RED)));
@@ -1571,8 +1602,22 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       return var10000;
    }
 
+   private boolean infiniteGrowthLocksStage(WitherStormWorldConfig config) {
+      return config.infiniteGrowth != 0 && config.infiniteGrowthLocksStage != 0 && config.infinitePhases == 0 && this.phase >= (double)5.0F;
+   }
+
+   private void syncExpansionPhase() {
+      this.expansionPhase = Math.max(this.phase, Math.min(this.expansionPhase, this.growthCeiling()));
+      this.entityData.set(EXPANSION_PHASE_DATA, (float)this.expansionPhase);
+   }
+
    private void tickInfiniteGrowth(WitherStormWorldConfig config) {
-      if ((config.infinitePhases == 0 && config.infiniteGrowth == 0) || this.isCollapsed() || this.phase < 5.8 || this.phase >= this.growthCeiling() - 0.001 || this.tickCount % 20 != 0) {
+      if ((config.infinitePhases == 0 && config.infiniteGrowth == 0) || this.isCollapsed() || this.tickCount % 20 != 0) {
+         return;
+      }
+
+      double startPhase = config.infiniteGrowth != 0 ? (double)5.0F : 5.8;
+      if (this.phase < startPhase || this.visualGrowthPhase() >= this.growthCeiling() - 0.001) {
          return;
       }
 
@@ -1583,7 +1628,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    }
 
    public void addSubGrowth(int amount) {
-      if (!(this.phase >= this.growthCeiling() - 0.001)) {
+      if (!(this.visualGrowthPhase() >= this.growthCeiling() - 0.001)) {
          WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
          if (config.fastGrowthToSixOne != 0 && this.phase >= (double)6.0F && this.phase < 6.1) {
             amount = Math.max(1, (int)Math.round((double)(amount * config.fastGrowthToSixOneSpeed) / (double)100.0F));
@@ -1593,28 +1638,38 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             amount = Math.max(1, (int)Math.round((double)amount * config.instantGrowthRate));
          }
 
-         this.subGrowth += amount;
-         this.entityData.set(SUBGROWTH_DATA, this.subGrowth);
          int mainPhase = (int)Math.floor(this.phase);
          int requirement = growthRequirement(mainPhase, config);
-         double progress = (double)this.subGrowth / (double)requirement;
          double phaseBefore = this.phase;
+         boolean stageLocked = this.infiniteGrowthLocksStage(config);
+         if (config.infiniteGrowth != 0 && this.phase >= (double)5.0F) {
+            this.expansionPhase = Math.min(this.growthCeiling(), Math.max(this.expansionPhase, this.phase) + (double)amount / (double)requirement);
+         }
+
+         this.subGrowth += amount;
+         if (stageLocked) {
+            this.subGrowth = Math.min(requirement, this.subGrowth);
+         }
+
+         this.entityData.set(SUBGROWTH_DATA, this.subGrowth);
+         double progress = (double)this.subGrowth / (double)requirement;
          this.phase = (double)mainPhase + Math.min(progress, 0.99);
          if (this.phase < (double)4.0F) {
-            Level var10 = this.level();
-            if (var10 instanceof ServerLevel) {
-               ServerLevel growLevel = (ServerLevel)var10;
+            Level var11 = this.level();
+            if (var11 instanceof ServerLevel) {
+               ServerLevel growLevel = (ServerLevel)var11;
                if (Math.floor(this.phase * (double)10.0F) > Math.floor(phaseBefore * (double)10.0F)) {
                   growLevel.playSound((Entity)null, this.getX(), this.getY(), this.getZ(), ModSounds.STORM_GROW, SoundSource.HOSTILE, 7.0F, 0.95F + this.random.nextFloat() * 0.1F);
                }
             }
          }
 
-         if (this.subGrowth >= requirement) {
+         if (!stageLocked && this.subGrowth >= requirement) {
             if ((double)mainPhase + (double)1.0F >= this.growthCeiling()) {
                this.phase = this.growthCeiling();
                this.subGrowth = 0;
                this.entityData.set(SUBGROWTH_DATA, 0);
+               this.syncExpansionPhase();
                this.entityData.set(PHASE_DATA, (float)this.phase);
                this.entityData.set(PHASE4_DATA, true);
                this.updatePhase5Stamp(this.phase);
@@ -1636,6 +1691,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             this.entityData.set(SUBGROWTH_DATA, 0);
          }
 
+         this.syncExpansionPhase();
          this.entityData.set(PHASE_DATA, (float)this.phase);
          this.entityData.set(PHASE4_DATA, this.phase >= (double)4.0F);
          this.updatePhase5Stamp(this.phase);
@@ -1724,6 +1780,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    public void setPhase(double value) {
       boolean wasPhase4 = this.phase4;
       this.phase = value;
+      this.expansionPhase = Math.max(this.expansionPhase, value);
       if (value >= (double)4.0F) {
          this.phase4 = true;
          if (!wasPhase4) {
@@ -1737,6 +1794,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
 
       this.entityData.set(PHASE_DATA, (float)value);
+      this.syncExpansionPhase();
       this.entityData.set(PHASE4_DATA, this.phase4);
       this.updatePhase5Stamp(value);
       if (this.phase4) {
@@ -1900,7 +1958,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.subGrowth = (int)Math.round(fraction * (double)requirement);
       this.entityData.set(SUBGROWTH_DATA, this.subGrowth);
       this.phase = (double)mainPhase + fraction;
+      this.expansionPhase = this.phase;
       this.entityData.set(PHASE_DATA, (float)this.phase);
+      this.entityData.set(EXPANSION_PHASE_DATA, (float)this.expansionPhase);
       if (this.phase4) {
          this.refreshDimensions();
       }
@@ -3878,6 +3938,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
    protected void addAdditionalSaveData(ValueOutput output) {
       output.putDouble("Phase", this.phase);
+      output.putDouble("ExpansionPhase", this.expansionPhase);
       output.putInt("SubGrowth", this.subGrowth);
       output.putLong("SpawnAnimGameTime", (Long)this.entityData.get(SPAWN_ANIM_GAME_TIME));
       output.putInt("SpawnFreezeTicks", this.spawnFreezeTicks);
@@ -4320,6 +4381,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    protected void readAdditionalSaveData(ValueInput input) {
       this.loadingFromSave = true;
       this.phase = input.getDoubleOr("Phase", (double)0.0F);
+      this.expansionPhase = Math.max(this.phase, input.getDoubleOr("ExpansionPhase", this.phase));
       this.subGrowth = input.getIntOr("SubGrowth", 0);
       this.phase4 = this.phase >= (double)4.0F;
       String uuid = input.getStringOr("UltimateTarget", "");
@@ -4385,6 +4447,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.entityData.set(PHASE_DATA, (float)this.phase);
       this.entityData.set(PHASE4_DATA, this.phase4);
       this.entityData.set(SUBGROWTH_DATA, this.subGrowth);
+      this.entityData.set(EXPANSION_PHASE_DATA, (float)this.expansionPhase);
       if (this.ultimateTargetUUID != null) {
          this.entityData.set(ULTIMATE_TARGET_UUID, this.ultimateTargetUUID.toString());
       }
@@ -4406,6 +4469,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       PHASE4_DATA = SynchedEntityData.defineId(WitherStormEntity.class, EntityDataSerializers.BOOLEAN);
       SIEGE_STAGE = SynchedEntityData.defineId(WitherStormEntity.class, EntityDataSerializers.INT);
       SUBGROWTH_DATA = SynchedEntityData.defineId(WitherStormEntity.class, EntityDataSerializers.INT);
+      EXPANSION_PHASE_DATA = SynchedEntityData.defineId(WitherStormEntity.class, EntityDataSerializers.FLOAT);
       SPAWN_ANIM_GAME_TIME = SynchedEntityData.defineId(WitherStormEntity.class, EntityDataSerializers.LONG);
       COLLAPSE_GAME_TIME = SynchedEntityData.defineId(WitherStormEntity.class, EntityDataSerializers.LONG);
       PHASE5_ANIM_GAME_TIME = SynchedEntityData.defineId(WitherStormEntity.class, EntityDataSerializers.LONG);

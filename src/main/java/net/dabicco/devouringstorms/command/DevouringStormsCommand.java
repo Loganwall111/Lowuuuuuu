@@ -370,7 +370,7 @@ public class DevouringStormsCommand {
 
       for(WitherStormEntity ws : getStorms(ctx)) {
          String var10000 = stormLabel(ws);
-         source.sendSuccess(() -> Component.literal(var10000 + ": phase §e" + String.format(Locale.ROOT, "%.2f", ws.getPhase()) + "§r, sub-growth §e" + ws.getSubGrowth()), false);
+         source.sendSuccess(() -> Component.literal(var10000 + ": phase §e" + String.format(Locale.ROOT, "%.2f", ws.getPhase()) + "§r, expansion §e" + String.format(Locale.ROOT, "%.2f", ws.getExpansionPhase()) + "§r, sub-growth §e" + ws.getSubGrowth()), false);
          ++count;
       }
 

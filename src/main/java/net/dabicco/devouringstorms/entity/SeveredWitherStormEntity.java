@@ -203,6 +203,27 @@ public class SeveredWitherStormEntity extends Mob implements StormHeadHost {
       return null;
    }
 
+   private WitherStormEntity findHost() {
+      if (this.hostUUID == null) {
+         return null;
+      } else if (this.level() instanceof ServerLevel server) {
+         Entity found = server.getEntity(this.hostUUID);
+         return found instanceof WitherStormEntity ? (WitherStormEntity)found : null;
+      } else {
+         Entity found = this.findHostOnClient();
+         return found instanceof WitherStormEntity ? (WitherStormEntity)found : null;
+      }
+   }
+
+   public float inheritedGrowthScale() {
+      WitherStormEntity host = this.findHost();
+      if (host == null) {
+         return 1.0F;
+      } else {
+         return 1.0F + (float)((host.currentGrowthScale() - 1.0) * 0.35);
+      }
+   }
+
    public void launch(Vec3 velocity) {
       this.launchVel = velocity;
    }

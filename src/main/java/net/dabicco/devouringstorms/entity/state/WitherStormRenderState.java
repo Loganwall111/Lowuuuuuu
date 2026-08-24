@@ -13,6 +13,7 @@ public class WitherStormRenderState extends LivingEntityRenderState {
    public final float[] groundBias = new float[8];
    public boolean playingSpawnAnimation;
    public double phase;
+   public double expansionPhase;
    public Vec3[] portalCorners;
    public boolean portalOpen;
    public float spawnElapsedTicks;
