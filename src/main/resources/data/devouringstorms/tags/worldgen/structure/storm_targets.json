@@ -12,11 +12,22 @@
     "minecraft:swamp_hut",
     "minecraft:igloo",
     "minecraft:monument",
+    "minecraft:shipwreck",
     "minecraft:shipwreck_beached",
+    "minecraft:mineshaft",
+    "minecraft:stronghold",
+    "minecraft:trail_ruins",
+    "minecraft:trial_chambers",
+    "minecraft:ancient_city",
+    "minecraft:fortress",
+    "minecraft:bastion_remnant",
+    "minecraft:end_city",
     "minecraft:ruined_portal",
     "minecraft:ruined_portal_desert",
     "minecraft:ruined_portal_jungle",
     "minecraft:ruined_portal_mountain",
-    "minecraft:ruined_portal_swamp"
+    "minecraft:ruined_portal_swamp",
+    "minecraft:ruined_portal_ocean",
+    "minecraft:ruined_portal_nether"
   ]
 }
