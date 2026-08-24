@@ -8,7 +8,6 @@ import net.dabicco.devouringstorms.entity.WitherStormEntity;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -18,17 +17,16 @@ import net.minecraft.world.phys.Vec3;
  * StormPresenceFX — atmosphere that hangs around the storm rather than on the
  * body itself.
  *
- * Batch 17 split the old combined halo/pulse behaviour into two lanes:
- *  - the permanent halo now lives on the storm renderer, attached to the body
- *  - the one-shot command-block pulse now lives in {@link StormPulseFX}
- *
- * What remains here is the surrounding late-phase rim glare and ejecta.
+ * The main storm-attached bubble / halo layers now live on
+ * {@link net.dabicco.devouringstorms.entity.renderer.WitherStormRenderer} so
+ * they can stay locked behind the model instead of behaving like a pasted
+ * camera-facing object. What remains here is the loose ejecta / debris spark
+ * field around that body-attached effect.
  */
 public final class StormPresenceFX {
    private static final Identifier SOFT = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tractor_beam.png");
    private static final Identifier PIECE_TEX = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/broken_piece.png");
    private static final String[] PIECES = {"broken_piece_a", "broken_piece_b", "broken_piece_c", "broken_piece_d"};
-   private static final Identifier HALO = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_ring.png");
    private static final int FULL_BRIGHT = 15728880;
 
    /* ---------- ejecta spark pool ---------- */
@@ -72,24 +70,6 @@ public final class StormPresenceFX {
       Vec3 cam = ctx.levelState().cameraRenderState.pos;
       PoseStack poseStack = ctx.poseStack();
       SubmitNodeCollector collector = ctx.submitNodeCollector();
-
-      for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-         float phase = d.phase;
-         float expansionPhase = d.expansionPhase;
-         Vec3 centre = new Vec3(d.dispX, d.dispY, d.dispZ);
-         double bodyR = bodyRadius(phase, expansionPhase);
-
-         /* ---- black rim glare (late phase 5+, drawn first so glow sits on top) ---- */
-         if (DevouringStormsClientConfig.blackGlare && phase >= 5.35F) {
-            float strength = (float)DevouringStormsClientConfig.blackGlareStrength * Mth.clamp((phase - 5.35F) / 0.45F, 0.0F, 1.0F);
-            if (strength > 0.004F) {
-               Vec3 view = centre.subtract(cam).normalize();
-               quad(poseStack, collector, GlowRenderTypes.translucent(HALO), cam, centre, view, bodyR * 1.30, 4, 2, 7, (int)(strength * 235.0F));
-               quad(poseStack, collector, GlowRenderTypes.translucent(HALO), cam, centre, view, bodyR * 1.75, 3, 2, 6, (int)(strength * 120.0F));
-            }
-         }
-
-      }
 
       /* ---- turquoise/green cluster ejecta ---- */
       if (DevouringStormsClientConfig.glareEjecta) {
@@ -190,24 +170,6 @@ public final class StormPresenceFX {
          SROT[i] = RANDOM.nextFloat() * 360F; SROTV[i] = -8F + RANDOM.nextFloat() * 16F;
          return;
       }
-   }
-
-   /** camera-facing textured quad */
-   private static void quad(PoseStack poseStack, SubmitNodeCollector collector, RenderType type, Vec3 cam, Vec3 centre, Vec3 view, double radius, int r, int g, int b, int alpha) {
-      if (alpha <= 2) {
-         return;
-      }
-      Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
-      Vec3 right = view.cross(upHint).normalize();
-      Vec3 up = right.cross(view).normalize();
-      Vec3 rx = right.scale(radius);
-      Vec3 uy = up.scale(radius);
-      collector.submitCustomGeometry(poseStack, type, (pose, consumer) -> {
-         vertex(pose, consumer, centre.subtract(rx).subtract(uy), 0.0F, 0.0F, r, g, b, alpha);
-         vertex(pose, consumer, centre.add(rx).subtract(uy), 1.0F, 0.0F, r, g, b, alpha);
-         vertex(pose, consumer, centre.add(rx).add(uy), 1.0F, 1.0F, r, g, b, alpha);
-         vertex(pose, consumer, centre.subtract(rx).add(uy), 0.0F, 1.0F, r, g, b, alpha);
-      });
    }
 
    private static void vertex(PoseStack.Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int r, int g, int b, int a) {

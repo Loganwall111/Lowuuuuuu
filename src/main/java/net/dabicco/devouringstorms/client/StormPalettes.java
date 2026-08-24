@@ -27,6 +27,17 @@ public final class StormPalettes {
    private static final float[] SKY_PINK = {0.31F, 0.14F, 0.33F};
    private static final float[] SKY_CATACLYSM = {0.040F, 0.018F, 0.072F};
 
+   /** Attached storm-back backdrop / glare bubble colours. */
+   private static final float[] BACKDROP_VOID_WHITE = {0.90F, 0.90F, 0.95F};
+   private static final float[] BACKDROP_VOID_TEAL = {0.08F, 0.12F, 0.18F};
+   private static final float[] BACKDROP_VOID_PURPLE = {0.08F, 0.03F, 0.14F};
+   private static final float[] BACKDROP_VOID_CATACLYSM = {0.02F, 0.01F, 0.04F};
+   private static final float[] BACKDROP_RIM_WHITE = {0.98F, 0.98F, 1.0F};
+   private static final float[] BACKDROP_RIM_TEAL = {0.18F, 0.36F, 0.42F};
+   private static final float[] BACKDROP_RIM_PURPLE = {0.76F, 0.34F, 0.88F};
+   private static final float[] BACKDROP_RIM_CATACLYSM = {0.94F, 0.38F, 0.82F};
+   private static final float[] BACKDROP_WARM = {0.95F, 0.56F, 0.26F};
+
    /** Pulse shells. */
    private static final float[] PULSE_GREEN = {0.58F, 0.80F, 0.42F};
    private static final float[] PULSE_FIVE = {0.38F, 0.52F, 0.98F};
@@ -79,18 +90,24 @@ public final class StormPalettes {
          w[1] = t;
          return;
       }
-      if (phase < 5.4) {
-         w[1] = 1.0F;
+      if (phase < 5.08) {
+         float t = smoothPhase(phase, 5.0F, 5.08F);
+         w[1] = 1.0F - t * 0.18F;
+         w[2] = t * 0.18F;
          return;
       }
-      if (phase < 5.8) {
-         float t = smoothPhase(phase, 5.4F, 5.8F);
-         w[1] = 1.0F - t;
-         w[2] = t;
+      if (phase < 5.45) {
+         float t = smoothPhase(phase, 5.08F, 5.45F);
+         w[1] = 0.82F * (1.0F - t);
+         w[2] = 0.18F + 0.82F * t;
+         return;
+      }
+      if (phase < 5.85) {
+         w[2] = 1.0F;
          return;
       }
       if (phase < 6.15) {
-         float t = smoothPhase(phase, 5.8F, 6.15F);
+         float t = smoothPhase(phase, 5.85F, 6.15F);
          w[2] = 1.0F - t;
          w[3] = t;
          return;
@@ -143,6 +160,31 @@ public final class StormPalettes {
 
    private static float[] brighten(float[] base, float[] anchor, float amount) {
       return new float[]{Mth.lerp(amount, base[0], anchor[0]), Mth.lerp(amount, base[1], anchor[1]), Mth.lerp(amount, base[2], anchor[2])};
+   }
+
+   public static float phaseAmount(double phase, float start, float end) {
+      return smoothPhase(phase, start, end);
+   }
+
+   public static float[] backdropVoidColor(double phase, float[] out) {
+      return curve(phase, BACKDROP_VOID_WHITE, BACKDROP_VOID_TEAL, BACKDROP_VOID_PURPLE, BACKDROP_VOID_CATACLYSM, out);
+   }
+
+   public static float[] backdropRimColor(double phase, float[] out) {
+      return curve(phase, BACKDROP_RIM_WHITE, BACKDROP_RIM_TEAL, BACKDROP_RIM_PURPLE, BACKDROP_RIM_CATACLYSM, out);
+   }
+
+   public static float[] backdropWarmColor(double phase, float[] out) {
+      float warm = phaseAmount(phase, 5.85F, 6.25F);
+      float pink = phaseAmount(phase, 5.05F, 5.55F);
+      float[] rim = backdropRimColor(phase, new float[3]);
+      out[0] = Mth.lerp(warm, rim[0], BACKDROP_WARM[0]);
+      out[1] = Mth.lerp(warm, rim[1], BACKDROP_WARM[1]);
+      out[2] = Mth.lerp(warm, rim[2], BACKDROP_WARM[2]);
+      out[0] = Mth.lerp(pink * 0.25F, out[0], Math.max(out[0], 0.78F));
+      out[1] = Mth.lerp(pink * 0.10F, out[1], out[1] * 0.92F);
+      out[2] = Mth.lerp(pink * 0.18F, out[2], Math.max(out[2], 0.58F));
+      return out;
    }
 
    /** The blue-purple cataclysm halo ring colour. */

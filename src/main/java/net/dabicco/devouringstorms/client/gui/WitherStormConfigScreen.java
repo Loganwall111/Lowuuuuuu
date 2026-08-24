@@ -777,9 +777,11 @@ public class WitherStormConfigScreen extends Screen {
       this.header("Cataclysm Halos (Phase 5.8+)");
       this.clientRow("cataclysmHalos", "Cataclysm Halo Pair", (BooleanSupplier)null);
       this.clientRow("haloStrength", "Halo Strength", (BooleanSupplier)null);
+      this.clientRow("bloomedBackdrop", "Bloomed Core / Black Hole", (BooleanSupplier)null);
       this.header("Black Glare & Ejecta");
-      this.clientRow("blackGlare", "Black Glare Ring", (BooleanSupplier)null);
+      this.clientRow("blackGlare", "Attached Sky Bubble", (BooleanSupplier)null);
       this.clientRow("blackGlareStrength", "Glare Strength", (BooleanSupplier)null);
+      this.clientRow("earlyVortexRings", "Early Vortex Rings", (BooleanSupplier)null);
       this.clientRow("glareEjecta", "Cluster Ejecta", (BooleanSupplier)null);
       this.clientRow("ejectaRate", "Ejecta Rate", (BooleanSupplier)null);
       this.clientRow("ejectaBrightness", "Ejecta Brightness", (BooleanSupplier)null);

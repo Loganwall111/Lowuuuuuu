@@ -2,6 +2,7 @@ package net.dabicco.devouringstorms.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
 import net.dabicco.devouringstorms.entity.WitherStormEntity;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
@@ -20,8 +21,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class StormCataclysmFX {
    private static final Identifier SHAFT = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tractor_beam.png");
-   private static final Identifier RING = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_ring.png");
-   private static final Identifier CLOUD = StormCloudDeck.SLAB;
+   private static final Identifier RING = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tile_witherstormVortexA_alp.png");
+   private static final Identifier CLOUD = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tile_witherstormVortexABackdrop_alp.png");
    private static final double MAX_VIEW_DIST = 2600.0;
 
    private StormCataclysmFX() {
@@ -44,11 +45,14 @@ public final class StormCataclysmFX {
       float[] sky = new float[3];
 
       for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-         double rawGrowth = WitherStormEntity.clientGrowthScaleForPhase(Math.max(d.phase, d.expansionPhase));
+         float visualPhase = Math.max(d.phase, d.expansionPhase);
+         double rawGrowth = WitherStormEntity.clientGrowthScaleForPhase(visualPhase);
          float growthScale = (float)Math.min(12.0, rawGrowth);
-         float shaftAmount = Mth.clamp((growthScale - 1.25F) / 1.7F, 0.0F, 1.0F);
-         float tornadoAmount = Mth.clamp((growthScale - 1.9F) / 2.6F, 0.0F, 1.0F);
-         float singularityAmount = Mth.clamp((growthScale - 3.0F) / 3.2F, 0.0F, 1.0F);
+         boolean early = DevouringStormsClientConfig.earlyVortexRings;
+         float onset = early ? Mth.clamp((visualPhase - 5.8F) / 0.7F, 0.0F, 1.0F) : Mth.clamp((visualPhase - 7.5F) / 0.9F, 0.0F, 1.0F);
+         float shaftAmount = onset * Mth.clamp((growthScale - 1.25F) / 1.7F, 0.0F, 1.0F);
+         float tornadoAmount = onset * Mth.clamp((growthScale - 1.9F) / 2.6F, 0.0F, 1.0F);
+         float singularityAmount = DevouringStormsClientConfig.bloomedBackdrop ? onset * Mth.clamp((growthScale - 3.0F) / 3.2F, 0.0F, 1.0F) : 0.0F;
          if (shaftAmount <= 0.01F && tornadoAmount <= 0.01F && singularityAmount <= 0.01F) {
             continue;
          }
@@ -66,8 +70,8 @@ public final class StormCataclysmFX {
 
          float pulse = 0.58F + 0.42F * (0.5F + 0.5F * Mth.sin(nowSec * (0.45F + growthScale * 0.02F) + d.entityId * 0.13F));
          float chaos = Mth.clamp(tornadoAmount * 0.72F + singularityAmount * 0.55F, 0.0F, 1.0F);
-         StormCloudDeck.colorsForPhase(d.phase, outer, inner);
-         StormPalettes.skyColor(d.phase, sky);
+         StormCloudDeck.colorsForPhase(visualPhase, outer, inner);
+         StormPalettes.skyColor(visualPhase, sky);
          tintCataclysm(outer, 0.82F, 0.24F, 0.95F, chaos);
          tintCataclysm(inner, 0.96F, 0.88F, 1.0F, chaos * 0.72F);
          tintCataclysm(sky, 0.78F, 0.18F, 0.88F, chaos);

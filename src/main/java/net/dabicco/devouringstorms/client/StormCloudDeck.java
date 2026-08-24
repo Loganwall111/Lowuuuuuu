@@ -58,7 +58,7 @@ public final class StormCloudDeck {
 
    static void colorsForPhase(float phase, float[] outer, float[] inner) {
       float[] tint = StormPalettes.cloudColor(phase, new float[3]);
-      float purple = smooth(phase, 5.34F, 5.76F);
+      float purple = smooth(phase, 5.06F, 5.42F);
       float cataclysm = smooth(phase, 5.90F, 6.18F);
       float purpleR = Mth.lerp(cataclysm, 0.54F, 0.24F);
       float purpleG = Mth.lerp(cataclysm, 0.41F, 0.16F);

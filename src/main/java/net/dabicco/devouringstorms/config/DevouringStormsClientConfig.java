@@ -143,6 +143,8 @@ public class DevouringStormsClientConfig {
    public static double haloStrength = (double)1.0F;
    public static boolean blackGlare = true;
    public static double blackGlareStrength = (double)1.0F;
+   public static boolean bloomedBackdrop = false;
+   public static boolean earlyVortexRings = false;
    public static boolean glareEjecta = true;
    public static double ejectaRate = (double)1.0F;
    public static double ejectaBrightness = (double)1.0F;
@@ -501,10 +503,12 @@ public class DevouringStormsClientConfig {
       key("summonShockwave", "Optional first-summon purple shockwave burst. Off by default.", (double)0.0F, (double)1.0F, true, () -> summonShockwave ? (double)1.0F : (double)0.0F, (v) -> summonShockwave = v >= (double)0.5F);
       key("summonShockwaveStrength", "Brightness of that first-summon shockwave.", (double)0.0F, (double)2.0F, false, () -> summonShockwaveStrength, (v) -> summonShockwaveStrength = v);
       key("summonShockwaveSize", "How far the first-summon shockwave expands.", 0.5, (double)3.0F, false, () -> summonShockwaveSize, (v) -> summonShockwaveSize = v);
-      key("cataclysmHalos", "Permanent phase-driven halo attached to the storm's back and middle once late growth starts.", (double)0.0F, (double)1.0F, true, () -> cataclysmHalos ? (double)1.0F : (double)0.0F, (v) -> cataclysmHalos = v >= (double)0.5F);
-      key("haloStrength", "Brightness of the attached storm halo.", (double)0.0F, (double)2.0F, false, () -> haloStrength, (v) -> haloStrength = v);
-      key("blackGlare", "The black-purple glare ring hugging the storm's silhouette.", (double)0.0F, (double)1.0F, true, () -> blackGlare ? (double)1.0F : (double)0.0F, (v) -> blackGlare = v >= (double)0.5F);
-      key("blackGlareStrength", "How dark the rim glare goes.", (double)0.0F, (double)2.0F, false, () -> blackGlareStrength, (v) -> blackGlareStrength = v);
+      key("cataclysmHalos", "Permanent late-stage halo planes attached behind the storm once the cataclysm look properly starts. The bright bloomed centre is now a separate toggle.", (double)0.0F, (double)1.0F, true, () -> cataclysmHalos ? (double)1.0F : (double)0.0F, (v) -> cataclysmHalos = v >= (double)0.5F);
+      key("haloStrength", "Brightness of those attached late-stage halo planes.", (double)0.0F, (double)2.0F, false, () -> haloStrength, (v) -> haloStrength = v);
+      key("blackGlare", "Attach the dark story-mode sky bubble behind the storm instead of drawing a simple flat glare over it. This is the main purple / black sky-backdrop effect.", (double)0.0F, (double)1.0F, true, () -> blackGlare ? (double)1.0F : (double)0.0F, (v) -> blackGlare = v >= (double)0.5F);
+      key("blackGlareStrength", "How strongly that attached sky bubble and phase glare claims the air behind the storm.", (double)0.0F, (double)2.0F, false, () -> blackGlareStrength, (v) -> blackGlareStrength = v);
+      key("bloomedBackdrop", "Optional bloomed centre / black-hole style core for the late sky bubble. Off by default.", (double)0.0F, (double)1.0F, true, () -> bloomedBackdrop ? (double)1.0F : (double)0.0F, (v) -> bloomedBackdrop = v >= (double)0.5F);
+      key("earlyVortexRings", "Let the huge 2D vortex rings and cataclysm sky column appear before the ultra-late 7.5+ range. Off by default.", (double)0.0F, (double)1.0F, true, () -> earlyVortexRings ? (double)1.0F : (double)0.0F, (v) -> earlyVortexRings = v >= (double)0.5F);
       key("glareEjecta", "Turquoise and green cluster sparks ejecting from the glare ring.", (double)0.0F, (double)1.0F, true, () -> glareEjecta ? (double)1.0F : (double)0.0F, (v) -> glareEjecta = v >= (double)0.5F);
       key("ejectaRate", "How many cluster sparks burst off the rim.", (double)0.0F, (double)3.0F, false, () -> ejectaRate, (v) -> ejectaRate = v);
       key("ejectaBrightness", "Brightness of the ejecta sparks.", (double)0.0F, (double)2.0F, false, () -> ejectaBrightness, (v) -> ejectaBrightness = v);
