@@ -537,7 +537,7 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("Cave Rumble", "caveRumble", "caveRumbleInterval", "caveRumbleDuration", "caveRumbleIntensity");
       this.serverSection("Nether Scaling", "netherScale", "netherScaleInterval", "netherScaleRandom");
       this.serverSection("New Growth Features", "instantGrowth", "instantGrowthRate", "infinitePhases", "infiniteGrowth", "infiniteGrowthSecondsPerPhase", "phaseCeiling");
-      this.serverSection("Story-Mode Towns", "townNpcPopulation");
+      this.serverSection("Story-Mode Towns", "townNpcPopulation", "townGuardPopulation", "townCatPopulation", "townPigPopulation");
       this.serverSection("Tentacle Slams & Raids", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "structureRaid", "structureRaidInterval", "structureRaidRadius", "structureTearClusters");
       this.serverSection("Death & Berserk", "deathBlast", "deathBlastRadius", "berserk", "berserkHealth", "berserkSlamInterval");
    }

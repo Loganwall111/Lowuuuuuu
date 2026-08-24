@@ -459,13 +459,18 @@ public class DevouringStormsCommand {
          return 0;
       }
       int placed = StructureBuilder.build(source.getLevel(), player.blockPosition(), type);
-      if ((type.equals("town") || type.equals("endertown")) && placed > 0) StoryNpcSpawner.populate(source.getLevel(), player.blockPosition(), WitherStormConfigs.get(source.getLevel()).townNpcPopulation);
+      int residents = 0;
+      if ((type.equals("town") || type.equals("endertown")) && placed > 0) {
+         residents = StoryNpcSpawner.populate(source.getLevel(), player.blockPosition(), WitherStormConfigs.get(source.getLevel()));
+      }
       if (placed == 0) {
          source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church | town | endertown | undertown | under_town | watchtower | courtyard | street)"));
          return 0;
       }
       int count = placed;
-      source.sendSuccess(() -> Component.literal("Built §e" + type + "§r (" + count + " blocks) in front of you."), true);
+      int living = residents;
+      Component message = living > 0 ? Component.literal("Built §e" + type + "§r (" + count + " blocks) and populated it with §e" + living + "§r Story-Mode residents.") : Component.literal("Built §e" + type + "§r (" + count + " blocks) in front of you.");
+      source.sendSuccess(() -> message, true);
       return 1;
    }
 
