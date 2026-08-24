@@ -49,6 +49,10 @@ public class WitherStormWorldConfig extends SavedData {
    public int caveRumbleInterval = 75;
    public int caveRumbleDuration = 6;
    public double caveRumbleIntensity = (double)1.0F;
+   public int voidCorruption = 1;
+   public int voidCorruptionInterval = 40;
+   public int voidCorruptionRadius = 28;
+   public int voidCorruptionBursts = 10;
    public int mobsFlee = 1;
    public int headForgiveSeconds = 25;
    public int mobPickup = 1;
@@ -244,6 +248,10 @@ public class WitherStormWorldConfig extends SavedData {
       key("caveRumbleInterval", "Base seconds between cave rumbles (a random half again is added on top, so they never fall into a rhythm)", (double)10.0F, (double)900.0F, true, (c) -> (double)c.caveRumbleInterval, (c, v) -> c.caveRumbleInterval = (int)v);
       key("caveRumbleDuration", "How many seconds a cave rumble lasts", (double)1.0F, (double)60.0F, true, (c) -> (double)c.caveRumbleDuration, (c, v) -> c.caveRumbleDuration = (int)v);
       key("caveRumbleIntensity", "How violent a cave rumble is: the screen shake, how much of the ceiling comes down, and how loud it is", 0.1, (double)3.0F, false, (c) -> c.caveRumbleIntensity, (c, v) -> c.caveRumbleIntensity = v);
+      keyToggle("voidCorruption", "Late-phase terrain corruption: the storm starts leaving withered flesh, stone, sand and wood scars across the world beneath it.", (c) -> (double)c.voidCorruption, (c, v) -> c.voidCorruption = (int)v);
+      key("voidCorruptionInterval", "Ticks between terrain-corruption passes", (double)5.0F, (double)600.0F, true, (c) -> (double)c.voidCorruptionInterval, (c, v) -> c.voidCorruptionInterval = (int)v);
+      key("voidCorruptionRadius", "How far from the storm those corruption passes can land, in blocks", (double)8.0F, (double)128.0F, true, (c) -> (double)c.voidCorruptionRadius, (c, v) -> c.voidCorruptionRadius = (int)v);
+      key("voidCorruptionBursts", "How many random surface spots are corrupted each pass", (double)1.0F, (double)64.0F, true, (c) -> (double)c.voidCorruptionBursts, (c, v) -> c.voidCorruptionBursts = (int)v);
       keyToggle("mobsFlee", "Nearby mobs panic and run away from the storm", (c) -> (double)c.mobsFlee, (c, v) -> c.mobsFlee = (int)v);
       key("headForgiveSeconds", "Breathing-room seconds after a head lets a player go", (double)0.0F, (double)600.0F, true, (c) -> (double)c.headForgiveSeconds, (c, v) -> c.headForgiveSeconds = (int)v);
       keyToggle("mobPickup", "Beams pull in and consume non-target mobs", (c) -> (double)c.mobPickup, (c, v) -> c.mobPickup = (int)v);

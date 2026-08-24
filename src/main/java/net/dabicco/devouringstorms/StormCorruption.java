@@ -1,0 +1,122 @@
+package net.dabicco.devouringstorms;
+
+import net.dabicco.devouringstorms.config.WitherStormWorldConfig;
+import net.dabicco.devouringstorms.entity.WitherStormEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction.Axis;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.levelgen.Heightmap.Types;
+
+public final class StormCorruption {
+   private StormCorruption() {
+   }
+
+   public static void tick(ServerLevel level, WitherStormEntity storm, WitherStormWorldConfig cfg) {
+      if (cfg.voidCorruption == 0 || storm.isCollapsed() || storm.getPhase() < 5.0) {
+         return;
+      }
+
+      RandomSource random = level.getRandom();
+      int bursts = Math.max(1, cfg.voidCorruptionBursts);
+      double phaseGain = storm.getPhase() >= 6.0 ? 1.4 : (storm.getPhase() >= 5.8 ? 1.2 : 1.0);
+      int radius = Math.max(6, (int)Math.round((double)cfg.voidCorruptionRadius * phaseGain));
+      boolean late = storm.getPhase() >= 5.8;
+
+      for(int i = 0; i < bursts; ++i) {
+         double ang = random.nextDouble() * Math.PI * 2.0;
+         double dist = Math.sqrt(random.nextDouble()) * (double)radius;
+         int x = Mth.floor(storm.getX() + Math.cos(ang) * dist);
+         int z = Mth.floor(storm.getZ() + Math.sin(ang) * dist);
+         int y = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+         BlockPos pos = new BlockPos(x, y, z);
+         if (level.hasChunkAt(pos)) {
+            corruptColumn(level, pos, late, random);
+         }
+      }
+   }
+
+   private static void corruptColumn(ServerLevel level, BlockPos pos, boolean late, RandomSource random) {
+      BlockPos cursor = pos;
+
+      for(int i = 0; i < 4 && level.getBlockState(cursor).isAir(); ++i) {
+         cursor = cursor.below();
+      }
+
+      BlockState state = level.getBlockState(cursor);
+      BlockState replacement = corruptState(state, late);
+      if (replacement != null && !state.is(replacement.getBlock())) {
+         level.setBlock(cursor, replacement, 3);
+      }
+
+      BlockPos above = cursor.above();
+      BlockState aboveState = level.getBlockState(above);
+      if (aboveState.isAir() && random.nextInt(late ? 3 : 5) == 0) {
+         level.setBlock(above, ModBlocks.WITHERED_MUSHROOM.defaultBlockState(), 3);
+      } else if (!aboveState.isAir() && aboveState.canBeReplaced() && random.nextInt(4) == 0) {
+         level.setBlock(above, ModBlocks.WITHERED_MUSHROOM.defaultBlockState(), 3);
+      }
+   }
+
+   private static BlockState corruptState(BlockState state, boolean late) {
+      if (state.isAir() || !state.getFluidState().isEmpty()) {
+         return null;
+      }
+
+      Block block = state.getBlock();
+      if (block == ModBlocks.WITHERED_FLESH_BLOCK || block == ModBlocks.TORN_WITHERED_FLESH || block == ModBlocks.WITHERED_BEDROCK || block == ModBlocks.WITHERED_COBBLESTONE || block == ModBlocks.WITHERED_NETHERBRICK || block == ModBlocks.WITHERED_SAND || block == ModBlocks.WITHERED_LOG || block == ModBlocks.WITHERED_PLANKS || block == ModBlocks.WITHERED_STONE) {
+         return null;
+      }
+
+      if (state.is(BlockTags.LOGS)) {
+         return copyAxis(state, ModBlocks.WITHERED_LOG.defaultBlockState());
+      }
+
+      if (state.is(BlockTags.PLANKS) || block == Blocks.CRAFTING_TABLE || block == Blocks.CHEST || block == Blocks.BARREL || block == Blocks.FLETCHING_TABLE) {
+         return ModBlocks.WITHERED_PLANKS.defaultBlockState();
+      }
+
+      if (block == Blocks.COBBLESTONE || block == Blocks.MOSSY_COBBLESTONE || block == Blocks.STONE_BRICKS || block == Blocks.MOSSY_STONE_BRICKS || block == Blocks.CRACKED_STONE_BRICKS || block == Blocks.CHISELED_STONE_BRICKS) {
+         return ModBlocks.WITHERED_COBBLESTONE.defaultBlockState();
+      }
+
+      if (block == Blocks.NETHER_BRICKS || block == Blocks.RED_NETHER_BRICKS || block == Blocks.CRACKED_NETHER_BRICKS || block == Blocks.CHISELED_NETHER_BRICKS || block == Blocks.NETHERRACK || block == Blocks.BLACKSTONE || block == Blocks.BASALT) {
+         return ModBlocks.WITHERED_NETHERBRICK.defaultBlockState();
+      }
+
+      if (block == Blocks.SAND || block == Blocks.RED_SAND || block == Blocks.SOUL_SAND || block == Blocks.SOUL_SOIL) {
+         return ModBlocks.WITHERED_SAND.defaultBlockState();
+      }
+
+      if (block == Blocks.GRASS_BLOCK || block == Blocks.DIRT || block == Blocks.COARSE_DIRT || block == Blocks.ROOTED_DIRT || block == Blocks.PODZOL || block == Blocks.MYCELIUM || block == Blocks.FARMLAND || block == Blocks.MUD || block == Blocks.CLAY) {
+         return late ? ModBlocks.TORN_WITHERED_FLESH.defaultBlockState() : ModBlocks.WITHERED_FLESH_BLOCK.defaultBlockState();
+      }
+
+      if (block == Blocks.STONE || block == Blocks.ANDESITE || block == Blocks.DIORITE || block == Blocks.GRANITE || block == Blocks.TUFF || block == Blocks.CALCITE || block == Blocks.DRIPSTONE_BLOCK || block == Blocks.DEEPSLATE || block == Blocks.COBBLED_DEEPSLATE) {
+         return ModBlocks.WITHERED_STONE.defaultBlockState();
+      }
+
+      return null;
+   }
+
+   private static BlockState copyAxis(BlockState from, BlockState to) {
+      if (from.hasProperty(RotatedPillarBlock.AXIS) && to.hasProperty(RotatedPillarBlock.AXIS)) {
+         Axis axis = (Axis)from.getValue(RotatedPillarBlock.AXIS);
+         return (BlockState)to.setValue(RotatedPillarBlock.AXIS, axis);
+      }
+
+      if (from.hasProperty(BlockStateProperties.AXIS) && to.hasProperty(BlockStateProperties.AXIS)) {
+         Axis axis = (Axis)from.getValue(BlockStateProperties.AXIS);
+         return (BlockState)to.setValue(BlockStateProperties.AXIS, axis);
+      }
+
+      return to;
+   }
+}

@@ -20,6 +20,7 @@ import net.dabicco.devouringstorms.ModAdvancements;
 import net.dabicco.devouringstorms.ModEffects;
 import net.dabicco.devouringstorms.ModItems;
 import net.dabicco.devouringstorms.ModSounds;
+import net.dabicco.devouringstorms.StormCorruption;
 import net.dabicco.devouringstorms.StormProfiler;
 import net.dabicco.devouringstorms.client.ClientConfigCache;
 import net.dabicco.devouringstorms.client.GroundProbe;
@@ -661,6 +662,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
 
                WitherStormWorldConfig config = WitherStormConfigs.get(this.level());
                this.tickInfiniteGrowth(config);
+               if (this.tickCount % Math.max(1, config.voidCorruptionInterval) == 0 && this.level() instanceof ServerLevel corruptionLevel) {
+                  StormCorruption.tick(corruptionLevel, this, config);
+               }
                this.updateUltimateTarget();
                if (!this.isPhase4()) {
                   Vec3 goal = this.resolveMoveGoal(config);
