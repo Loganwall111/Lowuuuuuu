@@ -307,13 +307,8 @@ public final class StormSkyBox {
          return;
       }
       try (ByteBufferBuilder builder = ByteBufferBuilder.exactlySized(maxQuads * 4 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
-         BufferBuilder bufferBuilder = new BufferBuilder(builder, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-         int quads = emitter.emit(bufferBuilder);
-         if (quads <= 0) {
-            return;
-         }
+         // BISECT PROBE H1: exactlySized line alone
       } catch (Exception e) {
-         // BISECT PROBE G: exactlySized + BufferBuilder ctor + emit live
       }
    }
 }
