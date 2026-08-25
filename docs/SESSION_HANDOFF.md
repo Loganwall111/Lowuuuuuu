@@ -288,10 +288,15 @@ mc.gameRenderer.mainRenderTarget()), and possibly new BufferBuilder(...) (never 
 - View matrix: new Matrix4f(RenderSystem.getModelViewStack()) (cheatutils-verified)
 - Texture: mc.getTextureManager().getTexture(id) -> AbstractTexture (probe-verified);
   tex.getTextureView(); sampler via RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)
-- Projection capture via @ModifyArg(renderLevel/ProjectionMatrixBuffer.getBuffer) FAILS THE
-  BUILD in our artifact (mixin AP cannot resolve) — do not retry that hook. Current sky pass
-  uses SkyMatrices.projection(): live-aspect 70-degree perspective fallback (fov effects and
-  non-70 fov cause a mild sky-scale mismatch; capture hook needs a different injection point).
+- Projection: RenderSystem.getProjectionMatrixBuffer() EXISTS in the real artifact (green in
+  run for commit 779ad7e / mod 1.9.80) and returns the uploaded GpuBufferSlice (std140 mat4).
+  renderPass.setUniform("Projection", slice) compiles — the sky pass binds the frame's TRUE
+  projection this way, with SkyMatrices' live-aspect 70-degree perspective as fallback only
+  while the slice is null. Do NOT retry @ModifyArg(renderLevel/ProjectionMatrixBuffer.getBuffer)
+  — that hook fails the build in our artifact (mixin AP cannot resolve it).
+- SkyRendererMixin's renderSunMoonAndStars handler deliberately captures NO target args
+  (args-free @Inject + CallbackInfo only) — an args-free handler can never mismatch a drifted
+  vanilla signature, so the sky hook cannot crash at mixin-apply time.
 - Bisect method when CI is the only oracle: stub whole subsystem green, restore halves, then
   statements, then sub-expressions (greens are reliable; a red can be an infra flake — retest
   any 'impossible' red before believing it, e.g. int*int*int arg 'failing').
