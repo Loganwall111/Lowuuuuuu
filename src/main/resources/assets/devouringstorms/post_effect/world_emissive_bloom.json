@@ -148,7 +148,7 @@
     },
     {
       "vertex_shader": "minecraft:core/screenquad",
-      "fragment_shader": "devouringstorms:post/storm_bloom_combine",
+      "fragment_shader": "devouringstorms:post/world_glow_combine",
       "inputs": [
         {
           "sampler_name": "In",
@@ -167,7 +167,7 @@
             "name": "Params",
             "type": "vec4",
             "value": [
-              0.95,
+              0.9,
               0.0,
               0.0,
               0.0
