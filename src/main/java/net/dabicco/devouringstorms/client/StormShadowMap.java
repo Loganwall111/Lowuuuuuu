@@ -62,6 +62,8 @@ public final class StormShadowMap {
    private static final Matrix4f lightViewProj = new Matrix4f();
    private static boolean haveGeometry;
    private static boolean failed;
+   /** Set while the always-on world-shadow pass is capturing, so wanted() admits it. */
+   private static boolean worldActive;
    private static float[] verts = new float['쀀'];
    private static int vertCount;
    private static float minX;
@@ -229,7 +231,12 @@ public final class StormShadowMap {
    }
 
    public static boolean wanted() {
-      return !failed && (DevouringStormsClientConfig.stormShadow || DevouringStormsClientConfig.stormSelfShadow) && DevouringStormsClientConfig.stormShadowStrength > (double)0.0F && !ShaderPackCompat.active();
+      return !failed && !ShaderPackCompat.active() && (worldActive || (DevouringStormsClientConfig.stormShadow || DevouringStormsClientConfig.stormSelfShadow) && DevouringStormsClientConfig.stormShadowStrength > (double)0.0F);
+   }
+
+   /** Marks the frame as an always-on world-shadow capture (natural sun shadows, no storm). */
+   public static void worldActive(boolean on) {
+      worldActive = on;
    }
 
    public static void capture(PoseStack pose, Model model) {

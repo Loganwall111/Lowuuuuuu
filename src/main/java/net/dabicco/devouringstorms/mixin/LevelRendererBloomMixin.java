@@ -6,6 +6,7 @@ import net.dabicco.devouringstorms.client.StormBloom;
 import net.dabicco.devouringstorms.client.StormImpactLights;
 import net.dabicco.devouringstorms.client.StormShadow;
 import net.dabicco.devouringstorms.client.StormSunGlow;
+import net.dabicco.devouringstorms.client.WorldShadows;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -35,6 +36,7 @@ public abstract class LevelRendererBloomMixin {
    ) {
       StormSunGlow.render(cameraState);
       StormShadow.render(cameraState);
+      WorldShadows.render(cameraState);
       StormImpactLights.render(cameraState);
       StormBloom.process();
    }

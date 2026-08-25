@@ -21,6 +21,7 @@ public final class StormBloom {
    private static final float[] WIDE_WEIGHT = new float[]{0.55F, 0.7F, 0.9F};
    private static final double[] TIER_DISTANCES = new double[]{(double)30.0F, (double)60.0F, (double)110.0F, (double)200.0F};
    private static final Identifier[] SCREEN_CHAINS = new Identifier[]{id("storm_bloom_subtle_all"), id("storm_bloom_all"), id("storm_bloom_strong_all")};
+   private static final Identifier WORLD_EMISSIVE_CHAIN = id("world_emissive_bloom");
    private static boolean failed = false;
    private static boolean drivingOutlineTarget = false;
    private static String lastStatus = "";
@@ -97,23 +98,34 @@ public final class StormBloom {
             status("off (a shader pack is active -- it does its own bloom)");
          } else {
             int level = (int)Math.round(DevouringStormsClientConfig.bloomStrength);
-            if (level <= 0) {
+            boolean worldGlow = DevouringStormsClientConfig.worldEmissiveGlow;
+            if (level <= 0 && !worldGlow) {
                drivingOutlineTarget = false;
                status("off (Bloom is set to Off in Effects)");
             } else {
                Minecraft mc = Minecraft.getInstance();
                if (mc.level != null && mc.player != null) {
                   try {
-                     if (DevouringStormsClientConfig.bloomMaskToStorm) {
+                     if (level > 0 && DevouringStormsClientConfig.bloomMaskToStorm) {
                         if (!processHeadsOnly(mc, level)) {
                            drivingOutlineTarget = false;
                         }
 
+                        // the heads-only bloom never touches torches and lava --
+                        // the world's own emitters get their glow from a second,
+                        // high-threshold pass so both can be on at once
+                        processWorldEmissive(mc);
+                        return;
+                     }
+
+                     if (level > 0) {
+                        drivingOutlineTarget = false;
+                        processWholeScreen(mc, level);
                         return;
                      }
 
                      drivingOutlineTarget = false;
-                     processWholeScreen(mc, level);
+                     processWorldEmissive(mc);
                   } catch (Exception e) {
                      failed = true;
                      drivingOutlineTarget = false;
@@ -189,6 +201,20 @@ public final class StormBloom {
             status("skipping one frame: bloom buffer is " + heads.width + "x" + heads.height + " but the screen is " + mainTarget.width + "x" + mainTarget.height);
             return false;
          }
+      }
+   }
+
+   /** The always-on emissive chain: only genuinely bright emitters (torch flames, lava, glowstone, beacons) pass its high threshold, so it reads as coloured light around sources rather than as fog over the whole frame. */
+   private static void processWorldEmissive(Minecraft mc) {
+      if (!DevouringStormsClientConfig.worldEmissiveGlow) {
+         return;
+      }
+
+      PostChain chain = mc.getShaderManager().getPostChain(WORLD_EMISSIVE_CHAIN, LevelTargetBundle.MAIN_TARGETS);
+      if (chain == null) {
+         status("world emissive chain failed to load (see the errors above this line)");
+      } else {
+         chain.process(mc.gameRenderer.mainRenderTarget(), ((GameRendererAccessor)mc.gameRenderer).dabyws$resourcePool());
       }
    }
 

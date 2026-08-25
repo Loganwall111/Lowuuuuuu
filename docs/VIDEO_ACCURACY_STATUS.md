@@ -196,3 +196,44 @@ the known-good HEAD sources (`StormSkyDarken`/`StormPalettes`/
 checked, all `cloudPrismShaded` (19) and legacy `cloudPrism` (15) call sites
 arg-counted, and the generated PNGs decoded back and sampled. CI remains the
 compile gate (no local JDK).
+
+---
+
+## Pass 3 — built-in world shader: natural shadows + emissive glow (2026-08-24)
+
+**The ask:** the game should look like a shader pack by itself — real sun
+shadows on grass/water/everything even with no storm, plus a coloured glow on
+torches and other emitters — all built into the mod.
+
+**What shipped:**
+
+1. **`client/WorldShadows.java`** — natural directional sun shadows for the
+   ordinary world, reusing the (battle-tested) storm shadow machinery:
+   the height surface around the player is sampled (throttled 400 ms cache,
+   min-of-neighbourhood like the lid so spikes can't punch holes) and emitted
+   into the sun-facing depth map; nearby living entities contribute padded
+   caster boxes; the shared screen-space pass then shades every scene pixel
+   the sun can't reach — grass, water, walls, snow, all of it, because the
+   receiver comes from the scene depth buffer. Cool blue-grey tint (what
+   remains in a real shadow is skylight), fades out at sunset automatically,
+   and steps aside entirely while a phase-4+ storm owns the shadow pass.
+2. **`StormShadow`** — the screen-space pass extracted into a shared
+   `drawShadowPass(...)` used by both the storm and world paths (no behaviour
+   change for the storm side).
+3. **`StormShadowMap`** — new `worldActive` frame flag lets the world pass
+   capture without needing the storm's shadow config.
+4. **Emissive glow** — new `post_effect/world_emissive_bloom.json` chain
+   (high threshold 0.82, gain 4, gentle combine) built on the existing
+   bloom shaders: torch flames, lava, glowstone and beacons get a soft
+   coloured halo that carries their light into the air. Runs whenever
+   `worldEmissiveGlow` is on (default), including alongside the storm's
+   heads-only bloom; skipped when whole-screen storm bloom already ran.
+5. **New config keys** (Effects): `worldShadows` (default on),
+   `worldShadowStrength` (0.55), `worldEmissiveGlow` (default on).
+6. **Inner-glow core wired** — `fx_witherCubeInnerGlow.png` (from the traced
+   Blockbench FX project) had been extracted but never rendered; it is now the
+   storm's emissive breathing core inside the shaded-shell body (phase 4+,
+   shaded preset). That closes the "all traced forms wired" list: 6 stage
+   shells + the inner-glow FX.
+7. **`auraRadius` now follows `backScale`** (the outward back/cube mass) as
+   requested, instead of the whole-body growth scale.

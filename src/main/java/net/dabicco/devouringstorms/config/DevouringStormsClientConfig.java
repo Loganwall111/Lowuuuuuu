@@ -87,6 +87,9 @@ public class DevouringStormsClientConfig {
    public static double sunGlowG = 0.82;
    public static double sunGlowB = 0.34;
    public static double stormShadowStrength = 0.55;
+   public static boolean worldShadows = true;
+   public static double worldShadowStrength = 0.55;
+   public static boolean worldEmissiveGlow = true;
    public static double stormShadowR = 0.42;
    public static double stormShadowG = 0.46;
    public static double stormShadowB = 0.58;
@@ -627,6 +630,9 @@ public class DevouringStormsClientConfig {
       key("stormBackfaceCull", "WARNING: very inconsistent. On paper the body draws both sides of every face, so dropping the far ones is close to half the pixel work. In practice the win depends entirely on how much of your screen the storm fills, and it can be nothing at all. Anything single-sided in the model becomes a hole. Measure it before you keep it.", (double)0.0F, (double)1.0F, true, () -> stormBackfaceCull ? (double)1.0F : (double)0.0F, (v) -> stormBackfaceCull = v >= (double)0.5F);
       key("shadowCullBackFaces", "Skip away-facing surfaces when building the shadow map. They cannot change the shadow's shape, so this roughly halves the work.", (double)0.0F, (double)1.0F, true, () -> shadowCullBackFaces ? (double)1.0F : (double)0.0F, (v) -> shadowCullBackFaces = v >= (double)0.5F);
       key("stormShadowSoftEdge", "Soften the shadow's edge with nine samples per pixel instead of one. This scales with your RESOLUTION, not with the storm, and it is the largest single shadow saving there is.", (double)0.0F, (double)1.0F, true, () -> stormShadowSoftEdge ? (double)1.0F : (double)0.0F, (v) -> stormShadowSoftEdge = v >= (double)0.5F);
+      key("worldShadows", "Natural sun shadows for the ordinary world, storm or no storm: terrain, trees and buildings cast real directional shade onto grass, water and everything else. Turns itself off while a storm owns the sky.", (double)0.0F, (double)1.0F, true, () -> worldShadows ? (double)1.0F : (double)0.0F, (v) -> worldShadows = v >= (double)0.5F);
+      key("worldShadowStrength", "How dark the natural world shadows fall.", (double)0.0F, (double)1.0F, false, () -> worldShadowStrength, (v) -> worldShadowStrength = v);
+      key("worldEmissiveGlow", "Torch flames, lava, glowstone and other bright emitters get a soft coloured glow that carries their light into the air around them.", (double)0.0F, (double)1.0F, true, () -> worldEmissiveGlow ? (double)1.0F : (double)0.0F, (v) -> worldEmissiveGlow = v >= (double)0.5F);
       key("stormShadowHeightmap", "WARNING: very inconsistent. The coarsest ground grid there is, meant for the cheapest possible setup, but the grid is rarely what your frame rate is spent on, so this often changes nothing while roughening every cave mouth and cliff edge. Try the resolution slider first.", (double)0.0F, (double)1.0F, true, () -> stormShadowHeightmap ? (double)1.0F : (double)0.0F, (v) -> stormShadowHeightmap = v >= (double)0.5F);
       key("stormGlowFlip", "Only needed if the night glow washes over the storm instead of ringing it. That means the model's faces arrive wound the other way round.", (double)0.0F, (double)1.0F, true, () -> stormGlowFlip ? (double)1.0F : (double)0.0F, (v) -> stormGlowFlip = v >= (double)0.5F);
       keyCycle("bloomDebug", "Draw one stage of the bloom pipeline over the screen instead of compositing. Stage 2 must show terrain and the body; all black means nothing was captured. Stage 4 marks visible teeth green and occluded ones red.", BLOOM_DEBUG_LABELS, () -> bloomDebug, (v) -> bloomDebug = (double)Math.round(v));

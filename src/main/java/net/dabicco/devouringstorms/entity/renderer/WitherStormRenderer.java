@@ -105,6 +105,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    private static final int PORTAL_ALPHA_SEALED = 105;
    private static final int PORTAL_ALPHA_OPEN = 170;
    private static final Identifier PORTAL_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/tractor_beam.png");
+   private static final Identifier INNER_GLOW_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/entity/fx_witherCubeInnerGlow.png");
    private static final Identifier HALO_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_ring.png");
    private static final Identifier HALO_GRADIENT_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_gradient.png");
    private static final Identifier HALO_BAND_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_band.png");
@@ -752,7 +753,10 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    private static double auraRadius(WitherStormRenderState state) {
-      return (26.0 + 9.0 * Math.max(0.0, state.phase - 4.0)) * (double)growthScale(state);
+      // follows the OUTWARD back/cube mass, not the whole-body scale: the aura
+      // is the reach of the storm's presence, so if back growth and body growth
+      // ever diverge the aura must track the back mass
+      return (26.0 + 9.0 * Math.max(0.0, state.phase - 4.0)) * (double)backScale(state);
    }
 
    private static float shadedModelAmount(WitherStormRenderState state) {
@@ -846,6 +850,49 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       if (shell != null && alpha > 0.01F && !this.previewShadowPass) {
          StormStageShells.submit(shell, state.phase, poseStack, collector, state.lightCoords, this.pieceTint(state), alpha, state.phase >= 5.0);
       }
+   }
+
+   /**
+    * The traced inner-glow core (fx_witherCubeInnerGlow from the Blockbench
+    * FX project): an emissive cube nested inside the body, breathing slowly.
+    * This is the storm's glowing heart from the Story-Mode shots -- the last
+    * piece of the Traced_shading_Textures set that had a texture but no
+    * renderer. Only in the shaded-shell presentation, phase 4 onward.
+    */
+   private void submitInnerGlow(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
+      if (this.previewShadowPass || !StormSkins.shaded() || !DevouringStormsClientConfig.stormStageShells || state.phase < 4.0) {
+         return;
+      }
+      float ramp = Mth.clamp((float)((state.phase - 4.0) / 0.35), 0.0F, 1.0F) * state.collapseFade * state.hatch;
+      if (ramp <= 0.01F) {
+         return;
+      }
+      float growth = growthScale(state);
+      float half = (float)((12.0 + Math.max(0.0, state.phase - 4.0) * 3.6) * (double)growth * 0.46);
+      float pulse = 0.82F + 0.18F * Mth.sin((float)(Util.getMillis() % 1000000L) * 0.0045F);
+      int a = (int)(190.0F * ramp * pulse);
+      if (a <= 3) {
+         return;
+      }
+      collector.submitCustomGeometry(poseStack, GlowRenderTypes.emitterMark(INNER_GLOW_TEXTURE), (pose, consumer) -> {
+         emitGlowCube(consumer, pose, half, a);
+      });
+   }
+
+   private static void emitGlowCube(VertexConsumer consumer, PoseStack.Pose pose, float h, int a) {
+      glowFace(consumer, pose, -h, h, -h, h, h, -h, h, h, h, -h, h, h, a);
+      glowFace(consumer, pose, -h, -h, -h, -h, -h, h, h, -h, h, h, -h, h, a);
+      glowFace(consumer, pose, -h, -h, -h, h, -h, -h, h, h, -h, -h, h, -h, a);
+      glowFace(consumer, pose, h, -h, -h, h, -h, h, h, h, h, h, h, -h, a);
+      glowFace(consumer, pose, -h, -h, -h, -h, h, -h, -h, h, h, -h, -h, h, a);
+      glowFace(consumer, pose, -h, -h, h, h, -h, h, h, h, h, -h, h, h, a);
+   }
+
+   private static void glowFace(VertexConsumer consumer, PoseStack.Pose pose, float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz, float dx, float dy, float dz, int a) {
+      consumer.addVertex(pose, ax, ay, az).setColor(255, 255, 255, a).setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
+      consumer.addVertex(pose, bx, by, bz).setColor(255, 255, 255, a).setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
+      consumer.addVertex(pose, cx, cy, cz).setColor(255, 255, 255, a).setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
+      consumer.addVertex(pose, dx, dy, dz).setColor(255, 255, 255, a).setUv(0.5F, 0.5F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
    }
 
    private void submitSkyBackdrop(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
@@ -1434,6 +1481,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          poseStack.translate(0.0F, -1.501F, 0.0F);
          this.submitCover(poseStack, this.frameCollector, state);
          this.submitStageShell(state, poseStack, this.frameCollector);
+         this.submitInnerGlow(state, poseStack, this.frameCollector);
          if (state.phase4 && !state.devourer && !this.previewShadowPass) {
             float emit = phase4EmissiveGain(state);
             if (emit > 0.02F) {

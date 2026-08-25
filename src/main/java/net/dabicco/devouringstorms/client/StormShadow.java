@@ -197,58 +197,9 @@ public final class StormShadow {
                            float gridExtent = extent + (float)(middle.subtract(landing).horizontalDistance() * (double)0.5F) + 48.0F;
                            StormShadowMap.captureTerrain(mc.level, gridMiddle, eye, gridExtent);
                            if (StormShadowMap.build(new Vector3f((float)sun.x, (float)sun.y, (float)sun.z), centre, extent)) {
-                              GpuTextureView shadowDepth = StormShadowMap.depthView();
-                              GpuTextureView groundDepth = StormShadowMap.groundView();
-                              if (groundDepth == null) {
-                                 groundDepth = shadowDepth;
-                              }
-
-                              if (shadowDepth == null) {
-                                 StormShadowMap.status("no shadow: the shadow map has no depth texture");
-                              } else {
-                                 Matrix4f viewProj = (new Matrix4f(camera.projectionMatrix)).mul(camera.viewRotationMatrix);
-                                 Matrix4f invViewProj = (new Matrix4f(viewProj)).invert();
-
-                                 try {
-                                    int size = (new Std140SizeCalculator()).putMat4f().putMat4f().putVec4().putMat4f().putVec4().putVec4().putMat4f().putVec4().get();
-                                    ByteBuffer data = staging(size);
-                                    float[] shadow = new float[3];
-                                    shadowColor(nearest.getPhase(), shadow);
-                                    Std140Builder.intoBuffer(data).putMat4f(invViewProj).putMat4f(StormShadowMap.lightViewProj()).putVec4(strength * altitude, 0.0015F, 1.0F / StormShadowMap.resolution(), StormShadowMap.hasGround() ? 1.0F : 0.0F).putMat4f(viewProj).putVec4((float)sun.x, (float)sun.y, (float)sun.z, DevouringStormsClientConfig.stormSelfShadow ? 1.0F : 0.0F).putVec4(shadow[0], shadow[1], shadow[2], DevouringStormsClientConfig.stormShadow ? 1.0F : 0.0F).putMat4f(StormShadowMap.groundViewProj()).putVec4((float)DevouringStormsClientConfig.stormShadingContrast, DevouringStormsClientConfig.stormShadowSoftEdge ? 1.0F : 0.0F, 0.0F, 0.0F);
-                                    data.rewind();
-                                    GpuBuffer ubo = GpuBufferPool.write("dabyws shadow cfg", 128, data);
-                                    RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "dabyws storm shadow", scene.getColorTextureView(), Optional.empty());
-
-                                    try {
-                                       pass.setPipeline(pipeline());
-                                       pass.setUniform("ShadowConfig", ubo);
-                                       GpuSampler point = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-                                       pass.bindTexture("DepthSampler", scene.getDepthTextureView(), point);
-                                       pass.bindTexture("ShadowSampler", shadowDepth, point);
-                                       pass.bindTexture("GroundSampler", groundDepth, point);
-                                       pass.draw(3, 1, 0, 0);
-                                    } catch (Throwable var32) {
-                                       if (pass != null) {
-                                          try {
-                                             pass.close();
-                                          } catch (Throwable var31) {
-                                             var32.addSuppressed(var31);
-                                          }
-                                       }
-
-                                       throw var32;
-                                    }
-
-                                    if (pass != null) {
-                                       pass.close();
-                                    }
-                                 } catch (Exception e) {
-                                    failed = true;
-                                    System.out.println("[devouringstorms] storm shadow DISABLED after an error: " + String.valueOf(e));
-                                    e.printStackTrace();
-                                 }
-
-                              }
+                              float[] shadow = new float[3];
+                              shadowColor(nearest.getPhase(), shadow);
+                              drawShadowPass(camera, sun, strength * altitude, shadow[0], shadow[1], shadow[2], DevouringStormsClientConfig.stormSelfShadow, DevouringStormsClientConfig.stormShadow, (float)DevouringStormsClientConfig.stormShadingContrast, DevouringStormsClientConfig.stormShadowSoftEdge, "storm");
                            }
                         }
                      } else {
@@ -256,6 +207,74 @@ public final class StormShadow {
                      }
                   }
                }
+            }
+         }
+      }
+   }
+
+   /**
+    * The screen-space half of the shadow: unproject the finished frame, compare
+    * against the sun's depth map and tint whatever it says is occluded. Shared
+    * by the storm shadow and the always-on natural world shadows.
+    */
+   static void drawShadowPass(CameraRenderState camera, Vec3 sun, float strength, float tintR, float tintG, float tintB, boolean selfShadow, boolean worldShadow, float contrast, boolean softEdge, String tag) {
+      if (failed) {
+         return;
+      } else {
+         Minecraft mc = Minecraft.getInstance();
+         RenderTarget scene = StormBloom.sceneTarget(mc);
+         if (scene == null || !scene.useDepth || scene.getDepthTextureView() == null) {
+            StormShadowMap.status("no shadow (" + tag + "): no scene depth buffer to read");
+         } else {
+            GpuTextureView shadowDepth = StormShadowMap.depthView();
+            GpuTextureView groundDepth = StormShadowMap.groundView();
+            if (groundDepth == null) {
+               groundDepth = shadowDepth;
+            }
+
+            if (shadowDepth == null) {
+               StormShadowMap.status("no shadow (" + tag + "): the shadow map has no depth texture");
+            } else {
+               Matrix4f viewProj = (new Matrix4f(camera.projectionMatrix)).mul(camera.viewRotationMatrix);
+               Matrix4f invViewProj = (new Matrix4f(viewProj)).invert();
+
+               try {
+                  int size = (new Std140SizeCalculator()).putMat4f().putMat4f().putVec4().putMat4f().putVec4().putVec4().putMat4f().putVec4().get();
+                  ByteBuffer data = staging(size);
+                  Std140Builder.intoBuffer(data).putMat4f(invViewProj).putMat4f(StormShadowMap.lightViewProj()).putVec4(strength, 0.0015F, 1.0F / StormShadowMap.resolution(), StormShadowMap.hasGround() ? 1.0F : 0.0F).putMat4f(viewProj).putVec4((float)sun.x, (float)sun.y, (float)sun.z, selfShadow ? 1.0F : 0.0F).putVec4(tintR, tintG, tintB, worldShadow ? 1.0F : 0.0F).putMat4f(StormShadowMap.groundViewProj()).putVec4(contrast, softEdge ? 1.0F : 0.0F, 0.0F, 0.0F);
+                  data.rewind();
+                  GpuBuffer ubo = GpuBufferPool.write("dabyws shadow cfg", 128, data);
+                  RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "dabyws storm shadow", scene.getColorTextureView(), Optional.empty());
+
+                  try {
+                     pass.setPipeline(pipeline());
+                     pass.setUniform("ShadowConfig", ubo);
+                     GpuSampler point = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+                     pass.bindTexture("DepthSampler", scene.getDepthTextureView(), point);
+                     pass.bindTexture("ShadowSampler", shadowDepth, point);
+                     pass.bindTexture("GroundSampler", groundDepth, point);
+                     pass.draw(3, 1, 0, 0);
+                  } catch (Throwable var12) {
+                     if (pass != null) {
+                        try {
+                           pass.close();
+                        } catch (Throwable var11) {
+                           var12.addSuppressed(var11);
+                        }
+                     }
+
+                     throw var12;
+                  }
+
+                  if (pass != null) {
+                     pass.close();
+                  }
+               } catch (Exception e) {
+                  failed = true;
+                  System.out.println("[devouringstorms] storm shadow DISABLED after an error: " + String.valueOf(e));
+                  e.printStackTrace();
+               }
+
             }
          }
       }
