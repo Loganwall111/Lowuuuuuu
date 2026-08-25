@@ -303,27 +303,9 @@ public final class StormSkyBox {
       Minecraft mc = Minecraft.getInstance();
       AbstractTexture tex = mc.getTextureManager().getTexture(texture);
       int maxQuads = SEGMENTS * (ELEVATIONS.length + CLOUD_ELEV_A.length + CLOUD_ELEV_B.length) + 16;
-
-      try (ByteBufferBuilder builder = ByteBufferBuilder.exactlySized(maxQuads * 4 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
-         BufferBuilder bufferBuilder = new BufferBuilder(builder, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-         int quads = emitter.emit(bufferBuilder);
-         if (quads <= 0) {
-            return;
-         }
-
-         try (MeshData meshData = bufferBuilder.buildOrThrow()) {
-            RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
-            GpuBuffer indexBuffer = autoIndices.getBuffer(quads * 6);
-
-            try (GpuBuffer vertexBuffer = RenderSystem.getDevice().createBuffer(() -> "Devouring Storms sky layer", 32, meshData.vertexBuffer())) {
-               GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(RenderSystem.getModelViewMatrixCopy(), new Vector4f(1.0F, 1.0F, 1.0F, 1.0F));
-               GpuTextureView color = mc.getMainRenderTarget().getColorTextureView();
-               GpuTextureView depth = mc.getMainRenderTarget().getDepthTextureView();
-               // BISECT PROBE E: RenderPass block removed
-            }
-         }
-      } catch (Exception e) {
-         // Never let a sky-layer hiccup kill the frame
+      if (tex == null || maxQuads < 0 || emitter == null) {
+         return;
       }
+      // BISECT PROBE F: only the texture-lookup statements live
    }
 }
