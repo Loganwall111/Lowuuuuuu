@@ -1,6 +1,5 @@
 package net.dabicco.devouringstorms.client;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
 import java.util.HashMap;
 import java.util.Map;
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
@@ -169,19 +168,93 @@ public final class StormMutationFlash {
    }
 
    /**
-    * BISECT PROBE: sky bloom disabled while hunting the compile failure.
+    * Draw the bloom in the sky layer, centred on the storm's local bearing.
+    * Called by StormSkyBox inside the native sky pass. An additive radial
+    * bloom (disc + racing ring) at sky depth — never a full-screen overlay.
     */
-   public static void renderSkyBloom(org.joml.Vector3f target) {
-   }
+   public static void renderSkyBloom(Vector3f target) {
+      if (!DevouringStormsClientConfig.mutationFlashBang) {
+         return;
+      }
+      long now = nowMs();
+      Flash bestFlash = null;
+      float bestEnv = 0.0F;
 
+      for (int i = 0; i < FLASHES.length; i++) {
+         Flash f = FLASHES[i];
+         if (f == null) {
+            continue;
+         }
+         float ticks = (float)(now - f.startMs) / 50.0F;
+         if (ticks > LIFE_TICKS) {
+            FLASHES[i] = null;
+            continue;
+         }
+         float env = envelope(ticks) * f.strength;
+         if (env > bestEnv) {
+            bestEnv = env;
+            bestFlash = f;
+         }
+      }
+
+      if (bestFlash == null || bestEnv <= 0.01F) {
+         return;
+      }
+
+      float ticks = (float)(now - bestFlash.startMs) / 50.0F;
+      float progress = Mth.clamp(ticks / LIFE_TICKS, 0.0F, 1.0F);
+      float amount = Math.min(1.0F, bestEnv) * (0.55F + 0.45F * SkyAtmosphereController.intensity());
+
+      // billboard basis around the storm bearing at sky depth
+      Vector3f t = new Vector3f(target).normalize();
+      Vector3f hint = Math.abs(t.y) > 0.95F ? new Vector3f(1.0F, 0.0F, 0.0F) : new Vector3f(0.0F, 1.0F, 0.0F);
+      Vector3f t1 = new Vector3f(t).cross(hint).normalize();
+      Vector3f t2 = new Vector3f(t).cross(t1).normalize();
+      float cx = t.x * SKY_R;
+      float cy = t.y * SKY_R;
+      float cz = t.z * SKY_R;
+
+      // core flash disc: bright, tight, shrinking as it decays
+      float coreS = 88.0F * (1.15F - 0.45F * progress);
+      float coreA = Mth.clamp(225.0F * amount / 255.0F, 0.0F, 1.0F);
+      // shock ring: races outward and thins out
+      float ringS = 110.0F + 150.0F * progress;
+      float ringA = Mth.clamp(160.0F * amount * (1.0F - progress * 0.5F) / 255.0F, 0.0F, 1.0F);
+
+      // mutation purple with a hot magenta core edge (0..1 channels)
+      float cr = CORE_COLOR[0] / 255.0F;
+      float cg = CORE_COLOR[1] / 255.0F;
+      float cb = CORE_COLOR[2] / 255.0F;
+      float er = EDGE_COLOR[0] / 255.0F;
+      float eg = EDGE_COLOR[1] / 255.0F;
+      float eb = EDGE_COLOR[2] / 255.0F;
+
+      if (coreA > 0.012F) {
+         StormSkyBox.drawLayer(GLOW_TEXTURE, w -> {
+            skyQuad(w, cx, cy, cz, t1, t2, coreS * 0.78F, cr, cg, cb, coreA);
+            skyQuad(w, cx, cy, cz, t1, t2, coreS * 0.45F, er, eg, eb, coreA);
+            return 2;
+         });
+      }
+
+      if (ringA > 0.012F) {
+         StormSkyBox.drawLayer(RING_TEXTURE, w -> {
+            skyQuad(w, cx, cy, cz, t1, t2, ringS, er, eg, eb, ringA);
+            return 1;
+         });
+      }
+   }
 
    /** One billboard quad on the tangent plane of the storm bearing, sky depth. */
-   private static void skyQuad(BufferBuilder bb, float cx, float cy, float cz, Vector3f t1, Vector3f t2, float half, int r, int g, int b, int a) {
-      bb.addVertex(cx - t1.x * half - t2.x * half, cy - t1.y * half - t2.y * half, cz - t1.z * half - t2.z * half).setUv(0.0F, 0.0F).setColor(r, g, b, a);
-      bb.addVertex(cx + t1.x * half - t2.x * half, cy + t1.y * half - t2.y * half, cz + t1.z * half - t2.z * half).setUv(1.0F, 0.0F).setColor(r, g, b, a);
-      bb.addVertex(cx + t1.x * half + t2.x * half, cy + t1.y * half + t2.y * half, cz + t1.z * half + t2.z * half).setUv(1.0F, 1.0F).setColor(r, g, b, a);
-      bb.addVertex(cx - t1.x * half + t2.x * half, cy - t1.y * half + t2.y * half, cz - t1.z * half + t2.z * half).setUv(0.0F, 1.0F).setColor(r, g, b, a);
+   private static void skyQuad(StormSkyBox.StormSkyWriter w, float cx, float cy, float cz, Vector3f t1, Vector3f t2, float half, float r, float g, float b, float a) {
+      w.vertex(cx - t1.x * half - t2.x * half, cy - t1.y * half - t2.y * half, cz - t1.z * half - t2.z * half, 0.0F, 0.0F, r, g, b, a);
+      w.vertex(cx + t1.x * half - t2.x * half, cy + t1.y * half - t2.y * half, cz + t1.z * half - t2.z * half, 1.0F, 0.0F, r, g, b, a);
+      w.vertex(cx + t1.x * half + t2.x * half, cy + t1.y * half + t2.y * half, cz + t1.z * half + t2.z * half, 1.0F, 1.0F, r, g, b, a);
+      w.vertex(cx - t1.x * half + t2.x * half, cy - t1.y * half + t2.y * half, cz - t1.z * half + t2.z * half, 0.0F, 1.0F, r, g, b, a);
    }
+
+
+   
 
    /** Reset transient state (world leave etc.). */
    public static void clear() {
