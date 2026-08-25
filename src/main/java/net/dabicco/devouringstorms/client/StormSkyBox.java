@@ -294,7 +294,45 @@ public final class StormSkyBox {
     * vanilla's own SkyRenderer render passes exactly (fresh vertex buffer per
     * frame, own RenderPass on the main target, default uniforms + transforms).
     */
+   /**
+    * Build + draw one additive textured layer in the sky pass, mirroring
+    * vanilla's own SkyRenderer render passes exactly (fresh vertex buffer per
+    * frame, own RenderPass on the main target, default uniforms + transforms).
+    */
    public static void drawLayer(Identifier texture, LayerEmit emitter) {
-      // BISECT PROBE C: render machinery removed
+      Minecraft mc = Minecraft.getInstance();
+      AbstractTexture tex = mc.getTextureManager().getTexture(texture);
+      int maxQuads = SEGMENTS * (ELEVATIONS.length + CLOUD_ELEV_A.length + CLOUD_ELEV_B.length) + 16;
+
+      try (ByteBufferBuilder builder = ByteBufferBuilder.exactlySized(maxQuads * 4 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
+         BufferBuilder bufferBuilder = new BufferBuilder(builder, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+         int quads = emitter.emit(bufferBuilder);
+         if (quads <= 0) {
+            return;
+         }
+
+         try (MeshData meshData = bufferBuilder.buildOrThrow()) {
+            RenderSystem.AutoStorageIndexBuffer autoIndices = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+            GpuBuffer indexBuffer = autoIndices.getBuffer(quads * 6);
+
+            try (GpuBuffer vertexBuffer = RenderSystem.getDevice().createBuffer(() -> "Devouring Storms sky layer", 32, meshData.vertexBuffer())) {
+               GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(RenderSystem.getModelViewMatrixCopy(), new Vector4f(1.0F, 1.0F, 1.0F, 1.0F));
+               GpuTextureView color = mc.getMainRenderTarget().getColorTextureView();
+               GpuTextureView depth = mc.getMainRenderTarget().getDepthTextureView();
+
+               try (RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "Devouring Storms sky", color, OptionalInt.empty(), depth, OptionalDouble.empty())) {
+                  renderPass.setPipeline(pipeline());
+                  RenderSystem.bindDefaultUniforms(renderPass);
+                  renderPass.setUniform("DynamicTransforms", dynamicTransforms);
+                  renderPass.bindTexture("Sampler0", tex.getTextureView(), tex.getSampler());
+                  renderPass.setVertexBuffer(0, vertexBuffer);
+                  renderPass.setIndexBuffer(indexBuffer, autoIndices.type());
+                  renderPass.drawIndexed(0, 0, quads * 6, 1);
+               }
+            }
+         }
+      } catch (Exception e) {
+         // Never let a sky-layer hiccup kill the frame
+      }
    }
 }
