@@ -169,80 +169,11 @@ public final class StormMutationFlash {
    }
 
    /**
-    * Draw the bloom in the sky layer, centred on the storm's local bearing.
-    * Called by StormSkyBox inside the native sky pass. An additive radial
-    * bloom (disc + racing ring) at sky depth — never a full-screen overlay.
+    * BISECT PROBE: sky bloom disabled while hunting the compile failure.
     */
-   public static void renderSkyBloom(Vector3f target) {
-      if (!DevouringStormsClientConfig.mutationFlashBang) {
-         return;
-      }
-      long now = nowMs();
-      Flash bestFlash = null;
-      float bestEnv = 0.0F;
-
-      for (int i = 0; i < FLASHES.length; i++) {
-         Flash f = FLASHES[i];
-         if (f == null) {
-            continue;
-         }
-         float ticks = (float)(now - f.startMs) / 50.0F;
-         if (ticks > LIFE_TICKS) {
-            FLASHES[i] = null;
-            continue;
-         }
-         float env = envelope(ticks) * f.strength;
-         if (env > bestEnv) {
-            bestEnv = env;
-            bestFlash = f;
-         }
-      }
-
-      if (bestFlash == null || bestEnv <= 0.01F) {
-         return;
-      }
-
-      float ticks = (float)(now - bestFlash.startMs) / 50.0F;
-      float progress = Mth.clamp(ticks / LIFE_TICKS, 0.0F, 1.0F);
-      float amount = Math.min(1.0F, bestEnv) * (0.55F + 0.45F * SkyAtmosphereController.intensity());
-
-      // billboard basis around the storm bearing at sky depth
-      Vector3f t = new Vector3f(target).normalize();
-      Vector3f hint = Math.abs(t.y) > 0.95F ? new Vector3f(1.0F, 0.0F, 0.0F) : new Vector3f(0.0F, 1.0F, 0.0F);
-      Vector3f t1 = new Vector3f(t).cross(hint).normalize();
-      Vector3f t2 = new Vector3f(t).cross(t1).normalize();
-      float cx = t.x * SKY_R;
-      float cy = t.y * SKY_R;
-      float cz = t.z * SKY_R;
-
-      // core flash disc: bright, tight, shrinking as it decays
-      float coreS = 88.0F * (1.15F - 0.45F * progress);
-      int coreA = (int)(225.0F * amount);
-      // shock ring: races outward and thins out
-      float ringS = 110.0F + 150.0F * progress;
-      int ringA = (int)(160.0F * amount * (1.0F - progress * 0.5F));
-
-      if (coreA > 2) {
-         int r = CORE_COLOR[0];
-         int g = CORE_COLOR[1];
-         int b = CORE_COLOR[2];
-         StormSkyBox.drawLayer(GLOW_TEXTURE, bb -> {
-            skyQuad(bb, cx, cy, cz, t1, t2, coreS * 0.78F, r, g, b, coreA);
-            skyQuad(bb, cx, cy, cz, t1, t2, coreS * 0.45F, EDGE_COLOR[0], EDGE_COLOR[1], EDGE_COLOR[2], coreA);
-            return 2;
-         });
-      }
-
-      if (ringA > 2) {
-         int rr = EDGE_COLOR[0];
-         int rg = EDGE_COLOR[1];
-         int rb = EDGE_COLOR[2];
-         StormSkyBox.drawLayer(RING_TEXTURE, bb -> {
-            skyQuad(bb, cx, cy, cz, t1, t2, ringS, rr, rg, rb, ringA);
-            return 1;
-         });
-      }
+   public static void renderSkyBloom(org.joml.Vector3f target) {
    }
+
 
    /** One billboard quad on the tangent plane of the storm bearing, sky depth. */
    private static void skyQuad(BufferBuilder bb, float cx, float cy, float cz, Vector3f t1, Vector3f t2, float half, int r, int g, int b, int a) {
