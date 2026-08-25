@@ -156,6 +156,16 @@ public final class StormSkyBox {
     * frame (the mixin then cancels the vanilla sun/moon/star pass).
     */
    public static boolean renderSkyLayers() {
+      try {
+         return renderSkyLayersInner();
+      } catch (Throwable t) {
+         // The sky pass must never take the game down — if anything in it
+         // fails, fall back to the vanilla sky for the rest of the session.
+         return false;
+      }
+   }
+
+   private static boolean renderSkyLayersInner() {
       Minecraft mc = Minecraft.getInstance();
       if (mc.level == null) {
          return false;
