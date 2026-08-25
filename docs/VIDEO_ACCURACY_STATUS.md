@@ -237,3 +237,40 @@ torches and other emitters — all built into the mod.
    shells + the inner-glow FX.
 7. **`auraRadius` now follows `backScale`** (the outward back/cube mass) as
    requested, instead of the whole-body growth scale.
+
+---
+
+## Pass 4 — in-game feedback round 1 (2026-08-25)
+
+User tested build `+build.N.be6018a`/`4c949b0`-era jars: textures landed,
+black screen fixed, but (1) no visible world shadows, (2) sky "super messed
+up" vs the reference shots, (3) billboard-looking glow still present.
+
+**Fixes:**
+
+1. **Billboard eliminated for real** — `StormGlowRenderer.submitLight` (the
+   summon/pulse flash) was still building its quads from the camera view
+   vector: a camera-facing billboard, exactly what the user was seeing. It is
+   now a WORLD-SPACE glow cross: three orthogonal world-axis-aligned gradient
+   planes per layer (XZ/XY/ZY) through the centre — additive, volumetric-ish
+   from any angle, never swings with the camera.
+2. **Sky canopy redesigned to compose with the vanilla sky, not replace it.**
+   The pass-2 full-replacement dome (alpha ~0.9 cylinder + zenith cap) is
+   gone. New canopy is a horizon haze band (r=480, bottom 46 below eye to 108
+   above, alpha fading to 0 well above the horizon): warm pale-blue by day,
+   orange/pink at sunset, faint teal at night — with the vanilla blue zenith,
+   sun, moon and twinkling stars showing through untouched. The storm
+   back-glow is now an ARC behind the nearest storm's bearing (±0.62 rad,
+   raised-cosine falloff), not a 360-degree wall — the ring was reading as a
+   giant billboard wrapped around the world.
+3. **World shadows made visible** — casters now use exact per-cell heights
+   (the old min-of-neighbourhood lowering erased 2-4 block features: walls,
+   hedges, young trees — on ordinary terrain nothing was left to cast);
+   default strength 0.55 → 0.65 with a deeper cool tint (0.44/0.49/0.60);
+   world shadows now only yield to a phase-4+ storm within 260 blocks (a
+   distant storm no longer switches the whole world's shadows off); the pass
+   fails loudly once with a full stack trace instead of silently.
+4. **Night cloud glare fixed** — the sun/moon brightness curve treated the
+   full moon as 80% of daylight, so the ambient cloud ceiling glared
+   near-white at midnight. New ramp: 1.0 at noon → ~0.37 at the horizon →
+   0.16 floor at midnight.

@@ -63,10 +63,17 @@ public final class WorldShadows {
       }
    }
 
-   /** True when a local phase-4+ storm owns the shadow pass this frame. */
+   /**
+    * True when a local phase-4+ storm close enough to matter owns the shadow
+    * pass this frame. A storm two hundred blocks away still runs the world
+    * shadows: its own shadow only covers its extent, and switching the whole
+    * world's shadows off because a storm exists somewhere on the map is why
+    * "the shadows are never there" happened.
+    */
    private static boolean stormOwnsShadows(Minecraft mc, Vec3 eye) {
+      double reachSq = (double)(260.0F * 260.0F);
       for (Entity entity : mc.level.entitiesForRendering()) {
-         if (entity instanceof WitherStormEntity && ((WitherStormEntity)entity).getPhase() >= (double)4.0F) {
+         if (entity instanceof WitherStormEntity && ((WitherStormEntity)entity).getPhase() >= (double)4.0F && entity.distanceToSqr(eye.x, eye.y, eye.z) < reachSq) {
             return true;
          }
       }
@@ -89,20 +96,17 @@ public final class WorldShadows {
       int originX = Mth.floor(eye.x) - cells * CASTER_STEP / 2;
       int originZ = Mth.floor(eye.z) - cells * CASTER_STEP / 2;
 
-      // heights first (min-of-neighbourhood, same trick as the lid: a coarse
-      // grid must not let spikes punch holes in the shadow field)
+      // EXACT per-cell heights. The overhead lid uses a lowered surface on
+      // purpose (it classifies, it must not spike), but casters are the
+      // opposite: lowering every cell by the lowest of its neighbourhood
+      // erases two-to-four-block features -- walls, hedges, young trees --
+      // and a shadow system that only reacts to cliffs reads as "no shadows".
+      // Each quad still sits at the min of its OWN four corners so the caster
+      // sheet stays watertight.
       float[] heights = new float[cells * cells];
       for (int ix = 0; ix < cells; ix++) {
          for (int iz = 0; iz < cells; iz++) {
-            int wx = originX + ix * CASTER_STEP;
-            int wz = originZ + iz * CASTER_STEP;
-            float lowest = Float.MAX_VALUE;
-            for (int ox = -1; ox <= 1; ox++) {
-               for (int oz = -1; oz <= 1; oz++) {
-                  lowest = Math.min(lowest, (float)level.getHeight(Heightmap.Types.MOTION_BLOCKING, wx + ox * CASTER_STEP, wz + oz * CASTER_STEP));
-               }
-            }
-            heights[ix * cells + iz] = lowest;
+            heights[ix * cells + iz] = (float)level.getHeight(Heightmap.Types.MOTION_BLOCKING, originX + ix * CASTER_STEP, originZ + iz * CASTER_STEP);
          }
       }
 
@@ -187,10 +191,23 @@ public final class WorldShadows {
       return out;
    }
 
+   private static boolean failed;
+
    public static void render(CameraRenderState camera) {
-      if (camera == null) {
+      if (camera == null || failed) {
          return;
       }
+      try {
+         renderInner(camera);
+      } catch (Exception e) {
+         failed = true;
+         System.out.println("[devouringstorms] world shadows DISABLED after an error: " + String.valueOf(e));
+         e.printStackTrace();
+      }
+
+   }
+
+   private static void renderInner(CameraRenderState camera) {
       Minecraft mc = Minecraft.getInstance();
       if (mc.level == null || mc.player == null) {
          return;
@@ -200,7 +217,7 @@ public final class WorldShadows {
          return;
       }
       if (stormOwnsShadows(mc, camera.pos)) {
-         status("world shadows paused: a phase-4+ storm owns the shadow pass");
+         status("world shadows paused: a nearby phase-4+ storm owns the shadow pass");
          return;
       }
       Vec3 sun = StormShadow.sunDirection(mc);
@@ -248,8 +265,8 @@ public final class WorldShadows {
             if (StormShadowMap.build(new Vector3f((float)sun.x, (float)sun.y, (float)sun.z), new Vector3f(0.0F, 0.0F, 0.0F), EXTENT)) {
                float strength = (float)DevouringStormsClientConfig.worldShadowStrength * altitude;
                // cool blue-grey: a real shadow keeps only skylight
-               StormShadow.drawShadowPass(camera, sun, strength, 0.48F, 0.53F, 0.63F, false, true, 0.0F, DevouringStormsClientConfig.stormShadowSoftEdge, "world");
-               status("world shadows drawing (" + casterFaces + " terrain cells)");
+               StormShadow.drawShadowPass(camera, sun, strength, 0.44F, 0.49F, 0.60F, false, true, 0.0F, DevouringStormsClientConfig.stormShadowSoftEdge, "world");
+               status("world shadows drawing (" + casterFaces + " terrain cells, strength " + String.format("%.2f", strength) + ")");
             }
          } finally {
             StormShadowMap.worldActive(false);

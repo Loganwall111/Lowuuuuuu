@@ -103,13 +103,14 @@ public final class StormCloudDeck {
       }
       sx /= len;
       sy /= len;
-      // daylight strength: 1 at noon, 0 at night, smooth through dusk/dawn
-      double day = Mth.clamp((float)sy, 0.0F, 1.0F);
-      double moon = Mth.clamp((float)(-sy), 0.0F, 1.0F);
+      // Light strength on a smooth ramp: 1 at noon, ~0.37 at the horizon,
+      // 0.16 floor at midnight. Moonlight is real but faint -- treating the
+      // full moon as 80 percent of daylight made the whole cloud ceiling
+      // glare near-white at midnight, which read as a broken night sky.
+      double bright = 0.16 + 0.84 * (double)Mth.clamp((float)(sy * 1.4 + 0.25), 0.0F, 1.0F);
       // at night the moon is up: light comes from the mirrored arc
       double dirY = sy >= 0.0 ? sy : -sy;
       double dirX = sx;
-      double bright = 0.34 + 0.66 * Math.max(day, moon * 0.7);
       return new double[]{dirX, dirY, 0.0, bright};
    }
 

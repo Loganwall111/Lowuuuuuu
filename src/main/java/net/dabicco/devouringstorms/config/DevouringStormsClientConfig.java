@@ -88,7 +88,7 @@ public class DevouringStormsClientConfig {
    public static double sunGlowB = 0.34;
    public static double stormShadowStrength = 0.55;
    public static boolean worldShadows = true;
-   public static double worldShadowStrength = 0.55;
+   public static double worldShadowStrength = 0.65;
    public static boolean worldEmissiveGlow = true;
    public static double stormShadowR = 0.42;
    public static double stormShadowG = 0.46;

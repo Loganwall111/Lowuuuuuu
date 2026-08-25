@@ -16,29 +16,50 @@ public final class StormGlowRenderer {
    private StormGlowRenderer() {
    }
 
+   /**
+    * A point glow at a world position. WORLD-SPACE, never a billboard: the
+    * gradient is carried by three orthogonal world-axis-aligned planes
+    * (XZ / XY / ZY) through the centre -- a classic glow cross. From any
+    * angle the additive sum of the visible planes reads as a soft volumetric
+    * light, and unlike a camera-facing quad it never swings around the
+    * subject as you orbit it. The {@code view} argument is kept for call-site
+    * compatibility and deliberately ignored.
+    */
    public static void submitLight(PoseStack poseStack, SubmitNodeCollector collector, Vec3 centre, Vec3 view, double radius, float[] sizes, float[] alphas, int[][] colours, float amount) {
       if (!(amount <= 0.004F) && !(radius <= 0.001)) {
-         Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3((double)1.0F, (double)0.0F, (double)0.0F) : new Vec3((double)0.0F, (double)1.0F, (double)0.0F);
-         Vec3 right = view.cross(upHint).normalize();
-         Vec3 up = right.cross(view).normalize();
-
          for(int i = sizes.length - 1; i >= 0; --i) {
             int alpha = (int)(Mth.clamp(alphas[i] * amount, 0.0F, 1.0F) * 255.0F);
             if (alpha > 2) {
                double r = radius * (double)sizes[i];
-               Vec3 rx = right.scale(r);
-               Vec3 uy = up.scale(r);
                int[] c = colours[i];
                collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(GLOW_SPRITE), (pose, consumer) -> {
-                  vertex(pose, consumer, centre.subtract(rx).subtract(uy), 0.0F, 0.0F, c, alpha);
-                  vertex(pose, consumer, centre.add(rx).subtract(uy), 1.0F, 0.0F, c, alpha);
-                  vertex(pose, consumer, centre.add(rx).add(uy), 1.0F, 1.0F, c, alpha);
-                  vertex(pose, consumer, centre.subtract(rx).add(uy), 0.0F, 1.0F, c, alpha);
+                  glowCross(consumer, pose, centre, r, c, alpha);
                });
             }
          }
 
       }
+   }
+
+   private static void glowCross(VertexConsumer consumer, PoseStack.Pose pose, Vec3 at, double r, int[] rgb, int alpha) {
+      double x = at.x;
+      double y = at.y;
+      double z = at.z;
+      // XZ plane (horizontal)
+      vertex(pose, consumer, new Vec3(x - r, y, z - r), 0.0F, 0.0F, rgb, alpha);
+      vertex(pose, consumer, new Vec3(x + r, y, z - r), 1.0F, 0.0F, rgb, alpha);
+      vertex(pose, consumer, new Vec3(x + r, y, z + r), 1.0F, 1.0F, rgb, alpha);
+      vertex(pose, consumer, new Vec3(x - r, y, z + r), 0.0F, 1.0F, rgb, alpha);
+      // XY plane
+      vertex(pose, consumer, new Vec3(x - r, y - r, z), 0.0F, 0.0F, rgb, alpha);
+      vertex(pose, consumer, new Vec3(x + r, y - r, z), 1.0F, 0.0F, rgb, alpha);
+      vertex(pose, consumer, new Vec3(x + r, y + r, z), 1.0F, 1.0F, rgb, alpha);
+      vertex(pose, consumer, new Vec3(x - r, y + r, z), 0.0F, 1.0F, rgb, alpha);
+      // ZY plane
+      vertex(pose, consumer, new Vec3(x, y - r, z - r), 0.0F, 0.0F, rgb, alpha);
+      vertex(pose, consumer, new Vec3(x, y - r, z + r), 1.0F, 0.0F, rgb, alpha);
+      vertex(pose, consumer, new Vec3(x, y + r, z + r), 1.0F, 1.0F, rgb, alpha);
+      vertex(pose, consumer, new Vec3(x, y + r, z - r), 0.0F, 1.0F, rgb, alpha);
    }
 
    private static void vertex(PoseStack.Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int[] rgb, int alpha) {
