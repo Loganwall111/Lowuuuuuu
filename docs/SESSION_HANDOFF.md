@@ -257,3 +257,41 @@ change and already makes every jar uniquely named for Minecraft updates.
 - Phase 6+ mutation flash-bang: LOCALIZED purple burst at the storm, never a
   full-screen flash, separate effect from the purple anomaly skybox.
 - Reference videos: youtu.be/E-NYcNk4h6, iBLYyNS4f3U, 8VlaLp2G1Aw.
+
+## PASS 7 CONT — THE 26.2 RENDER API GROUND TRUTH (learned via 16 CI bisect probes)
+
+The Renekovski/26.2-mcp mirror is an OLDER API era than the artifact we compile
+against. It lied about: VertexFormat.Mode (real = com.mojang.blaze3d.PrimitiveTopology),
+drawIndexed arity (real = 5 args: (indexCount, 1, 0, 0, 0)), withVertexFormat (real =
+withVertexBinding(0, fmt) + withPrimitiveTopology), Minecraft.getMainRenderTarget (real =
+mc.gameRenderer.mainRenderTarget()), and possibly new BufferBuilder(...) (never proven).
+
+### VERIFIED-REAL 26.x API (every line green in CI run 32905697166 / commit 6fef80e)
+- Custom vertex format: VertexFormat.builder(0).addAttribute("InPosition", GpuFormat.RGB32_FLOAT)
+  .addAttribute("InTexCoords", GpuFormat.RG32_FLOAT)...build() — attribute names are YOURS,
+  matched only by your own shaders. RGBA32_FLOAT unverified; RGB32/RG32/R32_FLOAT verified.
+- Pipeline: RenderPipeline.builder().withLocation(id).withVertexShader(id).withFragmentShader(id)
+  .withVertexBinding(0, SKY_FORMAT).withPrimitiveTopology(PrimitiveTopology.QUADS)
+  .withBindGroupLayout(BindGroupLayout.builder().withSampler("Sampler0").build())
+  .withBindGroupLayout(BindGroupLayout.builder().withUniform("SkyConfig", UniformType.UNIFORM_BUFFER).build())
+  .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE)).withCull(false).build()
+- Indices: RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS) -> AutoStorageIndexBuffer;
+  .getBuffer(quads*6) -> GpuBuffer; pass.setIndexBuffer(indices, indexer.type());
+  pass.drawIndexed(indexCount, 1, 0, 0, 0)   // FIVE args
+- Vertices: stage floats -> ByteBuffer -> GpuBufferPool.write(name, 40, data);
+  pass.setVertexBuffer(0, vbo.slice(0L, bytes))
+- UBO: (new Std140SizeCalculator()).putMat4f().get() + Std140Builder.intoBuffer(data).putMat4f(m);
+  pass.setUniform("SkyConfig", ubo)
+- Pass: RenderSystem.getDevice().createCommandEncoder().createRenderPass(supplier,
+  mainTarget.getColorTextureView(), Optional.empty(), mainTarget.getDepthTextureView(),
+  OptionalDouble.empty()); mainTarget = mc.gameRenderer.mainRenderTarget()
+- View matrix: new Matrix4f(RenderSystem.getModelViewStack()) (cheatutils-verified)
+- Texture: mc.getTextureManager().getTexture(id) -> AbstractTexture (probe-verified);
+  tex.getTextureView(); sampler via RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)
+- Projection capture via @ModifyArg(renderLevel/ProjectionMatrixBuffer.getBuffer) FAILS THE
+  BUILD in our artifact (mixin AP cannot resolve) — do not retry that hook. Current sky pass
+  uses SkyMatrices.projection(): live-aspect 70-degree perspective fallback (fov effects and
+  non-70 fov cause a mild sky-scale mismatch; capture hook needs a different injection point).
+- Bisect method when CI is the only oracle: stub whole subsystem green, restore halves, then
+  statements, then sub-expressions (greens are reliable; a red can be an infra flake — retest
+  any 'impossible' red before believing it, e.g. int*int*int arg 'failing').
