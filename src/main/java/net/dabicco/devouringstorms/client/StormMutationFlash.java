@@ -1,45 +1,41 @@
 package net.dabicco.devouringstorms.client;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import java.util.HashMap;
 import java.util.Map;
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
 import net.dabicco.devouringstorms.entity.WitherStormEntity;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 /**
  * StormMutationFlash — the LOCALIZED purple flash-bang for phase 6+.
  *
- * When the storm mutates past the split (phase 6) and again at 7 and 8, and at
- * slow intervals while it rampages, a bright purple flash bursts around the
- * storm's core - the way the mutating mass crackles in the Story Mode shots.
+ * When the storm mutates past the split (phase 6) and again at 7 and 8, and
+ * at slow intervals while it rampages, a bright purple flash blooms around
+ * the storm's bearing IN THE SKY LAYER (the Telltale architecture's dedicated
+ * flash pass — exactly like vanilla's own end-dragon flash quad):
  *
- * Deliberately NOT a screen flash:
- *  - everything renders in WORLD space, anchored to the storm core, so the
- *    burst is a local event at the storm, not an overlay;
- *  - it uses the additive glow pipelines that DEPTH-TEST without writing
- *    depth, so hills, terrain and buildings in front of the storm occlude it
- *    - it can never light up the player's whole screen;
- *  - it never touches the lightmap, fog or sky dome - it is a separate effect
- *    from the purple anomaly skybox, it just shares the colour family.
+ *  - rendered inside the native sky pass as an additive radial bloom centred
+ *    on the storm's sky bearing, so it lives at infinite depth with the
+ *    backdrop instead of on the world;
+ *  - it is NOT a full-screen overlay and never touches the lightmap or fog —
+ *    the bloom stays localized around the storm and the terrain keeps its
+ *    own lighting;
+ *  - it is a separate effect from the purple anomaly skybox — same colour
+ *    family, different layer and timing.
  */
 public final class StormMutationFlash {
    private static final Identifier GLOW_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_gradient.png");
    private static final Identifier RING_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/halo_ring.png");
-   private static final int FULL_BRIGHT = 15728880;
    /** Flashes live for this many ticks after the bang. */
    private static final float LIFE_TICKS = 26.0F;
    /** Ticks from bang to full brightness. */
    private static final float ATTACK_TICKS = 2.0F;
-   /** Past this distance from the player the flash is not worth drawing. */
-   private static final double MAX_DIST = 1600.0;
+   /** Sky-depth radius the bloom quads sit at (the vanilla sun band). */
+   private static final float SKY_R = 240.0F;
    /** Mutation purple with a hot magenta core edge. */
    private static final int[] CORE_COLOR = new int[]{186, 62, 255};
    private static final int[] EDGE_COLOR = new int[]{255, 92, 214};
@@ -172,13 +168,18 @@ public final class StormMutationFlash {
       return fade * fade;
    }
 
-   public static void submit(LevelRenderContext ctx) {
-      Minecraft mc = Minecraft.getInstance();
-      if (mc.level == null || !DevouringStormsClientConfig.mutationFlashBang) {
+   /**
+    * Draw the bloom in the sky layer, centred on the storm's local bearing.
+    * Called by StormSkyBox inside the native sky pass. An additive radial
+    * bloom (disc + racing ring) at sky depth — never a full-screen overlay.
+    */
+   public static void renderSkyBloom(Vector3f target) {
+      if (!DevouringStormsClientConfig.mutationFlashBang) {
          return;
       }
       long now = nowMs();
-      boolean alive = false;
+      Flash bestFlash = null;
+      float bestEnv = 0.0F;
 
       for (int i = 0; i < FLASHES.length; i++) {
          Flash f = FLASHES[i];
@@ -190,85 +191,65 @@ public final class StormMutationFlash {
             FLASHES[i] = null;
             continue;
          }
-         alive = true;
+         float env = envelope(ticks) * f.strength;
+         if (env > bestEnv) {
+            bestEnv = env;
+            bestFlash = f;
+         }
       }
 
-      if (!alive) {
+      if (bestFlash == null || bestEnv <= 0.01F) {
          return;
       }
 
-      Vec3 cam = ctx.levelState().cameraRenderState.pos;
-      PoseStack poseStack = ctx.poseStack();
-      SubmitNodeCollector collector = ctx.submitNodeCollector();
+      float ticks = (float)(now - bestFlash.startMs) / 50.0F;
+      float progress = Mth.clamp(ticks / LIFE_TICKS, 0.0F, 1.0F);
+      float amount = Math.min(1.0F, bestEnv) * (0.55F + 0.45F * SkyAtmosphereController.intensity());
 
-      for (Flash f : FLASHES) {
-         if (f == null) {
-            continue;
-         }
-         float ticks = (float)(nowMs() - f.startMs) / 50.0F;
-         float env = envelope(ticks);
-         if (env <= 0.01F) {
-            continue;
-         }
+      // billboard basis around the storm bearing at sky depth
+      Vector3f t = new Vector3f(target).normalize();
+      Vector3f hint = Math.abs(t.y) > 0.95F ? new Vector3f(1.0F, 0.0F, 0.0F) : new Vector3f(0.0F, 1.0F, 0.0F);
+      Vector3f t1 = new Vector3f(t).cross(hint).normalize();
+      Vector3f t2 = new Vector3f(t).cross(t1).normalize();
+      float cx = t.x * SKY_R;
+      float cy = t.y * SKY_R;
+      float cz = t.z * SKY_R;
 
-         double dist = Math.sqrt((f.x - cam.x) * (f.x - cam.x) + (f.z - cam.z) * (f.z - cam.z));
-         if (dist > MAX_DIST) {
-            continue;
-         }
-         // distance keeps it polite: full presence up close, a hint from far
-         float proximity = Mth.clamp((float)(1.2 - dist / MAX_DIST), 0.18F, 1.0F);
-         float amount = env * f.strength * proximity;
+      // core flash disc: bright, tight, shrinking as it decays
+      float coreS = 88.0F * (1.15F - 0.45F * progress);
+      int coreA = (int)(225.0F * amount);
+      // shock ring: races outward and thins out
+      float ringS = 110.0F + 150.0F * progress;
+      int ringA = (int)(160.0F * amount * (1.0F - progress * 0.5F));
 
-         float progress = Mth.clamp(ticks / LIFE_TICKS, 0.0F, 1.0F);
-         // core flash: bright, tight, shrinks as it decays
-         float coreSize = (float)(f.bodyR * (1.35 - 0.35 * progress));
-         int coreA = (int)(215.0F * amount);
-         // shock ring: races outward and thins out
-         float ringSize = (float)(f.bodyR * (1.25 + 2.1 * progress));
-         int ringA = (int)(150.0F * amount * (1.0F - progress * 0.55F));
-         if (coreA <= 2 && ringA <= 2) {
-            continue;
-         }
+      if (coreA > 2) {
+         int r = CORE_COLOR[0];
+         int g = CORE_COLOR[1];
+         int b = CORE_COLOR[2];
+         StormSkyBox.drawLayer(GLOW_TEXTURE, bb -> {
+            skyQuad(bb, cx, cy, cz, t1, t2, coreS * 0.78F, r, g, b, coreA);
+            skyQuad(bb, cx, cy, cz, t1, t2, coreS * 0.45F, EDGE_COLOR[0], EDGE_COLOR[1], EDGE_COLOR[2], coreA);
+            return 2;
+         });
+      }
 
-         Vec3 at = new Vec3(f.x, f.y, f.z);
-         // camera-facing basis so the burst always reads as a disc/ring to the
-         // viewer; everything stays WORLD-anchored at the storm core
-         Vec3 view = at.subtract(cam).normalize();
-         Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
-         Vec3 right = view.cross(upHint).normalize();
-         Vec3 up = right.cross(view).normalize();
-
-         if (coreA > 2) {
-            int r = CORE_COLOR[0];
-            int g = CORE_COLOR[1];
-            int b = CORE_COLOR[2];
-            float s = coreSize;
-            collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(GLOW_TEXTURE), (pose, consumer) -> {
-               billboardQuad(consumer, pose, at, right, up, s * 0.72F, r, g, b, coreA);
-               // hot magenta heart of the bang
-               billboardQuad(consumer, pose, at, right, up, s * 0.4F, EDGE_COLOR[0], EDGE_COLOR[1], EDGE_COLOR[2], coreA);
-            });
-         }
-
-         if (ringA > 2) {
-            float thin = ringSize * 0.16F + 1.0F;
-            int rr = EDGE_COLOR[0];
-            int rg = EDGE_COLOR[1];
-            int rb = EDGE_COLOR[2];
-            collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(RING_TEXTURE), (pose, consumer) -> {
-               billboardQuad(consumer, pose, at, right, up, ringSize, rr, rg, rb, ringA);
-               billboardQuad(consumer, pose, at, right, up, thin, CORE_COLOR[0], CORE_COLOR[1], CORE_COLOR[2], ringA);
-            });
-         }
+      if (ringA > 2) {
+         int rr = EDGE_COLOR[0];
+         int rg = EDGE_COLOR[1];
+         int rb = EDGE_COLOR[2];
+         StormSkyBox.drawLayer(RING_TEXTURE, bb -> {
+            skyQuad(bb, cx, cy, cz, t1, t2, ringS, rr, rg, rb, ringA);
+            return 1;
+         });
       }
    }
 
-   /** One camera-facing additive quad in world space (depth-tested, never writes depth). */
-   private static void billboardQuad(VertexConsumer consumer, PoseStack.Pose pose, Vec3 at, Vec3 right, Vec3 up, float half, int r, int g, int b, int a) {
-      consumer.addVertex(pose, (float)(at.x - right.x * half - up.x * half), (float)(at.y - right.y * half - up.y * half), (float)(at.z - right.z * half - up.z * half)).setColor(r, g, b, a).setUv(0.0F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, (float)up.x, (float)up.y, (float)up.z);
-      consumer.addVertex(pose, (float)(at.x + right.x * half - up.x * half), (float)(at.y + right.y * half - up.y * half), (float)(at.z + right.z * half - up.z * half)).setColor(r, g, b, a).setUv(1.0F, 0.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, (float)up.x, (float)up.y, (float)up.z);
-      consumer.addVertex(pose, (float)(at.x + right.x * half + up.x * half), (float)(at.y + right.y * half + up.y * half), (float)(at.z + right.z * half + up.z * half)).setColor(r, g, b, a).setUv(1.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, (float)up.x, (float)up.y, (float)up.z);
-      consumer.addVertex(pose, (float)(at.x - right.x * half + up.x * half), (float)(at.y - right.y * half + up.y * half), (float)(at.z - right.z * half + up.z * half)).setColor(r, g, b, a).setUv(0.0F, 1.0F).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, (float)up.x, (float)up.y, (float)up.z);
+   /** One billboard quad on the tangent plane of the storm bearing, sky depth. */
+   private static void skyQuad(BufferBuilder bb, float cx, float cy, float cz, Vector3f t1, Vector3f t2, float half, int r, int g, int b, int a) {
+      bb.addVertex(cx - t1.x * half - t2.x * half, cy - t1.y * half - t2.y * half, cz - t1.z * half - t2.z * half).setUv(0.0F, 0.0F).setColor(r, g, b, a);
+      bb.addVertex(cx + t1.x * half - t2.x * half, cy + t1.y * half - t2.y * half, cz + t1.z * half - t2.z * half).setUv(1.0F, 0.0F).setColor(r, g, b, a);
+      bb.addVertex(cx + t1.x * half + t2.x * half, cy + t1.y * half + t2.y * half, cz + t1.z * half + t2.z * half).setUv(1.0F, 1.0F).setColor(r, g, b, a);
+      bb.addVertex(cx - t1.x * half + t2.x * half, cy - t1.y * half + t2.y * half, cz - t1.z * half + t2.z * half).setUv(0.0F, 1.0F).setColor(r, g, b, a);
    }
 
    /** Reset transient state (world leave etc.). */

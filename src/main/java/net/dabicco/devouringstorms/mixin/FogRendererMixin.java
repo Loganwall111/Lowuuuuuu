@@ -2,6 +2,7 @@ package net.dabicco.devouringstorms.mixin;
 
 import net.dabicco.devouringstorms.client.BiomeStormFog;
 import net.dabicco.devouringstorms.client.FarLandsHaze;
+import net.dabicco.devouringstorms.client.SkyAtmosphereController;
 import net.dabicco.devouringstorms.client.SpawnTowerGloom;
 import net.dabicco.devouringstorms.client.StormFog;
 import net.dabicco.devouringstorms.client.StormSkyDarken;
@@ -49,11 +50,20 @@ public class FogRendererMixin {
       at = {@At("RETURN")}
    )
    private void dabyws$towerFog(Camera camera, int renderDistance, DeltaTracker delta, float f, ClientLevel level, CallbackInfoReturnable<FogData> cir) {
+      // LAYER 2: keep the central storm-sky controller fresh (fog runs early
+      // in the frame) and compress the horizon fog while the storm sky is
+      // active, so distant terrain edges melt into the backdrop and chunk
+      // boundaries stay masked.
+      SkyAtmosphereController.update(camera.position(), delta.getGameTimeDeltaPartialTick(false), level.getGameTime());
+      float stormSkyFog = SkyAtmosphereController.fogScale();
       float scale = SpawnTowerGloom.fogScale();
       float storm = StormFog.fogScale();
       Vec3 camPos = camera.position();
       float farLands = FarLandsHaze.fogScale(camPos.x, camPos.z);
       float combined = Math.min(scale, Math.min(storm, farLands));
+      if (stormSkyFog < 1.0F) {
+         combined = Math.min(combined, stormSkyFog);
+      }
       if (!(combined >= 0.999F)) {
          FogData data = (FogData)cir.getReturnValue();
          if (data != null) {

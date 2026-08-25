@@ -599,9 +599,13 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
             }
 
             if (state.preview == null) {
-               this.submitSkyBackdrop(state, poseStack, submitNodeCollector);
-               this.submitNightLight(state, poseStack, submitNodeCollector);
-               this.submitStormAura(state, poseStack, submitNodeCollector, camera);
+               // LAYER 3 (Telltale architecture): the entity pass is strictly
+               // FOREGROUND now - the sky backdrop, night aura shells and the
+               // legacy glare planes all moved to the native sky pass
+               // (SkyRendererMixin + StormSkyBox). The only atmosphere left
+               // here is the single 2D core glow billboard riding the storm's
+               // centre, plus the collapse event glow.
+               this.submitCoreGlow(state, poseStack, submitNodeCollector, camera);
                this.submitCollapseGlow(state, poseStack, submitNodeCollector, camera);
             }
 
@@ -1022,18 +1026,18 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    /**
-    * The attached Story-Mode halo - and it is a REGULAR halo after all: one
-    * flat ring facing the viewer, centred on the storm's core, tinted by the
-    * phase timeline. The old layered gradient shells are gone; what remains is
-    * the plain classic ring (additive glow, depth-occluded, never a wall)
-    * plus, very late (7.5+/8), the horizontal purple + dark-pink vortex rings.
+    * The storm's ONE and only 2D billboard: the white core glow. A soft light
+    * disc that always faces the viewer and sits directly at the storm's
+    * centre - the light coming off the mass, exactly like the reference
+    * shot. Everything else atmospheric about the storm now lives in the
+    * native sky pass (StormSkyBox), never on the entity renderer.
     *
-    * Phase story: blue-white in phase 4, a dark wash when the turquoise fog
-    * starts, black/purple through 5, a drift toward blue at 5.5, pink toward
-    * the split, then the mutation red/orange/magenta tint through 6+.
+    * Warm white through the early phases, heating toward magenta through the
+    * mutation; very late (7.5+/8) the horizontal purple + dark-pink vortex
+    * rings still appear around the giant.
     */
-   private void submitStormAura(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
-      if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || DevouringStormsClientConfig.blackGlare || state.phase < 4.0) {
+   private void submitCoreGlow(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+      if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || state.phase < 4.0) {
          return;
       }
       float strength = (float)DevouringStormsClientConfig.haloStrength * state.collapseFade;
@@ -1043,23 +1047,9 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
 
       float phase = (float)state.phase;
       double radius = auraRadius(state);
-      float breathe = 0.92F + 0.08F * Mth.sin((double)(state.idleTimeTicks * 0.028F));
+      float breathe = 0.9F + 0.1F * Mth.sin((double)(state.idleTimeTicks * 0.028F));
 
-      // --- window weights along the phase timeline ---
-      float phase4Glow = StormPalettes.phaseAmount(phase, 4.0F, 4.34F) * (1.0F - StormPalettes.phaseAmount(phase, 4.86F, 5.06F));
-      float tealDark = StormPalettes.phaseAmount(phase, 4.92F, 5.06F) * (1.0F - StormPalettes.phaseAmount(phase, 5.16F, 5.3F));
-      float purpleAura = StormPalettes.phaseAmount(phase, 5.1F, 5.3F);
-      float blueDrift = StormPalettes.phaseAmount(phase, 5.42F, 5.62F) * (1.0F - StormPalettes.phaseAmount(phase, 5.95F, 6.15F));
-      float pinkHalo = StormPalettes.phaseAmount(phase, 5.45F, 5.95F) * (1.0F - StormPalettes.phaseAmount(phase, 6.05F, 6.3F));
-      float phase6 = StormPalettes.phaseAmount(phase, 5.92F, 6.18F);
-
-      pushStormWorld(poseStack, state);
-
-      // --- ONE regular halo ------------------------------------------------
-      // The reference halos turn out to be just regular halos: a single flat
-      // ring, centred on the storm's core and facing the viewer, tinted by
-      // the phase timeline. No layered gradient shells, no walls - the plain
-      // classic ring, additive and depth-occluded like every storm glow.
+      // camera-facing billboard math in world axes
       double dx = camera.pos.x - state.worldX;
       double dy = camera.pos.y - state.worldY;
       double dz = camera.pos.z - state.worldZ;
@@ -1067,49 +1057,28 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       float yawDeg = (float)Math.toDegrees(Math.atan2(dx, dz));
       float pitchDeg = (float)Math.toDegrees(Math.atan2(dy, Math.max(horiz, 0.001)));
 
-      // colour timeline: blue-white (4) -> dark teal wash (~5) -> black+purple
-      // (5.15-5.45) -> blue (5.5) -> pink (5.7) -> mutation red/orange/magenta (6+)
-      float cr = 0.66F;
-      float cg = 0.81F;
-      float cb = 1.0F;
-      float w = tealDark * 0.7F;
-      cr = Mth.lerp(w, cr, 0.14F);
-      cg = Mth.lerp(w, cg, 0.24F);
-      cb = Mth.lerp(w, cb, 0.30F);
-      cr = Mth.lerp(purpleAura, cr, 0.58F);
-      cg = Mth.lerp(purpleAura, cg, 0.23F);
-      cb = Mth.lerp(purpleAura, cb, 0.76F);
-      cr = Mth.lerp(blueDrift * 0.85F, cr, 0.32F);
-      cg = Mth.lerp(blueDrift * 0.85F, cg, 0.46F);
-      cb = Mth.lerp(blueDrift * 0.85F, cb, 0.98F);
-      cr = Mth.lerp(pinkHalo * 0.6F, cr, 0.96F);
-      cg = Mth.lerp(pinkHalo * 0.6F, cg, 0.42F);
-      cb = Mth.lerp(pinkHalo * 0.6F, cb, 0.84F);
-      if (phase6 > 0.01F) {
-         float t = Mth.clamp((phase - 6.0F) / 2.0F, 0.0F, 1.0F);
-         float mg = Mth.lerp(Math.min(t * 2.0F, 1.0F), 0.44F, 0.17F);
-         float mb = t < 0.5F ? 0.16F : Mth.lerp((t - 0.5F) * 2.0F, 0.16F, 0.64F);
-         cr = Mth.lerp(phase6, cr, 1.0F);
-         cg = Mth.lerp(phase6, cg, mg);
-         cb = Mth.lerp(phase6, cb, mb);
-      }
-
+      // warm white core light, heating toward magenta through the mutation
+      float heat = StormPalettes.phaseAmount(phase, 5.95F, 6.4F);
+      float cr = Mth.lerp(heat, 0.93F, 1.0F);
+      float cg = Mth.lerp(heat, 0.96F, 0.58F);
+      float cb = Mth.lerp(heat, 1.0F, 0.95F);
       int hr = (int)(Mth.clamp(cr, 0.0F, 1.0F) * 255.0F);
       int hg = (int)(Mth.clamp(cg, 0.0F, 1.0F) * 255.0F);
       int hb = (int)(Mth.clamp(cb, 0.0F, 1.0F) * 255.0F);
       float ramp = StormPalettes.phaseAmount(phase, 4.0F, 4.3F);
-      float windowBoost = Math.max(phase4Glow, Math.max(tealDark, Math.max(purpleAura, Math.max(blueDrift, Math.max(pinkHalo, phase6)))));
-      int haloA = (int)((64.0F + 88.0F * Math.max(ramp, windowBoost)) * strength * breathe);
+      int glowA = (int)((64.0F + 84.0F * ramp) * strength * breathe);
 
-      if (haloA > 2) {
+      pushStormWorld(poseStack, state);
+
+      if (glowA > 2) {
          poseStack.pushPose();
-         poseStack.translate(0.0, radius * 0.42, 0.0);
+         poseStack.translate(0.0, radius * 0.3, 0.0);
          poseStack.mulPose(Axis.YP.rotationDegrees(yawDeg));
          poseStack.mulPose(Axis.XP.rotationDegrees(-pitchDeg));
-         // the ring itself, wide enough to halo the whole mass
-         submitHaloPlane(collector, poseStack, radius * 1.52, radius * 1.52, hr, hg, hb, haloA, GlowRenderTypes.glow(HALO_TEXTURE));
-         // a soft light core inside the ring so the halo reads as glow, not an outline
-         submitHaloPlane(collector, poseStack, radius * 0.8, radius * 0.8, hr, hg, hb, (int)((float)haloA * 0.42F), GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
+         // the soft light the mass gives off...
+         submitHaloPlane(collector, poseStack, radius * 0.88, radius * 0.88, hr, hg, hb, glowA, GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
+         // ...and its hot centre
+         submitHaloPlane(collector, poseStack, radius * 0.36, radius * 0.36, Math.min(255, hr + 24), Math.min(255, hg + 16), hb, Math.min(255, (int)((float)glowA * 1.45F)), GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
          poseStack.popPose();
       }
 

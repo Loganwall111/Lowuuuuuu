@@ -774,9 +774,9 @@ public class WitherStormConfigScreen extends Screen {
       this.clientRow("summonShockwave", "First-Summon Shockwave", (BooleanSupplier)null);
       this.clientRow("summonShockwaveStrength", "Shockwave Strength", () -> !DevouringStormsClientConfig.summonShockwave);
       this.clientRow("summonShockwaveSize", "Shockwave Size", () -> !DevouringStormsClientConfig.summonShockwave);
-      this.header("Cataclysm Halos (Phase 5.8+)");
-      this.clientRow("cataclysmHalos", "Cataclysm Halo Pair", (BooleanSupplier)null);
-      this.clientRow("haloStrength", "Halo Strength", (BooleanSupplier)null);
+      this.header("Storm Core Glow");
+      this.clientRow("cataclysmHalos", "Core Glow (the one 2D billboard)", (BooleanSupplier)null);
+      this.clientRow("haloStrength", "Core Glow Brightness", (BooleanSupplier)null);
       this.clientRow("bloomedBackdrop", "Bloomed Core / Black Hole", (BooleanSupplier)null);
       this.header("Mutation Flash-Bang (Phase 6+)");
       this.clientRow("mutationFlashBang", "Localized Purple Flash-Bang", (BooleanSupplier)null);

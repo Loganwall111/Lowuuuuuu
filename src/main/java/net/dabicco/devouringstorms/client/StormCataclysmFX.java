@@ -33,6 +33,11 @@ public final class StormCataclysmFX {
       if (mc.level == null || ClientDistantStormManager.all().isEmpty()) {
          return;
       }
+      // the faux-volumetric cataclysm FX are superseded by the native storm
+      // sky pass - stand down whenever it owns the frame
+      if (SkyAtmosphereController.active()) {
+         return;
+      }
 
       float gt = (float)(mc.level.getGameTime() % 240000L) + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
       float nowSec = gt * 0.05F;

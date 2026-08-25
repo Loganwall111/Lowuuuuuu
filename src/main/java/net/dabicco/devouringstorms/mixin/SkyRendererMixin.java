@@ -1,11 +1,14 @@
 package net.dabicco.devouringstorms.mixin;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.dabicco.devouringstorms.client.StormSkyBox;
 import net.dabicco.devouringstorms.client.StormSkyDarken;
 import net.minecraft.client.Camera;
 import net.minecraft.util.Mth;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SkyRenderer;
 import net.minecraft.client.renderer.state.level.SkyRenderState;
+import net.minecraft.world.level.MoonPhase;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -27,6 +30,25 @@ public class SkyRendererMixin {
          state.sunriseAndSunsetColor = blendToFloor(state.sunriseAndSunsetColor, Mth.clamp(dome * 0.82F, 0.0F, 1.0F));
          state.starBrightness *= keep;
          state.rainBrightness *= keep;
+      }
+   }
+
+   /**
+    * LAYER 1 of the Telltale sky architecture: while a storm owns the sky,
+    * the native sky pass draws the storm's layered backdrop (energy plate /
+    * anomaly plate / churning cloud bands / mutation flash bloom) in place of
+    * the vanilla sun/moon/star pass. Everything is camera-locked at infinite
+    * depth in the sky frame pass, with additive blending and no depth state,
+    * so terrain can never clip it and it can never box against mountains.
+    */
+   @Inject(
+      method = {"renderSunMoonAndStars"},
+      at = {@At("HEAD")},
+      cancellable = true
+   )
+   private void dabyws$stormSkyBackdrop(PoseStack poseStack, float sunAngle, float moonAngle, float starAngle, MoonPhase moonPhase, float rainBrightness, float starBrightness, CallbackInfo ci) {
+      if (StormSkyBox.renderSkyLayers()) {
+         ci.cancel();
       }
    }
 

@@ -169,6 +169,12 @@ public final class StormSkyCanopy {
       if (mc.level == null) {
          return;
       }
+      // The vanilla-sky horizon band composes only when the vanilla sky is
+      // the sky: once the storm's native skybox pass owns the frame, this
+      // stands down so it never fights the backdrop plates.
+      if (SkyAtmosphereController.active()) {
+         return;
+      }
       Vec3 cam = ctx.levelState().cameraRenderState.pos;
       PoseStack poseStack = ctx.poseStack();
       SubmitNodeCollector collector = ctx.submitNodeCollector();

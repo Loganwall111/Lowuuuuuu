@@ -30,7 +30,6 @@ import net.dabicco.devouringstorms.client.StormCataclysmFX;
 import net.dabicco.devouringstorms.client.StormCloudDeck;
 import net.dabicco.devouringstorms.client.StormMutationFlash;
 import net.dabicco.devouringstorms.client.StormSkyCanopy;
-import net.dabicco.devouringstorms.client.StormSkyDome;
 import net.dabicco.devouringstorms.client.StormPresenceFX;
 import net.dabicco.devouringstorms.client.StormPulseFX;
 import net.dabicco.devouringstorms.client.StormStarfield;
@@ -219,8 +218,9 @@ public class DevouringStormsModClient implements ClientModInitializer {
       LevelRenderEvents.COLLECT_SUBMITS.register(FormidibombBlast::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormStarfield::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormSkyCanopy::submit);
-      LevelRenderEvents.COLLECT_SUBMITS.register(StormSkyDome::submit);
-      LevelRenderEvents.COLLECT_SUBMITS.register(StormMutationFlash::submit);
+      // StormSkyDome (world dome) retired: the storm sky is now the native
+      // Telltale-style sky pass — see SkyRendererMixin + StormSkyBox.
+      // StormMutationFlash also renders in the sky layer now (sky bloom).
       LevelRenderEvents.COLLECT_SUBMITS.register(StormCloudDeck::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormCataclysmFX::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPresenceFX::submit);

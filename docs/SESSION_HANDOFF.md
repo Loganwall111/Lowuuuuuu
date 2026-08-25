@@ -1,4 +1,131 @@
-# SESSION HANDOFF — Devouring Storms (2026-08-25, pass 6)
+# SESSION HANDOFF — Devouring Storms (2026-08-25, pass 7 = TELLTALE SKYBOX)
+
+Paste/read this at the start of a new session. Workspace: /home/user/Lowuuuuuu,
+branch arena/01a03982-lowuuuuuu (session-fixed; never switch/push elsewhere).
+Pass 6 merged arena/01a0354e (pass 5). Pass 7 = the Telltale skybox refactor
+the user specified after realizing the "globe" approach was wrong: it was
+always a DYNAMIC SKYBOX attached to the back, native sky-pass architecture.
+
+## Project
+Fabric mod for Minecraft 26.2, package net.dabicco.devouringstorms, repo
+Loganwall111/Lowuuuuuu. Builds ONLY via GitHub Actions (no local JDK; CDN
+hosts blocked from sandbox: gradle/maven/adoptium/GH release-assets ALL EOF -
+only api.github.com + github.com git work). Jar stamped
+"<mod_version>+build.<run>.<sha>" by build.gradle; PR #13 (draft) is the
+build gate (on: pull_request). gh token FLAPS (401 Bad credentials) - retry
+later if it dies mid-session; it came back on its own twice.
+
+## 26.2 SKY SOURCE OF TRUTH (verified via Renekovski/26.2-mcp mirror)
+- SkyRenderer public methods: renderSkyDisc(int), renderDarkDisc(),
+  renderSunMoonAndStars(PoseStack,float,float,float,MoonPhase,float,float),
+  renderSunriseAndSunset(...), renderEndSky(), renderEndFlash(PoseStack,
+  float,float,float), extractRenderState(...). Called from
+  LevelRenderer.addSkyPass inside a frame-graph "sky" pass lambda; the
+  poseStack is camera-rotation-only => camera-locked geometry = infinite
+  depth. Each render* makes its OWN RenderPass on the main target.
+- RenderPipelines.END_SKY: MATRICES_PROJECTION_SNIPPET + "core/position_tex_color"
+  shaders + Sampler0 + BlendFunction.TRANSLUCENT + POSITION_TEX_COLOR QUADS.
+  Our StormSkyBox pipeline = same but BlendFunction.ADDITIVE, no depth state.
+- CONFIRMED APIs: Minecraft.getTextureManager().getTexture(id) auto-loads
+  (SimpleTexture) and returns AbstractTexture; .getTextureView()/.getSampler();
+  mc.getMainRenderTarget().getColorTextureView()/getDepthTextureView();
+  mc.gameRenderer.mainCamera().position() (record-style accessor - NOT
+  getMainCamera); Camera.position(); RenderSystem.getModelViewMatrixCopy();
+  RenderSystem.getDynamicUniforms().writeTransform(Matrix4f, Vector4f);
+  device.createBuffer(Supplier,32,ByteBuffer); sequential QUADS indices via
+  RenderSystem.getSequentialBuffer(QUADS).getBuffer(quads*6) + .type().
+
+## What pass 7 shipped (this session, Telltale architecture)
+- NEW client/SkyAtmosphereController.java: central phase-linked controller.
+  Nearest storm -> intensity (proximity clamp(1.25-dist/2400,.16,1)),
+  energyWeight/anomalyWeight (crossfade smooth(5.5,6.0)), cloudWeight,
+  coneRadians (lerp smooth(4,6.5): 0.66rad -> 2.1rad full takeover),
+  fogScale (1.0 -> 0.6), churn, mutationTint (orange->red->magenta 6-8),
+  stormDir (horizon-biased camera->storm unit vector).
+- NEW client/StormSkyBox.java: LAYER 1 native sky pass. renderSkyLayers()
+  called from SkyRendererMixin HEAD-inject on renderSunMoonAndStars; when
+  active it draws AND cancels (sun/moon/stars suppressed during storm).
+  Camera-locked dome rings (RADIUS 320, elevations {0,7,15,26,40,58,78,90}deg,
+  ring weights), ADDITIVE pipeline (no depth test/write = glDepthMask(false)+
+  no depth test, no mountain clipping), per-vertex cone weighting via
+  dot(dir, stormBearingLocal()) (bearing transformed into view space with
+  modelview.transformDirection), UV vertical by elevation + horizontal
+  azimuth+churn (u=0.5+0.35*sin(az+churn), v=0.55-elev*0.0058 clamp .06-.55).
+  Layers: energy plate (cyan tint + yellow horizon accent ring 0), anomaly
+  plate (mutation tint), 2 cloud bands from textures/misc/mcsm_cloud.png
+  (12-36deg + 6-26deg, chunky segments 18/14, counter-churn). Per-frame
+  ByteBufferBuilder -> MeshData -> GpuBuffer (closed), drawLayer(texture,
+  emitter) public helper reused by the flash.
+- StormMutationFlash: rewritten as SKY-LAYER bloom (renderSkyBloom(target)):
+  additive disc + racing ring quads on the tangent plane of the storm
+  bearing at SKY_R=240 sky depth. Triggers unchanged (phase crossings 6/7/8
+  + ~16-22s crackle). NOT full-screen, no lightmap/fog interaction.
+- SkyRendererMixin: + dabyws$stormSkyBackdrop HEAD cancellable inject.
+- RenderPipelinesAccessor: + MATRICES_PROJECTION_SNIPPET accessor.
+- WitherStormRenderer LAYER 3: submitSkyBackdrop/submitNightLight calls
+  REMOVED (methods remain, dead); submitStormAura replaced by submitCoreGlow
+  = THE one 2D billboard (user: white glow at storm centre, only 2D element)
+  - camera-facing soft white glow + hot centre at radius*0.3 up the core,
+  warm white -> magenta heat 5.95-6.4; 7.5+ vortex rings kept; collapse
+  glow kept. GUI rows renamed to "Storm Core Glow".
+- DevouringStormsModClient: StormSkyDome::submit + StormMutationFlash::submit
+  registrations REMOVED (world dome retired; flash is sky-layer now).
+  StormSkyDome class kept only for domeVeil() (StormPresenceFX uses it).
+- StormSkyCanopy + StormCataclysmFX: early-return when
+  SkyAtmosphereController.active() (stand down under the skybox).
+- FogRendererMixin (LAYER 2): controller updated at fog time; horizon fog
+  compressed by fogScale (environmental/renderDistance start+end *=).
+- Colored lighting: world_glow_combine.fsh chroma boost (pass 6) + phase
+  palettes still drive fog/sky/lightmap-darken sync.
+- mod_version -> 1.9.62-26.2-beta.
+
+## Commits <-> green runs
+(previous: 8f616dc=32864907130, e7d8f02=32877016373, ecf96cd=32877962720)
+Pass 7: fill in after CI green.
+
+## Open items (next steps)
+1. User retests pass-7 jar: storm sky should now sit at true infinite depth
+   (no mountain clipping, no boxes), churn around the storm, widen 6+, sun/
+   moon/stars gone during storm, fog heavier at horizon, white core glow
+   billboard at the storm's centre, purple mutation bangs in the sky layer.
+2. If skybox too bright/washed: lower alpha ceilings (235 in StormSkyBox.alpha)
+   or intensity clamp; if too faint: raise RADIUS or cone floor.
+3. If renderSunMoonAndStars inject ever fails to apply, check the 26.2 mirror
+   (Renekovski/26.2-mcp) for signature drift FIRST.
+4. Keep PR draft, stay on branch, keep green checkpoints.
+
+## Gotchas / dead ends (DO NOT REPEAT)
+- Arena app token CANNOT push .github/workflows/* changes (rejected; patch
+  saved at docs/ci-artifact-name.patch for web-UI application).
+- User web-UI upload commits (like 217682f) REPLACE THE WHOLE TREE with a
+  stale snapshot; extract only genuinely-new files via git show <sha>:<file>.
+- CI logs unreadable from sandbox (results-receiver EOF); find compile errors
+  by DIFF AUDIT vs last green commit (pass 6: lossy double->float narrowing).
+- User attachments usually don't reach the sandbox; work from specs + palettes.
+- No local JDK/toolchain; gradle/maven/adoptium hosts blocked.
+- API notes if CI goes red: mappings are Mojang-record-style in places:
+  gameRenderer.mainCamera() (not getMainCamera), Camera.position(),
+  ClientDistantStormManager.all() Collection, StormData{x,y,z,phase,entityId,
+  expansionPhase,dispX/Y,Z}, FULL_BRIGHT=15728880.
+
+## Standing user specs
+- TELLTALE LAYERED SKY (pass 7 spec): L1 native dynamic skybox pass at
+  infinite depth, camera-locked, additive, no depth test/write; L2 fog/
+  ambient/world-tint sync + denser horizon fog + suppress vanilla weather
+  clouds/prisms/sun/moon; L3 entity renderer = foreground only (core shell,
+  heads, tentacles, tractor beams, particles) - NO sky domes/aura meshes/
+  big billboards on the entity; phase 4 black/purple void + cyan energy +
+  yellow horizon; 5.9 purple/void/orange (sky_only_no_clouds.png); 6-8 cone
+  widens + red/magenta/orange; mutation flashbangs = additive radial bloom
+  IN THE SKY LAYER, never full-screen whiteout.
+- The white glow at the storm's centre is the ONLY 2D billboard ("the light
+  coming off the storm"); everything else is 3D or sky-layer.
+- Sky timeline: 4 regular; 4.5 green; 5 turquoise; 5.15-5.7 purple->pink;
+  5.5-6.0 crossfade to anomaly; 6 black then pinkish purple; 6/7 pinkish
+  purple / vibrant red-orange-magenta; 8 purple + dark pink rings.
+- OG dark black/purple MCSM look default; teeth mint-cyan FULL_BRIGHT;
+  lighting must read visibly COLORED; shadows default-on; seamless+automatic.
+- Reference videos: youtu.be/E-NYcNk4h6, iBLYyNS4f3U, 8VlaLp2G1Aw.
 
 Paste/read this at the start of a new session. Workspace: /home/user/Lowuuuuuu,
 branch arena/01a03982-lowuuuuuu (session-fixed; never switch/push elsewhere).
