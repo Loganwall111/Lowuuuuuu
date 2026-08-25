@@ -319,16 +319,7 @@ public final class StormSkyBox {
                GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(RenderSystem.getModelViewMatrixCopy(), new Vector4f(1.0F, 1.0F, 1.0F, 1.0F));
                GpuTextureView color = mc.getMainRenderTarget().getColorTextureView();
                GpuTextureView depth = mc.getMainRenderTarget().getDepthTextureView();
-
-               try (RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "Devouring Storms sky", color, OptionalInt.empty(), depth, OptionalDouble.empty())) {
-                  renderPass.setPipeline(pipeline());
-                  RenderSystem.bindDefaultUniforms(renderPass);
-                  renderPass.setUniform("DynamicTransforms", dynamicTransforms);
-                  renderPass.bindTexture("Sampler0", tex.getTextureView(), tex.getSampler());
-                  renderPass.setVertexBuffer(0, vertexBuffer);
-                  renderPass.setIndexBuffer(indexBuffer, autoIndices.type());
-                  renderPass.drawIndexed(0, 0, quads * 6, 1);
-               }
+               // BISECT PROBE E: RenderPass block removed
             }
          }
       } catch (Exception e) {
