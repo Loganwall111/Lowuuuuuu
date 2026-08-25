@@ -50,10 +50,10 @@ public final class StormMutationFlash {
       final double y;
       final double z;
       final float strength;
-      final float bodyR;
+      final double bodyR;
       final long startMs;
 
-      Flash(double x, double y, double z, float strength, float bodyR, long startMs) {
+      Flash(double x, double y, double z, float strength, double bodyR, long startMs) {
          this.x = x;
          this.y = y;
          this.z = z;
