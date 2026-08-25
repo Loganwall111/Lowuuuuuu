@@ -312,7 +312,7 @@ public final class StormSkyBox {
       AbstractTexture tex = mc.getTextureManager().getTexture(texture);
       int maxQuads = SEGMENTS * (ELEVATIONS.length + CLOUD_ELEV_A.length + CLOUD_ELEV_B.length) + 16;
 
-      try (ByteBufferBuilder builder = ByteBufferBuilder.exactlySized((long)maxQuads * 4L * (long)DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
+      try (ByteBufferBuilder builder = ByteBufferBuilder.exactlySized(maxQuads * 4 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
          BufferBuilder bufferBuilder = new BufferBuilder(builder, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
          int quads = emitter.emit(bufferBuilder);
          if (quads <= 0) {
