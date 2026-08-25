@@ -308,8 +308,7 @@ public final class StormSkyBox {
       }
       try (ByteBufferBuilder builder = ByteBufferBuilder.exactlySized(1024 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
          BufferBuilder bufferBuilder = new BufferBuilder(builder, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-         int quads = emitter.emit(bufferBuilder);
-         if (quads <= 0) {
+         if (bufferBuilder == null) {
             return;
          }
       } catch (Exception e) {
