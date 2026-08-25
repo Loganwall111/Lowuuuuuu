@@ -63,7 +63,18 @@ selfShadow; lightmap darken; impact light; stormShadow defaults ON.
 ## Commits <-> green runs
 (previous session: be6018a=32794211093, f1bc3e7=32794678617, 4c949b0=32796206417,
 8563f89=32835552913, 9fde820=32861093160, 8f616dc=32864907130)
-This session: fill in after CI goes green.
+This session: 583fa5b=32873887081 RED (lossy double->float narrowing in
+StormMutationFlash.Flash ctor — javac rejects implicit narrowing),
+e7d8f02=32877016373 GREEN (2m40s, run #112). Jar inside the artifact:
+devouringstorms-1.9.61-26.2-beta+build.112.e7d8f02.jar (unique name per build).
+PR #13 (draft) is this session's build gate.
+
+IMPORTANT CI lesson learned this session: the Arena app token CANNOT push
+commits touching .github/workflows/* (push rejected: "without workflows
+permission"). The unique-artifact-name workflow tweak is saved as
+docs/ci-artifact-name.patch — apply it via the GitHub web UI if wanted.
+The jar filename stamping (+build.N.sha via build.gradle) needs no workflow
+change and already makes every jar uniquely named for Minecraft updates.
 
 ## Open items (next steps)
 1. User retests THIS jar: clean storm sky (no cloud boxes, no dust), regular
