@@ -1026,15 +1026,16 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    /**
-    * The storm's ONE and only 2D billboard: the white core glow. A soft light
-    * disc that always faces the viewer and sits directly at the storm's
-    * centre - the light coming off the mass, exactly like the reference
-    * shot. Everything else atmospheric about the storm now lives in the
-    * native sky pass (StormSkyBox), never on the entity renderer.
+    * The storm's ONE and only 2D billboard: the BLUE HALO. In phase 4 it is
+    * the classic reference look - a light-blue halo pinned to the very
+    * middle of the storm so the whole mass reads as lit from its centre,
+    * blue light looming off its sides. The same single glow then simply
+    * follows the sky palette (teal -> purple -> pink -> mutated magenta-red).
+    * Everything else atmospheric about the storm lives in the native sky pass
+    * (StormSkyBox), never on the entity renderer.
     *
-    * Warm white through the early phases, heating toward magenta through the
-    * mutation; very late (7.5+/8) the horizontal purple + dark-pink vortex
-    * rings still appear around the giant.
+    * Very late (7.5+/8) the horizontal purple + dark-pink vortex rings still
+    * appear around the giant.
     */
    private void submitCoreGlow(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
       if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || state.phase < 4.0) {
@@ -1057,16 +1058,44 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       float yawDeg = (float)Math.toDegrees(Math.atan2(dx, dz));
       float pitchDeg = (float)Math.toDegrees(Math.atan2(dy, Math.max(horiz, 0.001)));
 
-      // warm white core light, heating toward magenta through the mutation
-      float heat = StormPalettes.phaseAmount(phase, 5.95F, 6.4F);
-      float cr = Mth.lerp(heat, 0.93F, 1.0F);
-      float cg = Mth.lerp(heat, 0.96F, 0.58F);
-      float cb = Mth.lerp(heat, 1.0F, 0.95F);
-      int hr = (int)(Mth.clamp(cr, 0.0F, 1.0F) * 255.0F);
-      int hg = (int)(Mth.clamp(cg, 0.0F, 1.0F) * 255.0F);
-      int hb = (int)(Mth.clamp(cb, 0.0F, 1.0F) * 255.0F);
+      // THE one billboard, per the reference shots: the BLUE halo riding the
+      // very middle of the storm in phase 4 - the mass lit from its centre
+      // with light blue, looming off its sides. Later phases keep the exact
+      // same single glow, only its colour follows the sky palette.
+      float blueHalo = StormPalettes.phaseAmount(phase, 4.0F, 4.2F) * (1.0F - StormPalettes.phaseAmount(phase, 4.9F, 5.15F));
+      float tealWash = StormPalettes.phaseAmount(phase, 4.92F, 5.1F) * (1.0F - StormPalettes.phaseAmount(phase, 5.16F, 5.3F));
+      float purpleWash = StormPalettes.phaseAmount(phase, 5.12F, 5.42F);
+      float pinkWash = StormPalettes.phaseAmount(phase, 5.55F, 5.95F);
+      float mutation = StormPalettes.phaseAmount(phase, 5.95F, 6.3F);
+      // halo edge colour: light blue (4) -> teal -> purple -> pink -> mutated magenta-red
+      float er = 0.42F;
+      float eg = 0.72F;
+      float eb = 1.0F;
+      er = Mth.lerp(tealWash * 0.6F, er, 0.24F);
+      eg = Mth.lerp(tealWash * 0.6F, eg, 0.66F);
+      er = Mth.lerp(purpleWash, er, 0.56F);
+      eg = Mth.lerp(purpleWash, eg, 0.24F);
+      eb = Mth.lerp(purpleWash, eb, 0.86F);
+      er = Mth.lerp(pinkWash * 0.5F, er, 0.96F);
+      eg = Mth.lerp(pinkWash * 0.5F, eg, 0.42F);
+      eb = Mth.lerp(pinkWash * 0.5F, eb, 0.84F);
+      er = Mth.lerp(mutation, er, 1.0F);
+      eg = Mth.lerp(mutation, eg, 0.32F);
+      eb = Mth.lerp(mutation, eb, 0.78F);
+      // hot centre: near-white with the same drift
+      float cr = Mth.lerp(mutation, 0.94F, 1.0F);
+      float cg = Mth.lerp(mutation, 0.97F, 0.64F);
+      float cb = Mth.lerp(mutation, 1.0F, 0.96F);
+      int eR = (int)(Mth.clamp(er, 0.0F, 1.0F) * 255.0F);
+      int eG = (int)(Mth.clamp(eg, 0.0F, 1.0F) * 255.0F);
+      int eB = (int)(Mth.clamp(eb, 0.0F, 1.0F) * 255.0F);
+      int cR = (int)(Mth.clamp(cr, 0.0F, 1.0F) * 255.0F);
+      int cG = (int)(Mth.clamp(cg, 0.0F, 1.0F) * 255.0F);
+      int cB = (int)(Mth.clamp(cb, 0.0F, 1.0F) * 255.0F);
       float ramp = StormPalettes.phaseAmount(phase, 4.0F, 4.3F);
-      int glowA = (int)((64.0F + 84.0F * ramp) * strength * breathe);
+      int glowA = (int)((72.0F + 92.0F * ramp) * strength * breathe);
+      // the blue phase-4 halo looms larger - it lights the storm's sides
+      float discScale = Mth.lerp(blueHalo, 0.98F, 1.22F);
 
       pushStormWorld(poseStack, state);
 
@@ -1075,10 +1104,11 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
          poseStack.translate(0.0, radius * 0.3, 0.0);
          poseStack.mulPose(Axis.YP.rotationDegrees(yawDeg));
          poseStack.mulPose(Axis.XP.rotationDegrees(-pitchDeg));
-         // the soft light the mass gives off...
-         submitHaloPlane(collector, poseStack, radius * 0.88, radius * 0.88, hr, hg, hb, glowA, GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
+         // the light blue halo looming off the mass (phase 4) / its palette drift
+         submitHaloPlane(collector, poseStack, radius * 0.95 * discScale, radius * 0.95 * discScale, eR, eG, eB, glowA, GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
+         submitHaloPlane(collector, poseStack, radius * 0.62 * discScale, radius * 0.62 * discScale, eR, eG, eB, (int)((float)glowA * 0.7F), GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
          // ...and its hot centre
-         submitHaloPlane(collector, poseStack, radius * 0.36, radius * 0.36, Math.min(255, hr + 24), Math.min(255, hg + 16), hb, Math.min(255, (int)((float)glowA * 1.45F)), GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
+         submitHaloPlane(collector, poseStack, radius * 0.34, radius * 0.34, Math.min(255, cR + 20), Math.min(255, cG + 12), cB, Math.min(255, (int)((float)glowA * 1.4F)), GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
          poseStack.popPose();
       }
 

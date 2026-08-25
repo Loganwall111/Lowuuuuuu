@@ -1,4 +1,17 @@
-# SESSION HANDOFF — Devouring Storms (2026-08-25, pass 7 = TELLTALE SKYBOX)
+# SESSION HANDOFF — Devouring Storms (2026-08-25, pass 8 = blue halo fix)
+
+Pass 8 (same day): user clarified the ONE billboard is the BLUE HALO of
+phase 4 - light blue, dead-centre of the storm, the mass lit from its middle
+with blue looming off the sides. submitCoreGlow retuned: phase 4 = light
+blue edge (0.42,0.72,1.0) + hot white-blue centre, disc scaled up 1.22x in
+the blue window (4.0-4.9), then the SAME single glow follows the palette
+(teal 5.0 -> purple 5.15-5.45 -> pink 5.7 -> mutated magenta-red 6+).
+Confirmed already-covered asks: clouds wired into skybox (pass 7), coloured
+lighting for glowing blocks (world_glow_combine chroma boost), twinkling
+stars (StormStarfield + vanilla), coloured shadows incl. water
+(StormShadow.shadowColor already blends the phase palette into the tint).
+
+# PREVIOUS HANDOFF (pass 7 = TELLTALE SKYBOX)
 
 Paste/read this at the start of a new session. Workspace: /home/user/Lowuuuuuu,
 branch arena/01a03982-lowuuuuuu (session-fixed; never switch/push elsewhere).
