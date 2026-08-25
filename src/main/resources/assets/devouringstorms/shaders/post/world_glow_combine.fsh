@@ -29,6 +29,10 @@ void main() {
     // coloured" look. Pushing each pixel toward its dominant hue first is
     // what makes a torch halo read orange and lava read red.
     float luma = dot(glow, vec3(0.2126, 0.7152, 0.0722));
-    glow = mix(vec3(luma), glow, 1.75);
+    glow = mix(vec3(luma), glow, 2.2);
+    // Reinforce the dominant channel so even faint spill stays hue-locked:
+    // weak grey fringes snap to the colour of the light that made them.
+    vec3 chroma = max(glow - vec3(luma), vec3(0.0));
+    glow += chroma * 0.35;
     fragColor = vec4(base + glow * Params.x, 1.0);
 }

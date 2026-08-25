@@ -28,6 +28,7 @@ import net.dabicco.devouringstorms.client.ControlPanelLightTint;
 import net.dabicco.devouringstorms.client.DistantStormRenderer;
 import net.dabicco.devouringstorms.client.StormCataclysmFX;
 import net.dabicco.devouringstorms.client.StormCloudDeck;
+import net.dabicco.devouringstorms.client.StormMutationFlash;
 import net.dabicco.devouringstorms.client.StormSkyCanopy;
 import net.dabicco.devouringstorms.client.StormSkyDome;
 import net.dabicco.devouringstorms.client.StormPresenceFX;
@@ -219,11 +220,13 @@ public class DevouringStormsModClient implements ClientModInitializer {
       LevelRenderEvents.COLLECT_SUBMITS.register(StormStarfield::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormSkyCanopy::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormSkyDome::submit);
+      LevelRenderEvents.COLLECT_SUBMITS.register(StormMutationFlash::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormCloudDeck::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormCataclysmFX::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPresenceFX::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPulseFX::render);
       ClientTickEvents.START_CLIENT_TICK.register(StormPresenceFX::tick);
+      ClientTickEvents.START_CLIENT_TICK.register(StormMutationFlash::tick);
       ClientPlayNetworking.registerGlobalReceiver(SpawnStructurePayload.TYPE, (payload, context) -> context.client().execute(() -> {
             StormMusic.setInsideSpawnTower(payload.inside());
             SpawnTowerGloom.set(payload.inside(), payload.x(), payload.floorY(), payload.z());
@@ -276,6 +279,7 @@ public class DevouringStormsModClient implements ClientModInitializer {
       ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
          ClientDistantStormManager.clear();
          StormPresenceFX.clear();
+         StormMutationFlash.clear();
          StormPulseFX.clear();
          StormSkyDarken.clear();
          SpawnTowerGloom.clear();
@@ -285,6 +289,7 @@ public class DevouringStormsModClient implements ClientModInitializer {
          ClientSicknessManager.clear();
          ClientWitheredManager.clear();
          StormPresenceFX.clear();
+         StormMutationFlash.clear();
          StormPulseFX.clear();
          StormSkyDarken.clear();
          SpawnTowerGloom.clear();
@@ -299,6 +304,7 @@ public class DevouringStormsModClient implements ClientModInitializer {
             beamHum[0] = null;
             ClientDistantStormManager.clear();
             StormPresenceFX.clear();
+            StormMutationFlash.clear();
             StormPulseFX.clear();
             StormSkyDarken.clear();
             SpawnTowerGloom.clear();

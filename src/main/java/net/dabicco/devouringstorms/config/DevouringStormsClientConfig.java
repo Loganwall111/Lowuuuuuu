@@ -146,6 +146,7 @@ public class DevouringStormsClientConfig {
    public static double summonShockwaveSize = 1.2;
    public static boolean cataclysmHalos = true;
    public static double haloStrength = (double)1.0F;
+   public static boolean mutationFlashBang = true;
    public static boolean blackGlare = false;
    public static double blackGlareStrength = (double)1.0F;
    public static boolean bloomedBackdrop = false;
@@ -521,6 +522,7 @@ public class DevouringStormsClientConfig {
       key("summonShockwaveSize", "How far the first-summon shockwave expands.", 0.5, (double)3.0F, false, () -> summonShockwaveSize, (v) -> summonShockwaveSize = v);
       key("cataclysmHalos", "Attached Story-Mode aura: a soft light halo that rides the storm's outer silhouette and follows it across the sky. Blue-white ring in phase 4, a dark black wash when the turquoise fog starts, a black/purple aura through phase 5, a drift toward blue at 5.5, and the layered orange/red/purple/black halo stack through phase 6+. Not a wall, never covers the storm.", (double)0.0F, (double)1.0F, true, () -> cataclysmHalos ? (double)1.0F : (double)0.0F, (v) -> cataclysmHalos = v >= (double)0.5F);
       key("haloStrength", "Brightness of the attached aura halos.", (double)0.0F, (double)2.0F, false, () -> haloStrength, (v) -> haloStrength = v);
+      key("mutationFlashBang", "Phase 6+ mutation flash-bang: a LOCALIZED purple burst at the storm's core when it mutates (6, 7, 8) and a slow crackle while it rampages. World-anchored and depth-occluded - it never lights up the whole screen and is separate from the purple skybox.", (double)0.0F, (double)1.0F, true, () -> mutationFlashBang ? (double)1.0F : (double)0.0F, (v) -> mutationFlashBang = v >= (double)0.5F);
       key("blackGlare", "Legacy look: the old big flat sky-bubble planes pinned behind the storm (the pixelated wall). Off by default - the new attached aura replaces it.", (double)0.0F, (double)1.0F, true, () -> blackGlare ? (double)1.0F : (double)0.0F, (v) -> blackGlare = v >= (double)0.5F);
       key("blackGlareStrength", "How strongly the legacy sky-bubble planes claim the air behind the storm.", (double)0.0F, (double)2.0F, false, () -> blackGlareStrength, (v) -> blackGlareStrength = v);
       key("bloomedBackdrop", "Optional bloomed centre / black-hole style core for the late sky bubble. Off by default.", (double)0.0F, (double)1.0F, true, () -> bloomedBackdrop ? (double)1.0F : (double)0.0F, (v) -> bloomedBackdrop = v >= (double)0.5F);

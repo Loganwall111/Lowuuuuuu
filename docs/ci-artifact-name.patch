@@ -1,0 +1,24 @@
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index ab91d46..7c0254b 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -4,6 +4,7 @@ on:
+   push:
+     branches: [ main ]
+   pull_request:
++  workflow_dispatch:
+ 
+ concurrency:
+   group: build-${{ github.ref }}
+@@ -38,7 +39,10 @@ jobs:
+       - name: Upload mod jar
+         uses: actions/upload-artifact@v4
+         with:
+-          name: dabywitherstormmod
++          # Every build gets its own artifact name so Minecraft (and you) can
++          # tell the jars apart: dabywitherstormmod-b<run>-<sha>. The jar inside
++          # is stamped the same way (version +build.<run>.<sha>).
++          name: dabywitherstormmod-b${{ github.run_number }}-${{ github.sha }}
+           path: build/libs/*.jar
+           if-no-files-found: error
+           retention-days: 14

@@ -43,7 +43,22 @@ public final class StormCloudDeck {
    /** Whether the stylized MCSM deck should take over from vanilla clouds right now. */
    public static boolean replacesVanillaClouds() {
       int mode = (int)Math.round(DevouringStormsClientConfig.stormCloudDeck);
-      return mode > 0 && (ambientCloudsActive() || StormSkyDarken.globalCloudDeckActive() || StormSkyDarken.paletteBlend() > 0.03F && StormSkyDarken.palettePhase() >= 4.25F);
+      if (mode <= 0) {
+         return false;
+      } else if (ambientCloudsActive() || StormSkyDarken.globalCloudDeckActive()) {
+         return true;
+      } else {
+         // Any storm claiming the sky hides the vanilla cloud layer too -
+         // including the weather cells - so the official storm sky reads
+         // clean, exactly like the uploaded "sky only, no clouds" plate.
+         for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
+            if (d.phase >= 4.25F) {
+               return true;
+            }
+         }
+
+         return StormSkyDarken.paletteBlend() > 0.03F && StormSkyDarken.palettePhase() >= 4.25F;
+      }
    }
 
    /** The MCSM clouds are the game's default cloud look, even with no storm anywhere. */
@@ -351,13 +366,12 @@ public final class StormCloudDeck {
          float[] outer = new float[3];
          float[] inner = new float[3];
 
-         for (ClientDistantStormManager.StormData d : storms) {
-            // once the anomaly dome owns the sky (phase ~5.5+) the deck's
-            // prisms melt away - the uploaded anomaly plate is a sky WITHOUT
-            // clouds and our synthetic ones must not fight it
-            float veil = 1.0F - StormSkyDome.domeVeil(d.phase);
-            renderField(consumer, pose, cam, nowSec, mode, coverage, baseAlpha, d.entityId, d.phase, d.expansionPhase, d.dispX, d.dispY, d.dispZ, veil, outer, inner);
-         }
+         // The synthetic per-storm cloud prisms are GONE: they read as the
+         // "glitchy boxes over top" fighting the official storm sky plates.
+         // From phase 4+ the StormSkyDome owns the storm sky alone - the
+         // uploaded anomaly plate is a sky WITHOUT clouds and nothing
+         // synthetic may be stacked on top of it anymore. Only the no-storm
+         // ambient ceiling (and the optional global deck) still renders here.
 
          if (global) {
             float phase = StormSkyDarken.globalPhase();

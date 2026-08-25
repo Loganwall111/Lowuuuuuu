@@ -139,7 +139,19 @@ public final class StormPresenceFX {
             if (d.phase < 5.15F) {
                continue;
             }
-            float rate = (float)DevouringStormsClientConfig.ejectaRate * Mth.clamp((d.phase - 5.15F) / 0.65F, 0.0F, 1.0F);
+            // no sky dust once the official anomaly sky owns the sky: the
+            // uploaded plate is a clean "sky only, no clouds" look, so the
+            // spark/ejecta field shuts off (and live sparks die out quickly)
+            float veil = StormSkyDome.domeVeil(d.phase);
+            if (veil >= 0.5F) {
+               for (int i = 0; i < SPARKS; i++) {
+                  if (SLIFE[i] > 0) {
+                     SLIFE[i] -= 2;
+                  }
+               }
+               continue;
+            }
+            float rate = (float)DevouringStormsClientConfig.ejectaRate * Mth.clamp((d.phase - 5.15F) / 0.65F, 0.0F, 1.0F) * (1.0F - veil);
             emitAcc += rate * 0.02F;
             while (emitAcc >= 1.0F) {
                emitAcc -= 1.0F;

@@ -1022,22 +1022,15 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    /**
-    * The attached Story-Mode aura: a gradient light shell that wraps around the
-    * storm's sides in world space (and hangs just behind its mass), moving with
-    * the storm across the sky. Every layer is a soft textured gradient drawn
-    * from the entity transform - never a camera-rotated billboard quad - and
-    * the pipelines depth-test without writing depth, so the glow reads as
-    * atmospheric back-light around the silhouette.
+    * The attached Story-Mode halo - and it is a REGULAR halo after all: one
+    * flat ring facing the viewer, centred on the storm's core, tinted by the
+    * phase timeline. The old layered gradient shells are gone; what remains is
+    * the plain classic ring (additive glow, depth-occluded, never a wall)
+    * plus, very late (7.5+/8), the horizontal purple + dark-pink vortex rings.
     *
-    * Phase story (per the reference images/videos):
-    *  - phase 4: a light-blue glow around the sides (pure light, not white)
-    *  - ~5.0 when turquoise fog begins: a dark/black gradient at the sides
-    *    so the turquoise reads blacker
-    *  - 5.15-5.45: black + purple gradient light around the storm
-    *  - 5.45-5.7+: the same gradient drifts from purple toward blue
-    *  - phase 6+ (post-split): steady layered gradient bands - orange at the
-    *    bottom, red above it, purple above the red, black above the purple.
-    *    They stay put; only the split shockwave bangs.
+    * Phase story: blue-white in phase 4, a dark wash when the turquoise fog
+    * starts, black/purple through 5, a drift toward blue at 5.5, pink toward
+    * the split, then the mutation red/orange/magenta tint through 6+.
     */
    private void submitStormAura(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
       if (this.previewShadowPass || !DevouringStormsClientConfig.cataclysmHalos || DevouringStormsClientConfig.blackGlare || state.phase < 4.0) {
@@ -1057,47 +1050,67 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       float tealDark = StormPalettes.phaseAmount(phase, 4.92F, 5.06F) * (1.0F - StormPalettes.phaseAmount(phase, 5.16F, 5.3F));
       float purpleAura = StormPalettes.phaseAmount(phase, 5.1F, 5.3F);
       float blueDrift = StormPalettes.phaseAmount(phase, 5.42F, 5.62F) * (1.0F - StormPalettes.phaseAmount(phase, 5.95F, 6.15F));
+      float pinkHalo = StormPalettes.phaseAmount(phase, 5.45F, 5.95F) * (1.0F - StormPalettes.phaseAmount(phase, 6.05F, 6.3F));
       float phase6 = StormPalettes.phaseAmount(phase, 5.92F, 6.18F);
 
       pushStormWorld(poseStack, state);
 
-      // --- phase 4: light-blue gradient glow around the sides ---
-      if (phase4Glow > 0.01F) {
-         submitGradientCylinder(collector, poseStack, radius * 0.98, radius * 0.14, radius * 0.82, 150, 205, 255, (int)(120.0F * phase4Glow * strength), GlowRenderTypes.glow(HALO_BAND_TEXTURE), 7);
-         submitGradientCylinder(collector, poseStack, radius * 1.22, radius * 0.04, radius * 0.92, 90, 162, 255, (int)(66.0F * phase4Glow * strength), GlowRenderTypes.glow(HALO_BAND_TEXTURE), 7);
-         submitBackPlate(collector, poseStack, radius, 158, 208, 255, (int)(72.0F * phase4Glow * strength));
-      }
+      // --- ONE regular halo ------------------------------------------------
+      // The reference halos turn out to be just regular halos: a single flat
+      // ring, centred on the storm's core and facing the viewer, tinted by
+      // the phase timeline. No layered gradient shells, no walls - the plain
+      // classic ring, additive and depth-occluded like every storm glow.
+      double dx = camera.pos.x - state.worldX;
+      double dy = camera.pos.y - state.worldY;
+      double dz = camera.pos.z - state.worldZ;
+      double horiz = Math.sqrt(dx * dx + dz * dz);
+      float yawDeg = (float)Math.toDegrees(Math.atan2(dx, dz));
+      float pitchDeg = (float)Math.toDegrees(Math.atan2(dy, Math.max(horiz, 0.001)));
 
-      // --- turquoise start: dark gradient at the sides so turquoise reads blacker ---
-      if (tealDark > 0.01F) {
-         submitGradientCylinder(collector, poseStack, radius * 1.04, radius * 0.1, radius * 0.84, 4, 16, 13, (int)(104.0F * tealDark * strength), GlowRenderTypes.translucent(HALO_BAND_TEXTURE), 7);
-      }
-
-      // --- phase 5: black + purple gradient around the storm, drifting blue at 5.5 ---
-      if (purpleAura > 0.01F) {
-         float towardBlue = blueDrift * 0.85F;
-         int pr = (int)(Mth.lerp(towardBlue, 0.52F, 0.30F) * 255.0F);
-         int pg = (int)(Mth.lerp(towardBlue, 0.24F, 0.46F) * 255.0F);
-         int pb = (int)(Mth.lerp(towardBlue, 0.86F, 1.0F) * 255.0F);
-         float auraAmt = purpleAura * strength * breathe;
-         // black gradient hugging the silhouette itself
-         submitGradientCylinder(collector, poseStack, radius * 0.9, radius * 0.1, radius * 0.86, 12, 5, 24, (int)(108.0F * auraAmt), GlowRenderTypes.translucent(HALO_BAND_TEXTURE), 7);
-         // purple (later blue) gradient light around the sides
-         submitGradientCylinder(collector, poseStack, radius * 1.08, radius * 0.12, radius * 0.84, pr, pg, pb, (int)(94.0F * auraAmt), GlowRenderTypes.glow(HALO_BAND_TEXTURE), 7);
-         if (blueDrift > 0.01F) {
-            // 5.5+: blue joins the gradient while the dark purple stays at the sides
-            submitGradientCylinder(collector, poseStack, radius * 1.24, radius * 0.06, radius * 0.92, 77, 128, 235, (int)(58.0F * blueDrift * strength), GlowRenderTypes.glow(HALO_BAND_TEXTURE), 7);
-         }
-         submitBackPlate(collector, poseStack, radius, pr, pg, pb, (int)(66.0F * auraAmt));
-      }
-
-      // --- phase 6+: steady layered gradient bands (semantic, no flashing) ---
+      // colour timeline: blue-white (4) -> dark teal wash (~5) -> black+purple
+      // (5.15-5.45) -> blue (5.5) -> pink (5.7) -> mutation red/orange/magenta (6+)
+      float cr = 0.66F;
+      float cg = 0.81F;
+      float cb = 1.0F;
+      float w = tealDark * 0.7F;
+      cr = Mth.lerp(w, cr, 0.14F);
+      cg = Mth.lerp(w, cg, 0.24F);
+      cb = Mth.lerp(w, cb, 0.30F);
+      cr = Mth.lerp(purpleAura, cr, 0.58F);
+      cg = Mth.lerp(purpleAura, cg, 0.23F);
+      cb = Mth.lerp(purpleAura, cb, 0.76F);
+      cr = Mth.lerp(blueDrift * 0.85F, cr, 0.32F);
+      cg = Mth.lerp(blueDrift * 0.85F, cg, 0.46F);
+      cb = Mth.lerp(blueDrift * 0.85F, cb, 0.98F);
+      cr = Mth.lerp(pinkHalo * 0.6F, cr, 0.96F);
+      cg = Mth.lerp(pinkHalo * 0.6F, cg, 0.42F);
+      cb = Mth.lerp(pinkHalo * 0.6F, cb, 0.84F);
       if (phase6 > 0.01F) {
-         float steady = (0.86F + 0.14F * Mth.sin((double)(state.idleTimeTicks * 0.016F))) * phase6 * strength;
-         submitGradientCylinder(collector, poseStack, radius * 1.3, radius * 0.34, radius * 0.6, 8, 5, 14, (int)(112.0F * steady), GlowRenderTypes.translucent(HALO_BAND_TEXTURE), 8);
-         submitGradientCylinder(collector, poseStack, radius * 1.2, radius * 0.08, radius * 0.32, 156, 74, 236, (int)(92.0F * steady), GlowRenderTypes.glow(HALO_BAND_TEXTURE), 8);
-         submitGradientCylinder(collector, poseStack, radius * 1.12, radius * -0.2, radius * 0.06, 228, 44, 58, (int)(100.0F * steady), GlowRenderTypes.glow(HALO_BAND_TEXTURE), 8);
-         submitGradientCylinder(collector, poseStack, radius * 1.06, radius * -0.46, radius * -0.24, 255, 138, 40, (int)(86.0F * steady), GlowRenderTypes.glow(HALO_BAND_TEXTURE), 8);
+         float t = Mth.clamp((phase - 6.0F) / 2.0F, 0.0F, 1.0F);
+         float mg = Mth.lerp(Math.min(t * 2.0F, 1.0F), 0.44F, 0.17F);
+         float mb = t < 0.5F ? 0.16F : Mth.lerp((t - 0.5F) * 2.0F, 0.16F, 0.64F);
+         cr = Mth.lerp(phase6, cr, 1.0F);
+         cg = Mth.lerp(phase6, cg, mg);
+         cb = Mth.lerp(phase6, cb, mb);
+      }
+
+      int hr = (int)(Mth.clamp(cr, 0.0F, 1.0F) * 255.0F);
+      int hg = (int)(Mth.clamp(cg, 0.0F, 1.0F) * 255.0F);
+      int hb = (int)(Mth.clamp(cb, 0.0F, 1.0F) * 255.0F);
+      float ramp = StormPalettes.phaseAmount(phase, 4.0F, 4.3F);
+      float windowBoost = Math.max(phase4Glow, Math.max(tealDark, Math.max(purpleAura, Math.max(blueDrift, Math.max(pinkHalo, phase6)))));
+      int haloA = (int)((64.0F + 88.0F * Math.max(ramp, windowBoost)) * strength * breathe);
+
+      if (haloA > 2) {
+         poseStack.pushPose();
+         poseStack.translate(0.0, radius * 0.42, 0.0);
+         poseStack.mulPose(Axis.YP.rotationDegrees(yawDeg));
+         poseStack.mulPose(Axis.XP.rotationDegrees(-pitchDeg));
+         // the ring itself, wide enough to halo the whole mass
+         submitHaloPlane(collector, poseStack, radius * 1.52, radius * 1.52, hr, hg, hb, haloA, GlowRenderTypes.glow(HALO_TEXTURE));
+         // a soft light core inside the ring so the halo reads as glow, not an outline
+         submitHaloPlane(collector, poseStack, radius * 0.8, radius * 0.8, hr, hg, hb, (int)((float)haloA * 0.42F), GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
+         poseStack.popPose();
       }
 
       // --- phase 7.5+/8: the ringed giant, purple + dark-pink vortex rings ---
