@@ -300,3 +300,19 @@ mc.gameRenderer.mainRenderTarget()), and possibly new BufferBuilder(...) (never 
 - Bisect method when CI is the only oracle: stub whole subsystem green, restore halves, then
   statements, then sub-expressions (greens are reliable; a red can be an infra flake — retest
   any 'impossible' red before believing it, e.g. int*int*int arg 'failing').
+
+## PASS 7 CONT 2 — THE 1.9.80 "EVERYTHING OCCLUDED" BUG (fixed in 1.9.81)
+
+Symptoms on build 135 (user report): 2D planes blocking the storm, "old halo shapes",
+shadows/lighting broken, clouds bugged, backdrop stuck phase 4-5 and NOTHING at 5.9.
+Root cause: the storm-sky pipeline set NO depth state — in this API era the default is
+depth-test-and-write ON, so every dome quad wrote depth at ~320 blocks. First layer each
+frame (energy dome) wrote depth; every later layer (anomaly plate, cloud bands) and the
+far parts of the STORM ITSELF got depth-rejected; scene depth was garbage for the shadow
+composite. Fixes (both green-precedented shapes):
+- pipeline: .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
+  — NOTE the enum constant is ALWAYS_PASS, not ALWAYS.
+- createRenderPass depth load: OptionalDouble.of(1.0) (deterministic clear; never
+  OptionalDouble.empty() mid-frame, "don't care" leaves the buffer undefined downstream).
+RULE: any sky/glow pass that must never occlude needs an EXPLICIT depth state in 26.x —
+see GlowRenderTypes/FoglessRenderTypes which always set DepthStencilState(..., false).

@@ -9,8 +9,10 @@ import com.mojang.blaze3d.buffers.Std140SizeCalculator;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -140,6 +142,7 @@ public final class StormSkyBox {
             .withBindGroupLayout(BindGroupLayout.builder().withUniform("SkyConfig", UniformType.UNIFORM_BUFFER).build())
             .withBindGroupLayout(BindGroupLayout.builder().withUniform("Projection", UniformType.UNIFORM_BUFFER).build())
             .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
+            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
             .withCull(false)
             .build();
       }
@@ -387,7 +390,7 @@ public final class StormSkyBox {
             RenderSystem.AutoStorageIndexBuffer indexer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
             GpuBuffer indices = indexer.getBuffer(indexCount);
             RenderTarget mainTarget = mc.gameRenderer.mainRenderTarget();
-            RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "dabyws storm sky", mainTarget.getColorTextureView(), Optional.empty(), mainTarget.getDepthTextureView(), OptionalDouble.empty());
+            RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "dabyws storm sky", mainTarget.getColorTextureView(), Optional.empty(), mainTarget.getDepthTextureView(), OptionalDouble.of(1.0));
 
             try {
                renderPass.setPipeline(pipeline());
