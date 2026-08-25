@@ -306,7 +306,7 @@ public final class StormSkyBox {
       if (tex == null || maxQuads < 0 || emitter == null) {
          return;
       }
-      try (ByteBufferBuilder builder = ByteBufferBuilder.exactlySized(maxQuads * 4 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
+      try (ByteBufferBuilder builder = ByteBufferBuilder.exactlySized(1024)) {
          // BISECT PROBE H1: exactlySized line alone
       } catch (Exception e) {
       }
