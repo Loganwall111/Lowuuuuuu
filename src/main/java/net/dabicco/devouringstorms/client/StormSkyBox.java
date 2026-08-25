@@ -2,6 +2,7 @@ package net.dabicco.devouringstorms.client;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -87,9 +88,9 @@ public final class StormSkyBox {
          // storm plates glow over the sky disc without ever boxing out.
          pipeline = RenderPipeline.builder(new RenderPipeline.Snippet[]{RenderPipelinesAccessor.dabyws$matricesProjectionSnippet()})
             .withLocation(Identifier.fromNamespaceAndPath("devouringstorms", "pipeline/storm_sky"))
-            .withVertexShader("core/position_tex_color")
-            .withFragmentShader("core/position_tex_color")
-            .withSampler("Sampler0")
+            .withVertexShader(Identifier.withDefaultNamespace("core/position_tex_color"))
+            .withFragmentShader(Identifier.withDefaultNamespace("core/position_tex_color"))
+            .withBindGroupLayout(BindGroupLayout.builder().withSampler("Sampler0").build())
             .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
             .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
             .build();
