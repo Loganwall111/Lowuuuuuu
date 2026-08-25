@@ -37,7 +37,7 @@ public final class StormSkyDome {
    private static final Identifier ANOMALY_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/sky/phase59_anomaly.png");
    private static final int FULL_BRIGHT = 15728880;
    /** Dome radius around the storm core, in blocks. */
-   private static final double RADIUS = 760.0;
+   private static final double RADIUS = 520.0;
    /** Ring elevations, in degrees above the storm's horizon plane. */
    private static final float[] ELEVATIONS = new float[]{0.0F, 10.0F, 22.0F, 38.0F, 58.0F};
    /** Per-ring alpha weights: strongest at the horizon, melting away up high. */
