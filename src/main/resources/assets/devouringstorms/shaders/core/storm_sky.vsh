@@ -8,7 +8,10 @@
 
 in vec3 InPosition;
 in vec2 InTexCoords;
-in vec4 InColor;
+in float InColorR;
+in float InColorG;
+in float InColorB;
+in float InColorA;
 
 layout(std140) uniform SkyConfig {
     // world-axis sky space -> clip space. No translation component: the dome
@@ -22,5 +25,5 @@ out vec4 vColor;
 void main() {
     gl_Position = SkyViewProj * vec4(InPosition, 1.0);
     vUv = InTexCoords;
-    vColor = InColor;
+    vColor = vec4(InColorR, InColorG, InColorB, InColorA);
 }

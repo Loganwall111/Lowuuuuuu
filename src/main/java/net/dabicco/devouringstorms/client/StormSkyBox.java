@@ -82,7 +82,10 @@ public final class StormSkyBox {
    private static final VertexFormat SKY_FORMAT = VertexFormat.builder(0)
       .addAttribute("InPosition", GpuFormat.RGB32_FLOAT)
       .addAttribute("InTexCoords", GpuFormat.RG32_FLOAT)
-      .addAttribute("InColor", GpuFormat.RGBA32_FLOAT)
+      .addAttribute("InColorR", GpuFormat.R32_FLOAT)
+      .addAttribute("InColorG", GpuFormat.R32_FLOAT)
+      .addAttribute("InColorB", GpuFormat.R32_FLOAT)
+      .addAttribute("InColorA", GpuFormat.R32_FLOAT)
       .build();
 
    private static RenderPipeline pipeline;
