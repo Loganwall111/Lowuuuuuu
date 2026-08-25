@@ -3,6 +3,7 @@ package net.dabicco.devouringstorms.client;
 import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
@@ -137,6 +138,7 @@ public final class StormSkyBox {
             .withPrimitiveTopology(PrimitiveTopology.QUADS)
             .withBindGroupLayout(BindGroupLayout.builder().withSampler("Sampler0").build())
             .withBindGroupLayout(BindGroupLayout.builder().withUniform("SkyConfig", UniformType.UNIFORM_BUFFER).build())
+            .withBindGroupLayout(BindGroupLayout.builder().withUniform("Projection", UniformType.UNIFORM_BUFFER).build())
             .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
             .withCull(false)
             .build();
@@ -365,13 +367,23 @@ public final class StormSkyBox {
 
             data.rewind();
             GpuBuffer vertexBuffer = GpuBufferPool.write("dabyws sky layer", 40, data);
-            // sky view-projection: live view rotation (no translation — the sky is
-            // camera-locked) composed with the frame projection
-            Matrix4f mvp = new Matrix4f(SkyMatrices.projection()).mul(new Matrix4f(RenderSystem.getModelViewStack()));
-            ByteBuffer uboData = ByteBuffer.allocateDirect((new Std140SizeCalculator()).putMat4f().get()).order(ByteOrder.nativeOrder());
-            Std140Builder.intoBuffer(uboData).putMat4f(mvp);
-            uboData.rewind();
-            GpuBuffer ubo = GpuBufferPool.write("dabyws sky matrix", 128, uboData);
+            // sky view rotation (no translation — the sky is camera-locked)
+            Matrix4f view = new Matrix4f(RenderSystem.getModelViewStack());
+            ByteBuffer viewData = ByteBuffer.allocateDirect((new Std140SizeCalculator()).putMat4f().get()).order(ByteOrder.nativeOrder());
+            Std140Builder.intoBuffer(viewData).putMat4f(view);
+            viewData.rewind();
+            GpuBuffer viewUbo = GpuBufferPool.write("dabyws sky view", 128, viewData);
+            // the frame's REAL projection, straight from vanilla's uploaded
+            // uniform slice; the 70-degree fallback only if it is not up yet
+            GpuBufferSlice projectionSlice = RenderSystem.getProjectionMatrixBuffer();
+            GpuBuffer projectionUbo = null;
+            if (projectionSlice == null) {
+               ByteBuffer projData = ByteBuffer.allocateDirect((new Std140SizeCalculator()).putMat4f().get()).order(ByteOrder.nativeOrder());
+               Std140Builder.intoBuffer(projData).putMat4f(SkyMatrices.projection());
+               projData.rewind();
+               projectionUbo = GpuBufferPool.write("dabyws sky projection", 128, projData);
+            }
+
             RenderSystem.AutoStorageIndexBuffer indexer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
             GpuBuffer indices = indexer.getBuffer(indexCount);
             RenderTarget mainTarget = mc.gameRenderer.mainRenderTarget();
@@ -380,7 +392,12 @@ public final class StormSkyBox {
             try {
                renderPass.setPipeline(pipeline());
                renderPass.bindTexture("Sampler0", tex.getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
-               renderPass.setUniform("SkyConfig", ubo);
+               renderPass.setUniform("SkyConfig", viewUbo);
+               if (projectionSlice != null) {
+                  renderPass.setUniform("Projection", projectionSlice);
+               } else {
+                  renderPass.setUniform("Projection", projectionUbo);
+               }
                renderPass.setVertexBuffer(0, vertexBuffer.slice(0L, (long)bytes));
                renderPass.setIndexBuffer(indices, indexer.type());
                renderPass.drawIndexed(indexCount, 1, 0, 0, 0);

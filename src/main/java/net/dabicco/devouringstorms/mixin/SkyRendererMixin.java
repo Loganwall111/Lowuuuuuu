@@ -1,6 +1,5 @@
 package net.dabicco.devouringstorms.mixin;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.dabicco.devouringstorms.client.StormSkyBox;
 import net.dabicco.devouringstorms.client.StormSkyDarken;
 import net.minecraft.client.Camera;
@@ -8,7 +7,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SkyRenderer;
 import net.minecraft.client.renderer.state.level.SkyRenderState;
-import net.minecraft.world.level.MoonPhase;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -46,7 +44,10 @@ public class SkyRendererMixin {
       at = {@At("HEAD")},
       cancellable = true
    )
-   private void dabyws$stormSkyBackdrop(PoseStack poseStack, float sunAngle, float moonAngle, float starAngle, MoonPhase moonPhase, float rainBrightness, float starBrightness, CallbackInfo ci) {
+   private void dabyws$stormSkyBackdrop(CallbackInfo ci) {
+      // No target args captured on purpose: an args-free handler can never
+      // mismatch the real renderSunMoonAndStars signature, so a renamed or
+      // re-typed vanilla parameter can never crash the game at apply time.
       if (StormSkyBox.renderSkyLayers()) {
          ci.cancel();
       }
