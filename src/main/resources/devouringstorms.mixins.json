@@ -34,7 +34,6 @@
     "BowelsEntityTiltMixin",
     "BowelsHitboxDebugMixin",
     "BowelsItemTiltMixin",
-    "GameRendererSkyMixin",
     "BowelsLocalPlayerMixin",
     "BowelsParticleMixin",
     "BowelsScreenEffectMixin",
