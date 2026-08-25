@@ -306,6 +306,14 @@ public final class StormSkyBox {
       if (tex == null || maxQuads < 0 || emitter == null) {
          return;
       }
-      // BISECT PROBE F: only the texture-lookup statements live
+      try (ByteBufferBuilder builder = ByteBufferBuilder.exactlySized(maxQuads * 4 * DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize())) {
+         BufferBuilder bufferBuilder = new BufferBuilder(builder, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+         int quads = emitter.emit(bufferBuilder);
+         if (quads <= 0) {
+            return;
+         }
+      } catch (Exception e) {
+         // BISECT PROBE G: exactlySized + BufferBuilder ctor + emit live
+      }
    }
 }
