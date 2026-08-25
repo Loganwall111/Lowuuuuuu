@@ -6,7 +6,17 @@ plugins {
 	id 'maven-publish'
 }
 
-version = project.mod_version
+// Builds are stamped with the CI run number + commit when building in GitHub
+// Actions, so every artifact is uniquely identifiable (jar filename AND the
+// version Fabric/Mod Menu reports). Local builds fall back to the plain version.
+def ciRun = System.getenv('GITHUB_RUN_NUMBER')
+def ciSha = System.getenv('GITHUB_SHA')?.take(7)
+if (ciRun != null) {
+	version = "${project.mod_version}+build.${ciRun}${ciSha ? '.' + ciSha : ''}"
+} else {
+	version = project.mod_version
+}
+println "Building Devouring Storms version: ${version}"
 group = project.maven_group
 
 base {
