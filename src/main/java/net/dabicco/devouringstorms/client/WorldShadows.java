@@ -265,7 +265,12 @@ public final class WorldShadows {
             if (StormShadowMap.build(new Vector3f((float)sun.x, (float)sun.y, (float)sun.z), new Vector3f(0.0F, 0.0F, 0.0F), EXTENT)) {
                float strength = (float)DevouringStormsClientConfig.worldShadowStrength * altitude;
                // cool blue-grey: a real shadow keeps only skylight
-               StormShadow.drawShadowPass(camera, sun, strength, 0.44F, 0.49F, 0.60F, false, true, 0.0F, DevouringStormsClientConfig.stormShadowSoftEdge, "world");
+               // selfShadow=true here does NOT mean storm self-shading: it lets pixels the
+// coarse lid misclasses as "aloft" (cliffs, towers - anything 28+ blocks
+// above the sampled surface) still take the shaded path from the same sun
+// map instead of being skipped outright. Contrast stays 0, so the treatment
+// is identical to the ground path.
+               StormShadow.drawShadowPass(camera, sun, strength, 0.44F, 0.49F, 0.60F, true, true, 0.0F, DevouringStormsClientConfig.stormShadowSoftEdge, "world");
                status("world shadows drawing (" + casterFaces + " terrain cells, strength " + String.format("%.2f", strength) + ")");
             }
          } finally {

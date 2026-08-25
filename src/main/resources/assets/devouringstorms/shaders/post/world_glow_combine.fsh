@@ -24,5 +24,11 @@ out vec4 fragColor;
 void main() {
     vec3 base = texture(InSampler, texCoord).rgb;
     vec3 glow = texture(BloomSampler, texCoord).rgb;
+    // SATURATE the glow before adding it. A blurred halo averages toward grey,
+    // and a grey add reads as WHITE light -- the "lighting is there but not
+    // coloured" look. Pushing each pixel toward its dominant hue first is
+    // what makes a torch halo read orange and lava read red.
+    float luma = dot(glow, vec3(0.2126, 0.7152, 0.0722));
+    glow = mix(vec3(luma), glow, 1.75);
     fragColor = vec4(base + glow * Params.x, 1.0);
 }

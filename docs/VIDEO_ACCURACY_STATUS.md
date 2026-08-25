@@ -274,3 +274,43 @@ up" vs the reference shots, (3) billboard-looking glow still present.
    full moon as 80% of daylight, so the ambient cloud ceiling glared
    near-white at midnight. New ramp: 1.0 at noon → ~0.37 at the horizon →
    0.16 floor at midnight.
+
+---
+
+## Pass 5 — official assets + phase skybox (2026-08-25)
+
+User uploaded the official Telltale-tweak cloud shader, a Stage D COLLADA
+model, the blue energy gradient and the sky-only-no-clouds anomaly plate
+(commit 217682f also carried an older snapshot of the whole tree, which was
+replaced by the current branch head; only the new assets were kept, filed
+under textures/sky + geo + tools/official).
+
+**Shipped:**
+
+1. **Official cloud shader ported** into the vanilla-override
+   `rendertype_clouds.vsh` (26.2 contract): official knobs — 2.5x vertical
+   cloud scaling, Y offset, per-face brightness, vertical alpha fade
+   `a = base * (0.8 - fade)`. Reference copy kept at
+   `tools/official/rendertype_clouds_OFFICIAL.vsh`.
+2. **StormSkyDome** — the entity-tethered phase skybox: dome centred on the
+   storm core sampling the uploaded plates vertically by view-ray elevation
+   and horizontally by azimuth; blue/cyan energy at phase 4+ (phase4_energy),
+   crossfading 5.5→6.0 into the deep purple/black/orange anomaly
+   (phase59_anomaly), then tinted through vibrant orange→red→magenta across
+   phases 6→8; additive, depth-write off, terrain never clipped; intensity
+   driven by player↔storm distance.
+3. **Clean sky**: ambient cloud deck now defaults OFF, cluster-ejecta "dust"
+   (glareEjecta) defaults OFF, and the storm deck prisms fade out under the
+   anomaly dome (phase ≥ ~5.5) so the no-clouds plate reads clean.
+4. **OG traced models by default**: the Blockbench stage shells no longer
+   require the Shaded preset — they render in every skin, so the traced
+   bodies + original textures are what you see out of the box.
+5. **World shadows**: worldShadowStrength default 0.70 and the pass now lets
+   tall-terrain pixels (cliffs/towers the coarse lid misclassifies) take the
+   shaded path instead of being skipped — the "no shadows on hills" hole.
+6. **Coloured lighting**: the emissive bloom now saturates each glow pixel
+   toward its dominant hue before adding, so torch halos read orange, lava
+   red, enchanting blue — not white.
+7. **Palettes 6-8**: cataclysm sky/cloud colours shifted toward the vibrant
+   red/orange/magenta story beats (fog + lightmap grading follow the same
+   palette system).

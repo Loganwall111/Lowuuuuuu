@@ -29,6 +29,7 @@ import net.dabicco.devouringstorms.client.DistantStormRenderer;
 import net.dabicco.devouringstorms.client.StormCataclysmFX;
 import net.dabicco.devouringstorms.client.StormCloudDeck;
 import net.dabicco.devouringstorms.client.StormSkyCanopy;
+import net.dabicco.devouringstorms.client.StormSkyDome;
 import net.dabicco.devouringstorms.client.StormPresenceFX;
 import net.dabicco.devouringstorms.client.StormPulseFX;
 import net.dabicco.devouringstorms.client.StormStarfield;
@@ -217,6 +218,7 @@ public class DevouringStormsModClient implements ClientModInitializer {
       LevelRenderEvents.COLLECT_SUBMITS.register(FormidibombBlast::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormStarfield::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormSkyCanopy::submit);
+      LevelRenderEvents.COLLECT_SUBMITS.register(StormSkyDome::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormCloudDeck::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormCataclysmFX::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPresenceFX::submit);

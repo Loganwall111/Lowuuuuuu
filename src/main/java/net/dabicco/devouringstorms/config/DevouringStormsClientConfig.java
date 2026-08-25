@@ -88,7 +88,7 @@ public class DevouringStormsClientConfig {
    public static double sunGlowB = 0.34;
    public static double stormShadowStrength = 0.55;
    public static boolean worldShadows = true;
-   public static double worldShadowStrength = 0.65;
+   public static double worldShadowStrength = 0.70;
    public static boolean worldEmissiveGlow = true;
    public static double stormShadowR = 0.42;
    public static double stormShadowG = 0.46;
@@ -135,7 +135,7 @@ public class DevouringStormsClientConfig {
    public static double stormCloudCoverage = 1.35;
    public static double stormCloudAltitude = (double)0.0F;
    public static double stormCloudPaletteMix = 1.0;
-   public static boolean ambientMcsmClouds = true;
+   public static boolean ambientMcsmClouds = false;
    public static boolean elevateVanillaClouds = true;
    public static boolean atmospherePulse = true;
    public static double pulseStrength = (double)1.0F;
@@ -150,7 +150,7 @@ public class DevouringStormsClientConfig {
    public static double blackGlareStrength = (double)1.0F;
    public static boolean bloomedBackdrop = false;
    public static boolean earlyVortexRings = false;
-   public static boolean glareEjecta = true;
+   public static boolean glareEjecta = false;
    public static double ejectaRate = (double)1.0F;
    public static double ejectaBrightness = (double)1.0F;
    public static boolean pulseHeartbeat = false;

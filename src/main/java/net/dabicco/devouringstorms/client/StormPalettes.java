@@ -27,7 +27,7 @@ public final class StormPalettes {
    private static final float[] SKY_TURQUOISE = {0.090F, 0.46F, 0.50F};
    private static final float[] SKY_PURPLE = {0.26F, 0.11F, 0.30F};
    private static final float[] SKY_PINK_HORIZON = {0.36F, 0.17F, 0.33F};
-   private static final float[] SKY_CATACLYSM = {0.13F, 0.05F, 0.16F};
+   private static final float[] SKY_CATACLYSM = {0.36F, 0.10F, 0.17F};
 
    /** Attached storm-back backdrop / glare bubble colours. */
    private static final float[] BACKDROP_VOID_WHITE = {0.90F, 0.90F, 0.95F};
@@ -54,7 +54,7 @@ public final class StormPalettes {
    private static final float[] CLOUD_GREEN = {0.26F, 0.31F, 0.28F};
    private static final float[] CLOUD_TURQUOISE = {0.30F, 0.26F, 0.38F};
    private static final float[] CLOUD_PINK = {0.34F, 0.24F, 0.40F};
-   private static final float[] CLOUD_CATACLYSM = {0.11F, 0.08F, 0.16F};
+   private static final float[] CLOUD_CATACLYSM = {0.34F, 0.11F, 0.18F};
 
    /** Starfield. */
    private static final float[] STAR_WHITE = {0.90F, 0.92F, 1.0F};

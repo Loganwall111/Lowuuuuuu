@@ -196,28 +196,5 @@ public final class StormSkyCanopy {
       collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(WHITE_TEXTURE), (pose, consumer) -> {
          renderHorizonBand(consumer, pose, cam, horizon, bandStrength);
       });
-      if (claim > 0.01F) {
-         // glow arc behind the nearest storm only
-         double bestSq = Double.MAX_VALUE;
-         double sx = cam.x;
-         double sz = cam.z;
-         float phase = Math.max(StormSkyDarken.palettePhase(), StormSkyDarken.globalPhase());
-         for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-            double dsq = (d.x - cam.x) * (d.x - cam.x) + (d.z - cam.z) * (d.z - cam.z);
-            if (dsq < bestSq) {
-               bestSq = dsq;
-               sx = d.x;
-               sz = d.z;
-               phase = d.phase;
-            }
-         }
-
-         final double stormX = sx;
-         final double stormZ = sz;
-         final float arcPhase = phase;
-         collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(BAND_TEXTURE), (pose, consumer) -> {
-            renderStormArc(consumer, pose, cam, stormX, stormZ, arcPhase, claim);
-         });
-      }
    }
 }

@@ -828,11 +828,14 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
    }
 
    private static String stageShellName(WitherStormRenderState state) {
-      return StormSkins.shaded() && DevouringStormsClientConfig.stormStageShells ? StormStageShells.shellForPhase(state.phase) : null;
+      // the traced Blockbench stage bodies render in EVERY skin now - the OG
+      // look is the traced models with the original textures, not just the
+      // separate shaded preset
+      return DevouringStormsClientConfig.stormStageShells ? StormStageShells.shellForPhase(state.phase) : null;
    }
 
    private static float stageShellAlpha(WitherStormRenderState state) {
-      if (!StormSkins.shaded() || !DevouringStormsClientConfig.stormStageShells) {
+      if (!DevouringStormsClientConfig.stormStageShells) {
          return 0.0F;
       } else if (!state.phase4) {
          float early = 0.34F + 0.18F * Mth.clamp((float)(state.phase / 3.0), 0.0F, 1.0F);

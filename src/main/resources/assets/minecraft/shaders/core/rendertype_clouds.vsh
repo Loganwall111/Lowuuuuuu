@@ -70,20 +70,16 @@ const vec3[] vertices = vec3[](
     vec3(1, 0, 1)
 );
 
-const vec4[] faceColors = vec4[](
-    // Bottom face - deep ambient shadow, semi-transparent underside
-    vec4(0.46, 0.48, 0.55, 0.55),
-    // Top face - crisp full-bright
-    vec4(1.0, 1.0, 1.0, 1.0),
-    // North face - soft shade
-    vec4(0.70, 0.72, 0.80, 1.0),
-    // South face - soft shade
-    vec4(0.70, 0.72, 0.80, 1.0),
-    // West face - lighter, catching the sun
-    vec4(0.84, 0.86, 0.92, 1.0),
-    // East face - lighter, catching the sun
-    vec4(0.84, 0.86, 0.92, 1.0)
-);
+// --- official Telltale-tweak knobs, ported from the uploaded shader ---
+const float CloudFadeAlpha   = 0.0;  // 0 = a full 0 alpha fade at the far side
+const float CloudHeight      = 2.5;  // vertical scaling (the chunky look)
+const float CloudYOffset     = 0.0;
+const float BrightnessBottom = 1.0;
+const float BrightnessTop    = 1.0;
+const float BrightnessNorth  = 1.0;
+const float BrightnessSouth  = 1.0;
+const float BrightnessWest   = 1.0;
+const float BrightnessEast   = 1.0;
 
 void main() {
     int quadVertex = gl_VertexID % 4;
@@ -98,9 +94,34 @@ void main() {
     cellX = (cellX << 1) | ((dirAndFlags & FLAG_EXTRA_X) >> 7);
     cellZ = (cellZ << 1) | ((dirAndFlags & FLAG_EXTRA_Z) >> 6);
     vec3 faceVertex = vertices[(direction * 4) + (isInsideFace ? 3 - quadVertex : quadVertex)];
-    vec3 pos = (faceVertex * CellSize) + (vec3(cellX, 0, cellZ) * CellSize) + CloudOffset;
-    gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
 
+    // World position with the official scaling & offset
+    vec3 scaledVertex = faceVertex * CellSize;
+    scaledVertex.y *= CloudHeight;
+    vec3 pos = scaledVertex + (vec3(cellX, 0, cellZ) * CellSize) + CloudOffset + vec3(0, CloudYOffset, 0);
+
+    gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
     vertexDistance = fog_spherical_distance(pos);
-    vertexColor = (useTopColor ? faceColors[1] : faceColors[direction]) * CloudColor;
+
+    // Official flat brightness per face
+    float brightness = 1.0;
+    if (useTopColor || direction == 1) brightness = BrightnessTop;
+    else if (direction == 0) brightness = BrightnessBottom;
+    else if (direction == 2) brightness = BrightnessNorth;
+    else if (direction == 3) brightness = BrightnessSouth;
+    else if (direction == 4) brightness = BrightnessWest;
+    else if (direction == 5) brightness = BrightnessEast;
+
+    // Official vertical alpha fade
+    float vertexY = pos.y - CloudOffset.y;
+    float normalizedY = clamp(vertexY / CloudHeight, 0.0, 1.0);
+    float dirRel = clamp(CloudOffset.y / CloudHeight, -1.0, 1.0);
+    float fadeBelow = mix(normalizedY, 1.0, CloudFadeAlpha);
+    float fadeAbove = mix(1.0 - normalizedY, 1.0, CloudFadeAlpha);
+    float mixFactor = (dirRel + 1.0) * 0.5;
+    float fade = mix(fadeBelow, fadeAbove, mixFactor);
+
+    vec3 rgb = vec3(brightness);
+    float finalA = CloudColor.a * (0.8 - fade);
+    vertexColor = vec4(rgb, finalA) * CloudColor;
 }

@@ -352,7 +352,11 @@ public final class StormCloudDeck {
          float[] inner = new float[3];
 
          for (ClientDistantStormManager.StormData d : storms) {
-            renderField(consumer, pose, cam, nowSec, mode, coverage, baseAlpha, d.entityId, d.phase, d.expansionPhase, d.dispX, d.dispY, d.dispZ, 1.0F, outer, inner);
+            // once the anomaly dome owns the sky (phase ~5.5+) the deck's
+            // prisms melt away - the uploaded anomaly plate is a sky WITHOUT
+            // clouds and our synthetic ones must not fight it
+            float veil = 1.0F - StormSkyDome.domeVeil(d.phase);
+            renderField(consumer, pose, cam, nowSec, mode, coverage, baseAlpha, d.entityId, d.phase, d.expansionPhase, d.dispX, d.dispY, d.dispZ, veil, outer, inner);
          }
 
          if (global) {
