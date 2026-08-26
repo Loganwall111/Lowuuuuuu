@@ -21,7 +21,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -69,7 +68,6 @@ import org.joml.Vector3f;
 public final class StormSkyBox {
    private static final Identifier ENERGY_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/sky/phase4_energy.png");
    private static final Identifier ANOMALY_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/sky/phase59_anomaly.png");
-   private static final Identifier CLOUD_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/mcsm_cloud.png");
    /** Main-game (no-storm) MCSM accents. */
    private static final Identifier HORIZON_GLOW_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/sky/horizon_glow.png");
    private static final Identifier MOON_HALO_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/sky/moon_halo.png");
@@ -79,9 +77,6 @@ public final class StormSkyBox {
    private static final float[] ELEVATIONS = new float[]{0.0F, 7.0F, 15.0F, 26.0F, 40.0F, 58.0F, 78.0F, 90.0F};
    private static final float[] RING_WEIGHTS = new float[]{1.0F, 0.95F, 0.85F, 0.66F, 0.45F, 0.26F, 0.12F, 0.04F};
    private static final int SEGMENTS = 28;
-   /** Cloud band elevations (degrees) — two chunky strata. */
-   private static final float[] CLOUD_ELEV_A = new float[]{12.0F, 24.0F, 36.0F};
-   private static final float[] CLOUD_ELEV_B = new float[]{6.0F, 14.0F, 26.0F};
    /** InPosition xyz + InTexCoords uv + InColor rgba, all float channels. */
    private static final int FLOATS_PER_VERTEX = 9;
 
@@ -181,7 +176,6 @@ public final class StormSkyBox {
             float intensity = SkyAtmosphereController.intensity();
             float energy = SkyAtmosphereController.energyWeight() * intensity;
             float anomaly = SkyAtmosphereController.anomalyWeight() * intensity;
-            float clouds = SkyAtmosphereController.cloudWeight() * intensity;
             float phase = SkyAtmosphereController.phase();
             Vector3f target = stormBearingLocal();
             if (energy > 0.02F) {
@@ -200,16 +194,11 @@ public final class StormSkyBox {
                drawLayer(ANOMALY_TEXTURE, (writer) -> emitDome(writer, target, tint, anomaly, 1.12F, 0.35F, false));
             }
 
-            if (clouds > 0.02F) {
-               // the wired-in storm cloud bands: chunky, churning, indigo -> dark purple
-               float late = StormCloudDeck.smooth(phase, 5.3F, 6.2F);
-               float[] tintA = new float[]{Mth.lerp(late, 0.34F, 0.26F), Mth.lerp(late, 0.38F, 0.17F), Mth.lerp(late, 0.56F, 0.36F)};
-               float[] tintB = new float[]{Mth.lerp(late, 0.28F, 0.20F), Mth.lerp(late, 0.31F, 0.13F), Mth.lerp(late, 0.50F, 0.30F)};
-               drawLayer(CLOUD_TEXTURE, (writer) -> emitCloudBand(writer, target, CLOUD_ELEV_A, tintA, clouds * 0.8F, 1.6F, 18));
-               drawLayer(CLOUD_TEXTURE, (writer) -> emitCloudBand(writer, target, CLOUD_ELEV_B, tintB, clouds * 0.62F, -1.1F, 14));
-            }
+            // (dome cloud bands removed: clouds are the ST cloud system with the
+         // uploaded rendertype_clouds shader — the storm skybox paints plates
+         // and bloom only, never clouds)
 
-            // phase 6+ mutation flash bloom — same sky layer, localized around the
+      // phase 6+ mutation flash bloom — same sky layer, localized around the
             // storm bearing, never a full-screen overlay
             StormMutationFlash.renderSkyBloom(target);
             return true;
@@ -369,53 +358,6 @@ public final class StormSkyBox {
       return quads;
    }
 
-   /** Chunky churning cloud strata between the given elevations. */
-   private static int emitCloudBand(StormSkyWriter w, Vector3f target, float[] elevations, float[] tint, float alpha, float churnDir, int segments) {
-      float churn = SkyAtmosphereController.churn() * churnDir;
-      float coneCos = (float)Math.cos((double)Mth.clamp(SkyAtmosphereController.coneRadians() * 1.35F, 0.5F, 2.8F));
-      float tr = Mth.clamp(tint[0], 0.0F, 1.0F);
-      float tg = Mth.clamp(tint[1], 0.0F, 1.0F);
-      float tb = Mth.clamp(tint[2], 0.0F, 1.0F);
-      int quads = 0;
-
-      for (int i = 0; i < elevations.length - 1; i++) {
-         float lo = (float)Math.toRadians((double)elevations[i]);
-         float hi = (float)Math.toRadians((double)elevations[i + 1]);
-         float yLo = Mth.sin(lo) * RADIUS;
-         float rLo = Mth.cos(lo) * RADIUS;
-         float yHi = Mth.sin(hi) * RADIUS;
-         float rHi = Mth.cos(hi) * RADIUS;
-         float bandLo = 1.0F - (float)i * 0.22F;
-         float bandHi = 1.0F - (float)(i + 1) * 0.22F;
-
-         for (int s = 0; s < segments; s++) {
-            float az0 = (float)(Math.PI * 2.0 * (double)s / (double)segments);
-            float az1 = (float)(Math.PI * 2.0 * (double)(s + 1) / (double)segments);
-            float c00 = coneWeight(dir(az0, yLo, rLo), target, coneCos);
-            float c01 = coneWeight(dir(az1, yLo, rLo), target, coneCos);
-            float c11 = coneWeight(dir(az1, yHi, rHi), target, coneCos);
-            float c10 = coneWeight(dir(az0, yHi, rHi), target, coneCos);
-            float a00 = alpha(alpha, c00 * bandLo);
-            float a01 = alpha(alpha, c01 * bandLo);
-            float a11 = alpha(alpha, c11 * bandHi);
-            float a10 = alpha(alpha, c10 * bandHi);
-            if (a00 + a01 + a11 + a10 <= 0.032F) {
-               continue;
-            }
-
-            float u0 = 0.5F + 0.4F * Mth.sin(az0 + churn);
-            float u1 = 0.5F + 0.4F * Mth.sin(az1 + churn);
-            w.vertex(Mth.cos(az0) * rLo, yLo, Mth.sin(az0) * rLo, u0, 0.68F, tr, tg, tb, a00);
-            w.vertex(Mth.cos(az1) * rLo, yLo, Mth.sin(az1) * rLo, u1, 0.68F, tr, tg, tb, a01);
-            w.vertex(Mth.cos(az1) * rHi, yHi, Mth.sin(az1) * rHi, u1, 0.95F, tr, tg, tb, a11);
-            w.vertex(Mth.cos(az0) * rHi, yHi, Mth.sin(az0) * rHi, u0, 0.95F, tr, tg, tb, a10);
-            quads++;
-         }
-      }
-
-      return quads;
-   }
-
    private static Vector3f dir(float azimuth, float y, float r) {
       Vector3f v = new Vector3f(Mth.cos(azimuth) * r, y, Mth.sin(azimuth) * r);
       return v.normalize();
@@ -482,7 +424,11 @@ public final class StormSkyBox {
             RenderSystem.AutoStorageIndexBuffer indexer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
             GpuBuffer indices = indexer.getBuffer(indexCount);
             RenderTarget mainTarget = mc.gameRenderer.mainRenderTarget();
-            RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "dabyws storm sky", mainTarget.getColorTextureView(), Optional.empty(), mainTarget.getDepthTextureView(), OptionalDouble.of(1.0));
+            // COLOR ONLY — no depth attachment in any form. Binding (and
+            // clearing) the main depth buffer from the sky pass corrupted it
+            // for everything drawn afterwards (void world, flickering
+            // shadows). The sky is the backdrop; it never needs depth.
+            RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "dabyws storm sky", mainTarget.getColorTextureView(), Optional.empty());
 
             try {
                renderPass.setPipeline(pipeline());

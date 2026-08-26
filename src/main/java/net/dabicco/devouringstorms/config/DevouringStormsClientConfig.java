@@ -123,7 +123,7 @@ public class DevouringStormsClientConfig {
    public static double shaderPackEmissiveGain = (double)1.0F;
    public static double stormStars = (double)2.0F;
    public static final String[] STAR_LABELS = new String[]{"Off", "Storm Nights", "Every Night"};
-   public static double starDensity = (double)1.0F;
+   public static double starDensity = (double)0.7F;
    public static double starTwinkleSpeed = (double)1.0F;
    public static double starBrightness = (double)1.0F;
    public static double stormCloudDeck = (double)2.0F;

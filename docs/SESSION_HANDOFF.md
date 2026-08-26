@@ -334,3 +334,20 @@ the pipeline rewrite but kept applying at runtime. LESSONS:
   float,float) EXISTS; renderEndSky uses getSequentialBuffer(PrimitiveTopology.QUADS),
   5-arg drawIndexed, getModelViewStack, writeTransform, bindDefaultUniforms — the rebuilt
   sky pass matches the official shapes.
+
+## PASS 7 CONT 4 — VOID WORLD + CLOUD SYSTEM DECISIONS (1.9.85)
+
+User report on 1.9.84: "complete void, couldn't see the ground, clouds broken pieces".
+Root cause of the void: the sky passes bound the MAIN depth attachment and cleared it
+(OptionalDouble.of(1.0)) — 26.2's GL depth is reverse-Z, so clearing to 1.0 = clearing to
+NEAR: every terrain pixel afterwards failed depth. FIX: the official CommandEncoder has a
+3-arg createRenderPass(label, colorView, clearColor) with NO depth attachment at all —
+sky passes now use it (color-only; they never needed depth).
+DECISIONS per user:
+- Clouds = the ST cloud system ONLY (uploaded rendertype_clouds.vsh, already ported +
+  corrected). The storm skybox NO LONGER paints dome cloud bands (emitCloudBand removed).
+  Cloud color follows time of day + storm phases via CloudColorMixin / deck palettes.
+- Core halo billboard replaced by physical world-anchored glow sphere (stacked rings).
+- starDensity default lowered to 0.7 ("scattered low-density square stars").
+RULE: never bind or clear the main depth buffer from a sky/overlay pass; use the 3-arg
+color-only createRenderPass.
