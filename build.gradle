@@ -6,17 +6,7 @@ plugins {
 	id 'maven-publish'
 }
 
-// Builds are stamped with the CI run number + commit when building in GitHub
-// Actions, so every artifact is uniquely identifiable (jar filename AND the
-// version Fabric/Mod Menu reports). Local builds fall back to the plain version.
-def ciRun = System.getenv('GITHUB_RUN_NUMBER')
-def ciSha = System.getenv('GITHUB_SHA')?.take(7)
-if (ciRun != null) {
-	version = "${project.mod_version}+build.${ciRun}${ciSha ? '.' + ciSha : ''}"
-} else {
-	version = project.mod_version
-}
-println "Building Devouring Storms version: ${version}"
+version = project.mod_version
 group = project.maven_group
 
 base {
@@ -45,7 +35,7 @@ loom {
 	// does not exist". The original mod was built without split source sets.
 
 	mods {
-		"devouringstorms" {
+		"dabywitherstormmod" {
 			sourceSet sourceSets.main
 		}
 	}

@@ -12,7 +12,7 @@ Pure stdlib (zlib/struct) PNG codec so it runs anywhere:
 import struct, zlib, math, os, random
 
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                    "src/main/resources/assets/devouringstorms/textures")
+                    "src/main/resources/assets/dabywitherstormmod/textures")
 
 # ---------------- PNG codec ----------------
 

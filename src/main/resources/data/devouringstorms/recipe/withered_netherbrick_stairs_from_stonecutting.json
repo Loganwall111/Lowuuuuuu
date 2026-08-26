@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:stonecutting",
-  "ingredient": "devouringstorms:withered_netherbrick",
-  "result": {
-    "id": "devouringstorms:withered_netherbrick_stairs",
-    "count": 1
-  }
-}

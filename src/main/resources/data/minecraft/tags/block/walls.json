@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "devouringstorms:withered_cobblestone_wall",
-    "devouringstorms:withered_netherbrick_wall"
+    "dabywitherstormmod:withered_cobblestone_wall",
+    "dabywitherstormmod:withered_netherbrick_wall"
   ]
 }

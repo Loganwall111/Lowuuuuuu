@@ -1,4 +1,4 @@
-# Devouring Storms — Clean Rewrite Plan
+# Wither Storm Mod — Clean Rewrite Plan
 
 We are rewriting the mod from scratch as a clean, modern Fabric mod for
 **Minecraft 26.2 / Java 25 / Fabric Loader 0.19.3**. The old decompiled source is
@@ -17,7 +17,7 @@ rewritten cleanly.
 - All resources under `src/main/resources` (textures, models, sounds, lang, data).
 
 **Rewritten clean (this branch):**
-- `DevouringStormsMod` / `DevouringStormsModClient` — clean init that only wires the
+- `DabyWitherStormMod` / `DabyWitherStormModClient` — clean init that only wires the
   things that exist.
 - `entity/ModEntityTypes` — clean entity registration (storm, head, skull, cluster,
   severed, tentacle, + the working support entities).
@@ -32,9 +32,9 @@ rewritten cleanly.
 ## Architecture (package map)
 
 ```
-net.dabicco.devouringstorms
-├── DevouringStormsMod          main entrypoint
-├── DevouringStormsModClient    client entrypoint
+net.dabicco.witherstormmod
+├── DabyWitherStormMod          main entrypoint
+├── DabyWitherStormModClient    client entrypoint
 ├── Mod*                        registries (kept)
 ├── config/                     kept, working
 ├── entity/

@@ -1,18 +1,18 @@
 {
   "replace": false,
   "values": [
-    "devouringstorms:furnace_filter",
-    "devouringstorms:withered_cobblestone",
-    "devouringstorms:withered_netherbrick",
-    "devouringstorms:withered_cobblestone_stairs",
-    "devouringstorms:withered_cobblestone_slab",
-    "devouringstorms:withered_cobblestone_wall",
-    "devouringstorms:withered_netherbrick_stairs",
-    "devouringstorms:withered_netherbrick_slab",
-    "devouringstorms:withered_netherbrick_wall",
-    "devouringstorms:withered_netherbrick_fence",
-    "devouringstorms:withered_stone",
-    "devouringstorms:withered_stone_stairs",
-    "devouringstorms:withered_stone_slab"
+    "dabywitherstormmod:furnace_filter",
+    "dabywitherstormmod:withered_cobblestone",
+    "dabywitherstormmod:withered_netherbrick",
+    "dabywitherstormmod:withered_cobblestone_stairs",
+    "dabywitherstormmod:withered_cobblestone_slab",
+    "dabywitherstormmod:withered_cobblestone_wall",
+    "dabywitherstormmod:withered_netherbrick_stairs",
+    "dabywitherstormmod:withered_netherbrick_slab",
+    "dabywitherstormmod:withered_netherbrick_wall",
+    "dabywitherstormmod:withered_netherbrick_fence",
+    "dabywitherstormmod:withered_stone",
+    "dabywitherstormmod:withered_stone_stairs",
+    "dabywitherstormmod:withered_stone_slab"
   ]
 }

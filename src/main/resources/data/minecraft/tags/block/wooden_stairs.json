@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "devouringstorms:withered_stairs",
-    "devouringstorms:stripped_withered_stairs"
+    "dabywitherstormmod:withered_stairs",
+    "dabywitherstormmod:stripped_withered_stairs"
   ]
 }

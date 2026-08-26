@@ -1,6 +1,0 @@
-{
-  "variants": {
-    "lit=false": { "model": "devouringstorms:block/furnace_filter" },
-    "lit=true":  { "model": "devouringstorms:block/furnace_filter_on" }
-  }
-}

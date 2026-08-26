@@ -1,10 +1,12 @@
-# Devouring Storms — clean rewrite
+# Dabicco's Wither Storm Mod — clean rewrite
 
-This repository is the **clean rewrite** of **Devouring Storms**, a modernized Fabric rebuild of the original *Minecraft: Story Mode* Wither Storm mod work. The old decompiled source was partially broken (missing models, mixins, renderers), so instead of patching it in place, this branch rebuilds the project as a coherent source-first mod.
+This repository is the **clean rewrite** of Dabicco's Wither Storm Mod (the
+*Minecraft: Story Mode*–inspired Wither Storm boss). The original decompiled source
+was partially broken (missing models, mixins, renderers), so instead of patching it we
+rebuild it as a fresh, modern Fabric mod.
 
-**Original jar source:** `dabywitherstormmod-1.9.60-26.2-beta.zip` (Fabric, Minecraft 26.2, Java 25)
-**Current mod id / artifact:** `devouringstorms`
-**License:** MIT — see `LICENSE` (© 2026 Logan Wall).
+**Original jar:** `dabywitherstormmod-1.9.60-26.2-beta.zip` (Fabric, Minecraft 26.2, Java 25)
+**License:** MIT — see `LICENSE` (© 2026 Dabicco).
 
 ---
 
@@ -13,61 +15,67 @@ This repository is the **clean rewrite** of **Devouring Storms**, a modernized F
 ```
 src/main/resources/       Mod assets (textures, models, blockstates, lang, sounds, data)
 src/main/java/            Fresh Java source
-├── DevouringStormsMod        clean server entrypoint
-├── DevouringStormsModClient  clean client entrypoint
-├── Mod*                      kept, working registries (config, sounds, blocks, items...)
+├── DabyWitherStormMod    clean server entrypoint
+├── DabyWitherStormModClient  clean client entrypoint
+├── Mod*                  kept, working registries (config, sounds, blocks, items...)
 └── entity/
-    ├── WitherStormEntity     fresh phase-driven boss core
-    ├── WitherStormPhase      phase enum + growth requirements
-    ├── ai/                   fresh AI goals (hunt, absorb)
-    ├── ability/              fresh ability framework + super skull, tractor beam
-    ├── renderer/             renderer pipeline wired to Blockbench-driven models
-    └── model/                model layer registry
-build.gradle                  Fabric Loom build script
-docs/                         rewrite plan + feature roadmap + validation notes
-tools/                        asset recovery / restore helpers
+    ├── WitherStormEntity  fresh phase-driven boss core
+    ├── WitherStormPhase   phase enum + growth requirements
+    ├── ai/                fresh AI goals (hunt, absorb)
+    ├── ability/           fresh ability framework + super skull, tractor beam
+    ├── renderer/          fresh renderer (plugs into Blockbench models)
+    └── model/             model layer registry
+build.gradle              Fabric Loom build script (from the jar's manifest)
+docs/                     rewrite plan + feature roadmap
+mod/                      Full raw extraction of the jar (gitignored; reference only)
 ```
 
-## Building
+## Building (on a machine with Java 25 + network access to Fabric/Maven)
 
-Build on a machine with **Java 25** and network access to Fabric/Maven.
-
-The repo ships with the **Gradle wrapper scripts** (`gradlew`, `gradlew.bat`) and
-`gradle/wrapper/gradle-wrapper.properties`. If `gradle-wrapper.jar` is missing, fetch it once:
+The repo ships with the **Gradle wrapper** (`gradlew`, `gradlew.bat`,
+`gradle/wrapper/gradle-wrapper.properties`). Only the wrapper **jar** needs fetching
+once (it is a ~43 KB binary and can't be committed as text). Two ways:
 
 ```bash
-# A) One-shot setup script
+# A) One-shot script (recommended) — downloads gradle-wrapper.jar:
 bash tools/setup-gradle-wrapper.sh
 
-# B) Or, if you already have Gradle 8+/9+
+# B) If you already have any Gradle 8+/9+ installed:
 gradle wrapper --gradle-version 9.5.1
 ```
 
-Then build:
+Then:
 
 ```bash
+# 1. Make sure fabric_version + yarn_mappings are set in gradle.properties
+# 2. Build
 ./gradlew build            # Linux / macOS
 # gradlew.bat build        # Windows
-# output: build/libs/devouringstorms-1.9.60-26.2-beta.jar
+# output: build/libs/dabywitherstormmod-1.9.60-26.2-beta.jar
 ```
 
-> `gradle-wrapper.properties` pins **Gradle 9.5.1**. If Fabric Loom needs a newer Gradle,
-> bump it there and rerun the wrapper setup.
+> `gradle-wrapper.properties` pins **Gradle 9.5.1** (matches the original jar's
+> `Fabric-Gradle-Version`). If Fabric Loom 1.17.19 needs a newer Gradle, bump the
+> version there and re-run the setup script.
 
-## Recovering the missing classes from the original jar
+## Recovering the "missing" classes from the original jar
 
 See **`tools/restore-missing-classes.sh`** — it decompiles
-`dabywitherstormmod-1.9.60-26.2-beta.zip`, rewrites the recovered sources into the
-current `net.dabicco.devouringstorms` package, and drops the missing `.java` files back
-into `src/main/java`.
+`dabywitherstormmod-1.9.60-26.2-beta.zip` and drops the 129 missing `.java` files back
+into `src/main/java`, unblocking the mixins, models, renderers and items the clean
+rewrite needs to compile fully.
 
-## Project docs
+## The rewrite
 
-- **[docs/REWRITE_PLAN.md](docs/REWRITE_PLAN.md)** — architecture and package layout
-- **[docs/WITHER_STORM_FEATURE_ROADMAP.md](docs/WITHER_STORM_FEATURE_ROADMAP.md)** — long-form feature roadmap
-- **[docs/VIDEO_ACCURACY_STATUS.md](docs/VIDEO_ACCURACY_STATUS.md)** — current implementation / validation status against the MCSM references
-- **[docs/BATCH_17_ASSET_AUDIT.md](docs/BATCH_17_ASSET_AUDIT.md)** — recovered texture inventory from the Blockbench archives
+See **[docs/REWRITE_PLAN.md](docs/REWRITE_PLAN.md)** for the architecture and data
+flow, and **[docs/WITHER_STORM_FEATURE_ROADMAP.md](docs/WITHER_STORM_FEATURE_ROADMAP.md)**
+for the feature list.
+
+The Wither Storm is a phase-driven state machine: it absorbs blocks/items/mobs to grow,
+and each phase unlocks new abilities. Models are built in **Blockbench** and dropped
+into `entity/model/`; the renderer and layer registry are already wired to consume them.
 
 ## Credits
 
-- **Logan Wall** — Project ownership, direction, rebrand and integration
+- **Dabicco** — Lead Programmer
+- **Joeyready** — Textures, Blocks, Items & Build

@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/outer_stairs",
-  "textures": {
-    "bottom": "devouringstorms:block/withered_stone",
-    "top": "devouringstorms:block/withered_stone",
-    "side": "devouringstorms:block/withered_stone"
-  }
-}

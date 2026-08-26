@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "###"
+  ],
+  "key": {
+    "#": "dabywitherstormmod:withered_planks"
+  },
+  "result": {
+    "id": "dabywitherstormmod:withered_slab",
+    "count": 6
+  }
+}

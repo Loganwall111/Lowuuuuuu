@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "devouringstorms:withered_slab",
-    "devouringstorms:stripped_withered_slab"
+    "dabywitherstormmod:withered_slab",
+    "dabywitherstormmod:stripped_withered_slab"
   ]
 }

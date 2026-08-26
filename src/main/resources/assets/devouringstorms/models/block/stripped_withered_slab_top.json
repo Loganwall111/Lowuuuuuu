@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/slab_top",
-  "textures": {
-    "bottom": "devouringstorms:block/stripped_withered_planks",
-    "top": "devouringstorms:block/stripped_withered_planks",
-    "side": "devouringstorms:block/stripped_withered_planks"
-  }
-}

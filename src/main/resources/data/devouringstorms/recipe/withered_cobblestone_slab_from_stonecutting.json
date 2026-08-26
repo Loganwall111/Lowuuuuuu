@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:stonecutting",
-  "ingredient": "devouringstorms:withered_cobblestone",
-  "result": {
-    "id": "devouringstorms:withered_cobblestone_slab",
-    "count": 2
-  }
-}
