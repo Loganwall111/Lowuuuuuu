@@ -26,9 +26,4 @@ public interface RenderPipelinesAccessor {
    static Snippet dabyws$entityEmissiveSnippet() {
       throw new AssertionError();
    }
-
-   @Accessor("MATRICES_PROJECTION_SNIPPET")
-   static Snippet dabyws$matricesProjectionSnippet() {
-      throw new AssertionError();
-   }
 }

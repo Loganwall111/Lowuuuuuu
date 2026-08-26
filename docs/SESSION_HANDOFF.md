@@ -316,3 +316,21 @@ composite. Fixes (both green-precedented shapes):
   OptionalDouble.empty() mid-frame, "don't care" leaves the buffer undefined downstream).
 RULE: any sky/glow pass that must never occlude needs an EXPLICIT depth state in 26.x —
 see GlowRenderTypes/FoglessRenderTypes which always set DepthStencilState(..., false).
+
+## PASS 7 CONT 3 — LAUNCH CRASH ROOT CAUSE (fixed in 1.9.83)
+
+User crash log (1.9.81/136): InvalidAccessorException "No candidates were found matching
+MATRICES_PROJECTION_SNIPPET" applying RenderPipelinesAccessor -> RenderPipelines, thrown
+from RenderTypes.<clinit> during Minecraft init => hard crash at launch, BEFORE any sky
+code ran. The accessor (added in pass 7 from the untrustworthy mirror) was dead code after
+the pipeline rewrite but kept applying at runtime. LESSONS:
+- @Accessor FIELD NAMES are validated at RUNTIME apply only (loom's build AP lets wrong
+  names through) — every accessor must be runtime-proven or sourced from official dumps.
+- The four remaining RenderPipelinesAccessor fields (ENTITY_SNIPPET, POST_PROCESSING_SNIPPET,
+  GLOBALS_SNIPPET, ENTITY_EMISSIVE_SNIPPET) are runtime-proven by the shipped 1.9.61 jar.
+- OFFICIAL 26.2 SOURCE DUMP (use this, not Renekovski's mirror):
+  github.com/366862732/DirectXmod -> docs/official-262/net/minecraft/client/renderer/...
+  Confirmed from it: SkyRenderer.renderSunMoonAndStars(PoseStack,float,float,float,MoonPhase,
+  float,float) EXISTS; renderEndSky uses getSequentialBuffer(PrimitiveTopology.QUADS),
+  5-arg drawIndexed, getModelViewStack, writeTransform, bindDefaultUniforms — the rebuilt
+  sky pass matches the official shapes.
