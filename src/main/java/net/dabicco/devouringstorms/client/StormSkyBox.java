@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
@@ -69,6 +70,9 @@ public final class StormSkyBox {
    private static final Identifier ENERGY_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/sky/phase4_energy.png");
    private static final Identifier ANOMALY_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/sky/phase59_anomaly.png");
    private static final Identifier CLOUD_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/misc/mcsm_cloud.png");
+   /** Main-game (no-storm) MCSM accents. */
+   private static final Identifier HORIZON_GLOW_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/sky/horizon_glow.png");
+   private static final Identifier MOON_HALO_TEXTURE = Identifier.fromNamespaceAndPath("devouringstorms", "textures/sky/moon_halo.png");
    /** Sky geometry radius — the same "infinite" band vanilla's sun/moon live in. */
    private static final float RADIUS = 320.0F;
    /** Elevation rings, degrees above the horizon plane of the dome. */
@@ -183,7 +187,7 @@ public final class StormSkyBox {
             if (energy > 0.02F) {
                // phase 4: black/purple void with blue/cyan energy highlights and a
                // yellow horizon accent on the lowest ring
-               float[] tint = new float[]{0.62F, 0.86F, 1.0F};
+               float[] tint = new float[]{0.52F, 0.74F, 0.98F};
                drawLayer(ENERGY_TEXTURE, (writer) -> emitDome(writer, target, tint, energy, 1.0F, 0.0F, true));
             }
 
@@ -192,7 +196,7 @@ public final class StormSkyBox {
                float mutation = Mth.clamp((phase - 6.0F) / 2.0F, 0.0F, 1.0F);
                float[] m = new float[3];
                SkyAtmosphereController.mutationTint(m);
-               float[] tint = new float[]{Mth.lerp(mutation, 0.9F, m[0]), Mth.lerp(mutation, 0.66F, m[1]), Mth.lerp(mutation, 0.92F, m[2])};
+               float[] tint = new float[]{Mth.lerp(mutation, 0.78F, m[0] * 0.9F), Mth.lerp(mutation, 0.52F, m[1] * 0.9F), Mth.lerp(mutation, 0.82F, m[2] * 0.9F)};
                drawLayer(ANOMALY_TEXTURE, (writer) -> emitDome(writer, target, tint, anomaly, 1.12F, 0.35F, false));
             }
 
@@ -211,6 +215,84 @@ public final class StormSkyBox {
             return true;
          }
       }
+   }
+
+   /**
+    * MAIN-GAME accents (no storm active): the Story-Mode horizon glow ring and
+    * the soft moon bloom halo, drawn after the vanilla celestial pass in the
+    * same sky-layer machinery. Never runs while the storm sky owns the frame.
+    */
+   public static void renderMainSkyAccents() {
+      try {
+         Minecraft mc = Minecraft.getInstance();
+         if (mc.level == null || !DevouringStormsClientConfig.mainSkyMCSM) {
+            return;
+         }
+         if (SkyAtmosphereController.active()) {
+            return;
+         }
+         long time = mc.level.getOverworldClockTime();
+         // horizon glow ring: full-circle low band, cyan day / glowing night
+         float[] glow = McsmSky.horizonGlowTint(time);
+         float glowStrength = glow[3] * 0.42F * McsmSky.rainBrightness();
+         if (glowStrength > 0.02F) {
+            drawLayer(HORIZON_GLOW_TEXTURE, w -> emitHorizonGlow(w, glow[0], glow[1], glow[2], glowStrength));
+         }
+
+         // soft moon bloom halo, riding the real moon bearing
+         float night = McsmSky.nightFactor(time);
+         float moonA = Mth.clamp(night * 0.9F, 0.0F, 1.0F) * McsmSky.rainBrightness();
+         if (moonA > 0.03F) {
+            float a = McsmSky.moonAngle();
+            Vector3f bearing = new Vector3f(-Mth.cos(a), -Mth.sin(a), 0.0F);
+            Matrix4f view = new Matrix4f(RenderSystem.getModelViewStack());
+            view.transformDirection(bearing);
+            bearing.normalize();
+            Vector3f hint = Math.abs(bearing.y) > 0.95F ? new Vector3f(1.0F, 0.0F, 0.0F) : new Vector3f(0.0F, 1.0F, 0.0F);
+            Vector3f t1 = new Vector3f(bearing).cross(hint).normalize();
+            Vector3f t2 = new Vector3f(bearing).cross(t1).normalize();
+            float cx = bearing.x * RADIUS;
+            float cy = bearing.y * RADIUS;
+            float cz = bearing.z * RADIUS;
+            float half = 46.0F;
+            float alpha = 0.44F * moonA;
+            drawLayer(MOON_HALO_TEXTURE, w -> {
+               tangentQuad(w, cx, cy, cz, t1, t2, half * 2.15F, 0.62F, 0.72F, 0.92F, alpha);
+               tangentQuad(w, cx, cy, cz, t1, t2, half * 0.8F, 0.85F, 0.92F, 1.0F, alpha * 0.8F);
+               return 2;
+            });
+         }
+      } catch (Throwable t) {
+         // accents must never take the frame down
+      }
+   }
+
+   /** Full-circle horizon glow band, bright at the horizon fading upward. */
+   private static int emitHorizonGlow(StormSkyWriter w, float r, float g, float b, float strength) {
+      float yHi = Mth.sin((float)Math.toRadians(13.0)) * RADIUS;
+      float rHi = Mth.cos((float)Math.toRadians(13.0)) * RADIUS;
+      int quads = 0;
+
+      for (int s = 0; s < SEGMENTS; s++) {
+         float az0 = (float)(Math.PI * 2.0 * (double)s / (double)SEGMENTS);
+         float az1 = (float)(Math.PI * 2.0 * (double)(s + 1) / (double)SEGMENTS);
+         // brightest just above the horizon, fading up (v=1 bottom row = bright)
+         w.vertex(Mth.cos(az0) * RADIUS, 0.0F, Mth.sin(az0) * RADIUS, 0.0F, 1.0F, r, g, b, strength);
+         w.vertex(Mth.cos(az1) * RADIUS, 0.0F, Mth.sin(az1) * RADIUS, 1.0F, 1.0F, r, g, b, strength);
+         w.vertex(Mth.cos(az1) * rHi, yHi, Mth.sin(az1) * rHi, 1.0F, 0.0F, r, g, b, 0.0F);
+         w.vertex(Mth.cos(az0) * rHi, yHi, Mth.sin(az0) * rHi, 0.0F, 0.0F, r, g, b, 0.0F);
+         quads++;
+      }
+
+      return quads;
+   }
+
+   /** One tangent-plane quad facing the given bearing, sky depth. */
+   private static void tangentQuad(StormSkyWriter w, float cx, float cy, float cz, Vector3f t1, Vector3f t2, float half, float r, float g, float b, float a) {
+      w.vertex(cx - t1.x * half - t2.x * half, cy - t1.y * half - t2.y * half, cz - t1.z * half - t2.z * half, 0.0F, 0.0F, r, g, b, a);
+      w.vertex(cx + t1.x * half - t2.x * half, cy + t1.y * half - t2.y * half, cz + t1.z * half - t2.z * half, 1.0F, 0.0F, r, g, b, a);
+      w.vertex(cx + t1.x * half + t2.x * half, cy + t1.y * half + t2.y * half, cz + t1.z * half + t2.z * half, 1.0F, 1.0F, r, g, b, a);
+      w.vertex(cx - t1.x * half + t2.x * half, cy - t1.y * half + t2.y * half, cz - t1.z * half + t2.z * half, 0.0F, 1.0F, r, g, b, a);
    }
 
    /** Storm bearing transformed into the sky pass' local view space. */
@@ -252,8 +334,8 @@ public final class StormSkyBox {
          float wLo = RING_WEIGHTS[i];
          float wHi = RING_WEIGHTS[i + 1];
          // the yellow horizon accent lives only on the very first band
-         float hr = yellowHorizon && i == 0 ? Math.min(1.0F, tr + 0.38F) : tr;
-         float hg = yellowHorizon && i == 0 ? Math.min(1.0F, tg + 0.24F) : tg;
+         float hr = yellowHorizon && i == 0 ? Math.min(1.0F, tr + 0.14F) : tr;
+         float hg = yellowHorizon && i == 0 ? Math.min(1.0F, tg + 0.09F) : tg;
          float hb = tb;
 
          for (int s = 0; s < SEGMENTS; s++) {
@@ -351,7 +433,7 @@ public final class StormSkyBox {
    }
 
    private static float alpha(float base, float weight) {
-      return Mth.clamp(base * Mth.clamp(weight, 0.0F, 1.0F), 0.0F, 0.92F);
+      return Mth.clamp(base * Mth.clamp(weight, 0.0F, 1.0F), 0.0F, 0.78F);
    }
 
    /**

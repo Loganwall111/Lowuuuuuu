@@ -1,7 +1,10 @@
 package net.dabicco.devouringstorms.mixin;
 
+import net.dabicco.devouringstorms.client.McsmSky;
+import net.dabicco.devouringstorms.client.SkyAtmosphereController;
 import net.dabicco.devouringstorms.client.StormSkyBox;
 import net.dabicco.devouringstorms.client.StormSkyDarken;
+import net.dabicco.devouringstorms.config.DevouringStormsClientConfig;
 import net.minecraft.client.Camera;
 import net.minecraft.util.Mth;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -19,6 +22,8 @@ public class SkyRendererMixin {
       at = {@At("TAIL")}
    )
    private void dabyws$darkenSkyDome(ClientLevel level, float partialTick, Camera camera, SkyRenderState state, CallbackInfo ci) {
+      // capture for the main-sky accents (moon halo bearing, weather)
+      McsmSky.capture(state.moonAngle, state.rainBrightness);
       float darken = StormSkyDarken.factor();
       float palette = StormSkyDarken.paletteBlend();
       float dome = Mth.clamp(darken * 0.72F + palette * 0.52F, 0.0F, 1.0F);
@@ -28,7 +33,29 @@ public class SkyRendererMixin {
          state.sunriseAndSunsetColor = blendToFloor(state.sunriseAndSunsetColor, Mth.clamp(dome * 0.82F, 0.0F, 1.0F));
          state.starBrightness *= keep;
          state.rainBrightness *= keep;
+      } else if (DevouringStormsClientConfig.mainSkyMCSM && !SkyAtmosphereController.active()) {
+         // REGULAR game: the Story-Mode dual-tone sky — lavender/purple day
+         // dome into a powder-cyan horizon, deep indigo nights with a glowing
+         // cyan horizon. Storm phases keep their own skybox untouched.
+         long time = level.getOverworldClockTime();
+         state.skyColor = McsmSky.blendSkyColor(state.skyColor, time);
+         state.sunriseAndSunsetColor = McsmSky.blendHorizonColor(state.sunriseAndSunsetColor, time);
       }
+   }
+
+   /**
+    * MAIN-GAME sky accents: after the vanilla sun/moon/star pass completes
+    * (and no storm owns the sky), paint the MCSM horizon glow ring and the
+    * soft moon bloom halo in the same sky layer machinery. Args-free on
+    * purpose — an args-free handler can never mismatch vanilla signatures.
+    */
+   @Inject(
+      method = {"renderSunMoonAndStars"},
+      at = {@At("TAIL")},
+      cancellable = false
+   )
+   private void dabyws$mainSkyAccents(CallbackInfo ci) {
+      StormSkyBox.renderMainSkyAccents();
    }
 
    /**

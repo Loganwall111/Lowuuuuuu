@@ -159,6 +159,8 @@ public class DevouringStormsClientConfig {
    public static double pulseHeartbeatRange = (double)512.0F;
    public static boolean phaseFogPalettes = true;
    public static double paletteStrength = 1.0;
+   /** Story-Mode look for the REGULAR sky (no storm): lavender day dome, cyan horizon, indigo nights, moon bloom. */
+   public static boolean mainSkyMCSM = true;
    public static double turquoiseFogR = 0.031;
    public static double turquoiseFogG = 0.42;
    public static double turquoiseFogB = 0.36;
@@ -534,6 +536,7 @@ public class DevouringStormsClientConfig {
       key("pulseHeartbeatVolume", "Loudness of the command pulse thump.", (double)0.0F, (double)2.0F, false, () -> pulseHeartbeatVolume, (v) -> pulseHeartbeatVolume = v);
       key("pulseHeartbeatRange", "How far the command pulse thump carries.", (double)128.0F, (double)1024.0F, false, () -> pulseHeartbeatRange, (v) -> pulseHeartbeatRange = v);
       key("phaseFogPalettes", "Let the storm's phase recolour the sky with the screenshot-matched handoff: green at phase 4.5, turquoise at phase 5, then a later pink/purple drift before the deep cataclysm gloom.", (double)0.0F, (double)1.0F, true, () -> phaseFogPalettes ? (double)1.0F : (double)0.0F, (v) -> phaseFogPalettes = v >= (double)0.5F);
+      key("mainSkyMCSM", "Story-Mode look for the regular (storm-free) sky: lavender/purple day gradient into a powder-cyan horizon, deep indigo nights with a glowing cyan horizon, soft moon bloom and horizon glow. Storm phases keep their own skybox.", (double)0.0F, (double)1.0F, true, () -> mainSkyMCSM ? (double)1.0F : (double)0.0F, (v) -> mainSkyMCSM = v >= (double)0.5F);
       key("paletteStrength", "How far the phase palettes override your manual colours.", (double)0.0F, (double)1.0F, false, () -> paletteStrength, (v) -> paletteStrength = v);
       key("turquoiseFogR", "Phase-5 turquoise fog anchor.", (double)0.0F, (double)1.0F, false, () -> turquoiseFogR, (v) -> turquoiseFogR = v);
       key("turquoiseFogG", "", (double)0.0F, (double)1.0F, false, () -> turquoiseFogG, (v) -> turquoiseFogG = v);

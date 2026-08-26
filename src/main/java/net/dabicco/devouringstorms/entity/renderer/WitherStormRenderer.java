@@ -1050,13 +1050,9 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       double radius = auraRadius(state);
       float breathe = 0.9F + 0.1F * Mth.sin((double)(state.idleTimeTicks * 0.028F));
 
-      // camera-facing billboard math in world axes
-      double dx = camera.pos.x - state.worldX;
-      double dy = camera.pos.y - state.worldY;
-      double dz = camera.pos.z - state.worldZ;
-      double horiz = Math.sqrt(dx * dx + dz * dz);
-      float yawDeg = (float)Math.toDegrees(Math.atan2(dx, dz));
-      float pitchDeg = (float)Math.toDegrees(Math.atan2(dy, Math.max(horiz, 0.001)));
+      // (billboard math removed: the core light is physical now — a glowing
+      // sphere of additive world-space rings in the storm's own frame, so it
+      // can never detach, flip, or clip inside the mass as it moves)
 
       // THE one billboard, per the reference shots: the BLUE halo riding the
       // very middle of the storm in phase 4 - the mass lit from its centre
@@ -1100,16 +1096,33 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
       pushStormWorld(poseStack, state);
 
       if (glowA > 2) {
-         poseStack.pushPose();
-         poseStack.translate(0.0, radius * 0.3, 0.0);
-         poseStack.mulPose(Axis.YP.rotationDegrees(yawDeg));
-         poseStack.mulPose(Axis.XP.rotationDegrees(-pitchDeg));
-         // the light blue halo looming off the mass (phase 4) / its palette drift
-         submitHaloPlane(collector, poseStack, radius * 0.95 * discScale, radius * 0.95 * discScale, eR, eG, eB, glowA, GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
-         submitHaloPlane(collector, poseStack, radius * 0.62 * discScale, radius * 0.62 * discScale, eR, eG, eB, (int)((float)glowA * 0.7F), GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
-         // ...and its hot centre
-         submitHaloPlane(collector, poseStack, radius * 0.34, radius * 0.34, Math.min(255, cR + 20), Math.min(255, cG + 12), cB, Math.min(255, (int)((float)glowA * 1.4F)), GlowRenderTypes.glow(HALO_GRADIENT_TEXTURE));
-         poseStack.popPose();
+         // THE core light, physically attached to the storm: a glowing sphere
+         // built from stacked world-space rings (plus one soft outer shell),
+         // all in the storm's own frame. Reads as a light volume from every
+         // angle and follows the storm wherever it goes.
+         double ry = radius * 0.72 * discScale;
+         double rx = radius * 0.92 * discScale;
+         int shells = 7;
+         for (int k = 0; k < shells; k++) {
+            float frac = (float)k / (float)(shells - 1);
+            double y = (double)(frac - 0.5F) * 2.0 * ry;
+            double profile = Math.sqrt(Math.max(0.0, 1.0 - (double)((frac - 0.5F) * (frac - 0.5F)) * 4.0));
+            double ringR = rx * profile;
+            if (ringR < radius * 0.02) {
+               continue;
+            }
+
+            float band = 0.55F + 0.45F * (float)profile;
+            boolean core = Math.abs(frac - 0.5F) < 0.34F;
+            int rr = core ? Math.min(255, cR + 18) : eR;
+            int rg = core ? Math.min(255, cG + 10) : eG;
+            int rb = core ? cB : eB;
+            int ra = (int)((float)glowA * (core ? 1.0F : 0.62F) * band);
+            submitWorldRing(collector, poseStack, state.idleTimeTicks, ringR, radius * 0.16, y, rr, rg, rb, ra);
+         }
+
+         // one wide, faint outer shell so the light "looms" off the mass
+         submitWorldRing(collector, poseStack, state.idleTimeTicks * 0.6F, rx * 1.22, radius * 0.3, 0.0, eR, eG, eB, (int)((float)glowA * 0.3F));
       }
 
       // --- phase 7.5+/8: the ringed giant, purple + dark-pink vortex rings ---

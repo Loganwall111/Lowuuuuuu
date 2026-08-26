@@ -171,7 +171,7 @@ public final class SkyAtmosphereController {
 
       // horizon fog compression for the active sky: denser fog blends the
       // terrain edge into the backdrop and masks chunk boundaries
-      fogScale = Mth.lerp(Mth.clamp(intensity, 0.0F, 1.0F), 1.0F, 0.6F);
+      fogScale = Mth.lerp(Mth.clamp(intensity, 0.0F, 1.0F), 1.0F, 0.78F);
 
       // slow churn so the backdrop clouds rotate lazily around the storm
       churn = (float)((double)(gameTimeTicks % 1000000L) + (double)tickDelta) * 0.0045F;

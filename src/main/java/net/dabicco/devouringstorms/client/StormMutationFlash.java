@@ -203,7 +203,7 @@ public final class StormMutationFlash {
 
       float ticks = (float)(now - bestFlash.startMs) / 50.0F;
       float progress = Mth.clamp(ticks / LIFE_TICKS, 0.0F, 1.0F);
-      float amount = Math.min(1.0F, bestEnv) * (0.55F + 0.45F * SkyAtmosphereController.intensity());
+      float amount = Math.min(1.0F, bestEnv) * (0.55F + 0.45F * SkyAtmosphereController.intensity()) * 0.72F;
 
       // billboard basis around the storm bearing at sky depth
       Vector3f t = new Vector3f(target).normalize();
@@ -216,7 +216,7 @@ public final class StormMutationFlash {
 
       // core flash disc: bright, tight, shrinking as it decays
       float coreS = 88.0F * (1.15F - 0.45F * progress);
-      float coreA = Mth.clamp(225.0F * amount / 255.0F, 0.0F, 1.0F);
+      float coreA = Mth.clamp(185.0F * amount / 255.0F, 0.0F, 1.0F);
       // shock ring: races outward and thins out
       float ringS = 110.0F + 150.0F * progress;
       float ringA = Mth.clamp(160.0F * amount * (1.0F - progress * 0.5F) / 255.0F, 0.0F, 1.0F);
