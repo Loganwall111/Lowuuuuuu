@@ -14,20 +14,15 @@ void main() {
         discard;
     }
 
-    // Turquoise / cyan glow on top of teeth (#00E5FF)
-    float isTurquoise = step(0.70, col.g) * step(0.80, col.b) * (1.0 - step(0.40, col.r));
-    float isHotMagenta = step(0.68, col.r) * step(0.68, col.b) * (1.0 - step(0.50, col.g));
-    float isCyanGlow   = step(0.68, col.g) * step(0.68, col.b) * (1.0 - step(0.50, col.r));
-    float isAmuletGold = step(0.80, col.r) * step(0.70, col.g) * (1.0 - step(0.40, col.b));
-    float emissive = max(max(max(isTurquoise, isHotMagenta), isCyanGlow), isAmuletGold);
+    float isTurquoise = step(0.65, col.g) * step(0.75, col.b) * (1.0 - step(0.40, col.r));
+    float isMagenta   = step(0.60, col.r) * step(0.60, col.b) * (1.0 - step(0.50, col.g));
 
-    if (emissive > 0.5) {
-        float pulse = 0.88 + 0.12 * sin(frameTimeCounter * 3.5);
-        if (isTurquoise > 0.5) {
-            col.rgb = mix(col.rgb, vec3(0.0, 0.90, 1.0), 0.75) * 2.10 * pulse;
-        } else {
-            col.rgb *= 1.85 * pulse;
-        }
+    if (isTurquoise > 0.5) {
+        float pulse = 0.90 + 0.10 * sin(frameTimeCounter * 4.0);
+        col.rgb = vec3(0.0, 0.92, 1.0) * 3.5 * pulse;
+    } else if (isMagenta > 0.5) {
+        float pulse = 0.92 + 0.08 * sin(frameTimeCounter * 3.0);
+        col.rgb = vec3(0.85, 0.12, 0.95) * 3.0 * pulse;
     }
 
     gl_FragColor = col;

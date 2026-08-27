@@ -142,11 +142,18 @@ public final class StormPresenceFX {
                StormPalettes.haloUnderColor(col);
                int aHalo = (int)(Mth.clamp(amount * 0.95F * (0.8F + 0.2F * pulseWave(d.entityId, nowSec)), 0.0F, 1.0F) * 255.0F);
                quad(poseStack, collector, GlowRenderTypes.glow(HALO), cam, centre, view, bodyR * 1.6, (int)(col[0] * 255.0F), (int)(col[1] * 255.0F), (int)(col[2] * 255.0F), aHalo);
-               if (phase >= 5.8F) {
-                  // outer cataclysm ring
+               if (phase >= 5.1F) {
+                  // outer cataclysm ring (phase 5.1+)
                   StormPalettes.haloRingColor(col);
                   int aOuter = (int)(Mth.clamp(amount * 0.75F, 0.0F, 1.0F) * 255.0F);
                   quad(poseStack, collector, GlowRenderTypes.glow(HALO), cam, centre, view, bodyR * 2.1, (int)(col[0] * 255.0F), (int)(col[1] * 255.0F), (int)(col[2] * 255.0F), aOuter);
+
+                  // dark roiling shroud anchored strictly to the storm's head / upper mass
+                  Vec3 shroudCentre = centre.add(0.0, bodyR * 0.65, 0.0);
+                  Vec3 shroudView = shroudCentre.subtract(cam).normalize();
+                  int aDark = (int)(Mth.clamp(amount * 0.82F, 0.0F, 1.0F) * 215.0F);
+                  quad(poseStack, collector, GlowRenderTypes.translucent(HALO), cam, shroudCentre, shroudView, bodyR * 2.7, 12, 6, 22, aDark);
+                  quad(poseStack, collector, GlowRenderTypes.translucent(HALO), cam, shroudCentre, shroudView, bodyR * 3.5, 8, 4, 15, (int)(aDark * 0.60F));
                }
             }
          }

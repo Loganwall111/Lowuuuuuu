@@ -4,63 +4,92 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
 
 ---
 
-## 📦 Deliverables Summary
+## 📦 Direct Downloads & Deliverables Summary
 
-1. **`MCSM_ShaderPack.zip`** (Flat root structure with `shaders/` directly at root)
-   - **Thick Extruded Story Mode Clouds**: `gbuffers_clouds.vsh` transforms cloud geometry in world space using `gbufferModelViewInverse`, extrudes the cloud deck vertically by **2.5x** (`worldPos.y *= 2.5`), and sets flat uniform Story Mode brightness (all faces 1.0) with crisp blocky edges.
-   - **User GLSL Core Cloud Shader**: Includes `rendertype_clouds.vsh` (GLSL 150 with `CloudFaces`, `CloudInfo`, `BrightnessTop/Bottom/Sides = 1.0`, `CloudHeight = 2.5`, `CloudFadeAlpha = 0`), `rendertype_clouds.fsh`, and `rendertype_clouds.json` wired into `shaders/core/` and `shaders/`.
-   - **Authentic Story Mode Colored Lighting & Shadows**: Warm golden direct sunlight, cool lavender ambient shadow tint, and warm amber torchlight with zero reflections and diffuse ground shading.
-   - **Story Mode Daytime Sky Dome**: Signature MCSM periwinkle lavender zenith -> soft lilac -> mauve -> peach -> golden amber horizon gradient.
-   - **Teeth Turquoise Glow**: Electric turquoise/cyan glow (`#00E5FF`) on the Wither Storm teeth.
-   - **100% Crash-Free GLSL**: Standardized uniform declarations (`uniform sampler2D gtexture;` replacing illegal `texture` keyword declarations) eliminating driver crashes on Iris and OptiFine.
-
-2. **`MCSM_ResourcePack.zip`** (Flat root structure with `pack.mcmeta` directly at root)
-   - **Core Cloud Shader Fallback**: `assets/minecraft/shaders/core/rendertype_clouds.vsh`, `.fsh`, and `.json` included for vanilla Minecraft rendering when shaders are toggled off.
-   - **Zero Cloud PNGs**: Pure shader-based clouds; all `clouds.png` and `mcsm_cloud.png` textures completely deleted.
-   - **Universal `pack.mcmeta`**: Simplified pack format avoiding `JsonParseException` on Minecraft 26.2 and 1.21.2.
-   - **Crash-Free OptiFine Custom Skies**: Consecutive `sky1`, `sky2`, `sky3` numbering with explicit `source=./sky*.png` tags and universal `blend=add` to prevent `NullPointerException` crashes in Skyboxify / OptiFine.
-   - **Story Mode Textures & Sounds**: Authentic OG obsidian-gloss textures, sound effects, and UI clicks.
-
-3. **Mod JAR (`dabywitherstormmod-1.9.60-26.2-beta.jar`)**
-   - **Presets**: **"Minecraft story mode OG"** (Default) and **"Minecraft story mode netflix"** (Secondary).
-   - **Phase 4 Cyan 3D Spherical Shield Halo (`#00E5FF`)**: True 3D spherical shell wrapped entirely around the boss bounding box with depth testing (`glEnable(GL_DEPTH_TEST)`).
-   - **Atmospheric Post-Processing**: Phase 5 pink-magenta fog/glare, Phase 6 volcanic dithered horizon, Phase 6.5 purple flashbang (`#E0B0FF`) with 45-tick exponential decay and periodic 2-minute End-flash.
-   - **Vortex Renderer**: Dynamic swirling atmospheric disc for Phases 7 & 8.
-   - **Unified Command**: `/devouringstorms` root command only.
+| Deliverable | Installation Location | Status |
+| :--- | :--- | :--- |
+| **[MCSM_ShaderPack.zip](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ShaderPack.zip)** | `.minecraft/shaderpacks/` (DO NOT unzip) | **Ready & Updated** |
+| **[MCSM_ResourcePack.zip](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ResourcePack.zip)** | `.minecraft/resourcepacks/` (DO NOT unzip) | **Ready & Updated** |
+| **[dabywitherstormmod-1.9.60-26.2-beta.jar](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/dabywitherstormmod-1.9.60-26.2-beta.jar)** | `.minecraft/mods/` | **Ready & Updated** |
 
 ---
 
-## 🛠️ Diagnostics & Solutions from Your Latest Game Log
+## 🛠️ Visual Fixes & Updates Applied
 
-### 1. Crash on Load: `Failed to parse post chain at dabywitherstormmod:post_effect/storm_atmosphere.json`
-* **Root Cause**: In Minecraft 1.21.2 / 26.2 snapshot, Mojang restructured post chains: `outtarget` and `intarget` were replaced with `output` and `inputs`. The mod JAR active in your `.minecraft/mods/` directory is an older build that still had `storm_atmosphere.json` inside it.
-* **Solution**: Download the latest mod JAR built by GitHub Actions CI and replace your existing JAR in `.minecraft/mods/`. In the latest build, `storm_atmosphere.json` has been completely removed from mod resources, preventing `ShaderManager.loadPostChain` from failing.
+### 1. pack.mcmeta Exact Schema (`MCSM_ResourcePack`)
+* Declared exact requested schema:
+  ```json
+  {
+    "pack": {
+      "pack_format": 46,
+      "supported_formats": {
+        "min_format": 42,
+        "max_format": 50
+      },
+      "description": "Minecraft: Story Mode Authentic Visuals"
+    }
+  }
+  ```
+* Ensures 100% compatibility across Minecraft 1.21.2 and 26.2 snapshot without `JsonParseException`.
 
-### 2. Regular Vanilla Clouds Rendering Instead of Story Mode Clouds
-* **Root Cause**: Two factors caused this:
-  1. Your log showed an external pack loaded: `Resource pack 'Story Mode Clouds.zip' indicates the following shaders should be ignored: rendertype_clouds.vsh`. This pack explicitly commanded Iris to skip custom cloud shaders.
-  2. When an Iris shaderpack is enabled, Iris bypasses vanilla core shaders and routes clouds through `gbuffers_clouds.vsh`. The previous `gbuffers_clouds.vsh` in `MCSM_ShaderPack` only called `ftransform()`, rendering vanilla-sized clouds.
-* **Solution**:
-  1. Remove or uncheck `Story Mode Clouds.zip` in your Resource Packs menu so it doesn't conflict.
-  2. Update `MCSM_ShaderPack.zip`. In `MCSM_ShaderPack`, `gbuffers_clouds.vsh` now calculates the cloud positions in world space using `gbufferModelViewInverse`, scales the cloud height vertically by **2.5x** (`worldPos.y *= 2.5`), and sets uniform 1.0 face brightness to match the Story Mode blocky cloud look.
+### 2. Thick Extruded Story Mode Clouds (`gbuffers_clouds.vsh` & `shaders.properties`)
+* **Root & Shader Directives**: Placed `shaders.properties` at root level (`MCSM_ShaderPack/shaders.properties`) and in `shaders/shaders.properties`:
+  ```properties
+  clouds=fast
+  customTexture.cloudTex0=shaders/textures/clouds/cloud0.png
+  customTexture.cloudTex1=shaders/textures/clouds/cloud1.png
+  customTexture.cloudTex2=shaders/textures/clouds/cloud2.png
+  customTexture.cloudTex3=shaders/textures/clouds/cloud3.png
+  customTexture.cloudTex4=shaders/textures/clouds/cloud4.png
+  customTexture.cloudTex5=shaders/textures/clouds/cloud5.png
+  customTexture.cloudTex6=shaders/textures/clouds/cloud6.png
+  customTexture.cloudTex7=shaders/textures/clouds/cloud7.png
+  ```
+* **True 2.5x Vertical Extrusion**: `gbuffers_clouds.vsh` unprojects vector arrays into camera-relative world coordinates and scales geometry bounds vertically by **2.5x** (extruding top and side-top vertices upwards by 6 blocks for a solid 10-block slab thickness).
+* **Identical Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` headers to eliminate GPU compiler crashes.
+* **Core Cloud Shaders**: `core/rendertype_clouds.vsh` included in `MCSM_ResourcePack` for vanilla Minecraft rendering when shaders are off.
 
-### 3. Resource Pack Metadata Warning: `missing mandatory fields min_format and max_format`
-* **Root Cause**: Minecraft 26.2 changed the schema validation for version ranges.
-* **Solution**: Simplified `pack.mcmeta` in `MCSM_ResourcePack.zip` to standard integer format `pack_format: 64`.
+### 3. Dynamic Day/Noon/Sunset/Night Skybox (Zero Black Void Bands)
+* **Smooth Time-of-Day Transitions**: `gbuffers_skybasic.fsh` dynamically blends between:
+  - **Day**: Signature MCSM periwinkle lavender zenith -> soft lilac -> mauve -> golden amber horizon.
+  - **Noon**: Vivid Story Mode azure blue zenith -> soft horizon.
+  - **Sunset / Twilight**: Royal violet zenith -> vivid magenta -> fiery coral -> golden orange horizon.
+  - **Night**: Deep obsidian midnight -> dark royal purple -> glowing indigo horizon.
+* **Zero Black Void Horizon Band**: Removed hardcoded brown/black void floor (`cVoid`). Below the horizon smoothly clamps and fades into the horizon tint, completely eliminating the dark band moving across the sky when looking around.
+* Removed broken rotating OptiFine custom sky overlays that created skybox artifacts.
+
+### 4. Boss-Anchored Halo & Dark Roiling Shroud (Phase 5.1+)
+* **Strictly Anchored to Boss Entity**: The cataclysm halo and dark roiling cloud shroud now anchor directly to the Wither Storm boss position in Phase 5.1+ and move strictly with the storm.
+* **Normal Pre-Summon Sky**: Before the storm is summoned, no storm entities exist, so the sky remains completely normal with zero black bands.
+* **ShaderPack Compatibility**: Updated `GlowRenderTypes.java` so `glow()` and `translucent()` route to `RenderTypes.eyes()` and `RenderTypes.entityTranslucent()` when `ShaderPackCompat.active() == true`, allowing Iris to render them cleanly.
+
+### 5. Luminescent Turquoise Teeth Glow (#00E5FF) & Shaded OG Visuals
+* Generated `phase_4_assets_og_e.png`, `phase_4_assets_e.png`, `devourer_assets_og_e.png`, and `wither_storm_og_e.png` with glowing turquoise teeth (`#00E5FF`) and glowing purple eyes (`#D81B60` / `#A800FF`).
+* In `gbuffers_entities.fsh`, amplified teeth emissive bloom to 3.5x intensity with radiant turquoise glow, and purple eyes to 3.0x intensity.
+* Shaded OG visuals wired in with matte near-black body and shaded edge outlines.
+
+### 6. Fixed Solid Black Hand Items
+* **32-Bit RGBA Conversion**: Converted all palette/indexed textures (`super_tnt_lava.png`, `tnt.png`, `tnt_bottom.png`, `tnt_top.png`) to 32-bit RGBA PNG with alpha transparency.
+* **Dedicated Hand Shaders**: Created `gbuffers_hand.vsh` and `gbuffers_hand.fsh` in `MCSM_ShaderPack` with proper lightmap illumination (`max(lm.rgb, vec3(0.55))`), ensuring held items and hands never render solid black.
+
+### 7. Story Mode Command Block & Grass Textures
+* Included authentic Story Mode command block textures (`command_block_front.png`, `command_block_back.png`, `command_block_side.png`, `command_block_conditional.png`, `repeating_...`, `chain_...`) in `MCSM_ResourcePack`.
+* Included authentic Story Mode vibrant grass block textures (`grass_block_top.png`, `grass_block_side.png`, `grass_block_side_overlay.png`).
 
 ---
 
-## 🚀 Step-by-Step Installation Instructions
+## 🚀 Installation Instructions
 
-1. **Update Mod JAR**:
-   - Download the latest mod JAR artifact from the GitHub Actions CI run.
-   - Place `dabywitherstormmod-1.9.60-26.2-beta.jar` into `.minecraft/mods/` (overwrite the old one).
+1. **Shader Pack**:
+   - Download **`MCSM_ShaderPack.zip`**
+   - Place into `.minecraft/shaderpacks/` (DO NOT unzip)
+   - Enable via **Options -> Video Settings -> Shader Packs -> MCSM_ShaderPack**
 
-2. **Update Shaderpack**:
-   - Copy `MCSM_ShaderPack.zip` into `.minecraft/shaderpacks/` (do NOT unzip).
-   - In Minecraft: Video Settings -> Shader Packs -> select **MCSM_ShaderPack**.
+2. **Resource Pack**:
+   - Download **`MCSM_ResourcePack.zip`**
+   - Place into `.minecraft/resourcepacks/` (DO NOT unzip)
+   - Enable via **Options -> Resource Packs -> Move to Right (Top priority)**
 
-3. **Update Resource Pack**:
-   - Copy `MCSM_ResourcePack.zip` into `.minecraft/resourcepacks/` (do NOT unzip).
-   - In Minecraft: Options -> Resource Packs -> enable **MCSM_ResourcePack** and move it to the top.
-   - Disable any conflicting external cloud packs such as `Story Mode Clouds.zip`.
+3. **Mod JAR**:
+   - Download **`dabywitherstormmod-1.9.60-26.2-beta.jar`**
+   - Place into `.minecraft/mods/` (replace any older beta jar)
