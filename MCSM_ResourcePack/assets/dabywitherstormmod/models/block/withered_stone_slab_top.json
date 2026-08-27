@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/slab_top",
-  "textures": {
-    "bottom": "dabywitherstormmod:block/withered_stone",
-    "top": "dabywitherstormmod:block/withered_stone",
-    "side": "dabywitherstormmod:block/withered_stone"
-  }
-}

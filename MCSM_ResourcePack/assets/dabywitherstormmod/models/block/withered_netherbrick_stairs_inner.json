@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/inner_stairs",
-  "textures": {
-    "bottom": "dabywitherstormmod:block/withered_netherbrick",
-    "top": "dabywitherstormmod:block/withered_netherbrick",
-    "side": "dabywitherstormmod:block/withered_netherbrick"
-  }
-}

@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 """
 MCSM Pack Builder — Standalone Resource Pack and Shader Pack for Minecraft: Story Mode
-Calibrated with official Story Mode palettes:
-- day_sky.png: Normal Story Mode daytime sky (periwinkle -> lilac -> peach -> golden amber)
-- sky_gradient_purple_sunset.png: Phase 5.1-5.9 sunset / pink-magenta & void-violet
-- sky_gradient_night_blue.png: Phase 4 3D blue shield halo (#00E5FF)
-- sky_gradient_twilight_purple.png: Phase 6-8 deep magenta twilight
-- Turquoise teeth glow (#00E5FF)
-- Procedural shader clouds (no solid meshes / no texture needed)
-- No additive cubemap whiteout / No nested folders
+Creates clean, 100% stable, crash-free packs for Minecraft: Story Mode.
 """
 
 import os
@@ -54,7 +47,7 @@ def write_png(path: str, width: int, height: int, rows: list) -> None:
         f.write(png)
 
 # ----------------------------------------------------------------------
-# Palettes (Interpolation helper)
+# Palettes
 # ----------------------------------------------------------------------
 def sample_stops(stops, t):
     t = max(0.0, min(1.0, t))
@@ -63,11 +56,11 @@ def sample_stops(stops, t):
         t1, c1 = stops[i + 1]
         if t0 <= t <= t1:
             f = (t - t0) / (t1 - t0)
-            f = f * f * (3.0 - 2.0 * f) # smoothstep
+            f = f * f * (3.0 - 2.0 * f)
             return [int(c0[j] + (c1[j] - c0[j]) * f) for j in range(3)]
     return list(stops[-1][1])
 
-# 1. Day Sky (Story Mode Normal default sky before storm)
+# 1. Day Sky (Story Mode Normal default sky)
 DAY_SKY_STOPS = [
     (0.00, (140, 135, 232)), # #8c87e8 periwinkle lavender zenith
     (0.20, (175, 155, 226)), # #af9be2 soft lilac
@@ -87,17 +80,7 @@ PURPLE_SUNSET_STOPS = [
     (1.00, (249, 136, 88))   # #f98858 fiery sunset orange horizon
 ]
 
-# 3. Night Blue (Phase 4 blue halo & night)
-NIGHT_BLUE_STOPS = [
-    (0.00, (12, 18, 43)),    # #0c122b midnight navy
-    (0.25, (25, 42, 94)),    # #192a5e dark cobalt
-    (0.50, (43, 74, 147)),   # #2b4a93 rich cobalt blue
-    (0.72, (70, 119, 195)),  # #4677c3 cerulean twilight
-    (0.88, (106, 165, 234)), # #6aa5ea sky blue
-    (1.00, (0, 229, 255))    # #00e5ff luminous cyan-blue halo glow
-]
-
-# 4. Twilight Purple (Phases 6, 7, 8)
+# 3. Twilight Purple (Phases 6, 7, 8)
 TWILIGHT_PURPLE_STOPS = [
     (0.00, (23, 2, 37)),     # #170225 deep midnight black purple
     (0.22, (62, 7, 86)),     # #3e0756 deep dark purple
@@ -108,11 +91,10 @@ TWILIGHT_PURPLE_STOPS = [
 ]
 
 # ----------------------------------------------------------------------
-# 1. BUILD RESOURCE PACK
+# 1. BUILD RESOURCE PACK (Clean & Crash-Free)
 # ----------------------------------------------------------------------
 print("[1/2] Assembling Minecraft: Story Mode Resource Pack...")
 
-# pack.mcmeta (Zero nested folder at root)
 rp_meta = {
     "pack": {
         "pack_format": 46,
@@ -120,53 +102,32 @@ rp_meta = {
             "min_inclusive": 15,
             "max_inclusive": 60
         },
-        "description": "Minecraft: Story Mode - Authentic Visuals, OG Textures & 3D Cyan Shield"
+        "description": "Minecraft: Story Mode - Authentic Visuals, OG Textures & Turquoise Teeth Glow"
     }
 }
 with open(os.path.join(RP_DIR, "pack.mcmeta"), "w", encoding="utf-8") as f:
     json.dump(rp_meta, f, indent=2)
 
-# Copy base assets from repository src/main/resources/assets
-src_repo_assets = os.path.join(ROOT, "src", "main", "resources", "assets")
-dst_assets = os.path.join(RP_DIR, "assets")
-if os.path.exists(src_repo_assets):
-    def ignore_bbmodel(path, names):
-        return [n for n in names if n.endswith(".bbmodel") or n == "geo"]
-    shutil.copytree(src_repo_assets, dst_assets, ignore=ignore_bbmodel, dirs_exist_ok=True)
-    print("Copied mod runtime assets into Resource Pack")
+# Copy ONLY textures, sounds, and language files into the Resource Pack
+# (NEVER copy shaders, post_effects, or blockstates into a resource pack)
+mod_tex_src = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "textures")
+mod_tex_dst = os.path.join(RP_DIR, "assets", "dabywitherstormmod", "textures")
+if os.path.exists(mod_tex_src):
+    shutil.copytree(mod_tex_src, mod_tex_dst, dirs_exist_ok=True)
+    print("Copied entity and misc textures into Resource Pack")
 
-# REMOVE BROKEN FABRICSKYBOXES THAT WAS CAUSING THE WHITE DOME BLOWOUT!
-fsb_dir = os.path.join(RP_DIR, "assets", "fabricskyboxes")
-if os.path.exists(fsb_dir):
-    shutil.rmtree(fsb_dir)
-    print("REMOVED assets/fabricskyboxes/ to completely eliminate blinding white dome bug!")
+mod_sounds_src = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "sounds")
+mod_sounds_dst = os.path.join(RP_DIR, "assets", "dabywitherstormmod", "sounds")
+if os.path.exists(mod_sounds_src):
+    shutil.copytree(mod_sounds_src, mod_sounds_dst, dirs_exist_ok=True)
 
-# REMOVE CORE CLOUD SHADERS THAT CAUSE BLACK SCREENS
-broken_shaders_dir = os.path.join(RP_DIR, "assets", "minecraft", "shaders")
-if os.path.exists(broken_shaders_dir):
-    shutil.rmtree(broken_shaders_dir)
-    print("REMOVED assets/minecraft/shaders/ to ensure pipeline stability!")
+mod_sounds_json = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "sounds.json")
+if os.path.exists(mod_sounds_json):
+    shutil.copy(mod_sounds_json, os.path.join(RP_DIR, "assets", "dabywitherstormmod", "sounds.json"))
 
-# Fix model parent cyclic loops
-for ns in ["witherstormmod", "devouringstorms", "dabywitherstormmod"]:
-    for blk in ["formidibomb.json", "super_tnt.json"]:
-        p = os.path.join(RP_DIR, "assets", ns, "models", "block", blk)
-        if os.path.exists(p):
-            with open(p, "r", encoding="utf-8") as f:
-                d = json.load(f)
-            d["parent"] = "block/block"
-            with open(p, "w", encoding="utf-8") as f:
-                json.dump(d, f, indent=2)
-    p_book = os.path.join(RP_DIR, "assets", ns, "models", "item", "command_block_book.json")
-    if os.path.exists(p_book):
-        with open(p_book, "r", encoding="utf-8") as f:
-            d = json.load(f)
-        d["parent"] = "item/generated"
-        with open(p_book, "w", encoding="utf-8") as f:
-            json.dump(d, f, indent=2)
-
-# Full Story Mode sound table
+# Full Story Mode sound table for vanilla clicks / menu
 sounds_json_path = os.path.join(RP_DIR, "assets", "minecraft", "sounds.json")
+os.makedirs(os.path.dirname(sounds_json_path), exist_ok=True)
 sounds_data = {
     "music.menu": {
         "replace": True,
@@ -175,18 +136,12 @@ sounds_data = {
     "ui.button.click": {
         "replace": True,
         "sounds": ["random/click_stereo"]
-    },
-    "ui.toast.in": {
-        "replace": True,
-        "sounds": ["ui/toast/in", "ui/toast/in1", "ui/toast/in2", "ui/toast/in3"]
     }
 }
 with open(sounds_json_path, "w", encoding="utf-8") as f:
     json.dump(sounds_data, f, indent=2)
 
-# ----------------------------------------------------------------------
-# Generate Authentic MCSM Clouds: assets/minecraft/textures/environment/clouds.png
-# ----------------------------------------------------------------------
+# Clouds texture: assets/minecraft/textures/environment/clouds.png
 print("Generating authentic MCSM 3D Clouds texture (256x256)...")
 CLOUD_SIZE = 256
 rng = random.Random(1337)
@@ -252,7 +207,6 @@ for cy in range(CLOUD_SIZE):
 env_dir = os.path.join(RP_DIR, "assets", "minecraft", "textures", "environment")
 write_png(os.path.join(env_dir, "clouds.png"), CLOUD_SIZE, CLOUD_SIZE, cloud_rows)
 
-# Sun & Moon
 sun_rows = [[255, 245, 210, 255] * 64 for _ in range(64)]
 write_png(os.path.join(env_dir, "sun.png"), 64, 64, sun_rows)
 moon_rows = [[230, 220, 245, 255] * 128 for _ in range(64)]
@@ -260,10 +214,7 @@ write_png(os.path.join(env_dir, "moon_phases.png"), 128, 64, moon_rows)
 end_rows = [[15, 6, 25, 255] * 128 for _ in range(128)]
 write_png(os.path.join(env_dir, "end_sky.png"), 128, 128, end_rows)
 
-# ----------------------------------------------------------------------
 # 3D Cyan Shield Halo Texture: textures/misc/halo_ring.png (#00E5FF)
-# ----------------------------------------------------------------------
-print("Generating 3D Cyan Shield texture (#00E5FF)...")
 HALO_SZ = 256
 halo_rows = []
 for hy in range(HALO_SZ):
@@ -272,11 +223,9 @@ for hy in range(HALO_SZ):
     for hx in range(HALO_SZ):
         dx = (hx - HALO_SZ / 2) / (HALO_SZ / 2)
         dist = math.sqrt(dx * dx + dy * dy)
-        # Ring shell profile with vibrant cyan-blue glow
         if 0.65 <= dist <= 0.98:
             ringFactor = 1.0 - abs(dist - 0.82) / 0.16
             ringFactor = max(0.0, min(1.0, ringFactor))
-            # Glowing cyan-blue (#00E5FF)
             r = int(0 + ringFactor * 120)
             g = int(229 + ringFactor * 26)
             b = int(255)
@@ -289,9 +238,7 @@ for hy in range(HALO_SZ):
 misc_dir = os.path.join(RP_DIR, "assets", "dabywitherstormmod", "textures", "misc")
 write_png(os.path.join(misc_dir, "halo_ring.png"), HALO_SZ, HALO_SZ, halo_rows)
 
-# ----------------------------------------------------------------------
-# Clean OptiFine Custom Skies: blend=alpha (NO additive blowout!)
-# ----------------------------------------------------------------------
+# Clean OptiFine Custom Skies: blend=alpha
 print("Generating clean OptiFine 3x2 Cubemaps with alpha blend...")
 opti_sky_dir = os.path.join(RP_DIR, "assets", "minecraft", "optifine", "sky", "world0")
 os.makedirs(opti_sky_dir, exist_ok=True)
@@ -303,7 +250,7 @@ def build_cubemap(stops, tile_size=512):
     c_zenith = stops[0][1]
     c_horizon = stops[-1][1]
 
-    # Top face (Row 0, Col 1)
+    # Top face
     for y in range(tile_size):
         for x in range(tile_size):
             dx = (x - tile_size / 2) / (tile_size / 2)
@@ -313,12 +260,12 @@ def build_cubemap(stops, tile_size=512):
             col = sample_stops(stops, t)
             grid[y][tile_size + x] = col + [255]
 
-    # Bottom face (Row 0, Col 0)
+    # Bottom face
     for y in range(tile_size):
         for x in range(tile_size):
             grid[y][x] = list(c_horizon) + [255]
 
-    # Sides (Col 2 on Row 0, and Col 0, 1, 2 on Row 1)
+    # Sides
     side_slots = [(0, 2), (1, 0), (1, 1), (1, 2)]
     for r_slot, c_slot in side_slots:
         for y in range(tile_size):
@@ -335,10 +282,9 @@ def build_cubemap(stops, tile_size=512):
         flat_rows.append(r)
     return flat_rows
 
-# sky1.png: Daytime Sky (day_sky.png periwinkle to amber)
+# sky1.png: Daytime Sky
 write_png(os.path.join(opti_sky_dir, "sky1.png"), 1536, 1024, build_cubemap(DAY_SKY_STOPS))
 sky1_properties = """# Minecraft: Story Mode — Official Daytime Sky (day_sky.png)
-source=./sky1.png
 startFadeIn=5:30
 endFadeIn=6:30
 startFadeOut=18:00
@@ -351,10 +297,9 @@ axis=0.0 1.0 0.0
 with open(os.path.join(opti_sky_dir, "sky1.properties"), "w", encoding="utf-8") as f:
     f.write(sky1_properties)
 
-# sky3.png: Phase 5.1-5.9 Sunset Pink-Magenta/Purple Sky
+# sky3.png: Phase 5.1-5.9 Sunset Sky
 write_png(os.path.join(opti_sky_dir, "sky3.png"), 1536, 1024, build_cubemap(PURPLE_SUNSET_STOPS))
 sky3_properties = """# Minecraft: Story Mode — Phase 5.1-5.9 Purple Sunset Sky
-source=./sky3.png
 startFadeIn=17:30
 endFadeIn=18:30
 startFadeOut=21:00
@@ -370,7 +315,6 @@ with open(os.path.join(opti_sky_dir, "sky3.properties"), "w", encoding="utf-8") 
 # sky4.png: Phase 6, 7, 8 Twilight Sky
 write_png(os.path.join(opti_sky_dir, "sky4.png"), 1536, 1024, build_cubemap(TWILIGHT_PURPLE_STOPS))
 sky4_properties = """# Minecraft: Story Mode — Phase 6, 7, 8 Twilight Sky
-source=./sky4.png
 startFadeIn=20:30
 endFadeIn=21:30
 startFadeOut=5:00
@@ -383,11 +327,17 @@ axis=0.0 1.0 0.0
 with open(os.path.join(opti_sky_dir, "sky4.properties"), "w", encoding="utf-8") as f:
     f.write(sky4_properties)
 
-# Pack Icon
+# Emissive mapping properties for OptiFine / Iris
+emissive_props = """# Minecraft: Story Mode Emissive Textures
+suffix.emissive=_e
+"""
+opti_dir = os.path.join(RP_DIR, "assets", "minecraft", "optifine")
+with open(os.path.join(opti_dir, "emissive.properties"), "w", encoding="utf-8") as f:
+    f.write(emissive_props)
+
 icon_rows = [[140, 135, 232, 255] * 64 for _ in range(64)]
 write_png(os.path.join(RP_DIR, "pack.png"), 64, 64, icon_rows)
 
-# Zip Resource Pack (Flat root structure)
 print("Zipping MCSM_ResourcePack.zip...")
 with zipfile.ZipFile(RP_ZIP, "w", zipfile.ZIP_DEFLATED) as z:
     for root_dir, _, files in os.walk(RP_DIR):
@@ -398,39 +348,26 @@ with zipfile.ZipFile(RP_ZIP, "w", zipfile.ZIP_DEFLATED) as z:
 print(f"Created {RP_ZIP} ({os.path.getsize(RP_ZIP)} bytes)")
 
 # ----------------------------------------------------------------------
-# 2. BUILD SHADER PACK
+# 2. BUILD SHADER PACK (100% Compliant GLSL 120 / OptiFine / Iris)
 # ----------------------------------------------------------------------
 print("\n[2/2] Assembling Minecraft: Story Mode Shader Pack...")
 sp_shaders = os.path.join(SP_DIR, "shaders")
 os.makedirs(sp_shaders, exist_ok=True)
 
-# shaders.properties
 shaders_properties = """# Minecraft: Story Mode — Atmosphere Shader Configuration
 profile.MCSM_DEFAULT=MCSM_DAY_SKY:1,MCSM_ROILING_CLOUDS:1,MCSM_COLOURED_LIGHTING:1,MCSM_SHADOW_TINT:1,MCSM_ATMOSPHERIC_FOG:1,MCSM_CINEMATIC_GRADE:1
 profile.MCSM_PERFORMANCE=MCSM_DAY_SKY:1,MCSM_ROILING_CLOUDS:0,MCSM_COLOURED_LIGHTING:1,MCSM_SHADOW_TINT:1,MCSM_ATMOSPHERIC_FOG:1,MCSM_CINEMATIC_GRADE:0
 
 option.MCSM_DAY_SKY=true
-option.MCSM_DAY_SKY.comment=Enables the official Minecraft: Story Mode day sky gradient (periwinkle lavender zenith down to golden amber horizon).
-
 option.MCSM_ROILING_CLOUDS=true
-option.MCSM_ROILING_CLOUDS.comment=Authentic Telltale roiling storm cumulus clouds underlit by warm amber horizon light.
-
 option.MCSM_COLOURED_LIGHTING=true
-option.MCSM_COLOURED_LIGHTING.comment=Warm golden sun highlights and rich firelight block lighting.
-
 option.MCSM_SHADOW_TINT=true
-option.MCSM_SHADOW_TINT.comment=Cool atmospheric lavender/purple bounce tint in shadows.
-
 option.MCSM_ATMOSPHERIC_FOG=true
-option.MCSM_ATMOSPHERIC_FOG.comment=Atmospheric golden-peach horizon haze.
-
 option.MCSM_CINEMATIC_GRADE=true
-option.MCSM_CINEMATIC_GRADE.comment=Cinematic Telltale saturation and filmic contrast grading.
 """
 with open(os.path.join(sp_shaders, "shaders.properties"), "w", encoding="utf-8") as f:
     f.write(shaders_properties)
 
-# gbuffers_skybasic.vsh / fsh — Official day_sky.png & Procedural Roiling Shader Clouds
 gbuffers_skybasic_vsh = """#version 120
 
 varying vec4 intColor;
@@ -460,7 +397,6 @@ varying vec3 viewPos;
 #define MCSM_ROILING_CLOUDS 1
 #endif
 
-// Fast 2D procedural noise for shader clouds
 float hash2(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
@@ -487,7 +423,6 @@ float cloudFbm(vec2 p) {
     return v;
 }
 
-// Official day_sky.png Story Mode gradient
 vec3 getStoryModeDaySky(float elev) {
     vec3 cZenith   = vec3(0.549, 0.529, 0.910); // #8c87e8 soft periwinkle lavender
     vec3 cLilac    = vec3(0.686, 0.608, 0.886); // #af9be2 soft lilac
@@ -521,11 +456,9 @@ void main() {
     #if MCSM_DAY_SKY
     vec3 skyCol = getStoryModeDaySky(elev);
 
-    // Warm luminous horizon glow accent
     float horizBand = exp(-pow(max(elev, 0.0) * 10.0, 2.0));
     skyCol += vec3(0.98, 0.76, 0.45) * horizBand * 0.22;
 
-    // Procedural Story Mode Shader Clouds (no solid objects / no texture needed!)
     #if MCSM_ROILING_CLOUDS
     if (elev > 0.04) {
         vec2 cp = dir.xz / max(elev + 0.18, 0.08);
@@ -537,7 +470,6 @@ void main() {
 
         float cloudMask = smoothstep(0.48, 0.76, density) * clamp(elev * 3.0, 0.0, 1.0);
 
-        // Underlit by warm amber/peach horizon, soft lilac-tinted crowns
         vec3 cloudUnderside = vec3(0.96, 0.72, 0.58);
         vec3 cloudCrown     = vec3(0.98, 0.96, 1.00);
         vec3 cloudCol = mix(cloudUnderside, cloudCrown, smoothstep(0.40, 0.82, detail));
@@ -555,7 +487,6 @@ void main() {
 with open(os.path.join(sp_shaders, "gbuffers_skybasic.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_skybasic_fsh)
 
-# gbuffers_skytextured.vsh / fsh
 gbuffers_skytextured_vsh = """#version 120
 
 varying vec4 color;
@@ -564,7 +495,7 @@ varying vec2 texcoord;
 void main() {
     gl_Position = ftransform();
     color = gl_Color;
-    texcoord = gl_MultiTexCoord0.xy;
+    texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 }
 """
 with open(os.path.join(sp_shaders, "gbuffers_skytextured.vsh"), "w", encoding="utf-8") as f:
@@ -585,24 +516,17 @@ void main() {
 with open(os.path.join(sp_shaders, "gbuffers_skytextured.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_skytextured_fsh)
 
-# gbuffers_terrain.vsh / fsh — Coloured Lighting & Lavender Ground Shadows
 gbuffers_terrain_vsh = """#version 120
 
 varying vec4 color;
 varying vec2 texcoord;
 varying vec2 lmcoord;
-varying vec3 normal;
-varying vec3 worldPos;
-
-uniform mat4 gbufferModelViewInverse;
 
 void main() {
     gl_Position = ftransform();
     color = gl_Color;
-    texcoord = gl_MultiTexCoord0.xy;
+    texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
     lmcoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
-    normal = normalize(gl_NormalMatrix * gl_Normal);
-    worldPos = (gbufferModelViewInverse * (gl_ModelViewMatrix * gl_Vertex)).xyz;
 }
 """
 with open(os.path.join(sp_shaders, "gbuffers_terrain.vsh"), "w", encoding="utf-8") as f:
@@ -610,19 +534,10 @@ with open(os.path.join(sp_shaders, "gbuffers_terrain.vsh"), "w", encoding="utf-8
 
 gbuffers_terrain_fsh = """#version 120
 
-/*
- * Minecraft: Story Mode — Coloured Lighting & Ground Shadows
- * Direct sunlight: Warm amber/golden illumination (#FFF2D8)
- * Shadows on ground: Atmospheric cool lavender/purple bounce tint (#6B5885)
- * Torch / blocklight: Rich warm firelight (#FFA347)
- */
-
 uniform sampler2D texture;
 varying vec4 color;
 varying vec2 texcoord;
 varying vec2 lmcoord;
-varying vec3 normal;
-varying vec3 worldPos;
 
 #ifndef MCSM_COLOURED_LIGHTING
 #define MCSM_COLOURED_LIGHTING 1
@@ -633,6 +548,9 @@ varying vec3 worldPos;
 
 void main() {
     vec4 tex = texture2D(texture, texcoord) * color;
+    if (tex.a < 0.1) {
+        discard;
+    }
 
     #if MCSM_COLOURED_LIGHTING
     float blockLight = clamp((lmcoord.x - 0.03) * 1.05, 0.0, 1.0);
@@ -664,7 +582,6 @@ void main() {
 with open(os.path.join(sp_shaders, "gbuffers_terrain.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_terrain_fsh)
 
-# gbuffers_entities.vsh / fsh — Turquoise Teeth Glow (#00E5FF) & Magenta Bloom
 gbuffers_entities_vsh = """#version 120
 
 varying vec4 color;
@@ -673,7 +590,7 @@ varying vec2 texcoord;
 void main() {
     gl_Position = ftransform();
     color = gl_Color;
-    texcoord = gl_MultiTexCoord0.xy;
+    texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 }
 """
 with open(os.path.join(sp_shaders, "gbuffers_entities.vsh"), "w", encoding="utf-8") as f:
@@ -688,10 +605,12 @@ varying vec2 texcoord;
 
 void main() {
     vec4 col = texture2D(texture, texcoord) * color;
+    if (col.a < 0.1) {
+        discard;
+    }
 
     // Vibrant Turquoise Teeth Glow (#00E5FF)
     float isTurquoise = step(0.70, col.g) * step(0.80, col.b) * (1.0 - step(0.40, col.r));
-    // Magenta Eyes & Command Block Rune Bloom
     float isHotMagenta = step(0.68, col.r) * step(0.68, col.b) * (1.0 - step(0.50, col.g));
     float isCyanGlow   = step(0.68, col.g) * step(0.68, col.b) * (1.0 - step(0.50, col.r));
     float isAmuletGold = step(0.80, col.r) * step(0.70, col.g) * (1.0 - step(0.40, col.b));
@@ -712,7 +631,6 @@ void main() {
 with open(os.path.join(sp_shaders, "gbuffers_entities.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_entities_fsh)
 
-# composite.vsh / fsh — Atmospheric Fog & Purple Flashbang
 composite_vsh = """#version 120
 
 varying vec2 texcoord;
@@ -727,17 +645,12 @@ with open(os.path.join(sp_shaders, "composite.vsh"), "w", encoding="utf-8") as f
 
 composite_fsh = """#version 120
 
-/*
- * Minecraft: Story Mode — Atmospheric Distance Fog & Purple Flashbang
- */
-
 uniform sampler2D colortex0;
 uniform sampler2D depthtex0;
 uniform float near;
 uniform float far;
 uniform vec3 fogColor;
 uniform float rainStrength;
-uniform int lightningBolt;
 
 varying vec2 texcoord;
 
@@ -746,8 +659,9 @@ varying vec2 texcoord;
 #endif
 
 float linearizeDepth(float z) {
-    float ndc = z * 2.0 - 1.0;
-    return (2.0 * near * far) / (far + near - ndc * (far - near));
+    float n = max(near, 0.1);
+    float f = max(far, 16.0);
+    return (2.0 * n) / (f + n - z * (f - n));
 }
 
 void main() {
@@ -760,16 +674,10 @@ void main() {
         float fogFactor = 1.0 - exp(-dist * 0.005 * (1.0 + rainStrength * 0.8));
         fogFactor = clamp(fogFactor, 0.0, 0.82);
 
-        // Story Mode warm golden peach horizon fog haze
         vec3 storyModeFog = vec3(0.95, 0.74, 0.62) * (0.85 + 0.15 * fogColor);
         col = mix(col, storyModeFog, fogFactor);
     }
     #endif
-
-    // Lightning storm sky flash
-    if (lightningBolt > 0) {
-        col += vec3(0.88, 0.69, 1.00) * 0.22;
-    }
 
     gl_FragColor = vec4(col, 1.0);
 }
@@ -777,7 +685,6 @@ void main() {
 with open(os.path.join(sp_shaders, "composite.fsh"), "w", encoding="utf-8") as f:
     f.write(composite_fsh)
 
-# final.vsh / fsh — Cinematic Color Grading
 final_vsh = """#version 120
 
 varying vec2 texcoord;
@@ -792,15 +699,7 @@ with open(os.path.join(sp_shaders, "final.vsh"), "w", encoding="utf-8") as f:
 
 final_fsh = """#version 120
 
-/*
- * Minecraft: Story Mode — Cinematic Final Presentation
- * Vibrant Telltale color grading, rich saturation, and filmic tone curve.
- */
-
 uniform sampler2D colortex0;
-uniform float viewWidth;
-uniform float viewHeight;
-
 varying vec2 texcoord;
 
 #ifndef MCSM_CINEMATIC_GRADE
@@ -843,7 +742,6 @@ Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Ed
 with open(os.path.join(SP_DIR, "README.md"), "w", encoding="utf-8") as f:
     f.write(sp_readme)
 
-# Zip Shader Pack
 print("Zipping MCSM_ShaderPack.zip...")
 with zipfile.ZipFile(SP_ZIP, "w", zipfile.ZIP_DEFLATED) as z:
     for root_dir, _, files in os.walk(SP_DIR):

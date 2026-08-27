@@ -1,14 +1,6 @@
 #version 120
 
-/*
- * Minecraft: Story Mode — Cinematic Final Presentation
- * Vibrant Telltale color grading, rich saturation, and filmic tone curve.
- */
-
 uniform sampler2D colortex0;
-uniform float viewWidth;
-uniform float viewHeight;
-
 varying vec2 texcoord;
 
 #ifndef MCSM_CINEMATIC_GRADE

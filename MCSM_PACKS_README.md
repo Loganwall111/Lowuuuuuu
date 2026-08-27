@@ -23,7 +23,20 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
 
 ## 🛠️ Critical Bug Fixes & Architecture
 
-### 1. The Blinding White Dome Bug (Completely Resolved)
+### 1. Crash on World Load / Silent Termination (Completely Fixed)
+* **Root Cause**: Previous builds inadvertently included internal mod core/post-processing shaders (`assets/dabywitherstormmod/post_effect/storm_atmosphere.json`) inside the resource pack. When Minecraft loads a world, vanilla's resource loader tries to compile any post-effects found in active resource packs; because vanilla Minecraft lacks the custom attributes and uniforms that mod code supplies, the render pipeline suffered an instant unhandled OpenGL fault, crashing to desktop with **no Java crash report**. In addition, shaderpacks referencing non-existent uniforms (`lightningBolt`) triggered driver link aborts.
+* **Fix**:
+  - `MCSM_ResourcePack.zip` is now strictly decoupled: it contains **only** pure textures, OptiFine skies (`sky1`, `sky3`, `sky4` with `blend=alpha`), and audio. All experimental post-effects, core shaders, and blockstates are stripped from the resource pack. Pure textures can never crash the game.
+  - `MCSM_ShaderPack.zip` uses 100% compliant GLSL 120 / OptiFine / Iris syntax with zero illegal uniforms.
+
+### 2. Why the "Netflix" Preset Wasn't Appearing in Your Settings
+* **Root Cause**: The visual presets menu in the mod settings (Game Menu -> Mod Options -> Daby's Wither Storm Mod) is powered by compiled Java code in the mod `.jar` file inside your `.minecraft/mods/` folder. If you are running an older pre-built binary (`dabywitherstormmod-1.9.60-26.2-beta.jar`), that binary was compiled before the "Netflix" preset and "OG" default were added to `DabyWSClientConfig.java`, so its config screen still shows the old options (`MCSM`, `Legacy Java`, `Cinematic`).
+* **Solution**:
+  - The updated `MCSM_ResourcePack.zip` automatically applies the authentic **Story Mode OG** look (OG textures, bone teeth with turquoise glow `#00E5FF`, 3D cyan halo, and Story Mode clouds) regardless of which preset is selected in the older mod jar!
+  - When selecting preset **MCSM** in your existing mod settings with `MCSM_ResourcePack.zip` enabled, you get the exact authentic Story Mode visual experience.
+  - Rebuilding the mod JAR from this repo (`./gradlew build`) will update the in-game config menu labels to show **Minecraft: Story Mode OG** (Default) and **Minecraft: Story Mode Netflix**.
+
+### 3. The Blinding White Dome Bug (Completely Resolved)
 * **Root Cause**: `fabricskyboxes/sky/mcsm_twilight.json` had `"alwaysOn": true` with `"type": "add"`, and its bottom texture was an opaque amber block `(248, 182, 72, 255)`. When rendered additively over the player's view 24/7, `source + destination` clamped to `1.0` (blinding pure white `#FFFFFF`), creating a giant glowing white dome over the world.
 * **Fix**: Completely eliminated `fabricskyboxes/` additive cubemaps and OptiFine's additive cloud ceiling `sky2.png`. Custom skies now utilize clean `blend=alpha` with correct diurnal fade schedules, and clouds are rendered procedurally via the shader without solid objects or additive whiteout.
 

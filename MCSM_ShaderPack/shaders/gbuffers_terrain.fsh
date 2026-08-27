@@ -1,18 +1,9 @@
 #version 120
 
-/*
- * Minecraft: Story Mode — Coloured Lighting & Ground Shadows
- * Direct sunlight: Warm amber/golden illumination (#FFF2D8)
- * Shadows on ground: Atmospheric cool lavender/purple bounce tint (#6B5885)
- * Torch / blocklight: Rich warm firelight (#FFA347)
- */
-
 uniform sampler2D texture;
 varying vec4 color;
 varying vec2 texcoord;
 varying vec2 lmcoord;
-varying vec3 normal;
-varying vec3 worldPos;
 
 #ifndef MCSM_COLOURED_LIGHTING
 #define MCSM_COLOURED_LIGHTING 1
@@ -23,6 +14,9 @@ varying vec3 worldPos;
 
 void main() {
     vec4 tex = texture2D(texture, texcoord) * color;
+    if (tex.a < 0.1) {
+        discard;
+    }
 
     #if MCSM_COLOURED_LIGHTING
     float blockLight = clamp((lmcoord.x - 0.03) * 1.05, 0.0, 1.0);

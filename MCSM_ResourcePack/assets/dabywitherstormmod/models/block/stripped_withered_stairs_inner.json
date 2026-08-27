@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/inner_stairs",
-  "textures": {
-    "bottom": "dabywitherstormmod:block/stripped_withered_planks",
-    "top": "dabywitherstormmod:block/stripped_withered_planks",
-    "side": "dabywitherstormmod:block/stripped_withered_planks"
-  }
-}

@@ -7,10 +7,12 @@ varying vec2 texcoord;
 
 void main() {
     vec4 col = texture2D(texture, texcoord) * color;
+    if (col.a < 0.1) {
+        discard;
+    }
 
     // Vibrant Turquoise Teeth Glow (#00E5FF)
     float isTurquoise = step(0.70, col.g) * step(0.80, col.b) * (1.0 - step(0.40, col.r));
-    // Magenta Eyes & Command Block Rune Bloom
     float isHotMagenta = step(0.68, col.r) * step(0.68, col.b) * (1.0 - step(0.50, col.g));
     float isCyanGlow   = step(0.68, col.g) * step(0.68, col.b) * (1.0 - step(0.50, col.r));
     float isAmuletGold = step(0.80, col.r) * step(0.70, col.g) * (1.0 - step(0.40, col.b));

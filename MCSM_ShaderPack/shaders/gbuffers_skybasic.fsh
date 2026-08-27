@@ -13,7 +13,6 @@ varying vec3 viewPos;
 #define MCSM_ROILING_CLOUDS 1
 #endif
 
-// Fast 2D procedural noise for shader clouds
 float hash2(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
@@ -40,7 +39,6 @@ float cloudFbm(vec2 p) {
     return v;
 }
 
-// Official day_sky.png Story Mode gradient
 vec3 getStoryModeDaySky(float elev) {
     vec3 cZenith   = vec3(0.549, 0.529, 0.910); // #8c87e8 soft periwinkle lavender
     vec3 cLilac    = vec3(0.686, 0.608, 0.886); // #af9be2 soft lilac
@@ -74,11 +72,9 @@ void main() {
     #if MCSM_DAY_SKY
     vec3 skyCol = getStoryModeDaySky(elev);
 
-    // Warm luminous horizon glow accent
     float horizBand = exp(-pow(max(elev, 0.0) * 10.0, 2.0));
     skyCol += vec3(0.98, 0.76, 0.45) * horizBand * 0.22;
 
-    // Procedural Story Mode Shader Clouds (no solid objects / no texture needed!)
     #if MCSM_ROILING_CLOUDS
     if (elev > 0.04) {
         vec2 cp = dir.xz / max(elev + 0.18, 0.08);
@@ -90,7 +86,6 @@ void main() {
 
         float cloudMask = smoothstep(0.48, 0.76, density) * clamp(elev * 3.0, 0.0, 1.0);
 
-        // Underlit by warm amber/peach horizon, soft lilac-tinted crowns
         vec3 cloudUnderside = vec3(0.96, 0.72, 0.58);
         vec3 cloudCrown     = vec3(0.98, 0.96, 1.00);
         vec3 cloudCol = mix(cloudUnderside, cloudCrown, smoothstep(0.40, 0.82, detail));
