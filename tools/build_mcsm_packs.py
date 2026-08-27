@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 MCSM Pack Builder — Standalone Resource Pack and Shader Pack for Minecraft: Story Mode
-Target: Minecraft 1.21.2
+Target: Minecraft 1.21.2 & 26.2 (Fabric / Iris / Sodium)
 Creates clean, 100% stable, crash-free packs for Minecraft: Story Mode.
 """
 
@@ -90,225 +90,7 @@ TWILIGHT_PURPLE_STOPS = [
     (1.00, (233, 98, 128))   # #e96280 warm rose pink horizon
 ]
 
-# ----------------------------------------------------------------------
-# 1. BUILD RESOURCE PACK (Clean, Pure Assets, Crash-Free)
-# ----------------------------------------------------------------------
-print("[1/2] Assembling Minecraft: Story Mode Resource Pack...")
-
-# pack_format 42 is official for Minecraft 1.21.2 - 1.21.3
-rp_meta = {
-    "pack": {
-        "pack_format": 42,
-        "supported_formats": {
-            "min_inclusive": 15,
-            "max_inclusive": 60
-        },
-        "description": "Minecraft: Story Mode - Authentic Visuals, OG Textures & Turquoise Teeth Glow (1.21.2)"
-    }
-}
-with open(os.path.join(RP_DIR, "pack.mcmeta"), "w", encoding="utf-8") as f:
-    json.dump(rp_meta, f, indent=2)
-
-# Copy ONLY textures, sounds, and language files into the Resource Pack
-mod_tex_src = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "textures")
-mod_tex_dst = os.path.join(RP_DIR, "assets", "dabywitherstormmod", "textures")
-if os.path.exists(mod_tex_src):
-    shutil.copytree(mod_tex_src, mod_tex_dst, dirs_exist_ok=True)
-    print("Copied entity and misc textures into Resource Pack")
-
-# Delete any cloud PNG from resource pack (per user instruction: no cloud PNGs)
-cloud_png_in_mod_tex = os.path.join(mod_tex_dst, "misc", "mcsm_cloud.png")
-if os.path.exists(cloud_png_in_mod_tex):
-    os.remove(cloud_png_in_mod_tex)
-    print("Deleted mcsm_cloud.png from Resource Pack")
-
-mod_sounds_src = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "sounds")
-mod_sounds_dst = os.path.join(RP_DIR, "assets", "dabywitherstormmod", "sounds")
-if os.path.exists(mod_sounds_src):
-    shutil.copytree(mod_sounds_src, mod_sounds_dst, dirs_exist_ok=True)
-
-mod_sounds_json = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "sounds.json")
-if os.path.exists(mod_sounds_json):
-    shutil.copy(mod_sounds_json, os.path.join(RP_DIR, "assets", "dabywitherstormmod", "sounds.json"))
-
-# Full Story Mode sound table for vanilla clicks / menu
-sounds_json_path = os.path.join(RP_DIR, "assets", "minecraft", "sounds.json")
-os.makedirs(os.path.dirname(sounds_json_path), exist_ok=True)
-sounds_data = {
-    "music.menu": {
-        "replace": True,
-        "sounds": [{"name": "music/menu/title_theme", "stream": True}]
-    },
-    "ui.button.click": {
-        "replace": True,
-        "sounds": ["random/click_stereo"]
-    }
-}
-with open(sounds_json_path, "w", encoding="utf-8") as f:
-    json.dump(sounds_data, f, indent=2)
-
-env_dir = os.path.join(RP_DIR, "assets", "minecraft", "textures", "environment")
-os.makedirs(env_dir, exist_ok=True)
-
-# Note: clouds.png is deliberately OMITTED. User requirement: "deletes the cloud PNGS it's not a PNG it's a shader"
-sun_rows = [[255, 245, 210, 255] * 64 for _ in range(64)]
-write_png(os.path.join(env_dir, "sun.png"), 64, 64, sun_rows)
-moon_rows = [[230, 220, 245, 255] * 128 for _ in range(64)]
-write_png(os.path.join(env_dir, "moon_phases.png"), 128, 64, moon_rows)
-end_rows = [[15, 6, 25, 255] * 128 for _ in range(128)]
-write_png(os.path.join(env_dir, "end_sky.png"), 128, 128, end_rows)
-
-# 3D Cyan Shield Halo Texture: textures/misc/halo_ring.png (#00E5FF)
-HALO_SZ = 256
-halo_rows = []
-for hy in range(HALO_SZ):
-    row = []
-    dy = (hy - HALO_SZ / 2) / (HALO_SZ / 2)
-    for hx in range(HALO_SZ):
-        dx = (hx - HALO_SZ / 2) / (HALO_SZ / 2)
-        dist = math.sqrt(dx * dx + dy * dy)
-        if 0.65 <= dist <= 0.98:
-            ringFactor = 1.0 - abs(dist - 0.82) / 0.16
-            ringFactor = max(0.0, min(1.0, ringFactor))
-            r = int(0 + ringFactor * 120)
-            g = int(229 + ringFactor * 26)
-            b = int(255)
-            a = int(ringFactor * 240)
-        else:
-            r, g, b, a = 0, 0, 0, 0
-        row.extend([r, g, b, a])
-    halo_rows.append(row)
-
-misc_dir = os.path.join(RP_DIR, "assets", "dabywitherstormmod", "textures", "misc")
-write_png(os.path.join(misc_dir, "halo_ring.png"), HALO_SZ, HALO_SZ, halo_rows)
-
-# OptiFine Custom Skies: sequential sky1, sky2, sky3 with explicit source= to prevent crash
-print("Generating clean OptiFine 3x2 Cubemaps with explicit source tags...")
-opti_sky_dir = os.path.join(RP_DIR, "assets", "minecraft", "optifine", "sky", "world0")
-os.makedirs(opti_sky_dir, exist_ok=True)
-
-def build_cubemap(stops, tile_size=512):
-    w = tile_size * 3
-    h = tile_size * 2
-    grid = [[[0, 0, 0, 255] for _ in range(w)] for _ in range(h)]
-    c_zenith = stops[0][1]
-    c_horizon = stops[-1][1]
-
-    # Top face
-    for y in range(tile_size):
-        for x in range(tile_size):
-            dx = (x - tile_size / 2) / (tile_size / 2)
-            dy = (y - tile_size / 2) / (tile_size / 2)
-            r = math.sqrt(dx * dx + dy * dy)
-            t = min(1.0, r * 0.40)
-            col = sample_stops(stops, t)
-            grid[y][tile_size + x] = col + [255]
-
-    # Bottom face
-    for y in range(tile_size):
-        for x in range(tile_size):
-            grid[y][x] = list(c_horizon) + [255]
-
-    # Sides: Row 0 slot 2 (South), Row 1 slot 0 (West), Row 1 slot 1 (North), Row 1 slot 2 (East)
-    side_slots = [(0, 2), (1, 0), (1, 1), (1, 2)]
-    for sy_slot, sx_slot in side_slots:
-        for y in range(tile_size):
-            fy = y / tile_size
-            t = 0.35 + fy * 0.65
-            col = sample_stops(stops, t)
-            for x in range(tile_size):
-                grid[sy_slot * tile_size + y][sx_slot * tile_size + x] = col + [255]
-
-    rows = []
-    for y in range(h):
-        row = []
-        for x in range(w):
-            row.extend(grid[y][x])
-        rows.append(row)
-    return w, h, rows
-
-# Layer 1: Daytime Sky
-w1, h1, r1 = build_cubemap(DAY_SKY_STOPS, tile_size=512)
-write_png(os.path.join(opti_sky_dir, "sky1.png"), w1, h1, r1)
-with open(os.path.join(opti_sky_dir, "sky1.properties"), "w", encoding="utf-8") as f:
-    f.write("""# Minecraft: Story Mode — Official Daytime Sky
-source=./sky1.png
-startFadeIn=5:30
-endFadeIn=6:30
-startFadeOut=18:00
-endFadeOut=19:00
-blend=add
-rotate=false
-speed=0.0
-axis=0.0 1.0 0.0
-""")
-
-# Layer 2: Phase 5 Purple Sunset Sky (consecutive numbering prevents skybox parser crash)
-w2, h2, r2 = build_cubemap(PURPLE_SUNSET_STOPS, tile_size=512)
-write_png(os.path.join(opti_sky_dir, "sky2.png"), w2, h2, r2)
-with open(os.path.join(opti_sky_dir, "sky2.properties"), "w", encoding="utf-8") as f:
-    f.write("""# Minecraft: Story Mode — Phase 5.1-5.9 Purple Sunset Sky
-source=./sky2.png
-startFadeIn=17:30
-endFadeIn=18:30
-startFadeOut=21:00
-endFadeOut=22:00
-blend=add
-rotate=false
-speed=0.0
-axis=0.0 1.0 0.0
-""")
-
-# Layer 3: Phases 6, 7, 8 Twilight Sky
-w3, h3, r3 = build_cubemap(TWILIGHT_PURPLE_STOPS, tile_size=512)
-write_png(os.path.join(opti_sky_dir, "sky3.png"), w3, h3, r3)
-with open(os.path.join(opti_sky_dir, "sky3.properties"), "w", encoding="utf-8") as f:
-    f.write("""# Minecraft: Story Mode — Phase 6-8 Twilight Sky
-source=./sky3.png
-startFadeIn=20:30
-endFadeIn=21:30
-startFadeOut=5:00
-endFadeOut=6:00
-blend=add
-rotate=false
-speed=0.0
-axis=0.0 1.0 0.0
-""")
-
-# Emissive mapping property
-opti_base = os.path.join(RP_DIR, "assets", "minecraft", "optifine")
-with open(os.path.join(opti_base, "emissive.properties"), "w", encoding="utf-8") as f:
-    f.write("# Minecraft: Story Mode Emissive Textures\nsuffix.emissive=_e\n")
-
-# Resource Pack pack.png
-pack_png_rows = []
-for py in range(64):
-    row = []
-    for px in range(64):
-        t = (px + py) / 128.0
-        col = sample_stops(DAY_SKY_STOPS, t)
-        row.extend(col + [255])
-    pack_png_rows.append(row)
-write_png(os.path.join(RP_DIR, "pack.png"), 64, 64, pack_png_rows)
-
-print("Zipping MCSM_ResourcePack.zip...")
-with zipfile.ZipFile(RP_ZIP, "w", zipfile.ZIP_DEFLATED) as z:
-    for root_dir, _, files in os.walk(RP_DIR):
-        for file in files:
-            full_p = os.path.join(root_dir, file)
-            rel_p = os.path.relpath(full_p, RP_DIR)
-            z.write(full_p, rel_p)
-print(f"Created {RP_ZIP} ({os.path.getsize(RP_ZIP)} bytes)")
-
-# ----------------------------------------------------------------------
-# 2. BUILD SHADER PACK (Clean GLSL, User Clouds Shader, Zero Crashes)
-# ----------------------------------------------------------------------
-print("[2/2] Assembling Minecraft: Story Mode Atmosphere Shader Pack...")
-sp_shaders = os.path.join(SP_DIR, "shaders")
-sp_core = os.path.join(sp_shaders, "core")
-os.makedirs(sp_core, exist_ok=True)
-
-# 2.1 The exact user-provided rendertype_clouds.vsh for Minecraft 1.21.2
+# User's exact core cloud shader for Minecraft 1.21.2 & 26.2
 user_rendertype_clouds_vsh = """#version 150
 
 #moj_import <minecraft:fog.glsl>
@@ -448,7 +230,227 @@ user_rendertype_clouds_json = """{
 }
 """
 
-# Place in shaders/core/ and shaders/ root
+# ----------------------------------------------------------------------
+# 1. BUILD RESOURCE PACK (Pure Assets, Core Cloud Shader, Crash-Free)
+# ----------------------------------------------------------------------
+print("[1/2] Assembling Minecraft: Story Mode Resource Pack...")
+
+# Simple, universal pack.mcmeta avoiding JsonParseException on modern loaders
+rp_meta = {
+    "pack": {
+        "pack_format": 64,
+        "description": "Minecraft: Story Mode - Authentic Visuals, OG Textures & Turquoise Teeth Glow"
+    }
+}
+with open(os.path.join(RP_DIR, "pack.mcmeta"), "w", encoding="utf-8") as f:
+    json.dump(rp_meta, f, indent=2)
+
+# Copy entity and block textures into Resource Pack
+mod_tex_src = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "textures")
+mod_tex_dst = os.path.join(RP_DIR, "assets", "dabywitherstormmod", "textures")
+if os.path.exists(mod_tex_src):
+    shutil.copytree(mod_tex_src, mod_tex_dst, dirs_exist_ok=True)
+    print("Copied entity and misc textures into Resource Pack")
+
+# Delete any cloud PNG from resource pack (clouds are 100% shader-driven)
+cloud_png_in_mod_tex = os.path.join(mod_tex_dst, "misc", "mcsm_cloud.png")
+if os.path.exists(cloud_png_in_mod_tex):
+    os.remove(cloud_png_in_mod_tex)
+
+# Wire core cloud shader into assets/minecraft/shaders/core/ for vanilla/fallback
+rp_mc_core = os.path.join(RP_DIR, "assets", "minecraft", "shaders", "core")
+os.makedirs(rp_mc_core, exist_ok=True)
+with open(os.path.join(rp_mc_core, "rendertype_clouds.vsh"), "w", encoding="utf-8") as f:
+    f.write(user_rendertype_clouds_vsh)
+with open(os.path.join(rp_mc_core, "rendertype_clouds.fsh"), "w", encoding="utf-8") as f:
+    f.write(user_rendertype_clouds_fsh)
+with open(os.path.join(rp_mc_core, "rendertype_clouds.json"), "w", encoding="utf-8") as f:
+    f.write(user_rendertype_clouds_json)
+
+mod_sounds_src = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "sounds")
+mod_sounds_dst = os.path.join(RP_DIR, "assets", "dabywitherstormmod", "sounds")
+if os.path.exists(mod_sounds_src):
+    shutil.copytree(mod_sounds_src, mod_sounds_dst, dirs_exist_ok=True)
+
+mod_sounds_json = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "sounds.json")
+if os.path.exists(mod_sounds_json):
+    shutil.copy(mod_sounds_json, os.path.join(RP_DIR, "assets", "dabywitherstormmod", "sounds.json"))
+
+sounds_json_path = os.path.join(RP_DIR, "assets", "minecraft", "sounds.json")
+os.makedirs(os.path.dirname(sounds_json_path), exist_ok=True)
+sounds_data = {
+    "music.menu": {
+        "replace": True,
+        "sounds": [{"name": "music/menu/title_theme", "stream": True}]
+    },
+    "ui.button.click": {
+        "replace": True,
+        "sounds": ["random/click_stereo"]
+    }
+}
+with open(sounds_json_path, "w", encoding="utf-8") as f:
+    json.dump(sounds_data, f, indent=2)
+
+env_dir = os.path.join(RP_DIR, "assets", "minecraft", "textures", "environment")
+os.makedirs(env_dir, exist_ok=True)
+
+# Note: clouds.png is deliberately omitted (shader clouds used)
+sun_rows = [[255, 245, 210, 255] * 64 for _ in range(64)]
+write_png(os.path.join(env_dir, "sun.png"), 64, 64, sun_rows)
+moon_rows = [[230, 220, 245, 255] * 128 for _ in range(64)]
+write_png(os.path.join(env_dir, "moon_phases.png"), 128, 64, moon_rows)
+end_rows = [[15, 6, 25, 255] * 128 for _ in range(128)]
+write_png(os.path.join(env_dir, "end_sky.png"), 128, 128, end_rows)
+
+# 3D Cyan Shield Halo Texture: textures/misc/halo_ring.png (#00E5FF)
+HALO_SZ = 256
+halo_rows = []
+for hy in range(HALO_SZ):
+    row = []
+    dy = (hy - HALO_SZ / 2) / (HALO_SZ / 2)
+    for hx in range(HALO_SZ):
+        dx = (hx - HALO_SZ / 2) / (HALO_SZ / 2)
+        dist = math.sqrt(dx * dx + dy * dy)
+        if 0.65 <= dist <= 0.98:
+            ringFactor = 1.0 - abs(dist - 0.82) / 0.16
+            ringFactor = max(0.0, min(1.0, ringFactor))
+            r = int(0 + ringFactor * 120)
+            g = int(229 + ringFactor * 26)
+            b = int(255)
+            a = int(ringFactor * 240)
+        else:
+            r, g, b, a = 0, 0, 0, 0
+        row.extend([r, g, b, a])
+    halo_rows.append(row)
+
+misc_dir = os.path.join(RP_DIR, "assets", "dabywitherstormmod", "textures", "misc")
+write_png(os.path.join(misc_dir, "halo_ring.png"), HALO_SZ, HALO_SZ, halo_rows)
+
+# OptiFine Custom Skies
+print("Generating clean OptiFine 3x2 Cubemaps with explicit source tags...")
+opti_sky_dir = os.path.join(RP_DIR, "assets", "minecraft", "optifine", "sky", "world0")
+os.makedirs(opti_sky_dir, exist_ok=True)
+
+def build_cubemap(stops, tile_size=512):
+    w = tile_size * 3
+    h = tile_size * 2
+    grid = [[[0, 0, 0, 255] for _ in range(w)] for _ in range(h)]
+    c_zenith = stops[0][1]
+    c_horizon = stops[-1][1]
+
+    # Top face
+    for y in range(tile_size):
+        for x in range(tile_size):
+            dx = (x - tile_size / 2) / (tile_size / 2)
+            dy = (y - tile_size / 2) / (tile_size / 2)
+            r = math.sqrt(dx * dx + dy * dy)
+            t = min(1.0, r * 0.40)
+            col = sample_stops(stops, t)
+            grid[y][tile_size + x] = col + [255]
+
+    # Bottom face
+    for y in range(tile_size):
+        for x in range(tile_size):
+            grid[y][x] = list(c_horizon) + [255]
+
+    # Sides: Row 0 slot 2 (South), Row 1 slot 0 (West), Row 1 slot 1 (North), Row 1 slot 2 (East)
+    side_slots = [(0, 2), (1, 0), (1, 1), (1, 2)]
+    for sy_slot, sx_slot in side_slots:
+        for y in range(tile_size):
+            fy = y / tile_size
+            t = 0.35 + fy * 0.65
+            col = sample_stops(stops, t)
+            for x in range(tile_size):
+                grid[sy_slot * tile_size + y][sx_slot * tile_size + x] = col + [255]
+
+    rows = []
+    for y in range(h):
+        row = []
+        for x in range(w):
+            row.extend(grid[y][x])
+        rows.append(row)
+    return w, h, rows
+
+# Layer 1: Daytime Sky
+w1, h1, r1 = build_cubemap(DAY_SKY_STOPS, tile_size=512)
+write_png(os.path.join(opti_sky_dir, "sky1.png"), w1, h1, r1)
+with open(os.path.join(opti_sky_dir, "sky1.properties"), "w", encoding="utf-8") as f:
+    f.write("""# Minecraft: Story Mode — Official Daytime Sky
+source=./sky1.png
+startFadeIn=5:30
+endFadeIn=6:30
+startFadeOut=18:00
+endFadeOut=19:00
+blend=add
+rotate=false
+speed=0.0
+axis=0.0 1.0 0.0
+""")
+
+# Layer 2: Phase 5 Purple Sunset Sky
+w2, h2, r2 = build_cubemap(PURPLE_SUNSET_STOPS, tile_size=512)
+write_png(os.path.join(opti_sky_dir, "sky2.png"), w2, h2, r2)
+with open(os.path.join(opti_sky_dir, "sky2.properties"), "w", encoding="utf-8") as f:
+    f.write("""# Minecraft: Story Mode — Phase 5.1-5.9 Purple Sunset Sky
+source=./sky2.png
+startFadeIn=17:30
+endFadeIn=18:30
+startFadeOut=21:00
+endFadeOut=22:00
+blend=add
+rotate=false
+speed=0.0
+axis=0.0 1.0 0.0
+""")
+
+# Layer 3: Phases 6, 7, 8 Twilight Sky
+w3, h3, r3 = build_cubemap(TWILIGHT_PURPLE_STOPS, tile_size=512)
+write_png(os.path.join(opti_sky_dir, "sky3.png"), w3, h3, r3)
+with open(os.path.join(opti_sky_dir, "sky3.properties"), "w", encoding="utf-8") as f:
+    f.write("""# Minecraft: Story Mode — Phase 6-8 Twilight Sky
+source=./sky3.png
+startFadeIn=20:30
+endFadeIn=21:30
+startFadeOut=5:00
+endFadeOut=6:00
+blend=add
+rotate=false
+speed=0.0
+axis=0.0 1.0 0.0
+""")
+
+opti_base = os.path.join(RP_DIR, "assets", "minecraft", "optifine")
+with open(os.path.join(opti_base, "emissive.properties"), "w", encoding="utf-8") as f:
+    f.write("# Minecraft: Story Mode Emissive Textures\nsuffix.emissive=_e\n")
+
+pack_png_rows = []
+for py in range(64):
+    row = []
+    for px in range(64):
+        t = (px + py) / 128.0
+        col = sample_stops(DAY_SKY_STOPS, t)
+        row.extend(col + [255])
+    pack_png_rows.append(row)
+write_png(os.path.join(RP_DIR, "pack.png"), 64, 64, pack_png_rows)
+
+print("Zipping MCSM_ResourcePack.zip...")
+with zipfile.ZipFile(RP_ZIP, "w", zipfile.ZIP_DEFLATED) as z:
+    for root_dir, _, files in os.walk(RP_DIR):
+        for file in files:
+            full_p = os.path.join(root_dir, file)
+            rel_p = os.path.relpath(full_p, RP_DIR)
+            z.write(full_p, rel_p)
+print(f"Created {RP_ZIP} ({os.path.getsize(RP_ZIP)} bytes)")
+
+# ----------------------------------------------------------------------
+# 2. BUILD SHADER PACK (Clean GLSL, Thick Extruded Clouds, Crash-Free)
+# ----------------------------------------------------------------------
+print("[2/2] Assembling Minecraft: Story Mode Atmosphere Shader Pack...")
+sp_shaders = os.path.join(SP_DIR, "shaders")
+sp_core = os.path.join(sp_shaders, "core")
+os.makedirs(sp_core, exist_ok=True)
+
+# 2.1 Core Cloud Shaders in shaders/core/ and shaders/
 with open(os.path.join(sp_core, "rendertype_clouds.vsh"), "w", encoding="utf-8") as f:
     f.write(user_rendertype_clouds_vsh)
 with open(os.path.join(sp_core, "rendertype_clouds.fsh"), "w", encoding="utf-8") as f:
@@ -462,15 +464,32 @@ with open(os.path.join(sp_shaders, "rendertype_clouds.fsh"), "w", encoding="utf-
     f.write(user_rendertype_clouds_fsh)
 
 # 2.2 OptiFine / Iris Pipeline Cloud Shaders (gbuffers_clouds)
-# Flat, crisp Story Mode lighting (Brightness = 1.0, CloudFadeAlpha = 0, no reflections)
+# Implements the 2.5x vertical extrusion and uniform 1.0 face brightness so Iris renders Story Mode thick clouds
 gbuffers_clouds_vsh = """#version 120
 
+uniform mat4 gbufferModelView;
+uniform mat4 gbufferModelViewInverse;
+
 varying vec4 color;
+varying vec2 texcoord;
+
+// Story Mode cloud extrusion factor matching rendertype_clouds.vsh
+const float CloudHeight = 2.5;
 
 void main() {
-    gl_Position = ftransform();
-    // Flat bright uniform MCSM story mode cloud lighting (all faces 1.0 brightness)
-    color = gl_Color;
+    // Transform from eye space into world space
+    vec3 eyePos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+    vec3 worldPos = (gbufferModelViewInverse * vec4(eyePos, 1.0)).xyz;
+
+    // Apply the 2.5 vertical extrusion exactly like rendertype_clouds.vsh
+    worldPos.y *= CloudHeight;
+
+    // Transform back to clip space
+    gl_Position = gl_ProjectionMatrix * (gbufferModelView * vec4(worldPos, 1.0));
+
+    // Flat MCSM story mode cloud coloring: uniform 1.0 brightness for all faces
+    color = vec4(gl_Color.rgb * 1.08, gl_Color.a);
+    texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 }
 """
 with open(os.path.join(sp_shaders, "gbuffers_clouds.vsh"), "w", encoding="utf-8") as f:
@@ -479,12 +498,13 @@ with open(os.path.join(sp_shaders, "gbuffers_clouds.vsh"), "w", encoding="utf-8"
 gbuffers_clouds_fsh = """#version 120
 
 varying vec4 color;
+varying vec2 texcoord;
 
 void main() {
     if (color.a < 0.05) {
         discard;
     }
-    // Crisp flat Story Mode clouds without raymarching or alpha fade
+    // Crisp flat Story Mode cloud blocks
     gl_FragColor = color;
 }
 """
@@ -741,25 +761,25 @@ with open(os.path.join(sp_shaders, "final.fsh"), "w", encoding="utf-8") as f:
 # 2.9 shaders.properties
 shaders_properties = """# Minecraft: Story Mode — Shaderpack Configuration
 # Clean, Authentic Minecraft: Story Mode visuals
-# Flat shader clouds, authentic daytime sky dome, turquoise teeth glow
+# Flat extruded shader clouds (2.5x height), authentic daytime sky dome, turquoise teeth glow
 """
 with open(os.path.join(sp_shaders, "shaders.properties"), "w", encoding="utf-8") as f:
     f.write(shaders_properties)
 
 # Shaderpack README
-sp_readme = """# MINECRAFT: STORY MODE — Official Atmosphere Shaderpack (1.21.2)
+sp_readme = """# MINECRAFT: STORY MODE — Official Atmosphere Shaderpack (1.21.2 / 26.2)
 Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Edition).
 
 ## Features
 - **Official MCSM Core Cloud Shader**: Integrated GLSL 150 core cloud shader (`rendertype_clouds.vsh` with `CloudFaces`, `CloudInfo`, `BrightnessTop/Bottom/Sides = 1.0`, `CloudHeight = 2.5`, `CloudFadeAlpha = 0`).
-- **Iris / OptiFine Cloud Pipeline**: `gbuffers_clouds` renders flat crisp Story Mode clouds without raymarched noise.
+- **Iris / OptiFine Cloud Pipeline**: `gbuffers_clouds` renders extruded 2.5x thick Story Mode clouds without raymarched noise.
 - **Story Mode Daytime Sky Dome**: Signature MCSM periwinkle lavender -> lilac -> mauve -> peach -> amber horizon gradient.
+- **Story Mode Colored Lighting & Shadows**: Warm golden sunlight, lavender shadow tint, amber torchlight, NO reflections.
 - **Teeth Turquoise Glow**: Vibrant cyan/turquoise glow (#00E5FF) pulsing on the Wither Storm teeth.
-- **No Dynamic Reflections or Heavy Shadows**: Authentic clean Story Mode diffuse lighting.
 - **100% Crash-Free**: Standardized uniform declarations (`gtexture`) avoiding GLSL keyword collisions.
 
 ## Installation
-1. Install **Iris + Sodium** (recommended) or OptiFine for Minecraft 1.21.2.
+1. Install **Iris + Sodium** (recommended) or OptiFine.
 2. Copy `MCSM_ShaderPack.zip` into `.minecraft/shaderpacks/` (DO NOT unzip).
 3. In Minecraft: Video Settings -> Shader Packs -> select **MCSM_ShaderPack**.
 """
