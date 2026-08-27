@@ -1,3 +1,20 @@
+# 🌟 Official Releases & Quick Downloads (Minecraft 1.21.2 & 26.2)
+
+> **All official Minecraft: Story Mode packs and mod builds are published in the [GitHub Releases Page](https://github.com/Loganwall111/Lowuuuuuu/releases/tag/v1.9.60-26.2-mcsm)!**
+
+| Deliverable | Description | Direct Download | Install Location |
+| :--- | :--- | :---: | :--- |
+| **MCSM Shader Pack** | Iris/OptiFine shaderpack with 8 Story Mode cloud presets, `clouds=fast` pipeline routing in `shaders.properties`, identical `precision highp float;` headers, and turquoise teeth glow. | [📥 **Download `MCSM_ShaderPack.zip`**](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ShaderPack.zip) | `.minecraft/shaderpacks/` *(Do NOT unzip)* |
+| **MCSM Resource Pack** | Authentic Story Mode textures, sounds, OptiFine skies, and modern 26.2 JSON metadata schema (`supported_formats`, `min_format`, `max_format`). | [📥 **Download `MCSM_ResourcePack.zip`**](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ResourcePack.zip) | `.minecraft/resourcepacks/` *(Do NOT unzip)* |
+| **Wither Storm Mod JAR** | Official 1.21.2 / 26.2 Fabric mod JAR with crash-free post-chain shaders, 3D spherical shield halo, and unified `/devouringstorms` command. | [📥 **Download Mod JAR (CI #33123018070)**](https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33123018070) | `.minecraft/mods/` |
+
+### 🚀 Quick Setup Instructions
+1. **Shaderpack**: Put `MCSM_ShaderPack.zip` in `.minecraft/shaderpacks/`. In Minecraft: Video Settings -> Shader Packs -> select **MCSM_ShaderPack**.
+2. **Resource Pack**: Put `MCSM_ResourcePack.zip` in `.minecraft/resourcepacks/`. In Minecraft: Options -> Resource Packs -> enable **MCSM_ResourcePack** (ensure conflicting cloud packs like `Story Mode Clouds.zip` are disabled).
+3. **Mod**: Put the mod JAR in `.minecraft/mods/`.
+
+---
+
 # Dabicco's Wither Storm Mod — clean rewrite
 
 This repository is the **clean rewrite** of Dabicco's Wither Storm Mod (the
