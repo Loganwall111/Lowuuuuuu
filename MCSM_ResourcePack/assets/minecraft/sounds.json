@@ -1,0 +1,26 @@
+{
+  "music.menu": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "music/menu/title_theme",
+        "stream": true
+      }
+    ]
+  },
+  "ui.button.click": {
+    "replace": true,
+    "sounds": [
+      "random/click_stereo"
+    ]
+  },
+  "ui.toast.in": {
+    "replace": true,
+    "sounds": [
+      "ui/toast/in",
+      "ui/toast/in1",
+      "ui/toast/in2",
+      "ui/toast/in3"
+    ]
+  }
+}
