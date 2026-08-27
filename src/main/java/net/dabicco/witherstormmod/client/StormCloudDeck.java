@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
  * Clouds are handled via authentic Minecraft: Story Mode shader clouds and resource packs.
  */
 public final class StormCloudDeck {
-   private static final Identifier SLAB = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/mcsm_cloud.png");
+   private static final Identifier SLAB = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/halo_ring.png");
    private static final double MAX_VIEW_DIST = 900.0;
    private static final int FULL_BRIGHT = 0xF000F0;
 

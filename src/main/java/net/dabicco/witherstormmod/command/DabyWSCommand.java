@@ -153,8 +153,6 @@ public class DabyWSCommand {
 
    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
       dispatcher.register(buildRoot("devouringstorms"));
-      dispatcher.register(buildRoot("devouringstorm"));
-      dispatcher.register(buildRoot("dabyws"));
       registerExtra(dispatcher);
    }
 

@@ -1,11 +1,10 @@
 #version 120
 
-uniform sampler2D texture;
+uniform sampler2D gtexture;
 varying vec4 color;
 varying vec2 texcoord;
 
 void main() {
-    vec4 col = texture2D(texture, texcoord) * color;
-    col.rgb *= vec3(1.10, 1.02, 0.94);
+    vec4 col = texture2D(gtexture, texcoord) * color;
     gl_FragColor = col;
 }

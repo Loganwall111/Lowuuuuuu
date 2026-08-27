@@ -1,10 +1,9 @@
 #version 120
 
 varying vec4 color;
-varying vec3 viewPos;
 
 void main() {
     gl_Position = ftransform();
+    // Flat bright uniform MCSM story mode cloud lighting (all faces 1.0 brightness)
     color = gl_Color;
-    viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
 }

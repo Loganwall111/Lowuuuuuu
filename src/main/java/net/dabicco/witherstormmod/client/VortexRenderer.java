@@ -13,7 +13,7 @@ import net.minecraft.world.phys.Vec3;
  * right above the Wither Storm body once it reaches Phases 7 and 8.
  */
 public final class VortexRenderer {
-   private static final Identifier VORTEX_TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/mcsm_cloud.png");
+   private static final Identifier VORTEX_TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/halo_ring.png");
 
    private VortexRenderer() {
    }

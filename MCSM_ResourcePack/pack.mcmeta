@@ -1,10 +1,10 @@
 {
   "pack": {
-    "pack_format": 46,
+    "pack_format": 42,
     "supported_formats": {
       "min_inclusive": 15,
       "max_inclusive": 60
     },
-    "description": "Minecraft: Story Mode - Authentic Visuals, OG Textures & Turquoise Teeth Glow"
+    "description": "Minecraft: Story Mode - Authentic Visuals, OG Textures & Turquoise Teeth Glow (1.21.2)"
   }
 }
