@@ -212,7 +212,7 @@ public class DabyWitherStormModClient implements ClientModInitializer {
       LevelRenderEvents.COLLECT_SUBMITS.register(WitheredRenderer::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(FormidibombBlast::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormStarfield::submit);
-      LevelRenderEvents.COLLECT_SUBMITS.register(StormCloudDeck::submit);
+      // StormCloudDeck removed per user request (synthetic slab prisms disabled; clouds handled by resourcepack & shaders)
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPresenceFX::submit);
       ClientTickEvents.START_CLIENT_TICK.register(StormPresenceFX::tick);
       ClientPlayNetworking.registerGlobalReceiver(SpawnStructurePayload.TYPE, (payload, context) -> context.client().execute(() -> {

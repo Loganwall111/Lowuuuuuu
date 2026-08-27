@@ -39,11 +39,9 @@ public final class StormCloudDeck {
    }
 
    public static void submit(LevelRenderContext ctx) {
-      Minecraft mc = Minecraft.getInstance();
-      int mode = (int)Math.round(DabyWSClientConfig.stormCloudDeck);
-      if (mode <= 0 || mc.level == null || ClientDistantStormManager.all().isEmpty()) {
-         return;
-      }
+      // Cloud deck disabled per user request: clouds are handled via Minecraft Story Mode resourcepack and shaderpack
+      return;
+   }
       float coverage = (float)DabyWSClientConfig.stormCloudCoverage;
       if (coverage <= 0.05F) {
          return;

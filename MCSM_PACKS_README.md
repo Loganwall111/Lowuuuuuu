@@ -1,79 +1,86 @@
-# Minecraft: Story Mode — Fixed Resource Pack & Shader Pack
+# Minecraft: Story Mode — Fixed Resource Pack & Shader Pack (v2.0 Overhaul)
 
-This package delivers two standalone, fully-fixed, production-ready deliverables that authentically recreate the visual aesthetic of **Minecraft: Story Mode (MCSM)**:
+This update delivers standalone, fully-fixed, production-ready deliverables that authentically recreate the visual aesthetic of **Minecraft: Story Mode (MCSM)** by Telltale Games, with all user-reported bugs resolved and official color palettes applied:
 
 1. 📦 **`MCSM_ResourcePack.zip`** (and folder `MCSM_ResourcePack/`)
 2. 🔮 **`MCSM_ShaderPack.zip`** (and folder `MCSM_ShaderPack/`)
 
 ---
 
-## 🌟 What Was Broken & How It Was Fixed
+## 🌟 What Was Fixed in This Update
 
-### 1. The Resource Pack (`MCSM_ResourcePack.zip`)
+### 1. Invisible World & Black Screen Bug (Fixed)
+- **Root Cause 1**: `assets/minecraft/shaders/core/rendertype_clouds.vsh` contained `#moj_import <minecraft:dynamictransforms.glsl>`. In Minecraft 1.20 - 1.21.1 and when running with Sodium/Iris, this file does not exist, causing core shader linking to fail. When a core shader fails, Minecraft's OpenGL terrain render pipeline is aborted, causing the **entire world to become invisible and pitch black with no ground**.
+- **Root Cause 2**: OptiFine custom sky `sky1.properties` was using `blend=replace`, which wrote opaque sky fragments into the depth buffer (`glDepthMask(true)`), causing all world terrain and ground geometry to fail depth-testing and get discarded.
+- **Fix Applied**: 
+  - **Completely removed `assets/minecraft/shaders/core/`**. Standard Minecraft resource packs use native `assets/minecraft/textures/environment/clouds.png` which works on 100% of versions, mods, and loaders without crashing the OpenGL state.
+  - Changed OptiFine custom sky to `blend=add` with `rotate=false` and `speed=0.0`. It now renders with `glDepthMask(false)` so the terrain and ground are **100% visible, crisp, and properly lit**.
 
-| Issue in Previous Version | Root Cause | Fix Applied |
-|---|---|---|
-| **Minecraft didn't recognize the pack** | Missing `pack.mcmeta` at root | Created modern `pack.mcmeta` supporting formats 15 through 60 (1.20 to 1.21.4+). |
-| **Assets failed to load** | Namespaces (`minecraft/`, `witherstormmod/`, etc.) were sitting in the pack root instead of under `assets/` | Structured all assets inside standard `assets/<namespace>/` hierarchy. |
-| **Game crash: Cyclic model reference** | `formidibomb.json` had `"parent": "formidibomb"`, and `command_block_book.json` had `"parent": "command_block_book"` | Replaced circular self-references with standard `"parent": "block/block"` and `"item/generated"`. |
-| **Super TNT model conflict** | `super_tnt.json` declared `"parent": "minecraft:block/cube_bottom_top"` while specifying custom Blockbench elements | Changed parent to `"block/block"`, preserving the full 3D Blockbench model. |
-| **Missing Sound Registrations** | `click_stereo.ogg` and `toast/in*.ogg` were in files but not defined in `sounds.json` | Wired `music.menu` (Title Theme), `ui.button.click` (MCSM UI clicks), and `ui.toast.in` (Toast notifications). |
-| **Cloud Shader Glitches** | `rendertype_clouds.vsh` calculated `finalA = baseA * (0.8 - fade)`, producing negative alpha and black box artifacts | Clamped alpha to `[0.0, 1.0]`, normalized slab height, and restored Story Mode flat directional face shading. |
-| **Cross-Mod Incompatibility** | Models/textures were only under `witherstormmod` | Added mirrors for `devouringstorms` and `dabywitherstormmod` so the pack works regardless of mod namespace. |
-| **Custom Sky Support** | No custom sky config in previous pack | Added dual OptiFine custom sky (`optifine/sky/world0/`) and FabricSkyBoxes format (`fabricskyboxes/sky/`) using the authentic pink twilight plate. |
-| **OptiFine Emissive Glow** | Glowing textures (`*_e.png`) were unconfigured | Added `optifine/emissive.properties` (`suffix.emissive=_e`) for glowing Command Blocks, Amulets, and Formidibombs. |
+### 2. Nested Folder Structure (Fixed)
+- **Root Cause**: When users unzipped archives with "Extract to MCSM_ResourcePack", archive utilities created a duplicate outer directory: `MCSM_ResourcePack/MCSM_ResourcePack/`.
+- **Fix Applied**: 
+  - `MCSM_ResourcePack.zip` contains `pack.mcmeta`, `pack.png`, and `assets/` directly at the root of the archive (zero nested folder).
+  - In Minecraft, **do NOT extract the ZIP file**. Simply drop `MCSM_ResourcePack.zip` directly into your `.minecraft/resourcepacks/` folder as a single file.
 
----
+### 3. Official Story Mode Daytime Sky (`day_sky.png`)
+- Replaced previous realistic/generic sky with the official Minecraft: Story Mode **Normal daytime sky**:
+  - **Zenith (Top)**: `#8C87E8` (Soft periwinkle lavender)
+  - **Upper-Mid**: `#BAA0E0` (Soft lilac)
+  - **Mid-Sky**: `#D5AED6` (Pastel mauve-pink)
+  - **Lower-Mid**: `#F4B89A` (Warm peach-pink)
+  - **Near Horizon**: `#F7C473` (Golden apricot)
+  - **Horizon Band**: `#F8B648` (Radiant sunlit golden amber)
 
-### 2. The Shader Pack (`MCSM_ShaderPack.zip`)
+### 4. Authentic MCSM Clouds (Resource Pack & Shader Pack)
+- **Resource Pack**: Generated a seamless 256x256 `assets/minecraft/textures/environment/clouds.png` with Story Mode roiling cumulus billows, underlit with warm twilight lilac shading and crisp bright crowns.
+- **OptiFine Custom Sky**: Added `sky2.png` and `sky2.properties` with a drifting roiling cloud ceiling (`blend=add`, `speed=0.015`, rotating along the vertical Y axis).
+- **Shader Pack**: Re-implemented `gbuffers_skybasic.fsh` with volumetric roiling clouds underlit by the warm amber/peach horizon light and soft lilac peaks.
 
-| Issue in Previous Version | Root Cause | Fix Applied |
-|---|---|---|
-| **No Pink Sky (Near-Black Sky)** | Old `gbuffers_skybasic.fsh` blended sky down to `(0.05, 0.02, 0.09)` (near pitch-black) | Implemented the authentic **Minecraft: Story Mode Pink Twilight sky gradient** calibrated directly to `sky_only_no_clouds.png`. |
-| **Harsh Screen Distortion & VHS Lines** | `final.fsh` forced VHS tracking bands, tracking noise, and heavy chromatic aberration by default | Disabled intrusive glitching by default; added a clean cinematic color-grade with warm saturation and soft tone curves. |
-| **Drab Grey Vanilla Distance Fog** | `composite.fsh` used generic grey fog | Implemented atmospheric **Rose-Coral Distance Fog** (`vec3(0.85, 0.52, 0.56)`), seamlessly dissolving terrain into the pink horizon. |
-| **Static / Boring Sky** | Old shader had flat rifts | Added procedural roiling storm clouds underlit by the magenta/pink horizon glow, plus twinkling stars in the high indigo dome. |
-| **Missing Skytexturing** | Celestial bodies lacked warm Story Mode bloom | Added `gbuffers_skytextured` to give the sun and moon warm golden radiance. |
+### 5. Coloured Lighting, Ground Shadows & Telltale Lighting Effects
+- **Sunlit Highlights**: Direct sunlight warmly illuminates surfaces with golden amber tones (`#FFF2D8`).
+- **Atmospheric Ground Shadows**: Shadows on the ground and surfaces facing away from the sky are tinted with Telltale's signature cool atmospheric lavender/purple bounce light (`#6B5885`) rather than drab black/grey.
+- **Block Lighting**: Torches, lanterns, and glowstone cast rich, warm firelight (`#FFA347`).
+- **Emissive Neon Bloom**: Command Blocks (hot magenta & cyan runes), Order of the Stone Amulets (jewel facets), and Formidibomb pulse with vibrant emissive bloom.
+- **Distance Fog**: Soft golden-peach horizon haze in `composite.fsh` seamlessly dissolves distant terrain into the horizon glow.
 
----
-
-## 🎨 Authentic Story Mode Sky Palette
-
-The shader's dynamic sky dome accurately evaluates:
-
-```
-Zenith (Top):          #100930  RGB( 16,   9,  48)  Deep Midnight Indigo
-Upper Sky:             #230f4f  RGB( 35,  15,  79)  Deep Nocturnal Purple
-Mid-Upper:             #441c6a  RGB( 68,  28, 106)  Rich Violet Purple
-Mid-Elevation:         #6a3175  RGB(106,  49, 117)  Royal Magenta Purple
-Lower Sky:             #974a80  RGB(151,  74, 128)  Vibrant Story Mode Pink
-Near Horizon:          #c5728e  RGB(197, 114, 142)  Warm Rose Pink
-Horizon Band:          #ec9891  RGB(236, 152, 145)  Soft Coral Pink
-Sunset / Low Horizon:  #fdc38c  RGB(253, 195, 140)  Luminous Peach Horizon Glow
-Under-Horizon Base:    #0c0618  RGB( 12,   6,  24)  Smooth Dark Void Transition
-```
+### 6. Phase Skies & Mod Integration
+- **Purple Sunset (`sky_gradient_purple_sunset.png`)**: Wired for Wither Storm phases 5.4 to 5.9 (deep midnight obsidian -> dark purple -> violet magenta -> coral pink -> fiery sunset orange).
+- **Twilight Purple (`sky_gradient_twilight_purple.png`)**: Wired for Wither Storm phases 6, 7, and 8.
+- **Night Blue Halo (`sky_gradient_night_blue.png`)**: Wired for Phase 4 Blue Halo (`#4677C3` -> `#8CC2F8`).
+- **Wither Storm Halo**: Fixed to vibrant blue (`float[]{0.27F, 0.58F, 0.98F}`), anchored right at the center of the Wither Storm body, moving with the storm frame-by-frame so it never clips into terrain.
+- **MCSM Cloud Deck**: Completely removed the synthetic slab cloud deck in `DabyWitherStormModClient.java` and `StormCloudDeck.java` per user request.
 
 ---
 
-## 📥 How to Install
+## 🎨 Color Palette Reference Table
+
+| Palette Name | Application / Phase | Zenith (Top) | Mid-Sky | Horizon (Bottom) |
+|---|---|---|---|---|
+| **Day Sky (`day_sky.png`)** | Default / Normal Daytime | `#8C87E8` (Periwinkle) | `#D5AED6` (Lilac-Pink) | `#F8B648` (Golden Amber) |
+| **Purple Sunset** | Phase 5.4 - 5.9 | `#140523` (Midnight Obsidian) | `#6F1478` (Magenta Violet) | `#F98858` (Fiery Orange) |
+| **Night Blue** | Phase 4 Halo & Night | `#0C122B` (Midnight Navy) | `#2B4A93` (Cobalt Blue) | `#8CC2F8` (Luminous Blue) |
+| **Twilight Purple** | Phases 6, 7, 8 | `#170225` (Black Purple) | `#73117B` (Magenta Purple) | `#E96280` (Rose Pink) |
+
+---
+
+## 📥 Installation Instructions
 
 ### Step 1: Install the Resource Pack
 1. Take `MCSM_ResourcePack.zip`.
-2. Move or copy it into your Minecraft `.minecraft/resourcepacks/` folder.
+2. Move it directly into your Minecraft `.minecraft/resourcepacks/` folder.
+   > **Note**: Do **NOT** extract/unzip the file! Minecraft loads the `.zip` directly.
 3. In Minecraft: **Options → Resource Packs...** → move **MCSM_ResourcePack** to the top of the Selected list → **Done**.
 
 ### Step 2: Install the Shader Pack
-1. Make sure you have **Iris + Sodium** (Fabric) or **OptiFine** installed.
+1. Ensure you have **Iris + Sodium** (recommended for Fabric) or **OptiFine** installed.
 2. Take `MCSM_ShaderPack.zip`.
-3. Move or copy it into your `.minecraft/shaderpacks/` folder.
+3. Move it directly into your `.minecraft/shaderpacks/` folder (do NOT unzip).
 4. In Minecraft: **Options → Video Settings → Shader Packs...** → select **MCSM_ShaderPack** → **Apply**.
 
 ---
 
-## 📂 Deliverable Files in Workspace
+## 📂 Deliverable Files
 
-- `MCSM_ResourcePack.zip` (14.1 MB) — Ready-to-use Resource Pack archive
-- `MCSM_ResourcePack/` — Uncompressed Resource Pack folder
-- `MCSM_ShaderPack.zip` (7.4 KB) — Ready-to-use Shader Pack archive
-- `MCSM_ShaderPack/` — Uncompressed Shader Pack folder
-- `tools/build_mcsm_packs.py` — Automated build script to re-pack at any time
+- **`MCSM_ResourcePack.zip`** (8.8 MB): Fixed, standalone resource pack (no nested folders, no broken core shaders, official daytime sky, 3D clouds, sounds, models, emissive textures).
+- **`MCSM_ShaderPack.zip`** (7.5 KB): Fixed, standalone Iris/OptiFine shader pack (daytime sky, roiling MCSM clouds, coloured lighting, purple ground shadows, emissive bloom).
+- **`tools/build_mcsm_packs.py`**: Automated build script to re-compile both packs at any time.

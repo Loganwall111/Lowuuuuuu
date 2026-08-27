@@ -31,9 +31,9 @@ public final class StormPalettes {
    private static final float[] PULSE_FIVE = {0.38F, 0.52F, 0.98F};
    private static final float[] PULSE_CATACLYSM = {0.48F, 0.20F, 0.72F};
 
-   /** Halo pair (phase 5.8+). */
+   /** Halo pair (phase 4+ blue halo, phase 5.8+ cataclysm ring). */
    private static final float[] HALO_RING = {0.36F, 0.46F, 1.0F};
-   private static final float[] HALO_UNDER = {0.92F, 0.94F, 1.0F};
+   private static final float[] HALO_UNDER = {0.27F, 0.58F, 0.98F}; // Vibrant blue from sky_gradient_night_blue.png
 
    /** Cloud deck tint. */
    private static final float[] CLOUD_PURPLE = {0.115F, 0.095F, 0.135F};
