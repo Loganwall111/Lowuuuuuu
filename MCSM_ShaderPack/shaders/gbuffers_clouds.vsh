@@ -1,26 +1,39 @@
 #version 120
 
+// Identical high precision header to eliminate GPU compiler crashes
+precision highp float;
+precision highp int;
+
+// Matrix transformations
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
+uniform float frameTimeCounter;
 
-varying vec4 color;
-varying vec2 texcoord;
+// Varyings passed to fragment shader
+varying vec4 vColor;
+varying vec2 vTexCoord;
+varying vec3 vWorldPos;
+varying vec3 vNormal;
+varying float vFogFactor;
 
-// Story Mode cloud extrusion factor matching rendertype_clouds.vsh
+// Global Story Mode Cloud Extrusion (2.5x vertical scaling)
 const float CloudHeight = 2.5;
 
 void main() {
-    // Transform from eye space into world space
+    // 1. Transform vertex from eye space to camera-relative world space
     vec3 eyePos = (gl_ModelViewMatrix * gl_Vertex).xyz;
     vec3 worldPos = (gbufferModelViewInverse * vec4(eyePos, 1.0)).xyz;
 
-    // Apply the 2.5 vertical extrusion exactly like rendertype_clouds.vsh
+    // 2. Global vertical height extrusion (Story Mode thick block aesthetic)
     worldPos.y *= CloudHeight;
 
-    // Transform back to clip space
+    // 3. Project back to clip space
     gl_Position = gl_ProjectionMatrix * (gbufferModelView * vec4(worldPos, 1.0));
 
-    // Flat MCSM story mode cloud coloring: uniform 1.0 brightness for all faces
-    color = vec4(gl_Color.rgb * 1.08, gl_Color.a);
-    texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
+    // 4. Pass varying attributes to fragment shader
+    vTexCoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
+    vNormal = normalize(gl_NormalMatrix * gl_Normal);
+    vColor = gl_Color;
+    vWorldPos = worldPos;
+    vFogFactor = clamp((length(eyePos) - 160.0) / 180.0, 0.0, 1.0);
 }

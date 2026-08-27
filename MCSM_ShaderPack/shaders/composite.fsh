@@ -1,5 +1,8 @@
 #version 120
 
+precision highp float;
+precision highp int;
+
 uniform sampler2D colortex0;
 varying vec2 texcoord;
 

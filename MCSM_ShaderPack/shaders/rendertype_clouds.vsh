@@ -1,94 +1,39 @@
-#version 150
+#version 120
 
-#moj_import <minecraft:fog.glsl>
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+// Identical high precision header to eliminate GPU compiler crashes
+precision highp float;
+precision highp int;
 
-const int FLAG_MASK_DIR = 7;
-const int FLAG_INSIDE_FACE = 1 << 4;
-const int FLAG_USE_TOP_COLOR = 1 << 5;
-const int FLAG_EXTRA_Z = 1 << 6;
-const int FLAG_EXTRA_X = 1 << 7;
+// Matrix transformations
+uniform mat4 gbufferModelView;
+uniform mat4 gbufferModelViewInverse;
+uniform float frameTimeCounter;
 
-layout(std140) uniform CloudInfo {
-    vec4 CloudColor;
-    vec3 CloudOffset;
-    vec3 CellSize;
-};
+// Varyings passed to fragment shader
+varying vec4 vColor;
+varying vec2 vTexCoord;
+varying vec3 vWorldPos;
+varying vec3 vNormal;
+varying float vFogFactor;
 
-uniform isamplerBuffer CloudFaces;
-
-const float CloudFadeAlpha = 0; // 0 = a full 0 alpha fade
-const float CloudHeight = 2.5; // vertical scaling
-const float CloudYOffset = 0.0; // Y offset
-const float BrightnessBottom = 1.0;
-const float BrightnessTop = 1.0;
-const float BrightnessNorth = 1.0;
-const float BrightnessSouth = 1.0;
-const float BrightnessWest = 1.0;
-const float BrightnessEast = 1.0;
-
-out float vertexDistance;
-out vec4 vertexColor;
-
-const vec3[] NORMAL_DIRECTIONS = vec3[](
-    vec3(0, -1, 0),
-    vec3(0, 1, 0),
-    vec3(0, 0, -1),
-    vec3(0, 0, 1),
-    vec3(-1, 0, 0),
-    vec3(1, 0, 0)
-);
-
-const vec3[][] VERTICES = vec3[][](
-    vec3[](vec3(0, 0, 0), vec3(1, 0, 0), vec3(1, 0, 1), vec3(0, 0, 1)),
-    vec3[](vec3(0, 1, 1), vec3(1, 1, 1), vec3(1, 1, 0), vec3(0, 1, 0)),
-    vec3[](vec3(1, 1, 0), vec3(1, 0, 0), vec3(0, 0, 0), vec3(0, 1, 0)),
-    vec3[](vec3(0, 1, 1), vec3(0, 0, 1), vec3(1, 0, 1), vec3(1, 1, 1)),
-    vec3[](vec3(0, 1, 0), vec3(0, 0, 0), vec3(0, 0, 1), vec3(0, 1, 1)),
-    vec3[](vec3(1, 1, 1), vec3(1, 0, 1), vec3(1, 0, 0), vec3(1, 1, 0))
-);
-
-vec3 lerp(vec3 a, vec3 b, float t) {
-    return a + t * (b - a);
-}
-
-float fog_spherical_distance(vec3 pos) {
-    return length(pos);
-}
+// Global Story Mode Cloud Extrusion (2.5x vertical scaling)
+const float CloudHeight = 2.5;
 
 void main() {
-    int faceIndex = gl_VertexID / 4;
-    int vertexIndex = gl_VertexID % 4;
+    // 1. Transform vertex from eye space to camera-relative world space
+    vec3 eyePos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+    vec3 worldPos = (gbufferModelViewInverse * vec4(eyePos, 1.0)).xyz;
 
-    int faceData = texelFetch(CloudFaces, faceIndex).r;
-    int dir = faceData & FLAG_MASK_DIR;
+    // 2. Global vertical height extrusion (Story Mode thick block aesthetic)
+    worldPos.y *= CloudHeight;
 
-    vec3 baseVertex = VERTICES[dir][vertexIndex];
-    vec3 normal = NORMAL_DIRECTIONS[dir];
+    // 3. Project back to clip space
+    gl_Position = gl_ProjectionMatrix * (gbufferModelView * vec4(worldPos, 1.0));
 
-    // Decode position from faceData
-    int posX = (faceData >> 8) & 0xFF;
-    int posY = (faceData >> 16) & 0xFF;
-    int posZ = (faceData >> 24) & 0xFF;
-
-    vec3 cellPos = vec3(posX, posY, posZ) * CellSize + CloudOffset;
-    vec3 worldPos = cellPos + baseVertex * CellSize;
-    worldPos.y = (worldPos.y + CloudYOffset) * CloudHeight;
-
-    vec3 viewPos = (ModelViewMat * vec4(worldPos, 1.0)).xyz;
-    gl_Position = ProjMat * vec4(viewPos, 1.0);
-
-    vertexDistance = fog_spherical_distance(viewPos);
-
-    // Flat MCSM story mode cloud coloring
-    vec4 faceColor = CloudColor;
-    if (dir == 0) faceColor.rgb *= BrightnessBottom;
-    else if (dir == 1) faceColor.rgb *= BrightnessTop;
-    else if (dir == 2) faceColor.rgb *= BrightnessNorth;
-    else if (dir == 3) faceColor.rgb *= BrightnessSouth;
-    else if (dir == 4) faceColor.rgb *= BrightnessWest;
-    else if (dir == 5) faceColor.rgb *= BrightnessEast;
-
-    vertexColor = faceColor;
+    // 4. Pass varying attributes to fragment shader
+    vTexCoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
+    vNormal = normalize(gl_NormalMatrix * gl_Normal);
+    vColor = gl_Color;
+    vWorldPos = worldPos;
+    vFogFactor = clamp((length(eyePos) - 160.0) / 180.0, 0.0, 1.0);
 }

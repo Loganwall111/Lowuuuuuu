@@ -1,5 +1,8 @@
 #version 120
 
+precision highp float;
+precision highp int;
+
 uniform sampler2D gtexture;
 uniform float frameTimeCounter;
 varying vec4 color;

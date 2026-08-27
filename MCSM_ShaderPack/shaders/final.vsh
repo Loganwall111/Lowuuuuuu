@@ -1,5 +1,8 @@
 #version 120
 
+precision highp float;
+precision highp int;
+
 varying vec2 texcoord;
 
 void main() {
