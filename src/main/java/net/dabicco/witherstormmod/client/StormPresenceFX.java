@@ -63,7 +63,7 @@ public final class StormPresenceFX {
    }
 
    /** Approximate visual body radius for a phase (rough phase->size mapping used for glow anchoring). */
-   private static double bodyRadius(float phase) {
+   public static double bodyRadius(float phase) {
       if (phase < 4.0F) {
          return 4.0 + phase * 1.5;
       }
