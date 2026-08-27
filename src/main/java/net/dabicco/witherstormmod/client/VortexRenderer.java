@@ -52,10 +52,10 @@ public final class VortexRenderer {
                float r = vortexRadius * (0.8F + layer * 0.25F);
                float yOff = layer * 3.5F;
                int alpha = 140 - layer * 30;
-               consumer.addVertex(pose, -r, yOff, -r).setColor(30, 10, 45, alpha).setUv(0.0F, 0.0F).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
-               consumer.addVertex(pose, r, yOff, -r).setColor(30, 10, 45, alpha).setUv(1.0F, 0.0F).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
-               consumer.addVertex(pose, r, yOff, r).setColor(30, 10, 45, alpha).setUv(1.0F, 1.0F).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
-               consumer.addVertex(pose, -r, yOff, r).setColor(30, 10, 45, alpha).setUv(0.0F, 1.0F).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
+               consumer.addVertex(pose, -r, yOff, -r).setColor(30, 10, 45, alpha).setUv(0.0F, 0.0F).setOverlay(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
+               consumer.addVertex(pose, r, yOff, -r).setColor(30, 10, 45, alpha).setUv(1.0F, 0.0F).setOverlay(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
+               consumer.addVertex(pose, r, yOff, r).setColor(30, 10, 45, alpha).setUv(1.0F, 1.0F).setOverlay(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
+               consumer.addVertex(pose, -r, yOff, r).setColor(30, 10, 45, alpha).setUv(0.0F, 1.0F).setOverlay(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
             }
          });
 

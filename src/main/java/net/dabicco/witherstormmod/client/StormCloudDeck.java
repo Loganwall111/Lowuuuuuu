@@ -6,7 +6,7 @@ import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
  * Clouds are handled via authentic Minecraft: Story Mode shader clouds and resource packs.
  */
 public final class StormCloudDeck {
-   private static final ResourceLocation SLAB = ResourceLocation.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/mcsm_cloud.png");
+   private static final Identifier SLAB = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/mcsm_cloud.png");
    private static final double MAX_VIEW_DIST = 900.0;
    private static final int FULL_BRIGHT = 0xF000F0;
 

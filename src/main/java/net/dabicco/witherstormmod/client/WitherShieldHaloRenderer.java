@@ -1,18 +1,10 @@
 package net.dabicco.witherstormmod.client;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
-import net.dabicco.witherstormmod.mixin.RenderPipelinesAccessor;
-import net.dabicco.witherstormmod.mixin.RenderTypeInvoker;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -22,47 +14,17 @@ import net.minecraft.world.phys.Vec3;
  * WitherShieldHaloRenderer — 3D World-Space Shield Overlay Effect for Phase 4 Wither Storm.
  *
  * Renders a perfect 3D spherical shell matrix wrapped entirely around the bounding box
- * of the boss entity ('wither_storm'). Depth tested (glEnable(GL_DEPTH_TEST)) so that
+ * of the boss entity ('wither_storm'). Depth tested with translucent blending so that
  * when player/tentacles pass inside, back-faces are correctly masked.
- *
- * Provides hooks for both Fabric (LevelRenderEvents.COLLECT_SUBMITS) and
- * Forge/NeoForge (RenderLevelStageEvent).
  */
 public final class WitherShieldHaloRenderer {
    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/halo_ring.png");
-   private static RenderPipeline shieldPipeline;
-   private static RenderType shieldRenderType;
 
    private WitherShieldHaloRenderer() {
    }
 
-   /** RenderPipeline with depth test enabled and translucent blending. */
-   public static RenderPipeline getPipeline() {
-      if (shieldPipeline == null) {
-         shieldPipeline = RenderPipeline.builder(new RenderPipeline.Snippet[]{RenderPipelinesAccessor.dabyws$entityEmissiveSnippet()})
-            .withLocation(Identifier.fromNamespaceAndPath("dabywitherstormmod", "pipeline/wither_shield"))
-            .withVertexShader(Identifier.fromNamespaceAndPath("dabywitherstormmod", "core/wither_shield"))
-            .withFragmentShader(Identifier.fromNamespaceAndPath("dabywitherstormmod", "core/wither_shield"))
-            .withShaderDefine("NO_OVERLAY")
-            .withShaderDefine("NO_CARDINAL_LIGHTING")
-            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
-            .withCull(false)
-            .build();
-      }
-      return shieldPipeline;
-   }
-
    public static RenderType getRenderType() {
-      if (shieldRenderType == null) {
-         shieldRenderType = RenderTypeInvoker.dabyws$create(
-            "dabywitherstormmod:wither_shield",
-            RenderSetup.builder(getPipeline())
-               .withTexture("Sampler0", TEXTURE)
-               .createRenderSetup()
-         );
-      }
-      return shieldRenderType;
+      return GlowRenderTypes.translucent(TEXTURE);
    }
 
    /**
@@ -109,14 +71,6 @@ public final class WitherShieldHaloRenderer {
       }
    }
 
-   /**
-    * Forge / NeoForge cross-loader entrypoint for RenderLevelStageEvent.
-    */
    public static void onRenderLevelStage(Object stageEvent) {
-      // In cross-loader setups this handles Stage.AFTER_TRANSLUCENT_BLOCKS
-      Minecraft mc = Minecraft.getInstance();
-      if (mc.level != null) {
-         // Dispatches to the unified renderer
-      }
    }
 }
