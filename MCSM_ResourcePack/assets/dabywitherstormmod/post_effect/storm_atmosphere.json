@@ -1,0 +1,28 @@
+{
+  "targets": [
+    "swap"
+  ],
+  "passes": [
+    {
+      "name": "dabywitherstormmod:storm_atmosphere",
+      "intarget": "minecraft:main",
+      "outtarget": "swap",
+      "vertex_shader": "dabywitherstormmod:post/storm_atmosphere",
+      "fragment_shader": "dabywitherstormmod:post/storm_atmosphere",
+      "samplers": [
+        { "name": "MainSampler", "target": "minecraft:main" },
+        { "name": "MainDepthSampler", "target": "minecraft:main:depth" }
+      ]
+    },
+    {
+      "name": "blit",
+      "intarget": "swap",
+      "outtarget": "minecraft:main",
+      "vertex_shader": "blit",
+      "fragment_shader": "blit",
+      "samplers": [
+        { "name": "InSampler", "target": "swap" }
+      ]
+    }
+  ]
+}

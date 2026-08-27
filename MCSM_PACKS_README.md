@@ -1,86 +1,90 @@
-# Minecraft: Story Mode — Fixed Resource Pack & Shader Pack (v2.0 Overhaul)
+# Minecraft: Story Mode — Official Visual Overhaul & Mod Integration
 
-This update delivers standalone, fully-fixed, production-ready deliverables that authentically recreate the visual aesthetic of **Minecraft: Story Mode (MCSM)** by Telltale Games, with all user-reported bugs resolved and official color palettes applied:
-
-1. 📦 **`MCSM_ResourcePack.zip`** (and folder `MCSM_ResourcePack/`)
-2. 🔮 **`MCSM_ShaderPack.zip`** (and folder `MCSM_ShaderPack/`)
+Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Games, integrated directly into both standalone packs (**Resource Pack** and **Shader Pack**) and the core **Wither Storm Mod** (`Lowuuuuuu`).
 
 ---
 
-## 🌟 What Was Fixed in This Update
+## 📦 Deliverables Summary
 
-### 1. Invisible World & Black Screen Bug (Fixed)
-- **Root Cause 1**: `assets/minecraft/shaders/core/rendertype_clouds.vsh` contained `#moj_import <minecraft:dynamictransforms.glsl>`. In Minecraft 1.20 - 1.21.1 and when running with Sodium/Iris, this file does not exist, causing core shader linking to fail. When a core shader fails, Minecraft's OpenGL terrain render pipeline is aborted, causing the **entire world to become invisible and pitch black with no ground**.
-- **Root Cause 2**: OptiFine custom sky `sky1.properties` was using `blend=replace`, which wrote opaque sky fragments into the depth buffer (`glDepthMask(true)`), causing all world terrain and ground geometry to fail depth-testing and get discarded.
-- **Fix Applied**: 
-  - **Completely removed `assets/minecraft/shaders/core/`**. Standard Minecraft resource packs use native `assets/minecraft/textures/environment/clouds.png` which works on 100% of versions, mods, and loaders without crashing the OpenGL state.
-  - Changed OptiFine custom sky to `blend=add` with `rotate=false` and `speed=0.0`. It now renders with `glDepthMask(false)` so the terrain and ground are **100% visible, crisp, and properly lit**.
-
-### 2. Nested Folder Structure (Fixed)
-- **Root Cause**: When users unzipped archives with "Extract to MCSM_ResourcePack", archive utilities created a duplicate outer directory: `MCSM_ResourcePack/MCSM_ResourcePack/`.
-- **Fix Applied**: 
-  - `MCSM_ResourcePack.zip` contains `pack.mcmeta`, `pack.png`, and `assets/` directly at the root of the archive (zero nested folder).
-  - In Minecraft, **do NOT extract the ZIP file**. Simply drop `MCSM_ResourcePack.zip` directly into your `.minecraft/resourcepacks/` folder as a single file.
-
-### 3. Official Story Mode Daytime Sky (`day_sky.png`)
-- Replaced previous realistic/generic sky with the official Minecraft: Story Mode **Normal daytime sky**:
-  - **Zenith (Top)**: `#8C87E8` (Soft periwinkle lavender)
-  - **Upper-Mid**: `#BAA0E0` (Soft lilac)
-  - **Mid-Sky**: `#D5AED6` (Pastel mauve-pink)
-  - **Lower-Mid**: `#F4B89A` (Warm peach-pink)
-  - **Near Horizon**: `#F7C473` (Golden apricot)
-  - **Horizon Band**: `#F8B648` (Radiant sunlit golden amber)
-
-### 4. Authentic MCSM Clouds (Resource Pack & Shader Pack)
-- **Resource Pack**: Generated a seamless 256x256 `assets/minecraft/textures/environment/clouds.png` with Story Mode roiling cumulus billows, underlit with warm twilight lilac shading and crisp bright crowns.
-- **OptiFine Custom Sky**: Added `sky2.png` and `sky2.properties` with a drifting roiling cloud ceiling (`blend=add`, `speed=0.015`, rotating along the vertical Y axis).
-- **Shader Pack**: Re-implemented `gbuffers_skybasic.fsh` with volumetric roiling clouds underlit by the warm amber/peach horizon light and soft lilac peaks.
-
-### 5. Coloured Lighting, Ground Shadows & Telltale Lighting Effects
-- **Sunlit Highlights**: Direct sunlight warmly illuminates surfaces with golden amber tones (`#FFF2D8`).
-- **Atmospheric Ground Shadows**: Shadows on the ground and surfaces facing away from the sky are tinted with Telltale's signature cool atmospheric lavender/purple bounce light (`#6B5885`) rather than drab black/grey.
-- **Block Lighting**: Torches, lanterns, and glowstone cast rich, warm firelight (`#FFA347`).
-- **Emissive Neon Bloom**: Command Blocks (hot magenta & cyan runes), Order of the Stone Amulets (jewel facets), and Formidibomb pulse with vibrant emissive bloom.
-- **Distance Fog**: Soft golden-peach horizon haze in `composite.fsh` seamlessly dissolves distant terrain into the horizon glow.
-
-### 6. Phase Skies & Mod Integration
-- **Purple Sunset (`sky_gradient_purple_sunset.png`)**: Wired for Wither Storm phases 5.4 to 5.9 (deep midnight obsidian -> dark purple -> violet magenta -> coral pink -> fiery sunset orange).
-- **Twilight Purple (`sky_gradient_twilight_purple.png`)**: Wired for Wither Storm phases 6, 7, and 8.
-- **Night Blue Halo (`sky_gradient_night_blue.png`)**: Wired for Phase 4 Blue Halo (`#4677C3` -> `#8CC2F8`).
-- **Wither Storm Halo**: Fixed to vibrant blue (`float[]{0.27F, 0.58F, 0.98F}`), anchored right at the center of the Wither Storm body, moving with the storm frame-by-frame so it never clips into terrain.
-- **MCSM Cloud Deck**: Completely removed the synthetic slab cloud deck in `DabyWitherStormModClient.java` and `StormCloudDeck.java` per user request.
+1. **`MCSM_ResourcePack.zip`** (20.8 MB) — Flat root structure (`pack.mcmeta` at root, zero nested folders). Contains authentic Story Mode textures, OG obsidian-gloss skins, electric turquoise teeth glow textures, 3D cyan shield textures, seamless 256×256 clouds, custom sounds, and fixed block models.
+2. **`MCSM_ShaderPack.zip`** (7.3 KB) — Flat root structure (`shaders/` at root). Features the official periwinkle-to-golden-amber daytime sky dome, procedural 3D roiling shader clouds (no solid meshes/textures needed), warm direct sun lighting, cool lavender ground shadows, and neon bloom.
+3. **Mod Engine Source Updates** (`src/main/`):
+   - **3D World-Space Shield Overlay**: Perfect 3D spherical shell matrix wrapped entirely around the bounding box of `wither_storm` (cyan-blue `#00E5FF`, Fresnel edge glow, scrolling voxel matrix, depth tested).
+   - **Unified Screen-Space Atmospheric Post-Processing Suite**:
+     - Phases 5.1–5.9: Wide anamorphic ellipsoid ambient glare, intensely saturated pink-magenta (`#D81B60`) and deep void-violet (`#4A148C`) high-altitude fog, with dark silhouette shadow occlusion.
+     - Phase 6: Volcanic fire-orange (`#FF6D00`) and blood-red (`#D50000`) mask radiating from lower horizon upward with blocky dithered step function for jagged voxel-aligned edges.
+     - Phase 6.5: Screen-space purple flashbang (`#E0B0FF`) with 45-tick exponential decay and automated 2-minute periodic end flash.
+   - **Teeth Color & Turquoise Glow**: Original white/bone teeth texture preserved with vibrant turquoise/teal glow (`#00E5FF`).
+   - **Atmospheric Vortex Model**: Sits right above the storm during Phases 7 and 8.
+   - **Presets**: `Minecraft: Story Mode OG` (default) and `Minecraft: Story Mode Netflix`.
+   - **Consolidated Commands**: Primary command `/devouringstorms` (and `/devouringstorm`), removing confusing duplicates.
 
 ---
 
-## 🎨 Color Palette Reference Table
+## 🛠️ Critical Bug Fixes & Architecture
 
-| Palette Name | Application / Phase | Zenith (Top) | Mid-Sky | Horizon (Bottom) |
-|---|---|---|---|---|
-| **Day Sky (`day_sky.png`)** | Default / Normal Daytime | `#8C87E8` (Periwinkle) | `#D5AED6` (Lilac-Pink) | `#F8B648` (Golden Amber) |
-| **Purple Sunset** | Phase 5.4 - 5.9 | `#140523` (Midnight Obsidian) | `#6F1478` (Magenta Violet) | `#F98858` (Fiery Orange) |
-| **Night Blue** | Phase 4 Halo & Night | `#0C122B` (Midnight Navy) | `#2B4A93` (Cobalt Blue) | `#8CC2F8` (Luminous Blue) |
-| **Twilight Purple** | Phases 6, 7, 8 | `#170225` (Black Purple) | `#73117B` (Magenta Purple) | `#E96280` (Rose Pink) |
+### 1. The Blinding White Dome Bug (Completely Resolved)
+* **Root Cause**: `fabricskyboxes/sky/mcsm_twilight.json` had `"alwaysOn": true` with `"type": "add"`, and its bottom texture was an opaque amber block `(248, 182, 72, 255)`. When rendered additively over the player's view 24/7, `source + destination` clamped to `1.0` (blinding pure white `#FFFFFF`), creating a giant glowing white dome over the world.
+* **Fix**: Completely eliminated `fabricskyboxes/` additive cubemaps and OptiFine's additive cloud ceiling `sky2.png`. Custom skies now utilize clean `blend=alpha` with correct diurnal fade schedules, and clouds are rendered procedurally via the shader without solid objects or additive whiteout.
 
----
-
-## 📥 Installation Instructions
-
-### Step 1: Install the Resource Pack
-1. Take `MCSM_ResourcePack.zip`.
-2. Move it directly into your Minecraft `.minecraft/resourcepacks/` folder.
-   > **Note**: Do **NOT** extract/unzip the file! Minecraft loads the `.zip` directly.
-3. In Minecraft: **Options → Resource Packs...** → move **MCSM_ResourcePack** to the top of the Selected list → **Done**.
-
-### Step 2: Install the Shader Pack
-1. Ensure you have **Iris + Sodium** (recommended for Fabric) or **OptiFine** installed.
-2. Take `MCSM_ShaderPack.zip`.
-3. Move it directly into your `.minecraft/shaderpacks/` folder (do NOT unzip).
-4. In Minecraft: **Options → Video Settings → Shader Packs...** → select **MCSM_ShaderPack** → **Apply**.
+### 2. Zero Nested Folders
+* `MCSM_ResourcePack.zip` and `MCSM_ShaderPack.zip` have their contents (`pack.mcmeta` and `shaders/`) directly at the root of each `.zip`.
+* **Important**: Do **not** unzip the `.zip` files. Drop them directly into `.minecraft/resourcepacks/` and `.minecraft/shaderpacks/`.
 
 ---
 
-## 📂 Deliverable Files
+## ⚡ Technical Features Breakdown
 
-- **`MCSM_ResourcePack.zip`** (8.8 MB): Fixed, standalone resource pack (no nested folders, no broken core shaders, official daytime sky, 3D clouds, sounds, models, emissive textures).
-- **`MCSM_ShaderPack.zip`** (7.5 KB): Fixed, standalone Iris/OptiFine shader pack (daytime sky, roiling MCSM clouds, coloured lighting, purple ground shadows, emissive bloom).
-- **`tools/build_mcsm_packs.py`**: Automated build script to re-compile both packs at any time.
+### 1. Dynamic 3D Spherical Shell Halo (Phase 4 Wither Shield)
+* **Mesh**: Full 3D hollow UV sphere mesh (`WitherShieldSphere.java`) with latitude rings and longitude sectors, automatically scaling to `bodyRadius * 1.75` to encapsulate the entire body of the boss.
+* **Material**: Translucent glowing cyan-blue energy shield (`#00E5FF`).
+* **Fresnel Glow**: Fragment shader (`wither_shield.fsh`) calculates `pow(1.0 - dot(N, V), 2.5)`: bright blue borders with a see-through center (~0.10 opacity) so the dark boss structure inside is clearly visible.
+* **Scrolling Matrix**: Scrolling blocky voxel hex-grid texture pulsing with `sin(time * 3.2)`.
+* **Depth Testing**: Rendered with `glEnable(GL_DEPTH_TEST)` (`CompareOp.GREATER_THAN_OR_EQUAL`) so that when the player or tentacles pass inside the shield, back-faces are correctly masked out.
+
+### 2. Screen-Space Atmospheric Shader Suite (`storm_atmosphere.fsh`)
+* **Phases 5.1–5.9 (Pink Atmosphere & Shadow Occlusion)**:
+  - Stretched anamorphic ellipsoid ambient glare centered on upper back spine coordinates (`WitherPosition + vec3(0, 18, 0)`).
+  - Intensely saturated pink-magenta (`#D81B60`) and deep void-violet (`#4A148C`) high-altitude fog.
+  - High-contrast black shadow silhouette dynamic occlusion following the boss.
+* **Phase 6 (Volcanic Red-Orange & Purple Fusion Gradient)**:
+  - Blends deep void-black and electric purple sky matrix with volcanic fire-orange (`#FF6D00`) and blood-red (`#D50000`).
+  - Originates from the lower horizon/bottom half of the viewport and radiates upward.
+  - Noisy blocky 4×4 dithered step function preserving the authentic voxel-aligned pixelated edge style.
+* **Phase 6.5 (Purple Flashbang with Exponential Decay)**:
+  - Instantly forces screen viewport to maximum white-violet exposure saturation (`#E0B0FF`), blanking out world geometry.
+  - Exponential decay function over exactly 45 game ticks (`flashIntensity = exp(-elapsed / 15.0)`), fading through deep twilight purple before returning to normal baseline visibility.
+  - Automated 2-minute periodic end flash (`AUTO_FLASH_INTERVAL = 2400` ticks).
+
+### 3. Teeth Color & Vibrant Turquoise Glow
+* **Base Teeth**: Retains the clean, original white/bone teeth texture.
+* **Glow Layer**: Purplish/dark tint removed and replaced with vibrant **turquoise / teal glow** (`#00E5FF` / `rgb(0, 229, 255)`).
+* Both OptiFine/Iris emissive mapping (`phase_4_assets_e.png`) and standard head rendering (`WitherStormHeadRenderer.java`) emit this turquoise glow.
+* Eyes remain vivid glowing magenta-pink (`#FF20FF`).
+
+### 4. Presets & Models
+* Preset 1: **Minecraft: Story Mode OG** (Default) — Uses OG obsidian-gloss skins, side tentacles, 3D cyan shield, turquoise teeth glow, and dynamic skies.
+* Preset 2: **Minecraft: Story Mode Netflix** — Netflix visual style variant.
+* Preset 3: **Legacy Java** — Brighter legacy visuals.
+* Preset 4: **Cinematic** — High dynamic range bloom and enhanced debris.
+
+### 5. Consolidated Commands
+* Summon and manage the storm directly with:
+  ```bash
+  /devouringstorms spawn
+  /devouringstorms setphase <phase>
+  /devouringstorms grow <amount>
+  /devouringstorms roar
+  /devouringstorms locate
+  ```
+  Aliases `/devouringstorm` and `/dabyws` point to the exact same tree with no duplicates.
+
+---
+
+## 🚀 Installation
+
+1. Copy `MCSM_ResourcePack.zip` into `.minecraft/resourcepacks/` (DO NOT unzip).
+2. Copy `MCSM_ShaderPack.zip` into `.minecraft/shaderpacks/` (DO NOT unzip).
+3. In Minecraft:
+   - **Options -> Resource Packs**: Enable **MCSM_ResourcePack.zip** (place at the top).
+   - **Video Settings -> Shader Packs**: Select **MCSM_ShaderPack**.

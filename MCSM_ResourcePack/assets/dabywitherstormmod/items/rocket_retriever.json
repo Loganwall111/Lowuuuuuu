@@ -1,0 +1,87 @@
+{
+	"model": {
+		"type": "minecraft:composite",
+		"models": [
+			{
+				"type": "minecraft:model",
+				"model": "dabywitherstormmod:item/rr_base"
+			},
+			{
+				"type": "minecraft:range_dispatch",
+				"property": "dabywitherstormmod:retriever_tnt",
+				"entries": [
+					{
+						"threshold": 1,
+						"model": {
+							"type": "minecraft:model",
+							"model": "dabywitherstormmod:item/rr_tnt_1"
+						}
+					},
+					{
+						"threshold": 2,
+						"model": {
+							"type": "minecraft:model",
+							"model": "dabywitherstormmod:item/rr_tnt_2"
+						}
+					},
+					{
+						"threshold": 3,
+						"model": {
+							"type": "minecraft:model",
+							"model": "dabywitherstormmod:item/rr_tnt_3"
+						}
+					},
+					{
+						"threshold": 4,
+						"model": {
+							"type": "minecraft:model",
+							"model": "dabywitherstormmod:item/rr_tnt_4"
+						}
+					}
+				],
+				"fallback": {
+					"type": "minecraft:model",
+					"model": "dabywitherstormmod:item/rr_empty"
+				}
+			},
+			{
+				"type": "minecraft:range_dispatch",
+				"property": "dabywitherstormmod:retriever_rockets",
+				"entries": [
+					{
+						"threshold": 1,
+						"model": {
+							"type": "minecraft:model",
+							"model": "dabywitherstormmod:item/rr_rocket_1"
+						}
+					},
+					{
+						"threshold": 2,
+						"model": {
+							"type": "minecraft:model",
+							"model": "dabywitherstormmod:item/rr_rocket_2"
+						}
+					},
+					{
+						"threshold": 3,
+						"model": {
+							"type": "minecraft:model",
+							"model": "dabywitherstormmod:item/rr_rocket_3"
+						}
+					},
+					{
+						"threshold": 4,
+						"model": {
+							"type": "minecraft:model",
+							"model": "dabywitherstormmod:item/rr_rocket_4"
+						}
+					}
+				],
+				"fallback": {
+					"type": "minecraft:model",
+					"model": "dabywitherstormmod:item/rr_empty"
+				}
+			}
+		]
+	}
+}
