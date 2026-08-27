@@ -124,7 +124,7 @@ void main() {
         vec2 uvOffset = presets[i].speed * frameTimeCounter;
         vec2 sampledUV = vTexCoord + uvOffset;
 
-        // Sample directly from local shader pack samplers (with texture/color fallback)
+        // Sample directly from local shader pack samplers
         vec4 sampledTex = vec4(1.0);
         if (i == 0) sampledTex = texture2D(cloudTex0, sampledUV);
         else if (i == 1) sampledTex = texture2D(cloudTex1, sampledUV);

@@ -2,6 +2,7 @@
 Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Edition).
 
 ## Features
+- **Pipeline Cloud Routing**: `shaders.properties` with `clouds=fast` explicitly instructs Iris to intercept the cloud rendering loop and route geometry directly through `gbuffers_clouds`.
 - **8 Story Mode Cloud Presets**: All 8 authentic cloud presets (Day, Sunset, Night, Storm Gathering, Awakening Cyan Rim, Cataclysm Magenta, Volcanic Horizon, Twilight Purple) forced to render globally without external map dependencies.
 - **Identical Precision Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` to prevent GPU compiler crashes on load.
 - **Local Texture Bindings**: Direct texture samplers (`cloudTex0` through `cloudTex7`) pointing to local shader pack assets (`textures/clouds/cloud*.png`).

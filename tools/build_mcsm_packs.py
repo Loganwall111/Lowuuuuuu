@@ -91,13 +91,17 @@ TWILIGHT_PURPLE_STOPS = [
 ]
 
 # ----------------------------------------------------------------------
-# 1. BUILD RESOURCE PACK (Pure Assets, Core Cloud Fallback, Crash-Free)
+# 1. BUILD RESOURCE PACK (Pure Assets, Modern JSON Schema, Crash-Free)
 # ----------------------------------------------------------------------
 print("[1/2] Assembling Minecraft: Story Mode Resource Pack...")
 
+# Modern Minecraft 26.2 & 1.21.2 JSON schema with explicit min_format, max_format, supported_formats
 rp_meta = {
     "pack": {
         "pack_format": 64,
+        "supported_formats": [35, 87],
+        "min_format": [35, 0],
+        "max_format": [87, 0],
         "description": "Minecraft: Story Mode - Authentic Visuals, OG Textures & Turquoise Teeth Glow"
     }
 }
@@ -287,7 +291,6 @@ os.makedirs(sp_core, exist_ok=True)
 cloud_tex_dir = os.path.join(sp_shaders, "textures", "clouds")
 os.makedirs(cloud_tex_dir, exist_ok=True)
 
-# Color palettes for the 8 cloud preset textures (64x64 blocks)
 PRESET_TEXTURE_COLORS = [
     # 0: Day (Crisp White / Light Periwinkle)
     (250, 252, 255, 240),
@@ -312,7 +315,6 @@ for idx, (cr, cg, cb, ca) in enumerate(PRESET_TEXTURE_COLORS):
     for y in range(64):
         p_row = []
         for x in range(64):
-            # Create Story Mode blocky cloud tile pattern
             bx = (x // 8) % 2
             by = (y // 8) % 2
             checker = 0.92 if (bx ^ by) else 1.05
@@ -327,7 +329,6 @@ for idx, (cr, cg, cb, ca) in enumerate(PRESET_TEXTURE_COLORS):
 print("Generated 8 local Story Mode cloud preset textures in shaders/textures/clouds/")
 
 # 2.1 The Rewritten 8-Preset Cloud Vertex Shader (gbuffers_clouds.vsh)
-# Matches precision highp float, strips Stage/LevelID checks, extrudes 2.5x
 gbuffers_clouds_vsh = """#version 120
 
 // Identical high precision header to eliminate GPU compiler crashes
@@ -372,7 +373,6 @@ with open(os.path.join(sp_shaders, "gbuffers_clouds.vsh"), "w", encoding="utf-8"
     f.write(gbuffers_clouds_vsh)
 
 # 2.2 The Rewritten 8-Preset Cloud Fragment Shader (gbuffers_clouds.fsh)
-# Matches precision highp float, preserves all 8 Story Mode presets, binds local textures, no stage/level conditionals
 gbuffers_clouds_fsh = """#version 120
 
 // Identical high precision header to eliminate GPU compiler crashes
@@ -499,7 +499,7 @@ void main() {
         vec2 uvOffset = presets[i].speed * frameTimeCounter;
         vec2 sampledUV = vTexCoord + uvOffset;
 
-        // Sample directly from local shader pack samplers (with texture/color fallback)
+        // Sample directly from local shader pack samplers
         vec4 sampledTex = vec4(1.0);
         if (i == 0) sampledTex = texture2D(cloudTex0, sampledUV);
         else if (i == 1) sampledTex = texture2D(cloudTex1, sampledUV);
@@ -841,9 +841,12 @@ void main() {
 with open(os.path.join(sp_shaders, "final.fsh"), "w", encoding="utf-8") as f:
     f.write(final_fsh)
 
-# 2.9 shaders.properties with explicit bindings for all 8 presets
-shaders_properties = """# Minecraft: Story Mode — Shaderpack Configuration
-# Clean, Authentic Minecraft: Story Mode visuals
+# 2.9 shaders.properties: Placed BOTH at the root of the shaderpack and in shaders/
+# Contains 'clouds=fast' to force Iris to route cloud geometry to gbuffers_clouds
+shaders_properties = """# Minecraft: Story Mode — Shaderpack Configuration & Pipeline Routing
+# Explicitly force Iris & OptiFine to route cloud geometry directly to custom gbuffers_clouds shaders
+clouds=fast
+
 # Local texture sampler bindings for all 8 Story Mode cloud presets
 customTexture.cloudTex0 = textures/clouds/cloud0.png
 customTexture.cloudTex1 = textures/clouds/cloud1.png
@@ -854,6 +857,8 @@ customTexture.cloudTex5 = textures/clouds/cloud5.png
 customTexture.cloudTex6 = textures/clouds/cloud6.png
 customTexture.cloudTex7 = textures/clouds/cloud7.png
 """
+with open(os.path.join(SP_DIR, "shaders.properties"), "w", encoding="utf-8") as f:
+    f.write(shaders_properties)
 with open(os.path.join(sp_shaders, "shaders.properties"), "w", encoding="utf-8") as f:
     f.write(shaders_properties)
 
@@ -862,6 +867,7 @@ sp_readme = """# MINECRAFT: STORY MODE — Official Atmosphere Shaderpack (1.21.
 Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Edition).
 
 ## Features
+- **Pipeline Cloud Routing**: `shaders.properties` with `clouds=fast` explicitly instructs Iris to intercept the cloud rendering loop and route geometry directly through `gbuffers_clouds`.
 - **8 Story Mode Cloud Presets**: All 8 authentic cloud presets (Day, Sunset, Night, Storm Gathering, Awakening Cyan Rim, Cataclysm Magenta, Volcanic Horizon, Twilight Purple) forced to render globally without external map dependencies.
 - **Identical Precision Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` to prevent GPU compiler crashes on load.
 - **Local Texture Bindings**: Direct texture samplers (`cloudTex0` through `cloudTex7`) pointing to local shader pack assets (`textures/clouds/cloud*.png`).
