@@ -6,18 +6,18 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
 
 ## 📦 Deliverables Summary
 
-1. **`MCSM_ResourcePack.zip`** (20.8 MB) — Flat root structure (`pack.mcmeta` at root, zero nested folders). Contains authentic Story Mode textures, OG obsidian-gloss skins, electric turquoise teeth glow textures, 3D cyan shield textures, seamless 256×256 clouds, custom sounds, and fixed block models.
-2. **`MCSM_ShaderPack.zip`** (7.3 KB) — Flat root structure (`shaders/` at root). Features the official periwinkle-to-golden-amber daytime sky dome, procedural 3D roiling shader clouds (no solid meshes/textures needed), warm direct sun lighting, cool lavender ground shadows, and neon bloom.
-3. **Mod Engine Source Updates** (`src/main/`):
-   - **3D World-Space Shield Overlay**: Perfect 3D spherical shell matrix wrapped entirely around the bounding box of `wither_storm` (cyan-blue `#00E5FF`, Fresnel edge glow, scrolling voxel matrix, depth tested).
-   - **Unified Screen-Space Atmospheric Post-Processing Suite**:
-     - Phases 5.1–5.9: Wide anamorphic ellipsoid ambient glare, intensely saturated pink-magenta (`#D81B60`) and deep void-violet (`#4A148C`) high-altitude fog, with dark silhouette shadow occlusion.
-     - Phase 6: Volcanic fire-orange (`#FF6D00`) and blood-red (`#D50000`) mask radiating from lower horizon upward with blocky dithered step function for jagged voxel-aligned edges.
-     - Phase 6.5: Screen-space purple flashbang (`#E0B0FF`) with 45-tick exponential decay and automated 2-minute periodic end flash.
-   - **Teeth Color & Turquoise Glow**: Original white/bone teeth texture preserved with vibrant turquoise/teal glow (`#00E5FF`).
-   - **Atmospheric Vortex Model**: Sits right above the storm during Phases 7 and 8.
-   - **Presets**: `Minecraft: Story Mode OG` (default) and `Minecraft: Story Mode Netflix`.
-   - **Consolidated Commands**: Primary command `/devouringstorms` (and `/devouringstorm`), removing confusing duplicates.
+1. **Newest Compiled Mod JAR (`dabywitherstormmod-1.9.60-26.2-beta.jar`)**
+   - **Download Link**: [GitHub Actions Build #33100672013 Artifact](https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33100672013)
+   - Click **`dabywitherstormmod`** under the **Artifacts** section at the bottom of the page to download `dabywitherstormmod.zip`, unzip it once to get the `.jar`, and place `dabywitherstormmod-1.9.60-26.2-beta.jar` into your `.minecraft/mods/` directory.
+   - Contains all new Java features:
+     - Presets: **"Minecraft: Story Mode OG"** (Default) and **"Minecraft: Story Mode Netflix"** (Secondary).
+     - Phase 4 Cyan 3D Spherical Shield Halo (`#00E5FF`) with Fresnel glow & depth testing.
+     - Atmospheric post-processing shader & screen-space overlay suite (Phase 5 pink glare, Phase 6 volcanic dithered horizon, Phase 6.5 purple flashbang with 45-tick decay, 2-minute periodic End-flash).
+     - Atmospheric Vortex renderer for Phases 7 & 8.
+     - Unified `/devouringstorms` command.
+     - Vibrant turquoise teeth glow (`#00E5FF`).
+2. **`MCSM_ResourcePack.zip`** (19.6 MB) — Flat root structure (`pack.mcmeta` at root, zero nested folders). Contains authentic Story Mode textures, OG obsidian-gloss skins, electric turquoise teeth glow textures, 3D cyan shield textures, seamless 256×256 clouds, custom sounds, and fixed block models.
+3. **`MCSM_ShaderPack.zip`** (6.4 KB) — Flat root structure (`shaders/` at root). Features the official periwinkle-to-golden-amber daytime sky dome, procedural 3D roiling shader clouds (no solid meshes/textures needed), warm direct sun lighting, cool lavender ground shadows, and neon bloom.
 
 ---
 
