@@ -32,7 +32,9 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
   ```
 * Ensures 100% compatibility across Minecraft 1.21.2 and 26.2 snapshot without `JsonParseException`.
 
-### 2. Thick Extruded Story Mode Clouds (`gbuffers_clouds.vsh` & `shaders.properties`)
+### 2. Thick Extruded Story Mode Clouds & Active Shader Options (`gbuffers_clouds.vsh` & `shaders.properties`)
+* **Active Iris Shader Options Menu**: Defined `screen=MCSM_OPTIONS` with configurable `#define` toggles (`CLOUD_EXTRUSION`, `CLOUDS_ACTIVE`, `DYNAMIC_SKY`, `MCSM_LIGHTING`, `EMISSIVE_TEETH_GLOW`), standalone `block.properties`, and language mappings (`lang/en_US.lang`) so Iris unlocks the "Shader Options..." button immediately.
+* **GLSL 120 Cross-GPU Compatibility**: Replaced GLSL 130 `gl_VertexID` in `gbuffers_clouds.vsh` with standard normal and UV coordinate checks (`gl_Normal` and `gl_MultiTexCoord0`), preventing shader compilation errors and fallback to vanilla flat cloud strips.
 * **Root & Shader Directives**: Placed `shaders.properties` at root level (`MCSM_ShaderPack/shaders.properties`) and in `shaders/shaders.properties`:
   ```properties
   clouds=fast
@@ -44,6 +46,8 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
   customTexture.cloudTex5=shaders/textures/clouds/cloud5.png
   customTexture.cloudTex6=shaders/textures/clouds/cloud6.png
   customTexture.cloudTex7=shaders/textures/clouds/cloud7.png
+  screen=MCSM_OPTIONS
+  screen.MCSM_OPTIONS=CLOUD_EXTRUSION CLOUDS_ACTIVE DYNAMIC_SKY MCSM_LIGHTING EMISSIVE_TEETH_GLOW
   ```
 * **True 2.5x Vertical Extrusion**: `gbuffers_clouds.vsh` unprojects vector arrays into camera-relative world coordinates and scales geometry bounds vertically by **2.5x** (extruding top and side-top vertices upwards by 6 blocks for a solid 10-block slab thickness).
 * **Identical Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` headers to eliminate GPU compiler crashes.

@@ -1,5 +1,7 @@
 #version 120
 
+#define CLOUD_EXTRUSION 2.5 // [1.0 1.5 2.0 2.5 3.0 3.5 4.0]
+
 // Identical high precision header to eliminate GPU compiler crashes
 precision highp float;
 precision highp int;
@@ -7,6 +9,7 @@ precision highp int;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform float frameTimeCounter;
+uniform int worldTime;
 
 varying vec4 vColor;
 varying vec2 vTexCoord;
@@ -14,24 +17,20 @@ varying vec3 vWorldPos;
 varying vec3 vNormal;
 varying float vFogFactor;
 
-// Global Story Mode Cloud Extrusion (2.5x vertical scaling)
-const float CloudHeight = 2.5;
+const float CloudHeight = CLOUD_EXTRUSION;
 
 void main() {
     // 1. Transform vertex to camera-relative world coordinates
     vec3 eyePos = (gl_ModelViewMatrix * gl_Vertex).xyz;
     vec3 worldPos = (gbufferModelViewInverse * vec4(eyePos, 1.0)).xyz;
     vec3 normal = gl_Normal;
+    vec2 tc = gl_MultiTexCoord0.xy;
 
     // 2. Vertically scale cloud geometry bounds by 2.5x for Story Mode chunk layout thickness
     float localExtrusion = 4.0 * (CloudHeight - 1.0); // 6.0 blocks expansion
-    if (normal.y > 0.3) {
+    bool isTop = (normal.y > 0.3) || (abs(normal.y) <= 0.3 && tc.y < 0.5);
+    if (isTop) {
         worldPos.y += localExtrusion;
-    } else if (abs(normal.y) < 0.3) {
-        int q = int(mod(float(gl_VertexID), 4.0));
-        if (q == 1 || q == 2) {
-            worldPos.y += localExtrusion;
-        }
     }
 
     // 3. Project back to clip space

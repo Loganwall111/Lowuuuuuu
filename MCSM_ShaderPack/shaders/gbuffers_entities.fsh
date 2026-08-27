@@ -1,5 +1,7 @@
 #version 120
 
+#define EMISSIVE_TEETH_GLOW // Bright cyan (#00E5FF) bloom on Wither Storm teeth
+
 precision highp float;
 precision highp int;
 
@@ -14,6 +16,7 @@ void main() {
         discard;
     }
 
+#ifdef EMISSIVE_TEETH_GLOW
     float isTurquoise = step(0.65, col.g) * step(0.75, col.b) * (1.0 - step(0.40, col.r));
     float isMagenta   = step(0.60, col.r) * step(0.60, col.b) * (1.0 - step(0.50, col.g));
 
@@ -24,6 +27,7 @@ void main() {
         float pulse = 0.92 + 0.08 * sin(frameTimeCounter * 3.0);
         col.rgb = vec3(0.85, 0.12, 0.95) * 3.0 * pulse;
     }
+#endif
 
     gl_FragColor = col;
 }

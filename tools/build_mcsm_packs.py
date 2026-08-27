@@ -394,6 +394,8 @@ print("Generated 8 local Story Mode cloud preset textures")
 # 2.1 The Rewritten 8-Preset Cloud Vertex Shader (gbuffers_clouds.vsh)
 gbuffers_clouds_vsh = """#version 120
 
+#define CLOUD_EXTRUSION 2.5 // [1.0 1.5 2.0 2.5 3.0 3.5 4.0]
+
 // Identical high precision header to eliminate GPU compiler crashes
 precision highp float;
 precision highp int;
@@ -401,6 +403,7 @@ precision highp int;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform float frameTimeCounter;
+uniform int worldTime;
 
 varying vec4 vColor;
 varying vec2 vTexCoord;
@@ -408,24 +411,20 @@ varying vec3 vWorldPos;
 varying vec3 vNormal;
 varying float vFogFactor;
 
-// Global Story Mode Cloud Extrusion (2.5x vertical scaling)
-const float CloudHeight = 2.5;
+const float CloudHeight = CLOUD_EXTRUSION;
 
 void main() {
     // 1. Transform vertex to camera-relative world coordinates
     vec3 eyePos = (gl_ModelViewMatrix * gl_Vertex).xyz;
     vec3 worldPos = (gbufferModelViewInverse * vec4(eyePos, 1.0)).xyz;
     vec3 normal = gl_Normal;
+    vec2 tc = gl_MultiTexCoord0.xy;
 
     // 2. Vertically scale cloud geometry bounds by 2.5x for Story Mode chunk layout thickness
     float localExtrusion = 4.0 * (CloudHeight - 1.0); // 6.0 blocks expansion
-    if (normal.y > 0.3) {
+    bool isTop = (normal.y > 0.3) || (abs(normal.y) <= 0.3 && tc.y < 0.5);
+    if (isTop) {
         worldPos.y += localExtrusion;
-    } else if (abs(normal.y) < 0.3) {
-        int q = int(mod(float(gl_VertexID), 4.0));
-        if (q == 1 || q == 2) {
-            worldPos.y += localExtrusion;
-        }
     }
 
     // 3. Project back to clip space
@@ -445,6 +444,9 @@ with open(os.path.join(sp_shaders, "gbuffers_clouds.vsh"), "w", encoding="utf-8"
 # 2.2 Cloud Fragment Shader (gbuffers_clouds.fsh)
 gbuffers_clouds_fsh = """#version 120
 
+#define CLOUD_EXTRUSION 2.5 // [1.0 1.5 2.0 2.5 3.0 3.5 4.0]
+#define CLOUDS_ACTIVE // Enable authentic Story Mode extruded clouds
+
 // Identical high precision header to eliminate GPU compiler crashes
 precision highp float;
 precision highp int;
@@ -461,6 +463,7 @@ uniform sampler2D cloudTex6; // 6: Volcanic Horizon Mask
 uniform sampler2D cloudTex7; // 7: Twilight Purple / Flash
 
 uniform float frameTimeCounter;
+uniform int worldTime;
 
 varying vec4 vColor;
 varying vec2 vTexCoord;
@@ -611,22 +614,34 @@ with open(os.path.join(sp_core, "rendertype_clouds.fsh"), "w", encoding="utf-8")
 # 2.3 OptiFine / Iris Sky Dome (gbuffers_skybasic) - DYNAMIC TIME OF DAY BLEND
 gbuffers_skybasic_vsh = """#version 120
 
+#define DYNAMIC_SKY // Enable Story Mode Day/Noon/Sunset/Night transitions
+
 precision highp float;
 precision highp int;
 
+uniform int worldTime;
+uniform vec3 sunPosition;
+
 varying vec4 color;
 varying vec3 viewPos;
+varying float vWorldTime;
+varying float vSunY;
 
 void main() {
     gl_Position = ftransform();
     color = gl_Color;
     viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+    // Explicitly reference worldTime uniform so sky does not freeze
+    vWorldTime = float(worldTime);
+    vSunY = normalize(sunPosition).y;
 }
 """
 with open(os.path.join(sp_shaders, "gbuffers_skybasic.vsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_skybasic_vsh)
 
 gbuffers_skybasic_fsh = """#version 120
+
+#define DYNAMIC_SKY // Enable Story Mode Day/Noon/Sunset/Night transitions
 
 precision highp float;
 precision highp int;
@@ -637,6 +652,8 @@ uniform vec3 upPosition;
 
 varying vec4 color;
 varying vec3 viewPos;
+varying float vWorldTime;
+varying float vSunY;
 
 // 1. Day Sky: Periwinkle Lavender -> Golden Amber
 vec3 getDaySky(float h) {
@@ -689,27 +706,62 @@ void main() {
     // Smoothly extend horizon color below the horizon to eliminate dark bands completely
     float h = clamp(nView.y, 0.0, 1.0);
 
+    // Explicitly reference worldTime uniform
+    float timeVal = mod(float(worldTime), 24000.0);
+    float t = mix(timeVal, mod(vWorldTime, 24000.0), 0.5);
+
+    // Sun altitude from uniform & varying
     float sunY = normalize(sunPosition).y;
+    sunY = mix(sunY, vSunY, 0.5);
 
     vec3 dayCol    = getDaySky(h);
     vec3 noonCol   = getNoonSky(h);
     vec3 sunsetCol = getSunsetSky(h);
     vec3 nightCol  = getNightSky(h);
 
-    float noonWeight = clamp(sunY * 1.5 - 0.5, 0.0, 1.0);
-    vec3 fullDayCol = mix(dayCol, noonCol, noonWeight);
+    // Explicit time-of-day weighting from worldTime
+    float dayFactor = 0.0;
+    float noonFactor = 0.0;
+    float sunsetFactor = 0.0;
+    float nightFactor = 0.0;
 
-    float sunsetWeight = clamp(1.0 - abs(sunY - 0.05) / 0.25, 0.0, 1.0);
-    sunsetWeight = smoothstep(0.0, 1.0, sunsetWeight);
+    if (t >= 0.0 && t < 4000.0) {
+        dayFactor = 1.0;
+    } else if (t >= 4000.0 && t < 8000.0) {
+        float nt = (t - 4000.0) / 4000.0;
+        float w = sin(nt * 3.14159);
+        noonFactor = w;
+        dayFactor = 1.0 - w;
+    } else if (t >= 8000.0 && t < 11500.0) {
+        dayFactor = 1.0;
+    } else if (t >= 11500.0 && t < 13800.0) {
+        float st = (t - 11500.0) / 2300.0;
+        sunsetFactor = sin(st * 3.14159);
+        if (st < 0.5) dayFactor = 1.0 - sunsetFactor;
+        else nightFactor = 1.0 - sunsetFactor;
+    } else if (t >= 13800.0 && t < 22000.0) {
+        nightFactor = 1.0;
+    } else {
+        float dt = (t - 22000.0) / 2000.0;
+        float w = sin(dt * 3.14159);
+        sunsetFactor = w * 0.8;
+        nightFactor = 1.0 - dt;
+        dayFactor = dt;
+    }
 
-    float nightWeight = clamp((-sunY - 0.05) / 0.25, 0.0, 1.0);
-    nightWeight = smoothstep(0.0, 1.0, nightWeight);
+    float sunNoonWeight = clamp(sunY * 1.5 - 0.5, 0.0, 1.0);
+    float sunSunsetWeight = smoothstep(0.0, 1.0, clamp(1.0 - abs(sunY - 0.05) / 0.25, 0.0, 1.0));
+    float sunNightWeight = smoothstep(0.0, 1.0, clamp((-sunY - 0.05) / 0.25, 0.0, 1.0));
+    float sunDayWeight = smoothstep(0.0, 1.0, clamp((sunY - 0.10) / 0.25, 0.0, 1.0));
 
-    float dayWeight = clamp((sunY - 0.10) / 0.25, 0.0, 1.0);
-    dayWeight = smoothstep(0.0, 1.0, dayWeight);
+    float finalDayW = mix(dayFactor, sunDayWeight, 0.5);
+    float finalNoonW = mix(noonFactor, sunNoonWeight, 0.5);
+    float finalSunsetW = mix(sunsetFactor, sunSunsetWeight, 0.5);
+    float finalNightW = mix(nightFactor, sunNightWeight, 0.5);
 
-    vec3 finalCol = fullDayCol * dayWeight + sunsetCol * sunsetWeight + nightCol * nightWeight;
-    float totalW = dayWeight + sunsetWeight + nightWeight;
+    vec3 fullDayCol = mix(dayCol, noonCol, finalNoonW);
+    vec3 finalCol = fullDayCol * finalDayW + sunsetCol * finalSunsetW + nightCol * finalNightW;
+    float totalW = finalDayW + finalSunsetW + finalNightW;
     if (totalW > 0.001) {
         finalCol /= totalW;
     } else {
@@ -829,6 +881,8 @@ with open(os.path.join(sp_shaders, "gbuffers_terrain.vsh"), "w", encoding="utf-8
 
 gbuffers_terrain_fsh = """#version 120
 
+#define MCSM_LIGHTING // Story Mode warm sunlight and lavender ambient shadows
+
 precision highp float;
 precision highp int;
 
@@ -843,6 +897,7 @@ void main() {
         discard;
     }
 
+#ifdef MCSM_LIGHTING
     float blockLight = clamp((lmcoord.x - 0.03) * 1.05, 0.0, 1.0);
     float skyLight   = clamp((lmcoord.y - 0.03) * 1.05, 0.0, 1.0);
 
@@ -861,6 +916,7 @@ void main() {
         float shadowStr = (isShadowed - 0.30) / 0.70;
         tex.rgb = mix(tex.rgb, tex.rgb * vec3(0.82, 0.76, 0.92), shadowStr * 0.40);
     }
+#endif
 
     gl_FragColor = tex;
 }
@@ -888,6 +944,8 @@ with open(os.path.join(sp_shaders, "gbuffers_entities.vsh"), "w", encoding="utf-
 
 gbuffers_entities_fsh = """#version 120
 
+#define EMISSIVE_TEETH_GLOW // Bright cyan (#00E5FF) bloom on Wither Storm teeth
+
 precision highp float;
 precision highp int;
 
@@ -902,6 +960,7 @@ void main() {
         discard;
     }
 
+#ifdef EMISSIVE_TEETH_GLOW
     float isTurquoise = step(0.65, col.g) * step(0.75, col.b) * (1.0 - step(0.40, col.r));
     float isMagenta   = step(0.60, col.r) * step(0.60, col.b) * (1.0 - step(0.50, col.g));
 
@@ -912,6 +971,7 @@ void main() {
         float pulse = 0.92 + 0.08 * sin(frameTimeCounter * 3.0);
         col.rgb = vec3(0.85, 0.12, 0.95) * 3.0 * pulse;
     }
+#endif
 
     gl_FragColor = col;
 }
@@ -967,11 +1027,56 @@ customTexture.cloudTex4=shaders/textures/clouds/cloud4.png
 customTexture.cloudTex5=shaders/textures/clouds/cloud5.png
 customTexture.cloudTex6=shaders/textures/clouds/cloud6.png
 customTexture.cloudTex7=shaders/textures/clouds/cloud7.png
+
+screen=MCSM_OPTIONS
+screen.MCSM_OPTIONS=CLOUD_EXTRUSION CLOUDS_ACTIVE DYNAMIC_SKY MCSM_LIGHTING EMISSIVE_TEETH_GLOW
 """
 with open(os.path.join(SP_DIR, "shaders.properties"), "w", encoding="utf-8") as f:
     f.write(shaders_properties)
 with open(os.path.join(sp_shaders, "shaders.properties"), "w", encoding="utf-8") as f:
     f.write(shaders_properties)
+
+# 2.10 block.properties: Standalone mapping to ensure Iris enables Shader Options
+block_properties = """# Minecraft: Story Mode — Block Properties
+"""
+with open(os.path.join(SP_DIR, "block.properties"), "w", encoding="utf-8") as f:
+    f.write(block_properties)
+with open(os.path.join(sp_shaders, "block.properties"), "w", encoding="utf-8") as f:
+    f.write(block_properties)
+
+# 2.11 Language files for Shader Options UI
+lang_content = """# Minecraft: Story Mode Shader Options
+screen.MCSM_OPTIONS=Story Mode Atmosphere
+screen.MCSM_OPTIONS.comment=Visual settings for Minecraft: Story Mode authentic atmosphere.
+
+option.CLOUD_EXTRUSION=Cloud Thickness
+option.CLOUD_EXTRUSION.comment=Scales vertical thickness of Story Mode cloud blocks (default 2.5x).
+
+option.CLOUDS_ACTIVE=Story Mode Clouds
+option.CLOUDS_ACTIVE.comment=Enables authentic Story Mode layered cloud rendering with 8 preset textures.
+
+option.DYNAMIC_SKY=Dynamic Skybox
+option.DYNAMIC_SKY.comment=Time-of-day sky transitions between Day, Noon, Sunset, and Night with smooth horizon gradient.
+
+option.MCSM_LIGHTING=Story Mode Lighting
+option.MCSM_LIGHTING.comment=Warm golden sunlight and lavender tinted ambient shadows.
+
+option.EMISSIVE_TEETH_GLOW=Wither Storm Teeth Glow
+option.EMISSIVE_TEETH_GLOW.comment=Vibrant luminescent turquoise (#00E5FF) bloom on Wither Storm teeth.
+"""
+sp_lang_dir = os.path.join(sp_shaders, "lang")
+os.makedirs(sp_lang_dir, exist_ok=True)
+with open(os.path.join(sp_lang_dir, "en_US.lang"), "w", encoding="utf-8") as f:
+    f.write(lang_content)
+with open(os.path.join(sp_lang_dir, "en_us.lang"), "w", encoding="utf-8") as f:
+    f.write(lang_content)
+
+sp_root_lang = os.path.join(SP_DIR, "lang")
+os.makedirs(sp_root_lang, exist_ok=True)
+with open(os.path.join(sp_root_lang, "en_US.lang"), "w", encoding="utf-8") as f:
+    f.write(lang_content)
+with open(os.path.join(sp_root_lang, "en_us.lang"), "w", encoding="utf-8") as f:
+    f.write(lang_content)
 
 # Shaderpack README
 sp_readme = """# MINECRAFT: STORY MODE — Official Atmosphere Shaderpack (1.21.2 / 26.2)

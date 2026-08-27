@@ -1,5 +1,7 @@
 #version 120
 
+#define MCSM_LIGHTING // Story Mode warm sunlight and lavender ambient shadows
+
 precision highp float;
 precision highp int;
 
@@ -14,6 +16,7 @@ void main() {
         discard;
     }
 
+#ifdef MCSM_LIGHTING
     float blockLight = clamp((lmcoord.x - 0.03) * 1.05, 0.0, 1.0);
     float skyLight   = clamp((lmcoord.y - 0.03) * 1.05, 0.0, 1.0);
 
@@ -32,6 +35,7 @@ void main() {
         float shadowStr = (isShadowed - 0.30) / 0.70;
         tex.rgb = mix(tex.rgb, tex.rgb * vec3(0.82, 0.76, 0.92), shadowStr * 0.40);
     }
+#endif
 
     gl_FragColor = tex;
 }

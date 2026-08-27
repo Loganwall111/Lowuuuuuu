@@ -1,5 +1,8 @@
 #version 120
 
+#define CLOUD_EXTRUSION 2.5 // [1.0 1.5 2.0 2.5 3.0 3.5 4.0]
+#define CLOUDS_ACTIVE // Enable authentic Story Mode extruded clouds
+
 // Identical high precision header to eliminate GPU compiler crashes
 precision highp float;
 precision highp int;
@@ -16,6 +19,7 @@ uniform sampler2D cloudTex6; // 6: Volcanic Horizon Mask
 uniform sampler2D cloudTex7; // 7: Twilight Purple / Flash
 
 uniform float frameTimeCounter;
+uniform int worldTime;
 
 varying vec4 vColor;
 varying vec2 vTexCoord;
