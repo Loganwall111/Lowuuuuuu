@@ -1,0 +1,140 @@
+name: MCSM Integrated Release Build
+
+# Force-synchronized build of the Wither Storm mod + MCSM packs.
+# Compiles the JAR from the latest branch sources (Java 25 + Fabric Loom on the
+# hosted runner), rebuilds both packs through tools/build_mcsm_packs.py, renames
+# the JAR per build (r<run-number> so no launcher can cache a stale binary),
+# validates everything, and force-uploads the result over the v1.9.60 release.
+on:
+  push:
+    branches:
+      - arena/01a048fa-lowuuuuuu
+    paths:
+      - 'src/**'
+      - 'tools/**'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'MCSM_ResourcePack/**'
+      - 'MCSM_ShaderPack/**'
+      - '.github/workflows/mcsm-release.yml'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag whose assets get overwritten'
+        required: false
+        default: 'v1.9.60-26.2-mcsm'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mcsm-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    name: Compile mod, rebuild packs, overwrite release
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.release_tag || 'v1.9.60-26.2-mcsm' }}
+    steps:
+      - name: Checkout (full history — the pack builder reads OG commits)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive mod version from gradle.properties
+        run: |
+          MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)
+          echo "MOD_VERSION=$MOD_VERSION" >> "$GITHUB_ENV"
+          echo "JAR_NAME=dabywitherstormmod-${MOD_VERSION}-r${GITHUB_RUN_NUMBER}.jar" >> "$GITHUB_ENV"
+          echo "building $JAR_NAME against release tag $RELEASE_TAG"
+
+      - name: Purge stale prebuilt binaries (force a real recompile)
+        run: |
+          rm -f dabywitherstormmod-*.jar
+          rm -f dabywitherstormmod-1.9.60-26.2-beta.zip
+          rm -f MCSM_ResourcePack.zip MCSM_ShaderPack.zip
+
+      - name: Rebuild MCSM resource pack + shader pack
+        run: |
+          python3 -m venv packenv
+          packenv/bin/pip install --quiet pillow
+          packenv/bin/python tools/build_mcsm_packs.py
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle 9.5.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.1'
+          cache-read-only: false
+
+      - name: Compile mod JAR from latest sources
+        run: gradle build --no-daemon --stacktrace
+
+      - name: Stage renamed artifacts
+        run: |
+          set -euo pipefail
+          SRC="build/libs/dabywitherstormmod-${MOD_VERSION}.jar"
+          test -f "$SRC" || { echo "missing $SRC"; ls -la build/libs; exit 1; }
+          mkdir -p dist
+          cp "$SRC" "dist/$JAR_NAME"
+          cp MCSM_ResourcePack.zip MCSM_ShaderPack.zip dist/
+          cd dist
+          zip -q -j MCSM_ResourcePack_and_Mod.zip MCSM_ResourcePack.zip "$JAR_NAME"
+          zip -q -j MCSM_ShaderPack_and_Mod.zip MCSM_ShaderPack.zip "$JAR_NAME"
+          ls -la
+
+      - name: Validate integrated build (flat zips, skyboxes, aligned shaders, backdrop classes)
+        run: python3 tools/validate_release_artifacts.py --rp "dist/MCSM_ResourcePack.zip" --sp "dist/MCSM_ShaderPack.zip" --jar "dist/$JAR_NAME" --expect-version "$MOD_VERSION"
+
+      - name: Overwrite release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Drop every asset the release currently holds that is not part of this
+          # build (this is what kills the stale dabywitherstormmod-1.9.60 jar and
+          # any branch-raw leftovers), then force-upload the finalized files.
+          KEEP=$(for f in dist/*; do basename "$f"; done)
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq '.assets[].name' > /tmp/current_assets.txt || true
+          while IFS= read -r asset; do
+            [ -n "$asset" ] || continue
+            if ! printf '%s\n' "$KEEP" | grep -qx -- "$asset"; then
+              echo "deleting stale asset: $asset"
+              gh release delete-asset "$RELEASE_TAG" "$asset" --yes || true
+            fi
+          done < /tmp/current_assets.txt
+          for f in dist/*; do
+            echo "uploading $f"
+            gh release upload "$RELEASE_TAG" "$f" --clobber
+          done
+
+      - name: Regenerate release notes with permanent asset links + sha256
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 tools/make_release_notes.py --dir dist --tag "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --out /tmp/NOTES.md --run "$GITHUB_RUN_NUMBER"
+          gh release edit "$RELEASE_TAG" --latest --notes-file /tmp/NOTES.md
+
+      - name: Published assets summary
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release view "$RELEASE_TAG" --json name,tagName,publishedAt,assets --jq '{tag:.tagName,name:.name,published:.publishedAt,assets:[.assets[]|{name,size,digest}]}'
+
+      - name: Upload CI artifacts (fallback access)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcsm-integrated-build-r${{ github.run_number }}
+          path: dist/*
+          if-no-files-found: warn
+          retention-days: 14
