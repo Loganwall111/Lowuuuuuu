@@ -100,6 +100,11 @@ jar {
 	from("LICENSE") {
 		rename { "${it}_$projectName" }
 	}
+
+	// Blockbench .bbmodel files are editor SOURCE projects (~340 MB) kept in the
+	// repo for model work; the runtime loads the exported .json geometry only.
+	// Shipping them made the production jar 126 MB of dead weight.
+	exclude "**/*.bbmodel"
 }
 
 // configure the maven publication
