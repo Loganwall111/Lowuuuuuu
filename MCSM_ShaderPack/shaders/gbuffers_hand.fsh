@@ -16,7 +16,6 @@ void main() {
         discard;
     }
     vec4 lm = texture2D(lightmap, lmcoord);
-    vec3 light = max(lm.rgb, vec3(0.55));
-    col.rgb *= color.rgb * light;
-    gl_FragColor = col;
+    vec3 lighting = max(lm.rgb, vec3(0.55));
+    gl_FragColor = vec4(col.rgb * color.rgb * lighting, col.a * color.a);
 }

@@ -1,6 +1,7 @@
 #version 120
 
 #define CLOUD_EXTRUSION 2.5 // [1.0 1.5 2.0 2.5 3.0 3.5 4.0]
+#define CLOUDS_ACTIVE // Enable authentic Story Mode extruded clouds
 
 // Identical high precision header to eliminate GPU compiler crashes
 precision highp float;
@@ -20,13 +21,13 @@ varying float vFogFactor;
 const float CloudHeight = CLOUD_EXTRUSION;
 
 void main() {
-    // 1. Transform vertex to camera-relative world coordinates
+    // 1. Transform vertex to camera-relative world coordinates (unprojecting)
     vec3 eyePos = (gl_ModelViewMatrix * gl_Vertex).xyz;
     vec3 worldPos = (gbufferModelViewInverse * vec4(eyePos, 1.0)).xyz;
     vec3 normal = gl_Normal;
     vec2 tc = gl_MultiTexCoord0.xy;
 
-    // 2. Vertically scale cloud geometry bounds by 2.5x for Story Mode chunk layout thickness
+    // 2. Vertically scale cloud mesh geometry bounds by 2.5x for Story Mode chunk layout thickness
     float localExtrusion = 4.0 * (CloudHeight - 1.0); // 6.0 blocks expansion
     bool isTop = (normal.y > 0.3) || (abs(normal.y) <= 0.3 && tc.y < 0.5);
     if (isTop) {

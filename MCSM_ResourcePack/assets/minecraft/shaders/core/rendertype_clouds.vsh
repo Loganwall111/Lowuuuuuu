@@ -19,7 +19,7 @@ layout(std140) uniform CloudInfo {
 uniform isamplerBuffer CloudFaces;
 
 const float CloudFadeAlpha   = 0;
-const float CloudHeight      = 2.5;   // 2.5x Story Mode vertical scaling
+const float CloudHeight      = 2.5;
 const float CloudYOffset     = 0.0;
 const float BrightnessBottom = 1.0;
 const float BrightnessTop    = 1.0;
@@ -65,6 +65,7 @@ void main() {
     vec3 pos = scaledVertex + (vec3(cellX, 0, cellZ) * CellSize) + CloudOffset + vec3(0, CloudYOffset, 0);
 
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
+
     vertexDistance = fog_spherical_distance(pos);
 
     float brightness = 1.0;
@@ -77,14 +78,17 @@ void main() {
 
     vec3 rgb = vec3(brightness);
     float baseA = CloudColor.a;
+    float finalA = baseA;
+
     float vertexY = pos.y - CloudOffset.y;
     float normalizedY = clamp(vertexY / CloudHeight, 0.0, 1.0);
+
     float dir = clamp(CloudOffset.y / CloudHeight, -1.0, 1.0);
     float fadeBelow = lerp(normalizedY, 1.0, CloudFadeAlpha);
     float fadeAbove = lerp(1.0 - normalizedY, 1.0, CloudFadeAlpha);
     float mixFactor = (dir + 1.0) * 0.5;
     float fade = mix(fadeBelow, fadeAbove, mixFactor);
-    float finalA = baseA * (0.8 - fade);
 
+    finalA = baseA * (0.8 - fade);
     vertexColor = vec4(rgb, finalA) * CloudColor;
 }

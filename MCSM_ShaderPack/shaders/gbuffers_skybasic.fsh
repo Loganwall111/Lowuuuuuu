@@ -14,7 +14,6 @@ varying vec3 viewPos;
 varying float vWorldTime;
 varying float vSunY;
 
-// 1. Day Sky: Periwinkle Lavender -> Golden Amber
 vec3 getDaySky(float h) {
     vec3 cZenith  = vec3(0.549, 0.529, 0.910); // #8c87e8
     vec3 cLilac   = vec3(0.686, 0.608, 0.886); // #af9be2
@@ -29,7 +28,6 @@ vec3 getDaySky(float h) {
     return mix(cLilac, cZenith, (h - 0.72) / 0.28);
 }
 
-// 2. Noon Sky: Vivid Bright Story Mode Azure
 vec3 getNoonSky(float h) {
     vec3 cZenith  = vec3(0.368, 0.549, 0.949);
     vec3 cMid     = vec3(0.529, 0.765, 0.980);
@@ -38,7 +36,6 @@ vec3 getNoonSky(float h) {
     return mix(cMid, cZenith, (h - 0.35) / 0.65);
 }
 
-// 3. Sunset / Twilight Sky: Royal Violet -> Vivid Magenta -> Fiery Coral -> Orange
 vec3 getSunsetSky(float h) {
     vec3 cZenith  = vec3(0.220, 0.039, 0.329); // #380a54 Royal dark violet
     vec3 cMagenta = vec3(0.486, 0.082, 0.408); // #7c1568 Rich magenta
@@ -51,7 +48,6 @@ vec3 getSunsetSky(float h) {
     return mix(cMagenta, cZenith, (h - 0.60) / 0.40);
 }
 
-// 4. Night Sky: Deep Obsidian Midnight -> Dark Violet -> Deep Indigo Horizon
 vec3 getNightSky(float h) {
     vec3 cZenith  = vec3(0.063, 0.016, 0.110); // #10041c Deep obsidian midnight
     vec3 cMid     = vec3(0.098, 0.039, 0.176); // #190a2d Dark royal purple
@@ -65,11 +61,9 @@ void main() {
     // Smoothly extend horizon color below the horizon to eliminate dark bands completely
     float h = clamp(nView.y, 0.0, 1.0);
 
-    // Explicitly reference worldTime uniform
     float timeVal = mod(float(worldTime), 24000.0);
     float t = mix(timeVal, mod(vWorldTime, 24000.0), 0.5);
 
-    // Sun altitude from uniform & varying
     float sunY = normalize(sunPosition).y;
     sunY = mix(sunY, vSunY, 0.5);
 
@@ -78,7 +72,6 @@ void main() {
     vec3 sunsetCol = getSunsetSky(h);
     vec3 nightCol  = getNightSky(h);
 
-    // Explicit time-of-day weighting from worldTime
     float dayFactor = 0.0;
     float noonFactor = 0.0;
     float sunsetFactor = 0.0;

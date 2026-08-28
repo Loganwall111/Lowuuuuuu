@@ -2,12 +2,14 @@
 Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Edition).
 
 ## Features
+- **Active Iris Shader Options**: Configurable toggles for Cloud Thickness, Story Mode Clouds, Dynamic Skybox, MCSM Colored Lighting, and Emissive Teeth Bloom. Standalone `block.properties` ensures menu ungrays immediately.
 - **Pipeline Cloud Routing**: `shaders.properties` with `clouds=fast` explicitly instructs Iris to intercept the cloud rendering loop and route geometry directly through `gbuffers_clouds`.
-- **8 Story Mode Cloud Presets**: All 8 authentic cloud presets (Day, Sunset, Night, Storm Gathering, Awakening Cyan Rim, Cataclysm Magenta, Volcanic Horizon, Twilight Purple) forced to render globally without external map dependencies.
-- **Identical Precision Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` to prevent GPU compiler crashes on load.
+- **8 Story Mode Cloud Presets**: Authentic 256x256 Story Mode cloud sheets mapped locally via `customTexture.cloudTex0` through `customTexture.cloudTex7`.
+- **2.5x Chunk Extrusion**: Vertex shaders vertically scale mesh bounds by 2.5x with GLSL 120 coordinate checking.
+- **Identical Precision Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` to prevent GPU compiler crashes.
+- **Story Mode Colored Lighting & Shadows**: Warm golden sunlight, lavender shadow tint, amber torchlight, surface normal diffuse shading, NO reflections.
 - **Dynamic Story Mode Sky Dome**: Smooth Day, Noon, Sunset, and Night transitions with zero void horizon black bands.
-- **Story Mode Colored Lighting & Shadows**: Warm golden sunlight, lavender shadow tint, amber torchlight, NO reflections.
-- **Teeth Turquoise Glow**: Vibrant cyan/turquoise glow (#00E5FF) pulsing on the Wither Storm teeth.
+- **Teeth Turquoise Glow**: Vibrant cyan/turquoise bloom (#00E5FF) pulsing on the Wither Storm teeth.
 - **Hand Item Lighting**: Dedicated gbuffers_hand shaders ensuring items never render solid black.
 
 ## Installation

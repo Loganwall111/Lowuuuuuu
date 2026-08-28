@@ -17,7 +17,7 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
 ## 🛠️ Visual Fixes & Updates Applied
 
 ### 1. pack.mcmeta Exact Schema (`MCSM_ResourcePack`)
-* Declared exact requested schema:
+* Declared exact requested modern schema for Minecraft 1.21.2 & 26.2:
   ```json
   {
     "pack": {
@@ -26,32 +26,30 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
         "min_format": 42,
         "max_format": 50
       },
-      "description": "Minecraft: Story Mode Authentic Visuals"
+      "description": "Minecraft: Story Mode Authentic Visual Pack"
     }
   }
   ```
-* Ensures 100% compatibility across Minecraft 1.21.2 and 26.2 snapshot without `JsonParseException`.
+* Eliminates `JsonParseException` across modern Fabric / Iris loaders.
 
 ### 2. Thick Extruded Story Mode Clouds & Active Shader Options (`gbuffers_clouds.vsh` & `shaders.properties`)
-* **Active Iris Shader Options Menu**: Defined `screen=MCSM_OPTIONS` with configurable `#define` toggles (`CLOUD_EXTRUSION`, `CLOUDS_ACTIVE`, `DYNAMIC_SKY`, `MCSM_LIGHTING`, `EMISSIVE_TEETH_GLOW`), standalone `block.properties`, and language mappings (`lang/en_US.lang`) so Iris unlocks the "Shader Options..." button immediately.
-* **GLSL 120 Cross-GPU Compatibility**: Replaced GLSL 130 `gl_VertexID` in `gbuffers_clouds.vsh` with standard normal and UV coordinate checks (`gl_Normal` and `gl_MultiTexCoord0`), preventing shader compilation errors and fallback to vanilla flat cloud strips.
-* **Root & Shader Directives**: Placed `shaders.properties` at root level (`MCSM_ShaderPack/shaders.properties`) and in `shaders/shaders.properties`:
-  ```properties
-  clouds=fast
-  customTexture.cloudTex0=shaders/textures/clouds/cloud0.png
-  customTexture.cloudTex1=shaders/textures/clouds/cloud1.png
-  customTexture.cloudTex2=shaders/textures/clouds/cloud2.png
-  customTexture.cloudTex3=shaders/textures/clouds/cloud3.png
-  customTexture.cloudTex4=shaders/textures/clouds/cloud4.png
-  customTexture.cloudTex5=shaders/textures/clouds/cloud5.png
-  customTexture.cloudTex6=shaders/textures/clouds/cloud6.png
-  customTexture.cloudTex7=shaders/textures/clouds/cloud7.png
-  screen=MCSM_OPTIONS
-  screen.MCSM_OPTIONS=CLOUD_EXTRUSION CLOUDS_ACTIVE DYNAMIC_SKY MCSM_LIGHTING EMISSIVE_TEETH_GLOW
-  ```
-* **True 2.5x Vertical Extrusion**: `gbuffers_clouds.vsh` unprojects vector arrays into camera-relative world coordinates and scales geometry bounds vertically by **2.5x** (extruding top and side-top vertices upwards by 6 blocks for a solid 10-block slab thickness).
-* **Identical Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` headers to eliminate GPU compiler crashes.
-* **Core Cloud Shaders**: `core/rendertype_clouds.vsh` included in `MCSM_ResourcePack` for vanilla Minecraft rendering when shaders are off.
+* **Active Iris Shader Options Menu**: Completely populated root and shaders `shaders.properties` with `clouds=fast`, local cloud bindings, and `screen=MCSM_OPTIONS` with options toggles (`CLOUD_EXTRUSION`, `CLOUDS_ACTIVE`, `DYNAMIC_SKY`, `MCSM_LIGHTING`, `EMISSIVE_TEETH_GLOW`). Added standalone `block.properties` so the Iris menu ungrays immediately.
+* **Preserved 8 Story Mode Cloud Sheets**: All 8 custom Story Mode cloud sheets are derived directly from the authentic 256x256 Story Mode cloud sheet and mapped locally to `customTexture.cloudTex0` through `customTexture.cloudTex7` in `shaders/textures/clouds/`.
+* **2.5x Vertical Mesh Extrusion**: `gbuffers_clouds.vsh` and `rendertype_clouds.vsh` unproject vertex coordinates to camera-relative world space and vertically scale bounds by 2.5x to match Story Mode chunk layout thickness, with identical `precision highp float; precision highp int;` declarations to stabilize GPU compilation.
+* **Purged Metadata Leaks**: `lang/en_us.lang` and `shaders/lang/en_us.lang` cleaned of any compilation logs, URLs, or markdown text, restoring standard localization keys.
+
+### 3. Restored Original Custom Textures & Time-of-Day Skies
+* **100% Original Custom Textures**: All author block textures (`withered_bedrock.png`, `withered_flesh_block.png`, `withered_sand.png`, etc.), entity maps, and items restored directly without generic templates or synthetic overlays.
+* **Custom Time-of-Day Skies**: Retained the complete `assets/minecraft/optifine/sky/world0/` directory (`sky1.png`, `sky1.properties` through `sky4.png`, `sky4.properties`) and `fabricskyboxes/`.
+* **Held Item Transparency**: Fixed item asset maps in `assets/dabywitherstormmod/textures/item/` to 32-bit RGBA with full alpha transparency registers (`tnt.png`, `tnt_bottom.png`, `tnt_top.png`, `super_tnt_lava.png`), preventing solid black boxes.
+
+### 4. Story Mode Colored Lighting & Shadows (Diffuse Only)
+* **Unconditional Pipeline**: `gbuffers_terrain.fsh` applies warm golden sunlight (`vec3(1.12, 1.02, 0.90)`), cool lavender ambient shadows (`vec3(0.70, 0.62, 0.88)`), warm amber torchlight (`vec3(1.20, 0.78, 0.38)`), surface normal diffuse shading, and shadow deepening on shaded faces. Pure diffuse shading with STRICTLY NO reflections.
+
+### 5. Boss-Anchored Halo & OG Visuals
+* **Authentic OG Textures**: Preserved original author OG textures (`phase_4_assets_og.png`, `devourer_assets_og.png`, `wither_storm_og.png`).
+* **Boss-Anchored Halo**: The storm dark roiling shroud and cataclysm halo anchor strictly to the boss entity in Phase 5.1+; the pre-summon sky is completely normal with zero black bands.
+* **Luminescent Turquoise Teeth**: Glowing turquoise teeth (#00E5FF) with 3.5x bloom and purple eye glow in `gbuffers_entities.fsh`.
 
 ### 3. Dynamic Day/Noon/Sunset/Night Skybox (Zero Black Void Bands)
 * **Smooth Time-of-Day Transitions**: `gbuffers_skybasic.fsh` dynamically blends between:

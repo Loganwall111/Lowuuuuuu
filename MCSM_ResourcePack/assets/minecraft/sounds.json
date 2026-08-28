@@ -13,5 +13,14 @@
     "sounds": [
       "random/click_stereo"
     ]
+  },
+  "ui.toast.in": {
+    "replace": true,
+    "sounds": [
+      "ui/toast/in",
+      "ui/toast/in1",
+      "ui/toast/in2",
+      "ui/toast/in3"
+    ]
   }
 }

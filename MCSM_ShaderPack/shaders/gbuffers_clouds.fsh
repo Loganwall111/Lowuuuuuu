@@ -7,16 +7,15 @@
 precision highp float;
 precision highp int;
 
-// Local shader pack texture samplers for all 8 Story Mode cloud presets
 uniform sampler2D gtexture;
-uniform sampler2D cloudTex0; // 0: Overworld Day
-uniform sampler2D cloudTex1; // 1: Sunset / Golden Hour
-uniform sampler2D cloudTex2; // 2: Deep Night / Moonlight
-uniform sampler2D cloudTex3; // 3: Storm Gathering
-uniform sampler2D cloudTex4; // 4: Wither Awakening (Cyan Rim)
-uniform sampler2D cloudTex5; // 5: Cataclysm (Pink-Magenta Anamorphic)
-uniform sampler2D cloudTex6; // 6: Volcanic Horizon Mask
-uniform sampler2D cloudTex7; // 7: Twilight Purple / Flash
+uniform sampler2D cloudTex0; // 0: Day
+uniform sampler2D cloudTex1; // 1: Sunset
+uniform sampler2D cloudTex2; // 2: Night
+uniform sampler2D cloudTex3; // 3: Storm
+uniform sampler2D cloudTex4; // 4: Awakening
+uniform sampler2D cloudTex5; // 5: Cataclysm
+uniform sampler2D cloudTex6; // 6: Volcanic
+uniform sampler2D cloudTex7; // 7: Twilight
 
 uniform float frameTimeCounter;
 uniform int worldTime;
@@ -32,7 +31,6 @@ struct CloudPreset {
     vec3 highlightColor;
     vec3 shadowColor;
     vec2 speed;
-    float extrusion;
     float weight;
 };
 
@@ -40,67 +38,59 @@ void main() {
     CloudPreset presets[8];
 
     // Preset 0: Overworld Day (MCSM Normal / Default)
-    presets[0].baseColor      = vec4(1.00, 1.00, 1.00, 0.90);
+    presets[0].baseColor      = vec4(1.00, 1.00, 1.00, 0.92);
     presets[0].highlightColor = vec3(1.05, 1.02, 0.98);
-    presets[0].shadowColor    = vec3(0.90, 0.88, 0.96);
+    presets[0].shadowColor    = vec3(0.88, 0.86, 0.95);
     presets[0].speed          = vec2(1.0, 0.2) * 0.0006;
-    presets[0].extrusion      = 2.5;
     presets[0].weight         = 0.35;
 
     // Preset 1: Sunset / Golden Hour (Warm Coral & Amber)
-    presets[1].baseColor      = vec4(0.98, 0.68, 0.45, 0.88);
-    presets[1].highlightColor = vec3(1.00, 0.84, 0.55);
+    presets[1].baseColor      = vec4(0.98, 0.70, 0.48, 0.90);
+    presets[1].highlightColor = vec3(1.00, 0.85, 0.58);
     presets[1].shadowColor    = vec3(0.85, 0.42, 0.48);
     presets[1].speed          = vec2(0.8, 0.6) * 0.0008;
-    presets[1].extrusion      = 2.8;
     presets[1].weight         = 0.20;
 
     // Preset 2: Deep Night / Moonlight (Silver & Periwinkle Indigo)
-    presets[2].baseColor      = vec4(0.35, 0.38, 0.58, 0.82);
+    presets[2].baseColor      = vec4(0.38, 0.40, 0.60, 0.85);
     presets[2].highlightColor = vec3(0.55, 0.62, 0.88);
     presets[2].shadowColor    = vec3(0.18, 0.16, 0.32);
     presets[2].speed          = vec2(0.5, -0.7) * 0.0005;
-    presets[2].extrusion      = 2.4;
     presets[2].weight         = 0.15;
 
-    // Preset 3: Storm Formative (Bruised Charcoal Overcast)
-    presets[3].baseColor      = vec4(0.22, 0.18, 0.26, 0.92);
-    presets[3].highlightColor = vec3(0.38, 0.30, 0.45);
+    // Preset 3: Storm Gathering (Bruised Charcoal Overcast)
+    presets[3].baseColor      = vec4(0.24, 0.20, 0.28, 0.94);
+    presets[3].highlightColor = vec3(0.40, 0.32, 0.48);
     presets[3].shadowColor    = vec3(0.10, 0.08, 0.14);
     presets[3].speed          = vec2(1.8, 1.2) * 0.0012;
-    presets[3].extrusion      = 3.0;
     presets[3].weight         = 0.12;
 
-    // Preset 4: Awakening (Obsidian Purple with #00E5FF Cyan Rim Glow)
-    presets[4].baseColor      = vec4(0.12, 0.08, 0.20, 0.95);
+    // Preset 4: Awakening (Obsidian Purple with #00E5FF Cyan Rim)
+    presets[4].baseColor      = vec4(0.15, 0.10, 0.22, 0.95);
     presets[4].highlightColor = vec3(0.00, 0.90, 1.00);
     presets[4].shadowColor    = vec3(0.05, 0.02, 0.08);
     presets[4].speed          = vec2(-1.5, 2.0) * 0.0016;
-    presets[4].extrusion      = 3.2;
     presets[4].weight         = 0.10;
 
-    // Preset 5: Cataclysm Core (Pink-Magenta #D81B60 & Void-Violet #4A148C)
-    presets[5].baseColor      = vec4(0.35, 0.05, 0.25, 0.98);
+    // Preset 5: Cataclysm Core (Pink-Magenta #D81B60 & Void-Violet)
+    presets[5].baseColor      = vec4(0.38, 0.06, 0.26, 0.98);
     presets[5].highlightColor = vec3(0.85, 0.11, 0.38);
     presets[5].shadowColor    = vec3(0.29, 0.08, 0.55);
     presets[5].speed          = vec2(2.5, -1.8) * 0.0020;
-    presets[5].extrusion      = 3.6;
     presets[5].weight         = 0.08;
 
-    // Preset 6: Volcanic Horizon Mask (Fire-Orange #FF6D00 & Blood-Red #D50000)
-    presets[6].baseColor      = vec4(0.70, 0.15, 0.02, 1.00);
+    // Preset 6: Volcanic Horizon Mask (Fire-Orange #FF6D00 & Blood-Red)
+    presets[6].baseColor      = vec4(0.72, 0.16, 0.02, 1.00);
     presets[6].highlightColor = vec3(1.00, 0.43, 0.00);
     presets[6].shadowColor    = vec3(0.84, 0.00, 0.00);
     presets[6].speed          = vec2(-3.0, -2.5) * 0.0025;
-    presets[6].extrusion      = 4.0;
     presets[6].weight         = 0.06;
 
-    // Preset 7: Twilight Purple / End Flash (Twilight #E0B0FF & Flash Pulse)
-    presets[7].baseColor      = vec4(0.88, 0.69, 1.00, 0.90);
+    // Preset 7: Twilight Purple / Flash
+    presets[7].baseColor      = vec4(0.88, 0.70, 1.00, 0.92);
     presets[7].highlightColor = vec3(0.98, 0.90, 1.00);
     presets[7].shadowColor    = vec3(0.45, 0.25, 0.65);
     presets[7].speed          = vec2(0.4, 0.4) * 0.0006;
-    presets[7].extrusion      = 2.6;
     presets[7].weight         = 0.06;
 
     vec4 accumulatedColor = vec4(0.0);
@@ -126,15 +116,11 @@ void main() {
 
         if (sampledTex.a < 0.01) {
             sampledTex = texture2D(gtexture, sampledUV);
-            if (sampledTex.a < 0.01) {
-                sampledTex = vec4(1.0);
-            }
+            if (sampledTex.a < 0.01) sampledTex = vec4(1.0);
         }
 
         vec3 faceTint = mix(presets[i].shadowColor, presets[i].highlightColor, isTop * 0.70 + isSide * 0.40);
-        if (isBottom > 0.5) {
-            faceTint = presets[i].shadowColor;
-        }
+        if (isBottom > 0.5) faceTint = presets[i].shadowColor;
 
         vec4 presetFinal = vec4(presets[i].baseColor.rgb * faceTint * sampledTex.rgb, presets[i].baseColor.a * sampledTex.a);
         accumulatedColor += presetFinal * presets[i].weight;

@@ -17,7 +17,6 @@ void main() {
     gl_Position = ftransform();
     color = gl_Color;
     viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
-    // Explicitly reference worldTime uniform so sky does not freeze
     vWorldTime = float(worldTime);
     vSunY = normalize(sunPosition).y;
 }
