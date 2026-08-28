@@ -125,6 +125,8 @@ public class DabyWSClientConfig {
    public static double stormCloudAltitude = (double)0.0F;
    public static double stormCloudPaletteMix = 0.85;
    public static boolean atmospherePulse = true;
+   public static boolean stormAtmosphere = true;
+   public static boolean stormBlobFX = true;
    public static double pulseStrength = (double)1.0F;
    public static double pulsePeriod = (double)4.0F;
    public static double pulseSize = (double)1.0F;
@@ -477,6 +479,8 @@ public class DabyWSClientConfig {
       key("stormCloudAltitude", "Push the whole deck up or down.", -40.0, (double)40.0F, false, () -> stormCloudAltitude, (v) -> stormCloudAltitude = v);
       key("stormCloudPaletteMix", "How much the deck follows the phase palette versus your manual cloud colour.", (double)0.0F, (double)1.0F, false, () -> stormCloudPaletteMix, (v) -> stormCloudPaletteMix = v);
       key("atmospherePulse", "The purple-blue glare breathing in the air around a late-phase storm - part of the atmosphere, bigger than the body.", (double)0.0F, (double)1.0F, true, () -> atmospherePulse ? (double)1.0F : (double)0.0F, (v) -> atmospherePulse = v >= (double)0.5F);
+      key("stormAtmosphere", "Full-screen post-processing pass that paints the purple-to-dark-magenta atmospheric fog behind the storm (never a physical block or sphere).", (double)0.0F, (double)1.0F, true, () -> stormAtmosphere ? (double)1.0F : (double)0.0F, (v) -> stormAtmosphere = v >= (double)0.5F);
+      key("stormBlobFX", "The pure shader-style storm atmosphere: centre blob (5.1+), light-blue centre halo (4+), rear fog cloud (5.1+), 2-minute phase-6 flash and the phase 7/8 vortex.", (double)0.0F, (double)1.0F, true, () -> stormBlobFX ? (double)1.0F : (double)0.0F, (v) -> stormBlobFX = v >= (double)0.5F);
       key("pulseStrength", "How bright the pulse burns at its peak.", (double)0.0F, (double)2.0F, false, () -> pulseStrength, (v) -> pulseStrength = v);
       key("pulsePeriod", "Seconds between pulse peaks.", (double)1.0F, (double)10.0F, false, () -> pulsePeriod, (v) -> pulsePeriod = v);
       key("pulseSize", "How far the glow reaches past the body.", 0.5, (double)2.0F, false, () -> pulseSize, (v) -> pulseSize = v);

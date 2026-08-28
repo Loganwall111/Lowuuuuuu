@@ -58,6 +58,32 @@ public final class StormSkyDarken {
       }
    }
 
+   /**
+    * Lavender zenith tint for the restored Story Mode skybox loop. Blends
+    * toward the palette's fog colour so the sky turns green at phase 4.5,
+    * turquoise at phase 5, and purple-black from the cataclysm onward.
+    */
+   public static float[] skyTint(float[] out) {
+      float[] f = fogColor3();
+      out[0] = Mth.lerp(0.55F, 0.549F, f[0]);
+      out[1] = Mth.lerp(0.55F, 0.529F, f[1]);
+      out[2] = Mth.lerp(0.55F, 0.910F, f[2]);
+      return out;
+   }
+
+   /** Warm orange horizon glow that answers the palette (magenta at cataclysm). */
+   public static float[] sunsetTint(float[] out) {
+      float[] f = fogColor3();
+      out[0] = Mth.lerp(0.72F, 0.973F, f[0]);
+      out[1] = Mth.lerp(0.72F, 0.714F, f[1]);
+      out[2] = Mth.lerp(0.72F, 0.282F, f[2]);
+      return out;
+   }
+
+   private static float[] fogColor3() {
+      return StormPalettes.fogColor(palettePhase, new float[3]);
+   }
+
    private StormSkyDarken() {
    }
 
