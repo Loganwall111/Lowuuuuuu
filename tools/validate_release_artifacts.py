@@ -8,12 +8,13 @@ Checks (all hard failures):
   * MCSM_ResourcePack.zip contains the custom time-of-day skyboxes under
     assets/minecraft/optifine/sky/world0/ (sky1..4 png+properties), the #version 150
     extruded-cloud core vertex shader, split-range pack.mcmeta, and leak-free lang files.
-  * MCSM_ShaderPack.zip contains the modern-engine aligned programs:
+  * MCSM_ShaderPack.zip is the modern-engine aligned PROCEDURAL pack:
       - uniform long worldTime in every sky/cloud program (Iris uniform type check)
       - NO reserved-keyword `uniform sampler2D texture;` samplers
-      - gbuffers_clouds.fsh / rendertype_clouds.fsh world-anchored fract() sheet UVs
-      - gbuffers_skybasic.fsh / gbuffers_skytextured.fsh actively shift with worldTime
-      - all 8 custom cloud sheets reachable from every texture-root convention
+      - gbuffers_clouds.fsh / rendertype_clouds.fsh are fully procedural (hash13/fbm)
+      - 2.5x cloud extrusion in the cloud vertex shaders
+      - sun shadow map (shadow.vsh/fsh) + shadowtex0 sampling in terrain/water
+      - ZERO PNG cloud sheets and ZERO cloudTex bindings (hard failure otherwise)
       - no GLSL120 files under shaders/core (invalid for the #version 150 pipeline)
   * The mod JAR is a FRESH compile of the latest branch, i.e. it carries the storm
     atmosphere backdrop class (StormAtmospherePost), the sky/cloud mixins, the post
@@ -151,30 +152,45 @@ def validate_sp(path: str) -> None:
             props = read(z, props_name).decode("utf-8")
             if "clouds=fast" not in props:
                 fail("SP: shaders.properties missing clouds=fast routing")
-            for i in range(8):
-                if f"customTexture.cloudTex{i}=" not in props:
-                    fail(f"SP: shaders.properties missing customTexture.cloudTex{i}")
-            ok("SP: clouds=fast + all 8 customTexture bindings declared")
-        for i in range(8):
-            roots = [
-                f"shaders/shaders/textures/clouds/cloud{i}.png",  # packroot/shaders/shaders (Iris)
-                f"shaders/textures/clouds/cloud{i}.png",           # packroot/textures (OptiFine)
-                f"textures/clouds/cloud{i}.png",                   # legacy root variant
-            ]
-            if not any(r in n for r in roots):
-                fail(f"SP: cloud sheet {i} unreachable (checked {roots})")
-        ok("SP: all 8 cloud sheets resolvable from every texture-root convention")
+            if "customTexture.cloudTex" in props:
+                fail("SP: shaders.properties still binds PNG cloud sheets (cloudTex) — clouds must be procedural GLSL")
+            else:
+                ok("SP: clouds=fast routing present, no cloudTex PNG bindings (procedural)")
+        cloud_pngs = [x for x in n if "cloud" in x.lower() and x.lower().endswith(".png")]
+        if cloud_pngs:
+            fail(f"SP: {len(cloud_pngs)} PNG cloud sheet(s) shipped — clouds must be procedural GLSL ({cloud_pngs[:2]})")
+        else:
+            ok("SP: zero PNG cloud sheets (100% procedural GLSL clouds)")
         _check_aligned_program("SP", z, "shaders/gbuffers_clouds.fsh",
                                need_long_time=True, forbid_texture_sampler=True,
-                               extra_markers=("SHEET_BLOCKS", "fract(", "dabywsDayPref"))
+                               extra_markers=("hash13", "fbm", "worldTime"))
         _check_aligned_program("SP", z, "shaders/rendertype_clouds.fsh",
                                need_long_time=True, forbid_texture_sampler=True,
-                               extra_markers=("SHEET_BLOCKS", "fract(", "dabywsDayPref"))
-        _check_aligned_program("SP", z, "shaders/gbuffers_clouds.vsh",
-                               need_long_time=False, forbid_texture_sampler=True)
+                               extra_markers=("hash13", "fbm", "worldTime"))
         for f in ("shaders/gbuffers_clouds.vsh", "shaders/rendertype_clouds.vsh"):
-            if f in n and "uniform int worldTime" in read(z, f).decode("utf-8"):
-                fail(f"SP: {f} still carries the mistyped int worldTime uniform")
+            if f not in n:
+                fail(f"SP: {f} missing")
+                continue
+            text = read(z, f).decode("utf-8")
+            if "worldPos.y *= 2.5" not in text and "scaledVertex.y *= 2.5" not in text:
+                fail(f"SP: {f} missing the 2.5x Story Mode cloud extrusion")
+            else:
+                ok(f"SP: {f} 2.5x cloud extrusion present")
+        # Sun shadow map on ground + water.
+        for f in ("shaders/shadow.vsh", "shaders/shadow.fsh"):
+            if f not in n:
+                fail(f"SP: {f} missing (sun shadow map pass)")
+            else:
+                ok(f"SP: {f} present")
+        for f in ("shaders/gbuffers_terrain.fsh", "shaders/gbuffers_water.fsh"):
+            if f not in n:
+                fail(f"SP: {f} missing (shadow-receiving surface)")
+                continue
+            text = read(z, f).decode("utf-8")
+            if "shadowtex0" not in text:
+                fail(f"SP: {f} does not sample shadowtex0 — ground/water shadows missing")
+            else:
+                ok(f"SP: {f} samples shadowtex0 (sun-cast shadows)")
         _check_aligned_program("SP", z, "shaders/gbuffers_skybasic.fsh",
                                need_long_time=True, forbid_texture_sampler=True,
                                extra_markers=("getSunsetSky",))
