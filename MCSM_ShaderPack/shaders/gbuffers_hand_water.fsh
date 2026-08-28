@@ -3,7 +3,6 @@
 precision highp float;
 precision highp int;
 
-uniform sampler2D texture;
 uniform sampler2D gtexture;
 uniform sampler2D lightmap;
 
@@ -12,10 +11,7 @@ varying vec2 texcoord;
 varying vec2 lmcoord;
 
 void main() {
-    vec4 col = texture2D(texture, texcoord);
-    if (col.a == 0.0 && col.rgb == vec3(0.0)) {
-        col = texture2D(gtexture, texcoord);
-    }
+    vec4 col = texture2D(gtexture, texcoord);
 
     // Explicit alpha channel transparency masking: discard transparent pixels
     if (col.a < 0.1) {

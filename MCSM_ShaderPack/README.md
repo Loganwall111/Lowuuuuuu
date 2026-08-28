@@ -4,6 +4,7 @@ Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Ed
 ## Features
 - **Active Iris Shader Options**: Configurable toggles for Cloud Thickness, Story Mode Clouds, Dynamic Skybox, MCSM Colored Lighting, and Emissive Teeth Bloom. Standalone `block.properties` ensures menu ungrays immediately.
 - **Pipeline Cloud Routing**: `shaders.properties` with `clouds=fast` explicitly instructs Iris to intercept the cloud rendering loop and route geometry directly through `gbuffers_clouds`.
+- **Modern Engine Alignment**: `uniform long worldTime` everywhere (Iris uniform type check), no reserved `texture` sampler names, and world-anchored `fract()` cloud UVs so the 8 sheets tile seamlessly with square texels and shift with the time of day.
 - **8 Story Mode Cloud Presets**: Authentic 256x256 Story Mode cloud sheets mapped locally via `customTexture.cloudTex0` through `customTexture.cloudTex7`.
 - **2.5x Chunk Extrusion**: Vertex shaders vertically scale mesh bounds by 2.5x with GLSL 120 coordinate checking.
 - **Identical Precision Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` to prevent GPU compiler crashes.

@@ -6,7 +6,6 @@ precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
-uniform sampler2D texture;
 
 varying vec4 color;
 varying vec2 texcoord;
@@ -15,10 +14,7 @@ varying vec3 normal;
 varying vec3 viewPos;
 
 void main() {
-    vec4 tex = texture2D(texture, texcoord);
-    if (tex.a == 0.0 && tex.rgb == vec3(0.0)) {
-        tex = texture2D(gtexture, texcoord);
-    }
+    vec4 tex = texture2D(gtexture, texcoord);
     tex *= color;
     if (tex.a < 0.1) {
         discard;

@@ -6,7 +6,7 @@ precision highp float;
 precision highp int;
 
 uniform mat4 gbufferModelViewInverse;
-uniform int worldTime;
+uniform long worldTime;
 uniform float sunAngle;
 uniform vec3 sunPosition;
 

@@ -9,7 +9,6 @@ precision highp int;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform float frameTimeCounter;
-uniform int worldTime;
 
 varying vec4 vColor;
 varying vec2 vTexCoord;

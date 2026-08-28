@@ -6,16 +6,12 @@ precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
-uniform sampler2D texture;
 uniform float frameTimeCounter;
 varying vec4 color;
 varying vec2 texcoord;
 
 void main() {
-    vec4 col = texture2D(texture, texcoord);
-    if (col.a == 0.0 && col.rgb == vec3(0.0)) {
-        col = texture2D(gtexture, texcoord);
-    }
+    vec4 col = texture2D(gtexture, texcoord);
     col *= color;
     if (col.a < 0.1) {
         discard;
