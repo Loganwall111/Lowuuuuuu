@@ -9,6 +9,8 @@ on:
   push:
     branches:
       - arena/01a048fa-lowuuuuuu
+      - arena/01a04a20-lowuuuuuu
+      - arena/01a04a20-lowuuuuuu
     paths:
       - 'src/**'
       - 'tools/**'
@@ -24,7 +26,7 @@ on:
       release_tag:
         description: 'Release tag whose assets get overwritten'
         required: false
-        default: 'v1.9.60-26.2-mcsm'
+        default: 'v1.9.61-26.2-mcsm-r1'
 
 permissions:
   contents: write
@@ -38,7 +40,7 @@ jobs:
     name: Compile mod, rebuild packs, overwrite release
     runs-on: ubuntu-latest
     env:
-      RELEASE_TAG: ${{ github.event.inputs.release_tag || 'v1.9.60-26.2-mcsm' }}
+      RELEASE_TAG: ${{ github.event.inputs.release_tag || 'v1.9.61-26.2-mcsm-r1' }}
     steps:
       - name: Checkout (full history — the pack builder reads OG commits)
         uses: actions/checkout@v4
