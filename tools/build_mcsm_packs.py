@@ -20,6 +20,28 @@ Protocol 3: PURGE CORRUPTED METADATA TEXT LEAKS (Resource Pack)
 - Restores clean standard Minecraft localization keys across resource pack and shader pack.
 
 Protocol 4: REPAIR HELD ITEM TRANSPARENCY & MOD ZIP SCHEMA (Mod Jar & Resource Pack)
+Protocol 5: MODERN-ENGINE SHADER ALIGNMENT (shader pack)
+- worldTime declared as `uniform long` (Iris/OptiFine type check) in every sky and
+  cloud program; cloud vertex shader no longer carries a stray mistyped uniform.
+- Reserved-keyword `texture` sampler removed from clouds/terrain/entities/hand
+  passes; all passes sample `gtexture` only.
+- gbuffers_clouds.fsh rebuilt sampling: world-anchored, fract()-wrapped square
+  256x256 sheet UVs (no 2:1 squash, no edge smear), seam-free side phase, and
+  time-of-day sheet weighting so the cloud stack shifts with worldTime.
+- gbuffers_skytextured.fsh actively tints the sun/moon/custom-sky quads with
+  worldTime (lavender night, orange sunrise/sunset) and stays hooked to the
+  optifine/sky/world0 maps rendered by the engine.
+- Shaders pack no longer ships GLSL120 files under shaders/core (invalid for
+  the #version 150 vanilla core pipeline; the resource pack ships the correct
+  #version 150 extruded cloud vsh instead).
+
+Protocol 6: INTEGRATED RELEASE (mcsm-release.yml)
+- GitHub Actions compiles the JAR from the latest branch code (Java 25 + Loom),
+  so the storm atmosphere backdrop (StormAtmospherePost) and post-processing
+  filters ship inside the mod alongside the bundled skyboxes.
+- The JAR is renamed per build (dabywitherstormmod-1.9.61-26.2-beta-r<run>.jar),
+  packs are zipped flat (no nested parent folder), and every asset is
+  force-uploaded over the v1.9.60-26.2-mcsm release.
 - Item textures in assets/dabywitherstormmod/textures/item/ verified for 32-bit RGBA alpha masking.
 - Dedicated gbuffers_hand and gbuffers_hand_water shaders with texture / gtexture samplers and alpha discard to prevent solid black voids.
 - pack.mcmeta utilizes strict split range schema (pack_format 46, min_format 42, max_format 50).
@@ -457,13 +479,11 @@ with open(os.path.join(mc_lang_dir, "en_us.json"), "w", encoding="utf-8") as f:
 print("[4/4] Assembling standalone MCSM_ShaderPack with 2.5x extruded clouds & dynamic sky...")
 
 sp_shaders = os.path.join(SP_DIR, "shaders")
-sp_core = os.path.join(sp_shaders, "core")
 sp_textures_clouds = os.path.join(sp_shaders, "textures", "clouds")
 sp_root_textures_clouds = os.path.join(SP_DIR, "textures", "clouds")
 sp_nested_textures_clouds = os.path.join(sp_shaders, "shaders", "textures", "clouds")
 
 os.makedirs(sp_shaders, exist_ok=True)
-os.makedirs(sp_core, exist_ok=True)
 os.makedirs(sp_textures_clouds, exist_ok=True)
 os.makedirs(sp_root_textures_clouds, exist_ok=True)
 os.makedirs(sp_nested_textures_clouds, exist_ok=True)
@@ -548,7 +568,6 @@ precision highp int;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform float frameTimeCounter;
-uniform int worldTime;
 
 varying vec4 vColor;
 varying vec2 vTexCoord;
@@ -579,8 +598,6 @@ with open(os.path.join(sp_shaders, "gbuffers_clouds.vsh"), "w", encoding="utf-8"
     f.write(gbuffers_clouds_vsh)
 with open(os.path.join(sp_shaders, "rendertype_clouds.vsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_clouds_vsh)
-with open(os.path.join(sp_core, "rendertype_clouds.vsh"), "w", encoding="utf-8") as f:
-    f.write(gbuffers_clouds_vsh)
 
 # Cloud Fragment Shader: Explicitly declares cloudTex0..cloudTex7 samplers
 gbuffers_clouds_fsh = """#version 120
@@ -591,8 +608,12 @@ gbuffers_clouds_fsh = """#version 120
 precision highp float;
 precision highp int;
 
+// Modern engine note: the Iris/OptiFine gbuffers_clouds program only binds
+// `gtexture` (+ `lightmap`). `texture` is a reserved keyword in the GLSL 3.3
+// core profile Iris compiles programs against, so it must never be declared
+// as a sampler; sampling an unbound/unknown sampler returned opaque white and
+// broke the cloud pass on modern builds.
 uniform sampler2D gtexture;
-uniform sampler2D texture;
 
 // Explicitly declare all 8 Story Mode cloud texture samplers
 uniform sampler2D cloudTex0; // 0: Day
@@ -605,7 +626,9 @@ uniform sampler2D cloudTex6; // 6: Volcanic
 uniform sampler2D cloudTex7; // 7: Twilight
 
 uniform float frameTimeCounter;
-uniform int worldTime;
+// worldTime is a `long` uniform in the modern Iris/OptiFine spec; declaring it
+// `int` fails the uniform type check and disables the whole cloud program.
+uniform long worldTime;
 
 varying vec4 vColor;
 varying vec2 vTexCoord;
@@ -620,6 +643,14 @@ struct CloudPreset {
     vec2 speed;
     float weight;
 };
+
+float dabywsDayPref(int i) {
+    if (i == 0) return 1.00; // Day sheet prefers daylight
+    if (i == 1) return 0.75; // Sunset keeps a warm-afternoon lean
+    if (i == 2) return 0.00; // Night sheet
+    if (i == 7) return 0.15; // Twilight sheet
+    return 0.50; // Storm/teal/magenta/volcanic stay time-neutral
+}
 
 void main() {
     CloudPreset presets[8];
@@ -680,6 +711,19 @@ void main() {
     presets[7].speed          = vec2(0.4, 0.4) * 0.0006;
     presets[7].weight         = 0.06;
 
+    // --- CLOUD PATTERN ALIGNMENT -------------------------------------------
+    // The 8 MCSM sheets are square 256x256 tiles while the cloud quad carries
+    // a UV layout built for the legacy 1024x512 atlas (v spans twice the world
+    // distance of u). Sampling the square sheets with that layout squashed the
+    // noise vertically and sheared it with camera motion. We rebuild the UVs
+    // from camera-relative world position divided by the sheet size so every
+    // texel cell is exactly square, anchor the sheets to the world (not the
+    // screen), and fract() the drifting offsets so each sheet wraps seamlessly
+    // instead of clamping and smearing at the texture edge.
+    const float SHEET_BLOCKS = 256.0;
+    float t = mod(float(worldTime), 24000.0);
+    float dayAmt = smoothstep(-0.15, 0.25, sin(6.2831853 * t / 24000.0));
+
     vec4 accumulatedColor = vec4(0.0);
     float totalWeight = 0.0;
 
@@ -688,8 +732,22 @@ void main() {
     float isSide = clamp(1.0 - abs(vNormal.y), 0.0, 1.0);
 
     for (int i = 0; i < 8; i++) {
-        vec2 uvOffset = presets[i].speed * frameTimeCounter;
-        vec2 sampledUV = vTexCoord + uvOffset;
+        // Drift is applied in world blocks; presets[i].speed is in
+        // uv-units/second, so scaling by the sheet size keeps movement
+        // identical across all faces and immune to the old vertex-uv stretch.
+        vec2 driftBlocks = presets[i].speed * (frameTimeCounter * SHEET_BLOCKS);
+        vec2 sheetUV = fract((vWorldPos.xz + driftBlocks) / SHEET_BLOCKS);
+
+        // Extruded side faces (3D cloud deck path) keep the exact horizontal
+        // phase of the top face so the edges meet with zero seam; the vertical
+        // slice comes from the quad coordinate, doubled to counteract the 2.5x
+        // extrusion stretch.
+        vec2 sideUV = vec2(fract(vWorldPos.x / SHEET_BLOCKS + driftBlocks.x / SHEET_BLOCKS),
+                           fract(vTexCoord.y * 2.0 + driftBlocks.y / SHEET_BLOCKS));
+        if (abs(vNormal.z) > 0.5) {
+            sideUV.x = fract(vWorldPos.z / SHEET_BLOCKS + driftBlocks.x / SHEET_BLOCKS);
+        }
+        vec2 sampledUV = mix(sheetUV, sideUV, isSide);
 
         vec4 sampledTex = vec4(1.0);
         if (i == 0) sampledTex = texture2D(cloudTex0, sampledUV);
@@ -701,12 +759,14 @@ void main() {
         else if (i == 6) sampledTex = texture2D(cloudTex6, sampledUV);
         else if (i == 7) sampledTex = texture2D(cloudTex7, sampledUV);
 
-        // If sampler returned empty/transparent, sample default cloud textures
-        if (sampledTex.a < 0.05 || (sampledTex.r == 0.0 && sampledTex.g == 0.0 && sampledTex.b == 0.0 && sampledTex.a == 0.0)) {
-            sampledTex = texture2D(texture, sampledUV);
-            if (sampledTex.a < 0.05 || (sampledTex.r == 0.0 && sampledTex.g == 0.0 && sampledTex.b == 0.0)) {
-                sampledTex = texture2D(gtexture, sampledUV);
-                if (sampledTex.a < 0.05) sampledTex = vec4(1.0);
+        // If a custom sheet is missing/transparent, fall back to the vanilla
+        // cloud atlas through the only guaranteed-bound sampler.
+        if (sampledTex.a < 0.05) {
+            vec4 vanilla = texture2D(gtexture, vTexCoord);
+            if (vanilla.a >= 0.05) {
+                sampledTex = vanilla;
+            } else {
+                sampledTex = vec4(1.0, 1.0, 1.0, 1.0);
             }
         }
 
@@ -714,9 +774,15 @@ void main() {
         vec3 faceTint = mix(presets[i].shadowColor, presets[i].highlightColor, isTop * 0.70 + isSide * 0.40);
         if (isBottom > 0.5) faceTint = presets[i].shadowColor;
 
+        // Time-of-day bias: pull each sheet's weight toward its daylight
+        // preference so the sky shifts across the game cycle instead of
+        // averaging all eight sheets into a constant haze.
+        float bias = clamp(1.9 - abs(dayAmt - dabywsDayPref(i)) * 1.8, 0.35, 1.6);
+        float wgt = presets[i].weight * bias;
+
         vec4 presetFinal = vec4(presets[i].baseColor.rgb * faceTint * sampledTex.rgb, presets[i].baseColor.a * sampledTex.a);
-        accumulatedColor += presetFinal * presets[i].weight;
-        totalWeight += presets[i].weight;
+        accumulatedColor += presetFinal * wgt;
+        totalWeight += wgt;
     }
 
     if (totalWeight > 0.0) {
@@ -735,8 +801,6 @@ void main() {
 with open(os.path.join(sp_shaders, "gbuffers_clouds.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_clouds_fsh)
 with open(os.path.join(sp_shaders, "rendertype_clouds.fsh"), "w", encoding="utf-8") as f:
-    f.write(gbuffers_clouds_fsh)
-with open(os.path.join(sp_core, "rendertype_clouds.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_clouds_fsh)
 
 # Terrain: Story Mode Colored Lighting & Shadows
@@ -771,7 +835,6 @@ precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
-uniform sampler2D texture;
 
 varying vec4 color;
 varying vec2 texcoord;
@@ -780,10 +843,7 @@ varying vec3 normal;
 varying vec3 viewPos;
 
 void main() {
-    vec4 tex = texture2D(texture, texcoord);
-    if (tex.a == 0.0 && tex.rgb == vec3(0.0)) {
-        tex = texture2D(gtexture, texcoord);
-    }
+    vec4 tex = texture2D(gtexture, texcoord);
     tex *= color;
     if (tex.a < 0.1) {
         discard;
@@ -847,16 +907,12 @@ precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
-uniform sampler2D texture;
 uniform float frameTimeCounter;
 varying vec4 color;
 varying vec2 texcoord;
 
 void main() {
-    vec4 col = texture2D(texture, texcoord);
-    if (col.a == 0.0 && col.rgb == vec3(0.0)) {
-        col = texture2D(gtexture, texcoord);
-    }
+    vec4 col = texture2D(gtexture, texcoord);
     col *= color;
     if (col.a < 0.1) {
         discard;
@@ -888,7 +944,7 @@ precision highp float;
 precision highp int;
 
 uniform mat4 gbufferModelViewInverse;
-uniform int worldTime;
+uniform long worldTime;
 uniform float sunAngle;
 uniform vec3 sunPosition;
 
@@ -929,7 +985,7 @@ gbuffers_skybasic_fsh = """#version 120
 precision highp float;
 precision highp int;
 
-uniform int worldTime;
+uniform long worldTime;
 uniform float sunAngle;
 uniform vec3 sunPosition;
 uniform vec3 upPosition;
@@ -1069,7 +1125,7 @@ gbuffers_skytextured_vsh = """#version 120
 precision highp float;
 precision highp int;
 
-uniform int worldTime;
+uniform long worldTime;
 uniform float sunAngle;
 uniform vec3 sunPosition;
 
@@ -1103,9 +1159,8 @@ gbuffers_skytextured_fsh = """#version 120
 precision highp float;
 precision highp int;
 
-uniform sampler2D texture;
 uniform sampler2D gtexture;
-uniform int worldTime;
+uniform long worldTime;
 uniform float sunAngle;
 uniform vec3 sunPosition;
 
@@ -1128,15 +1183,24 @@ void main() {
         }
     }
 
-    vec4 col = texture2D(texture, texcoord);
-    if (col.a == 0.0 && col.rgb == vec3(0.0)) {
-        col = texture2D(gtexture, texcoord);
-    }
-    col *= color;
+    vec4 col = texture2D(gtexture, texcoord);
 
     if (col.a < 0.01) {
         discard;
     }
+
+    // Shift the sampled sun/moon/custom-skybox quads with live game time:
+    // lavender night shade and warm orange sunrise/sunset glow, so the
+    // custom sky maps fade through the cycle instead of staying static.
+    float t = mod(liveTime, 24000.0);
+    float dayAmt = smoothstep(-0.15, 0.25, sin(6.2831853 * t / 24000.0));
+    float sunsetAmt = clamp(1.0 - abs(dayAmt - 0.30) / 0.30, 0.0, 1.0);
+    vec3 warmTint = vec3(1.08, 0.78, 0.48);      // MCSM orange horizon glow
+    vec3 lavenderNight = vec3(0.62, 0.60, 0.90); // MCSM lavender night tint
+    col.rgb *= mix(vec3(1.0), lavenderNight, (1.0 - dayAmt) * 0.55);
+    col.rgb = mix(col.rgb, col.rgb * warmTint, sunsetAmt * 0.80);
+
+    col *= color;
     gl_FragColor = col;
 }
 """
@@ -1170,7 +1234,6 @@ gbuffers_hand_fsh = """#version 120
 precision highp float;
 precision highp int;
 
-uniform sampler2D texture;
 uniform sampler2D gtexture;
 uniform sampler2D lightmap;
 
@@ -1179,10 +1242,7 @@ varying vec2 texcoord;
 varying vec2 lmcoord;
 
 void main() {
-    vec4 col = texture2D(texture, texcoord);
-    if (col.a == 0.0 && col.rgb == vec3(0.0)) {
-        col = texture2D(gtexture, texcoord);
-    }
+    vec4 col = texture2D(gtexture, texcoord);
 
     // Explicit alpha channel transparency masking: discard transparent pixels
     if (col.a < 0.1) {
@@ -1245,6 +1305,7 @@ Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Ed
 ## Features
 - **Active Iris Shader Options**: Configurable toggles for Cloud Thickness, Story Mode Clouds, Dynamic Skybox, MCSM Colored Lighting, and Emissive Teeth Bloom. Standalone `block.properties` ensures menu ungrays immediately.
 - **Pipeline Cloud Routing**: `shaders.properties` with `clouds=fast` explicitly instructs Iris to intercept the cloud rendering loop and route geometry directly through `gbuffers_clouds`.
+- **Modern Engine Alignment**: `uniform long worldTime` everywhere (Iris uniform type check), no reserved `texture` sampler names, and world-anchored `fract()` cloud UVs so the 8 sheets tile seamlessly with square texels and shift with the time of day.
 - **8 Story Mode Cloud Presets**: Authentic 256x256 Story Mode cloud sheets mapped locally via `customTexture.cloudTex0` through `customTexture.cloudTex7`.
 - **2.5x Chunk Extrusion**: Vertex shaders vertically scale mesh bounds by 2.5x with GLSL 120 coordinate checking.
 - **Identical Precision Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` to prevent GPU compiler crashes.
@@ -1318,4 +1379,5 @@ for archive_path in [JAR_PATH, ZIP_MOD_PATH]:
 print("\n--- MCSM REPAIR & BUILD COMPLETE ---")
 print(f"Resource Pack: {RP_ZIP} ({os.path.getsize(RP_ZIP)} bytes)")
 print(f"Shader Pack:   {SP_ZIP} ({os.path.getsize(SP_ZIP)} bytes)")
-print(f"Mod JAR:       {JAR_PATH} ({os.path.getsize(JAR_PATH)} bytes)")
+jar_note = f"{os.path.getsize(JAR_PATH)} bytes" if os.path.exists(JAR_PATH) else "n/a (rebuilt by mcsm-release.yml from latest master)"
+print(f"Mod JAR:       {JAR_PATH} ({jar_note})")

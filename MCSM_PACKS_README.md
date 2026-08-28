@@ -6,11 +6,13 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
 
 ## 📦 Deliverables & 1-Click Direct Downloads
 
-| Package | Direct Download Link | Target Directory | Description |
+| Package | Permanent Download (Release Asset) | Target Directory | Description |
 | :--- | :--- | :--- | :--- |
-| **MCSM Shader Pack** | [MCSM_ShaderPack.zip](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ShaderPack.zip) | `.minecraft/shaderpacks/` | Standalone atmosphere shaderpack: 2.5x chunky 3D extruded clouds, active Iris Shader Options, dynamic sky dome, colored lighting & shadows, and luminescent turquoise teeth bloom. |
-| **MCSM Resource Pack** | [MCSM_ResourcePack.zip](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ResourcePack.zip) | `.minecraft/resourcepacks/` | Standalone authentic visual resourcepack: original author custom textures, 4-point time-of-day custom skyboxes, 8 Story Mode cloud sheets, 32-bit RGBA items, and sounds. |
-| **Wither Storm Mod** | [dabywitherstormmod-1.9.60-26.2-beta.jar](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/dabywitherstormmod-1.9.60-26.2-beta.jar) | `.minecraft/mods/` | Fully functional mod JAR for 1.21.2 & 26.2 with boss-anchored Phase 5.1+ cataclysm halo, 32-bit RGBA item transparency masking, and split-range pack metadata. |
+| **MCSM Shader Pack** | [MCSM_ShaderPack.zip](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ShaderPack.zip) / [mirror](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a048fa-lowuuuuuu/MCSM_ShaderPack.zip) | `.minecraft/shaderpacks/` | Standalone atmosphere shaderpack: 2.5x chunky 3D extruded clouds, active Iris Shader Options, dynamic sky dome, colored lighting & shadows, and luminescent turquoise teeth bloom. |
+| **MCSM Resource Pack** | [MCSM_ResourcePack.zip](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ResourcePack.zip) / [mirror](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a048fa-lowuuuuuu/MCSM_ResourcePack.zip) | `.minecraft/resourcepacks/` | Standalone authentic visual resourcepack: original author custom textures, 4-point time-of-day custom skyboxes (lavender→orange), 8 Story Mode cloud sheets, 32-bit RGBA items, and sounds. |
+| **Wither Storm Mod** | [latest dabywitherstormmod JAR](https://github.com/Loganwall111/Lowuuuuuu/releases/tag/v1.9.60-26.2-mcsm) | `.minecraft/mods/` | Freshly compiled in CI on every release (`dabywitherstormmod-1.9.61-26.2-beta-r{N}.jar`, renamed per build). Bundles the storm atmosphere purple backdrop, post-processing filters, sky/cloud mixins, and the custom skyboxes. |
+| **Resource Pack + Mod bundle** | [MCSM_ResourcePack_and_Mod.zip](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ResourcePack_and_Mod.zip) | split | One download with both. |
+| **Shader Pack + Mod bundle** | [MCSM_ShaderPack_and_Mod.zip](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ShaderPack_and_Mod.zip) | split | One download with both. |
 
 ---
 
@@ -65,3 +67,35 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
    - **Dynamic Skybox**: `ON`
    - **Story Mode Lighting**: `ON`
    - **Wither Storm Teeth Glow**: `ON`
+
+---
+
+## 🔧 Protocol 5 — Modern Engine Alignment (this finalized build)
+
+* **`uniform long worldTime`** — every sky/cloud program now declares `worldTime` with the
+  modern engine's actual type. The old `uniform int` declaration failed Iris's uniform type
+  check and silently disabled the sky programs — the "missing time-of-day skybox" symptom.
+* **Reserved-keyword sampler purge** — `uniform sampler2D texture;` is illegal in the GLSL 3.3
+  core profile Iris compiles against; all programs sample `gtexture` only. (Unbound `texture`
+  samplers previously returned opaque white over terrain/entities.)
+* **Stale GLSL120 core overrides removed from the shader pack** — `shaders/core/*` in a shader
+  pack must be `#version 150`; the extruded 3D cloud core vsh lives in the *resource pack* where
+  the vanilla pipeline accepts it.
+* **Cloud pattern re-alignment in `gbuffers_clouds.fsh`** — the eight square 256×256 sheets are
+  now sampled from camera-relative **world position** (`SHEET_BLOCKS`), so texels are square
+  (no more 2:1 vertical squash from the legacy atlas UV), drift is `fract()`-wrapped (seamless,
+  no clamp-edge smearing), extruded side faces share the top face's horizontal phase (zero
+  seams), and per-preset weights bias toward the current time of day, so clouds shift with the
+  sky.
+* **`gbuffers_skytextured.fsh` really shifts now** — sun/moon/custom-sky quads are tinted warm
+  orange at sunrise/sunset and lavender at night using the live time, instead of computing the
+  time and discarding it.
+
+## 🏗️ Protocol 6 — Integrated Repository Build
+
+* `.github/workflows/mcsm-release.yml` recompiles the mod JAR from the latest branch sources
+  (Java 25 + Fabric Loom on GitHub-hosted runners — no stale committed binaries anymore),
+  rebuilds both packs through `tools/build_mcsm_packs.py`, renames the JAR per build,
+  runs `tools/validate_release_artifacts.py`, and force-uploads everything over
+  `v1.9.60-26.2-mcsm` with regenerated notes + sha256 digests via `tools/make_release_notes.py`.
+* Zips are validated to be **flat-rooted** (no nested parent folder wrappers).

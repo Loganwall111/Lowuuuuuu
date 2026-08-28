@@ -1,17 +1,26 @@
 # 🌟 Official Releases & Quick Downloads (Minecraft 1.21.2 & 26.2)
 
-> **All official Minecraft: Story Mode packs and mod builds are published in the [GitHub Releases Page](https://github.com/Loganwall111/Lowuuuuuu/releases/tag/v1.9.60-26.2-mcsm)!**
+> **Every official Minecraft: Story Mode build is published as a real GitHub Release
+> asset on the [Releases page](https://github.com/Loganwall111/Lowuuuuuu/releases/tag/v1.9.60-26.2-mcsm).**
+> The `MCSM Integrated Release Build` workflow (`.github/workflows/mcsm-release.yml`)
+> recompiles the mod JAR from the latest branch sources, rebuilds both packs, **renames
+> the JAR on every build** (`-r<build-number>` so no launcher can reuse a cached stale
+> jar), and force-uploads everything over that release. Never download from raw branch
+> links again — they were the source of the stale-visuals problem.
 
-| Deliverable | Description | Direct 1-Click Link | Target Location |
-| :--- | :--- | :---: | :--- |
-| **`MCSM_ShaderPack.zip`** | Authentic MCSM atmosphere shaderpack with 8 Story Mode cloud presets, `clouds=fast` pipeline routing in `shaders.properties`, identical `precision highp float;` headers, and turquoise teeth glow. | [📥 **Download `MCSM_ShaderPack.zip`**](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ShaderPack.zip) | `.minecraft/shaderpacks/` *(Do NOT unzip)* |
-| **`MCSM_ResourcePack.zip`** | Authentic Story Mode textures, sounds, OptiFine skies, and modern 26.2 JSON metadata schema (`supported_formats`, `min_format`, `max_format`). | [📥 **Download `MCSM_ResourcePack.zip`**](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ResourcePack.zip) | `.minecraft/resourcepacks/` *(Do NOT unzip)* |
-| **`dabywitherstormmod.jar`** | Official 1.21.2 / 26.2 Fabric mod JAR with crash-free post-chain shaders, 3D spherical shield halo, and unified `/devouringstorms` command. | [📥 **Download `dabywitherstormmod-1.9.60-26.2-beta.jar`**](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/dabywitherstormmod-1.9.60-26.2-beta.jar) | `.minecraft/mods/` |
+| Deliverable | Description | Permanent Download Link | Target Location |
+| :--- | :--- | :--- | :--- |
+| **`MCSM_ResourcePack.zip`** | Authentic Story Mode textures, sounds, the original custom time-of-day skyboxes in `assets/minecraft/optifine/sky/world0/` (lavender→orange day sky + purple sunset + twilight night), 8 blocky cloud sheets, 32-bit RGBA items, and modern split-range `pack.mcmeta`. | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ResourcePack.zip) or [branch mirror](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a048fa-lowuuuuuu/MCSM_ResourcePack.zip) | `.minecraft/resourcepacks/` *(Do NOT unzip)* |
+| **`MCSM_ShaderPack.zip`** | Atmosphere shaderpack for Iris/OptiFine: `clouds=fast` routing, 8 cloud samplers, 2.5x extruded cloud slabs, dynamic `uniform long worldTime` sky dome, and the re-aligned seam-free cloud UV mapping (Protocol 5 below). | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ShaderPack.zip) or [branch mirror](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a048fa-lowuuuuuu/MCSM_ShaderPack.zip) | `.minecraft/shaderpacks/` *(Do NOT unzip)* |
+| **`dabywitherstormmod-…jar`** | The Fabric mod, compiled fresh from the latest master on every release. Bundles the storm atmosphere backdrop (`StormAtmospherePost` purple-phase overlays), all `shaders/post` storm filters + `post_effect` definitions, the sky/cloud mixins, and the custom skyboxes — the JAR itself carries the OG visuals. Current name: `dabywitherstormmod-1.9.61-26.2-beta-r{N}.jar` (see release page for the latest N). | [📥 Release page](https://github.com/Loganwall111/Lowuuuuuu/releases/tag/v1.9.60-26.2-mcsm) | `.minecraft/mods/` |
+| **Bundle: Resource Pack + Mod** | One-file combo of `MCSM_ResourcePack.zip` + the renamed mod JAR. | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ResourcePack_and_Mod.zip) | split per instructions |
+| **Bundle: Shader Pack + Mod** | One-file combo of `MCSM_ShaderPack.zip` + the renamed mod JAR. | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ShaderPack_and_Mod.zip) | split per instructions |
 
-### 🚀 Quick Setup Instructions
-1. **Shaderpack**: Put `MCSM_ShaderPack.zip` in `.minecraft/shaderpacks/`. In Minecraft: **Video Settings** -> **Shader Packs** -> select **`MCSM_ShaderPack`**.
-2. **Resource Pack**: Put `MCSM_ResourcePack.zip` in `.minecraft/resourcepacks/`. In Minecraft: **Options** -> **Resource Packs** -> enable **`MCSM_ResourcePack`** (ensure conflicting cloud packs like `Story Mode Clouds.zip` are disabled).
-3. **Mod**: Put `dabywitherstormmod-1.9.60-26.2-beta.jar` in `.minecraft/mods/` (replacing any older version).
+### 🚀 Quick Setup
+1. **Mod**: put the newest `dabywitherstormmod-…-r<N>.jar` into `.minecraft/mods/`, **deleting any 1.9.60 jar** still sitting there.
+2. **Resource Pack**: enable `MCSM_ResourcePack` (Options → Resource Packs). Conflicting cloud packs off.
+3. **Shader Pack**: select `MCSM_ShaderPack` (Video Settings → Shader Packs) alongside or instead of another shader.
+4. Verify in-game: version reads **1.9.61-26.2-beta** — if it shows 1.9.60 you still have the stale jar.
 
 ---
 

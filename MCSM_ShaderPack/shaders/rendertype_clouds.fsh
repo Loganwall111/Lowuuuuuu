@@ -6,8 +6,12 @@
 precision highp float;
 precision highp int;
 
+// Modern engine note: the Iris/OptiFine gbuffers_clouds program only binds
+// `gtexture` (+ `lightmap`). `texture` is a reserved keyword in the GLSL 3.3
+// core profile Iris compiles programs against, so it must never be declared
+// as a sampler; sampling an unbound/unknown sampler returned opaque white and
+// broke the cloud pass on modern builds.
 uniform sampler2D gtexture;
-uniform sampler2D texture;
 
 // Explicitly declare all 8 Story Mode cloud texture samplers
 uniform sampler2D cloudTex0; // 0: Day
@@ -20,7 +24,9 @@ uniform sampler2D cloudTex6; // 6: Volcanic
 uniform sampler2D cloudTex7; // 7: Twilight
 
 uniform float frameTimeCounter;
-uniform int worldTime;
+// worldTime is a `long` uniform in the modern Iris/OptiFine spec; declaring it
+// `int` fails the uniform type check and disables the whole cloud program.
+uniform long worldTime;
 
 varying vec4 vColor;
 varying vec2 vTexCoord;
@@ -35,6 +41,14 @@ struct CloudPreset {
     vec2 speed;
     float weight;
 };
+
+float dabywsDayPref(int i) {
+    if (i == 0) return 1.00; // Day sheet prefers daylight
+    if (i == 1) return 0.75; // Sunset keeps a warm-afternoon lean
+    if (i == 2) return 0.00; // Night sheet
+    if (i == 7) return 0.15; // Twilight sheet
+    return 0.50; // Storm/teal/magenta/volcanic stay time-neutral
+}
 
 void main() {
     CloudPreset presets[8];
@@ -95,6 +109,19 @@ void main() {
     presets[7].speed          = vec2(0.4, 0.4) * 0.0006;
     presets[7].weight         = 0.06;
 
+    // --- CLOUD PATTERN ALIGNMENT -------------------------------------------
+    // The 8 MCSM sheets are square 256x256 tiles while the cloud quad carries
+    // a UV layout built for the legacy 1024x512 atlas (v spans twice the world
+    // distance of u). Sampling the square sheets with that layout squashed the
+    // noise vertically and sheared it with camera motion. We rebuild the UVs
+    // from camera-relative world position divided by the sheet size so every
+    // texel cell is exactly square, anchor the sheets to the world (not the
+    // screen), and fract() the drifting offsets so each sheet wraps seamlessly
+    // instead of clamping and smearing at the texture edge.
+    const float SHEET_BLOCKS = 256.0;
+    float t = mod(float(worldTime), 24000.0);
+    float dayAmt = smoothstep(-0.15, 0.25, sin(6.2831853 * t / 24000.0));
+
     vec4 accumulatedColor = vec4(0.0);
     float totalWeight = 0.0;
 
@@ -103,8 +130,22 @@ void main() {
     float isSide = clamp(1.0 - abs(vNormal.y), 0.0, 1.0);
 
     for (int i = 0; i < 8; i++) {
-        vec2 uvOffset = presets[i].speed * frameTimeCounter;
-        vec2 sampledUV = vTexCoord + uvOffset;
+        // Drift is applied in world blocks; presets[i].speed is in
+        // uv-units/second, so scaling by the sheet size keeps movement
+        // identical across all faces and immune to the old vertex-uv stretch.
+        vec2 driftBlocks = presets[i].speed * (frameTimeCounter * SHEET_BLOCKS);
+        vec2 sheetUV = fract((vWorldPos.xz + driftBlocks) / SHEET_BLOCKS);
+
+        // Extruded side faces (3D cloud deck path) keep the exact horizontal
+        // phase of the top face so the edges meet with zero seam; the vertical
+        // slice comes from the quad coordinate, doubled to counteract the 2.5x
+        // extrusion stretch.
+        vec2 sideUV = vec2(fract(vWorldPos.x / SHEET_BLOCKS + driftBlocks.x / SHEET_BLOCKS),
+                           fract(vTexCoord.y * 2.0 + driftBlocks.y / SHEET_BLOCKS));
+        if (abs(vNormal.z) > 0.5) {
+            sideUV.x = fract(vWorldPos.z / SHEET_BLOCKS + driftBlocks.x / SHEET_BLOCKS);
+        }
+        vec2 sampledUV = mix(sheetUV, sideUV, isSide);
 
         vec4 sampledTex = vec4(1.0);
         if (i == 0) sampledTex = texture2D(cloudTex0, sampledUV);
@@ -116,12 +157,14 @@ void main() {
         else if (i == 6) sampledTex = texture2D(cloudTex6, sampledUV);
         else if (i == 7) sampledTex = texture2D(cloudTex7, sampledUV);
 
-        // If sampler returned empty/transparent, sample default cloud textures
-        if (sampledTex.a < 0.05 || (sampledTex.r == 0.0 && sampledTex.g == 0.0 && sampledTex.b == 0.0 && sampledTex.a == 0.0)) {
-            sampledTex = texture2D(texture, sampledUV);
-            if (sampledTex.a < 0.05 || (sampledTex.r == 0.0 && sampledTex.g == 0.0 && sampledTex.b == 0.0)) {
-                sampledTex = texture2D(gtexture, sampledUV);
-                if (sampledTex.a < 0.05) sampledTex = vec4(1.0);
+        // If a custom sheet is missing/transparent, fall back to the vanilla
+        // cloud atlas through the only guaranteed-bound sampler.
+        if (sampledTex.a < 0.05) {
+            vec4 vanilla = texture2D(gtexture, vTexCoord);
+            if (vanilla.a >= 0.05) {
+                sampledTex = vanilla;
+            } else {
+                sampledTex = vec4(1.0, 1.0, 1.0, 1.0);
             }
         }
 
@@ -129,9 +172,15 @@ void main() {
         vec3 faceTint = mix(presets[i].shadowColor, presets[i].highlightColor, isTop * 0.70 + isSide * 0.40);
         if (isBottom > 0.5) faceTint = presets[i].shadowColor;
 
+        // Time-of-day bias: pull each sheet's weight toward its daylight
+        // preference so the sky shifts across the game cycle instead of
+        // averaging all eight sheets into a constant haze.
+        float bias = clamp(1.9 - abs(dayAmt - dabywsDayPref(i)) * 1.8, 0.35, 1.6);
+        float wgt = presets[i].weight * bias;
+
         vec4 presetFinal = vec4(presets[i].baseColor.rgb * faceTint * sampledTex.rgb, presets[i].baseColor.a * sampledTex.a);
-        accumulatedColor += presetFinal * presets[i].weight;
-        totalWeight += presets[i].weight;
+        accumulatedColor += presetFinal * wgt;
+        totalWeight += wgt;
     }
 
     if (totalWeight > 0.0) {

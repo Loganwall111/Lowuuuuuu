@@ -5,7 +5,7 @@
 precision highp float;
 precision highp int;
 
-uniform int worldTime;
+uniform long worldTime;
 uniform float sunAngle;
 uniform vec3 sunPosition;
 uniform vec3 upPosition;
