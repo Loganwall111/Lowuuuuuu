@@ -103,20 +103,51 @@ python3 tools/validate_release_artifacts.py \
 
 Release-asset uploads are blocked from the dev sandbox (`uploads.github.com`
 unreachable), so publishing happens on GitHub's runner via the workflow.
+Current state: the release **`v1.9.61-26.2-mcsm-r1` already exists** (created,
+zero assets) and **PR #18 is open and mergeable**.
 
-### Steps
+### 5.1 Exact steps (click-by-click)
 
-1. **Merge PR #18** (`arena/01a04a20-lowuuuuuu` → `main`).
-2. GitHub **Actions → “MCSM Integrated Release Build” → Run workflow** with:
-   - `release_tag` = `v1.9.61-26.2-mcsm-r1`
-3. The workflow will:
-   - compile the mod jar (renamed `-r<run-number>`),
-   - rebuild both packs via `tools/build_mcsm_packs.py`,
-   - validate all three artifacts,
-   - force-upload them to the release `v1.9.61-26.2-mcsm-r1` (already created),
-   - regenerate the release notes + SHA-256 digests.
+1. **Merge PR #18** (`arena/01a04a20-lowuuuuuu` → `main`)
+   - GitHub → **Pull requests → #18** → **Merge pull request** → **Confirm merge**.
+   - Wait for the merge commit. (Do NOT skip this — the workflow builds from
+     `main`, so main must contain the r1 code first. Merging also runs the
+     normal `Build` check on main automatically.)
+2. **Open the Actions tab**
+   - GitHub → **Actions** → left sidebar → **MCSM Integrated Release Build**.
+3. **Run the workflow**
+   - Click the **Run workflow** button (top right of the workflow list).
+   - In the popup, in the **release_tag** field, type exactly:
+     `v1.9.61-26.2-mcsm-r1`
+   - Click the green **Run workflow** button.
+4. **Wait** (~3–5 minutes). The run:
+   - compiles the mod jar from `main` (Java 25 + Fabric Loom), renamed
+     `dabywitherstormmod-1.9.61-26.2-beta-r<run-number>.jar`,
+   - rebuilds both packs via `tools/build_mcsm_packs.py`,
+   - validates all artifacts (procedural-only clouds, skyboxes, version),
+   - force-uploads every `dist/*` file to the release tag you typed,
+   - rewrites the release notes + SHA-256 digests.
+5. **Verify the publish**
+   - GitHub → **Releases** → **v1.9.61-26.2-mcsm-r1** should now list assets:
+     - `dabywitherstormmod-1.9.61-26.2-beta-r<run>.jar`
+     - `MCSM_ResourcePack.zip`
+     - `MCSM_ShaderPack.zip`
+     - `MCSM_ResourcePack_and_Mod.zip` (convenience bundle)
+     - `MCSM_ShaderPack_and_Mod.zip` (convenience bundle)
+   - The release page shows the regenerated notes and the SHA-256 digests.
+   - Optionally click the run in Actions → **Published assets summary** step
+     to see the exact uploaded `{name, size, digest}` list.
 
-Until then, the artifacts are downloadable from the repo at
+### 5.2 If something fails
+
+| Failure | Cause / fix |
+| :--- | :--- |
+| “No workflow found” or the workflow isn't listed | You must be on the **default branch view** of Actions, and the workflow only appears after it has run once or when a dispatch is possible. After merging PR #18, refresh the page. |
+| Validation step fails | Open the failed step log: it lists the exact problem (e.g. a missing skybox, a `cloudTex` binding). Fix on the branch, push, and re-merge before retrying. |
+| “release not found” | The tag must match exactly: `v1.9.61-26.2-mcsm-r1` (it already exists, so this shouldn't happen). |
+| Asset upload partially fails mid-run | Rerun the workflow with the same `release_tag` — the workflow deletes stale assets and force-uploads (`--clobber`), so a re-run is safe. |
+
+Until the workflow finishes, the artifacts stay downloadable from the repo at
 `docs/releases/r1/` (open each file → **Download raw file**), with checksums
 in `docs/releases/r1/SHA256SUMS.txt`.
 
