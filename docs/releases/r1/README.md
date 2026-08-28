@@ -5,9 +5,9 @@ or pull this folder's contents.
 
 | File | SHA-256 |
 | :--- | :--- |
-| `dabywitherstormmod-1.9.61-26.2-beta-r1.jar` | `4763dcdbdb144d615eab025bb7e7c5b6974624186f715f09e5f9684df8ca18c3` |
-| `MCSM_ResourcePack.zip` | `ea9afc5a0853b995f88519369b6227c986001f2b8aa046c31ac7c2a1b062386c` |
-| `MCSM_ShaderPack.zip` | `16763152ee75c670244388dbd1410e85a4fb49875d7fe24353fc1f7fca0de556` |
+| `dabywitherstormmod-1.9.61-26.2-beta-r1.jar` | `8ade143f77dcbf392ed65ee422edba382a43ec93e63b9b3c4caa2aa1413e8fa2` |
+| `MCSM_ResourcePack.zip` | `f72f1ab6c0434958fd24b45f127215d573b962dc4916670a77cf470432bcdab0` |
+| `MCSM_ShaderPack.zip` | `3677fd571f99a918024b549d827956c4605467c5a4e69e45083a5b467cc32834` |
 
 ## Install
 1. `dabywitherstormmod-1.9.61-26.2-beta-r1.jar` → `.minecraft/mods/`

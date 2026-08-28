@@ -2,6 +2,7 @@ package net.dabicco.witherstormmod.mixin;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
+import net.dabicco.witherstormmod.client.StormAtmosphere;
 import net.dabicco.witherstormmod.client.StormBloom;
 import net.dabicco.witherstormmod.client.StormImpactLights;
 import net.dabicco.witherstormmod.client.StormShadow;
@@ -36,6 +37,7 @@ public abstract class LevelRendererBloomMixin {
       StormSunGlow.render(cameraState);
       StormShadow.render(cameraState);
       StormImpactLights.render(cameraState);
+      StormAtmosphere.process();
       StormBloom.process();
    }
 }
