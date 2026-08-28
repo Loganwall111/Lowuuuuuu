@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "dabywitherstormmod:block/withered_log"
+    },
+    "axis=z": {
+      "model": "dabywitherstormmod:block/withered_log",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "dabywitherstormmod:block/withered_log",
+      "x": 90,
+      "y": 90
+    }
+  }
+}
