@@ -57,14 +57,14 @@ public class DabyWSClientConfig {
    public static double skyDarkenG = 0.055;
    public static double skyDarkenB = 0.194;
    public static double skyDarkenIntensity = 0.6;
-   public static double eyeColorR = 0.0;
-   public static double eyeColorG = 0.90;
+   public static double eyeColorR = 0.75;
+   public static double eyeColorG = 0.2;
    public static double eyeColorB = (double)1.0F;
    public static double stormGlowStrength = (double)1.0F;
    public static boolean stormGlowFlip = false;
-   public static double beamColorR = 0.3;
-   public static double beamColorG = 0.22;
-   public static double beamColorB = (double)1.0F;
+   public static double beamColorR = 0.35;
+   public static double beamColorG = 0.1;
+   public static double beamColorB = 0.95;
    public static boolean stormModelShading = true;
    public static boolean stormBackfaceCull = false;
    public static boolean stormRenderStats = false;
@@ -125,6 +125,8 @@ public class DabyWSClientConfig {
    public static double stormCloudAltitude = (double)0.0F;
    public static double stormCloudPaletteMix = 0.85;
    public static boolean atmospherePulse = true;
+   public static boolean stormAtmosphere = true;
+   public static boolean stormBlobFX = true;
    public static double pulseStrength = (double)1.0F;
    public static double pulsePeriod = (double)4.0F;
    public static double pulseSize = (double)1.0F;
@@ -479,6 +481,8 @@ public class DabyWSClientConfig {
       key("stormCloudAltitude", "Push the whole deck up or down.", -40.0, (double)40.0F, false, () -> stormCloudAltitude, (v) -> stormCloudAltitude = v);
       key("stormCloudPaletteMix", "How much the deck follows the phase palette versus your manual cloud colour.", (double)0.0F, (double)1.0F, false, () -> stormCloudPaletteMix, (v) -> stormCloudPaletteMix = v);
       key("atmospherePulse", "The purple-blue glare breathing in the air around a late-phase storm - part of the atmosphere, bigger than the body.", (double)0.0F, (double)1.0F, true, () -> atmospherePulse ? (double)1.0F : (double)0.0F, (v) -> atmospherePulse = v >= (double)0.5F);
+      key("stormAtmosphere", "Full-screen Story-Mode atmosphere post pass (lavender-to-magenta fog gradient + phase tinting).", (double)0.0F, (double)1.0F, true, () -> stormAtmosphere ? (double)1.0F : (double)0.0F, (v) -> stormAtmosphere = v >= (double)0.5F);
+      key("stormBlobFX", "Phase 5.1+ GLSL storm body: colour-shifting centre blob, halo, rear fog cloud, phase-6 flash and vortex mesh.", (double)0.0F, (double)1.0F, true, () -> stormBlobFX ? (double)1.0F : (double)0.0F, (v) -> stormBlobFX = v >= (double)0.5F);
       key("pulseStrength", "How bright the pulse burns at its peak.", (double)0.0F, (double)2.0F, false, () -> pulseStrength, (v) -> pulseStrength = v);
       key("pulsePeriod", "Seconds between pulse peaks.", (double)1.0F, (double)10.0F, false, () -> pulsePeriod, (v) -> pulsePeriod = v);
       key("pulseSize", "How far the glow reaches past the body.", 0.5, (double)2.0F, false, () -> pulseSize, (v) -> pulseSize = v);
@@ -602,10 +606,10 @@ public class DabyWSClientConfig {
       }
 
       loadedVersion = 13;
-      PRESET_MCSM = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("eyeColorR", 0.0), Map.entry("eyeColorG", 0.90), Map.entry("eyeColorB", (double)1.0F), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)0.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.8), Map.entry("phaseFogPalettes", (double)1.0F));
-      PRESET_MCSM_NETFLIX = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)1.8F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)2.0F), Map.entry("eyeColorR", 0.0), Map.entry("eyeColorG", 0.85), Map.entry("eyeColorB", (double)1.0F), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)0.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.5), Map.entry("phaseFogPalettes", (double)1.0F));
+      PRESET_MCSM = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.35), Map.entry("beamColorG", 0.1), Map.entry("beamColorB", 0.95), Map.entry("stormSkin", (double)1.0F), Map.entry("eyeColorR", 0.75), Map.entry("eyeColorG", 0.2), Map.entry("eyeColorB", (double)1.0F), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)0.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.8), Map.entry("phaseFogPalettes", (double)1.0F));
+      PRESET_MCSM_NETFLIX = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)1.8F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.35), Map.entry("beamColorG", 0.1), Map.entry("beamColorB", 0.95), Map.entry("stormSkin", (double)2.0F), Map.entry("eyeColorR", 0.0), Map.entry("eyeColorG", 0.85), Map.entry("eyeColorB", (double)1.0F), Map.entry("stormStars", (double)1.0F), Map.entry("stormCloudDeck", (double)0.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("debrisSize", 1.5), Map.entry("phaseFogPalettes", (double)1.0F));
       PRESET_LEGACY = Map.of("reverseShading", (double)0.0F, "bloomStrength", (double)1.0F, "beamOpacity", 0.74, "beamColorR", 0.52, "beamColorG", 0.46, "beamColorB", (double)1.0F);
-      PRESET_CINEMATIC = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.3), Map.entry("beamColorG", 0.22), Map.entry("beamColorB", (double)1.0F), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStars", (double)2.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("pulseStrength", 1.3), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("haloStrength", 1.2), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("ejectaRate", 1.4), Map.entry("pulseHeartbeat", (double)1.0F), Map.entry("debrisSize", (double)2.0F), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
+      PRESET_CINEMATIC = Map.ofEntries(Map.entry("reverseShading", (double)1.0F), Map.entry("bloomStrength", (double)2.0F), Map.entry("beamOpacity", 0.6), Map.entry("beamColorR", 0.35), Map.entry("beamColorG", 0.1), Map.entry("beamColorB", 0.95), Map.entry("stormSkin", (double)1.0F), Map.entry("stormStars", (double)2.0F), Map.entry("stormCloudDeck", (double)2.0F), Map.entry("atmospherePulse", (double)1.0F), Map.entry("pulseStrength", 1.3), Map.entry("cataclysmHalos", (double)1.0F), Map.entry("haloStrength", 1.2), Map.entry("blackGlare", (double)1.0F), Map.entry("glareEjecta", (double)1.0F), Map.entry("ejectaRate", 1.4), Map.entry("pulseHeartbeat", (double)1.0F), Map.entry("debrisSize", (double)2.0F), Map.entry("phaseFogPalettes", (double)1.0F), Map.entry("paletteStrength", (double)1.0F));
       GSON = (new GsonBuilder()).setPrettyPrinting().create();
    }
 
