@@ -17,3 +17,9 @@ mod/
 # ffmpeg.exe + build source shipped inside the mod's assets — dev artifacts, not runtime assets
 src/main/resources/assets/dabywitherstormmod/sounds/ffmpeg/
 __pycache__/
+
+# Never commit a prebuilt mod JAR — committing the stale 1.9.60 one is exactly what
+# made in-game visuals look like an old mod. Fresh jars ship as GitHub Release
+# assets built by .github/workflows/mcsm-release.yml (or CI artifact fallbacks).
+/dabywitherstormmod-1.9.*.jar
+dist/

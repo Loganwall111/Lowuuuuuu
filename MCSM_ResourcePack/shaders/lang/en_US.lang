@@ -1,0 +1,18 @@
+# Minecraft: Story Mode Shader Options
+screen.MCSM_OPTIONS=Story Mode Atmosphere
+screen.MCSM_OPTIONS.comment=Visual settings for Minecraft: Story Mode authentic atmosphere.
+
+option.CLOUD_EXTRUSION=Cloud Thickness
+option.CLOUD_EXTRUSION.comment=Scales vertical thickness of Story Mode cloud blocks by 2.5x.
+
+option.CLOUDS_ACTIVE=Story Mode Clouds
+option.CLOUDS_ACTIVE.comment=Enables authentic Story Mode layered cloud rendering with 8 preset textures.
+
+option.DYNAMIC_SKY=Dynamic Skybox
+option.DYNAMIC_SKY.comment=Time-of-day sky transitions between Day, Noon, Sunset, and Night with smooth horizon gradient.
+
+option.MCSM_LIGHTING=Story Mode Lighting
+option.MCSM_LIGHTING.comment=Warm golden sunlight and lavender tinted ambient shadows.
+
+option.EMISSIVE_TEETH_GLOW=Wither Storm Teeth Glow
+option.EMISSIVE_TEETH_GLOW.comment=Vibrant luminescent turquoise (#00E5FF) bloom on Wither Storm teeth.

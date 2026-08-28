@@ -29,6 +29,9 @@ import net.dabicco.witherstormmod.client.DistantStormRenderer;
 import net.dabicco.witherstormmod.client.StormCloudDeck;
 import net.dabicco.witherstormmod.client.StormPresenceFX;
 import net.dabicco.witherstormmod.client.StormStarfield;
+import net.dabicco.witherstormmod.client.StormAtmospherePost;
+import net.dabicco.witherstormmod.client.VortexRenderer;
+import net.dabicco.witherstormmod.client.WitherShieldHaloRenderer;
 import net.dabicco.witherstormmod.client.FormidibombBlast;
 import net.dabicco.witherstormmod.client.FormidibombEmissiveTint;
 import net.dabicco.witherstormmod.client.FormidibombFlash;
@@ -212,9 +215,12 @@ public class DabyWitherStormModClient implements ClientModInitializer {
       LevelRenderEvents.COLLECT_SUBMITS.register(WitheredRenderer::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(FormidibombBlast::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormStarfield::submit);
-      LevelRenderEvents.COLLECT_SUBMITS.register(StormCloudDeck::submit);
+      // StormCloudDeck removed per user request (synthetic slab prisms disabled; clouds handled by resourcepack & shaders)
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPresenceFX::submit);
+      LevelRenderEvents.COLLECT_SUBMITS.register(WitherShieldHaloRenderer::render);
+      LevelRenderEvents.COLLECT_SUBMITS.register(VortexRenderer::render);
       ClientTickEvents.START_CLIENT_TICK.register(StormPresenceFX::tick);
+      ClientTickEvents.START_CLIENT_TICK.register(StormAtmospherePost::tick);
       ClientPlayNetworking.registerGlobalReceiver(SpawnStructurePayload.TYPE, (payload, context) -> context.client().execute(() -> {
             StormMusic.setInsideSpawnTower(payload.inside());
             SpawnTowerGloom.set(payload.inside(), payload.x(), payload.floorY(), payload.z());
