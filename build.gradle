@@ -100,6 +100,11 @@ jar {
 	from("LICENSE") {
 		rename { "${it}_$projectName" }
 	}
+
+	// Blockbench .bbmodel files are editor SOURCE projects (~340 MB) kept in the
+	// repo for model work; the runtime loads the exported .json geometry only.
+	// Shipping them made the production jar 126 MB of dead weight.
+	exclude "**/*.bbmodel"
 }
 
 // configure the maven publication
@@ -116,5 +121,19 @@ publishing {
 		// Notice: This block does NOT have the same function as the block in the top level.
 		// The repositories here will be used for publishing your artifact, not for
 		// retrieving dependencies.
+	}
+}
+
+gradle.taskGraph.afterTask { Task task, TaskState state ->
+	if (state.failure != null) {
+		def msg = (state.failure.message ?: state.failure.toString())
+		def cur = state.failure.cause
+		while (cur != null) {
+			msg += " === CAUSED BY: " + (cur.message ?: cur.toString())
+			cur = cur.cause
+		}
+		if (msg.length() > 3000) msg = msg.substring(0, 3000)
+		msg = msg.replace("\r", "").replace("\n", "%0A")
+		println "::error title=Gradle Task ${task.name} Failure::${msg}"
 	}
 }

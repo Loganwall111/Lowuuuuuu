@@ -1,36 +1,19 @@
-# MCSM Shader Pack — Minecraft: Story Mode Atmosphere
+# MINECRAFT: STORY MODE — Official Atmosphere Shaderpack (1.21.2 / 26.2)
+Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Edition).
 
-Standalone Iris / OptiFine shader pack for the **Wither Storm Mod (Minecraft 26.2)**
-and the standalone **MCSM Resource Pack**.
+## Features
+- **Active Iris Shader Options**: Configurable toggles for Cloud Thickness, Story Mode Clouds, Dynamic Skybox, MCSM Colored Lighting, and Emissive Teeth Bloom. Standalone `block.properties` ensures menu ungrays immediately.
+- **Pipeline Cloud Routing**: `shaders.properties` with `clouds=fast` explicitly instructs Iris to intercept the cloud rendering loop and route geometry directly through `gbuffers_clouds`.
+- **Modern Engine Alignment**: `uniform long worldTime` everywhere (Iris uniform type check), no reserved `texture` sampler names, and world-anchored `fract()` cloud UVs so the 8 sheets tile seamlessly with square texels and shift with the time of day.
+- **8 Story Mode Cloud Presets**: Authentic 256x256 Story Mode cloud sheets mapped locally via `customTexture.cloudTex0` through `customTexture.cloudTex7`.
+- **2.5x Chunk Extrusion**: Vertex shaders vertically scale mesh bounds by 2.5x with GLSL 120 coordinate checking.
+- **Identical Precision Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` to prevent GPU compiler crashes.
+- **Story Mode Colored Lighting & Shadows**: Warm golden sunlight, lavender shadow tint, amber torchlight, surface normal diffuse shading, NO reflections.
+- **Dynamic Story Mode Sky Dome**: Smooth Day, Noon, Sunset, and Night transitions with zero void horizon black bands.
+- **Teeth Turquoise Glow**: Vibrant cyan/turquoise bloom (#00E5FF) pulsing on the Wither Storm teeth.
+- **Hand Item Lighting**: Dedicated gbuffers_hand shaders ensuring items never render solid black.
 
-## What this pack does
-
-- **Lavender-to-orange Story Mode sky** — `gbuffers_skybasic` paints the exact
-  MCSM sky: lavender/periwinkle zenith with a warm orange horizon at
-  day/sunset, royal-violet magenta at night. The gradient is sampled from the
-  live `worldTime` clock (with a `sunAngle` fallback so Sodium can never freeze
-  it at tick 0).
-- **100% procedural GLSL clouds** — the old 8 PNG cloud sheets are gone. Cloud
-  slabs are generated entirely with fractal value-noise (`gbuffers_clouds.fsh`,
-  `rendertype_clouds.fsh`), extruded 2.5x in the vertex shaders, and their
-  colour shifts with the time of day (white day → coral sunset → periwinkle
-  night). No `sampler2D` cloud textures anywhere in the pack.
-- **Sun-cast shadows on the ground and on water** — a real shadow map
-  (`shadow.vsh`/`shadow.fsh`) is rendered from the sun every frame; terrain
-  (`gbuffers_terrain.fsh`) and water (`gbuffers_water.fsh`) sample it, so the
-  shadows sweep the world as the sun travels the day/night cycle.
-- **Turquoise teeth aura** — `gbuffers_entities.fsh` detects the Wither
-  Storm's turquoise pixels and drives them to a bright, pulsing emissive cyan
-  (`#00E5FF`), with magenta accents.
-- **Held-item transparency fix** — `gbuffers_hand*` discard transparent texels
-  so held tools no longer render as solid black boxes.
-- **Story Mode lighting** — warm sunlight, lavender ambient shadows and amber
-  torchlight (`gbuffers_terrain.fsh`).
-
-## Install
-
-1. Drop `MCSM_ShaderPack.zip` into `.minecraft/shaderpacks/` and enable it in
-   Video Settings → Shader Packs (Iris or OptiFine).
-2. Recommended together with the MCSM Resource Pack and the Wither Storm Mod.
-3. Shader Options → `MCSM_OPTIONS` exposes: CLOUD_EXTRUSION, CLOUDS_ACTIVE,
-   DYNAMIC_SKY, MCSM_LIGHTING, EMISSIVE_TEETH_GLOW.
+## Installation
+1. Install **Iris + Sodium** (recommended) or OptiFine.
+2. Copy `MCSM_ShaderPack.zip` into `.minecraft/shaderpacks/` (DO NOT unzip).
+3. In Minecraft: Video Settings -> Shader Packs -> select **MCSM_ShaderPack**.

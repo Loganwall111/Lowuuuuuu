@@ -1,15 +1,7 @@
 #version 120
 
-// ============================================================================
-// MCSM gbuffers_clouds.vsh — 2.5x extruded Story Mode cloud mesh
-// ============================================================================
-// Unprojects the cloud mesh into camera-relative world space, vertically
-// scales the mesh height by 2.5x for the thick, chunky Story Mode cloud slabs,
-// and passes the world position down to the fully procedural fragment shader
-// (no PNG cloud sheets are used anywhere in this pack).
-
 #define CLOUD_EXTRUSION // Enable 2.5x thick Story Mode cloud mesh
-#define CLOUDS_ACTIVE   // Enable authentic Story Mode extruded clouds
+#define CLOUDS_ACTIVE // Enable authentic Story Mode extruded clouds
 
 precision highp float;
 precision highp int;
@@ -17,14 +9,12 @@ precision highp int;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 uniform float frameTimeCounter;
-uniform vec3 sunPosition;
 
 varying vec4 vColor;
 varying vec2 vTexCoord;
 varying vec3 vWorldPos;
 varying vec3 vNormal;
 varying float vFogFactor;
-varying float vSunY;
 
 void main() {
     // 1. Transform vertex to camera-relative world coordinates (unprojecting)
@@ -43,5 +33,4 @@ void main() {
     vColor = gl_Color;
     vWorldPos = worldPos;
     vFogFactor = clamp((length(eyePos) - 160.0) / 180.0, 0.0, 1.0);
-    vSunY = normalize(sunPosition).y;
 }
