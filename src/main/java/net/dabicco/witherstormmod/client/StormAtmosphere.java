@@ -25,12 +25,22 @@ public final class StormAtmosphere {
    private StormAtmosphere() {
    }
 
+   /** Chronological trigger window: Phases 5.1 through 5.9 (the Destroyer stage). */
+   public static final float POST_START_PHASE = 5.1F;
+   public static final float POST_END_PHASE = 6.0F;
+
    public static void process() {
       if (failed || !DabyWSClientConfig.stormAtmosphere || ShaderPackCompat.active()) {
          return;
       }
       Minecraft mc = Minecraft.getInstance();
       if (mc.level == null || mc.player == null || ClientDistantStormManager.all().isEmpty()) {
+         return;
+      }
+      // Chronological stage trigger: the pink/magenta fog chains, coloured
+      // light-maps and environmental flares paint only during Phases 5.1-5.9.
+      float phase = StormAtmospherePost.getCurrentPhase();
+      if (phase < POST_START_PHASE || phase >= POST_END_PHASE) {
          return;
       }
       try {

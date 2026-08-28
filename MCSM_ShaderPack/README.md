@@ -2,16 +2,24 @@
 Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Edition).
 
 ## Features
-- **Active Iris Shader Options**: Configurable toggles for Cloud Thickness, Story Mode Clouds, Dynamic Skybox, MCSM Colored Lighting, and Emissive Teeth Bloom. Standalone `block.properties` ensures menu ungrays immediately.
-- **Pipeline Cloud Routing**: `shaders.properties` with `clouds=fast` explicitly instructs Iris to intercept the cloud rendering loop and route geometry directly through `gbuffers_clouds`.
-- **Modern Engine Alignment**: `uniform long worldTime` everywhere (Iris uniform type check), no reserved `texture` sampler names, and world-anchored `fract()` cloud UVs so the 8 sheets tile seamlessly with square texels and shift with the time of day.
-- **8 Story Mode Cloud Presets**: Authentic 256x256 Story Mode cloud sheets mapped locally via `customTexture.cloudTex0` through `customTexture.cloudTex7`.
-- **2.5x Chunk Extrusion**: Vertex shaders vertically scale mesh bounds by 2.5x with GLSL 120 coordinate checking.
-- **Identical Precision Headers**: Both `.vsh` and `.fsh` use `precision highp float; precision highp int;` to prevent GPU compiler crashes.
-- **Story Mode Colored Lighting & Shadows**: Warm golden sunlight, lavender shadow tint, amber torchlight, surface normal diffuse shading, NO reflections.
-- **Dynamic Story Mode Sky Dome**: Smooth Day, Noon, Sunset, and Night transitions with zero void horizon black bands.
-- **Teeth Turquoise Glow**: Vibrant cyan/turquoise bloom (#00E5FF) pulsing on the Wither Storm teeth.
-- **Hand Item Lighting**: Dedicated gbuffers_hand shaders ensuring items never render solid black.
+- **Active Iris Shader Options**: `shaders.properties` (+ `shaders/shaders.properties`) ships the pipeline
+  routing (`clouds=fast`, `customSkies=true`, `shadowMapResolution=2048`) and three custom material
+  bindings (`witherFlesh`, `tornFlesh`, `blueHalo`) so the Shader Options menu stays unlocked.
+- **100% Procedural Clouds**: `gbuffers_clouds` / `rendertype_clouds` generate the cloud pattern
+  mathematically from fractal noise. There are **no** `cloudTex0-7` image variables and **no** PNG
+  cloud sheets anywhere in this pack.
+- **Cloud Vertex Re-Anchoring**: the vertex stage decodes the `CloudFaces` buffer, builds the 2.5x
+  extruded face quad per cell and passes `worldPosCoord` cleanly into the fragment channels along
+  with `vertexColor` and `vertexDistance`.
+- **Live Time-of-Day**: `uniform long worldTime` with `sunAngle` / `sunPosition` fallbacks drives the
+  lavender day, coral sunset and periwinkle night palettes so the sky and clouds never freeze.
+- **Shiny Materials**: `gbuffers_terrain` binds the `witherFlesh` / `tornWitheredFlesh` custom
+  textures and paints a soft specular metallic sheen + fresnel rim over the black voxel sheets so
+  they catch light highlights dynamically.
+- **Story Mode Colored Lighting & Shadows**: Warm golden sunlight, lavender shadow tint, amber
+  torchlight, and live sun-cast shadows that sweep with the clock.
+- **Hand Item Lighting**: Dedicated gbuffers_hand shaders with explicit alpha masking so held items
+  never render as a solid black box.
 
 ## Installation
 1. Install **Iris + Sodium** (recommended) or OptiFine.

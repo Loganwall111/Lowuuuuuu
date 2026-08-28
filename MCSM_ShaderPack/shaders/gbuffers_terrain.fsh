@@ -12,6 +12,11 @@ precision highp int;
 
 uniform sampler2D gtexture;
 uniform sampler2D shadowtex0;
+// Custom material bindings from shaders.properties:
+//   customTexture.witherFlesh = shaders/textures/wither_flesh_block.png
+//   customTexture.tornFlesh   = shaders/textures/torn_withered_flesh.png
+uniform sampler2D witherFlesh;
+uniform sampler2D tornFlesh;
 uniform vec3 sunPosition;
 uniform float frameTimeCounter;
 
@@ -49,6 +54,30 @@ void main() {
     // Diffuse surface normal shading (pure diffuse, NO reflections)
     float normalShade = clamp(normal.y * 0.35 + 0.65, 0.35, 1.0);
     tex.rgb *= normalShade;
+
+    // ---- Shiny material pass: soft specular metallic sheen over the active
+    // witherFlesh / tornFlesh voxel sheets ----
+    // The black voxel sheets catch light highlights dynamically: a soft
+    // Blinn-Phong key light sheen plus a fresnel rim, gated by a material
+    // match against the bound custom textures (colour identity test on the
+    // block's sampled albedo vs the custom texture's average texel).
+    vec3 witherAvg = texture2D(witherFlesh, vec2(0.5, 0.5)).rgb;
+    vec3 tornAvg = texture2D(tornFlesh, vec2(0.5, 0.5)).rgb;
+    float witherMatch = 1.0 - smoothstep(0.0, 0.30, length(tex.rgb - witherAvg));
+    float tornMatch = 1.0 - smoothstep(0.0, 0.30, length(tex.rgb - tornAvg));
+    float fleshMask = clamp(witherMatch + tornMatch, 0.0, 1.0);
+    if (fleshMask > 0.01) {
+        vec3 viewDir = normalize(-viewPos);
+        vec3 keyLight = normalize(vec3(0.35, 0.85, 0.30)); // stylized key light
+        vec3 halfVec = normalize(viewDir + keyLight);
+        float ndotl = clamp(dot(normal, keyLight), 0.0, 1.0);
+        float spec = pow(clamp(dot(normal, halfVec), 0.0, 1.0), 28.0);
+        float sheen = spec * (0.25 + 0.75 * skyLight) + 0.05 * ndotl;
+        tex.rgb += vec3(0.75, 0.66, 1.05) * sheen * fleshMask * 0.55;
+        // metallic fresnel rim so the sheets read as dark metal, not matte paint
+        float fres = pow(1.0 - clamp(dot(normal, viewDir), 0.0, 1.0), 3.0);
+        tex.rgb += vec3(0.55, 0.48, 0.95) * fres * fleshMask * 0.22;
+    }
 
     // ---- Live sun shadow (moves with the time of day) ----
     // Sun elevation gates the shadow strength so it fades at dawn/dusk and is

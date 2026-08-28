@@ -33,7 +33,7 @@ public final class StormSkyDarken {
 
    public static float fogR() {
       if (DabyWSClientConfig.phaseFogPalettes) {
-         float[] c = StormPalettes.fogColor(palettePhase, new float[3]);
+         float[] c = StormPalettes.backdropColor(palettePhase, new float[3]);
          return Mth.lerp(StormPalettes.strength(), DabyWSClientConfig.separateFogColor ? (float)DabyWSClientConfig.fogColorR : floorR(), c[0]);
       } else {
          return DabyWSClientConfig.separateFogColor ? (float)DabyWSClientConfig.fogColorR : floorR();
@@ -42,7 +42,7 @@ public final class StormSkyDarken {
 
    public static float fogG() {
       if (DabyWSClientConfig.phaseFogPalettes) {
-         float[] c = StormPalettes.fogColor(palettePhase, new float[3]);
+         float[] c = StormPalettes.backdropColor(palettePhase, new float[3]);
          return Mth.lerp(StormPalettes.strength(), DabyWSClientConfig.separateFogColor ? (float)DabyWSClientConfig.fogColorG : floorG(), c[1]);
       } else {
          return DabyWSClientConfig.separateFogColor ? (float)DabyWSClientConfig.fogColorG : floorG();
@@ -51,7 +51,7 @@ public final class StormSkyDarken {
 
    public static float fogB() {
       if (DabyWSClientConfig.phaseFogPalettes) {
-         float[] c = StormPalettes.fogColor(palettePhase, new float[3]);
+         float[] c = StormPalettes.backdropColor(palettePhase, new float[3]);
          return Mth.lerp(StormPalettes.strength(), DabyWSClientConfig.separateFogColor ? (float)DabyWSClientConfig.fogColorB : floorB(), c[2]);
       } else {
          return DabyWSClientConfig.separateFogColor ? (float)DabyWSClientConfig.fogColorB : floorB();
@@ -69,8 +69,16 @@ public final class StormSkyDarken {
     * Lavender zenith tint for the restored Story Mode skybox loop. Blends
     * toward the palette's fog colour so the sky turns green at phase 4.5,
     * turquoise at phase 5, and purple-black from the cataclysm onward.
+    * At Phase 6 (split heads) the backdrop force-swaps COMPLETELY to the
+    * volcanic ORANGE layout.
     */
    public static float[] skyTint(float[] out) {
+      if (orangeBackdrop()) {
+         out[0] = 1.00F;
+         out[1] = 0.43F;
+         out[2] = 0.00F;
+         return out;
+      }
       float[] f = fogColor3();
       out[0] = Mth.lerp(0.55F, 0.549F, f[0]);
       out[1] = Mth.lerp(0.55F, 0.529F, f[1]);
@@ -78,8 +86,14 @@ public final class StormSkyDarken {
       return out;
    }
 
-   /** Warm orange horizon glow that answers the palette (magenta at cataclysm). */
+   /** Warm orange horizon glow that answers the palette (orange at phase 6+, magenta at cataclysm). */
    public static float[] sunsetTint(float[] out) {
+      if (orangeBackdrop()) {
+         out[0] = 0.96F;
+         out[1] = 0.20F;
+         out[2] = 0.02F;
+         return out;
+      }
       float[] f = fogColor3();
       out[0] = Mth.lerp(0.72F, 0.973F, f[0]);
       out[1] = Mth.lerp(0.72F, 0.714F, f[1]);
@@ -87,8 +101,12 @@ public final class StormSkyDarken {
       return out;
    }
 
+   private static boolean orangeBackdrop() {
+      return StormPalettes.isOrangeBackdrop(palettePhase);
+   }
+
    private static float[] fogColor3() {
-      return StormPalettes.fogColor(palettePhase, new float[3]);
+      return StormPalettes.backdropColor(palettePhase, new float[3]);
    }
 
    public static void update(Vec3 cameraPos, float partialTick) {

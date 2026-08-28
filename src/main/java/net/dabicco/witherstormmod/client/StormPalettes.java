@@ -45,6 +45,14 @@ public final class StormPalettes {
    /** Light-blue halo that lives at the storm centre from phase 4 to the end. */
    private static final float[] HALO_CENTER = {0.44F, 0.72F, 1.0F};
 
+   /** Blue protective shield sphere (Phase 4+ timeline). */
+   private static final float[] HALO_SHIELD = {0.30F, 0.55F, 1.0F};
+
+   /** Phase 6 orange backdrop: volcanic fire-orange / blood-red cataclysm. */
+   private static final float[] BACKDROP_ORANGE_TOP = {1.00F, 0.43F, 0.00F};
+   private static final float[] BACKDROP_ORANGE_HORIZON = {0.96F, 0.20F, 0.02F};
+   private static final float[] BACKDROP_ORANGE_BOTTOM = {0.42F, 0.06F, 0.02F};
+
    /** Cloud deck tint. */
    private static final float[] CLOUD_PURPLE = {0.115F, 0.095F, 0.135F};
    private static final float[] CLOUD_TURQUOISE = {0.05F, 0.22F, 0.20F};
@@ -145,6 +153,38 @@ public final class StormPalettes {
       out[1] = HALO_CENTER[1];
       out[2] = HALO_CENTER[2];
       return out;
+   }
+
+   /** The blue protective shield sphere colour (Phase 4+ timeline). */
+   public static float[] haloShieldColor(float[] out) {
+      out[0] = HALO_SHIELD[0];
+      out[1] = HALO_SHIELD[1];
+      out[2] = HALO_SHIELD[2];
+      return out;
+   }
+
+   /**
+    * Backdrop colour for a phase. From Phase 6 (the split-heads phase) onward
+    * the backdrop force-swaps completely to the volcanic ORANGE layout:
+    * fire-orange zenith, blood-red horizon, burnt-crimson ground haze.
+    * Before Phase 6 this returns the normal phase fog palette.
+    */
+   public static float[] backdropColor(double phase, float[] out) {
+      if (phase >= 6.0) {
+         float[] top = BACKDROP_ORANGE_TOP;
+         float[] horizon = BACKDROP_ORANGE_HORIZON;
+         float[] bottom = BACKDROP_ORANGE_BOTTOM;
+         out[0] = (top[0] + horizon[0] + bottom[0]) / 3.0F;
+         out[1] = (top[1] + horizon[1] + bottom[1]) / 3.0F;
+         out[2] = (top[2] + horizon[2] + bottom[2]) / 3.0F;
+         return out;
+      }
+      return fogColor(phase, out);
+   }
+
+   /** True while the phase-6 orange backdrop override is active. */
+   public static boolean isOrangeBackdrop(double phase) {
+      return phase >= 6.0;
    }
 
    /** Phase-6 pulse flash colour: hot white-violet burst. */

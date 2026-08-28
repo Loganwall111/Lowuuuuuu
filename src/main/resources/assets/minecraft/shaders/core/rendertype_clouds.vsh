@@ -30,6 +30,7 @@ const float BrightnessEast   = 1.0;
 
 out float vertexDistance;
 out vec4 vertexColor;
+out vec3 worldPosCoord;
 
 const vec3[] vertices = vec3[](
     vec3(1,0,0),vec3(1,0,1),vec3(0,0,1),vec3(0,0,0),
@@ -67,6 +68,7 @@ void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
 
     vertexDistance = fog_spherical_distance(pos);
+    worldPosCoord = pos;
 
     float brightness = 1.0;
     if (useTopColor || direction == 1) brightness = BrightnessTop;
