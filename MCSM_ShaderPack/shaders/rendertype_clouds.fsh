@@ -104,6 +104,14 @@ void main() {
     vec3 col = mix(botCol, topCol, topF);
     col *= 0.55 + 0.55 * topF;
     col = mix(col, col * 0.45, botF * 0.8);
+
+    // WitherStormShaderSource body formula: near-black purple core with a
+    // magenta rim hugging the shredded slab edges.
+    float dns = smoothstep(0.34, 0.72, d);
+    float edge = smoothstep(0.34, 0.52, d) * (1.0 - smoothstep(0.60, 0.72, d));
+    col = mix(col, vec3(0.02, 0.01, 0.03), 0.35 * dns);                     // body core
+    col = mix(col, vec3(0.85, 0.12, 0.90), 0.55 * edge * (0.6 + 0.4 * topF)); // magenta rim
+
     col = mix(col, vec3(0.68, 0.60, 0.88), vFogFactor * 0.5);
 
     gl_FragColor = vec4(col, alpha);

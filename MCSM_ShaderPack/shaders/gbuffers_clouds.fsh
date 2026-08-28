@@ -129,6 +129,12 @@ void main() {
     col *= 0.55 + 0.55 * topF;
     col = mix(col, col * 0.45, botF * 0.8);
 
+    // WitherStormShaderSource body formula: near-black purple core with a
+    // magenta rim hugging the shredded slab edges.
+    float edge = smoothstep(0.34, 0.52, d) * (1.0 - smoothstep(0.60, 0.72, d));
+    col = mix(col, vec3(0.02, 0.01, 0.03), 0.35 * density);                   // body core
+    col = mix(col, vec3(0.85, 0.12, 0.90), 0.55 * edge * (0.6 + 0.4 * topF)); // magenta rim
+
     // Blend into the sky haze with distance
     col = mix(col, vec3(0.68, 0.60, 0.88), vFogFactor * 0.5);
 

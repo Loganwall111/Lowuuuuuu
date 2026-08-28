@@ -36,7 +36,7 @@ public final class StormPalettes {
    private static final float[] BLOB_DARK_PURPLE = {0.16F, 0.05F, 0.30F};
    private static final float[] BLOB_MAGENTA = {0.82F, 0.14F, 0.72F};
    private static final float[] BLOB_PINK = {0.95F, 0.45F, 0.78F};
-   private static final float[] BLOB_BLACK_PURPLE = {0.05F, 0.02F, 0.11F};
+   private static final float[] BLOB_BLACK_PURPLE = {0.02F, 0.01F, 0.03F}; // WitherStormShaderSource body colour
    private static final float[] BLOB_BLUE = {0.26F, 0.16F, 0.80F};
 
    /** Halo pair (phase 5.8+). */
