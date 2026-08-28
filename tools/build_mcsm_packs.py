@@ -3,30 +3,26 @@
 MCSM Pack Builder — Complete Standalone Resource Pack and Shader Pack for Minecraft: Story Mode
 Target: Minecraft 1.21.2 & 26.2 (Fabric / Iris / Sodium)
 
-Criteria:
-1. RESTORE EXCLUSIVELY ORIGINAL CUSTOM TEXTURES:
-   - Preserves custom block textures, entity maps, items, and skyboxes.
-   - Retains assets/minecraft/optifine/sky/world0/ (sky1..4.png and properties).
-   - Preserves and references all 8 Story Mode cloud sheets derived from authentic 256x256 clouds.
-   - Restores authentic OG textures (phase_4_assets_og.png, devourer_assets_og.png, wither_storm_og.png).
-   - Zero generic templates or generated block overlays.
-2. FIX RENDER PIPELINE IN ROOT shaders.properties:
-   - clouds=fast directive.
-   - customTexture.cloudTex0..7 mapped to shaders/textures/clouds/cloud0..7.png.
-   - screen=MCSM_OPTIONS and options defined.
-   - Standalone block.properties at root and shaders/ to ungray Iris Shader Options menu.
-3. EXTRUDE CLOUD MESH GEOMETRY (.vsh):
-   - gbuffers_clouds.vsh and rendertype_clouds.vsh unproject to camera-relative world coordinates.
-   - Vertically scales bounds by 2.5x.
-   - Passes local indices/attributes cleanly to fragment arrays.
-   - Identical precision declarations: precision highp float; precision highp int;.
-4. PURGE METADATA TEXT LEAKS (lang):
-   - Clean localization keys only. Zero compilation logs, zero URLs, zero markdown.
-5. FIX MOD JAR META AND HELD ITEM TRANSPARENCY:
-   - Modern split range schema pack.mcmeta for 26.2.
-   - Item textures converted to 32-bit RGBA with full alpha transparency channel registers.
-6. SHADOWS & COLOURED LIGHTING:
-   - Story Mode warm golden sunlight, cool lavender ambient shadow, warm amber torchlight, surface normal diffuse shading, shadow deepening on shaded faces, NO reflections.
+Protocol 1: REPAIR THE SHADER MAPPINGS & RESTORE DISAPPEARED SKYBOX (Shader Pack)
+- Restores original custom time-of-day skyboxes in assets/minecraft/optifine/sky/world0/ (sky1..4.png + properties).
+- Ensures gbuffers_skybasic.fsh, gbuffers_skybasic.vsh, gbuffers_skytextured.fsh, and gbuffers_skytextured.vsh actively sample live game time (worldTime).
+- Sodium tick 0 protection: dynamically derives time from sunAngle / sunPosition when worldTime is 0.
+- Restores world-space background definitions in gbuffers_skybasic using gbufferModelViewInverse.
+- Updates shaders.properties with clouds=fast, customTexture.cloudTex0..7 bindings, and screen menus for Iris / OptiFine.
+
+Protocol 2: REBUILD EXTRUDED 3D STORY MODE CLOUDS (Shader Pack)
+- Explicitly declares all 8 texture samplers (uniform sampler2D cloudTex0; .. cloudTex7;) in gbuffers_clouds.fsh and rendertype_clouds.fsh.
+- gbuffers_clouds.vsh and rendertype_clouds.vsh unproject coordinates and vertically scale mesh height by 2.5x ('worldPos.y *= 2.5').
+- Identical 'precision highp float; precision highp int;' headers across all files to stop GPU compiler failures.
+
+Protocol 3: PURGE CORRUPTED METADATA TEXT LEAKS (Resource Pack)
+- Completely cleans lang/en_us.lang and shaders/lang/en_us.lang of any leaked markdown, URLs, tables, or formatting data.
+- Restores clean standard Minecraft localization keys across resource pack and shader pack.
+
+Protocol 4: REPAIR HELD ITEM TRANSPARENCY & MOD ZIP SCHEMA (Mod Jar & Resource Pack)
+- Item textures in assets/dabywitherstormmod/textures/item/ verified for 32-bit RGBA alpha masking.
+- Dedicated gbuffers_hand and gbuffers_hand_water shaders with texture / gtexture samplers and alpha discard to prevent solid black voids.
+- pack.mcmeta utilizes strict split range schema (pack_format 46, min_format 42, max_format 50).
 """
 
 import os
@@ -46,7 +42,7 @@ SP_ZIP = os.path.join(ROOT, "MCSM_ShaderPack.zip")
 JAR_PATH = os.path.join(ROOT, "dabywitherstormmod-1.9.60-26.2-beta.jar")
 ZIP_MOD_PATH = os.path.join(ROOT, "dabywitherstormmod-1.9.60-26.2-beta.zip")
 
-print("--- Starting Authentic MCSM Pack Build ---")
+print("--- Starting Authentic MCSM Pack Build (4 Repair Protocols) ---")
 
 # Clean previous build directories
 shutil.rmtree(RP_DIR, ignore_errors=True)
@@ -58,9 +54,9 @@ os.makedirs(RP_DIR, exist_ok=True)
 os.makedirs(SP_DIR, exist_ok=True)
 
 # ----------------------------------------------------------------------
-# 1. RESTORE EXCLUSIVELY ORIGINAL CUSTOM TEXTURES IN SRC & RESOURCE PACK
+# PROTOCOL 1 & 4: RESTORE CUSTOM TEXTURES, SKYBOXES, AND ITEM TRANSPARENCY
 # ----------------------------------------------------------------------
-print("[1/3] Restoring original custom textures from author git commits...")
+print("[1/4] Restoring original custom textures, skyboxes, and items...")
 
 # 1.1 Block textures from commit 0987244
 block_names = [
@@ -100,13 +96,13 @@ for e in entity_names:
     with open(os.path.join(src_entity_dir, e), "wb") as f:
         f.write(data)
 
-# Ensure devourer_assets_e, devourer_assets_og_e, phase_4_assets_og_e, wither_storm_e, wither_storm_og_e are present
+# Emissive overlays for entities
 for extra_e in ["phase_4_assets_og_e.png", "devourer_assets_e.png", "devourer_assets_og_e.png", "wither_storm_e.png", "wither_storm_og_e.png"]:
     extra_p = os.path.join(src_entity_dir, extra_e)
     if not os.path.exists(extra_p):
         shutil.copy(os.path.join(src_entity_dir, "phase_4_assets_e.png"), extra_p)
 
-# 1.3 Items from commit 0987244 with 32-bit RGBA transparency conversion
+# 1.3 Items from commit 0987244 with verified 32-bit RGBA transparency masking
 item_names = [
     "Command_Circuit_Stage_0.png", "Command_Circuit_Stage_1.png", "Command_Circuit_Stage_2.png", "Command_Circuit_Stage_3.png",
     "amulet_bridges.png", "amulet_wussmode.png", "command_circuit.png", "command_circuit.png.mcmeta",
@@ -124,18 +120,86 @@ for it in item_names:
         f.write(data)
     if it.endswith(".png"):
         img = Image.open(dst)
-        if img.mode != "RGBA":
-            img = img.convert("RGBA")
-            img.save(dst, "PNG")
+        # Convert cleanly to 32-bit RGBA, clearing transparent pixel channels
+        img_rgba = img.convert("RGBA")
+        datas = list(img_rgba.getdata())
+        clean_datas = []
+        for px in datas:
+            if px[3] < 10:
+                clean_datas.append((0, 0, 0, 0))
+            else:
+                clean_datas.append(px)
+        clean_img = Image.new("RGBA", img_rgba.size)
+        clean_img.putdata(clean_datas)
+        clean_img.save(dst, "PNG")
+        # Also provide lowercase versions for Stage files
+        if "Command_Circuit_Stage" in it:
+            clean_img.save(os.path.join(src_item_dir, it.lower()), "PNG")
 
-# 1.4 Custom Time-of-Day Skybox from commit d52bba9 in assets/minecraft/optifine/sky/world0/
-sky_names = ["sky1.png", "sky1.properties", "sky2.png", "sky2.properties", "sky3.png", "sky3.properties", "sky4.png", "sky4.properties"]
+# Also provide super_tnt.png alongside super-tnt.png
+shutil.copy(os.path.join(src_item_dir, "super-tnt.png"), os.path.join(src_item_dir, "super_tnt.png"))
+
+# 1.4 Custom Time-of-Day Skyboxes under assets/minecraft/optifine/sky/world0/
 src_sky_dir = os.path.join(ROOT, "src", "main", "resources", "assets", "minecraft", "optifine", "sky", "world0")
 os.makedirs(src_sky_dir, exist_ok=True)
-for s in sky_names:
+
+# Authentic 1536x1024 skies from d52bba9
+for s in ["sky1.png", "sky2.png", "sky3.png", "sky4.png"]:
     data = subprocess.check_output(["git", "show", f"d52bba9:src/main/resources/assets/minecraft/optifine/sky/world0/{s}"])
     with open(os.path.join(src_sky_dir, s), "wb") as f:
         f.write(data)
+
+# Authentic properties with complete 4-point fade specifications and alpha blending
+sky_properties_map = {
+    "sky1.properties": """# Minecraft: Story Mode — Official Daytime Sky (day_sky.png)
+source=./sky1.png
+startFadeIn=5:30
+endFadeIn=6:30
+startFadeOut=18:00
+endFadeOut=19:00
+blend=alpha
+rotate=false
+speed=0.0
+axis=0.0 1.0 0.0
+""",
+    "sky2.properties": """# Minecraft: Story Mode — Drifting Cloud Ceiling
+source=./sky2.png
+startFadeIn=5:30
+endFadeIn=6:30
+startFadeOut=18:00
+endFadeOut=19:00
+blend=alpha
+rotate=true
+speed=0.015
+axis=0.0 1.0 0.0
+""",
+    "sky3.properties": """# Minecraft: Story Mode — Phase 5.1-5.9 Purple Sunset Sky
+source=./sky3.png
+startFadeIn=17:30
+endFadeIn=18:30
+startFadeOut=21:00
+endFadeOut=22:00
+blend=alpha
+rotate=false
+speed=0.0
+axis=0.0 1.0 0.0
+""",
+    "sky4.properties": """# Minecraft: Story Mode — Phase 6, 7, 8 Twilight Sky
+source=./sky4.png
+startFadeIn=20:30
+endFadeIn=21:30
+startFadeOut=5:00
+endFadeOut=6:00
+blend=alpha
+rotate=false
+speed=0.0
+axis=0.0 1.0 0.0
+"""
+}
+
+for prop_name, prop_content in sky_properties_map.items():
+    with open(os.path.join(src_sky_dir, prop_name), "w", encoding="utf-8") as fp:
+        fp.write(prop_content)
 
 # 1.5 Custom Environment & Colormap textures from commit d52bba9
 src_env_dir = os.path.join(ROOT, "src", "main", "resources", "assets", "minecraft", "textures", "environment")
@@ -144,13 +208,6 @@ for env in ["clouds.png", "sun.png", "moon_phases.png", "end_sky.png"]:
     data = subprocess.check_output(["git", "show", f"d52bba9:src/main/resources/assets/minecraft/textures/environment/{env}"])
     with open(os.path.join(src_env_dir, env), "wb") as f:
         f.write(data)
-
-# Also mcsm_cloud.png in dabywitherstormmod/textures/misc
-misc_dir = os.path.join(ROOT, "src", "main", "resources", "assets", "dabywitherstormmod", "textures", "misc")
-os.makedirs(misc_dir, exist_ok=True)
-cloud_bytes = subprocess.check_output(["git", "show", "d52bba9:src/main/resources/assets/minecraft/textures/environment/clouds.png"])
-with open(os.path.join(misc_dir, "mcsm_cloud.png"), "wb") as f:
-    f.write(cloud_bytes)
 
 # FabricSkyboxes from d52bba9
 fsb_dir = os.path.join(ROOT, "src", "main", "resources", "assets", "fabricskyboxes")
@@ -175,9 +232,9 @@ for cm in ["grass.png", "foliage.png"]:
 # ----------------------------------------------------------------------
 # 2. POPULATE MCSM_ResourcePack
 # ----------------------------------------------------------------------
-print("[2/3] Assembling standalone MCSM_ResourcePack.zip...")
+print("[2/4] Assembling standalone MCSM_ResourcePack...")
 
-# 2.1 pack.mcmeta exact schema requested
+# 2.1 pack.mcmeta exact split range schema
 rp_meta = {
     "pack": {
         "pack_format": 46,
@@ -189,6 +246,9 @@ rp_meta = {
     }
 }
 with open(os.path.join(RP_DIR, "pack.mcmeta"), "w", encoding="utf-8") as f:
+    json.dump(rp_meta, f, indent=2)
+
+with open(os.path.join(ROOT, "src", "main", "resources", "pack.mcmeta"), "w", encoding="utf-8") as f:
     json.dump(rp_meta, f, indent=2)
 
 # Copy pack.png
@@ -224,7 +284,6 @@ shutil.copytree(fsb_dir, rp_fsb_dst, dirs_exist_ok=True)
 # Copy other namespaces from cab6cf6 (cmdblockascension, minecraft-cursor, witherstormmod, devouringstorms)
 for ns in ["cmdblockascension", "minecraft-cursor", "witherstormmod", "devouringstorms"]:
     try:
-        # Check files from commit cab6cf6
         tree_files = subprocess.check_output(["git", "ls-tree", "-r", "--name-only", "cab6cf6", f"MCSM_ResourcePack/assets/{ns}"]).decode("utf-8").splitlines()
         for tf in tree_files:
             file_data = subprocess.check_output(["git", "show", f"cab6cf6:{tf}"])
@@ -235,6 +294,13 @@ for ns in ["cmdblockascension", "minecraft-cursor", "witherstormmod", "devouring
                 fp.write(file_data)
     except Exception:
         pass
+
+# Emissive properties in OptiFine folders
+for ns in ["minecraft", "dabywitherstormmod", "witherstormmod", "devouringstorms"]:
+    em_dir = os.path.join(RP_DIR, "assets", ns, "optifine")
+    os.makedirs(em_dir, exist_ok=True)
+    with open(os.path.join(em_dir, "emissive.properties"), "w", encoding="utf-8") as fp:
+        fp.write("suffix.emissive=_e\n")
 
 # Add PR #15 core cloud shader with 2.5x vertical extrusion
 core_cloud_shader = """#version 150
@@ -338,22 +404,72 @@ with open(os.path.join(rp_core_cloud_dir, "rendertype_clouds.vsh"), "w", encodin
     f.write(core_cloud_shader)
 
 # ----------------------------------------------------------------------
-# 3. POPULATE MCSM_ShaderPack
+# PROTOCOL 3: PURGE CORRUPTED METADATA TEXT LEAKS (Clean Localization)
 # ----------------------------------------------------------------------
-print("[3/3] Assembling standalone MCSM_ShaderPack.zip...")
+print("[3/4] Purging metadata text leaks and installing clean localization...")
+
+# Standard shader localization
+sp_lang_content = """# Minecraft: Story Mode Shader Options
+screen.MCSM_OPTIONS=Story Mode Atmosphere
+screen.MCSM_OPTIONS.comment=Visual settings for Minecraft: Story Mode authentic atmosphere.
+
+option.CLOUD_EXTRUSION=Cloud Thickness
+option.CLOUD_EXTRUSION.comment=Scales vertical thickness of Story Mode cloud blocks by 2.5x.
+
+option.CLOUDS_ACTIVE=Story Mode Clouds
+option.CLOUDS_ACTIVE.comment=Enables authentic Story Mode layered cloud rendering with 8 preset textures.
+
+option.DYNAMIC_SKY=Dynamic Skybox
+option.DYNAMIC_SKY.comment=Time-of-day sky transitions between Day, Noon, Sunset, and Night with smooth horizon gradient.
+
+option.MCSM_LIGHTING=Story Mode Lighting
+option.MCSM_LIGHTING.comment=Warm golden sunlight and lavender tinted ambient shadows.
+
+option.EMISSIVE_TEETH_GLOW=Wither Storm Teeth Glow
+option.EMISSIVE_TEETH_GLOW.comment=Vibrant luminescent turquoise (#00E5FF) bloom on Wither Storm teeth.
+"""
+
+# Put clean lang in RP as well to prevent any legacy / OptiFine .lang parsing corruption
+for lang_dir in [os.path.join(RP_DIR, "lang"), os.path.join(RP_DIR, "shaders", "lang")]:
+    os.makedirs(lang_dir, exist_ok=True)
+    with open(os.path.join(lang_dir, "en_us.lang"), "w", encoding="utf-8") as f:
+        f.write(sp_lang_content)
+    with open(os.path.join(lang_dir, "en_US.lang"), "w", encoding="utf-8") as f:
+        f.write(sp_lang_content)
+
+# Clean Minecraft UI keys in RP
+mc_lang_dir = os.path.join(RP_DIR, "assets", "minecraft", "lang")
+os.makedirs(mc_lang_dir, exist_ok=True)
+clean_mc_lang = {
+    "menu.game": "Game Menu",
+    "menu.options": "Options...",
+    "options.video": "Video Settings...",
+    "options.videoTitle": "Video Settings",
+    "key.categories.gameplay": "Gameplay",
+    "key.categories.inventory": "Inventory"
+}
+with open(os.path.join(mc_lang_dir, "en_us.json"), "w", encoding="utf-8") as f:
+    json.dump(clean_mc_lang, f, indent=2)
+
+# ----------------------------------------------------------------------
+# PROTOCOL 1 & 2: POPULATE MCSM_ShaderPack & SHADER PIPELINES
+# ----------------------------------------------------------------------
+print("[4/4] Assembling standalone MCSM_ShaderPack with 2.5x extruded clouds & dynamic sky...")
 
 sp_shaders = os.path.join(SP_DIR, "shaders")
 sp_core = os.path.join(sp_shaders, "core")
 sp_textures_clouds = os.path.join(sp_shaders, "textures", "clouds")
 sp_root_textures_clouds = os.path.join(SP_DIR, "textures", "clouds")
+sp_nested_textures_clouds = os.path.join(sp_shaders, "shaders", "textures", "clouds")
 
 os.makedirs(sp_shaders, exist_ok=True)
 os.makedirs(sp_core, exist_ok=True)
 os.makedirs(sp_textures_clouds, exist_ok=True)
 os.makedirs(sp_root_textures_clouds, exist_ok=True)
+os.makedirs(sp_nested_textures_clouds, exist_ok=True)
 
-# 3.1 Build the 8 Beautiful Custom Story Mode Cloud Sheets from authentic clouds.png
-base_clouds = Image.open(io.BytesIO(cloud_bytes)).convert("RGBA")
+# Build the 8 Beautiful Custom Story Mode Cloud Sheets from authentic clouds.png
+base_clouds = Image.open(os.path.join(src_env_dir, "clouds.png")).convert("RGBA")
 PRESET_TINTS = [
     (1.00, 1.00, 1.00), # 0 Day: Crisp White / Periwinkle
     (1.00, 0.72, 0.48), # 1 Sunset: Golden Amber & Warm Coral
@@ -377,17 +493,16 @@ for idx, (mr, mg, mb) in enumerate(PRESET_TINTS):
                 ng = min(255, int(g * mg))
                 nb = min(255, int(b * mb))
                 px[x, y] = (nr, ng, nb, a)
-    # Save into shaders/textures/clouds/ and textures/clouds/
-    p1 = os.path.join(sp_textures_clouds, f"cloud{idx}.png")
-    p2 = os.path.join(sp_root_textures_clouds, f"cloud{idx}.png")
-    sheet.save(p1, "PNG")
-    sheet.save(p2, "PNG")
+    # Save into all resolution paths
+    for target_dir in [sp_textures_clouds, sp_root_textures_clouds, sp_nested_textures_clouds]:
+        sheet.save(os.path.join(target_dir, f"cloud{idx}.png"), "PNG")
 
 print("Generated 8 authentic 256x256 Story Mode cloud sheets")
 
-# 3.2 Root and shaders/ shaders.properties with clouds=fast and customTexture.cloudTex0..7
+# shaders.properties at root and in shaders/
 shaders_properties = """# Minecraft: Story Mode — Shaderpack Configuration & Pipeline Routing
 clouds=fast
+
 customTexture.cloudTex0=shaders/textures/clouds/cloud0.png
 customTexture.cloudTex1=shaders/textures/clouds/cloud1.png
 customTexture.cloudTex2=shaders/textures/clouds/cloud2.png
@@ -397,7 +512,7 @@ customTexture.cloudTex5=shaders/textures/clouds/cloud5.png
 customTexture.cloudTex6=shaders/textures/clouds/cloud6.png
 customTexture.cloudTex7=shaders/textures/clouds/cloud7.png
 
-screen=MCSM_OPTIONS
+screen=CLOUD_EXTRUSION CLOUDS_ACTIVE DYNAMIC_SKY MCSM_LIGHTING EMISSIVE_TEETH_GLOW
 screen.MCSM_OPTIONS=CLOUD_EXTRUSION CLOUDS_ACTIVE DYNAMIC_SKY MCSM_LIGHTING EMISSIVE_TEETH_GLOW
 """
 with open(os.path.join(SP_DIR, "shaders.properties"), "w", encoding="utf-8") as f:
@@ -413,40 +528,20 @@ with open(os.path.join(SP_DIR, "block.properties"), "w", encoding="utf-8") as f:
 with open(os.path.join(sp_shaders, "block.properties"), "w", encoding="utf-8") as f:
     f.write(block_properties)
 
-# 3.3 Purge metadata text leaks: Clean localization keys only
-lang_content = """# Minecraft: Story Mode Shader Options
-screen.MCSM_OPTIONS=Story Mode Atmosphere
-screen.MCSM_OPTIONS.comment=Visual settings for Minecraft: Story Mode authentic atmosphere.
-
-option.CLOUD_EXTRUSION=Cloud Thickness
-option.CLOUD_EXTRUSION.comment=Scales vertical thickness of Story Mode cloud blocks (default 2.5x).
-
-option.CLOUDS_ACTIVE=Story Mode Clouds
-option.CLOUDS_ACTIVE.comment=Enables authentic Story Mode layered cloud rendering with 8 preset textures.
-
-option.DYNAMIC_SKY=Dynamic Skybox
-option.DYNAMIC_SKY.comment=Time-of-day sky transitions between Day, Noon, Sunset, and Night with smooth horizon gradient.
-
-option.MCSM_LIGHTING=Story Mode Lighting
-option.MCSM_LIGHTING.comment=Warm golden sunlight and lavender tinted ambient shadows.
-
-option.EMISSIVE_TEETH_GLOW=Wither Storm Teeth Glow
-option.EMISSIVE_TEETH_GLOW.comment=Vibrant luminescent turquoise (#00E5FF) bloom on Wither Storm teeth.
-"""
+# Language files for Shaderpack
 for d in [os.path.join(SP_DIR, "lang"), os.path.join(sp_shaders, "lang")]:
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, "en_us.lang"), "w", encoding="utf-8") as f:
-        f.write(lang_content)
+        f.write(sp_lang_content)
     with open(os.path.join(d, "en_US.lang"), "w", encoding="utf-8") as f:
-        f.write(lang_content)
+        f.write(sp_lang_content)
 
-# 3.4 gbuffers_clouds.vsh: Unproject vertex coordinates, scale bounds by 2.5x
+# 2.5x Vertically Extruded Cloud Vertex Shader
 gbuffers_clouds_vsh = """#version 120
 
-#define CLOUD_EXTRUSION 2.5 // [1.0 1.5 2.0 2.5 3.0 3.5 4.0]
+#define CLOUD_EXTRUSION // Enable 2.5x thick Story Mode cloud mesh
 #define CLOUDS_ACTIVE // Enable authentic Story Mode extruded clouds
 
-// Identical high precision header to eliminate GPU compiler crashes
 precision highp float;
 precision highp int;
 
@@ -461,21 +556,13 @@ varying vec3 vWorldPos;
 varying vec3 vNormal;
 varying float vFogFactor;
 
-const float CloudHeight = CLOUD_EXTRUSION;
-
 void main() {
     // 1. Transform vertex to camera-relative world coordinates (unprojecting)
     vec3 eyePos = (gl_ModelViewMatrix * gl_Vertex).xyz;
     vec3 worldPos = (gbufferModelViewInverse * vec4(eyePos, 1.0)).xyz;
-    vec3 normal = gl_Normal;
-    vec2 tc = gl_MultiTexCoord0.xy;
 
-    // 2. Vertically scale cloud mesh geometry bounds by 2.5x for Story Mode chunk layout thickness
-    float localExtrusion = 4.0 * (CloudHeight - 1.0); // 6.0 blocks expansion
-    bool isTop = (normal.y > 0.3) || (abs(normal.y) <= 0.3 && tc.y < 0.5);
-    if (isTop) {
-        worldPos.y += localExtrusion;
-    }
+    // 2. Vertically scale mesh height by 2.5x to achieve the thick, boxy MCSM cloud volume
+    worldPos.y *= 2.5;
 
     // 3. Project back to clip space
     gl_Position = gl_ProjectionMatrix * (gbufferModelView * vec4(worldPos, 1.0));
@@ -495,17 +582,19 @@ with open(os.path.join(sp_shaders, "rendertype_clouds.vsh"), "w", encoding="utf-
 with open(os.path.join(sp_core, "rendertype_clouds.vsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_clouds_vsh)
 
-# 3.5 gbuffers_clouds.fsh: Layered multi-preset Story Mode sampling with identical highp header
+# Cloud Fragment Shader: Explicitly declares cloudTex0..cloudTex7 samplers
 gbuffers_clouds_fsh = """#version 120
 
-#define CLOUD_EXTRUSION 2.5 // [1.0 1.5 2.0 2.5 3.0 3.5 4.0]
+#define CLOUD_EXTRUSION // Enable 2.5x thick Story Mode cloud mesh
 #define CLOUDS_ACTIVE // Enable authentic Story Mode extruded clouds
 
-// Identical high precision header to eliminate GPU compiler crashes
 precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
+uniform sampler2D texture;
+
+// Explicitly declare all 8 Story Mode cloud texture samplers
 uniform sampler2D cloudTex0; // 0: Day
 uniform sampler2D cloudTex1; // 1: Sunset
 uniform sampler2D cloudTex2; // 2: Night
@@ -612,11 +701,16 @@ void main() {
         else if (i == 6) sampledTex = texture2D(cloudTex6, sampledUV);
         else if (i == 7) sampledTex = texture2D(cloudTex7, sampledUV);
 
-        if (sampledTex.a < 0.01) {
-            sampledTex = texture2D(gtexture, sampledUV);
-            if (sampledTex.a < 0.01) sampledTex = vec4(1.0);
+        // If sampler returned empty/transparent, sample default cloud textures
+        if (sampledTex.a < 0.05 || (sampledTex.r == 0.0 && sampledTex.g == 0.0 && sampledTex.b == 0.0 && sampledTex.a == 0.0)) {
+            sampledTex = texture2D(texture, sampledUV);
+            if (sampledTex.a < 0.05 || (sampledTex.r == 0.0 && sampledTex.g == 0.0 && sampledTex.b == 0.0)) {
+                sampledTex = texture2D(gtexture, sampledUV);
+                if (sampledTex.a < 0.05) sampledTex = vec4(1.0);
+            }
         }
 
+        // 3D face shading
         vec3 faceTint = mix(presets[i].shadowColor, presets[i].highlightColor, isTop * 0.70 + isSide * 0.40);
         if (isBottom > 0.5) faceTint = presets[i].shadowColor;
 
@@ -645,7 +739,7 @@ with open(os.path.join(sp_shaders, "rendertype_clouds.fsh"), "w", encoding="utf-
 with open(os.path.join(sp_core, "rendertype_clouds.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_clouds_fsh)
 
-# 3.6 Terrain: Story Mode Colored Lighting & Shadows (Unconditional, Always Active)
+# Terrain: Story Mode Colored Lighting & Shadows
 gbuffers_terrain_vsh = """#version 120
 
 precision highp float;
@@ -677,6 +771,7 @@ precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
+uniform sampler2D texture;
 
 varying vec4 color;
 varying vec2 texcoord;
@@ -685,7 +780,11 @@ varying vec3 normal;
 varying vec3 viewPos;
 
 void main() {
-    vec4 tex = texture2D(gtexture, texcoord) * color;
+    vec4 tex = texture2D(texture, texcoord);
+    if (tex.a == 0.0 && tex.rgb == vec3(0.0)) {
+        tex = texture2D(gtexture, texcoord);
+    }
+    tex *= color;
     if (tex.a < 0.1) {
         discard;
     }
@@ -699,9 +798,7 @@ void main() {
     vec3 shadowAmbientColor = vec3(0.70, 0.62, 0.88); // Lavender ambient shadow tint
     vec3 torchColor = vec3(1.20, 0.78, 0.38);         // Warm amber firelight
 
-    // Sky light combines direct sun with ambient shadow
     vec3 skyLightTerm = mix(shadowAmbientColor * 0.72, sunLightColor, pow(skyLight, 1.25));
-    // Torch / block light term
     vec3 blockLightTerm = torchColor * pow(blockLight, 1.35) * 1.35;
 
     vec3 ambientLighting = skyLightTerm + blockLightTerm;
@@ -724,7 +821,7 @@ void main() {
 with open(os.path.join(sp_shaders, "gbuffers_terrain.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_terrain_fsh)
 
-# 3.7 Entities: Luminescent Turquoise Teeth (#00E5FF) and Magenta Eye Bloom
+# Entities: Luminescent Turquoise Teeth (#00E5FF) and Magenta Eye Bloom
 gbuffers_entities_vsh = """#version 120
 
 precision highp float;
@@ -750,12 +847,17 @@ precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
+uniform sampler2D texture;
 uniform float frameTimeCounter;
 varying vec4 color;
 varying vec2 texcoord;
 
 void main() {
-    vec4 col = texture2D(gtexture, texcoord) * color;
+    vec4 col = texture2D(texture, texcoord);
+    if (col.a == 0.0 && col.rgb == vec3(0.0)) {
+        col = texture2D(gtexture, texcoord);
+    }
+    col *= color;
     if (col.a < 0.1) {
         discard;
     }
@@ -777,7 +879,7 @@ void main() {
 with open(os.path.join(sp_shaders, "gbuffers_entities.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_entities_fsh)
 
-# 3.8 Dynamic Sky Dome (gbuffers_skybasic) - Zero black void band
+# Protocol 1: Dynamic Sky Dome (gbuffers_skybasic) actively sampling live game time uniform
 gbuffers_skybasic_vsh = """#version 120
 
 #define DYNAMIC_SKY // Enable Story Mode Day/Noon/Sunset/Night transitions
@@ -785,19 +887,35 @@ gbuffers_skybasic_vsh = """#version 120
 precision highp float;
 precision highp int;
 
+uniform mat4 gbufferModelViewInverse;
 uniform int worldTime;
+uniform float sunAngle;
 uniform vec3 sunPosition;
 
 varying vec4 color;
-varying vec3 viewPos;
-varying float vWorldTime;
+varying vec3 worldDir;
+varying float vLiveTime;
 varying float vSunY;
 
 void main() {
     gl_Position = ftransform();
     color = gl_Color;
-    viewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
-    vWorldTime = float(worldTime);
+    vec3 eyePos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+    // Unproject to camera-relative world space direction
+    worldDir = normalize((gbufferModelViewInverse * vec4(eyePos, 0.0)).xyz);
+    
+    // Actively compute live game time; prevent Sodium locking at tick 0
+    float liveTime = float(worldTime);
+    if (liveTime < 0.5) {
+        liveTime = mod(sunAngle * 24000.0, 24000.0);
+        if (liveTime < 0.5 && length(sunPosition) > 0.01) {
+            float sY = normalize(sunPosition).y;
+            float sX = normalize(sunPosition).x;
+            float a = atan(sY, sX);
+            liveTime = mod((0.5 - a / 6.2831853) * 24000.0, 24000.0);
+        }
+    }
+    vLiveTime = liveTime;
     vSunY = normalize(sunPosition).y;
 }
 """
@@ -812,12 +930,13 @@ precision highp float;
 precision highp int;
 
 uniform int worldTime;
+uniform float sunAngle;
 uniform vec3 sunPosition;
 uniform vec3 upPosition;
 
 varying vec4 color;
-varying vec3 viewPos;
-varying float vWorldTime;
+varying vec3 worldDir;
+varying float vLiveTime;
 varying float vSunY;
 
 vec3 getDaySky(float h) {
@@ -863,12 +982,23 @@ vec3 getNightSky(float h) {
 }
 
 void main() {
-    vec3 nView = normalize(viewPos);
-    // Smoothly extend horizon color below the horizon to eliminate dark bands completely
-    float h = clamp(nView.y, 0.0, 1.0);
+    float h = clamp(worldDir.y, 0.0, 1.0);
 
-    float timeVal = mod(float(worldTime), 24000.0);
-    float t = mix(timeVal, mod(vWorldTime, 24000.0), 0.5);
+    // Live game time sampling; protect against Sodium freezing at tick 0
+    float liveTime = float(worldTime);
+    if (liveTime < 0.5) {
+        liveTime = vLiveTime;
+        if (liveTime < 0.5) {
+            liveTime = mod(sunAngle * 24000.0, 24000.0);
+            if (liveTime < 0.5 && length(sunPosition) > 0.01) {
+                float sY = normalize(sunPosition).y;
+                float sX = normalize(sunPosition).x;
+                float a = atan(sY, sX);
+                liveTime = mod((0.5 - a / 6.2831853) * 24000.0, 24000.0);
+            }
+        }
+    }
+    float t = mod(liveTime, 24000.0);
 
     float sunY = normalize(sunPosition).y;
     sunY = mix(sunY, vSunY, 0.5);
@@ -933,19 +1063,36 @@ void main() {
 with open(os.path.join(sp_shaders, "gbuffers_skybasic.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_skybasic_fsh)
 
-# 3.9 Sky Textured (Sun, Moon, Starfields)
+# Protocol 1: Sky Textured (Sun, Moon, Custom OptiFine Skybox Textures) actively sampling live game time
 gbuffers_skytextured_vsh = """#version 120
 
 precision highp float;
 precision highp int;
 
+uniform int worldTime;
+uniform float sunAngle;
+uniform vec3 sunPosition;
+
 varying vec4 color;
 varying vec2 texcoord;
+varying float vLiveTime;
 
 void main() {
     gl_Position = ftransform();
     color = gl_Color;
     texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
+
+    float liveTime = float(worldTime);
+    if (liveTime < 0.5) {
+        liveTime = mod(sunAngle * 24000.0, 24000.0);
+        if (liveTime < 0.5 && length(sunPosition) > 0.01) {
+            float sY = normalize(sunPosition).y;
+            float sX = normalize(sunPosition).x;
+            float a = atan(sY, sX);
+            liveTime = mod((0.5 - a / 6.2831853) * 24000.0, 24000.0);
+        }
+    }
+    vLiveTime = liveTime;
 }
 """
 with open(os.path.join(sp_shaders, "gbuffers_skytextured.vsh"), "w", encoding="utf-8") as f:
@@ -956,12 +1103,37 @@ gbuffers_skytextured_fsh = """#version 120
 precision highp float;
 precision highp int;
 
+uniform sampler2D texture;
 uniform sampler2D gtexture;
+uniform int worldTime;
+uniform float sunAngle;
+uniform vec3 sunPosition;
+
 varying vec4 color;
 varying vec2 texcoord;
+varying float vLiveTime;
 
 void main() {
-    vec4 col = texture2D(gtexture, texcoord) * color;
+    float liveTime = float(worldTime);
+    if (liveTime < 0.5) {
+        liveTime = vLiveTime;
+        if (liveTime < 0.5) {
+            liveTime = mod(sunAngle * 24000.0, 24000.0);
+            if (liveTime < 0.5 && length(sunPosition) > 0.01) {
+                float sY = normalize(sunPosition).y;
+                float sX = normalize(sunPosition).x;
+                float a = atan(sY, sX);
+                liveTime = mod((0.5 - a / 6.2831853) * 24000.0, 24000.0);
+            }
+        }
+    }
+
+    vec4 col = texture2D(texture, texcoord);
+    if (col.a == 0.0 && col.rgb == vec3(0.0)) {
+        col = texture2D(gtexture, texcoord);
+    }
+    col *= color;
+
     if (col.a < 0.01) {
         discard;
     }
@@ -971,7 +1143,7 @@ void main() {
 with open(os.path.join(sp_shaders, "gbuffers_skytextured.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_skytextured_fsh)
 
-# 3.10 Hand Shaders
+# Protocol 4: Hand Shaders with proper alpha discard & dual texture/gtexture samplers
 gbuffers_hand_vsh = """#version 120
 
 precision highp float;
@@ -990,12 +1162,15 @@ void main() {
 """
 with open(os.path.join(sp_shaders, "gbuffers_hand.vsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_hand_vsh)
+with open(os.path.join(sp_shaders, "gbuffers_hand_water.vsh"), "w", encoding="utf-8") as f:
+    f.write(gbuffers_hand_vsh)
 
 gbuffers_hand_fsh = """#version 120
 
 precision highp float;
 precision highp int;
 
+uniform sampler2D texture;
 uniform sampler2D gtexture;
 uniform sampler2D lightmap;
 
@@ -1004,19 +1179,30 @@ varying vec2 texcoord;
 varying vec2 lmcoord;
 
 void main() {
-    vec4 col = texture2D(gtexture, texcoord);
+    vec4 col = texture2D(texture, texcoord);
+    if (col.a == 0.0 && col.rgb == vec3(0.0)) {
+        col = texture2D(gtexture, texcoord);
+    }
+
+    // Explicit alpha channel transparency masking: discard transparent pixels
     if (col.a < 0.1) {
         discard;
     }
+
     vec4 lm = texture2D(lightmap, lmcoord);
-    vec3 lighting = max(lm.rgb, vec3(0.55));
-    gl_FragColor = vec4(col.rgb * color.rgb * lighting, col.a * color.a);
+    vec3 lighting = max(lm.rgb, vec3(0.60));
+    col.rgb *= color.rgb * lighting;
+    col.a *= color.a;
+
+    gl_FragColor = col;
 }
 """
 with open(os.path.join(sp_shaders, "gbuffers_hand.fsh"), "w", encoding="utf-8") as f:
     f.write(gbuffers_hand_fsh)
+with open(os.path.join(sp_shaders, "gbuffers_hand_water.fsh"), "w", encoding="utf-8") as f:
+    f.write(gbuffers_hand_fsh)
 
-# 3.11 Composite and Final Passes
+# Composite and Final Passes
 composite_vsh = """#version 120
 
 precision highp float;
@@ -1076,7 +1262,7 @@ with open(os.path.join(SP_DIR, "README.md"), "w", encoding="utf-8") as f:
     f.write(sp_readme)
 
 # ----------------------------------------------------------------------
-# 4. ZIP ARCHIVE GENERATION (Flat root structure)
+# ZIP ARCHIVE GENERATION (Flat root structure)
 # ----------------------------------------------------------------------
 print("Packaging MCSM_ShaderPack.zip...")
 with zipfile.ZipFile(SP_ZIP, "w", zipfile.ZIP_DEFLATED) as z:
@@ -1097,20 +1283,18 @@ with zipfile.ZipFile(RP_ZIP, "w", zipfile.ZIP_DEFLATED) as z:
 print(f"Created {RP_ZIP} ({os.path.getsize(RP_ZIP)} bytes)")
 
 # ----------------------------------------------------------------------
-# 5. UPDATE MOD JAR / ZIP WITH RESTORED TEXTURES & PACK.MCMETA
+# UPDATE MOD JAR / ZIP WITH RESTORED TEXTURES & PACK.MCMETA
 # ----------------------------------------------------------------------
-print("Updating dabywitherstormmod jar and zip with restored assets...")
+print("Updating dabywitherstormmod jar and zip with restored assets and modern pack.mcmeta...")
 for archive_path in [JAR_PATH, ZIP_MOD_PATH]:
     if not os.path.exists(archive_path):
         continue
-    # Extract to temp, copy restored assets, rezip
     tmp_extract = os.path.join(ROOT, "build", "tmp_jar_update")
     shutil.rmtree(tmp_extract, ignore_errors=True)
     os.makedirs(tmp_extract, exist_ok=True)
     with zipfile.ZipFile(archive_path, "r") as zin:
         zin.extractall(tmp_extract)
-    
-    # Copy restored assets (excluding raw dev geo/ bbmodel sources)
+
     jar_assets_dst = os.path.join(tmp_extract, "assets")
     shutil.copytree(
         os.path.join(ROOT, "src", "main", "resources", "assets"),
@@ -1118,12 +1302,10 @@ for archive_path in [JAR_PATH, ZIP_MOD_PATH]:
         dirs_exist_ok=True,
         ignore=shutil.ignore_patterns("geo", "*.bbmodel")
     )
-    
-    # Add pack.mcmeta to jar root as well
+
     with open(os.path.join(tmp_extract, "pack.mcmeta"), "w", encoding="utf-8") as f:
         json.dump(rp_meta, f, indent=2)
 
-    # Re-zip
     with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zout:
         for root_dir, _, files in os.walk(tmp_extract):
             for file in files:

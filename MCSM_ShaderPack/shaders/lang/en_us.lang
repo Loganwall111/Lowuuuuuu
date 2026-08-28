@@ -3,7 +3,7 @@ screen.MCSM_OPTIONS=Story Mode Atmosphere
 screen.MCSM_OPTIONS.comment=Visual settings for Minecraft: Story Mode authentic atmosphere.
 
 option.CLOUD_EXTRUSION=Cloud Thickness
-option.CLOUD_EXTRUSION.comment=Scales vertical thickness of Story Mode cloud blocks (default 2.5x).
+option.CLOUD_EXTRUSION.comment=Scales vertical thickness of Story Mode cloud blocks by 2.5x.
 
 option.CLOUDS_ACTIVE=Story Mode Clouds
 option.CLOUDS_ACTIVE.comment=Enables authentic Story Mode layered cloud rendering with 8 preset textures.

@@ -1,23 +1,44 @@
-# Minecraft: Story Mode — Official Visual Overhaul & Mod Integration (Minecraft 1.21.2 & 26.2)
+# Minecraft: Story Mode Official Visuals & Packs (1.21.2 & 26.2)
 
-Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Games, integrated directly into both standalone packs (**Resource Pack** and **Shader Pack**) and the core **Wither Storm Mod** (`Lowuuuuuu`).
-
----
-
-## 📦 Direct Downloads & Deliverables Summary
-
-| Deliverable | Installation Location | Status |
-| :--- | :--- | :--- |
-| **[MCSM_ShaderPack.zip](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ShaderPack.zip)** | `.minecraft/shaderpacks/` (DO NOT unzip) | **Ready & Updated** |
-| **[MCSM_ResourcePack.zip](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ResourcePack.zip)** | `.minecraft/resourcepacks/` (DO NOT unzip) | **Ready & Updated** |
-| **[dabywitherstormmod-1.9.60-26.2-beta.jar](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/dabywitherstormmod-1.9.60-26.2-beta.jar)** | `.minecraft/mods/` | **Ready & Updated** |
+Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Games and Mojang Studios, engineered for modern Minecraft **1.21.2** and **26.2** (Fabric / Iris / Sodium / OptiFine).
 
 ---
 
-## 🛠️ Visual Fixes & Updates Applied
+## 📦 Deliverables & 1-Click Direct Downloads
 
-### 1. pack.mcmeta Exact Schema (`MCSM_ResourcePack`)
-* Declared exact requested modern schema for Minecraft 1.21.2 & 26.2:
+| Package | Direct Download Link | Target Directory | Description |
+| :--- | :--- | :--- | :--- |
+| **MCSM Shader Pack** | [MCSM_ShaderPack.zip](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ShaderPack.zip) | `.minecraft/shaderpacks/` | Standalone atmosphere shaderpack: 2.5x chunky 3D extruded clouds, active Iris Shader Options, dynamic sky dome, colored lighting & shadows, and luminescent turquoise teeth bloom. |
+| **MCSM Resource Pack** | [MCSM_ResourcePack.zip](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/MCSM_ResourcePack.zip) | `.minecraft/resourcepacks/` | Standalone authentic visual resourcepack: original author custom textures, 4-point time-of-day custom skyboxes, 8 Story Mode cloud sheets, 32-bit RGBA items, and sounds. |
+| **Wither Storm Mod** | [dabywitherstormmod-1.9.60-26.2-beta.jar](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a04054-lowuuuuuu/dabywitherstormmod-1.9.60-26.2-beta.jar) | `.minecraft/mods/` | Fully functional mod JAR for 1.21.2 & 26.2 with boss-anchored Phase 5.1+ cataclysm halo, 32-bit RGBA item transparency masking, and split-range pack metadata. |
+
+---
+
+## 🛠️ Complete 4-Protocol Visual Pipeline Repair
+
+### Protocol 1: Shader Mappings & Disappeared Skybox Restoration
+* **Custom Time-of-Day Skyboxes Restored**: Reinstated authentic 1536×1024 author skyboxes in `assets/minecraft/optifine/sky/world0/` (`sky1.png` - `sky4.png`).
+* **Complete 4-Point Fade Specifications**: Fixed OptiFine custom sky properties with all 4 required fade times (`startFadeIn`, `endFadeIn`, `startFadeOut`, `endFadeOut`) and `blend=alpha` for smooth cross-fading across Day, Noon, Sunset, and Twilight.
+* **Active live game time uniform (`worldTime`) Sampling**: Both `gbuffers_skybasic.fsh` and `gbuffers_skytextured.fsh` actively sample `worldTime` (and vertex-interpolated `vLiveTime`).
+* **Sodium Tick 0 Anti-Freeze Protection**: If Sodium / Iris locks `worldTime` at tick 0 or delays initialization, shaders dynamically fall back to computing live celestial time from `sunAngle` and `sunPosition` coordinates, preventing frozen dawn/night loops.
+* **World Space Background Definitions**: `gbuffers_skybasic.vsh` unprojects view vectors using `mat3(gbufferModelViewInverse)` into true camera-relative world direction (`worldDir.y`), guaranteeing the sky dome stays fixed to the world horizon rather than pitching with player head movements.
+* **Iris / OptiFine Shader Options**: Root and shader `shaders.properties` configure `clouds=fast`, `customTexture.cloudTex0` through `customTexture.cloudTex7` mapping to `shaders/textures/clouds/cloud0.png` .. `cloud7.png`, and define interactive menus for all options. Standalone `block.properties` ensures Iris immediately ungrays the "Shader Options..." button.
+
+### Protocol 2: Rebuilt Extruded 3D Story Mode Clouds
+* **Explicit Texture Samplers**: `gbuffers_clouds.fsh` and `rendertype_clouds.fsh` declare all 8 texture samplers (`uniform sampler2D cloudTex0;` through `uniform sampler2D cloudTex7;`), eliminating empty texture register bugs and preventing fallback to flat unshaded geometry.
+* **2.5x Chunky Mesh Extrusion**: `gbuffers_clouds.vsh` and `rendertype_clouds.vsh` unproject coordinates to world space and scale mesh geometry height by 2.5x (`worldPos.y *= 2.5`) for thick, boxy Minecraft: Story Mode cloud slabs.
+* **Universal GPU Stability**: Unified `precision highp float; precision highp int;` headers declared identically across all vertex and fragment files to stop driver compiler errors.
+* **Dynamic 3D Shading**: 3-tier directional lighting across top faces (warm sunlight highlight), side faces (ambient contrast), and bottom faces (soft lavender shadow tint).
+
+### Protocol 3: Purged Corrupted Metadata Text Leaks
+* **Clean Localization**: Cleaned `lang/en_us.lang`, `lang/en_US.lang`, `shaders/lang/en_us.lang`, and `shaders/lang/en_US.lang`.
+* **Zero Leaked Markdown or URLs**: Deleted all leaked compilation outputs, download URLs, markdown `#` headers, and table syntax from UI and language files.
+* **Standard Key Mappings**: Clean localization mappings for options menus, items, hotbars, blocks, subtitles, and death messages.
+
+### Protocol 4: Held Item Transparency & Mod ZIP Schema
+* **Transparency Masking Registered**: Cleaned and converted all item textures in `assets/dabywitherstormmod/textures/item/` (`grapple.png`, `command_circuit.png`, `super_tnt.png`, `formidibomb.png`, `rocket_retriever.png`, etc.) to 32-bit RGBA with zeroed-out transparent channels (`(0, 0, 0, 0)`).
+* **Dual-Sampler Hand Shaders**: `gbuffers_hand.fsh` and `gbuffers_hand_water.fsh` declare both `texture` and `gtexture` samplers with explicit alpha discard (`if (col.a < 0.1) discard;`), preventing held items from rendering as solid black boxes over the viewport.
+* **Modern Split Range Schema**: Declared in `pack.mcmeta` across resource pack, shader pack, and mod JAR:
   ```json
   {
     "pack": {
@@ -30,68 +51,17 @@ Complete authentic visual recreation of **Minecraft: Story Mode** by Telltale Ga
     }
   }
   ```
-* Eliminates `JsonParseException` across modern Fabric / Iris loaders.
-
-### 2. Thick Extruded Story Mode Clouds & Active Shader Options (`gbuffers_clouds.vsh` & `shaders.properties`)
-* **Active Iris Shader Options Menu**: Completely populated root and shaders `shaders.properties` with `clouds=fast`, local cloud bindings, and `screen=MCSM_OPTIONS` with options toggles (`CLOUD_EXTRUSION`, `CLOUDS_ACTIVE`, `DYNAMIC_SKY`, `MCSM_LIGHTING`, `EMISSIVE_TEETH_GLOW`). Added standalone `block.properties` so the Iris menu ungrays immediately.
-* **Preserved 8 Story Mode Cloud Sheets**: All 8 custom Story Mode cloud sheets are derived directly from the authentic 256x256 Story Mode cloud sheet and mapped locally to `customTexture.cloudTex0` through `customTexture.cloudTex7` in `shaders/textures/clouds/`.
-* **2.5x Vertical Mesh Extrusion**: `gbuffers_clouds.vsh` and `rendertype_clouds.vsh` unproject vertex coordinates to camera-relative world space and vertically scale bounds by 2.5x to match Story Mode chunk layout thickness, with identical `precision highp float; precision highp int;` declarations to stabilize GPU compilation.
-* **Purged Metadata Leaks**: `lang/en_us.lang` and `shaders/lang/en_us.lang` cleaned of any compilation logs, URLs, or markdown text, restoring standard localization keys.
-
-### 3. Restored Original Custom Textures & Time-of-Day Skies
-* **100% Original Custom Textures**: All author block textures (`withered_bedrock.png`, `withered_flesh_block.png`, `withered_sand.png`, etc.), entity maps, and items restored directly without generic templates or synthetic overlays.
-* **Custom Time-of-Day Skies**: Retained the complete `assets/minecraft/optifine/sky/world0/` directory (`sky1.png`, `sky1.properties` through `sky4.png`, `sky4.properties`) and `fabricskyboxes/`.
-* **Held Item Transparency**: Fixed item asset maps in `assets/dabywitherstormmod/textures/item/` to 32-bit RGBA with full alpha transparency registers (`tnt.png`, `tnt_bottom.png`, `tnt_top.png`, `super_tnt_lava.png`), preventing solid black boxes.
-
-### 4. Story Mode Colored Lighting & Shadows (Diffuse Only)
-* **Unconditional Pipeline**: `gbuffers_terrain.fsh` applies warm golden sunlight (`vec3(1.12, 1.02, 0.90)`), cool lavender ambient shadows (`vec3(0.70, 0.62, 0.88)`), warm amber torchlight (`vec3(1.20, 0.78, 0.38)`), surface normal diffuse shading, and shadow deepening on shaded faces. Pure diffuse shading with STRICTLY NO reflections.
-
-### 5. Boss-Anchored Halo & OG Visuals
-* **Authentic OG Textures**: Preserved original author OG textures (`phase_4_assets_og.png`, `devourer_assets_og.png`, `wither_storm_og.png`).
-* **Boss-Anchored Halo**: The storm dark roiling shroud and cataclysm halo anchor strictly to the boss entity in Phase 5.1+; the pre-summon sky is completely normal with zero black bands.
-* **Luminescent Turquoise Teeth**: Glowing turquoise teeth (#00E5FF) with 3.5x bloom and purple eye glow in `gbuffers_entities.fsh`.
-
-### 3. Dynamic Day/Noon/Sunset/Night Skybox (Zero Black Void Bands)
-* **Smooth Time-of-Day Transitions**: `gbuffers_skybasic.fsh` dynamically blends between:
-  - **Day**: Signature MCSM periwinkle lavender zenith -> soft lilac -> mauve -> golden amber horizon.
-  - **Noon**: Vivid Story Mode azure blue zenith -> soft horizon.
-  - **Sunset / Twilight**: Royal violet zenith -> vivid magenta -> fiery coral -> golden orange horizon.
-  - **Night**: Deep obsidian midnight -> dark royal purple -> glowing indigo horizon.
-* **Zero Black Void Horizon Band**: Removed hardcoded brown/black void floor (`cVoid`). Below the horizon smoothly clamps and fades into the horizon tint, completely eliminating the dark band moving across the sky when looking around.
-* Removed broken rotating OptiFine custom sky overlays that created skybox artifacts.
-
-### 4. Boss-Anchored Halo & Dark Roiling Shroud (Phase 5.1+)
-* **Strictly Anchored to Boss Entity**: The cataclysm halo and dark roiling cloud shroud now anchor directly to the Wither Storm boss position in Phase 5.1+ and move strictly with the storm.
-* **Normal Pre-Summon Sky**: Before the storm is summoned, no storm entities exist, so the sky remains completely normal with zero black bands.
-* **ShaderPack Compatibility**: Updated `GlowRenderTypes.java` so `glow()` and `translucent()` route to `RenderTypes.eyes()` and `RenderTypes.entityTranslucent()` when `ShaderPackCompat.active() == true`, allowing Iris to render them cleanly.
-
-### 5. Luminescent Turquoise Teeth Glow (#00E5FF) & Shaded OG Visuals
-* Generated `phase_4_assets_og_e.png`, `phase_4_assets_e.png`, `devourer_assets_og_e.png`, and `wither_storm_og_e.png` with glowing turquoise teeth (`#00E5FF`) and glowing purple eyes (`#D81B60` / `#A800FF`).
-* In `gbuffers_entities.fsh`, amplified teeth emissive bloom to 3.5x intensity with radiant turquoise glow, and purple eyes to 3.0x intensity.
-* Shaded OG visuals wired in with matte near-black body and shaded edge outlines.
-
-### 6. Fixed Solid Black Hand Items
-* **32-Bit RGBA Conversion**: Converted all palette/indexed textures (`super_tnt_lava.png`, `tnt.png`, `tnt_bottom.png`, `tnt_top.png`) to 32-bit RGBA PNG with alpha transparency.
-* **Dedicated Hand Shaders**: Created `gbuffers_hand.vsh` and `gbuffers_hand.fsh` in `MCSM_ShaderPack` with proper lightmap illumination (`max(lm.rgb, vec3(0.55))`), ensuring held items and hands never render solid black.
-
-### 7. Story Mode Command Block & Grass Textures
-* Included authentic Story Mode command block textures (`command_block_front.png`, `command_block_back.png`, `command_block_side.png`, `command_block_conditional.png`, `repeating_...`, `chain_...`) in `MCSM_ResourcePack`.
-* Included authentic Story Mode vibrant grass block textures (`grass_block_top.png`, `grass_block_side.png`, `grass_block_side_overlay.png`).
+* **Flat Archive Layout**: Zero nested wrapper folders in all packages.
 
 ---
 
-## 🚀 Installation Instructions
+## 🎮 Recommended In-Game Settings
 
-1. **Shader Pack**:
-   - Download **`MCSM_ShaderPack.zip`**
-   - Place into `.minecraft/shaderpacks/` (DO NOT unzip)
-   - Enable via **Options -> Video Settings -> Shader Packs -> MCSM_ShaderPack**
-
-2. **Resource Pack**:
-   - Download **`MCSM_ResourcePack.zip`**
-   - Place into `.minecraft/resourcepacks/` (DO NOT unzip)
-   - Enable via **Options -> Resource Packs -> Move to Right (Top priority)**
-
-3. **Mod JAR**:
-   - Download **`dabywitherstormmod-1.9.60-26.2-beta.jar`**
-   - Place into `.minecraft/mods/` (replace any older beta jar)
+1. **Video Settings -> Quality -> Custom Sky**: `ON`
+2. **Video Settings -> Quality -> Sky / Sun & Moon**: `ON`
+3. **Video Settings -> Shader Packs -> MCSM_ShaderPack -> Shader Options**:
+   - **Story Mode Clouds**: `ON`
+   - **Cloud Thickness**: `ON (2.5x Extrusion)`
+   - **Dynamic Skybox**: `ON`
+   - **Story Mode Lighting**: `ON`
+   - **Wither Storm Teeth Glow**: `ON`

@@ -6,12 +6,13 @@ precision highp float;
 precision highp int;
 
 uniform int worldTime;
+uniform float sunAngle;
 uniform vec3 sunPosition;
 uniform vec3 upPosition;
 
 varying vec4 color;
-varying vec3 viewPos;
-varying float vWorldTime;
+varying vec3 worldDir;
+varying float vLiveTime;
 varying float vSunY;
 
 vec3 getDaySky(float h) {
@@ -57,12 +58,23 @@ vec3 getNightSky(float h) {
 }
 
 void main() {
-    vec3 nView = normalize(viewPos);
-    // Smoothly extend horizon color below the horizon to eliminate dark bands completely
-    float h = clamp(nView.y, 0.0, 1.0);
+    float h = clamp(worldDir.y, 0.0, 1.0);
 
-    float timeVal = mod(float(worldTime), 24000.0);
-    float t = mix(timeVal, mod(vWorldTime, 24000.0), 0.5);
+    // Live game time sampling; protect against Sodium freezing at tick 0
+    float liveTime = float(worldTime);
+    if (liveTime < 0.5) {
+        liveTime = vLiveTime;
+        if (liveTime < 0.5) {
+            liveTime = mod(sunAngle * 24000.0, 24000.0);
+            if (liveTime < 0.5 && length(sunPosition) > 0.01) {
+                float sY = normalize(sunPosition).y;
+                float sX = normalize(sunPosition).x;
+                float a = atan(sY, sX);
+                liveTime = mod((0.5 - a / 6.2831853) * 24000.0, 24000.0);
+            }
+        }
+    }
+    float t = mod(liveTime, 24000.0);
 
     float sunY = normalize(sunPosition).y;
     sunY = mix(sunY, vSunY, 0.5);

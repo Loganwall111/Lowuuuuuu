@@ -6,6 +6,7 @@ precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
+uniform sampler2D texture;
 
 varying vec4 color;
 varying vec2 texcoord;
@@ -14,7 +15,11 @@ varying vec3 normal;
 varying vec3 viewPos;
 
 void main() {
-    vec4 tex = texture2D(gtexture, texcoord) * color;
+    vec4 tex = texture2D(texture, texcoord);
+    if (tex.a == 0.0 && tex.rgb == vec3(0.0)) {
+        tex = texture2D(gtexture, texcoord);
+    }
+    tex *= color;
     if (tex.a < 0.1) {
         discard;
     }
@@ -28,9 +33,7 @@ void main() {
     vec3 shadowAmbientColor = vec3(0.70, 0.62, 0.88); // Lavender ambient shadow tint
     vec3 torchColor = vec3(1.20, 0.78, 0.38);         // Warm amber firelight
 
-    // Sky light combines direct sun with ambient shadow
     vec3 skyLightTerm = mix(shadowAmbientColor * 0.72, sunLightColor, pow(skyLight, 1.25));
-    // Torch / block light term
     vec3 blockLightTerm = torchColor * pow(blockLight, 1.35) * 1.35;
 
     vec3 ambientLighting = skyLightTerm + blockLightTerm;

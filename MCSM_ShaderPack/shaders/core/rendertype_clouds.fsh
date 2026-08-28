@@ -1,13 +1,15 @@
 #version 120
 
-#define CLOUD_EXTRUSION 2.5 // [1.0 1.5 2.0 2.5 3.0 3.5 4.0]
+#define CLOUD_EXTRUSION // Enable 2.5x thick Story Mode cloud mesh
 #define CLOUDS_ACTIVE // Enable authentic Story Mode extruded clouds
 
-// Identical high precision header to eliminate GPU compiler crashes
 precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
+uniform sampler2D texture;
+
+// Explicitly declare all 8 Story Mode cloud texture samplers
 uniform sampler2D cloudTex0; // 0: Day
 uniform sampler2D cloudTex1; // 1: Sunset
 uniform sampler2D cloudTex2; // 2: Night
@@ -114,11 +116,16 @@ void main() {
         else if (i == 6) sampledTex = texture2D(cloudTex6, sampledUV);
         else if (i == 7) sampledTex = texture2D(cloudTex7, sampledUV);
 
-        if (sampledTex.a < 0.01) {
-            sampledTex = texture2D(gtexture, sampledUV);
-            if (sampledTex.a < 0.01) sampledTex = vec4(1.0);
+        // If sampler returned empty/transparent, sample default cloud textures
+        if (sampledTex.a < 0.05 || (sampledTex.r == 0.0 && sampledTex.g == 0.0 && sampledTex.b == 0.0 && sampledTex.a == 0.0)) {
+            sampledTex = texture2D(texture, sampledUV);
+            if (sampledTex.a < 0.05 || (sampledTex.r == 0.0 && sampledTex.g == 0.0 && sampledTex.b == 0.0)) {
+                sampledTex = texture2D(gtexture, sampledUV);
+                if (sampledTex.a < 0.05) sampledTex = vec4(1.0);
+            }
         }
 
+        // 3D face shading
         vec3 faceTint = mix(presets[i].shadowColor, presets[i].highlightColor, isTop * 0.70 + isSide * 0.40);
         if (isBottom > 0.5) faceTint = presets[i].shadowColor;
 
