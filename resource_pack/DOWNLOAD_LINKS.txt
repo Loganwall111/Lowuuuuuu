@@ -1,0 +1,26 @@
+STANDALONE RESOURCE PACK — Download & Links
+===============================================
+
+PR / Full Changes: https://github.com/Loganwall111/Lowuuuuuu/pull/21
+Release (draft):     https://github.com/Loganwall111/Lowuuuuuu/releases/tag/untagged-4c3778d106aad267b344
+Branch:              arena/01a04e02-lowuuuuuu
+
+Contents of this resource pack:
+- assets/minecraft/shaders/core/
+  * rendertype_clouds.vsh / .fsh (2.5x vertical extrude + mathematical 3D noise)
+  * rendertype_skybasic.fsh (lavender -> night clock lock)
+  * rendertype_skytextured.fsh (custom skybox sheet samples)
+  * rendertype_terrain.fsh (vignette, AO, magenta/purple grade, fake shadow metric, dark fog)
+  * rendertype_shield_halo.vsh / .fsh (persistent Phase 4-7, duplicates Phase 6, alpha edge fade)
+- assets/dabywitherstormmod/shaders/core/
+  * unified_core_array.fsh (merges all visual logic into single array)
+  * storm_shield_halo.vsh / .fsh
+- assets/dabywitherstormmod/textures/item/
+  * alpha_transparency_registry.json
+  * All item .mcmeta files with alpha_blend transparency registered
+
+Cloud/end-sky PNG textures deleted from original mod:
+- mcsm_cloud.png, halo_ring.png, star.png, broken_piece.png
+
+Shaderpack property configurations purged:
+- assets/minecraft/optifine/emissive.properties deleted
