@@ -27,17 +27,14 @@ import net.dabicco.witherstormmod.client.CommandBlockPowerSound;
 import net.dabicco.witherstormmod.client.ControlPanelLightTint;
 import net.dabicco.witherstormmod.client.DistantStormRenderer;
 import net.dabicco.witherstormmod.client.StormCloudDeck;
-import net.dabicco.witherstormmod.client.StormBlobFX;
 import net.dabicco.witherstormmod.client.StormPresenceFX;
-import net.dabicco.witherstormmod.client.StormShieldFX;
 import net.dabicco.witherstormmod.client.StormStarfield;
-import net.dabicco.witherstormmod.client.StormAtmospherePost;
 import net.dabicco.witherstormmod.client.FormidibombBlast;
 import net.dabicco.witherstormmod.client.FormidibombEmissiveTint;
 import net.dabicco.witherstormmod.client.FormidibombFlash;
 import net.dabicco.witherstormmod.client.FormidibombProperty;
 import net.dabicco.witherstormmod.client.RetrieverClientTooltip;
-import net.dabicco.witherstormmod.client.RetrieverCountProperties;
+// import net.dabicco.witherstormmod.client.RetrieverCountProperties; // unused after RangeSelect accessor removal
 import net.dabicco.witherstormmod.client.SpawnTowerGloom;
 import net.dabicco.witherstormmod.client.StormAmbienceSound;
 import net.dabicco.witherstormmod.client.StormDistantVocals;
@@ -75,7 +72,6 @@ import net.dabicco.witherstormmod.item.RetrieverTooltip;
 import net.dabicco.witherstormmod.menu.ModMenus;
 import net.dabicco.witherstormmod.mixin.ItemTintSourcesAccessor;
 import net.dabicco.witherstormmod.mixin.LivingEntitySwimAccessor;
-import net.dabicco.witherstormmod.mixin.RangeSelectItemModelPropertiesAccessor;
 import net.dabicco.witherstormmod.mixin.SelectItemModelPropertiesAccessor;
 import net.dabicco.witherstormmod.network.CaveRumblePayload;
 import net.dabicco.witherstormmod.network.CommandBlockPowerPayload;
@@ -178,8 +174,11 @@ public class DabyWitherStormModClient implements ClientModInitializer {
       ItemTintSourcesAccessor.dabyws$idMapper().put(Identifier.fromNamespaceAndPath("dabywitherstormmod", "panel_light"), ControlPanelLightTint.MAP_CODEC);
       ItemTintSourcesAccessor.dabyws$idMapper().put(Identifier.fromNamespaceAndPath("dabywitherstormmod", "formidibomb_light"), FormidibombEmissiveTint.MAP_CODEC);
       SelectItemModelPropertiesAccessor.dabyws$idMapper().put(Identifier.fromNamespaceAndPath("dabywitherstormmod", "formidibomb"), FormidibombProperty.TYPE);
-      RangeSelectItemModelPropertiesAccessor.dabyws$idMapper().put(Identifier.fromNamespaceAndPath("dabywitherstormmod", "retriever_tnt"), RetrieverCountProperties.TntCount.MAP_CODEC);
-      RangeSelectItemModelPropertiesAccessor.dabyws$idMapper().put(Identifier.fromNamespaceAndPath("dabywitherstormmod", "retriever_rockets"), RetrieverCountProperties.RocketCount.MAP_CODEC);
+      // RangeSelectItemModelPropertiesAccessor hook REMOVED: the accessor mixin
+      // was dropped from dabywitherstormmod.mixins.json (manual repair), so any
+      // reference to that class here throws NoClassDefFoundError and crashes
+      // client initialization. The retriever_tnt / retriever_rockets item
+      // properties are deliberately unregistered to keep the boot clean.
       ParticleProviderRegistry.getInstance().register(ModParticles.BEAM_MOTE, BeamMoteParticle.Provider::new);
       ModEntityModelLayers.registerModelLayers();
       ModelLayerRegistry.registerModelLayer(BowelsCrackModel.LAYER, BowelsCrackModel::createBodyLayer);
@@ -215,12 +214,9 @@ public class DabyWitherStormModClient implements ClientModInitializer {
       LevelRenderEvents.COLLECT_SUBMITS.register(WitheredRenderer::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(FormidibombBlast::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormStarfield::submit);
-      // StormCloudDeck removed per user request (synthetic slab prisms disabled; clouds handled by resourcepack & shaders)
+      LevelRenderEvents.COLLECT_SUBMITS.register(StormCloudDeck::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPresenceFX::submit);
-      LevelRenderEvents.COLLECT_SUBMITS.register(StormBlobFX::submit);
-      LevelRenderEvents.COLLECT_SUBMITS.register(StormShieldFX::submit);
       ClientTickEvents.START_CLIENT_TICK.register(StormPresenceFX::tick);
-      ClientTickEvents.START_CLIENT_TICK.register(StormAtmospherePost::tick);
       ClientPlayNetworking.registerGlobalReceiver(SpawnStructurePayload.TYPE, (payload, context) -> context.client().execute(() -> {
             StormMusic.setInsideSpawnTower(payload.inside());
             SpawnTowerGloom.set(payload.inside(), payload.x(), payload.floorY(), payload.z());
