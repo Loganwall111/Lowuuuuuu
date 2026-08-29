@@ -1,29 +1,20 @@
 package net.dabicco.witherstormmod.item;
 
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.Rarity;
 
 /**
  * ModItems — Devouring Storms item definitions.
- * Items registered via DevouringItemRegistry.
+ * Simple items registered for the Devouring Storms overhaul.
  */
 public class ModItems {
 
-    public static final Item WITHER_BLADE = new SwordItem(
-        Tiers.NETHERITE,
-        new Item.Properties()
-            .attributes(SwordItem.createAttributes(Tiers.NETHERITE, 8, -2.0f))
-            .rarity(Rarity.EPIC)
-            .fireResistant()
+    public static final Item WITHER_BLADE = new Item(
+        new Item.Properties().rarity(Rarity.EPIC).fireResistant().stacksTo(1)
     );
 
-    public static final Item STORM_SLICER = new SwordItem(
-        Tiers.DIAMOND,
-        new Item.Properties()
-            .attributes(SwordItem.createAttributes(Tiers.DIAMOND, 6, -1.8f))
-            .rarity(Rarity.RARE)
+    public static final Item STORM_SLICER = new Item(
+        new Item.Properties().rarity(Rarity.RARE).stacksTo(1)
     );
 
     public static final Item CORRUPTION_STAFF = new Item(
