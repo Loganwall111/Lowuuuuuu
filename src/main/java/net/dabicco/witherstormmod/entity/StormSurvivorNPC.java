@@ -1,6 +1,5 @@
 package net.dabicco.witherstormmod.entity;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -10,6 +9,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 /**
  * StormSurvivorNPC — Devouring Storms NPC entity.
@@ -47,31 +48,25 @@ public class StormSurvivorNPC extends PathfinderMob {
         };
 
         String dialogue = dialogues[dialogueProgress % dialogues.length];
-        player.sendSystemComponent(Component.literal(dialogue));
+        player.sendSystemMessage(Component.literal(dialogue));
         dialogueProgress++;
 
         return InteractionResult.CONSUME;
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
-        tag.putString("DialogueId", dialogueId);
-        tag.putInt("DialogueProgress", dialogueProgress);
-        tag.putBoolean("HasGivenQuest", hasGivenQuest);
+    protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putString("DialogueId", dialogueId);
+        output.putInt("DialogueProgress", dialogueProgress);
+        output.putBoolean("HasGivenQuest", hasGivenQuest);
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        if (tag.contains("DialogueId")) {
-            this.dialogueId = tag.getString("DialogueId");
-        }
-        if (tag.contains("DialogueProgress")) {
-            this.dialogueProgress = tag.getInt("DialogueProgress");
-        }
-        if (tag.contains("HasGivenQuest")) {
-            this.hasGivenQuest = tag.getBoolean("HasGivenQuest");
-        }
+    protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        this.dialogueId = input.getStringOr("DialogueId", "default");
+        this.dialogueProgress = input.getIntOr("DialogueProgress", 0);
+        this.hasGivenQuest = input.getBooleanOr("HasGivenQuest", false);
     }
 }

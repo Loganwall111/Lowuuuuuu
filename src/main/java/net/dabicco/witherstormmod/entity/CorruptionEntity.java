@@ -1,16 +1,16 @@
 package net.dabicco.witherstormmod.entity;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 /**
  * CorruptionEntity — A glitching anomaly that warps reality around it.
- * When players get close, their screen distorts with visual glitches.
  */
 public class CorruptionEntity extends Entity {
 
@@ -32,13 +32,11 @@ public class CorruptionEntity extends Entity {
     @Override
     public void tick() {
         super.tick();
-
         if (this.level().isClientSide()) {
             var player = this.level().getNearestPlayer(this, glitchRadius);
             if (player != null) {
                 float intensity = (float)(1.0 - (this.distanceTo(player) / glitchRadius));
-                intensity = Math.max(0, Math.min(1, intensity));
-                this.entityData.set(GLITCH_INTENSITY, intensity);
+                this.entityData.set(GLITCH_INTENSITY, Math.max(0, Math.min(1, intensity)));
             } else {
                 this.entityData.set(GLITCH_INTENSITY, 0.0f);
             }
@@ -50,15 +48,13 @@ public class CorruptionEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
-        if (tag.contains("GlitchRadius")) {
-            this.glitchRadius = tag.getFloat("GlitchRadius");
-        }
+    protected void readAdditionalSaveData(ValueInput input) {
+        this.glitchRadius = input.getFloatOr("GlitchRadius", 16.0f);
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
-        tag.putFloat("GlitchRadius", glitchRadius);
+    protected void addAdditionalSaveData(ValueOutput output) {
+        output.putFloat("GlitchRadius", this.glitchRadius);
     }
 
     @Override

@@ -1,28 +1,27 @@
 package net.dabicco.witherstormmod.entity;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 /**
- * RealityRiftEntity — A pixelated rift in reality.
- * Teleports players when they get close.
+ * RealityRiftEntity — A pixelated rift portal that tears through dimensions.
  */
 public class RealityRiftEntity extends Entity {
 
     private static final EntityDataAccessor<Float> RIFT_SIZE =
         SynchedEntityData.defineId(RealityRiftEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Integer> RIFT_AGE =
-        SynchedEntityData.defineId(RealityRiftEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> IS_ACTIVE =
+
+    private static final EntityDataAccessor<Boolean> IS_OPEN =
         SynchedEntityData.defineId(RealityRiftEntity.class, EntityDataSerializers.BOOLEAN);
 
-    private int teleportCooldown = 0;
+    private int lifetime = 0;
+    private static final int MAX_LIFETIME = 6000; // 5 minutes
 
     public RealityRiftEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -31,47 +30,26 @@ public class RealityRiftEntity extends Entity {
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        builder.define(RIFT_SIZE, 1.0f);
-        builder.define(RIFT_AGE, 0);
-        builder.define(IS_ACTIVE, true);
+        builder.define(RIFT_SIZE, 3.0f);
+        builder.define(IS_OPEN, true);
     }
 
     @Override
     public void tick() {
         super.tick();
+        lifetime++;
 
-        int age = this.entityData.get(RIFT_AGE);
-        this.entityData.set(RIFT_AGE, age + 1);
-
-        float size = this.entityData.get(RIFT_SIZE);
-        if (size < 8.0f) {
-            this.entityData.set(RIFT_SIZE, Math.min(8.0f, size + 0.005f));
-        }
-
-        if (teleportCooldown > 0) {
-            teleportCooldown--;
-        }
-
-        if (!this.level().isClientSide() && teleportCooldown <= 0) {
-            var players = this.level().getEntitiesOfClass(
-                Player.class,
-                this.getBoundingBox().inflate(3),
-                p -> true
-            );
-
-            for (Player player : players) {
-                if (player.distanceTo(this) < 3) {
-                    double newX = this.position().x + (this.random.nextDouble() - 0.5) * 200;
-                    double newZ = this.position().z + (this.random.nextDouble() - 0.5) * 200;
-                    double newY = this.level().getHeightmapPos(
-                        net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE,
-                        new net.minecraft.core.BlockPos((int)newX, 0, (int)newZ)
-                    ).getY();
-                    player.teleportTo(newX, newY, newZ);
-                    teleportCooldown = 100;
-                    break;
-                }
+        if (lifetime > MAX_LIFETIME) {
+            this.entityData.set(IS_OPEN, false);
+            if (this.level().isClientSide()) {
+                // Spawn closing particles
+            } else {
+                this.discard();
             }
+        }
+
+        if (this.level().isClientSide() && this.entityData.get(IS_OPEN)) {
+            // Pixelated rift visual effect handled by renderer
         }
     }
 
@@ -79,24 +57,22 @@ public class RealityRiftEntity extends Entity {
         return this.entityData.get(RIFT_SIZE);
     }
 
-    public int getRiftAge() {
-        return this.entityData.get(RIFT_AGE);
-    }
-
-    public boolean isActive() {
-        return this.entityData.get(IS_ACTIVE);
+    public boolean isOpen() {
+        return this.entityData.get(IS_OPEN);
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
-        if (tag.contains("RiftSize")) {
-            this.entityData.set(RIFT_SIZE, tag.getFloat("RiftSize"));
-        }
+    protected void readAdditionalSaveData(ValueInput input) {
+        this.lifetime = input.getIntOr("Lifetime", 0);
+        this.entityData.set(RIFT_SIZE, input.getFloatOr("RiftSize", 3.0f));
+        this.entityData.set(IS_OPEN, input.getBooleanOr("IsOpen", true));
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
-        tag.putFloat("RiftSize", this.entityData.get(RIFT_SIZE));
+    protected void addAdditionalSaveData(ValueOutput output) {
+        output.putInt("Lifetime", lifetime);
+        output.putFloat("RiftSize", this.entityData.get(RIFT_SIZE));
+        output.putBoolean("IsOpen", this.entityData.get(IS_OPEN));
     }
 
     @Override
