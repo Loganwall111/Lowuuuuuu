@@ -1,6 +1,18 @@
 # MINECRAFT: STORY MODE — Official Atmosphere Shaderpack (1.21.2 / 26.2)
 Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Edition).
 
+## Namespace unification
+Every custom sky/environment asset resolves from ONE synchronized directory so
+Sodium and Iris can never flash between mismatched namespaces:
+- time-of-day skyboxes: `assets/minecraft/optifine/sky/world0/` (sky1-4 + the
+  dark backdrop sheets + blue shield halo live there too);
+- shader-pack custom bindings: `shaders/textures/...` (halos, flesh sheets,
+  environment backdrop).
+`gbuffers_skybasic` + `gbuffers_skytextured` sample the LIVE `worldTime`
+uniform (with `sunAngle`/`sunPosition` fallbacks) so the clock never locks at
+tick 0. The pack ships a single lowercase `shaders/lang/en_us.lang` and a
+single `shaders/block.properties` — root-level duplicates are removed.
+
 ## How the packs fit together (single, zero-conflict pipeline)
 The cloud and sky look is delivered by **two coordinated layers**:
 

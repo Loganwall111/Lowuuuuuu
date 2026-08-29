@@ -16,6 +16,8 @@ void main() {
     color = gl_Color;
     texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 
+    // LIVE world clock (unified namespace: the sampled sheets come from
+    // assets/minecraft/optifine/sky/world0/ via customSkies=true).
     float liveTime = float(worldTime);
     if (liveTime < 0.5) {
         liveTime = mod(sunAngle * 24000.0, 24000.0);

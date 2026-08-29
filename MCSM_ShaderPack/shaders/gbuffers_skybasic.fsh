@@ -2,13 +2,21 @@
 
 #define DYNAMIC_SKY // Enable Story Mode Day/Noon/Sunset/Night transitions
 
+// ============================================================================
+// MCSM gbuffers_skybasic.fsh — lavender Story Mode sky dome
+// ============================================================================
+// Unified namespace: the dome's time-of-day texture sheets live under
+// assets/minecraft/optifine/sky/world0/ (customSkies=true); this program
+// colours the basic sky dome while gbuffers_skytextured samples those sheets.
+// The clock chain samples the LIVE worldTime uniform (sunAngle/sunPosition
+// fallbacks) so the day -> sunset -> night loop never freezes.
+
 precision highp float;
 precision highp int;
 
 uniform long worldTime;
 uniform float sunAngle;
 uniform vec3 sunPosition;
-uniform vec3 upPosition;
 
 varying vec4 color;
 varying vec3 worldDir;
@@ -60,7 +68,9 @@ vec3 getNightSky(float h) {
 void main() {
     float h = clamp(worldDir.y, 0.0, 1.0);
 
-    // Live game time sampling; protect against Sodium freezing at tick 0
+    // LIVE clock chain: worldTime -> vLiveTime (vertex) -> sunAngle ->
+    // sunPosition. Every stage of the fallback is guarded so a locked tick 0
+    // can never freeze the day/night cycle.
     float liveTime = float(worldTime);
     if (liveTime < 0.5) {
         liveTime = vLiveTime;

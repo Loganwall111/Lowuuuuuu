@@ -150,7 +150,8 @@ public final class StormShieldFX {
          }
 
          // Phase 7: maximize purple flares — periodic additive flare bursts
-         // over the main body and every severed head, on top of the shields.
+         // over the main body and every severed head, plus a cinematic
+         // sky-spanning purple glare bloom high above the storm.
          if (phase >= 7.0F) {
             long gtTicks = mc.level.getGameTime();
             long inWindow = gtTicks % FLARE_PERIOD_TICKS;
@@ -161,6 +162,11 @@ public final class StormShieldFX {
                Vec3 view = centre.subtract(cam).normalize();
                quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, centre, view, bodyR * 2.4, 140, 51, 242, a);
                quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, centre, view, bodyR * 3.0, 170, 80, 250, (int)(a * 0.55F));
+               // Sky-spanning purple glare bloom high above the storm.
+               Vec3 skyGlow = centre.add(0.0, bodyR * 4.2, 0.0);
+               Vec3 skyView = skyGlow.subtract(cam).normalize();
+               quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, skyGlow, skyView, bodyR * 5.0, 120, 40, 235, (int)(a * 0.45F));
+               quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, skyGlow, skyView, bodyR * 7.0, 90, 28, 220, (int)(a * 0.28F));
                for (WitherStormPositionPacket.SeveredData s : d.severed) {
                   Vec3 head = new Vec3(s.x(), s.y(), s.z());
                   Vec3 hView = head.subtract(cam).normalize();

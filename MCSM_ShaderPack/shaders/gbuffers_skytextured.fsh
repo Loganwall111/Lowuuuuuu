@@ -1,12 +1,23 @@
 #version 120
 
+// ============================================================================
+// MCSM gbuffers_skytextured.fsh — unified-namespace sky sheets + dark backdrop
+// ============================================================================
+// Namespace unification: every custom environment sheet this program reads
+// resolves out of the single synchronized directory
+//   assets/minecraft/optifine/sky/world0/          (time-of-day skyboxes)
+//   shaders/textures/environment/sky/              (dark purple-black
+//                                                   backdrop, bound via
+//                                                   customTexture.darkBackdrop)
+// gtexture carries the active OptiFine sky sheet for the current clock phase.
+// The clock itself is sampled LIVE below (worldTime -> vLiveTime ->
+// sunAngle -> sunPosition) so Sodium and Iris can never lock the cycle at
+// tick 0 and the dome can never flash between mismatched namespaces.
+
 precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
-// Hardcoded dark purple-and-black atmospheric backdrop, bound through
-// shaders.properties (customTexture.darkBackdrop). Renders natively behind
-// the boss on shader initialization, independent of the resource pack.
 uniform sampler2D darkBackdrop;
 uniform long worldTime;
 uniform float sunAngle;
@@ -32,14 +43,11 @@ void main() {
     }
 
     vec4 col = texture2D(gtexture, texcoord);
-
     if (col.a < 0.01) {
         discard;
     }
 
-    // Shift the sampled sun/moon/custom-skybox quads with live game time:
-    // lavender night shade and warm orange sunrise/sunset glow, so the
-    // custom sky maps fade through the cycle instead of staying static.
+    // Live lavender/orange time-of-day grading over the synchronized sheets.
     float t = mod(liveTime, 24000.0);
     float dayAmt = smoothstep(-0.15, 0.25, sin(6.2831853 * t / 24000.0));
     float sunsetAmt = clamp(1.0 - abs(dayAmt - 0.30) / 0.30, 0.0, 1.0);
@@ -48,8 +56,8 @@ void main() {
     col.rgb *= mix(vec3(1.0), lavenderNight, (1.0 - dayAmt) * 0.55);
     col.rgb = mix(col.rgb, col.rgb * warmTint, sunsetAmt * 0.80);
 
-    // Dark purple-and-black backdrop: blends into the lower half of the sky
-    // dome (behind the storm) straight from the bound environment sheet.
+    // Dark purple-and-black atmospheric backdrop: blends into the lower half
+    // of the sky dome (behind the storm) from the bound environment sheet.
     vec3 backdrop = texture2D(darkBackdrop, texcoord).rgb;
     float backdropAmt = smoothstep(0.60, 0.0, texcoord.y);
     col.rgb = mix(col.rgb, backdrop, backdropAmt * 0.85);

@@ -19,10 +19,11 @@ void main() {
     gl_Position = ftransform();
     color = gl_Color;
     vec3 eyePos = (gl_ModelViewMatrix * gl_Vertex).xyz;
-    // Unproject to camera-relative world space direction
+    // Unproject to camera-relative world space direction.
     worldDir = normalize((gbufferModelViewInverse * vec4(eyePos, 0.0)).xyz);
-    
-    // Actively compute live game time; prevent Sodium locking at tick 0
+
+    // Actively compute the LIVE world clock: worldTime first, sunAngle second,
+    // sunPosition last, so Sodium/Iris can never lock the cycle at tick 0.
     float liveTime = float(worldTime);
     if (liveTime < 0.5) {
         liveTime = mod(sunAngle * 24000.0, 24000.0);

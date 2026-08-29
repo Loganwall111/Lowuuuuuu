@@ -1,33 +1,29 @@
-#version 120
+#version 150
 
 // ============================================================================
-// MCSM gbuffers_clouds.fsh — 100% procedural Story Mode clouds (Iris path)
+// MCSM gbuffers_clouds.fsh — 100% procedural Story Mode clouds
 // ============================================================================
-// The volumetric cloud look is generated entirely with GLSL fractal noise
-// mapped over worldPosCoord — there are NO cloudTex0-7 image variables, NO
-// sampler2D cloud sheets and NO PNG lookups anywhere in this program. The
-// palette is driven by the LIVE in-game clock (uniform long worldTime with
-// sunAngle/sunPosition fallbacks so the sky never freezes), and the mesh
-// thickness comes from the 2.5x extrusion performed in the vertex shader.
-
-#define CLOUDS_ACTIVE          // Enable authentic Story Mode extruded clouds
-#define DYNAMIC_CLOUD_COLOR    // Clouds shift colour with the time of day
+// Matches the rebuilt gbuffers_clouds.vsh channel contract (core dialect):
+// the vertex stage decodes the CloudFaces buffer, applies the 2.5x Story Mode
+// extrusion and hands worldPosCoord / vertexColor / vertexDistance down here.
+// The cloud pattern is generated MATHEMATICALLY — there are NO cloudTex0-7
+// image variables, no sampler2D cloud sheets and no PNG lookups anywhere in
+// this program. The shader itself is the cloud. Live time-of-day colour flows
+// through the sky programs' world clock sampling; this core-dialect program
+// uses frameTimeCounter/sunPosition (GLSL 150 has no `long` uniforms), which
+// Iris and OptiFine both inject every frame.
 
 precision highp float;
 precision highp int;
 
-uniform float frameTimeCounter;
-// worldTime is a `long` uniform in the modern Iris spec; declaring it `int`
-// fails the uniform type check and disables the whole cloud program.
-uniform long worldTime;
-uniform float sunAngle;
-uniform vec3 sunPosition;
+in vec4 vertexColor;
+in float vertexDistance;
+in vec3 worldPosCoord;
 
-varying vec4 vertexColor;
-varying vec3 worldPosCoord;
-varying float vertexDistance;
-varying vec3 vNormal;
-varying float vSunY;
+out vec4 fragColor;
+
+uniform float frameTimeCounter;
+uniform vec3 sunPosition;
 
 /* ------------------------- noise toolkit ------------------------- */
 float hash13(vec3 p) {
@@ -60,28 +56,11 @@ float fbm(vec3 p) {
     return v;
 }
 
-/* --------------------- live time of day --------------------- */
-float liveTime() {
-    float t = float(worldTime);
-    if (t < 0.5) {
-        t = mod(sunAngle * 24000.0, 24000.0);
-        if (t < 0.5 && length(sunPosition) > 0.01) {
-            float sY = normalize(sunPosition).y;
-            float sX = normalize(sunPosition).x;
-            float a = atan(sY, sX);
-            t = mod((0.5 - a / 6.2831853) * 24000.0, 24000.0);
-        }
-    }
-    return mod(t, 24000.0);
-}
-
 void main() {
     vec3 p = worldPosCoord;
 
     // Slow wind drift keeps the slabs alive without ever sampling a texture.
-    float windX = frameTimeCounter * 0.0032;
-    float windZ = frameTimeCounter * 0.0011;
-    p.xz += vec2(windX, windZ);
+    p.xz += vec2(frameTimeCounter * 0.0032, frameTimeCounter * 0.0011);
 
     float d = fbm(vec3(p.x * 0.014, p.y * 0.10, p.z * 0.014) + vec3(0.0, frameTimeCounter * 0.0008, 0.0));
     float d2 = fbm(vec3(p.x * 0.05, p.y * 0.22, p.z * 0.05) + vec3(7.0, frameTimeCounter * 0.0016, 13.0));
@@ -96,8 +75,7 @@ void main() {
     }
 
     // ---- live time-of-day palette (lavender day / coral sunset / night) ----
-    float t = liveTime();
-    float sunY = mix(vSunY, normalize(sunPosition).y, 0.5);
+    float sunY = length(sunPosition) > 0.01 ? normalize(sunPosition).y : 0.55;
     float dayAmt    = clamp(sunY * 3.0, 0.0, 1.0);
     float nightAmt  = clamp(-sunY * 3.0, 0.0, 1.0);
     float sunsetAmt = clamp(1.0 - abs(sunY) * 8.0, 0.0, 1.0);
@@ -128,5 +106,5 @@ void main() {
     float fogF = clamp((vertexDistance - 120.0) / 320.0, 0.0, 1.0);
     col = mix(col, vec3(0.68, 0.60, 0.88), fogF * 0.5);
 
-    gl_FragColor = vec4(col, alpha);
+    fragColor = vec4(col, alpha);
 }

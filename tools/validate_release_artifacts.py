@@ -161,19 +161,24 @@ def validate_sp(path: str) -> None:
             fail(f"SP: {len(cloud_pngs)} PNG cloud sheet(s) shipped — clouds must be procedural GLSL ({cloud_pngs[:2]})")
         else:
             ok("SP: zero PNG cloud sheets (100% procedural GLSL clouds)")
+        # Cloud programs are core-dialect (#version 150, matching the
+        # CloudFaces vertex ABI): GLSL 150 has no `long` uniforms, so the live
+        # clock flows through frameTimeCounter/sunPosition here; the sky
+        # programs carry the long worldTime uniform.
         _check_aligned_program("SP", z, "shaders/gbuffers_clouds.fsh",
-                               need_long_time=True, forbid_texture_sampler=True,
-                               extra_markers=("hash13", "fbm", "worldTime"))
+                               need_long_time=False, forbid_texture_sampler=True,
+                               extra_markers=("hash13", "fbm"))
         _check_aligned_program("SP", z, "shaders/rendertype_clouds.fsh",
-                               need_long_time=True, forbid_texture_sampler=True,
-                               extra_markers=("hash13", "fbm", "worldTime"))
+                               need_long_time=False, forbid_texture_sampler=True,
+                               extra_markers=("hash13", "fbm"))
         for f in ("shaders/gbuffers_clouds.vsh", "shaders/rendertype_clouds.vsh"):
             if f not in n:
                 fail(f"SP: {f} missing")
                 continue
             text = read(z, f).decode("utf-8")
-            if "worldPos.y *= 2.5" not in text and "scaledVertex.y *= 2.5" not in text:
-                fail(f"SP: {f} missing the 2.5x Story Mode cloud extrusion")
+            if ("worldPos.y *= 2.5" not in text and "scaledVertex.y *= 2.5" not in text
+                    and "scaledVertex.y *= CloudHeight" not in text and "CloudHeight      = 2.5" not in text):
+                fail(f"SP: {f} missing the 2.5x Story Mode cloud extrusion (CloudHeight)")
             else:
                 ok(f"SP: {f} 2.5x cloud extrusion present")
         # Sun shadow map on ground + water.
