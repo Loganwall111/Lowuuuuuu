@@ -38,7 +38,12 @@ void main() {
 
     // Strength is stronger near the horizon, weaker overhead.
     float amt = mix(Params.z, Params.y, h);
-    vec3 outCol = mix(scene.rgb, grad, amt * 0.55);
+    vec3 outCol = mix(scene.rgb, grad, amt * 0.72);
+
+    // Pink-lavender push: re-grade the whole frame toward a soft pink-lavender
+    // wash so the storm gloom reads pink-and-purple, not grey.
+    vec3 pinkLavender = mix(vec3(0.50, 0.34, 0.72), vec3(0.90, 0.42, 0.66), h);
+    outCol = mix(outCol, pinkLavender, Params.y * 0.34);
 
     // Custom coloured light-map tint: pink key light, magenta fill.
     vec3 lightTint = mix(vec3(1.04, 0.90, 1.02), vec3(1.06, 0.82, 0.98), h);
