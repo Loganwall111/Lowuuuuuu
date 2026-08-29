@@ -4,10 +4,13 @@ Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Ed
 ## Namespace unification
 Every custom sky/environment asset resolves from ONE synchronized directory so
 Sodium and Iris can never flash between mismatched namespaces:
-- time-of-day skyboxes: `assets/minecraft/optifine/sky/world0/` (sky1-4 + the
-  dark backdrop sheets + blue shield halo live there too);
-- shader-pack custom bindings: `shaders/textures/...` (halos, flesh sheets,
-  environment backdrop).
+- time-of-day skyboxes: `assets/minecraft/optifine/sky/world0/` (sky1-4);
+- the dark backdrop sheets live under the mod's own namespace
+  (`assets/dabywitherstormmod/textures/environment/sky/`) and are bound into
+  the pack via `customTexture.darkBackdrop`;
+- the protective shield halo is a fully procedural, untextured 3D sphere
+  (vertex-coloured emissive geometry + the mod's screen-space bloom chain) —
+  no flat 2D sprite icon is sampled anywhere.
 `gbuffers_skybasic` + `gbuffers_skytextured` sample the LIVE `worldTime`
 uniform (with `sunAngle`/`sunPosition` fallbacks) so the clock never locks at
 tick 0. The pack ships a single lowercase `shaders/lang/en_us.lang` and a
@@ -20,12 +23,15 @@ The cloud and sky look is delivered by **two coordinated layers**:
    runs the vanilla-core cloud pipeline: the vertex stage decodes the vanilla
    `CloudFaces` buffer with the 2.5x extrusion and passes `worldPosCoord` to a
    100% mathematical fragment stage. This is the layer that always renders,
-   with or without a shader pack.
+   with or without a shader pack. (The resource pack deliberately ships NO
+   `shaders/core/` copies and NO `clouds.png` — those overrides are hidden the
+   moment an Iris shaderpack loads and only cause namespace collisions.)
 2. **This shader pack** (`gbuffers_clouds.{vsh,fsh}` + `rendertype_clouds.{vsh,fsh}`)
-   replaces the cloud program *inside Iris* with the same procedural noise
-   math in Iris's own gbuffers dialect. No PNG cloud sheets, no `cloudTex0-7`
-   samplers — the shader itself is the cloud, so turning the pack on can never
-   blank the sky. `shaders.properties` keeps `clouds=fast` routing.
+   replaces the cloud program *inside Iris* with the same handwritten
+   CloudFaces-decode vertex math and procedural noise in the fragment stage.
+   No PNG cloud sheets, no `cloudTex0-7` samplers — the shader itself is the
+   cloud, so turning the pack on can never blank the sky. `shaders.properties`
+   keeps `clouds=fast` routing.
 
 ## Features
 - **Iris Shader Options unlocked**: root `shaders.properties` + `shaders/shaders.properties`

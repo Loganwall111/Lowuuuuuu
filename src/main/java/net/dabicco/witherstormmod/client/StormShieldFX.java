@@ -17,22 +17,33 @@ import net.minecraft.world.phys.Vec3;
  * StormShieldFX — the glowing, emissive, alpha-blended 3D spherical protective
  * shield halos around the Wither Storm.
  *
+ * The barrier is a TRUE volumetric sphere, not a flat sprite:
+ *  - the sphere is a procedural lat/long UV-sphere mesh (never a billboard);
+ *  - its colour and alpha come 100% from per-vertex data — the pipeline is
+ *    bound to a constant 1x1 white texel, so no 2D sprite icon is ever
+ *    sampled. The flat blue_shield.png sprite texture has been discarded;
+ *  - every vertex carries a view-dependent rim factor (1 - |normal.view|) so
+ *    the shell fades in smoothly from its centre and brightens toward its
+ *    silhouette — smooth edge-fading alpha blending with no hard sprite edge;
+ *  - three passes: a depth-tested translucent shell, an additive emissive
+ *    glow, and a bloom-source pass feeding the mod's real localized
+ *    screen-space bloom chain (StormBloomTarget -> storm_bloom_extract /
+ *    blur / combine).
+ *
  * Timeline (chronological stage triggers):
  *  - Phase 4.0+: the blue shield sphere activates around the storm centre and
  *    stays persistently active across ALL subsequent phases (4, 5, 6, 7 and
  *    beyond — there is deliberately no upper bound on the phase gate).
- *  - Phase 6.0+ (split heads): the same 3D shield is cleanly duplicated across
+ *  - Phase 6.0+ (split heads): the same 3D shield is cleanly mirrored across
  *    all three split heads — the main devourer body plus both severed halves
  *    reported by the server.
- *
- * True transparency & depth: the shield is rendered as a real UV-sphere mesh
- * (not a billboard quad) through the depth-tested translucent pipeline, with a
- * second additive emissive pass on top so it reads as a glowing protective
- * shell that terrain can occlude and the player can look through.
+ *  - Phase 7.0+: periodic purple flare bursts (additive glow spheres) over the
+ *    body, the severed heads and a sky-spanning glare bloom above the storm.
  */
 public final class StormShieldFX {
-   private static final Identifier SHIELD = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/blue_shield.png");
-   private static final Identifier HALO_RING = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/halo_ring.png");
+   /** Constant 1x1 WHITE texel: the shield renders as pure vertex-coloured
+    *  geometry. No sprite icon — colour/alpha come from the mesh vertices. */
+   private static final Identifier WHITE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/shield_white.png");
    private static final int FULL_BRIGHT = 15728880;
    private static final int RINGS = 18;
    private static final int SEGS = 36;
@@ -138,19 +149,19 @@ public final class StormShieldFX {
 
          // Main shield: persistent from Phase 4 through every later phase.
          Vec3 centre = new Vec3(d.dispX, d.dispY, d.dispZ);
-         shield(poseStack, collector, centre, bodyR * 1.45, col, breathe, spin);
+         shield(poseStack, collector, cam, centre, bodyR * 1.45, col, breathe, spin);
 
-         // Phase 6 split-heads: cleanly duplicate the 3D shield across all
-         // three heads (main body above + both severed halves).
+         // Phase 6 split-heads: cleanly mirror the same 3D shield across all
+         // three heads (main body above + both severed halves) simultaneously.
          if (phase >= 6.0F) {
             for (WitherStormPositionPacket.SeveredData s : d.severed) {
                Vec3 head = new Vec3(s.x(), s.y(), s.z());
-               shield(poseStack, collector, head, bodyR * 0.85, col, breathe, spin + 90.0F);
+               shield(poseStack, collector, cam, head, bodyR * 0.85, col, breathe, spin + 90.0F);
             }
          }
 
-         // Phase 7: maximize purple flares — periodic additive flare bursts
-         // over the main body and every severed head, plus a cinematic
+         // Phase 7: maximize purple flares — periodic additive 3D glow-sphere
+         // bursts over the main body, every severed head, plus a cinematic
          // sky-spanning purple glare bloom high above the storm.
          if (phase >= 7.0F) {
             long gtTicks = mc.level.getGameTime();
@@ -159,25 +170,27 @@ public final class StormShieldFX {
             float base = 0.22F + 0.10F * (float)Math.sin(nowSec * 0.9 + d.entityId);
             int a = (int)(Mth.clamp(base + 0.55F * spike, 0.0F, 1.0F) * 255.0F);
             if (a > 4) {
-               Vec3 view = centre.subtract(cam).normalize();
-               quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, centre, view, bodyR * 2.4, 140, 51, 242, a);
-               quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, centre, view, bodyR * 3.0, 170, 80, 250, (int)(a * 0.55F));
+               flare(poseStack, collector, cam, centre, bodyR * 2.4, 140, 51, 242, a, spin);
+               flare(poseStack, collector, cam, centre, bodyR * 3.0, 170, 80, 250, (int)(a * 0.55F), spin);
                // Sky-spanning purple glare bloom high above the storm.
                Vec3 skyGlow = centre.add(0.0, bodyR * 4.2, 0.0);
-               Vec3 skyView = skyGlow.subtract(cam).normalize();
-               quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, skyGlow, skyView, bodyR * 5.0, 120, 40, 235, (int)(a * 0.45F));
-               quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, skyGlow, skyView, bodyR * 7.0, 90, 28, 220, (int)(a * 0.28F));
+               flare(poseStack, collector, cam, skyGlow, bodyR * 5.0, 120, 40, 235, (int)(a * 0.45F), spin);
+               flare(poseStack, collector, cam, skyGlow, bodyR * 7.0, 90, 28, 220, (int)(a * 0.28F), spin);
                for (WitherStormPositionPacket.SeveredData s : d.severed) {
                   Vec3 head = new Vec3(s.x(), s.y(), s.z());
-                  Vec3 hView = head.subtract(cam).normalize();
-                  quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, head, hView, bodyR * 1.3, 140, 51, 242, (int)(a * 0.7F));
+                  flare(poseStack, collector, cam, head, bodyR * 1.3, 140, 51, 242, (int)(a * 0.7F), spin + 90.0F);
                }
             }
          }
       }
    }
 
-   private static void shield(PoseStack poseStack, SubmitNodeCollector collector, Vec3 at, double radius, float[] col, double breathe, float spin) {
+   /**
+    * The 3D emissive shield: depth-tested translucent shell + additive glow +
+    * bloom-source feed. `cam` drives the per-vertex rim so the shell fades
+    * smoothly from centre to silhouette.
+    */
+   private static void shield(PoseStack poseStack, SubmitNodeCollector collector, Vec3 cam, Vec3 at, double radius, float[] col, double breathe, float spin) {
       BakedMesh.Mesh m = sphere();
       if (m.tris().length == 0) {
          return;
@@ -188,53 +201,80 @@ public final class StormShieldFX {
       int aShell = (int)(145.0 * breathe);
       int aGlow = (int)(72.0 * breathe);
       // Depth-tested translucent shell: true transparency, occluded by terrain.
-      collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(SHIELD), (pose, consumer) -> emit(consumer, pose, m, at, radius, spin, r, g, b, aShell));
+      collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(WHITE), (pose, consumer) -> emit(consumer, pose, m, cam, at, radius, spin, r, g, b, aShell, 0.30F, 2.0F));
       // Additive emissive pass on top so the shield glows like a barrier.
-      collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(SHIELD), (pose, consumer) -> emit(consumer, pose, m, at, radius, spin, r, g, b, aGlow));
+      collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(WHITE), (pose, consumer) -> emit(consumer, pose, m, cam, at, radius, spin, r, g, b, aGlow, 0.20F, 1.5F));
+      // Localized screen-space bloom: feed the halo into the mod's bloom
+      // source target (storm_bloom_extract -> blur -> combine) so it bleeds
+      // light into the frame exactly where the shield sits.
+      collector.submitCustomGeometry(poseStack, GlowRenderTypes.bloomSource(WHITE), (pose, consumer) -> emit(consumer, pose, m, cam, at, radius, spin, r, g, b, aGlow, 0.20F, 1.5F));
    }
 
-   /** camera-facing textured quad (phase-7 purple flares) */
-   private static void quad(PoseStack poseStack, SubmitNodeCollector collector, net.minecraft.client.renderer.rendertype.RenderType type, Vec3 cam, Vec3 centre, Vec3 view, double radius, int r, int g, int b, int alpha) {
+   /** Phase 7 purple flare: additive 3D glow sphere (volumetric, no sprite). */
+   private static void flare(PoseStack poseStack, SubmitNodeCollector collector, Vec3 cam, Vec3 at, double radius, int r, int g, int b, int alpha, float spin) {
       if (alpha <= 2) {
          return;
       }
-      Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
-      Vec3 right = view.cross(upHint).normalize();
-      Vec3 up = right.cross(view).normalize();
-      Vec3 rx = right.scale(radius);
-      Vec3 uy = up.scale(radius);
-      collector.submitCustomGeometry(poseStack, type, (pose, consumer) -> {
-         vertex(pose, consumer, centre.subtract(rx).subtract(uy), 0.0F, 0.0F, r, g, b, alpha);
-         vertex(pose, consumer, centre.add(rx).subtract(uy), 1.0F, 0.0F, r, g, b, alpha);
-         vertex(pose, consumer, centre.add(rx).add(uy), 1.0F, 1.0F, r, g, b, alpha);
-         vertex(pose, consumer, centre.subtract(rx).add(uy), 0.0F, 1.0F, r, g, b, alpha);
-      });
+      BakedMesh.Mesh m = sphere();
+      if (m.tris().length == 0) {
+         return;
+      }
+      collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(WHITE), (pose, consumer) -> emit(consumer, pose, m, cam, at, radius, spin, r, g, b, alpha, 0.55F, 1.0F));
+      collector.submitCustomGeometry(poseStack, GlowRenderTypes.bloomSource(WHITE), (pose, consumer) -> emit(consumer, pose, m, cam, at, radius, spin, r, g, b, alpha, 0.55F, 1.0F));
    }
 
-   private static void emit(VertexConsumer c, PoseStack.Pose p, BakedMesh.Mesh m, Vec3 pos, double radius, float spin, int r, int g, int b, int a) {      double y = Math.toRadians(spin);
-      for (int i = 0; i < m.tris().length / 9; i++) {
-         float nx = m.normals()[i * 3];
-         float ny = m.normals()[i * 3 + 1];
-         float nz = m.normals()[i * 3 + 2];
-         for (int q = 0; q < 4; q++) {
-            int j = i * 9 + Math.min(q, 2) * 3;
-            int u = i * 6 + Math.min(q, 2) * 2;
-            float px = m.tris()[j] * (float)radius;
-            float py = m.tris()[j + 1] * (float)radius;
-            float pz = m.tris()[j + 2] * (float)radius;
-            float rx = (float)(px * Math.cos(y) - pz * Math.sin(y));
-            float rz = (float)(px * Math.sin(y) + pz * Math.cos(y));
-            c.addVertex(p, (float)pos.x + rx, (float)pos.y + py, (float)pos.z + rz)
-               .setColor(r, g, b, a)
-               .setUv(m.uvs()[u], m.uvs()[u + 1])
+   /**
+    * Emits the sphere mesh as REAL triangles (exactly 3 vertices each) with
+    * per-vertex normals and a view-dependent rim factor:
+    *   edgeAlpha = core + (1 - core) * pow(1 - |normal.view|, rimPow)
+    * so the shell alpha blends smoothly from its centre to its silhouette —
+    * no hard sprite edge, no degenerate quads, no UV tricks.
+    */
+   private static void emit(VertexConsumer c, PoseStack.Pose p, BakedMesh.Mesh m, Vec3 cam, Vec3 pos, double radius, float spin, int r, int g, int b, int a, float core, double rimPow) {
+      double y = Math.toRadians(spin);
+      double cos = Math.cos(y);
+      double sin = Math.sin(y);
+      float[] tris = m.tris();
+      float[] normals = m.normals();
+      int triCount = tris.length / 9;
+      for (int i = 0; i < triCount; i++) {
+         for (int q = 0; q < 3; q++) {
+            int vi = i * 9 + q * 3;
+            float px = tris[vi] * (float)radius;
+            float py = tris[vi + 1] * (float)radius;
+            float pz = tris[vi + 2] * (float)radius;
+            float rx = (float)(px * cos - pz * sin);
+            float rz = (float)(px * sin + pz * cos);
+            float wx = (float)pos.x + rx;
+            float wy = (float)pos.y + py;
+            float wz = (float)pos.z + rz;
+            // per-vertex sphere normal, spun with the shell
+            int ni = i * 9 + q * 3;
+            float nx = (float)(normals[ni] * cos - normals[ni + 2] * sin);
+            float nz = (float)(normals[ni] * sin + normals[ni + 2] * cos);
+            float ny = normals[ni + 1];
+            // view direction from the camera to this vertex
+            float vx = (float)(cam.x - wx);
+            float vy = (float)(cam.y - wy);
+            float vz = (float)(cam.z - wz);
+            float vl = (float)Math.sqrt(vx * vx + vy * vy + vz * vz);
+            if (vl < 1.0E-4F) {
+               vl = 1.0F;
+            }
+            vx /= vl;
+            vy /= vl;
+            vz /= vl;
+            float ndv = Math.abs(nx * vx + ny * vy + nz * vz);
+            float rim = 1.0F - ndv;
+            float edge = core + (1.0F - core) * (float)Math.pow(rim, rimPow);
+            int va = Mth.clamp((int)(a * edge + 0.5F), 0, 255);
+            c.addVertex(p, wx, wy, wz)
+               .setColor(r, g, b, va)
+               .setUv(0.0F, 0.0F)
                .setOverlay(OverlayTexture.NO_OVERLAY)
                .setLight(FULL_BRIGHT)
                .setNormal(p, nx, ny, nz);
          }
       }
-   }
-
-   private static void vertex(PoseStack.Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int r, int g, int b, int a) {
-      consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z).setColor(r, g, b, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
    }
 }

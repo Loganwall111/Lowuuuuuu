@@ -6,13 +6,16 @@ assets are pushed to the v1.9.60 GitHub Release, but usable standalone.
 Checks (all hard failures):
   * Zips are FLAT: no single nested parent folder wrapping the pack contents.
   * MCSM_ResourcePack.zip contains the custom time-of-day skyboxes under
-    assets/minecraft/optifine/sky/world0/ (sky1..4 png+properties), the #version 150
-    extruded-cloud core vertex shader, split-range pack.mcmeta, and leak-free lang files.
+    assets/minecraft/optifine/sky/world0/ (sky1..4 png+properties), split-range
+    pack.mcmeta, and leak-free lang files. It must NOT ship any shaders/core
+    cloud overrides (hidden the moment an Iris shaderpack loads — the shader
+    pack owns the clouds) and must NOT ship a PNG clouds.png sheet.
   * MCSM_ShaderPack.zip is the modern-engine aligned PROCEDURAL pack:
-      - uniform long worldTime in every sky/cloud program (Iris uniform type check)
+      - uniform long worldTime in every sky program (Iris uniform type check)
       - NO reserved-keyword `uniform sampler2D texture;` samplers
       - gbuffers_clouds.fsh / rendertype_clouds.fsh are fully procedural (hash13/fbm)
-      - 2.5x cloud extrusion in the cloud vertex shaders
+      - the handwritten CloudFaces-decode vertex math (isamplerBuffer CloudFaces,
+        CloudHeight 2.5x extrusion) in the cloud vertex shaders
       - sun shadow map (shadow.vsh/fsh) + shadowtex0 sampling in terrain/water
       - ZERO PNG cloud sheets and ZERO cloudTex bindings (hard failure otherwise)
       - no GLSL120 files under shaders/core (invalid for the #version 150 pipeline)
@@ -106,15 +109,19 @@ def validate_rp(path: str) -> None:
             if key in n and must not in read(z, key).decode("utf-8"):
                 fail(f"RP: {key} missing fade spec '{must}'")
         want_core = "assets/minecraft/shaders/core/rendertype_clouds.vsh"
-        if want_core not in n:
-            fail(f"RP: {want_core} missing (3D cloud deck path)")
-        elif "#version 150" not in read(z, want_core).decode("utf-8"):
-            fail("RP: core rendertype_clouds.vsh is not #version 150 (vanilla pipeline)")
+        core_overrides = [x for x in n if "/shaders/core/" in x and x.endswith((".vsh", ".fsh"))]
+        if core_overrides:
+            fail(f"RP: {len(core_overrides)} hidden core shader override(s) shipped — Iris replaces them with the shader pack, delete them ({core_overrides[:2]})")
+        elif want_core in n:
+            fail(f"RP: {want_core} still present — misplaced cloud core override (shader pack owns the clouds)")
         else:
-            ok("RP: #version 150 extruded cloud core vsh present")
+            ok("RP: no shaders/core cloud overrides (shader pack owns the clouds)")
+        if "assets/minecraft/textures/environment/clouds.png" in n:
+            fail("RP: loose PNG clouds.png still shipped — clouds must be procedural GLSL")
+        else:
+            ok("RP: no PNG clouds.png sheet (procedural GLSL clouds only)")
         for cm in ("assets/minecraft/textures/colormap/grass.png",
-                   "assets/minecraft/textures/colormap/foliage.png",
-                   "assets/minecraft/textures/environment/clouds.png"):
+                   "assets/minecraft/textures/colormap/foliage.png"):
             if cm not in n:
                 fail(f"RP: expected texture {cm} missing")
         check_leak_free(z, "RP", ["lang/en_us.lang", "shaders/lang/en_us.lang"])
@@ -176,11 +183,16 @@ def validate_sp(path: str) -> None:
                 fail(f"SP: {f} missing")
                 continue
             text = read(z, f).decode("utf-8")
-            if ("worldPos.y *= 2.5" not in text and "scaledVertex.y *= 2.5" not in text
-                    and "scaledVertex.y *= CloudHeight" not in text and "CloudHeight      = 2.5" not in text):
-                fail(f"SP: {f} missing the 2.5x Story Mode cloud extrusion (CloudHeight)")
+            for marker in ("isamplerBuffer CloudFaces", "// Vertical block thickness", "vertices[(direction * 4)"):
+                if marker not in text:
+                    fail(f"SP: {f} missing the handwritten CloudFaces-decode marker `{marker}`")
+            if (text.count("vec3(1,0,0),vec3(1,0,1)") != 1 or text.count("vec3(1,0,0),vec3(1,1,0),vec3(1,1,1),vec3(1,0,1)") != 1):
+                fail(f"SP: {f} vertices[] coordinate array does not match the raw directive source")
+            if (not text.startswith("#version 150") or "scaledVertex.y *= CloudHeight" not in text
+                    or "CloudHeight      = 2.5" not in text):
+                fail(f"SP: {f} not re-anchored to the raw #version 150 vertex math (CloudHeight 2.5x extrusion)")
             else:
-                ok(f"SP: {f} 2.5x cloud extrusion present")
+                ok(f"SP: {f} raw CloudFaces vertex math + 2.5x CloudHeight extrusion present")
         # Sun shadow map on ground + water.
         for f in ("shaders/shadow.vsh", "shaders/shadow.fsh"):
             if f not in n:

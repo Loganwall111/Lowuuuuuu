@@ -18,7 +18,7 @@ layout(std140) uniform CloudInfo {
 uniform isamplerBuffer CloudFaces;
 
 const float CloudFadeAlpha   = 0;   
-const float CloudHeight      = 2.5;   // Vertical scaling thickness
+const float CloudHeight      = 2.5;   // Vertical block thickness
 const float CloudYOffset     = 0.0;   
 const float BrightnessBottom = 1.0;
 const float BrightnessTop    = 1.0;
