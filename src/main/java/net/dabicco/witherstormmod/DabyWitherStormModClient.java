@@ -29,6 +29,7 @@ import net.dabicco.witherstormmod.client.DistantStormRenderer;
 import net.dabicco.witherstormmod.client.StormCloudDeck;
 import net.dabicco.witherstormmod.client.StormBlobFX;
 import net.dabicco.witherstormmod.client.StormPresenceFX;
+import net.dabicco.witherstormmod.client.StormShieldFX;
 import net.dabicco.witherstormmod.client.StormStarfield;
 import net.dabicco.witherstormmod.client.StormAtmospherePost;
 import net.dabicco.witherstormmod.client.FormidibombBlast;
