@@ -3,6 +3,8 @@ package net.dabicco.witherstormmod.entity;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -55,6 +57,11 @@ public class CorruptionEntity extends Entity {
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
         output.putFloat("GlitchRadius", this.glitchRadius);
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        return false; // Cannot be damaged
     }
 
     @Override

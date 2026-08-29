@@ -3,6 +3,8 @@ package net.dabicco.witherstormmod.entity;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -73,6 +75,11 @@ public class RealityRiftEntity extends Entity {
         output.putInt("Lifetime", lifetime);
         output.putFloat("RiftSize", this.entityData.get(RIFT_SIZE));
         output.putBoolean("IsOpen", this.entityData.get(IS_OPEN));
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        return false; // Cannot be damaged
     }
 
     @Override
