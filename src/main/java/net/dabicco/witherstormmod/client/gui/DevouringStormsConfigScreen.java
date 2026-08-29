@@ -1,13 +1,13 @@
 package net.dabicco.witherstormmod.client.gui;
 
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
  * DevouringStormsConfigScreen — Enhanced config UI for Devouring Storms.
- * Organized into tabs: Visuals, Storm, Combat, Audio, Devouring Storms.
  */
 public class DevouringStormsConfigScreen extends Screen {
 
@@ -98,8 +98,6 @@ public class DevouringStormsConfigScreen extends Screen {
     @Override
     public void onClose() {
         DabyWSClientConfig.save();
-        if (this.minecraft != null) {
-            this.minecraft.setScreen(this.parent);
-        }
+        Minecraft.getInstance().gui.setScreen(this.parent);
     }
 }

@@ -5,7 +5,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Npc;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -16,7 +15,7 @@ import net.minecraft.world.level.Level;
  * StormSurvivorNPC — Devouring Storms NPC entity.
  * Survivors who provide lore, quests, and dialogue.
  */
-public class StormSurvivorNPC extends PathfinderMob implements Npc {
+public class StormSurvivorNPC extends PathfinderMob {
 
     private String dialogueId = "default";
     private int dialogueProgress = 0;

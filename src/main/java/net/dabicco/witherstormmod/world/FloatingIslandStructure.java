@@ -1,15 +1,14 @@
 package net.dabicco.witherstormmod.world;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * FloatingIslandStructure — Devouring Storms sky structure.
  * Massive floating islands suspended in the sky.
- * Structure generation registered via data-driven worldgen.
  */
 public class FloatingIslandStructure {
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(
         "dabywitherstormmod", "floating_island"
     );
 

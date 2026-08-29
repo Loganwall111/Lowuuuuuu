@@ -1,15 +1,14 @@
 package net.dabicco.witherstormmod.world;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * AbandonedCityStructure — Devouring Storms world structure.
  * Abandoned cities scattered across the world, ravaged by the storm.
- * Structure generation registered via data-driven worldgen.
  */
 public class AbandonedCityStructure {
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(
         "dabywitherstormmod", "abandoned_city"
     );
 
