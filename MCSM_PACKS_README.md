@@ -23,6 +23,25 @@ Checksums: `docs/releases/r1/SHA256SUMS.txt`.
 
 ---
 
+## 🔗 Single-package integration (zero-conflict pipeline)
+
+The cloud/sky stack now ships **inside the mod JAR itself** under
+`assets/dabywitherstormmod/` so it works as one standalone package:
+
+* `assets/dabywitherstormmod/shaders/core/rendertype_clouds.{vsh,fsh}` — the
+  vanilla-core cloud program (CloudFaces decode + 2.5x extrusion + procedural
+  fbm noise over `worldPosCoord`). This renders with **no shader pack at all**.
+* The Iris shader pack mirrors the same math in its own `gbuffers_clouds` /
+  `rendertype_clouds` programs, so enabling the pack swaps the *implementation*,
+  never the look — the shader itself is the cloud, and there are no PNG buffers
+  for the GPU to choke on.
+* The dark purple-and-black backdrop is hardcoded in-pack under
+  `shaders/textures/environment/sky/` and blended by `gbuffers_skytextured` on
+  shader initialization, independent of the resource pack.
+* Phase timeline: blue 3D shield halos (Phase 4 → 7, duplicated across all
+  three split heads at Phase 6), pink/magenta post fog (Phases 5.1–5.9),
+  Phase 6 orange backdrop swap, maximized purple flares on Phase 7.
+
 ## ✨ What r1 actually changed
 
 ### Clouds are now real shaders — zero PNG cloud sheets

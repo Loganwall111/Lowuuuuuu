@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -31,9 +32,13 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class StormShieldFX {
    private static final Identifier SHIELD = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/blue_shield.png");
+   private static final Identifier HALO_RING = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/halo_ring.png");
    private static final int FULL_BRIGHT = 15728880;
    private static final int RINGS = 18;
    private static final int SEGS = 36;
+   /** Phase 7 purple flare: spike every 300 ticks (15s) with a slow breathing base. */
+   private static final long FLARE_PERIOD_TICKS = 300L;
+   private static final long FLARE_SPIKE_TICKS = 45L;
    private static BakedMesh.Mesh sphere;
 
    private StormShieldFX() {
@@ -143,6 +148,26 @@ public final class StormShieldFX {
                shield(poseStack, collector, head, bodyR * 0.85, col, breathe, spin + 90.0F);
             }
          }
+
+         // Phase 7: maximize purple flares — periodic additive flare bursts
+         // over the main body and every severed head, on top of the shields.
+         if (phase >= 7.0F) {
+            long gtTicks = mc.level.getGameTime();
+            long inWindow = gtTicks % FLARE_PERIOD_TICKS;
+            float spike = (float)Math.exp(-(double)inWindow / (double)FLARE_SPIKE_TICKS);
+            float base = 0.22F + 0.10F * (float)Math.sin(nowSec * 0.9 + d.entityId);
+            int a = (int)(Mth.clamp(base + 0.55F * spike, 0.0F, 1.0F) * 255.0F);
+            if (a > 4) {
+               Vec3 view = centre.subtract(cam).normalize();
+               quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, centre, view, bodyR * 2.4, 140, 51, 242, a);
+               quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, centre, view, bodyR * 3.0, 170, 80, 250, (int)(a * 0.55F));
+               for (WitherStormPositionPacket.SeveredData s : d.severed) {
+                  Vec3 head = new Vec3(s.x(), s.y(), s.z());
+                  Vec3 hView = head.subtract(cam).normalize();
+                  quad(poseStack, collector, GlowRenderTypes.glow(HALO_RING), cam, head, hView, bodyR * 1.3, 140, 51, 242, (int)(a * 0.7F));
+               }
+            }
+         }
       }
    }
 
@@ -162,8 +187,25 @@ public final class StormShieldFX {
       collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(SHIELD), (pose, consumer) -> emit(consumer, pose, m, at, radius, spin, r, g, b, aGlow));
    }
 
-   private static void emit(VertexConsumer c, PoseStack.Pose p, BakedMesh.Mesh m, Vec3 pos, double radius, float spin, int r, int g, int b, int a) {
-      double y = Math.toRadians(spin);
+   /** camera-facing textured quad (phase-7 purple flares) */
+   private static void quad(PoseStack poseStack, SubmitNodeCollector collector, net.minecraft.client.renderer.rendertype.RenderType type, Vec3 cam, Vec3 centre, Vec3 view, double radius, int r, int g, int b, int alpha) {
+      if (alpha <= 2) {
+         return;
+      }
+      Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
+      Vec3 right = view.cross(upHint).normalize();
+      Vec3 up = right.cross(view).normalize();
+      Vec3 rx = right.scale(radius);
+      Vec3 uy = up.scale(radius);
+      collector.submitCustomGeometry(poseStack, type, (pose, consumer) -> {
+         vertex(pose, consumer, centre.subtract(rx).subtract(uy), 0.0F, 0.0F, r, g, b, alpha);
+         vertex(pose, consumer, centre.add(rx).subtract(uy), 1.0F, 0.0F, r, g, b, alpha);
+         vertex(pose, consumer, centre.add(rx).add(uy), 1.0F, 1.0F, r, g, b, alpha);
+         vertex(pose, consumer, centre.subtract(rx).add(uy), 0.0F, 1.0F, r, g, b, alpha);
+      });
+   }
+
+   private static void emit(VertexConsumer c, PoseStack.Pose p, BakedMesh.Mesh m, Vec3 pos, double radius, float spin, int r, int g, int b, int a) {      double y = Math.toRadians(spin);
       for (int i = 0; i < m.tris().length / 9; i++) {
          float nx = m.normals()[i * 3];
          float ny = m.normals()[i * 3 + 1];
@@ -184,5 +226,9 @@ public final class StormShieldFX {
                .setNormal(p, nx, ny, nz);
          }
       }
+   }
+
+   private static void vertex(PoseStack.Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int r, int g, int b, int a) {
+      consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z).setColor(r, g, b, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(pose, 0.0F, 1.0F, 0.0F);
    }
 }

@@ -1,27 +1,40 @@
 # MINECRAFT: STORY MODE — Official Atmosphere Shaderpack (1.21.2 / 26.2)
 Standalone atmosphere shaderpack for **Iris** (Fabric) and **OptiFine** (Java Edition).
 
+## How the packs fit together (single, zero-conflict pipeline)
+The cloud and sky look is delivered by **two coordinated layers**:
+
+1. **The mod JAR itself** (`assets/dabywitherstormmod/shaders/core/rendertype_clouds.{vsh,fsh}`)
+   runs the vanilla-core cloud pipeline: the vertex stage decodes the vanilla
+   `CloudFaces` buffer with the 2.5x extrusion and passes `worldPosCoord` to a
+   100% mathematical fragment stage. This is the layer that always renders,
+   with or without a shader pack.
+2. **This shader pack** (`gbuffers_clouds.{vsh,fsh}` + `rendertype_clouds.{vsh,fsh}`)
+   replaces the cloud program *inside Iris* with the same procedural noise
+   math in Iris's own gbuffers dialect. No PNG cloud sheets, no `cloudTex0-7`
+   samplers — the shader itself is the cloud, so turning the pack on can never
+   blank the sky. `shaders.properties` keeps `clouds=fast` routing.
+
 ## Features
-- **Active Iris Shader Options**: `shaders.properties` (+ `shaders/shaders.properties`) ships the pipeline
-  routing (`clouds=fast`, `customSkies=true`, `shadowMapResolution=2048`) and three custom material
-  bindings (`witherFlesh`, `tornFlesh`, `blueHalo`) so the Shader Options menu stays unlocked.
-- **100% Procedural Clouds**: `gbuffers_clouds` / `rendertype_clouds` generate the cloud pattern
-  mathematically from fractal noise. There are **no** `cloudTex0-7` image variables and **no** PNG
-  cloud sheets anywhere in this pack.
-- **Cloud Vertex Re-Anchoring**: the vertex stage decodes the `CloudFaces` buffer, builds the 2.5x
-  extruded face quad per cell and passes `worldPosCoord` cleanly into the fragment channels along
-  with `vertexColor` and `vertexDistance`.
-- **Live Time-of-Day**: `uniform long worldTime` with `sunAngle` / `sunPosition` fallbacks drives the
-  lavender day, coral sunset and periwinkle night palettes so the sky and clouds never freeze.
-- **Shiny Materials**: `gbuffers_terrain` binds the `witherFlesh` / `tornWitheredFlesh` custom
-  textures and paints a soft specular metallic sheen + fresnel rim over the black voxel sheets so
-  they catch light highlights dynamically.
-- **Story Mode Colored Lighting & Shadows**: Warm golden sunlight, lavender shadow tint, amber
-  torchlight, and live sun-cast shadows that sweep with the clock.
-- **Hand Item Lighting**: Dedicated gbuffers_hand shaders with explicit alpha masking so held items
-  never render as a solid black box.
+- **Iris Shader Options unlocked**: root `shaders.properties` + `shaders/shaders.properties`
+  route the pipeline (`clouds=fast`, `customSkies=true`, `shadowMapResolution=2048`) and
+  bind the custom materials (`witherFlesh`, `tornFlesh`, `blueHalo`, `darkBackdrop`).
+- **100% procedural clouds**: blocky fbm noise mapped over `worldPosCoord`, live
+  `uniform long worldTime` day/night palettes, distance haze via `vertexDistance`.
+- **Dark backdrop hardcoded in-pack**: `gbuffers_skytextured` blends the bound
+  dark purple-and-black atmosphere sheet (`shaders/textures/environment/sky/`) into
+  the lower sky dome on shader initialization — no resource pack required.
+- **Shiny materials**: `gbuffers_terrain` paints a soft specular metallic sheen
+  + fresnel rim over the `witherFlesh` / `tornWitheredFlesh` voxel sheets, with
+  the 2048px sun shadow map (`shadowtex0`) sweeping across terrain and water.
+- **Story Mode Colored Lighting**: warm golden sunlight, lavender ambient
+  shadows, amber torchlight, emissive turquoise teeth aura on entities.
+- **Hand item alpha masking**: `gbuffers_hand` discards transparent texels so
+  held tools never render as solid black voids.
 
 ## Installation
 1. Install **Iris + Sodium** (recommended) or OptiFine.
 2. Copy `MCSM_ShaderPack.zip` into `.minecraft/shaderpacks/` (DO NOT unzip).
 3. In Minecraft: Video Settings -> Shader Packs -> select **MCSM_ShaderPack**.
+4. For the full Story Mode look keep the MCSM resource pack enabled too — the
+   mod's own assets (skyboxes, skins, presets) now live inside the mod JAR.

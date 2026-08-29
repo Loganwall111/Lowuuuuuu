@@ -58,11 +58,15 @@ Everything you need to install, verify, build, and publish the
 | 4.5 | Sky/fog turns **green** |
 | 5.0 | Sky/fog turns **turquoise** |
 | 5.1–5.9 | Giant colour-shifting centre blob (dark purple → magenta → pink/blue/black), heavy magenta/purple/black fog layer on the storm's **back**, moving with it |
-| 6.0+ | Bright **flash directly above the storm every 2 minutes** |
-| 7–8 | **Vortex model mesh** rotating/tumbling on top of the storm |
+| 6.0+ | Bright **flash directly above the storm every 2 minutes**; blue 3D shield halos duplicated across **all three split heads**; backdrop swaps to the **ORANGE** layout |
+| 7.0+ | **Maximized purple flares** pulsing over the storm + heads; **Vortex model mesh** rotating/tumbling on top |
 | Day/night | Cloud colour shifts (white/coral → periwinkle); **sun-cast shadows sweep the ground and water** |
 
 The storm body is **100% shader/GLSL** — no 3D shells, no PNG cloud sheets.
+The cloud core + dark backdrop also ship **inside the mod JAR**
+(`assets/dabywitherstormmod/shaders/core/rendertype_clouds.{vsh,fsh}`,
+`textures/environment/sky/`), so the mod renders the Story Mode sky standalone
+even without the shader pack enabled.
 
 ---
 

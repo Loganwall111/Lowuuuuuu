@@ -1,16 +1,17 @@
-#version 150
+#version 120
 
 // ============================================================================
-// MCSM gbuffers_clouds.fsh — 100% procedural Story Mode clouds
+// MCSM gbuffers_clouds.fsh — 100% procedural Story Mode clouds (Iris path)
 // ============================================================================
-// Matches the rebuilt gbuffers_clouds.vsh channel contract: the vertex stage
-// emits worldPosCoord / vertexColor / vertexDistance, and this fragment stage
-// generates the cloud pattern MATHEMATICALLY — there are NO cloudTex0-7 image
-// variables, no sampler2D cloud sheets and no PNG lookups in this program.
-// The noise field is anchored to worldPosCoord so the cloud slabs keep their
-// blocky 2.5x-thick shape, the palette follows the LIVE worldTime clock
-// (sunAngle/sunPosition fallbacks included), and face brightness + fade come
-// straight from vertexColor so the vertex->fragment channel handoff is clean.
+// The volumetric cloud look is generated entirely with GLSL fractal noise
+// mapped over worldPosCoord — there are NO cloudTex0-7 image variables, NO
+// sampler2D cloud sheets and NO PNG lookups anywhere in this program. The
+// palette is driven by the LIVE in-game clock (uniform long worldTime with
+// sunAngle/sunPosition fallbacks so the sky never freezes), and the mesh
+// thickness comes from the 2.5x extrusion performed in the vertex shader.
+
+#define CLOUDS_ACTIVE          // Enable authentic Story Mode extruded clouds
+#define DYNAMIC_CLOUD_COLOR    // Clouds shift colour with the time of day
 
 precision highp float;
 precision highp int;
@@ -22,11 +23,11 @@ uniform long worldTime;
 uniform float sunAngle;
 uniform vec3 sunPosition;
 
-in float vertexDistance;
-in vec4 vertexColor;
-in vec3 worldPosCoord;
-
-out vec4 fragColor;
+varying vec4 vertexColor;
+varying vec3 worldPosCoord;
+varying float vertexDistance;
+varying vec3 vNormal;
+varying float vSunY;
 
 /* ------------------------- noise toolkit ------------------------- */
 float hash13(vec3 p) {
@@ -96,12 +97,7 @@ void main() {
 
     // ---- live time-of-day palette (lavender day / coral sunset / night) ----
     float t = liveTime();
-    float timeSunY = sin((mod(t - 6000.0, 24000.0) / 24000.0) * 6.2831853);
-    float sunY = timeSunY;
-    if (length(sunPosition) > 0.01) {
-        sunY = mix(timeSunY, normalize(sunPosition).y, 0.5);
-    }
-
+    float sunY = mix(vSunY, normalize(sunPosition).y, 0.5);
     float dayAmt    = clamp(sunY * 3.0, 0.0, 1.0);
     float nightAmt  = clamp(-sunY * 3.0, 0.0, 1.0);
     float sunsetAmt = clamp(1.0 - abs(sunY) * 8.0, 0.0, 1.0);
@@ -118,9 +114,8 @@ void main() {
     vec3 botCol = mix(nightBot, dayBot, dayAmt);
     botCol = mix(botCol, sunBot, sunsetAmt * (1.0 - nightAmt));
 
-    // Vertical gradient across the extruded slab (CloudHeight = 2.5 in the vsh),
-    // then the per-face brightness carried by vertexColor.rgb
-    // (top/bottom/N/S/W/E face constants).
+    // Vertical gradient across the extruded slab (CloudHeight = 2.5 in the
+    // vsh), then the per-face brightness carried by vertexColor.rgb.
     float h = clamp(worldPosCoord.y / 2.5, 0.0, 1.0);
     vec3 col = mix(botCol, topCol, h) * vertexColor.rgb;
 
@@ -133,5 +128,5 @@ void main() {
     float fogF = clamp((vertexDistance - 120.0) / 320.0, 0.0, 1.0);
     col = mix(col, vec3(0.68, 0.60, 0.88), fogF * 0.5);
 
-    fragColor = vec4(col, alpha);
+    gl_FragColor = vec4(col, alpha);
 }

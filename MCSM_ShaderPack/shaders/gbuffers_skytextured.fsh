@@ -4,6 +4,10 @@ precision highp float;
 precision highp int;
 
 uniform sampler2D gtexture;
+// Hardcoded dark purple-and-black atmospheric backdrop, bound through
+// shaders.properties (customTexture.darkBackdrop). Renders natively behind
+// the boss on shader initialization, independent of the resource pack.
+uniform sampler2D darkBackdrop;
 uniform long worldTime;
 uniform float sunAngle;
 uniform vec3 sunPosition;
@@ -43,6 +47,12 @@ void main() {
     vec3 lavenderNight = vec3(0.62, 0.60, 0.90); // MCSM lavender night tint
     col.rgb *= mix(vec3(1.0), lavenderNight, (1.0 - dayAmt) * 0.55);
     col.rgb = mix(col.rgb, col.rgb * warmTint, sunsetAmt * 0.80);
+
+    // Dark purple-and-black backdrop: blends into the lower half of the sky
+    // dome (behind the storm) straight from the bound environment sheet.
+    vec3 backdrop = texture2D(darkBackdrop, texcoord).rgb;
+    float backdropAmt = smoothstep(0.60, 0.0, texcoord.y);
+    col.rgb = mix(col.rgb, backdrop, backdropAmt * 0.85);
 
     col *= color;
     gl_FragColor = col;
