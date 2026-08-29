@@ -1,0 +1,21 @@
+{
+  "registry_version": 1,
+  "alpha_channels_registered": true,
+  "items": [
+    "command_circuit.png",
+    "command_essence.png",
+    "grapple.png",
+    "rocket_retriever.png",
+    "super-tnt.png",
+    "tnt.png",
+    "wither_fragment.png",
+    "wither_heart.png",
+    "withered_dust_item.png",
+    "withered_nether_star.png",
+    "amulet_bridges.png",
+    "amulet_wussmode.png",
+    "control_panel.png",
+    "super_tnt_lava.png"
+  ],
+  "black_viewport_bug_fix": "alpha_blend_transparency_registered"
+}

@@ -1,0 +1,9 @@
+{
+  "animation": {},
+  "texture": {
+    "blur": false,
+    "clamp": false,
+    "alpha": true,
+    "transparency": "alpha_blend"
+  }
+}

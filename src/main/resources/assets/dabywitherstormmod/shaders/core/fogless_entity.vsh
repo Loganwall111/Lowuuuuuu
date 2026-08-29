@@ -44,7 +44,12 @@ out vec4 overlayColor;
 out vec2 texCoord0;
 
 void main() {
-    gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+    // FORCE NATIVE CLOUD RE-ANCHORING: vertical extrude by 2.5x for Story Mode cloud volume
+    // This locks in blocky cloud mesh array thickness directly in core shader pipeline.
+    vec4 scaledPos = vec4(Position, 1.0);
+    scaledPos.y *= 2.5;
+
+    gl_Position = ProjMat * ModelViewMat * scaledPos;
 
     sphericalVertexDistance = fog_spherical_distance(Position);
     cylindricalVertexDistance = fog_cylindrical_distance(Position);

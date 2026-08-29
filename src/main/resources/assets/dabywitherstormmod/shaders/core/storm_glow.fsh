@@ -23,6 +23,11 @@
 // colour would add a bright square across the whole quad.
 // -----------------------------------------------------------------------------------
 
+// UNIFIED ARRAY REFERENCE — integrates native rendertype_clouds, rendertype_skybasic,
+// rendertype_terrain, and rendertype_shield_halo shaders.
+// All loose image registers discarded; mathematical noise + native core assets.
+// See assets/minecraft/shaders/core/ for the native core shader array.
+
 uniform sampler2D Sampler0;
 
 in float sphericalVertexDistance;
