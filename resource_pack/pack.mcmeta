@@ -1,6 +1,8 @@
 {
   "pack": {
-    "pack_format": 22,
-    "description": "Unified Core Shader Resource Pack — Story Mode Cloud Block Volume, Lavender Sky Lock, Terrain Shadow Metrics, Shield Halo (Phase 4-7), Item Alpha Transparency Registry"
+    "pack_format": 88,
+    "min_format": 88,
+    "max_format": 88,
+    "description": "Devouring Storms: The Point of No Return — Visual & Shader Resources (MC 26.2)"
   }
 }

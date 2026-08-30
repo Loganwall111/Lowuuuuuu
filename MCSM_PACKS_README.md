@@ -15,7 +15,7 @@ is published as an Actions artifact):
 
 | Package | File | Install into | What it is |
 | :--- | :--- | :--- | :--- |
-| **Wither Storm Mod** | `dabywitherstormmod-1.9.61-26.2-beta-r1.jar` | `.minecraft/mods/` | Mod with bundled skyboxes, procedural cloud vsh, Vortex mesh, storm atmosphere post-chain, OG shaded textures + `_e` emissive pairs. Renamed per build (`-r{run}`). |
+| **Wither Storm Mod** | `devouring-storms-point-of-no-return-1.9.62-26.2-beta-r1.jar` | `.minecraft/mods/` | Gameplay mod with mod-owned runtime assets. Global skybox, cloud, and shader overrides are excluded and distributed separately. Renamed per build (`-r{run}`). |
 | **MCSM Resource Pack** | `MCSM_ResourcePack.zip` | `.minecraft/resourcepacks/` | Shaded OG Story Mode textures, 4-point time-of-day custom skyboxes (lavender → orange), `rendertype_clouds.vsh` (2.5x extrusion), `emissive.properties` for the turquoise teeth aura. |
 | **MCSM Shader Pack** | `MCSM_ShaderPack.zip` | `.minecraft/shaderpacks/` | **100% procedural GLSL clouds** (no PNG sheets), sun-cast shadows on ground & water that sweep with the day/night clock, dynamic sky, colored lighting, turquoise teeth bloom. |
 

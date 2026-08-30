@@ -79,7 +79,7 @@ public class DabyWitherStormMod implements ModInitializer {
       ModEntityTypes.registerAttributes();
       ModBowelsEntities.register();
       String version = (String)FabricLoader.getInstance().getModContainer("dabywitherstormmod").map((c) -> c.getMetadata().getVersion().getFriendlyString()).orElse("unknown version");
-      BRAND.info("Dabicco's Wither Storm Mod - {}", version);
+      BRAND.info("Devouring Storms: The Point of No Return - {}", version);
       CommandRegistrationCallback.EVENT.register((CommandRegistrationCallback)(dispatcher, registryAccess, environment) -> DabyWSCommand.register(dispatcher));
       SigeonNetwork.register();
       StrippableBlockRegistry.register(ModBlocks.WITHERED_LOG, ModBlocks.STRIPPED_WITHERED_LOG);
