@@ -5,7 +5,7 @@ assets are pushed to the v1.9.60 GitHub Release, but usable standalone.
 
 Checks (all hard failures):
   * Zips are FLAT: no single nested parent folder wrapping the pack contents.
-  * MCSM_ResourcePack.zip contains the custom time-of-day skyboxes under
+  * MCSM_TrueCoreVisuals.zip contains the custom time-of-day skyboxes under
     assets/minecraft/optifine/sky/world0/ (sky1..4 png+properties), the #version 150
     extruded-cloud core vertex shader, split-range pack.mcmeta, and leak-free lang files.
   * MCSM_ShaderPack.zip is the modern-engine aligned PROCEDURAL pack:

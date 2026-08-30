@@ -1,6 +1,8 @@
 package net.dabicco.witherstormmod.mixin;
 
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
+import net.dabicco.witherstormmod.client.gui.DevouringMainMenuOverlay;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -14,6 +16,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin({TitleScreen.class})
 public abstract class TitleScreenConfigNoticeMixin {
+   @Inject(method = {"extractRenderState"}, at = {@At("TAIL")})
+   private void devouringstorms$overlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+      Screen screen = (Screen)(Object)this;
+      DevouringMainMenuOverlay.render(graphics, screen.width, screen.height);
+   }
+
    @Inject(
       method = {"init"},
       at = {@At("TAIL")}

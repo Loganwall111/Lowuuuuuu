@@ -63,6 +63,20 @@ public class ModItems {
    public static final Item WITHERED_NETHERBRICK_WALL;
    public static final Item WITHERED_NETHERBRICK_FENCE;
    public static final Item WITHERED_LOG;
+   // Devouring Storms overhaul inventory
+   public static final Item COMMAND_BLOCK_SWORD = register("command_block_sword", Item::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+   public static final Item COMMAND_BLOCK_PICKAXE = register("command_block_pickaxe", Item::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+   public static final Item COMMAND_BLOCK_AXE = register("command_block_axe", Item::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+   public static final Item COMMAND_BLOCK_SHOVEL = register("command_block_shovel", Item::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+   public static final Item COMMAND_BLOCK_HOE = register("command_block_hoe", Item::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+   public static final Item COMMAND_BLOCK_BOOK = register("command_block_book", Item::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+   public static final Item HERO_AMULET = register("hero_amulet", Item::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+   public static final Item CORRUPTION_SHARD = register("corruption_shard", Item::new, new Item.Properties());
+   public static final Item RIFT_CORE = register("rift_core", Item::new, new Item.Properties().stacksTo(16).rarity(Rarity.EPIC));
+   public static final Item SURVIVOR_COMPASS = register("survivor_compass", Item::new, new Item.Properties().stacksTo(1));
+   public static final Item STORM_EYE = register("storm_eye", Item::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+   public static final Item DECAYED_ESSENCE = register("decayed_essence", Item::new, new Item.Properties());
+   public static final Item REALITY_ANCHOR = register("reality_anchor", Item::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
 
    public static <T extends Item> T register(String name, Function<Item.Properties, T> itemFactory, Item.Properties settings) {
       ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("dabywitherstormmod", name));

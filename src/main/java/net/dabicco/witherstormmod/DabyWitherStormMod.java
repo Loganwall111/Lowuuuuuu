@@ -24,6 +24,7 @@ import net.dabicco.witherstormmod.network.StormRemovedPacket;
 import net.dabicco.witherstormmod.network.WitherSicknessPayload;
 import net.dabicco.witherstormmod.network.WitherStormPositionPacket;
 import net.dabicco.witherstormmod.network.WitheredCastPayload;
+import net.dabicco.witherstormmod.world.ModWorldgen;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -70,6 +71,7 @@ public class DabyWitherStormMod implements ModInitializer {
       ModMenus.initialize();
       ModItems.initialize();
       ModItemGroups.initialize();
+      ModWorldgen.register();
       ModSounds.initialize();
       ModEffects.initialize();
       ModPotions.initialize();

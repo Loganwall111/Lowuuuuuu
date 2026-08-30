@@ -81,6 +81,19 @@ public final class ModItemGroups {
          out.accept(ModItems.STRIPPED_WITHERED_SLAB);
          out.accept(ModItems.STRIPPED_WITHERED_FENCE);
          out.accept(ModItems.STRIPPED_WITHERED_BUTTON);
+         out.accept(ModItems.COMMAND_BLOCK_SWORD);
+         out.accept(ModItems.COMMAND_BLOCK_PICKAXE);
+         out.accept(ModItems.COMMAND_BLOCK_AXE);
+         out.accept(ModItems.COMMAND_BLOCK_SHOVEL);
+         out.accept(ModItems.COMMAND_BLOCK_HOE);
+         out.accept(ModItems.COMMAND_BLOCK_BOOK);
+         out.accept(ModItems.HERO_AMULET);
+         out.accept(ModItems.CORRUPTION_SHARD);
+         out.accept(ModItems.RIFT_CORE);
+         out.accept(ModItems.SURVIVOR_COMPASS);
+         out.accept(ModItems.STORM_EYE);
+         out.accept(ModItems.DECAYED_ESSENCE);
+         out.accept(ModItems.REALITY_ANCHOR);
       }).build());
    }
 

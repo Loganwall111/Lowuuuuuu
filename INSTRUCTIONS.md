@@ -23,7 +23,7 @@ Everything you need to install, verify, build, and publish the
 | File | Where it goes |
 | :--- | :--- |
 | `devouring-storms-point-of-no-return-1.9.62-26.2-beta-r1.jar` | `.minecraft/mods/` |
-| `MCSM_ResourcePack.zip` | `.minecraft/resourcepacks/` |
+| `MCSM_TrueCoreVisuals.zip` | `.minecraft/resourcepacks/` |
 | `MCSM_ShaderPack.zip` | `.minecraft/shaderpacks/` |
 
 `.minecraft` is `%APPDATA%/.minecraft` on Windows, `~/Library/Application Support/minecraft` on macOS, `~/.minecraft` on Linux.
@@ -80,14 +80,14 @@ Rebuild the two packs from the committed directories (flat zips, PNG-free check)
 
 ```bash
 python3 tools/build_mcsm_packs.py
-# writes MCSM_ResourcePack.zip and MCSM_ShaderPack.zip at the repo root
+# writes MCSM_TrueCoreVisuals.zip and MCSM_ShaderPack.zip at the repo root
 ```
 
 Validate everything:
 
 ```bash
 python3 tools/validate_release_artifacts.py \
-  --rp MCSM_ResourcePack.zip --sp MCSM_ShaderPack.zip \
+  --rp MCSM_TrueCoreVisuals.zip --sp MCSM_ShaderPack.zip \
   --jar build/libs/devouring-storms-point-of-no-return-1.9.62-26.2-beta.jar \
   --expect-version 1.9.61-26.2-beta
 ```
@@ -130,7 +130,7 @@ zero assets) and **PR #18 is open and mergeable**.
 5. **Verify the publish**
    - GitHub → **Releases** → **v1.9.61-26.2-mcsm-r1** should now list assets:
      - `devouring-storms-point-of-no-return-1.9.62-26.2-beta-r<run>.jar`
-     - `MCSM_ResourcePack.zip`
+     - `MCSM_TrueCoreVisuals.zip`
      - `MCSM_ShaderPack.zip`
      - `MCSM_ResourcePack_and_Mod.zip` (convenience bundle)
      - `MCSM_ShaderPack_and_Mod.zip` (convenience bundle)

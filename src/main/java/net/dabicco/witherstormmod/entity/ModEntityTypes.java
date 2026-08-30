@@ -28,6 +28,9 @@ public class ModEntityTypes {
    public static final EntityType<BlackHoleEntity> BLACK_HOLE;
    public static final EntityType<WitheredBlockEntity> WITHERED_BLOCK;
    public static final EntityType<SeveredWitherStormEntity> SEVERED_WITHER_STORM;
+   public static final EntityType<CorruptionEntity> CORRUPTION;
+   public static final EntityType<RealityRiftEntity> REALITY_RIFT;
+   public static final EntityType<StormSurvivorNPC> STORM_SURVIVOR;
 
    private static <T extends Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {
       ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath("dabywitherstormmod", name));
@@ -40,6 +43,9 @@ public class ModEntityTypes {
    public static void registerAttributes() {
       FabricDefaultAttributeRegistry.register(WITHER_STORM, WitherStormEntity.createAttributes());
       FabricDefaultAttributeRegistry.register(SEVERED_WITHER_STORM, SeveredWitherStormEntity.createAttributes());
+      FabricDefaultAttributeRegistry.register(CORRUPTION, net.minecraft.world.entity.monster.Monster.createMonsterAttributes());
+      FabricDefaultAttributeRegistry.register(REALITY_RIFT, net.minecraft.world.entity.LivingEntity.createLivingAttributes());
+      FabricDefaultAttributeRegistry.register(STORM_SURVIVOR, net.minecraft.world.entity.Mob.createMobAttributes());
    }
 
    static {
@@ -56,5 +62,8 @@ public class ModEntityTypes {
       BLACK_HOLE = register("black_hole", Builder.of(BlackHoleEntity::new, MobCategory.MISC).sized(2.0F, 2.0F).clientTrackingRange(10000).updateInterval(1));
       WITHERED_BLOCK = register("withered_block", Builder.of(WitheredBlockEntity::new, MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(1));
       SEVERED_WITHER_STORM = register("severed_wither_storm", Builder.of(SeveredWitherStormEntity::new, MobCategory.MISC).sized(0.9F, 3.5F).clientTrackingRange(10000).updateInterval(1));
+      CORRUPTION = register("corruption", Builder.of(CorruptionEntity::new, MobCategory.MONSTER).sized(0.8F, 1.95F).clientTrackingRange(12));
+      REALITY_RIFT = register("reality_rift", Builder.of(RealityRiftEntity::new, MobCategory.MISC).sized(2.0F, 3.0F).clientTrackingRange(32).fireImmune());
+      STORM_SURVIVOR = register("storm_survivor", Builder.of(StormSurvivorNPC::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(12));
    }
 }
