@@ -43,18 +43,17 @@ loom {
 
 dependencies {
 	// To change the versions see the gradle.properties file
-	// Tells Fabric to load Minecraft 26.2 directly using native (unobfuscated) names.
-	// NOTE: 26.1+ has NO mappings line — there is nothing to remap. Adding
-	// `mappings loom.officialMojangMappings()` fails with
-	// "Failed to find official mojang mappings for <version>".
+	// Fabric Loom 1.17+ for MC 26.x (unobfuscated): use modImplementation for
+	// Fabric Loader and Fabric API so they are available at compile time but
+	// NOT bundled into the output JAR.  Using plain `implementation` causes
+	// Loom to embed the entire dependency tree, producing a 150 MB+ fat JAR
+	// that Fabric Loader cannot recognise as a mod.
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 
-	// 26.x uses standard `implementation` / `compileOnly` (NOT modImplementation)
-	// because nothing is remapped.
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
 	// Mod Menu (for the config screen integration). Client-only, so compileOnly + included
 	// by the runtime if present; ModMenuIntegration only compiles against its API.
