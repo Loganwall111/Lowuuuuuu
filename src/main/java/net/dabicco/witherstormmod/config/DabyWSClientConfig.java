@@ -26,6 +26,13 @@ public class DabyWSClientConfig {
    public static boolean legacyHeads = false;
    public static boolean filledSubphases = true;
    public static boolean scaledSubphaseGrowth = false;
+   public static boolean infiniteGrowth = false;
+   public static double infiniteGrowthRate = 0.01;
+   public static double infiniteGrowthMaxScale = 5.0;
+   public static boolean infectionSpreading = true;
+   public static double infectionSpreadRadius = 16.0;
+   public static double infectionSpreadRate = 0.5;
+   public static boolean infectionCorruptBlocks = true;
    public static boolean flatbackFlipFix = true;
    public static double mirrorBackDetail = (double)1.0F;
    public static final boolean useNewFormidibomb = false;
