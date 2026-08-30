@@ -63,7 +63,7 @@ public final class StormPresenceFX {
    }
 
    /** Approximate visual body radius for a phase (rough phase->size mapping used for glow anchoring). */
-   private static double bodyRadius(float phase) {
+   public static double bodyRadius(float phase) {
       if (phase < 4.0F) {
          return 4.0 + phase * 1.5;
       }
@@ -132,22 +132,29 @@ public final class StormPresenceFX {
             }
          }
 
-         /* ---- cataclysm halo pair (phase 5.8+) ---- */
-         if (DabyWSClientConfig.cataclysmHalos && phase >= 5.8F) {
-            float ramp = Mth.clamp((phase - 5.8F) / 0.35F, 0.0F, 1.0F);
+         /* ---- blue halo for phase 4+ (anchored to storm centre) ---- */
+         if (DabyWSClientConfig.cataclysmHalos && phase >= 4.0F) {
+            float ramp = Mth.clamp((phase - 3.8F) / 0.5F, 0.0F, 1.0F);
             float amount = (float)DabyWSClientConfig.haloStrength * ramp;
             if (amount > 0.004F) {
                Vec3 view = centre.subtract(cam).normalize();
-               // blue-purple ring around the whole area
-               StormPalettes.haloRingColor(col);
-               int aOuter = (int)(Mth.clamp(amount * 0.85F * (0.6F + 0.4F * pulseWave(d.entityId, nowSec)), 0.0F, 1.0F) * 255.0F);
-               quad(poseStack, collector, GlowRenderTypes.glow(HALO), cam, centre, view, bodyR * 1.9, (int)(col[0] * 255.0F), (int)(col[1] * 255.0F), (int)(col[2] * 255.0F), aOuter);
-               // the original white halo underneath the body
+               // Blue halo anchored right at the middle/centre of the Wither Storm
                StormPalettes.haloUnderColor(col);
-               Vec3 underCentre = centre.add(0.0, -bodyR * 0.55, 0.0);
-               Vec3 viewUnder = underCentre.subtract(cam).normalize();
-               int aUnder = (int)(Mth.clamp(amount * 0.95F, 0.0F, 1.0F) * 255.0F);
-               quad(poseStack, collector, GlowRenderTypes.glow(HALO), cam, underCentre, viewUnder, bodyR * 1.1, (int)(col[0] * 255.0F), (int)(col[1] * 255.0F), (int)(col[2] * 255.0F), aUnder);
+               int aHalo = (int)(Mth.clamp(amount * 0.95F * (0.8F + 0.2F * pulseWave(d.entityId, nowSec)), 0.0F, 1.0F) * 255.0F);
+               quad(poseStack, collector, GlowRenderTypes.glow(HALO), cam, centre, view, bodyR * 1.6, (int)(col[0] * 255.0F), (int)(col[1] * 255.0F), (int)(col[2] * 255.0F), aHalo);
+               if (phase >= 5.1F) {
+                  // outer cataclysm ring (phase 5.1+)
+                  StormPalettes.haloRingColor(col);
+                  int aOuter = (int)(Mth.clamp(amount * 0.75F, 0.0F, 1.0F) * 255.0F);
+                  quad(poseStack, collector, GlowRenderTypes.glow(HALO), cam, centre, view, bodyR * 2.1, (int)(col[0] * 255.0F), (int)(col[1] * 255.0F), (int)(col[2] * 255.0F), aOuter);
+
+                  // dark roiling shroud anchored strictly to the storm's head / upper mass
+                  Vec3 shroudCentre = centre.add(0.0, bodyR * 0.65, 0.0);
+                  Vec3 shroudView = shroudCentre.subtract(cam).normalize();
+                  int aDark = (int)(Mth.clamp(amount * 0.82F, 0.0F, 1.0F) * 215.0F);
+                  quad(poseStack, collector, GlowRenderTypes.translucent(HALO), cam, shroudCentre, shroudView, bodyR * 2.7, 12, 6, 22, aDark);
+                  quad(poseStack, collector, GlowRenderTypes.translucent(HALO), cam, shroudCentre, shroudView, bodyR * 3.5, 8, 4, 15, (int)(aDark * 0.60F));
+               }
             }
          }
       }
