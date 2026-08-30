@@ -92,12 +92,12 @@ public final class GlowRenderTypes {
    }
 
    public static RenderType glow(Identifier texture) {
-      return (RenderType)TYPES.computeIfAbsent(texture, (tex) -> RenderTypeInvoker.dabyws$create("dabywitherstormmod:storm_glow:" + String.valueOf(tex), RenderSetup.builder(pipeline()).withTexture("Sampler0", tex).createRenderSetup()));
+      return ShaderPackCompat.active() ? RenderTypes.eyes(texture) : (RenderType)TYPES.computeIfAbsent(texture, (tex) -> RenderTypeInvoker.dabyws$create("dabywitherstormmod:storm_glow:" + String.valueOf(tex), RenderSetup.builder(pipeline()).withTexture("Sampler0", tex).createRenderSetup()));
    }
 
    /** Fogless alpha-blended (non-additive) layer for dark translucent moods: cloud decks, rim glare. */
    public static RenderType translucent(Identifier texture) {
-      return (RenderType)TRANSLUCENT_TYPES.computeIfAbsent(texture, (tex) -> RenderTypeInvoker.dabyws$create("dabywitherstormmod:storm_translucent:" + String.valueOf(tex), RenderSetup.builder(translucentPipeline()).withTexture("Sampler0", tex).createRenderSetup()));
+      return ShaderPackCompat.active() ? RenderTypes.entityTranslucent(texture) : (RenderType)TRANSLUCENT_TYPES.computeIfAbsent(texture, (tex) -> RenderTypeInvoker.dabyws$create("dabywitherstormmod:storm_translucent:" + String.valueOf(tex), RenderSetup.builder(translucentPipeline()).withTexture("Sampler0", tex).createRenderSetup()));
    }
 
    private static RenderPipeline translucentPipeline() {
