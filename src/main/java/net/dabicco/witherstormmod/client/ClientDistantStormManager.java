@@ -105,7 +105,7 @@ public class ClientDistantStormManager {
          }
       }
 
-      return STORMS.values();
+      return java.util.List.copyOf(STORMS.values());
    }
 
    public static void remove(int entityId) {
