@@ -26,7 +26,8 @@ import net.dabicco.witherstormmod.client.ClientWitheredManager;
 import net.dabicco.witherstormmod.client.CommandBlockPowerSound;
 import net.dabicco.witherstormmod.client.ControlPanelLightTint;
 import net.dabicco.witherstormmod.client.DistantStormRenderer;
-import net.dabicco.witherstormmod.client.StormCloudDeck;
+import net.dabicco.witherstormmod.client.StormAtmospherePost;
+import net.dabicco.witherstormmod.client.StormBlobFX;
 import net.dabicco.witherstormmod.client.StormPresenceFX;
 import net.dabicco.witherstormmod.client.StormStarfield;
 import net.dabicco.witherstormmod.client.FormidibombBlast;
@@ -212,9 +213,10 @@ public class DabyWitherStormModClient implements ClientModInitializer {
       LevelRenderEvents.COLLECT_SUBMITS.register(WitheredRenderer::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(FormidibombBlast::render);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormStarfield::submit);
-      LevelRenderEvents.COLLECT_SUBMITS.register(StormCloudDeck::submit);
       LevelRenderEvents.COLLECT_SUBMITS.register(StormPresenceFX::submit);
+      LevelRenderEvents.COLLECT_SUBMITS.register(StormBlobFX::submit);
       ClientTickEvents.START_CLIENT_TICK.register(StormPresenceFX::tick);
+      ClientTickEvents.START_CLIENT_TICK.register(StormAtmospherePost::tick);
       ClientPlayNetworking.registerGlobalReceiver(SpawnStructurePayload.TYPE, (payload, context) -> context.client().execute(() -> {
             StormMusic.setInsideSpawnTower(payload.inside());
             SpawnTowerGloom.set(payload.inside(), payload.x(), payload.floorY(), payload.z());
