@@ -4,6 +4,22 @@ Complete visual recreation of **Minecraft: Story Mode** by Telltale Games and
 Mojang Studios, engineered for modern Minecraft **26.2** (Fabric / Iris /
 Sodium / OptiFine).
 
+> **Pack format note (MC 26.2):** all resource packs in this repo use
+> **pack_format 88** — the correct resource-pack format for Minecraft 26.2
+> (Chaos Cubed). The older 42 (MC 1.21.2–1.21.3) and 46 (1.21.4) values were
+> placeholders from 1.21.x and are **not** used. Using 42/46 on 26.2 shows an
+> "made for an older version" warning and can hide relocated asset paths.
+
+> **Runtime-texture correction:** the storm's 3D-blocky cloud deck
+> (`mcsm_cloud.png`), cataclysm halo ring (`halo_ring.png`), starfield
+> (`star.png`) and ejecta (`broken_piece.png`) are shipped **inside the mod JAR**
+> under `assets/dabywitherstormmod/textures/misc/` (and mirrored in the
+> resource pack). Previously these were only in the optional pack, so on a fresh
+> install the clouds/halo/stars vanished and a "loading Minecraft resource pack"
+> stall appeared on boss spawn. Shipping them in the mod JAR keeps the
+> volumetric clouds and halo permanently drawn in the skybox across boss phase
+> changes.
+
 ---
 
 ## 📦 r1 Deliverables

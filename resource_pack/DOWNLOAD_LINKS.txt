@@ -1,26 +1,43 @@
-STANDALONE RESOURCE PACK — Download & Links
-===============================================
+MCSM_TrueCoreVisuals — STANDALONE RESOURCE PACK (MC 26.2, pack_format 88)
+=========================================================================
 
-PR / Full Changes: https://github.com/Loganwall111/Lowuuuuuu/pull/21
-Release (draft):     https://github.com/Loganwall111/Lowuuuuuu/releases/tag/untagged-4c3778d106aad267b344
-Branch:              arena/01a04e02-lowuuuuuu
+Download:  MCSM_TrueCoreVisuals.zip   ->  .minecraft/resourcepacks/
+Mod JAR:   devouring-storms-*.jar     ->  .minecraft/mods/
 
-Contents of this resource pack:
+Branch:    arena/01a05452-lowuuuuuu
+PR:        https://github.com/Loganwall111/Lowuuuuuu/pull/26
+
+PACK_FORMAT
+-----------
+This pack uses pack_format 88, the correct resource-pack format for
+Minecraft 26.2 (Chaos Cubed). (Formats 42 / 46 are for MC 1.21.x and will
+show an "made for an older version" warning on 26.2.)
+
+CONTENTS
+--------
 - assets/minecraft/shaders/core/
-  * rendertype_clouds.vsh / .fsh (2.5x vertical extrude + mathematical 3D noise)
-  * rendertype_skybasic.fsh (lavender -> night clock lock)
-  * rendertype_skytextured.fsh (custom skybox sheet samples)
-  * rendertype_terrain.fsh (vignette, AO, magenta/purple grade, fake shadow metric, dark fog)
-  * rendertype_shield_halo.vsh / .fsh (persistent Phase 4-7, duplicates Phase 6, alpha edge fade)
-- assets/dabywitherstormmod/shaders/core/
-  * unified_core_array.fsh (merges all visual logic into single array)
-  * storm_shield_halo.vsh / .fsh
-- assets/dabywitherstormmod/textures/item/
-  * alpha_transparency_registry.json
-  * All item .mcmeta files with alpha_blend transparency registered
+  * rendertype_clouds.vsh / .fsh      (2.5x vertical extrude + 3D noise)
+  * rendertype_skybasic.fsh           (day lavender -> night clock lock)
+  * rendertype_skytextured.fsh        (custom time-of-day skybox sheets)
+  * rendertype_terrain.fsh            (vignette, AO, shadow metric, dark fog)
+  * rendertype_shield_halo.vsh / .fsh
+- assets/dabywitherstormmod/
+  * shaders/ (core + post): emissive glow, HDR bloom, shadow depth, sun glow
+  * post_effect/*.json (storm bloom / atmosphere chains, MC 26.x format)
+  * textures/misc/  mcsm_cloud.png, halo_ring.png, star.png, broken_piece.png
+  * textures/entity/ + textures/item/ + textures/block/
+  * icon.png, lang/, sounds.json, blockstates/, models/, meshes/
 
-Cloud/end-sky PNG textures deleted from original mod:
-- mcsm_cloud.png, halo_ring.png, star.png, broken_piece.png
+RUNTIME TEXTURES
+----------------
+The storm's 3D-blocky cloud deck (mcsm_cloud.png), cataclysm halo ring
+(halo_ring.png), starfield (star.png) and ejecta (broken_piece.png) are ALSO
+shipped inside the mod JAR under the same paths. This keeps the clouds, halo
+and stars permanently rendered even if this resource pack is not installed,
+and removes the "loading Minecraft resource pack" stall that appeared on boss
+spawning when those runtime textures were only in an optional pack.
 
-Shaderpack property configurations purged:
-- assets/minecraft/optifine/emissive.properties deleted
+INSTALLATION
+------------
+Place MCSM_TrueCoreVisuals.zip in .minecraft/resourcepacks/ and enable it in
+Options -> Resource Packs. The mod JAR must also be installed.
