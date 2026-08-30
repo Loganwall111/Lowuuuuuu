@@ -2,8 +2,8 @@
 	"schemaVersion": 1,
 	"id": "dabywitherstormmod",
 	"version": "${version}",
-	"name": "Dabicco's Wither Storm Mod",
-	"description": "Adds The Wither Storm from Minecraft: Story Mode: a mutant wither that grows through several phases, flattens your world as it consumes it, and hunts you across it. Possessed enemies, deep configuration, multiplayer support, and a proper final boss fight. No matter how far you go, you cannot escape The Wither Storm.",
+	"name": "Devouring Storms: The Point of No Return",
+	"description": "Devouring Storms: The Point of No Return — a mutant wither that grows through several phases, flattens your world as it consumes it, and hunts you across it. Possessed enemies, deep configuration, multiplayer support, and a proper final boss fight. No matter how far you go, you cannot escape The Wither Storm.",
 	"authors": [
 		"Dabicco - Lead Programmer",
 		"Joeyready - Textures, Blocks, Items & Build"
@@ -13,7 +13,7 @@
 		"issues": "https://discord.gg/eKDqAmSPzj"
 	},
 	"license": "MIT",
-	"icon": "assets/dabywitherstormmod/icon.png",
+	"icon": "icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [

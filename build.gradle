@@ -50,10 +50,10 @@ dependencies {
 	// that Fabric Loader cannot recognise as a mod.
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
 	// Mod Menu (for the config screen integration). Client-only, so compileOnly + included
 	// by the runtime if present; ModMenuIntegration only compiles against its API.
@@ -104,6 +104,10 @@ jar {
 	// repo for model work; the runtime loads the exported .json geometry only.
 	// Shipping them made the production jar 126 MB of dead weight.
 	exclude "**/*.bbmodel"
+
+	// Visual/shader overrides are distributed as standalone packs, never in the mod jar.
+	exclude "assets/minecraft/**"
+	exclude "pack.mcmeta"
 }
 
 // configure the maven publication

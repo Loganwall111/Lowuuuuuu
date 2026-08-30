@@ -127,7 +127,7 @@ public class WitherStormConfigScreen extends Screen {
    }
 
    public WitherStormConfigScreen(Screen parent, boolean worldCreation) {
-      super(Component.literal(worldCreation ? "Wither Storm Settings For This World" : "Dabicco's Wither Storm Config"));
+      super(Component.literal(worldCreation ? "Wither Storm Settings For This World" : "Devouring Storms Config"));
       this.editing = new WitherStormWorldConfig();
       this.serverTouched = false;
       this.requestedSync = false;
@@ -1198,7 +1198,7 @@ public class WitherStormConfigScreen extends Screen {
          g.fill(left - 1, 58, left, bottom, -12964270);
          g.fill(right, 58, right + 1, bottom, -12964270);
          int centre = this.panelCentre();
-         g.centeredText(this.font, this.worldCreation ? "Wither Storm: This World's Settings" : "Dabicco's Wither Storm", centre, 10, -1);
+         g.centeredText(this.font, this.worldCreation ? "Wither Storm: This World's Settings" : "Devouring Storms", centre, 10, -1);
          g.fill(centre - 90, 21, centre + 90, 22, -2130722739);
          if (this.worldCreation) {
             g.centeredText(this.font, "Applied when the world is created", centre, 38, -6381922);

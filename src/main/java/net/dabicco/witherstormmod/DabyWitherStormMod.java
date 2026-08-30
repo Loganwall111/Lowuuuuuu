@@ -24,6 +24,7 @@ import net.dabicco.witherstormmod.network.StormRemovedPacket;
 import net.dabicco.witherstormmod.network.WitherSicknessPayload;
 import net.dabicco.witherstormmod.network.WitherStormPositionPacket;
 import net.dabicco.witherstormmod.network.WitheredCastPayload;
+import net.dabicco.witherstormmod.world.ModWorldgen;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -70,6 +71,7 @@ public class DabyWitherStormMod implements ModInitializer {
       ModMenus.initialize();
       ModItems.initialize();
       ModItemGroups.initialize();
+      ModWorldgen.register();
       ModSounds.initialize();
       ModEffects.initialize();
       ModPotions.initialize();
@@ -79,7 +81,7 @@ public class DabyWitherStormMod implements ModInitializer {
       ModEntityTypes.registerAttributes();
       ModBowelsEntities.register();
       String version = (String)FabricLoader.getInstance().getModContainer("dabywitherstormmod").map((c) -> c.getMetadata().getVersion().getFriendlyString()).orElse("unknown version");
-      BRAND.info("Dabicco's Wither Storm Mod - {}", version);
+      BRAND.info("Devouring Storms: The Point of No Return - {}", version);
       CommandRegistrationCallback.EVENT.register((CommandRegistrationCallback)(dispatcher, registryAccess, environment) -> DabyWSCommand.register(dispatcher));
       SigeonNetwork.register();
       StrippableBlockRegistry.register(ModBlocks.WITHERED_LOG, ModBlocks.STRIPPED_WITHERED_LOG);

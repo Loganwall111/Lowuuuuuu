@@ -22,8 +22,8 @@ Everything you need to install, verify, build, and publish the
 
 | File | Where it goes |
 | :--- | :--- |
-| `dabywitherstormmod-1.9.61-26.2-beta-r1.jar` | `.minecraft/mods/` |
-| `MCSM_ResourcePack.zip` | `.minecraft/resourcepacks/` |
+| `devouring-storms-point-of-no-return-1.9.62-26.2-beta-r1.jar` | `.minecraft/mods/` |
+| `MCSM_TrueCoreVisuals.zip` | `.minecraft/resourcepacks/` |
 | `MCSM_ShaderPack.zip` | `.minecraft/shaderpacks/` |
 
 `.minecraft` is `%APPDATA%/.minecraft` on Windows, `~/Library/Application Support/minecraft` on macOS, `~/.minecraft` on Linux.
@@ -74,21 +74,21 @@ Requires **JDK 25** and **Gradle 9.5.1** (the wrapper is included; CI uses the s
 gradle build --no-daemon --stacktrace
 ```
 
-Output: `build/libs/dabywitherstormmod-1.9.61-26.2-beta.jar`
+Output: `build/libs/devouring-storms-point-of-no-return-1.9.62-26.2-beta.jar`
 
 Rebuild the two packs from the committed directories (flat zips, PNG-free check):
 
 ```bash
 python3 tools/build_mcsm_packs.py
-# writes MCSM_ResourcePack.zip and MCSM_ShaderPack.zip at the repo root
+# writes MCSM_TrueCoreVisuals.zip and MCSM_ShaderPack.zip at the repo root
 ```
 
 Validate everything:
 
 ```bash
 python3 tools/validate_release_artifacts.py \
-  --rp MCSM_ResourcePack.zip --sp MCSM_ShaderPack.zip \
-  --jar build/libs/dabywitherstormmod-1.9.61-26.2-beta.jar \
+  --rp MCSM_TrueCoreVisuals.zip --sp MCSM_ShaderPack.zip \
+  --jar build/libs/devouring-storms-point-of-no-return-1.9.62-26.2-beta.jar \
   --expect-version 1.9.61-26.2-beta
 ```
 
@@ -122,15 +122,15 @@ zero assets) and **PR #18 is open and mergeable**.
    - Click the green **Run workflow** button.
 4. **Wait** (~3–5 minutes). The run:
    - compiles the mod jar from `main` (Java 25 + Fabric Loom), renamed
-     `dabywitherstormmod-1.9.61-26.2-beta-r<run-number>.jar`,
+     `devouring-storms-point-of-no-return-1.9.62-26.2-beta-r<run-number>.jar`,
    - rebuilds both packs via `tools/build_mcsm_packs.py`,
    - validates all artifacts (procedural-only clouds, skyboxes, version),
    - force-uploads every `dist/*` file to the release tag you typed,
    - rewrites the release notes + SHA-256 digests.
 5. **Verify the publish**
    - GitHub → **Releases** → **v1.9.61-26.2-mcsm-r1** should now list assets:
-     - `dabywitherstormmod-1.9.61-26.2-beta-r<run>.jar`
-     - `MCSM_ResourcePack.zip`
+     - `devouring-storms-point-of-no-return-1.9.62-26.2-beta-r<run>.jar`
+     - `MCSM_TrueCoreVisuals.zip`
      - `MCSM_ShaderPack.zip`
      - `MCSM_ResourcePack_and_Mod.zip` (convenience bundle)
      - `MCSM_ShaderPack_and_Mod.zip` (convenience bundle)

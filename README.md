@@ -10,23 +10,23 @@
 
 | Deliverable | Description | Permanent Download Link | Target Location |
 | :--- | :--- | :--- | :--- |
-| **`MCSM_ResourcePack.zip`** | Authentic Story Mode textures, sounds, the original custom time-of-day skyboxes in `assets/minecraft/optifine/sky/world0/` (lavender→orange day sky + purple sunset + twilight night), 8 blocky cloud sheets, 32-bit RGBA items, and modern split-range `pack.mcmeta`. | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ResourcePack.zip) or [branch mirror](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a048fa-lowuuuuuu/MCSM_ResourcePack.zip) | `.minecraft/resourcepacks/` *(Do NOT unzip)* |
+| **`MCSM_TrueCoreVisuals.zip`** | Authentic Story Mode textures, sounds, the original custom time-of-day skyboxes in `assets/minecraft/optifine/sky/world0/` (lavender→orange day sky + purple sunset + twilight night), 8 blocky cloud sheets, 32-bit RGBA items, and modern split-range `pack.mcmeta`. | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_TrueCoreVisuals.zip) or [branch mirror](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a048fa-lowuuuuuu/MCSM_TrueCoreVisuals.zip) | `.minecraft/resourcepacks/` *(Do NOT unzip)* |
 | **`MCSM_ShaderPack.zip`** | Atmosphere shaderpack for Iris/OptiFine: `clouds=fast` routing, 8 cloud samplers, 2.5x extruded cloud slabs, dynamic `uniform long worldTime` sky dome, and the re-aligned seam-free cloud UV mapping (Protocol 5 below). | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ShaderPack.zip) or [branch mirror](https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a048fa-lowuuuuuu/MCSM_ShaderPack.zip) | `.minecraft/shaderpacks/` *(Do NOT unzip)* |
-| **`dabywitherstormmod-…jar`** | The Fabric mod, compiled fresh from the latest master on every release. Bundles the storm atmosphere backdrop (`StormAtmospherePost` purple-phase overlays), all `shaders/post` storm filters + `post_effect` definitions, the sky/cloud mixins, and the custom skyboxes — the JAR itself carries the OG visuals. Current name: `dabywitherstormmod-1.9.61-26.2-beta-r{N}.jar` (see release page for the latest N). | [📥 Release page](https://github.com/Loganwall111/Lowuuuuuu/releases/tag/v1.9.60-26.2-mcsm) | `.minecraft/mods/` |
-| **Bundle: Resource Pack + Mod** | One-file combo of `MCSM_ResourcePack.zip` + the renamed mod JAR. | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ResourcePack_and_Mod.zip) | split per instructions |
+| **`dabywitherstormmod-…jar`** | The Fabric mod, compiled fresh from the latest master on every release. Contains the gameplay code and mod-owned runtime effects only. Global Minecraft sky, cloud, texture, and shader overrides are intentionally distributed in the standalone packs, not the JAR. Current name: `devouring-storms-point-of-no-return-1.9.62-26.2-beta-r{N}.jar` (see release page for the latest N). | [📥 Release page](https://github.com/Loganwall111/Lowuuuuuu/releases/tag/v1.9.60-26.2-mcsm) | `.minecraft/mods/` |
+| **Bundle: Resource Pack + Mod** | One-file combo of `MCSM_TrueCoreVisuals.zip` + the renamed mod JAR. | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ResourcePack_and_Mod.zip) | split per instructions |
 | **Bundle: Shader Pack + Mod** | One-file combo of `MCSM_ShaderPack.zip` + the renamed mod JAR. | [📥 Release asset](https://github.com/Loganwall111/Lowuuuuuu/releases/download/v1.9.60-26.2-mcsm/MCSM_ShaderPack_and_Mod.zip) | split per instructions |
 
 ### 🚀 Quick Setup
 1. **Mod**: put the newest `dabywitherstormmod-…-r<N>.jar` into `.minecraft/mods/`, **deleting any 1.9.60 jar** still sitting there.
 2. **Resource Pack**: enable `MCSM_ResourcePack` (Options → Resource Packs). Conflicting cloud packs off.
 3. **Shader Pack**: select `MCSM_ShaderPack` (Video Settings → Shader Packs) alongside or instead of another shader.
-4. Verify in-game: version reads **1.9.61-26.2-beta** — if it shows 1.9.60 you still have the stale jar.
+4. Verify in-game: version reads **1.9.62-26.2-beta** — if it shows 1.9.60 you still have the stale jar.
 
 ---
 
-# Dabicco's Wither Storm Mod — clean rewrite
+# Devouring Storms: The Point of No Return — clean rewrite
 
-This repository is the **clean rewrite** of Dabicco's Wither Storm Mod (the
+This repository is the **clean rewrite** of Devouring Storms: The Point of No Return (the
 *Minecraft: Story Mode*–inspired Wither Storm boss). The original decompiled source
 was partially broken (missing models, mixins, renderers), so instead of patching it we
 rebuild it as a fresh, modern Fabric mod.

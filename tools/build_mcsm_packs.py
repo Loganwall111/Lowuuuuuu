@@ -22,7 +22,7 @@ import zipfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RP_DIR = os.path.join(ROOT, "MCSM_ResourcePack")
 SP_DIR = os.path.join(ROOT, "MCSM_ShaderPack")
-RP_ZIP = os.path.join(ROOT, "MCSM_ResourcePack.zip")
+RP_ZIP = os.path.join(ROOT, "MCSM_TrueCoreVisuals.zip")
 SP_ZIP = os.path.join(ROOT, "MCSM_ShaderPack.zip")
 
 
