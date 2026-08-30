@@ -66,6 +66,13 @@ processResources {
 	def version = project.version
 	inputs.property "version", version
 
+	// Exclude the ~321 MB of Blockbench source models (assets/dabywitherstormmod/geo/*.bbmodel).
+	// These are authoring/reference assets the mod never loads at runtime — runtime meshes
+	// come from assets/dabywitherstormmod/meshes/*.json via BakedMesh, and no Java code
+	// references the `geo/` path. Bundling them inflates the fat JAR; excluding them keeps
+	// the output near the expected ~137 MB without touching the implementation config.
+	exclude "assets/dabywitherstormmod/geo/**"
+
 	filesMatching("fabric.mod.json") {
 		expand "version": version
 	}
