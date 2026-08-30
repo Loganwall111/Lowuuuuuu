@@ -49,9 +49,11 @@ dependencies {
 	// "Failed to find official mojang mappings for <version>".
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 
-	// 26.x uses standard `implementation` / `compileOnly` (NOT modImplementation)
-	// because nothing is remapped.
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	// fabric-loader declared as modImplementation so Gradle (via Loom) excludes
+	// its internal classes from the fat JAR bundle — prevents the 155MB bloated
+	// output and the resulting Fabric client black-screen timeout on boot.
+	// Commit fdee9e8: implementation -> modImplementation (ref: build bloat fix)
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
