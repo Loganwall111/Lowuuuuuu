@@ -43,11 +43,13 @@ loom {
 
 dependencies {
 	// To change the versions see the gradle.properties file
-	// Fabric Loom 1.17+ for MC 26.x (unobfuscated): use modImplementation for
-	// Fabric Loader and Fabric API so they are available at compile time but
-	// NOT bundled into the output JAR.  Using plain `implementation` causes
-	// Loom to embed the entire dependency tree, producing a 150 MB+ fat JAR
-	// that Fabric Loader cannot recognise as a mod.
+	// Minecraft 26.1+ is UNOBFUSCATED, so the net.fabricmc.fabric-loom plugin
+	// does NOT register the remap-only `modImplementation` / `modCompileOnly`
+	// configurations. Using `modImplementation "net.fabricmc:fabric-loader:..."`
+	// fails the build with:
+	//   Could not find method modImplementation() for arguments [net.fabricmc:fabric-loader:...]
+	// The correct declaration for unobfuscated Loom is the standard
+	// `implementation` (compile + runtime) / `compileOnly` configurations.
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"

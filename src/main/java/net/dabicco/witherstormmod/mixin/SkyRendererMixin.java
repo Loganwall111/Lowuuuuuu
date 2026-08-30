@@ -1,5 +1,6 @@
 package net.dabicco.witherstormmod.mixin;
 
+import net.dabicco.witherstormmod.client.StormGlowRenderer;
 import net.dabicco.witherstormmod.client.StormPalettes;
 import net.dabicco.witherstormmod.client.StormSkyDarken;
 import net.minecraft.client.Camera;
@@ -28,7 +29,21 @@ public class SkyRendererMixin {
          state.rainBrightness *= keep;
       }
 
-      // Restored Story Mode skybox loop: lavender zenith with a warm orange
+      // Peaceful Story Mode timeline. Only when NO storm is present, so the warm
+      // yellowish-lavender daylight and deep bluish-black night are the only
+      // colours a peaceful exploration loop ever sees. The purple/magenta storm
+      // atmosphere is hard-locked behind an active Wither Storm below.
+      if (!StormSkyDarken.stormActive()) {
+         float night = StormGlowRenderer.nightFactor(level);
+         // Twilight window: near sunrise/sunset the horizon bridges amber -> lavender.
+         float[] sky = StormSkyDarken.peacefulSkyTint(night, new float[3]);
+         state.skyColor = blendTo(state.skyColor, 0.62F, sky);
+         float[] horizon = StormSkyDarken.peacefulHorizonTint(night, new float[3]);
+         state.sunriseAndSunsetColor = blendTo(state.sunriseAndSunsetColor, 0.45F, horizon);
+         return;
+      }
+
+      // Restored Story Mode storm skybox loop: lavender zenith with a warm orange
       // horizon. The amount follows the nearest storm's smoothed phase, so the
       // sky reads lavender->orange normally, green at phase 4.5, turquoise at
       // phase 5+, and purple/magenta/black through the cataclysm — and the

@@ -31,6 +31,40 @@ public final class StormSkyDarken {
       return palettePhase;
    }
 
+   /** True when a storm is actually present within range (pure peace = false). */
+   public static boolean stormActive() {
+      return palettePhase > 0.05F || displayed > 0.002F;
+   }
+
+   // ---- Peaceful (no-storm) Story Mode atmosphere anchors -----------------
+   // These only ever apply when there is NO active Wither Storm, so the purple
+   // storm atmosphere can never leak into peaceful exploration loops.
+   private static final float[] DAY_TINT = {0.98F, 0.90F, 0.80F};      // warm yellowish-lavender daylight
+   private static final float[] NOON_HORIZON = {0.96F, 0.82F, 0.72F};  // warm amber horizon
+   private static final float[] NIGHT_TINT = {0.035F, 0.045F, 0.11F};  // deep cinematic bluish-black
+
+   /**
+    * Peaceful base sky tint for the restored Story Mode day/night loop. Called
+    * only when {@link #stormActive()} is false, so the warm yellowish-lavender
+    * daylight and deep bluish-black night are the *only* colours a peaceful
+    * exploration loop ever sees. {@code night} is 0 at noon and 1 at deep night.
+    */
+   public static float[] peacefulSkyTint(float night, float[] out) {
+      // day: warm yellow-lavender zenith; night: deep bluish-black; blend at dusk/dawn.
+      out[0] = Mth.lerp(night, DAY_TINT[0], NIGHT_TINT[0]);
+      out[1] = Mth.lerp(night, DAY_TINT[1], NIGHT_TINT[1]);
+      out[2] = Mth.lerp(night, DAY_TINT[2], NIGHT_TINT[2]);
+      return out;
+   }
+
+   /** Peaceful horizon tint (amber by day, low lavender at dusk, dark at night). */
+   public static float[] peacefulHorizonTint(float night, float[] out) {
+      out[0] = Mth.lerp(night, NOON_HORIZON[0], NIGHT_TINT[0]);
+      out[1] = Mth.lerp(night, NOON_HORIZON[1], NIGHT_TINT[1]);
+      out[2] = Mth.lerp(night, NOON_HORIZON[2], NIGHT_TINT[2]);
+      return out;
+   }
+
    public static float fogR() {
       if (DabyWSClientConfig.phaseFogPalettes) {
          float[] c = StormPalettes.fogColor(palettePhase, new float[3]);

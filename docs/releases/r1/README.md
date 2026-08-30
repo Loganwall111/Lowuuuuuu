@@ -3,10 +3,14 @@
 Download all three from the GitHub UI (open each file, then *Download raw file*),
 or pull this folder's contents.
 
+> **Pack format:** all resource packs use **pack_format 88** (correct for
+> Minecraft 26.2 / Chaos Cubed). The older 42 / 46 values were 1.21.x
+> placeholders and are not used.
+
 | File | SHA-256 |
 | :--- | :--- |
 | `dabywitherstormmod-1.9.61-26.2-beta-r1.jar` | `8ade143f77dcbf392ed65ee422edba382a43ec93e63b9b3c4caa2aa1413e8fa2` |
-| `MCSM_ResourcePack.zip` | `f72f1ab6c0434958fd24b45f127215d573b962dc4916670a77cf470432bcdab0` |
+| `MCSM_ResourcePack.zip` | `8c774df6e50dbe4e90909b0b08d4e7bb7928cec704a2cf92d2a03db3cccff397` |
 | `MCSM_ShaderPack.zip` | `4631616129eaf05363044dbd3750f5951d61252b84399a605f5f35b4c8707ba6` |
 
 ## Install
@@ -14,12 +18,24 @@ or pull this folder's contents.
 2. `MCSM_ResourcePack.zip` → `.minecraft/resourcepacks/` (enable it)
 3. `MCSM_ShaderPack.zip` → `.minecraft/shaderpacks/` (enable it in Iris / OptiFine)
 
+## Runtime textures shipped in the mod JAR
+The storm's 3D-blocky cloud deck (`mcsm_cloud.png`), cataclysm halo ring
+(`halo_ring.png`), starfield (`star.png`) and ejecta (`broken_piece.png`) are
+shipped **inside the mod JAR** under `assets/dabywitherstormmod/textures/misc/`
+(and mirrored in the resource pack). This keeps the volumetric clouds, halo and
+stars permanently rendered across boss phase changes and removes the "loading
+Minecraft resource pack" stall that appeared on boss spawn when those textures
+lived only in an optional pack.
+
 ## What's in r1
 - **Procedural GLSL clouds** — no PNG cloud sheets; fractal-noise clouds with the
   2.5x extrusion and live time-of-day colour (the author's `rendertype_clouds.vsh`
   is bundled in the resource pack and the mod jar).
 - **Restored lavender→orange skybox** clock loop (mod + resource pack custom skies;
-  green at phase 4.5, turquoise at 5+, purple-black cataclysm).
+  green at phase 4.5, turquoise at 5+, purple-black cataclysm). When **no** storm
+  is present the sky uses the warm yellowish-lavender daylight and deep
+  bluish-black night timeline, and the purple/magenta storm atmosphere is
+  hard-locked behind an active Wither Storm.
 - **Sun-cast shadows on the ground and on water** that sweep with the day/night
   cycle (new shadow map + water program in the shader pack).
 - **Storm atmosphere post-effect** (`post_effect/storm_atmosphere.json`) — true
