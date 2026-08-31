@@ -179,10 +179,17 @@ def main():
                 for f in sorted(files):
                     p = os.path.join(root, f)
                     rel = os.path.relpath(p, SHADER)
+                    # Fixed epoch timestamp + attrs -> byte-identical zips
+                    # every build (no per-run mtime drift between the two
+                    # deliverable names).
+                    zi = zipfile.ZipInfo(rel, date_time=(2020, 1, 1, 0, 0, 0))
+                    zi.compress_type = zipfile.ZIP_DEFLATED
+                    zi.external_attr = 0o644 << 16
                     if f in shippable:
-                        z.writestr(rel, shippable[f])
+                        z.writestr(zi, shippable[f])
                     else:
-                        z.write(p, rel)
+                        with open(p, 'rb') as src:
+                            z.writestr(zi, src.read())
         print(f'wrote {out}')
 
     # 6) post-zip sanity
