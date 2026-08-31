@@ -39,7 +39,7 @@ void main() {
     vec3 v = normalize(cameraPosition - pos);
     float spec = pow(max(dot(r, v), 0.0), isLava ? 40.0 : 90.0);
     spec = floor(spec * 4.0) / 4.0;
-    color += vec3(spec) * (isLava ? vec3(1.0, 0.55, 0.25) : vec3(0.7, 0.9, 1.0)) * 0.8;
+    color += vec3(spec, spec, spec) * (isLava ? vec3(1.0, 0.55, 0.25) : vec3(0.7, 0.9, 1.0)) * 0.8;
 
     color = isLava ? color * vec3(1.12, 0.95, 0.90) : color * vec3(0.95, 1.05, 1.12);
 

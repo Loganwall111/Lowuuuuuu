@@ -64,10 +64,10 @@ void main() {
     // style presets: 0 Story Mode | 1 Vibrant | 2 Moody
     float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if (STYLE == 1) {
-        color = mix(vec3(luma), color, 1.30);
+        color = mix(vec3(luma, luma, luma), color, 1.30);
     } else if (STYLE == 2) {
-        color = mix(vec3(luma), color, 0.55);
-        color = mix(vec3(0.5), color, 1.16);
+        color = mix(vec3(luma, luma, luma), color, 0.55);
+        color = mix(vec3(0.5, 0.5, 0.5), color, 1.16);
     }
 
     // ==================== VIGNETTE ==========================================

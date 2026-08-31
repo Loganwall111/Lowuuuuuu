@@ -115,9 +115,9 @@ void main() {
     sky += vec3(0.55, 0.7, 1.0) * ray * 0.10 * nightW * MOONSHINE;
 
     if (SKY_PRESET == 1) {
-        sky = mix(sky, sky * 1.06 + vec3(0.03), 0.6);
+        sky = mix(sky, sky * 1.06 + vec3(0.03, 0.03, 0.03), 0.6);
     } else if (SKY_PRESET == 2) {
-        sky = mix(sky, sky * 0.92 + vec3(0.01), 0.7);
+        sky = mix(sky, sky * 0.92 + vec3(0.01, 0.01, 0.01), 0.7);
     }
 
     gl_FragData[0] = vec4(sky, 1.0);

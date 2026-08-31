@@ -1,8 +1,10 @@
 #version 120
 /* DRAWBUFFERS:0 */
-
+uniform sampler2D depthtex0;
+uniform sampler2D colortex1;
+uniform mat4 gbufferProjectionInverse;
+uniform vec3 cameraPosition;
 #include "/lib.glsl"
-
 /*
   COMPOSITE: SSAO contact occlusion, per-biome Story Mode fog, desert heat
   shimmer, aurora overlay, sun/moon god rays and bloom.
@@ -15,6 +17,8 @@ varying vec2 texcoord;
 //   gl_FragData[0] -> colortex0 (color)
 //   gl_FragData[1] -> colortex1 (depth copy, cleared white by the loader)
 //   gl_FragData[2] -> colortex2 (normals, sampled in final.fsh)
+// (depthtex0/colortex1/gbufferProjectionInverse/cameraPosition are also
+// declared at the very top of this file for strict Intel drivers.)
 // colortex1 is declared here for completeness even though this program
 // reads the loader-filled depth textures depthtex0/depthtex1 instead.
 uniform sampler2D colortex0;
@@ -42,7 +46,7 @@ uniform float MOONSHINE; //settings moonlight
 
 vec3 getWorldPos(vec2 uv) {
     float depth = texture2D(depthtex0, uv).r;
-    if (depth > 0.99999) return vec3(1000000.0);
+    if (depth > 0.99999) return vec3(1000000.0, 1000000.0, 1000000.0);
     vec3 clip = vec3(uv * 2.0 - 1.0, depth * 2.0 - 1.0);
     vec4 world = gbufferProjectionInverse * vec4(clip, 1.0);
     world /= world.w;
@@ -117,16 +121,16 @@ void main() {
         vec3 celest = (sunAngle < 0.45) ? normalize(moonPosition) : normalize(sunPosition);
         vec4 clip = gbufferProjection * gbufferModelViewInverse * vec4(celest * 200.0, 1.0);
         vec2 sunUv = clip.xy / clip.w * 0.5 + 0.5;
-        if (clip.w > 0.0 && clamp(sunUv, vec2(0.0), vec2(1.0)) == sunUv) {
+        if (clip.w > 0.0 && clamp(sunUv, vec2(0.0, 0.0), vec2(1.0, 1.0)) == sunUv) {
             vec2 dirToSun = (sunUv - uv) * 0.028;
-            vec3 rays = vec3(0.0);
+            vec3 rays = vec3(0.0, 0.0, 0.0);
             vec2 su = uv;
             for (int i = 0; i < 14; i++) {
                 su += dirToSun;
                 float d = texture2D(depthtex1, clamp(su, 0.002, 0.998)).r;
                 float luma = dot(texture2D(colortex0, clamp(su, 0.002, 0.998)).rgb, vec3(0.299, 0.587, 0.114));
                 float visible = step(d, 0.99999);
-                rays += vec3(luma) * pow(max(1.0 - float(i) / 14.0, 0.0), 2.0) * visible;
+                rays += vec3(luma, luma, luma) * pow(max(1.0 - float(i) / 14.0, 0.0), 2.0) * visible;
             }
             vec3 rayCol = (sunAngle < 0.45) ? vec3(0.55, 0.7, 1.0) : vec3(1.0, 0.82, 0.6);
             scene += rayCol * rays * 0.10 * (1.0 - rainStrength);
@@ -136,7 +140,7 @@ void main() {
 
     // ==================== BLOOM =============================================
 #ifdef BLOOM
-    vec3 bloom = vec3(0.0);
+    vec3 bloom = vec3(0.0, 0.0, 0.0);
     float bweights = 0.0;
     for (int x = -2; x <= 2; x++) {
         for (int y = -2; y <= 2; y++) {

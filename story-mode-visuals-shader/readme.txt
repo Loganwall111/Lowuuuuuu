@@ -98,6 +98,29 @@ Built by tools/build_story_mode_shader.py - full source of truth.
 - The 36-option menu (18 toggles + 16 sliders + 2 presets), aurora toggle,
   biome fogs, Story Mode clouds, ink outlines etc. are all preserved.
 
+v7 CHANGELOG - STRICT-DRIVER LINK HARDENING (Intel UHD)
+- shaders/composite.fsh: the four mandatory pipeline uniforms
+  (depthtex0, colortex1, gbufferProjectionInverse, cameraPosition) are now
+  declared at the VERY TOP of the file, right after #version 120, so every
+  strict driver identifies them immediately (they are also redeclared,
+  identically, in the main uniform block - legal GLSL 1.20, same trick as
+  BSL/SEUS).
+- shaders/composite.fsh line 126 is now a proper three-component vec3
+  assignment:  vec3 rays = vec3(0.0, 0.0, 0.0);  (no single-float vec3
+  math remains anywhere).
+- EVERY single-argument vec2/vec3/vec4 constructor across the whole
+  pipeline (god rays, bloom, ACES tonemap, LUT grade, style presets,
+  sky presets, cloud colorize, torch tint, water glitter, shadow clamp,
+  fog accumulator) was rewritten in explicit component form to remove
+  the last float->vec3 implicit-replication edge case.
+- shaders/shader.properties: added iris.patch.colorful_lighting=true
+  (COLORFUL LIGHTING BRIDGE). It marks the pack's native colored-lighting
+  path (DEFINE.TORCH_TINT + SETTINGS.TORCH_SAT + OptiFine-format emissive
+  overlays) as active through Oculus, so nothing ever depends on the
+  Colorful Lighting mod's auto-patcher script. Note: the Colorful Lighting
+  MOD itself is Sodium-only and cannot run under Forge - the pack carries
+  its own colored-lighting implementation, which is what this key routes.
+
 TROUBLESHOOTING
 - "Id must be specified in OptionPage 'Shader Packs...'" in the log:
   this warning comes from the OCULUS mod's own options-page button inside

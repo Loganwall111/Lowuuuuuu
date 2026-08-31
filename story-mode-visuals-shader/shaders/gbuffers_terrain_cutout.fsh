@@ -57,7 +57,7 @@ void main() {
 #ifdef TORCH_TINT
     vec3 torchLight = torchColor * torch;
     float tl = dot(torchLight, vec3(0.299, 0.587, 0.114));
-    torchLight = mix(vec3(tl), torchLight, TORCH_SAT);   // saturation slider
+    torchLight = mix(vec3(tl, tl, tl), torchLight, TORCH_SAT);   // saturation slider
     light += torchLight * (0.9 + 0.5 * ao);
 #endif
 

@@ -132,7 +132,7 @@ def main():
     assert 'screen=composite' in props and 'shaders=' in props, 'properties broken'
     assert 'buffers=shadow:' in props, 'buffers must use colon syntax'
     assert 'colortex2' in props, 'colortex2 (gnormal) missing from textures list'
-    lang = open(f'{shaders}/lang/en_US.lang', encoding='utf-8').read()
+    lang = open(f'{shaders}/lang/en_us.lang', encoding='utf-8').read()
     assert 'screen.MAIN=' in lang, 'settings screen identity missing from lang'
 
     settings = re.findall(r'^(?:SETTINGS|DEFINE)\.([A-Z0-9_]+)', props, re.M)
@@ -175,6 +175,7 @@ def main():
     for name in ('StoryMode_Visuals.zip', 'Story_Mode_Visuals_Shader.zip'):
         with zipfile.ZipFile(f'{REPO}/{name}') as z:
             names = z.namelist()
+            assert all(n == n.lower() for n in names), 'non-lowercase path in zip'
             assert 'shaders/shader.properties' in names
             assert any(n.endswith('gbuffers_terrain.fsh') for n in names)
             assert any(n.endswith('final.fsh') for n in names)

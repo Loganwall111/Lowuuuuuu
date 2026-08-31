@@ -54,7 +54,7 @@ vec3 rgb2hsv(vec3 c) {
 }
 vec3 hsv2rgb(vec3 c) {
     vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-    return c.z * mix(vec3(1.0), rgb, c.y);
+    return c.z * mix(vec3(1.0, 1.0, 1.0), rgb, c.y);
 }
 
 // smootherstep + gamma helpers
@@ -62,13 +62,13 @@ float sstep(float a, float b, float x) {
     x = clamp((x - a) / max(b - a, 1e-5), 0.0, 1.0);
     return x * x * (3.0 - 2.0 * x);
 }
-vec3 toLinear(vec3 c)  { return pow(max(c, vec3(0.0)), vec3(2.2)); }
-vec3 toGamma(vec3 c)   { return pow(max(c, vec3(0.0)), vec3(1.0 / 2.2)); }
+vec3 toLinear(vec3 c)  { return pow(max(c, vec3(0.0, 0.0, 0.0)), vec3(2.2, 2.2, 2.2)); }
+vec3 toGamma(vec3 c)   { return pow(max(c, vec3(0.0, 0.0, 0.0)), vec3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2)); }
 
 // ------------------------------------------------------------- SDR grade
 vec3 sdrTonemap(vec3 c) {
     vec3 t = toLinear(c);
-    t = t * (2.51 * t + vec3(0.03)) / (t * (2.43 * t + vec3(0.59)) + vec3(0.14)); // ACES fit
+    t = t * (2.51 * t + vec3(0.03, 0.03, 0.03)) / (t * (2.43 * t + vec3(0.59, 0.59, 0.59)) + vec3(0.14, 0.14, 0.14)); // ACES fit
     return toGamma(clamp(t, 0.0, 1.0));
 }
 
@@ -76,7 +76,7 @@ vec3 sdrTonemap(vec3 c) {
 // High saturation, warm highlights, teal-purple shadow split.
 vec3 grade(vec3 c, float sat) {
     float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
-    vec3 graded = mix(vec3(luma), c, sat);
+    vec3 graded = mix(vec3(luma, luma, luma), c, sat);
     graded *= vec3(1.02, 1.00, 0.97);
     graded = pow(graded, vec3(1.04, 1.00, 0.96));              // warm lift
     float shad = sstep(1.0, 0.0, luma);
@@ -159,7 +159,7 @@ float biomeMatch(vec3 pos, float target) {
 vec4 sampledFog(vec3 pos) {
     float w[8]; ivec4 id[8];
     biomeWeights(pos, w, id);
-    vec4 fog = vec4(0.0);
+    vec4 fog = vec4(0.0, 0.0, 0.0, 0.0);
     float sum = 0.0;
     for (int k = 0; k < 8; k++) {
         vec4 p = fogProfile(id[k].x);

@@ -174,3 +174,21 @@ and fell back, which is why the settings menu disappeared. Repairs:
 - The Embeddium "Id must be specified in OptionPage 'Shader Packs...'"
   warning is Oculus's own options-page integration and cannot be set from
   a shader pack; it is benign (documented in the pack README too).
+
+## v7 - Strict-driver link hardening (Intel UHD) + fully lowercase tree
+- `composite.fsh`: the four mandatory uniforms (depthtex0, colortex1,
+  gbufferProjectionInverse, cameraPosition) now sit at the VERY TOP of the
+  file (lines 3-6, right after `#version 120`); they are redeclared
+  identically in the main uniform block (legal GLSL 1.20, BSL/SEUS trick).
+- `composite.fsh` line 126 is now a proper 3-component vec3 assignment:
+  `vec3 rays = vec3(0.0, 0.0, 0.0);` - and EVERY single-argument vec
+  constructor across the whole pipeline was rewritten in explicit component
+  form (god rays, bloom, ACES, LUT grade, style presets, sky presets, cloud
+  colorize, torch tint, water glitter, shadow clamp, fog accumulator).
+- `shader.properties`: added `iris.patch.colorful_lighting=true`
+  (COLORFUL LIGHTING BRIDGE marker - the pack's native colored lighting
+  runs through Oculus; the Sodium-only Colorful Lighting mod itself can
+  never load under Forge and is not needed).
+- The whole shader zip is now a 100% lowercase file tree (`en_US.lang` ->
+  `en_us.lang`, which Oculus's LanguageMap handles identically, and
+  `README.txt` -> `readme.txt`); the builder now asserts this on every build.

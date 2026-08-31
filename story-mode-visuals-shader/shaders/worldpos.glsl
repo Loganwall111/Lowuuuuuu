@@ -45,7 +45,7 @@ float getShadow(vec3 worldPos, vec3 nrm) {
     vec4 shadowSpace = shadowProjection * shadowModelView * vec4(worldPos, 1.0);
     if (abs(shadowSpace.w) < 1e-5) return 1.0;
     vec3 ndc = shadowSpace.xyz / shadowSpace.w;
-    if (clamp(ndc.xy, vec2(-1.0), vec2(1.0)) != ndc.xy) return 1.0;
+    if (clamp(ndc.xy, vec2(-1.0, -1.0), vec2(1.0, 1.0)) != ndc.xy) return 1.0;
     if (ndc.z > 1.0 || ndc.z < -1.0) return 1.0;
 
     float mc = 0.5 / MC_SHADOW_ORTHO;

@@ -52,7 +52,7 @@ void main() {
     // clouds adapt to the biome fog below (Story Mode color harmony)
     vec4 fogHere = sampledFog(cameraPosition + vec3(uv.x * 300.0, 128.0, uv.y * 300.0));
     float luma = dot(cloudCol, vec3(0.299, 0.587, 0.114));
-    cloudCol = mix(vec3(luma), cloudCol, CLOUD_COLORIZE);
+    cloudCol = mix(vec3(luma, luma, luma), cloudCol, CLOUD_COLORIZE);
     cloudCol = mix(cloudCol, fogHere.rgb, 0.35);
 
     // rain -> dark overcast blanket
