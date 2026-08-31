@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 2,
+  "type": "single-sprite-square-textured",
+  "texture": "forgeskyboxes:textures/sky/badlands_sunset.png",
+  "blend": {
+    "type": "alpha",
+    "horizonBlend": true
+  },
+  "properties": {
+    "priority": 11,
+    "fade": {
+      "alwaysOn": false,
+      "startFadeIn": 11500,
+      "endFadeIn": 13200,
+      "startFadeOut": 13800,
+      "endFadeOut": 15000
+    },
+    "transitionInDuration": 40,
+    "transitionOutDuration": 40,
+    "changeFog": true,
+    "fogColors": {
+      "red": 0.9098039215686274,
+      "green": 0.40784313725490196,
+      "blue": 0.2196078431372549,
+      "alpha": 0.95
+    }
+  },
+  "conditions": {
+    "biomes": [
+      "minecraft:badlands",
+      "minecraft:eroded_badlands",
+      "minecraft:wooded_badlands"
+    ],
+    "dimensions": [
+      "minecraft:overworld"
+    ]
+  },
+  "decorations": {
+    "showSun": true
+  }
+}

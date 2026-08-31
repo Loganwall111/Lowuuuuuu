@@ -1,67 +1,39 @@
-MCSM Ultimate Atmosphere — FIXED for Minecraft 1.20.1
-======================================================
+MCSM ULTIMATE ATMOSPHERE - v2 "Story Mode Visuals" - Minecraft 1.20.1
+=============================================================================
 
-This pack was repaired from "MCSM_Ultimate_Atmosphere .zip". Everything below
-explains what was broken and what was changed.
+WHAT THIS PACK DOES
+- Custom day / sunset / night skies that melt into the horizon fog (ForgeSkyboxes /
+  Nuit pathway: all sky configs live in assets/forgeskyboxes/).
+- UNIQUE FOG + SKY TINT PER AREA, Minecraft Story Mode style: plains, forest,
+  cherry grove, jungle, desert, badlands, savanna, swamp, snowy, taiga,
+  mountains, ocean, mushroom fields and caves each get their own horizon fog
+  color that changes between day, sunset and night.
+- Story Mode clouds: a 1.20.1-compatible core shader (position_tex_color_normal)
+  rounds each cloud cell into soft puffs and dissolves their lower parts into
+  the atmosphere. Solid blocks are untouched (rendertype_solid).
+- Story Mode lighting: warm sun / cool shade tinting plus baked AO-like contact
+  shading at the base of blocks (rendertype_solid vertex shader).
+- Colored point lights via the Colorful Lighting mod (torches, lanterns,
+  glowstone, soul fire, lava and more) - assets/mcsm_atmosphere/light/emitters.json.
+- Emissive block textures via OptiFine format (assets/minecraft/optifine):
+  torches, lanterns, glowstone, sea lantern, shroomlight, redstone lamp,
+  end rod, magma block.
 
-REQUIRED MODS (same as before):
-  * FabricSkyBoxes 0.7.x for 1.20.1  (Fabric) — custom day/night/sunset skies
-  * Colorful Lighting (by erykczy, Fabric) — colored light for redstone torches,
-    soul lanterns and glowstone. NOTE: the original mod is NOT compatible with
-    Sodium. If you use Sodium, the skybox part still works, the colored lights
-    will not.
+REQUIRED MODS (Forge 1.20.1 instance)
+- ForgeSkyboxes / Nuit (any loader) - the sky + fog system. Nuit scans
+  assets/*/sky/, so the forgeskyboxes namespace works everywhere.
+- Colorful Lighting (Forge port / Sodium Compat edition) - the colored lights.
+- OptiFine OR Continuity - for the emissive textures only. Without it the
+  emissives are skipped and everything else still works.
 
-WHAT WAS BROKEN AND HOW IT WAS FIXED
-------------------------------------
+TRUE DYNAMIC SHADOWS are not possible in a resource pack - Minecraft draws
+lighting on the CPU. This pack approximates Story Mode's look with warm/cool
+lightmap tinting, directional shading and contact AO. For real shadows add a
+shader pack (Oculus / Iris + BSL or Complementary).
 
-1) rendertype_solid.vsh / .fsh  (the big one — made most of the world render wrong)
-   The shaders were written in the old pre-1.17 GLSL format. In 1.20.1 this
-   program uses the attributes Position, Color, UV0, UV2, Normal plus the
-   lightmap sampler, ChunkOffset and fog uniforms. The old files lacked all of
-   those, which breaks the shader for every solid block (most of the world).
-   -> Rewritten in the exact vanilla 1.20.1 format (lightmap + fog included).
-      The pack's "soft ground shading" tweak was kept, in the vertex shader.
+HOW TO INSTALL
+1. Copy the zip into .minecraft/resourcepacks (or the instance's folder).
+2. Enable the pack in Options > Resource Packs, then press F3+T to reload.
+3. Fly around: every biome family now has its own fog color in the sky.
 
-2) rendertype_clouds.fsh (deleted)
-   1.20.1 no longer has a "rendertype_clouds" shader program (clouds render
-   through "position_tex_color_normal" in 1.20.x; the clouds program only came
-   back in 1.20.5). The file did nothing — and its "fade near y=120" idea can't
-   work anyway, because clouds are a flat plane at one fixed height.
-   -> Removed. Clouds now render with the normal vanilla behavior.
-
-3) Skybox JSONs were in assets/fabricskyboxes/skyboxes/ ...
-   FabricSkyBoxes 0.7.x loads skybox JSONs from assets/<namespace>/sky/.
-   The mod never saw the old files, so no custom sky appeared at all.
-   -> Moved to assets/fabricskyboxes/sky/.
-
-4) Skybox type "square-textured" with a single texture
-   "square-textured" requires 6 separate side textures. For one image per time
-   of day, the correct type is "single-sprite-square-textured", which uses one
-   3:2 image with a fixed 6-face layout (verified against the mod's source).
-   -> Type changed, and the day/night/sunset PNGs were rebuilt as 1536x1024
-      (3:2) canvases using the mod's UV layout: the gradient covers the four
-      sides, the zenith color fills the top face.
-
-5) Skybox blend was "add"
-   Adding the gradients over the vanilla sky washes them out to near-white
-   during the day. -> Blend is now "alpha", which crossfades over the vanilla
-   sky during the fade windows and fully covers it at full alpha.
-   Sun is shown on the day/sunset skies; moon + stars on the night sky.
-
-6) assets/colorful_lighting/lights.json
-   The Colorful Lighting mod reads assets/<namespace>/light/emitters.json with
-   plain color values ("#RRGGBB"). The old file had the wrong name, the wrong
-   folder and an object format the mod can't parse.
-   -> Replaced with assets/mcsm_atmosphere/light/emitters.json. A separate
-      namespace is used on purpose so the mod's built-in color list stays
-      intact and only these entries are overridden:
-        redstone torches -> red (#FF0000)
-        soul lanterns    -> cyan (#00FFFF)
-        glowstone        -> warm yellow (#FFCC44)
-
-INSTALL
--------
-Put the zip in .minecraft/resourcepacks (or use the in-game pack screen), enable
-the pack, then press F3+T to reload resources if you already had a world open.
-
-Timeline (in-game ticks): day 6:00-18:00, sunset 17:15-19:00, night 18:45-5:00.
+Time of day: day 6:00-18:00 | sunset 17:15-19:00 | night 18:45-5:00

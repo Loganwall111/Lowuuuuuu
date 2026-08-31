@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 2,
+  "type": "single-sprite-square-textured",
+  "texture": "forgeskyboxes:textures/sky/savanna_day.png",
+  "blend": {
+    "type": "alpha",
+    "horizonBlend": true
+  },
+  "properties": {
+    "priority": 10,
+    "fade": {
+      "alwaysOn": false,
+      "startFadeIn": 0,
+      "endFadeIn": 2000,
+      "startFadeOut": 11000,
+      "endFadeOut": 13000
+    },
+    "transitionInDuration": 40,
+    "transitionOutDuration": 40,
+    "changeFog": true,
+    "fogColors": {
+      "red": 0.9098039215686274,
+      "green": 0.8470588235294118,
+      "blue": 0.6274509803921569,
+      "alpha": 0.95
+    }
+  },
+  "conditions": {
+    "biomes": [
+      "minecraft:savanna",
+      "minecraft:savanna_plateau",
+      "minecraft:windswept_savanna"
+    ],
+    "dimensions": [
+      "minecraft:overworld"
+    ]
+  },
+  "decorations": {
+    "showSun": true
+  }
+}

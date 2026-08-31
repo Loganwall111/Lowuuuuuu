@@ -54,3 +54,40 @@ Real cloud styling requires a shader pack (e.g. Iris) instead.
 - `emitters.json` matches the mod's own loader (`ConfigResourceManager`) and
   value syntax (`ColorEmitter`), placed under a separate namespace so the
   mod's built-in emitter list is preserved.
+
+## v2 update — "Story Mode Visuals" (per request)
+
+For a Forge 1.20.1 instance using **ForgeSkyboxes / Nuit**, the pack was refactored:
+
+- All skybox assets moved from `assets/fabricskyboxes/` to `assets/forgeskyboxes/`
+  (configs in `assets/forgeskyboxes/sky/`, textures in `assets/forgeskyboxes/textures/sky/`),
+  with internal texture references renamed `forgeskyboxes:...`. Nuit scans
+  `assets/*/sky/` in any namespace, so this works across Fabric/NeoForge/Forge ports.
+- `blend.type` is `"alpha"` everywhere, with `"horizonBlend": true` included as
+  requested (tolerated no-op in Nuit 1.20.x codecs; the horizon melt is done for
+  real via alpha blend + `changeFog` + horizon-tinted textures).
+- **45 skybox configs**: `default_*` fallbacks plus **14 biome families**
+  (plains, forest, cherry grove, jungle, desert, badlands, savanna, swamp, snowy,
+  taiga, mountains, ocean, mushroom fields, caves) × 3 times of day. Each biome
+  family has its own fog color (`changeFog` + `fogColors`) and a horizon-tinted
+  sky texture, gated with `conditions.biomes` / `dimensions: [minecraft:overworld]`,
+  priorities day=10 / sunset=11 / night=12 for deterministic fog crossfades.
+- **Story Mode clouds**: `position_tex_color_normal.{vsh,fsh}` (the cloud program
+  in 1.20.1) rewritten — vanilla-faithful vertex stage; fragment stage rounds
+  each cloud cell into soft puffs, dissolves cell bottoms, and melts clouds into
+  distance fog. `rendertype_solid` is untouched apart from the atmosphere tweaks,
+  so ground blocks are unaffected.
+- **Story Mode shading** (`rendertype_solid.vsh`): warm sun / cool shade tint
+  driven by the lightmap, directional shading, and AO-like contact darkening at
+  block bases. True dynamic shadows are not possible in a resource pack — use a
+  shader pack (Oculus/Iris) on top for those.
+- **Emissive lighting**: OptiFine-format `assets/minecraft/optifine/emissive.properties`
+  + `_e` overlays (torch, soul/redstone torch, lanterns, glowstone, sea lantern,
+  shroomlight, redstone lamp, end rod, magma). Needs OptiFine or Continuity;
+  delete the `optifine` folder if neither is installed.
+- **Colored lighting**: `emitters.json` expanded to 20 entries.
+- New generated **pack icon** (`story_mode_icon_raw.png` → `pack.png`).
+
+Two zips ship at the repo root: `MCSM_Ultimate_Atmosphere_FIXED.zip` and
+`Story_Mode_Visuals.zip` (identical content, different pack name/description).
+Build/regenerate everything with `tools/build_story_mode_pack.py`.

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "type": "single-sprite-square-textured",
+  "texture": "forgeskyboxes:textures/sky/forest_night.png",
+  "blend": {
+    "type": "alpha",
+    "horizonBlend": true
+  },
+  "properties": {
+    "priority": 12,
+    "fade": {
+      "alwaysOn": false,
+      "startFadeIn": 13500,
+      "endFadeIn": 15500,
+      "startFadeOut": 22000,
+      "endFadeOut": 23900
+    },
+    "transitionInDuration": 40,
+    "transitionOutDuration": 40,
+    "changeFog": true,
+    "fogColors": {
+      "red": 0.054901960784313725,
+      "green": 0.10196078431372549,
+      "blue": 0.09411764705882353,
+      "alpha": 0.95
+    }
+  },
+  "conditions": {
+    "biomes": [
+      "minecraft:forest",
+      "minecraft:birch_forest",
+      "minecraft:old_growth_birch_forest",
+      "minecraft:dark_forest",
+      "minecraft:flower_forest"
+    ],
+    "dimensions": [
+      "minecraft:overworld"
+    ]
+  },
+  "decorations": {
+    "showMoon": true,
+    "showStars": true
+  }
+}

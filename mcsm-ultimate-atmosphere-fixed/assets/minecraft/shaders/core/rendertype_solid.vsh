@@ -27,11 +27,25 @@ void main() {
 
     vertexDistance = fog_distance(ModelViewMat, pos, FogShape);
 
-    // MCSM Ultimate Atmosphere: subtle fake directional shading from above,
-    // so flat terrain doesn't look completely unlit.
+    vec3 lightmap = minecraft_sample_lightmap(Sampler2, UV2).rgb;
+    float lum = dot(lightmap, vec3(0.2126, 0.7152, 0.0722));
+
+    // Story Mode style: warm sun, cool shade
+    vec3 tint = mix(vec3(0.90, 0.94, 1.06), vec3(1.10, 1.03, 0.92), clamp(lum * 1.25, 0.0, 1.0));
+
+    // soft directional shading from above (kept from the original pack)
     float groundShadow = max(0.5, dot(normalize(Normal), normalize(vec3(0.3, 1.0, 0.2))));
 
-    vertexColor = Color * minecraft_sample_lightmap(Sampler2, UV2) * vec4(vec3(groundShadow), 1.0);
+    // baked AO-like contact shading at the base of blocks
+    float yFrac = fract(pos.y);
+    float contact = 1.0;
+    if (Normal.y < -0.5) {
+        contact = 0.90;                                        // undersides
+    } else if (abs(Normal.y) < 0.5) {
+        contact = mix(0.93, 1.0, smoothstep(0.0, 0.22, yFrac)); // wall bases
+    }
+
+    vertexColor = vec4(Color.rgb * lightmap * tint * (groundShadow * contact), Color.a);
     texCoord0 = UV0;
     normal = ProjMat * ModelViewMat * vec4(Normal, 0.0);
 }

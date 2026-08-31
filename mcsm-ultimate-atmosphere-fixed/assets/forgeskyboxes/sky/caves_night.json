@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 2,
+  "type": "single-sprite-square-textured",
+  "texture": "forgeskyboxes:textures/sky/caves_night.png",
+  "blend": {
+    "type": "alpha",
+    "horizonBlend": true
+  },
+  "properties": {
+    "priority": 12,
+    "fade": {
+      "alwaysOn": false,
+      "startFadeIn": 13500,
+      "endFadeIn": 15500,
+      "startFadeOut": 22000,
+      "endFadeOut": 23900
+    },
+    "transitionInDuration": 40,
+    "transitionOutDuration": 40,
+    "changeFog": true,
+    "fogColors": {
+      "red": 0.0392156862745098,
+      "green": 0.0392156862745098,
+      "blue": 0.07058823529411765,
+      "alpha": 0.95
+    }
+  },
+  "conditions": {
+    "biomes": [
+      "minecraft:dripstone_caves",
+      "minecraft:lush_caves"
+    ],
+    "dimensions": [
+      "minecraft:overworld"
+    ]
+  },
+  "decorations": {
+    "showMoon": true,
+    "showStars": true
+  }
+}

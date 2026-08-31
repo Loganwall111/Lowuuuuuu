@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 2,
+  "type": "single-sprite-square-textured",
+  "texture": "forgeskyboxes:textures/sky/snowy_sunset.png",
+  "blend": {
+    "type": "alpha",
+    "horizonBlend": true
+  },
+  "properties": {
+    "priority": 11,
+    "fade": {
+      "alwaysOn": false,
+      "startFadeIn": 11500,
+      "endFadeIn": 13200,
+      "startFadeOut": 13800,
+      "endFadeOut": 15000
+    },
+    "transitionInDuration": 40,
+    "transitionOutDuration": 40,
+    "changeFog": true,
+    "fogColors": {
+      "red": 0.9411764705882353,
+      "green": 0.7529411764705882,
+      "blue": 0.7215686274509804,
+      "alpha": 0.95
+    }
+  },
+  "conditions": {
+    "biomes": [
+      "minecraft:snowy_plains",
+      "minecraft:ice_spikes",
+      "minecraft:snowy_taiga",
+      "minecraft:snowy_beach",
+      "minecraft:frozen_river",
+      "minecraft:frozen_ocean",
+      "minecraft:deep_frozen_ocean",
+      "minecraft:grove",
+      "minecraft:snowy_slopes",
+      "minecraft:frozen_peaks"
+    ],
+    "dimensions": [
+      "minecraft:overworld"
+    ]
+  },
+  "decorations": {
+    "showSun": true
+  }
+}
