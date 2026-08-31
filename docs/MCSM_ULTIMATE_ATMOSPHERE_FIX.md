@@ -91,3 +91,42 @@ For a Forge 1.20.1 instance using **ForgeSkyboxes / Nuit**, the pack was refacto
 Two zips ship at the repo root: `MCSM_Ultimate_Atmosphere_FIXED.zip` and
 `Story_Mode_Visuals.zip` (identical content, different pack name/description).
 Build/regenerate everything with `tools/build_story_mode_pack.py`.
+
+## v3 — standalone SHADER PACK ("Story Mode Visuals")
+
+The pack now also ships as a complete Iris/Oculus shader pack for 1.20.1
+(`story-mode-visuals-shader/`, built by `tools/build_story_mode_shader.py`):
+
+- **Pipeline** (old OptiFine-style, Iris-compatible): gbuffers_terrain (+cutout,
+  mipped), entities, block, textured/textured_lit, water, clouds, skybasic,
+  skytextured, composite, final, shadow.
+- **Seamless procedural sky dome** in gbuffers_skybasic.fsh — ray-based gradient
+  dome with horizon melt into biome fog, Story Mode sunset band (slider),
+  procedural moon with craters/halo, twinkling stars, sun/moon god rays.
+  gbuffers_skytextured discards vanilla skybox textures, permanently killing the
+  "giant cube" artifact.
+- **Per-biome fog**: 14 hardcoded profiles in lib.glsl (swamp = dense mossy
+  mist, desert = golden heat-glare, snowy/taiga/mountains = lavender fade,
+  forests/plains = clean cyan, cherry, jungle, badlands, savanna, ocean,
+  mushroom, caves), crossfaded continuously via noise cells so borders melt.
+- **Story Mode clouds**: procedural blocky noise cells, vertical alpha dissolve,
+  celestial color clock (white noon / pink-lavender sunset / royal indigo
+  midnight), wind-speed slider.
+- **Shadows**: hard blocky directional shadows (shadow pass + no PCF),
+  moving cloud footprint shadows (getCloudShadow), SSAO contact occlusion.
+- **Telltale post**: Sobel depth+normal ink outlines, Season-1 LUT grade,
+  vignette (night/underground boost), letterbox toggle, film grain, bloom.
+- **Fluids**: flat saturated opaque water/lava with blocky glitter.
+- **Settings UI**: art-style presets (Story Mode / Vibrant / Moody), sliders,
+  and 10 toggle options via shader.properties + lang/en_US.lang.
+- The resource-pack module (ForgeSkyboxes configs, emissives, Colorful Lighting
+  emitters) is merged into the shader zip's `assets/` so the atmosphere remains
+  even with the shader disabled.
+
+Archive names at repo root: `StoryMode_Visuals.zip` and
+`Story_Mode_Visuals_Shader.zip` (identical). The exact cloud GLSL reference
+listing lives at `story-mode-visuals-shader/assets/minecraft/shaders/core/rendertype_clouds.vsh`.
+
+NOTE: crafting-table interactions and block-step particles (Jesse-style
+crafting UI) are mod territory, not shader territory — the pack's hand/block
+passes style those surfaces, but implementing them needs a client mod.

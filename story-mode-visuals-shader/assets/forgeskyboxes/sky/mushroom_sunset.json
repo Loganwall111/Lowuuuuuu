@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "type": "single-sprite-square-textured",
+  "texture": "forgeskyboxes:textures/sky/mushroom_sunset.png",
+  "blend": {
+    "type": "alpha",
+    "horizonBlend": true
+  },
+  "properties": {
+    "priority": 11,
+    "fade": {
+      "alwaysOn": false,
+      "startFadeIn": 11500,
+      "endFadeIn": 13200,
+      "startFadeOut": 13800,
+      "endFadeOut": 15000
+    },
+    "transitionInDuration": 40,
+    "transitionOutDuration": 40,
+    "changeFog": true,
+    "fogColors": {
+      "red": 0.8470588235294118,
+      "green": 0.6274509803921569,
+      "blue": 0.7843137254901961,
+      "alpha": 0.95
+    }
+  },
+  "conditions": {
+    "biomes": [
+      "minecraft:mushroom_fields"
+    ],
+    "dimensions": [
+      "minecraft:overworld"
+    ]
+  },
+  "decorations": {
+    "showSun": true
+  }
+}

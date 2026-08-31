@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 2,
+  "type": "single-sprite-square-textured",
+  "texture": "forgeskyboxes:textures/sky/mushroom_night.png",
+  "blend": {
+    "type": "alpha",
+    "horizonBlend": true
+  },
+  "properties": {
+    "priority": 12,
+    "fade": {
+      "alwaysOn": false,
+      "startFadeIn": 13500,
+      "endFadeIn": 15500,
+      "startFadeOut": 22000,
+      "endFadeOut": 23900
+    },
+    "transitionInDuration": 40,
+    "transitionOutDuration": 40,
+    "changeFog": true,
+    "fogColors": {
+      "red": 0.09411764705882353,
+      "green": 0.06274509803921569,
+      "blue": 0.1568627450980392,
+      "alpha": 0.95
+    }
+  },
+  "conditions": {
+    "biomes": [
+      "minecraft:mushroom_fields"
+    ],
+    "dimensions": [
+      "minecraft:overworld"
+    ]
+  },
+  "decorations": {
+    "showMoon": true,
+    "showStars": true
+  }
+}

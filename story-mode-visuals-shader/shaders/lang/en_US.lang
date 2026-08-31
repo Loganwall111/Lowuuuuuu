@@ -1,0 +1,53 @@
+screen.MAIN=Story Mode Visuals
+screen.MAIN.comment=Telltale "Minecraft: Story Mode" style renderer
+
+group.GRADE=Story Mode Presets
+group.GRADE.comment=Overall look & feel
+
+option.STYLE=Art style
+option.STYLE.comment=Story Mode = Season-1 LUT. Vibrant = extra saturation. Moody = desaturated cinematic.
+value.STYLE.story=Story Mode
+value.STYLE.vibrant=Vibrant
+value.STYLE.moody=Moody
+
+group.SUN=Atmosphere
+group.SUN.comment=Sun, clouds and sky
+
+option.SUNSET=Sunset intensity
+option.SUNSET.comment=How dramatic the Story Mode sunset band glows.
+
+option.CLOUD_SPEED=Cloud speed
+option.CLOUD_SPEED.comment=Wind speed of the procedural clouds and their terrain shadows.
+
+group.POST=Post processing
+group.POST.comment=Comic outlines, cinematic framing and lighting
+
+option.OUTLINE=Telltale ink outlines
+option.OUTLINE.comment=Sobel depth+normal edge detection tracing black comic lines around blocks and entities.
+
+option.VIGNETTE=Story vignette
+option.VIGNETTE.comment=Corner darkening that deepens at night and underground.
+
+option.LETTERBOX=Cinematic letterbox
+option.LETTERBOX.comment=Black bars at the top and bottom for an interactive-movie look.
+
+option.SSAO=Contact occlusion
+option.SSAO.comment=Screen-space contact shading where blocks meet the ground.
+
+option.GODRAYS=God rays
+option.GODRAYS.comment=Sun and moon light shafts beaming through the sky.
+
+option.BLOOM=Bloom
+option.BLOOM.comment=Soft glow around bright highlights.
+
+option.CEL_BANDS=Cel lighting bands
+option.CEL_BANDS.comment=Hard posterized light steps on terrain (the comic-book look).
+
+option.CLOUD_SHADOWS=Cloud shadows
+option.CLOUD_SHADOWS.comment=Moving cloud footprints sweeping across the landscape.
+
+option.TERRAIN_AO=Terrain contact AO
+option.TERRAIN_AO.comment=Dark contact lines where blocks meet the ground.
+
+option.TORCH_TINT=Saturated torch light
+option.TORCH_TINT.comment=Color-blended emissive light from torches and lanterns.

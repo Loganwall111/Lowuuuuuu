@@ -1,0 +1,22 @@
+{
+  "minecraft:torch": "#FFC866",
+  "minecraft:wall_torch": "#FFC866",
+  "minecraft:redstone_torch": "#FF3333",
+  "minecraft:redstone_wall_torch": "#FF3333",
+  "minecraft:soul_torch": "#63F8FF",
+  "minecraft:soul_wall_torch": "#63F8FF",
+  "minecraft:lantern": "#FFD27F",
+  "minecraft:soul_lantern": "#63F8FF",
+  "minecraft:glowstone": "#FFD166",
+  "minecraft:redstone_lamp": "#FFEECC",
+  "minecraft:sea_lantern": "#BFEFFF",
+  "minecraft:shroomlight": "#FFB366",
+  "minecraft:jack_o_lantern": "#FFA940",
+  "minecraft:end_rod": "#E8F6FF",
+  "minecraft:magma_block": "#FF6633",
+  "minecraft:campfire": "#FFAC4D",
+  "minecraft:soul_campfire": "#63F8FF",
+  "minecraft:lava": "#FF7A1A",
+  "minecraft:fire": "#FFA050",
+  "minecraft:brewing_stand": "#FFE680"
+}

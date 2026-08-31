@@ -74,19 +74,22 @@ TIME = {
     'night':  {'in': (13500, 15500), 'out': (22000, 23900), 'pri': 12, 'decor': {'showMoon': True, 'showStars': True}},
 }
 
+# (day, sunset, night) fog colors per biome family.
+# Swamps = dense mossy mist, Deserts/Badlands = golden heat-glare,
+# Mountains/Snowy/Taiga = crisp lavender fade.
 GROUPS = {
     'plains':   ('#BBD9F0', '#F0B878', '#101828', ['plains', 'sunflower_plains', 'meadow']),
     'forest':   ('#A8D4C8', '#D8A878', '#0E1A18', ['forest', 'birch_forest', 'old_growth_birch_forest', 'dark_forest', 'flower_forest']),
     'cherry':   ('#F2C8D8', '#F0A8A0', '#1C1020', ['cherry_grove']),
     'jungle':   ('#9CD8B0', '#C8A060', '#0C1C14', ['jungle', 'sparse_jungle', 'bamboo_jungle']),
-    'desert':   ('#F0DCA0', '#F0A048', '#1C1420', ['desert']),
-    'badlands': ('#F0C898', '#E86838', '#1A0E10', ['badlands', 'eroded_badlands', 'wooded_badlands']),
+    'desert':   ('#F0DC9C', '#F09030', '#180E18', ['desert']),
+    'badlands': ('#F0C898', '#E86830', '#1A0E10', ['badlands', 'eroded_badlands', 'wooded_badlands']),
     'savanna':  ('#E8D8A0', '#F0A040', '#141020', ['savanna', 'savanna_plateau', 'windswept_savanna']),
-    'swamp':    ('#98C0A8', '#B09868', '#0C1414', ['swamp', 'mangrove_swamp']),
-    'snowy':    ('#D8E8F8', '#F0C0B8', '#101C30', ['snowy_plains', 'ice_spikes', 'snowy_taiga', 'snowy_beach', 'frozen_river',
+    'swamp':    ('#7FA878', '#A89060', '#081410', ['swamp', 'mangrove_swamp']),
+    'snowy':    ('#DCE8F8', '#E8C8D8', '#0E1830', ['snowy_plains', 'ice_spikes', 'snowy_taiga', 'snowy_beach', 'frozen_river',
                                                     'frozen_ocean', 'deep_frozen_ocean', 'grove', 'snowy_slopes', 'frozen_peaks']),
-    'taiga':    ('#B0D8E8', '#D8B088', '#0E1824', ['taiga', 'old_growth_pine_taiga', 'old_growth_spruce_taiga']),
-    'mountains':('#A8C8E8', '#D8A090', '#101828', ['jagged_peaks', 'stony_peaks', 'windswept_hills', 'windswept_gravelly_hills',
+    'taiga':    ('#B0D8E8', '#C0A8C8', '#0E1824', ['taiga', 'old_growth_pine_taiga', 'old_growth_spruce_taiga']),
+    'mountains':('#A8C0E8', '#C8A8D8', '#141028', ['jagged_peaks', 'stony_peaks', 'windswept_hills', 'windswept_gravelly_hills',
                                                     'windswept_forest', 'stony_shore']),
     'ocean':    ('#90C8E8', '#E8A868', '#081828', ['ocean', 'deep_ocean', 'cold_ocean', 'deep_cold_ocean', 'lukewarm_ocean',
                                                     'deep_lukewarm_ocean', 'warm_ocean', 'river', 'beach']),
@@ -383,3 +386,24 @@ HOW TO INSTALL
 Time of day: day 6:00-18:00 | sunset 17:15-19:00 | night 18:45-5:00
 ''')
 print('notes written')
+
+# ---------------------------------------------------------- ship the zips
+import zipfile as _z
+for zname, desc in [('MCSM_Ultimate_Atmosphere_FIXED.zip',
+                     'All-in-One MCSM Ultimate Atmosphere Pack for 1.20.1'),
+                    ('Story_Mode_Visuals.zip',
+                     'Story Mode Visuals - MCSM (Telltale) atmosphere: biome fog, soft clouds, emissive & colored lighting')]:
+    zp = f'{REPO}/{zname}'
+    if os.path.exists(zp):
+        os.remove(zp)
+    with _z.ZipFile(zp, 'w', _z.ZIP_DEFLATED) as z:
+        for root, dirs, files in os.walk(OUT):
+            for f in sorted(files):
+                p = os.path.join(root, f)
+                if f == 'pack.mcmeta':
+                    z.writestr(os.path.relpath(p, OUT),
+                               json.dumps({'pack': {'pack_format': 15, 'description': desc}}, indent=2) + '\n')
+                else:
+                    z.write(p, os.path.relpath(p, OUT))
+    print('wrote', zp)
+
