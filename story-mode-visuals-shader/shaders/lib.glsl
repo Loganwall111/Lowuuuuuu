@@ -74,8 +74,7 @@ vec3 sdrTonemap(vec3 c) {
 
 // ------------------------------------------------ Story Mode LUT (Season 1)
 // High saturation, warm highlights, teal-purple shadow split.
-vec3 grade(vec3 c) {
-    float sat = 1.18;
+vec3 grade(vec3 c, float sat) {
     float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
     vec3 graded = mix(vec3(luma), c, sat);
     graded *= vec3(1.02, 1.00, 0.97);
@@ -104,8 +103,8 @@ float starLayer(vec3 dir, float density, float twinkle) {
 }
 
 // --------------------------------------------------- procedural moon disk
-vec3 moonGlow(vec3 dir, vec3 moonDir, float moonPhase) {
-    float disk = smoothstep(0.9955, 0.9975, dot(dir, moonDir));
+vec3 moonGlow(vec3 dir, vec3 moonDir, float moonPhase, float size) {
+    float disk = smoothstep(1.0 - size * 0.004, 1.0 - size * 0.001, dot(dir, moonDir));
     vec2 lp = dir.xy * 24.0;
     float crater = vnoise(vec3(lp * 1.7, 3.0)) * 0.12 + vnoise(vec3(lp * 5.0, 9.0)) * 0.05;
     float terminator = mix(1.0 - moonPhase, moonPhase, step(0.0, dir.x));
@@ -145,6 +144,18 @@ void biomeWeights(vec3 pos, out float w[8], out ivec4 id[8]) {
         id[k] = ivec4(int(hash13(floor(c) + o) * 14.0), 0, 0, 0);
     }
 }
+// Continuous biome match: how much of the 8 nearest cells belong to one
+// profile (used for aurora placement and desert heat shimmer).
+float biomeMatch(vec3 pos, float target) {
+    float w[8]; ivec4 id[8];
+    biomeWeights(pos, w, id);
+    float s = 0.0;
+    for (int k = 0; k < 8; k++) {
+        if (abs(float(id[k].x) - target) < 0.5) s += w[k];
+    }
+    return s;
+}
+
 vec4 sampledFog(vec3 pos) {
     float w[8]; ivec4 id[8];
     biomeWeights(pos, w, id);

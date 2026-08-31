@@ -34,10 +34,9 @@ def glsl_check(path):
         elif ch == '}': depth -= 1
         if depth < 0: errs.append('unbalanced }'); break
     if depth != 0: errs.append(f'unbalanced braces ({depth})')
-    if s.count('#ifdef') != s.count('#endif') and '#include' not in s[:400]:
-        # only check shaders that actually use ifdefs
-        if '#ifdef' in s and s.count('#ifdef') != s.count('#endif'):
-            errs.append('ifdef/endif mismatch')
+    opens = s.count('#ifdef') + s.count('#ifndef')
+    if opens != s.count('#endif'):
+        errs.append('ifdef/endif mismatch')
     for inc in ('/lib.glsl', '/worldpos.glsl'):
         if inc in s:
             target = f'{SHADER}/shaders{inc}'
@@ -62,7 +61,22 @@ def main():
     # properties sanity
     props = open(f'{shaders}/shader.properties').read()
     assert 'screen=composite' in props and 'shaders=' in props, 'properties broken'
-    print('GLSL + properties validation OK')
+    # every SETTINGS/DEFINE entry must have a menu entry in the lang file
+    lang = open(f'{shaders}/lang/en_US.lang', encoding='utf-8').read()
+    import re
+    settings = re.findall(r'^(?:SETTINGS|DEFINE)\.([A-Z0-9_]+)', props, re.M)
+    opts = set(re.findall(r'^option\.([A-Z0-9_]+)=', lang, re.M))
+    missing = [k for k in settings if k != 'PRESET' and k not in opts]
+    dead = sorted(opts - set(settings))
+    if missing:
+        raise SystemExit(f'lang missing entries for: {missing}')
+    if dead:
+        print(f'note: lang entries without SETTINGS/DEFINE (presets ok): {dead}')
+    n_toggles = len(re.findall(r'^DEFINE\.', props, re.M))
+    n_sliders = len(re.findall(r'^SETTINGS\.[A-Z0-9_]+=', props, re.M))
+    n_presets = len(re.findall(r'^SETTINGS\.PRESET\.', props, re.M))
+    print(f'menu: {n_toggles} toggles, {n_sliders} sliders, {n_presets} preset values')
+    print('GLSL + properties + lang validation OK')
 
     # 4) zip
     for name in ('StoryMode_Visuals.zip', 'Story_Mode_Visuals_Shader.zip'):

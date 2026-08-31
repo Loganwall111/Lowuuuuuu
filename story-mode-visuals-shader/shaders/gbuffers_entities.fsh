@@ -16,6 +16,12 @@ uniform vec3 moonPosition;
 uniform float frameTimeCounter;
 uniform float sunAngle;
 
+uniform mat4  shadowProjection;
+uniform mat4  shadowModelView;
+uniform sampler2D shadowtex0;
+
+uniform float ENT_AO; //settings entAO
+
 void main() {
     vec3 nrm = normalize(normal);
     vec3 pos = worldPos + cameraPosition;
@@ -30,8 +36,13 @@ void main() {
     light *= mix(vec3(0.30, 0.35, 0.55), vec3(1.08, 0.97, 0.84), ceil(ndl * 3.0) / 3.0);
 
     float sh = getShadow(pos, nrm);
-    light *= mix(sh, 1.0, 0.15);                          // soft-ish for entities
+#ifdef ENTITY_SOFT_SHADOW
+    light *= mix(sh, 1.0, 0.15);
+#else
+    light *= sh;
+#endif
     light *= 1.0 - getCloudShadow(pos) * 0.25;
+    light *= mix(getContactAO(worldPos, nrm), 1.0, 1.0 - ENT_AO);
     light += vec3(1.0, 0.82, 0.62) * torch;               // torch glow
 
     vec4 albedo = texture2D(texture, texcoord.xy) * glcolor;

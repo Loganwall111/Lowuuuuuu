@@ -88,7 +88,7 @@ void main() {
     else if (direction == 0) brightness = BrightnessBottom;
     else if (direction == 2) brightness = BrightnessNorth;
     else if (direction == 3) brightness = BrightnessSouth;
-    else if (direction == 4) brightness = BrightnessWest;   // fixed: was BetterThirdPerson
+    else if (direction == 4) brightness = BrightnessWest;
     else if (direction == 5) brightness = BrightnessEast;
 
     vec3 rgb = vec3(brightness);

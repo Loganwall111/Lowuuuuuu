@@ -1,37 +1,124 @@
 screen.MAIN=Story Mode Visuals
 screen.MAIN.comment=Telltale "Minecraft: Story Mode" style renderer
 
-group.GRADE=Story Mode Presets
-group.GRADE.comment=Overall look & feel
+group.GRADE=Art Style
+group.GRADE.comment=Presets and the Season-1 color grade
 
-option.STYLE=Art style
-option.STYLE.comment=Story Mode = Season-1 LUT. Vibrant = extra saturation. Moody = desaturated cinematic.
+option.STYLE=Art style preset
+option.STYLE.comment=Story Mode = warm Season-1 LUT. Vibrant = extra pop. Moody = desaturated cinematic wash.
 value.STYLE.story=Story Mode
 value.STYLE.vibrant=Vibrant
 value.STYLE.moody=Moody
 
-group.SUN=Atmosphere
-group.SUN.comment=Sun, clouds and sky
+option.SATURATION=Color saturation
+option.SATURATION.comment=Master saturation of the cinematic grade (1.0 = Season-1 default).
+
+group.SUN=Sky & Atmosphere
+group.SUN.comment=Sun, sky dome, moon, stars, auroras
+
+option.SKY_PRESET=Sky preset
+option.SKY_PRESET.comment=Classic = balanced MCSM sky. Bright = saturated cyan day. Cinematic = deeper blue with intense red sunset.
+value.SKY_PRESET.classic=Classic
+value.SKY_PRESET.bright=Bright
+value.SKY_PRESET.cinematic=Cinematic
 
 option.SUNSET=Sunset intensity
 option.SUNSET.comment=How dramatic the Story Mode sunset band glows.
 
-option.CLOUD_SPEED=Cloud speed
-option.CLOUD_SPEED.comment=Wind speed of the procedural clouds and their terrain shadows.
+option.SKY_FOG_MIX=Sky / fog blend
+option.SKY_FOG_MIX.comment=How much the sky dome adopts the local biome fog color.
 
-group.POST=Post processing
-group.POST.comment=Comic outlines, cinematic framing and lighting
+option.MOON_SIZE=Moon size
+option.MOON_SIZE.comment=Size of the procedural cratered moon disk.
+
+option.MOONSHINE=Moonshine intensity
+option.MOONSHINE.comment=Moon brightness, halo, moonlight wash and moonlight god rays.
+
+option.AURORA=Aurora borealis
+option.AURORA.comment=Green-purple ribbons at night in snowy and taiga biomes.
+
+group.CLOUDS=Clouds
+group.CLOUDS.comment=Procedural Story Mode cloud layer
+
+option.CLOUD_SPEED=Cloud speed
+option.CLOUD_SPEED.comment=Wind speed of the clouds and their moving terrain shadows.
+
+option.CLOUD_COVER=Cloud cover
+option.CLOUD_COVER.comment=How much of the sky is covered by clouds.
+
+option.CLOUD_DENSITY=Cloud density
+option.CLOUD_DENSITY.comment=Chunkiness of the cloud cells.
+
+option.CLOUD_COLORIZE=Cloud color richness
+option.CLOUD_COLORIZE.comment=How strongly clouds tint with the time-of-day palette and biome fog.
+
+option.RAIN_STR=Overcast strength
+option.RAIN_STR.comment=Extra darkening and coverage added when it rains.
+
+group.FOG=Biome Fog
+group.FOG.comment=14 hardcoded biome fog profiles
+
+option.FOG_STR=Biome fog strength
+option.FOG_STR.comment=Master strength of the per-biome fog (swamp mist, desert glare, lavender peaks...).
+
+group.WORLD=Terrain & Shadows
+group.WORLD.comment=Lighting, shadows and contact shading
+
+option.SHADOW=Dynamic shadows
+option.SHADOW.comment=Hard, flat, blocky sun/moon shadows that move with the celestial clock.
+
+option.SHADOW_SOFT=Soften block shadows
+option.SHADOW_SOFT.comment=Softens the block shadow edges (off = pure retro-cinematic hard shadows).
+
+option.CLOUD_SHADOWS=Cloud shadow footprints
+option.CLOUD_SHADOWS.comment=Moving soft cloud shadows that sweep across the ground.
+
+option.CEL_BANDS=Cel lighting bands
+option.CEL_BANDS.comment=Hard posterized light steps on terrain (the comic-book look).
+
+option.FLAT_LIGHTING=Flat Story Mode lighting
+option.FLAT_LIGHTING.comment=Ignores face orientation - pure lightmap look like Telltale's matte painted scenes.
+
+option.TERRAIN_AO=Terrain contact AO
+option.TERRAIN_AO.comment=Dark contact lines where blocks meet the ground.
+
+option.TERRAIN_AO_STR=Terrain AO strength
+option.TERRAIN_AO_STR.comment=How deep the block-base contact shading goes.
+
+option.ENTITY_SOFT_SHADOW=Soft shadows on entities
+option.ENTITY_SOFT_SHADOW.comment=Soften shadow edges on mobs and players.
+
+option.ENT_AO=Entity contact AO
+option.ENT_AO.comment=Contact shading on entities and block entities (chests, crafting tables...).
+
+option.TORCH_TINT=Saturated torch light
+option.TORCH_TINT.comment=Color-blended emissive light from torches and lanterns.
+
+option.TORCH_SAT=Torch color saturation
+option.TORCH_SAT.comment=Richness of the amber/soul-cyan emissive light.
+
+option.HEAT_SHIMMER=Desert heat shimmer
+option.HEAT_SHIMMER.comment=Golden heat-haze distortion in desert and badlands biomes.
+
+group.WATER=Water & Lava
+group.WATER.comment=Stylized Story Mode fluids
+
+option.WATER_FOAM=Shore foam
+option.WATER_FOAM.comment=Biome-tinted stylized foam where water meets the shore.
+
+group.ITEMS=Hand & Held Items
+group.ITEMS.comment=First-person hand and items
+
+option.HAND_LIGHT=Hand light boost
+option.HAND_LIGHT.comment=Extra warm torch light on the hand and held items.
+
+group.POST=Post Processing
+group.POST.comment=Outlines, occlusion, framing and light
 
 option.OUTLINE=Telltale ink outlines
 option.OUTLINE.comment=Sobel depth+normal edge detection tracing black comic lines around blocks and entities.
 
-option.VIGNETTE=Story vignette
-option.VIGNETTE.comment=Corner darkening that deepens at night and underground.
-
-option.LETTERBOX=Cinematic letterbox
-option.LETTERBOX.comment=Black bars at the top and bottom for an interactive-movie look.
-
-option.SSAO=Contact occlusion
+option.SSAO=Screen-space occlusion
 option.SSAO.comment=Screen-space contact shading where blocks meet the ground.
 
 option.GODRAYS=God rays
@@ -40,14 +127,14 @@ option.GODRAYS.comment=Sun and moon light shafts beaming through the sky.
 option.BLOOM=Bloom
 option.BLOOM.comment=Soft glow around bright highlights.
 
-option.CEL_BANDS=Cel lighting bands
-option.CEL_BANDS.comment=Hard posterized light steps on terrain (the comic-book look).
+option.FILM_GRAIN=Film grain
+option.FILM_GRAIN.comment=Subtle animated movie grain (stronger on the Moody preset).
 
-option.CLOUD_SHADOWS=Cloud shadows
-option.CLOUD_SHADOWS.comment=Moving cloud footprints sweeping across the landscape.
+option.VIGNETTE=Story vignette
+option.VIGNETTE.comment=Corner darkening that deepens at night and underground.
 
-option.TERRAIN_AO=Terrain contact AO
-option.TERRAIN_AO.comment=Dark contact lines where blocks meet the ground.
+option.VIGNETTE_STR=Vignette strength
+option.VIGNETTE_STR.comment=How strong the corner darkening is.
 
-option.TORCH_TINT=Saturated torch light
-option.TORCH_TINT.comment=Color-blended emissive light from torches and lanterns.
+option.LETTERBOX=Cinematic letterbox
+option.LETTERBOX.comment=Black bars at the top and bottom for an interactive-movie look.

@@ -44,3 +44,36 @@ Lighting emitters) - it stays active when the shader is switched off, so
 the world never loses its Story Mode atmosphere.
 
 Built by tools/build_story_mode_shader.py - full source of truth.
+
+--- v4 CHANGELOG ---
+- FIXED the cloud vertex shader compile error: the reference listing used an
+  undeclared "BetterThirdPerson" identifier on the west face; it is now
+  "BrightnessWest" (assets/minecraft/shaders/core/rendertype_clouds.vsh).
+- FIXED a hidden gbuffers compile issue: contact AO no longer samples the
+  depth buffer inside gbuffers passes (not readable there) and the shadow
+  uniforms (shadowProjection / shadowModelView / shadowtex0) are now declared
+  in every pass that looks up the shadow map.
+- HUGE EXPANDED CONFIG MENU (36 options across 8 groups):
+    Art Style preset (Story Mode / Vibrant / Moody) + master saturation
+    Sky preset (Classic / Bright / Cinematic), sunset intensity, sky-fog
+      blend, moon size, moonshine intensity, aurora toggle
+    Clouds: speed, cover, density, color richness, overcast strength
+    Biome fog strength (14 profiles)
+    Terrain & shadows: dynamic shadows on/off, soft shadows, flat Story Mode
+      lighting, cel bands, cloud shadow footprints, terrain AO + strength,
+      entity soft shadows, entity AO, torch tint + saturation, desert heat
+      shimmer
+    Water: shore foam toggle
+    Hand: held-item light boost
+    Post: ink outlines, SSAO, god rays, bloom, film grain, vignette + strength,
+      cinematic letterbox
+- New features wired to the menu:
+    * Flat Story Mode lighting mode (pure lightmap, no directional shading)
+    * Soft shadow option (9-tap PCF) vs. hard blocky shadows
+    * Aurora borealis ribbons in snowy/taiga biomes at night
+    * Milky way band that rotates with the celestial clock
+    * Desert/badlands heat shimmer (golden UV distortion)
+    * Stylized biome-tinted shore foam on water
+    * Cloud cover / density / color-richness controls
+    * Entity contact AO + hand light boost
+    * Vignette strength + moody film grain boost

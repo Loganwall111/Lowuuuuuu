@@ -20,10 +20,8 @@ uniform float nightVision;
 uniform float blindness;
 
 uniform int STYLE; //settings preset
-
-#define OUTLINE
-#define VIGNETTE
-//#define LETTERBOX
+uniform float SATURATION; //settings saturation
+uniform float VIGNETTE_STR; //settings vignette
 
 void main() {
     vec2 uv = texcoord;
@@ -65,15 +63,15 @@ void main() {
 #endif
 
     // ==================== SEASON-1 LUT GRADE ================================
-    color = grade(color);
+    color = grade(color, SATURATION);
 
-    // style presets: 0 Story Mode | 1 Vibrant | 2 Moody
+    // style presets: 0 Story Mode | 1 Vibrant | 2 Moody (Desaturated)
     float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if (STYLE == 1) {
-        color = mix(vec3(luma), color, 1.3);                 // extra pop
+        color = mix(vec3(luma), color, 1.30);                // extra pop
     } else if (STYLE == 2) {
-        color = mix(vec3(luma), color, 0.82);                // moody wash
-        color = mix(vec3(0.5), color, 1.12);                 // lifted contrast
+        color = mix(vec3(luma), color, 0.55);                // moody wash
+        color = mix(vec3(0.5), color, 1.16);                 // lifted contrast
     }
 
     // ==================== VIGNETTE ==========================================
@@ -84,7 +82,7 @@ void main() {
     float nightW = smoothstep(0.55, 0.35, sunAngle);
     vec4 caveFog = sampledFog(cameraPosition);
     float underground = smoothstep(0.5, 0.9, caveFog.a);
-    float vigStr = mix(0.30, 0.62, max(nightW, underground));
+    float vigStr = mix(0.30, 0.62, max(nightW, underground)) * VIGNETTE_STR;
     color *= mix(1.0, mix(1.0, 0.55, vig), vigStr);
 #endif
 
@@ -94,9 +92,12 @@ void main() {
     color *= 1.0 - bar;
 #endif
 
-    // ==================== FILM GRAIN ========================================
+    // ==================== FILM GRAIN (strength scales with style) ===========
     float grain = hash12(uv * vec2(viewWidth, viewHeight) + frameTimeCounter * 1.7);
-    color += (grain - 0.5) * 0.028;
+#ifdef FILM_GRAIN
+    float grainStr = 0.028 * (STYLE == 2 ? 1.8 : 1.0);
+    color += (grain - 0.5) * grainStr;
+#endif
 
     // night vision / blindness compat
     color = mix(color, color * 0.03, blindness);

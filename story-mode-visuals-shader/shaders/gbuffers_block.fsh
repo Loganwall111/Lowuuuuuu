@@ -12,12 +12,15 @@ uniform sampler2D texture;
 uniform vec3 cameraPosition;
 uniform float frameTimeCounter;
 
+uniform float ENT_AO; //settings entAO
+
 void main() {
     vec2 luv = lmcoord.xy;
     vec3 band = vec3(ceil(luv.x * 3.0) / 3.0);
     vec3 torch = vec3(1.0, 0.82, 0.62) * (1.0 - luv.y);
     vec4 albedo = texture2D(texture, texcoord.xy) * glcolor;
     vec3 color = albedo.rgb * (band * band + torch);
+    color *= mix(getContactAO(worldPos, normalize(normal)), 1.0, 1.0 - ENT_AO);
 
     vec4 fog = sampledFog(worldPos + cameraPosition);
     float dist = length(worldPos);

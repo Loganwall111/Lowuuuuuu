@@ -130,3 +130,21 @@ listing lives at `story-mode-visuals-shader/assets/minecraft/shaders/core/render
 NOTE: crafting-table interactions and block-step particles (Jesse-style
 crafting UI) are mod territory, not shader territory — the pack's hand/block
 passes style those surfaces, but implementing them needs a client mod.
+
+## v4 — expanded feature set + huge config menu
+
+- FIXED the cloud vertex shader compile crash: the reference listing's
+  undeclared `BetterThirdPerson` identifier (west face) is now `BrightnessWest`.
+- FIXED a hidden gbuffers compile issue: contact AO no longer reads the depth
+  buffer inside gbuffers passes (not readable there — now pure geometry), and
+  shadow uniforms (shadowProjection/shadowModelView/shadowtex0) are declared
+  in every pass that queries the shadow map.
+- NEW FEATURES: flat Story Mode lighting mode, optional soft shadows (9-tap),
+  aurora borealis in snowy/taiga biomes, milky way band, desert/badlands heat
+  shimmer, stylized shore foam, cloud cover/density/color-richness controls,
+  entity contact AO, hand light boost, vignette strength, moody film grain,
+  sky presets (Classic/Bright/Cinematic), moon size + moonshine.
+- CONFIG MENU: 8 groups, 36 options (18 toggles + 16 sliders + 2 presets with
+  6 preset values), all documented in shaders/lang/en_US.lang.
+- Builder validates GLSL, properties/lang cross-references and repacks both
+  shader zips automatically.

@@ -29,9 +29,8 @@ uniform float rainStrength;
 uniform int   worldTime;
 uniform float wetness;
 
-#define SSAO
-#define GODRAYS
-#define BLOOM
+uniform float FOG_STR; //settings fog
+uniform float MOONSHINE; //settings moonlight
 
 void main() {
     vec2 uv = texcoord;
@@ -69,8 +68,36 @@ void main() {
     float dist = length(pos - cameraPosition);
     vec4 fog = sampledFog(pos);
     float nightMul = (sunAngle < 0.45) ? 0.6 : 1.0;
-    float fogF = 1.0 - exp(-fog.a * nightMul * dist * 0.0022);
+    float fogF = 1.0 - exp(-fog.a * nightMul * FOG_STR * dist * 0.0022);
     scene = mix(scene, fog.rgb, clamp(fogF, 0.0, 0.94));
+
+    // ==================== DESERT HEAT SHIMMER ================================
+#ifdef HEAT_SHIMMER
+    float desertW = biomeMatch(pos, 4.0) + biomeMatch(pos, 5.0) * 0.7;
+    float glare = desertW * (1.0 - rainStrength) * sstep(0.0, 0.5, sunAngle);
+    if (glare > 0.01) {
+        vec2 shimmer = vec2(vnoise(vec3(pos.x * 0.35, pos.y * 0.35, frameTimeCounter * 0.9)),
+                            vnoise(vec3(pos.z * 0.35, pos.y * 0.35, frameTimeCounter * 0.9))) - 0.5;
+        shimmer *= 0.004 * glare * smoothstep(8.0, 90.0, dist);
+        vec3 shifted = texture2D(colortex0, uv + shimmer).rgb;
+        scene = mix(scene, shifted, 0.6 * glare);
+        scene += vec3(1.0, 0.82, 0.55) * glare * 0.05;   // golden heat bloom
+    }
+#endif
+
+    // ==================== AURORA OVERLAY (cold biomes) =======================
+#ifdef AURORA
+    float auroraW = biomeMatch(pos, 8.0) + biomeMatch(pos, 9.0) * 0.8;
+    if (auroraW > 0.01 && sunAngle < 0.45 && rainStrength < 0.8) {
+        vec3 dir = normalize(pos - cameraPosition);
+        float aDir = dot(normalize(dir.xz + 0.0001), vec2(0.3, 0.95));
+        float ribbon = smoothstep(0.2, 0.9, fbm3(vec3(aDir * 3.5, dir.y * 4.0 - frameTimeCounter * 0.06)));
+        float band = smoothstep(0.0, 0.55, dir.y) * smoothstep(0.85, 0.55, dir.y);
+        float aur = ribbon * band * auroraW * MOONSHINE * 0.6;
+        scene += vec3(0.15, 0.85, 0.55) * aur;
+        scene += vec3(0.65, 0.25, 0.75) * aur * 0.5;
+    }
+#endif
 
     // ==================== GOD RAYS ==========================================
 #ifdef GODRAYS

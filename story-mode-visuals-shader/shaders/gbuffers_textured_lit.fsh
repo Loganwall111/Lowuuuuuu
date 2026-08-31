@@ -16,6 +16,9 @@ uniform vec3 moonPosition;
 uniform float frameTimeCounter;
 uniform float sunAngle;
 
+uniform float HAND_LIGHT; //settings handLight
+uniform float ENT_AO; //settings entAO
+
 void main() {
     // held items / lit textured geometry (incl. the held torch & formidi-bomb vibe)
     vec3 nrm = normalize(normal);
@@ -28,8 +31,9 @@ void main() {
     vec3 lightDir = (sunAngle < 0.45) ? normalize(moonPosition) : normalize(sunPosition);
     float ndl = max(dot(nrm, lightDir), 0.0);
     vec3 light = band * band * mix(vec3(0.30, 0.35, 0.55), vec3(1.08, 0.97, 0.84), ceil(ndl * 3.0) / 3.0);
-    light += torch * 1.15;
+    light += torch * (1.0 + HAND_LIGHT);
     light *= 1.0 - getCloudShadow(pos) * 0.2;
+    light *= mix(getContactAO(worldPos, nrm), 1.0, 1.0 - ENT_AO);
 
     vec4 albedo = texture2D(texture, texcoord.xy) * glcolor;
     vec3 color = albedo.rgb * light;

@@ -3,10 +3,9 @@
 #include "/lib.glsl"
 #include "/worldpos.glsl"
 
-#define CEL_BANDS
-#define CLOUD_SHADOWS
-#define TERRAIN_AO
-#define TORCH_TINT
+uniform float TERRAIN_AO_STR; //settings terrainAO
+uniform float TORCH_SAT; //settings torchSat
+uniform float FOG_STR; //settings fog
 
 varying vec4 texcoord;
 varying vec4 lmcoord;
@@ -37,6 +36,11 @@ uniform float darknessFactor;
 
 uniform int   worldTime;
 
+// shadow pass interface (Iris/OptiFine)
+uniform mat4  shadowProjection;
+uniform mat4  shadowModelView;
+uniform sampler2D shadowtex0;
+
 void main() {
     vec3 nrm = normalize(normal);
     vec3 pos = worldPos + cameraPosition;
@@ -63,6 +67,9 @@ void main() {
 #else
     float fac = ndl;
 #endif
+#ifdef FLAT_LIGHTING
+    fac = 1.0;                                           // pure lightmap look
+#endif
     float sh = getShadow(pos, nrm);
 
     // cloud footprint shadows sweep across the terrain (hard-edged at dusk/dawn)
@@ -82,13 +89,15 @@ void main() {
     vec3 soul = vec3(0.35, 0.95, 1.0) * torch;
     float soulWeight = clamp(biome == 8 ? 0.4 : 0.0, 0.0, 1.0);
     vec3 torchLight = mix(warm, soul, soulWeight);
+    float tl = dot(torchLight, vec3(0.299, 0.587, 0.114));
+    torchLight = mix(vec3(tl), torchLight, TORCH_SAT);   // saturation slider
     light += torchLight * (0.9 + 0.5 * ao);
 #endif
 
     // ---------- contact AO lines where blocks meet the ground
 #ifdef TERRAIN_AO
-    float contact = getContactAO(pos, nrm);
-    light *= mix(contact, 1.0, smoothstep(0.0, 0.6, abs(nrm.y)));
+    float contact = getContactAO(worldPos, nrm);
+    light *= mix(mix(contact, 1.0, smoothstep(0.0, 0.6, abs(nrm.y))), 1.0, 1.0 - TERRAIN_AO_STR);
 #endif
 
     // ---------- albedo
@@ -99,7 +108,7 @@ void main() {
     vec4 fog = sampledFog(pos);
     float dist = length(pos - cameraPosition);
     float fogMul = isNight ? 0.6 : 1.0;
-    float fogF = 1.0 - exp(-fog.a * fogMul * dist * 0.0022);
+    float fogF = 1.0 - exp(-fog.a * fogMul * FOG_STR * dist * 0.0022);
     color = mix(color, fog.rgb, clamp(fogF, 0.0, 0.94));
 
     // ---------- hand-held item glow-up + story vignette keep this pass simple

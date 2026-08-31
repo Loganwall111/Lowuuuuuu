@@ -50,6 +50,14 @@ void main() {
     // saturated hue boost per fluid type
     color = isLava ? color * vec3(1.12, 0.95, 0.90) : color * vec3(0.95, 1.05, 1.12);
 
+    // biome-tinted foam edge (stylized water touching the shore)
+#ifdef WATER_FOAM
+    float foam = vnoise(pos * 0.65 + vec3(frameTimeCounter * 0.05, 0.0, 0.0));
+    foam = smoothstep(0.55, 0.72, foam);
+    foam *= smoothstep(0.0, 0.12, lmcoord.x);
+    color += vec3(0.92, 0.97, 1.0) * foam * 0.55;
+#endif
+
     // biome fog
     vec4 fog = sampledFog(pos);
     float dist = length(pos - cameraPosition);
