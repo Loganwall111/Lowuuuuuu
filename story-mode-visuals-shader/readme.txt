@@ -121,6 +121,36 @@ v7 CHANGELOG - STRICT-DRIVER LINK HARDENING (Intel UHD)
   MOD itself is Sodium-only and cannot run under Forge - the pack carries
   its own colored-lighting implementation, which is what this key routes.
 
+v8 CHANGELOG - SKY / CLOUD LAYER DECOUPLING (mixin cancellation fix)
+- The pack's sky programs are DELETED from shaders/: gbuffers_skybasic and
+  gbuffers_skytextured (.vsh + .fsh). Oculus was generating its internal
+  shaders/core/sky_basic.json wrapper for our skybasic pass, and its
+  native-sky mixin hook then crashed with
+  'ChainedJsonException: Invalid shaders/core/sky_basic.json: The call
+  m_166612_ is not cancellable' under the installed Embeddium/Oculus
+  pairing. With no sky program registered, Oculus never generates that
+  JSON and never cancels the native sky call: the sky now renders through
+  Oculus's NATIVE path (vanilla dome, sun, moon) and still receives the
+  pack's composite grading, per-biome fog, god rays and bloom. (Vanilla
+  sun/moon needed skytextured removed too - its only job was discarding
+  textured sky elements under the custom dome, which would have hidden
+  the native sun/moon.)
+- Clouds now render STRICTLY through the main pipeline:
+  shaders/gbuffers_clouds.vsh + shaders/gbuffers_clouds.fsh (procedural
+  blocky cells, vertical dissolve, celestial color clock, biome fog tint,
+  rain overcast, all CLOUD_* settings). The vanilla core-shader overrides
+  that touched clouds (assets/minecraft/shaders/core/rendertype_clouds.vsh
+  and position_tex_color_normal.vsh/.fsh) are no longer shipped in the
+  shader zip - no vanilla JSON layer is involved in cloud rendering. The
+  user's verbatim cloud GLSL listing is preserved at
+  assets/mcsm_atmosphere/clouds_reference/rendertype_clouds.vsh
+  (inert path - nothing loads it).
+- shader.properties: the menu wrapper id is locked as a clean lowercase
+  system tag for Embeddium's pagination filters:
+    id=story_mode_menu
+- Note: SKY_PRESET and MOON_SIZE settings are temporarily inert (they fed
+  the old sky program); MOONSHINE still drives composite moonlight.
+
 TROUBLESHOOTING
 - "Id must be specified in OptionPage 'Shader Packs...'" in the log:
   this warning comes from the OCULUS mod's own options-page button inside
@@ -134,3 +164,10 @@ TROUBLESHOOTING
 - If the settings screen is missing: the shader failed to compile and
   Oculus fell back - fix the compile issue (this build has none) and the
   menu returns.
+- 'ChainedJsonException: Invalid shaders/core/sky_basic.json: The call
+  m_166612_ is not cancellable': this came from Oculus's native-sky mixin
+  hook firing because the pack defined a custom skybasic program. v8
+  removes all sky programs so the hook never fires. If the same class of
+  error ever appears with a DIFFERENT pack, remove that pack's sky
+  programs - or update the Oculus/Embeddium version pair, since the mixin
+  targets must match between the two mods.

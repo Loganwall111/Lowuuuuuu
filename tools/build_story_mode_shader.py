@@ -126,12 +126,26 @@ def main():
     run(f'cp -r {PACK}/assets {SHADER}/')
     run(f'cp {PACK}/pack.png {SHADER}/pack.png')
 
+    # v8: sky/cloud layer decoupling - clouds render ONLY through the
+    # pipeline program shaders/gbuffers_clouds.*; every vanilla
+    # core-shader override that touches clouds is excluded from the
+    # shader zip, and the verbatim cloud GLSL lives at an inert path no
+    # loader reads (assets/mcsm_atmosphere/clouds_reference/).
+    run(f'rm -f {SHADER}/assets/minecraft/shaders/core/rendertype_clouds.vsh')
+    run(f'rm -f {SHADER}/assets/minecraft/shaders/core/position_tex_color_normal.vsh')
+    run(f'rm -f {SHADER}/assets/minecraft/shaders/core/position_tex_color_normal.fsh')
+    assert os.path.exists(f'{SHADER}/assets/mcsm_atmosphere/clouds_reference/rendertype_clouds.vsh'), \
+        'verbatim cloud reference missing'
+
     # 3) properties sanity + menu identity
     shaders = f'{SHADER}/shaders'
     props = open(f'{shaders}/shader.properties').read()
     assert 'screen=composite' in props and 'shaders=' in props, 'properties broken'
     assert 'buffers=shadow:' in props, 'buffers must use colon syntax'
     assert 'colortex2' in props, 'colortex2 (gnormal) missing from textures list'
+    assert 'id=story_mode_menu' in props, 'menu wrapper id tag missing'
+    assert 'gbuffers_skybasic' not in props and 'gbuffers_skytextured' not in props, \
+        'sky programs must stay unregistered (native sky path)'
     lang = open(f'{shaders}/lang/en_us.lang', encoding='utf-8').read()
     assert 'screen.MAIN=' in lang, 'settings screen identity missing from lang'
 
@@ -180,6 +194,14 @@ def main():
             assert any(n.endswith('gbuffers_terrain.fsh') for n in names)
             assert any(n.endswith('final.fsh') for n in names)
             assert any(n.endswith('pack.mcmeta') for n in names)
+            assert 'shaders/gbuffers_clouds.vsh' in names and 'shaders/gbuffers_clouds.fsh' in names
+            assert not any('skybasic' in n or 'skytextured' in n or 'sky_basic' in n for n in names)
+            assert not any(n.endswith('assets/minecraft/shaders/core/rendertype_clouds.vsh') for n in names)
+            assert not any(n.endswith('assets/minecraft/shaders/core/position_tex_color_normal.vsh')
+                           or n.endswith('assets/minecraft/shaders/core/position_tex_color_normal.fsh')
+                           for n in names)
+            assert any(n.endswith('assets/mcsm_atmosphere/clouds_reference/rendertype_clouds.vsh')
+                       for n in names)
             for n in names:
                 if n.startswith('shaders/') and n.endswith(('.fsh', '.vsh', '.glsl')):
                     body = z.read(n).decode()

@@ -192,3 +192,26 @@ and fell back, which is why the settings menu disappeared. Repairs:
 - The whole shader zip is now a 100% lowercase file tree (`en_US.lang` ->
   `en_us.lang`, which Oculus's LanguageMap handles identically, and
   `README.txt` -> `readme.txt`); the builder now asserts this on every build.
+
+## v8 - Sky/cloud layer decoupling (Oculus mixin cancellation fix)
+- Deleted the pack's sky programs (`gbuffers_skybasic.vsh/.fsh`,
+  `gbuffers_skytextured.vsh/.fsh`). Oculus only generates its internal
+  `shaders/core/sky_basic.json` wrapper - and only fires its native-sky
+  cancellation mixin (`m_166612_`) - when a pack defines a sky program.
+  With none registered, the ChainedJsonException path is unreachable and
+  the sky renders natively (still graded/fogged/bloomed by composite).
+  `gbuffers_skytextured` had to go with it: its sole purpose was
+  discarding textured sky elements under the custom dome, which would
+  have hidden the native sun/moon.
+- Clouds are now strictly pipeline-mapped: `shaders/gbuffers_clouds.vsh`
+  + `gbuffers_clouds.fsh` only. The vanilla-layer cloud overrides
+  (`assets/minecraft/shaders/core/rendertype_clouds.vsh`,
+  `position_tex_color_normal.vsh/.fsh`) are excluded from the shader zip;
+  the verbatim user cloud GLSL is preserved at
+  `assets/mcsm_atmosphere/clouds_reference/rendertype_clouds.vsh`.
+- `shader.properties`: locked lowercase menu wrapper tag
+  `id=story_mode_menu` for Embeddium's pagination filters; sky programs
+  removed from the `shaders=` registration list.
+- Builder now permanently asserts: no sky program entries in the zip,
+  clouds pair present, no active cloud overrides, verbatim reference
+  present, menu id tag present.
