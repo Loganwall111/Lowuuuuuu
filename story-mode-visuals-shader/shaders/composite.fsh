@@ -11,7 +11,14 @@
 
 varying vec2 texcoord;
 
+// Legacy MRT contract (DRAWBUFFERS:012 in the gbuffers passes):
+//   gl_FragData[0] -> colortex0 (color)
+//   gl_FragData[1] -> colortex1 (depth copy, cleared white by the loader)
+//   gl_FragData[2] -> colortex2 (normals, sampled in final.fsh)
+// colortex1 is declared here for completeness even though this program
+// reads the loader-filled depth textures depthtex0/depthtex1 instead.
 uniform sampler2D colortex0;
+uniform sampler2D colortex1;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
 
