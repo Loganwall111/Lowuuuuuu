@@ -1,4 +1,5 @@
 #version 120
+/* DRAWBUFFERS:0 */
 
 #include "/lib.glsl"
 
@@ -14,15 +15,10 @@
 varying vec2 texcoord;
 varying vec4 glcolor;
 
-uniform vec3  sunPosition;
-uniform vec3  moonPosition;
 uniform vec3  cameraPosition;
 uniform float frameTimeCounter;
-uniform float sunAngle;
 uniform float rainStrength;
 uniform int   worldTime;
-uniform float viewWidth;
-uniform float viewHeight;
 
 uniform float CLOUD_SPEED; //settings speed
 uniform float CLOUD_DENSITY; //settings density
@@ -31,15 +27,13 @@ uniform float CLOUD_COVER; //settings cloudCover
 uniform float RAIN_STR; //settings rainStrength
 
 void main() {
-    // texcoord = normalized position on the vanilla cloud plane
     vec2 uv = texcoord;
     float anim = frameTimeCounter * 4.5 * CLOUD_SPEED;
 
-    // blocky cell structure: keep the same world cells as the shadow pass
     vec3 p = vec3(uv.x, uv.y, 0.0) * vec3(90.0, 90.0, 1.0) + vec3(anim * 0.14, 0.0, anim * 0.07);
 
     float n = vnoise(p) * 0.55 + vnoise(p * 2.4 + 31.0) * 0.35 + vnoise(p * 5.0 + 71.0) * 0.10;
-    float thresh = mix(0.62, 0.14, CLOUD_COVER);         // more cover = denser blanket
+    float thresh = mix(0.62, 0.14, CLOUD_COVER);
     float cloud = smoothstep(thresh - 0.44 * CLOUD_DENSITY, thresh, n);
 
     // vertical dissolve: crisp tops, soft bottoms

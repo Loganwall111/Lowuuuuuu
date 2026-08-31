@@ -77,3 +77,37 @@ Built by tools/build_story_mode_shader.py - full source of truth.
     * Cloud cover / density / color-richness controls
     * Entity contact AO + hand light boost
     * Vignette strength + moody film grain boost
+
+--- v5 CHANGELOG (Oculus 1.8.0 / Embeddium boot fix) ---
+- FIXED pipeline compile failures reported on Oculus 1.8.0 + Embeddium:
+  * Every shader now ships SELF-CONTAINED: all #include files are inlined
+    at build time, so no loader include-handling quirks can break the pack.
+  * Every uniform used in a program is DECLARED in that same file
+    (no reliance on loader auto-injection).
+  * All gbuffer passes now write the legacy buffer layout explicitly with
+    "/* DRAWBUFFERS:012 */": color -> gcolor, depth -> gdepth, normals ->
+    gnormal. (Previously normals were written into the depth slot, which
+    corrupted depth-based effects.)
+  * gbuffers_block.fsh now includes the contact-AO library it calls
+    (undeclared-function crash removed).
+  * Removed loader-risky uniforms: moonPhase (now computed procedurally),
+    aspectRatio (now derived from view size), biome (int).
+  * shader.properties: shadow buffers now use the OptiFine colon syntax
+    (buffers=shadow:shadowcolor0:shadowcolor1) and colortex2 (gnormal) is
+    registered in the textures list.
+- The 36-option menu (18 toggles + 16 sliders + 2 presets), aurora toggle,
+  biome fogs, Story Mode clouds, ink outlines etc. are all preserved.
+
+TROUBLESHOOTING
+- "Id must be specified in OptionPage 'Shader Packs...'" in the log:
+  this warning comes from the OCULUS mod's own options-page button inside
+  Embeddium's video settings (Oculus creates that page without an id).
+  It cannot be defined from inside a shader pack, it is harmless, and it
+  is unrelated to shader loading. The pack's settings menu (Shader Pack
+  Settings) appears once the pipeline compiles.
+- If a pack named "is not valid": delete every old copy of the zip from
+  .minecraft/shaderpacks, re-download a fresh one, and press F3+R (or
+  /reloadShaders) after selecting it.
+- If the settings screen is missing: the shader failed to compile and
+  Oculus fell back - fix the compile issue (this build has none) and the
+  menu returns.

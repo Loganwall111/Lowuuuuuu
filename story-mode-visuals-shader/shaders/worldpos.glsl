@@ -1,27 +1,24 @@
 /*
 ============================================================================
- STORY MODE VISUALS - world position + shadow mapping library
+ STORY MODE VISUALS - shadow / cloud / contact-AO library (gbuffer-safe)
  ----------------------------------------------------------------------------
- getWorldPos      : reconstructs world-space position from the depth buffer
- getCloudShadow   : Story Mode cloud footprint shadows sweeping the terrain
- getShadow        : hard-edged directional shadow lookup (soft PCF optional)
- getContactAO     : dark contact line where geometry meets geometry
+ All uniforms used here are DECLARED HERE so every program that includes
+ this file is self-contained - no reliance on loader auto-injection.
 ============================================================================
 */
 
-// 1.0 / ortho distance of the nearest shadow far plane used by the loader
+// 1.0 / ortho distance of the nearest shadow far plane (default if the
+// loader does not provide its own macro).
 #ifndef MC_SHADOW_ORTHO
 #define MC_SHADOW_ORTHO 256.0
 #endif
 
-vec3 getWorldPos(vec2 uv) {
-    float depth = texture2D(depthtex0, uv).r;
-    if (depth > 0.99999) return vec3(1000000.0);
-    vec3 clip = vec3(uv * 2.0 - 1.0, depth * 2.0 - 1.0);
-    vec4 world = gbufferProjectionInverse * vec4(clip, 1.0);
-    world /= world.w;
-    return world.xyz + cameraPosition;
-}
+uniform float frameTimeCounter;
+uniform float CLOUD_SPEED; //settings speed
+
+uniform mat4  shadowProjection;
+uniform mat4  shadowModelView;
+uniform sampler2D shadowtex0;
 
 // ------------------------------------------------ Story Mode cloud shadows
 // A 3D noise shadowmap swept horizontally by a time-based wind: large soft

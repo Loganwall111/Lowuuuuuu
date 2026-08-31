@@ -1,55 +1,61 @@
 #version 120
+/* DRAWBUFFERS:0 */
 
 #include "/lib.glsl"
-#include "/worldpos.glsl"
+
+/*
+  COMPOSITE: SSAO contact occlusion, per-biome Story Mode fog, desert heat
+  shimmer, aurora overlay, sun/moon god rays and bloom.
+  Every uniform used is declared locally - no reliance on loader injection.
+*/
 
 varying vec2 texcoord;
 
 uniform sampler2D colortex0;
-uniform sampler2D depthtex1;
 uniform sampler2D depthtex0;
+uniform sampler2D depthtex1;
 
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferProjectionInverse;
+uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 
 uniform vec3  cameraPosition;
 uniform vec3  sunPosition;
 uniform vec3  moonPosition;
-uniform vec3  upPosition;
-uniform vec3  skyColor;
-uniform vec3  fogColor;
-uniform float frameTimeCounter;
 uniform float viewWidth;
 uniform float viewHeight;
-uniform float near;
-uniform float far;
+uniform float frameTimeCounter;
 uniform float sunAngle;
 uniform float rainStrength;
 uniform int   worldTime;
-uniform float wetness;
 
 uniform float FOG_STR; //settings fog
 uniform float MOONSHINE; //settings moonlight
+
+vec3 getWorldPos(vec2 uv) {
+    float depth = texture2D(depthtex0, uv).r;
+    if (depth > 0.99999) return vec3(1000000.0);
+    vec3 clip = vec3(uv * 2.0 - 1.0, depth * 2.0 - 1.0);
+    vec4 world = gbufferProjectionInverse * vec4(clip, 1.0);
+    world /= world.w;
+    return world.xyz + cameraPosition;
+}
 
 void main() {
     vec2 uv = texcoord;
     vec3 scene = texture2D(colortex0, uv).rgb;
     vec3 pos = getWorldPos(uv);
+    float d1 = texture2D(depthtex1, uv).r;
 
     // ==================== SSAO: dark contact lines where geometry meets ====
 #ifdef SSAO
-    float d1 = texture2D(depthtex1, uv).r;
     if (pos.y < 1000000.0 && d1 < 0.9999) {
-        vec3 nrm = texture2D(colortex1, uv).rgb * 2.0 - 1.0;
-        float depth = texture2D(depthtex1, uv).r;
-        vec3 viewN = normalize(mat3(gbufferModelViewInverse) * nrm);
-
+        float depth = d1;
         float occ = 0.0;
         float radius = 2.6 / max(depth * 900.0, 0.12);
         vec2 rnd = hash22(uv * vec2(viewWidth, viewHeight) + frameTimeCounter) * 6.283;
         mat2 rot = mat2(cos(rnd.x), -sin(rnd.x), sin(rnd.x), cos(rnd.x));
-
         for (int i = 0; i < 12; i++) {
             float a = (float(i) / 12.0) * 6.2831;
             float rr = radius * (0.4 + 0.6 * hash12(vec2(float(i), 3.0)));
@@ -57,10 +63,9 @@ void main() {
             float sd = texture2D(depthtex1, uv + dir).r;
             float diff = depth - sd;
             float dist = length(dir * vec2(viewWidth / 2.0, viewHeight / 2.0)) / 160.0;
-            occ += clamp(diff * 2400.0 - dist * 0.06, 0.0, 1.0) * (0.35 + 0.65 * max(dot(viewN, vec3(0.0, 1.0, 0.0)), 0.0));
+            occ += clamp(diff * 2400.0 - dist * 0.06, 0.0, 1.0);
         }
-        float ao = 1.0 - clamp(occ / 12.0, 0.0, 1.0) * 0.65;
-        scene *= ao;
+        scene *= 1.0 - clamp(occ / 12.0, 0.0, 1.0) * 0.65;
     }
 #endif
 
@@ -81,7 +86,7 @@ void main() {
         shimmer *= 0.004 * glare * smoothstep(8.0, 90.0, dist);
         vec3 shifted = texture2D(colortex0, uv + shimmer).rgb;
         scene = mix(scene, shifted, 0.6 * glare);
-        scene += vec3(1.0, 0.82, 0.55) * glare * 0.05;   // golden heat bloom
+        scene += vec3(1.0, 0.82, 0.55) * glare * 0.05;
     }
 #endif
 
@@ -113,7 +118,7 @@ void main() {
                 su += dirToSun;
                 float d = texture2D(depthtex1, clamp(su, 0.002, 0.998)).r;
                 float luma = dot(texture2D(colortex0, clamp(su, 0.002, 0.998)).rgb, vec3(0.299, 0.587, 0.114));
-                float visible = step(d, 0.99999);           // rays blocked by geometry
+                float visible = step(d, 0.99999);
                 rays += vec3(luma) * pow(max(1.0 - float(i) / 14.0, 0.0), 2.0) * visible;
             }
             vec3 rayCol = (sunAngle < 0.45) ? vec3(0.55, 0.7, 1.0) : vec3(1.0, 0.82, 0.6);
@@ -136,7 +141,7 @@ void main() {
             bweights += w;
         }
     }
-    bloom /= bweights;
+    bloom /= max(bweights, 1e-5);
     scene += bloom * 0.6;
 #endif
 

@@ -1,10 +1,10 @@
 #version 120
+/* DRAWBUFFERS:0 */
 
 /*
-  Story Mode Visuals - sky is fully procedural (see gbuffers_skybasic.fsh).
-  This pass is discarded so no textured skybox can ever show cube edges:
-  the vanilla sun/moon/stars textures AND any ForgeSkyboxes/FabricSkyboxes
-  skybox textures are hidden and replaced by the seamless procedural dome.
+  Story Mode Visuals - the sky is fully procedural (see gbuffers_skybasic.fsh).
+  This pass discards every textured sky element so no skybox texture can ever
+  draw cube edges: the seamless dome fully replaces the vanilla sky.
 */
 
 varying vec2 texcoord;

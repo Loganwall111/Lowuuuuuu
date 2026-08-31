@@ -148,3 +148,29 @@ passes style those surfaces, but implementing them needs a client mod.
   6 preset values), all documented in shaders/lang/en_US.lang.
 - Builder validates GLSL, properties/lang cross-references and repacks both
   shader zips automatically.
+
+## v5 — Oculus 1.8.0 / Embeddium boot fix (real crash repair)
+
+User log diagnosis: Oculus 1.8.0 reported `ShaderCompileException` in
+composite.fsh ("depthtex0/gbufferProjectionInverse/cameraPosition undeclared")
+and fell back, which is why the settings menu disappeared. Repairs:
+
+- **Self-contained shipped GLSL**: the builder now inlines every `#include`
+  into the shaders inside the zip (zero include processing at load time).
+- **All uniforms declared in-file** in every program; risky loader-dependent
+  uniforms removed (moonPhase -> procedural 8-day cycle, aspectRatio ->
+  viewWidth/viewHeight, biome int removed).
+- **Legacy gbuffer layout fixed**: every gbuffers program writes
+  color/gl_FragData[0], depth/gl_FragData[1], normals/gl_FragData[2] with
+  explicit `/* DRAWBUFFERS:012 */` (previously normals overwrote the depth
+  slot, corrupting SSAO/outlines/fog).
+- **gbuffers_block.fsh** include bug fixed (called getContactAO without the
+  library include - would have been the next compile crash).
+- **shader.properties**: colon buffer syntax + colortex2 registered; menu
+  identity token `story_mode_menu` documented next to the settings screen.
+- Builder validator now checks: #version 120 first, brace/ifdef balance,
+  no GLSL-150 `texture()`, every risky uniform used is declared, every
+  helper used is defined, DRAWBUFFERS covers all written indices.
+- The Embeddium "Id must be specified in OptionPage 'Shader Packs...'"
+  warning is Oculus's own options-page integration and cannot be set from
+  a shader pack; it is benign (documented in the pack README too).

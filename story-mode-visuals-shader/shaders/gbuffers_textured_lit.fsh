@@ -1,4 +1,5 @@
 #version 120
+/* DRAWBUFFERS:012 */
 
 #include "/lib.glsl"
 #include "/worldpos.glsl"
@@ -10,17 +11,15 @@ varying vec3 normal;
 varying vec3 worldPos;
 
 uniform sampler2D texture;
-uniform vec3 cameraPosition;
-uniform vec3 sunPosition;
-uniform vec3 moonPosition;
-uniform float frameTimeCounter;
+uniform vec3  cameraPosition;
+uniform vec3  sunPosition;
+uniform vec3  moonPosition;
 uniform float sunAngle;
-
 uniform float HAND_LIGHT; //settings handLight
 uniform float ENT_AO; //settings entAO
 
 void main() {
-    // held items / lit textured geometry (incl. the held torch & formidi-bomb vibe)
+
     vec3 nrm = normalize(normal);
     vec3 pos = worldPos + cameraPosition;
 
@@ -43,6 +42,8 @@ void main() {
     float fogF = 1.0 - exp(-fog.a * dist * 0.0022);
     color = mix(color, fog.rgb, clamp(fogF, 0.0, 0.94));
 
+    float depth = gl_FragCoord.z;
     gl_FragData[0] = vec4(color, albedo.a);
-    gl_FragData[1] = vec4(nrm * 0.5 + 0.5, 1.0);
+    gl_FragData[1] = vec4(depth, depth * depth, depth, 1.0);
+    gl_FragData[2] = vec4(nrm * 0.5 + 0.5, 1.0);
 }

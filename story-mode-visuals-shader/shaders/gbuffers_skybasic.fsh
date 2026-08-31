@@ -1,38 +1,34 @@
 #version 120
+/* DRAWBUFFERS:0 */
 
 #include "/lib.glsl"
 
 /*
-  SEAMLESS INFINITE SKY DOME — no geometry, no cube, no seams.
+  SEAMLESS INFINITE SKY DOME - no geometry, no cube, no seams.
   Everything is computed per-ray: horizon-melted biome gradient dome,
-  dramatic Story Mode sunset band, moon with craters and halo, stars,
-  God-rays from the sun/moon.
+  dramatic Story Mode sunset band, procedural moon with craters + halo,
+  twinkling stars, milky way, auroras and sun/moon god rays.
 */
 
 varying vec3 viewDir;
 
 uniform vec3  sunPosition;
 uniform vec3  moonPosition;
-uniform vec3  upPosition;
 uniform mat4  gbufferModelViewInverse;
-uniform vec3  skyColor;
-uniform vec3  fogColor;
+uniform vec3  cameraPosition;
 uniform float rainStrength;
 uniform float sunAngle;
 uniform float frameTimeCounter;
 uniform int   worldTime;
-uniform float moonPhase;
 
 uniform float SUNSET; //settings intensity
 uniform float MOONSHINE; //settings moonlight
-uniform float SKY_FOG_MIX; //settings skyFog
 uniform float MOON_SIZE; //settings moonSize
 uniform float CLOUD_COVER; //settings cloudCover
 uniform int SKY_PRESET; //settings preset
 
 void main() {
     vec3 dir = normalize(viewDir);
-    // world-space direction (horizontal = horizon)
     vec3 wdir = normalize(mat3(gbufferModelViewInverse) * dir);
 
     // ------------- day/night/sunset clock (preset-blended phases)
@@ -40,6 +36,12 @@ void main() {
     float dayW = sstep(0.07, 0.30, timeF) * sstep(0.80, 0.55, timeF);
     float nightW = sstep(0.52, 0.72, timeF) * sstep(0.05, 0.35, timeF);
     float setW = 1.0 - dayW - nightW;
+
+    // ------------- biome gradient (the same profiles the fog uses)
+    vec4 fog = sampledFog(cameraPosition + wdir * 300.0);
+
+    float hUp = clamp(wdir.y, 0.0, 1.0);
+    float hDown = clamp(-wdir.y, 0.0, 1.0);
 
     vec3 zenSel[3]; vec3 horSel[3]; float sunSel[3];
     zenSel[0] = mix(vec3(0.16, 0.38, 0.75), fog.rgb, 0.35);
@@ -49,21 +51,9 @@ void main() {
     horSel[1] = mix(fog.rgb, vec3(0.98, 0.52, 0.22), 0.65);
     horSel[2] = fog.rgb * 0.5;
     sunSel[0] = 0.55; sunSel[1] = 1.0; sunSel[2] = 0.0;
-    // sky preset: 0 classic | 1 bright | 2 cinematic (alt sunset, saturated day)
     if (SKY_PRESET == 1) { zenSel[0] = vec3(0.20, 0.55, 0.95); sunSel[0] = 0.8; }
     if (SKY_PRESET == 2) { zenSel[0] = vec3(0.10, 0.30, 0.55); horSel[1] = vec3(1.0, 0.35, 0.30); sunSel[1] = 1.25; }
 
-    // ------------- biome gradient (the same profiles the fog uses)
-    vec4 fog = sampledFog(cameraPosition + wdir * 300.0);
-
-    // ------------- horizon melt: lower sky dissolves into fog
-    float hUp = clamp(wdir.y, 0.0, 1.0);
-    float hDown = clamp(-wdir.y, 0.0, 1.0);
-
-    // zenith colors per phase
-    vec3 dayZen = mix(vec3(0.16, 0.38, 0.75), fog.rgb, 0.35);
-    vec3 setZen = vec3(0.55, 0.36, 0.60);
-    vec3 nightZen = vec3(0.012, 0.016, 0.075);
     vec3 zen = zenSel[0] * dayW + zenSel[1] * setW + zenSel[2] * nightW;
     zen = mix(zen, vec3(0.045, 0.055, 0.09), rainStrength * 0.9);   // stormy overcast
 
@@ -77,7 +67,7 @@ void main() {
     // ------------- dramatic Story Mode sunset: sun-following warm glow
     vec3 sunDir = normalize(sunPosition);
     float sunDot = dot(wdir, sunDir);
-    float sunGlow = pow(max(sunDot, 0.0), 260.0) * 1.4;                  // disc
+    float sunGlow = pow(max(sunDot, 0.0), 260.0) * 1.4;
     float sunHalo = pow(max(sunDot, 0.0), 6.0) * 0.55 * sunSel[0];
     vec3 sunsetBand = mix(vec3(1.0, 0.52, 0.24), vec3(0.85, 0.30, 0.55), hUp);
     sky += sunsetBand * SUNSET * (sunHalo * setW * (1.0 - rainStrength) + sunGlow * dayW);
@@ -86,12 +76,11 @@ void main() {
     vec3 moonDir = normalize(moonPosition);
     float moonDot = dot(wdir, moonDir);
     float halo = pow(max(moonDot, 0.0), 16.0) * 0.35 * nightW * MOONSHINE;
+    float moonPhase = (mod(float(worldTime), 192000.0) / 192000.0) * 2.0 - 1.0; // pseudo 8-day cycle
     vec3 moon = moonGlow(wdir, moonDir, moonPhase, MOON_SIZE);
     float moonVis = sstep(-0.12, 0.02, wdir.y) * nightW * (1.0 - rainStrength);
     sky += moon * moonVis * MOONSHINE;
     sky += vec3(0.65, 0.75, 1.0) * halo * (1.0 - rainStrength);
-
-    // ------------- moonlit horizon / moonlight sky wash
     sky += vec3(0.10, 0.14, 0.26) * MOONSHINE * (1.0 - hUp) * nightW * (1.0 - rainStrength);
 
     // ------------- aurora borealis: ribbons in cold biomes at night
@@ -125,7 +114,6 @@ void main() {
     sky += vec3(1.0, 0.82, 0.62) * ray * 0.18 * (dayW + setW) * (1.0 - rainStrength);
     sky += vec3(0.55, 0.7, 1.0) * ray * 0.10 * nightW * MOONSHINE;
 
-    // merge per-preset sky bias (bright = boost, cinematic = deepen)
     if (SKY_PRESET == 1) {
         sky = mix(sky, sky * 1.06 + vec3(0.03), 0.6);
     } else if (SKY_PRESET == 2) {
