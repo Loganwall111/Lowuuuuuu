@@ -1,0 +1,6 @@
+{
+  "minecraft:redstone_torch": "#FF0000",
+  "minecraft:redstone_wall_torch": "#FF0000",
+  "minecraft:soul_lantern": "#00FFFF",
+  "minecraft:glowstone": "#FFCC44"
+}

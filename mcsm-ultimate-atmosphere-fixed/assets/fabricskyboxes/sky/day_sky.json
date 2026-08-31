@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "type": "single-sprite-square-textured",
+  "texture": "fabricskyboxes:textures/sky/day.png",
+  "blend": {
+    "type": "alpha"
+  },
+  "properties": {
+    "fade": {
+      "alwaysOn": false,
+      "startFadeIn": 0,
+      "endFadeIn": 2000,
+      "startFadeOut": 11000,
+      "endFadeOut": 13000
+    }
+  },
+  "decorations": {
+    "showSun": true
+  }
+}

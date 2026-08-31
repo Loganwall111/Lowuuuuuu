@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "type": "single-sprite-square-textured",
+  "texture": "fabricskyboxes:textures/sky/sunset.png",
+  "blend": {
+    "type": "alpha"
+  },
+  "properties": {
+    "fade": {
+      "alwaysOn": false,
+      "startFadeIn": 11500,
+      "endFadeIn": 13200,
+      "startFadeOut": 13800,
+      "endFadeOut": 15000
+    }
+  },
+  "decorations": {
+    "showSun": true
+  }
+}
