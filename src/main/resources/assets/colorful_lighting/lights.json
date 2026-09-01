@@ -1,0 +1,14 @@
+{
+  "minecraft:redstone_torch": {
+    "color": "#FF0000",
+    "luminance": 7
+  },
+  "minecraft:soul_lantern": {
+    "color": "#00FFFF",
+    "luminance": 10
+  },
+  "minecraft:glowstone": {
+    "color": "#FFCC44",
+    "luminance": 15
+  }
+}

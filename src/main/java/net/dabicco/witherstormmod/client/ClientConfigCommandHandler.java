@@ -45,7 +45,7 @@ public class ClientConfigCommandHandler {
                }
                break;
             case 3:
-               mc.gui.setScreen(new WitherStormConfigScreen((Screen)null));
+               mc.setScreen(new WitherStormConfigScreen((Screen)null));
          }
 
       }

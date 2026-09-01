@@ -106,6 +106,9 @@ public class WitherStormConfigScreen extends Screen {
    private int previewBeamMask;
    private static final int HEAD_CLICK_RADIUS = 22;
    private static final String[] PHASE_LABELS = new String[]{"Phase 0", "Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5", "Phase 6", "Severed Half"};
+   private boolean previewGigantic;
+   private int previewBackdrop;
+   private boolean backdropPickerOpen;
    private boolean confirmOpen;
    private int pendingPreset;
    private final List<String> presetTabKeys;
@@ -119,11 +122,21 @@ public class WitherStormConfigScreen extends Screen {
    private static final String MASTER_GEOMETRY = "Geometry Thinning";
 
    private int previewWidth() {
+      if (this.previewGigantic) {
+         return Math.max(132, this.width - 24);
+      }
       return Mth.clamp(this.width - 300 - 8 - 8, 132, 460);
    }
 
    public WitherStormConfigScreen(Screen parent) {
       this(parent, false);
+   }
+
+   public static WitherStormConfigScreen createGiganticPreview(Screen parent) {
+      WitherStormConfigScreen screen = new WitherStormConfigScreen(parent);
+      screen.previewShown = true;
+      screen.previewGigantic = true;
+      return screen;
    }
 
    public WitherStormConfigScreen(Screen parent, boolean worldCreation) {
@@ -200,7 +213,7 @@ public class WitherStormConfigScreen extends Screen {
    }
 
    private boolean modalOpen() {
-      return this.phasePickerOpen || this.subPickerOpen || this.presetPickerOpen || this.pendingPreset > 0 || this.confirmOpen;
+      return this.phasePickerOpen || this.subPickerOpen || this.backdropPickerOpen || this.presetPickerOpen || this.pendingPreset > 0 || this.confirmOpen;
    }
 
    private boolean overPreview(double x, double y) {
@@ -234,6 +247,9 @@ public class WitherStormConfigScreen extends Screen {
    }
 
    private int contentWidth() {
+      if (this.previewGigantic) {
+         return this.width - 24;
+      }
       return this.previewVisible() ? 308 + this.previewWidth() : 300;
    }
 
@@ -275,6 +291,9 @@ public class WitherStormConfigScreen extends Screen {
    }
 
    private int previewLeft() {
+      if (this.previewGigantic) {
+         return 12;
+      }
       return this.panelRight() + 8;
    }
 
@@ -283,6 +302,9 @@ public class WitherStormConfigScreen extends Screen {
    }
 
    private int previewBottom() {
+      if (this.previewGigantic) {
+         return this.height - 58;
+      }
       return this.panelBottom() - 50;
    }
 
@@ -343,6 +365,22 @@ public class WitherStormConfigScreen extends Screen {
             this.subPickerOpen = false;
             this.rebuild();
          }).bounds(this.width / 2 - 50, top + StormModelPreview.SUBPHASE_LABELS.length * 22 + 8, 100, 20).build());
+      } else if (this.backdropPickerOpen) {
+         int top = this.height / 2 - PreviewScene.BACKDROP_LABELS.length * 22 / 2;
+
+         for(int i = 0; i < PreviewScene.BACKDROP_LABELS.length; ++i) {
+            final int idx = i;
+            this.addChrome(Button.builder(Component.literal(PreviewScene.BACKDROP_LABELS[idx]), (b) -> {
+               this.previewBackdrop = idx;
+               this.backdropPickerOpen = false;
+               this.rebuild();
+            }).bounds(this.width / 2 - 70, top + i * 22, 140, 20).build());
+         }
+
+         this.addChrome(Button.builder(Component.literal("Cancel"), (b) -> {
+            this.backdropPickerOpen = false;
+            this.rebuild();
+         }).bounds(this.width / 2 - 50, top + PreviewScene.BACKDROP_LABELS.length * 22 + 8, 100, 20).build());
       } else if (this.presetPickerOpen) {
          String[] labels = DabyWSClientConfig.PRESET_LABELS;
          int top = this.height / 2 - labels.length * 24 / 2;
@@ -428,13 +466,21 @@ public class WitherStormConfigScreen extends Screen {
                this.setStatus("Open a world to change server settings", -6381922);
             }
          } else {
-            this.addChrome(Button.builder(Component.literal("Reset Defaults"), (b) -> this.resetClientDefaults()).bounds(barCentre - 102, this.height - 52, 100, 20).build());
+            this.addChrome(Button.builder(Component.literal("Reset Defaults"), (b) -> this.resetClientDefaults()).bounds(barCentre - 102, this.height - 52, 98, 20).build());
             Button model = Button.builder(Component.literal(this.previewShown ? "Model: §aON" : "Model: §7OFF"), (b) -> {
                this.previewShown = !this.previewShown;
+               if (!this.previewShown) this.previewGigantic = false;
                this.rebuild();
-            }).bounds(barCentre + 2, this.height - 52, 100, 20).build();
+            }).bounds(barCentre + 2, this.height - 52, 98, 20).build();
             model.active = this.width >= 448;
             this.addChrome(model);
+            Button gigantic = Button.builder(Component.literal(this.previewGigantic ? "Gigantic: §aON" : "Gigantic: §7OFF"), (b) -> {
+               this.previewGigantic = !this.previewGigantic;
+               if (this.previewGigantic) this.previewShown = true;
+               this.rebuild();
+            }).bounds(barCentre + 104, this.height - 52, 98, 20).build();
+            gigantic.active = this.width >= 448;
+            this.addChrome(gigantic);
          }
 
          this.addChrome(Button.builder(Component.literal("Done"), (b) -> this.onClose()).bounds(barCentre - 102, this.height - 27, 204, 20).build());
@@ -456,18 +502,59 @@ public class WitherStormConfigScreen extends Screen {
          this.searchBox.setPosition(barCentre - 314, this.height - 27);
          this.addChrome(this.searchBox);
          if (this.previewVisible()) {
-            int half = (this.previewWidth() - 4) / 2;
-            this.addChrome(Button.builder(Component.literal(PHASE_LABELS[Mth.clamp(this.previewPhase, 0, PHASE_LABELS.length - 1)]), (b) -> {
-               this.phasePickerOpen = true;
-               this.rebuild();
-            }).bounds(this.previewLeft(), this.previewBottom() + 4, half, 20).build());
-            String var10001 = StormModelPreview.SUBPHASE_LABELS[Mth.clamp(this.previewSub, 0, 4)];
-            this.addChrome(Button.builder(Component.literal("Sub: " + var10001), (b) -> {
-               this.subPickerOpen = true;
-               this.rebuild();
-            }).bounds(this.previewLeft() + half + 4, this.previewBottom() + 4, half, 20).build());
-            ((AbstractWidget)this.chrome.get(this.chrome.size() - 1)).active = this.previewPhase != 7;
-            this.addChrome(new SunSlider(this.previewLeft(), this.previewBottom() + 26, this.previewWidth(), 20, this));
+            if (this.previewGigantic) {
+               int btnW = Math.max(70, Math.min(105, (this.previewWidth() - 28) / 6));
+               int bx = this.previewLeft();
+               this.addChrome(Button.builder(Component.literal(PHASE_LABELS[Mth.clamp(this.previewPhase, 0, PHASE_LABELS.length - 1)]), (b) -> {
+                  this.phasePickerOpen = true;
+                  this.rebuild();
+               }).bounds(bx, this.previewBottom() + 4, btnW, 20).build());
+               bx += btnW + 4;
+               String var10001 = StormModelPreview.SUBPHASE_LABELS[Mth.clamp(this.previewSub, 0, 4)];
+               this.addChrome(Button.builder(Component.literal("Sub: " + var10001), (b) -> {
+                  this.subPickerOpen = true;
+                  this.rebuild();
+               }).bounds(bx, this.previewBottom() + 4, btnW, 20).build());
+               ((AbstractWidget)this.chrome.get(this.chrome.size() - 1)).active = this.previewPhase != 7;
+               bx += btnW + 4;
+               this.addChrome(Button.builder(Component.literal(PreviewScene.BACKDROP_LABELS[this.previewBackdrop]), (b) -> {
+                  this.backdropPickerOpen = true;
+                  this.rebuild();
+               }).bounds(bx, this.previewBottom() + 4, btnW, 20).build());
+               bx += btnW + 4;
+               this.addChrome(Button.builder(Component.literal(this.previewAutoSpin ? "Spin: §aON" : "Spin: §7OFF"), (b) -> {
+                  this.previewAutoSpin = !this.previewAutoSpin;
+                  this.rebuild();
+               }).bounds(bx, this.previewBottom() + 4, btnW, 20).build());
+               bx += btnW + 4;
+               this.addChrome(Button.builder(Component.literal(this.previewBeamMask != 0 ? "Beams: §aON" : "Beams: §7OFF"), (b) -> {
+                  this.previewBeamMask = this.previewBeamMask != 0 ? 0 : 7;
+                  this.rebuild();
+               }).bounds(bx, this.previewBottom() + 4, btnW, 20).build());
+               bx += btnW + 4;
+               this.addChrome(Button.builder(Component.literal("Normal View"), (b) -> {
+                  this.previewGigantic = false;
+                  this.rebuild();
+               }).bounds(bx, this.previewBottom() + 4, btnW, 20).build());
+               this.addChrome(new SunSlider(this.previewLeft(), this.previewBottom() + 26, this.previewWidth(), 20, this));
+            } else {
+               int third = (this.previewWidth() - 8) / 3;
+               this.addChrome(Button.builder(Component.literal(PHASE_LABELS[Mth.clamp(this.previewPhase, 0, PHASE_LABELS.length - 1)]), (b) -> {
+                  this.phasePickerOpen = true;
+                  this.rebuild();
+               }).bounds(this.previewLeft(), this.previewBottom() + 4, third, 20).build());
+               String var10001 = StormModelPreview.SUBPHASE_LABELS[Mth.clamp(this.previewSub, 0, 4)];
+               this.addChrome(Button.builder(Component.literal("Sub: " + var10001), (b) -> {
+                  this.subPickerOpen = true;
+                  this.rebuild();
+               }).bounds(this.previewLeft() + third + 4, this.previewBottom() + 4, third, 20).build());
+               ((AbstractWidget)this.chrome.get(this.chrome.size() - 1)).active = this.previewPhase != 7;
+               this.addChrome(Button.builder(Component.literal(PreviewScene.BACKDROP_LABELS[this.previewBackdrop]), (b) -> {
+                  this.backdropPickerOpen = true;
+                  this.rebuild();
+               }).bounds(this.previewLeft() + (third + 4) * 2, this.previewBottom() + 4, third, 20).build());
+               this.addChrome(new SunSlider(this.previewLeft(), this.previewBottom() + 26, this.previewWidth(), 20, this));
+            }
          }
 
          this.skipCurrentSection = false;
@@ -522,6 +609,7 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("Chasing & Distractions", "orbitStationaryTargets", "chaseSpeed", "chaseInterval", "distractionInterval", "distractionDuration", "distractionRange");
       this.serverSection("Targeting", "targetingMode");
       this.serverSection("Heads & Tractor Beams", "headFireInterval", "headTargetRange", "headForgiveSeconds", "beamClusterInterval", "beamGroundRadius", "beamShutoff", "mobPickup", "castThroughWater", "beamImpactLight", "roarRange", "beamSoundRange");
+      this.serverSection("Tractor Beam Physics", "tractorBeamPullPower", "tractorBeamLiftSpeed");
       this.serverSection("Debris Clusters", "clustersTakeLiquids", "severedScavenge", "severedScavengeInterval", "spiralStrength", "clusterSpeed", "clusterCooldown", "absorptionRadius", "pickupRangeModifier");
       String[] stageKeys = new String[WitherStormWorldConfig.CLUSTER_STAGES.length];
 
@@ -530,6 +618,8 @@ public class WitherStormConfigScreen extends Screen {
       }
 
       this.serverSection("Max Cluster Size by Stage", stageKeys);
+      this.serverSection("Debris Vortex & Lightning", "debrisTornadoSpeed", "debrisDamageMultiplier", "superCataclysmLightning", "lightningDischargeInterval", "lightningDamage");
+      this.serverSection("House & Village Destruction", "buildingDestruction", "buildingTearRadius", "buildingTearInterval", "buildingClusterSize");
       this.serverSection("Corruption & Behavior", "mobsFlee", "tentacleAwareness", "witherSickness", "witheredMobs", "witheredMax", "witheredMaxCaves");
       this.serverSection("Atmosphere", "worldDarkening");
       this.serverSection("Formidibomb Aftermath", "postFormidibombChase", "postFormidibombChaseSpeed", "fastGrowthToSixOne", "fastGrowthToSixOneSpeed");
@@ -538,7 +628,9 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("Nether Scaling", "netherScale", "netherScaleInterval", "netherScaleRandom");
       this.serverSection("New Growth Features", "instantGrowth", "instantGrowthRate", "infinitePhases", "phaseCeiling");
       this.serverSection("Story-Mode Towns", "townNpcPopulation");
-      this.serverSection("Tentacle Slams & Raids", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "structureRaid", "structureRaidInterval", "structureRaidRadius", "structureTearClusters");
+      this.serverSection("Tentacle Swoops & Fling Attacks", "tentacleSwoopSpeed", "tentacleThrowPower", "tentacleChompDamage", "tentacleSnatchRange", "tentacleTargetMobs", "tentacleEscapeHits");
+      this.serverSection("Tentacle Slams & Shockwaves", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "groundShakeOnSlam", "groundShakeRadius", "groundShockwaveParticles");
+      this.serverSection("Combat & Damage Multipliers", "bossHealthMultiplier", "bossAttackDamageMultiplier");
       this.serverSection("Death & Berserk", "deathBlast", "deathBlastRadius", "berserk", "berserkHealth", "berserkSlamInterval");
    }
 
@@ -752,6 +844,26 @@ public class WitherStormConfigScreen extends Screen {
       this.clientRow("cataclysmFogR", "Phase-5.8 Fog: Red", (BooleanSupplier)null);
       this.clientRow("cataclysmFogG", "Phase-5.8 Fog: Green", (BooleanSupplier)null);
       this.clientRow("cataclysmFogB", "Phase-5.8 Fog: Blue", (BooleanSupplier)null);
+      this.header("Cinematic Overlays & HUD");
+      this.clientRow("storyModeBossbar", "Story Mode Boss Health Bar", (BooleanSupplier)null);
+      this.clientRow("storyModeTitleScreen", "Story Mode Main Menu Theme", (BooleanSupplier)null);
+      this.clientRow("stormProximityVignette", "Storm Proximity Dark Vignette", (BooleanSupplier)null);
+      this.clientRow("vignetteIntensity", "Vignette Darkness Intensity", () -> !DabyWSClientConfig.stormProximityVignette);
+      this.clientRow("sicknessVeinOverlay", "Wither Sickness Creeping Veins", (BooleanSupplier)null);
+      this.clientRow("sicknessVeinIntensity", "Vein Overlay Intensity", () -> !DabyWSClientConfig.sicknessVeinOverlay);
+      this.clientRow("chromaticGlitchStrength", "Roar Chromatic Shockwave Glitch", (BooleanSupplier)null);
+      this.header("Atmospheric FX & Particles");
+      this.clientRow("trailerShadows", "Cinematic Trailer Shadow Casting", (BooleanSupplier)null);
+      this.clientRow("groundShakingTremors", "Earthquake Camera Tremors", (BooleanSupplier)null);
+      this.clientRow("screenTremorIntensity", "Camera Shake Intensity", () -> !DabyWSClientConfig.groundShakingTremors);
+      this.clientRow("dynamicScreenShake", "Storm Footstep Ground Vibrations", (BooleanSupplier)null);
+      this.clientRow("customSkyboxes", "Dynamic FabricSkyBoxes", (BooleanSupplier)null);
+      this.clientRow("cloudDeckLayer", "Story Mode Volumetric Cloud Deck", (BooleanSupplier)null);
+      this.clientRow("regionalBiomeFog", "Regional Biome Atmospheric Fog", (BooleanSupplier)null);
+      this.clientRow("purpleLightningSparks", "Ambient Purple Lightning Spikes", (BooleanSupplier)null);
+      this.clientRow("debrisDustParticles", "Debris Dust & Splinter Particles", (BooleanSupplier)null);
+      this.clientRow("headEyeGlow", "Colossal Head Eye Lens Flare Glow", (BooleanSupplier)null);
+      this.clientRow("volumetricFogDensity", "Volumetric Mist & Haze Density", (BooleanSupplier)null);
       this.buildPerformanceRows();
    }
 
@@ -1141,6 +1253,18 @@ public class WitherStormConfigScreen extends Screen {
             widget.extractRenderState(g, mouseX, mouseY, partialTick);
          }
 
+      } else if (this.backdropPickerOpen) {
+         int w2 = this.width / 2;
+         int top = this.height / 2 - PreviewScene.BACKDROP_LABELS.length * 22 / 2;
+         g.fill(0, 0, this.width, this.height, -1879048192);
+         g.fill(w2 - 80, top - 30, w2 + 80, top + PreviewScene.BACKDROP_LABELS.length * 22 + 36, -435352812);
+         g.fill(w2 - 81, top - 31, w2 + 81, top - 30, -12964270);
+         g.centeredText(this.font, "Choose a Skybox Backdrop", w2, top - 22, -16307);
+
+         for(AbstractWidget widget : this.chrome) {
+            widget.extractRenderState(g, mouseX, mouseY, partialTick);
+         }
+
       } else if (this.presetPickerOpen) {
          int w2 = this.width / 2;
          int top = this.height / 2 - DabyWSClientConfig.PRESET_LABELS.length * 24 / 2;
@@ -1182,6 +1306,14 @@ public class WitherStormConfigScreen extends Screen {
          g.fill(w2 + 140, h2 - 44, w2 + 141, h2 + 42, -12964270);
          g.centeredText(this.font, "You have unsaved changes!", w2, h2 - 32, -16307);
          g.centeredText(this.font, "Save them to the server before leaving?", w2, h2 - 16, -2236963);
+
+         for(AbstractWidget widget : this.chrome) {
+            widget.extractRenderState(g, mouseX, mouseY, partialTick);
+         }
+
+      } else if (this.previewGigantic && this.previewVisible()) {
+         g.fill(0, 0, this.width, this.height, -16777216);
+         this.drawPreview(g);
 
          for(AbstractWidget widget : this.chrome) {
             widget.extractRenderState(g, mouseX, mouseY, partialTick);
@@ -1274,18 +1406,27 @@ public class WitherStormConfigScreen extends Screen {
       this.stepPreviewTurn();
       int bands = 14;
 
-      for(int i = 0; i < bands; ++i) {
-         int y0 = 58 + (bottom - 58) * i / bands;
-         int y1 = 58 + (bottom - 58) * (i + 1) / bands;
-         g.fill(left, y0, right, y1, lerpColor(-12690298, -7362108, (float)i / (float)(bands - 1)));
+      if (this.previewBackdrop == 0) {
+         for(int i = 0; i < bands; ++i) {
+            int y0 = 58 + (bottom - 58) * i / bands;
+            int y1 = 58 + (bottom - 58) * (i + 1) / bands;
+            g.fill(left, y0, right, y1, lerpColor(-12690298, -7362108, (float)i / (float)(bands - 1)));
+         }
+      } else {
+         g.fill(left, 58, right, bottom, -16777216);
       }
 
-      StormModelPreview.render(g, left, 58, right, bottom, this.previewView(), this.previewPhase, this.previewSub, this.previewFacing(), this.previewSunAzimuth, this.previewBeamMask, -7362108, this.previewShadow());
+      StormModelPreview.render(g, left, 58, right, bottom, this.previewView(), this.previewPhase, this.previewSub, this.previewFacing(), this.previewSunAzimuth, this.previewBeamMask, -7362108, this.previewShadow(), this.previewBackdrop);
       g.fill(left - 1, 57, right + 1, 58, -12964270);
       g.fill(left - 1, bottom, right + 1, bottom + 1, -12964270);
       g.fill(left - 1, 58, left, bottom, -12964270);
       g.fill(right, 58, right + 1, bottom, -12964270);
-      g.centeredText(this.font, "Bloom is fullscreen; not shown here", (left + right) / 2, bottom - 11, -7695448);
+
+      if (this.previewGigantic) {
+         g.centeredText(this.font, "§5§lGigantic Preview §7— Left-Drag: Rotate | Right-Drag: Pan | Scroll: Zoom (" + String.format("%.1fx", this.previewZoom) + ") | Click Heads: Toggle Beams", (left + right) / 2, 40, -1);
+      } else {
+         g.centeredText(this.font, "Bloom is fullscreen; not shown here", (left + right) / 2, bottom - 11, -7695448);
+      }
    }
 
    private void drawPreviewSun(GuiGraphicsExtractor g, int left, int right, int bottom) {
@@ -1340,7 +1481,7 @@ public class WitherStormConfigScreen extends Screen {
 
    private void closeForReal() {
       DabyWSClientConfig.save();
-      Minecraft.getInstance().gui.setScreen(this.parent);
+      Minecraft.getInstance().setScreen(this.parent);
    }
 
    private static enum Tab {

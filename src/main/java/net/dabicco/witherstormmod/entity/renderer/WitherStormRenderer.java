@@ -536,6 +536,7 @@ public class WitherStormRenderer extends MobRenderer<WitherStormEntity, WitherSt
 
       try {
          if (state.preview != null && !this.previewShadowPass) {
+            state.preview.submitSky(poseStack, submitNodeCollector);
             state.preview.submitGround(poseStack, submitNodeCollector);
             state.preview.submitSun(poseStack, submitNodeCollector);
             if (state.preview.castShadow) {

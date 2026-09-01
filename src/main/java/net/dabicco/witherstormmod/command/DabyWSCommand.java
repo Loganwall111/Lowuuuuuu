@@ -344,6 +344,34 @@ public class DabyWSCommand {
       return count;
    }
 
+   private static int snatchStorms(CommandContext<CommandSourceStack> ctx, boolean throwMode) throws CommandSyntaxException {
+      CommandSourceStack source = (CommandSourceStack)ctx.getSource();
+      int count = 0;
+      ServerPlayer player = source.getPlayer();
+
+      for(WitherStormEntity ws : getStorms(ctx)) {
+         LivingEntity target = player;
+         if (target == null && ws.level() instanceof ServerLevel sl) {
+            List<LivingEntity> list = sl.getEntitiesOfClass(LivingEntity.class, ws.getBoundingBox().inflate(48.0));
+            for(LivingEntity le : list) {
+               if (le != ws && !(le instanceof WitherStormHeadEntity) && !(le instanceof GrabTentacleEntity) && le.isAlive()) {
+                  target = le;
+                  break;
+               }
+            }
+         }
+         if (target != null) {
+            ws.beginSnatch(target, throwMode);
+            String var10000 = stormLabel(ws);
+            String action = throwMode ? ": tentacle throw swoop initiated!" : ": tentacle devour swoop initiated!";
+            source.sendSuccess(() -> Component.literal(var10000 + action), true);
+            ++count;
+         }
+      }
+
+      return count;
+   }
+
    private static int stormStatus(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
       CommandSourceStack source = (CommandSourceStack)ctx.getSource();
       int count = 0;
@@ -441,7 +469,7 @@ public class DabyWSCommand {
       int placed = StructureBuilder.build(source.getLevel(), player.blockPosition(), type);
       if ((type.equals("town") || type.equals("endertown")) && placed > 0) StoryNpcSpawner.populate(source.getLevel(), player.blockPosition(), WitherStormConfigs.get(source.getLevel()).townNpcPopulation);
       if (placed == 0) {
-         source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church | town | endertown)"));
+         source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church | town | endertown | temple | redstonia | boomtown | endercon | bunker | shrine | island | sky_fortress | farlands | ivor_lab | storm_nest | vault)"));
          return 0;
       }
       int count = placed;
@@ -497,6 +525,15 @@ public class DabyWSCommand {
          .then(Commands.literal("slam").requires(DabyWSCommand::mayEditServerConfig)
             .then(Commands.argument("targets", EntityArgument.entities())
                .executes((ctx) -> slamStorms(ctx))))
+         .then(Commands.literal("grab").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .executes((ctx) -> snatchStorms(ctx, false))))
+         .then(Commands.literal("throw").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .executes((ctx) -> snatchStorms(ctx, true))))
+         .then(Commands.literal("eat").requires(DabyWSCommand::mayEditServerConfig)
+            .then(Commands.argument("targets", EntityArgument.entities())
+               .executes((ctx) -> snatchStorms(ctx, false))))
          .then(Commands.literal("roar").requires(DabyWSCommand::mayEditServerConfig)
             .then(Commands.argument("targets", EntityArgument.entities())
                .executes((ctx) -> roarStorms(ctx))))

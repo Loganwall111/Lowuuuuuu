@@ -116,6 +116,7 @@ public class SeveredWitherStormRenderer extends MobRenderer<SeveredWitherStormEn
 
    public void submit(SeveredWitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
       if (state.preview != null && !this.previewShadowPass) {
+         state.preview.submitSky(poseStack, collector);
          state.preview.submitGround(poseStack, collector);
          state.preview.submitSun(poseStack, collector);
          if (state.preview.castShadow) {
