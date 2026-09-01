@@ -29,7 +29,7 @@ public abstract class CreateWorldGameTabMixin extends GridLayoutTab {
          int[] var6 = new int[]{0};
          grid.visitChildren(child -> var6[0]++);
          Button button = Button.builder(
-               Component.literal("Dabicco's Wither Storm Server"), b -> Minecraft.getInstance().setScreen(new WitherStormConfigScreen(parent, true))
+               Component.literal("Dabicco's Wither Storm Server"), b -> Minecraft.getInstance().gui.setScreen(new WitherStormConfigScreen(parent, true))
             )
             .width(210)
             .build();

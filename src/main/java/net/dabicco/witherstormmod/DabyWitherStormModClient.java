@@ -37,6 +37,7 @@ import net.dabicco.witherstormmod.client.RetrieverClientTooltip;
 import net.dabicco.witherstormmod.client.RetrieverCountProperties;
 import net.dabicco.witherstormmod.client.SpawnTowerGloom;
 import net.dabicco.witherstormmod.client.StormAmbienceSound;
+import net.dabicco.witherstormmod.client.StormAtmosphereOverlay;
 import net.dabicco.witherstormmod.client.StormDistantVocals;
 import net.dabicco.witherstormmod.client.StormLoopSounds;
 import net.dabicco.witherstormmod.client.StormMusic;
@@ -241,7 +242,7 @@ public class DabyWitherStormModClient implements ClientModInitializer {
       ClientPlayNetworking.registerGlobalReceiver(SyncWitherStormConfigPayload.TYPE, (payload, context) -> context.client().execute(() -> {
             ClientConfigCache.cfg.applyArray(payload.values());
             ClientConfigCache.canEditServer = payload.canEdit();
-            Screen patt0$temp = context.client().screen;
+            Screen patt0$temp = context.client().gui.screen();
             if (patt0$temp instanceof WitherStormConfigScreen screen) {
                screen.onServerConfigSynced();
             }

@@ -53,7 +53,7 @@ public final class BiomeStormFog {
       if (level.dimension() == Level.NETHER) {
          return RegionAtmosphere.NETHER_NECROSIS;
       }
-      if (level.dimension().location().getPath().contains("bowels")) {
+      if (level.dimension().identifier().getPath().contains("bowels")) {
          return RegionAtmosphere.BOWELS_VISCERAL;
       }
 
@@ -65,7 +65,7 @@ public final class BiomeStormFog {
       BlockPos pos = BlockPos.containing(cameraPos);
       Holder<Biome> biomeHolder = level.getBiome(pos);
       if (biomeHolder != null && biomeHolder.unwrapKey().isPresent()) {
-         String biomePath = biomeHolder.unwrapKey().get().location().getPath().toLowerCase();
+         String biomePath = biomeHolder.unwrapKey().get().identifier().getPath().toLowerCase();
          if (biomePath.contains("desert") || biomePath.contains("badlands") || biomePath.contains("savanna") || biomePath.contains("mesa")) {
             return RegionAtmosphere.DESERT_SMOLDER;
          }
