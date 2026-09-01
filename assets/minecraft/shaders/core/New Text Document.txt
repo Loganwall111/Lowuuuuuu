@@ -1,0 +1,274 @@
+[05:33:56] [main] [cpw.mods.modlauncher.Launcher/INFO]: ModLauncher running: args [--username, {MINECRAFT_USERNAME}, --version, 1.20.1, --gameDir, C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2, --assetsDir, C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\meta\assets, --assetIndex, 5, --uuid, {MINECRAFT_UUID}, --accessToken, ❄❄❄❄❄❄❄❄, --clientId, c4502edb-87c6-40cb-b595-64a280cf8906, --xuid, 0, --userType, msa, --versionType, release, --width, 854, --height, 480, --launchTarget, forgeclient, --fml.forgeVersion, 47.4.20, --fml.mcVersion, 1.20.1, --fml.forgeGroup, net.minecraftforge, --fml.mcpVersion, 20230612.114412]
+[05:33:56] [main] [cpw.mods.modlauncher.Launcher/INFO]: ModLauncher 10.0.9+10.0.9+main.dcd20f30 starting: java version 17.0.17 by Azul Systems, Inc.; OS Windows 11 arch amd64 version 10.0
+[05:33:57] [main] [net.minecraftforge.fml.loading.ImmediateWindowHandler/INFO]: Loading ImmediateWindowProvider fmlearlywindow
+[05:33:57] [main] [EARLYDISPLAY/INFO]: Trying GL version 4.6
+[05:33:59] [main] [EARLYDISPLAY/INFO]: Requested GL version 4.6 got version 4.6
+[05:33:59] [main] [mixin-transmog/INFO]: Mixin Transmogrifier is definitely up to no good...
+[05:33:59] [main] [mixin-transmog/INFO]: crimes against java were committed
+[05:33:59] [main] [optifine.OptiFineTransformationService/INFO]: OptiFineTransformationService.onLoad
+[05:33:59] [main] [optifine.OptiFineTransformationService/INFO]: OptiFine ZIP file URL: union:/C:/Users/{COMPUTER_USERNAME}/AppData/Roaming/ModrinthApp/profiles/Fabric%2026.2/mods/OptiFine_1.20.1_HD_U_I6.jar%23180!/
+[05:33:59] [main] [optifine.OptiFineTransformationService/INFO]: OptiFine ZIP file: C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods\OptiFine_1.20.1_HD_U_I6.jar
+[05:33:59] [main] [optifine.OptiFineTransformer/INFO]: Target.PRE_CLASS is available
+[05:33:59] [main] [mixin-transmog/INFO]: Original mixin transformation service successfully crobbed by mixin-transmogrifier!
+[05:33:59] [main] [optifine.OptiFineTransformationService/INFO]: OptiFineTransformationService.initialize
+[05:33:59] [pool-2-thread-1] [EARLYDISPLAY/INFO]: GL info: NVIDIA GeForce RTX 5050 Laptop GPU/PCIe/SSE2 GL version 4.6.0 NVIDIA 610.74, NVIDIA Corporation
+[05:33:59] [main] [mixin/INFO]: SpongePowered MIXIN Subsystem Version=0.8.5 Source=union:/C:/Users/{COMPUTER_USERNAME}/AppData/Roaming/ModrinthApp/profiles/Fabric%2026.2/mods/Connector-1.0.0-beta.49+1.20.1.jar%23177%23181!/ Service=ModLauncher Env=CLIENT
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file Connector-1.0.0-beta.49+1.20.1-mod.jar of type MOD with provider org.sinytra.connector.locator.ConnectorEarlyLocator@6bff19ff
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file bettercombat-forge-1.9.0+1.20.1.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file BetterThirdPerson-Forge-1.20-1.9.0.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file CameraOverhaul-v2.1.1-forge+mc[1.20-1.20.5].jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file cloth-config-11.1.136-forge.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file colorful_lighting-1.20.1-2.7.0.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file entity_model_features-3.2.4-1.20.1-forge.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file entity_texture_features_1.20.1-forge-7.1.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-api-0.92.6+1.11.15+1.20.1.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file geckolib-forge-1.20.1-4.8.4.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file liosplayeranimatorapi-forge-1.20.1-0.0.8.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file Pehkui-3.8.2+1.20.1-forge.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file player-animation-lib-forge-1.0.2-rc1+1.20.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file Smlr1.20.1V4.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file witherstormmod-1.20.1-4.2.1-all.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:33:59] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file zaps_sm_portals-1.0.1-forge-1.20.1.jar of type MOD with provider {mods folder locator at C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2\mods}
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/WARN]: Mod file C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\meta\libraries\net\minecraftforge\fmlcore\1.20.1-47.4.20\fmlcore-1.20.1-47.4.20.jar is missing mods.toml file
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/WARN]: Mod file C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\meta\libraries\net\minecraftforge\javafmllanguage\1.20.1-47.4.20\javafmllanguage-1.20.1-47.4.20.jar is missing mods.toml file
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/WARN]: Mod file C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\meta\libraries\net\minecraftforge\lowcodelanguage\1.20.1-47.4.20\lowcodelanguage-1.20.1-47.4.20.jar is missing mods.toml file
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModFileParser/WARN]: Mod file C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\meta\libraries\net\minecraftforge\mclanguage\1.20.1-47.4.20\mclanguage-1.20.1-47.4.20.jar is missing mods.toml file
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fmlcore-1.20.1-47.4.20.jar of type LIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@4905c46b
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file javafmllanguage-1.20.1-47.4.20.jar of type LANGPROVIDER with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@4905c46b
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file lowcodelanguage-1.20.1-47.4.20.jar of type LANGPROVIDER with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@4905c46b
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file mclanguage-1.20.1-47.4.20.jar of type LANGPROVIDER with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@4905c46b
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file client-1.20.1-20230612.114412-srg.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@4905c46b
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file forge-1.20.1-47.4.20-universal.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@4905c46b
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator/INFO]: Found 50 dependencies adding them to mods collection
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-transfer-api-v1-3.3.6+25eff73b77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-dimensions-v1-2.1.55+8005d10d77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-renderer-api-v1-3.2.2+cf68abbe77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-item-api-v1-2.1.29+4d0bbcfa77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-model-loading-api-v1-1.0.4+6274ab9d77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-rendering-fluids-v1-3.0.29+4ac5e37a77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-screen-handler-api-v1-1.3.33+561530ec77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-models-v0-0.4.3+7c3892a477.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-resource-loader-v0-0.11.12+4b4151c077.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file mclib-20.jar of type GAMELIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-rendering-v1-3.0.9+66e9a48f77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-renderer-indigo-1.5.3+b5b2da4177.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-convention-tags-v1-1.5.6+fa3d1c0177.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-mining-level-api-v1-2.1.52+561530ec77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-command-api-v1-1.2.35+f71b366f77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-block-view-api-v2-1.0.3+53347ba977.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file MixinExtras-0.4.1.jar of type GAMELIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-command-api-v2-2.2.14+561530ec77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file crackerslib-forge-1.20.1-0.4.1.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-data-attachment-api-v1-1.0.2+30ef839e77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file mixinextras-forge-0.4.1.jar of type GAMELIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-screen-api-v1-2.0.9+45a670a577.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-particles-v1-1.1.3+78e1ecb877.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-content-registries-v0-4.0.13+a670df1e77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-transitive-access-wideners-v1-4.3.2+1880499877.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-game-rule-api-v1-1.0.41+683d4da877.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-api-base-0.4.32+ef105b4977.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file runtime-1.0.0+1.20.1.jar of type GAMELIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-api-lookup-api-v1-1.6.37+67f9824077.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-blockrenderlayer-v1-1.1.42+1d0da21e77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-block-api-v1-1.0.12+0e6cb7f777.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-resource-conditions-api-v1-2.3.9+996d00b277.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file Connector-1.0.0-beta.49+1.20.1-fabricloader.jar of type LIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-item-group-api-v1-4.0.14+c9161c2d77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file liosmultiloaderutils-forge-1.20.1-1.2.4-1.2.4.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-biome-api-v1-13.0.14+dc36698e77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-entity-events-v1-1.6.1+4ca7515277.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-registry-sync-v0-2.3.6+1c0ea72177.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-recipe-api-v1-1.0.24+514a076577.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-loot-api-v2-1.2.3+eb28f93e77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-object-builder-api-v1-11.1.5+f8c414ce77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-rendering-data-attachment-v1-0.3.39+a6081afc77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-networking-api-v1-1.3.14+fb7c822677.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-sound-api-v1-1.0.14+4f23bd8477.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-message-api-v1-5.1.10+52cc178c77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-lifecycle-events-v1-2.2.23+afab492177.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-data-generation-api-v1-12.3.7+369cb3a477.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-events-interaction-v0-0.6.5+0f26153f77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-key-binding-api-v1-1.0.38+561530ec77.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:00] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabric-client-tags-api-v1-1.1.3+5d6761b877.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.JarInJarDependencyLocator@27a97e08
+[05:34:01] [main] [org.sinytra.connector.locator.DependencyResolver/INFO]: Dependency resolution found 2 candidates to load
+[05:34:01] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file fabricskyboxes-0.7.3+mc1.20.1_mapped_srg_1.20.1.jar of type MOD with provider org.sinytra.connector.locator.ConnectorLocator@5d497a91
+[05:34:01] [main] [net.minecraftforge.fml.loading.moddiscovery.ModDiscoverer/INFO]: Found mod file placeholder-api-2.2.1+1.20.2_mapped_srg_1.20.1.jar of type MOD with provider org.sinytra.connector.locator.ConnectorLocator@5d497a91
+[05:34:02] [main] [org.sinytra.connector.service.hacks.ModuleLayerMigrator/INFO]: Successfully made module authlib transformable
+[05:34:02] [main] [optifine.OptiFineTransformationService/INFO]: OptiFineTransformationService.transformers
+[05:34:02] [main] [optifine.OptiFineTransformer/INFO]: Targets: 412
+[05:34:03] [main] [optifine.OptiFineTransformationService/INFO]: additionalClassesLocator: [optifine., net.optifine.]
+[05:34:03] [main] [mixin/INFO]: Compatibility level set to JAVA_17
+[05:34:03] [main] [cpw.mods.modlauncher.LaunchServiceHandler/INFO]: Launching target 'forgeclient' with arguments [--version, 1.20.1, --gameDir, C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\profiles\Fabric 26.2, --assetsDir, C:\Users\{COMPUTER_USERNAME}\AppData\Roaming\ModrinthApp\meta\assets, --uuid, {MINECRAFT_UUID}, --username, {MINECRAFT_USERNAME}, --assetIndex, 5, --accessToken, ❄❄❄❄❄❄❄❄, --clientId, c4502edb-87c6-40cb-b595-64a280cf8906, --xuid, 0, --userType, msa, --versionType, release, --width, 854, --height, 480]
+[05:34:04] [main] [mixin/WARN]: Reference map 'liosmultiloaderutils-common-1.20.1-common-refmap.json' for liosmultiloaderutils-common.mixins.json could not be read. If this is a development environment you can ignore this message
+[05:34:04] [main] [mixin/WARN]: Reference map '' for adapter.init.mixins.json could not be read. If this is a development environment you can ignore this message
+[05:34:06] [main] [mixin/WARN]: Error loading class: ca/spottedleaf/starlight/common/light/StarLightInterface (java.lang.ClassNotFoundException: ca.spottedleaf.starlight.common.light.StarLightInterface)
+[05:34:06] [main] [mixin/WARN]: Error loading class: ca/spottedleaf/starlight/common/light/StarLightInterface (java.lang.ClassNotFoundException: ca.spottedleaf.starlight.common.light.StarLightInterface)
+[05:34:06] [main] [mixin/WARN]: Error loading class: com/leclowndu93150/wakes/simulation/Brick (java.lang.ClassNotFoundException: com.leclowndu93150.wakes.simulation.Brick)
+[05:34:06] [main] [mixin/WARN]: Error loading class: com/leclowndu93150/wakes/particle/custom/SplashPlaneParticle (java.lang.ClassNotFoundException: com.leclowndu93150.wakes.particle.custom.SplashPlaneParticle)
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/irisshaders/iris/gl/shader/StandardMacros (java.lang.ClassNotFoundException: net.irisshaders.iris.gl.shader.StandardMacros)
+[05:34:06] [main] [mixin/WARN]: @Mixin target net.irisshaders.iris.gl.shader.StandardMacros was not found colorful_lighting.mixins.json:compat.iris.IrisMacroInjection from mod colorful_lighting
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/irisshaders/iris/pipeline/transform/transformer/CommonTransformer (java.lang.ClassNotFoundException: net.irisshaders.iris.pipeline.transform.transformer.CommonTransformer)
+[05:34:06] [main] [mixin/WARN]: @Mixin target net.irisshaders.iris.pipeline.transform.transformer.CommonTransformer was not found colorful_lighting.mixins.json:compat.iris.CommonTransformerMixin from mod colorful_lighting
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/irisshaders/iris/shaderpack/properties/ShaderProperties (java.lang.ClassNotFoundException: net.irisshaders.iris.shaderpack.properties.ShaderProperties)
+[05:34:06] [main] [mixin/WARN]: @Mixin target net.irisshaders.iris.shaderpack.properties.ShaderProperties was not found colorful_lighting.mixins.json:compat.iris.ShaderPropertiesMixin from mod colorful_lighting
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/irisshaders/iris/shaderpack/ShaderPack (java.lang.ClassNotFoundException: net.irisshaders.iris.shaderpack.ShaderPack)
+[05:34:06] [main] [mixin/WARN]: @Mixin target net.irisshaders.iris.shaderpack.ShaderPack was not found colorful_lighting.mixins.json:compat.iris.ShaderPackMixin from mod colorful_lighting
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/irisshaders/iris/shaderpack/ShaderPack (java.lang.ClassNotFoundException: net.irisshaders.iris.shaderpack.ShaderPack)
+[05:34:06] [main] [mixin/WARN]: @Mixin target net.irisshaders.iris.shaderpack.ShaderPack was not found colorful_lighting.mixins.json:compat.iris.ShaderPackAccessor from mod colorful_lighting
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/irisshaders/iris/Iris (java.lang.ClassNotFoundException: net.irisshaders.iris.Iris)
+[05:34:06] [main] [mixin/WARN]: @Mixin target net.irisshaders.iris.Iris was not found colorful_lighting.mixins.json:compat.iris.IrisMixin from mod colorful_lighting
+[05:34:06] [main] [mixin/WARN]: Error loading class: me/jellysquid/mods/sodium/client/model/light/flat/FlatLightPipeline (java.lang.ClassNotFoundException: me.jellysquid.mods.sodium.client.model.light.flat.FlatLightPipeline)
+[05:34:06] [main] [mixin/WARN]: @Mixin target me.jellysquid.mods.sodium.client.model.light.flat.FlatLightPipeline was not found colorful_lighting.mixins.json:compat.sodium.sodium.FlatLightPipelineMixin from mod colorful_lighting
+[05:34:06] [main] [mixin/WARN]: Error loading class: me/jellysquid/mods/sodium/client/model/light/smooth/SmoothLightPipeline (java.lang.ClassNotFoundException: me.jellysquid.mods.sodium.client.model.light.smooth.SmoothLightPipeline)
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/raphimc/immediatelyfast/feature/core/BatchableBufferSource (java.lang.ClassNotFoundException: net.raphimc.immediatelyfast.feature.core.BatchableBufferSource)
+[05:34:06] [main] [mixin/WARN]: Error loading class: dev/tr7zw/skinlayers/render/CustomizableModelPart (java.lang.ClassNotFoundException: dev.tr7zw.skinlayers.render.CustomizableModelPart)
+[05:34:06] [main] [mixin/WARN]: Error loading class: me/jellysquid/mods/sodium/client/render/vertex/buffer/SodiumBufferBuilder (java.lang.ClassNotFoundException: me.jellysquid.mods.sodium.client.render.vertex.buffer.SodiumBufferBuilder)
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/irisshaders/batchedentityrendering/impl/FullyBufferedMultiBufferSource (java.lang.ClassNotFoundException: net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource)
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/irisshaders/iris/layer/InnerWrappedRenderType (java.lang.ClassNotFoundException: net.irisshaders.iris.layer.InnerWrappedRenderType)
+[05:34:06] [main] [mixin/WARN]: Error loading class: net/irisshaders/iris/layer/OuterWrappedRenderType (java.lang.ClassNotFoundException: net.irisshaders.iris.layer.OuterWrappedRenderType)
+org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException: Critical injection failure: @Inject annotation on getResourcePackNames could not find any targets matching 'Lnet/minecraft/server/packs/resources/ReloadableResourceManager;m_203825_(Ljava/util/List;)Ljava/lang/Object;' in net.minecraft.server.packs.resources.ReloadableResourceManager. Using refmap fabric-resource-loader-v0-refmap.json [PREINJECT Applicator Phase -> fabric-resource-loader-v0.mixins.json:ReloadableResourceManagerImplMixin from mod fabric_resource_loader_v0 -> Prepare Injections ->  -> handler$zkb000$fabric_resource_loader_v0$getResourcePackNames(Ljava/util/List;Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V -> Parse]
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.validateTargets(InjectionInfo.java:656)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.findTargets(InjectionInfo.java:587)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.readAnnotation(InjectionInfo.java:330)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.<init>(InjectionInfo.java:316)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.<init>(InjectionInfo.java:308)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.CallbackInjectionInfo.<init>(CallbackInjectionInfo.java:46)
+        at jdk.internal.reflect.GeneratedConstructorAccessor21.newInstance(Unknown Source)
+        at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(Unknown Source)
+        at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Unknown Source)
+        at java.base/java.lang.reflect.Constructor.newInstance(Unknown Source)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo$InjectorEntry.create(InjectionInfo.java:149)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.parse(InjectionInfo.java:708)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinTargetContext.prepareInjections(MixinTargetContext.java:1329)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.prepareInjections(MixinApplicatorStandard.java:1053)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.applyMixin(MixinApplicatorStandard.java:395)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:327)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:421)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:403)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:363)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:250)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.service.modlauncher.MixinTransformationHandler.processClass(MixinTransformationHandler.java:131)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.launch.MixinLaunchPluginLegacy.processClass(MixinLaunchPluginLegacy.java:131)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.serviceapi.ILaunchPluginService.processClassWithFlags(ILaunchPluginService.java:156)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.LaunchPluginHandler.offerClassNodeToPlugins(LaunchPluginHandler.java:88)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.ClassTransformer.transform(ClassTransformer.java:120)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.TransformingClassLoader.maybeTransformClassBytes(TransformingClassLoader.java:50)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.readerToClass(ModuleClassLoader.java:113)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.lambda$findClass$15(ModuleClassLoader.java:219)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.loadFromModule(ModuleClassLoader.java:229)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.findClass(ModuleClassLoader.java:219)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.loadClass(ModuleClassLoader.java:135)
+        at java.base/java.lang.ClassLoader.loadClass(Unknown Source)
+        at java.base/java.lang.Class.getDeclaredFields0(Native Method)
+        at java.base/java.lang.Class.privateGetDeclaredFields(Unknown Source)
+        at java.base/java.lang.Class.getDeclaredFields(Unknown Source)
+        at TRANSFORMER/net.optifine/net.optifine.reflect.FieldLocatorTypes.<init>(FieldLocatorTypes.java:25)
+        at TRANSFORMER/net.optifine/net.optifine.reflect.Reflector.<clinit>(Reflector.java:550)
+        at TRANSFORMER/minecraft@1.20.1/net.minecraft.CrashReport.m_127526_(CrashReport.java:176)
+        at TRANSFORMER/minecraft@1.20.1/net.minecraft.CrashReport.m_127529_(CrashReport.java:346)
+        at TRANSFORMER/minecraft@1.20.1/net.minecraft.client.main.Main.main(Main.java:149)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+        at MC-BOOTSTRAP/fmlloader@1.20.1-47.4.20/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111)
+        at MC-BOOTSTRAP/fmlloader@1.20.1-47.4.20/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99)
+        at MC-BOOTSTRAP/fmlloader@1.20.1-47.4.20/net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.Launcher.run(Launcher.java:108)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.Launcher.main(Launcher.java:78)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23)
+        at cpw.mods.bootstraplauncher@1.1.2/cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+        at com.modrinth.theseus.MinecraftLaunch.relaunch(MinecraftLaunch.java:63)
+        at com.modrinth.theseus.MinecraftLaunch.main(MinecraftLaunch.java:28)
+Exception in thread "main" java.lang.reflect.InvocationTargetException
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+        at com.modrinth.theseus.MinecraftLaunch.relaunch(MinecraftLaunch.java:63)
+        at com.modrinth.theseus.MinecraftLaunch.main(MinecraftLaunch.java:28)
+Caused by: java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:32)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.Launcher.run(Launcher.java:108)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.Launcher.main(Launcher.java:78)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23)
+        at cpw.mods.bootstraplauncher@1.1.2/cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:141)
+        ... 6 more
+Caused by: java.lang.reflect.InvocationTargetException
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+        at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+        at MC-BOOTSTRAP/fmlloader@1.20.1-47.4.20/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:111)
+        at MC-BOOTSTRAP/fmlloader@1.20.1-47.4.20/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:99)
+        at MC-BOOTSTRAP/fmlloader@1.20.1-47.4.20/net.minecraftforge.fml.loading.targets.CommonClientLaunchHandler.lambda$makeService$0(CommonClientLaunchHandler.java:25)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30)
+        ... 13 more
+Caused by: org.spongepowered.asm.mixin.transformer.throwables.MixinTransformerError: An unexpected critical error was encountered
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:392)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:250)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.service.modlauncher.MixinTransformationHandler.processClass(MixinTransformationHandler.java:131)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.launch.MixinLaunchPluginLegacy.processClass(MixinLaunchPluginLegacy.java:131)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.serviceapi.ILaunchPluginService.processClassWithFlags(ILaunchPluginService.java:156)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.LaunchPluginHandler.offerClassNodeToPlugins(LaunchPluginHandler.java:88)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.ClassTransformer.transform(ClassTransformer.java:120)
+        at MC-BOOTSTRAP/cpw.mods.modlauncher@10.0.9/cpw.mods.modlauncher.TransformingClassLoader.maybeTransformClassBytes(TransformingClassLoader.java:50)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.readerToClass(ModuleClassLoader.java:113)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.lambda$findClass$15(ModuleClassLoader.java:219)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.loadFromModule(ModuleClassLoader.java:229)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.findClass(ModuleClassLoader.java:219)
+        at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.loadClass(ModuleClassLoader.java:135)
+        at java.base/java.lang.ClassLoader.loadClass(Unknown Source)
+        at java.base/java.lang.Class.getDeclaredFields0(Native Method)
+        at java.base/java.lang.Class.privateGetDeclaredFields(Unknown Source)
+        at java.base/java.lang.Class.getDeclaredFields(Unknown Source)
+        at TRANSFORMER/net.optifine/net.optifine.reflect.FieldLocatorTypes.
+(FieldLocatorTypes.java:25)
+        at TRANSFORMER/net.optifine/net.optifine.reflect.Reflector.
+(Reflector.java:550)
+        at TRANSFORMER/minecraft@1.20.1/net.minecraft.CrashReport.m_127526_(CrashReport.java:176)
+        at TRANSFORMER/minecraft@1.20.1/net.minecraft.CrashReport.m_127529_(CrashReport.java:346)
+        at TRANSFORMER/minecraft@1.20.1/net.minecraft.client.main.Main.main(Main.java:149)
+        ... 21 more
+Caused by: org.spongepowered.asm.mixin.throwables.MixinApplyError: Mixin [fabric-resource-loader-v0.mixins.json:ReloadableResourceManagerImplMixin from mod fabric_resource_loader_v0] from phase [DEFAULT] in config [fabric-resource-loader-v0.mixins.json] FAILED during APPLY
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinError(MixinProcessor.java:638)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinProcessor.handleMixinApplyError(MixinProcessor.java:589)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:379)
+        ... 42 more
+Caused by: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException: Critical injection failure: @Inject annotation on getResourcePackNames could not find any targets matching 'Lnet/minecraft/server/packs/resources/ReloadableResourceManager;m_203825_(Ljava/util/List;)Ljava/lang/Object;' in net.minecraft.server.packs.resources.ReloadableResourceManager. Using refmap fabric-resource-loader-v0-refmap.json [PREINJECT Applicator Phase -> fabric-resource-loader-v0.mixins.json:ReloadableResourceManagerImplMixin from mod fabric_resource_loader_v0 -> Prepare Injections ->  -> handler$zkb000$fabric_resource_loader_v0$getResourcePackNames(Ljava/util/List;Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V -> Parse]
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.validateTargets(InjectionInfo.java:656)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.findTargets(InjectionInfo.java:587)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.readAnnotation(InjectionInfo.java:330)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.
+(InjectionInfo.java:316)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.
+(InjectionInfo.java:308)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.CallbackInjectionInfo.
+(CallbackInjectionInfo.java:46)
+        at jdk.internal.reflect.GeneratedConstructorAccessor21.newInstance(Unknown Source)
+        at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(Unknown Source)
+        at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Unknown Source)
+        at java.base/java.lang.reflect.Constructor.newInstance(Unknown Source)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo$InjectorEntry.create(InjectionInfo.java:149)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.injection.struct.InjectionInfo.parse(InjectionInfo.java:708)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinTargetContext.prepareInjections(MixinTargetContext.java:1329)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.prepareInjections(MixinApplicatorStandard.java:1053)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.applyMixin(MixinApplicatorStandard.java:395)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinApplicatorStandard.apply(MixinApplicatorStandard.java:327)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.TargetClassContext.apply(TargetClassContext.java:421)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.TargetClassContext.applyMixins(TargetClassContext.java:403)
+        at MC-BOOTSTRAP/org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer.MixinProcessor.applyMixins(MixinProcessor.java:363)
+        ... 42 more
+[05:34:07] [main] [MixinExtras|Service/INFO]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.4.1).
+[05:34:10] [main] [mixin/FATAL]: Mixin apply for mod fabric_resource_loader_v0 failed fabric-resource-loader-v0.mixins.json:ReloadableResourceManagerImplMixin from mod fabric_resource_loader_v0 -> net.minecraft.server.packs.resources.ReloadableResourceManager: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException Critical injection failure: @Inject annotation on getResourcePackNames could not find any targets matching 'Lnet/minecraft/server/packs/resources/ReloadableResourceManager;m_203825_(Ljava/util/List;)Ljava/lang/Object;' in net.minecraft.server.packs.resources.ReloadableResourceManager. Using refmap fabric-resource-loader-v0-refmap.json [PREINJECT Applicator Phase -> fabric-resource-loader-v0.mixins.json:ReloadableResourceManagerImplMixin from mod fabric_resource_loader_v0 -> Prepare Injections ->  -> handler$zkb000$fabric_resource_loader_v0$getResourcePackNames(Ljava/util/List;Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V -> Parse]
