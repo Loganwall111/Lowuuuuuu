@@ -129,5 +129,20 @@
   "advancements.dabywitherstormmod.another_begins.title": "When one story ends, another one begins",
   "advancements.dabywitherstormmod.another_begins.description": "Take the withered nether star from what is left of the storm",
   "advancements.dabywitherstormmod.withered_beacon.title": "Something Still Burning",
-  "advancements.dabywitherstormmod.withered_beacon.description": "Drive a withered nether star into a beacon"
+  "advancements.dabywitherstormmod.withered_beacon.description": "Drive a withered nether star into a beacon",
+  "block.dabywitherstormmod.command_core_block": "Pulsing Command Core Block",
+  "item.dabywitherstormmod.command_core_block": "Pulsing Command Core Block",
+  "block.dabywitherstormmod.tainted_obsidian": "Tainted Obsidian",
+  "item.dabywitherstormmod.tainted_obsidian": "Tainted Obsidian",
+  "block.dabywitherstormmod.wither_storm_eye_block": "Wither Storm Eye Block",
+  "item.dabywitherstormmod.wither_storm_eye_block": "Wither Storm Eye Block",
+  "block.dabywitherstormmod.storm_debris_block": "Compressed Storm Debris",
+  "item.dabywitherstormmod.storm_debris_block": "Compressed Storm Debris",
+  "block.dabywitherstormmod.withered_bone_block": "Colossal Withered Bone Block",
+  "item.dabywitherstormmod.withered_bone_block": "Colossal Withered Bone Block",
+  "block.dabywitherstormmod.super_command_block": "Super Command Block",
+  "item.dabywitherstormmod.super_command_block": "Super Command Block",
+  "item.dabywitherstormmod.super_command_ingot": "Super Command Ingot",
+  "item.dabywitherstormmod.stormcaller_horn": "Stormcaller Siren Horn",
+  "item.dabywitherstormmod.formidibomb_remote": "Formidibomb Detonator Remote"
 }

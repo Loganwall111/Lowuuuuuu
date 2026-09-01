@@ -62,6 +62,12 @@ public class ModBlocks {
    public static final Block WITHERED_STONE;
    public static final Block WITHERED_STONE_STAIRS;
    public static final Block WITHERED_STONE_SLAB;
+   public static final Block COMMAND_CORE_BLOCK;
+   public static final Block TAINTED_OBSIDIAN;
+   public static final Block WITHER_STORM_EYE_BLOCK;
+   public static final Block STORM_DEBRIS_BLOCK;
+   public static final Block WITHERED_BONE_BLOCK;
+   public static final Block SUPER_COMMAND_BLOCK;
 
    public static <T extends Block> T register(String name, Function<BlockBehaviour.Properties, T> factory, BlockBehaviour.Properties props) {
       ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("dabywitherstormmod", name));
@@ -119,5 +125,11 @@ public class ModBlocks {
       WITHERED_STONE = register("withered_stone", Block::new, Properties.of().strength(1.5F, 6.0F).requiresCorrectToolForDrops().sound(SoundType.STONE));
       WITHERED_STONE_STAIRS = register("withered_stone_stairs", (props) -> new StairBlock(WITHERED_STONE.defaultBlockState(), props), Properties.of().strength(1.5F, 6.0F).requiresCorrectToolForDrops().sound(SoundType.STONE));
       WITHERED_STONE_SLAB = register("withered_stone_slab", SlabBlock::new, Properties.of().strength(1.5F, 6.0F).requiresCorrectToolForDrops().sound(SoundType.STONE));
+      COMMAND_CORE_BLOCK = register("command_core_block", Block::new, Properties.of().strength(50.0F, 1200.0F).sound(SoundType.METAL).lightLevel((s) -> 15).emissiveRendering((state) -> true));
+      TAINTED_OBSIDIAN = register("tainted_obsidian", Block::new, Properties.of().strength(60.0F, 1400.0F).sound(SoundType.STONE).requiresCorrectToolForDrops());
+      WITHER_STORM_EYE_BLOCK = register("wither_storm_eye_block", Block::new, Properties.of().strength(10.0F, 100.0F).sound(SoundType.SLIME_BLOCK).lightLevel((s) -> 12).emissiveRendering((state) -> true));
+      STORM_DEBRIS_BLOCK = register("storm_debris_block", Block::new, Properties.of().strength(3.0F, 9.0F).sound(SoundType.BASALT).requiresCorrectToolForDrops());
+      WITHERED_BONE_BLOCK = register("withered_bone_block", RotatedPillarBlock::new, Properties.of().strength(2.0F, 4.0F).sound(SoundType.BONE_BLOCK).requiresCorrectToolForDrops());
+      SUPER_COMMAND_BLOCK = register("super_command_block", Block::new, Properties.of().strength(80.0F, 2000.0F).sound(SoundType.METAL).lightLevel((s) -> 15).emissiveRendering((state) -> true));
    }
 }

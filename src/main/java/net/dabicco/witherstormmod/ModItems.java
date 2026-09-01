@@ -63,6 +63,15 @@ public class ModItems {
    public static final Item WITHERED_NETHERBRICK_WALL;
    public static final Item WITHERED_NETHERBRICK_FENCE;
    public static final Item WITHERED_LOG;
+   public static final Item COMMAND_CORE_BLOCK;
+   public static final Item TAINTED_OBSIDIAN;
+   public static final Item WITHER_STORM_EYE_BLOCK;
+   public static final Item STORM_DEBRIS_BLOCK;
+   public static final Item WITHERED_BONE_BLOCK;
+   public static final Item SUPER_COMMAND_BLOCK;
+   public static final Item SUPER_COMMAND_INGOT;
+   public static final Item STORMCALLER_HORN;
+   public static final Item FORMIDIBOMB_REMOTE;
 
    public static <T extends Item> T register(String name, Function<Item.Properties, T> itemFactory, Item.Properties settings) {
       ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("dabywitherstormmod", name));
@@ -110,5 +119,14 @@ public class ModItems {
       WITHERED_NETHERBRICK_WALL = register("withered_netherbrick_wall", (props) -> new BlockItem(ModBlocks.WITHERED_NETHERBRICK_WALL, props), new Item.Properties());
       WITHERED_NETHERBRICK_FENCE = register("withered_netherbrick_fence", (props) -> new BlockItem(ModBlocks.WITHERED_NETHERBRICK_FENCE, props), new Item.Properties());
       WITHERED_LOG = register("withered_log", (props) -> new BlockItem(ModBlocks.WITHERED_LOG, props), new Item.Properties());
+      COMMAND_CORE_BLOCK = register("command_core_block", (props) -> new BlockItem(ModBlocks.COMMAND_CORE_BLOCK, props), (new Item.Properties()).rarity(Rarity.RARE));
+      TAINTED_OBSIDIAN = register("tainted_obsidian", (props) -> new BlockItem(ModBlocks.TAINTED_OBSIDIAN, props), new Item.Properties());
+      WITHER_STORM_EYE_BLOCK = register("wither_storm_eye_block", (props) -> new BlockItem(ModBlocks.WITHER_STORM_EYE_BLOCK, props), (new Item.Properties()).rarity(Rarity.UNCOMMON));
+      STORM_DEBRIS_BLOCK = register("storm_debris_block", (props) -> new BlockItem(ModBlocks.STORM_DEBRIS_BLOCK, props), new Item.Properties());
+      WITHERED_BONE_BLOCK = register("withered_bone_block", (props) -> new BlockItem(ModBlocks.WITHERED_BONE_BLOCK, props), new Item.Properties());
+      SUPER_COMMAND_BLOCK = register("super_command_block", (props) -> new BlockItem(ModBlocks.SUPER_COMMAND_BLOCK, props), (new Item.Properties()).rarity(Rarity.EPIC).component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true));
+      SUPER_COMMAND_INGOT = register("super_command_ingot", Item::new, (new Item.Properties()).rarity(Rarity.EPIC).component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true));
+      STORMCALLER_HORN = register("stormcaller_horn", Item::new, (new Item.Properties()).stacksTo(1).rarity(Rarity.EPIC));
+      FORMIDIBOMB_REMOTE = register("formidibomb_remote", Item::new, (new Item.Properties()).stacksTo(1).rarity(Rarity.UNCOMMON));
    }
 }

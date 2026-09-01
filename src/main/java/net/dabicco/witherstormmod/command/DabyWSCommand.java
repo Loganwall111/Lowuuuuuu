@@ -469,7 +469,7 @@ public class DabyWSCommand {
       int placed = StructureBuilder.build(source.getLevel(), player.blockPosition(), type);
       if ((type.equals("town") || type.equals("endertown")) && placed > 0) StoryNpcSpawner.populate(source.getLevel(), player.blockPosition(), WitherStormConfigs.get(source.getLevel()).townNpcPopulation);
       if (placed == 0) {
-         source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church | town | endertown)"));
+         source.sendFailure(Component.literal("Unknown building type: " + type + " (beacon | house | portal | church | town | endertown | temple | redstonia | boomtown | endercon | bunker | shrine)"));
          return 0;
       }
       int count = placed;
