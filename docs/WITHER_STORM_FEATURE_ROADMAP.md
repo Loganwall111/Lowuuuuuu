@@ -226,5 +226,11 @@ Remaining planned batches (each pushed and auto-built by Actions):
 - Structure-raid tear clusters (buildings break open; chunks fly to the storm).
 - Config: "Skybox & Atmosphere" master section, "Find settings" search, Cinematic preset.
 
-Still queued for the next batch: bbmodel→Java stage-model port, NPC characters and
-Endertown contents, per-phase animation overhaul.
+## Batch 16 — Wither Storm Ultimate Fusion (Merged Mods, Gigantic Preview, Skybox & Shaders Port, Regional Biome Atmosphere, Direct Settings Access)
+
+- **Merged All Mods into Unified Boss Mod:** Seamlessly merged Cracker's Wither Storm Mod mechanics (Wither Sickness, Formidibomb & Super TNT weaponry, Rocket Retriever, Bowels Dimension gravity flip, Maw traversal, Heart core battle, severed tentacle rope mechanics, cave rumbles) with Totally Accurate & Tabby's Wither Storm visual fidelity (Blockbench models, glowing command runes, halo rings, dark cloud slabs, purple atmospheric pulse, starfields, custom shaders, cluster tear, snatch tentacles, severed halves, deadass stages).
+- **Settings Direct Access & Decompiler Fixes:** Fixed `mc.gui.setScreen` decompiler artifacts to `setScreen`; created `OptionsScreenMixin` to inject a direct "Wither Storm Settings" button into Minecraft's main Options / Settings menu, Pause Screen, and World Creation tab.
+- **Gigantic 3D Model Preview:** Added interactive Gigantic Preview mode in `WitherStormConfigScreen` and `StormModelPreview` with 0.15x to 12.0x zoom, 360-degree rotation, pitch tilt, head laser beam toggles, sun azimuth controls, and skybox backdrop integration.
+- **Ported Skyboxes & Shaders into Mod:** Extracted and merged all FabricSkyBoxes textures (`day.png`, `sunset.png`, `night.png`, `mcsm_cosmic_sky.png`, `sky_only_no_clouds.png`), JSON definitions, and custom GLSL shaders (`rendertype_clouds.vsh`, `rendertype_clouds.fsh`, `rendertype_solid.*`, `lights.json`) directly into the mod assets.
+- **Regional Biome & Atmosphere Engine:** Expanded `BiomeStormFog` and `StormPalettes` with regional atmospheric profiles (Temperate Twilight, Desert Smoldering Ash, Ocean Abyssal Tempest, Mountain / Far Lands Reality Rift, Nether Necrosis, Bowels Visceral Interior).
+- **Infinite Procedural Phases, Back Growth & Attacks:** Full procedural hunchback/carapace growth, dynamic tentacle physics and slamming, tractor beam vortex motes, flaming super skull homing artillery, and infinite phase progression.
