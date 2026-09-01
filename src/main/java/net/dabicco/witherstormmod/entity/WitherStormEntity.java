@@ -294,7 +294,8 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    private static final double TENTACLE_REACH = (double)15.0F;
    private static final int SNATCH_DURATION = 110;
    private static final int SNATCH_HITS_TO_ESCAPE = 5;
-   private Player snatchVictim;
+   private LivingEntity snatchVictim;
+   private boolean snatchThrowMode;
    private int snatchTicks;
    private int snatchHits;
    private Vec3 lastSnatchPos;
@@ -2766,7 +2767,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       Level var5 = this.level();
       if (var5 instanceof ServerLevel sl) {
          if (this.snatchVictim != null) {
-            Player held = this.snatchVictim;
+            LivingEntity held = this.snatchVictim;
             this.tickSnatch();
             if (this.snatchVictim != null) {
                this.updateGrabTentacle(held, (double)1.0F, true);
@@ -2776,12 +2777,12 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             }
          } else {
             Vec3 c = this.getBoundingBox().getCenter();
-            Player best = null;
-            double bestSqr = (double)1600.0F;
+            LivingEntity best = null;
+            double bestSqr = 2304.0;
             long gameTime = sl.getGameTime();
 
             for(Player p : this.level().players()) {
-               if (this.isTargetable(p) && !p.isCreative() && !WitherStormHeadEntity.isForgiven(p, gameTime) && !ModEffects.isHyperInvisible(p) && !(p.getY() > this.getY())) {
+               if (this.isTargetable(p) && !p.isCreative() && !p.isSpectator() && !WitherStormHeadEntity.isForgiven(p, gameTime) && !ModEffects.isHyperInvisible(p) && !(p.getY() > this.getY() + 10.0)) {
                   double dx = p.getX() - c.x;
                   double dz = p.getZ() - c.z;
                   double horizSqr = dx * dx + dz * dz;
@@ -2793,16 +2794,32 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             }
 
             if (best == null) {
+               AABB scanBox = this.getBoundingBox().inflate(42.0, 30.0, 42.0);
+               List<LivingEntity> nearby = sl.getEntitiesOfClass(LivingEntity.class, scanBox, e -> {
+                  return e.isAlive() && !e.isInvulnerable() && !(e instanceof WitherStormEntity) && !(e instanceof WitherStormHeadEntity) && !(e instanceof GrabTentacleEntity) && !WitheredMobs.isWithered(e);
+               });
+               for(LivingEntity mob : nearby) {
+                  double dx = mob.getX() - c.x;
+                  double dz = mob.getZ() - c.z;
+                  double horizSqr = dx * dx + dz * dz;
+                  if (horizSqr < bestSqr) {
+                     bestSqr = horizSqr;
+                     best = mob;
+                  }
+               }
+            }
+
+            if (best == null) {
                this.despawnGrabTentacle();
                return normalY;
             } else {
                double horizDist = Math.sqrt(bestSqr);
-               if (horizDist < (double)18.0F && this.getY() - best.getY() < (double)15.0F) {
+               if (horizDist < 26.0 && this.getY() - best.getY() < 28.0) {
                   this.beginSnatch(best);
                   this.updateGrabTentacle(best, (double)1.0F, true);
                   return this.getY();
                } else {
-                  double closeness = (double)1.0F - Mth.clamp(horizDist / (double)40.0F, (double)0.0F, (double)1.0F);
+                  double closeness = (double)1.0F - Mth.clamp(horizDist / 48.0, (double)0.0F, (double)1.0F);
                   this.updateGrabTentacle(best, 0.35 + 0.65 * closeness, false);
                   double reachY = best.getY() + (double)7.0F;
                   double sinkY = Mth.lerp(closeness, normalY, reachY);
@@ -2815,7 +2832,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
    }
 
-   private void updateGrabTentacle(Player victim, double reach, boolean grabbed) {
+   private void updateGrabTentacle(LivingEntity victim, double reach, boolean grabbed) {
       Level var6 = this.level();
       if (var6 instanceof ServerLevel sl) {
          if (this.grabTentacle == null || this.grabTentacle.isRemoved()) {
@@ -2845,7 +2862,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    public void registerGrabHit(ServerLevel level, Player attacker) {
       if (this.snatchVictim != null && attacker == this.snatchVictim) {
          ItemStack held = attacker.getMainHandItem();
-         boolean weapon = held.is(ItemTags.SWORDS) || held.is(ItemTags.AXES);
+         boolean weapon = held.is(ItemTags.SWORDS) || held.is(ItemTags.AXES) || !held.isEmpty();
          if (weapon) {
             level.playSound((Entity)null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 0.9F + this.random.nextFloat() * 0.2F);
             this.playSound(ModSounds.HEAD_HURT, this.voiceVolume(0.75F), 0.92F - this.random.nextFloat() * 0.06F);
@@ -2858,26 +2875,74 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       }
    }
 
-   private void beginSnatch(Player player) {
-      this.snatchVictim = player;
+   public void beginSnatch(LivingEntity victim, boolean throwMode) {
+      this.snatchVictim = victim;
+      this.snatchThrowMode = throwMode;
       this.snatchTicks = 0;
       this.snatchHits = 0;
-      this.lastSnatchPos = player.position();
-      this.entityData.set(SNATCH_ID, player.getId());
-      this.playSound(ModSounds.HEAD_SNARL, this.voiceVolume(0.75F), 0.96F);
+      this.lastSnatchPos = victim.position();
+      this.entityData.set(SNATCH_ID, victim.getId());
+      this.playSound(ModSounds.HEAD_SNARL, this.voiceVolume(0.85F), 0.96F);
+      this.playSound(ModSounds.STORM_THUMP, this.voiceVolume(0.75F), 1.1F);
+   }
+
+   public void beginSnatch(LivingEntity victim) {
+      this.beginSnatch(victim, this.random.nextFloat() < 0.45F);
    }
 
    private void tickSnatch() {
-      Player p = this.snatchVictim;
+      LivingEntity p = this.snatchVictim;
       if (p != null) {
          Level var3 = this.level();
          if (var3 instanceof ServerLevel) {
             ServerLevel sl = (ServerLevel)var3;
-            boolean pearled = this.lastSnatchPos != null && p.position().distanceToSqr(this.lastSnatchPos) > (double)36.0F;
-            if (p.isAlive() && !p.isRemoved() && p.level() == this.level() && !p.isCreative() && !p.isSpectator() && !p.isFallFlying() && !pearled) {
+            boolean isPlayer = p instanceof Player;
+            Player player = isPlayer ? (Player)p : null;
+            boolean pearled = this.lastSnatchPos != null && p.position().distanceToSqr(this.lastSnatchPos) > 49.0;
+            if (p.isAlive() && !p.isRemoved() && p.level() == this.level() && (player == null || (!player.isCreative() && !player.isSpectator() && !player.isFallFlying())) && !pearled) {
                this.lastSnatchPos = p.position();
                ++this.snatchTicks;
-               float prog = Math.min(1.0F, (float)this.snatchTicks / 110.0F);
+
+               if (this.snatchThrowMode) {
+                  if (this.snatchTicks < 32) {
+                     double angle = (double)this.snatchTicks * 0.35;
+                     Vec3 stormCenter = this.getBoundingBox().getCenter();
+                     Vec3 orbitPos = stormCenter.add(Math.cos(angle) * 7.5, -9.0 + (double)this.snatchTicks * 0.35, Math.sin(angle) * 7.5);
+                     Vec3 vel = orbitPos.subtract(p.position()).scale(0.35);
+                     if (vel.length() > 1.6) {
+                        vel = vel.normalize().scale(1.6);
+                     }
+                     p.setDeltaMovement(vel);
+                     p.fallDistance = 0.0F;
+                     p.hurtMarked = true;
+                     if (p instanceof ServerPlayer sp) {
+                        sp.connection.send(new ClientboundSetEntityMotionPacket(sp));
+                     }
+                     if (player != null) {
+                        this.lockRotationOn(player);
+                     }
+                     return;
+                  } else {
+                     Vec3 away = p.position().subtract(this.position()).normalize();
+                     Vec3 throwDir = new Vec3(away.x, 0.52 + this.random.nextDouble() * 0.28, away.z).normalize();
+                     double flingPower = 2.8 + this.random.nextDouble() * 0.8;
+                     Vec3 flingVel = throwDir.scale(flingPower);
+                     p.setDeltaMovement(flingVel);
+                     p.fallDistance = 0.0F;
+                     p.hurtMarked = true;
+                     if (p instanceof ServerPlayer sp) {
+                        sp.connection.send(new ClientboundSetEntityMotionPacket(sp));
+                     }
+                     sl.sendParticles(ParticleTypes.EXPLOSION, p.getX(), p.getY(), p.getZ(), 4, 0.5, 0.5, 0.5, 0.1);
+                     sl.sendParticles(ParticleTypes.DRAGON_BREATH, p.getX(), p.getY(), p.getZ(), 25, 1.0, 1.0, 1.0, 0.2);
+                     this.playSound(ModSounds.STORM_THUMP_LARGE, this.voiceVolume(1.0F), 1.0F);
+                     this.playSound(ModSounds.HEAD_ROAR, this.voiceVolume(0.9F), 0.95F);
+                     this.endSnatch(sl, true);
+                     return;
+                  }
+               }
+
+               float prog = Math.min(1.0F, (float)this.snatchTicks / 100.0F);
                float eased = prog * prog * (3.0F - 2.0F * prog);
                WitherStormHeadEntity midHead = this.getHead(sl, 0);
                Vec3 dest;
@@ -2888,7 +2953,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
                }
 
                Vec3 vel = dest.subtract(p.position());
-               double speed = 0.12 + 0.55 * (double)eased;
+               double speed = 0.14 + 0.62 * (double)eased;
                if (vel.length() > speed) {
                   vel = vel.normalize().scale(speed);
                }
@@ -2896,13 +2961,15 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
                p.setDeltaMovement(vel);
                p.fallDistance = (double)0.0F;
                p.hurtMarked = true;
-               if (p instanceof ServerPlayer) {
-                  ServerPlayer sp = (ServerPlayer)p;
+               if (p instanceof ServerPlayer sp) {
                   sp.connection.send(new ClientboundSetEntityMotionPacket(sp));
                }
 
-               this.lockRotationOn(p);
-               if (prog >= 1.0F || prog > 0.5F && p.position().distanceTo(dest) < (double)3.5F) {
+               if (player != null) {
+                  this.lockRotationOn(player);
+               }
+
+               if (prog >= 1.0F || prog > 0.45F && p.position().distanceTo(dest) < 3.8) {
                   if (midHead != null) {
                      midHead.chompVictim(p);
                      this.endSnatch(sl, false);
@@ -2924,11 +2991,12 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
    }
 
    private void endSnatch(ServerLevel sl, boolean survivorGetsForgiveness) {
-      if (survivorGetsForgiveness && this.snatchVictim != null && this.snatchVictim.isAlive()) {
-         WitherStormHeadEntity.forgive(sl, this.snatchVictim);
+      if (survivorGetsForgiveness && this.snatchVictim instanceof Player player && player.isAlive()) {
+         WitherStormHeadEntity.forgive(sl, player);
       }
 
       this.snatchVictim = null;
+      this.snatchThrowMode = false;
       this.snatchTicks = 0;
       this.snatchHits = 0;
       this.lastSnatchPos = null;

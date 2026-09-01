@@ -263,6 +263,7 @@ public class DabyWitherStormModClient implements ClientModInitializer {
       ClientPlayNetworking.registerGlobalReceiver(FormidibombFlashPayload.TYPE, FormidibombFlashPayload::handleClient);
       HudElementRegistry.addLast(DabyWitherStormMod.id("formidibomb_flash"), FormidibombFlash::render);
       HudElementRegistry.addLast(DabyWitherStormMod.id("bowels_frame"), BowelsHud::render);
+      HudElementRegistry.addLast(DabyWitherStormMod.id("storm_atmosphere"), StormAtmosphereOverlay::render);
       ClientPlayConnectionEvents.DISCONNECT.register((ClientPlayConnectionEvents.Disconnect)(handler, client) -> {
          ClientDistantStormManager.clear();
          ClientSicknessManager.clear();

@@ -132,6 +132,13 @@ public class WitherStormConfigScreen extends Screen {
       this(parent, false);
    }
 
+   public static WitherStormConfigScreen createGiganticPreview(Screen parent) {
+      WitherStormConfigScreen screen = new WitherStormConfigScreen(parent);
+      screen.previewShown = true;
+      screen.previewGigantic = true;
+      return screen;
+   }
+
    public WitherStormConfigScreen(Screen parent, boolean worldCreation) {
       super(Component.literal(worldCreation ? "Wither Storm Settings For This World" : "Dabicco's Wither Storm Config"));
       this.editing = new WitherStormWorldConfig();
