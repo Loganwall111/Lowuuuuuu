@@ -609,6 +609,7 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("Chasing & Distractions", "orbitStationaryTargets", "chaseSpeed", "chaseInterval", "distractionInterval", "distractionDuration", "distractionRange");
       this.serverSection("Targeting", "targetingMode");
       this.serverSection("Heads & Tractor Beams", "headFireInterval", "headTargetRange", "headForgiveSeconds", "beamClusterInterval", "beamGroundRadius", "beamShutoff", "mobPickup", "castThroughWater", "beamImpactLight", "roarRange", "beamSoundRange");
+      this.serverSection("Tractor Beam Physics", "tractorBeamPullPower", "tractorBeamLiftSpeed");
       this.serverSection("Debris Clusters", "clustersTakeLiquids", "severedScavenge", "severedScavengeInterval", "spiralStrength", "clusterSpeed", "clusterCooldown", "absorptionRadius", "pickupRangeModifier");
       String[] stageKeys = new String[WitherStormWorldConfig.CLUSTER_STAGES.length];
 
@@ -617,6 +618,8 @@ public class WitherStormConfigScreen extends Screen {
       }
 
       this.serverSection("Max Cluster Size by Stage", stageKeys);
+      this.serverSection("Debris Vortex & Lightning", "debrisTornadoSpeed", "debrisDamageMultiplier", "superCataclysmLightning", "lightningDischargeInterval", "lightningDamage");
+      this.serverSection("House & Village Destruction", "buildingDestruction", "buildingTearRadius", "buildingTearInterval", "buildingClusterSize");
       this.serverSection("Corruption & Behavior", "mobsFlee", "tentacleAwareness", "witherSickness", "witheredMobs", "witheredMax", "witheredMaxCaves");
       this.serverSection("Atmosphere", "worldDarkening");
       this.serverSection("Formidibomb Aftermath", "postFormidibombChase", "postFormidibombChaseSpeed", "fastGrowthToSixOne", "fastGrowthToSixOneSpeed");
@@ -625,7 +628,9 @@ public class WitherStormConfigScreen extends Screen {
       this.serverSection("Nether Scaling", "netherScale", "netherScaleInterval", "netherScaleRandom");
       this.serverSection("New Growth Features", "instantGrowth", "instantGrowthRate", "infinitePhases", "phaseCeiling");
       this.serverSection("Story-Mode Towns", "townNpcPopulation");
-      this.serverSection("Tentacle Slams & Raids", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "structureRaid", "structureRaidInterval", "structureRaidRadius", "structureTearClusters");
+      this.serverSection("Tentacle Swoops & Fling Attacks", "tentacleSwoopSpeed", "tentacleThrowPower", "tentacleChompDamage", "tentacleSnatchRange", "tentacleTargetMobs", "tentacleEscapeHits");
+      this.serverSection("Tentacle Slams & Shockwaves", "tentacleSlam", "tentacleSlamInterval", "tentacleSlamRadius", "groundShakeOnSlam", "groundShakeRadius", "groundShockwaveParticles");
+      this.serverSection("Combat & Damage Multipliers", "bossHealthMultiplier", "bossAttackDamageMultiplier");
       this.serverSection("Death & Berserk", "deathBlast", "deathBlastRadius", "berserk", "berserkHealth", "berserkSlamInterval");
    }
 
@@ -839,6 +844,26 @@ public class WitherStormConfigScreen extends Screen {
       this.clientRow("cataclysmFogR", "Phase-5.8 Fog: Red", (BooleanSupplier)null);
       this.clientRow("cataclysmFogG", "Phase-5.8 Fog: Green", (BooleanSupplier)null);
       this.clientRow("cataclysmFogB", "Phase-5.8 Fog: Blue", (BooleanSupplier)null);
+      this.header("Cinematic Overlays & HUD");
+      this.clientRow("storyModeBossbar", "Story Mode Boss Health Bar", (BooleanSupplier)null);
+      this.clientRow("storyModeTitleScreen", "Story Mode Main Menu Theme", (BooleanSupplier)null);
+      this.clientRow("stormProximityVignette", "Storm Proximity Dark Vignette", (BooleanSupplier)null);
+      this.clientRow("vignetteIntensity", "Vignette Darkness Intensity", () -> !DabyWSClientConfig.stormProximityVignette);
+      this.clientRow("sicknessVeinOverlay", "Wither Sickness Creeping Veins", (BooleanSupplier)null);
+      this.clientRow("sicknessVeinIntensity", "Vein Overlay Intensity", () -> !DabyWSClientConfig.sicknessVeinOverlay);
+      this.clientRow("chromaticGlitchStrength", "Roar Chromatic Shockwave Glitch", (BooleanSupplier)null);
+      this.header("Atmospheric FX & Particles");
+      this.clientRow("trailerShadows", "Cinematic Trailer Shadow Casting", (BooleanSupplier)null);
+      this.clientRow("groundShakingTremors", "Earthquake Camera Tremors", (BooleanSupplier)null);
+      this.clientRow("screenTremorIntensity", "Camera Shake Intensity", () -> !DabyWSClientConfig.groundShakingTremors);
+      this.clientRow("dynamicScreenShake", "Storm Footstep Ground Vibrations", (BooleanSupplier)null);
+      this.clientRow("customSkyboxes", "Dynamic FabricSkyBoxes", (BooleanSupplier)null);
+      this.clientRow("cloudDeckLayer", "Story Mode Volumetric Cloud Deck", (BooleanSupplier)null);
+      this.clientRow("regionalBiomeFog", "Regional Biome Atmospheric Fog", (BooleanSupplier)null);
+      this.clientRow("purpleLightningSparks", "Ambient Purple Lightning Spikes", (BooleanSupplier)null);
+      this.clientRow("debrisDustParticles", "Debris Dust & Splinter Particles", (BooleanSupplier)null);
+      this.clientRow("headEyeGlow", "Colossal Head Eye Lens Flare Glow", (BooleanSupplier)null);
+      this.clientRow("volumetricFogDensity", "Volumetric Mist & Haze Density", (BooleanSupplier)null);
       this.buildPerformanceRows();
    }
 

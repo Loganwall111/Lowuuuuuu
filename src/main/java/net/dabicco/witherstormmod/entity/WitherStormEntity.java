@@ -27,6 +27,7 @@ import net.dabicco.witherstormmod.config.WitherStormWorldConfig;
 import net.dabicco.witherstormmod.entity.cluster.WitherStormClusterEntity;
 import net.dabicco.witherstormmod.entity.withered.WitheredMobs;
 import net.dabicco.witherstormmod.mixin.WitherBossAccessor;
+import net.dabicco.witherstormmod.network.CaveRumblePayload;
 import net.dabicco.witherstormmod.network.StormRemovedPacket;
 import net.dabicco.witherstormmod.network.WitherStormPositionPacket;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -56,6 +57,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -1007,6 +1009,9 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       return broken;
    }
 
+   private int buildingTearCooldown = 40;
+   private int lightningCooldown = 60;
+
    private void tentacleSlamTick(ServerLevel server) {
       WitherStormWorldConfig cfg = WitherStormConfigs.get(server);
       if (cfg.tentacleSlam == 0 || this.phase < 3.0) {
@@ -1033,6 +1038,30 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       this.carveSphere(server, centre, radius);
       server.playSound((Entity)null, centre.x, centre.y, centre.z, ModSounds.STORM_THUMP_LARGE, SoundSource.HOSTILE, 6.0F, 0.75F + this.random.nextFloat() * 0.3F);
 
+      // Radial Ground Shockwave & Particles
+      if (cfg.groundShockwaveParticles != 0) {
+         for (int i = 0; i < 36; i++) {
+            double ang = (double)i * (Math.PI * 2.0 / 36.0);
+            double rx = Math.cos(ang) * (radius * 0.9);
+            double rz = Math.sin(ang) * (radius * 0.9);
+            server.sendParticles(ParticleTypes.EXPLOSION, centre.x + rx, centre.y + 0.5, centre.z + rz, 1, 0.2, 0.2, 0.2, 0.05);
+            server.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, centre.x + rx, centre.y + 0.5, centre.z + rz, 3, 0.4, 0.3, 0.4, 0.08);
+            server.sendParticles(ParticleTypes.DRAGON_BREATH, centre.x + rx * 0.6, centre.y + 0.5, centre.z + rz * 0.6, 2, 0.2, 0.4, 0.2, 0.05);
+         }
+      }
+
+      // Ground Shaking & Camera Tremors to nearby players
+      if (cfg.groundShakeOnSlam != 0) {
+         double shakeRad = cfg.groundShakeRadius;
+         for (ServerPlayer player : server.players()) {
+            double d = player.distanceToSqr(centre);
+            if (d < shakeRad * shakeRad) {
+               float intScale = (float)(1.0 - Math.sqrt(d) / shakeRad);
+               ServerPlayNetworking.send(player, new CaveRumblePayload(35, Math.max(0.3F, 1.5F * intScale)));
+            }
+         }
+      }
+
       AABB box = new AABB(centre.x - radius, centre.y - 1.0, centre.z - radius, centre.x + radius, centre.y + radius * 1.6, centre.z + radius);
       List<LivingEntity> victims = server.getEntitiesOfClass(LivingEntity.class, box, (e) -> e != this && e.isAlive());
 
@@ -1043,6 +1072,88 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          double falloff = Math.max(0.0, 1.0 - dist / radius);
          victim.hurtServer(server, server.damageSources().mobAttack(this), (float)(2.0 + 9.0 * falloff));
          victim.setDeltaMovement(victim.getDeltaMovement().add(dx / dist * 1.3 * falloff, 0.5 + 0.5 * falloff, dz / dist * 1.3 * falloff));
+      }
+   }
+
+   private void tickAmbientBuildingTear(ServerLevel server) {
+      WitherStormWorldConfig cfg = WitherStormConfigs.get(server);
+      if (cfg.buildingDestruction == 0 || this.phase < 2.5) {
+         return;
+      }
+
+      if (--this.buildingTearCooldown > 0) {
+         return;
+      }
+      this.buildingTearCooldown = Math.max(20, cfg.buildingTearInterval);
+
+      double tearRad = cfg.buildingTearRadius;
+      int bx = Mth.floor(this.getX() + (this.random.nextDouble() - 0.5) * tearRad * 2.0);
+      int bz = Mth.floor(this.getZ() + (this.random.nextDouble() - 0.5) * tearRad * 2.0);
+      int surfaceY = server.getHeight(Types.MOTION_BLOCKING, bx, bz);
+
+      BlockPos checkPos = new BlockPos(bx, surfaceY, bz);
+      if (checkPos.getY() > server.getMinY() && checkPos.getY() < server.getMaxY()) {
+         BlockState state = server.getBlockState(checkPos);
+         boolean isStructural = state.is(BlockTags.PLANKS) || state.is(BlockTags.WOODEN_FENCES) || state.is(BlockTags.WOODEN_STAIRS)
+            || state.is(BlockTags.WOODEN_SLABS) || state.is(BlockTags.LOGS) || state.is(BlockTags.DOORS)
+            || state.is(BlockTags.STAIRS) || state.is(BlockTags.SLABS) || state.is(BlockTags.STONE_BRICKS)
+            || state.is(BlockTags.WALLS) || state.is(BlockTags.WOOL) || state.is(BlockTags.TERRACOTTA)
+            || state.is(Blocks.COBBLESTONE) || state.is(Blocks.MOSSY_COBBLESTONE) || state.is(Blocks.GLASS)
+            || state.is(Blocks.GLASS_PANE) || state.is(Blocks.BRICKS) || state.is(Blocks.CRAFTING_TABLE)
+            || state.is(Blocks.CHEST) || state.is(Blocks.FURNACE) || state.is(Blocks.HAY_BLOCK);
+
+         if (isStructural) {
+            int clusterRadius = Math.min(cfg.buildingClusterSize, this.random.nextInt(Math.max(1, cfg.buildingClusterSize + 1)));
+            WitherStormClusterEntity cluster = new WitherStormClusterEntity(ModEntityTypes.WITHER_STORM_CLUSTER, server);
+            cluster.setOrigin(checkPos);
+            cluster.setRadius(clusterRadius);
+            BlockPos spawnPos = WitherStormClusterEntity.adjustSpawnOrigin(checkPos, clusterRadius);
+            cluster.setPos((double)spawnPos.getX() + 0.5, (double)spawnPos.getY() + 0.5, (double)spawnPos.getZ() + 0.5);
+            cluster.absorbBlocks(checkPos);
+            cluster.setTargetStorm(this);
+            server.addFreshEntity(cluster);
+            WitherStormClusterEntity.syncBlocksToTracking(cluster);
+
+            server.playSound((Entity)null, (double)checkPos.getX(), (double)checkPos.getY(), (double)checkPos.getZ(), SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.BLOCKS, 2.5F, 0.85F + this.random.nextFloat() * 0.3F);
+            server.playSound((Entity)null, (double)checkPos.getX(), (double)checkPos.getY(), (double)checkPos.getZ(), SoundEvents.STONE_BREAK, SoundSource.BLOCKS, 2.5F, 0.7F);
+            server.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, (double)checkPos.getX() + 0.5, (double)checkPos.getY() + 1.0, (double)checkPos.getZ() + 0.5, 8, 0.8, 0.8, 0.8, 0.08);
+            server.sendParticles(ParticleTypes.POOF, (double)checkPos.getX() + 0.5, (double)checkPos.getY() + 1.0, (double)checkPos.getZ() + 0.5, 6, 0.5, 0.5, 0.5, 0.05);
+
+            for (ServerPlayer player : server.players()) {
+               if (player.distanceToSqr(checkPos.getCenter()) < 48.0 * 48.0) {
+                  ServerPlayNetworking.send(player, new CaveRumblePayload(20, 0.45F));
+               }
+            }
+         }
+      }
+   }
+
+   private void tickCataclysmLightning(ServerLevel server) {
+      WitherStormWorldConfig cfg = WitherStormConfigs.get(server);
+      if (cfg.superCataclysmLightning == 0 || this.phase < 5.8) {
+         return;
+      }
+
+      if (--this.lightningCooldown > 0) {
+         return;
+      }
+      this.lightningCooldown = Math.max(30, cfg.lightningDischargeInterval);
+
+      double rad = 32.0 + this.random.nextDouble() * 48.0;
+      double ang = this.random.nextDouble() * Math.PI * 2.0;
+      int lx = Mth.floor(this.getX() + Math.cos(ang) * rad);
+      int lz = Mth.floor(this.getZ() + Math.sin(ang) * rad);
+      int ly = server.getHeight(Types.MOTION_BLOCKING, lx, lz);
+
+      BlockPos strikePos = new BlockPos(lx, ly, lz);
+      server.sendParticles(ParticleTypes.DRAGON_BREATH, (double)lx + 0.5, (double)ly + 1.0, (double)lz + 0.5, 30, 1.0, 3.0, 1.0, 0.2);
+      server.sendParticles(ParticleTypes.EXPLOSION, (double)lx + 0.5, (double)ly + 0.5, (double)lz + 0.5, 2, 0.5, 0.5, 0.5, 0.05);
+      server.playSound((Entity)null, (double)lx, (double)ly, (double)lz, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 5.0F, 0.9F + this.random.nextFloat() * 0.2F);
+
+      AABB strikeBox = new AABB((double)lx - 4.0, (double)ly - 2.0, (double)lz - 4.0, (double)lx + 4.0, (double)ly + 6.0, (double)lz + 4.0);
+      for (LivingEntity le : server.getEntitiesOfClass(LivingEntity.class, strikeBox, e -> e != this && e.isAlive())) {
+         le.hurtServer(server, server.damageSources().lightningBolt(), (float)cfg.lightningDamage);
+         le.setDeltaMovement(le.getDeltaMovement().add(0.0, 0.6, 0.0));
       }
    }
 
@@ -1433,6 +1544,8 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
          if (this.level() instanceof ServerLevel server) {
             this.tentacleSlamTick(server);
             this.raidStructureTick(server);
+            this.tickAmbientBuildingTear(server);
+            this.tickCataclysmLightning(server);
          }
 
          if (!this.isPhase4()) {
