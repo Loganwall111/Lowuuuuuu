@@ -27,9 +27,9 @@ public final class StormAtmosphereOverlay {
 
          // 1. Storm Proximity Vignette & Atmospheric Border Darkness
          float stormFactor = StormSkyDarken.factor();
-         if (stormFactor > 0.04F) {
+         if (DabyWSClientConfig.stormProximityVignette && stormFactor > 0.04F) {
             float pulse = (float)(Math.sin((double)now * 0.002) * 0.08 + 0.92);
-            float intensity = Mth.clamp(stormFactor * pulse, 0.0F, 1.0F);
+            float intensity = Mth.clamp(stormFactor * pulse * (float)DabyWSClientConfig.vignetteIntensity, 0.0F, 1.0F);
             int alphaMax = (int)(intensity * 140.0F);
             if (alphaMax > 2) {
                int topColor = (alphaMax << 24) | 0x120320;
@@ -49,9 +49,9 @@ public final class StormAtmosphereOverlay {
 
          // 2. Wither Sickness Necrotic Infection Creeping Veins Overlay
          float infection = ClientSicknessManager.getInfection(player.getId());
-         if (infection > 0.02F) {
+         if (DabyWSClientConfig.sicknessVeinOverlay && infection > 0.02F) {
             float heartBeat = (float)(Math.sin((double)now * 0.0055) * 0.25 + 0.75);
-            float veinAlpha = Mth.clamp(infection * heartBeat, 0.0F, 1.0F);
+            float veinAlpha = Mth.clamp(infection * heartBeat * (float)DabyWSClientConfig.sicknessVeinIntensity, 0.0F, 1.0F);
             int vAlpha = (int)(veinAlpha * 180.0F);
             if (vAlpha > 3) {
                int veinColor = (vAlpha << 24) | 0x2A063C;
@@ -72,12 +72,32 @@ public final class StormAtmosphereOverlay {
             }
          }
 
-         // 3. Shake & Snatch Tension Overlay
+         // 3. Shake & Snatch Tension Overlay & Story Mode Escape QTE Prompt
          if (snatchShake > 0.01F) {
-            snatchShake = Math.max(0.0F, snatchShake - 0.04F);
-            int shakeAlpha = (int)(snatchShake * 90.0F);
+            snatchShake = Math.max(0.0F, snatchShake - 0.03F);
+            int shakeAlpha = (int)(snatchShake * 95.0F);
             if (shakeAlpha > 2) {
                g.fill(0, 0, w, h, (shakeAlpha << 24) | 0x380540);
+            }
+
+            // Story Mode Quick-Time Event Escape Prompt
+            if (snatchShake > 0.25F) {
+               float qtePulse = (float)(Math.sin((double)now * 0.01) * 0.5 + 0.5);
+               int qteColor = qtePulse > 0.5F ? -171 : -43691;
+               String qteText = "§e§l[ RAPIDLY ATTACK WITH WEAPON TO BREAK FREE! ]";
+               g.centeredText(mc.font, qteText, w / 2, h / 2 + 35, qteColor);
+               g.fill(w / 2 - 110, h / 2 + 48, w / 2 + 110, h / 2 + 52, 0xAA220533);
+               int progW = (int)(216.0F * snatchShake);
+               g.fill(w / 2 - 108, h / 2 + 49, w / 2 - 108 + progW, h / 2 + 51, -11141121);
+            }
+         }
+
+         // 4. Story Mode Episodic Chapter Card (Fades in near colossal phases)
+         if (DabyWSClientConfig.storyModeBossbar && stormFactor > 0.75F) {
+            float titlePulse = (float)(Math.sin((double)now * 0.003) * 0.15 + 0.85);
+            int titleAlpha = (int)(titlePulse * 220.0F);
+            if (titleAlpha > 20) {
+               g.centeredText(mc.font, "§5§lMINECRAFT: STORY MODE §8— §d§lTHE DEVOURER", w / 2, 8, (titleAlpha << 24) | 0xDDAAEE);
             }
          }
       }

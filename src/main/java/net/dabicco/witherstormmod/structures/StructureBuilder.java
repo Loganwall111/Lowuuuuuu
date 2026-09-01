@@ -7,15 +7,15 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Procedural Story-Mode buildings and fortress structures.
- * Generated from code to give the storm epic backdrop towns and fortresses
+ * Procedural Story-Mode buildings, floating sky islands, and fortress structures.
+ * Generated from code to give the storm epic backdrop towns, sky bases, and fortresses
  * to hunt, level, and tear apart into flying block debris.
  */
 public final class StructureBuilder {
    private StructureBuilder() {
    }
 
-   /** Build one of: beacon | house | portal | church | town | endertown | temple | redstonia | boomtown | endercon | bunker | shrine */
+   /** Build one of: beacon | house | portal | church | town | endertown | temple | redstonia | boomtown | endercon | bunker | shrine | island | sky_fortress | farlands | ivor_lab | storm_nest | vault */
    public static int build(ServerLevel server, BlockPos origin, String type) {
       switch (type.toLowerCase()) {
          case "beacon" -> {
@@ -50,6 +50,24 @@ public final class StructureBuilder {
          }
          case "shrine", "crater_shrine" -> {
             return shrine(server, origin);
+         }
+         case "island", "floating_island", "sky_island" -> {
+            return floatingIsland(server, origin);
+         }
+         case "sky_fortress", "soren_fortress", "mob_grinder" -> {
+            return skyFortress(server, origin);
+         }
+         case "farlands", "far_lands", "monolith" -> {
+            return farLands(server, origin);
+         }
+         case "ivor_lab", "potion_lab", "laboratory" -> {
+            return ivorLab(server, origin);
+         }
+         case "storm_nest", "vortex_hive", "hive" -> {
+            return stormNest(server, origin);
+         }
+         case "vault", "treasure_vault", "order_vault" -> {
+            return treasureVault(server, origin);
          }
          default -> {
             return 0;
@@ -189,14 +207,12 @@ public final class StructureBuilder {
    /** Temple of the Order of the Stone */
    private static int temple(ServerLevel server, BlockPos origin) {
       int placed = 0;
-      // Foundation & Flooring
       for (int x = -7; x <= 7; x++) {
          for (int z = -7; z <= 7; z++) {
             set(server, origin.offset(x, 0, z), Blocks.QUARTZ_BLOCK.defaultBlockState());
             placed++;
          }
       }
-      // Quartz Pillars
       int[][] pillars = {{-6, -6}, {6, -6}, {-6, 6}, {6, 6}, {-6, 0}, {6, 0}, {0, -6}, {0, 6}};
       for (int[] p : pillars) {
          for (int y = 1; y <= 8; y++) {
@@ -204,7 +220,6 @@ public final class StructureBuilder {
             placed++;
          }
       }
-      // Roof & Dome
       for (int x = -7; x <= 7; x++) {
          for (int z = -7; z <= 7; z++) {
             if (Math.abs(x) == 7 || Math.abs(z) == 7) {
@@ -222,7 +237,6 @@ public final class StructureBuilder {
             }
          }
       }
-      // Central Order Altar & Light
       set(server, origin.offset(0, 1, 0), Blocks.BEACON.defaultBlockState());
       set(server, origin.offset(0, 2, 0), Blocks.PURPLE_STAINED_GLASS.defaultBlockState());
       set(server, origin.offset(0, 14, 0), Blocks.SEA_LANTERN.defaultBlockState());
@@ -250,7 +264,6 @@ public final class StructureBuilder {
             }
          }
       }
-      // Command apparatus in center
       set(server, origin.offset(0, 1, 0), ModBlocks.COMMAND_CORE_BLOCK.defaultBlockState());
       set(server, origin.offset(0, 2, 0), Blocks.LIGHTNING_ROD.defaultBlockState());
       placed += 2;
@@ -266,7 +279,6 @@ public final class StructureBuilder {
             placed++;
          }
       }
-      // Barricades & Super TNT Stacks
       for (int x = -4; x <= 4; x += 2) {
          for (int z = -4; z <= 4; z += 2) {
             set(server, origin.offset(x, 1, z), ModBlocks.SUPER_TNT.defaultBlockState());
@@ -293,7 +305,6 @@ public final class StructureBuilder {
             placed++;
          }
       }
-      // Grandstands
       for (int step = 1; step <= 4; step++) {
          int inset = 9 - step;
          for (int x = -inset; x <= inset; x++) {
@@ -302,7 +313,6 @@ public final class StructureBuilder {
             placed += 2;
          }
       }
-      // Center Podiums
       set(server, origin.offset(0, 1, 0), Blocks.GOLD_BLOCK.defaultBlockState());
       set(server, origin.offset(-2, 1, 0), Blocks.IRON_BLOCK.defaultBlockState());
       set(server, origin.offset(2, 1, 0), Blocks.COPPER_BLOCK.defaultBlockState());
@@ -326,7 +336,6 @@ public final class StructureBuilder {
             }
          }
       }
-      // Supplies inside
       set(server, origin.offset(-2, -3, -2), Blocks.CHEST.defaultBlockState());
       set(server, origin.offset(2, -3, -2), Blocks.BREWING_STAND.defaultBlockState());
       set(server, origin.offset(0, -3, 0), Blocks.LANTERN.defaultBlockState());
@@ -354,6 +363,163 @@ public final class StructureBuilder {
       set(server, origin.offset(0, 1, 0), ModBlocks.COMMAND_CORE_BLOCK.defaultBlockState());
       set(server, origin.offset(0, 2, 0), ModBlocks.WITHER_STORM_EYE_BLOCK.defaultBlockState());
       placed += 2;
+      return placed;
+   }
+
+   /** Colossal Floating Sky Island */
+   private static int floatingIsland(ServerLevel server, BlockPos origin) {
+      int placed = 0;
+      BlockPos top = origin.above(18);
+      int rad = 9;
+      // Inverted cone terrain base
+      for (int y = 0; y >= -12; y--) {
+         int layerRad = Math.max(1, rad + y * 2 / 3);
+         for (int x = -layerRad; x <= layerRad; x++) {
+            for (int z = -layerRad; z <= layerRad; z++) {
+               if (x * x + z * z <= layerRad * layerRad) {
+                  BlockState st;
+                  if (y == 0) {
+                     st = Blocks.GRASS_BLOCK.defaultBlockState();
+                  } else if (y >= -3) {
+                     st = Blocks.DIRT.defaultBlockState();
+                  } else if (y >= -8) {
+                     st = Blocks.STONE.defaultBlockState();
+                  } else {
+                     st = Blocks.DEEPSLATE.defaultBlockState();
+                  }
+                  set(server, top.offset(x, y, z), st);
+                  placed++;
+               }
+            }
+         }
+      }
+      // Ancient Sky Ruins & Waterfall
+      for (int h = 1; h <= 4; h++) {
+         set(server, top.offset(-4, h, -4), Blocks.MOSSY_STONE_BRICKS.defaultBlockState());
+         set(server, top.offset(4, h, -4), Blocks.MOSSY_STONE_BRICKS.defaultBlockState());
+         set(server, top.offset(-4, h, 4), Blocks.MOSSY_STONE_BRICKS.defaultBlockState());
+         set(server, top.offset(4, h, 4), Blocks.MOSSY_STONE_BRICKS.defaultBlockState());
+         placed += 4;
+      }
+      set(server, top.offset(0, 1, 0), Blocks.WATER.defaultBlockState());
+      set(server, top.offset(0, 2, 0), Blocks.BEACON.defaultBlockState());
+      placed += 2;
+      return placed;
+   }
+
+   /** Soren's Massive Sky Fortress & Mob Grinder */
+   private static int skyFortress(ServerLevel server, BlockPos origin) {
+      int placed = 0;
+      BlockPos base = origin.above(12);
+      for (int x = -8; x <= 8; x++) {
+         for (int z = -8; z <= 8; z++) {
+            set(server, base.offset(x, 0, z), Blocks.SMOOTH_QUARTZ.defaultBlockState());
+            set(server, base.offset(x, 10, z), Blocks.WHITE_WOOL.defaultBlockState());
+            placed += 2;
+         }
+      }
+      // Fortress Walls with glass observation decks
+      for (int y = 1; y <= 9; y++) {
+         for (int x = -8; x <= 8; x++) {
+            for (int z = -8; z <= 8; z++) {
+               if (Math.abs(x) == 8 || Math.abs(z) == 8) {
+                  BlockState st = (y >= 4 && y <= 6) ? Blocks.TINTED_GLASS.defaultBlockState() : Blocks.QUARTZ_BLOCK.defaultBlockState();
+                  set(server, base.offset(x, y, z), st);
+                  placed++;
+               }
+            }
+         }
+      }
+      // Grinder waterdrop core
+      for (int y = 1; y <= 9; y++) {
+         set(server, base.offset(0, y, 0), Blocks.WATER.defaultBlockState());
+         placed++;
+      }
+      return placed;
+   }
+
+   /** Far Lands Monolith Wall */
+   private static int farLands(ServerLevel server, BlockPos origin) {
+      int placed = 0;
+      for (int y = 0; y <= 24; y++) {
+         for (int x = -12; x <= 12; x++) {
+            for (int z = -3; z <= 3; z++) {
+               if ((x + y) % 3 != 0) {
+                  BlockState st = (y % 4 == 0) ? Blocks.BEDROCK.defaultBlockState() : Blocks.STONE.defaultBlockState();
+                  set(server, origin.offset(x, y, z), st);
+                  placed++;
+               }
+            }
+         }
+      }
+      return placed;
+   }
+
+   /** Ivor's Underground Alchemy Laboratory */
+   private static int ivorLab(ServerLevel server, BlockPos origin) {
+      int placed = 0;
+      for (int y = -4; y <= 0; y++) {
+         for (int x = -5; x <= 5; x++) {
+            for (int z = -5; z <= 5; z++) {
+               if (y == -4 || y == 0 || Math.abs(x) == 5 || Math.abs(z) == 5) {
+                  set(server, origin.offset(x, y, z), Blocks.POLISHED_DEEPSLATE.defaultBlockState());
+               } else {
+                  set(server, origin.offset(x, y, z), Blocks.AIR.defaultBlockState());
+               }
+               placed++;
+            }
+         }
+      }
+      // Alchemy Tables & Cauldrons
+      set(server, origin.offset(-3, -3, -3), Blocks.BREWING_STAND.defaultBlockState());
+      set(server, origin.offset(-2, -3, -3), Blocks.CAULDRON.defaultBlockState());
+      set(server, origin.offset(0, -3, 0), ModBlocks.COMMAND_CORE_BLOCK.defaultBlockState());
+      set(server, origin.offset(3, -3, 3), Blocks.BOOKSHELF.defaultBlockState());
+      set(server, origin.offset(3, -2, 3), Blocks.BOOKSHELF.defaultBlockState());
+      set(server, origin.offset(0, -1, 0), Blocks.SOUL_LANTERN.defaultBlockState());
+      placed += 6;
+      return placed;
+   }
+
+   /** Wither Storm Vortex Hive */
+   private static int stormNest(ServerLevel server, BlockPos origin) {
+      int placed = 0;
+      BlockPos center = origin.above(10);
+      for (int r = 1; r <= 6; r++) {
+         double angle = (double)r * 1.1;
+         int ox = (int)(Math.cos(angle) * r * 1.5);
+         int oz = (int)(Math.sin(angle) * r * 1.5);
+         set(server, center.offset(ox, r, oz), ModBlocks.WITHERED_BONE_BLOCK.defaultBlockState());
+         set(server, center.offset(-ox, -r, -oz), ModBlocks.TAINTED_OBSIDIAN.defaultBlockState());
+         placed += 2;
+      }
+      set(server, center, ModBlocks.WITHER_STORM_EYE_BLOCK.defaultBlockState());
+      set(server, center.above(), ModBlocks.COMMAND_CORE_BLOCK.defaultBlockState());
+      placed += 2;
+      return placed;
+   }
+
+   /** Order of the Stone Treasure Vault */
+   private static int treasureVault(ServerLevel server, BlockPos origin) {
+      int placed = 0;
+      for (int y = -3; y <= 3; y++) {
+         for (int x = -5; x <= 5; x++) {
+            for (int z = -5; z <= 5; z++) {
+               if (Math.abs(y) == 3 || Math.abs(x) == 5 || Math.abs(z) == 5) {
+                  set(server, origin.offset(x, y, z), Blocks.NETHERITE_BLOCK.defaultBlockState());
+               } else {
+                  set(server, origin.offset(x, y, z), Blocks.AIR.defaultBlockState());
+               }
+               placed++;
+            }
+         }
+      }
+      set(server, origin.offset(-2, -2, -2), Blocks.DIAMOND_BLOCK.defaultBlockState());
+      set(server, origin.offset(2, -2, -2), Blocks.EMERALD_BLOCK.defaultBlockState());
+      set(server, origin.offset(-2, -2, 2), Blocks.GOLD_BLOCK.defaultBlockState());
+      set(server, origin.offset(2, -2, 2), ModBlocks.SUPER_COMMAND_BLOCK.defaultBlockState());
+      set(server, origin.offset(0, -2, 0), Blocks.BEACON.defaultBlockState());
+      placed += 5;
       return placed;
    }
 }
