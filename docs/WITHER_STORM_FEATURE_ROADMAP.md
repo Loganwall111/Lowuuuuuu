@@ -234,3 +234,15 @@ Remaining planned batches (each pushed and auto-built by Actions):
 - **Ported Skyboxes & Shaders into Mod:** Extracted and merged all FabricSkyBoxes textures (`day.png`, `sunset.png`, `night.png`, `mcsm_cosmic_sky.png`, `sky_only_no_clouds.png`), JSON definitions, and custom GLSL shaders (`rendertype_clouds.vsh`, `rendertype_clouds.fsh`, `rendertype_solid.*`, `lights.json`) directly into the mod assets.
 - **Regional Biome & Atmosphere Engine:** Expanded `BiomeStormFog` and `StormPalettes` with regional atmospheric profiles (Temperate Twilight, Desert Smoldering Ash, Ocean Abyssal Tempest, Mountain / Far Lands Reality Rift, Nether Necrosis, Bowels Visceral Interior).
 - **Infinite Procedural Phases, Back Growth & Attacks:** Full procedural hunchback/carapace growth, dynamic tentacle physics and slamming, tractor beam vortex motes, flaming super skull homing artillery, and infinite phase progression.
+
+## Batch 17 — Massive Story Mode Content Expansion (Blocks, Items, Boss Mechanics, Structures & HUD)
+
+- **New Blocks & Items:** Added Formidibomb Item & Super TNT blocks, Command Core Block, Wither Storm Eye Block, Tainted Obsidian, Withered Bone Block, Command Sword, Storm Tracker Compass, Storm Horn & Siren, Severed Tentacle, Command Amulet, and Wither Sickness Antidote.
+- **Formidibomb Ritual Super-Weapon:** Multiphase weapon loop with countdown ticking, seismic rumblings, and colossal blast detonation capable of breaking command block immunity shields.
+- **Command Block Heart Pulsing & Vulnerability:** Added pulsing command heart core with dynamic shield mechanics, phase vulnerability windows, and audible alarm feedback.
+- **Severed Head Mini-Bosses:** Implemented independent roaming severed head entities with roving laser beams, chomp attacks, and debris suction.
+- **Tornado Debris Physics:** Sucking debris spiral vortex that pulls blocks and mobs up into the storm clouds.
+- **Procedural Structures & Far Lands:** Implemented 12 procedural Story Mode structures via `/storm build <type>` (`beacon`, `house`, `portal`, `church`, `town`, `endertown`, `temple`, `redstonia`, `boomtown`, `endercon`, `bunker`, `shrine`, `island`, `sky_fortress`, `farlands`, `ivor_lab`, `storm_nest`, `vault`).
+- **Story Mode Cinematic HUD & QTE Prompts:** Interactive Quick-Time Event escape action bar during tentacle snatching, Wither Sickness creeping vein overlay, proximity vignette, and episodic chapter title cards.
+- **Pre-packaged Release Jar:** Bundled complete compiled classes, textures, models, shaders, skyboxes, and recipes into `build/libs/dabywitherstormmod-1.9.60-26.2.jar`.
+
