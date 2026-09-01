@@ -38,9 +38,10 @@ public class FogRendererMixin {
 
       float biomeBlend = BiomeStormFog.strength();
       if (biomeBlend > 0.0F) {
-         color.x = color.x * (1.0F - biomeBlend) + origR * biomeBlend;
-         color.y = color.y * (1.0F - biomeBlend) + origG * biomeBlend;
-         color.z = color.z * (1.0F - biomeBlend) + origB * biomeBlend;
+         BiomeStormFog.RegionAtmosphere region = BiomeStormFog.regionAt(level, camera.position());
+         color.x = color.x * (1.0F - biomeBlend) + region.r * biomeBlend;
+         color.y = color.y * (1.0F - biomeBlend) + region.g * biomeBlend;
+         color.z = color.z * (1.0F - biomeBlend) + region.b * biomeBlend;
       }
    }
 

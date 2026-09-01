@@ -56,6 +56,7 @@
     "LivingEntitySwimAccessor",
     "ModelPartAccessor",
     "ModelPartCubesAccessor",
+    "OptionsScreenMixin",
     "ProjectionMixin",
     "RangeSelectItemModelPropertiesAccessor",
     "RenderPipelinesAccessor",

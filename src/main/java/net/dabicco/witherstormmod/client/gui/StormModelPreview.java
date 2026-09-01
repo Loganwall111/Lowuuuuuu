@@ -24,8 +24,8 @@ public final class StormModelPreview {
    public static final float DEFAULT_PITCH = 18.0F;
    public static final float MIN_PITCH = -25.0F;
    public static final float MAX_PITCH = 80.0F;
-   public static final float MIN_ZOOM = 0.35F;
-   public static final float MAX_ZOOM = 4.0F;
+   public static final float MIN_ZOOM = 0.15F;
+   public static final float MAX_ZOOM = 12.0F;
    public static final float SUN_ELEVATION = 52.0F;
    public static final String[] SUBPHASE_LABELS = new String[]{".0", ".2", ".4", ".6", ".8"};
    private static final float[] PHASE_HEIGHT = new float[]{10.0F, 10.0F, 11.0F, 12.0F, 48.0F, 64.0F, 68.0F, 34.0F};
@@ -37,12 +37,12 @@ public final class StormModelPreview {
    public static final int SUBJECT_SEVERED = 7;
    private static final float GROUND_GAP = 0.12F;
    private static final float FIELD_REACH = 3.4F;
-   private static final float DEPTH_LIMIT_PIXELS = 850.0F;
+   private static final float DEPTH_LIMIT_PIXELS = 1400.0F;
 
    private StormModelPreview() {
    }
 
-   private static void scene(View v, float sunAzimuth, int beamMask, int hazeColour, boolean castShadow) {
+   private static void scene(View v, float sunAzimuth, int beamMask, int hazeColour, boolean castShadow, int backdrop) {
       SCENE.field = v.field();
       SCENE.groundY = v.groundY();
       SCENE.haze = hazeColour;
@@ -50,6 +50,7 @@ public final class StormModelPreview {
       SCENE.pitch = v.pitch();
       SCENE.castShadow = castShadow;
       SCENE.beams = beamMask;
+      SCENE.backdropIndex = backdrop;
       float el = 0.9075712F;
       float az = sunAzimuth * ((float)Math.PI / 180F);
       SCENE.sunX = Mth.cos((double)el) * Mth.cos((double)az);
@@ -81,10 +82,10 @@ public final class StormModelPreview {
       float wide = frame(PHASE_WIDTH, 30.0F, p, subphase);
       float drop = frame(PHASE_DROP, 0.22F, p, subphase);
       pitch = Mth.clamp(pitch, -25.0F, 80.0F);
-      zoom = Mth.clamp(zoom, 0.35F, 4.0F);
+      zoom = Mth.clamp(zoom, 0.15F, 12.0F);
       float scale = Math.min((float)height / tall, (float)width / wide) * 0.86F * zoom;
       float groundY = -(drop + 0.12F) * tall;
-      float field = Math.min(3.4F * tall, 850.0F / scale);
+      float field = Math.min(3.4F * tall, 1400.0F / scale);
       return new View(scale, -panX * tall, (0.5F - drop + panY) * tall, pitch, groundY, field, tall, tall / 9.0F);
    }
 
@@ -144,8 +145,12 @@ public final class StormModelPreview {
    }
 
    public static void render(GuiGraphicsExtractor g, int x0, int y0, int x1, int y1, View v, int phase, int subphase, float yaw, float sunAzimuth, int beamMask, int hazeColour, boolean castShadow) {
+      render(g, x0, y0, x1, y1, v, phase, subphase, yaw, sunAzimuth, beamMask, hazeColour, castShadow, 0);
+   }
+
+   public static void render(GuiGraphicsExtractor g, int x0, int y0, int x1, int y1, View v, int phase, int subphase, float yaw, float sunAzimuth, int beamMask, int hazeColour, boolean castShadow, int backdrop) {
       if (x1 - x0 > 8 && y1 - y0 > 8) {
-         scene(v, sunAzimuth, beamMask, hazeColour, castShadow);
+         scene(v, sunAzimuth, beamMask, hazeColour, castShadow, backdrop);
          EntityRenderState subject = phase == 7 ? fillSevered(yaw) : fillState(Mth.clamp(phase, 0, 6), subphase, yaw);
          Quaternionf tilt = (new Quaternionf()).rotateX(v.pitch() * ((float)Math.PI / 180F));
          Quaternionf rotation = (new Quaternionf()).rotateZ((float)Math.PI).mul(tilt);

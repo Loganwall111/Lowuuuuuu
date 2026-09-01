@@ -241,7 +241,7 @@ public class DabyWitherStormModClient implements ClientModInitializer {
       ClientPlayNetworking.registerGlobalReceiver(SyncWitherStormConfigPayload.TYPE, (payload, context) -> context.client().execute(() -> {
             ClientConfigCache.cfg.applyArray(payload.values());
             ClientConfigCache.canEditServer = payload.canEdit();
-            Screen patt0$temp = context.client().gui.screen();
+            Screen patt0$temp = context.client().screen;
             if (patt0$temp instanceof WitherStormConfigScreen screen) {
                screen.onServerConfigSynced();
             }
