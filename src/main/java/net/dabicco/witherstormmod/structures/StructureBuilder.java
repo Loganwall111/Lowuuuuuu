@@ -238,7 +238,7 @@ public final class StructureBuilder {
          }
       }
       set(server, origin.offset(0, 1, 0), Blocks.BEACON.defaultBlockState());
-      set(server, origin.offset(0, 2, 0), Blocks.PURPLE_STAINED_GLASS.defaultBlockState());
+      set(server, origin.offset(0, 2, 0), Blocks.STAINED_GLASS.purple().defaultBlockState());
       set(server, origin.offset(0, 14, 0), Blocks.SEA_LANTERN.defaultBlockState());
       placed += 3;
       return placed;
@@ -265,7 +265,7 @@ public final class StructureBuilder {
          }
       }
       set(server, origin.offset(0, 1, 0), ModBlocks.COMMAND_CORE_BLOCK.defaultBlockState());
-      set(server, origin.offset(0, 2, 0), Blocks.LIGHTNING_ROD.defaultBlockState());
+      set(server, origin.offset(0, 2, 0), Blocks.LIGHTNING_ROD.weathering().unaffected().defaultBlockState());
       placed += 2;
       return placed;
    }
@@ -282,7 +282,7 @@ public final class StructureBuilder {
       for (int x = -4; x <= 4; x += 2) {
          for (int z = -4; z <= 4; z += 2) {
             set(server, origin.offset(x, 1, z), ModBlocks.SUPER_TNT.defaultBlockState());
-            set(server, origin.offset(x, 2, z), Blocks.GUNPOWDER.defaultBlockState());
+            set(server, origin.offset(x, 2, z), ModBlocks.WITHERED_DUST.defaultBlockState());
             placed += 2;
          }
       }
@@ -315,7 +315,7 @@ public final class StructureBuilder {
       }
       set(server, origin.offset(0, 1, 0), Blocks.GOLD_BLOCK.defaultBlockState());
       set(server, origin.offset(-2, 1, 0), Blocks.IRON_BLOCK.defaultBlockState());
-      set(server, origin.offset(2, 1, 0), Blocks.COPPER_BLOCK.defaultBlockState());
+      set(server, origin.offset(2, 1, 0), Blocks.COPPER_BLOCK.weathering().unaffected().defaultBlockState());
       set(server, origin.offset(0, 2, 0), Blocks.BEACON.defaultBlockState());
       placed += 4;
       return placed;
@@ -414,7 +414,7 @@ public final class StructureBuilder {
       for (int x = -8; x <= 8; x++) {
          for (int z = -8; z <= 8; z++) {
             set(server, base.offset(x, 0, z), Blocks.SMOOTH_QUARTZ.defaultBlockState());
-            set(server, base.offset(x, 10, z), Blocks.WHITE_WOOL.defaultBlockState());
+            set(server, base.offset(x, 10, z), Blocks.WOOL.white().defaultBlockState());
             placed += 2;
          }
       }

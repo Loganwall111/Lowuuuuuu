@@ -59,6 +59,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -354,7 +355,7 @@ public class DabyWSCommand {
          if (target == null && ws.level() instanceof ServerLevel sl) {
             List<LivingEntity> list = sl.getEntitiesOfClass(LivingEntity.class, ws.getBoundingBox().inflate(48.0));
             for(LivingEntity le : list) {
-               if (le != ws && !(le instanceof WitherStormHeadEntity) && !(le instanceof GrabTentacleEntity) && le.isAlive()) {
+               if (le != ws && le.isAlive()) {
                   target = le;
                   break;
                }

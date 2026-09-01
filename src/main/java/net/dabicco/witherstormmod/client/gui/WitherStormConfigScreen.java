@@ -11,6 +11,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import net.dabicco.witherstormmod.client.ClientConfigCache;
+import net.dabicco.witherstormmod.client.PreviewScene;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.dabicco.witherstormmod.config.PendingWorldConfig;
 import net.dabicco.witherstormmod.config.RequestWitherStormConfigPayload;
@@ -1481,7 +1482,7 @@ public class WitherStormConfigScreen extends Screen {
 
    private void closeForReal() {
       DabyWSClientConfig.save();
-      Minecraft.getInstance().setScreen(this.parent);
+      Minecraft.getInstance().gui.setScreen(this.parent);
    }
 
    private static enum Tab {

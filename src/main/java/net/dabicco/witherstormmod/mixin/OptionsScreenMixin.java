@@ -20,7 +20,7 @@ public class OptionsScreenMixin {
       OptionsScreen screen = (OptionsScreen)(Object)this;
       Button button = Button.builder(
             Component.literal("§5Wither Storm Settings"),
-            b -> Minecraft.getInstance().setScreen(new WitherStormConfigScreen(screen))
+            b -> Minecraft.getInstance().gui.setScreen(new WitherStormConfigScreen(screen))
          )
          .width(150)
          .build();

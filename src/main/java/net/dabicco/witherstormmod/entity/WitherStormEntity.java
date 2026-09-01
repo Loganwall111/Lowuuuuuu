@@ -42,6 +42,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.PowerParticleOption;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -1046,7 +1047,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             double rz = Math.sin(ang) * (radius * 0.9);
             server.sendParticles(ParticleTypes.EXPLOSION, centre.x + rx, centre.y + 0.5, centre.z + rz, 1, 0.2, 0.2, 0.2, 0.05);
             server.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, centre.x + rx, centre.y + 0.5, centre.z + rz, 3, 0.4, 0.3, 0.4, 0.08);
-            server.sendParticles(ParticleTypes.DRAGON_BREATH, centre.x + rx * 0.6, centre.y + 0.5, centre.z + rz * 0.6, 2, 0.2, 0.4, 0.2, 0.05);
+            server.sendParticles(PowerParticleOption.create(ParticleTypes.DRAGON_BREATH, 1.0F), centre.x + rx * 0.6, centre.y + 0.5, centre.z + rz * 0.6, 2, 0.2, 0.4, 0.2, 0.05);
          }
       }
 
@@ -1120,7 +1121,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             server.sendParticles(ParticleTypes.POOF, (double)checkPos.getX() + 0.5, (double)checkPos.getY() + 1.0, (double)checkPos.getZ() + 0.5, 6, 0.5, 0.5, 0.5, 0.05);
 
             for (ServerPlayer player : server.players()) {
-               if (player.distanceToSqr(checkPos.getCenter()) < 48.0 * 48.0) {
+               if (player.distanceToSqr(Vec3.atCenterOf(checkPos)) < 48.0 * 48.0) {
                   ServerPlayNetworking.send(player, new CaveRumblePayload(20, 0.45F));
                }
             }
@@ -1146,7 +1147,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
       int ly = server.getHeight(Types.MOTION_BLOCKING, lx, lz);
 
       BlockPos strikePos = new BlockPos(lx, ly, lz);
-      server.sendParticles(ParticleTypes.DRAGON_BREATH, (double)lx + 0.5, (double)ly + 1.0, (double)lz + 0.5, 30, 1.0, 3.0, 1.0, 0.2);
+      server.sendParticles(PowerParticleOption.create(ParticleTypes.DRAGON_BREATH, 1.0F), (double)lx + 0.5, (double)ly + 1.0, (double)lz + 0.5, 30, 1.0, 3.0, 1.0, 0.2);
       server.sendParticles(ParticleTypes.EXPLOSION, (double)lx + 0.5, (double)ly + 0.5, (double)lz + 0.5, 2, 0.5, 0.5, 0.5, 0.05);
       server.playSound((Entity)null, (double)lx, (double)ly, (double)lz, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 5.0F, 0.9F + this.random.nextFloat() * 0.2F);
 
@@ -2909,7 +2910,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
             if (best == null) {
                AABB scanBox = this.getBoundingBox().inflate(42.0, 30.0, 42.0);
                List<LivingEntity> nearby = sl.getEntitiesOfClass(LivingEntity.class, scanBox, e -> {
-                  return e.isAlive() && !e.isInvulnerable() && !(e instanceof WitherStormEntity) && !(e instanceof WitherStormHeadEntity) && !(e instanceof GrabTentacleEntity) && !WitheredMobs.isWithered(e);
+                  return e.isAlive() && !e.isInvulnerable() && !(e instanceof WitherStormEntity) && !WitheredMobs.isWithered(e);
                });
                for(LivingEntity mob : nearby) {
                   double dx = mob.getX() - c.x;
@@ -3047,7 +3048,7 @@ public class WitherStormEntity extends WitherBoss implements StormHeadHost {
                         sp.connection.send(new ClientboundSetEntityMotionPacket(sp));
                      }
                      sl.sendParticles(ParticleTypes.EXPLOSION, p.getX(), p.getY(), p.getZ(), 4, 0.5, 0.5, 0.5, 0.1);
-                     sl.sendParticles(ParticleTypes.DRAGON_BREATH, p.getX(), p.getY(), p.getZ(), 25, 1.0, 1.0, 1.0, 0.2);
+                     sl.sendParticles(PowerParticleOption.create(ParticleTypes.DRAGON_BREATH, 1.0F), p.getX(), p.getY(), p.getZ(), 25, 1.0, 1.0, 1.0, 0.2);
                      this.playSound(ModSounds.STORM_THUMP_LARGE, this.voiceVolume(1.0F), 1.0F);
                      this.playSound(ModSounds.HEAD_ROAR, this.voiceVolume(0.9F), 0.95F);
                      this.endSnatch(sl, true);

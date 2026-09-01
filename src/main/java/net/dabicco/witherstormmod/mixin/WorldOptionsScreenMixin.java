@@ -19,7 +19,7 @@ public class WorldOptionsScreenMixin {
    private void addWitherStormButton(CallbackInfo ci) {
       WorldOptionsScreen screen = (WorldOptionsScreen)(Object)this;
       Button button = Button.builder(
-            Component.literal("Dabicco's Wither Storm"), b -> Minecraft.getInstance().setScreen(new WitherStormConfigScreen(screen))
+            Component.literal("Dabicco's Wither Storm"), b -> Minecraft.getInstance().gui.setScreen(new WitherStormConfigScreen(screen))
          )
          .width(200)
          .build();
