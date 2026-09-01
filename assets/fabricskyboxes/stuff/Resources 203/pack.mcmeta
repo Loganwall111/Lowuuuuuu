@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "pack_format": 6,
+    "description": "MCSM Recreation: Resources for MC200/203"
+  },
+  "meta": {
+    "game_version": "1.16.5"
+  }
+}

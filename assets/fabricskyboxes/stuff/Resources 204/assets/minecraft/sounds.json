@@ -1,0 +1,32 @@
+{
+"mc100": {
+"sounds": [
+"MC100/108CreditsA",
+"MC100/108CreditsB",
+"MC100/108CreditsC",
+"MC100/107CreditsA",
+"MC100/107CreditsB",
+"MC100/107CreditsC",
+"MC100/106CreditsA",
+"MC100/106CreditsB",
+"MC100/106CreditsC",
+"MC100/106CreditsD",
+"MC100/106CreditsE",
+"MC100/105CreditsA",
+"MC100/105CreditsB",
+"MC100/105CreditsC",
+"MC100/104CreditsA",
+"MC100/104CreditsB",
+"MC100/103CreditsA",
+"MC100/103CreditsB",
+"MC100/103CreditsC",
+"MC100/103CreditsD",
+]
+},
+"mc200":{
+"sounds": [
+"",
+""
+]
+}
+}
