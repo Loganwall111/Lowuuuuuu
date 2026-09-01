@@ -126,16 +126,22 @@ def main():
     run(f'cp -r {PACK}/assets {SHADER}/')
     run(f'cp {PACK}/pack.png {SHADER}/pack.png')
 
-    # v8: sky/cloud layer decoupling - clouds render ONLY through the
-    # pipeline program shaders/gbuffers_clouds.*; every vanilla
-    # core-shader override that touches clouds is excluded from the
-    # shader zip, and the verbatim cloud GLSL lives at an inert path no
-    # loader reads (assets/mcsm_atmosphere/clouds_reference/).
-    run(f'rm -f {SHADER}/assets/minecraft/shaders/core/rendertype_clouds.vsh')
-    run(f'rm -f {SHADER}/assets/minecraft/shaders/core/position_tex_color_normal.vsh')
-    run(f'rm -f {SHADER}/assets/minecraft/shaders/core/position_tex_color_normal.fsh')
-    assert os.path.exists(f'{SHADER}/assets/mcsm_atmosphere/clouds_reference/rendertype_clouds.vsh'), \
+    # v9: LEGACY RESOURCE-PACK TRAIL REMOVED FROM THE SHADER ZIP.
+    # The resource-pack module ships vanilla core-shader overrides
+    # (rendertype_solid, soft clouds) for shader-off mode, but inside a
+    # shader pack those files live at assets/minecraft/shaders/core/ and
+    # become a resource-pack folder trail that fights the mod loader over
+    # environment hooks. The whole subtree is stripped from the shader
+    # pack; the standalone resource packs keep it. Clouds render ONLY
+    # through shaders/gbuffers_clouds.* (fully self-contained, zero
+    # texture samplers), and the verbatim user cloud GLSL is preserved at
+    # pack-root clouds_reference/ - outside assets/, so the resource
+    # manager never sees it.
+    run(f'rm -rf {SHADER}/assets/minecraft/shaders')
+    assert os.path.exists(f'{SHADER}/clouds_reference/rendertype_clouds.vsh'), \
         'verbatim cloud reference missing'
+    assert os.path.exists(f'{SHADER}/shaders/gbuffers_clouds.vsh'), 'gbuffers_clouds.vsh missing'
+    assert os.path.exists(f'{SHADER}/shaders/gbuffers_clouds.fsh'), 'gbuffers_clouds.fsh missing'
 
     # 3) properties sanity + menu identity
     shaders = f'{SHADER}/shaders'
@@ -203,12 +209,13 @@ def main():
             assert any(n.endswith('pack.mcmeta') for n in names)
             assert 'shaders/gbuffers_clouds.vsh' in names and 'shaders/gbuffers_clouds.fsh' in names
             assert not any('skybasic' in n or 'skytextured' in n or 'sky_basic' in n for n in names)
-            assert not any(n.endswith('assets/minecraft/shaders/core/rendertype_clouds.vsh') for n in names)
-            assert not any(n.endswith('assets/minecraft/shaders/core/position_tex_color_normal.vsh')
-                           or n.endswith('assets/minecraft/shaders/core/position_tex_color_normal.fsh')
-                           for n in names)
-            assert any(n.endswith('assets/mcsm_atmosphere/clouds_reference/rendertype_clouds.vsh')
-                       for n in names)
+            assert not any('assets/minecraft/shaders/' in n for n in names), \
+                'legacy core-shader trail leaked into shader zip'
+            assert 'clouds_reference/rendertype_clouds.vsh' in names, \
+                'verbatim cloud reference missing from zip'
+            clouds_fsh = z.read('shaders/gbuffers_clouds.fsh').decode()
+            assert '#include' not in clouds_fsh, 'clouds not self-contained'
+            assert 'sampler2D' not in clouds_fsh, 'clouds has vanilla texture dependency'
             for n in names:
                 if n.startswith('shaders/') and n.endswith(('.fsh', '.vsh', '.glsl')):
                     body = z.read(n).decode()

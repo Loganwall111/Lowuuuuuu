@@ -215,3 +215,26 @@ and fell back, which is why the settings menu disappeared. Repairs:
 - Builder now permanently asserts: no sky program entries in the zip,
   clouds pair present, no active cloud overrides, verbatim reference
   present, menu id tag present.
+
+## v9 - Legacy resource-pack folder trail removed
+- Deleted the entire `assets/minecraft/shaders/` subtree from the shader
+  pack (the `rendertype_solid.vsh/.fsh` trail). Those vanilla core-shader
+  overrides belong to the resource-pack module (shader-off mode) and are
+  kept there unchanged; inside a shader pack they are a legacy
+  resource-pack folder that fights the mod loader over environment hooks.
+- Confirmed the files named in the user's log do not exist in the pack:
+  `shaders/core/sky_basic.json`, `sky_basic.vsh`, `sky_basic.fsh` (the
+  pack's sky programs were `gbuffers_skybasic.*`/`gbuffers_skytextured.*`
+  and were deleted in v8). The `sky_basic.json` in the error is an
+  internal wrapper Oculus generates while compiling a program.
+- Ground truth: the crash is a documented Oculus x Embeddium mixin
+  incompatibility (`the call m_166612_ is not cancellable`), reproduced
+  upstream with unrelated packs and with the exact Oculus 1.8.0 +
+  Embeddium 0.3.31 pair (Asek3/Oculus #764, open; also #670 with
+  Oculus 1.7.0 + Embeddium 0.3.27; and an Iris-side report with
+  Chocapic13 v8). The durable fix is the mod pair / Java version, not the
+  pack - but v8+v9 remove every sky/vanilla hook surface pack-side.
+- Verbatim cloud GLSL moved to pack-root `clouds_reference/` (outside
+  `assets/` - invisible to the resource manager). Live clouds remain fully
+  self-contained in `shaders/gbuffers_clouds.vsh/.fsh` (zero includes
+  after build, zero samplers). Builder now asserts all of the above.

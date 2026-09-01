@@ -151,6 +151,38 @@ v8 CHANGELOG - SKY / CLOUD LAYER DECOUPLING (mixin cancellation fix)
 - Note: SKY_PRESET and MOON_SIZE settings are temporarily inert (they fed
   the old sky program); MOONSHINE still drives composite moonlight.
 
+v9 CHANGELOG - LEGACY RESOURCE-PACK FOLDER TRAIL REMOVED
+- The shader pack no longer ships ANY vanilla core-shader overrides:
+  the whole assets/minecraft/shaders/ subtree (rendertype_solid.vsh/.fsh
+  trail) is deleted from the shader zip. That trail belonged to the
+  resource pack (shader-off mode) and, inside a shader pack, it becomes
+  a legacy resource-pack folder fighting the mod loader over environment
+  hooks. The standalone resource packs keep it unchanged.
+- The pack's sky programs were already deleted in v8 (gbuffers_skybasic /
+  gbuffers_skytextured .vsh + .fsh), and files named sky_basic.json /
+  sky_basic.vsh / sky_basic.fsh never existed in this pack: the
+  'shaders/core/sky_basic.json' named in the crash log is an INTERNAL
+  json wrapper that Oculus generates while compiling a shader program -
+  it is not a file inside the pack.
+- IMPORTANT - the actual crash is a documented OCULUS x EMBEDDIUM MIXIN
+  INCOMPATIBILITY, not a pack bug: the same error
+  ('ChainedJsonException: ... the call m_166612_ is not cancellable')
+  with different blamed program names is reported upstream with several
+  unrelated packs, including the exact version pair this pack was tested
+  against (MC 1.20.1, Oculus 1.8.0, Embeddium 0.3.31 - Asek3/Oculus
+  issue #764, still open). The blamed json is simply whichever program
+  Oculus is compiling when its mixin injection fails. Pack-side, all
+  sky/vanilla-layer hooks are now removed so nothing routes through the
+  patched path, but the durable fix is the mod pair: try a different
+  Embeddium build (e.g. 0.3.21) or a matched Oculus/Embeddium pair, and
+  Java 17 (upstream reports used Java 21/22).
+- The user's verbatim cloud GLSL now lives at pack-root
+  clouds_reference/rendertype_clouds.vsh - OUTSIDE assets/, so the
+  resource manager never loads it (zero hook surface).
+- Live clouds remain 100% self-contained in shaders/gbuffers_clouds.vsh
+  + gbuffers_clouds.fsh: zero #include after build, zero texture
+  samplers, no vanilla asset dependencies.
+
 TROUBLESHOOTING
 - "Id must be specified in OptionPage 'Shader Packs...'" in the log:
   this warning comes from the OCULUS mod's own options-page button inside
@@ -164,10 +196,14 @@ TROUBLESHOOTING
 - If the settings screen is missing: the shader failed to compile and
   Oculus fell back - fix the compile issue (this build has none) and the
   menu returns.
-- 'ChainedJsonException: Invalid shaders/core/sky_basic.json: The call
-  m_166612_ is not cancellable': this came from Oculus's native-sky mixin
-  hook firing because the pack defined a custom skybasic program. v8
-  removes all sky programs so the hook never fires. If the same class of
-  error ever appears with a DIFFERENT pack, remove that pack's sky
-  programs - or update the Oculus/Embeddium version pair, since the mixin
-  targets must match between the two mods.
+- 'ChainedJsonException: Invalid shaders/core/*.json: The call m_166612_
+  is not cancellable': Oculus x Embeddium mixin incompatibility,
+  reproduced upstream with several unrelated packs and with the exact
+  Oculus 1.8.0 + Embeddium 0.3.31 pair (Asek3/Oculus #764, open). The
+  json named in the log is an internal wrapper Oculus generates while
+  compiling a program - it is NOT a file in the pack. v8 removed all
+  sky programs and v9 removed the last core-shader trail so nothing
+  routes through the patched path; if the error still appears, switch
+  the MOD pair (different Embeddium build, e.g. 0.3.21, or a matched
+  Oculus/Embeddium combo) and use Java 17 - upstream reports all ran
+  Java 21/22.
