@@ -1,0 +1,641 @@
+# Cracker's Wither Storm Mod - SERVER  (Ultimate MCSM :: MAX SPECTACLE)
+
+[server]
+	# Specifies if the amulet should override the Wither Storm's targeting.
+	amuletOverride = true
+
+	# Specifies the amount of time in seconds high immunity mobs (players) must be infected in order
+	# to be applied the wither sickness effect Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	applicationDelay = 155
+
+	# High immunity mobs (players) will be assigned a random application delay modifier that will
+	# change the application delay. This value will set the maximum potential limit for that modifier,
+	# in seconds. Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	applicationDelayModifierMax = 155
+
+	# Specifies if the Withered Symbiont can be attacked from behind if it's not vulnerable.
+	attackableWhenNotVulnerable = true
+
+	# Specifies the amount of time (in minutes) required for the Wither Storm to automatically spawn,
+	# if enabled. Range: 0 ~ 120
+	# Range: 0 ~ 120
+	autoSpawnTime = 14
+
+	# Specifies if the Wither Storm should automatically be spawned upon world creation.
+	autoSpawnWitherStorm = true
+
+	# Modifies the Wither Storm's block cluster pull speed by multiplying the default speed with this
+	# value. Range: 0.1 ~ 10.0
+	# Range: 0.1 ~ 10.0
+	blockClusterPullSpeedModifier = 9.208
+
+	# Toggle to enable/disable drops from Block Clusters. NOTE: Enabling this feature can cause world
+	# lag
+	blockClustersDropItems = false
+
+	# Specifies if the Wither Storm should get distracted when a player boats across water for too
+	# long. Used to prevent specific scenarios where the Wither Storm is chasing players but it can't
+	# quite keep up.
+	boatingForTooLongDistractions = true
+
+	# The amount of time a player needs to be boating until the Wither Storm will become distracted.
+	# Range: 30 ~ 300
+	# Range: 30 ~ 300
+	boatingForTooLongSeconds = 62
+
+	# If multiple players are near the Withered Symbiont, the command block book will automatically
+	# drop into the inventory of the player the Symbiont was spawned for, if they are nearby and have
+	# inventory space.
+	bookDropsInInventory = true
+
+	# Specifies if max strength damange resistance should be given to the player when falling out of
+	# the bowels, to mitigate fall damage.
+	bowelsFallResistance = true
+
+	# Specifies if the Wither Storm's heads can be attacked.
+	canAttackHeads = true
+
+	# Specifies if block clusters can have a chance to spiral counter clockwise when being consumed by
+	# the Wither Storm.
+	canClustersSpiralCounterClockwise = true
+
+	# Specifies if the Wither Storm's tractor beams can pull in multiple mobs at once that interesect
+	# the beam.
+	canPickupMobClusters = true
+
+	# Specifies if the Wither Storm can summon the Withered Symbiont.
+	canSummonSymbiont = true
+
+	# If the formidibomb is manually set on fire the fuse tick count will be set to this value, if the
+	# original fuse is greater than this value. Range: 1 ~ 12000
+	# Range: 1 ~ 12000
+	catchFireFuseTicks = 8400
+
+	category.accessibility = true
+
+	category.caves = true
+
+	category.chases = true
+
+	category.client = true
+
+	category.common = true
+
+	category.compatibility = true
+
+	category.distractions = true
+
+	category.evolution = true
+
+	category.flaming_skulls = true
+
+	category.formidibomb = true
+
+	category.instancing = true
+
+	category.item_preservation = true
+
+	category.misc = true
+
+	category.performance = true
+
+	category.playing_dead = true
+
+	category.preference = true
+
+	category.random_strolling = true
+
+	category.roaring = true
+
+	category.runaway_attempts = true
+
+	category.server = true
+
+	category.speed = true
+
+	category.target_stationary_logic = true
+
+	category.targeting = true
+
+	category.ultimate_target_logic = true
+
+	category.wither_sickness = true
+
+	category.withered_symbiont = true
+
+	category.world_consumption = true
+
+	# Higher values makes cave rumbles more 'intense,' and makes more dripstone and glowberries fall.
+	# Range: 0.0 ~ 1.0
+	# Range: 0.0 ~ 1.0
+	caveRumbleIntensity = 0.7
+
+	# Specifies the maximum interval possible (in seconds) between cave rumbles. Range: 5 ~ 1800
+	# Range: 5 ~ 1800
+	caveRumbleIntervalMax = 220
+
+	# Specifies the minimum interval possible (in seconds) between cave rumbles. Range: 5 ~ 1800
+	# Range: 5 ~ 1800
+	caveRumbleIntervalMin = 220
+
+	# Specifies if the screen should shake and other various cave rumble effects should occur when
+	# underground and near the Storm.
+	caveRumbles = true
+
+	# Specifies if cave rumbles should mess with redstone type blocks.
+	caveRumblesMessWithRedstone = true
+
+	# Specifies if a random chance for extended cave rumbles to occur should be possible.
+	chanceForExtendedRumbles = true
+
+	# Specifies if the Wither Storm should accelerate when it evolves into the next phase..
+	chaseOnPhaseChange = true
+
+	# Specifies a modifier value of Target Stationary Flying Speed attribute. The higher the value,
+	# the faster the Wither Storm will go when its ultimate target is stationary Range: 0.01 ~ 1.0
+	# Range: 0.01 ~ 1.0
+	chasingFlyingSpeed = 0.921
+
+	# Toggle to enable/disable the chromatic aberration effect.
+	chromaticAberration = true
+
+	# Specifies the chunk loading radius for the Wither Storm Range: 6 ~ 32
+	# Range: 6 ~ 32
+	chunkLoadingRadius = 30
+
+	chunksToLoad = true
+
+	# Alters the interval (in ticks) of picking up block clusters for the destroyer phases (phase 4 -
+	# 5). NOTE: This value changes the evolution speed of the Wither Storm significantly. Range: 10 ~
+	# 80
+	# Range: 10 ~ 80
+	clusterPickupInterval = 18
+
+	# Increases the radius of block clusters linearly by this amount. NOTE: Greatly impacts the Wither
+	# Storm's evolution rate. Greater values also lead to worse performance!. Range: 0 ~ 16
+	# Range: 0 ~ 16
+	clusterSizeModifier = 15
+
+	# Specifies if Block Clusters should remove non-important items in its path. NOTE: Disabling can
+	# cause major lag.
+	clustersRemoveItems = true
+
+	# CAUTION THIS WILL BE EXTREMELY LAGGY, THIS SETS THE WITHER STORM TO HAVE NO SMALL CLUSTER
+	# COOLDOWN.
+	constantBlackhole = true
+
+	# Specifies if the Wither Storm should convert falling blocks into clusters (NOTE: This can be
+	# very laggy and cause the Wither Storm to evolve fast!).
+	convertFallingBlocks = true
+
+	# Specifies the fuse in ticks that count down to the formidibomb's explosion. The fuse is set when
+	# the block is crafted. Range: 1 ~ 12000
+	# Range: 1 ~ 12000
+	craftFuseTicks = 8400
+
+	# Specifies if crossbows should be able to also shoot ender pearls. Disable if facing
+	# compatibility issues.
+	crossbowsSupportEnderPearls = true
+
+	# Specifies the delay, in seconds, before high immunity mobs (players) are cured of wither
+	# sickness Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	cureDelay = 155
+
+	# High immunity mobs (players) will be assigned a random cure delay modifier that will change the
+	# cure delay. This value will set the maximum potential limit for that modifier, in seconds.
+	# Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	cureDelayModifierMax = 155
+
+	# Alters the interval (in ticks) of picking up block clusters for the devourer phases (phase 6+).
+	# NOTE: This value changes the evolution speed of the Wither Storm significantly. Range: 10 ~ 80
+	# Range: 10 ~ 80
+	devourerClusterPickupInterval = 18
+
+	# Specifies the time in minutes that the Wither Storm should be distracted for, plus some random
+	# modifying and more. Range: 1 ~ 25
+	# Range: 1 ~ 25
+	distractionTimeMinutes = 4
+
+	# For when the Wither Storm needs to wait to become distracted, this value (in minutes) will
+	# specifiy the wait time, plus a random modifier. Range: 1 ~ 20
+	# Range: 1 ~ 20
+	distractionWaitTime = 3
+
+	# Specifies the interval for when the formidibomb will drop out of its inventory (if enabled).
+	# This value divides the crafted fuse ticks to get the interval (e.x. 12000 / 4 = 3000). Range: 1
+	# ~ 8
+	# Range: 1 ~ 8
+	dropInterval = 2
+
+	# Makes the Wither Storm randomly adjust it's flying height itself between 40 and 80.
+	dynamicFlyingHeight = true
+
+	# The time (in seconds) that the Wither Storm should take before adjusting it's dynamic flying
+	# height. Range: 15 ~ 1200
+	# Range: 15 ~ 1200
+	dynamicFlyingHeightTime = 157
+
+	# Specifies if only the end of phase five can be formidibombed, instead of all of phase 5.
+	endOfPhaseFiveBombableExclusively = true
+
+	# Specifies a modifier value of the evolution rate attribute. The higher the value, the longer it
+	# takes for the Wither Storm to make a complete evolution (from phases 0 to 7), and vice versa.
+	# Cannot be lower than 0. Range: 0.01 ~ 32.0
+	# Range: 0.01 ~ 32.0
+	evolutionAttributeModifier = 29.441
+
+	# Makes the Wither Storm target the player that was farthest from it while using FARTHEST
+	# targeting for the configured amount of time (in minutes). Range: 1 ~ 60
+	# Range: 1 ~ 60
+	farthestTargetingTime = 8
+
+	# The flaming skull explosion size when they collide with blocks. Range: 1.0 ~ 16.0
+	# Range: 1.0 ~ 16.0
+	flamingSkullExplosionSize = 14.8
+
+	# The speed modifier for flaming wither skulls. Higher = faster. Range: 0.5 ~ 8.0
+	# Range: 0.5 ~ 8.0
+	flamingSkullSpeedModifier = 7.4
+
+	# Specifies if a warning should be printed out to server operators if flying is disabled.
+	flyingEnabledWarning = true
+
+	# Specifies the height the Wither Storm will fly at during phase 4 and up. Range: 10 ~ 150
+	# Range: 10 ~ 150
+	flyingHeight = 108
+
+	# Specifies if a formidibomb's auto detonation fuse should be enabled.
+	formidibombFuseEnabled = true
+
+	# The targeting invulnerability time in seconds players who escape from a Wither Storm after
+	# injuring a head get. Range: 0 ~ 60
+	# Range: 0 ~ 60
+	headEscapeTime = 7
+
+	# Specifies if the Wither Storm should heal whenever it eats a mob (determined by half the mob's
+	# max health).
+	healFromChomp = true
+
+	# Adds this value multiplied by the amount of nearby players to the Symbiont's max health when it
+	# is spawned. Set to zero to disable this feature. Range: 0.0 ~ 100.0
+	# Range: 0.0 ~ 100.0
+	healthScalePerPlayer = 92.0
+
+	# Alters the interval (in ticks) of picking up block clusters for the hunchback phases (phase 0 -
+	# 3). NOTE: This value changes the evolution speed of the Wither Storm significantly. Range: 10 ~
+	# 80
+	# Range: 10 ~ 80
+	hunchbackClusterPickupInterval = 18
+
+	# If the Wither Storm's ultimate target is hidden (bossbar is not visible for that target) for an
+	# extended period of time, it will ignore that target temporarily and go for a different player.
+	# Toggle to disable. NOTE: Only functional on a multiplayer environment.
+	ignoreUltimateTargetIfHidden = true
+
+	# Specifies if entities who are reinfected over a short period of time should receive wither
+	# sickness with a greater strength.
+	increaseAmplifier = true
+
+	# A list of mobs that should not have custom AI injected into them
+	injectAiMobBlacklist = true
+
+	# Specifies if custom AI behavior should be injected into certain entities (such as mobs running
+	# away from the Wither Storm). Disable if facing compatibility issues
+	injectCustomAiBehavior = true
+
+	# Specifies if a Wither Storm head should immediately kill the player upon biting them. Does not
+	# apply to heads inside the bowels.
+	instantChomp = true
+
+	# Specifies the invulnerability time when the Wither Storm has been summoned, in seconds. When
+	# invulnerable, the Wither Storm doesn't move and can't be attacked. Range: 1 ~ 320
+	# Range: 1 ~ 320
+	invulnerabilityTime = 39
+
+	# When a player dies, a block cluster containing their items will be created into the world based
+	# on the condition defined by this value. Acts as a gravestone.
+	itemPreservation = true
+
+	# Specifies if Wither Sickness should be removed after a player respawns.
+	keepSicknessAfterRespawn = true
+
+	# Specifies the amount of time in seconds low immunity mobs must be infected in order to be
+	# applied the wither sickness effect Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	lowImmuneApplicationDelay = 155
+
+	# Low immunity mobs will be assigned a random application delay modifier that will change the
+	# proximity seconds time. This value will set the maximum potential limit for that modifier, in
+	# seconds. Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	lowImmuneApplicationModifierMax = 1105
+
+	# Specifies the delay, in seconds, before low immunity mobs are cured of wither sickness Range: 12
+	# ~ 1200
+	# Range: 12 ~ 1200
+	lowImmuneCureDelay = 155
+
+	# Low immunity mobs will be assigned a random cure delay modifier that will change the cure delay
+	# time. This value will set the maximum potential limit for that modifier, in seconds. Range: 12 ~
+	# 1200
+	# Range: 12 ~ 1200
+	lowImmuneCureDelayModifierMax = 155
+
+	# Low immunity mobs will be assigned a random proximity seconds delay modifier that will change
+	# the proximity seconds time. This value will set the maximum potential limit for that modifier,
+	# in seconds. Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	lowImmuneProximityModifierMax = 1105
+
+	# Specifies the amount of time in seconds that low immunity mobs must be near the Wither Storm in
+	# order to begin infection Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	lowImmuneRequiredProximitySeconds = 155
+
+	# Lowers the resistance of blocks in the path of the explosion, effectively increasing the
+	# strength of the explosion which allows for obsidian, etc. to be destroyed.
+	lowerBlockResistance = true
+
+	# The max amount of distance a Wither Storm can travel at once when using the RANDOM_STROLL or
+	# RANDOM_STROLL_NEAR_PLAYER targeting type. Range: 200 ~ 5000
+	# Range: 200 ~ 5000
+	maxRandomStrollTargetingTypeRadius = 4616
+
+	# Specifies the greatest time, in seconds, it will take for one of the Wither Storm's heads to
+	# initiate a roar and shoot a flaming skull. Range: 1 ~ 100
+	# Range: 1 ~ 100
+	maximumRoarInterval = 13
+
+	# Specifies the lowest time, in seconds, it will take for one of the Wither Storm's heads to
+	# initiate a roar and shoot a flaming skull. Range: 1 ~ 100
+	# Range: 1 ~ 100
+	minimumRoarInterval = 13
+
+	# Specifies the minimum interval (+random) in seconds that the Wither Storm should check for
+	# Withered Symbiont spawn conditions. Range: 1 ~ 240
+	# Range: 1 ~ 240
+	minimumSpawnCheckInterval = 30
+
+	# Specifies the required time that must pass (in minutes) in order to decrease the runaway attempt
+	# amount. This timer only counts if the Wither Storms ultimate target remains in the stationary
+	# chunk radius. Range: 1 ~ 48
+	# Range: 1 ~ 48
+	minutesTillRunawayAttemptDiminish = 7
+
+	# Specifies if mobs should go into nearby nether portals when running away from a Wither Storm.
+	mobsRunIntoPortals = true
+
+	# Specifies a modifier value of Slow Flying Speed attribute. The higher the value, the faster the
+	# Wither Storm will go when it's ultimate target is not stationary Range: 0.01 ~ 1.0
+	# Range: 0.01 ~ 1.0
+	normalFlyingSpeed = 0.921
+
+	# Makes the Wither Storm attempt to only grab blocks that were tagged in the Tractor Distractions
+	# json.
+	onlyTryPickingUpTractorTagged = true
+
+	# Toggles the OptiFine warning upon joining a world.
+	optifineWarning = true
+
+	# Toggles the patron cosmetic for nonamecrackers2's Wither Storm backers.
+	patronCosmetic = true
+
+	# Specifies if phantoms AI should be overriden to allow circling above any nearby Wither Storms.
+	# Disable if you wish for default behaviour and/or if issues arise
+	phantomsOrbitWitherStorm = true
+
+	# Toggles the Withered Symbiont theme, created for CWSM by Mar Mar.
+	playSymbiontTheme = true
+
+	# Toggles the Wither Storm boss theme. NOTE: this theme is from MC:SM and is subject to copyright.
+	playWitherStormTheme = true
+
+	# Specifies if players should not be able to dismount a tentacle entity. Disable if facing
+	# compatibility issues.
+	playerCannotDismountTentacles = true
+
+	playerFavorability = true
+
+	# Specifies the time in minutes (+random) that the players who killed a Withered Symbiont should
+	# be ignored by the Wither Storm for. Range: 1 ~ 10
+	# Range: 1 ~ 10
+	playerInvulnerableTime = 2
+
+	# Specifies the delay in minutes (+random) that the Wither Storm should be able summon a Withered
+	# Symbiont for the player it summoned one for. Range: 1 ~ 60
+	# Range: 1 ~ 60
+	playerSummoningDelay = 8
+
+	# If a player kills a Withered Symbiont, their sumoning delay will be increased to this value in
+	# minutes (+random). Range: 1 ~ 60
+	# Range: 1 ~ 60
+	playerSummoningDelayOnKill = 8
+
+	# Specifies if drops should be preserved using block clusters (gravestones) for all mobs, not just
+	# players.
+	preserveDropsForAllMobs = true
+
+	# Specifies if players should temporarily respawn away from the Wither Storm when they die to it,
+	# if their respawn point is near the Storm.
+	preventWitherStormCamping = true
+
+	# High immunity mobs (players) will be assigned a random proximity seconds modifier that will
+	# change the proximity seconds time. This value will set the maximum potential limit for that
+	# modifier, in seconds. Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	proximitySecondsModifierMax = 155
+
+	# Specifies if players should spawn somewhere random when entering the bowels. Disable to revert
+	# to a static entrance position.
+	randomBowelsEntrance = true
+
+	# Distractions may or may not occur if the conditions are met/unmet based off of a random chance.
+	# Toggle to enable/disable.
+	randomDistractionChances = true
+
+	# Specifies if the Wither Storm should stroll around the player if they're hidden from the storm.
+	randomStrollingWhenTargetHidden = true
+
+	# If you're using RANDOMIZED targeting you can use this to set how often (in minutes) the Wither
+	# Storm should switch its targeting type. Range: 1 ~ 60
+	# Range: 1 ~ 60
+	randomizedTargetingTime = 8
+
+	# When set to true the Wither Storm will have a 10% chance to speedup when it changes it's
+	# targeting type while using RANDOMIZED targeting.
+	randomlySpeedUpWithTargetChange = true
+
+	# Specifies if junk items near the Wither Storm should be immediately destroyed. NOTE: Disabling
+	# will cause massive server side and potential FPS lag!.
+	removeNearbyJunk = true
+
+	# After a mob has been targetted by the Wither Storm a set maximum of times, the mob will become
+	# infected Range: 1 ~ 40
+	# Range: 1 ~ 40
+	requiredContacts = 28
+
+	# Specifies the amount of time in seconds high immunity mobs (players) must be near the Wither
+	# Storm in order to to begin infection Range: 12 ~ 1200
+	# Range: 12 ~ 1200
+	requiredProximitySeconds = 155
+
+	# Specifies the phase the Wither Storm should be set to when resummoned by a withered beacon.
+	# Range: 0 ~ 7
+	# Range: 0 ~ 7
+	resummonedPhase = 5
+
+	# Specifies the time (in minutes) after being revived that the Wither Storm should ignore players.
+	# Range: 1 ~ 40
+	# Range: 1 ~ 40
+	revivalPlayerProtection = 28
+
+	# Specifies when (in minutes) the Wither Storm will automatically revive when playing dead. Range:
+	# 1 ~ 120
+	# Range: 1 ~ 120
+	revivalTimeMinutes = 15
+
+	# Specifies if the Wither Storm should automatically revive if not found after a period of time.
+	revivalTimer = true
+
+	# Specifies the rotation speed of the Wither Storm. Range: 0.1 ~ 1.0
+	# Range: 0.1 ~ 1.0
+	rotationSpeed = 0.928
+
+	# Specifies the search radius multiplier for when searching for a random location to go to. Range:
+	# 1 ~ 8
+	# Range: 1 ~ 8
+	searchableRangeMultiplier = 7
+
+	# If the ultimate target is stationary for a specific amount of time, the Wither Storm will begin
+	# to move towards it at a faster rate (chase). Toggle to enable/disable this feature.
+	shouldChaseWhenTargetStopped = true
+
+	# Toggle to enable/disable Wither Storm chunk loading when no players are online.
+	shouldChunkLoadWhenNoPlayers = true
+
+	# Specifies if after a set amount of time the formidibomb item should drop out of whatever
+	# inventory is holding it and should spawn as the entity.
+	shouldDropFromInventory = true
+
+	# Specifies if the current entity the Wither Storm is picking up has a vehicle, that it should
+	# pick it up as well. Ex: Should pick up a player riding a boat.
+	shouldPickUpVehicles = true
+
+	# Specifies if the bowels entrance hole in the Wither Storm's mass at the end of phase 7 should be
+	# available or not.
+	shouldShowHole = true
+
+	# Specifies if the Withered Symbiont is hostile towards other mobs (This is only applied to
+	# Symbionts spawned after this change is applied).
+	shouldSymbiontAttackMobs = true
+
+	# Specifies if mobs should convert to sickened mobs once they die from wither sickness.
+	sickenedMobConversions = true
+
+	# The Wither Storm's bossbar and boss music will automatically toggle based on whether the player
+	# is underground or not. Disable to revert back to default bossbar/boss theme logic.
+	smartBossbar = true
+
+	# Specifies if certain mobs (by default, players) should be targeted over others.
+	specialTargetingBias = true
+
+	# The percent chance certain mobs (by default, players) should be picked up over others. Range: 0
+	# ~ 100
+	# Range: 0 ~ 100
+	specialTargetingBiasChance = 12
+
+	# If true, the hitbox of the Wither Storm and Wither Storm Segment's will be shrunk vertically to
+	# one block. Enable if facing major server lag in the bigger Wither Storm phases
+	squashHitbox = true
+
+	# Specifies the required time, in minutes, the Wither Storms ultimate target must be stationary in
+	# order to be able to count a runaway attempt when it tries to leave the stationary chunk radius.
+	# Range: 1 ~ 20
+	# Range: 1 ~ 20
+	targetRunawayAttemptMinutes = 3
+
+	# Specifies if the Wither Storm should count the times its ultimate target leaves the stationary
+	# chunk radius. After a specified amount of attempts has been reached, the Wither Storm will
+	# accelerate to its Target Stationary Speed.
+	targetRunawayAttempts = true
+
+	# Specifies the amount of runaway attempts made by the Wither Storms ultimate target that must be
+	# met for it to begin a chase. Range: 1 ~ 32
+	# Range: 1 ~ 32
+	targetRunawayAttemptsRequired = 23
+
+	# Specifies the amount of time in minutes that the Wither Storm's ultimate target has begun to run
+	# away in order to slow back down again. Range: 1 ~ 90
+	# Range: 1 ~ 90
+	targetRunawayMinutes = 12
+
+	# If the player remains in a radius of chunks specified by this value for a specific amount of
+	# time, the Wither Storm will begin to move towards the player at a faster rate Range: 0 ~ 16
+	# Range: 0 ~ 16
+	targetStationaryChunkRadius = 15
+
+	# Specifies the amount of time in minutes that the Wither Storm's ultimate target must be
+	# stationary in order for it to accelerate Range: 1 ~ 120
+	# Range: 1 ~ 120
+	targetStationaryMinutes = 15
+
+	# Specifies when the Wither Storm is done chasing its ultimate target if it should become
+	# 'distracted' and go to a random nearby area.
+	targettingDistractionsEnabled = true
+
+	# If the Wither Storm's ultimate target has a command block tool and the Wither Storm is at phase
+	# 7, a timer specified by this value (in minutes) + random will countdown until the hole will
+	# automatically appear. Range: 1 ~ 30
+	# Range: 1 ~ 30
+	tillShouldShowHole = 21
+
+	# How far the tractor beams should search for distraction blocks, NOTE: High values may cause lag.
+	# Range: 4 ~ 256
+	# Range: 4 ~ 256
+	tractorBeamBlockSearchRadius = 236
+
+	# Specifies if the Wither Storm should be able to pick up block clusters with its tractor beams.
+	tractorBeamClusterPickUp = true
+
+	# Multiplies the speed of block clusters being pulled in by a Wither Storm's tractor beam by this
+	# value. Range: 0.1 ~ 10.0
+	# Range: 0.1 ~ 10.0
+	tractorBeamClusterSpeedModifier = 9.208
+
+	# Specifies the height of which tractor beams should remove water. The default of 63 is ocean
+	# height and upwards. Range: -64 ~ 320
+	# Range: -64 ~ 320
+	tractorBeamFluidRemovalHeight = 205
+
+	# Makes it so the Wither Storm will remove fluids above Y 63 with its tractor beams.
+	tractorBeamsRemoveFluids = true
+
+	# Modifies the tractor beam pull speed, higher = faster. Range: 0.1 ~ 1.0
+	# Range: 0.1 ~ 1.0
+	tractorPullSpeedModifier = 0.928
+
+	# Specifies the targeting type the Wither Storm should use to determine it's ultimate target.
+	ultimateTargetingType = true
+
+	# Specifies if mobs should be able to receive wither sickness
+	witherSicknessEnabled = true
+
+	# Specifies if an overlay should be applied to entities that renders wither sickness
+	witherSicknessLayer = true
+
+	witherStormCanDestroyBlocks = true
+
+	# Specifies if the Wither Storm should regenerate its health and be melee attackable.
+	witherStormInvulnerability = true
+
+	# Specifies the delay in minutes (+random) that the Wither Storm will be able to summon a Withered
+	# Symbiont. Range: 1 ~ 20
+	# Range: 1 ~ 20
+	witherStormSummoningDelay = 3
+
+	# Specifies if smaller Wither Storms should follow one with more consumed entities.
+	witherStormsFollowBiggerStorms = true

@@ -1,0 +1,1078 @@
+{
+  "_comment": "Ultimate MCSM Wither Storm - master config. Defaults = MAX SPECTACLE.",
+  "version": 1,
+  "activePreset": "MAX_SPECTACLE",
+  "presets": {
+    "MAX_SPECTACLE": "Everything on, cranked. Built for cinematics.",
+    "HIGH": "Nearly everything, minor culling.",
+    "BALANCED": "All signature looks, tuned for mid-range PCs.",
+    "LOW": "Cheap halos, reduced debris.",
+    "POTATO": "Bare minimum."
+  },
+  "categories": {
+    "Halos & Auras": {
+      "icon": "\u2728",
+      "options": [
+        {
+          "id": "halo.enabled",
+          "title": "Enable Procedural Halos",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "Master switch for all phase halos.",
+          "tags": []
+        },
+        {
+          "id": "halo.phase4.white",
+          "title": "Phase 4 White Rim Glow",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "Omissive white glow hugging the storm's sides.",
+          "tags": []
+        },
+        {
+          "id": "halo.phase4.intensity",
+          "title": "Phase 4 Intensity",
+          "default": 1.0,
+          "type": "float",
+          "range": [
+            0.0,
+            4.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.phase5.blackblur",
+          "title": "Phase 5 Black Blur",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "Dark bruised blur around the silhouette.",
+          "tags": []
+        },
+        {
+          "id": "halo.phase5.purple",
+          "title": "Phase 5 Purple Bleed",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.phase5.intensity",
+          "title": "Phase 5 Intensity",
+          "default": 1.15,
+          "type": "float",
+          "range": [
+            0.0,
+            4.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.phase5_1.blue",
+          "title": "Phase 5.1 Blue Aura",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "The blue aura that fades in first.",
+          "tags": []
+        },
+        {
+          "id": "halo.phase5_1.intensity",
+          "title": "Phase 5.1 Blue Intensity",
+          "default": 1.0,
+          "type": "float",
+          "range": [
+            0.0,
+            4.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.phase5_5.purpleWrap",
+          "title": "Phase 5.5 Purple Wrap",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "Purple aura wrapped AROUND the blue aura, growing as the storm grows.",
+          "tags": []
+        },
+        {
+          "id": "halo.phase5_5.intensity",
+          "title": "Phase 5.5 Intensity",
+          "default": 1.35,
+          "type": "float",
+          "range": [
+            0.0,
+            4.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.growWithSize",
+          "title": "Halo Scales With Storm Size",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.pulseSpeed",
+          "title": "Halo Pulse Speed",
+          "default": 1.0,
+          "type": "float",
+          "range": [
+            0.0,
+            5.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.rotateSpeed",
+          "title": "Halo Rotation Speed",
+          "default": 0.35,
+          "type": "float",
+          "range": [
+            -3.0,
+            3.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.boil",
+          "title": "Halo Turbulence / Boil",
+          "default": 0.45,
+          "type": "float",
+          "range": [
+            0.0,
+            1.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.bloom",
+          "title": "Additive Bloom Strength",
+          "default": 1.2,
+          "type": "float",
+          "range": [
+            0.0,
+            3.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "halo.layers",
+          "title": "Max Halo Layers",
+          "default": 5,
+          "type": "int",
+          "range": [
+            1,
+            8
+          ],
+          "description": "",
+          "tags": []
+        }
+      ]
+    },
+    "Teeth & Emissives": {
+      "icon": "\ud83e\uddb7",
+      "options": [
+        {
+          "id": "teeth.turquoise",
+          "title": "Turquoise Glowing Teeth",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "teeth.color",
+          "title": "Teeth Glow Colour",
+          "default": "#40F0E0",
+          "type": "color",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "teeth.intensity",
+          "title": "Teeth Glow Intensity",
+          "default": 1.6,
+          "type": "float",
+          "range": [
+            0.0,
+            5.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "teeth.pulse",
+          "title": "Teeth Pulse With Roar",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "eyes.color",
+          "title": "Eye Glow Colour",
+          "default": "#FF3CEB",
+          "type": "color",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "eyes.intensity",
+          "title": "Eye Glow Intensity",
+          "default": 1.4,
+          "type": "float",
+          "range": [
+            0.0,
+            5.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "emissive.decals",
+          "title": "Emissive Body Decals",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "emissive.tentacleTips",
+          "title": "Glowing Tentacle Tips",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        }
+      ]
+    },
+    "Dynamic Sky": {
+      "icon": "\ud83c\udf0c",
+      "options": [
+        {
+          "id": "sky.enabled",
+          "title": "Dynamic Storm Skybox",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.followStorm",
+          "title": "Skybox Follows The Storm",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "The skybox is anchored behind the storm and moves when it moves.",
+          "tags": []
+        },
+        {
+          "id": "sky.colorTop",
+          "title": "Sky Zenith Colour",
+          "default": "#1A0630",
+          "type": "color",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.colorMid",
+          "title": "Sky Mid Colour",
+          "default": "#6822A8",
+          "type": "color",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.colorLow",
+          "title": "Sky Low Colour",
+          "default": "#CE4EA8",
+          "type": "color",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.colorHorizon",
+          "title": "Horizon / Bottom Pink",
+          "default": "#FF9696",
+          "type": "color",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.rotationSpeed",
+          "title": "Sky Rotation Speed",
+          "default": 0.35,
+          "type": "float",
+          "range": [
+            -5.0,
+            5.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.fogTint",
+          "title": "Tint Fog To Match Sky",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.stormProximityBlend",
+          "title": "Blend Sky By Storm Distance",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.lightning",
+          "title": "Purple Lightning",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.godRays",
+          "title": "Volumetric God Rays",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "sky.godRayStrength",
+          "title": "God Ray Strength",
+          "default": 1.3,
+          "type": "float",
+          "range": [
+            0.0,
+            4.0
+          ],
+          "description": "",
+          "tags": []
+        }
+      ]
+    },
+    "Shaders & Lighting": {
+      "icon": "\ud83d\udca1",
+      "options": [
+        {
+          "id": "shader.groundShadows",
+          "title": "Ground Shadows",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.shadowsMoveWithSun",
+          "title": "Shadows Cast & Move With Sun",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.shadowSoftness",
+          "title": "Shadow Softness",
+          "default": 0.6,
+          "type": "float",
+          "range": [
+            0.0,
+            1.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.sunGlow",
+          "title": "Sun Glow / Bloom",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.sunGlowStrength",
+          "title": "Sun Glow Strength",
+          "default": 1.4,
+          "type": "float",
+          "range": [
+            0.0,
+            4.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.stormShadow",
+          "title": "Storm Casts A Shadow On The World",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.colorGrading",
+          "title": "Story Mode Colour Grading",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.vignette",
+          "title": "Cinematic Vignette",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.chromatic",
+          "title": "Chromatic Aberration Near Storm",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.screenShake",
+          "title": "Screen Shake",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "shader.screenShakeStrength",
+          "title": "Screen Shake Strength",
+          "default": 1.25,
+          "type": "float",
+          "range": [
+            0.0,
+            4.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "clouds.storyMode",
+          "title": "Story Mode Clouds",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "clouds.height",
+          "title": "Cloud Height",
+          "default": 192,
+          "type": "int",
+          "range": [
+            64,
+            320
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "clouds.speed",
+          "title": "Cloud Speed",
+          "default": 1.4,
+          "type": "float",
+          "range": [
+            0.0,
+            6.0
+          ],
+          "description": "",
+          "tags": []
+        }
+      ]
+    },
+    "Tentacle Interaction": {
+      "icon": "\ud83d\udc19",
+      "options": [
+        {
+          "id": "tentacle.grabPlayers",
+          "title": "Tentacles Can Grab Players",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.grabMobs",
+          "title": "Tentacles Can Grab Mobs",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.throwPlayers",
+          "title": "Tentacles Can Throw You",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.throwPower",
+          "title": "Throw Power",
+          "default": 2.4,
+          "type": "float",
+          "range": [
+            0.0,
+            8.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.touchDamage",
+          "title": "Touch Damage",
+          "default": 6.0,
+          "type": "float",
+          "range": [
+            0.0,
+            40.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.grabRange",
+          "title": "Grab Range (blocks)",
+          "default": 42,
+          "type": "int",
+          "range": [
+            4,
+            256
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.grabDuration",
+          "title": "Grab Duration (ticks)",
+          "default": 70,
+          "type": "int",
+          "range": [
+            5,
+            600
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.slamBlocks",
+          "title": "Tentacles Slam Into Blocks",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.ripStructures",
+          "title": "Tentacles Rip Apart Structures",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.count",
+          "title": "Max Active Tentacles",
+          "default": 14,
+          "type": "int",
+          "range": [
+            1,
+            64
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.reachMultiplier",
+          "title": "Reach Multiplier",
+          "default": 1.8,
+          "type": "float",
+          "range": [
+            0.1,
+            10.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "tentacle.escapeStruggle",
+          "title": "Struggle To Escape",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        }
+      ]
+    },
+    "Mass Destruction": {
+      "icon": "\ud83d\udca5",
+      "options": [
+        {
+          "id": "destroy.enabled",
+          "title": "Mass Destruction",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "destroy.ripHouses",
+          "title": "Rip Apart Houses",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "destroy.demolishRadius",
+          "title": "Demolition Radius",
+          "default": 34,
+          "type": "int",
+          "range": [
+            1,
+            256
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "destroy.slamForce",
+          "title": "Slam Force",
+          "default": 2.6,
+          "type": "float",
+          "range": [
+            0.0,
+            10.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "destroy.suckItems",
+          "title": "Vacuum Up Items",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "destroy.terrainDeformation",
+          "title": "Terrain Deformation",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "destroy.debrisPhysics",
+          "title": "Flying Debris Physics",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "destroy.debrisCount",
+          "title": "Debris Particle Count",
+          "default": 2400,
+          "type": "int",
+          "range": [
+            0,
+            20000
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "destroy.fireOnImpact",
+          "title": "Fires On Impact",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "destroy.craterDepth",
+          "title": "Crater Depth",
+          "default": 9,
+          "type": "int",
+          "range": [
+            0,
+            64
+          ],
+          "description": "",
+          "tags": []
+        }
+      ]
+    },
+    "Storm Growth & Size": {
+      "icon": "\ud83c\udf00",
+      "options": [
+        {
+          "id": "size.unlimited",
+          "title": "UNLIMITED Growth (no size cap)",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "Removes the size ceiling entirely - the storm can keep growing forever.",
+          "tags": []
+        },
+        {
+          "id": "size.maxPhase",
+          "title": "Max Phase",
+          "default": 7.0,
+          "type": "float",
+          "range": [
+            1.0,
+            12.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "size.scaleMultiplier",
+          "title": "Global Scale Multiplier",
+          "default": 1.0,
+          "type": "float",
+          "range": [
+            0.05,
+            100.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "size.growthRate",
+          "title": "Growth Rate",
+          "default": 1.6,
+          "type": "float",
+          "range": [
+            0.0,
+            20.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "size.hungerRate",
+          "title": "Consumption Rate",
+          "default": 1.8,
+          "type": "float",
+          "range": [
+            0.0,
+            20.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "size.phaseThresholdScale",
+          "title": "Phase Threshold Scale",
+          "default": 1.0,
+          "type": "float",
+          "range": [
+            0.01,
+            10.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "size.allowFractionalPhases",
+          "title": "Fractional Phases (5.1 / 5.5)",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "size.renderDistanceBoost",
+          "title": "Force Render At Any Distance",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        }
+      ]
+    },
+    "World & Structures": {
+      "icon": "\ud83c\udfd8",
+      "options": [
+        {
+          "id": "world.mcsmStructures",
+          "title": "Generate MCSM Structures",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "world.beaconTown",
+          "title": "Beacon Town",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "world.orderTemple",
+          "title": "Order Of The Stone Temple",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "world.bouldervale",
+          "title": "Bouldervale / Wilderness",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "world.netherStation",
+          "title": "Nether Train Station",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "world.structureRarity",
+          "title": "Structure Rarity",
+          "default": 4,
+          "type": "int",
+          "range": [
+            1,
+            100
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "world.taintedBiome",
+          "title": "Tainted Biome Spread",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "world.spawnGuidebook",
+          "title": "Give Guidebook On First Join",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "world.storyModeTerrain",
+          "title": "Story Mode Terrain Palette",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        }
+      ]
+    },
+    "Audio": {
+      "icon": "\ud83d\udd0a",
+      "options": [
+        {
+          "id": "audio.mcsmMusic",
+          "title": "MCSM Music Pack",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "audio.stormRoars",
+          "title": "Storm Roars",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "audio.roarVolume",
+          "title": "Roar Volume",
+          "default": 1.0,
+          "type": "float",
+          "range": [
+            0.0,
+            2.0
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "audio.ambientDread",
+          "title": "Ambient Dread Layer",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "audio.distanceRumble",
+          "title": "Low-Frequency Rumble",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        }
+      ]
+    },
+    "Performance": {
+      "icon": "\u26a1",
+      "options": [
+        {
+          "id": "perf.preset",
+          "title": "Preset",
+          "default": "MAX_SPECTACLE",
+          "type": "enum",
+          "range": null,
+          "description": "MAX_SPECTACLE / HIGH / BALANCED / LOW / POTATO",
+          "tags": []
+        },
+        {
+          "id": "perf.haloResolution",
+          "title": "Halo Texture Resolution",
+          "default": 512,
+          "type": "int",
+          "range": [
+            64,
+            2048
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "perf.skyResolution",
+          "title": "Sky Texture Resolution",
+          "default": 1024,
+          "type": "int",
+          "range": [
+            128,
+            4096
+          ],
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "perf.cullDistantDebris",
+          "title": "Cull Distant Debris",
+          "default": false,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "perf.asyncBuild",
+          "title": "Async Buffer Building",
+          "default": true,
+          "type": "bool",
+          "range": null,
+          "description": "",
+          "tags": []
+        },
+        {
+          "id": "perf.maxParticles",
+          "title": "Max Particles",
+          "default": 12000,
+          "type": "int",
+          "range": [
+            100,
+            100000
+          ],
+          "description": "",
+          "tags": []
+        }
+      ]
+    }
+  }
+}

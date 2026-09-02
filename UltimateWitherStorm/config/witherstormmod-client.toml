@@ -1,0 +1,118 @@
+# Cracker's Wither Storm Mod - CLIENT  (Ultimate MCSM :: MAX SPECTACLE)
+
+[client]
+	# Toggles April Fools special effects.
+	aprilFools = false
+
+	# Builds instanced vertex buffers off thread to help reduce stuttering. It is only recommended to
+	# disable this if facing compatibility issues.
+	asyncBufferBuilders = true
+
+	# Specifies whether or not a white overlay should cover the screen during certain events.
+	blindingEffects = true
+
+	# Toggles the rendering of Block Clusters.
+	blockClusterRendering = true
+
+	# Specifies whether or not camera shake effects should be used.
+	cameraShakeEffects = true
+
+	category.boss_music = true
+
+	# Toggles the custom main menu panorama added by the mod.
+	customPanorama = true
+
+	# Specifies if the Wither Storm should use this value as a multiplier when calculating the time in
+	# ticks it takes for it to start accelerating, when its ultimate target is stationary. Range: 0.1
+	# ~ 24.0
+	# Range: 0.1 ~ 24.0
+	distanceMultiplier = 22.088
+
+	# Specifies if fog should be applied to Wither Storms being rendered from a distance.
+	distantFog = true
+
+	# The distant renderer allows for the Wither Storm to be rendered from much greater distances than
+	# what vanilla allows. Disable if you're facing issues with it.
+	distantRenderer = true
+
+	# Turn off to disable the ear ringing effects used in the mod.
+	earRingingEffects = true
+
+	# Hides the debris rings until the Wither Storm has split (phase 6).
+	hideDebrisRingsUntilSplit = false
+
+	# Uses larger cubes to make up the the phase 4 and up models. May result in a performance
+	# increase.
+	lowResModels = false
+
+	lowerDebrisResWithPhase = true
+
+	# Distractions will not occur if the Wither Storm's ultimate target is outside the radius
+	# determined by this value + its target range. Although, if the ultimate target is inside the
+	# radius, but then leaves, a distraction can then later occur. Range: 100 ~ 3000
+	# Range: 100 ~ 3000
+	maximumDistractionDistance = 2768
+
+	# Distractions will not occur IMMEDIATELY if the Wither Storm's ultimate target is INSIDE the
+	# radius determined by this value + its target range. If the target is inside this radius, the
+	# Wither Storm will wait before becoming distracted, to see if the target is outside the radius.
+	# If not, a distraction will not occur. Set to 0 to disable. Range: 10 ~ 500
+	# Range: 10 ~ 500
+	minimumDistractionDistance = 461
+
+	# Specifies if sounds from the Wither Storm should be heard when deep underground.
+	occludeSoundsUnderground = true
+
+	# Specifies if Minecraft music should play at all. Used for if you want the boss music to play but
+	# not the Minecraft music.
+	playMinecraftMusic = true
+
+	# Toggles the rendering of the debris cloud surrounding the Wither Storm.
+	renderDebrisCloud = true
+
+	# Toggles the rendering of debris rings that surround the Wither Storm (much more performant than
+	# the debris cloud).
+	renderDebrisRings = true
+
+	renderDebrisTwoDimensional = false
+
+	# Setting this value to false will disable the debris cloud when rendering the Wither Storm from
+	# large distances.
+	renderDistantDebris = true
+
+	# Specifies if the emissive decal (eyes and teeth) for the Wither Storm heads should be rendered.
+	renderEmissiveDecalForHeads = true
+
+	# Specifies if a pulsating effect, mimicking endermen pulling the Wither Storm apart, should be
+	# rendered once its evolution is complete.
+	renderPulse = true
+
+	# Specifies if a purple shine should render behind the Wither Storm at night.
+	renderShine = true
+
+	# Specifies if sky ambience affects (sky darkening) should render when a Wither Storm is nearby.
+	renderSkyAmbienceEffects = true
+
+	# Turn off to disable the overlay that appears when inside a tractor beam.
+	renderTractorBeamOverlay = true
+
+	# Toggles the rendering of the tractor beams.
+	renderTractorBeams = true
+
+	# Specifies if global sounds made by the Wither Storm (e.x. evolve sound) should play cross
+	# dimensionally.
+	shouldPlayGlobalSoundsCrossDimensionally = true
+
+	# Specifies if particles inside the tractor beams of the Wither Storm should render.
+	tractorBeamParticles = true
+
+	# Specifies if the Wither Storm should use the phase as a multiplier when calculating the time in
+	# ticks it takes for it to start accelerating, when its ultimate target is stationary.
+	usePhaseAsDistanceMultiplier = true
+
+	# Specifies if CWSM should use more performant rendering when rendering Block Clusters and the
+	# Wither Storm's mass. NOTE: It is not recommended to disable this option unless necessary.
+	vertexBufferRendering = true
+
+	# Specifies if the low res models should be used when being rendered via the distant renderer.
+	witherStormLOD = true

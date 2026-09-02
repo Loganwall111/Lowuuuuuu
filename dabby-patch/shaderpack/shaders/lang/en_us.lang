@@ -1,0 +1,60 @@
+screen.Sky=Story Mode Sky
+screen.Aurora=Aurora Borealis
+screen.Biome=Biome Skies
+screen.Storm=Wither Storm
+screen.Color=Colour Grading
+
+option.SKY_STORY_MODE=Story Mode Sky
+option.SKY_STORY_MODE.comment=Replaces the vanilla sky with the Minecraft Story Mode gradient.
+option.SKY_SATURATION=Sky Saturation
+option.HORIZON_GLOW=Horizon Glow
+option.SKY_DAY_R=Day Red
+option.SKY_DAY_G=Day Green
+option.SKY_DAY_B=Day Blue
+option.SKY_NIGHT_R=Night Red
+option.SKY_NIGHT_G=Night Green
+option.SKY_NIGHT_B=Night Blue
+option.SKY_DUSK_R=Dusk Red
+option.SKY_DUSK_G=Dusk Green
+option.SKY_DUSK_B=Dusk Blue
+
+option.AURORA=Aurora Borealis
+option.AURORA.comment=Animated aurora curtains after dark.
+option.AURORA_STRENGTH=Aurora Strength
+option.AURORA_SPEED=Aurora Speed
+option.AURORA_HEIGHT=Aurora Height
+option.AURORA_COVERAGE=Aurora Coverage
+option.AURORA_R=Aurora Core Red
+option.AURORA_G=Aurora Core Green
+option.AURORA_B=Aurora Core Blue
+option.AURORA_TIP_R=Aurora Tip Red
+option.AURORA_TIP_G=Aurora Tip Green
+option.AURORA_TIP_B=Aurora Tip Blue
+
+option.BIOME_SKIES=Per-Biome Skies
+option.BIOME_SKIES.comment=Gives deserts, snowfields, swamps and the Nether their own sky colour.
+option.BIOME_STRENGTH=Biome Sky Strength
+option.BIOME_DESERT_R=Desert Red
+option.BIOME_DESERT_G=Desert Green
+option.BIOME_DESERT_B=Desert Blue
+option.BIOME_SNOW_R=Snowy Red
+option.BIOME_SNOW_G=Snowy Green
+option.BIOME_SNOW_B=Snowy Blue
+option.BIOME_SWAMP_R=Swamp Red
+option.BIOME_SWAMP_G=Swamp Green
+option.BIOME_SWAMP_B=Swamp Blue
+option.BIOME_NETHER_R=Nether Red
+option.BIOME_NETHER_G=Nether Green
+option.BIOME_NETHER_B=Nether Blue
+
+option.STORM_PURPLE_ON=Storm Purple Wash
+option.STORM_PURPLE=Purple Wash Amount
+option.STORM_VIGNETTE_ON=Storm Vignette
+option.STORM_VIGNETTE=Vignette Amount
+
+option.BLOOM=Bloom
+option.BLOOM_STRENGTH=Bloom Strength
+option.TONEMAP=ACES Tonemap
+option.EXPOSURE=Exposure
+option.CONTRAST=Contrast
+option.VIBRANCE=Vibrance
