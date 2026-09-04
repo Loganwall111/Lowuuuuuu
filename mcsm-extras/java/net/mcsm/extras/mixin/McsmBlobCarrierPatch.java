@@ -2,6 +2,7 @@ package net.mcsm.extras.mixin;
 
 import net.dabicco.witherstormmod.client.StormSkyGradient;
 import net.mcsm.extras.McsmDiag;
+import net.mcsm.extras.McsmExtrasConfig;
 import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -97,7 +98,23 @@ public abstract class McsmBlobCarrierPatch {
             pitchIdx = 180;
         }
 
-        data.cloudEnd = 3000.0F + yawIdx * 181.0F + pitchIdx;
+        // MCSM 1.9.98: WIDE carrier -- same invertible yaw/pitch payload,
+        // multiplied by 16, with the user's glare-size index in the low nibble
+        // (shader decodes sizeIdx 0..15 -> x0.50..x3.05). Max integer is
+        // 68340*16+15 = 1093455 < 2^24, still exact in float32. The shader
+        // accepts both encodings (wide band >= 47000), so an old jar-side
+        // writer degrades gracefully to the 1.9.98 default size.
+        McsmExtrasConfig.load();
+        double size = McsmExtrasConfig.glareSize;
+        int sizeIdx = (int) Math.round((size - 0.50) / 0.17);
+        if (sizeIdx < 0) {
+            sizeIdx = 0;
+        }
+        if (sizeIdx > 15) {
+            sizeIdx = 15;
+        }
+
+        data.cloudEnd = (3000.0F + yawIdx * 181.0F + pitchIdx) * 16.0F + sizeIdx;
         McsmDiag.carrier(data.cloudEnd, yawIdx, pitchIdx);
     }
 }

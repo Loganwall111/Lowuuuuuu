@@ -122,6 +122,40 @@ void main() {
 
     float isBody = step(0.10, length(ColorModulator.rgb - FogColor.rgb));
 
+    // ---------------------------------------------------------------- death
+    // MCSM 1.9.98: the demise cinematic. Dormant until the phase-31 Java
+    // driver stamps the 1906..2906 FogSkyEnd band; while dormant
+    // mcsm_death() is -1 and this whole block is skipped.
+    float mcsmDt = mcsm_death(FogSkyEnd);
+    if (mcsmDt >= 0.0) {
+        vec3 ddir = mcsm_death_dir(worldDir, mcsmDt, clock);
+        float upd = clamp(ddir.y * 0.5 + 0.5, 0.0, 1.0);
+        upd = smoothstep(0.0, 1.0, upd);
+        // the dying sky holds the late dark blood dome and drains toward black
+        vec3 ddome = mcsm_storm_dome(upd, 7.6);
+        ddome *= 1.0 - 0.78 * mcsm_ramp(mcsmDt, 0.0, 0.55);
+        // the dust cloud settles out of the air and hangs low (user: "the
+        // cloud of dust in the air starts to fall to the ground")
+        vec3 dustC = vec3(0.16, 0.13, 0.12);
+        float dustW = mcsm_ramp(mcsmDt, 0.62, 0.78) * (1.0 - mcsm_ramp(mcsmDt, 0.86, 1.0));
+        ddome = mix(ddome, dustC, dustW * 0.5 * clamp(1.0 - ddir.y, 0.0, 1.0));
+        vec3 camWd = vec3(CameraBlockPos) + CameraOffset;
+        vec4 aimD = mcsm_boss_dir(camWd);
+        vec3 dadd = mcsm_death_cracks(ddir, mcsmDt, clock);
+        if (aimD.w > 0.5) {
+            dadd += mcsm_death_implosion(worldDir, aimD.xyz, mcsmDt, clock);
+            dadd += mcsm_supernova(ddir, aimD.xyz, mcsmDt, clock);
+        }
+        vec3 dsky = ddome + dadd + vec3(1.0, 0.98, 0.97) * mcsm_death_flash(mcsmDt);
+        // ease out at the very end: as the storm despawns the carrier stops
+        // and the normal sky resumes -- this fade hides the handoff
+        dsky *= 0.35 + 0.65 * (1.0 - mcsm_ramp(mcsmDt, 0.95, 1.0));
+        // sun/moon never show through the supernova
+        fragColor = vec4(mcsm_story_grade(dsky), isBody > 0.5 ? 0.0 : 1.0);
+        return;
+    }
+
+
     if (!mcsm_sky_active(mcsmP)) {
         if (isBody > 0.5) {
             fragColor = apply_fog(ColorModulator, sphericalVertexDistance,

@@ -582,3 +582,44 @@ to decompiled net.dabicco sources unless a feature truly can't hook around.
 ci/build.sh + .github/workflows/build-mcsm.yml now compile every push on
 GitHub Actions (JDK 25), run shimcheck, and publish a release when VERSION is
 new — "the GitHub compiler" the user asked for.
+
+---
+
+## 14. PHASE 30a (2026-09-04) — build **1.9.98-26.2-beta-mcsm**
+
+Shader-side engine work, dormant-safe (no Java landed in this jar — sources
+are committed and compile via ci/build.ps1 or CI; nothing uncompiled ships):
+
+- **Wide aim carrier.** `cloudEnd = (3000 + yawIdx*181 + pitchIdx) * 16 +
+  sizeIdx` (band 47000..1093455, exact < 2^24). Shader decodes BOTH bands;
+  legacy keeps aiming, wide adds the glare-size nibble. Guards updated in
+  `mcsm_clouds_end()`; `mcsm_rd_start()` 9001-band guard retired-but-kept as
+  future-proofing. Default size when no writer: **1.18** ("a tiny bit bigger
+  than 1.9.95" — user's final ruling; the 1.9.96 half-size passed review).
+- **Death-sequence engine** (`mcsm_death*` family in mcsm_visuals.glsl +
+  branch in sky.fsh main): distortion wobble -> white crack web -> shaking
+  layered implosion to a white-hot point with in-rushing pink/white motes ->
+  whole-sky flash at dt=0.55 -> six-ring supernova (purple, pink, blue,
+  orange, green, yellow) -> low settling dust -> 0.95..1.0 ease-out so the
+  return to normal sky never snaps. Carrier: FogSkyEnd band 1906..2906 maps to
+  dt 0.06..1.06. **Dormant until the phase-31 driver stamps it.**
+- **Java written, awaiting first CI/local compile into a jar**
+  (`mcsm-extras/java`, compiled by ci/build.ps1 / Actions): config adds
+  glareSize, auroraEnabled, deathCinematic, supernovaRings, smokeScreen,
+  purpleSky, dustWaves, realityTear (=ON per user), obliterateFlash (ON),
+  obliterateKick (OFF, grief-safe); `McsmBlobCarrierPatch` stamps the wide
+  carrier + size nibble; `McsmGuiExtrasRows` adds all toggle/slider rows and
+  nudges zero-arg scroll/relayout/refresh methods (extras-tab scroll fix
+  attempt — if the screen's real hook differs, it silently no-ops; check next
+  user log).
+
+### Jar record
+sha256 fa33e307bf644a562e0a5ace53a704bc6fe9b78ab6fa42dfaefc1793a2d9fd06 —
+57,356,874 B, 2450 entries, zip-tested; GLSL 42/42. 1.9.96 and 1.9.97 existed
+only locally inside this phase (never uploaded); current public build: 1.9.98.
+
+### Phase 30b/31 next (Java-first): death driver mixin on the storm entity
+(stamp 1906..2906 during dying, ring-radius block/player damage, segment
+drop), reality-tear block + corruption spread + splash-heal cure, command-wire
+block + holographic terminal, obliterate flash action, tentacle attacks,
+extras-tab scroll verification from user log, inventory/HUD moves.

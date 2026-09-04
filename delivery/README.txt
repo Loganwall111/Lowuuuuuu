@@ -1,10 +1,10 @@
 ================================================================
- MCSM WITHER STORM  --  1.9.97-26.2-beta-mcsm
+ MCSM WITHER STORM  --  1.9.98-26.2-beta-mcsm
  Multi-phase fix: visibility, shadows, glare blob, sky, rim
 ================================================================
 
 DOWNLOAD (all live on :8765)
-  dabywitherstormmod-1.9.97-26.2-beta-mcsm.jar   57,354,216 B
+  dabywitherstormmod-1.9.98-26.2-beta-mcsm.jar   57356874 B
   MCSShaders-shaderpack.zip                          11,663 B
   MCSM_visuals.zip                                1,064,899 B
   MCSM_mod_changes.zip                               51,7xx B

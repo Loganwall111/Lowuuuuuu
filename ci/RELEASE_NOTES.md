@@ -1,4 +1,4 @@
-# MCSM Wither Storm — Phase 29 build
+# MCSM Wither Storm — Phase 29–30 build
 
 **Install:** put this jar in `mods/` for Minecraft 26.2 (Fabric, with
 fabric-api, Sodium, Iris, cloth-config — the usual stack). Remove any older
@@ -10,8 +10,8 @@ is embedded in the jar.
 The jar is committed right in this repository (binary uploads to GitHub
 Releases were blocked from the build environment, so the repo IS the store):
 
-- **Direct jar link:** https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a06df7-lowuuuuuu/delivery/dabywitherstormmod-1.9.97-26.2-beta-mcsm.jar
-- File page (Download button): https://github.com/Loganwall111/Lowuuuuuu/blob/arena/01a06df7-lowuuuuuu/delivery/dabywitherstormmod-1.9.97-26.2-beta-mcsm.jar
+- **Direct jar link:** https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a06df7-lowuuuuuu/delivery/dabywitherstormmod-1.9.98-26.2-beta-mcsm.jar
+- File page (Download button): https://github.com/Loganwall111/Lowuuuuuu/blob/arena/01a06df7-lowuuuuuu/delivery/dabywitherstormmod-1.9.98-26.2-beta-mcsm.jar
 - Integrity list (sha256): https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a06df7-lowuuuuuu/delivery/sha256.txt
 
 ## Highlights in this build
@@ -31,5 +31,12 @@ Releases were blocked from the build environment, so the repo IS the store):
   1.04→1.08 — capped deliberately to protect the reference sky gradients).
 - **Devourer body slightly more opaque** (semi-transparent texels lifted).
 - Validated by the offline GLSL gate (42/42) in `glslcheck/shimcheck.py`.
+
+Plus in this build: **the death-sequence engine** (distortion, white cracks,
+shaking whitening implosion, in-rushing motes, flash, six-colour supernova
+rings, settling dust) — dormant until the Java driver (source already in
+`mcsm-extras/java`, compiles via `ci/build.ps1` or GitHub Actions) stamps the
+carrier. Glare size is slider-ready (same carrier). Dormant = invisible until
+activated; nothing changes in normal play.
 
 Full phase log and the Phase 30+ roadmap live in `delivery/HANDOFF.md`.

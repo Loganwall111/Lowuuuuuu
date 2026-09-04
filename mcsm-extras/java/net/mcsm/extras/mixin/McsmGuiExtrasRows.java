@@ -74,6 +74,74 @@ public abstract class McsmGuiExtrasRows {
                     "Debris always winds into the mouth counterclockwise.",
                     (DoubleSupplier) () -> McsmExtrasConfig.spiralCounterClockwise ? 1.0 : 0.0,
                     (DoubleConsumer) (v -> McsmExtrasConfig.spiralCounterClockwise = v >= 0.5), commit));
+
+            // ---- MCSM 1.9.98 visuals & events (phase 29/30 user orders) ----
+            mAdd.invoke(self, mHeader.invoke(null, "MCSM Storm Visuals & Events", 0));
+            mAdd.invoke(self, mSlider.invoke(null, "Glare Size",
+                    "Scale of the storm's sky glare mass. 1.18 = a touch bigger than stock.",
+                    0.25, 3.05, "%.2fx",
+                    (DoubleSupplier) () -> McsmExtrasConfig.glareSize,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.glareSize = v), commit));
+            mAdd.invoke(self, mToggle.invoke(null, "In-Mod Aurora",
+                    "Aurora borealis at night without a shader pack (cold-biome biased).",
+                    (DoubleSupplier) () -> McsmExtrasConfig.auroraEnabled ? 1.0 : 0.0,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.auroraEnabled = v >= 0.5), commit));
+            mAdd.invoke(self, mToggle.invoke(null, "Death Cinematic",
+                    "Distortion -> white cracks -> shaking implosion -> supernova rings -> segments.",
+                    (DoubleSupplier) () -> McsmExtrasConfig.deathCinematic ? 1.0 : 0.0,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.deathCinematic = v >= 0.5), commit));
+            mAdd.invoke(self, mToggle.invoke(null, "Supernova Rings",
+                    "Ring shockwaves on phase-4 rise, phase-7 rise and at death.",
+                    (DoubleSupplier) () -> McsmExtrasConfig.supernovaRings ? 1.0 : 0.0,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.supernovaRings = v >= 0.5), commit));
+            mAdd.invoke(self, mToggle.invoke(null, "Smoke Screen + Sparks",
+                    "Skull impacts kick up grey ground smoke and yellow electric sparks.",
+                    (DoubleSupplier) () -> McsmExtrasConfig.smokeScreen ? 1.0 : 0.0,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.smokeScreen = v >= 0.5), commit));
+            mAdd.invoke(self, mToggle.invoke(null, "Purple Sky (5.5+)",
+                    "Purple lightning strikes and floating motes once the storm passes 5.5.",
+                    (DoubleSupplier) () -> McsmExtrasConfig.purpleSky ? 1.0 : 0.0,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.purpleSky = v >= 0.5), commit));
+            mAdd.invoke(self, mToggle.invoke(null, "Dust Waves",
+                    "Swoops against blocks leave dust trails.",
+                    (DoubleSupplier) () -> McsmExtrasConfig.dustWaves ? 1.0 : 0.0,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.dustWaves = v >= 0.5), commit));
+            mAdd.invoke(self, mToggle.invoke(null, "Reality Tear",
+                    "After the storm dies, a black-aurora tear corrupts the world until healed.",
+                    (DoubleSupplier) () -> McsmExtrasConfig.realityTear ? 1.0 : 0.0,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.realityTear = v >= 0.5), commit));
+            mAdd.invoke(self, mToggle.invoke(null, "Obliterate Flash",
+                    "The command block can erase entities from existence in one flash.",
+                    (DoubleSupplier) () -> McsmExtrasConfig.obliterateFlash ? 1.0 : 0.0,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.obliterateFlash = v >= 0.5), commit));
+            mAdd.invoke(self, mToggle.invoke(null, "Obliterate Kicks Players",
+                    "Prank variant: the flash also kicks players. Off by default.",
+                    (DoubleSupplier) () -> McsmExtrasConfig.obliterateKick ? 1.0 : 0.0,
+                    (DoubleConsumer) (v -> McsmExtrasConfig.obliterateKick = v >= 0.5), commit));
+
+            // MCSM 1.9.98 -- extras-tab scroll fix. User report: the tab's
+            // scrollbar acted like a +/- stepper with "nothing to scroll down
+            // to" -- rows appended at TAIL never told the screen its content
+            // grew. Nudge every zero-arg scroll/relayout/refresh-style hook so
+            // the bounds recalculate; absent methods are simply skipped.
+            try {
+                for (Method m : screen.getDeclaredMethods()) {
+                    String n = m.getName().toLowerCase();
+                    if (m.getParameterCount() == 0
+                            && (n.contains("scroll") || n.contains("relayout")
+                                || n.contains("refresh") || n.contains("layout")
+                                || n.contains("reposition"))) {
+                        try {
+                            m.setAccessible(true);
+                            m.invoke(self);
+                        } catch (Throwable ignored) {
+                            // a hook that refuses is not fatal -- others may work
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+                // never let a GUI nicety crash the config screen
+            }
         } catch (Throwable t) {
             System.err.println("[MCSM] extras GUI rows skipped: " + t);
         }

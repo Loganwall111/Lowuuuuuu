@@ -208,7 +208,10 @@ float mcsm_phase(float fogSkyEnd, vec4 fogColor, float fogRenderDistanceEnd) {
 float mcsm_clouds_end() {
     float v = FogCloudsEnd;
     // 1.9.71 carrier band 3000..68340, plus the legacy 1100..2150 band.
-    if ((v > 1100.0 && v < 2150.0) || (v >= 2999.0 && v <= 68341.0))
+    // MCSM 1.9.98: the WIDE carrier (aim + glare size) sits at 47000..1093455
+    // -- the cloud pass must not read any of these as a real distance.
+    if ((v > 1100.0 && v < 2150.0) || (v >= 2999.0 && v <= 68341.0)
+        || (v >= 47000.0 && v <= 1093455.0))
         return clamp(FogRenderDistanceEnd * 0.75, 32.0, 192.0);
     return v;
 }
@@ -263,7 +266,20 @@ vec4 mcsm_boss_dir(vec3 camWorld) {
     //   cloudEnd = 3000 + yawIdx*181 + pitchIdx
     // The old 1200-band packing aliased 45:1 and decoded pitch to -90 almost
     // always, which drew the glare blob below the world -> "blob is missing".
-    if (v >= 2999.0 && v <= 68341.0) {
+    //
+    // MCSM 1.9.98: WIDE carrier. Same integer payload, multiplied by 16, with
+    // the glare-size index packed into the low nibble:
+    //   cloudEnd = (3000 + yawIdx*181 + pitchIdx) * 16 + sizeIdx
+    // Max = 68340*16+15 = 1093455, exact in float32 (< 2^24). Band split is
+    // clean: old tops out at 68340, wide starts at 48000.
+    if (v >= 47000.0 && v <= 1093455.0) {
+        float e16 = floor(v / 16.0);
+        float e   = e16 - 3000.0;
+        float yi  = floor(e / 181.0);
+        float pi  = e - yi * 181.0;
+        yaw   = clamp(yi, 0.0, 360.0) - 180.0;
+        pitch = clamp(pi, 0.0, 180.0) - 90.0;
+    } else if (v >= 2999.0 && v <= 68341.0) {
         float e  = v - 3000.0;
         float yi = floor(e / 181.0);
         float pi = e - yi * 181.0;
@@ -287,6 +303,22 @@ vec4 mcsm_boss_dir(vec3 camWorld) {
     // negation is the suspect -- flip it back first.
     vec3 d = vec3(cos(pr) * cos(yr), sin(pr), cos(pr) * sin(yr));
     return vec4(-d, 1.0);
+}
+
+// MCSM 1.9.98 -- user-facing glare size, rides the wide carrier's low nibble.
+//   sizeIdx 0..15 -> size 0.50 + 0.17*idx  (0.50 .. 3.05x the 1.9.89 mass)
+// Absent band (unpatched jar-side writer) -> 1.18, i.e. "a tiny bit bigger
+// than 1.9.95", the user's final ruling; the in-game slider (MCSM Extras tab)
+// writes the real value each frame once the Java half ships (phase 30 builds
+// from CI). 1.9.96/97's FogRenderDistanceStart band was retired before use;
+// its guard in mcsm_rd_start() stays as harmless future-proofing.
+float mcsm_glare_size() {
+    float v = FogCloudsEnd;
+    if (v >= 47000.0 && v <= 1093455.0) {
+        float sizeIdx = v - floor(v / 16.0) * 16.0;
+        return clamp(0.50 + 0.17 * sizeIdx, 0.25, 3.05);
+    }
+    return 1.18;
 }
 
 // ------------------------------------------------------------- helpers
@@ -472,19 +504,11 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     vec3 wd = normalize(worldDir);
     vec3 bd = normalize(bossDir);
     float ang = degrees(acos(clamp(dot(wd, bd), -1.0, 1.0)));
-    // MCSM 1.9.97 -- size ruling, final word from the user: "the size shouldn't
-    // be smaller, it's actually a tiny bit bigger than it is right now, just a
-    // tiny bit" ("right now" = the 1.9.95 24->36 deg extents; the thing that
-    // was "way too big" turned out to be the orange post-pass sun halo, which
-    // storm_sun_glow.fsh shrinks instead). So: defaults +12.5% over 1.9.95.
-    // A config slider (glare size up to maximum) rides the
-    // FogRenderDistanceStart carrier band 9001..9299 = size x1000 -- written by
-    // Java once the toolchain phase lands; DEFAULT 1.125 when unstamped.
-    float mcsmSize = 1.125;
-    float mcsmCar = mcsm_rd_raw();
-    if (mcsmCar >= 9001.0 && mcsmCar <= 9299.0) {
-        mcsmSize = clamp((mcsmCar - 9000.0) * 0.01, 0.10, 3.00);
-    }
+    // MCSM 1.9.98 -- size comes from the wide carrier (mcsm_glare_size):
+    // slider-driven once the Java half ships, otherwise the "tiny bit bigger
+    // than 1.9.95" default of 1.18. The 1.9.65-1.9.95 orange-blob bloat that
+    // triggered "shrink the glare" was the post sun halo, fixed there.
+    float mcsmSize = mcsm_glare_size();
     float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
     if (ang >= outer) return vec4(0.0, 0.0, 0.0, 0.0);
     float u = clamp(ang / outer, 0.0, 1.0);   // 0 at the storm -> 1 at the edge
@@ -628,4 +652,114 @@ vec3 mcsm_aurora(vec3 worldDir, float clock, float nightW, float coolW) {
     vec3 violet = vec3(0.45, 0.18, 0.80);   // violet-purple tips (MCSM palette)
     vec3 col = mix(green, violet, clamp(h * 1.6 - 0.20, 0.0, 1.0));
     return col * (band * curtains * rays) * 0.060 * nightW * coolW;
+}
+
+// ============================================================================
+//  MCSM 1.9.98 -- THE DEATH SEQUENCE (user storyboard, 2026-09-04):
+//    dt 0.00-0.30  world/ sky distort, white cracks web across the sky,
+//                  tiny in-falling motes whip toward the storm
+//    dt 0.30-0.55  the mass SHAKES (aim jitter) and shrinks in layers,
+//                  whitening -- particles impulse inward
+//    dt 0.55       the implosion FLASH (whole-sky white spike)
+//    dt 0.55-1.00  SUPERNOVA: six translucent rings -- purple, pink, blue,
+//                  orange, green, yellow -- expand from the storm across the
+//                  horizon (the gameplay-side radius damage falls trees/blocks
+//                  and is Java-owned; these rings are the sky visible part)
+//    dt ~0.92+     everything eases off so the post-storm sky transition can
+//                  drift back to normal as the carrier stops
+//
+//  CARRIER: FogSkyEnd band 1906..2906 => dt = (fogSkyEnd - 1900) * 0.01.
+//  Nobody stamps it before the phase-31 Java driver, so this whole engine is
+//  DORMANT in 1.9.98 (mcsm_death() returns -1) and the frame is untouched.
+// ============================================================================
+float mcsm_death(float fogSkyEnd) {
+    if (fogSkyEnd >= 1906.0 && fogSkyEnd <= 2906.0)
+        return clamp((fogSkyEnd - 1900.0) * 0.01, 0.0, 1.0);
+    return -1.0;
+}
+
+// Act-I distortion: space itself wobbles. Applied to the SAMPLING direction,
+// so the dome and everything keyed off it bends while staying continuous.
+vec3 mcsm_death_dir(vec3 worldDir, float dt, float clock) {
+    float warp = 0.010 * mcsm_ramp(dt, 0.00, 0.30);
+    if (warp <= 0.0) return worldDir;
+    vec3 d = normalize(worldDir);
+    return normalize(d + vec3(
+        sin(d.y * 41.0 + clock * 7.0),
+        sin(d.z * 37.0 - clock * 8.0),
+        sin(d.x * 43.0 + clock * 6.0)) * warp);
+}
+
+// White crack filaments crawling over the dome (dt 0..0.5, gone by the flash).
+vec3 mcsm_death_cracks(vec3 worldDir, float dt, float clock) {
+    float a = mcsm_ramp(dt, 0.02, 0.30) * (1.0 - mcsm_ramp(dt, 0.42, 0.55));
+    if (a <= 0.001) return vec3(0.0);
+    vec3 d = normalize(worldDir);
+    float web = sin(d.x * 34.0 + clock * 0.35)
+              * sin(d.y * 27.0 - clock * 0.22)
+              * sin(d.z * 31.0 + clock * 0.28);
+    web = pow(abs(web), 24.0);   // thin filaments, mostly dark sky between
+    float flicker = 0.70 + 0.30 * sin(clock * 6.0 + d.y * 9.0);
+    return vec3(1.0, 0.97, 0.95) * web * a * flicker * 0.65;
+}
+
+// Implosion body: the mass contracts to a white-hot point (dt 0.25..0.55),
+// ringed by in-rushing pink/white motes ("particles impulsing inwards").
+vec3 mcsm_death_implosion(vec3 worldDir, vec3 bossDir, float dt, float clock) {
+    float a = mcsm_ramp(dt, 0.25, 0.34);
+    if (a <= 0.001) return vec3(0.0);
+    // the storm shakes in the air while it shrinks
+    float shake = mcsm_ramp(dt, 0.30, 0.50) * 2.2;   // degrees of jitter
+    vec3 jb = normalize(bossDir + vec3(
+        sin(clock * 17.0), sin(clock * 21.0 + 1.0), sin(clock * 19.0 + 2.0))
+        * (shake * 0.0174533));                      // deg -> rad
+    float ang = degrees(acos(clamp(dot(normalize(worldDir), jb), -1.0, 1.0)));
+    // layers peel inward: radius stair-steps down rather than sliding
+    float layer = floor(mcsm_ramp(dt, 0.25, 0.55) * 4.0) * 0.25;  // 0,.25,.5,.75
+    float outer = mix(28.0, 2.5, layer);
+    if (ang >= outer + 14.0) return vec3(0.0);
+    float shape = 1.0 - smoothstep(0.0, outer, ang);
+    float hot   = pow(shape, 2.0);
+    // white takes over as the mass whitens
+    vec3 coreCol = mix(vec3(0.55, 0.12, 0.42), vec3(1.0, 0.98, 1.0),
+                       mcsm_ramp(dt, 0.30, 0.53));
+    // converging motes: bright spokes whose radius slides inward with dt
+    float conv = ang - mix(40.0, 3.0, mcsm_ramp(dt, 0.25, 0.55));
+    float motes = pow(0.5 + 0.5 * sin(conv * 1.6 - clock * 2.5), 6.0)
+                * smoothstep(0.0, 6.0, ang) * (1.0 - smoothstep(outer, outer + 14.0, ang));
+    vec3 moteCol = mix(vec3(1.0, 0.55, 0.85), vec3(1.0), 0.35);
+    float burst = mcsm_ramp(dt, 0.45, 0.55);
+    return (coreCol * (0.30 + hot * (0.5 + 1.6 * burst)) * a)
+         + moteCol * motes * 0.22 * a;
+}
+
+// The supernova rings themselves.
+vec3 mcsm_supernova(vec3 worldDir, vec3 bossDir, float dt, float clock) {
+    float st = mcsm_ramp(dt, 0.55, 0.60);        // rings ignite at the flash
+    if (st <= 0.0) return vec3(0.0);
+    float ang = degrees(acos(clamp(dot(normalize(worldDir), normalize(bossDir)), -1.0, 1.0)));
+    const vec3 RING_COL[6] = vec3[](
+        vec3(0.62, 0.20, 0.95),   // purple
+        vec3(0.98, 0.28, 0.72),   // pink
+        vec3(0.25, 0.50, 1.00),   // blue
+        vec3(1.00, 0.52, 0.12),   // orange
+        vec3(0.25, 0.95, 0.45),   // green
+        vec3(1.00, 0.86, 0.20));  // yellow
+    vec3 acc = vec3(0.0);
+    for (int i = 0; i < 6; i++) {
+        float fi = float(i);
+        float local = clamp((dt - 0.55 - fi * 0.035) / 0.45, 0.0, 1.0);
+        if (local <= 0.0 || local >= 1.0) continue;
+        float rDeg = local * (95.0 + fi * 14.0);        // each ring flies farther
+        float w = 2.2 + fi * 0.35;                       // translucent band width
+        float ring = exp(-pow((ang - rDeg) / w, 2.0));
+        float fade = (1.0 - local) * (1.0 - local);      // dims as it crosses the sky
+        acc += RING_COL[i] * ring * fade * 0.42;
+    }
+    return acc * st;
+}
+
+// The whole-sky white spike at dt = 0.55 ("completely implodes").
+float mcsm_death_flash(float dt) {
+    return exp(-pow((dt - 0.55) * 20.0, 2.0)) * 1.35;
 }

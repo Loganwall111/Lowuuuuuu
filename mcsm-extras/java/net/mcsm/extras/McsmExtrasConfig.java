@@ -22,6 +22,30 @@ public final class McsmExtrasConfig {
     public static boolean spiralCounterClockwise = true;
     public static boolean enableBeaconBlock = true;
 
+    // ---- MCSM 1.9.98 batch (phase 29/30 user orders, 2026-09-04) ----------
+    /** Storm glare mass scale; read by the blob carrier every frame. */
+    public static double  glareSize = 1.18;
+    /** Mod-side aurora borealis at night (cold-biome biased). */
+    public static boolean auroraEnabled = true;
+    /** Full death cinematic: distortion -> white cracks -> implosion flash ->
+     *  supernova rings -> segments. Drives the sky carrier band 1906..2906. */
+    public static boolean deathCinematic = true;
+    /** Expanding ring shockwaves on phase 4 rise, phase 7 rise, and death. */
+    public static boolean supernovaRings = true;
+    /** Skull impacts: grey ground smoke + yellow electric sparks + crackle. */
+    public static boolean smokeScreen = true;
+    /** Phase 5.5+: purple lightning strikes + purple motes in the sky. */
+    public static boolean purpleSky = true;
+    /** Dust trails when the storm sweeps blocks. */
+    public static boolean dustWaves = true;
+    /** Post-death reality tear with the black aurora + corruption spread
+     *  (user: "turned on by default in the config"). */
+    public static boolean realityTear = true;
+    /** Command block obliterate flash erases entities incl. players. */
+    public static boolean obliterateFlash = true;
+    /** Prank variant: also kicks players. Default OFF (grief-safe). */
+    public static boolean obliterateKick = false;
+
     private static boolean loaded = false;
     private static long stamp = -1L;
 
@@ -42,8 +66,18 @@ public final class McsmExtrasConfig {
             p.setProperty("enable_rise_fx", String.valueOf(enableRiseFx));
             p.setProperty("spiral_counter_clockwise", String.valueOf(spiralCounterClockwise));
             p.setProperty("enable_beacon_block", String.valueOf(enableBeaconBlock));
+            p.setProperty("glare_size", String.valueOf(glareSize));
+            p.setProperty("aurora_enabled", String.valueOf(auroraEnabled));
+            p.setProperty("death_cinematic", String.valueOf(deathCinematic));
+            p.setProperty("supernova_rings", String.valueOf(supernovaRings));
+            p.setProperty("smoke_screen", String.valueOf(smokeScreen));
+            p.setProperty("purple_sky", String.valueOf(purpleSky));
+            p.setProperty("dust_waves", String.valueOf(dustWaves));
+            p.setProperty("reality_tear", String.valueOf(realityTear));
+            p.setProperty("obliterate_flash", String.valueOf(obliterateFlash));
+            p.setProperty("obliterate_kick", String.valueOf(obliterateKick));
             try (OutputStream out = new FileOutputStream(f)) {
-                p.store(out, "MCSM - storm gameplay patches (grab, beacon, rise fx, spiral)");
+                p.store(out, "MCSM - storm gameplay patches + 1.9.98 visuals (glare size, aurora, death cinematic, supernova, smoke, tear)");
             }
             stamp = f.lastModified();
         } catch (Throwable t) {
@@ -85,6 +119,16 @@ public final class McsmExtrasConfig {
             enableRiseFx       = bool(p, "enable_rise_fx", enableRiseFx);
             spiralCounterClockwise = bool(p, "spiral_counter_clockwise", spiralCounterClockwise);
             enableBeaconBlock = bool(p, "enable_beacon_block", enableBeaconBlock);
+            glareSize          = dbl(p, "glare_size", glareSize);
+            auroraEnabled      = bool(p, "aurora_enabled", auroraEnabled);
+            deathCinematic     = bool(p, "death_cinematic", deathCinematic);
+            supernovaRings     = bool(p, "supernova_rings", supernovaRings);
+            smokeScreen        = bool(p, "smoke_screen", smokeScreen);
+            purpleSky          = bool(p, "purple_sky", purpleSky);
+            dustWaves          = bool(p, "dust_waves", dustWaves);
+            realityTear        = bool(p, "reality_tear", realityTear);
+            obliterateFlash    = bool(p, "obliterate_flash", obliterateFlash);
+            obliterateKick     = bool(p, "obliterate_kick", obliterateKick);
         } catch (Throwable t) {
             // stay on defaults; never crash the game over a config file
         }
