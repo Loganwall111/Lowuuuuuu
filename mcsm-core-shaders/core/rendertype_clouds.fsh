@@ -16,10 +16,13 @@
 //      carrier is not up we fall through to exactly the vanilla multiply).
 
 #moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:globals.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:mcsm_visuals.glsl>
 
 in float vertexDistance;
 in vec4 vertexColor;
+in vec3 mcsmCloudRay;
 
 out vec4 fragColor;
 
@@ -34,6 +37,21 @@ void main() {
 
     if (mcsm_fog_active(mcsmP)) {
         color.rgb *= mcsm_cloud_tint(mcsmP);
+
+        // MCSM 1.9.99 -- the heart mass occludes the cloud deck. Same field the
+        // dome blob uses (mcsm_heart_cover), so the deck vanishes exactly where
+        // the mass is opaque: the very top of the storm goes black and the
+        // clouds stop showing through it. Only inside the 5.10-5.90 window the
+        // dome blob itself lives in, so nothing changes in any other phase.
+        if (mcsmP >= 5.10 && mcsmP <= 5.90) {
+            vec4 aimC = mcsm_boss_dir(vec3(CameraBlockPos) + CameraOffset);
+            if (aimC.w > 0.5) {
+                vec3 wdC = normalize(transpose(mat3(ModelViewMat)) * normalize(mcsmCloudRay));
+                float cover = mcsm_heart_cover(wdC, aimC.xyz, mcsmP);
+                color.rgb *= (1.0 - cover);
+                color.a   *= (1.0 - cover * 0.94);
+            }
+        }
     }
 
     // 26.2 fades clouds by FogCloudsEnd right here. Our carrier encodes the

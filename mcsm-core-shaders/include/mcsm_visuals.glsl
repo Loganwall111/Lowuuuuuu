@@ -476,8 +476,13 @@ vec3 mcsm_halo_color(float p) {
     c = mix(c, vec3(0.026, 0.082, 0.088), mcsm_ramp(p, 4.95, 5.04));     // 5.00 turquoise
     c = mix(c, vec3(0.045, 0.020, 0.075), mcsm_ramp(p, 5.15, 5.24));     // 5.20 purple snap
     c = mix(c, vec3(0.088, 0.026, 0.098), mcsm_ramp(p, 5.30, 5.44));     // purple & pink
-    c = mix(c, vec3(0.118, 0.028, 0.140), mcsm_ramp(p, 5.48, 5.60));     // 1.9.96 pink-magenta w/ blue note
-    c = mix(c, vec3(0.095, 0.030, 0.170), mcsm_ramp(p, 5.65, 5.90));     // 1.9.96 5.5-5.9: purple, a tinsy blue (user: "dark red pink purple magenta ... and a tinsy blue"; never orange)
+    c = mix(c, vec3(0.108, 0.028, 0.155), mcsm_ramp(p, 5.48, 5.60));     // 1.9.99 pink-magenta, blue note lifted
+    // MCSM 1.9.99 -- hue matched to the reference frame (2026-09-04 182220).
+    // Sampled glows there: #3e1256 / #321772 / #472fbe, i.e. hue ~ (0.44, 0.20,
+    // 1.0) once normalised to unit luminance -- a blue-leaning violet. The old
+    // key normalised to (0.56, 0.18, 1.0), reading pinker than the reference.
+    // Never orange: red stays the smallest channel by a wide margin.
+    c = mix(c, vec3(0.082, 0.030, 0.185), mcsm_ramp(p, 5.65, 5.90));     // 1.9.99 5.5-5.9: purple + a tinsy blue (user: "dark red pink purple magenta ... and a tinsy blue"; never orange)
     c = mix(c, vec3(0.150, 0.032, 0.058), mcsm_ramp(p, 6.00, 6.35));     // 6.0 dark crimson
     c = mix(c, vec3(0.165, 0.038, 0.060), mcsm_ramp(p, 6.35, 6.90));     // crimson holds
     c = mix(c, vec3(0.055, 0.012, 0.028), mcsm_ramp(p, 7.20, 7.90));     // 8.0 black top
@@ -500,6 +505,86 @@ vec3 mcsm_halo_color(float p) {
 // sets the BRIGHTNESS. Multiplying the raw dim tints could never out-glow a
 // dark dome (pre-flight simulation: rim/dome 0.84x at phase 5.3 -- a dark
 // smudge, not the ~1.9x brighter mass of frame 195058).
+// ------------------------------------------------------- heart / V silhouette
+// MCSM 1.9.99 -- SHAPE REBUILD (user reference 2026-09-04 182220, "halo
+// accuracy comparison"). Measured off the reference frame, the mass is NOT a
+// disc:
+//   * the top is a near-black slab that spans the whole frame (luminance
+//     0.015-0.02; the cloud deck is completely gone behind it),
+//   * the lower boundary converges into a wide V whose arms run a long way
+//     down BOTH sides of the storm,
+//   * all the colour lives on the outer skirt/rim of that V, never inside.
+// The old field was `ang / outer` -- a perfect circle that also stayed far too
+// bright in the middle. Replaced by a vertically STRETCHED heart implicit:
+// two lobes at the top, a shallow notch at top centre, one cusp (the V tip) at
+// the bottom. The radial profile below is unchanged in spirit, it is just fed
+// the heart's own normalised radius instead of a circular one.
+//
+// Classic heart implicit, y up. Interior where f < 0:
+//     f(x,y) = (x*x + y*y - 1)^3 - x*x * y*y*y
+//   * (0,-1) is the bottom cusp, (0,+1) is the top-centre notch,
+//   * the lobes peak near (+-0.6, +1.2), widest around y ~ +0.5.
+// Star-shaped about the origin, so a bisection along the ray finds the
+// boundary in 5 steps.
+float mcsm_heart_radius(vec2 d) {
+    float lo = 0.0, hi = 1.60;
+    for (int i = 0; i < 5; i++) {
+        float m = 0.5 * (lo + hi);
+        vec2  q = d * m;
+        float s = q.x * q.x + q.y * q.y - 1.0;
+        float f = s * s * s - q.x * q.x * q.y * q.y * q.y;
+        if (f < 0.0) lo = m; else hi = m;
+    }
+    return 0.5 * (lo + hi);
+}
+
+// Dome-plane heart field for a view ray.
+//   .x = u      0 at the centre .. 1 on the heart's edge (the profile param)
+//   .y = upness 0 at the bottom tip .. 1 at the top of the mass
+//   .z = inside 1 inside the silhouette, 0 outside
+// outer = the old circular radius in DEGREES (keeps the size slider working).
+vec3 mcsm_heart_field(vec3 wd, vec3 bd, float outer) {
+    float cd = dot(wd, bd);
+    if (cd <= 0.02) return vec3(2.0, 0.5, 0.0);
+    vec3 upRef = abs(bd.y) > 0.985 ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0);
+    vec3 ex = normalize(cross(upRef, bd));      // horizontal, perpendicular
+    vec3 ey = cross(bd, ex);                    // "up" along the dome
+    // gnomonic projection onto the dome plane, normalised so 1.0 == old radius
+    vec2 s = vec2(dot(wd, ex), dot(wd, ey)) / (cd * tan(radians(outer)));
+    // STRETCH: 1.15x wider than the old disc, 1.38x taller, and the lower half
+    // gets another 1.25x so the V runs "pretty far down the side". The upper
+    // half is held to 0.72x: at 0.85 the lobes overshot the top of the frame
+    // whenever the storm sat above the crosshair, so the notch and the two
+    // lobes were cropped off and the whole thing read as a plain wedge. 0.72
+    // keeps the full heart (lobes + notch + V tip) inside a 70 degree frame.
+    float vs = s.y < 0.0 ? 1.25 : 0.72;
+    vec2  hs = vec2(s.x / 1.15, s.y / (1.38 * vs));
+    float hl = length(hs);
+    vec2  hd = hl > 1e-5 ? hs / hl : vec2(0.0, 1.0);
+    float u  = hl / max(mcsm_heart_radius(hd), 1e-3);
+    return vec3(u, clamp(hs.y * 0.55 + 0.5, 0.0, 1.0), u <= 1.0 ? 1.0 : 0.0);
+}
+
+// Coverage only (no colour): how much of the sky this ray hides. Shared with
+// the cloud pass so the deck disappears behind the mass exactly where the
+// dome blob is opaque (user: "you can't even see the clouds at the very top
+// of the storm").
+float mcsm_heart_cover(vec3 wd, vec3 bd, float p) {
+    float mcsmSize = mcsm_glare_size();
+    float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
+    float ang = degrees(acos(clamp(dot(normalize(wd), normalize(bd)), -1.0, 1.0)));
+    if (ang >= outer * 2.4) return 0.0;
+    vec3 f = mcsm_heart_field(normalize(wd), normalize(bd), outer);
+    if (f.z < 0.5) return 0.0;
+    float u = clamp(f.x, 0.0, 1.0);
+    float heart = 1.0 - smoothstep(0.34, 0.82, u);
+    float skirt = (1.0 - heart) * (1.0 - smoothstep(0.82, 0.96, u));
+    float band  = smoothstep(0.72, 0.90, u) * (1.0 - smoothstep(0.93, 1.0, u));
+    float o = clamp(0.992 * heart + 0.94 * skirt + 0.34 * band, 0.0, 0.99);
+    // the very top of the mass is a black slab -- no cloud gets through
+    return mix(o, 0.995, smoothstep(0.42, 0.98, f.y) * 0.9);
+}
+
 vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     vec3 wd = normalize(worldDir);
     vec3 bd = normalize(bossDir);
@@ -510,13 +595,24 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     // triggered "shrink the glare" was the post sun halo, fixed there.
     float mcsmSize = mcsm_glare_size();
     float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
-    if (ang >= outer) return vec4(0.0, 0.0, 0.0, 0.0);
-    float u = clamp(ang / outer, 0.0, 1.0);   // 0 at the storm -> 1 at the edge
+    if (ang >= outer * 2.4) return vec4(0.0, 0.0, 0.0, 0.0);
+    // ---- shape: stretched heart, V tip at the bottom ----------------------
+    vec3 fld = mcsm_heart_field(wd, bd, outer);
+    if (fld.z < 0.5) return vec4(0.0, 0.0, 0.0, 0.0);
+    float u = clamp(fld.x, 0.0, 1.0);   // 0 at the storm -> 1 at the edge
+    // topdark: 0 at the bottom tip, 1 across the top slab. The reference is
+    // "really really really dark at the very top" -- there the mass stops
+    // glowing entirely and simply occludes.
+    float topdark = smoothstep(0.42, 0.98, fld.y);
     vec3 tint = mcsm_halo_color(p);
     // ---- structure: black heart / tinted skirt / glowing rim band --------
-    float heart = 1.0 - smoothstep(0.20, 0.55, u);
-    float skirt = (1.0 - heart) * (1.0 - smoothstep(0.55, 0.80, u));
-    float band  = smoothstep(0.58, 0.80, u) * (1.0 - smoothstep(0.85, 1.0, u));
+    // 1.9.99: the black heart now reaches out to 0.82 of the radius (was
+    // 0.55). Measured on the reference, the interior + top read 0.015-0.02
+    // luminance -- a slab, not a smudge. All the colour is on the outer skirt
+    // and the rim band that traces the V.
+    float heart = 1.0 - smoothstep(0.34, 0.82, u);
+    float skirt = (1.0 - heart) * (1.0 - smoothstep(0.82, 0.96, u));
+    float band  = smoothstep(0.72, 0.90, u) * (1.0 - smoothstep(0.93, 1.0, u));
     // ---- adapt to the dome underneath ------------------------------------
     // dk = 1 on a bright day sky, 0 on a dark storm dome. On a bright sky the
     // mass reads by CONTRAST (061332: dark mass, quiet tinted edge). On a
@@ -533,12 +629,19 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     // opaque, not too much". Heart 0.93 -> 0.965, skirt 0.78 -> 0.85, ceiling
     // 0.95 -> 0.97. Small absolute lifts: the mass stays a sky effect, not a
     // wall, but the storm behind it no longer ghosts through.
-    float occl = clamp(0.965 * heart
-                     + 0.85 * skirt
-                     + mix(0.55, 0.20, 1.0 - dk) * band, 0.0, 0.97);
-    // emission: absolute targets, not multiples of the dim tints
-    float rimLum   = 0.13 * mix(1.0, 0.38, dk);   // glow on dark, tint on bright
-    float skirtLum = 0.05 * mix(1.0, 0.50, dk);
+    // MCSM 1.9.99: heart 0.965 -> 0.992, skirt 0.85 -> 0.94, and the top slab
+    // is pushed to 0.995 -- "really really really dark at the very top", the
+    // cloud deck no longer reads through it.
+    float occl = clamp(0.992 * heart
+                     + 0.94 * skirt
+                     + mix(0.50, 0.16, 1.0 - dk) * band, 0.0, 0.99);
+    occl = mix(occl, 0.995, topdark * 0.90);
+    // emission: absolute targets, not multiples of the dim tints.
+    // 1.9.99: the rim dies out toward the top (x0.28 there) so the colour
+    // traces the V and the underside of the mass, exactly like the reference
+    // where every bright pixel sits along the lower/outer edge.
+    float rimLum   = 0.13 * mix(1.0, 0.38, dk) * mix(1.0, 0.28, topdark);
+    float skirtLum = 0.05 * mix(1.0, 0.50, dk) * mix(1.0, 0.22, topdark);
     vec3  emis = hue * (band * rimLum + skirt * skirtLum);
     emis *= 0.92 + 0.08 * sin(clock * 3.0);   // slow roar pulse (~2.1 s)
     return vec4(emis, occl);

@@ -650,3 +650,44 @@ extras-tab scroll verification from user log, inventory/HUD moves.
     is default-on; user's working knob today is Iris → shader pack Lighting →
     COLORED_LIGHT_AMT. A richer per-block emission pass is queued with the
     Story Mode "porch lighting" item.
+
+### Phase 30b (2026-09-04, after "halo accuracy comparison" screenshot)
+Reference frame: `uploads/Screenshot 2026-09-04 182220.png` (user's side-by-side:
+LEFT = our 1.9.98 render, RIGHT = the MCSM original). The image cannot be viewed
+as pixels in this sandbox, so it was MEASURED instead (pure-python PNG decode,
+luminance/coverage scans). Numbers that drove the retune:
+  * reference top rows: #06030b .. #0c0911  (lum 0.015-0.02) -- a near-black
+    slab that spans the FULL frame width; dark coverage 1.00 at y=65..156.
+  * our 1.9.98: sky #5d3e62 / #894889, dark coverage 0.00 above the blob --
+    the mass was a compact 273px disc in a 950px frame, and its core read
+    0.06-0.17 lum (4-10x too bright).
+Shape: the reference is NOT round. Dark span narrows monotonically downward
+(full width at the top -> ~68% at mid-frame -> gone at the ground) with the
+arms running a long way down both sides = a stretched heart, V tip at the
+bottom. Implemented as the classic heart implicit
+    f(x,y) = (x^2+y^2-1)^3 - x^2 y^3   (interior f<0)
+in a gnomonic dome-plane frame around the boss direction, stretched
+1.15x wide / 1.38x tall with an extra 1.25x BELOW the centre (the V runs far
+down the sides) and 0.72x above it (0.85 cropped the lobes out of a 70deg
+frame, which read as a plain wedge -- the notch and lobes have to be visible
+for it to read as a heart). Boundary radius by 5-step bisection along the ray
+(the heart is star-shaped about the origin).
+Look: black heart now reaches 0.82 of the radius (was 0.55), occlusion ceiling
+0.99 and the top slab pushed to 0.995 (measured interior #060209, lum 0.013 vs
+the reference's 0.015). Rim/skirt emission is killed toward the top (x0.28 /
+x0.22) so all colour traces the V and the underside -- every bright pixel in
+the reference sits on the lower/outer edge.
+Colour (5.5-5.9): reference glows sample #3e1256 / #321772 / #472fbe -> hue
+(0.44, 0.20, 1.0) at unit luminance. Old key normalised to (0.56, 0.18, 1.0)
+= too pink. New key vec3(0.082, 0.030, 0.185). Never orange.
+Clouds: `rendertype_clouds.vsh` now exports `mcsmCloudRay` and the .fsh
+reconstructs the world ray (transpose(mat3(ModelViewMat)) * normalize(ray),
+same trick as sky.fsh) to apply `mcsm_heart_cover()` -- the deck now vanishes
+wherever the mass is opaque, which is the "you can't even see the clouds at the
+very top of the storm" note. Gated to phase 5.10-5.90 and to an active carrier.
+Validation: shimcheck 40/40. Preview: delivery/preview_halo_heart_1.9.99.png
+(left = old disc, right = new heart, same scene + a cloud deck).
+Release: 1.9.99 is a SHADER-ONLY overlay onto the 1.9.98 jar (no javac in this
+sandbox): the 4 touched shader entries + fabric.mod.json version were replaced
+in place, 2450 entries preserved, sha256 regenerated. The Java half (extras
+config-screen fix, McsmExtrasScreen) still needs build.ps1 / GitHub Actions.
