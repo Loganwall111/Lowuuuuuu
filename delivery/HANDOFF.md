@@ -785,3 +785,36 @@ Artifact: delivery/preview_halo_vs_reference_1.9.100.png (reference | ours).
 Release 1.9.100 built from the clean 1.9.98 base (not the re-rolled 1.9.99) with
 the full mcsm-core-shaders tree overlaid: 2450 entries, sha256
 03cbed79a8c16d419eef69b6cb36cbb56b95ff081ebfc97b15289d8d50d6f1dd.
+
+### Phase 30d (2026-09-04) — "I can't see any of the changes" (DELIVERY bug, not code)
+User report: no config-menu overhaul, inventory still at the bottom, no
+corruption, no smoke, teeth unchanged, halo still CIRCULAR, no command text /
+holographic wire / 3D command block, no shockwave on death (storm dies
+instantly), no aura, no rift, MCSM structures and instructions don't render --
+only cloud shadows work. No resource packs enabled, shaders OFF.
+Two independent causes, both proven:
+1. DELIVERY: the user is running the RELEASED 1.9.98 jar. 1.9.99/1.9.100 were
+   never released -- `gh release create` fails at the asset upload step from
+   this sandbox (EOF on both a 68 MB jar and a 37 KB zip; `git push` works,
+   uploads.github.com does not). So every shader change made after 1.9.98 has
+   never reached the game. Proof that it is the old jar: the halo is still a
+   perfect circle, which is exactly the pre-1.9.99 code.
+2. JAVA NEVER COMPILED: config-screen fix + McsmExtrasScreen, inventory/HUD
+   move, smoke screen, reality tear, command wire, corruption spread, death
+   shockwave/supernova, MCSM structures/instructions are all .java sources in
+   mcsm-extras/java. There is no JDK in this sandbox (no javac/java), so none
+   of them exist in ANY jar yet. Cloud shadows work because they are pure
+   shader (terrain.fsh), which is why the user sees exactly one MCSM feature.
+Not the cause (all checked and cleared): jar is structurally valid (zip test
+OK, fabric.mod.json + dabywitherstormmod.mixins.json + mcsm_extras.mixins.json
+present, 38 net/mcsm/extras classes, 14 shader entries); file NAME is
+irrelevant to Fabric (mod id comes from fabric.mod.json); no resource pack
+shadowing; with shaders OFF the jar's core shaders DO run.
+NEW DELIVERY MECHANISM (works around the blocked release uploads):
+delivery/MCSM_shaders_1.9.100.zip -- 37 KB, pack.mcmeta + the 14 core shader
+entries. Drop in .minecraft/resourcepacks, enable, move to TOP: a resource
+pack overrides the copies baked into the jar, so shader-only changes can ship
+without touching the jar. pack.mcmeta reuses the project's own pack_format 15
+(the value in the mod jar), so Minecraft may flag it red/incompatible --
+enabling it anyway is harmless. Remove it after running ci/build.ps1, which
+bakes the same files into the jar.
