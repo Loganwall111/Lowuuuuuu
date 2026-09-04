@@ -1,0 +1,194 @@
+================================================================
+ MCSM 1.9.87 -- HOW TO READ THE LOG
+ One paste from here tells me more than ten screenshots
+================================================================
+
+WHERE THE LOG IS
+  .minecraft/logs/latest.log
+  (or the game console if you launch from a terminal)
+
+WHAT TO GREP
+  Windows PowerShell:
+    Select-String -Path "$env:APPDATA\.minecraft\logs\latest.log" `
+      -Pattern "\[mcsm\]|dabywitherstormmod"
+
+  Or just open latest.log and search for:  [mcsm]
+
+----------------------------------------------------------------
+1. DID OUR PATCHES LOAD AT ALL?
+----------------------------------------------------------------
+Expect this banner shortly after the world loads:
+
+  [mcsm] MCSM extras 1.9.87 active. Patches:
+  [mcsm]   McsmShaderGatePatch      ShaderPackCompat.active() -> false
+  [mcsm]   McsmStormVisibilityPatch fogless()/reverseShading() -> false
+  [mcsm]   McsmBlobCarrierPatch     invertible cloudEnd carrier
+  [mcsm]   McsmGradientTickPatch    drives StormSkyGradient.update()
+
+  IF THIS BANNER IS ABSENT
+      the mixins did not apply. Nothing else in this guide matters
+      and no visual fix could have taken effect. Send me the log
+      and I will look for a mixin apply failure.
+
+  IF PRESENT
+      the patches are live. Any remaining defect is downstream,
+      which is a much smaller search space.
+
+----------------------------------------------------------------
+2. IS THE SHADER GATE ACTUALLY OPEN?
+----------------------------------------------------------------
+  [mcsm] ShaderPackCompat.active() forced FALSE -- the mod now
+         draws its own sun glow, shadow map, impact lights, bloom,
+         turquoise teeth and eye glow even under Iris.
+
+This line proves the phase 1 fix ran. It is the precondition for
+shadows, teeth and eye glow.
+
+----------------------------------------------------------------
+3. WHY ARE THERE NO SHADOWS?  (the important one)
+----------------------------------------------------------------
+The MOD already reports this itself:
+
+  [dabywitherstormmod][shadow] <reason>
+
+Known reason string, straight out of the bytecode:
+
+  "off: disabled in Effects, strength 0, a shader pack is active,
+   or an earlier error switched it off"
+
+StormShadowMap.wanted() needs ALL of:
+    1. !failed                                    (runtime)
+    2. stormShadow || stormSelfShadow   default ON
+    3. stormShadowStrength > 0          default 0.55
+    4. !ShaderPackCompat.active()       <-- our patch forces this
+
+Conditions 2-4 are satisfied in 1.9.87. If shadows are still off,
+condition 1 tripped and you will see ONE of:
+
+  [dabywitherstormmod] storm shadow map FAILED, shadows off: <cause>
+  [dabywitherstormmod] storm shadow capture FAILED, shadows off: <cause>
+  [dabywitherstormmod] storm shadow DISABLED after an error: <cause>
+
+THE <cause> IS THE ANSWER. Paste that line to me verbatim.
+
+You should instead see, when it is working:
+
+  [dabywitherstormmod][shadow] drawing, N storm vertices, M ground vertices
+
+----------------------------------------------------------------
+3b. WHY IS THE SKY NOT A STORM SKY?   (new in 1.9.87)
+----------------------------------------------------------------
+One of these prints whenever the answer changes:
+
+  [mcsm] storm sky ON (phase 7.00)
+  [mcsm] storm sky OFF -- phase 4.10 is below the 4.5 threshold.
+         Vanilla sky here is CORRECT; the dome starts at 4.5 and
+         turquoise at 5.0.
+  [mcsm] storm sky OFF -- no storm within 1400 blocks (or phase 0).
+
+This exists because screenshots cannot distinguish "the storm is
+too young for a dome" from "the sky patch is broken". Analysis of
+your 2026-09-03 frames found a full storm at close range under a
+plain vanilla sky, which turned out to be CORRECT behaviour for a
+storm below phase 4.5 -- not a bug at all.
+
+If you see "storm sky ON" and the sky still looks vanilla, THAT is
+a real bug and worth sending.
+
+----------------------------------------------------------------
+4. WHY IS THE GLARE BLOB MISSING?
+----------------------------------------------------------------
+Two new lines trace the whole chain:
+
+  [mcsm] gradient ACTIVE phase=7.00 yaw=-43.0 pitch=12.5
+  [mcsm] blob carrier cloudEnd=27856 (yawIdx=137 pitchIdx=102)
+
+  IF YOU SEE "gradient inactive"
+      no storm is in range, or the phase is outside 4.42..8.06.
+      The blob genuinely should not draw. Get closer / raise phase.
+
+  IF gradient is ACTIVE but there is NO carrier line
+      the carrier mixin is not running. Send the log.
+
+  IF BOTH LINES APPEAR AND THERE IS STILL NO BLOB
+      the Java side is fully correct and the fault is in the
+      shader's mcsm_blob(). That is a completely different fix,
+      and knowing it saves me from guessing.
+
+  cloudEnd must fall in 3000..68340. Anything else is out of band.
+
+----------------------------------------------------------------
+5. OTHER USEFUL MOD LINES
+----------------------------------------------------------------
+  [dabywitherstormmod] storm bloom: <state>
+  [dabywitherstormmod] bloom buffer OK: N/M lit pixels ...
+  [dabywitherstormmod] no lit pixels over the centre ...
+      -> bloom ran but produced nothing; halos/teeth will be dark
+  [dabywitherstormmod] no scene depth available -- bloom occlusion
+     is OFF, so the glow will show through geometry
+  [dabywitherstormmod] sun glow DISABLED after an error: <cause>
+  [dabywitherstormmod] beam impact light DISABLED after an error: <cause>
+  [dabywitherstormmod][perf] <stage> took N ms
+
+----------------------------------------------------------------
+WHAT TO SEND ME
+----------------------------------------------------------------
+Ideally just this, from a session where the storm is visible at a
+late phase:
+
+    every line containing  [mcsm]
+    every line containing  dabywitherstormmod
+
+That is usually under 30 lines and it resolves in one round what
+screenshots cannot: whether a feature is OFF, FAILED, or drawing
+but invisible. Those three look identical on screen and completely
+different in the log.
+
+----------------------------------------------------------------
+6. CHECKING CLOUD SHADOWS FROM A SCREENSHOT
+----------------------------------------------------------------
+  python3 shadowtest.py "Screenshot ....png"
+
+Take the shot in DAYLIGHT, looking at a big patch of flat open
+ground (sand or grass), with the hotbar and held item out of the
+lower-left area if you can.
+
+It prints an ASCII map of dark/light ground and runs two
+structural tests -- shadow patch SIZE and a bimodal brightness
+histogram -- before declaring anything. A simple bright-vs-dark
+ratio is not enough: that test returned a false positive on a
+frame with no shadows at all.
+
+  VERDICT: CLOUD SHADOWS PRESENT     -> working
+  VERDICT: NO CLOUD SHADOWS          -> send me the frame plus the
+                                        [mcsm] log lines
+
+----------------------------------------------------------------
+7. FEATURE INVENTORY   (new in 1.9.87)
+----------------------------------------------------------------
+Printed whenever the values change:
+
+  [mcsm] features: teeth=true eyeGlow=true sunGlow=true shadows=true
+         bloom=true ogSkin=true (stormSkin=1.0)
+
+Phases 31-32 traced turquoise teeth, eye glow, heads, sun glow,
+the shadow map, impact lights and bloom all the way through the
+bytecode. EVERY gate audits as open:
+
+  turquoise teeth  turquoiseTeeth=true -> FoglessRenderTypes.eyes()
+                   -> with our patch this is VANILLA RenderTypes.eyes()
+  eye glow         headEyeGlow=true -> GlowRenderTypes.emitterMark
+                   -> MARK_TYPES, the mod's own custom emitter
+  heads            PHASE4_DATA = phase >= 4.0, spawns 3 heads,
+                   renders through the SAME 'lit_cutout' path the
+                   body uses -- and the body is confirmed visible
+  OG textures      stormSkin defaults to 1.0, so og() is TRUE and
+                   the *_og.png set is already selected
+  all 10 StormSkins textures verified present and valid in the jar
+
+So if this line prints TRUE for something you cannot see, the
+configuration is fine and the problem is in DRAWING. That is a
+completely different search, and knowing which one it is saves a
+lot of guessing.
+
+SEND THIS LINE if teeth / eye glow / heads are still missing.

@@ -1,0 +1,441 @@
+# MCSM WITHER STORM — SESSION HANDOFF
+
+**Paste this entire file as your first message to the new agent.**
+
+---
+
+## 0. WHO YOU ARE AND WHAT THIS IS
+
+You are continuing a long-running engineering project: a patched Minecraft
+**26.2** Fabric mod (`dabywitherstormmod`, "MCSM Wither Storm"), plus an Iris
+shader pack and a visuals resource pack. The goal is to make the Wither Storm
+and its sky/shadows/effects **render correctly and look identical to the
+user's Minecraft: Story Mode reference screenshots.**
+
+The work has run **28 phases**. The current shipped build is **1.9.87**.
+Everything below is the accumulated state. Read all of it before acting.
+
+---
+
+## 1. USER'S ENVIRONMENT AND HARD CONSTRAINTS
+
+**Never violate these. They are standing instructions from the user.**
+
+- Minecraft **26.2**, Windows 11, Java 25 (Azul), RTX 5050 laptop.
+- Fabric 0.19.5, fabric-api 0.159.0+26.2, Sodium 0.9.1, **Iris 1.11.2+mc26.2**,
+  cloth-config 26.2.155, cameraoverhaul. **NO OptiFine.**
+- Creative singleplayer, op.
+- **Mods folder gets ONLY our jar** — never alongside a plain upstream copy.
+- **Verify every artifact with sha256** after writing.
+- **Never reuse retired version numbers.** Next version after 1.9.87 is **1.9.87**.
+- **Never ship the jar without embedded textures** — keep embedding every
+  rebuild, do not "slim" it. Current: 817 png, 109 ogg, 2389 entries.
+- **NEVER alter the 24 day/night reference gradients** in `SKY_DAY` /
+  `SKY_NIGHT` / `SKY_DUSK` in `core/sky.fsh`. They are byte-matched to the
+  user's references ("identical look" contract). I nearly broke this in phase
+  25 — see §7.
+- Storm-sky progression 5.0→8.0: **5.0 must be turquoise; 5.3+ NO turquoise.**
+- Sun/moon hidden during storm sky; ground shadowing; colorful lightmap.
+- **Aurora only in the shader pack, never in core ribbons.**
+- **The MOD owns all assets**: shaders, shadows, Story Mode clouds, lighting,
+  skies, tone. **The shader pack is limited to aurora borealis + colourful
+  lighting ONLY.**
+- **Do NOT delete/disable the Story Mode clouds** — they are the real ones.
+- Coloured lighting is handled by the mod (`storyModeLighting` /
+  `StoryModeLightmapMixin`), not by our `lightmap.fsh`.
+- Custom GLSL uniforms keep the `witherstorm_` prefix; shaders use `#version 330`.
+- Keep the workspace lean (< ~100 MB); build scratch in `/tmp`.
+- **Run javac immediately after any Python script that edits Java sources.**
+- **Run the GLSL validator immediately after any shader edit.**
+- User wants "all links to play" in one shot — file cards for every deliverable.
+- Work autonomously in phases; only stop to ask on marked diagnostics.
+
+---
+
+## 2. CURRENT SHIPPED STATE — 1.9.87
+
+Served from `/home/user/delivery/` at `http://localhost:8765/`
+(start with: `python3 /home/user/serve.py`, threaded, from that dir).
+
+```
+7eed07ed61074c282d408bcd8cf4d1ce65d66bd9a18d34bcc4ebe0449de891d9  dabywitherstormmod-1.9.87-26.2-beta-mcsm.jar   (56,832,812 B)
+599c95c357398569d493aafc8f92cb722dffaa278ea4c121ab12a5385031334c  MCSShaders-shaderpack.zip                      (11,663 B)
+94f4f405185f5ed14588168c125728d1c177e4cfc34099e592aa9b9d4d0939df  MCSM_visuals.zip                            (1,064,899 B)
+dcecd0d5e1d81d1f9eb94476f17e31df4fd23c287908fa33ba29db350306659a  MCSM_mod_changes.zip                           (67,343 B)
+9a51a19042aa751d452ef0f512157cd1a650ad8039addbc38e860dff23055555  shadowtest.py                                   (7,154 B)
+```
+
+Retired, never reuse: 1.9.68–1.9.82.
+
+---
+
+## 3. WORKSPACE LAYOUT
+
+```
+/home/user/delivery/            # served at :8765, all deliverables + README.txt + LOG_GUIDE.txt
+/home/user/mcsm-extras/java/    # OUR Java sources (13 files, see §4)
+/home/user/mcsm-extras/valcore.py     # core-shader compile harness
+/home/user/mcsm-extras/shadowtest.py  # cloud-shadow acceptance test
+/home/user/mcsm-core-shaders/   # THE 14 CORE SHADERS — source of truth, edit these
+/home/user/shaderpack-v4/shaders/     # Iris pack source (NOTE: no MCSShaders/ level)
+/home/user/glslcheck/bin/glslang      # validator binary (chmod +x after every reset!)
+/home/user/uploads/             # 44 files: user's reference shots + 12 rendered test frames
+/home/user/serve.py             # threaded HTTP server for :8765
+```
+
+**The repo the user mentions is cloned and pushed to `main`.** Prior recovery
+notes: `raw.githubusercontent.com` returns LFS *pointer* text for LFS-tracked
+files; use `media.githubusercontent.com/media/<user>/<repo>/<branch>/<path>`
+for real bytes.
+
+---
+
+## 4. OUR JAVA PATCHES (all in `net.mcsm.extras`)
+
+`mcsm_extras.mixins.json` — **`compatibilityLevel: JAVA_25`, `minVersion: 0.8`,
+`required: true`, `defaultRequire: 1`.** Package `net.mcsm.extras.mixin` may
+contain **ONLY** `@Mixin` classes (26.2 rule) — `McsmDiag` lives one level up
+in `net.mcsm.extras` for exactly this reason.
+
+| class | target | what it does |
+|---|---|---|
+| `McsmShaderGatePatch` | `ShaderPackCompat.active()` HEAD | forces **false** — the single most important patch (§5) |
+| `McsmStormVisibilityPatch` | `FoglessRenderTypes.fogless()` + `reverseShading()` HEAD | both **false** — fixes invisible storm body |
+| `McsmBlobCarrierPatch` | `FogRenderer.updateBuffer(Lnet/minecraft/client/renderer/fog/FogData;)V` **TAIL** | rewrites `cloudEnd` with an invertible encoding |
+| `McsmGradientTickPatch` | `LevelRenderer.render(...)` HEAD (full descriptor) | drives `StormSkyGradient.update(cameraState.pos)` every frame |
+| `McsmDiag` | *(not a mixin)* | `[mcsm]` log output |
+| `McsmGuiExtrasRows`, `McsmStormGrabPatch`, `McsmBeaconStormPatch`, `McsmBeaconBlockInitPatch`, `McsmSpiralPatch` | various | pre-existing features, working, leave alone |
+
+---
+
+## 5. THE FIXES, AND WHY EACH ONE EXISTS
+
+### Phase 1 — invisible storm / no teeth / no eye glow
+`ShaderPackCompat.active()` gates **6 systems** via `ifne <skip>` — with Iris
+loaded, the mod turns its OWN effects off expecting the shader pack to draw
+them. Under the "mod owns everything" architecture, nothing drew.
+
+Separately `FoglessRenderTypes` picks the body render path with
+`useCustom = fogless() || reverseShading()`, and `useCustom` selects
+`bodyCutout(tex)` which **renders nothing on 26.2**.
+
+**ORDER MATTERS:** `fogless() = active && !legacyDistantRenderer &&
+!ShaderPackCompat.active()`. Neutralising `active()` **alone** flips
+`fogless()` TRUE and re-selects the broken path. **Both mixins are required
+together.** Do not remove one.
+
+Phase 20 verified polarity at **all 11 call sites** of `active()`. Nine use
+`ifne` (false enables them). **Two use `ifeq` and invert** —
+`GlowRenderTypes.emitterMark` is the important one:
+`active TRUE → RenderTypes.eyes()` (vanilla plain glow),
+`active FALSE → MARK_TYPES` (the mod's custom emitter mark = **turquoise
+teeth**). False is correct at all 11.
+
+### Phase 2 — no shadows at all
+`mcsm_sun_true()` computed `(t01*2.0-0.5)*PI` — a **quarter-day phase shift**.
+At noon the sun sat on the horizon (`y=+0.02`), so every `sunDir.y > 0.05`
+gate failed and cloud shadows never ran at any time of day.
+Fixed to `fract(t01)*2.0*PI`; gate lowered to `0.02`. Verified: `sun.y` is
+now `+0.965` at noon, `−0.962` at midnight.
+
+### Phase 3 — purple rim at zenith
+Four hard `if/else` colour steps; at `u=0.75` magenta cut instantly to
+near-black. Now `smoothstep(0.58, 0.94, u)`.
+
+### Phase 4 / 25 — sky colour
+Every `mcsm_storm_dome` stop rescaled **×0.46**; `MCSM_SATURATION` 1.34→**1.06**,
+`MCSM_CONTRAST` 1.09→**1.04**. (1.34 was *clipping* channels and destroying the
+gradient.) Phase 25 then retargeted the **7.0 row** directly from a real
+rendered frame to the measured reference profile:
+`zenith (0.130,0.076,0.120)`, `mid (0.184,0.116,0.184)`, `horizon (0.373,0.215,0.398)`.
+
+### Phase 5 / 9 / 11 / 15 — the black glare blob (FOUR separate bugs)
+1. **Non-invertible encoding.** The mod's `McsmFogCarrierMixin` packs
+   `cloudEnd = 1200 + (yaw+180)*2 + (pitch+90)*0.5`. The pitch term spans
+   [0,90) while yaw steps by 2 → **45 pairs collide**. Decoder recovered
+   pitch ≈ −90° (straight down): the blob was drawn *below the world*.
+   **Fix:** our TAIL patch rewrites it as
+   `cloudEnd = 3000 + yawIdx*181 + pitchIdx` (yawIdx 0..360, pitchIdx 0..180).
+   `pitchIdx < 181` guarantees uniqueness; max 68340 is exact in float32.
+   **Verified exhaustively: 65,341 pairs, zero mismatches.**
+   Decoder is `mcsm_boss_dir()` in `include/mcsm_visuals.glsl`, band
+   `v >= 2999.0 && v <= 68341.0`.
+2. **Ambiguous injector.** `FogRenderer` has TWO `updateBuffer` overloads. We
+   declared a bare name **and `require = 0`** — Mixin would have skipped it
+   **silently**. Now the full descriptor + `require = 1`.
+3. **Dead-code producer.** `StormSkyGradient.update(Vec3)` is the ONLY writer
+   of `yawDeg/pitchDeg/phase/active`, and **nothing in the jar called it**.
+   `active` stayed false forever → both carriers bailed at their first guard.
+   `McsmGradientTickPatch` now drives it per-frame.
+4. **Wrong compositing.** The "black core bite" was a *subtraction* of
+   `vec3(0.010,0.006,0.014)` — ~1.4% of a channel — tuned against the old
+   2.2×-brighter dome. It rendered as a bright red-pink RING. Now
+   multiplicative: `occl = 0.93*pow(disc,1.5)`, `emis = col*(rim*rim)*0.85`,
+   composite `dome*(1.0-occl) + emis`. Core is ~14× darker than sky.
+
+**Also guarded:** `mcsm_clouds_end()` and `mcsm_rd_start()` only recognised the
+old 1100–2150 band; they now also guard 2999–68341 or a carrier value would
+leak through as a literal cloud distance.
+
+### Phase 16 / 28 — STRANDED ADDITIVE CONSTANTS (a recurring bug class)
+The ×0.46 dome rescale left behind every term that *added* a fixed amount:
+- **blob core bite** (phase 15) — fixed, now multiplicative
+- **lightning flash** (phase 16) — added 0.546 lum to a 0.165 sky, a **4.3×
+  white-out** on every strike. Scaled ×0.46.
+- **sun halo** (phase 28) — added 0.423 lum to 0.091, a **4.7× blow-out that
+  clipped 90% of the sky**. Scaled ×0.46.
+- sun halo & horizon glow on the *clear-sky* path were checked and are fine
+  (that path was never rescaled).
+
+**RULE: multiplicative terms survive a rescale; additive constants do not.**
+If you change dome brightness again, re-check every `+=` against it.
+
+### Phase 17 — animation ran 20× too fast
+`mcsm_clock()` returned `gameTime01 * 24000` (**ticks**) but every consumer was
+written in **seconds** (their comments say "every ~4.3 s", "roar pulse").
+Ticks advance 20/sec → lightning fired **4.65 strikes/second**, blob pulsed at
+**9.5 Hz**. A genuine photosensitivity hazard. Now `gameTime01 * 1200.0`.
+Phase 18 re-checked all 9 consumers for the opposite regression; all fine.
+
+### Phase 19 / 21 — cloud shadows
+- **Bug:** `t = (192 - worldPos.y)/sunDir.y` goes negative above y=192, which
+  sampled the noise **mirrored** and painted shadows on terrain *above* the
+  clouds. Guarded: `if (dy <= 1.0) return 1.0;`
+- **Phase 19 wrongly declared per-cloud matching impossible** (stopped at the
+  `CloudInfo` UBO). Phase 21 read `CloudRenderer` instead: vanilla clouds are
+  **not procedural** — they load `textures/environment/clouds.png` (256×256)
+  on a fixed grid. Constants from bytecode:
+  `CELL_SIZE_IN_BLOCKS 12.0`, `TICKS_PER_CELL 400`, `BLOCKS_PER_SECOND 0.6`,
+  **scroll is +X only**, Z is a fixed **+3.96**, coverage measured **27.6%**
+  (18,103/65,536 opaque texels).
+  Shadows now match all of that. **Remaining gap:** per-cell occupancy is still
+  procedural because `clouds.png` is not bound to the terrain pass (`Sampler0`
+  is the block atlas). Closing it needs Java-side pipeline work to bind a
+  second sampler — **a legitimate next task if the user reports mismatch.**
+
+### Phase 24 — mixin config could have been refused at load
+Ours declared **no** `compatibilityLevel` while the mod declares `JAVA_25`, and
+our classes were `--release 21` (major 65) vs theirs (major 69). Mixin falls
+back conservatively and can refuse — **silently**. Now `JAVA_25` + all classes
+compiled `--release 25`, verified major version 69.
+
+### Phase 26 — the sky is "intermittent" BY DESIGN (not a bug)
+`StormSkyGradient.update()` only selects a storm at **`phase >= 4.5` AND
+distance <= 1400**. Below that, nothing sets `active`, the carrier never stamps
+`fogSkyEnd`, `mcsm_phase()` returns 0, and the shader correctly takes the
+vanilla branch. **Frame 100455 shows a huge storm under a plain blue sky and
+that is CORRECT** for a sub-4.5 storm. Do **not** "fix" this by widening the
+gate — turquoise at 5.0 is a specified requirement.
+`McsmDiag.skyReason()` now states the reason in the log.
+
+---
+
+## 6. DIAGNOSTICS — THE MOST IMPORTANT TOOL
+
+The mod **already** logs to stdout (nobody had been reading it):
+```
+[dabywitherstormmod][shadow] <reason>
+[dabywitherstormmod] storm shadow map FAILED, shadows off: {}
+[dabywitherstormmod] storm shadow capture FAILED, shadows off: {}
+[dabywitherstormmod] sun glow DISABLED after an error: {}
+[dabywitherstormmod] bloom buffer OK: {}/{} lit pixels ...
+[dabywitherstormmod] no lit pixels over the centre {}x{} ...
+[dabywitherstormmod][perf] %s took %.1f ms
+```
+`StormShadowMap.status()` dedupes and prints its own reason string. The known
+one is literally: *"off: disabled in Effects, strength 0, **a shader pack is
+active**, or an earlier error switched it off"*.
+
+We add, under `[mcsm]`:
+```
+[mcsm] MCSM extras 1.9.87 active. Patches: ...          (once)
+[mcsm] ShaderPackCompat.active() forced FALSE ...       (once)
+[mcsm] gradient ACTIVE phase=7.00 yaw=-43.0 pitch=12.5  (on change)
+[mcsm] blob carrier cloudEnd=27856 (yawIdx=137 pitchIdx=102)
+[mcsm] storm sky ON (phase 7.00)  /  storm sky OFF -- phase 4.10 is below 4.5 ...
+```
+
+**If the `[mcsm]` banner is ABSENT, the mixins did not apply and nothing
+downstream matters.** This is the first thing to check in any user log.
+
+`StormShadowMap.wanted()` requires ALL of:
+1. `!failed` (runtime), 2. `stormShadow || stormSelfShadow`,
+3. `stormShadowStrength > 0`, 4. `!ShaderPackCompat.active()` ← our patch.
+Config defaults confirmed from `<clinit>` (last write wins):
+`stormShadow=true`, `stormShadowStrength=0.55`, `sunGlow=true`,
+`sunGlowStrength=2.2`, `bloomStrength=2.0`, `turquoiseTeeth=true`,
+`cataclysmHalos=true`, `headEyeGlow=true`, `blackGlare=true`,
+`stormBackdrop=true`, `storyModeLighting=true`, `impactLight=true`,
+`bloomMaskToStorm=true`, `stormSelfShadow=true`. **All 14 enabled.**
+
+---
+
+## 7. MEASUREMENT DISCIPLINE — READ THIS, IT COST REAL TIME
+
+Four separate times a **measuring tool** produced a confident wrong answer:
+
+1. **Phase 12** — a caller census reported 0 callers for *everything* including
+   known-good ones. Broken `javap @argfile`. Caught by a control case.
+2. **Phase 20** — a config parser reported every boolean as `0.5`, then as
+   `false`. Field *declarations* default to false; the real values are assigned
+   later in `<clinit>`, so **only the last write counts.**
+3. **Phase 27** — a naive min/max ratio said "cloud shadows present" on a frame
+   that has none. min/max is the statistic outliers corrupt most.
+4. **Phase 28** — a hue measurement on a **clipped** patch reported a too-blue
+   sky as "correct magenta", and nearly caused a correct fix to be reverted.
+   **A clipped pixel carries no hue information — reject `max(c) >= 235` first.**
+
+**Rules:**
+- A scan that disagrees with a known-good fact is a **broken scan**, not a discovery.
+- Always run a control case whose answer you already know.
+- Prefer **structural** tests (run lengths, histogram modality) over single ratios.
+- Reject saturated pixels before any colour comparison.
+- **Static checks are not visual verification.** 21/21 and 15/15 audits passed
+  while four defects were plainly visible on screen.
+
+---
+
+## 8. BUILD / VALIDATE / SHIP RECIPE
+
+```bash
+# toolchain (/tmp is wiped between turns — recreate every time)
+mkdir -p /tmp/jdkx /tmp/dl && cd /tmp/dl
+curl -sL -o jdk.tgz "https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse" && tar xzf jdk.tgz -C /tmp/jdkx
+curl -sL -o client.jar "https://piston-data.mojang.com/v1/objects/2dc72797acbc1b63fc16a11c4ac393605f453754/client.jar"   # 39,193,383 B
+curl -sL -o mixin.jar    "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar"
+curl -sL -o jspecify.jar "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar"
+curl -sL -o fastutil.jar "https://repo1.maven.org/maven2/it/unimi/dsi/fastutil/8.5.15/fastutil-8.5.15.jar"
+curl -sL -o dfu.jar      "https://libraries.minecraft.net/com/mojang/datafixerupper/8.0.16/datafixerupper-8.0.16.jar"
+curl -sL -o joml.jar     "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar"
+
+# GLSL validate (ALWAYS after any shader edit)
+chmod +x /home/user/glslcheck/bin/glslang
+rm -rf /tmp/vc && mkdir -p /tmp/vc/assets/minecraft
+cp -r /home/user/mcsm-core-shaders /tmp/vc/assets/minecraft/shaders
+python3 /home/user/mcsm-extras/valcore.py /tmp/vc/assets/minecraft/shaders /tmp/dl/client.jar   # expect 15/15
+
+# compile (ALWAYS --release 25)
+J=/tmp/jdkx/jdk-25.0.4.1+1
+CP="/tmp/dl/client.jar:/home/user/delivery/<current>.jar:/tmp/dl/mixin.jar:/tmp/dl/jspecify.jar:/tmp/dl/fastutil.jar:/tmp/dl/dfu.jar:/tmp/dl/joml.jar"
+cd /home/user/mcsm-extras/java
+$J/bin/javac -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/build $(find . -name "*.java")   # expect 13 classes
+
+# assemble
+rm -rf /tmp/fx && mkdir -p /tmp/fx/cls && cd /tmp/fx/cls
+unzip -o -q /home/user/delivery/<current>.jar
+cp -r /home/user/mcsm-core-shaders/* assets/minecraft/shaders/
+cp -r /tmp/build/* .
+# bump version in fabric.mod.json AND the McsmDiag banner string
+zip -q -r -X /tmp/<new>.jar . -x '.*'
+
+# ship
+cd /home/user/delivery && cp /tmp/<new>.jar . && rm -f <old>.jar
+sha256sum *.jar *.zip shadowtest.py > sha256.txt
+python3 /home/user/serve.py &     # threaded; from delivery/
+# then curl every file and byte-compare against on-disk
+```
+
+**`/tmp` is a 993 MB tmpfs.** It has hit 100% twice and **silently truncated
+writes** (a 53.5 MB "jar" that wasn't a valid zip, and a failed `zip`). Check
+`df -h /tmp` and clean before big writes. Also: never verify a download by
+writing into a full `/tmp`.
+
+**The stock `python3 -m http.server` crashes on concurrent 56 MB transfers.**
+Use `/home/user/serve.py` (threaded, `Accept-Ranges`, `no-store`).
+
+---
+
+## 9. VERIFIED-GOOD FACTS (don't re-derive these)
+
+- Cross-artifact audit: **0** core-shader overlap between jar and visuals pack.
+  `MCSM_visuals.zip` is now **fully redundant** — 763/764 files byte-identical
+  to the jar, only `pack.mcmeta` differs. Harmless, but a *stale* copy in
+  `resourcepacks/` WOULD shadow the jar.
+- Shader pack scope verified clean: `SKY_STORY_MODE=0` in source *and* false in
+  `shaders.properties`, so `storyModeSky()`/`biomeTint()` are dead code. Live
+  path is `c = skyColor; c += aurora()`. Terrain does `COLORED_LIGHT` only;
+  textured/basic are passthrough; BLOOM 0, TONEMAP 0, VIBRANCE 1.00.
+- All 82 mixin classes (73 theirs + 9 ours) exist and are registered.
+- Every visual system has a caller (phase 12 census, 169 distinct call targets).
+  `StormSkyGradient.update` is called **only** by our `McsmGradientTickPatch`.
+- No mixin collision: mod injects `dabyws$bloomAtLevelEnd` at RETURN of
+  `LevelRenderer.render`; we inject `mcsm$driveStormGradient` at HEAD. All
+  handler names across the jar are unique.
+- `WitherStormEntity` sends `WitherStormPositionPacket` every 2 ticks
+  server-side → drives `ClientDistantStormManager`.
+- **Upstream 1.9.60 jar is unobtainable** (404 both branches).
+- `repo1.maven.org` 404s on `com/mojang/datafixerupper` — use
+  `libraries.minecraft.net`.
+- glslang cannot compile `#version 330 compatibility` builtins; `validate.py`
+  shims them. GLSL has **no hoisting** — the `mcsm_ramp` forward declaration
+  near line 40 of `mcsm_visuals.glsl` must survive any edit.
+- Pillow IS available.
+
+---
+
+## 10. RULED OUT — DO NOT RETRY
+
+- Shader pack, texture atlas, CEM, OptiFine-detection compat class,
+  `emissive.properties`, tawmesh meshes, Legacy Distant Renderer alone.
+- **The `witherstorm_*` uniform path is DEAD** — 0 classes reference
+  `witherstorm_BossPos` / `witherstorm_Phase` / `witherstorm_GameTime`. The
+  `FogData` carrier is the only channel.
+- Do **not** write a smarter decoder for the old `cloudEnd` encoding — proven
+  non-invertible.
+- Do **not** neutralise `ShaderPackCompat.active()` on its own (see §5 phase 1).
+- Flat vivid blue night sky = **not a defect**, it's the storm's own baked sky.
+- The purple rim was **not** a dome-pole/UV bug — don't revisit geometry.
+- `mcsm_story_grade` with SAT 1.34 was **actively harmful** (clipped channels).
+  The references are dark and moody with vivid *accents*, not globally vivid.
+- Substring presence checks are fooled by explanatory comments — **strip
+  comment lines before asserting a formula was removed.** (Bit us twice.)
+
+---
+
+## 11. WHAT IS STILL OPEN
+
+Acceptance criteria status:
+- ✅ no IllegalClassLoadError
+- ✅ storm body renders (**proven** by frames 100455 / 131242 / 131056)
+- ✅ one owner per visual system (mod owns everything; pack is aurora + light)
+- ✅ :8765 + README + LOG_GUIDE + sha256
+- ❓ **halos + turquoise teeth + eye glow** — gate fixed, never visually confirmed
+- ❓ **ground/cloud shadows** — all four `wanted()` conditions now satisfiable,
+  never visually confirmed. `shadowtest.py` exists to settle it.
+- ❓ **sky matches references** — 7.0 row retargeted from a real frame in phase
+  25; sun halo declipped in phase 28. Needs a fresh frame.
+- ❓ **glare blob** — four bugs fixed across phases 5/9/11/15, never seen working.
+
+**The single most valuable next input** is a fresh test from the user on
+1.9.87: a daylight screenshot over open flat ground, a late-phase (>5.0)
+screenshot, and the `[mcsm]` + `dabywitherstormmod` lines from
+`.minecraft/logs/latest.log`. Run the screenshot through
+`python3 shadowtest.py <file>`.
+
+**Known candidate next tasks** (in rough priority order):
+1. Diagnose from the user's log/frames — everything above is unverified in-game.
+2. Bind `clouds.png` to the terrain pass so cloud shadows match per-cell
+   (phase 21's remaining gap). Needs Java pipeline work.
+3. Hunt for a **fifth** stranded additive constant if a fresh frame shows any
+   blown-out region.
+4. Consider dropping `MCSM_visuals.zip` from the deliverables as redundant
+   (user's call — it's useful standalone on a vanilla client).
+
+---
+
+## 12. TONE AND WORKING STYLE THE USER EXPECTS
+
+- Work in **phases**, autonomously, continuing until done. The user repeatedly
+  says "keep continuing until it's done."
+- **Be honest about what is and isn't verified.** Say plainly when a claim is
+  static analysis vs. an observed frame. The user is the only renderer.
+- **Own mistakes explicitly.** Several bugs in this project were *introduced by
+  earlier fixes* (the ×0.46 rescale stranded four constants; a `vec2.z` typo
+  broke 11 of 15 shader units). Flag them, don't bury them.
+- Ship a versioned jar + refreshed README + sha256 + working :8765 every phase
+  that changes an artifact.
+- Present the README at the end so the user sees it.
+
+---
+
+**End of handoff. The new agent should read §5, §7 and §11 most carefully.**
