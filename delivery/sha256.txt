@@ -1,4 +1,4 @@
-6d31633602debd48b8fcc16ae1f7a32ed3b478cb2cd1d6abe81b3d2afd70638e  dabywitherstormmod-1.9.96-26.2-beta-mcsm.jar
+acbbe5f6df314351dc81a48b3a82ba1104cdbd9b16e8c08fd1fc1fac7dcef6fe  dabywitherstormmod-1.9.97-26.2-beta-mcsm.jar
 8c775591773b9a0f1e90370bc6cca6255198d100c23236d3f02f99b8f02cb0a9  MCSM_mod_changes.zip
 aeba213e8ac44091def31873bf3bea71d347cbc9f81a228f38a009351687bab4  MCSM_visuals.zip
 2f5dcddfe352b241f9c7c05b20e82787574d3f68909d21e76a3bd1095e81832f  MCSShaders-shaderpack.zip

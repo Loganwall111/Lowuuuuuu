@@ -472,19 +472,20 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     vec3 wd = normalize(worldDir);
     vec3 bd = normalize(bossDir);
     float ang = degrees(acos(clamp(dot(wd, bd), -1.0, 1.0)));
-    // MCSM 1.9.96 -- HALF SIZE, per user: "shrink the glare, it's way too big;
-    // by default I only want it half the size that it is right now". The 1.9.89
-    // extents (24->36 deg) read as a wall of fog; 12->18 deg keeps the mass a
-    // distinct shape hugging the storm. A config slider (glare size up to
-    // maximum) rides the FogRenderDistanceStart carrier band 9001..9299 =
-    // size x1000 -- written by Java once the toolchain phase lands; DEFAULT 0.5
-    // when the band is unstamped, so the half size ships today either way.
-    float mcsmSize = 0.5;
+    // MCSM 1.9.97 -- size ruling, final word from the user: "the size shouldn't
+    // be smaller, it's actually a tiny bit bigger than it is right now, just a
+    // tiny bit" ("right now" = the 1.9.95 24->36 deg extents; the thing that
+    // was "way too big" turned out to be the orange post-pass sun halo, which
+    // storm_sun_glow.fsh shrinks instead). So: defaults +12.5% over 1.9.95.
+    // A config slider (glare size up to maximum) rides the
+    // FogRenderDistanceStart carrier band 9001..9299 = size x1000 -- written by
+    // Java once the toolchain phase lands; DEFAULT 1.125 when unstamped.
+    float mcsmSize = 1.125;
     float mcsmCar = mcsm_rd_raw();
     if (mcsmCar >= 9001.0 && mcsmCar <= 9299.0) {
         mcsmSize = clamp((mcsmCar - 9000.0) * 0.01, 0.10, 3.00);
     }
-    float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * 2.0 * mcsmSize;
+    float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
     if (ang >= outer) return vec4(0.0, 0.0, 0.0, 0.0);
     float u = clamp(ang / outer, 0.0, 1.0);   // 0 at the storm -> 1 at the edge
     vec3 tint = mcsm_halo_color(p);

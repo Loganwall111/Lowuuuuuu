@@ -442,7 +442,7 @@ screenshot, and the `[mcsm]` + `dabywitherstormmod` lines from
 
 ---
 
-## 12. PHASE 29 (2026-09-04) — build **1.9.96-26.2-beta-mcsm**
+## 12. PHASE 29 (2026-09-04) — build **1.9.97-26.2-beta-mcsm**
 
 ### Environment reality this session
 - **No network** (curl to Mojang/Adoptium/Maven all fail: exit 35/empty) and
@@ -463,9 +463,10 @@ screenshot, and the `[mcsm]` + `dabywitherstormmod` lines from
 
 ### What changed in 1.9.96 (all shader-side, all validated 42/42 by the new
 ### `glslcheck/shimcheck.py` offline glslang harness — shims are compile-only):
-1. **Glare blob half size & centred on the storm** (`include/mcsm_visuals.glsl`):
-   extent `mix(24,36°)` → `* 2.0 * mcsmSize` with **default mcsmSize = 0.5**
-   (half, per user). Carrier band **FogRenderDistanceStart 9001..9299** =
+1. **Glare blob sized & centred on the storm** (`include/mcsm_visuals.glsl`):
+   extent `mix(24,36°) * mcsmSize`, **default mcsmSize = 1.125** after the
+   user corrected the brief in-review ("not smaller, a tiny bit bigger than
+   1.9.95"; the "way too big" offender was the post sun halo, shrunk there). Carrier band **FogRenderDistanceStart 9001..9299** =
    size×10 ready for the Java slider (range 0.1..3.0 → up to ~3x the old
    maximum). `mcsm_rd_start()` guards the band so fog never reads it.
    **ANTIPODE FIX**: carrier decode result negated — frames 194701/195146 show
@@ -501,7 +502,8 @@ screenshot, and the `[mcsm]` + `dabywitherstormmod` lines from
    5,080 semi-transparent texels (alpha 1..120) lifted to 200..253 (holes kept
    0; "a little more opaque, not too much").
 9. fabric.mod.json version → 1.9.96-26.2-beta-mcsm. Jar: 2450 entries,
-   57,354,186 B, sha256 **6d31633602debd48b8fcc16ae1f7a32ed3b478cb2cd1d6abe81b3d2afd70638e**,
+   57,354,186 B, sha256 **acbbe5f6df314351dc81a48b3a82ba1104cdbd9b16e8c08fd1fc1fac7dcef6fe**
+   (1.9.97 — rebuilt in-phase after the glare-size ruling; 1.9.96 never shipped),
    zip-tested clean. delivery/ README header updated; sha256.txt regenerated.
    NOTE: the `[mcsm]` in-log banner still prints the 1.9.95 string (it is a
    compiled class; no Java rebuild this phase) — cosmetic only.
