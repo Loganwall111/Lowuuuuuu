@@ -22,6 +22,16 @@ public final class McsmExtrasConfig {
     public static boolean spiralCounterClockwise = true;
     public static boolean enableBeaconBlock = true;
 
+    // ---- fields that ALSO existed in the 1.9.88-1.9.95 jars ----------------
+    // (these live in the shipped jar's bytecode; other jar-side classes read
+    // them, so the names/types must NEVER change or those classes crash with
+    // NoSuchFieldError. ogCemModels defaults false: the redone model is the
+    // default look, Tainted's original CEM is opt-in.)
+    /** Use Tainted's original 103-part CEM model for the phase-5 body. */
+    public static boolean ogCemModels = false;
+    /** Apparent size of the smudge/halo quads behind the storm (0.5 = new). */
+    public static double  smudgeScale = 0.5;
+
     // ---- MCSM 1.9.98 batch (phase 29/30 user orders, 2026-09-04) ----------
     /** Storm glare mass scale; read by the blob carrier every frame. */
     public static double  glareSize = 1.18;
@@ -66,6 +76,8 @@ public final class McsmExtrasConfig {
             p.setProperty("enable_rise_fx", String.valueOf(enableRiseFx));
             p.setProperty("spiral_counter_clockwise", String.valueOf(spiralCounterClockwise));
             p.setProperty("enable_beacon_block", String.valueOf(enableBeaconBlock));
+            p.setProperty("og_cem_models", String.valueOf(ogCemModels));
+            p.setProperty("smudge_scale", String.valueOf(smudgeScale));
             p.setProperty("glare_size", String.valueOf(glareSize));
             p.setProperty("aurora_enabled", String.valueOf(auroraEnabled));
             p.setProperty("death_cinematic", String.valueOf(deathCinematic));
@@ -119,6 +131,8 @@ public final class McsmExtrasConfig {
             enableRiseFx       = bool(p, "enable_rise_fx", enableRiseFx);
             spiralCounterClockwise = bool(p, "spiral_counter_clockwise", spiralCounterClockwise);
             enableBeaconBlock = bool(p, "enable_beacon_block", enableBeaconBlock);
+            ogCemModels        = bool(p, "og_cem_models", ogCemModels);
+            smudgeScale        = dbl(p, "smudge_scale", smudgeScale);
             glareSize          = dbl(p, "glare_size", glareSize);
             auroraEnabled      = bool(p, "aurora_enabled", auroraEnabled);
             deathCinematic     = bool(p, "death_cinematic", deathCinematic);

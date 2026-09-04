@@ -623,3 +623,30 @@ only locally inside this phase (never uploaded); current public build: 1.9.98.
 drop), reality-tear block + corruption spread + splash-heal cure, command-wire
 block + holographic terminal, obliterate flash action, tentacle attacks,
 extras-tab scroll verification from user log, inventory/HUD moves.
+
+### Phase 30a-2 (2026-09-04, after user's config screenshot)
+- **Extras-tab bug ROOT-CAUSED** (Screenshot 2026-09-04 145751): their screen
+  folds rows by section (`collapsed` set, `tabKeys`/`masterKeys`) and
+  `repositionRows()` ran at init BEFORE our TAIL-injected rows → header showed
+  [-] with an empty body. Also: jar-era GUI class had extra self fields
+  (skipCurrentSection/skipCurrentMaster) we don't reproduce. New design: ONE
+  header row + ONE button row ("Open the MCSM Control Panel") that opens our
+  own `net.mcsm.extras.client.McsmExtrasScreen` (vanilla Screen; CycleButton +
+  AbstractSliderButton two-column layout; conservative API so it survives 26.2
+  render refactor). Then exact-name `repositionRows()` is invoked. `rebuild()`
+  would drop ours — NEVER call it.
+- **API-parity rule for CI rebuilds (important):** repo Java now mirrors the
+  jar's 1.9.95-era config fields (`ogCemModels Z` default false, `smudgeScale
+  D` default 0.5) — other pre-compiled jar classes read these, so removing or
+  renaming them would NoSuchFieldError at runtime. Verified via constant-pool
+  scan (classfile parser snippet in this session's notes).
+- **New backlog items (user, same message):**
+  - "Pilot the storm yourself" — ride/controllable-storm option (follows the
+    Command Wire terminal; you'll steer it from the holographic panel).
+  - Ground shadows for TREES and MOBS too (not just cloud/storm shadows) —
+    renderer-level shadow-map expansion; StormShadowMap currently covers the
+    storm only. Big engine task; phase 31+.
+  - Torches & colored lighting ambience — pack side: MCSShaders COLORED_LIGHT
+    is default-on; user's working knob today is Iris → shader pack Lighting →
+    COLORED_LIGHT_AMT. A richer per-block emission pass is queued with the
+    Story Mode "porch lighting" item.
