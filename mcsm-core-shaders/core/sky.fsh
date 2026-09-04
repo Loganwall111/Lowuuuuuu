@@ -77,8 +77,10 @@ vec3 mcsm_storm_dome(float up, float p) {
             mcsm_ramp(p, 5.15, 5.23));                                                                // 5.2 pinker
     d = mix(d, mcsm_col(up, vec3(0.028, 0.005, 0.064), vec3(0.074, 0.018, 0.110), vec3(0.138, 0.037, 0.175)),
             mcsm_ramp(p, 5.26, 5.34));                                                                // 5.3 dark purple
-    d = mix(d, mcsm_col(up, vec3(0.046, 0.009, 0.092), vec3(0.156, 0.046, 0.156), vec3(0.285, 0.101, 0.239)),
-            mcsm_ramp(p, 5.42, 5.52));                                                                // 5.5 pink + purple overhead
+    d = mix(d, mcsm_col(up, vec3(0.150, 0.055, 0.175), vec3(0.330, 0.118, 0.282), vec3(0.505, 0.235, 0.392)),
+            mcsm_ramp(p, 5.42, 5.52));                                                                // 5.5 light pink, purple overhead (1.9.96: pinker per user note "more pinkish and purplish but not too purple"; 1.9.95 measured top (53,17,57) lower (92,40,74))
+    d = mix(d, mcsm_col(up, vec3(0.108, 0.032, 0.116), vec3(0.238, 0.076, 0.208), vec3(0.428, 0.152, 0.348)),
+            mcsm_ramp(p, 5.70, 5.90));                                                                // 1.9.96 5.7-5.9: "dark pink end" -- keeps pink alive toward 6 instead of holding the flat 5.5 stop
     d = mix(d, mcsm_col(up, vec3(0.099, 0.067, 0.108), vec3(0.162, 0.108, 0.159), vec3(0.265, 0.170, 0.207)),
             mcsm_ramp(p, 5.96, 6.10));                                                                // 6.0 grey + bit of purple
     // MCSM 1.9.81: retargeted from a REAL rendered frame (Screenshot
@@ -138,6 +140,17 @@ void main() {
         sky += mcsm_horizon_glow(1.0 - up, dayW, duskW);
         sky = mcsm_biome_tint(sky);
 
+        // MCSM 1.9.96: AURORA in the mod itself (user ask: "Aurora Borealis to
+        // the sky in cold biomes, in the mod as well"). Night-only, gated by a
+        // cold-biome bias read off the fog colour (snowy biomes carry a bluer
+        // fog than warm ones; the gate is smooth so temperate nights get a
+        // faint show and deserts none). Storm sky never reaches this branch.
+        // The SKY_DAY / SKY_NIGHT / SKY_DUSK arrays stay byte-identical; this
+        // is additive on top of the finished night sky, not an edit of them.
+        float coolFog = smoothstep(0.015, 0.10,
+                          (FogColor.b - FogColor.r) + 0.5 * (FogColor.g - FogColor.r));
+        sky += mcsm_aurora(worldDir, clock, nightW, coolFog);
+
         // MCSM v8: sun halo in ordinary play. Blooms wider and hotter through
         // the late phases; mcsmP is 0 with no storm so this is the calm
         // baseline glow until things start going wrong.
@@ -193,8 +206,15 @@ void main() {
     // The glare blob: follows the storm, punches a dark core, rims it.
     vec3 camWorld = vec3(CameraBlockPos) + CameraOffset;
     vec4 aim = mcsm_boss_dir(camWorld);
-    if (aim.w > 0.5) {
-        vec4 blob = mcsm_blob(worldDir, aim.xyz, mcsmP, clock);
+    // MCSM 1.9.90: the sky-dome blob now lives ONLY in its r1 window,
+    // 5.10-5.90 (INSTRUCTIONS.md phase table: "giant colour-shifting centre
+    // blob, 5.1-5.9"). Below that the phase-4 light-blue halo quad and the
+    // turquoise sky carry the look; above it the purple/crimson rear-fog
+    // quads and the storm dome do. The storm-attached backdrop quads
+    // (McsmStormBackdropPatch) own the mass now -- a dome-wide blob at every
+    // phase was reading as "a fog in the sky", the user's standing complaint.
+    if (aim.w > 0.5 && mcsmP >= 5.10 && mcsmP <= 5.90) {
+        vec4 blob = mcsm_blob(worldDir, aim.xyz, mcsmP, clock, dome);
         // 1.9.76: blob.w is now a full occlusion factor (already includes its
         // own strength curve), so it multiplies the dome directly. The extra
         // 0.85 that used to be applied here is folded into mcsm_blob().

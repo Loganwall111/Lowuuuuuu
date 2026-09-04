@@ -439,3 +439,117 @@ screenshot, and the `[mcsm]` + `dabywitherstormmod` lines from
 ---
 
 **End of handoff. The new agent should read §5, §7 and §11 most carefully.**
+
+---
+
+## 12. PHASE 29 (2026-09-04) — build **1.9.96-26.2-beta-mcsm**
+
+### Environment reality this session
+- **No network** (curl to Mojang/Adoptium/Maven all fail: exit 35/empty) and
+  **no local JDK/javac, no Pillow, no git-lfs**. The LFS-filtered `.py` files in
+  the repo are pointer text in the working tree (valcore/validate/shadowtest).
+- The user-linked current build is on branch `heress`:
+  `dabywitherstormmod-1.9.95-26.2-beta-mcsm.jar` (sha256 git-object, real bytes,
+  57,363,400 B). **New truth baseline.** It already contains everything from
+  1.9.88–1.9.95 (CEM engine, McsmTeethTexturePatch, McsmTeethGlowPatch,
+  McsmSilhouetteWrapPatch, McsmStormBackdropPatch, McsmShadowTrackPatch,...).
+  Its embedded `sky.fsh` + `include/mcsm_visuals.glsl` DIFFER from main's
+  copies — main was stale. **Repo copies have been synced FROM the jar first,
+  then edited.**
+- Java edits were impossible to compile-verify → **no Java changed this phase**
+  (standing rule: javac after any Java edit). The glare-size slider and the
+  extras-tab scroll fix are wired shader-side and queued for the toolchain
+  phase (see backlog §13).
+
+### What changed in 1.9.96 (all shader-side, all validated 42/42 by the new
+### `glslcheck/shimcheck.py` offline glslang harness — shims are compile-only):
+1. **Glare blob half size & centred on the storm** (`include/mcsm_visuals.glsl`):
+   extent `mix(24,36°)` → `* 2.0 * mcsmSize` with **default mcsmSize = 0.5**
+   (half, per user). Carrier band **FogRenderDistanceStart 9001..9299** =
+   size×10 ready for the Java slider (range 0.1..3.0 → up to ~3x the old
+   maximum). `mcsm_rd_start()` guards the band so fog never reads it.
+   **ANTIPODE FIX**: carrier decode result negated — frames 194701/195146 show
+   the mass mirrored both axes (boss→camera vector). This is also the
+   "clipping through the other side of the storm" fix. If a future frame shows
+   it opposite again, flip that one negation back first.
+2. **Glare more opaque**: occl heart 0.93→0.965, skirt 0.78→0.85, cap
+   0.95→0.97 ("a little more opaque, not too much").
+3. **5.5–5.9 palette**: halo 5.65–5.90 → (0.095,0.030,0.170) deep purple with
+   a tinsy blue; 5.48–5.60 pink-magenta nudged; `sky.fsh` 5.5 stop pinker
+   (measured Sep-3 stills kept as anchor, hue nudged pinkward per user) +
+   **new 5.7–5.9 "dark pink end" stop** so the range no longer holds one flat
+   colour. 5.0 turquoise / 7.0 measured row / SKY_DAY-NIGHT-DUSK arrays all
+   untouched.
+4. **Silhouette glow = blue** (`dabywitherstormmod:shaders/core/storm_glow.fsh`,
+   now tracked in `jar-overrides/`): luminance-preserving re-hue of the vertex
+   colour to blue (0.20,0.45,0.95); **white core washout 0.22→0.08** — that was
+   what blew the turquoise teeth marks out to white ("teeth still not
+   turquoise"). Teeth marks themselves already ARE turquoise in the *_e.png
+   textures (measured: rgb(71,240,225)); they now read through.
+5. **Phase-5.5 sun glare no longer orange + smaller**
+   (`dabywitherstormmod:shaders/post/storm_sun_glow.fsh`): luminance-preserving
+   re-hue yellow→dark-red/magenta with 22% blue note; wide halo pow 4→7 and
+   ×0.35→×0.18 (~8x smaller half-width).
+6. **Aurora borealis in the mod**: `mcsm_aurora()` in the include, called from
+   the clear-sky path of `core/sky.fsh`, night-gated + cold-biome-biased via
+   fog colour. Additive on top of the finished sky; reference gradients
+   untouched. Subtle (0.06). Shader-pack aurora still exists independently —
+   running both shows both (they're independent toggles).
+7. **World grade**: MCSM_SATURATION 1.06→**1.14**, MCSM_CONTRAST 1.04→**1.08**
+   ("more contrast and vivid"; kept far below the clipping 1.34 disaster).
+8. **Devourer body opacity**: `pngtools.py lift` — devourer_assets pngs'
+   5,080 semi-transparent texels (alpha 1..120) lifted to 200..253 (holes kept
+   0; "a little more opaque, not too much").
+9. fabric.mod.json version → 1.9.96-26.2-beta-mcsm. Jar: 2450 entries,
+   57,354,186 B, sha256 **6d31633602debd48b8fcc16ae1f7a32ed3b478cb2cd1d6abe81b3d2afd70638e**,
+   zip-tested clean. delivery/ README header updated; sha256.txt regenerated.
+   NOTE: the `[mcsm]` in-log banner still prints the 1.9.95 string (it is a
+   compiled class; no Java rebuild this phase) — cosmetic only.
+
+### Build-from recipe this session (no network, no JDK)
+```
+git fetch origin heress
+git show FETCH_HEAD:dabywitherstormmod-1.9.95-26.2-beta-mcsm.jar > /tmp/dl/mod95.jar
+unzip to /tmp/fx/cls; overlay repo files (mcsm-core-shaders/* +
+jar-overrides/*); bump fabric.mod.json version; zip -q -r -X.
+Validate GLSL first: python3 glslcheck/shimcheck.py mcsm-core-shaders \
+  jar-overrides/.../storm_glow.fsh jar-overrides/.../storm_sun_glow.fsh  # 42/42
+```
+
+## 13. PHASE 30+ BACKLOG (needs network for JDK + client.jar, or the gradle
+    source build on branch heress — its MIT licence allows editing with
+    attribution; roadmap at docs/WITHER_STORM_FEATURE_ROADMAP.md)
+User-ordered, 2026-09-04 message:
+- **Extras-tab sliders**: "clicked it, just went plus and minus, nothing to
+  scroll" — rows appended past the scroll viewport; fix scroll-bounds refresh
+  after McsmGuiExtrasRows adds; add **Glare Size slider** (carrier band 9001..
+  9299 already decoded shader-side), aurora/smoke/supernova toggles.
+- **Config-screen overhaul**: MCSM-accurate layout, "Save & Quit" slot,
+  Episode-One button ("The Order of the Stone"), intro (camera drifts down
+  through clouds to the character), three white side bars toggle (default on).
+- **Silhouette placement**: colour is now shader-blue; "all the way around the
+  sides" needs quad placement in a Java patch (extend McsmSilhouetteWrapPatch).
+- **Tentacle attacks**: grab/sway/slam players, smash buildings; earthquakes,
+  ground splits scaling with phase.
+- **Supernova ring at phase-up** (colour wave, giant transparent blue→purple
+  rings that fell trees/blocks and blast the player; default ON, config-gated).
+- **Smoke screen**: skull impacts → grey ground smoke + yellow electric sparks
+  + crackle noise (default ON, config-gated).
+- **Phase 5.5+ purple lightning from the sky** + **purple floating motes** all
+  over the sky after phase 5 (config-gated).
+- **Dust waves** trailing the storm's swoops against blocks (config-gated).
+- **Ambient block-lift particles** (tiny block-textured debris lifting near the
+  storm even off-beam) + **phase-5 black smoke drift** (TNT-smoke style, black).
+- **Command block**: 3D command block model, purple side palette like the
+  reference, cycling colours, dented 3-dot texture animating, night glow like
+  RGB; shift+click the core in-world → big control menu (summon, every
+  ability), with vanilla command-block UI as the other option.
+- **Gameplay layout**: inventory to the top-left (MCSM-like), look-down
+  first-person body (arms/legs), place-items-on-crafting-table interaction.
+- **Storm rain-phase tractor beams pull players onto debris clusters the
+  player can stand on** (all phases).
+- **Ground shadows not moving**: get the user's latest.log, read the
+  [dabywitherstormmod][shadow] / [mcsm] lines per LOG_GUIDE.txt before editing
+  anything (McsmShadowTrackPatch exists in 1.9.95).
+- **Porch/emissive story-lighting** on story-relevant blocks (Iris pack
+  block-id work or mod lightmap), more atmospheric night towns.
