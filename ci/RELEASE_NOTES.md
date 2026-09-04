@@ -5,6 +5,15 @@ fabric-api, Sodium, Iris, cloth-config — the usual stack). Remove any older
 `dabywitherstormmod` jar first. Everything needed (textures, shaders, mixins)
 is embedded in the jar.
 
+## Download
+
+The jar is committed right in this repository (binary uploads to GitHub
+Releases were blocked from the build environment, so the repo IS the store):
+
+- **Direct jar link:** https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a06df7-lowuuuuuu/delivery/dabywitherstormmod-1.9.97-26.2-beta-mcsm.jar
+- File page (Download button): https://github.com/Loganwall111/Lowuuuuuu/blob/arena/01a06df7-lowuuuuuu/delivery/dabywitherstormmod-1.9.97-26.2-beta-mcsm.jar
+- Integrity list (sha256): https://github.com/Loganwall111/Lowuuuuuu/raw/arena/01a06df7-lowuuuuuu/delivery/sha256.txt
+
 ## Highlights in this build
 
 - **Storm glare lives in the skybox, centred on the storm** — antipode bug
