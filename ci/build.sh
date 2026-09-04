@@ -14,6 +14,7 @@
 #         bash ci/build.sh 1.9.98     # explicit
 # ============================================================================
 set -euo pipefail
+set -x   # MCSM 1.9.100: full trace so a red run names the exact command
 
 VER="${1:-$(cat VERSION | tr -d '[:space:]')}"
 JAR_ID="${VER}-26.2-beta-mcsm"
@@ -27,11 +28,28 @@ mkdir -p "$DL"
 fetch() { # url -> file
   local out="$DL/$(basename "$2")"
   if [ ! -s "$out" ]; then
-    curl -fsSL --retry 3 --retry-delay 3 -o "$out" "$1"
+    curl -fsSL --retry 3 --retry-delay 3 -o "$out" "$1" || {
+      echo "[deps] FAILED to download $1"; return 1; }
   fi
   echo "[deps] $(basename "$out") $(stat -c%s "$out") B"
 }
-fetch "https://piston-data.mojang.com/v1/objects/2dc72797acbc1b63fc16a11c4ac393605f453754/client.jar" client.jar
+
+# MCSM 1.9.100 -- the Minecraft client jar is resolved from the LIVE version
+# manifest instead of a hardcoded object hash. A stale hash 404s and kills the
+# build in seconds with no useful message (exactly what run 33930633043 looked
+# like). Falls back to the pinned hash if the manifest cannot be reached.
+export MC_VER="${MC_VER:-26.2}"
+CLIENT_URL="https://piston-data.mojang.com/v1/objects/2dc72797acbc1b63fc16a11c4ac393605f453754/client.jar"
+MANIFEST="$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v2.json || true)"
+if [ -n "$MANIFEST" ]; then
+  VURL="$(printf '%s' "$MANIFEST" | python3 -c 'import json,sys; m=json.load(sys.stdin); v=[x for x in m["versions"] if x["id"]==__import__("os").environ.get("MC_VER","26.2")]; print(v[0]["url"] if v else "")' || true)"
+  if [ -n "$VURL" ]; then
+    RESOLVED="$(curl -fsSL "$VURL" | python3 -c 'import json,sys; print(json.load(sys.stdin)["downloads"]["client"]["url"])' || true)"
+    if [ -n "$RESOLVED" ]; then CLIENT_URL="$RESOLVED"; fi
+  fi
+fi
+echo "[deps] minecraft $MC_VER -> $CLIENT_URL"
+fetch "$CLIENT_URL" client.jar
 fetch "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar" mixin.jar
 fetch "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar" jspecify.jar
 fetch "https://repo1.maven.org/maven2/it/unimi/dsi/fastutil/8.5.15/fastutil-8.5.15.jar" fastutil.jar
