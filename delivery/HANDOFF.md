@@ -754,3 +754,34 @@ Verified in sky.fsh (line ~93); REVERT restores the documented "was" values.
 shimcheck 40/40. Jar re-rolled with the WHOLE mcsm-core-shaders tree this time
 (core/ + include/) so a future roll cannot drift from source: sha256
 36ead130096f2f5955c5dd26ffca6dc82d570ec80e3d03ef695e36f5611f21a1.
+
+### Phase 30c (2026-09-04) — MCSM 1.9.100: the mass is a MAP PIN, not a heart
+User correction after seeing 1.9.99: "the shape actually is not a heart I was
+wrong. The exact shape ... a minimalist black outline of a map pin icon ... The
+top of the shape is flattened into a completely straight, horizontal line with
+rounded corners that curve smoothly down into a single sharp point at the
+bottom." Also confirmed the reference's near-black upper area is SKY (not the
+creature), so the 1.9.99 dome retune stays.
+Implementation (mcsm_visuals.glsl): the heart implicit is gone. The silhouette
+is now a half-width profile w(y) in the dome plane, y up, origin on the storm:
+    y in [H-r, H]  :  w = (W - r) + sqrt(r^2 - (y-(H-r))^2)   rounded corners
+    y in [-D, H-r] :  w = W * pow((y+D)/(H-r+D), k)           k<1 sweeps the
+                      shoulders out before converging on one cusp
+Top edge = straight horizontal segment |x| <= W-r (75% of width at r = 0.25W);
+w -> 0 at y = -D gives the single sharp point. Exactly one cusp, no notch.
+Boundary radius by 6-step bisection (the pin is star-shaped about the origin).
+Constants (grid-fitted against the reference's per-row dark coverage):
+    W 1.95   H 0.78   D 2.80   r 0.49 (=0.25W)   k 0.68
+    W = 2.00 scored 0.081 vs 0.093 but left only ~27% of the frame as sky at
+    mid-height; 1.95 keeps ~30%, so the storm stays readable.
+Result, mean |error| over 9 sky rows:
+    1.9.98 disc 0.580  ->  1.9.99 heart 0.200  ->  1.9.100 pin 0.076
+    row     0.04  0.11  0.18  0.25  0.32  0.39  0.46  0.54  0.61
+    ref     0.81  0.98  1.00  0.89  0.80  0.63  0.80  0.66  0.41
+    1.9.100 1.00  1.00  0.96  0.89  0.80  0.75  0.68  0.63  0.56
+Renamed mcsm_heart_field/mcsm_heart_cover -> mcsm_mass_field/mcsm_mass_cover
+(cloud pass updated to match). shimcheck 40/40.
+Artifact: delivery/preview_halo_vs_reference_1.9.100.png (reference | ours).
+Release 1.9.100 built from the clean 1.9.98 base (not the re-rolled 1.9.99) with
+the full mcsm-core-shaders tree overlaid: 2450 entries, sha256
+03cbed79a8c16d419eef69b6cb36cbb56b95ff081ebfc97b15289d8d50d6f1dd.

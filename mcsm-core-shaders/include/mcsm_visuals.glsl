@@ -505,45 +505,64 @@ vec3 mcsm_halo_color(float p) {
 // sets the BRIGHTNESS. Multiplying the raw dim tints could never out-glow a
 // dark dome (pre-flight simulation: rim/dome 0.84x at phase 5.3 -- a dark
 // smudge, not the ~1.9x brighter mass of frame 195058).
-// ------------------------------------------------------- heart / V silhouette
-// MCSM 1.9.99 -- SHAPE REBUILD (user reference 2026-09-04 182220, "halo
-// accuracy comparison"). Measured off the reference frame, the mass is NOT a
-// disc:
-//   * the top is a near-black slab that spans the whole frame (luminance
-//     0.015-0.02; the cloud deck is completely gone behind it),
-//   * the lower boundary converges into a wide V whose arms run a long way
-//     down BOTH sides of the storm,
-//   * all the colour lives on the outer skirt/rim of that V, never inside.
-// The old field was `ang / outer` -- a perfect circle that also stayed far too
-// bright in the middle. Replaced by a vertically STRETCHED heart implicit:
-// two lobes at the top, a shallow notch at top centre, one cusp (the V tip) at
-// the bottom. The radial profile below is unchanged in spirit, it is just fed
-// the heart's own normalised radius instead of a circular one.
+// ------------------------------------------------------ map-pin silhouette
+// MCSM 1.9.100 -- SHAPE CORRECTION. The user looked at 1.9.99 and ruled:
+// "the shape actually is not a heart ... The top of the shape is flattened
+// into a completely straight, horizontal line with rounded corners that curve
+// smoothly down into a single sharp point at the bottom" -- a minimalist MAP
+// PIN. So the heart implicit of 1.9.99 (two lobes + a notch) is gone.
 //
-// Classic heart implicit, y up. Interior where f < 0:
-//     f(x,y) = (x*x + y*y - 1)^3 - x*x * y*y*y
-//   * (0,-1) is the bottom cusp, (0,+1) is the top-centre notch,
-//   * the lobes peak near (+-0.6, +1.2), widest around y ~ +0.5.
-// Star-shaped about the origin, so a bisection along the ray finds the
-// boundary in 5 steps.
-float mcsm_heart_radius(vec2 d) {
-    float lo = 0.0, hi = 1.60;
-    for (int i = 0; i < 5; i++) {
+// Built as a half-width profile w(y) in the dome plane (y up, origin on the
+// storm's centre), which is what makes the flat top exact:
+//   y in [H-r, H]  :  w = (W - r) + sqrt(r^2 - (y-(H-r))^2)   rounded corners
+//   y in [-D, H-r] :  w = W * pow((y+D)/(H-r+D), k)           k < 1 sweeps the
+//                     sides outward before they converge on the single point
+// The top edge is a straight horizontal segment |x| <= W-r (75% of the width
+// at r = 0.25W), the outer 25% is the corner arc, and w -> 0 at y = -D gives
+// one sharp cusp at the bottom. No notch, no lobes -- one point, not three.
+//
+// Fitted (not guessed): the reference frame's per-row dark-coverage profile
+// was measured and a grid search over (W, H, D, k) minimised the difference
+// over the sky rows. Mean error over 9 rows:
+//   1.9.98 disc 0.580  ->  1.9.99 heart 0.200  ->  1.9.100 pin 0.093
+// W = 2.00 scored marginally better (0.081) but left only ~27% of the frame
+// as sky at mid-height; 1.95 keeps ~30% so the storm stays readable.
+const float MCSM_PIN_W = 1.95;   // half width (old disc radius == 1.0)
+const float MCSM_PIN_H = 0.78;   // height of the flat top above centre
+const float MCSM_PIN_D = 2.80;   // depth of the point below centre
+const float MCSM_PIN_R = 0.49;   // corner radius = 0.25 W
+const float MCSM_PIN_K = 0.68;   // side sweep (<1 bulges the pin's shoulders)
+
+float mcsm_pin_width(float y) {
+    float hr = MCSM_PIN_H - MCSM_PIN_R;
+    if (y > hr) {
+        float dy = y - hr;
+        return (MCSM_PIN_W - MCSM_PIN_R) + sqrt(max(MCSM_PIN_R * MCSM_PIN_R - dy * dy, 0.0));
+    }
+    float u = (y + MCSM_PIN_D) / (hr + MCSM_PIN_D);
+    return MCSM_PIN_W * pow(max(u, 0.0), MCSM_PIN_K);
+}
+
+// Boundary radius along a unit dome-plane direction d (y up), by bisection --
+// the pin is star-shaped about the origin, so it has one crossing per ray.
+float mcsm_pin_radius(vec2 d) {
+    float lo = 0.0, hi = 4.0;
+    for (int i = 0; i < 6; i++) {
         float m = 0.5 * (lo + hi);
-        vec2  q = d * m;
-        float s = q.x * q.x + q.y * q.y - 1.0;
-        float f = s * s * s - q.x * q.x * q.y * q.y * q.y;
-        if (f < 0.0) lo = m; else hi = m;
+        float y = d.y * m;
+        bool inside = (y <= MCSM_PIN_H) && (y >= -MCSM_PIN_D)
+                   && (abs(d.x * m) <= mcsm_pin_width(y));
+        if (inside) lo = m; else hi = m;
     }
     return 0.5 * (lo + hi);
 }
 
-// Dome-plane heart field for a view ray.
-//   .x = u      0 at the centre .. 1 on the heart's edge (the profile param)
-//   .y = upness 0 at the bottom tip .. 1 at the top of the mass
+// Dome-plane pin field for a view ray.
+//   .x = u      0 at the centre .. 1 on the silhouette edge
+//   .y = upness 0 at the bottom point .. 1 across the flat top
 //   .z = inside 1 inside the silhouette, 0 outside
 // outer = the old circular radius in DEGREES (keeps the size slider working).
-vec3 mcsm_heart_field(vec3 wd, vec3 bd, float outer) {
+vec3 mcsm_mass_field(vec3 wd, vec3 bd, float outer) {
     float cd = dot(wd, bd);
     if (cd <= 0.02) return vec3(2.0, 0.5, 0.0);
     vec3 upRef = abs(bd.y) > 0.985 ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0);
@@ -551,45 +570,30 @@ vec3 mcsm_heart_field(vec3 wd, vec3 bd, float outer) {
     vec3 ey = cross(bd, ex);                    // "up" along the dome
     // gnomonic projection onto the dome plane, normalised so 1.0 == old radius
     vec2 s = vec2(dot(wd, ex), dot(wd, ey)) / (cd * tan(radians(outer)));
-    // STRETCH: 1.50x wider than the old disc, 1.45x taller, and the lower half
-    // gets another 1.70x so the V runs "pretty far down the side" (the tip
-    // lands past the bottom of the frame whenever the storm is high, which is
-    // what the reference shows). The upper half is held to 0.72x: at 0.85 the
-    // lobes overshot the top of the frame whenever the storm sat above the
-    // crosshair, so the notch and the two lobes were cropped off and the whole
-    // thing read as a plain wedge. 0.72 keeps the full heart (lobes + notch +
-    // V tip) inside a 70 degree frame.
-    // These three numbers were FITTED, not guessed: the reference frame's
-    // per-row "dark coverage" profile was measured (pure-python PNG decode) and
-    // a grid search over the stretch triple minimised the difference over the
-    // sky rows. 1.15/1.38/1.25 scored 0.20 mean error, 1.50/1.45/1.70 scores
-    // 0.14 -- nearly all of the residual is the reference's own storm body and
-    // attachments, which a sky shader cannot draw.
-    float vs = s.y < 0.0 ? 1.70 : 0.72;
-    vec2  hs = vec2(s.x / 1.50, s.y / (1.45 * vs));
-    float hl = length(hs);
-    vec2  hd = hl > 1e-5 ? hs / hl : vec2(0.0, 1.0);
-    float u  = hl / max(mcsm_heart_radius(hd), 1e-3);
-    return vec3(u, clamp(hs.y * 0.55 + 0.5, 0.0, 1.0), u <= 1.0 ? 1.0 : 0.0);
+    float hl = length(s);
+    vec2  d  = hl > 1e-5 ? s / hl : vec2(0.0, 1.0);
+    float u  = hl / max(mcsm_pin_radius(d), 1e-3);
+    float upness = clamp((s.y / MCSM_PIN_H) * 0.5 + 0.5, 0.0, 1.0);
+    return vec3(u, upness, u <= 1.0 ? 1.0 : 0.0);
 }
 
 // Coverage only (no colour): how much of the sky this ray hides. Shared with
 // the cloud pass so the deck disappears behind the mass exactly where the
 // dome blob is opaque (user: "you can't even see the clouds at the very top
 // of the storm").
-float mcsm_heart_cover(vec3 wd, vec3 bd, float p) {
+float mcsm_mass_cover(vec3 wd, vec3 bd, float p) {
     float mcsmSize = mcsm_glare_size();
     float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
     float ang = degrees(acos(clamp(dot(normalize(wd), normalize(bd)), -1.0, 1.0)));
-    if (ang >= outer * 2.4) return 0.0;
-    vec3 f = mcsm_heart_field(normalize(wd), normalize(bd), outer);
+    if (ang >= outer * 3.0) return 0.0;
+    vec3 f = mcsm_mass_field(normalize(wd), normalize(bd), outer);
     if (f.z < 0.5) return 0.0;
     float u = clamp(f.x, 0.0, 1.0);
     float heart = 1.0 - smoothstep(0.34, 0.82, u);
     float skirt = (1.0 - heart) * (1.0 - smoothstep(0.82, 0.96, u));
     float band  = smoothstep(0.72, 0.90, u) * (1.0 - smoothstep(0.93, 1.0, u));
     float o = clamp(0.992 * heart + 0.94 * skirt + 0.34 * band, 0.0, 0.99);
-    // the very top of the mass is a black slab -- no cloud gets through
+    // across the flat top the mass is a black slab -- no cloud gets through
     return mix(o, 0.995, smoothstep(0.42, 0.98, f.y) * 0.9);
 }
 
@@ -603,9 +607,9 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     // triggered "shrink the glare" was the post sun halo, fixed there.
     float mcsmSize = mcsm_glare_size();
     float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
-    if (ang >= outer * 2.4) return vec4(0.0, 0.0, 0.0, 0.0);
-    // ---- shape: stretched heart, V tip at the bottom ----------------------
-    vec3 fld = mcsm_heart_field(wd, bd, outer);
+    if (ang >= outer * 3.0) return vec4(0.0, 0.0, 0.0, 0.0);
+    // ---- shape: map pin, flat top, single point at the bottom -------------
+    vec3 fld = mcsm_mass_field(wd, bd, outer);
     if (fld.z < 0.5) return vec4(0.0, 0.0, 0.0, 0.0);
     float u = clamp(fld.x, 0.0, 1.0);   // 0 at the storm -> 1 at the edge
     // topdark: 0 at the bottom tip, 1 across the top slab. The reference is
