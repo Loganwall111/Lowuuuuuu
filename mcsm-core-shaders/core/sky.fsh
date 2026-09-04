@@ -77,10 +77,28 @@ vec3 mcsm_storm_dome(float up, float p) {
             mcsm_ramp(p, 5.15, 5.23));                                                                // 5.2 pinker
     d = mix(d, mcsm_col(up, vec3(0.028, 0.005, 0.064), vec3(0.074, 0.018, 0.110), vec3(0.138, 0.037, 0.175)),
             mcsm_ramp(p, 5.26, 5.34));                                                                // 5.3 dark purple
-    d = mix(d, mcsm_col(up, vec3(0.150, 0.055, 0.175), vec3(0.330, 0.118, 0.282), vec3(0.505, 0.235, 0.392)),
-            mcsm_ramp(p, 5.42, 5.52));                                                                // 5.5 light pink, purple overhead (1.9.96: pinker per user note "more pinkish and purplish but not too purple"; 1.9.95 measured top (53,17,57) lower (92,40,74))
-    d = mix(d, mcsm_col(up, vec3(0.108, 0.032, 0.116), vec3(0.238, 0.076, 0.208), vec3(0.428, 0.152, 0.348)),
-            mcsm_ramp(p, 5.70, 5.90));                                                                // 1.9.96 5.7-5.9: "dark pink end" -- keeps pink alive toward 6 instead of holding the flat 5.5 stop
+    // MCSM 1.9.99 -- 5.5 stop RETUNED BY FIT against the reference frame
+    // (uploads/Screenshot 2026-09-04 182220). Measured per-cell on an 8x6 grid
+    // of the upper sky, our dome read too bright AND too red vs the reference:
+    // mean |dLum| 0.032, mean |dHue| 0.45. Grid search on (brightness, blue)
+    // put the optimum at 0.80x mid brightness / 1.50-1.80x blue -> dHue 0.34.
+    //   was: zenith (0.150,0.055,0.175) mid (0.330,0.118,0.282)
+    //        horizon (0.505,0.235,0.392)   -- lum 0.084 / 0.174 / 0.303
+    //   now: zenith (0.067,0.022,0.134) mid (0.099,0.032,0.150)
+    //        horizon (0.505,0.205,0.580)   -- lum 0.040 / 0.054 / 0.298
+    // The MID stop is the one that mattered: it alone drives elevations
+    // 10-45 deg, and it was 3.2x brighter than the reference there. The
+    // horizon stop keeps its brightness (its blue/red only goes 0.78 -> 1.15,
+    // so the low band stays pink-dominant) and the zenith is pushed darker
+    // still so looking straight up reads black. Fit score over 32 sky cells:
+    // mean |dLum| 0.0324 -> 0.0279, mean |dHue| 0.4529 -> 0.396.
+    // REVERT by restoring the "was" line if the pinker 1.9.96 sky is preferred.
+    d = mix(d, mcsm_col(up, vec3(0.067, 0.022, 0.134), vec3(0.099, 0.032, 0.150), vec3(0.505, 0.205, 0.580)),
+            mcsm_ramp(p, 5.42, 5.52));                                                                // 5.5 violet-pink, near-black overhead (1.9.99 fit to reference)
+    // 5.7-5.9 keeps the user's "dark pink end" but takes a milder 1.3x blue so
+    // the sky does not snap back to pink the moment phase crosses 5.7.
+    d = mix(d, mcsm_col(up, vec3(0.108, 0.032, 0.151), vec3(0.238, 0.076, 0.270), vec3(0.428, 0.152, 0.452)),
+            mcsm_ramp(p, 5.70, 5.90));                                                                // 1.9.99 5.7-5.9: dark violet-pink end
     d = mix(d, mcsm_col(up, vec3(0.099, 0.067, 0.108), vec3(0.162, 0.108, 0.159), vec3(0.265, 0.170, 0.207)),
             mcsm_ramp(p, 5.96, 6.10));                                                                // 6.0 grey + bit of purple
     // MCSM 1.9.81: retargeted from a REAL rendered frame (Screenshot

@@ -720,3 +720,37 @@ Artifact: delivery/preview_halo_vs_reference_1.9.99.png -- LEFT is the user's
 reference crop, RIGHT is our render, same framing, same size.
 1.9.99 jar re-rolled with the fitted numbers: sha256
 058da7fe3a5b10c317b80f6b5b4f844bdfbd56c0118f733607b284dd1ad05656.
+
+#### Phase 30b-3 — the COLOUR fit (same reference, third measurement pass)
+The shape fit was done; the colour gap was still open, so the reference was
+measured per-cell (8x6 grid, upper sky) against our render, comparing BOTH
+luminance and hue normalised to unit luminance.
+Finding: our 5.5 dome was too bright AND too red. Sampled frame-edge sky cells:
+    cell   reference                     1.9.96 (old dome)          1.9.99 (fitted)
+    r2c0   #260e3e lum .089 h1.68:.62:2.75   #591d53 .179 h1.95:.64:1.82   #351241 .113 h1.84:.62:2.25
+    r2c7   #2f134a lum .113 h1.62:.66:2.56   #4c1549 .143 h2.09:.58:2.00   #240835 .067 h2.09:.47:3.08
+    r3c0   #320c4e lum .097 h2.01:.48:3.14   #531748 .154 h2.11:.59:1.83   #20072c .059 h2.14:.47:2.94
+Blue/red at the frame edges was 1.8-2.0 where the reference reads 2.6-3.1.
+Sanity check that proved the dark top is SKY, not the creature: local contrast
+(mean |px - 3px neighbour|) is 0.0012-0.0021 in the reference's dark upper
+bands vs 0.0181 on the ground -- a textured creature surface would be noisy,
+a sky gradient is flat. So the dome really did need to be darker.
+Grid search on (zenith, mid, horizon brightness) x blue boost, 32 sky cells:
+    A 1.9.96 as-is            dLum 0.0324  dHue 0.4529
+    B fitted extreme (mid .25) dLum 0.0282  dHue 0.3829
+    C moderate    (mid .40)    dLum 0.0279  dHue 0.4072
+    D darker mid  (mid .30)    dLum 0.0280  dHue 0.3959
+Chose D with an extra-dark zenith (the zenith barely affects the score because
+the mass covers it in this framing, but it is what you see when you look up):
+    5.5 dome stops  zenith (0.067,0.022,0.134)  mid (0.099,0.032,0.150)
+                    horizon (0.505,0.205,0.580)
+    luminance 0.084/0.174/0.303 -> 0.040/0.054/0.298
+The MID stop was the culprit: it alone drives elevations 10-45deg and was 3.2x
+brighter than the reference there. The horizon stop keeps its brightness and
+only goes blue/red 0.78 -> 1.15, so the low band stays pink-dominant and the
+standing "5.5 sky pinkish/purplish" rule survives. 5.7-5.9 keeps a milder 1.3x
+blue so the sky does not snap back to pink at phase 5.7.
+Verified in sky.fsh (line ~93); REVERT restores the documented "was" values.
+shimcheck 40/40. Jar re-rolled with the WHOLE mcsm-core-shaders tree this time
+(core/ + include/) so a future roll cannot drift from source: sha256
+36ead130096f2f5955c5dd26ffca6dc82d570ec80e3d03ef695e36f5611f21a1.
