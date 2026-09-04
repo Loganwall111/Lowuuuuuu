@@ -65,10 +65,25 @@ python3 glslcheck/shimcheck.py mcsm-core-shaders \
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
+mkdir -p out
 CP="$DL/client.jar:$BASE:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
-javac -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
-  $(find mcsm-extras/java -name '*.java')
-echo "[javac] OK: $(find /tmp/mcsm-build -name '*.class' | wc -l) classes"
+# MCSM 1.9.100 -- a javac failure used to kill the job outright, so a compile
+# error in ONE java file meant the user got no jar at all -- not even the
+# shaders that were already finished. Now a failed compile is survivable: the
+# jar is still assembled from the previous classes + the current shaders, the
+# first 60 lines of javac output are written to out/JAVAC_FAILED.txt, and the
+# run is flagged with a GitHub error annotation (red, but with an artifact).
+JAVAC_LOG=/tmp/mcsm-javac.log
+if javac -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
+     $(find mcsm-extras/java -name '*.java') > "$JAVAC_LOG" 2>&1; then
+  echo "[javac] OK: $(find /tmp/mcsm-build -name '*.class' | wc -l) classes"
+  rm -f out/JAVAC_FAILED.txt
+else
+  echo "::error::javac FAILED -- this jar has the NEW SHADERS but the OLD Java classes. See out/JAVAC_FAILED.txt"
+  head -60 "$JAVAC_LOG" > out/JAVAC_FAILED.txt
+  cat out/JAVAC_FAILED.txt
+  echo "[javac] FAILED (continuing with a shaders-only jar)"
+fi
 
 echo "[assemble] overlay onto base"
 FX=/tmp/mcsm-fx

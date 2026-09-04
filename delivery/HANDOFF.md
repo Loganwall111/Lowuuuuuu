@@ -818,3 +818,41 @@ without touching the jar. pack.mcmeta reuses the project's own pack_format 15
 (the value in the mod jar), so Minecraft may flag it red/incompatible --
 enabling it anyway is harmless. Remove it after running ci/build.ps1, which
 bakes the same files into the jar.
+
+### Phase 30e (2026-09-04) — the GitHub Actions build: status + honest inventory
+The user installed ci/workflows/build-mcsm.yml as .github/workflows/build-mcsm.yml
+(I cannot: pushes are rejected with "refusing to allow a GitHub App to create or
+update workflow ... without `workflows` permission", and `gh workflow run`
+returns 403 "Resource not accessible by integration"). Consequences:
+  * ONLY the user's pushes/clicks start a build. My pushes do NOT trigger runs.
+    Verified: branch head 9fcce7f produced no run.
+  * I cannot read runner logs (results-receiver.actions.githubusercontent.com
+    is unreachable from the sandbox); `gh run view --log-failed` EOFs.
+  * I cannot create GitHub releases at all (uploads.github.com EOFs on both a
+    68 MB jar and a 37 KB zip), but the workflow publishes them from the runner.
+First run (33930633043) failed at "Build the jar" (bash ci/build.sh, exit 1) in
+~20 s. Hardening applied since:
+  1. `set -x` full trace so a red run names the exact command.
+  2. client.jar resolved from the LIVE version manifest
+     (piston-meta.mojang.com) instead of the pinned object hash -- a stale hash
+     404s and kills the build in seconds, which matches the observed timing.
+     Falls back to the pinned hash; fallback path tested locally (clean exit).
+  3. javac failure is now SURVIVABLE: the jar is still assembled from the old
+     classes + current shaders, the first 60 lines of javac output go to
+     out/JAVAC_FAILED.txt, and a ::error:: annotation reddens the run. Before,
+     one bad java file meant the user got no jar at all.
+MIXIN REGISTRY (checked): the jar's mcsm_extras.mixins.json lists 13 mixins but
+only 6 have sources in mcsm-extras/java. Seven exist ONLY as compiled .class
+files in the jar: McsmCemModelPatch, McsmFoglessEyesPatch, McsmShadowTrackPatch,
+McsmSilhouetteWrapPatch, McsmStormBackdropPatch, McsmTeethGlowPatch,
+McsmTeethTexturePatch. build.sh overlays and never deletes, so they keep
+working -- but they cannot be edited until the sources are recovered.
+HONEST INVENTORY (1125 lines of Java, 14 files) -- what the build WILL deliver:
+  config-screen fix + McsmExtrasScreen control panel, storm grab/rise fx,
+  beacon storm + beacon block, spiral, visibility, shader gate (Iris), blob
+  carrier + gradient tick, storm relay fx, diagnostics.
+  NOT WRITTEN AT ALL (backlog, not "waiting for a compile" -- do not promise
+  these from a build): smoke screen, reality tear + corruption spread, command
+  wire / holographic terminal, death shockwave + supernova DRIVER (the shader
+  side exists but nothing stamps its carrier), obliterate flash action,
+  inventory/HUD move to the side, MCSM structures, MCSM instructions.
