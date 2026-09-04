@@ -1,0 +1,55 @@
+name: Build MCSM Wither Storm jar
+
+on:
+  push:
+    branches: [arena/01a06df7-lowuuuuuu]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mcsm-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Build the jar
+        run: bash ci/build.sh
+
+      - name: Upload built jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcsm-jar-${{ github.run_number }}
+          path: |
+            out/*.jar
+            out/*.sha256
+
+      - name: Publish release when VERSION is new
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="mcsm-${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists — leaving it alone"
+          else
+            gh release create "$TAG" \
+              --repo Loganwall111/Lowuuuuuu \
+              --target "${GITHUB_REF#refs/heads/}" \
+              --title "MCSM Wither Storm ${VER}-26.2-beta" \
+              --notes-file ci/RELEASE_NOTES.md \
+              out/*.jar out/*.sha256
+          fi
