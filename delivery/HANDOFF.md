@@ -555,3 +555,30 @@ User-ordered, 2026-09-04 message:
   anything (McsmShadowTrackPatch exists in 1.9.95).
 - **Porch/emissive story-lighting** on story-relevant blocks (Iris pack
   block-id work or mod lightmap), more atmospheric night towns.
+
+### Phase 30 additions (user, 2026-09-04 second message) — append to backlog §13
+- **Death cinematic**: while dying the storm cracks open — WHITE cracks spread
+  over the body — then it falls to the ground in SEGMENTS (breaks into chunks
+  as it drops). Layered with the command-block shatter.
+- **Obliterate flash**: the command block erases mobs/entities "out of
+  existence" with a single flash — including players (knockout-style); an
+  optional prank "kick player" variant. Must be config-gated; delete default
+  ON, kick default OFF (grief-safe), both configurable.
+- **Command Wire** (new block, never in MCSM): wires into the command block
+  like redstone; with a lever attached it opens a **gigantic holographic
+  terminal window** — summon/dismiss the storm, choose who it follows
+  (Ivor's "programmed to follow the amulet" made playable), orders, ride-a-mob
+  option, summon button. Alternative summon: command block on the ground with
+  a lever on EACH side in a circular ring — click a lever → instant summon.
+- **Shockwave/supernova timing clarified**: the expanding ring blast happens
+  on entering **phase 4**, again at **phase 7**, and once more **when killed**
+  — three triggers, all config-gated.
+
+### Phase-30 mechanics note
+171 decompiled mod sources exist on branch `heress` (clean Vineflower-style).
+Strategy stays ADDITIVE: new features as mcsm-extras classes + mixins +
+(allowed) our own Fabric entrypoint registered in fabric.mod.json — no edits
+to decompiled net.dabicco sources unless a feature truly can't hook around.
+ci/build.sh + .github/workflows/build-mcsm.yml now compile every push on
+GitHub Actions (JDK 25), run shimcheck, and publish a release when VERSION is
+new — "the GitHub compiler" the user asked for.
