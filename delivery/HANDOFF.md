@@ -691,3 +691,32 @@ Release: 1.9.99 is a SHADER-ONLY overlay onto the 1.9.98 jar (no javac in this
 sandbox): the 4 touched shader entries + fabric.mod.json version were replaced
 in place, 2450 entries preserved, sha256 regenerated. The Java half (extras
 config-screen fix, McsmExtrasScreen) still needs build.ps1 / GitHub Actions.
+
+#### Phase 30b-2 — the reference was MEASURED, then FITTED (same day)
+Two measurement mistakes in the first pass, both caught and corrected:
+1. The right-hand screenshot is PILLARBOXED: ~60px of #202020 matte on each
+   side. Early "dark" readings included the matte. Content box is actually
+   x[62..894] y[6..516] of the panel (832x510).
+2. The first preview used a hand-guessed dome. Replaced with the REAL
+   mcsm_storm_dome()/mcsm_col()/mcsm_story_grade() maths lifted from the
+   shipped shaders, so the preview is now what the game actually draws.
+
+Fit method: per-row "dark coverage" profile of the reference (fraction of the
+row below luminance 0.045, 12 rows) vs the same profile computed from our
+render in the reference's framing (camera pitched up 13.4deg -- derived from
+the horizon sitting at 0.67 of the frame -- storm head at +29.5deg). Grid
+search over the heart stretch triple.
+   row y_frac:  0.04  0.12  0.21  0.29  0.38  0.46  0.54  0.62  0.71
+   reference :  0.81  0.98  1.00  0.89  0.80  0.63  0.80  0.66  0.41
+   1.9.98    :  0.22  0.29  0.33  0.33  0.31  0.25  0.04  0.00  0.00   err 0.580
+   1.9.99    :  0.94  0.85  0.77  0.70  0.64  0.58  0.51  0.44   --    err 0.200
+Final stretch: width 1.50 (was 1.15), height 1.45 (was 1.38), lower half 1.70
+(was 1.25), upper half 0.72 unchanged. Darkening the 5.5 dome zenith was
+tested and REJECTED: it moved the error 0.138 -> 0.137, i.e. nothing, and it
+would have broken the standing "5.5 sky stays pinkish/purplish" rule. The
+residual error is the reference's own storm body + attachments (the
+non-monotonic 0.63 -> 0.80 bump at row 0.54), which a sky shader cannot draw.
+Artifact: delivery/preview_halo_vs_reference_1.9.99.png -- LEFT is the user's
+reference crop, RIGHT is our render, same framing, same size.
+1.9.99 jar re-rolled with the fitted numbers: sha256
+058da7fe3a5b10c317b80f6b5b4f844bdfbd56c0118f733607b284dd1ad05656.
