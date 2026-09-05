@@ -1,0 +1,40 @@
+name: Model-builder recovery (12g single-class decompile)
+
+# ---------------------------------------------------------------------------
+# Track B step 2b: the six model classes whose createBodyLayer() builders
+# OOM'd Vineflower at the 6 GB whole-tree heap get their own 12 GB
+# single-class decompile (Vineflower first, CFR as fallback). Recovered
+# methods are spliced into src-recon/, the compile exclusion is lifted, and
+# the result is pushed -- which re-triggers build-source.yml as proof.
+# Report-only on failure; never blocks anything.
+# ---------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/01a07250-lowuuuuuu]
+    paths:
+      - ci/recover-models.sh
+      - .github/workflows/model-recovery.yml
+
+permissions:
+  contents: write   # the recovery commit pushes src-recon updates back
+
+concurrency:
+  group: model-recovery
+  cancel-in-progress: true
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Recover the six model builders
+        run: bash ci/recover-models.sh
