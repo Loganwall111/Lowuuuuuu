@@ -65,6 +65,14 @@ public final class McsmExtrasConfig {
     /** Force the world config on: building tear, corruption, shockwave
      *  particles, structure raids, withered mobs, cave rumble. */
     public static boolean forceMcsmWorld = true;
+
+    // MCSM 1.9.111 -- McsmShaderGatePatch forces ShaderPackCompat.active() to
+    // false so the mod draws its own visuals under Iris. Dabicco's look presets
+    // (Cinematic, Netflix) route part of their difference through that
+    // shader-pack path, so with the gate forced they appear to "do nothing".
+    // This toggle lets the player hand the answer back to the mod and A/B the
+    // presets without editing files.
+    public static boolean shaderPackGate = true;
     /** Taut glowing wire from the storm's core down to its ground anchor. */
     public static boolean commandWire = true;
     /** Brief a player the first time they get close to a live storm. */
@@ -95,6 +103,7 @@ public final class McsmExtrasConfig {
             p.setProperty("smudge_scale", String.valueOf(smudgeScale));
             p.setProperty("glare_size", String.valueOf(glareSize));
             p.setProperty("aurora_enabled", String.valueOf(auroraEnabled));
+            p.setProperty("shader_pack_gate", String.valueOf(shaderPackGate));
             p.setProperty("death_cinematic", String.valueOf(deathCinematic));
             p.setProperty("supernova_rings", String.valueOf(supernovaRings));
             p.setProperty("smoke_screen", String.valueOf(smokeScreen));
@@ -160,6 +169,7 @@ public final class McsmExtrasConfig {
                 glareSize = 0.58;
             }
             auroraEnabled      = bool(p, "aurora_enabled", auroraEnabled);
+            shaderPackGate     = bool(p, "shader_pack_gate", shaderPackGate);
             deathCinematic     = bool(p, "death_cinematic", deathCinematic);
             supernovaRings     = bool(p, "supernova_rings", supernovaRings);
             smokeScreen        = bool(p, "smoke_screen", smokeScreen);

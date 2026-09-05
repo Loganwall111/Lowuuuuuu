@@ -71,26 +71,39 @@ public final class McsmExtrasScreen extends Screen {
         int top = 34;
         final int fColW = colW;
 
+        // MCSM 1.9.111 -- the drawn header at y=12 never appeared in the
+        // player's screenshots, so the build number also rides as a widget
+        // row: widgets demonstrably render, and "which build is this panel?"
+        // becomes answerable at a glance, spanning both columns.
+        Button ver = Button.builder(
+                Component.literal("MCSM extras " + McsmExtrasConfig.BUILD_VERSION
+                                  + "  -- this build"), b -> { })
+                .bounds(left, top, fColW * 2 + gap, 20).build();
+        ver.active = false;
+        this.addWidget(ver);
+        this.chrome.add(ver);
+        this.baseY.put(ver, top);
+
         // ---- column 1: visuals ----------------------------------------------
-        addSlider(0, 0, fColW, gap, left, top, rowH, "Glare Size", "%.2fx",
+        addSlider(0, 1, fColW, gap, left, top, rowH, "Glare Size", "%.2fx",
                 0.25, 3.05, () -> McsmExtrasConfig.glareSize, v -> McsmExtrasConfig.glareSize = v);
-        addToggle(0, 1, fColW, gap, left, top, rowH, "In-Mod Aurora",
+        addToggle(0, 2, fColW, gap, left, top, rowH, "In-Mod Aurora",
                 () -> McsmExtrasConfig.auroraEnabled, v -> McsmExtrasConfig.auroraEnabled = v);
-        addToggle(0, 2, fColW, gap, left, top, rowH, "Death Cinematic",
+        addToggle(0, 3, fColW, gap, left, top, rowH, "Death Cinematic",
                 () -> McsmExtrasConfig.deathCinematic, v -> McsmExtrasConfig.deathCinematic = v);
-        addToggle(0, 3, fColW, gap, left, top, rowH, "Supernova Rings",
+        addToggle(0, 4, fColW, gap, left, top, rowH, "Supernova Rings",
                 () -> McsmExtrasConfig.supernovaRings, v -> McsmExtrasConfig.supernovaRings = v);
-        addToggle(0, 4, fColW, gap, left, top, rowH, "Smoke Screen + Sparks",
+        addToggle(0, 5, fColW, gap, left, top, rowH, "Smoke Screen + Sparks",
                 () -> McsmExtrasConfig.smokeScreen, v -> McsmExtrasConfig.smokeScreen = v);
-        addToggle(0, 5, fColW, gap, left, top, rowH, "Purple Sky (5.5+)",
+        addToggle(0, 6, fColW, gap, left, top, rowH, "Purple Sky (5.5+)",
                 () -> McsmExtrasConfig.purpleSky, v -> McsmExtrasConfig.purpleSky = v);
-        addToggle(0, 6, fColW, gap, left, top, rowH, "Dust Waves",
+        addToggle(0, 7, fColW, gap, left, top, rowH, "Dust Waves",
                 () -> McsmExtrasConfig.dustWaves, v -> McsmExtrasConfig.dustWaves = v);
-        addToggle(0, 7, fColW, gap, left, top, rowH, "Reality Tear",
+        addToggle(0, 8, fColW, gap, left, top, rowH, "Reality Tear",
                 () -> McsmExtrasConfig.realityTear, v -> McsmExtrasConfig.realityTear = v);
-        addToggle(0, 8, fColW, gap, left, top, rowH, "OG CEM Models",
+        addToggle(0, 9, fColW, gap, left, top, rowH, "OG CEM Models",
                 () -> McsmExtrasConfig.ogCemModels, v -> McsmExtrasConfig.ogCemModels = v);
-        addSlider(0, 9, fColW, gap, left, top, rowH, "Smudge Scale", "%.2fx",
+        addSlider(0, 10, fColW, gap, left, top, rowH, "Smudge Scale", "%.2fx",
                 0.10, 2.00, () -> McsmExtrasConfig.smudgeScale, v -> McsmExtrasConfig.smudgeScale = v);
 
         // ---- column 2: gameplay ---------------------------------------------
@@ -120,8 +133,12 @@ public final class McsmExtrasScreen extends Screen {
                 () -> McsmExtrasConfig.commandWire, v -> McsmExtrasConfig.commandWire = v);
         addToggle(1, 12, fColW, gap, left, top, rowH, "MCSM Instructions",
                 () -> McsmExtrasConfig.mcsmInstructions, v -> McsmExtrasConfig.mcsmInstructions = v);
+        // MCSM 1.9.111 -- hands the shader-pack answer back to the mod so the
+        // look presets can be A/B tested; see McsmShaderGatePatch.
+        addToggle(1, 13, fColW, gap, left, top, rowH, "Shader Pack Gate",
+                () -> McsmExtrasConfig.shaderPackGate, v -> McsmExtrasConfig.shaderPackGate = v);
 
-        this.contentBottom = top + 13 * rowH + 4;
+        this.contentBottom = top + 14 * rowH + 4;
         applyScrollLayout();
 
         Button done = Button.builder(Component.literal("Done"), b -> this.onClose())

@@ -339,7 +339,10 @@ public final class McsmFxDriver {
         int k = Math.min(RINGS.length - 1, (int) (t * RINGS.length));
         float[] c = RINGS[k];
         float[] n = RINGS[Math.min(RINGS.length - 1, k + 1)];
-        float scale = (float) (2.0D + fade * 3.0D);
+        // MCSM 1.9.111 -- motes twice as fat as before. At three hundred blocks
+        // a 2-scale dust particle is sub-pixel: the death WAS rendering (the
+        // chat lines proved the arming) and still read as nothing happening.
+        float scale = (float) (5.0D + fade * 5.0D);
 
         int segments = 14;
         for (int i = 0; i < segments; i++) {
@@ -361,9 +364,39 @@ public final class McsmFxDriver {
             }
         }
 
+        // MCSM 1.9.111 -- the distance legibility pass, deaths only: a third
+        // altitude layer, a white column from the storm's floor to the sky for
+        // the first half (the "beam out of the sky" at the moment of death),
+        // and pink embers raining out of the front as it dies.
+        if (death) {
+            for (int i = 0; i < segments; i += 2) {
+                double a = (i / (double) segments) * Math.PI * 2.0D;
+                double px = x + Math.cos(a) * r;
+                double pz = z + Math.sin(a) * r;
+                sink.send(dust(pack(c[0], c[1], c[2]), scale * 0.7f),
+                          px, baseY + 10.0D, pz, 1, 0.0, 0.2, 0.0, 0.0);
+            }
+            if (t < 0.5D) {
+                for (double yy = floorY + 2.0D; yy < floorY + 120.0D; yy += 6.0D) {
+                    sink.send(dust(0xffffff, 7.0f), x, yy, z,
+                              1, 0.4, 0.0, 0.4, 0.0);
+                }
+            }
+            if (t > 0.7D) {
+                for (int i = 0; i < 8; i++) {
+                    double a = Math.random() * Math.PI * 2.0D;
+                    double rr = r * (0.3D + Math.random() * 0.7D);
+                    sink.send(dust(0xff9ad5, 4.0f),
+                              x + Math.cos(a) * rr, baseY + Math.random() * 20.0D,
+                              z + Math.sin(a) * rr, 1, 0.3, 0.5, 0.3, 0.01);
+                }
+            }
+        }
+
         // the detonation core: lit at the start, blows out white at the end
         if (t < 0.12D || t > 0.90D) {
-            sink.send(dust(0xffffff, 4.0f), x, y + 2.0D, z, 24, 3.0, 2.0, 3.0, 0.2);
+            sink.send(dust(0xffffff, death ? 7.0f : 4.0f), x, y + 2.0D, z,
+                      24, 3.0, 2.0, 3.0, 0.2);
         }
     }
 

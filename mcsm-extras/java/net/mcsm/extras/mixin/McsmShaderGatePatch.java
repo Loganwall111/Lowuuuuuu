@@ -2,6 +2,7 @@ package net.mcsm.extras.mixin;
 
 import net.dabicco.witherstormmod.client.ShaderPackCompat;
 import net.mcsm.extras.McsmDiag;
+import net.mcsm.extras.McsmExtrasConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -38,6 +39,15 @@ public abstract class McsmShaderGatePatch {
 
     @Inject(method = "active", at = @At("HEAD"), cancellable = true)
     private static void mcsm$modOwnsTheLook(CallbackInfoReturnable<Boolean> cir) {
+        // MCSM 1.9.111 -- the force is now a player-facing toggle. Dabicco's
+        // look presets route part of their difference through the shader-pack
+        // path this gate closes, so with it forced they appeared to do
+        // nothing; turning "Shader Pack Gate" off in MCSM Extras hands the
+        // answer back to the mod for an A/B test.
+        McsmExtrasConfig.load();
+        if (!McsmExtrasConfig.shaderPackGate) {
+            return;
+        }
         if (!reported) {
             reported = true;
             McsmDiag.banner();
