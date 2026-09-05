@@ -1,0 +1,179 @@
+Compiled from "WitherStormConfigScreen.java"
+public class net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen extends net.minecraft.client.gui.screens.Screen {
+  public net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen(net.minecraft.client.gui.screens.Screen);
+  public static net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen createGiganticPreview(net.minecraft.client.gui.screens.Screen);
+  public net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen(net.minecraft.client.gui.screens.Screen, boolean);
+  public void onServerConfigSynced();
+  public boolean mouseScrolled(double, double, double, double);
+  public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent, boolean);
+  public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent, double, double);
+  public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent);
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public void onClose();
+}
+Compiled from "ShaderPackCompat.java"
+public final class net.dabicco.witherstormmod.client.ShaderPackCompat {
+  public static boolean active();
+}
+Compiled from "FoglessRenderTypes.java"
+public final class net.dabicco.witherstormmod.client.FoglessRenderTypes {
+  public static void setActive(boolean);
+  public static boolean fogless();
+  public static boolean modelShading();
+  public static boolean reverseShading();
+  public static net.minecraft.client.renderer.rendertype.RenderType bodyCutout(net.minecraft.resources.Identifier);
+  public static net.minecraft.client.renderer.rendertype.RenderType bodyCutout(net.minecraft.resources.Identifier, boolean);
+  public static net.minecraft.client.renderer.rendertype.RenderType entityTranslucentEmissive(net.minecraft.resources.Identifier);
+  public static net.minecraft.client.renderer.rendertype.RenderType eyes(net.minecraft.resources.Identifier);
+}
+Compiled from "StormSkyGradient.java"
+public final class net.dabicco.witherstormmod.client.StormSkyGradient {
+  public static void update(net.minecraft.world.phys.Vec3);
+  public static boolean active();
+  public static float yaw();
+  public static float pitch();
+  public static float phase();
+  public static boolean fogStampActive();
+  public static int color();
+}
+Compiled from "WitherStormEntity.java"
+public class net.dabicco.witherstormmod.entity.WitherStormEntity extends net.minecraft.world.entity.boss.wither.WitherBoss implements net.dabicco.witherstormmod.entity.StormHeadHost {
+  public static final net.minecraft.world.phys.Vec3[] HEAD_OFFSETS;
+  public static final float[] HEAD_YAW_OFFSETS;
+  public static final double DEVOURER_HEADS_RETURN;
+  public static final double DEVOURER_SETTLE_PHASE;
+  public static final float HATCH_TICKS_SHARED;
+  public static final float MINI_HEAD_ENTITY_SCALE;
+  public static final double MINI_HEAD_WORLD_FORWARD;
+  public static final double MAX_NATURAL_PHASE;
+  public static final double MAX_DEVOURER_PHASE;
+  public static final double DEVOURER_PHASE;
+  public static final double STORM_COVER_LIFT;
+  public final net.dabicco.witherstormmod.client.GroundProbe groundProbe;
+  public static final double GROWTH_SLOWDOWN;
+  public static final double EARLY_GROWTH_SLOWDOWN;
+  public static final double MINI_HEAD_PHASE;
+  public static final double FRONT_TENTACLE_PHASE;
+  public static final int MINI_HEAD_CHOMP_TICKS;
+  public static final double MINI_HEAD_WORLD_Y;
+  public static final double COLLAPSE_REST_HEIGHT;
+  public static final int SIEGE_NONE;
+  public static final int SIEGE_GROWING;
+  public static final int SIEGE_LULL;
+  public static final int SIEGE_ACTIVE;
+  public static final int SIEGE_OVER;
+  public static final int SPAWN_ANIM_LENGTH_TICKS;
+  public static final double TENTACLE_NOTICE_RANGE;
+  public void die(net.minecraft.world.damagesource.DamageSource);
+  public int getCoverPlates();
+  public boolean hasCover();
+  public void setSuppressLoot(boolean);
+  public void lockRotationOn(net.minecraft.world.entity.player.Player);
+  public float getBodyRoll();
+  public float headYawOffsetFor(int);
+  public float headRollOffsetFor(int);
+  public static float restYawFor(int);
+  public static float restRollFor(int);
+  public net.dabicco.witherstormmod.entity.WitherStormEntity(net.minecraft.world.entity.EntityType<? extends net.dabicco.witherstormmod.entity.WitherStormEntity>, net.minecraft.world.level.Level);
+  public boolean shouldRenderAtSqrDistance(double);
+  public int getSnatchId();
+  public void clientSyncPose(float, boolean);
+  public void clientSyncPhase(float);
+  public void onSyncedDataUpdated(net.minecraft.network.syncher.EntityDataAccessor<?>);
+  public double getSubPhase();
+  public void tick();
+  public net.minecraft.world.phys.Vec3 headOffsetFor(int);
+  public float headScaleFor(int);
+  public float hatchProgress();
+  public float headYawRangeFor(int);
+  public boolean headBeamAllowed(int);
+  public float beamScaleFor(int);
+  public float headPitchRangeFor(int);
+  public boolean isDevourerForm();
+  public float headLitFor(int);
+  public float attachPitch(float);
+  public double attachPivotY();
+  public double attachDrop(float);
+  public void roarAllHeads(boolean);
+  public void carveAlong(float[]);
+  public void forceTentacleSlam();
+  public int consumeBlocks(net.minecraft.server.level.ServerLevel, int);
+  public static net.minecraft.world.phys.Vec3 headOffset(int, boolean);
+  public boolean isDevourer();
+  public long getCollapseGameTime();
+  public boolean isPostBombChasing();
+  public float collapseTicks();
+  public boolean isCollapsed();
+  public double behaviourPhase();
+  public boolean formidibombed(net.minecraft.server.level.ServerLevel);
+  public boolean canBeAffected(net.minecraft.world.effect.MobEffectInstance);
+  public void aiStep();
+  public void performRangedAttack(net.minecraft.world.entity.LivingEntity, float);
+  public static net.minecraft.world.entity.ai.attributes.AttributeSupplier$Builder createAttributes();
+  public void addSubGrowth(int);
+  public void spawnScavengedCluster(net.minecraft.world.entity.Entity);
+  public double getPhase();
+  public void setPhase(double);
+  public long getFrontTentacleAnimGameTime();
+  public long getMiniHeadAnimGameTime();
+  public long getPhase5AnimGameTime();
+  public long getPhase58AnimGameTime();
+  public int getSubGrowth();
+  public void setPhaseExact(double);
+  public boolean isPhase4();
+  public boolean isPushable();
+  public void push(double, double, double);
+  public void push(net.minecraft.world.entity.Entity);
+  public int getSiegeStage();
+  public int siegeProgress();
+  public boolean isUnderSiege();
+  public boolean headsDistressed();
+  public static void tickCaughtEndermen(net.minecraft.server.level.ServerLevel);
+  public static void catchEndermenInBeams(net.minecraft.server.level.ServerLevel, net.dabicco.witherstormmod.entity.StormHeadHost, int);
+  public static boolean isHeldByBeam(net.minecraft.world.entity.Entity);
+  public net.dabicco.witherstormmod.entity.WitherStormEntity$MoveMode getMoveMode();
+  public boolean isChasing();
+  public void setChasing(boolean);
+  public void distractNow();
+  public java.util.UUID getUltimateTargetUUID();
+  public boolean isUltimateTargetLocked();
+  public void setUltimateTarget(net.minecraft.world.entity.player.Player);
+  public void clearUltimateTarget();
+  public net.minecraft.world.entity.player.Player rerollUltimateTarget();
+  public int getChaseEtaSeconds();
+  public int getDistractionSecondsLeft();
+  public void onHeadFired(int);
+  public long getSpawnAnimGameTime();
+  public boolean isPlayingSpawnAnimation();
+  public float getAnimationProgress();
+  public void registerGrabHit(net.minecraft.server.level.ServerLevel, net.minecraft.world.entity.player.Player);
+  public void beginSnatch(net.minecraft.world.entity.LivingEntity, boolean);
+  public void beginSnatch(net.minecraft.world.entity.LivingEntity);
+  public boolean causeFallDamage(double, float, net.minecraft.world.damagesource.DamageSource);
+  public int getMaxFallDistance();
+  public boolean isInvulnerableTo(net.minecraft.server.level.ServerLevel, net.minecraft.world.damagesource.DamageSource);
+  public boolean hurtServer(net.minecraft.server.level.ServerLevel, net.minecraft.world.damagesource.DamageSource, float);
+  public boolean isPickable();
+  public void doomMob(net.minecraft.world.entity.LivingEntity);
+  public boolean isDoomed(net.minecraft.world.entity.LivingEntity);
+  public boolean isProbingPortal();
+  public net.minecraft.core.BlockPos getProbePortal();
+  public static boolean spawnPortalProbe(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.entity.player.Player);
+  public int activeHeadCount();
+  public net.minecraft.world.phys.Vec3 modelCenter();
+  public boolean isGrappleHittable(net.minecraft.world.phys.Vec3);
+  public void beginSpawnFreeze();
+  public void playGlobalSpawnWail();
+  public void onGrappleHit(net.minecraft.world.phys.Vec3);
+  public net.dabicco.witherstormmod.entity.WitherStormHeadEntity getMiddleHead();
+  public net.dabicco.witherstormmod.entity.WitherStormHeadEntity getAnyHead();
+  public net.dabicco.witherstormmod.entity.WitherStormHeadEntity hostHead(net.minecraft.server.level.ServerLevel, int);
+  public void remove(net.minecraft.world.entity.Entity$RemovalReason);
+  public int getTargetingMode();
+}
+Compiled from "DabyWSCommand.java"
+public class net.dabicco.witherstormmod.command.DabyWSCommand {
+  public net.dabicco.witherstormmod.command.DabyWSCommand();
+  public static void register(com.mojang.brigadier.CommandDispatcher<net.minecraft.commands.CommandSourceStack>);
+  public static void registerTick();
+}
