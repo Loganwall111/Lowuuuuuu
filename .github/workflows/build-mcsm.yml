@@ -1,0 +1,68 @@
+name: Build MCSM Wither Storm jar
+
+# ----------------------------------------------------------------------------
+# The "GitHub compiler": the sandbox has no JDK and no route to Mojang/Maven,
+# so every push to either arena branch builds the full jar on a runner that
+# has both. Artifacts appear on the run page; when the VERSION file bumps to a
+# version with no release yet, a release with the jar is created automatically
+# -- but only when the build ran on the main dev branch
+# (arena/01a06df7-lowuuuuuu), so test builds on other arena branches do not
+# publish alongside it.
+#
+# NOTE: this file lives in .github/workflows/ so GitHub actually runs it.
+# ci/workflows/build-mcsm.yml is kept as a mirror/template of the same recipe.
+# ----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [arena/01a06ef4-lowuuuuuu, arena/01a06df7-lowuuuuuu]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # allow the job to publish the release with the built jar
+
+concurrency:
+  group: mcsm-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Build the jar
+        run: bash ci/build.sh
+
+      - name: Upload built jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: mcsm-jar-${{ github.run_number }}
+          path: |
+            out/*.jar
+            out/*.sha256
+
+      - name: Publish release when VERSION is new
+        if: success() && github.ref == 'refs/heads/arena/01a06df7-lowuuuuuu'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="mcsm-${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists — leaving it alone"
+          else
+            gh release create "$TAG" \
+              --repo Loganwall111/Lowuuuuuu \
+              --target "${GITHUB_REF#refs/heads/}" \
+              --title "MCSM Wither Storm ${VER}-26.2-beta" \
+              --notes-file ci/RELEASE_NOTES.md \
+              out/*.jar out/*.sha256
+          fi
