@@ -1,0 +1,13 @@
+99:       243: getstatic     #173                // Field net/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents.END_LEVEL_TICK:Lnet/fabricmc/fabric/api/event/Event;
+100:       246: invokedynamic #178,  0            // InvokeDynamic #3:onEndTick:()Lnet/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents$EndLevelTick;
+109:       275: getstatic     #173                // Field net/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents.END_LEVEL_TICK:Lnet/fabricmc/fabric/api/event/Event;
+110:       278: invokedynamic #208,  0            // InvokeDynamic #4:onEndTick:()Lnet/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents$EndLevelTick;
+112:       286: getstatic     #173                // Field net/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents.END_LEVEL_TICK:Lnet/fabricmc/fabric/api/event/Event;
+113:       289: invokedynamic #209,  0            // InvokeDynamic #5:onEndTick:()Lnet/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents$EndLevelTick;
+115:       297: getstatic     #173                // Field net/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents.END_LEVEL_TICK:Lnet/fabricmc/fabric/api/event/Event;
+116:       300: invokedynamic #210,  0            // InvokeDynamic #6:onEndTick:()Lnet/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents$EndLevelTick;
+118:       308: getstatic     #173                // Field net/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents.END_LEVEL_TICK:Lnet/fabricmc/fabric/api/event/Event;
+119:       311: invokedynamic #211,  0            // InvokeDynamic #7:onEndTick:()Lnet/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents$EndLevelTick;
+133:       363: getstatic     #238                // Field net/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents.END_SERVER_TICK:Lnet/fabricmc/fabric/api/event/Event;
+134:       366: invokedynamic #241,  0            // InvokeDynamic #12:onEndTick:()Lnet/fabricmc/fabric/api/event/lifecycle/v1/ServerTickEvents$EndTick;
+311:         1: invokestatic  #465                // Method net/dabicco/witherstormmod/structures/McsmWorldgen.tick:(Lnet/minecraft/server/level/ServerLevel;)I
