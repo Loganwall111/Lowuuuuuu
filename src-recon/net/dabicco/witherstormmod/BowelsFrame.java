@@ -38,29 +38,29 @@ public final class BowelsFrame {
    // $VF: Unable to simplify switch on enum
    // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
    public static Vec3 toWorld(Direction gravity, Vec3 v) {
-      return switch (1.$SwitchMap$net$minecraft$core$Direction[gravity.ordinal()]) {
-         case 1 -> v;
-         case 2 -> new Vec3(-v.x, -v.y, v.z);
-         case 3 -> new Vec3(-v.y, v.x, v.z);
-         case 4 -> new Vec3(v.y, -v.x, v.z);
-         case 5 -> new Vec3(v.x, -v.z, v.y);
-         case 6 -> new Vec3(v.x, v.z, -v.y);
+      return switch (gravity) {
+         case DOWN -> var10000 = v;
+         case UP -> var10000 = new Vec3(-v.x, -v.y, v.z);
+         case EAST -> var10000 = new Vec3(-v.y, v.x, v.z);
+         case WEST -> var10000 = new Vec3(v.y, -v.x, v.z);
+         case NORTH -> var10000 = new Vec3(v.x, -v.z, v.y);
+         case SOUTH -> var10000 = new Vec3(v.x, v.z, -v.y);
          default -> throw new MatchException((String)null, (Throwable)null);
-      };
+      }
    }
 
    // $VF: Unable to simplify switch on enum
    // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
    public static Vec3 toFrame(Direction gravity, Vec3 v) {
-      return switch (1.$SwitchMap$net$minecraft$core$Direction[gravity.ordinal()]) {
-         case 1 -> v;
-         case 2 -> new Vec3(-v.x, -v.y, v.z);
-         case 3 -> new Vec3(v.y, -v.x, v.z);
-         case 4 -> new Vec3(-v.y, v.x, v.z);
-         case 5 -> new Vec3(v.x, v.z, -v.y);
-         case 6 -> new Vec3(v.x, -v.z, v.y);
+      return switch (gravity) {
+         case DOWN -> var10000 = v;
+         case UP -> var10000 = new Vec3(-v.x, -v.y, v.z);
+         case EAST -> var10000 = new Vec3(v.y, -v.x, v.z);
+         case WEST -> var10000 = new Vec3(-v.y, v.x, v.z);
+         case NORTH -> var10000 = new Vec3(v.x, v.z, -v.y);
+         case SOUTH -> var10000 = new Vec3(v.x, -v.z, v.y);
          default -> throw new MatchException((String)null, (Throwable)null);
-      };
+      }
    }
 
    public static Vec3 down(Direction gravity) {
@@ -77,53 +77,31 @@ public final class BowelsFrame {
       double maxY = feet.y + half;
       double minZ = feet.z - half;
       double maxZ = feet.z + half;
-      switch (1.$SwitchMap$net$minecraft$core$Direction[gravity.ordinal()]) {
-         case 1:
+      switch (gravity) {
+         case DOWN:
             minY = feet.y;
             maxY = feet.y + height;
             break;
-         case 2:
+         case UP:
             minY = feet.y - height;
             maxY = feet.y;
             break;
-         case 3:
+         case EAST:
             minX = feet.x - height;
             maxX = feet.x;
             break;
-         case 4:
+         case WEST:
             minX = feet.x;
             maxX = feet.x + height;
             break;
-         case 5:
+         case NORTH:
             minZ = feet.z;
             maxZ = feet.z + height;
             break;
-         case 6:
+         case SOUTH:
             minZ = feet.z - height;
             maxZ = feet.z;
       }
-
-      return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
-   }
-
-   public static Vec3 eye(Direction gravity, Vec3 feet, double eyeHeight) {
-      return feet.subtract(down(gravity).scale(eyeHeight));
-   }
-
-   // $VF: Unable to simplify switch on enum
-   // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
-   public static AABB footprint(Direction gravity, AABB box) {
-      double skin = 1.0E-6;
-
-      return switch (1.$SwitchMap$net$minecraft$core$Direction[gravity.ordinal()]) {
-         case 1 -> new AABB(box.minX, box.minY - skin, box.minZ, box.maxX, box.minY, box.maxZ);
-         case 2 -> new AABB(box.minX, box.maxY, box.minZ, box.maxX, box.maxY + skin, box.maxZ);
-         case 3 -> new AABB(box.maxX, box.minY, box.minZ, box.maxX + skin, box.maxY, box.maxZ);
-         case 4 -> new AABB(box.minX - skin, box.minY, box.minZ, box.minX, box.maxY, box.maxZ);
-         case 5 -> new AABB(box.minX, box.minY, box.minZ - skin, box.maxX, box.maxY, box.minZ);
-         case 6 -> new AABB(box.minX, box.minY, box.maxZ, box.maxX, box.maxY, box.maxZ + skin);
-         default -> throw new MatchException((String)null, (Throwable)null);
-      };
    }
 
    public static BlockState viewBlocker(Player player, Direction gravity) {

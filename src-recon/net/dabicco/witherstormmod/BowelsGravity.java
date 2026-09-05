@@ -56,15 +56,15 @@ public final class BowelsGravity {
    public static Quaternionf frame(Direction pull, Quaternionf dest) {
       float QUARTER = (float) (Math.PI / 2);
 
-      return switch (1.$SwitchMap$net$minecraft$core$Direction[pull.ordinal()]) {
-         case 1 -> dest.identity();
-         case 2 -> dest.rotationZ((float) Math.PI);
-         case 3 -> dest.rotationZ((float) (Math.PI / 2));
-         case 4 -> dest.rotationZ((float) (-Math.PI / 2));
-         case 5 -> dest.rotationX((float) (Math.PI / 2));
-         case 6 -> dest.rotationX((float) (-Math.PI / 2));
+      return switch (pull) {
+         case DOWN -> var10000 = dest.identity();
+         case UP -> var10000 = dest.rotationZ((float)Math.PI);
+         case EAST -> var10000 = dest.rotationZ(((float)Math.PI / 2F));
+         case WEST -> var10000 = dest.rotationZ((-(float)Math.PI / 2F));
+         case NORTH -> var10000 = dest.rotationX(((float)Math.PI / 2F));
+         case SOUTH -> var10000 = dest.rotationX((-(float)Math.PI / 2F));
          default -> throw new MatchException((String)null, (Throwable)null);
-      };
+      }
    }
 
    public static void tick(ServerLevel level) {
