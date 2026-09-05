@@ -150,7 +150,9 @@ echo "[source] $N_SRC java files in the compile set"
 
 rm -rf /tmp/ds-src-build && mkdir -p /tmp/ds-src-build
 JAVAC_LOG=/tmp/ds-javac.log
-javac -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/ds-src-build @/tmp/ds-src.args > "$JAVAC_LOG" 2>&1
+# -J-Xss: the model builders are thousands-deep method-call chains that
+# overflow javac's default attribution recursion stack.
+javac -J-Xss512m -J-Xmx8g -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/ds-src-build @/tmp/ds-src.args > "$JAVAC_LOG" 2>&1
 RC=$?
 N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
 {
@@ -161,6 +163,8 @@ N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
   echo "jar reference:   385 mod classes (+ our overlay) in the 1.9.100 base"
   echo "--- first 40 error lines ---"
   grep -E "error:" "$JAVAC_LOG" | head -40 || true
+  echo "--- javac log head ---"
+  head -5 "$JAVAC_LOG" || true
   echo "--- javac log tail ---"
   tail -20 "$JAVAC_LOG" || true
 } > out/source-build-report.txt
