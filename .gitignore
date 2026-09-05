@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+.cache/
+out/
+ci/cache/
+ci/out-classes/
+ci/out-unzip/
