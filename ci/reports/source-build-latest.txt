@@ -1,6 +1,6 @@
 source build report
 java files in:   346
-classes out:     57
+classes out:     58
 javac exit:      1
 jar reference:   385 mod classes (+ our overlay) in the 1.9.100 base
 --- widen list ---
@@ -11,19 +11,19 @@ MenuScreens#register
 MenuType#MenuSupplier
 MenuType#MenuType
 --- first 25 errors with detail ---
-src-recon/net/dabicco/witherstormmod/entity/model/HugeAssBackModel.java:9178: error: missing return statement
+src-recon/net/dabicco/witherstormmod/entity/model/WitherStormTentacles5.java:2179: error: missing return statement
    }
    ^
 Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 --- javac log head ---
-src-recon/net/dabicco/witherstormmod/entity/model/HugeAssBackModel.java:9178: error: missing return statement
+src-recon/net/dabicco/witherstormmod/entity/model/WitherStormTentacles5.java:2179: error: missing return statement
    }
    ^
 Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 --- javac log tail ---
-src-recon/net/dabicco/witherstormmod/entity/model/HugeAssBackModel.java:9178: error: missing return statement
+src-recon/net/dabicco/witherstormmod/entity/model/WitherStormTentacles5.java:2179: error: missing return statement
    }
    ^
 Note: Some input files use or override a deprecated API.
