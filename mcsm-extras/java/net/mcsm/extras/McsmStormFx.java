@@ -3,7 +3,7 @@ package net.mcsm.extras;
 import net.dabicco.witherstormmod.WitherStormSummon;
 import net.dabicco.witherstormmod.entity.WitherStormEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -20,6 +20,11 @@ import java.util.List;
  */
 public final class McsmStormFx {
 
+    // MCSM 1.9.101 -- 26.2 spelling of the particle call: options, not types.
+    private static DustParticleOptions dust(int rgb, float scale) {
+        return new DustParticleOptions(rgb, scale);
+    }
+
     public static void fire(Level world, BlockPos pos) {
         if (world.isClientSide()) return;
         double cx = pos.getX() + 0.5, cy = pos.getY() + 1.4, cz = pos.getZ() + 0.5;
@@ -32,11 +37,11 @@ public final class McsmStormFx {
                 for (int k = 0; k < 3; k++) {
                     double r = 5.0 + k * 4.5 + ((seed >> (i & 31)) & 3) * 0.4;
                     double px = cx + Math.cos(a) * r, pz = cz + Math.sin(a) * r;
-                    sl.sendParticles(ParticleTypes.ELECTRIC_SPARK, px, cy + 0.5 + k * 0.8, pz, 1, 0.12, 0.35, 0.12, 0.06);
-                    sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER, px, cy + k, pz, 1, 0.0, 0.0, 0.0, 0.0);
+                    sl.sendParticles(dust(0xd8e6ff, 0.7f), px, cy + 0.5 + k * 0.8, pz, 1, 0.12, 0.35, 0.12, 0.06);
+                    sl.sendParticles(dust(0xfff3e0, 3.0f), px, cy + k, pz, 1, 0.0, 0.0, 0.0, 0.0);
                 }
             }
-            sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER, cx, cy + 1.0, cz, 1, 0.0, 0.0, 0.0, 0.0);
+            sl.sendParticles(dust(0xfff3e0, 3.0f), cx, cy + 1.0, cz, 1, 0.0, 0.0, 0.0, 0.0);
         }
         world.playSound(null, cx, cy, cz, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 3.2f, 0.85f);
 

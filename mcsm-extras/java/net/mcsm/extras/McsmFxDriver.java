@@ -2,7 +2,6 @@ package net.mcsm.extras;
 
 import net.dabicco.witherstormmod.entity.WitherStormEntity;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
@@ -110,46 +109,62 @@ public final class McsmFxDriver {
         }
     }
 
+    // MCSM 1.9.101 -- 26.2's ServerLevel.sendParticles takes PARTICLE OPTIONS,
+    // not ParticleTypes, and DustParticleOptions is (int packed RGB, float
+    // scale), not (Vector3f, float). Every effect here is therefore plain
+    // dust with a colour: the closest deterministic spelling of the same
+    // staging on the API the 26.2 client actually has (verified from the
+    // runner's javap dump, ci/api/level.txt).
+    private static DustParticleOptions dust(int rgb, float scale) {
+        return new DustParticleOptions(rgb, scale);
+    }
+
+    private static int pack(float r, float g, float b) {
+        int ri = (int) (Math.max(0.0f, Math.min(1.0f, r)) * 255.0f);
+        int gi = (int) (Math.max(0.0f, Math.min(1.0f, g)) * 255.0f);
+        int bi = (int) (Math.max(0.0f, Math.min(1.0f, b)) * 255.0f);
+        return (ri << 16) | (gi << 8) | bi;
+    }
+
     /** Expanding dust ring, ground to sky, plus the grey smoke of the impact. */
     private static void riseShockwave(ServerLevel srv, WitherStormEntity self, int phase) {
         double x = self.getX(), y = self.getY(), z = self.getZ();
         float[] c = (phase >= 7) ? new float[]{1.0f, 0.45f, 0.80f}
                                  : new float[]{0.65f, 0.30f, 0.95f};
-        DustParticleOptions dust = new DustParticleOptions(new org.joml.Vector3f(c[0], c[1], c[2]), 2.4f);
+        DustParticleOptions puff = dust(pack(c[0], c[1], c[2]), 2.4f);
         for (int ring = 0; ring < 3; ring++) {
             double r = 6.0 + ring * 7.0;
             for (int i = 0; i < 48; i++) {
                 double a = (i / 48.0) * Math.PI * 2.0;
                 double px = x + Math.cos(a) * r;
                 double pz = z + Math.sin(a) * r;
-                srv.sendParticles(dust, px, y - 1.0 + ring * 0.6, pz, 1, 0.0, 0.35, 0.0, 0.0);
+                srv.sendParticles(puff, px, y - 1.0 + ring * 0.6, pz, 1, 0.0, 0.35, 0.0, 0.0);
                 if (i % 6 == 0) {
-                    srv.sendParticles(ParticleTypes.CLOUD, px, y, pz, 2, 1.2, 1.0, 1.2, 0.03);
-                    srv.sendParticles(ParticleTypes.POOF, px, y + 0.5, pz, 1, 1.0, 0.8, 1.0, 0.04);
+                    srv.sendParticles(dust(0x9aa0a6, 2.2f), px, y, pz, 2, 1.2, 1.0, 1.2, 0.03);
+                    srv.sendParticles(dust(0xb8b8b8, 1.8f), px, y + 0.5, pz, 1, 1.0, 0.8, 1.0, 0.04);
                 }
             }
         }
-        srv.sendParticles(ParticleTypes.ELECTRIC_SPARK, x, y + 2.0, z, 60, 6.0, 3.0, 6.0, 0.3);
+        srv.sendParticles(dust(0xd8e6ff, 0.7f), x, y + 2.0, z, 60, 6.0, 3.0, 6.0, 0.3);
     }
 
     /** Six expanding rings, one per MCSM colour, then a white flash. */
     private static void supernova(ServerLevel srv, WitherStormEntity self, long gt) {
         double x = self.getX(), y = self.getY(), z = self.getZ();
         for (int k = 0; k < RINGS.length; k++) {
-            DustParticleOptions dust = new DustParticleOptions(
-                new org.joml.Vector3f(RINGS[k][0], RINGS[k][1], RINGS[k][2]), 3.0f);
+            DustParticleOptions puff = dust(pack(RINGS[k][0], RINGS[k][1], RINGS[k][2]), 3.0f);
             double r = 4.0 + k * 3.4;
             double yy = y + k * 1.1;
             for (int i = 0; i < 64; i++) {
                 double a = (i / 64.0) * Math.PI * 2.0 + (k * 0.13);
-                srv.sendParticles(dust,
+                srv.sendParticles(puff,
                     x + Math.cos(a) * r, yy, z + Math.sin(a) * r,
                     1, 0.0, 0.6, 0.0, 0.0);
             }
         }
-        srv.sendParticles(ParticleTypes.FLASH, x, y + 3.0, z, 2, 0.0, 0.0, 0.0, 0.0);
-        srv.sendParticles(ParticleTypes.ELECTRIC_SPARK, x, y + 3.0, z, 120, 8.0, 5.0, 8.0, 0.4);
-        srv.sendParticles(ParticleTypes.CLOUD, x, y + 2.0, z, 80, 7.0, 4.0, 7.0, 0.12);
+        srv.sendParticles(dust(0xffffff, 4.0f), x, y + 3.0, z, 2, 0.0, 0.0, 0.0, 0.0);
+        srv.sendParticles(dust(0xd8e6ff, 0.7f), x, y + 3.0, z, 120, 8.0, 5.0, 8.0, 0.4);
+        srv.sendParticles(dust(0x9aa0a6, 2.2f), x, y + 2.0, z, 80, 7.0, 4.0, 7.0, 0.12);
     }
 
     /** The tear closes: MCSM reads survival as recovery, so heal and cleanse. */
@@ -158,12 +173,12 @@ public final class McsmFxDriver {
         for (ServerPlayer sp : srv.getPlayers(p -> p.isAlive()
                 && p.distanceToSqr(x, y, z) < 96.0 * 96.0)) {
             sp.heal(12.0f);
-            srv.sendParticles(ParticleTypes.HAPPY_VILLAGER, sp.getX(), sp.getY() + 1.0, sp.getZ(),
+            srv.sendParticles(dust(0x7ddf64, 0.8f), sp.getX(), sp.getY() + 1.0, sp.getZ(),
                               24, 0.8, 0.8, 0.8, 0.2);
-            srv.sendParticles(ParticleTypes.HEART, sp.getX(), sp.getY() + 1.6, sp.getZ(),
+            srv.sendParticles(dust(0xff4d6d, 1.0f), sp.getX(), sp.getY() + 1.6, sp.getZ(),
                               8, 0.5, 0.5, 0.5, 0.1);
         }
-        srv.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, x, y + 2.0, z, 160, 4.0, 3.0, 4.0, 0.35);
+        srv.sendParticles(dust(0xffd76a, 1.2f), x, y + 2.0, z, 160, 4.0, 3.0, 4.0, 0.35);
     }
 
     private static void purpleMotes(ServerLevel srv, WitherStormEntity self, long gt) {
@@ -174,11 +189,11 @@ public final class McsmFxDriver {
             double a = ((seed >>> (i * 3)) % 360) / 360.0 * Math.PI * 2.0;
             double rr = r + ((seed >>> (i * 5)) % 24);
             double py = y + ((seed >>> (i * 7)) % 40) - 12.0;
-            srv.sendParticles(ParticleTypes.PORTAL, x + Math.cos(a) * rr, py, z + Math.sin(a) * rr,
+            srv.sendParticles(dust(0x9d6bff, 1.4f), x + Math.cos(a) * rr, py, z + Math.sin(a) * rr,
                               3, 0.6, 1.4, 0.6, 0.02);
         }
         if (gt % 40L == 0L) {
-            srv.sendParticles(ParticleTypes.ELECTRIC_SPARK, x, y + 18.0, z, 40, 10.0, 6.0, 10.0, 0.35);
+            srv.sendParticles(dust(0xd8e6ff, 0.7f), x, y + 18.0, z, 40, 10.0, 6.0, 10.0, 0.35);
         }
     }
 
@@ -188,7 +203,7 @@ public final class McsmFxDriver {
         double py = Math.max(self.getBoundingBox().minY, y - 22.0);
         for (int i = 0; i < 8; i++) {
             double a = (i / 8.0) * Math.PI * 2.0;
-            srv.sendParticles(ParticleTypes.CLOUD, x + Math.cos(a) * r, py, z + Math.sin(a) * r,
+            srv.sendParticles(dust(0x9aa0a6, 2.2f), x + Math.cos(a) * r, py, z + Math.sin(a) * r,
                               3, 1.6, 0.7, 1.6, 0.05);
         }
     }
@@ -197,8 +212,8 @@ public final class McsmFxDriver {
         double x = self.getX(), y = self.getY(), z = self.getZ();
         double r = self.getBoundingBox().getXsize() * 0.55;
         double py = Math.max(self.getBoundingBox().minY, y - 30.0) + 1.0;
-        srv.sendParticles(ParticleTypes.LARGE_SMOKE, x, py, z, 6, r * 0.7, 1.2, r * 0.7, 0.02);
-        srv.sendParticles(ParticleTypes.SMOKE, x, py + 2.0, z, 8, r * 0.9, 2.0, r * 0.9, 0.03);
+        srv.sendParticles(dust(0x5a5a5a, 4.0f), x, py, z, 6, r * 0.7, 1.2, r * 0.7, 0.02);
+        srv.sendParticles(dust(0x777777, 3.0f), x, py + 2.0, z, 8, r * 0.9, 2.0, r * 0.9, 0.03);
     }
 
     /**
@@ -217,14 +232,14 @@ public final class McsmFxDriver {
         int steps = 26;
         for (int i = 0; i <= steps; i++) {
             double t = i / (double) steps;
-            srv.sendParticles(ParticleTypes.END_ROD, x, y - len * t, z, 1, 0.03, 0.0, 0.03, 0.0);
+            srv.sendParticles(dust(0xbfffe8, 0.9f), x, y - len * t, z, 1, 0.03, 0.0, 0.03, 0.0);
         }
         double pt = (gt % 30L) / 30.0;
-        srv.sendParticles(ParticleTypes.FLAME, x, y - len * pt, z, 2, 0.05, 0.05, 0.05, 0.0);
+        srv.sendParticles(dust(0xffb347, 1.2f), x, y - len * pt, z, 2, 0.05, 0.05, 0.05, 0.0);
         if (gt % 20L == 0L) {
             for (int i = 0; i < 16; i++) {
                 double a = (i / 16.0) * Math.PI * 2.0;
-                srv.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                srv.sendParticles(dust(0xd8e6ff, 0.7f),
                     x + Math.cos(a) * 1.6, gy + 0.3, z + Math.sin(a) * 1.6,
                     1, 0.1, 0.2, 0.1, 0.02);
             }

@@ -7,7 +7,7 @@ import net.mcsm.extras.McsmGate;
 import net.mcsm.extras.McsmStormBeaconBlock;
 
 import net.dabicco.witherstormmod.entity.WitherStormEntity;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -39,6 +39,11 @@ public abstract class McsmStormGrabPatch extends net.minecraft.world.entity.boss
 
     private McsmStormGrabPatch() { super(null, null); }
 
+    // MCSM 1.9.101 -- 26.2 spelling of the particle call: options, not types.
+    private static DustParticleOptions dust(int rgb, float scale) {
+        return new DustParticleOptions(rgb, scale);
+    }
+
     @Inject(method = {"tick"}, at = @At("TAIL"))
     private void mcsm$extras(CallbackInfo ci) {
         McsmExtrasConfig.load();
@@ -67,9 +72,9 @@ public abstract class McsmStormGrabPatch extends net.minecraft.world.entity.boss
                 double rr = r0 + ((seed >> i & 7)) * 1.7;
                 double px = x + Math.cos(a) * rr, pz = z + Math.sin(a) * rr;
                 double py = Math.max(y - 26.0, self.getBoundingBox().minY) + 0.4;
-                sl.sendParticles(ParticleTypes.ELECTRIC_SPARK, px, py + 1.2, pz, 3, 0.5, 0.9, 0.5, 0.05);
-                sl.sendParticles(ParticleTypes.CLOUD, px, py, pz, 4, 0.7, 0.5, 0.7, 0.028);
-                sl.sendParticles(ParticleTypes.POOF, px, py + 0.6, pz, 2, 0.5, 0.7, 0.5, 0.06);
+                sl.sendParticles(dust(0xd8e6ff, 0.7f), px, py + 1.2, pz, 3, 0.5, 0.9, 0.5, 0.05);
+                sl.sendParticles(dust(0x9aa0a6, 2.2f), px, py, pz, 4, 0.7, 0.5, 0.7, 0.028);
+                sl.sendParticles(dust(0xb8b8b8, 1.8f), px, py + 0.6, pz, 2, 0.5, 0.7, 0.5, 0.06);
             }
         }
 

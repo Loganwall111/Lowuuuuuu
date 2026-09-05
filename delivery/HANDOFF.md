@@ -1003,3 +1003,35 @@ old ones. The 00:41 build passed because its base (the fake overlay) had no
 mcsm classes at all -- same sources, same client jar, no twins.
 LESSON: from now on every base jar contains the previous build's classes, so
 this strip is mandatory for any base that was itself a real compile.
+
+### Phase 31c (2026-09-05) -- 00:41 was ALSO a fake; the 26.2 particle API moved; rewrite done
+DECISIVE: run 33933807480's (00:41, published mcsm-1.9.100) annotations say
+"Build verdict: shaders-only jar (javac failed)" -- the "real" release jar
+is ALSO an overlay (old 1.9.99 classes + new shaders). The new Java has
+never been compiled, anywhere. A GREEN run is not proof of a compile: this
+recipe's survivable-javac path continues and exits 0 by design.
+THE 26.2 API TRUTH (runner javap dump, ci/api/level.txt):
+  * ServerLevel.sendParticles is <T extends ParticleOptions> -- ParticleTypes
+    constants are no longer accepted (the "no suitable method" + "Vector3f
+    cannot be converted to int" cluster);
+  * DustParticleOptions ctor is (int packedRGB, float scale), not
+    (Vector3f, float) (the "Vector3f -> int" error);
+  * 26.2's Component implements com.mojang.brigadier.Message -- brigadier
+    1.3.10 was missing from the classpath (the "cannot access Message"
+    error). Adding it made that error disappear.
+  * 26.2 real libraries list (version JSON via the manifest): brigadier
+    1.3.10, datafixerupper 10.0.21 (was 8.0.16), fastutil 8.5.18 (was
+    8.5.15), joml 1.10.8 + jspecify 1.0.0 (already matched), client.jar
+    sha1 2dc72797... (unchanged all along).
+REWRITE (McsmFxDriver, McsmStormFx, McsmStormGrabPatch): all 26
+sendParticles calls now pass DustParticleOptions with colours chosen to
+approximate the original effects (cloud grey 0x9aa0a6, poof 0xb8b8b8,
+spark pale-blue 0xd8e6ff, flash white, smoke dark grey, end-rod pale cyan,
+flame orange, totem gold, portal purple, villager green, heart red,
+explosion-emitter warm white). If exact vanilla particle types are wanted:
+one more dump round of the net.minecraft.core.particles options classes
+(26.2 has dedicated options classes per effect; their constructors are not
+dumped yet).
+STATE: this push -> javac expected green -> the FIRST genuine compile of
+the new Java, ever (1.9.101). If javac fails again, the ERR trap now
+reports the exact line + command as a GitHub annotation.
