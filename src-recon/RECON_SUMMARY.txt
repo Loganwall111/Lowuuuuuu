@@ -18,3 +18,15 @@ ERROR:    Unable to simplify switch on enum: const(1) not found, available: {} i
 ERROR:    Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame suffocates
 ERROR:          Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsGravity frame
 ERROR:    Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsGravity frame
+
+--- post-recon fixup (sandbox, same day) ---
+The per-package decompile passes wrote each package's CONTENTS flat into
+their parent dir (vineflower mirrors contents, not the input dir name), so
+every .java was relocated to the directory its own `package` statement
+declares: 294 files moved, 0 conflicts, 331 total.
+Known rough edge: entity/model/WitherStormDevourer.java (24k lines) carries
+a "$VF: Couldn't be decompiled" body -- the compile phase must either retry
+it with CFR, keep the binary class from the jar for that one file, or
+reconstruct it from the 1.9.60 clean source if present there (it is not).
+BowelsFrame/BowelsGravity enum-switch errors CAN be cross-checked against
+the author's clean 1.9.60 copies in net/.
