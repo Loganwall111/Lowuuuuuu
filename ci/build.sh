@@ -74,6 +74,20 @@ else
   echo "[build] base jar: ${BASE} (release asset, hash verified)"
 fi
 
+# MCSM 1.9.101 -- the COMPILE classpath must not contain stale copies of the
+# very classes being compiled. The real 1.9.100 base jar holds the
+# net/mcsm/extras classes CI compiled at 00:41, and compiling the same sources
+# with those classfile twins on the path broke javac (run 33966494942:
+# "cannot access Message" + bogus sendParticles errors; the 00:41 build of the
+# identical sources passed with a base that had no mcsm classes). So the
+# classpath gets a base jar with net/mcsm stripped out; the ASSEMBLY still
+# unzips the full base (below), and the fresh classes overwrite the old ones.
+STRIPPED="$DL/base-nomcsm.jar"
+rm -rf "$DL/base-x" "$STRIPPED" && mkdir -p "$DL/base-x"
+( cd "$DL/base-x" && unzip -q "$BASE" && rm -rf net/mcsm \
+    && zip -q -r -X "$OLDPWD/$STRIPPED" . -x '.*' )
+echo "[build] compile classpath base: ${STRIPPED} (net/mcsm stripped)"
+
 # The Minecraft client jar is resolved from the LIVE version manifest instead
 # of a hardcoded object hash. A stale hash 404s and kills the build in seconds
 # with no useful message. Falls back to the pinned hash if the manifest is
@@ -112,7 +126,7 @@ fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" jom
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
   echo "[apidump] javap the real client + mod API"
   mkdir -p ci/api
-  CP2="$DL/client.jar:$BASE:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
+  CP2="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
   CLIENT_CLASSES="net.minecraft.client.Minecraft net.minecraft.client.gui.Gui \
     net.minecraft.client.gui.GuiGraphics net.minecraft.client.gui.screens.Screen \
     net.minecraft.client.gui.screens.inventory.AbstractContainerScreen \
@@ -170,7 +184,7 @@ fi
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
-CP="$DL/client.jar:$BASE:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
+CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
 # A javac failure is survivable: the jar is still assembled from the previous
 # classes + the current shaders, the FULL javac output goes to
 # out/JAVAC_FAILED.txt, and the run is flagged with a GitHub error annotation.

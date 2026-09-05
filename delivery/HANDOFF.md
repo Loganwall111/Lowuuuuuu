@@ -984,3 +984,22 @@ into arena/01a06df7-lowuuuuuu -- the dev branch's workflow auto-publishes
 mcsm-<VERSION> when VERSION is new.
 STILL UNWRITTEN (unchanged): HUD/inventory move, 3D command block
 rendering -- waiting on the api dump for any further client-side code.
+### Phase 31b (2026-09-05) -- the stale-twin trap (run 33966494942)
+FIRST 1.9.101 build ran on the runner and javac FAILED with exactly four
+errors (McsmFxDriver: "Vector3f cannot be converted to int" x2, "no suitable
+method for sendParticles(...)"; McsmExtrasScreen: "cannot access Message").
+Why the identical sources compiled at 00:41 but not at 12:35:
+  * client jar UNCHANGED -- the run's api-dump pushback stayed silent (a
+    changed client jar would have pushed a different ci/api dump);
+  * deps pinned; sources byte-identical to the 00:41 tree;
+  * the ONLY delta = the base jar: the real 1.9.100 now carries the 17
+    net/mcsm/extras .class files CI compiled at 00:41, so the compile
+    classpath held stale classfile TWINS of every source file being
+    compiled. javac chokes on source/classfile twins.
+FIX (ci/build.sh): the compile classpath (CP and the apidump CP2) now uses a
+stripped copy of the base jar with net/mcsm removed ($DL/base-nomcsm.jar);
+the ASSEMBLY still unzips the full base and the fresh classes overwrite the
+old ones. The 00:41 build passed because its base (the fake overlay) had no
+mcsm classes at all -- same sources, same client jar, no twins.
+LESSON: from now on every base jar contains the previous build's classes, so
+this strip is mandatory for any base that was itself a real compile.

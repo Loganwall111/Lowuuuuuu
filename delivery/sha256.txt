@@ -10,7 +10,7 @@
 #   6adcf07e1ad810703c12cb25d7d135aca7b8f66f7d12c273ad3f00b5abdb6599
 #   https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-1.9.100/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
 
-85da4df54028af42d624b9d8491648cf5f7478953c6e37edb812e0a2cae481d7  HANDOFF.md
+0dfbdeda6789a1d97dd2e4b3d8a08d7c5bdd86e14a22457997d6d412b141ae6b  HANDOFF.md
 6aed6d87db080b29ee1b81c6e5642c872874e6db61881e7ac07d2861c5fb3e56  HANDOFF.txt
 2becf143ab4c784452bed4987a0f30440827205bfe0a2025390ab8753f83827d  LOG_GUIDE.txt
 620273f2256d5a72122acd42a66ffaa5c2ddcabf9942a4135beea678e6bd4968  README.txt
