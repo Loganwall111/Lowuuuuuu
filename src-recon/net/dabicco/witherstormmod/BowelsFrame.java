@@ -202,16 +202,16 @@ public final class BowelsFrame {
       double x1 = x0 + 1.0;
       double y1 = y0 + 1.0;
       double z1 = z0 + 1.0;
-      switch (1.$SwitchMap$net$minecraft$core$Direction$Axis[gravity.getAxis().ordinal()]) {
-         case 1:
+      switch (gravity.getAxis()) {
+         case X:
             x0 = body.minX;
             x1 = body.maxX;
             break;
-         case 2:
+         case Y:
             y0 = body.minY;
             y1 = body.maxY;
             break;
-         case 3:
+         case Z:
             z0 = body.minZ;
             z1 = body.maxZ;
       }
