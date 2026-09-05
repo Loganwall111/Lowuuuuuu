@@ -1,0 +1,27 @@
+package net.dabicco.witherstormmod.bowels.client;
+
+import java.util.HashMap;
+import java.util.Map;
+import net.dabicco.witherstormmod.entity.model.ModEntityModelLayers;
+import net.dabicco.witherstormmod.entity.model.Tentacle;
+import net.minecraft.client.model.geom.EntityModelSet;
+
+public final class BowelsLimbModels {
+   private static final int MAX_CACHED = 64;
+   private static final Map<Integer, Tentacle> MODELS = new HashMap<>();
+
+   private BowelsLimbModels() {
+   }
+
+   public static Tentacle forEntity(EntityModelSet modelSet, int entityId) {
+      if (MODELS.size() > 64) {
+         MODELS.clear();
+      }
+
+      return MODELS.computeIfAbsent(entityId, id -> new Tentacle(modelSet.bakeLayer(ModEntityModelLayers.TENTACLE)));
+   }
+
+   public static void clear() {
+      MODELS.clear();
+   }
+}

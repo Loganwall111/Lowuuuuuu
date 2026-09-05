@@ -1,0 +1,20 @@
+base jar:       dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
+base sha256:    6adcf07e1ad810703c12cb25d7d135aca7b8f66f7d12c273ad3f00b5abdb6599
+classes in:     385
+java files out: 331
+vineflower rc:  0
+vineflower log: 13 ERROR lines
+date:           2026-09-05T20:05:47Z
+ERROR:       Class net/dabicco/witherstormmod/entity/model/WitherStormDevourer couldn't be fully decompiled.
+ERROR:          Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame toWorld
+ERROR:          Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame toFrame
+ERROR:          Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame box
+ERROR:          Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame footprint
+ERROR:          Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame suffocates
+ERROR:    Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame toWorld
+ERROR:    Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame toFrame
+ERROR:    Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame box
+ERROR:    Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame footprint
+ERROR:    Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsFrame suffocates
+ERROR:          Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsGravity frame
+ERROR:    Unable to simplify switch on enum: const(1) not found, available: {} in method net/dabicco/witherstormmod/BowelsGravity frame

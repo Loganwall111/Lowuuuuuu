@@ -1,0 +1,154 @@
+package net.dabicco.witherstormmod.client.renderer;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.QuadInstance;
+import com.mojang.math.Axis;
+import java.util.List;
+import net.dabicco.witherstormmod.config.DabyWSClientConfig;
+import net.dabicco.witherstormmod.entity.cluster.WitherStormClusterEntity;
+import net.dabicco.witherstormmod.entity.state.DarkenedMovingBlockRenderState;
+import net.dabicco.witherstormmod.entity.state.WitherStormClusterRenderState;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
+
+public class WitherStormClusterRenderer extends EntityRenderer<WitherStormClusterEntity, WitherStormClusterRenderState> {
+   public WitherStormClusterRenderer(Context context) {
+      super(context);
+   }
+
+   public WitherStormClusterRenderState createRenderState() {
+      return new WitherStormClusterRenderState();
+   }
+
+   public void extractRenderState(WitherStormClusterEntity entity, WitherStormClusterRenderState state, float partialTick) {
+      super.extractRenderState(entity, state, partialTick);
+      state.legacy = DabyWSClientConfig.clusterVolumetricLighting;
+      state.mesh = state.legacy ? null : entity.getOrBakeMesh();
+      if (state.legacy) {
+         this.extractLegacy(entity, state);
+      }
+
+      entity.clientScale = entity.clientScale + (entity.getRenderScale() - entity.clientScale) * 0.08F;
+      state.clusterScale = entity.clientScale;
+      state.packedLight = scaleLight(state.lightCoords, entity.getDarknessFactor());
+      state.yRot = entity.getInterpolatedYaw(partialTick);
+      state.xRot = entity.getInterpolatedPitch(partialTick);
+      state.roll = entity.getInterpolatedRoll(partialTick);
+   }
+
+   private void extractLegacy(WitherStormClusterEntity entity, WitherStormClusterRenderState state) {
+      state.legacyBlocks.clear();
+      state.legacyOffsets.clear();
+      List<BlockState> blocks = entity.getBlocks();
+      List<BlockPos> offsets = entity.getBlockOffsets();
+      List<boolean[]> faceVis = entity.getBlockFaceVisibility();
+      float brightness = entity.getDarknessFactor();
+      BlockPos base = entity.blockPosition();
+
+      for (int i = 0; i < blocks.size() && i < offsets.size(); i++) {
+         if (i < faceVis.size()) {
+            boolean[] vis = faceVis.get(i);
+            boolean any = false;
+
+            for (boolean b : vis) {
+               if (b) {
+                  any = true;
+                  break;
+               }
+            }
+
+            if (!any) {
+               continue;
+            }
+         }
+
+         BlockPos worldPos = base.offset((Vec3i)offsets.get(i));
+         DarkenedMovingBlockRenderState block = new DarkenedMovingBlockRenderState();
+         block.brightnessScale = brightness;
+         block.blockState = blocks.get(i);
+         block.blockPos = worldPos;
+         block.randomSeedPos = worldPos;
+         if (entity.level() instanceof ClientLevel clientLevel) {
+            block.biome = clientLevel.getBiome(worldPos);
+            block.cardinalLighting = clientLevel.cardinalLighting();
+            block.lightEngine = clientLevel.getLightEngine();
+         }
+
+         state.legacyBlocks.add(block);
+         state.legacyOffsets.add(offsets.get(i));
+      }
+   }
+
+   private static int withEmission(int packed, int emission) {
+      int sky = packed >> 20 & 15;
+      int block = Math.max(packed >> 4 & 15, Math.min(15, emission));
+      return sky << 20 | block << 4;
+   }
+
+   private static int scaleLight(int packed, float factor) {
+      int block = Math.round(((packed & 65535) >> 4) * factor);
+      int sky = Math.round(((packed >> 16 & 65535) >> 4) * factor);
+      return Mth.clamp(sky, 0, 15) << 20 | Mth.clamp(block, 0, 15) << 4;
+   }
+
+   public void submit(WitherStormClusterRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+      if (state.legacy) {
+         this.submitLegacy(state, poseStack, submitNodeCollector);
+         super.submit(state, poseStack, submitNodeCollector, camera);
+      } else {
+         net.dabicco.witherstormmod.client.ClusterMesh mesh = state.mesh;
+         if (mesh != null && !mesh.groups().isEmpty()) {
+            poseStack.pushPose();
+            poseStack.mulPose(Axis.YP.rotationDegrees(state.yRot));
+            poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(state.roll));
+            poseStack.scale(state.clusterScale, state.clusterScale, state.clusterScale);
+            poseStack.translate(-0.5, 0.0, -0.5);
+            int light = state.packedLight;
+
+            for (net.dabicco.witherstormmod.client.ClusterMesh.Group group : mesh.groups()) {
+               QuadInstance quads = new QuadInstance();
+               quads.setLightCoords(light);
+               quads.setOverlayCoords(OverlayTexture.NO_OVERLAY);
+               submitNodeCollector.submitCustomGeometry(poseStack, group.renderType(), (pose, consumer) -> {
+                  for (net.dabicco.witherstormmod.client.ClusterMesh.Piece piece : group.pieces()) {
+                     quads.setLightCoords(piece.emission() > 0 ? withEmission(light, piece.emission()) : light);
+                     quads.setColor(piece.color());
+                     consumer.putBakedQuad(pose, piece.quad(), quads);
+                  }
+               });
+            }
+
+            poseStack.popPose();
+         }
+
+         super.submit(state, poseStack, submitNodeCollector, camera);
+      }
+   }
+
+   private void submitLegacy(WitherStormClusterRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
+      for (int i = 0; i < state.legacyBlocks.size() && i < state.legacyOffsets.size(); i++) {
+         DarkenedMovingBlockRenderState block = (DarkenedMovingBlockRenderState)state.legacyBlocks.get(i);
+         if (block.blockState.getRenderShape() == RenderShape.MODEL) {
+            BlockPos offset = (BlockPos)state.legacyOffsets.get(i);
+            poseStack.pushPose();
+            poseStack.mulPose(Axis.YP.rotationDegrees(state.yRot));
+            poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(state.roll));
+            poseStack.scale(state.clusterScale, state.clusterScale, state.clusterScale);
+            poseStack.translate(offset.getX() - 0.5, offset.getY(), offset.getZ() - 0.5);
+            collector.submitMovingBlock(poseStack, block, 0);
+            poseStack.popPose();
+         }
+      }
+   }
+}

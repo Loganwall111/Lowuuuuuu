@@ -1,0 +1,419 @@
+package net.dabicco.witherstormmod.structures;
+
+public final class LegacyBlocks {
+   private LegacyBlocks() {
+   }
+
+   private static String pick(int data, String[] opts) {
+      if (opts.length == 0) {
+         return "air";
+      } else {
+         int i = data & 15;
+         return i < opts.length ? opts[i] : opts[0];
+      }
+   }
+
+   public static String of(int id, int data) {
+      return switch (id) {
+         case 0 -> "air";
+         case 1 -> pick(data, new String[]{"stone", "granite", "polished_granite", "diorite", "polished_diorite", "andesite", "polished_andesite"});
+         case 2 -> "grass_block";
+         case 3 -> pick(data, new String[]{"dirt", "coarse_dirt", "podzol"});
+         case 4 -> "cobblestone";
+         case 5 -> pick(data, new String[]{"oak_planks", "spruce_planks", "birch_planks", "jungle_planks", "acacia_planks", "dark_oak_planks"});
+         case 6 -> "oak_sapling";
+         case 7 -> "bedrock";
+         case 8 -> "water";
+         case 9 -> "water";
+         case 10 -> "lava";
+         case 11 -> "lava";
+         case 12 -> pick(data, new String[]{"sand", "red_sand"});
+         case 13 -> "gravel";
+         case 14 -> "gold_ore";
+         case 15 -> "iron_ore";
+         case 16 -> "coal_ore";
+         case 17 -> pick(data, new String[]{"oak_log", "spruce_log", "birch_log", "jungle_log"});
+         case 18 -> pick(data, new String[]{"oak_leaves", "spruce_leaves", "birch_leaves", "jungle_leaves"});
+         case 19 -> "sponge";
+         case 20 -> "glass";
+         case 21 -> "lapis_ore";
+         case 22 -> "lapis_block";
+         case 23 -> "dispenser";
+         case 24 -> pick(data, new String[]{"sandstone", "chiseled_sandstone", "cut_sandstone"});
+         case 25 -> "note_block";
+         case 26 -> "red_bed";
+         case 27 -> "powered_rail";
+         case 28 -> "detector_rail";
+         case 29 -> "sticky_piston";
+         case 30 -> "cobweb";
+         case 31 -> pick(data, new String[]{"dead_bush", "short_grass", "fern"});
+         case 32 -> "dead_bush";
+         case 33 -> "piston";
+         case 34 -> "piston_head";
+         case 35 -> pick(
+            data,
+            new String[]{
+               "white_wool",
+               "orange_wool",
+               "magenta_wool",
+               "light_blue_wool",
+               "yellow_wool",
+               "lime_wool",
+               "pink_wool",
+               "gray_wool",
+               "light_gray_wool",
+               "cyan_wool",
+               "purple_wool",
+               "blue_wool",
+               "brown_wool",
+               "green_wool",
+               "red_wool",
+               "black_wool"
+            }
+         );
+         case 36 -> "moving_piston";
+         case 37 -> "dandelion";
+         case 38 -> pick(
+            data, new String[]{"poppy", "blue_orchid", "allium", "azure_bluet", "red_tulip", "orange_tulip", "white_tulip", "pink_tulip", "oxeye_daisy"}
+         );
+         case 39 -> "brown_mushroom";
+         case 40 -> "red_mushroom";
+         case 41 -> "gold_block";
+         case 42 -> "iron_block";
+         case 43 -> "smooth_stone_slab";
+         case 44 -> "smooth_stone_slab";
+         case 45 -> "bricks";
+         case 46 -> "tnt";
+         case 47 -> "bookshelf";
+         case 48 -> "mossy_cobblestone";
+         case 49 -> "obsidian";
+         case 50 -> "torch";
+         case 51 -> "fire";
+         case 52 -> "spawner";
+         case 53 -> "oak_stairs";
+         case 54 -> "chest";
+         case 55 -> "redstone_wire";
+         case 56 -> "diamond_ore";
+         case 57 -> "diamond_block";
+         case 58 -> "crafting_table";
+         case 59 -> "wheat";
+         case 60 -> "farmland";
+         case 61 -> "furnace";
+         case 62 -> "furnace";
+         case 63 -> "oak_sign";
+         case 64 -> "oak_door";
+         case 65 -> "ladder";
+         case 66 -> "rail";
+         case 67 -> "cobblestone_stairs";
+         case 68 -> "oak_wall_sign";
+         case 69 -> "lever";
+         case 70 -> "stone_pressure_plate";
+         case 71 -> "iron_door";
+         case 72 -> "oak_pressure_plate";
+         case 73 -> "redstone_ore";
+         case 74 -> "redstone_ore";
+         case 75 -> "redstone_torch";
+         case 76 -> "redstone_torch";
+         case 77 -> "stone_button";
+         case 78 -> "snow";
+         case 79 -> "ice";
+         case 80 -> "snow_block";
+         case 81 -> "cactus";
+         case 82 -> "clay";
+         case 83 -> "sugar_cane";
+         case 84 -> "jukebox";
+         case 85 -> "oak_fence";
+         case 86 -> "carved_pumpkin";
+         case 87 -> "netherrack";
+         case 88 -> "soul_sand";
+         case 89 -> "glowstone";
+         case 90 -> "nether_portal";
+         case 91 -> "jack_o_lantern";
+         case 92 -> "cake";
+         case 93 -> "repeater";
+         case 94 -> "repeater";
+         case 95 -> pick(
+            data,
+            new String[]{
+               "white_stained_glass",
+               "orange_stained_glass",
+               "magenta_stained_glass",
+               "light_blue_stained_glass",
+               "yellow_stained_glass",
+               "lime_stained_glass",
+               "pink_stained_glass",
+               "gray_stained_glass",
+               "light_gray_stained_glass",
+               "cyan_stained_glass",
+               "purple_stained_glass",
+               "blue_stained_glass",
+               "brown_stained_glass",
+               "green_stained_glass",
+               "red_stained_glass",
+               "black_stained_glass"
+            }
+         );
+         case 96 -> "oak_trapdoor";
+         case 97 -> "infested_stone";
+         case 98 -> pick(data, new String[]{"stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks", "chiseled_stone_bricks"});
+         case 99 -> "brown_mushroom_block";
+         case 100 -> "red_mushroom_block";
+         case 101 -> "iron_bars";
+         case 102 -> "glass_pane";
+         case 103 -> "melon";
+         case 104 -> "pumpkin_stem";
+         case 105 -> "melon_stem";
+         case 106 -> "vine";
+         case 107 -> "oak_fence_gate";
+         case 108 -> "brick_stairs";
+         case 109 -> "stone_brick_stairs";
+         case 110 -> "mycelium";
+         case 111 -> "lily_pad";
+         case 112 -> "nether_bricks";
+         case 113 -> "nether_brick_fence";
+         case 114 -> "nether_brick_stairs";
+         case 115 -> "nether_wart";
+         case 116 -> "enchanting_table";
+         case 117 -> "brewing_stand";
+         case 118 -> "cauldron";
+         case 119 -> "end_portal";
+         case 120 -> "end_portal_frame";
+         case 121 -> "end_stone";
+         case 122 -> "dragon_egg";
+         case 123 -> "redstone_lamp";
+         case 124 -> "redstone_lamp";
+         case 125 -> "oak_slab";
+         case 126 -> "oak_slab";
+         case 127 -> "cocoa";
+         case 128 -> "sandstone_stairs";
+         case 129 -> "emerald_ore";
+         case 130 -> "ender_chest";
+         case 131 -> "tripwire_hook";
+         case 132 -> "tripwire";
+         case 133 -> "emerald_block";
+         case 134 -> "spruce_stairs";
+         case 135 -> "birch_stairs";
+         case 136 -> "jungle_stairs";
+         case 137 -> "command_block";
+         case 138 -> "beacon";
+         case 139 -> pick(data, new String[]{"cobblestone_wall", "mossy_cobblestone_wall"});
+         case 140 -> "flower_pot";
+         case 141 -> "carrots";
+         case 142 -> "potatoes";
+         case 143 -> "oak_button";
+         case 144 -> "skeleton_skull";
+         case 145 -> "anvil";
+         case 146 -> "trapped_chest";
+         case 147 -> "light_weighted_pressure_plate";
+         case 148 -> "heavy_weighted_pressure_plate";
+         case 149 -> "comparator";
+         case 150 -> "comparator";
+         case 151 -> "daylight_detector";
+         case 152 -> "redstone_block";
+         case 153 -> "nether_quartz_ore";
+         case 154 -> "hopper";
+         case 155 -> pick(data, new String[]{"quartz_block", "chiseled_quartz_block", "quartz_pillar"});
+         case 156 -> "quartz_stairs";
+         case 157 -> "activator_rail";
+         case 158 -> "dropper";
+         case 159 -> pick(
+            data,
+            new String[]{
+               "white_terracotta",
+               "orange_terracotta",
+               "magenta_terracotta",
+               "light_blue_terracotta",
+               "yellow_terracotta",
+               "lime_terracotta",
+               "pink_terracotta",
+               "gray_terracotta",
+               "light_gray_terracotta",
+               "cyan_terracotta",
+               "purple_terracotta",
+               "blue_terracotta",
+               "brown_terracotta",
+               "green_terracotta",
+               "red_terracotta",
+               "black_terracotta"
+            }
+         );
+         case 160 -> pick(
+            data,
+            new String[]{
+               "white_stained_glass_pane",
+               "orange_stained_glass_pane",
+               "magenta_stained_glass_pane",
+               "light_blue_stained_glass_pane",
+               "yellow_stained_glass_pane",
+               "lime_stained_glass_pane",
+               "pink_stained_glass_pane",
+               "gray_stained_glass_pane",
+               "light_gray_stained_glass_pane",
+               "cyan_stained_glass_pane",
+               "purple_stained_glass_pane",
+               "blue_stained_glass_pane",
+               "brown_stained_glass_pane",
+               "green_stained_glass_pane",
+               "red_stained_glass_pane",
+               "black_stained_glass_pane"
+            }
+         );
+         case 161 -> pick(data, new String[]{"acacia_leaves", "dark_oak_leaves"});
+         case 162 -> pick(data, new String[]{"acacia_log", "dark_oak_log"});
+         case 163 -> "acacia_stairs";
+         case 164 -> "dark_oak_stairs";
+         case 165 -> "slime_block";
+         case 166 -> "barrier";
+         case 167 -> "iron_trapdoor";
+         case 168 -> pick(data, new String[]{"prismarine", "prismarine_bricks", "dark_prismarine"});
+         case 169 -> "sea_lantern";
+         case 170 -> "hay_block";
+         case 171 -> pick(
+            data,
+            new String[]{
+               "white_carpet",
+               "orange_carpet",
+               "magenta_carpet",
+               "light_blue_carpet",
+               "yellow_carpet",
+               "lime_carpet",
+               "pink_carpet",
+               "gray_carpet",
+               "light_gray_carpet",
+               "cyan_carpet",
+               "purple_carpet",
+               "blue_carpet",
+               "brown_carpet",
+               "green_carpet",
+               "red_carpet",
+               "black_carpet"
+            }
+         );
+         case 172 -> "terracotta";
+         case 173 -> "coal_block";
+         case 174 -> "packed_ice";
+         case 175 -> "sunflower";
+         case 176 -> pick(
+            data,
+            new String[]{
+               "white_banner",
+               "orange_banner",
+               "magenta_banner",
+               "light_blue_banner",
+               "yellow_banner",
+               "lime_banner",
+               "pink_banner",
+               "gray_banner",
+               "light_gray_banner",
+               "cyan_banner",
+               "purple_banner",
+               "blue_banner",
+               "brown_banner",
+               "green_banner",
+               "red_banner",
+               "black_banner"
+            }
+         );
+         case 177 -> "white_wall_banner";
+         case 178 -> "daylight_detector";
+         case 179 -> pick(data, new String[]{"red_sandstone", "chiseled_red_sandstone", "cut_red_sandstone"});
+         case 180 -> "red_sandstone_stairs";
+         case 181 -> "red_sandstone_slab";
+         case 182 -> "red_sandstone_slab";
+         case 183 -> "spruce_fence_gate";
+         case 184 -> "birch_fence_gate";
+         case 185 -> "jungle_fence_gate";
+         case 186 -> "dark_oak_fence_gate";
+         case 187 -> "acacia_fence_gate";
+         case 188 -> "spruce_fence";
+         case 189 -> "birch_fence";
+         case 190 -> "jungle_fence";
+         case 191 -> "dark_oak_fence";
+         case 192 -> "acacia_fence";
+         case 193 -> "spruce_door";
+         case 194 -> "birch_door";
+         case 195 -> "jungle_door";
+         case 196 -> "acacia_door";
+         case 197 -> "dark_oak_door";
+         case 198 -> "end_rod";
+         case 199 -> "chorus_plant";
+         case 200 -> "chorus_flower";
+         case 201 -> "purpur_block";
+         case 202 -> "purpur_pillar";
+         case 203 -> "purpur_stairs";
+         case 204 -> "purpur_slab";
+         case 205 -> "purpur_slab";
+         case 206 -> "end_stone_bricks";
+         case 207 -> "beetroots";
+         case 208 -> "dirt_path";
+         case 209 -> "end_gateway";
+         case 210 -> "repeating_command_block";
+         case 211 -> "chain_command_block";
+         case 212 -> "frosted_ice";
+         case 213 -> "magma_block";
+         case 214 -> "nether_wart_block";
+         case 215 -> "red_nether_bricks";
+         case 216 -> "bone_block";
+         case 217 -> "structure_void";
+         case 218 -> "observer";
+         case 219 -> "white_shulker_box";
+         default -> "stone";
+         case 231 -> "purple_shulker_box";
+         case 236 -> "white_concrete";
+         case 237 -> "orange_concrete";
+         case 238 -> "magenta_concrete";
+         case 240 -> "yellow_concrete";
+         case 241 -> "lime_concrete";
+         case 242 -> "pink_concrete";
+         case 243 -> "gray_concrete";
+         case 245 -> "cyan_concrete";
+         case 246 -> "purple_concrete";
+         case 248 -> "brown_concrete";
+         case 249 -> "green_concrete";
+         case 250 -> "red_concrete";
+         case 251 -> pick(
+            data,
+            new String[]{
+               "white_concrete",
+               "orange_concrete",
+               "magenta_concrete",
+               "light_blue_concrete",
+               "yellow_concrete",
+               "lime_concrete",
+               "pink_concrete",
+               "gray_concrete",
+               "light_gray_concrete",
+               "cyan_concrete",
+               "purple_concrete",
+               "blue_concrete",
+               "brown_concrete",
+               "green_concrete",
+               "red_concrete",
+               "black_concrete"
+            }
+         );
+         case 252 -> pick(
+            data,
+            new String[]{
+               "white_concrete_powder",
+               "orange_concrete_powder",
+               "magenta_concrete_powder",
+               "light_blue_concrete_powder",
+               "yellow_concrete_powder",
+               "lime_concrete_powder",
+               "pink_concrete_powder",
+               "gray_concrete_powder",
+               "light_gray_concrete_powder",
+               "cyan_concrete_powder",
+               "purple_concrete_powder",
+               "blue_concrete_powder",
+               "brown_concrete_powder",
+               "green_concrete_powder",
+               "red_concrete_powder",
+               "black_concrete_powder"
+            }
+         );
+         case 255 -> "structure_block";
+      };
+   }
+}

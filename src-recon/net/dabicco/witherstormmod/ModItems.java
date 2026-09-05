@@ -1,0 +1,166 @@
+package net.dabicco.witherstormmod;
+
+import java.util.List;
+import java.util.function.Function;
+import net.dabicco.witherstormmod.item.FormidibombItem;
+import net.dabicco.witherstormmod.item.RocketRetrieverItem;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.Item.Properties;
+import net.minecraft.world.item.component.ItemLore;
+
+public class ModItems {
+   public static final Item WITHER_HEART = register("wither_heart", Item::new, new Properties());
+   public static final Item WITHER_FRAGMENT = register("wither_fragment", Item::new, new Properties());
+   public static final Item COMMAND_ESSENCE = register("command_essence", Item::new, new Properties());
+   public static final Item COMMAND_CIRCUIT = register("command_circuit", Item::new, new Properties());
+   public static final Item CONTROL_PANEL = register("control_panel", Item::new, new Properties());
+   public static final Item SUPER_TNT = register("super_tnt", props -> new BlockItem(ModBlocks.SUPER_TNT, props), new Properties());
+   public static final Item ROCKET_RETRIEVER = register("rocket_retriever", RocketRetrieverItem::new, new Properties().stacksTo(1));
+   public static final Item GRAPPLE = register("grapple", Item::new, new Properties());
+   public static final Item FORMIDIBOMB = register(
+      "formidibomb",
+      FormidibombItem::new,
+      new Properties()
+         .stacksTo(16)
+         .component(
+            DataComponents.ITEM_NAME,
+            Component.translatable("item.dabywitherstormmod.formidibomb").withStyle(Style.EMPTY.withColor(TextColor.fromRgb(10170623)))
+         )
+         .component(
+            DataComponents.LORE,
+            new ItemLore(
+               List.of(
+                  Component.translatable("item.dabywitherstormmod.formidibomb.lore").withStyle(ChatFormatting.GRAY),
+                  Component.translatable("item.dabywitherstormmod.formidibomb.warning")
+                     .withStyle(new ChatFormatting[]{ChatFormatting.RED, ChatFormatting.BOLD})
+               )
+            )
+         )
+   );
+   public static final Item FURNACE_FILTER = register(
+      "furnace_filter",
+      props -> new BlockItem(ModBlocks.FURNACE_FILTER, props),
+      new Properties()
+         .component(
+            DataComponents.LORE, new ItemLore(List.of(Component.translatable("item.dabywitherstormmod.furnace_filter.lore").withStyle(ChatFormatting.GRAY)))
+         )
+   );
+   public static final Item WITHERED_FLESH_BLOCK = register(
+      "withered_flesh_block", props -> new BlockItem(ModBlocks.WITHERED_FLESH_BLOCK, props), new Properties()
+   );
+   public static final Item TORN_WITHERED_FLESH = register(
+      "torn_withered_flesh", props -> new BlockItem(ModBlocks.TORN_WITHERED_FLESH, props), new Properties()
+   );
+   public static final Item WITHERED_BEDROCK = register("withered_bedrock", props -> new BlockItem(ModBlocks.WITHERED_BEDROCK, props), new Properties());
+   public static final Item STRIPPED_WITHERED_LOG = register(
+      "stripped_withered_log", props -> new BlockItem(ModBlocks.STRIPPED_WITHERED_LOG, props), new Properties()
+   );
+   public static final Item WITHERED_PLANKS = register("withered_planks", props -> new BlockItem(ModBlocks.WITHERED_PLANKS, props), new Properties());
+   public static final Item WITHERED_STAIRS = register("withered_stairs", props -> new BlockItem(ModBlocks.WITHERED_STAIRS, props), new Properties());
+   public static final Item WITHERED_SLAB = register("withered_slab", props -> new BlockItem(ModBlocks.WITHERED_SLAB, props), new Properties());
+   public static final Item WITHERED_FENCE = register("withered_fence", props -> new BlockItem(ModBlocks.WITHERED_FENCE, props), new Properties());
+   public static final Item WITHERED_BUTTON = register("withered_button", props -> new BlockItem(ModBlocks.WITHERED_BUTTON, props), new Properties());
+   public static final Item STRIPPED_WITHERED_PLANKS = register(
+      "stripped_withered_planks", props -> new BlockItem(ModBlocks.STRIPPED_WITHERED_PLANKS, props), new Properties()
+   );
+   public static final Item STRIPPED_WITHERED_STAIRS = register(
+      "stripped_withered_stairs", props -> new BlockItem(ModBlocks.STRIPPED_WITHERED_STAIRS, props), new Properties()
+   );
+   public static final Item STRIPPED_WITHERED_SLAB = register(
+      "stripped_withered_slab", props -> new BlockItem(ModBlocks.STRIPPED_WITHERED_SLAB, props), new Properties()
+   );
+   public static final Item STRIPPED_WITHERED_FENCE = register(
+      "stripped_withered_fence", props -> new BlockItem(ModBlocks.STRIPPED_WITHERED_FENCE, props), new Properties()
+   );
+   public static final Item STRIPPED_WITHERED_BUTTON = register(
+      "stripped_withered_button", props -> new BlockItem(ModBlocks.STRIPPED_WITHERED_BUTTON, props), new Properties()
+   );
+   public static final Item WITHERED_MUSHROOM = register("withered_mushroom", props -> new BlockItem(ModBlocks.WITHERED_MUSHROOM, props), new Properties());
+   public static final Item WITHERED_DUST = register("withered_dust", props -> new BlockItem(ModBlocks.WITHERED_DUST, props), new Properties());
+   public static final Item WITHERED_STONE = register("withered_stone", props -> new BlockItem(ModBlocks.WITHERED_STONE, props), new Properties());
+   public static final Item WITHERED_STONE_STAIRS = register(
+      "withered_stone_stairs", props -> new BlockItem(ModBlocks.WITHERED_STONE_STAIRS, props), new Properties()
+   );
+   public static final Item WITHERED_STONE_SLAB = register(
+      "withered_stone_slab", props -> new BlockItem(ModBlocks.WITHERED_STONE_SLAB, props), new Properties()
+   );
+   public static final Item AMULET_BRIDGES = register("amulet_bridges", Item::new, new Properties().stacksTo(1));
+   public static final Item AMULET_WUSSMODE = register("amulet_wussmode", Item::new, new Properties().stacksTo(1));
+   public static final Item WITHERED_NETHER_STAR = register(
+      "withered_nether_star",
+      Item::new,
+      new Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant().component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
+   );
+   public static final Item WITHERED_COBBLESTONE = register(
+      "withered_cobblestone", props -> new BlockItem(ModBlocks.WITHERED_COBBLESTONE, props), new Properties()
+   );
+   public static final Item WITHERED_NETHERBRICK = register(
+      "withered_netherbrick", props -> new BlockItem(ModBlocks.WITHERED_NETHERBRICK, props), new Properties()
+   );
+   public static final Item WITHERED_SAND = register("withered_sand", props -> new BlockItem(ModBlocks.WITHERED_SAND, props), new Properties());
+   public static final Item WITHERED_COBBLESTONE_STAIRS = register(
+      "withered_cobblestone_stairs", props -> new BlockItem(ModBlocks.WITHERED_COBBLESTONE_STAIRS, props), new Properties()
+   );
+   public static final Item WITHERED_COBBLESTONE_SLAB = register(
+      "withered_cobblestone_slab", props -> new BlockItem(ModBlocks.WITHERED_COBBLESTONE_SLAB, props), new Properties()
+   );
+   public static final Item WITHERED_COBBLESTONE_WALL = register(
+      "withered_cobblestone_wall", props -> new BlockItem(ModBlocks.WITHERED_COBBLESTONE_WALL, props), new Properties()
+   );
+   public static final Item WITHERED_NETHERBRICK_STAIRS = register(
+      "withered_netherbrick_stairs", props -> new BlockItem(ModBlocks.WITHERED_NETHERBRICK_STAIRS, props), new Properties()
+   );
+   public static final Item WITHERED_NETHERBRICK_SLAB = register(
+      "withered_netherbrick_slab", props -> new BlockItem(ModBlocks.WITHERED_NETHERBRICK_SLAB, props), new Properties()
+   );
+   public static final Item WITHERED_NETHERBRICK_WALL = register(
+      "withered_netherbrick_wall", props -> new BlockItem(ModBlocks.WITHERED_NETHERBRICK_WALL, props), new Properties()
+   );
+   public static final Item WITHERED_NETHERBRICK_FENCE = register(
+      "withered_netherbrick_fence", props -> new BlockItem(ModBlocks.WITHERED_NETHERBRICK_FENCE, props), new Properties()
+   );
+   public static final Item WITHERED_LOG = register("withered_log", props -> new BlockItem(ModBlocks.WITHERED_LOG, props), new Properties());
+   public static final Item COMMAND_CORE_BLOCK = register(
+      "command_core_block", props -> new BlockItem(ModBlocks.COMMAND_CORE_BLOCK, props), new Properties().rarity(Rarity.RARE)
+   );
+   public static final Item TAINTED_OBSIDIAN = register("tainted_obsidian", props -> new BlockItem(ModBlocks.TAINTED_OBSIDIAN, props), new Properties());
+   public static final Item WITHER_STORM_EYE_BLOCK = register(
+      "wither_storm_eye_block", props -> new BlockItem(ModBlocks.WITHER_STORM_EYE_BLOCK, props), new Properties().rarity(Rarity.UNCOMMON)
+   );
+   public static final Item STORM_DEBRIS_BLOCK = register("storm_debris_block", props -> new BlockItem(ModBlocks.STORM_DEBRIS_BLOCK, props), new Properties());
+   public static final Item WITHERED_BONE_BLOCK = register(
+      "withered_bone_block", props -> new BlockItem(ModBlocks.WITHERED_BONE_BLOCK, props), new Properties()
+   );
+   public static final Item SUPER_COMMAND_BLOCK = register(
+      "super_command_block",
+      props -> new BlockItem(ModBlocks.SUPER_COMMAND_BLOCK, props),
+      new Properties().rarity(Rarity.EPIC).component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
+   );
+   public static final Item SUPER_COMMAND_INGOT = register(
+      "super_command_ingot", Item::new, new Properties().rarity(Rarity.EPIC).component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
+   );
+   public static final Item STORMCALLER_HORN = register("stormcaller_horn", Item::new, new Properties().stacksTo(1).rarity(Rarity.EPIC));
+   public static final Item FORMIDIBOMB_REMOTE = register("formidibomb_remote", Item::new, new Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+
+   public static <T extends Item> T register(String name, Function<Properties, T> itemFactory, Properties settings) {
+      ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("dabywitherstormmod", name));
+      T item = (T)itemFactory.apply(settings.setId(itemKey));
+      Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+      return item;
+   }
+
+   public static void initialize() {
+   }
+}
