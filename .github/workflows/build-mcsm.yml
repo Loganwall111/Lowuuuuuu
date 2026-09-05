@@ -2,12 +2,13 @@ name: Build MCSM Wither Storm jar
 
 # ----------------------------------------------------------------------------
 # The "GitHub compiler": the sandbox has no JDK and no route to Mojang/Maven,
-# so every push to either arena branch builds the full jar on a runner that
+# so every push to a listed arena branch builds the full jar on a runner that
 # has both. Artifacts appear on the run page; when the VERSION file bumps to a
-# version with no release yet, a release with the jar is created automatically
-# -- but only when the build ran on the main dev branch
-# (arena/01a06df7-lowuuuuuu), so test builds on other arena branches do not
-# publish alongside it.
+# version with no release yet, a release carrying the jar is created
+# automatically. MCSM 1.9.109: that now happens from any arena branch, because
+# the release tag is derived from VERSION and an existing tag is never
+# overwritten -- so branches cannot collide, and a dispatched test build no
+# longer leaves the user hunting through run pages for an artifact.
 #
 # NOTE: this file lives in .github/workflows/ so GitHub actually runs it.
 # ci/workflows/build-mcsm.yml is kept as a mirror/template of the same recipe.
@@ -15,7 +16,8 @@ name: Build MCSM Wither Storm jar
 
 on:
   push:
-    branches: [arena/01a071bb-lowuuuuuu, arena/01a06ef4-lowuuuuuu, arena/01a06df7-lowuuuuuu]
+    branches: [arena/01a071bb-lowuuuuuu, arena/01a06ef4-lowuuuuuu,
+               arena/01a06df7-lowuuuuuu, arena/01a07250-lowuuuuuu]
   workflow_dispatch:
 
 permissions:
@@ -51,7 +53,16 @@ jobs:
             out/*.txt
 
       - name: Publish release when VERSION is new
-        if: success() && (github.ref == 'refs/heads/arena/01a071bb-lowuuuuuu' || github.ref == 'refs/heads/arena/01a06df7-lowuuuuuu')
+        # MCSM 1.9.109 -- publish from ANY arena branch. The tag comes from
+        # VERSION and the step already refuses to touch an existing tag, so two
+        # branches cannot collide: whichever builds a new version first owns that
+        # release and the rest leave it alone. This used to be gated to two named
+        # branches, which meant a dispatched build anywhere else produced an
+        # artifact only -- and an artifact needs a logged-in click-through on the
+        # run page, with a run-numbered name that says nothing about the version.
+        # That is part of the "which build did I actually install?" confusion this
+        # release exists to end, so the gate is now the tag check alone.
+        if: success() && startsWith(github.ref, 'refs/heads/arena/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
