@@ -25,6 +25,17 @@ Legend:
 
 ---
 
+## 0. Branding (as of 1.9.116)
+
+| Feature | Status | Evidence / notes |
+|---|---|---|
+| Title-screen wordmark = player's logo | LIVE | `jar-overrides/assets/minecraft/textures/gui/title/minecraft.png` (1024x682, black keyed to alpha), baked by `ci/make_branding.py` from `branding/logo.png`. |
+| Mods-list icon = player's logo | LIVE | `jar-overrides/assets/dabywitherstormmod/icon.png` (256x256, whole artwork fit-centred); path confirmed against `fabric.mod.json` "icon". |
+| Title panorama = player's storm shot | LIVE | 6 faces (4 side quarters + sky + ground caps) at BOTH `gui/title/background/` and legacy `gui/panorama/`. |
+| Display-name rebrand strings | LIVE | since 1.9.113: banner, panel, jar filename, release tags. |
+
+---
+
 ## 1. Storm look
 
 | Feature | Status | Evidence / notes |

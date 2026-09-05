@@ -7,7 +7,7 @@ Turns the two brand assets the player supplied into jar overrides:
                               (the title-screen wordmark: logo, black keyed
                               out to alpha so the panorama shows through)
                            -> assets/dabywitherstormmod/icon.png
-                              (mods-list icon: centre square crop, 256x256)
+                              (mods-list icon: whole artwork fit-centred, 256x256)
   branding/panorama.png    -> assets/minecraft/textures/gui/title/background/
                               panorama_0..5.png  (and the legacy
                               textures/gui/panorama/ path as insurance)
@@ -174,11 +174,20 @@ def main():
         nh = max(1, h * nw // w)
         write_png(os.path.join(over, "assets/minecraft/textures/gui/title/minecraft.png"),
                   nw, nh, key_black(scale(px, w, h, nw, nh)))
-        # mods-list icon: centre square, 256
-        side = min(w, h)
-        cx, cy = (w - side) // 2, (h - side) // 2
+        # mods-list icon: whole artwork fit-centred on a 256x256 transparent
+        # square (a centre crop chopped the wordmark edges)
+        nw2 = 244
+        nh2 = max(1, h * nw2 // w)
+        art = key_black(scale(px, w, h, nw2, nh2))
+        canvas = [(0, 0, 0, 0)] * (256 * 256)
+        x0 = (256 - nw2) // 2
+        y0 = (256 - nh2) // 2
+        for yy in range(nh2):
+            src = yy * nw2
+            dst = (y0 + yy) * 256 + x0
+            canvas[dst:dst + nw2] = art[src:src + nw2]
         write_png(os.path.join(over, "assets/dabywitherstormmod/icon.png"),
-                  256, 256, key_black(scale(crop(px, w, h, cx, cy, side, side), side, side, 256, 256)))
+                  256, 256, canvas)
         print("[branding] wrote title logo + mod icon")
 
     if pano:
