@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/fence_post",
+  "textures": {
+    "texture": "dabywitherstormmod:block/stripped_withered_planks"
+  }
+}

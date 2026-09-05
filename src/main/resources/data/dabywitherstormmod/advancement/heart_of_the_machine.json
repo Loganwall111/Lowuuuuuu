@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "dabywitherstormmod:control_panel"
+    },
+    "title": {
+      "translate": "advancements.dabywitherstormmod.heart_of_the_machine.title"
+    },
+    "description": {
+      "translate": "advancements.dabywitherstormmod.heart_of_the_machine.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "dabywitherstormmod:control_panel"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has"
+    ]
+  ],
+  "parent": "dabywitherstormmod:bigger_bang"
+}

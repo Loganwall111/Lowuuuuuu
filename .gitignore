@@ -1,2 +1,19 @@
 __pycache__/
 *.pyc
+.gradle/
+build/
+out/
+run/
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.DS_Store
+*.log
+
+# Raw jar extraction — reference only, not tracked (assets live in src/main/resources)
+mod/
+# ffmpeg.exe + build source shipped inside the mod's assets — dev artifacts, not runtime assets
+src/main/resources/assets/dabywitherstormmod/sounds/ffmpeg/
