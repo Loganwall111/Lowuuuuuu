@@ -52,8 +52,13 @@ float mcsm_ramp(float v, float lo, float hi);
 
 // Vivid Story Mode grade. Applied to terrain and sky so the whole frame
 // matches the reference stills instead of only the storm.
-const float MCSM_SATURATION = 1.06;   // 1.9.71: 1.34 clipped channels to 1.0 and flattened the gradient
-const float MCSM_CONTRAST   = 1.04;   // 1.9.71: reduced with saturation
+// MCSM 1.9.96: user wants the world "a lot more contrast and vivid, just like
+// the [MCSM] images". Bumped from the conservative 1.06/1.04 pair. Kept well
+// below 1.34 (phase 4: that clipped channels and destroyed gradients) -- 1.14
+// is measured-safe: mcsm_story_grade() clips to >= 0 only at the dark end, and
+// the storm dome rows top out near 0.50 so 1.14x saturation cannot clip them.
+const float MCSM_SATURATION = 1.14;   // 1.9.71: 1.34 clipped channels to 1.0 and flattened the gradient
+const float MCSM_CONTRAST   = 1.08;   // 1.9.71: reduced with saturation
 const float MCSM_LIFT       = 0.008;  // keeps blacks from crushing
 
 vec3 mcsm_story_grade(vec3 c) {
@@ -203,18 +208,31 @@ float mcsm_phase(float fogSkyEnd, vec4 fogColor, float fogRenderDistanceEnd) {
 float mcsm_clouds_end() {
     float v = FogCloudsEnd;
     // 1.9.71 carrier band 3000..68340, plus the legacy 1100..2150 band.
-    if ((v > 1100.0 && v < 2150.0) || (v >= 2999.0 && v <= 68341.0))
+    // MCSM 1.9.98: the WIDE carrier (aim + glare size) sits at 47000..1093455
+    // -- the cloud pass must not read any of these as a real distance.
+    if ((v > 1100.0 && v < 2150.0) || (v >= 2999.0 && v <= 68341.0)
+        || (v >= 47000.0 && v <= 1093455.0))
         return clamp(FogRenderDistanceEnd * 0.75, 32.0, 192.0);
     return v;
 }
 
 // Defensive twin for the render-distance slot (unused by the v3 carrier, but
 // harmless and future-proof if the aim ever moves back there).
+// MCSM 1.9.96: also guard the 9001..9299 band -- it will carry the user
+// glare-size preference (size*10 offset from 9000) once the Java carrier
+// ships; fog math must never see those values as a real distance.
 float mcsm_rd_start() {
     float v = FogRenderDistanceStart;
-    if ((v > 1100.0 && v < 2150.0) || (v >= 2999.0 && v <= 68341.0))
+    if ((v > 1100.0 && v < 2150.0) || (v >= 2999.0 && v <= 68341.0)
+        || (v >= 9001.0 && v <= 9299.0))
         return FogRenderDistanceEnd * 0.72;
     return v;
+}
+
+// Raw read of the render-distance slot, for carrier bands that need the
+// unmodified value (glare size). Fog consumers must use mcsm_rd_start().
+float mcsm_rd_raw() {
+    return FogRenderDistanceStart;
 }
 
 float mcsm_clock(float gameTime01) {
@@ -248,7 +266,20 @@ vec4 mcsm_boss_dir(vec3 camWorld) {
     //   cloudEnd = 3000 + yawIdx*181 + pitchIdx
     // The old 1200-band packing aliased 45:1 and decoded pitch to -90 almost
     // always, which drew the glare blob below the world -> "blob is missing".
-    if (v >= 2999.0 && v <= 68341.0) {
+    //
+    // MCSM 1.9.98: WIDE carrier. Same integer payload, multiplied by 16, with
+    // the glare-size index packed into the low nibble:
+    //   cloudEnd = (3000 + yawIdx*181 + pitchIdx) * 16 + sizeIdx
+    // Max = 68340*16+15 = 1093455, exact in float32 (< 2^24). Band split is
+    // clean: old tops out at 68340, wide starts at 48000.
+    if (v >= 47000.0 && v <= 1093455.0) {
+        float e16 = floor(v / 16.0);
+        float e   = e16 - 3000.0;
+        float yi  = floor(e / 181.0);
+        float pi  = e - yi * 181.0;
+        yaw   = clamp(yi, 0.0, 360.0) - 180.0;
+        pitch = clamp(pi, 0.0, 180.0) - 90.0;
+    } else if (v >= 2999.0 && v <= 68341.0) {
         float e  = v - 3000.0;
         float yi = floor(e / 181.0);
         float pi = e - yi * 181.0;
@@ -259,7 +290,35 @@ vec4 mcsm_boss_dir(vec3 camWorld) {
     }
     float yr = yaw * (MCSM_PI / 180.0);
     float pr = pitch * (MCSM_PI / 180.0);
-    return vec4(cos(pr) * cos(yr), sin(pr), cos(pr) * sin(yr), 1.0);
+    // MCSM 1.9.96 -- ANTIPODE FIX. Frames 194701 / 195146 show the glare mass
+    // parked low-right while the storm sits high-left -- mirrored in BOTH axes,
+    // i.e. the carrier's yaw()/pitch() describe boss->camera, not
+    // camera->boss. The dome blob therefore rendered at the exact opposite
+    // point of the sky (and its rim poked out "through the other side of the
+    // storm", the user's clip-through report). Negating the decoded vector
+    // re-centres the mass on the storm, which also delivers "the storm must be
+    // in the centre". The witherstorm_BossPos branch above is already
+    // camera->boss (BossPos - camWorld), so it is left untouched.
+    // If a future frame ever shows the blob opposite the storm again, this one
+    // negation is the suspect -- flip it back first.
+    vec3 d = vec3(cos(pr) * cos(yr), sin(pr), cos(pr) * sin(yr));
+    return vec4(-d, 1.0);
+}
+
+// MCSM 1.9.98 -- user-facing glare size, rides the wide carrier's low nibble.
+//   sizeIdx 0..15 -> size 0.50 + 0.17*idx  (0.50 .. 3.05x the 1.9.89 mass)
+// Absent band (unpatched jar-side writer) -> 1.18, i.e. "a tiny bit bigger
+// than 1.9.95", the user's final ruling; the in-game slider (MCSM Extras tab)
+// writes the real value each frame once the Java half ships (phase 30 builds
+// from CI). 1.9.96/97's FogRenderDistanceStart band was retired before use;
+// its guard in mcsm_rd_start() stays as harmless future-proofing.
+float mcsm_glare_size() {
+    float v = FogCloudsEnd;
+    if (v >= 47000.0 && v <= 1093455.0) {
+        float sizeIdx = v - floor(v / 16.0) * 16.0;
+        return clamp(0.50 + 0.17 * sizeIdx, 0.25, 3.05);
+    }
+    return 1.18;
 }
 
 // ------------------------------------------------------------- helpers
@@ -401,70 +460,205 @@ vec3 mcsm_blob_color(float p, float clock) {
 // Premultiplied emission + coverage. Grows with the storm, 15% smaller than
 // the Java StormBackdrop ever rendered ("shrunk just a bit"), pinned to the
 // boss's sky direction so it stalks with the creature.
-// MCSM 1.9.85 -- the halo/bubble mass changes colour with the storm phase.
-// 1.9.84 hard-coded it teal, which is only correct at 5.0. The user's spec:
-//     5.0          turquoise
-//     5.1 - 5.2    dark purple
-//     5.25 - 5.9   magenta / purple / pink / black
-//     6.0          orange, magenta, purple, pink, black and red
-//     7.0          same family as 6
-// Cross-checked against the reference frames (trimmed radial means at r=0.20H):
-//     144558 turquoise  (0.018,0.038,0.040)  G-R +0.020  B-R +0.022
-//     072359 phase ~7   (0.025,0.013,0.045)  G-R -0.012  B-R +0.020
-//     073325 phase ~7   (0.035,0.036,0.086)  G-R +0.001  B-R +0.050
-//     145046 late       (0.136,0.071,0.239)  G-R -0.066  B-R +0.103
-// Only the turquoise reference has G-R positive, so green must drop away
-// immediately after 5.0 and never return -- that is the 5.3+ "no turquoise" rule.
+// MCSM 1.9.89 -- the user's colour schedule (2026-09-03 voice note):
+//     green        4.45-4.95  (green-fog era; the blob first appears at the
+//                              sky gate 4.95 still green -- the "green glare")
+//     turquoise    5.00-5.15  ("5.0 turquoise"; frame 144558 is the only
+//                              reference with G-R positive, so green drops
+//                              away after 5.0 and never returns -- the 5.3+
+//                              "no turquoise" rule holds)
+//     purple & pink 5.20-5.50
+//     purple       5.50-5.90  ("phase 5.5 to 5.9 purple")
+//     dark crimson 6.00-6.90
+//     black at the top 7.0-8.0 (black heart, blood rim)
 vec3 mcsm_halo_color(float p) {
-    vec3 c = vec3(0.026, 0.082, 0.088);                                  // 5.00 turquoise
-    c = mix(c, vec3(0.038, 0.020, 0.062), mcsm_ramp(p, 5.02, 5.12));     // 5.1  dark purple
-    c = mix(c, vec3(0.075, 0.022, 0.090), mcsm_ramp(p, 5.18, 5.28));     // 5.25 magenta-purple
-    c = mix(c, vec3(0.105, 0.028, 0.108), mcsm_ramp(p, 5.30, 5.62));     // 5.6  magenta/pink
-    c = mix(c, vec3(0.120, 0.032, 0.118), mcsm_ramp(p, 5.62, 5.92));     // 5.9  pink-magenta
-    c = mix(c, vec3(0.140, 0.052, 0.110), mcsm_ramp(p, 5.92, 6.05));     // 6.0  orange enters
-    c = mix(c, vec3(0.150, 0.058, 0.100), mcsm_ramp(p, 6.05, 6.55));     // 6.5  orange+red
-    c = mix(c, vec3(0.155, 0.060, 0.098), mcsm_ramp(p, 6.55, 7.00));     // 7.0  same family
-    c = mix(c, vec3(0.150, 0.040, 0.070), mcsm_ramp(p, 7.20, 8.00));     // 8.0  blood red
+    vec3 c = vec3(0.032, 0.105, 0.062);                                  // 4.45 green glare
+    c = mix(c, vec3(0.026, 0.082, 0.088), mcsm_ramp(p, 4.95, 5.04));     // 5.00 turquoise
+    c = mix(c, vec3(0.045, 0.020, 0.075), mcsm_ramp(p, 5.15, 5.24));     // 5.20 purple snap
+    c = mix(c, vec3(0.088, 0.026, 0.098), mcsm_ramp(p, 5.30, 5.44));     // purple & pink
+    c = mix(c, vec3(0.108, 0.028, 0.155), mcsm_ramp(p, 5.48, 5.60));     // 1.9.99 pink-magenta, blue note lifted
+    // MCSM 1.9.99 -- hue matched to the reference frame (2026-09-04 182220).
+    // Sampled glows there: #3e1256 / #321772 / #472fbe, i.e. hue ~ (0.44, 0.20,
+    // 1.0) once normalised to unit luminance -- a blue-leaning violet. The old
+    // key normalised to (0.56, 0.18, 1.0), reading pinker than the reference.
+    // Never orange: red stays the smallest channel by a wide margin.
+    c = mix(c, vec3(0.082, 0.030, 0.185), mcsm_ramp(p, 5.65, 5.90));     // 1.9.99 5.5-5.9: purple + a tinsy blue (user: "dark red pink purple magenta ... and a tinsy blue"; never orange)
+    c = mix(c, vec3(0.150, 0.032, 0.058), mcsm_ramp(p, 6.00, 6.35));     // 6.0 dark crimson
+    c = mix(c, vec3(0.165, 0.038, 0.060), mcsm_ramp(p, 6.35, 6.90));     // crimson holds
+    c = mix(c, vec3(0.055, 0.012, 0.028), mcsm_ramp(p, 7.20, 7.90));     // 8.0 black top
     return c;
 }
 
-vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock) {
-    float cd = dot(normalize(worldDir), normalize(bossDir));
-    // MCSM 1.9.87 -- reshaped after user feedback on 1.9.86.
-    // Complaint: "they're just one colour a fog instead of oval shape / shape of
-    // different colour gradients... it's like a fog blur but not quite the style".
-    // Measured in frame 195146: corners 0.058 lum vs 0.107 near the storm -- only
-    // a 1.8x ratio spread over the whole sky, which reads as flat fog rather than
-    // a distinct mass. Two causes:
-    //   1. the falloff was pow(disc,0.75), far too gradual, so the edge never
-    //      resolved into a shape;
-    //   2. a single flat tint, so there was no internal gradient to read as form.
-    // Now: a tighter core with a fast shoulder, an OVAL profile (wider than tall,
-    // matching the reference silhouette), and a two-stop internal gradient --
-    // dark centre, brighter mid, fading rim.
-    float ang = degrees(acos(clamp(cd, -1.0, 1.0)));
-    // Oval: squash the vertical axis so the mass is wider than it is tall.
-    vec3  wd  = normalize(worldDir);
-    vec3  bd  = normalize(bossDir);
-    float dy  = wd.y - bd.y;                       // vertical offset from the storm
-    float ovality = 1.0 + 0.55 * clamp(abs(dy) * 2.2, 0.0, 1.0);
-    ang *= ovality;                                // vertical distance counts more
-    float outer = mix(20.0, 27.0, clamp((p - 4.5) / 3.5, 0.0, 1.0));
-    float core  = outer * 0.42;
-    float disc  = 1.0 - smoothstep(core, outer, ang);
-    if (disc <= 0.001) return vec4(0.0, 0.0, 0.0, 0.0);
-    // Fast shoulder: pow 2.2 makes the boundary read as an EDGE, not a haze.
-    float shaped = pow(disc, 2.2);
-    float occl   = 0.95 * shaped;
-    // Internal gradient so the mass has form instead of one flat colour.
-    vec3  tint  = mcsm_halo_color(p);
-    vec3  deep  = tint * 0.35;                     // dark heart
-    vec3  mid   = tint * 1.85;                     // luminous middle band
-    float band  = disc * (1.0 - disc) * 4.0;       // peaks mid-radius
-    vec3  emis  = mix(deep, mid, band) * shaped * 0.9;
-    emis *= 0.92 + 0.08 * sin(clock * 3.0);        // slow roar pulse
+// MCSM 1.9.89 -- rebuilt from the reference frames (0902 061332, 195058,
+// 195146). Complaint history: 1.9.86 "one colour, a fog"; 1.9.87 still "a
+// fog". Two structural causes, both fixed:
+//   1. the 1.9.87 "ovality" term stretched the disc up to 1.55x wider
+//      whenever the storm sat high in the view, smearing the mass into a
+//      full-width band (frame 194747). Removed -- the mass is round again.
+//   2. the 1.9.87 profile had a LUMINOUS middle band over heavy occlusion,
+//      which reads as glowing fog. The references are the opposite: a DARK
+//      GRADIENT -- near-black heart ("the black attached to the back of the
+//      geometry"), tinted skirt, glowing rim band, clean release to the sky.
+//      Measured on 061332 (day sky lum 0.49): heart 0.03, mid 0.08,
+//      rim 0.14-0.24 tinted, edge back to sky within the outer 15%.
+// The rim is hue-normalised: the tint sets the COLOUR, an adaptive target
+// sets the BRIGHTNESS. Multiplying the raw dim tints could never out-glow a
+// dark dome (pre-flight simulation: rim/dome 0.84x at phase 5.3 -- a dark
+// smudge, not the ~1.9x brighter mass of frame 195058).
+// ------------------------------------------------------ map-pin silhouette
+// MCSM 1.9.100 -- SHAPE CORRECTION. The user looked at 1.9.99 and ruled:
+// "the shape actually is not a heart ... The top of the shape is flattened
+// into a completely straight, horizontal line with rounded corners that curve
+// smoothly down into a single sharp point at the bottom" -- a minimalist MAP
+// PIN. So the heart implicit of 1.9.99 (two lobes + a notch) is gone.
+//
+// Built as a half-width profile w(y) in the dome plane (y up, origin on the
+// storm's centre), which is what makes the flat top exact:
+//   y in [H-r, H]  :  w = (W - r) + sqrt(r^2 - (y-(H-r))^2)   rounded corners
+//   y in [-D, H-r] :  w = W * pow((y+D)/(H-r+D), k)           k < 1 sweeps the
+//                     sides outward before they converge on the single point
+// The top edge is a straight horizontal segment |x| <= W-r (75% of the width
+// at r = 0.25W), the outer 25% is the corner arc, and w -> 0 at y = -D gives
+// one sharp cusp at the bottom. No notch, no lobes -- one point, not three.
+//
+// Fitted (not guessed): the reference frame's per-row dark-coverage profile
+// was measured and a grid search over (W, H, D, k) minimised the difference
+// over the sky rows. Mean error over 9 rows:
+//   1.9.98 disc 0.580  ->  1.9.99 heart 0.200  ->  1.9.100 pin 0.093
+// W = 2.00 scored marginally better (0.081) but left only ~27% of the frame
+// as sky at mid-height; 1.95 keeps ~30% so the storm stays readable.
+const float MCSM_PIN_W = 1.95;   // half width (old disc radius == 1.0)
+const float MCSM_PIN_H = 0.78;   // height of the flat top above centre
+const float MCSM_PIN_D = 2.80;   // depth of the point below centre
+const float MCSM_PIN_R = 0.49;   // corner radius = 0.25 W
+const float MCSM_PIN_K = 0.68;   // side sweep (<1 bulges the pin's shoulders)
+
+float mcsm_pin_width(float y) {
+    float hr = MCSM_PIN_H - MCSM_PIN_R;
+    if (y > hr) {
+        float dy = y - hr;
+        return (MCSM_PIN_W - MCSM_PIN_R) + sqrt(max(MCSM_PIN_R * MCSM_PIN_R - dy * dy, 0.0));
+    }
+    float u = (y + MCSM_PIN_D) / (hr + MCSM_PIN_D);
+    return MCSM_PIN_W * pow(max(u, 0.0), MCSM_PIN_K);
+}
+
+// Boundary radius along a unit dome-plane direction d (y up), by bisection --
+// the pin is star-shaped about the origin, so it has one crossing per ray.
+float mcsm_pin_radius(vec2 d) {
+    float lo = 0.0, hi = 4.0;
+    for (int i = 0; i < 6; i++) {
+        float m = 0.5 * (lo + hi);
+        float y = d.y * m;
+        bool inside = (y <= MCSM_PIN_H) && (y >= -MCSM_PIN_D)
+                   && (abs(d.x * m) <= mcsm_pin_width(y));
+        if (inside) lo = m; else hi = m;
+    }
+    return 0.5 * (lo + hi);
+}
+
+// Dome-plane pin field for a view ray.
+//   .x = u      0 at the centre .. 1 on the silhouette edge
+//   .y = upness 0 at the bottom point .. 1 across the flat top
+//   .z = inside 1 inside the silhouette, 0 outside
+// outer = the old circular radius in DEGREES (keeps the size slider working).
+vec3 mcsm_mass_field(vec3 wd, vec3 bd, float outer) {
+    float cd = dot(wd, bd);
+    if (cd <= 0.02) return vec3(2.0, 0.5, 0.0);
+    vec3 upRef = abs(bd.y) > 0.985 ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0);
+    vec3 ex = normalize(cross(upRef, bd));      // horizontal, perpendicular
+    vec3 ey = cross(bd, ex);                    // "up" along the dome
+    // gnomonic projection onto the dome plane, normalised so 1.0 == old radius
+    vec2 s = vec2(dot(wd, ex), dot(wd, ey)) / (cd * tan(radians(outer)));
+    float hl = length(s);
+    vec2  d  = hl > 1e-5 ? s / hl : vec2(0.0, 1.0);
+    float u  = hl / max(mcsm_pin_radius(d), 1e-3);
+    float upness = clamp((s.y / MCSM_PIN_H) * 0.5 + 0.5, 0.0, 1.0);
+    return vec3(u, upness, u <= 1.0 ? 1.0 : 0.0);
+}
+
+// Coverage only (no colour): how much of the sky this ray hides. Shared with
+// the cloud pass so the deck disappears behind the mass exactly where the
+// dome blob is opaque (user: "you can't even see the clouds at the very top
+// of the storm").
+float mcsm_mass_cover(vec3 wd, vec3 bd, float p) {
+    float mcsmSize = mcsm_glare_size();
+    float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
+    float ang = degrees(acos(clamp(dot(normalize(wd), normalize(bd)), -1.0, 1.0)));
+    if (ang >= outer * 3.0) return 0.0;
+    vec3 f = mcsm_mass_field(normalize(wd), normalize(bd), outer);
+    if (f.z < 0.5) return 0.0;
+    float u = clamp(f.x, 0.0, 1.0);
+    float heart = 1.0 - smoothstep(0.34, 0.82, u);
+    float skirt = (1.0 - heart) * (1.0 - smoothstep(0.82, 0.96, u));
+    float band  = smoothstep(0.72, 0.90, u) * (1.0 - smoothstep(0.93, 1.0, u));
+    float o = clamp(0.992 * heart + 0.94 * skirt + 0.34 * band, 0.0, 0.99);
+    // across the flat top the mass is a black slab -- no cloud gets through
+    return mix(o, 0.995, smoothstep(0.42, 0.98, f.y) * 0.9);
+}
+
+vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
+    vec3 wd = normalize(worldDir);
+    vec3 bd = normalize(bossDir);
+    float ang = degrees(acos(clamp(dot(wd, bd), -1.0, 1.0)));
+    // MCSM 1.9.98 -- size comes from the wide carrier (mcsm_glare_size):
+    // slider-driven once the Java half ships, otherwise the "tiny bit bigger
+    // than 1.9.95" default of 1.18. The 1.9.65-1.9.95 orange-blob bloat that
+    // triggered "shrink the glare" was the post sun halo, fixed there.
+    float mcsmSize = mcsm_glare_size();
+    float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
+    if (ang >= outer * 3.0) return vec4(0.0, 0.0, 0.0, 0.0);
+    // ---- shape: map pin, flat top, single point at the bottom -------------
+    vec3 fld = mcsm_mass_field(wd, bd, outer);
+    if (fld.z < 0.5) return vec4(0.0, 0.0, 0.0, 0.0);
+    float u = clamp(fld.x, 0.0, 1.0);   // 0 at the storm -> 1 at the edge
+    // topdark: 0 at the bottom tip, 1 across the top slab. The reference is
+    // "really really really dark at the very top" -- there the mass stops
+    // glowing entirely and simply occludes.
+    float topdark = smoothstep(0.42, 0.98, fld.y);
+    vec3 tint = mcsm_halo_color(p);
+    // ---- structure: black heart / tinted skirt / glowing rim band --------
+    // 1.9.99: the black heart now reaches out to 0.82 of the radius (was
+    // 0.55). Measured on the reference, the interior + top read 0.015-0.02
+    // luminance -- a slab, not a smudge. All the colour is on the outer skirt
+    // and the rim band that traces the V.
+    float heart = 1.0 - smoothstep(0.34, 0.82, u);
+    float skirt = (1.0 - heart) * (1.0 - smoothstep(0.82, 0.96, u));
+    float band  = smoothstep(0.72, 0.90, u) * (1.0 - smoothstep(0.93, 1.0, u));
+    // ---- adapt to the dome underneath ------------------------------------
+    // dk = 1 on a bright day sky, 0 on a dark storm dome. On a bright sky the
+    // mass reads by CONTRAST (061332: dark mass, quiet tinted edge). On a
+    // dark dome contrast dies, so the rim must generate its own light
+    // (195058: the mass is ~1.9x brighter than the sky around it).
+    float domeLum = dot(dome, vec3(0.2126, 0.7152, 0.0722));
+    float dk = clamp(domeLum * 2.6, 0.0, 1.0);
+    // hue at unit luminance -- kills the 3x tint-brightness spread across phases
+    float tintLum = max(dot(tint, vec3(0.2126, 0.7152, 0.0722)), 0.001);
+    vec3  hue     = tint / tintLum;
+    // occlusion: heart always near-black; skirt holds dark; the rim releases
+    // more dome on DARK domes (the glow has to carry the edge there)
+    // MCSM 1.9.96: "the black part is a bit see-through ... a little bit more
+    // opaque, not too much". Heart 0.93 -> 0.965, skirt 0.78 -> 0.85, ceiling
+    // 0.95 -> 0.97. Small absolute lifts: the mass stays a sky effect, not a
+    // wall, but the storm behind it no longer ghosts through.
+    // MCSM 1.9.99: heart 0.965 -> 0.992, skirt 0.85 -> 0.94, and the top slab
+    // is pushed to 0.995 -- "really really really dark at the very top", the
+    // cloud deck no longer reads through it.
+    float occl = clamp(0.992 * heart
+                     + 0.94 * skirt
+                     + mix(0.50, 0.16, 1.0 - dk) * band, 0.0, 0.99);
+    occl = mix(occl, 0.995, topdark * 0.90);
+    // emission: absolute targets, not multiples of the dim tints.
+    // 1.9.99: the rim dies out toward the top (x0.28 there) so the colour
+    // traces the V and the underside of the mass, exactly like the reference
+    // where every bright pixel sits along the lower/outer edge.
+    float rimLum   = 0.13 * mix(1.0, 0.38, dk) * mix(1.0, 0.28, topdark);
+    float skirtLum = 0.05 * mix(1.0, 0.50, dk) * mix(1.0, 0.22, topdark);
+    vec3  emis = hue * (band * rimLum + skirt * skirtLum);
+    emis *= 0.92 + 0.08 * sin(clock * 3.0);   // slow roar pulse (~2.1 s)
     return vec4(emis, occl);
 }
+
 
 // ---------------------------------------------------------------- fog / tints
 vec3 mcsm_fog_color(float p, vec3 vanilla) {
@@ -541,4 +735,146 @@ vec3 mcsm_attachment_color(float p, float clock, vec3 localPos, vec2 uv,
     // lattice from 5.25; storm-mass from 5.95 all the way through phase 8
     vec3 out1 = mix(lattice, mass, smoothstep(5.90, 6.00, p));
     return out1 + base * 0.10;
+}
+
+// ============================================================================
+//  MCSM 1.9.96 -- AURORA BOREALIS in the MOD side.
+//  User ask (2026-09-04): "add Aurora Borealis to the sky in cold biomes, in
+//  the mod as well" -- previously aurora lived only in the Iris pack.
+//  This is a night-only, cold-biased curtain: soft green bases fading to
+//  violet tips, slow drift, deliberately subtle (~0.05 luminance) so it never
+//  fights the byte-matched day/night gradients it sits on top of. Storm path
+//  never reaches it (storm branch returns earlier).
+//  coolW is computed by the caller from the biome fog colour; the gate is
+//  "bluish fog" = snowy/cold biomes strongly, temperate nights weakly.
+// ============================================================================
+vec3 mcsm_aurora(vec3 worldDir, float clock, float nightW, float coolW) {
+    if (nightW <= 0.01 || coolW <= 0.01) return vec3(0.0);
+    float h = clamp(worldDir.y, 0.0, 1.0);
+    if (h < 0.05) return vec3(0.0);
+    float az = atan(worldDir.x, worldDir.z);
+    // slow curtain wave: three octaves of wobble drifting east, like a real rayed arc
+    float x = az * 2.6 + clock * 0.010;
+    float wave = sin(x) * 0.50 + sin(x * 1.73 + 1.30) * 0.30 + sin(x * 3.10 + 2.10) * 0.20;
+    // the band hangs above the horizon; wave lifts/drops its lower edge
+    float band = smoothstep(0.16, 0.42, h - 0.26 * wave) * (1.0 - smoothstep(0.52, 0.92, h));
+    // ray structure: fine vertical striations inside the band
+    float rays = 0.5 + 0.5 * sin(az * 22.0 + wave * 4.0 + clock * 0.040);
+    rays = 0.65 + 0.35 * rays * rays;
+    float curtains = 0.5 + 0.5 * sin(az * 9.0 + wave * 3.0 + clock * 0.045);
+    curtains *= curtains;
+    vec3 green  = vec3(0.10, 0.85, 0.45);   // classic aurora green base
+    vec3 violet = vec3(0.45, 0.18, 0.80);   // violet-purple tips (MCSM palette)
+    vec3 col = mix(green, violet, clamp(h * 1.6 - 0.20, 0.0, 1.0));
+    return col * (band * curtains * rays) * 0.060 * nightW * coolW;
+}
+
+// ============================================================================
+//  MCSM 1.9.98 -- THE DEATH SEQUENCE (user storyboard, 2026-09-04):
+//    dt 0.00-0.30  world/ sky distort, white cracks web across the sky,
+//                  tiny in-falling motes whip toward the storm
+//    dt 0.30-0.55  the mass SHAKES (aim jitter) and shrinks in layers,
+//                  whitening -- particles impulse inward
+//    dt 0.55       the implosion FLASH (whole-sky white spike)
+//    dt 0.55-1.00  SUPERNOVA: six translucent rings -- purple, pink, blue,
+//                  orange, green, yellow -- expand from the storm across the
+//                  horizon (the gameplay-side radius damage falls trees/blocks
+//                  and is Java-owned; these rings are the sky visible part)
+//    dt ~0.92+     everything eases off so the post-storm sky transition can
+//                  drift back to normal as the carrier stops
+//
+//  CARRIER: FogSkyEnd band 1906..2906 => dt = (fogSkyEnd - 1900) * 0.01.
+//  Nobody stamps it before the phase-31 Java driver, so this whole engine is
+//  DORMANT in 1.9.98 (mcsm_death() returns -1) and the frame is untouched.
+// ============================================================================
+float mcsm_death(float fogSkyEnd) {
+    if (fogSkyEnd >= 1906.0 && fogSkyEnd <= 2906.0)
+        return clamp((fogSkyEnd - 1900.0) * 0.01, 0.0, 1.0);
+    return -1.0;
+}
+
+// Act-I distortion: space itself wobbles. Applied to the SAMPLING direction,
+// so the dome and everything keyed off it bends while staying continuous.
+vec3 mcsm_death_dir(vec3 worldDir, float dt, float clock) {
+    float warp = 0.010 * mcsm_ramp(dt, 0.00, 0.30);
+    if (warp <= 0.0) return worldDir;
+    vec3 d = normalize(worldDir);
+    return normalize(d + vec3(
+        sin(d.y * 41.0 + clock * 7.0),
+        sin(d.z * 37.0 - clock * 8.0),
+        sin(d.x * 43.0 + clock * 6.0)) * warp);
+}
+
+// White crack filaments crawling over the dome (dt 0..0.5, gone by the flash).
+vec3 mcsm_death_cracks(vec3 worldDir, float dt, float clock) {
+    float a = mcsm_ramp(dt, 0.02, 0.30) * (1.0 - mcsm_ramp(dt, 0.42, 0.55));
+    if (a <= 0.001) return vec3(0.0);
+    vec3 d = normalize(worldDir);
+    float web = sin(d.x * 34.0 + clock * 0.35)
+              * sin(d.y * 27.0 - clock * 0.22)
+              * sin(d.z * 31.0 + clock * 0.28);
+    web = pow(abs(web), 24.0);   // thin filaments, mostly dark sky between
+    float flicker = 0.70 + 0.30 * sin(clock * 6.0 + d.y * 9.0);
+    return vec3(1.0, 0.97, 0.95) * web * a * flicker * 0.65;
+}
+
+// Implosion body: the mass contracts to a white-hot point (dt 0.25..0.55),
+// ringed by in-rushing pink/white motes ("particles impulsing inwards").
+vec3 mcsm_death_implosion(vec3 worldDir, vec3 bossDir, float dt, float clock) {
+    float a = mcsm_ramp(dt, 0.25, 0.34);
+    if (a <= 0.001) return vec3(0.0);
+    // the storm shakes in the air while it shrinks
+    float shake = mcsm_ramp(dt, 0.30, 0.50) * 2.2;   // degrees of jitter
+    vec3 jb = normalize(bossDir + vec3(
+        sin(clock * 17.0), sin(clock * 21.0 + 1.0), sin(clock * 19.0 + 2.0))
+        * (shake * 0.0174533));                      // deg -> rad
+    float ang = degrees(acos(clamp(dot(normalize(worldDir), jb), -1.0, 1.0)));
+    // layers peel inward: radius stair-steps down rather than sliding
+    float layer = floor(mcsm_ramp(dt, 0.25, 0.55) * 4.0) * 0.25;  // 0,.25,.5,.75
+    float outer = mix(28.0, 2.5, layer);
+    if (ang >= outer + 14.0) return vec3(0.0);
+    float shape = 1.0 - smoothstep(0.0, outer, ang);
+    float hot   = pow(shape, 2.0);
+    // white takes over as the mass whitens
+    vec3 coreCol = mix(vec3(0.55, 0.12, 0.42), vec3(1.0, 0.98, 1.0),
+                       mcsm_ramp(dt, 0.30, 0.53));
+    // converging motes: bright spokes whose radius slides inward with dt
+    float conv = ang - mix(40.0, 3.0, mcsm_ramp(dt, 0.25, 0.55));
+    float motes = pow(0.5 + 0.5 * sin(conv * 1.6 - clock * 2.5), 6.0)
+                * smoothstep(0.0, 6.0, ang) * (1.0 - smoothstep(outer, outer + 14.0, ang));
+    vec3 moteCol = mix(vec3(1.0, 0.55, 0.85), vec3(1.0), 0.35);
+    float burst = mcsm_ramp(dt, 0.45, 0.55);
+    return (coreCol * (0.30 + hot * (0.5 + 1.6 * burst)) * a)
+         + moteCol * motes * 0.22 * a;
+}
+
+// The supernova rings themselves.
+vec3 mcsm_supernova(vec3 worldDir, vec3 bossDir, float dt, float clock) {
+    float st = mcsm_ramp(dt, 0.55, 0.60);        // rings ignite at the flash
+    if (st <= 0.0) return vec3(0.0);
+    float ang = degrees(acos(clamp(dot(normalize(worldDir), normalize(bossDir)), -1.0, 1.0)));
+    const vec3 RING_COL[6] = vec3[](
+        vec3(0.62, 0.20, 0.95),   // purple
+        vec3(0.98, 0.28, 0.72),   // pink
+        vec3(0.25, 0.50, 1.00),   // blue
+        vec3(1.00, 0.52, 0.12),   // orange
+        vec3(0.25, 0.95, 0.45),   // green
+        vec3(1.00, 0.86, 0.20));  // yellow
+    vec3 acc = vec3(0.0);
+    for (int i = 0; i < 6; i++) {
+        float fi = float(i);
+        float local = clamp((dt - 0.55 - fi * 0.035) / 0.45, 0.0, 1.0);
+        if (local <= 0.0 || local >= 1.0) continue;
+        float rDeg = local * (95.0 + fi * 14.0);        // each ring flies farther
+        float w = 2.2 + fi * 0.35;                       // translucent band width
+        float ring = exp(-pow((ang - rDeg) / w, 2.0));
+        float fade = (1.0 - local) * (1.0 - local);      // dims as it crosses the sky
+        acc += RING_COL[i] * ring * fade * 0.42;
+    }
+    return acc * st;
+}
+
+// The whole-sky white spike at dt = 0.55 ("completely implodes").
+float mcsm_death_flash(float dt) {
+    return exp(-pow((dt - 0.55) * 20.0, 2.0)) * 1.35;
 }

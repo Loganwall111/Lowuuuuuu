@@ -2,6 +2,8 @@ package net.mcsm.extras.mixin;
 
 import net.mcsm.extras.McsmExtrasConfig;
 import net.mcsm.extras.McsmStormFx;
+import net.mcsm.extras.McsmFxDriver;
+import net.mcsm.extras.McsmGate;
 import net.mcsm.extras.McsmStormBeaconBlock;
 
 import net.dabicco.witherstormmod.entity.WitherStormEntity;
@@ -43,9 +45,14 @@ public abstract class McsmStormGrabPatch extends net.minecraft.world.entity.boss
         WitherStormEntity self = (WitherStormEntity) (Object) this;
         Level level = self.level();
         if (level == null || level.isClientSide()) return;
+        // Server only: in single player both sides share one JVM, and writing
+        // the client's synced copy of the world config would be overwritten by
+        // the next sync packet (or silently never reach the server).
+        McsmGate.openWorld(level);
         long gt = level.getGameTime();
         if (gt == this.mcsm$gt) return;
         this.mcsm$gt = gt;
+        McsmFxDriver.tick(self, level, gt);
 
         // ---- rise fx: spawn animation = the storm leaving the ground ----
         if (McsmExtrasConfig.enableRiseFx && self.isPlayingSpawnAnimation() && gt % 3L == 0L

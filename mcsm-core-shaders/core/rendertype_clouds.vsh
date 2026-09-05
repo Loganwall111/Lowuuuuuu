@@ -36,6 +36,10 @@ const float BrightnessEast   = 1.0;
 
 out float vertexDistance;
 out vec4 vertexColor;
+// MCSM 1.9.99 -- view-space ray to this cloud vertex. The .fsh turns it into a
+// world direction so the storm's heart mass can hide the deck at the very top
+// ("you can't even see the clouds at the very top of the storm").
+out vec3 mcsmCloudRay;
 
 const vec3[] vertices = vec3[](
     vec3(1,0,0),vec3(1,0,1),vec3(0,0,1),vec3(0,0,0),   // Bottom
@@ -71,7 +75,9 @@ void main() {
     scaledVertex.y *= CloudHeight; // vertical scaling
     vec3 pos = scaledVertex + (vec3(cellX, 0, cellZ) * CellSize) + CloudOffset + vec3(0, CloudYOffset, 0);
 
-    gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
+    vec4 viewPos = ModelViewMat * vec4(pos, 1.0);
+    gl_Position = ProjMat * viewPos;
+    mcsmCloudRay = viewPos.xyz;
 
     // Fog distance
     vertexDistance = fog_spherical_distance(pos);

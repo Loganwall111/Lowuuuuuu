@@ -6,6 +6,7 @@ import net.dabicco.witherstormmod.client.StormSkins;
 import net.dabicco.witherstormmod.client.StormSkyGradient;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.mcsm.extras.McsmDiag;
+import net.mcsm.extras.McsmGate;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -70,6 +71,7 @@ public abstract class McsmGradientTickPatch {
             return;
         }
         try {
+            McsmGate.openClient();
             McsmDiag.banner();
             StormSkyGradient.update(cameraState.pos);
             // Report what update() produced. This is the value the glare blob

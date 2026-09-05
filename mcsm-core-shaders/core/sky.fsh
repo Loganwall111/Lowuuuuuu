@@ -77,8 +77,28 @@ vec3 mcsm_storm_dome(float up, float p) {
             mcsm_ramp(p, 5.15, 5.23));                                                                // 5.2 pinker
     d = mix(d, mcsm_col(up, vec3(0.028, 0.005, 0.064), vec3(0.074, 0.018, 0.110), vec3(0.138, 0.037, 0.175)),
             mcsm_ramp(p, 5.26, 5.34));                                                                // 5.3 dark purple
-    d = mix(d, mcsm_col(up, vec3(0.046, 0.009, 0.092), vec3(0.156, 0.046, 0.156), vec3(0.285, 0.101, 0.239)),
-            mcsm_ramp(p, 5.42, 5.52));                                                                // 5.5 pink + purple overhead
+    // MCSM 1.9.99 -- 5.5 stop RETUNED BY FIT against the reference frame
+    // (uploads/Screenshot 2026-09-04 182220). Measured per-cell on an 8x6 grid
+    // of the upper sky, our dome read too bright AND too red vs the reference:
+    // mean |dLum| 0.032, mean |dHue| 0.45. Grid search on (brightness, blue)
+    // put the optimum at 0.80x mid brightness / 1.50-1.80x blue -> dHue 0.34.
+    //   was: zenith (0.150,0.055,0.175) mid (0.330,0.118,0.282)
+    //        horizon (0.505,0.235,0.392)   -- lum 0.084 / 0.174 / 0.303
+    //   now: zenith (0.067,0.022,0.134) mid (0.099,0.032,0.150)
+    //        horizon (0.505,0.205,0.580)   -- lum 0.040 / 0.054 / 0.298
+    // The MID stop is the one that mattered: it alone drives elevations
+    // 10-45 deg, and it was 3.2x brighter than the reference there. The
+    // horizon stop keeps its brightness (its blue/red only goes 0.78 -> 1.15,
+    // so the low band stays pink-dominant) and the zenith is pushed darker
+    // still so looking straight up reads black. Fit score over 32 sky cells:
+    // mean |dLum| 0.0324 -> 0.0279, mean |dHue| 0.4529 -> 0.396.
+    // REVERT by restoring the "was" line if the pinker 1.9.96 sky is preferred.
+    d = mix(d, mcsm_col(up, vec3(0.067, 0.022, 0.134), vec3(0.099, 0.032, 0.150), vec3(0.505, 0.205, 0.580)),
+            mcsm_ramp(p, 5.42, 5.52));                                                                // 5.5 violet-pink, near-black overhead (1.9.99 fit to reference)
+    // 5.7-5.9 keeps the user's "dark pink end" but takes a milder 1.3x blue so
+    // the sky does not snap back to pink the moment phase crosses 5.7.
+    d = mix(d, mcsm_col(up, vec3(0.108, 0.032, 0.151), vec3(0.238, 0.076, 0.270), vec3(0.428, 0.152, 0.452)),
+            mcsm_ramp(p, 5.70, 5.90));                                                                // 1.9.99 5.7-5.9: dark violet-pink end
     d = mix(d, mcsm_col(up, vec3(0.099, 0.067, 0.108), vec3(0.162, 0.108, 0.159), vec3(0.265, 0.170, 0.207)),
             mcsm_ramp(p, 5.96, 6.10));                                                                // 6.0 grey + bit of purple
     // MCSM 1.9.81: retargeted from a REAL rendered frame (Screenshot
@@ -120,6 +140,40 @@ void main() {
 
     float isBody = step(0.10, length(ColorModulator.rgb - FogColor.rgb));
 
+    // ---------------------------------------------------------------- death
+    // MCSM 1.9.98: the demise cinematic. Dormant until the phase-31 Java
+    // driver stamps the 1906..2906 FogSkyEnd band; while dormant
+    // mcsm_death() is -1 and this whole block is skipped.
+    float mcsmDt = mcsm_death(FogSkyEnd);
+    if (mcsmDt >= 0.0) {
+        vec3 ddir = mcsm_death_dir(worldDir, mcsmDt, clock);
+        float upd = clamp(ddir.y * 0.5 + 0.5, 0.0, 1.0);
+        upd = smoothstep(0.0, 1.0, upd);
+        // the dying sky holds the late dark blood dome and drains toward black
+        vec3 ddome = mcsm_storm_dome(upd, 7.6);
+        ddome *= 1.0 - 0.78 * mcsm_ramp(mcsmDt, 0.0, 0.55);
+        // the dust cloud settles out of the air and hangs low (user: "the
+        // cloud of dust in the air starts to fall to the ground")
+        vec3 dustC = vec3(0.16, 0.13, 0.12);
+        float dustW = mcsm_ramp(mcsmDt, 0.62, 0.78) * (1.0 - mcsm_ramp(mcsmDt, 0.86, 1.0));
+        ddome = mix(ddome, dustC, dustW * 0.5 * clamp(1.0 - ddir.y, 0.0, 1.0));
+        vec3 camWd = vec3(CameraBlockPos) + CameraOffset;
+        vec4 aimD = mcsm_boss_dir(camWd);
+        vec3 dadd = mcsm_death_cracks(ddir, mcsmDt, clock);
+        if (aimD.w > 0.5) {
+            dadd += mcsm_death_implosion(worldDir, aimD.xyz, mcsmDt, clock);
+            dadd += mcsm_supernova(ddir, aimD.xyz, mcsmDt, clock);
+        }
+        vec3 dsky = ddome + dadd + vec3(1.0, 0.98, 0.97) * mcsm_death_flash(mcsmDt);
+        // ease out at the very end: as the storm despawns the carrier stops
+        // and the normal sky resumes -- this fade hides the handoff
+        dsky *= 0.35 + 0.65 * (1.0 - mcsm_ramp(mcsmDt, 0.95, 1.0));
+        // sun/moon never show through the supernova
+        fragColor = vec4(mcsm_story_grade(dsky), isBody > 0.5 ? 0.0 : 1.0);
+        return;
+    }
+
+
     if (!mcsm_sky_active(mcsmP)) {
         if (isBody > 0.5) {
             fragColor = apply_fog(ColorModulator, sphericalVertexDistance,
@@ -137,6 +191,17 @@ void main() {
                  + mcsm_sky6(SKY_DUSK[0], SKY_DUSK[1], SKY_DUSK[2], SKY_DUSK[3], SKY_DUSK[4], SKY_DUSK[5], up) * duskW;
         sky += mcsm_horizon_glow(1.0 - up, dayW, duskW);
         sky = mcsm_biome_tint(sky);
+
+        // MCSM 1.9.96: AURORA in the mod itself (user ask: "Aurora Borealis to
+        // the sky in cold biomes, in the mod as well"). Night-only, gated by a
+        // cold-biome bias read off the fog colour (snowy biomes carry a bluer
+        // fog than warm ones; the gate is smooth so temperate nights get a
+        // faint show and deserts none). Storm sky never reaches this branch.
+        // The SKY_DAY / SKY_NIGHT / SKY_DUSK arrays stay byte-identical; this
+        // is additive on top of the finished night sky, not an edit of them.
+        float coolFog = smoothstep(0.015, 0.10,
+                          (FogColor.b - FogColor.r) + 0.5 * (FogColor.g - FogColor.r));
+        sky += mcsm_aurora(worldDir, clock, nightW, coolFog);
 
         // MCSM v8: sun halo in ordinary play. Blooms wider and hotter through
         // the late phases; mcsmP is 0 with no storm so this is the calm
@@ -193,8 +258,15 @@ void main() {
     // The glare blob: follows the storm, punches a dark core, rims it.
     vec3 camWorld = vec3(CameraBlockPos) + CameraOffset;
     vec4 aim = mcsm_boss_dir(camWorld);
-    if (aim.w > 0.5) {
-        vec4 blob = mcsm_blob(worldDir, aim.xyz, mcsmP, clock);
+    // MCSM 1.9.90: the sky-dome blob now lives ONLY in its r1 window,
+    // 5.10-5.90 (INSTRUCTIONS.md phase table: "giant colour-shifting centre
+    // blob, 5.1-5.9"). Below that the phase-4 light-blue halo quad and the
+    // turquoise sky carry the look; above it the purple/crimson rear-fog
+    // quads and the storm dome do. The storm-attached backdrop quads
+    // (McsmStormBackdropPatch) own the mass now -- a dome-wide blob at every
+    // phase was reading as "a fog in the sky", the user's standing complaint.
+    if (aim.w > 0.5 && mcsmP >= 5.10 && mcsmP <= 5.90) {
+        vec4 blob = mcsm_blob(worldDir, aim.xyz, mcsmP, clock, dome);
         // 1.9.76: blob.w is now a full occlusion factor (already includes its
         // own strength curve), so it multiplies the dome directly. The extra
         // 0.85 that used to be applied here is folded into mcsm_blob().
