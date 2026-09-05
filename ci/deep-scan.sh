@@ -47,16 +47,38 @@ done
 # and any class whose strings matched the build-queue messages.
 BYTECODE_SET=$(mktemp)
 grep -Ei 'command|town|build|struct|queue|schematic|place' ci/api/scan/mod-classes.txt \
-  | grep -v '\$' | head -14 > "$BYTECODE_SET" || true
+  | grep -v '\$' | head -20 > "$BYTECODE_SET" || true
 awk '/^### /{cls=$2} /queued|location\(s\)|build over|no location/{print cls}' \
   ci/api/scan/strings.txt >> "$BYTECODE_SET" || true
-sort -u "$BYTECODE_SET" | head -20 | while read -r c; do
+# The town-queue machinery, inner classes included: McsmWorldgen owns the
+# QUEUE/budget/tick() that /mcsm build feeds, and the first scan's head -14
+# cut off exactly these two.
+grep -E 'McsmWorldgen|StructureBuilder|McsmSchematic' ci/api/scan/mod-classes.txt \
+  >> "$BYTECODE_SET" || true
+sort -u "$BYTECODE_SET" | head -28 | while read -r c; do
   [ -n "$c" ] || continue
   cn="${c%.class}"; cn="${cn//\//.}"
   echo "===== $cn (bytecode) =====" >> ci/api/scan/javap-bytecode.txt
   javap -p -c -classpath "$DL" "$cn" >> ci/api/scan/javap-bytecode.txt 2>/dev/null || true
 done
 rm -f "$BYTECODE_SET"
+
+# WHO CALLS THE QUEUE? McsmWorldgen.tick(ServerLevel) drains the build queue;
+# if no class references McsmWorldgen at all outside the command, the queue is
+# written-but-dead and /mcsm build can never produce a town. List every class
+# whose constant pool mentions McsmWorldgen or StructureBuilder, then
+# disassemble the mentions that are not the queue classes themselves.
+grep -rl "McsmWorldgen\|StructureBuilder" "$DL/net" 2>/dev/null \
+  | sed "s|^$DL/||" | sort > ci/api/scan/queue-referencers.txt || true
+echo "[scan] classes referencing the queue machinery:"
+cat ci/api/scan/queue-referencers.txt
+: > ci/api/scan/queue-callers-bytecode.txt
+grep -v -E 'McsmWorldgen|StructureBuilder' ci/api/scan/queue-referencers.txt \
+  | head -10 | while read -r c; do
+  cn="${c%.class}"; cn="${cn//\//.}"
+  echo "===== $cn (references the queue) =====" >> ci/api/scan/queue-callers-bytecode.txt
+  javap -p -c -classpath "$DL" "$cn" >> ci/api/scan/queue-callers-bytecode.txt 2>/dev/null || true
+done
 
 wc -l ci/api/scan/*.txt
 echo "[scan] done -- commit ci/api/scan back to the branch"
