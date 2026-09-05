@@ -1,0 +1,23 @@
+source build report
+java files in:   341
+classes out:     413
+javac exit:      0
+jar reference:   385 mod classes (+ our overlay) in the 1.9.100 base
+--- widen list ---
+CreativeModeTab#Output
+EntityRenderers#register
+MenuScreens#ScreenConstructor
+MenuScreens#register
+MenuType#MenuSupplier
+MenuType#MenuType
+--- first 25 errors with detail ---
+--- javac log head ---
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+--- javac log tail ---
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
