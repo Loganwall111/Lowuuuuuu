@@ -57,9 +57,9 @@ float mcsm_ramp(float v, float lo, float hi);
 // below 1.34 (phase 4: that clipped channels and destroyed gradients) -- 1.14
 // is measured-safe: mcsm_story_grade() clips to >= 0 only at the dark end, and
 // the storm dome rows top out near 0.50 so 1.14x saturation cannot clip them.
-const float MCSM_SATURATION = 1.14;   // 1.9.71: 1.34 clipped channels to 1.0 and flattened the gradient
-const float MCSM_CONTRAST   = 1.08;   // 1.9.71: reduced with saturation
-const float MCSM_LIFT       = 0.008;  // keeps blacks from crushing
+const float MCSM_SATURATION = 1.28;   // 1.9.71: 1.34 clipped channels to 1.0 and flattened the gradient
+const float MCSM_CONTRAST   = 1.15;   // 1.9.71: reduced with saturation
+const float MCSM_LIFT       = 0.010;  // keeps blacks from crushing
 
 vec3 mcsm_story_grade(vec3 c) {
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -144,41 +144,25 @@ float mcsm_cloud_noise(vec2 uv) {
 // worldPos: fragment world position. sunDir: true sun vector. clock: seconds.
 float mcsm_cloud_shadow(vec3 worldPos, vec3 sunDir, float clock, float upFace) {
     if (sunDir.y <= 0.02) return 1.0;                   // sun down: no cloud shadow
-    // MCSM 1.9.79 -- rebuilt to match vanilla 26.2 CloudRenderer exactly.
-    // Constants read straight from CloudRenderer bytecode:
-    //     CELL_SIZE_IN_BLOCKS = 12.0
-    //     TICKS_PER_CELL      = 400
-    //     BLOCKS_PER_SECOND   = 0.6      (12 blocks / 20 s -- cross-checks)
-    //     scroll is +X only; Z is a fixed +3.96 offset
-    //     clouds.png is 256x256, 1 texel = 1 cell = 12 blocks (3072 block wrap)
-    // The previous version used smooth noise on an arbitrary 238-block scale
-    // drifting on BOTH axes at 1.5x speed, so the shadows could never line up
-    // with the deck overhead. Now the cell grid, the speed and the axis all
-    // match the real clouds; only the per-cell pattern is procedural, because
-    // clouds.png is not bound to the terrain pass (Sampler0 is the block atlas).
     float deckY = 192.0;
     float dy = deckY - worldPos.y;
     if (dy <= 1.0) return 1.0;                          // above the deck: no shadow
     float t = dy / max(sunDir.y, 0.05);
-    vec2 hit = worldPos.xz + sunDir.xz * t;             // where the ray meets the deck
-    hit.x += clock * 0.6;                               // vanilla scroll: +X, 0.6 b/s
-    hit.y += 3.96;                                      // vanilla fixed Z offset (hit is vec2 xz)
-    vec2 cell = floor(hit / 12.0);                      // 12-block cells, like vanilla
-    // Deterministic per-cell occupancy tuned to clouds.png's 27.6% coverage.
-    float r = fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);
-    float occupied = step(0.724, r);                    // 1 - 0.276
-    // Soften the cell edge slightly so it reads as cloud, not a checkerboard.
-    vec2 f = fract(hit / 12.0);
-    vec2 e = smoothstep(0.0, 0.12, f) * (1.0 - smoothstep(0.88, 1.0, f));
-    float cov = occupied * e.x * e.y;
-    // MCSM 1.9.84: 0.30 was too subtle to read against Minecraft's own per-block
-    // texture noise -- shadowtest.py could not separate the two populations on a
-    // real frame. 0.45 puts shadowed ground at 0.55x lit, which is clearly
-    // visible and still gentler than vanilla entity shadows.
-    float strength = 0.45 * clamp(sunDir.y * 1.6, 0.0, 1.0) * upFace;
+    vec2 hit = worldPos.xz + sunDir.xz * t;
+
+    // MCSM 1.9.107 -- visible MOVING shadows even with no storm. The previous
+    // cell-accurate shadow matched vanilla cloud speed but moved too slowly to
+    // read in play. This keeps the correct sun projection and adds large soft
+    // Story-Mode cloud/tree-shadow bands drifting over terrain.
+    vec2 uv = hit * 0.030 + vec2(clock * 0.050, -clock * 0.020);
+    float n1 = mcsm_cloud_noise(uv);
+    float n2 = mcsm_cloud_noise(uv * 2.15 + vec2(17.4, clock * 0.030));
+    float soft = smoothstep(0.48, 0.78, n1 * 0.70 + n2 * 0.30);
+    float streak = smoothstep(0.62, 0.86, sin((hit.x + hit.y * 0.55) * 0.020 + clock * 0.18) * 0.5 + 0.5);
+    float cov = clamp(soft * 0.85 + streak * 0.22, 0.0, 1.0);
+    float strength = 0.58 * clamp(sunDir.y * 1.7, 0.0, 1.0) * upFace;
     return 1.0 - cov * strength;
 }
-
 // ---------------------------------------------------------------- decode
 bool mcsm_fog_active(float p) { return p >= 4.42 && p <= 8.06; }
 bool mcsm_sky_active(float p) { return p >= 4.95 && p <= 8.06; }
@@ -312,7 +296,7 @@ vec4 mcsm_boss_dir(vec3 camWorld) {
 }
 
 // MCSM 1.9.98 -- user-facing glare size, rides the wide carrier's low nibble.
-//   sizeIdx 0..15 -> size 0.50 + 0.17*idx  (0.50 .. 3.05x the 1.9.89 mass)
+//   sizeIdx 0..15 -> size 0.35 + 0.18*idx  (0.35 .. 3.05x the old mass)
 // Absent band (unpatched jar-side writer) -> 1.18, i.e. "a tiny bit bigger
 // than 1.9.95", the user's final ruling; the in-game slider (MCSM Extras tab)
 // writes the real value each frame once the Java half ships (phase 30 builds
@@ -322,9 +306,9 @@ float mcsm_glare_size() {
     float v = FogCloudsEnd;
     if (v >= 47000.0 && v <= 1093455.0) {
         float sizeIdx = v - floor(v / 16.0) * 16.0;
-        return clamp(0.50 + 0.17 * sizeIdx, 0.25, 3.05);
+        return clamp(0.35 + 0.18 * sizeIdx, 0.25, 3.05);
     }
-    return 1.18;
+    return 0.58;
 }
 
 // ------------------------------------------------------------- helpers
@@ -348,8 +332,8 @@ vec3 mcsm_k_bot(int k) {
     if (k == 1) return vec3(0.060, 0.940, 0.850);   // 5.10 brighter green-teal
     if (k == 2) return vec3(0.150, 0.050, 0.250);   // 5.20 dark purple (img 3 base)
     if (k == 3) return vec3(0.240, 0.080, 0.330);   // 5.40 purple morph mid
-    if (k == 4) return vec3(0.830, 0.240, 0.600);   // 5.55 pink core
-    if (k == 5) return vec3(0.720, 0.180, 0.520);   // 5.90 pink deepening
+    if (k == 4) return vec3(0.920, 0.360, 0.680);   // 5.55 light story-pink core
+    if (k == 5) return vec3(0.700, 0.160, 0.430);   // 5.90 dark-pink end, not pure purple
     if (k == 6) return vec3(0.280, 0.245, 0.270);   // 6.00 dark grey (img 4)
     if (k == 7) return vec3(0.950, 0.420, 0.120);   // 6.10 orange horizon bleed
     if (k == 8) return vec3(0.850, 0.300, 0.060);   // 7.00 orange-red low band
@@ -360,8 +344,8 @@ vec3 mcsm_k_mid(int k) {
     if (k == 1) return vec3(0.040, 0.560, 0.520);
     if (k == 2) return vec3(0.220, 0.145, 0.325);   // PURP #382553
     if (k == 3) return vec3(0.340, 0.120, 0.420);
-    if (k == 4) return vec3(0.639, 0.180, 0.573);   // PINK #A32E92
-    if (k == 5) return vec3(0.520, 0.140, 0.470);   // MAGE #761A67
+    if (k == 4) return vec3(0.620, 0.170, 0.510);   // rose-purple body
+    if (k == 5) return vec3(0.460, 0.100, 0.340);   // dark pink/magenta
     if (k == 6) return vec3(0.190, 0.170, 0.200);
     if (k == 7) return vec3(0.660, 0.300, 0.460);   // dark light pink
     if (k == 8) return vec3(0.380, 0.040, 0.060);   // dark red
@@ -372,8 +356,8 @@ vec3 mcsm_k_top(int k) {
     if (k == 1) return vec3(0.010, 0.020, 0.024);
     if (k == 2) return vec3(0.020, 0.005, 0.048);   // black-purple overhead
     if (k == 3) return vec3(0.040, 0.010, 0.090);
-    if (k == 4) return vec3(0.050, 0.010, 0.100);   // dark purple around pink
-    if (k == 5) return vec3(0.030, 0.008, 0.070);
+    if (k == 4) return vec3(0.090, 0.020, 0.120);   // dark purple around pink
+    if (k == 5) return vec3(0.065, 0.010, 0.090);
     if (k == 6) return vec3(0.055, 0.048, 0.075);   // grey-on-grey
     if (k == 7) return vec3(0.035, 0.020, 0.090);   // dark blue-black top
     if (k == 8) return vec3(0.020, 0.008, 0.020);   // "somewhat black but dark"
@@ -570,7 +554,7 @@ vec3 mcsm_measured_halo_gradient(float p, float u) {
 // of the storm").
 float mcsm_mass_cover(vec3 wd, vec3 bd, float p) {
     float mcsmSize = mcsm_glare_size();
-    float outer = mix(13.5, 18.0, mcsm_ramp(p, 5.10, 5.90)) * mcsmSize;
+    float outer = mix(9.5, 13.0, mcsm_ramp(p, 5.10, 5.90)) * mcsmSize;
     float ang = degrees(acos(clamp(dot(normalize(wd), normalize(bd)), -1.0, 1.0)));
     if (ang >= outer * 3.0) return 0.0;
     vec3 f = mcsm_mass_field(normalize(wd), normalize(bd), outer);
@@ -581,7 +565,7 @@ float mcsm_mass_cover(vec3 wd, vec3 bd, float p) {
     float rim   = smoothstep(0.70, 0.92, u) * (1.0 - smoothstep(0.95, 1.0, u));
     // Oval halo coverage: enough to keep clouds from cutting through the glow,
     // but no map-pin black slab and no hard top edge.
-    return clamp(0.72 * core + 0.54 * skirt + 0.22 * rim, 0.0, 0.88);
+    return clamp(0.82 * core + 0.62 * skirt + 0.25 * rim, 0.0, 0.93);
 }
 
 vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
@@ -592,7 +576,7 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     // carrier (mcsm_glare_size), but the base angular radius is now much smaller
     // than 1.9.105; phase 5 should hug the storm instead of filling the sky.
     float mcsmSize = mcsm_glare_size();
-    float outer = mix(13.5, 18.0, mcsm_ramp(p, 5.10, 5.90)) * mcsmSize;
+    float outer = mix(9.5, 13.0, mcsm_ramp(p, 5.10, 5.90)) * mcsmSize;
     if (ang >= outer * 3.0) return vec4(0.0, 0.0, 0.0, 0.0);
 
     vec3 fld = mcsm_mass_field(wd, bd, outer);
@@ -612,9 +596,9 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     // occlusion/contrast; dark storm skies let the measured glow colour carry.
     float domeLum = dot(dome, vec3(0.2126, 0.7152, 0.0722));
     float dk = clamp(domeLum * 2.6, 0.0, 1.0);
-    float occl = clamp((0.46 + 0.18 * dk) * core
-                     + (0.30 + 0.15 * dk) * mid
-                     + (0.10 + 0.06 * dk) * rim, 0.0, 0.74);
+    float occl = clamp((0.58 + 0.20 * dk) * core
+                     + (0.36 + 0.16 * dk) * mid
+                     + (0.10 + 0.06 * dk) * rim, 0.0, 0.84);
 
     // Use the sampled colours directly instead of hue-normalising them; this is
     // what preserves the blue centre / navy edge and the purple phase-4/5.3
@@ -733,7 +717,7 @@ vec3 mcsm_aurora(vec3 worldDir, float clock, float nightW, float coolW) {
     vec3 green  = vec3(0.10, 0.85, 0.45);   // classic aurora green base
     vec3 violet = vec3(0.45, 0.18, 0.80);   // violet-purple tips (MCSM palette)
     vec3 col = mix(green, violet, clamp(h * 1.6 - 0.20, 0.0, 1.0));
-    return col * (band * curtains * rays) * 0.060 * nightW * coolW;
+    return col * (band * curtains * rays) * 0.165 * nightW * coolW;
 }
 
 // ============================================================================

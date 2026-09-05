@@ -100,13 +100,13 @@ public abstract class McsmBlobCarrierPatch {
 
         // MCSM 1.9.98: WIDE carrier -- same invertible yaw/pitch payload,
         // multiplied by 16, with the user's glare-size index in the low nibble
-        // (shader decodes sizeIdx 0..15 -> x0.50..x3.05). Max integer is
+        // (shader decodes sizeIdx 0..15 -> x0.35..x3.05). Max integer is
         // 68340*16+15 = 1093455 < 2^24, still exact in float32. The shader
         // accepts both encodings (wide band >= 47000), so an old jar-side
         // writer degrades gracefully to the 1.9.98 default size.
         McsmExtrasConfig.load();
         double size = McsmExtrasConfig.glareSize;
-        int sizeIdx = (int) Math.round((size - 0.50) / 0.17);
+        int sizeIdx = (int) Math.round((size - 0.35) / 0.18);
         if (sizeIdx < 0) {
             sizeIdx = 0;
         }

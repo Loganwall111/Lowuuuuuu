@@ -34,7 +34,7 @@ public final class McsmExtrasConfig {
 
     // ---- MCSM 1.9.98 batch (phase 29/30 user orders, 2026-09-04) ----------
     /** Storm glare mass scale; read by the blob carrier every frame. */
-    public static double  glareSize = 1.18;
+    public static double  glareSize = 0.58;
     /** Mod-side aurora borealis at night (cold-biome biased). */
     public static boolean auroraEnabled = true;
     /** Full death cinematic: distortion -> white cracks -> implosion flash ->
@@ -82,6 +82,7 @@ public final class McsmExtrasConfig {
             File f = file();
             f.getParentFile().mkdirs();
             Properties p = new Properties();
+            p.setProperty("config_version", "1.9.107");
             p.setProperty("enable_tentacle_grab", String.valueOf(enableTentacleGrab));
             p.setProperty("grab_interval_seconds", String.valueOf(grabIntervalSeconds));
             p.setProperty("enable_beacon_storm", String.valueOf(enableBeaconStorm));
@@ -151,6 +152,9 @@ public final class McsmExtrasConfig {
             ogCemModels        = bool(p, "og_cem_models", ogCemModels);
             smudgeScale        = dbl(p, "smudge_scale", smudgeScale);
             glareSize          = dbl(p, "glare_size", glareSize);
+            if (p.getProperty("config_version") == null && Math.abs(glareSize - 1.18) < 0.001) {
+                glareSize = 0.58;
+            }
             auroraEnabled      = bool(p, "aurora_enabled", auroraEnabled);
             deathCinematic     = bool(p, "death_cinematic", deathCinematic);
             supernovaRings     = bool(p, "supernova_rings", supernovaRings);

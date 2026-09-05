@@ -12,7 +12,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
@@ -41,6 +43,9 @@ public final class McsmExtrasScreen extends Screen {
 
     private final Screen parent;
     private final List<AbstractWidget> chrome = new ArrayList<>();
+    private final Map<AbstractWidget, Integer> baseY = new HashMap<>();
+    private int scrollPx = 0;
+    private int contentBottom = 0;
 
     public McsmExtrasScreen(Screen parent) {
         super(Component.literal("MCSM Storm Control Panel"));
@@ -51,9 +56,13 @@ public final class McsmExtrasScreen extends Screen {
     protected void init() {
         this.clearWidgets();
         this.chrome.clear();
+        this.baseY.clear();
+        this.contentBottom = 0;
         McsmExtrasConfig.load();
 
-        // two columns; on very short screens the columns simply run long
+        // two columns, scrollable. The previous fixed layout let lower rows
+        // disappear behind Done on normal GUI scales, which made sliders feel
+        // like +/- only controls with no way to reach the rest of the menu.
         int rowH = 22;
         int gap = 10;
         int colW = Math.min(240, (this.width - 24 - gap) / 2);
@@ -112,6 +121,9 @@ public final class McsmExtrasScreen extends Screen {
         addToggle(1, 12, fColW, gap, left, top, rowH, "MCSM Instructions",
                 () -> McsmExtrasConfig.mcsmInstructions, v -> McsmExtrasConfig.mcsmInstructions = v);
 
+        this.contentBottom = top + 13 * rowH + 4;
+        applyScrollLayout();
+
         Button done = Button.builder(Component.literal("Done"), b -> this.onClose())
                 .bounds(this.width / 2 - 100, this.height - 28, 200, 20).build();
         this.addWidget(done);
@@ -134,6 +146,8 @@ public final class McsmExtrasScreen extends Screen {
         }).bounds(x, y, colW, 20).build();
         this.addWidget(b);
         this.chrome.add(b);
+        this.baseY.put(b, y);
+        this.contentBottom = Math.max(this.contentBottom, y + 20);
     }
 
     private void addSlider(int col, int row, int colW, int gap, int left, int top, int rowH,
@@ -144,6 +158,8 @@ public final class McsmExtrasScreen extends Screen {
         Slider s = new Slider(x, y, colW, label, fmt, lo, hi, get, set);
         this.addWidget(s);
         this.chrome.add(s);
+        this.baseY.put(s, y);
+        this.contentBottom = Math.max(this.contentBottom, y + 20);
     }
 
     /**
@@ -193,11 +209,36 @@ public final class McsmExtrasScreen extends Screen {
         }
     }
 
+    private void applyScrollLayout() {
+        int max = Math.max(0, this.contentBottom - (this.height - 36));
+        if (this.scrollPx < 0) this.scrollPx = 0;
+        if (this.scrollPx > max) this.scrollPx = max;
+        for (Map.Entry<AbstractWidget, Integer> e : this.baseY.entrySet()) {
+            AbstractWidget w = e.getKey();
+            int y = e.getValue() - this.scrollPx;
+            w.setY(y);
+            boolean show = y >= 28 && y <= this.height - 42;
+            w.visible = show;
+            w.active = show;
+        }
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        this.scrollPx -= (int) Math.round(scrollY * 24.0);
+        applyScrollLayout();
+        return true;
+    }
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         g.fill(0, 0, this.width, this.height, 0xB0101010);
+        applyScrollLayout();
         g.centeredText(this.font, "MCSM Storm Control Panel", this.width / 2, 12, 0xFFFFFF);
-        g.centeredText(this.font, "Changes save instantly.", this.width / 2, 23, 0xA0A0A0);
+        g.centeredText(this.font, "Scroll wheel moves this panel. Changes save instantly.", this.width / 2, 23, 0xA0A0A0);
+        if (this.contentBottom > this.height - 36) {
+            g.centeredText(this.font, "scroll " + this.scrollPx + "/" + Math.max(0, this.contentBottom - (this.height - 36)), this.width - 62, 12, 0xA0A0A0);
+        }
         for (AbstractWidget widget : this.chrome) {
             widget.extractRenderState(g, mouseX, mouseY, partialTick);
         }

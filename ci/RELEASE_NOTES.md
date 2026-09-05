@@ -2,6 +2,8 @@
 
 - **1.9.103 halo correction** — reverted the new map-pin/heart silhouette back to a round, slightly oval halo. Rebuilt the radial halo gradient from the supplied reference images: phase 5.5–5.9 uses the measured blue core/navy falloff (#6A8FF7 → #627FE3 → #263165), while phase 4/5.3 uses the measured purple-black ramp (#3F255A → #2D1C41 → #140B1B).
 
+- **1.9.107 atmosphere + config-scroll pass** — made the MCSM Extras panel scrollable, changed the default glare size to roughly half, tightened the storm halo again, made the black core more opaque, boosted 5.5-5.9 into dark-pink/purple instead of orange/over-purple, strengthened cold-biome aurora, made always-on cloud/tree-like ground shadows visibly move, and added shader-side emissive pop for torches/glowing blocks.
+
 - **1.9.106 halo scale pass** — phase-5 storm halo is much smaller vertically, wider only around the storm sides, and phase-6 sun/glare bloom is heavily tightened/dimmed so it no longer fills the whole ceiling. Config changes now reset the MCSM gates so toggling options can re-apply without restarting.
 
 - **1.9.105 visible/clickable config button + release** — the **MCSM Extras** button is now drawn by our own render injection and opens through our own mouse handler, so it no longer depends on Dabicco's custom child-widget renderer. The workflow now publishes a proper `mcsm-1.9.105` GitHub Release from this Arena branch so you do not have to hunt for old artifacts.
@@ -17,7 +19,7 @@ is embedded in the jar.
 
 ## Download
 
-GitHub Actions uploads the built 1.9.106 jar as an artifact from this branch. SHA-256 is emitted next to the artifact and recorded in `out/BUILD_INFO.txt`.
+GitHub Actions uploads the built 1.9.107 jar as an artifact from this branch. SHA-256 is emitted next to the artifact and recorded in `out/BUILD_INFO.txt`.
 
 ## Highlights in this build
 

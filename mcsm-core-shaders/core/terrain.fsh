@@ -99,6 +99,18 @@ void main() {
 
     vec4 color = texColor * vertexColor;
     color = mix(FogColor * vec4(1, 1, 1, color.a), color, ChunkVisibility);
+
+    // MCSM 1.9.107: fake emissive material response for torches, lava, redstone,
+    // sea-lantern/beacon-style pixels and other bright accents. Core shaders do
+    // not know block IDs here, so this keys off the sampled texel colour; it
+    // makes the source block glow vividly without washing the whole scene.
+    float mxC = max(color.r, max(color.g, color.b));
+    float mnC = min(color.r, min(color.g, color.b));
+    float satC = mxC - mnC;
+    float warmEmit = smoothstep(0.46, 0.95, color.r) * smoothstep(0.18, 0.75, color.g) * (1.0 - smoothstep(0.50, 0.92, color.b));
+    float coolEmit = smoothstep(0.50, 0.95, max(color.g, color.b)) * smoothstep(0.12, 0.55, color.r);
+    float redEmit  = smoothstep(0.45, 0.95, color.r) * (1.0 - smoothstep(0.25, 0.55, color.g));
+    float emit = clamp(max(max(warmEmit, coolEmit), redEmit) * smoothstep(0.16, 0.55, satC) * texColor.a, 0.0, 1.0);
 #ifdef ALPHA_CUTOUT
     if (color.a < ALPHA_CUTOUT) {
         discard;
@@ -127,8 +139,14 @@ void main() {
     float keyA   = sunT.y >= 0.0 ? 1.0 : 0.42;
     color.rgb *= mix(1.0, clamp(0.58 + 0.42 * crispA, 0.0, 1.0), keyA);
 
-    // clouds cast their shape onto the ground
+    // clouds / cinematic tree-like bands cast moving shape onto the ground
     color.rgb *= mcsm_cloud_shadow(mcsmWorldPos, sunT, clockS, upFace);
+
+    // local emissive lift after shadows: torches/glow blocks keep their colour
+    // and read like little Story Mode light sources.
+    color.rgb += color.rgb * emit * 0.55 + vec3(1.0, 0.72, 0.38) * warmEmit * emit * 0.22
+               + vec3(0.35, 0.95, 1.00) * coolEmit * emit * 0.16
+               + vec3(1.00, 0.12, 0.08) * redEmit  * emit * 0.18;
 
     // late-phase sun burns hotter and spills warm light onto up-facing ground
     float sunUpA = clamp(sunT.y * 3.0, 0.0, 1.0);
