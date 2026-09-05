@@ -1,0 +1,200 @@
+package net.mcsm.extras.client;
+
+import net.mcsm.extras.McsmExtrasConfig;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
+
+/**
+ * The MCSM Control Panel — our OWN screen so we never fight the mod config
+ * screen's section-fold/tab machinery again (2026-09-04 bug: inline rows never
+ * saw a relayout; the header showed [-] with an empty body).
+ *
+ * 26.2 NOTE (2026-09-05 compile audit): the 26.2 GUI refactor replaced the old
+ * render() widget pipeline with extractRenderState(GuiGraphicsExtractor,...)
+ * and moved screen switching to Minecraft.gui.setScreen(...). Every API used
+ * below is the EXACT shape the mod's own (compiling) WitherStormConfigScreen
+ * uses: Screen(Component), protected init(), clearWidgets(), addWidget(),
+ * Button.builder(...).bounds(...).build(), b.setMessage(...), an
+ * AbstractSliderButton subclass reading this.value with updateMessage()/
+ * applyValue(), and a chrome list rendered via
+ * widget.extractRenderState(g, mouseX, mouseY, partialTick). No
+ * addRenderableWidget / CycleButton / isPauseScreen / this.minecraft — those
+ * could not be verified against 26.2 and two of them are known-moved.
+ *
+ * Runtime-safe: on any failure the extras button in the mod's own screen
+ * simply does nothing further.
+ */
+public final class McsmExtrasScreen extends Screen {
+
+    private final Screen parent;
+    private final List<AbstractWidget> chrome = new ArrayList<>();
+
+    public McsmExtrasScreen(Screen parent) {
+        super(Component.literal("MCSM Storm Control Panel"));
+        this.parent = parent;
+    }
+
+    @Override
+    protected void init() {
+        this.clearWidgets();
+        this.chrome.clear();
+        McsmExtrasConfig.load();
+
+        // two columns; on very short screens the columns simply run long
+        int rowH = 22;
+        int gap = 10;
+        int colW = Math.min(240, (this.width - 24 - gap) / 2);
+        if (colW < 100) { colW = 100; }
+        int left = (this.width - (colW * 2 + gap)) / 2;
+        int top = 34;
+        final int fColW = colW;
+
+        // ---- column 1: visuals ----------------------------------------------
+        addSlider(0, 0, fColW, gap, left, top, rowH, "Glare Size", "%.2fx",
+                0.25, 3.05, () -> McsmExtrasConfig.glareSize, v -> McsmExtrasConfig.glareSize = v);
+        addToggle(0, 1, fColW, gap, left, top, rowH, "In-Mod Aurora",
+                () -> McsmExtrasConfig.auroraEnabled, v -> McsmExtrasConfig.auroraEnabled = v);
+        addToggle(0, 2, fColW, gap, left, top, rowH, "Death Cinematic",
+                () -> McsmExtrasConfig.deathCinematic, v -> McsmExtrasConfig.deathCinematic = v);
+        addToggle(0, 3, fColW, gap, left, top, rowH, "Supernova Rings",
+                () -> McsmExtrasConfig.supernovaRings, v -> McsmExtrasConfig.supernovaRings = v);
+        addToggle(0, 4, fColW, gap, left, top, rowH, "Smoke Screen + Sparks",
+                () -> McsmExtrasConfig.smokeScreen, v -> McsmExtrasConfig.smokeScreen = v);
+        addToggle(0, 5, fColW, gap, left, top, rowH, "Purple Sky (5.5+)",
+                () -> McsmExtrasConfig.purpleSky, v -> McsmExtrasConfig.purpleSky = v);
+        addToggle(0, 6, fColW, gap, left, top, rowH, "Dust Waves",
+                () -> McsmExtrasConfig.dustWaves, v -> McsmExtrasConfig.dustWaves = v);
+        addToggle(0, 7, fColW, gap, left, top, rowH, "Reality Tear",
+                () -> McsmExtrasConfig.realityTear, v -> McsmExtrasConfig.realityTear = v);
+        addToggle(0, 8, fColW, gap, left, top, rowH, "OG CEM Models",
+                () -> McsmExtrasConfig.ogCemModels, v -> McsmExtrasConfig.ogCemModels = v);
+        addSlider(0, 9, fColW, gap, left, top, rowH, "Smudge Scale", "%.2fx",
+                0.10, 2.00, () -> McsmExtrasConfig.smudgeScale, v -> McsmExtrasConfig.smudgeScale = v);
+
+        // ---- column 2: gameplay ---------------------------------------------
+        addToggle(1, 0, fColW, gap, left, top, rowH, "Obliterate Flash",
+                () -> McsmExtrasConfig.obliterateFlash, v -> McsmExtrasConfig.obliterateFlash = v);
+        addToggle(1, 1, fColW, gap, left, top, rowH, "Obliterate Kicks Players",
+                () -> McsmExtrasConfig.obliterateKick, v -> McsmExtrasConfig.obliterateKick = v);
+        addToggle(1, 2, fColW, gap, left, top, rowH, "Tentacle Grab",
+                () -> McsmExtrasConfig.enableTentacleGrab, v -> McsmExtrasConfig.enableTentacleGrab = v);
+        addSlider(1, 3, fColW, gap, left, top, rowH, "Grab Interval", "%.1f s",
+                0.0, 30.0, () -> McsmExtrasConfig.grabIntervalSeconds, v -> McsmExtrasConfig.grabIntervalSeconds = v);
+        addToggle(1, 4, fColW, gap, left, top, rowH, "Lit Beacon Relay",
+                () -> McsmExtrasConfig.enableBeaconStorm, v -> McsmExtrasConfig.enableBeaconStorm = v);
+        addSlider(1, 5, fColW, gap, left, top, rowH, "Beacon Cooldown", "%.0f s",
+                2.0, 120.0, () -> McsmExtrasConfig.beaconCooldownSeconds, v -> McsmExtrasConfig.beaconCooldownSeconds = v);
+        addToggle(1, 6, fColW, gap, left, top, rowH, "Storm Beacon Block",
+                () -> McsmExtrasConfig.enableBeaconBlock, v -> McsmExtrasConfig.enableBeaconBlock = v);
+        addToggle(1, 7, fColW, gap, left, top, rowH, "Rise Ground FX",
+                () -> McsmExtrasConfig.enableRiseFx, v -> McsmExtrasConfig.enableRiseFx = v);
+        addToggle(1, 8, fColW, gap, left, top, rowH, "Counterclockwise Spiral",
+                () -> McsmExtrasConfig.spiralCounterClockwise, v -> McsmExtrasConfig.spiralCounterClockwise = v);
+
+        Button done = Button.builder(Component.literal("Done"), b -> this.onClose())
+                .bounds(this.width / 2 - 100, this.height - 28, 200, 20).build();
+        this.addWidget(done);
+        this.chrome.add(done);
+    }
+
+    private static Component toggleLabel(String label, boolean on) {
+        return Component.literal(label + ": " + (on ? "\u00a7aON" : "\u00a7cOFF"));
+    }
+
+    private void addToggle(int col, int row, int colW, int gap, int left, int top, int rowH,
+                           String label, BooleanSupplier get, Consumer<Boolean> set) {
+        int x = left + col * (colW + gap);
+        int y = top + row * rowH;
+        Button b = Button.builder(toggleLabel(label, get.getAsBoolean()), btn -> {
+            set.accept(!get.getAsBoolean());
+            McsmExtrasConfig.save();
+            btn.setMessage(toggleLabel(label, get.getAsBoolean()));
+        }).bounds(x, y, colW, 20).build();
+        this.addWidget(b);
+        this.chrome.add(b);
+    }
+
+    private void addSlider(int col, int row, int colW, int gap, int left, int top, int rowH,
+                           String label, String fmt, double lo, double hi,
+                           DoubleSupplier get, Consumer<Double> set) {
+        int x = left + col * (colW + gap);
+        int y = top + row * rowH;
+        Slider s = new Slider(x, y, colW, label, fmt, lo, hi, get, set);
+        this.addWidget(s);
+        this.chrome.add(s);
+    }
+
+    /**
+     * Same shape as the mod's own (compiling) WitherStormConfigScreen$ConfigSlider:
+     * AbstractSliderButton(int,int,int,int,Component,double) with this.value,
+     * updateMessage() and applyValue().
+     */
+    private static final class Slider extends AbstractSliderButton {
+        private final String label;
+        private final String fmt;
+        private final double lo;
+        private final double hi;
+        private final DoubleSupplier get;
+        private final Consumer<Double> set;
+
+        Slider(int x, int y, int w, String label, String fmt, double lo, double hi,
+               DoubleSupplier get, Consumer<Double> set) {
+            super(x, y, w, 20,
+                    Component.literal(label + ": " + String.format(fmt, clamp(get.getAsDouble(), lo, hi))),
+                    (clamp(get.getAsDouble(), lo, hi) - lo) / (hi - lo));
+            this.label = label;
+            this.fmt = fmt;
+            this.lo = lo;
+            this.hi = hi;
+            this.get = get;
+            this.set = set;
+        }
+
+        private static double clamp(double v, double lo, double hi) {
+            return v < lo ? lo : (v > hi ? hi : v);
+        }
+
+        private double actual() {
+            return this.lo + (this.hi - this.lo) * this.value;
+        }
+
+        @Override
+        protected void updateMessage() {
+            this.setMessage(Component.literal(this.label + ": \u00a7e" + String.format(this.fmt, this.actual())));
+        }
+
+        @Override
+        protected void applyValue() {
+            this.set.accept(this.actual());
+            McsmExtrasConfig.save();
+        }
+    }
+
+    @Override
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        g.fill(0, 0, this.width, this.height, 0xB0101010);
+        g.centeredText(this.font, "MCSM Storm Control Panel", this.width / 2, 12, 0xFFFFFF);
+        g.centeredText(this.font, "Changes save instantly.", this.width / 2, 23, 0xA0A0A0);
+        for (AbstractWidget widget : this.chrome) {
+            widget.extractRenderState(g, mouseX, mouseY, partialTick);
+        }
+    }
+
+    @Override
+    public void onClose() {
+        McsmExtrasConfig.save();
+        Minecraft.getInstance().gui.setScreen(this.parent);
+    }
+}
