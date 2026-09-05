@@ -6,23 +6,37 @@
 # + Mojang/Maven network; the sandbox had neither, so this script moves the
 # compile step to CI runners, which do).
 #
-# Steps: fetch deps -> javac the mcsm-extras sources --release 25 -> overlay
-# core shaders + jar-overrides + fresh classes onto the newest delivery jar ->
-# bump fabric.mod.json version -> zip -> sha256. Output in ./out/.
+# Steps: fetch deps -> GLSL gate -> javac the mcsm-extras sources --release 25
+# -> overlay core shaders + jar-overrides + fresh classes onto the newest
+# delivery jar -> bump fabric.mod.json version -> zip -> sha256. Output ./out/.
+#
+# 2026-09-05 hardening (compile audit):
+#   * the old "survivable javac" was broken: on a compile error the class dir
+#     is empty, `cp -r /tmp/mcsm-build/*` then dies under `set -e` and the jar
+#     is never assembled. Fixed with a nullglob guard.
+#   * the FULL javac log now lands in out/JAVAC_FAILED.txt (was 60 lines).
+#   * out/BUILD_INFO.txt records the verdict (versions, hashes, class count).
+#   * build evidence (log, class list, sha256) is pushed best-effort to the
+#     session branch arena/01a06edf-lowuuuuuu so the compile result can be
+#     audited without runner-log access. Never fails the build.
 #
 # Usage:  bash ci/build.sh            # version from ./VERSION
-#         bash ci/build.sh 1.9.98     # explicit
+#         bash ci/build.sh 1.9.101    # explicit
 # ============================================================================
 set -euo pipefail
-set -x   # MCSM 1.9.100: full trace so a red run names the exact command
+set -x
 
 VER="${1:-$(cat VERSION | tr -d '[:space:]')}"
 JAR_ID="${VER}-26.2-beta-mcsm"
 echo "[build] MCSM ${JAR_ID}"
 
+EVIDENCE_REPO="https://github.com/Loganwall111/Lowuuuuuu.git"
+EVIDENCE_BRANCH="arena/01a06edf-lowuuuuuu"
+
 BASE="$(ls -1v delivery/dabywitherstormmod-*-26.2-beta-mcsm.jar | tail -1)"
 echo "[build] base jar: ${BASE}"
 
+mkdir -p out
 DL=/tmp/mcsm-dl
 mkdir -p "$DL"
 fetch() { # url -> file
@@ -34,10 +48,10 @@ fetch() { # url -> file
   echo "[deps] $(basename "$out") $(stat -c%s "$out") B"
 }
 
-# MCSM 1.9.100 -- the Minecraft client jar is resolved from the LIVE version
-# manifest instead of a hardcoded object hash. A stale hash 404s and kills the
-# build in seconds with no useful message (exactly what run 33930633043 looked
-# like). Falls back to the pinned hash if the manifest cannot be reached.
+# The Minecraft client jar is resolved from the LIVE version manifest instead
+# of a hardcoded object hash. A stale hash 404s and kills the build in seconds
+# with no useful message. Falls back to the pinned hash if the manifest is
+# unreachable.
 export MC_VER="${MC_VER:-26.2}"
 CLIENT_URL="https://piston-data.mojang.com/v1/objects/2dc72797acbc1b63fc16a11c4ac393605f453754/client.jar"
 MANIFEST="$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v2.json || true)"
@@ -50,6 +64,9 @@ if [ -n "$MANIFEST" ]; then
 fi
 echo "[deps] minecraft $MC_VER -> $CLIENT_URL"
 fetch "$CLIENT_URL" client.jar
+if [ "$(stat -c%s "$DL/client.jar")" -lt 10000000 ]; then
+  echo "[deps] client.jar is suspiciously small — refusing"; exit 1
+fi
 fetch "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar" mixin.jar
 fetch "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar" jspecify.jar
 fetch "https://repo1.maven.org/maven2/it/unimi/dsi/fastutil/8.5.15/fastutil-8.5.15.jar" fastutil.jar
@@ -58,30 +75,37 @@ fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" jom
 
 echo "[glsl] shader gate (glslang via shimcheck)"
 chmod +x glslcheck/bin/glslang || true
-python3 glslcheck/shimcheck.py mcsm-core-shaders \
-  jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
-  jar-overrides/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh
+GLSL_LOG=/tmp/mcsm-glsl.log
+if python3 glslcheck/shimcheck.py mcsm-core-shaders \
+     jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
+     jar-overrides/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh \
+     > "$GLSL_LOG" 2>&1; then
+  tail -2 "$GLSL_LOG"
+else
+  cat "$GLSL_LOG"
+  echo "[glsl] shader gate FAILED — not building a broken shaderpack"
+  exit 1
+fi
 
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
-mkdir -p out
 CP="$DL/client.jar:$BASE:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
-# MCSM 1.9.100 -- a javac failure used to kill the job outright, so a compile
-# error in ONE java file meant the user got no jar at all -- not even the
-# shaders that were already finished. Now a failed compile is survivable: the
-# jar is still assembled from the previous classes + the current shaders, the
-# first 60 lines of javac output are written to out/JAVAC_FAILED.txt, and the
-# run is flagged with a GitHub error annotation (red, but with an artifact).
+# A javac failure is survivable: the jar is still assembled from the previous
+# classes + the current shaders, the FULL javac output goes to
+# out/JAVAC_FAILED.txt, and the run is flagged with a GitHub error annotation.
 JAVAC_LOG=/tmp/mcsm-javac.log
-if javac -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
-     $(find mcsm-extras/java -name '*.java') > "$JAVAC_LOG" 2>&1; then
-  echo "[javac] OK: $(find /tmp/mcsm-build -name '*.class' | wc -l) classes"
+JAVAC_RC=0
+javac -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
+     $(find mcsm-extras/java -name '*.java') > "$JAVAC_LOG" 2>&1 || JAVAC_RC=$?
+N_CLASSES="$(find /tmp/mcsm-build -name '*.class' | wc -l)"
+if [ "$JAVAC_RC" -eq 0 ]; then
+  echo "[javac] OK: ${N_CLASSES} classes"
   rm -f out/JAVAC_FAILED.txt
 else
-  echo "::error::javac FAILED -- this jar has the NEW SHADERS but the OLD Java classes. See out/JAVAC_FAILED.txt"
-  head -60 "$JAVAC_LOG" > out/JAVAC_FAILED.txt
-  cat out/JAVAC_FAILED.txt
+  echo "::error::javac FAILED (exit ${JAVAC_RC}) — this jar has the NEW SHADERS but the OLD Java classes. Full log: out/JAVAC_FAILED.txt"
+  cp -f "$JAVAC_LOG" out/JAVAC_FAILED.txt
+  tail -80 "$JAVAC_LOG" || true
   echo "[javac] FAILED (continuing with a shaders-only jar)"
 fi
 
@@ -91,13 +115,78 @@ rm -rf "$FX" && mkdir -p "$FX/cls"
 ( cd "$FX/cls" && unzip -o -q "$OLDPWD/$BASE" )
 cp -r mcsm-core-shaders/* "$FX/cls/assets/minecraft/shaders/"
 cp -r jar-overrides/* "$FX/cls/"
-cp -r /tmp/mcsm-build/* "$FX/cls/"
+# nullglob guard: on a failed javac the class dir is empty and a bare
+# `cp -r /tmp/mcsm-build/*` would die under set -e (that bug ate the jar).
+shopt -s nullglob
+FRESH_CLASSES=(/tmp/mcsm-build/*)
+shopt -u nullglob
+if [ "${#FRESH_CLASSES[@]}" -gt 0 ]; then
+  cp -r "${FRESH_CLASSES[@]}" "$FX/cls/"
+fi
 sed -i "s/\"version\": \"[0-9.]*-26.2-beta-mcsm\"/\"version\": \"${JAR_ID}\"/" "$FX/cls/fabric.mod.json"
 
-mkdir -p out
 OUT="out/dabywitherstormmod-${JAR_ID}.jar"
 rm -f "$OUT"
 ( cd "$FX/cls" && zip -q -r -X "$OLDPWD/$OUT" . -x '.*' )
 ( unzip -t "$OUT" > /dev/null )
 sha256sum "$OUT" | tee "$OUT.sha256"
+
+{
+  echo "MCSM build ${JAR_ID}"
+  echo "date:        $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "run:         ${GITHUB_RUN_ID:-local} (#${GITHUB_RUN_NUMBER:-local})"
+  echo "base jar:    ${BASE} ($(stat -c%s "$BASE") B)"
+  echo "client.jar:  $(sha256sum "$DL/client.jar" | cut -d' ' -f1) ($(stat -c%s "$DL/client.jar") B)"
+  echo "glsl gate:   PASS"
+  echo "javac:       exit ${JAVAC_RC}, ${N_CLASSES} fresh classes"
+  if [ "$JAVAC_RC" -eq 0 ]; then
+    echo "VERDICT:     FULL BUILD — fresh Java classes + shaders"
+  else
+    echo "VERDICT:     SHADERS-ONLY — javac failed, old classes kept (see JAVAC_FAILED.txt)"
+  fi
+  echo "output:      ${OUT} ($(stat -c%s "$OUT") B)"
+  echo "sha256:      $(cut -d' ' -f1 < "$OUT.sha256")"
+} > out/BUILD_INFO.txt
+cat out/BUILD_INFO.txt
+[ "$JAVAC_RC" -eq 0 ] || echo "::warning::Build verdict: shaders-only jar (javac failed)"
+
+# ---------------------------------------------------------------------------
+# Build evidence: push the logs/class list/hashes to the session branch so the
+# compile result is auditable even without Actions log access. Best-effort —
+# NEVER fails the build. Skipped automatically when no credentials exist
+# (local runs) or the push loses a race with a concurrent push.
+# ---------------------------------------------------------------------------
+push_evidence_simple() {
+  local AUTH
+  AUTH="$(git config --get http.https://github.com/.extraheader 2>/dev/null || true)"
+  [ -n "$AUTH" ] || { echo "[evidence] no credentials — skip"; return 0; }
+  rm -rf /tmp/mcsm-evidence
+  GIT_LFS_SKIP_SMUDGE=1 git -c "http.https://github.com/.extraheader=${AUTH}" \
+    clone -q --depth 5 --branch "$EVIDENCE_BRANCH" "$EVIDENCE_REPO" /tmp/mcsm-evidence || {
+      echo "[evidence] clone failed — skip"; return 0; }
+  local DST="/tmp/mcsm-evidence/ci-out/run-${GITHUB_RUN_NUMBER:-local}"
+  rm -rf "$DST"; mkdir -p "$DST"
+  cp -f out/BUILD_INFO.txt "$DST/" 2>/dev/null || true
+  cp -f out/JAVAC_FAILED.txt "$DST/" 2>/dev/null || true
+  cp -f "$JAVAC_LOG" "$DST/javac-full.log"
+  cp -f "$GLSL_LOG" "$DST/glsl-gate.log"
+  cp -f out/*.sha256 "$DST/" 2>/dev/null || true
+  ( cd /tmp/mcsm-build && find . -name '*.class' | sort ) > "$DST/classes.txt"
+  git -C /tmp/mcsm-evidence config user.name "mcsm-ci"
+  git -C /tmp/mcsm-evidence config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  if git -C /tmp/mcsm-evidence add ci-out && \
+     git -C /tmp/mcsm-evidence commit -qm "ci evidence: run ${GITHUB_RUN_NUMBER:-local} — javac exit ${JAVAC_RC}, ${N_CLASSES} classes"; then
+    if ! git -C /tmp/mcsm-evidence push -q origin "HEAD:${EVIDENCE_BRANCH}"; then
+      echo "[evidence] push rejected (branch moved) — retrying once"
+      git -C /tmp/mcsm-evidence fetch -q origin "$EVIDENCE_BRANCH"
+      git -C /tmp/mcsm-evidence rebase -q FETCH_HEAD || { echo "[evidence] rebase failed — skip"; return 0; }
+      git -C /tmp/mcsm-evidence push -q origin "HEAD:${EVIDENCE_BRANCH}" || echo "[evidence] retry push failed — skip"
+    fi
+  else
+    echo "[evidence] nothing to commit — skip"
+  fi
+}
+push_evidence_simple || echo "[evidence] skipped (non-fatal)"
+rm -rf /tmp/mcsm-evidence
+
 echo "[done] $OUT ($(stat -c%s "$OUT") B)"

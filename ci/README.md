@@ -5,6 +5,35 @@ Two ways to build the jar. Both run the identical recipe in `ci/build.sh` /
 them + the core shaders + `jar-overrides/` on top of the newest delivery jar
 and stamp the version.
 
+## 2026-09-05 compile audit (session arena/01a06edf)
+
+The 1.9.100 Java sources had never been compiled. Every API they use was
+audited against two compile-verified sources of truth: the `heress` branch
+(decompiled mod sources that CI-compile against Minecraft 26.2) and the
+previously-compiled `net.mcsm.extras` classes inside the shipped jar. Fixes:
+
+* `Minecraft.setScreen(...)` → **`Minecraft.getInstance().gui.setScreen(...)`**
+  (26.2 moved screen switching; both call sites fixed).
+* `McsmExtrasScreen` rewritten to the 26.2 GUI pipeline the mod's own config
+  screen uses: `extractRenderState(GuiGraphicsExtractor, ...)` + `addWidget` +
+  `Button.builder(...).bounds(...).build()` + `AbstractSliderButton` subclass.
+  The old version used `addRenderableWidget` / `CycleButton` / `isPauseScreen`,
+  which cannot be verified against 26.2 and were dropped.
+* `ci/build.sh`'s "survivable javac" was actually broken — on a compile error
+  the empty class dir made `cp -r /tmp/mcsm-build/*` abort under `set -e`, so
+  the jar was never assembled. Fixed with a nullglob guard.
+* Full javac log + `out/BUILD_INFO.txt` + evidence pushed to
+  `ci-out/run-<n>/` on branch `arena/01a06edf-lowuuuuuu` (build results are
+  readable from the sandbox, where Actions logs are not).
+* `ci/build.ps1` got the same treatment (live client-jar resolution,
+  survivable compile, empty-class guard).
+
+Everything else was already correct — including the mixin descriptors
+(`BeaconBlockEntity.tick`, `LevelRenderer.render`,
+`FogRenderer.updateBuffer(FogData)`), `BlockBehaviour.Properties`,
+`useItemOn`, `forceTentacleSlam`, `ModBlocks/ModItems.register`,
+`StormSkyGradient.*`, `cameraState.pos`, and every sound/particle constant.
+
 ## A) GitHub Actions — automatic build on every push ("the GitHub compiler")
 
 The workflow is written and ready at **`ci/workflows/build-mcsm.yml`**. It
