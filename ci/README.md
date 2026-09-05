@@ -7,25 +7,24 @@ and stamp the version.
 
 ## A) GitHub Actions — automatic build on every push ("the GitHub compiler")
 
-The workflow is written and ready at **`ci/workflows/build-mcsm.yml`**. It
-cannot be pushed into `.github/workflows/` by the build bot (the app token
-lacks the `workflows` permission), so it needs one manual step from the repo
-owner:
+The workflow is installed at **`.github/workflows/build-mcsm.yml`** (the
+location GitHub actually runs), with an identical mirror at
+`ci/workflows/build-mcsm.yml` kept as the template. It runs on pushes to
+`arena/01a06ef4-lowuuuuuu` and `arena/01a06df7-lowuuuuuu`, and every push:
+- installs Temurin JDK 25 on a clean runner,
+- downloads the Minecraft 26.2 client jar + Mixin + deps (runners have
+  full network),
+- runs the GLSL gate (`glslcheck/shimcheck.py`),
+- compiles `mcsm-extras` with `javac --release 25`,
+- assembles and zip-tests the new jar,
+- attaches it as a run **Artifact**, and
+- when `VERSION` is bumped to something with no release yet, creates a
+  GitHub Release automatically (releases are only published from
+  `arena/01a06df7-lowuuuuuu`, so test builds on other arena branches do not
+  publish).
 
-1. In the repo on GitHub, go to **Actions → New workflow → set up a workflow
-   yourself**.
-2. Paste the entire contents of `ci/workflows/build-mcsm.yml` from this branch
-   (or copy the file into `.github/workflows/build-mcsm.yml` locally and push).
-3. Commit — done. Every push to `arena/01a06df7-lowuuuuuu` then:
-   - installs Temurin JDK 25 on a clean runner,
-   - downloads the Minecraft 26.2 client jar + Mixin + deps (runners have
-     full network),
-   - runs the GLSL gate (`glslcheck/shimcheck.py`),
-   - compiles `mcsm-extras` with `javac --release 25`,
-   - assembles and zip-tests the new jar,
-   - attaches it as a run **Artifact**, and
-   - when `VERSION` is bumped to something with no release yet, creates a
-     GitHub Release automatically.
+To move or re-install it on a new branch, copy the file into
+`.github/workflows/` and update the `branches` list.
 
 Builds/artifacts appear at
 <https://github.com/Loganwall111/Lowuuuuuu/actions>.
