@@ -77,9 +77,8 @@ Legend:
 
 | Feature | Status | Notes |
 |---|---|---|
-| `/mcsm` command suite (build, tp, list, status) | **DABICCO-SIDE** | the strings "Queued 1 location(s)…", "No location called 'all'. Try /mcsm list." do not exist anywhere in our sources |
-| Story-Mode town build queue (queued but nothing spawned after ~9 min) | **DABICCO-SIDE** | their builder; likely needs the town chunks loaded / player near the queued location, or their queue is broken in this world. We can only advise, not patch |
-| Look presets (Custom / MCSM OG / Legacy Java / Cinematic / Netflix) | **DABICCO-SIDE (fixed our interference in 1.9.112)** | presets are their screen; the "goes back to normal" wipe was OUR gate re-forcing values after every Extras-panel click — that is fixed now |
+| `/mcsm` command suite (build, tp, list, status) | **DABICCO-SIDE, DECODED (1.9.114)** | fully disassembled via ci/api/scan: the queue WORKS — `McsmWorldgen.tick` runs every server tick at up to 24000 blocks/tick, all 33 schematics ship in the jar, towns land at ABSOLUTE coords (anchor -640/256, offsets to ~1400 blocks, Sky City floats at y=296). The failure was UX: no coords printed, `/mcsm tp all` invalid, site keys hidden (`beacon_town`). Our `/ds towns` (list/build/tp/status) now drives their builder with coordinates and tab-completion |
+| Look presets (Custom / MCSM OG / Legacy Java / Cinematic / Netflix) | **DABICCO-SIDE (fixed our interference in 1.9.112)** | presets are their screen; the "goes back to normal" wipe was OUR gate re-forcing values after every Extras-panel click — that is fixed now. Preset A/B: Shader Pack Gate OFF → apply preset → compare |
 | Death Blast crater, Berserk mode | **DABICCO-SIDE** | their Server-tab config; we don't touch it |
 | Town NPC population slider | **DABICCO-SIDE** | their world config; towns themselves are world-gen, cannot be retro-generated into an existing world by Force MCSM World |
 | Storm phases/growth, spawn animation, tractor beams | **DABICCO-SIDE** | their entity code; we hook around it |
