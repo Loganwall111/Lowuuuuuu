@@ -54,7 +54,7 @@ public class DistantStormRenderer {
          float frac = optimize ? 0.0F : mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
          long gt = mc.level.getGameTime();
          float now = (float)(gt % 100000L) + frac;
-         EntityRenderer<WitherStormEntity, WitherStormRenderState> stormRenderer = mc.getEntityRenderDispatcher().getRenderer(proxyStorm);
+         EntityRenderer<WitherStormEntity, WitherStormRenderState> stormRenderer = (EntityRenderer<WitherStormEntity, WitherStormRenderState>) mc.getEntityRenderDispatcher().getRenderer(proxyStorm);
          float dt = Mth.clamp(mc.getDeltaTracker().getRealtimeDeltaTicks(), 0.0F, 4.0F);
          float ease = 1.0F - (float)Math.exp(-dt * 3.5F);
          float maxTurn = 7.0F * dt;
@@ -222,7 +222,7 @@ public class DistantStormRenderer {
       float ease,
       float maxTurn
    ) {
-      EntityRenderer<SeveredWitherStormEntity, SeveredWitherStormRenderState> sevRenderer = mc.getEntityRenderDispatcher().getRenderer(proxySevered[0]);
+      EntityRenderer<SeveredWitherStormEntity, SeveredWitherStormRenderState> sevRenderer = (EntityRenderer<SeveredWitherStormEntity, SeveredWitherStormRenderState>) mc.getEntityRenderDispatcher().getRenderer(proxySevered[0]);
 
       for (SeveredData s : d.severed) {
          if (mc.level == null || mc.level.getEntity(s.entityId()) == null) {

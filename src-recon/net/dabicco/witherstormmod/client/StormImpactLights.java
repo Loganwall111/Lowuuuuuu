@@ -153,7 +153,7 @@ public final class StormImpactLights {
 
                      for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData storm : DabyWSClientConfig.distantStorms
                         ? net.dabicco.witherstormmod.client.ClientDistantStormManager.all()
-                        : List.of()) {
+                        : List.<net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData>of()) {
                         if (mc.level.getEntity(storm.entityId) == null) {
                            for (int i = 0; i < storm.beamActive.length; i++) {
                               if (storm.beamActive[i]) {

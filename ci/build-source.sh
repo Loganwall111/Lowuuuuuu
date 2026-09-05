@@ -153,8 +153,40 @@ rm -rf /tmp/ds-src-build && mkdir -p /tmp/ds-src-build
 JAVAC_LOG=/tmp/ds-javac.log
 # -J-Xss: the model builders are thousands-deep method-call chains that
 # overflow javac's default attribution recursion stack.
-javac -J-Xss512m -J-Xmx8g -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/ds-src-build @/tmp/ds-src.args > "$JAVAC_LOG" 2>&1
-RC=$?
+# Self-widening loop: vanilla members the published mod bytecode calls
+# directly (private/protected per the raw jar) are widened in a COMPILE-ONLY
+# copy of the client jar, round by round, until javac converges.
+WIDEN="$DL/widen.txt"; : > "$WIDEN"
+CP_TAIL="${CP#*:}"
+ROUND=0
+RC=1
+while [ "$ROUND" -lt 8 ]; do
+  ROUND=$((ROUND + 1))
+  python3 ci/widen_members.py "$DL/client-stripped.jar" "$DL/client-w.jar" "$WIDEN" || exit 1
+  rm -rf /tmp/ds-src-build && mkdir -p /tmp/ds-src-build
+  javac -J-Xss512m -J-Xmx8g -nowarn --release 25 -proc:none -cp "$DL/client-w.jar:$CP_TAIL" -d /tmp/ds-src-build @/tmp/ds-src.args > "$JAVAC_LOG" 2>&1
+  RC=$?
+  [ "$RC" -eq 0 ] && break
+  python3 - "$JAVAC_LOG" "$DL/acc-new.txt" <<'ACCPY'
+import re, sys
+log = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+pairs = set()
+for m in re.finditer(r'([A-Za-z_$][\w$]*)\s+has\s+(?:private|protected)\s+access\s+in\s+([\w.$]+)', log):
+    pairs.add((m.group(2), m.group(1)))
+for m in re.finditer(r'(?:<[^>]*>)?([A-Za-z_$][\w$]*)\([^)]*\)\s+has\s+(?:private|protected)\s+access\s+in\s+([\w.$]+)', log):
+    pairs.add((m.group(2), m.group(1)))
+for m in re.finditer(r'([A-Za-z_$][\w$]*)\s+is\s+not\s+public\s+in\s+([\w.$]+)', log):
+    pairs.add((m.group(2), m.group(1)))
+open(sys.argv[2], "w").write("\n".join(f"{o}#{n}" for o, n in sorted(pairs)))
+ACCPY
+  BEFORE=$(wc -l < "$WIDEN")
+  cat "$DL/acc-new.txt" >> "$WIDEN" 2>/dev/null || true
+  sort -u "$WIDEN" -o "$WIDEN"
+  AFTER=$(sort -u "$WIDEN" | grep -c . || true)
+  echo "[widen] round $ROUND: javac rc=$RC, widen list $BEFORE -> $AFTER"
+  [ "$AFTER" -le "$BEFORE" ] && break
+done
+echo "::notice title=source-build::compile rounds: $ROUND; widened vanilla members: $(grep -c . "$WIDEN" || true)"
 N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
 {
   echo "source build report"
@@ -162,6 +194,8 @@ N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
   echo "classes out:     $N_CLS"
   echo "javac exit:      $RC"
   echo "jar reference:   385 mod classes (+ our overlay) in the 1.9.100 base"
+  echo "--- widen list ---"
+  cat "$WIDEN" 2>/dev/null || true
   echo "--- first 40 error lines ---"
   grep -E "error:" "$JAVAC_LOG" | head -40 || true
   echo "--- javac log head ---"
@@ -175,8 +209,11 @@ if [ "$RC" -eq 0 ]; then
 else
   N_ERR=$(grep -cE "error:" "$JAVAC_LOG" || true)
   echo "::error title=source-build::javac reported $N_ERR errors across $N_SRC files; first lines in annotations and out/source-build-report.txt"
-  grep -E "error:" "$JAVAC_LOG" | head -12 | while IFS= read -r line; do
+  grep -E "error:" "$JAVAC_LOG" | head -24 | while IFS= read -r line; do
     echo "::error title=javac::${line:0:400}"
+  done
+  grep -E "error:" "$JAVAC_LOG" | sed -E 's/.*error: //; s/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -8 | while IFS= read -r line; do
+    echo "::error title=error-kinds::${line:0:300}"
   done
   grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -15 | while read -r c f; do
     echo "::error title=errors-in::${c} ${f}"
