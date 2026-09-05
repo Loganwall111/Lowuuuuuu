@@ -44,11 +44,23 @@ public final class McsmDiag {
             return;
         }
         bannerDone = true;
-        say("MCSM extras 1.9.107 active. Patches:");
+        // MCSM 1.9.109 -- the version is NO LONGER a literal here. It was
+        // hand-typed and drifted (the jar said 1.9.108, this banner said
+        // 1.9.107, the config-screen header said 1.9.105), so there was no way
+        // to tell from inside the game which build was actually loaded -- the
+        // exact confusion that made every fix look like "Minecraft did not
+        // recognise the jar". Single source of truth: McsmExtrasConfig
+        // .BUILD_VERSION, which ci/build.sh syncs from ./VERSION before javac.
+        say("MCSM extras " + McsmExtrasConfig.BUILD_VERSION + " active. Patches:");
         say("  McsmShaderGatePatch      ShaderPackCompat.active() -> false");
         say("  McsmStormVisibilityPatch fogless()/reverseShading() -> false");
-        say("  McsmBlobCarrierPatch     invertible cloudEnd carrier");
+        say("  McsmBlobCarrierPatch     invertible cloudEnd carrier + death band");
         say("  McsmGradientTickPatch    drives StormSkyGradient.update()");
+        say("  McsmStormGrabPatch       die()/addSubGrowth() -> shockwaves");
+        say("  McsmFxDriver             expanding rings, motes, dust, wire");
+        say("Build " + McsmExtrasConfig.BUILD_VERSION
+            + " -- if the mod list or the Extras header shows any OTHER number,");
+        say("you are running an older jar: delete every other dabywitherstormmod*.jar from mods/.");
         say("Grep this log for: [mcsm]  [dabywitherstormmod][shadow]");
     }
 
@@ -117,6 +129,38 @@ public final class McsmDiag {
             say("  if a feature reads TRUE here but you cannot see it, the gate is"
               + " open and the fault is in drawing, not configuration.");
         }
+    }
+
+    private static String lastDeath = null;
+    private static String lastDeathPct = null;
+
+    /**
+     * Death-cinematic STATE CHANGES only: start, end, and which FogData field
+     * ended up carrying the band. The sequence runs sixteen seconds at sixty
+     * frames a second or more, so an unthrottled line here would bury the log
+     * and hide the very evidence it is meant to provide.
+     */
+    public static void death(String msg) {
+        if (msg == null || msg.equals(lastDeath)) {
+            return;
+        }
+        lastDeath = msg;
+        say("death cinematic: " + msg);
+    }
+
+    /**
+     * Progress, in whole tens of a percent, so the log proves the sky band is
+     * actually moving through 1906..2900 rather than being stamped once and
+     * forgotten -- the difference between a working sequence and a single frame.
+     */
+    public static void deathProgress(double t) {
+        int pct = ((int) (t * 10.0)) * 10;
+        String s = pct + "% (FogSkyEnd band 1906..2900)";
+        if (s.equals(lastDeathPct)) {
+            return;
+        }
+        lastDeathPct = s;
+        say("death cinematic: " + s);
     }
 
     /** Reports the encoded carrier value actually handed to the shader. */

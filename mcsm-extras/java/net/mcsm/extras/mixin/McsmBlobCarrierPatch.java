@@ -1,14 +1,21 @@
 package net.mcsm.extras.mixin;
 
 import net.dabicco.witherstormmod.client.StormSkyGradient;
+import net.dabicco.witherstormmod.entity.WitherStormEntity;
 import net.mcsm.extras.McsmDiag;
 import net.mcsm.extras.McsmExtrasConfig;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.client.renderer.fog.FogRenderer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.lang.reflect.Field;
 
 /**
  * MCSM 1.9.71 -- fixes the missing black glare blob.
@@ -36,15 +43,63 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * exact-integer range (2^24), so nothing is lost in the uniform upload.
  * Verified exhaustively: 65341 angle pairs, zero round-trip mismatches.
  *
- * One degree of angular resolution is far finer than the blob's own angular
- * radius, so quantisation is invisible.
+ * MCSM 1.9.98 widened that to (3000 + yawIdx*181 + pitchIdx) * 16 + sizeIdx so
+ * the user's glare-size setting rides along in the low nibble. The shader reads
+ * both encodings, so an old jar-side writer degrades to the default size.
  *
- * The matching decoder lives in mcsm_boss_dir() in include/mcsm_visuals.glsl
- * and reads the 3000..68340 band. The legacy 1100..2150 band is still accepted
- * there so an unpatched carrier degrades instead of misplacing the blob.
+ * ---------------------------------------------------------------------------
+ * MCSM 1.9.109 -- THE DEATH CINEMATIC IS NOW WIRED UP.
+ *
+ * The whole dying sequence (world distortion -> white cracks crawling over the
+ * sky -> the mass shaking and shedding layers into a white-hot point with
+ * in-rushing motes -> full-screen flash -> six translucent supernova rings in
+ * MCSM order purple/pink/blue/orange/green/yellow rolling out across the horizon
+ * -> the dust cloud settling -> the sky easing back to normal) has been sitting
+ * fully implemented in the shaders since 1.9.98, keyed off the FogSkyEnd band
+ * 1906..2906 -- and nothing ever wrote that band, so it never ran once. That is
+ * why "the shockwave" was invisible in every build the user tested: it was not
+ * a config default, not a missing feature and not a stale jar. It was a
+ * dormant shader waiting for a carrier that did not exist yet.
+ *
+ * This mixin already runs once per frame on the client with the FogData in
+ * hand, so it is the natural place to drive it:
+ *
+ *   1. Latch: the first frame a WitherStormEntity is dead-or-dying starts a
+ *      fixed-length sequence. It is LATCHED, not polled -- the storm is usually
+ *      removed part-way through dying, and the cinematic must run to its end
+ *      rather than cut off when the entity disappears.
+ *   2. Stamp: skyEnd = 1906 + dt*994, so the shader's mcsm_death() decodes
+ *      dt = 0.06 .. 1.00 across the sequence.
+ *   3. Aim: the rings and the implosion need the storm direction, which normally
+ *      comes from StormSkyGradient. Once the storm is gone the gradient drops
+ *      out, so the last known yaw/pitch are cached and re-stamped for the rest
+ *      of the sequence -- otherwise the finale would render unaimed.
+ *
+ * The skyEnd FIELD NAME is resolved reflectively (name match, then "any float
+ * field containing sky", then "the float field currently holding the mod's own
+ * phase stamp in 1300..1900") and cached, because FogData's field names are not
+ * in the CI api dump and a wrong guess must never break a frame. If it cannot
+ * be resolved the cinematic stays dormant exactly as before and says so once in
+ * the log -- it can never crash the game.
  */
 @Mixin(value = FogRenderer.class, priority = 1500)
 public abstract class McsmBlobCarrierPatch {
+
+    /** Length of the latched death sequence, in seconds. */
+    private static final double DEATH_SECONDS = 16.0;
+
+    /** Dying-storm scan cadence: every 5th frame keeps the cost off the hot path. */
+    private static final int SCAN_EVERY = 5;
+
+    private static long   mcsm$deathStartNs = 0L;
+    private static int    mcsm$frame        = 0;
+    private static boolean mcsm$dyingCache  = false;
+    private static float  mcsm$lastYaw      = 0.0F;
+    private static float  mcsm$lastPitch    = 0.0F;
+    private static int    mcsm$lastSizeIdx  = 4;
+
+    private static Field  mcsm$skyEndField   = null;
+    private static boolean mcsm$skyEndFailed = false;
 
     // FogRenderer.updateBuffer is OVERLOADED -- there is also a private
     // updateBuffer(ByteBuffer,int,Vector4f,F,F,F,F,F,F). A bare "updateBuffer"
@@ -58,31 +113,130 @@ public abstract class McsmBlobCarrierPatch {
         require = 1
     )
     private void mcsm$stampBlobCarrier(FogData data, CallbackInfo ci) {
-        if (!StormSkyGradient.fogStampActive()) {
-            return;
-        }
-        float p = StormSkyGradient.phase();
-        if (p < 4.42F || p > 8.06F) {
-            return;
-        }
-        float yaw = StormSkyGradient.yaw();
-        float pitch = StormSkyGradient.pitch();
+        McsmExtrasConfig.load();
 
-        // normalise yaw into [-180,180] before indexing
-        yaw = yaw % 360.0F;
-        if (yaw > 180.0F) {
-            yaw -= 360.0F;
-        }
-        if (yaw < -180.0F) {
-            yaw += 360.0F;
-        }
-        if (pitch > 90.0F) {
-            pitch = 90.0F;
-        }
-        if (pitch < -90.0F) {
-            pitch = -90.0F;
+        boolean gradient = StormSkyGradient.fogStampActive();
+        float p = gradient ? StormSkyGradient.phase() : 0.0F;
+
+        // glare-size nibble, shared by both paths below
+        int sizeIdx = mcsm$sizeIdx(McsmExtrasConfig.glareSize);
+        mcsm$lastSizeIdx = sizeIdx;
+
+        if (gradient && p >= 4.42F && p <= 8.06F) {
+            float yaw = StormSkyGradient.yaw();
+            float pitch = StormSkyGradient.pitch();
+
+            // normalise yaw into [-180,180] before indexing
+            yaw = yaw % 360.0F;
+            if (yaw > 180.0F) {
+                yaw -= 360.0F;
+            }
+            if (yaw < -180.0F) {
+                yaw += 360.0F;
+            }
+            if (pitch > 90.0F) {
+                pitch = 90.0F;
+            }
+            if (pitch < -90.0F) {
+                pitch = -90.0F;
+            }
+            mcsm$lastYaw = yaw;
+            mcsm$lastPitch = pitch;
+
+            data.cloudEnd = mcsm$pack(yaw, pitch, sizeIdx);
+            McsmDiag.carrier(data.cloudEnd, Math.round(yaw) + 180, Math.round(pitch) + 90);
         }
 
+        mcsm$driveDeathCinematic(data, gradient, sizeIdx);
+    }
+
+    /** Latch, advance and stamp the dying sequence. Never throws. */
+    private void mcsm$driveDeathCinematic(FogData data, boolean gradient, int sizeIdx) {
+        try {
+            if (!McsmExtrasConfig.deathCinematic && !McsmExtrasConfig.supernovaRings) {
+                if (mcsm$deathStartNs != 0L) {
+                    mcsm$deathStartNs = 0L;
+                    McsmDiag.death("off (disabled in the MCSM control panel)");
+                }
+                return;
+            }
+
+            boolean dying = mcsm$stormIsDying();
+            long now = System.nanoTime();
+
+            if (dying && mcsm$deathStartNs == 0L) {
+                mcsm$deathStartNs = now;
+                McsmDiag.death("START -- storm is dying; stamping the 1906..2906 sky band for "
+                               + (int) DEATH_SECONDS + "s");
+            }
+            if (mcsm$deathStartNs == 0L) {
+                return;
+            }
+
+            double t = (now - mcsm$deathStartNs) / 1.0e9 / DEATH_SECONDS;
+            if (t >= 1.0) {
+                mcsm$deathStartNs = 0L;
+                mcsm$dyingCache = false;
+                McsmDiag.death("END -- sky band released, normal fog resumes");
+                return;
+            }
+            if (t < 0.0) {
+                t = 0.0;
+            }
+
+            // 1906..2900 -> the shader decodes dt = (skyEnd - 1900) * 0.01
+            mcsm$stampSkyEnd(data, 1906.0F + (float) (t * 994.0));
+
+            // Keep the aim alive after the gradient drops out with the entity,
+            // so the implosion and the rings stay centred on where it died.
+            if (!gradient) {
+                data.cloudEnd = mcsm$pack(mcsm$lastYaw, mcsm$lastPitch, sizeIdx);
+            }
+
+            McsmDiag.deathProgress(t);
+        } catch (Throwable ignored) {
+            // A missing field or a vanished level must never break a frame.
+        }
+    }
+
+    /** Is any storm within reach dead-or-dying? Scanned every SCAN_EVERY frames. */
+    private boolean mcsm$stormIsDying() {
+        // While a sequence is latched we keep the cached answer: the entity is
+        // usually removed part-way through, and the latch owns the timeline.
+        if (mcsm$deathStartNs != 0L) {
+            return mcsm$dyingCache;
+        }
+        if ((mcsm$frame++ % SCAN_EVERY) != 0) {
+            return mcsm$dyingCache;
+        }
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            LocalPlayer pl = mc.player;
+            if (pl == null || mc.level == null) {
+                mcsm$dyingCache = false;
+                return false;
+            }
+            // The storm is tracked out to ~1400 blocks by the gradient; 4096
+            // leaves room for a dying storm that has already stopped updating.
+            AABB box = new AABB(pl.getX() - 4096.0, -512.0, pl.getZ() - 4096.0,
+                                pl.getX() + 4096.0, 2048.0, pl.getZ() + 4096.0);
+            boolean found = false;
+            for (Entity e : mc.level.getEntities(pl, box,
+                    en -> en instanceof WitherStormEntity)) {
+                if (e.isDeadOrDying()) {
+                    found = true;
+                    break;
+                }
+            }
+            mcsm$dyingCache = found;
+        } catch (Throwable t) {
+            mcsm$dyingCache = false;
+        }
+        return mcsm$dyingCache;
+    }
+
+    /** cloudEnd payload: invertible yaw/pitch plus the glare-size nibble. */
+    private static float mcsm$pack(float yaw, float pitch, int sizeIdx) {
         int yawIdx = Math.round(yaw) + 180;
         int pitchIdx = Math.round(pitch) + 90;
         if (yawIdx < 0) {
@@ -97,24 +251,81 @@ public abstract class McsmBlobCarrierPatch {
         if (pitchIdx > 180) {
             pitchIdx = 180;
         }
+        // Max integer is 68340*16+15 = 1093455 < 2^24, still exact in float32.
+        return (3000.0F + yawIdx * 181.0F + pitchIdx) * 16.0F + sizeIdx;
+    }
 
-        // MCSM 1.9.98: WIDE carrier -- same invertible yaw/pitch payload,
-        // multiplied by 16, with the user's glare-size index in the low nibble
-        // (shader decodes sizeIdx 0..15 -> x0.35..x3.05). Max integer is
-        // 68340*16+15 = 1093455 < 2^24, still exact in float32. The shader
-        // accepts both encodings (wide band >= 47000), so an old jar-side
-        // writer degrades gracefully to the 1.9.98 default size.
-        McsmExtrasConfig.load();
-        double size = McsmExtrasConfig.glareSize;
-        int sizeIdx = (int) Math.round((size - 0.35) / 0.18);
-        if (sizeIdx < 0) {
-            sizeIdx = 0;
+    /** glare size -> nibble 0..15 covering x0.35..x3.05 (shader-side table). */
+    private static int mcsm$sizeIdx(double size) {
+        int idx = (int) Math.round((size - 0.35) / 0.18);
+        if (idx < 0) {
+            idx = 0;
         }
-        if (sizeIdx > 15) {
-            sizeIdx = 15;
+        if (idx > 15) {
+            idx = 15;
         }
+        return idx;
+    }
 
-        data.cloudEnd = (3000.0F + yawIdx * 181.0F + pitchIdx) * 16.0F + sizeIdx;
-        McsmDiag.carrier(data.cloudEnd, yawIdx, pitchIdx);
+    private static void mcsm$stampSkyEnd(FogData data, float value) {
+        Field f = mcsm$skyEndField;
+        if (f == null) {
+            if (mcsm$skyEndFailed) {
+                return;
+            }
+            f = mcsm$resolveSkyEnd(data);
+            if (f == null) {
+                mcsm$skyEndFailed = true;
+                McsmDiag.death("no sky-end field found on FogData -- death cinematic stays dormant");
+                return;
+            }
+            try {
+                f.setAccessible(true);
+            } catch (Throwable ignored) {
+                mcsm$skyEndFailed = true;
+                return;
+            }
+            mcsm$skyEndField = f;
+            McsmDiag.death("FogData." + f.getName() + " carries the death band");
+        }
+        try {
+            f.setFloat(data, value);
+        } catch (Throwable ignored) {
+            // leave the frame alone
+        }
+    }
+
+    /**
+     * Find the FogData field that carries FogSkyEnd. Three attempts, cheapest
+     * and most certain first; the result is cached for the rest of the session.
+     */
+    private static Field mcsm$resolveSkyEnd(FogData data) {
+        try {
+            return FogData.class.getDeclaredField("skyEnd");
+        } catch (Throwable ignored) {
+            // fall through to the heuristics
+        }
+        for (Field f : FogData.class.getDeclaredFields()) {
+            if (f.getType() == float.class && f.getName().toLowerCase().contains("sky")) {
+                return f;
+            }
+        }
+        // Last resort: the field currently holding the mod's own phase stamp
+        // (skyEnd = 1000 + phase*100, phase 4.42..8.06 -> 1442..1806).
+        for (Field f : FogData.class.getDeclaredFields()) {
+            if (f.getType() != float.class) {
+                continue;
+            }
+            try {
+                f.setAccessible(true);
+                float v = f.getFloat(data);
+                if (v >= 1300.0F && v <= 1900.0F) {
+                    return f;
+                }
+            } catch (Throwable ignored) {
+                // keep looking
+            }
+        }
+        return null;
     }
 }

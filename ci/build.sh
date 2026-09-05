@@ -35,7 +35,9 @@ JAR_ID="${VER}-26.2-beta-mcsm"
 echo "[build] MCSM ${JAR_ID}"
 
 EVIDENCE_REPO="https://github.com/Loganwall111/Lowuuuuuu.git"
-EVIDENCE_BRANCH="arena/01a071bb-lowuuuuuu"
+# MCSM 1.9.109 -- evidence lands on whichever branch triggered the build, so a
+# dispatched run on another session branch does not write into that one.
+EVIDENCE_BRANCH="${EVIDENCE_BRANCH:-${GITHUB_REF_NAME:-arena/01a071bb-lowuuuuuu}}"
 
 # MCSM 1.9.101 -- base resolution moved BELOW the fetch() definition
 # (it needs fetch). It no longer takes "latest jar in delivery/": that
@@ -204,6 +206,35 @@ else
   exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# MCSM 1.9.109 -- VERSION SINGLE-SOURCE + DRIFT GATE.
+#
+# Why this exists: the jar's fabric.mod.json was stamped from ./VERSION, but
+# three user-visible strings inside the Java were hand-typed literals and had
+# drifted (BUILD_VERSION 1.9.108, startup banner 1.9.107, config-screen header
+# 1.9.105). From inside the game every build therefore claimed to be an older
+# one, which reads exactly like "Minecraft did not recognise the new jar" --
+# the user could not tell a working update from a stale file, so real fixes
+# looked like no-ops and the same reports came back round after round.
+#
+# Now: ./VERSION is the only place a version number is written. BUILD_VERSION
+# is synced from it here before javac, and any surviving hardcoded literal
+# fails the build instead of shipping.
+# ---------------------------------------------------------------------------
+CFG=mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
+sed -i "s/BUILD_VERSION = \"[0-9][0-9.]*\"/BUILD_VERSION = \"${VER}\"/" "$CFG"
+echo "[version] BUILD_VERSION synced to ${VER}"
+
+DRIFT="$(grep -rn '"[^"]*1\.9\.[0-9]' --include='*.java' mcsm-extras/java \
+         | grep -v 'BUILD_VERSION = ' || true)"
+if [ -n "$DRIFT" ]; then
+  echo "::error::hardcoded version literal(s) found -- the in-game build number would lie about which jar is loaded"
+  echo "$DRIFT"
+  echo "[version] use McsmExtrasConfig.BUILD_VERSION instead of a literal"
+  exit 1
+fi
+echo "[version] drift gate OK (no hardcoded version literals)"
+
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
@@ -224,6 +255,13 @@ else
   cp -f "$JAVAC_LOG" out/JAVAC_FAILED.txt
   tail -160 "$JAVAC_LOG" || true
   echo "[javac] FAILED (hard stop so users never receive another old-behaviour jar)"
+  # MCSM 1.9.109 -- the sandbox can read check ANNOTATIONS (Checks API) but not
+  # runner logs or artifacts, so the actual compiler errors have to travel as
+  # annotations or the fix loop is blind. First 12 error lines, truncated.
+  grep -E "error:|symbol:|location:|required:|found:" "$JAVAC_LOG" 2>/dev/null | head -12 | \
+    while IFS= read -r line; do
+      echo "::error title=javac::${line:0:400}"
+    done
   exit "$JAVAC_RC"
 fi
 
@@ -242,6 +280,107 @@ if [ "${#FRESH_CLASSES[@]}" -gt 0 ]; then
   cp -r "${FRESH_CLASSES[@]}" "$FX/cls/"
 fi
 sed -i "s/\"version\": \"[0-9.]*-26.2-beta-mcsm\"/\"version\": \"${JAR_ID}\"/" "$FX/cls/fabric.mod.json"
+
+# ---------------------------------------------------------------------------
+# MCSM 1.9.109 -- JAR AUDIT (hard gate).
+#
+# Every "the user sees none of the changes" report up to now was answered with
+# "all the gates are open", which says nothing about whether the code in the
+# jar is ever *called*. A Fabric mod whose Mixin config does not list a mixin
+# class simply never applies it: the Java side is inert, the jar still loads,
+# and every diagnostic reads "enabled". That failure mode is invisible to the
+# user and to static review, so it is checked here instead.
+#
+#   1. freshly compiled classes are present in the jar,
+#   2. a Mixin config exists and lists EVERY mixin class we compile,
+#   3. fabric.mod.json points at that Mixin config.
+# Any miss fails the build: an inert jar is worse than no jar.
+# Results are emitted as annotations, which survive without runner-log access.
+# ---------------------------------------------------------------------------
+echo "[audit] ---- assembled jar ----"
+AUDIT_FAIL=0
+
+# 1. fresh classes
+NEW_COUNT=$(cd /tmp/mcsm-build && find net -name "*.class" 2>/dev/null | wc -l)
+JAR_COUNT=$(cd "$FX/cls" && find net/mcsm -name "*.class" 2>/dev/null | wc -l)
+echo "[audit] mcsm classes: jar=$JAR_COUNT freshly-compiled=$NEW_COUNT"
+if [ "$NEW_COUNT" -eq 0 ] || [ "$JAR_COUNT" -lt "$NEW_COUNT" ]; then
+  echo "::error title=jar audit::fresh classes did not make it into the jar (jar=$JAR_COUNT compiled=$NEW_COUNT)"
+  AUDIT_FAIL=1
+fi
+
+# 2 + 3. mixin config registration, read from fabric.mod.json itself so a
+#        config named or located unusually is still found.
+CFG_LIST=$(python3 - "$FX/cls/fabric.mod.json" <<'PYCFG'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception as e:
+    print("PARSE_ERROR", e); raise SystemExit(0)
+m = d.get("mixins", [])
+if isinstance(m, str):
+    m = [m]
+for x in m:
+    print(x if isinstance(x, str) else (x.get("config") or ""))
+PYCFG
+)
+echo "[audit] fabric.mod.json declares mixin configs: ${CFG_LIST:-<none>}"
+if [ -z "$CFG_LIST" ]; then
+  echo "::error title=jar audit::fabric.mod.json declares NO mixin config - every MCSM mixin is inert"
+  AUDIT_FAIL=1
+else
+  ALL_CFG=""
+  while IFS= read -r cfg; do
+    [ -n "$cfg" ] || continue
+    if [ ! -f "$FX/cls/$cfg" ]; then
+      echo "::error title=jar audit::fabric.mod.json names $cfg but that file is not in the jar"
+      AUDIT_FAIL=1
+      continue
+    fi
+    echo "[audit] mixin config $cfg:"; cat "$FX/cls/$cfg"
+    ALL_CFG="$ALL_CFG $(cat "$FX/cls/$cfg")"
+  done <<< "$CFG_LIST"
+
+  MISSING=""
+  N_MIXINS=0
+  for src in mcsm-extras/java/net/mcsm/extras/mixin/*.java; do
+    [ -f "$src" ] || continue
+    N_MIXINS=$((N_MIXINS + 1))
+    cls=$(basename "$src" .java)
+    # matches both "McsmFoo" and "net.mcsm.extras.mixin.McsmFoo"
+    if ! grep -q "${cls}\"" <<< "$ALL_CFG"; then
+      MISSING="$MISSING $cls"
+    fi
+    if [ ! -f "$FX/cls/net/mcsm/extras/mixin/$cls.class" ]; then
+      echo "::error title=jar audit::mixin $cls has no compiled class in the jar"
+      AUDIT_FAIL=1
+    fi
+  done
+  if [ -n "$MISSING" ]; then
+    echo "::error title=jar audit::mixins NOT listed in any config (they will NEVER apply):$MISSING"
+    AUDIT_FAIL=1
+  else
+    echo "[audit] all $N_MIXINS mixin classes are registered in a loaded config"
+  fi
+fi
+
+# shader spot-check: the jar must carry THIS source, not the base's
+for f in core/sky.fsh include/mcsm_visuals.glsl; do
+  if [ -f "$FX/cls/assets/minecraft/shaders/$f" ] && \
+     cmp -s "mcsm-core-shaders/$f" "$FX/cls/assets/minecraft/shaders/$f"; then
+    echo "[audit] shader up to date: $f"
+  else
+    echo "::error title=jar audit::shader in jar differs from source: $f"
+    AUDIT_FAIL=1
+  fi
+done
+
+if [ "$AUDIT_FAIL" -ne 0 ]; then
+  echo "[audit] FAILED -- refusing to publish a jar whose hooks may never run"
+  exit 1
+fi
+echo "::notice title=jar audit::all mixins registered, fresh classes present, shaders current"
+echo "[audit] PASS"
 
 OUT="out/dabywitherstormmod-${JAR_ID}.jar"
 rm -f "$OUT"

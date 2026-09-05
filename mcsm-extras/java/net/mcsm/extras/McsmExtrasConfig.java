@@ -108,7 +108,7 @@ public final class McsmExtrasConfig {
             p.setProperty("command_wire", String.valueOf(commandWire));
             p.setProperty("mcsm_instructions", String.valueOf(mcsmInstructions));
             try (OutputStream out = new FileOutputStream(f)) {
-                p.store(out, "MCSM - storm gameplay patches + 1.9.98 visuals + 1.9.100 gates (glare size, aurora, death cinematic, supernova, smoke, tear, forced MCSM look/world)");
+                p.store(out, "MCSM - storm gameplay patches + visuals + gates (glare size, aurora, death cinematic, supernova, smoke, tear, forced MCSM look/world). config_version below is the build that wrote this file.");
             }
             stamp = f.lastModified();
         } catch (Throwable t) {

@@ -7,8 +7,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * MCSM 1.9.100 -- the visible half of the Story Mode sequence.
@@ -104,6 +106,9 @@ public final class McsmFxDriver {
             if (McsmExtrasConfig.mcsmInstructions && gt % 20L == 0L) {
                 briefNearby(srv, self);
             }
+
+            // ---- MCSM 1.9.109: advance any expanding blast in flight ------
+            tickBlasts(srv, self);
         } catch (Throwable ignored) {
             // Never let a particle break a tick.
         }
@@ -124,6 +129,217 @@ public final class McsmFxDriver {
         int gi = (int) (Math.max(0.0f, Math.min(1.0f, g)) * 255.0f);
         int bi = (int) (Math.max(0.0f, Math.min(1.0f, b)) * 255.0f);
         return (ri << 16) | (gi << 8) | bi;
+    }
+
+    /**
+     * Sends one particle batch with delivery FORCED.
+     *
+     * MCSM 1.9.109 -- this is why the shockwaves were never seen. All nineteen
+     * call sites in this driver used the
+     * sendParticles(options, x, y, z, count, dx, dy, dz, speed) overload, which
+     * forwards force = false. The server then drops the packet for any player
+     * more than 32 blocks from the particle (blockPos.distSqr(target) >= 1024)
+     * and drops it again when the client's Particle setting is decreased. A
+     * Wither Storm's core and its ring geometry sit hundreds of blocks away and
+     * high overhead, so the storm-centred effects -- rise shockwave, supernova,
+     * purple motes, most of the dust wave -- were discarded on the server and
+     * never reached a client, while the player-centred ones (the heal burst in
+     * recover(), the lower rungs of the command wire, smoke pooled directly
+     * underfoot) did arrive. That is precisely the reported split between what
+     * was visible and what was not, and no gate check could ever have found it:
+     * the code ran, the packets were built, and the server threw them away.
+     *
+     * The overload used here sets force = true, decreased = false.
+     */
+    private static void spawn(ServerLevel srv, DustParticleOptions options,
+                              double x, double y, double z, int count,
+                              double dx, double dy, double dz, double speed) {
+        try {
+            srv.sendParticles(options, true, false, x, y, z, count, dx, dy, dz, speed);
+        } catch (Throwable ignored) {
+            // a visual must never take the world tick down with it
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // MCSM 1.9.109 -- EXPANDING BLASTS
+    //
+    // riseShockwave() and supernova() each emitted their whole geometry in a
+    // single tick and stopped: three static rings, six static rings, gone. A
+    // shockwave is only legible if the front TRAVELS, so each detonation now
+    // also arms a small state machine keyed by the storm's UUID and advanced
+    // from the storm's own tick. It walks the radius out along an ease-out
+    // curve (fast at detonation, decelerating as it dies), stacks two verticals
+    // per segment so the front reads as a wall rather than a line on the
+    // ground, trails debris behind the front, and cycles the RINGS palette so
+    // the colour travels with the wave instead of sitting still.
+    //
+    // Budget: 14 segments x 2 verticals + ~5 debris = ~33 packets per blast per
+    // tick. Now that delivery is forced these actually arrive, so the count is
+    // deliberately a fraction of the 144 the one-shot rings used to send.
+    // ---------------------------------------------------------------------
+    /**
+     * Armed blasts: UUID -> [0]=startGameTime [1]=kind [2]=x [3]=y [4]=z
+     * [5]=floorY [6]=bodyHeight. The geometry is captured when the blast is
+     * armed rather than read from the entity each frame, because the death
+     * blast has to keep expanding after the storm's entity is gone. Concurrent
+     * map: the server thread arms it, the render thread draws it.
+     */
+    private static final Map<UUID, double[]> BLASTS = new ConcurrentHashMap<>();
+
+    /** Blast kinds: a phase rise, or the death supernova. */
+    private static final int KIND_RISE  = 4;
+    private static final int KIND_DEATH = 99;
+
+    /** Expansion durations in ticks: 3 s for a rise, 5 s for the death blast. */
+    private static final int RISE_TICKS  = 60;
+    private static final int DEATH_TICKS = 100;
+
+    /**
+     * Where one frame of a blast goes: a server broadcast, or a local spawn.
+     * Public so the client half (net.mcsm.extras.client.McsmClientBlasts) can
+     * supply its own without this class ever importing a client class -- a
+     * dedicated server loads this one, and must not have to resolve Minecraft.
+     */
+    public interface Sink {
+        void send(DustParticleOptions options, double x, double y, double z,
+                  int count, double dx, double dy, double dz, double speed);
+    }
+
+    /** Game time of the last client step, so frames cannot outrun ticks. */
+    private static long lastClientGameTime = Long.MIN_VALUE;
+
+    /**
+     * Wall clock of the last client step. In single-player the client and the
+     * integrated server share this JVM and therefore this map, so the server
+     * half uses it to stand down: broadcasting a blast the client is already
+     * drawing locally would double every particle.
+     */
+    private static volatile long lastClientStepMs = 0L;
+
+    /** Arms an expanding blast for this storm. */
+    private static void startBlast(ServerLevel srv, WitherStormEntity self, int kind) {
+        double x = self.getX(), y = self.getY(), z = self.getZ();
+        double floorY = self.getBoundingBox().minY;
+        BLASTS.put(self.getUUID(), new double[]{
+                srv.getGameTime(), kind, x, y, z, floorY, y - floorY});
+    }
+
+    /**
+     * Server-side advance, for a dedicated server where no client shares this
+     * JVM. It runs from the storm's own tick, so it stops when the storm does --
+     * which is precisely why the client half below exists.
+     */
+    private static void tickBlasts(ServerLevel srv, WitherStormEntity self) {
+        if (System.currentTimeMillis() - lastClientStepMs < 2000L) {
+            return;   // a local client is drawing this blast already
+        }
+        double[] d = BLASTS.get(self.getUUID());
+        if (d == null) {
+            return;
+        }
+        int duration = d[1] == KIND_DEATH ? DEATH_TICKS : RISE_TICKS;
+        double t = (srv.getGameTime() - d[0]) / duration;
+        if (t >= 1.0D) {
+            BLASTS.remove(self.getUUID());
+            return;
+        }
+        expandRing((o, px, py, pz, c, dx, dy, dz, sp) ->
+                       spawn(srv, o, px, py, pz, c, dx, dy, dz, sp),
+                   d, t, d[1] == KIND_DEATH);
+    }
+
+    /**
+     * Advances every armed blast one tick, sending each frame to {@code sink}.
+     * This is the half that makes the DEATH blast survivable.
+     *
+     * Driven once per frame from LevelRenderer.render by the client class. When
+     * the storm dies its entity stops ticking within about a second, so a
+     * server-driven animation freezes almost immediately -- that is the
+     * "one-tick puff" this replaces. The client keeps its own clock and spawns
+     * its own particles, so the front runs its full five seconds whether or not
+     * the entity still exists. Throttled to one step per game tick rather than
+     * per frame, so a 240 Hz monitor does not get eight times the particles.
+     *
+     * @param sink     where this frame's particles go
+     * @param gameTime the caller's clock, used both to pace and to age the blast
+     * @return true if a step was taken
+     */
+    public static boolean stepBlasts(Sink sink, long gameTime) {
+        if (sink == null || BLASTS.isEmpty()) {
+            return false;
+        }
+        if (gameTime == lastClientGameTime) {
+            return false;
+        }
+        lastClientGameTime = gameTime;
+        lastClientStepMs = System.currentTimeMillis();
+
+        boolean stepped = false;
+        for (Iterator<Map.Entry<UUID, double[]>> it = BLASTS.entrySet().iterator();
+             it.hasNext();) {
+            double[] d = it.next().getValue();
+            int duration = d[1] == KIND_DEATH ? DEATH_TICKS : RISE_TICKS;
+            double t = (gameTime - d[0]) / duration;
+            if (t >= 1.0D || t < -4.0D) {
+                it.remove();      // finished, or armed in a world we have left
+                continue;
+            }
+            if (t < 0.0D) {
+                t = 0.0D;
+            }
+            try {
+                expandRing(sink, d, t, d[1] == KIND_DEATH);
+                stepped = true;
+            } catch (Throwable ignored) {
+                // a visual must never break a frame
+            }
+        }
+        return stepped;
+    }
+
+    /** One frame of the expanding front; {@code t} runs 0..1 across the blast. */
+    private static void expandRing(Sink sink, double[] d, double t, boolean death) {
+        double x = d[2], y = d[3], z = d[4], floorY = d[5], bodyH = d[6];
+
+        double ease = 1.0D - (1.0D - t) * (1.0D - t);
+        double maxR = death ? 320.0D : 200.0D;
+        double r = 6.0D + ease * maxR;
+        double fade = 1.0D - t;
+
+        // the front starts at the storm's floor and rides up its body
+        double lift = (death ? bodyH * 0.45D : bodyH * 0.12D) * (1.0D - t * 0.35D);
+        double baseY = floorY + lift + 1.0D;
+
+        int k = Math.min(RINGS.length - 1, (int) (t * RINGS.length));
+        float[] c = RINGS[k];
+        float[] n = RINGS[Math.min(RINGS.length - 1, k + 1)];
+        float scale = (float) (2.0D + fade * 3.0D);
+
+        int segments = 14;
+        for (int i = 0; i < segments; i++) {
+            double a = (i / (double) segments) * Math.PI * 2.0D;
+            double px = x + Math.cos(a) * r;
+            double pz = z + Math.sin(a) * r;
+
+            // ground wall + sky wall: a front with height reads as a shockwave
+            sink.send(dust(pack(c[0], c[1], c[2]), scale),
+                      px, baseY, pz, 1, 0.0, 0.30, 0.0, 0.0);
+            sink.send(dust(pack(n[0], n[1], n[2]), scale * 0.8f),
+                      px, baseY + 3.0D + r * 0.02D, pz, 1, 0.0, 0.25, 0.0, 0.0);
+
+            // debris dragged along just behind the front
+            if (i % 3 == 0) {
+                sink.send(dust(0x9aa0a6, 1.6f),
+                          x + (px - x) * 0.94D, baseY + 0.5D, z + (pz - z) * 0.94D,
+                          1, 0.4, 0.2, 0.4, 0.02);
+            }
+        }
+
+        // the detonation core: lit at the start, blows out white at the end
+        if (t < 0.12D || t > 0.90D) {
+            sink.send(dust(0xffffff, 4.0f), x, y + 2.0D, z, 24, 3.0, 2.0, 3.0, 0.2);
+        }
     }
 
     /** Direct mixin hook: phase-up shockwave fired from addSubGrowth(), not only from tick polling. */
@@ -168,14 +384,17 @@ public final class McsmFxDriver {
                 double a = (i / 48.0) * Math.PI * 2.0;
                 double px = x + Math.cos(a) * r;
                 double pz = z + Math.sin(a) * r;
-                srv.sendParticles(puff, px, y - 1.0 + ring * 0.6, pz, 1, 0.0, 0.35, 0.0, 0.0);
+                spawn(srv, puff, px, y - 1.0 + ring * 0.6, pz, 1, 0.0, 0.35, 0.0, 0.0);
                 if (i % 6 == 0) {
-                    srv.sendParticles(dust(0x9aa0a6, 2.2f), px, y, pz, 2, 1.2, 1.0, 1.2, 0.03);
-                    srv.sendParticles(dust(0xb8b8b8, 1.8f), px, y + 0.5, pz, 1, 1.0, 0.8, 1.0, 0.04);
+                    spawn(srv, dust(0x9aa0a6, 2.2f), px, y, pz, 2, 1.2, 1.0, 1.2, 0.03);
+                    spawn(srv, dust(0xb8b8b8, 1.8f), px, y + 0.5, pz, 1, 1.0, 0.8, 1.0, 0.04);
                 }
             }
         }
-        srv.sendParticles(dust(0xd8e6ff, 0.7f), x, y + 2.0, z, 60, 6.0, 3.0, 6.0, 0.3);
+        spawn(srv, dust(0xd8e6ff, 0.7f), x, y + 2.0, z, 60, 6.0, 3.0, 6.0, 0.3);
+        // MCSM 1.9.109 -- the one-shot rings above are the detonation; this
+        // arms the front that actually travels outward over the next 3 s.
+        startBlast(srv, self, KIND_RISE);
     }
 
     /** Six expanding rings, one per MCSM colour, then a white flash. */
@@ -187,14 +406,19 @@ public final class McsmFxDriver {
             double yy = y + k * 1.1;
             for (int i = 0; i < 64; i++) {
                 double a = (i / 64.0) * Math.PI * 2.0 + (k * 0.13);
-                srv.sendParticles(puff,
+                spawn(srv, puff,
                     x + Math.cos(a) * r, yy, z + Math.sin(a) * r,
                     1, 0.0, 0.6, 0.0, 0.0);
             }
         }
-        srv.sendParticles(dust(0xffffff, 4.0f), x, y + 3.0, z, 2, 0.0, 0.0, 0.0, 0.0);
-        srv.sendParticles(dust(0xd8e6ff, 0.7f), x, y + 3.0, z, 120, 8.0, 5.0, 8.0, 0.4);
-        srv.sendParticles(dust(0x9aa0a6, 2.2f), x, y + 2.0, z, 80, 7.0, 4.0, 7.0, 0.12);
+        spawn(srv, dust(0xffffff, 4.0f), x, y + 3.0, z, 2, 0.0, 0.0, 0.0, 0.0);
+        spawn(srv, dust(0xd8e6ff, 0.7f), x, y + 3.0, z, 120, 8.0, 5.0, 8.0, 0.4);
+        spawn(srv, dust(0x9aa0a6, 2.2f), x, y + 2.0, z, 80, 7.0, 4.0, 7.0, 0.12);
+        // MCSM 1.9.109 -- and the death front, expanding for 5 s. This is the
+        // particle half of the death sequence; the sky half (cracks, implosion,
+        // ring flare) is driven into the FogSkyEnd band 1906..2900 by
+        // McsmBlobCarrierPatch and drawn by mcsm_death() in core/sky.fsh.
+        startBlast(srv, self, KIND_DEATH);
     }
 
     /** The tear closes: MCSM reads survival as recovery, so heal and cleanse. */
@@ -203,12 +427,12 @@ public final class McsmFxDriver {
         for (ServerPlayer sp : srv.getPlayers(p -> p.isAlive()
                 && p.distanceToSqr(x, y, z) < 96.0 * 96.0)) {
             sp.heal(12.0f);
-            srv.sendParticles(dust(0x7ddf64, 0.8f), sp.getX(), sp.getY() + 1.0, sp.getZ(),
+            spawn(srv, dust(0x7ddf64, 0.8f), sp.getX(), sp.getY() + 1.0, sp.getZ(),
                               24, 0.8, 0.8, 0.8, 0.2);
-            srv.sendParticles(dust(0xff4d6d, 1.0f), sp.getX(), sp.getY() + 1.6, sp.getZ(),
+            spawn(srv, dust(0xff4d6d, 1.0f), sp.getX(), sp.getY() + 1.6, sp.getZ(),
                               8, 0.5, 0.5, 0.5, 0.1);
         }
-        srv.sendParticles(dust(0xffd76a, 1.2f), x, y + 2.0, z, 160, 4.0, 3.0, 4.0, 0.35);
+        spawn(srv, dust(0xffd76a, 1.2f), x, y + 2.0, z, 160, 4.0, 3.0, 4.0, 0.35);
     }
 
     private static void purpleMotes(ServerLevel srv, WitherStormEntity self, long gt) {
@@ -219,11 +443,11 @@ public final class McsmFxDriver {
             double a = ((seed >>> (i * 3)) % 360) / 360.0 * Math.PI * 2.0;
             double rr = r + ((seed >>> (i * 5)) % 24);
             double py = y + ((seed >>> (i * 7)) % 40) - 12.0;
-            srv.sendParticles(dust(0x9d6bff, 1.4f), x + Math.cos(a) * rr, py, z + Math.sin(a) * rr,
+            spawn(srv, dust(0x9d6bff, 1.4f), x + Math.cos(a) * rr, py, z + Math.sin(a) * rr,
                               3, 0.6, 1.4, 0.6, 0.02);
         }
         if (gt % 40L == 0L) {
-            srv.sendParticles(dust(0xd8e6ff, 0.7f), x, y + 18.0, z, 40, 10.0, 6.0, 10.0, 0.35);
+            spawn(srv, dust(0xd8e6ff, 0.7f), x, y + 18.0, z, 40, 10.0, 6.0, 10.0, 0.35);
         }
     }
 
@@ -233,7 +457,7 @@ public final class McsmFxDriver {
         double py = Math.max(self.getBoundingBox().minY, y - 22.0);
         for (int i = 0; i < 8; i++) {
             double a = (i / 8.0) * Math.PI * 2.0;
-            srv.sendParticles(dust(0x9aa0a6, 2.2f), x + Math.cos(a) * r, py, z + Math.sin(a) * r,
+            spawn(srv, dust(0x9aa0a6, 2.2f), x + Math.cos(a) * r, py, z + Math.sin(a) * r,
                               3, 1.6, 0.7, 1.6, 0.05);
         }
     }
@@ -242,8 +466,8 @@ public final class McsmFxDriver {
         double x = self.getX(), y = self.getY(), z = self.getZ();
         double r = self.getBoundingBox().getXsize() * 0.55;
         double py = Math.max(self.getBoundingBox().minY, y - 30.0) + 1.0;
-        srv.sendParticles(dust(0x5a5a5a, 4.0f), x, py, z, 6, r * 0.7, 1.2, r * 0.7, 0.02);
-        srv.sendParticles(dust(0x777777, 3.0f), x, py + 2.0, z, 8, r * 0.9, 2.0, r * 0.9, 0.03);
+        spawn(srv, dust(0x5a5a5a, 4.0f), x, py, z, 6, r * 0.7, 1.2, r * 0.7, 0.02);
+        spawn(srv, dust(0x777777, 3.0f), x, py + 2.0, z, 8, r * 0.9, 2.0, r * 0.9, 0.03);
     }
 
     /**
@@ -262,14 +486,14 @@ public final class McsmFxDriver {
         int steps = 26;
         for (int i = 0; i <= steps; i++) {
             double t = i / (double) steps;
-            srv.sendParticles(dust(0xbfffe8, 0.9f), x, y - len * t, z, 1, 0.03, 0.0, 0.03, 0.0);
+            spawn(srv, dust(0xbfffe8, 0.9f), x, y - len * t, z, 1, 0.03, 0.0, 0.03, 0.0);
         }
         double pt = (gt % 30L) / 30.0;
-        srv.sendParticles(dust(0xffb347, 1.2f), x, y - len * pt, z, 2, 0.05, 0.05, 0.05, 0.0);
+        spawn(srv, dust(0xffb347, 1.2f), x, y - len * pt, z, 2, 0.05, 0.05, 0.05, 0.0);
         if (gt % 20L == 0L) {
             for (int i = 0; i < 16; i++) {
                 double a = (i / 16.0) * Math.PI * 2.0;
-                srv.sendParticles(dust(0xd8e6ff, 0.7f),
+                spawn(srv, dust(0xd8e6ff, 0.7f),
                     x + Math.cos(a) * 1.6, gy + 0.3, z + Math.sin(a) * 1.6,
                     1, 0.1, 0.2, 0.1, 0.02);
             }
@@ -288,6 +512,7 @@ public final class McsmFxDriver {
     /** Forget a storm (entity removed) so the map cannot grow without bound. */
     public static void forget(UUID id) {
         STATE.remove(id);
+        BLASTS.remove(id);   // MCSM 1.9.109 -- an in-flight blast dies with it
     }
 
     private McsmFxDriver() {}

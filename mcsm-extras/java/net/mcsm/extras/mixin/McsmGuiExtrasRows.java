@@ -132,7 +132,12 @@ public abstract class McsmGuiExtrasRows {
             Method mAdd = screen.getDeclaredMethod("addRowWidget", rowCls);
             for (Method m : new Method[]{mHeader, mButton, mAdd}) m.setAccessible(true);
 
-            mAdd.invoke(self, mHeader.invoke(null, "MCSM extras 1.9.105", 0));
+            // MCSM 1.9.109 -- single-sourced version: this header used to be a
+            // hand-typed literal and lagged the jar by three builds, so the
+            // screen always claimed to be an older version than the file the
+            // user had just installed.
+            mAdd.invoke(self, mHeader.invoke(null,
+                    "MCSM extras " + McsmExtrasConfig.BUILD_VERSION, 0));
             mAdd.invoke(self, mButton.invoke(null,
                     "Open the MCSM Control Panel",
                     "Glare size, aurora, death cinematic, supernova rings, smoke screen, purple sky, dust waves, reality tear, obliterate flash, and the gameplay patches.",

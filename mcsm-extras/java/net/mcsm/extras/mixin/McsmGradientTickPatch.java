@@ -7,6 +7,7 @@ import net.dabicco.witherstormmod.client.StormSkyGradient;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.mcsm.extras.McsmDiag;
 import net.mcsm.extras.McsmGate;
+import net.mcsm.extras.client.McsmClientBlasts;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -99,6 +100,12 @@ public abstract class McsmGradientTickPatch {
                               DabyWSClientConfig.bloomStrength > 0.0,
                               StormSkins.og(),
                               DabyWSClientConfig.stormSkin);
+            // MCSM 1.9.109 -- advance the expanding blasts. Driven from here
+            // rather than from the storm's tick because the death blast has to
+            // keep expanding for its full five seconds AFTER the storm entity
+            // has been removed, and this hook runs for as long as the world is
+            // being rendered. It steps at most once per game tick internally.
+            McsmClientBlasts.tick();
         } catch (Throwable ignored) {
             // Never let a visual helper break the frame.
         }
