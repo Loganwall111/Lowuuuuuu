@@ -4181,7 +4181,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
       if (!(this.level() instanceof ServerLevel server)) {
          return null;
       } else {
-         ArrayList var9 = new ArrayList();
+         ArrayList<Player> var9 = new ArrayList<Player>();
 
          for (Player p : this.targetablePlayers()) {
             if (p.distanceToSqr(this) < 9216.0) {

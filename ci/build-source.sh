@@ -36,7 +36,6 @@ VURL="$(printf '%s' "$MANIFEST" | python3 -c 'import json,sys; m=json.load(sys.s
 CLIENT_URL="$(curl -fsSL "$VURL" | python3 -c 'import json,sys; print(json.load(sys.stdin)["downloads"]["client"]["url"])' || true)"
 fetch "$CLIENT_URL" client.jar || exit 1
 fetch "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar" mixin.jar || exit 1
-fetch "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar" jspecify.jar || exit 1
 fetch "https://libraries.minecraft.net/it/unimi/dsi/fastutil/8.5.18/fastutil-8.5.18.jar" fastutil.jar || exit 1
 fetch "https://libraries.minecraft.net/com/mojang/datafixerupper/10.0.21/datafixerupper-10.0.21.jar" dfu.jar || exit 1
 fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" joml.jar || exit 1
@@ -46,14 +45,22 @@ fetch "https://libraries.minecraft.net/com/google/code/gson/gson/2.11.0/gson-2.1
 fetch "https://libraries.minecraft.net/org/slf4j/slf4j-api/2.0.7/slf4j-api-2.0.7.jar" slf4j.jar || exit 1
 
 # modmenu: newest release from the TerraformersMC maven (API surface is stable)
-MODMENU_VER="$(curl -fsSL https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml \
-  | grep -oE '<version>[^<]*</version>' | sed 's/<[^>]*>//g' | tail -1 || true)"
-if [ -z "$MODMENU_VER" ]; then
-  echo "::error title=source-build::could not resolve a modmenu version"
-  exit 1
+MODMENU_OK=""
+for MODMENU_VER in $(curl -fsSL https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml \
+    | grep -oE '<version>[^<]*</version>' | sed 's/<[^>]*>//g' | tail -3); do
+  echo "[deps] trying modmenu $MODMENU_VER"
+  if curl -fsSL --retry 2 -o "$DL/modmenu.jar" \
+      "https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/${MODMENU_VER}/modmenu-${MODMENU_VER}.jar" \
+     && unzip -l "$DL/modmenu.jar" | grep -q "com/terraformersmc/modmenu/api/ModMenuApi.class"; then
+    MODMENU_OK="$MODMENU_VER"
+    break
+  fi
+  echo "::warning title=source-build::modmenu $MODMENU_VER unusable (download or missing api package)"
+done
+if [ -z "$MODMENU_OK" ]; then
+  echo "::error title=source-build::no usable modmenu jar found; ModMenuIntegration will not compile"
 fi
-echo "[deps] modmenu resolved: $MODMENU_VER"
-fetch "https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/${MODMENU_VER}/modmenu-${MODMENU_VER}.jar" modmenu.jar || exit 1
+echo "::notice title=source-build::modmenu in use: ${MODMENU_OK:-NONE}"
 
 # fabric-api: pick the newest build for MC 26.2 from Fabric's maven metadata
 FAPI_VER="$(curl -fsSL https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml \
@@ -88,7 +95,7 @@ while IFS=$'\t' read -r url name; do
 done < "$DL/fapi-list.txt"
 FAPI_CP="$(find "$DL/fapi" -name '*.jar' | tr '\n' ':')"
 
-CP="$DL/client.jar:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$DL/gson.jar:$DL/slf4j.jar:$DL/modmenu.jar:$FAPI_CP"
+CP="$DL/client.jar:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$DL/gson.jar:$DL/slf4j.jar:$DL/modmenu.jar:$FAPI_CP"
 
 # Compile-time fallback, LAST on the classpath: the single class Vineflower
 # could not recover (WitherStormDevourer.createBodyLayer -- OOM on a

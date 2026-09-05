@@ -120,7 +120,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-import net.minecraft.client.renderer.item.tint.BlockTintSource;
+import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.world.level.block.RedStoneWireBlock;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.dabicco.witherstormmod.block.WitheredDustBlock;
