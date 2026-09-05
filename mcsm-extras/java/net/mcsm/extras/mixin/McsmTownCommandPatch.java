@@ -215,9 +215,10 @@ public abstract class McsmTownCommandPatch {
                     + " in the wilderness outside EnderCon (" + t.x() + ", " + t.y() + ", " + t.z()
                     + "). " + queued + " site(s) queued -- they rise within seconds."), false);
         } else {
+            McsmWorldgen.Site t2 = treehouse;   // effectively final for the lambda
             src.sendSuccess(() -> Component.literal("[ds] " + queued
                     + " Episode 1 site(s) queued around the Wilderness Treehouse ("
-                    + treehouse.x() + ", " + treehouse.y() + ", " + treehouse.z() + ")."), false);
+                    + t2.x() + ", " + t2.y() + ", " + t2.z() + ")."), false);
         }
         return queued;
     }
