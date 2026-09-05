@@ -1,7 +1,22 @@
-03cbed79a8c16d419eef69b6cb36cbb56b95ff081ebfc97b15289d8d50d6f1dd  dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
-fa33e307bf644a562e0a5ace53a704bc6fe9b78ab6fa42dfaefc1793a2d9fd06  dabywitherstormmod-1.9.98-26.2-beta-mcsm.jar
-36ead130096f2f5955c5dd26ffca6dc82d570ec80e3d03ef695e36f5611f21a1  dabywitherstormmod-1.9.99-26.2-beta-mcsm.jar
+# sha256 for every file in this directory -- MCSM 1.9.101 (2026-09-05)
+#
+# THE 1.9.101 JAR ITSELF: built on the CI runner (this sandbox has no JDK).
+# Its sha256 ships next to it in the mcsm-jar-<run> artifact / the release;
+# add it here after downloading.
+#
+# BASE (what 1.9.101 is assembled on top of) = the REAL CI-compiled 1.9.100
+# release asset -- NOT the overlay jar in obsolete/ (that was the old 1.9.99
+# base wearing a 1.9.100 version string):
+#   6adcf07e1ad810703c12cb25d7d135aca7b8f66f7d12c273ad3f00b5abdb6599
+#   https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-1.9.100/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
+
+85da4df54028af42d624b9d8491648cf5f7478953c6e37edb812e0a2cae481d7  HANDOFF.md
+6aed6d87db080b29ee1b81c6e5642c872874e6db61881e7ac07d2861c5fb3e56  HANDOFF.txt
+2becf143ab4c784452bed4987a0f30440827205bfe0a2025390ab8753f83827d  LOG_GUIDE.txt
+620273f2256d5a72122acd42a66ffaa5c2ddcabf9942a4135beea678e6bd4968  README.txt
+ab8032763922da46c60f464f6de1bf9fe103bf56ed201700191762de1e270d99  shadowtest.py
 8c775591773b9a0f1e90370bc6cca6255198d100c23236d3f02f99b8f02cb0a9  MCSM_mod_changes.zip
+3b1fd79c3a504869d931bdd6fe28ba2547f620fab8ac45c3ef218772abf03b6c  MCSM_shaders_1.9.100.zip
 aeba213e8ac44091def31873bf3bea71d347cbc9f81a228f38a009351687bab4  MCSM_visuals.zip
 2f5dcddfe352b241f9c7c05b20e82787574d3f68909d21e76a3bd1095e81832f  MCSShaders-shaderpack.zip
 392be0aa649c9bfd4ea44fa4aad559e960de8cfd6676a99ba2d038f2cc878a59  preview_death_supernova.png
@@ -9,3 +24,4 @@ aeba213e8ac44091def31873bf3bea71d347cbc9f81a228f38a009351687bab4  MCSM_visuals.z
 38319902a5e5c7bdaac4d2fdc6d24f5393b40056803ebf6afcb458a2ee966068  preview_halo_vs_reference_1.9.100.png
 b0f6dc64cc17c5b77c8a602513ba201c125953f7532c70e0010756e3c6043b4c  preview_halo_vs_reference_1.9.99.png
 c22c1220eecfef92b58a01cbcab654545423ebf2209daa79d5b0fc89c9bbddef  preview_storm_sky_1.9.96.png
+03cbed79a8c16d419eef69b6cb36cbb56b95ff081ebfc97b15289d8d50d6f1dd  obsolete/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar

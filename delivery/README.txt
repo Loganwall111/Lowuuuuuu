@@ -1,17 +1,41 @@
 ================================================================
- MCSM WITHER STORM  --  1.9.98-26.2-beta-mcsm
- Multi-phase fix: visibility, shadows, glare blob, sky, rim
+ MCSM WITHER STORM  --  1.9.101-26.2-beta-mcsm        (2026-09-05)
+ FIRST VERSION BUILT ON THE REAL COMPILATION
 ================================================================
 
-DOWNLOAD (all live on :8765)
-  dabywitherstormmod-1.9.98-26.2-beta-mcsm.jar   57356874 B
-  MCSShaders-shaderpack.zip                          11,663 B
-  MCSM_visuals.zip                                1,064,899 B
-  MCSM_mod_changes.zip                               51,7xx B
-  README.txt / sha256.txt
+WHAT CHANGED AT 1.9.101
+  The 1.9.100 jar that had been sitting in delivery/ was NEVER a compile:
+  entry-level sha256 diff (2450 entries, 2249 files) shows it is the old
+  1.9.99 base wearing a new version string -- 4 shader files + the version
+  in fabric.mod.json were the only differences, and every one of the 418
+  .class files is the old one. The new Java (McsmGate, McsmFxDriver,
+  McsmStory, client/McsmExtrasScreen + recompiled config/mixins) was not in
+  it. That jar is now in obsolete/.
 
-sha256 (jar):
-7eed07ed61074c282d408bcd8cf4d1ce65d66bd9a18d34bcc4ebe0449de891d9
+  1.9.101 is assembled on top of the REAL 1.9.100 (the CI compile, release
+  mcsm-1.9.100):
+    base    dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar   57,360,136 B
+            sha256 6adcf07e1ad810703c12cb25d7d135aca7b8f66f7d12c273ad3f00b5abdb6599
+            https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-1.9.100/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
+    +       the 17 freshly compiled net/mcsm/extras classes (javac, Java 25)
+    +       mcsm-core-shaders (map-pin silhouette + deck fix, as in 1.9.100)
+    +       jar-overrides (mixin registry, fabric.mod.json -> 1.9.101)
+
+GETTING THE 1.9.101 JAR
+  This sandbox has no JDK; the jar is built on the GitHub Actions runner by
+  ci/build.sh, which now pins the base to the real 1.9.100 release asset by
+  the hash above (a wrong/old jar can no longer be mistaken for the base).
+  The result is the mcsm-jar-<run> artifact of the push that built
+  VERSION=1.9.101 -- download it from that run's page.
+
+IN THIS DIRECTORY
+  MCSM_shaders_1.9.100.zip   the shader payload (identical at 1.9.101)
+  preview_*.png              historical frames (1.9.96 - 1.9.100)
+  obsolete/                  the fake 1.9.100 overlay jar (kept for record)
+  sha256.txt                 hashes of every file in this directory
+
+BELOW: the 1.9.98 phase history (kept for reference).
+================================================================
 
 Five defects, five root causes. Every one measured from bytecode
 or from your own screenshots -- no guessing this time.

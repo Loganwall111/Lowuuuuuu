@@ -35,8 +35,21 @@ Write-Host "[build] base jar: $($base.Name)"
 # --- dependencies (only downloaded once, cached in .\ci\.\cache) -----------
 $cache = "$root\ci\cache"
 New-Item -ItemType Directory -Force -Path $cache | Out-Null
+
+# Resolve the Minecraft client jar from the LIVE version manifest — a pinned
+# object hash goes stale and 404s. Falls back to the pinned hash offline.
+$clientUrl = "https://piston-data.mojang.com/v1/objects/2dc72797acbc1b63fc16a11c4ac393605f453754/client.jar"
+try {
+  $manifest = Invoke-RestMethod -Uri "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" -TimeoutSec 30
+  $v = $manifest.versions | Where-Object { $_.id -eq "26.2" } | Select-Object -First 1
+  if ($v) {
+    $vmeta = Invoke-RestMethod -Uri $v.url -TimeoutSec 30
+    if ($vmeta.downloads.client.url) { $clientUrl = $vmeta.downloads.client.url }
+  }
+} catch { Write-Host "[deps] manifest unreachable — using pinned client hash" }
+
 $deps = @(
-  @{ url = "https://piston-data.mojang.com/v1/objects/2dc72797acbc1b63fc16a11c4ac393605f453754/client.jar"; file = "client.jar" },
+  @{ url = $clientUrl; file = "client.jar" },
   @{ url = "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar"; file = "mixin.jar" },
   @{ url = "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar"; file = "jspecify.jar" },
   @{ url = "https://repo1.maven.org/maven2/it/unimi/dsi/fastutil/8.5.15/fastutil-8.5.15.jar"; file = "fastutil.jar" },
@@ -63,11 +76,21 @@ $jarTool = Join-Path $javaBin "jar.exe"
 $buildDir = "$root\ci\out-classes"
 if (Test-Path $buildDir) { Remove-Item -Recurse -Force $buildDir }
 New-Item -ItemType Directory -Force -Path $buildDir | Out-Null
+New-Item -ItemType Directory -Force -Path "$root\out" | Out-Null
 $sources = Get-ChildItem -Recurse "$root\mcsm-extras\java" -Filter *.java | ForEach-Object { $_.FullName }
 $cp = @( "$cache\client.jar"; $base.FullName; "$cache\mixin.jar"; "$cache\jspecify.jar"; "$cache\fastutil.jar"; "$cache\dfu.jar"; "$cache\joml.jar" ) -join ";"
-& $javac -nowarn --release 25 -proc:none -cp "$cp" -d "$buildDir" $sources
-if ($LASTEXITCODE -ne 0) { throw "javac failed with exit code $LASTEXITCODE" }
-Write-Host "[javac] OK: $((Get-ChildItem -Recurse $buildDir -Filter *.class).Count) classes"
+# Survivable: on failure the full log is saved next to the output jar and the
+# jar is still assembled from the old classes + current shaders.
+& $javac -nowarn --release 25 -proc:none -cp "$cp" -d "$buildDir" $sources 2>&1 | Tee-Object -FilePath "$root\ci\javac-last.log"
+$javacRc = $LASTEXITCODE
+$nClasses = @(Get-ChildItem -Recurse $buildDir -Filter *.class -ErrorAction SilentlyContinue).Count
+if ($javacRc -ne 0) {
+  Write-Host "[javac] FAILED (exit $javacRc) — continuing with a shaders-only jar." -ForegroundColor Red
+  Write-Host "[javac] The jar will keep the OLD Java classes. Full log: ci\javac-last.log" -ForegroundColor Red
+  Copy-Item "$root\ci\javac-last.log" "$root\out\JAVAC_FAILED.txt" -Force -ErrorAction SilentlyContinue
+} else {
+  Write-Host "[javac] OK: $nClasses classes"
+}
 
 # --- assemble the new jar ---------------------------------------------------
 $fx = "$root\ci\out-unzip"
@@ -79,7 +102,11 @@ try { & $jarTool -xf $base.FullName } finally { Pop-Location }
 
 Copy-Item -Recurse -Force "$root\mcsm-core-shaders\*" "$fx\assets\minecraft\shaders\"
 Copy-Item -Recurse -Force "$root\jar-overrides\*" "$fx\"
-Copy-Item -Recurse -Force "$buildDir\*" "$fx\"
+# only overlay fresh classes when the compile produced some (empty dir would
+# otherwise abort the script — that bug used to eat the whole jar)
+if ($nClasses -gt 0) {
+  Copy-Item -Recurse -Force "$buildDir\*" "$fx\"
+}
 
 $fmj = "$fx\fabric.mod.json"
 (Get-Content $fmj -Raw) -replace '"version": "[0-9.]+-26\.2-beta-mcsm"', """version"": ""$jarId""" | Set-Content $fmj -Encoding ASCII

@@ -936,3 +936,51 @@ TOOLING: glslcheck/apicheck.py usage note -- it verifies net.dabicco.* symbols
   eats the rest of the file).
 STILL UNWRITTEN, waiting on the api dump: HUD/inventory move to the side,
   3D command block rendering.
+
+### Phase 31 (2026-09-05) — the 1.9.100 copy was not a compile; 1.9.101 is built on the real one
+PROOF (entry-level sha256 diff of the three delivery jars, 2450 entries,
+2249 files): 1.9.98 -> 1.9.99 changed exactly 4 shader files + the version
+string; 1.9.99 -> 1.9.100(copy) changed 2 shader files + the version string.
+0 added / 0 removed entries in either step. The 1.9.100 copy was the old
+1.9.99 base with the version string bumped -- the new Java (McsmGate,
+McsmFxDriver, McsmStory, client/McsmExtrasScreen + recompiled
+config/mixins) was never in it; every one of the 418 .class files is old.
+REAL JAR: release mcsm-1.9.100 asset dabywitherstormmod-1.9.100-26.2-beta-
+mcsm.jar, 57,360,136 B, sha256
+6adcf07e1ad810703c12cb25d7d135aca7b8f66f7d12c273ad3f00b5abdb6599
+(built by run 33933807480, 2026-09-05 00:41). It contains the 17 freshly
+compiled classes; its 4 shader entries are byte-identical to the copy's
+(verified against f6d9405:mcsm-core-shaders), so real-jar vs copy differs
+only in the compiled Java + metadata.
+SANDBOX EGRESS: release-asset + artifact downloads are blocked HERE
+(curl/gh get EOF), but the 116-B .sha256 asset came through the page
+fetcher -- that is how the base hash above was obtained without the file.
+CI runners CAN download release assets, which is why the base is fetched
+there.
+CHANGES FOR 1.9.101
+  VERSION -> 1.9.101.
+  ci/build.sh: the base is no longer "latest jar in delivery/" (that
+    silently picked the fake one). It is pinned to the real 1.9.100 release
+    asset by sha256: use delivery/<name> only if its hash matches, else
+    fetch the release asset and verify, aborting on mismatch. An old
+    overlay can never again be mistaken for the base.
+  delivery/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar -> delivery/
+    obsolete/ (the fake, kept for the record, out of the base path).
+  The build workflow cannot be committed by the build bot: the GitHub App
+    token has no `workflows` permission and GitHub rejects any push that
+    touches .github/workflows/ (seen live on this very push). It therefore
+    ships as the mirror ci/workflows/build-mcsm.yml (now covering
+    arena/01a06ef4-lowuuuuuu + arena/01a06df7-lowuuuuuu) and is installed
+    by the repo owner with one command:  bash ci/install-workflow.sh
+    (copies mirror -> .github/workflows/, commits + pushes with the
+    owner's credentials, which DO have the permission).
+  delivery/README.txt header + sha256.txt rewritten for the real state.
+STATUS: code push done. Next: the owner runs `bash ci/install-workflow.sh`
+on this branch -- that push starts the build. Result: mcsm-jar-<run>
+artifact = base (real 1.9.100, hash-verified) + fresh classes + shaders +
+version 1.9.101.
+NEXT (when a release is wanted, not just an artifact): merge this branch
+into arena/01a06df7-lowuuuuuu -- the dev branch's workflow auto-publishes
+mcsm-<VERSION> when VERSION is new.
+STILL UNWRITTEN (unchanged): HUD/inventory move, 3D command block
+rendering -- waiting on the api dump for any further client-side code.
