@@ -42,9 +42,9 @@ public final class McsmClientChat {
     }
 
     /**
-     * "[mcsm] MCSM extras 1.9.110 loaded ..." once per world load. If the mods
-     * list or the Extras header shows a different number, an older jar is still
-     * sitting in mods/ and is the one actually running.
+     * The loaded-banner line, once per world load: [mcsm] MCSM extras, then the
+     * build number. If the mods list or the Extras header shows a different
+     * number, an older jar is still sitting in mods/ and is the one running.
      */
     public static void announceBuildOnce() {
         try {
