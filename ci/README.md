@@ -24,7 +24,14 @@ location GitHub actually runs), with an identical mirror at
   publish).
 
 To move or re-install it on a new branch, copy the file into
-`.github/workflows/` and update the `branches` list.
+`.github/workflows/` and update the `branches` list. There is a one-command
+helper for the repo owner (required because the arena build-bot token has no
+`workflows` permission to push `.github/workflows/` itself):
+
+```bash
+git fetch origin
+bash ci/install-workflow.sh     # copies the template + commits + pushes
+```
 
 Builds/artifacts appear at
 <https://github.com/Loganwall111/Lowuuuuuu/actions>.
