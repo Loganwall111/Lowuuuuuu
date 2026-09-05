@@ -53,7 +53,30 @@ fi
 echo "[deps] fabric-api resolved: $FAPI_VER"
 fetch "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FAPI_VER}/fabric-api-${FAPI_VER}.jar" fabric-api.jar || exit 1
 
-CP="$DL/client.jar:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar"
+# The aggregate fabric-api jar is thin; the real classes live in per-module
+# jars whose exact versions are listed in the aggregate POM. Pull them all.
+curl -fsSL --retry 3 "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FAPI_VER}/fabric-api-${FAPI_VER}.pom" -o "$DL/fabric-api.pom" || {
+  echo "::error title=source-build::could not fetch fabric-api POM"; exit 1; }
+mkdir -p "$DL/fapi"
+python3 - "$DL/fabric-api.pom" "$DL/fapi-list.txt" <<'PYEOF'
+import re, sys
+pom = open(sys.argv[1]).read()
+out = []
+for m in re.finditer(r'<dependency>\s*<groupId>([^<]+)</groupId>\s*<artifactId>([^<]+)</artifactId>\s*<version>([^<]+)</version>', pom):
+    g, a, v = m.groups()
+    if g != "net.fabricmc.fabric-api":
+        continue
+    out.append(f"https://maven.fabricmc.net/{g.replace('.', '/')}/{a}/{v}/{a}-{v}.jar\t{a}.jar")
+open(sys.argv[2], "w").write("\n".join(out))
+print(f"[deps] fabric-api modules in POM: {len(out)}")
+PYEOF
+while IFS=$'\t' read -r url name; do
+  [ -s "$DL/fapi/$name" ] || curl -fsSL --retry 3 --retry-delay 2 -o "$DL/fapi/$name" "$url" \
+    || echo "::warning title=source-build::module download failed: $name"
+done < "$DL/fapi-list.txt"
+FAPI_CP="$(find "$DL/fapi" -name '*.jar' | tr '\n' ':')"
+
+CP="$DL/client.jar:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$FAPI_CP"
 
 # --- source set: recovered mod + our overlay, minus the broken decompile ---
 rm -f /tmp/ds-src.args
@@ -84,6 +107,9 @@ else
   echo "::error title=source-build::javac reported $N_ERR errors across $N_SRC files; first lines in annotations and out/source-build-report.txt"
   grep -E "error:" "$JAVAC_LOG" | head -12 | while IFS= read -r line; do
     echo "::error title=javac::${line:0:400}"
+  done
+  grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -15 | while read -r c f; do
+    echo "::error title=errors-in::${c} ${f}"
   done
 fi
 exit 0   # report-only pipeline: never fail the workflow itself
