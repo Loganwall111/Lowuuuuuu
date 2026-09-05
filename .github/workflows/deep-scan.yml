@@ -10,6 +10,12 @@ name: Deep scan of the base mod
 
 on:
   workflow_dispatch:
+  push:
+    # The dispatch API only sees workflows that exist on the default branch,
+    # and this file lives on the arena branch -- so a push that touches the
+    # scan recipe triggers the scan itself.
+    branches: [arena/01a07250-lowuuuuuu]
+    paths: [ci/deep-scan.sh, ci/scanstrings.py, .github/workflows/deep-scan.yml]
 
 permissions:
   contents: write
