@@ -41,7 +41,7 @@ public class SeveredWitherStormRenderer
 
    public SeveredWitherStormRenderer(Context context) {
       super(context, new SeveredWitherStorm(context.bakeLayer(ModEntityModelLayers.SEVERED_WITHER_STORM)), 1.0F);
-      this.bodyModel = (SeveredWitherStorm)this.model;
+      this.bodyModel = (SeveredWitherStorm)(Object)this.model;
       this.shadowModel = new SeveredWitherStorm(context.bakeLayer(ModEntityModelLayers.SEVERED_WITHER_STORM));
       this.previewHeads = new PreviewHeads(context);
    }

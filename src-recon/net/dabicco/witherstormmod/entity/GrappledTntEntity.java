@@ -86,11 +86,11 @@ public class GrappledTntEntity extends Entity {
    }
 
    public int getProbeState() {
-      return (Integer)this.entityData.get(DATA_STATE);
+      return (Integer)(Object)this.entityData.get(DATA_STATE);
    }
 
    public int getOwnerId() {
-      return (Integer)this.entityData.get(DATA_OWNER);
+      return (Integer)(Object)this.entityData.get(DATA_OWNER);
    }
 
    public boolean isPickable() {
@@ -126,8 +126,8 @@ public class GrappledTntEntity extends Entity {
             if (struck != null) {
                this.setPos(to.x, to.y, to.z);
                struck.onGrappleHit(to);
-               this.detonate((ServerLevel)this.level());
-               this.grantFragments((ServerLevel)this.level(), struck.getPhase());
+               this.detonate((ServerLevel)(Object)this.level());
+               this.grantFragments((ServerLevel)(Object)this.level(), struck.getPhase());
                return;
             }
 
@@ -142,7 +142,7 @@ public class GrappledTntEntity extends Entity {
             } else {
                Vec3 at = hitBlock ? hit.getLocation() : to;
                this.setPos(at.x, at.y, at.z);
-               this.detonate((ServerLevel)this.level());
+               this.detonate((ServerLevel)(Object)this.level());
             }
          } else {
             if (owner == null) {

@@ -142,8 +142,8 @@ if [ -n "$FAPI_HOLDER" ]; then
   javap -cp "$FAPI_HOLDER" net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder 2>/dev/null | head -12 | while IFS= read -r line; do
     echo "::notice title=probe-fpbb::${line:0:280}"
   done
-  javap -cp "$FAPI_HOLDER" 'net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder$Builder' 2>/dev/null | head -16 | while IFS= read -r line; do
-    echo "::notice title=probe-builder::${line:0:280}"
+  javap -cp "$FAPI_HOLDER" 'net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder$BuildCallback' 2>/dev/null | head -8 | while IFS= read -r line; do
+    echo "::notice title=probe-callback::${line:0:280}"
   done
 else
   echo "::warning title=source-build::FabricPotionBrewingBuilder not found in any fabric-api module jar"
@@ -235,6 +235,9 @@ else
   echo "::error title=source-build::javac reported $N_ERR errors across $N_SRC files; first lines in annotations and out/source-build-report.txt"
   grep -E "error:" "$JAVAC_LOG" | sed -E 's/.*error: //; s/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -10 | while IFS= read -r line; do
     echo "::error title=error-kinds::${line:0:300}"
+  done
+  grep -E "error:" "$JAVAC_LOG" | head -6 | while IFS= read -r line; do
+    echo "::error title=javac-first::${line:0:300}"
   done
   grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -10 | while read -r c f; do
     echo "::error title=errors-in::${c} ${f}"

@@ -21,7 +21,7 @@ public class ScreenHighlightMixin {
    )
    private void dabyws$discoveryHighlight(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
       if (DiscoveryHighlight.shouldShow()) {
-         Screen screen = (Screen)this;
+         Screen screen = (Screen)(Object)this;
          String wanted;
          if (screen instanceof OptionsScreen) {
             wanted = Component.translatable("options.worldOptions.button").getString();

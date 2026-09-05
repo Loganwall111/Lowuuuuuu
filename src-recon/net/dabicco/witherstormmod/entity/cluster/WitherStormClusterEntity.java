@@ -160,7 +160,7 @@ public class WitherStormClusterEntity extends Entity {
    }
 
    public float getRenderScale() {
-      return (Float)this.entityData.get(DATA_SCALE);
+      return (Float)(Object)this.entityData.get(DATA_SCALE);
    }
 
    public WitherStormClusterEntity.ClusterState getClusterState() {
@@ -347,7 +347,7 @@ public class WitherStormClusterEntity extends Entity {
             brightness = darkFloor + (1.0F - darkFloor) * t;
          }
 
-         if (Math.abs((Float)this.entityData.get(DATA_BRIGHTNESS) - brightness) > 0.02F) {
+         if (Math.abs((Float)(Object)this.entityData.get(DATA_BRIGHTNESS) - brightness) > 0.02F) {
             this.entityData.set(DATA_BRIGHTNESS, brightness);
          }
       }
@@ -568,7 +568,7 @@ public class WitherStormClusterEntity extends Entity {
                double shrinkRange = Math.max(6.0, (double)config.absorptionRadius);
                if (distance < shrinkRange) {
                   float shrink = (float)Mth.clamp((distance - 2.0) / (shrinkRange - 2.0), 0.05, 1.0);
-                  this.entityData.set(DATA_SCALE, Math.min((Float)this.entityData.get(DATA_SCALE), shrink));
+                  this.entityData.set(DATA_SCALE, Math.min((Float)(Object)this.entityData.get(DATA_SCALE), shrink));
                }
 
                boolean tookTooLong = this.travelTicks > 1800;
@@ -769,7 +769,7 @@ public class WitherStormClusterEntity extends Entity {
    }
 
    public float getDarknessFactor() {
-      return (Float)this.entityData.get(DATA_BRIGHTNESS);
+      return (Float)(Object)this.entityData.get(DATA_BRIGHTNESS);
    }
 
    public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {

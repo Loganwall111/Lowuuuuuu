@@ -17,7 +17,7 @@ public class OptionsScreenMixin {
       at = {@At("TAIL")}
    )
    private void dabyws$addWitherStormSettingsButton(CallbackInfo ci) {
-      OptionsScreen screen = (OptionsScreen)this;
+      OptionsScreen screen = (OptionsScreen)(Object)this;
       Button button = Button.builder(
             Component.literal("§5Wither Storm Settings"), b -> Minecraft.getInstance().gui.setScreen(new WitherStormConfigScreen(screen))
          )

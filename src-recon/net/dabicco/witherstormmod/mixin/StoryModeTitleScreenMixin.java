@@ -24,7 +24,7 @@ public abstract class StoryModeTitleScreenMixin extends Screen {
    )
    private void dabyws$addStoryModeButtons(CallbackInfo ci) {
       Minecraft mc = Minecraft.getInstance();
-      TitleScreen self = (TitleScreen)this;
+      TitleScreen self = (TitleScreen)(Object)this;
       Button settingsBtn = Button.builder(Component.literal("§5§l⚡ Storm Config"), b -> mc.gui.setScreen(new WitherStormConfigScreen(self)))
          .bounds(self.width - 142, 6, 136, 18)
          .build();
@@ -42,7 +42,7 @@ public abstract class StoryModeTitleScreenMixin extends Screen {
       at = {@At("TAIL")}
    )
    private void dabyws$renderStoryModeBanner(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
-      TitleScreen self = (TitleScreen)this;
+      TitleScreen self = (TitleScreen)(Object)this;
       g.fillGradient(0, 0, self.width, 50, -1072561632, 1180192);
       g.fillGradient(0, self.height - 38, self.width, self.height, 1180192, -1072561632);
       long ms = System.currentTimeMillis();

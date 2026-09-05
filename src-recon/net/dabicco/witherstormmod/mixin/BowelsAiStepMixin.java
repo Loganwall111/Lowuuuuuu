@@ -24,7 +24,7 @@ public abstract class BowelsAiStepMixin {
       at = {@At("HEAD")}
    )
    private void dabyws$intoFrame(CallbackInfo ci) {
-      LivingEntity self = (LivingEntity)this;
+      LivingEntity self = (LivingEntity)(Object)this;
       boolean outer = BowelsFrame.active(self) == null;
       if (outer) {
          BowelsTrace.record(self, 0, self.getDeltaMovement(), false);
@@ -41,7 +41,7 @@ public abstract class BowelsAiStepMixin {
       at = {@At("RETURN")}
    )
    private void dabyws$outOfFrame(CallbackInfo ci) {
-      LivingEntity self = (LivingEntity)this;
+      LivingEntity self = (LivingEntity)(Object)this;
       BowelsTrace.record(self, 5, self.getDeltaMovement(), true);
       BowelsFrame.stepOut(self);
       if (BowelsFrame.active(self) == null) {
@@ -54,7 +54,7 @@ public abstract class BowelsAiStepMixin {
       at = {@At("HEAD")}
    )
    private void dabyws$travelIn(Vec3 input, CallbackInfo ci) {
-      LivingEntity self = (LivingEntity)this;
+      LivingEntity self = (LivingEntity)(Object)this;
       BowelsTrace.record(self, 2, self.getDeltaMovement(), true);
       BowelsTrace.recordInput(self, input, self.getSpeed());
    }
@@ -65,7 +65,7 @@ public abstract class BowelsAiStepMixin {
       cancellable = true
    )
    private void dabyws$noVanillaStep(CallbackInfoReturnable<Float> cir) {
-      LivingEntity self = (LivingEntity)this;
+      LivingEntity self = (LivingEntity)(Object)this;
       if (BowelsFrame.boxAxis(self) != Direction.DOWN) {
          cir.setReturnValue(0.0F);
       }
@@ -107,7 +107,7 @@ public abstract class BowelsAiStepMixin {
       cancellable = true
    )
    private void dabyws$suffocateTurned(Pose pose, CallbackInfoReturnable<Boolean> cir) {
-      LivingEntity self = (LivingEntity)this;
+      LivingEntity self = (LivingEntity)(Object)this;
       Direction gravity = BowelsFrame.boxAxis(self);
       if (gravity != Direction.DOWN) {
          EntityDimensions size = self.getDimensions(pose);

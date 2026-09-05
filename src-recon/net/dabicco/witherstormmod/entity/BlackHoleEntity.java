@@ -95,7 +95,7 @@ public class BlackHoleEntity extends Entity {
    }
 
    public float getMass() {
-      return (Float)this.entityData.get(MASS);
+      return (Float)(Object)this.entityData.get(MASS);
    }
 
    public float getRadius() {
@@ -190,7 +190,7 @@ public class BlackHoleEntity extends Entity {
    public void tick() {
       super.tick();
       if (this.level().isClientSide()) {
-         this.mass = (Float)this.entityData.get(MASS);
+         this.mass = (Float)(Object)this.entityData.get(MASS);
          this.spawnAccretionParticles();
       } else {
          double radius = this.getRadius();

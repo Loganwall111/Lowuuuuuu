@@ -67,7 +67,7 @@ public class FurnaceFilterMenu extends AbstractContainerMenu {
 
    public ItemStack quickMoveStack(Player player, int index) {
       ItemStack result = ItemStack.EMPTY;
-      Slot slot = (Slot)this.slots.get(index);
+      Slot slot = (Slot)(Object)this.slots.get(index);
       if (slot != null && slot.hasItem()) {
          ItemStack stack = slot.getItem();
          result = stack.copy();

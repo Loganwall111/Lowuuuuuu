@@ -49,7 +49,7 @@ public class WitheredBlockEntity extends Entity {
    }
 
    public boolean isSolid() {
-      return (Boolean)this.entityData.get(SOLID);
+      return (Boolean)(Object)this.entityData.get(SOLID);
    }
 
    public boolean canBeCollidedWith(Entity other) {
@@ -65,7 +65,7 @@ public class WitheredBlockEntity extends Entity {
    }
 
    public BlockState getBlockState() {
-      return Block.stateById((Integer)this.entityData.get(BLOCK_ID));
+      return Block.stateById((Integer)(Object)this.entityData.get(BLOCK_ID));
    }
 
    public void setOwnerId(int id) {
@@ -73,11 +73,11 @@ public class WitheredBlockEntity extends Entity {
    }
 
    public int getOwnerId() {
-      return (Integer)this.entityData.get(OWNER_ID);
+      return (Integer)(Object)this.entityData.get(OWNER_ID);
    }
 
    public boolean isFlung() {
-      return (Boolean)this.entityData.get(FLUNG);
+      return (Boolean)(Object)this.entityData.get(FLUNG);
    }
 
    public boolean isNoGravity() {
@@ -166,8 +166,8 @@ public class WitheredBlockEntity extends Entity {
    }
 
    protected void addAdditionalSaveData(ValueOutput output) {
-      output.putInt("BlockId", (Integer)this.entityData.get(BLOCK_ID));
-      output.putBoolean("Flung", (Boolean)this.entityData.get(FLUNG));
+      output.putInt("BlockId", (Integer)(Object)this.entityData.get(BLOCK_ID));
+      output.putBoolean("Flung", (Boolean)(Object)this.entityData.get(FLUNG));
       output.putInt("Life", this.life);
    }
 }

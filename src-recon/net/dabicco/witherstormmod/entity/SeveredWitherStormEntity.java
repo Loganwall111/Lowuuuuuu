@@ -182,7 +182,7 @@ public class SeveredWitherStormEntity extends Mob implements net.dabicco.withers
    }
 
    public float hostCollapseTicks(float partialTick) {
-      long start = (Long)this.entityData.get(COLLAPSE);
+      long start = (Long)(Object)this.entityData.get(COLLAPSE);
       return start < 0L ? -1.0F : (float)(this.level().getGameTime() - start) + partialTick;
    }
 
@@ -218,16 +218,16 @@ public class SeveredWitherStormEntity extends Mob implements net.dabicco.withers
    }
 
    public float getPhase() {
-      return (Float)this.entityData.get(PHASE);
+      return (Float)(Object)this.entityData.get(PHASE);
    }
 
    public boolean isMirrored() {
-      return (Boolean)this.entityData.get(MIRRORED);
+      return (Boolean)(Object)this.entityData.get(MIRRORED);
    }
 
    @Override
    public float getBodyRoll() {
-      return (Float)this.entityData.get(BODY_ROLL);
+      return (Float)(Object)this.entityData.get(BODY_ROLL);
    }
 
    public UUID getHostUUID() {
@@ -235,7 +235,7 @@ public class SeveredWitherStormEntity extends Mob implements net.dabicco.withers
    }
 
    public int activeHeadCount() {
-      return (Integer)this.entityData.get(HEADS);
+      return (Integer)(Object)this.entityData.get(HEADS);
    }
 
    @Override

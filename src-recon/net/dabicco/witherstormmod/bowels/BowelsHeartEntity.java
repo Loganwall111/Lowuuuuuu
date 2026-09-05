@@ -98,19 +98,19 @@ public class BowelsHeartEntity extends Entity {
    }
 
    public int getCracks() {
-      return (Integer)this.entityData.get(CRACKS);
+      return (Integer)(Object)this.entityData.get(CRACKS);
    }
 
    public boolean isFighting() {
-      return (Integer)this.entityData.get(FIGHT) >= 0;
+      return (Integer)(Object)this.entityData.get(FIGHT) >= 0;
    }
 
    public int getFightTicks() {
-      return (Integer)this.entityData.get(FIGHT);
+      return (Integer)(Object)this.entityData.get(FIGHT);
    }
 
    public int getHurtTime() {
-      return (Integer)this.entityData.get(HURT_TIME);
+      return (Integer)(Object)this.entityData.get(HURT_TIME);
    }
 
    public boolean hasRisen() {
