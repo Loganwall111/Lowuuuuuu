@@ -856,3 +856,48 @@ HONEST INVENTORY (1125 lines of Java, 14 files) -- what the build WILL deliver:
   wire / holographic terminal, death shockwave + supernova DRIVER (the shader
   side exists but nothing stamps its carrier), obliterate flash action,
   inventory/HUD move to the side, MCSM structures, MCSM instructions.
+
+### Phase 30f (2026-09-04) — the features were written; the GATES were shut
+Two new tools replaced the missing compiler:
+  glslcheck/whocalls.py  -- whole-jar invoke scan: is this method ever called?
+  glslcheck/apicheck.py  -- verifies every net.dabicco.* symbol our java uses
+                            against the shipped jar (public? non-final? exists?)
+                            so a typo/bad type is caught here, not on the runner.
+  (both sit on glslcheck/whocalls.py's minimal .class parser; no JDK here)
+
+KEY FINDING: the "missing" features already exist and are already wired.
+  die()             -> deathBlast(ServerLevel)          (death shockwave)
+  addSubGrowth(..)  -> phaseUpShockwave(ServerLevel)    (phase shockwave)
+  aiStep(..)        -> tickAmbientBuildingTear(..)      (reality tear/corruption)
+DabyWSClientConfig exposes 335 public static non-final fields holding the look
+(trailerShadows = ground shadows for terrain+mobs, stormProximityVignette = the
+smoke screen, cloudDeckLayer, customSkyboxes, purpleLightningSparks, sunGlow,
+blackGlare, stormShadowTerrain...). WitherStormWorldConfig is reached via
+WitherStormConfigs.get(Level) and all its interesting fields are public
+non-final (buildingDestruction, buildingTearRadius/Interval,
+groundShockwaveParticles, structureRaid*, structureTearClusters,
+witherSickness, witheredMobs/Max, caveRumble).
+So the job was to open gates, not to reimplement.
+
+NEW FILES
+  net/mcsm/extras/McsmGate.java      -- forces the MCSM look on (client) and the
+    world config on (server), ONCE per session via a static latch. Booleans are
+    only ever forced ON; numbers are only RAISED to a floor (never lowered), so
+    a player who already turned something up keeps their value. Blanket catch:
+    a renamed field after a mod update costs a visual, never a crash.
+    World gate is server-only: in single player both sides share one JVM and the
+    client's synced copy would be overwritten by the next sync packet.
+  net/mcsm/extras/McsmFxDriver.java  -- the visible staging, all vanilla
+    particles so nothing desyncs: phase-4/7 rise shockwaves (dust ring + smoke),
+    death supernova (6 coloured rings via DustParticleOptions, purple/pink/blue/
+    orange/green/yellow, then FLASH + sparks), recovery on death (heal nearby
+    players + totem particles = "the tear closes"), purple motes at phase 5.5+,
+    dust waves while sweeping, smoke pool under the body.
+HOOKS (no new mixin, so no mixin-json registration needed):
+  McsmGradientTickPatch (client, per frame)  -> McsmGate.openClient()
+  McsmStormGrabPatch    (server, per storm)  -> McsmGate.openWorld(level)
+                                              + McsmFxDriver.tick(self, level, gt)
+NEW CONFIG: forceMcsmLook, forceMcsmWorld (both default true, in
+  config/mcsm_storm_extras.properties).
+Gotcha found by apicheck: DabyWSClientConfig.useNewFormidibomb is FINAL -- it
+  cannot be assigned. Removed. Re-run apicheck after every java edit.

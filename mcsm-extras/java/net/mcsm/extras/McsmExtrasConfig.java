@@ -56,6 +56,15 @@ public final class McsmExtrasConfig {
     /** Prank variant: also kicks players. Default OFF (grief-safe). */
     public static boolean obliterateKick = false;
 
+    // ---- MCSM 1.9.100 batch: the gates ------------------------------------
+    /** Force the client's Story Mode look on (shadows, glare, smoke screen,
+     *  skyboxes, vignette, tremor). Booleans only ever go ON, numeric values
+     *  are only raised -- see McsmGate. */
+    public static boolean forceMcsmLook = true;
+    /** Force the world config on: building tear, corruption, shockwave
+     *  particles, structure raids, withered mobs, cave rumble. */
+    public static boolean forceMcsmWorld = true;
+
     private static boolean loaded = false;
     private static long stamp = -1L;
 
@@ -88,8 +97,10 @@ public final class McsmExtrasConfig {
             p.setProperty("reality_tear", String.valueOf(realityTear));
             p.setProperty("obliterate_flash", String.valueOf(obliterateFlash));
             p.setProperty("obliterate_kick", String.valueOf(obliterateKick));
+            p.setProperty("force_mcsm_look", String.valueOf(forceMcsmLook));
+            p.setProperty("force_mcsm_world", String.valueOf(forceMcsmWorld));
             try (OutputStream out = new FileOutputStream(f)) {
-                p.store(out, "MCSM - storm gameplay patches + 1.9.98 visuals (glare size, aurora, death cinematic, supernova, smoke, tear)");
+                p.store(out, "MCSM - storm gameplay patches + 1.9.98 visuals + 1.9.100 gates (glare size, aurora, death cinematic, supernova, smoke, tear, forced MCSM look/world)");
             }
             stamp = f.lastModified();
         } catch (Throwable t) {
@@ -143,6 +154,8 @@ public final class McsmExtrasConfig {
             realityTear        = bool(p, "reality_tear", realityTear);
             obliterateFlash    = bool(p, "obliterate_flash", obliterateFlash);
             obliterateKick     = bool(p, "obliterate_kick", obliterateKick);
+            forceMcsmLook      = bool(p, "force_mcsm_look", forceMcsmLook);
+            forceMcsmWorld     = bool(p, "force_mcsm_world", forceMcsmWorld);
         } catch (Throwable t) {
             // stay on defaults; never crash the game over a config file
         }
