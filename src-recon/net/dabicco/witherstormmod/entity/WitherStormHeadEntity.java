@@ -882,7 +882,7 @@ public class WitherStormHeadEntity extends Entity {
                      boolean eat = WitherStormConfigs.get(server).mobPickup != 0
                         && this.level().getEntity(this.getStormId()) instanceof net.dabicco.witherstormmod.entity.WitherStormEntity;
                      net.dabicco.witherstormmod.entity.WitherStormEntity ws = eat
-                        ? (net.dabicco.witherstormmod.entity.WitherStormEntity)this.level().getEntity(this.getStormId())
+                        ? (net.dabicco.witherstormmod.entity.WitherStormEntity)(Object)this.level().getEntity(this.getStormId())
                         : null;
                      if (ws != null) {
                         for (LivingEntity v : new ArrayList<>(this.victims)) {

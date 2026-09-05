@@ -233,18 +233,13 @@ if [ "$RC" -eq 0 ]; then
 else
   N_ERR=$(grep -cE "error:" "$JAVAC_LOG" || true)
   echo "::error title=source-build::javac reported $N_ERR errors across $N_SRC files; first lines in annotations and out/source-build-report.txt"
-  grep -E "error:" "$JAVAC_LOG" | sed -E 's/.*error: //; s/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -10 | while IFS= read -r line; do
-    echo "::error title=error-kinds::${line:0:300}"
-  done
-  grep -E "error:" "$JAVAC_LOG" | head -6 | while IFS= read -r line; do
-    echo "::error title=javac-first::${line:0:300}"
-  done
-  grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -10 | while read -r c f; do
-    echo "::error title=errors-in::${c} ${f}"
-  done
-  grep -A4 -E "error:" "$JAVAC_LOG" | grep -E "symbol:|location:|required:|found:" | sort -u | head -12 | while IFS= read -r line; do
-    echo "::error title=javac-detail::${line:0:400}"
-  done
+  K=$(grep -E "error:" "$JAVAC_LOG" | sed -E 's/.*error: //; s/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -10 | paste -sd '|' | sed 's/|/%0A/g')
+  echo "::error title=error-kinds::$K"
+  F=$(grep -E "error:" "$JAVAC_LOG" | head -8 | paste -sd '|' | sed 's/|/%0A/g')
+  D=$(grep -A4 -E "error:" "$JAVAC_LOG" | grep -E "symbol:|location:|required:|found:" | sort -u | head -8 | paste -sd '|' | sed 's/|/%0A/g')
+  echo "::error title=javac-first::$F%0A--details--%0A$D"
+  W=$(grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -8 | paste -sd '|' | sed 's/|/%0A/g')
+  echo "::error title=errors-in::$W"
   if [ "$N_ERR" -eq 0 ]; then
     echo "::error title=javac-nonzero-exit::javac exited $RC with no 'error:' lines; log tail follows"
     tail -12 "$JAVAC_LOG" | while IFS= read -r line; do
