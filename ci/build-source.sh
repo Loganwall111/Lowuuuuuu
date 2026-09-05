@@ -162,7 +162,13 @@ ROUND=0
 RC=1
 while [ "$ROUND" -lt 8 ]; do
   ROUND=$((ROUND + 1))
-  python3 ci/widen_members.py "$DL/client-stripped.jar" "$DL/client-w.jar" "$WIDEN" || exit 1
+  python3 ci/widen_members.py "$DL/client-stripped.jar" "$DL/client-w.jar" "$WIDEN" > "$DL/widen-out.txt" 2>&1 || exit 1
+  while IFS= read -r line; do
+    echo "::notice title=widen-r$ROUND::${line:0:280}"
+  done < <(head -10 "$DL/widen-out.txt")
+  while IFS= read -r line; do
+    echo "::notice title=widen-entry::${line:0:200}"
+  done < "$WIDEN"
   rm -rf /tmp/ds-src-build && mkdir -p /tmp/ds-src-build
   javac -J-Xss512m -J-Xmx8g -nowarn --release 25 -proc:none -cp "$DL/client-w.jar:$CP_TAIL" -d /tmp/ds-src-build @/tmp/ds-src.args > "$JAVAC_LOG" 2>&1
   RC=$?
