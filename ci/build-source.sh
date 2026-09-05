@@ -247,4 +247,9 @@ else
     done
   fi
 fi
+# Publish the report INTO the repo so the sandbox (which cannot reach
+# GitHub log/artifact blobs) can always read the full verdict via git.
+mkdir -p ci/reports
+cp out/source-build-report.txt ci/reports/source-build-latest.txt
+echo "[report] copied to ci/reports/source-build-latest.txt"
 exit 0   # report-only pipeline: never fail the workflow itself
