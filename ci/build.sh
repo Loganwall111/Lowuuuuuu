@@ -160,6 +160,18 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.dabicco.witherstormmod.command.DabyWSCommand"
   javap -public -classpath "$CP2" $CLIENT_CLASSES > ci/api/client.txt 2>&1 || true
   javap -public -classpath "$CP2" $MOD_CLASSES   > ci/api/mod.txt    2>&1 || true
+  # MCSM 1.9.101 -- the 1.9.101 javac errors (sendParticles overload,
+  # "cannot access Message") live in the particle/level/chat API, which the
+  # original dump never covered. Dump it, plus a package index of those
+  # packages and every "message" entry in the client jar, so the sandbox can
+  # see where 26.2 moved things.
+  LEVEL_CLASSES="net.minecraft.world.level.Level net.minecraft.world.level.ServerLevel \
+    net.minecraft.core.particles.ParticleType net.minecraft.client.particles.DustParticleOptions \
+    net.minecraft.network.chat.Component"
+  javap -public -classpath "$CP2" $LEVEL_CLASSES > ci/api/level.txt 2>&1 || true
+  unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/(world/level|core/particles|client/particles|network/chat)/' \
+    | sort > ci/api/api-classes-index.txt || true
+  unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -iE 'message' > ci/api/message-locations.txt || true
   # A class index so we can discover what this version renamed things to.
   unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/client/.*\.class$' | sort \
     > ci/api/client-index.txt || true
