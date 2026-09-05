@@ -33,13 +33,40 @@ fetch() {
 # --- vanilla client (official mojmap names, same as the shipping build) ---
 MANIFEST="$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v2.json || true)"
 VURL="$(printf '%s' "$MANIFEST" | python3 -c 'import json,sys; m=json.load(sys.stdin); v=[x for x in m["versions"] if x["id"]=="26.2"]; print(v[0]["url"] if v else "")' || true)"
-CLIENT_URL="$(curl -fsSL "$VURL" | python3 -c 'import json,sys; print(json.load(sys.stdin)["downloads"]["client"]["url"])' || true)"
+curl -fsSL "$VURL" -o "$DL/version.json" || { echo "::error title=source-build::could not fetch MC version json"; exit 1; }
+CLIENT_URL="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["downloads"]["client"]["url"])' "$DL/version.json" || true)"
 fetch "$CLIENT_URL" client.jar || exit 1
 # javac hard-fails on JSpecify type annotations in the raw vanilla class files
 # (FriendlyByteBuf.readNullable); strip those attributes into a compile-only copy.
 python3 ci/strip_typeann.py "$DL/client.jar" "$DL/client-stripped.jar" || {
   echo "::error title=source-build::client jar type-annotation stripping failed"; exit 1; }
 fetch "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar" mixin.jar || exit 1
+
+# Every vanilla runtime library (netty, guava, log4j, authlib, ...) straight
+# from the version manifest -- kills the whole "missing transitive lib" class
+# of compile errors in one move.
+mkdir -p "$DL/libs"
+python3 - "$DL/version.json" "$DL/lib-list.txt" <<'LIBPY'
+import json, os, sys
+v = json.load(open(sys.argv[1]))
+out = []
+for lib in v.get("libraries", []):
+    art = (lib.get("downloads") or {}).get("artifact") or {}
+    url = art.get("url")
+    if not url:
+        continue
+    name = art.get("path") or os.path.basename(url)
+    if name.startswith("net/minecraft/client"):
+        continue
+    out.append(url + "\t" + os.path.basename(name))
+open(sys.argv[2], "w").write("\n".join(out))
+print(f"[deps] vanilla libraries in manifest: {len(out)}")
+LIBPY
+while IFS=$'\t' read -r url name; do
+  [ -s "$DL/libs/$name" ] || curl -fsSL --retry 2 --retry-delay 2 -o "$DL/libs/$name" "$url" \
+    || echo "::warning title=source-build::library download failed: $name"
+done < "$DL/lib-list.txt"
+LIBS_CP="$(find "$DL/libs" -name '*.jar' | tr '\n' ':')"
 fetch "https://libraries.minecraft.net/it/unimi/dsi/fastutil/8.5.18/fastutil-8.5.18.jar" fastutil.jar || exit 1
 fetch "https://libraries.minecraft.net/com/mojang/datafixerupper/10.0.21/datafixerupper-10.0.21.jar" dfu.jar || exit 1
 fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" joml.jar || exit 1
@@ -101,7 +128,7 @@ while IFS=$'\t' read -r url name; do
 done < "$DL/fapi-list.txt"
 FAPI_CP="$(find "$DL/fapi" -name '*.jar' | tr '\n' ':')"
 
-CP="$DL/client-stripped.jar:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$DL/gson.jar:$DL/slf4j.jar:$DL/modmenu.jar:$FAPI_CP"
+CP="$DL/client-stripped.jar:$LIBS_CP$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$DL/gson.jar:$DL/slf4j.jar:$DL/modmenu.jar:$FAPI_CP"
 
 # Compile-time fallback, LAST on the classpath: the single class Vineflower
 # could not recover (WitherStormDevourer.createBodyLayer -- OOM on a
