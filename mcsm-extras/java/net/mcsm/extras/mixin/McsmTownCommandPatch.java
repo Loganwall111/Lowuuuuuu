@@ -207,16 +207,17 @@ public abstract class McsmTownCommandPatch {
                     + " from this jar's layout -- /ds towns still lists what exists."));
             return 0;
         }
+        final int n = queued;   // loop counter is not effectively final
         if (p != null) {
             McsmWorldgen.Site t = treehouse;
             p.teleportTo(src.getLevel(), t.x() + 0.5, t.y() + 2.0, t.z() + 0.5,
                     Collections.emptySet(), p.getYRot(), p.getXRot(), false);
             src.sendSuccess(() -> Component.literal("[ds] the story starts here: the treehouse"
                     + " in the wilderness outside EnderCon (" + t.x() + ", " + t.y() + ", " + t.z()
-                    + "). " + queued + " site(s) queued -- they rise within seconds."), false);
+                    + "). " + n + " site(s) queued -- they rise within seconds."), false);
         } else {
             McsmWorldgen.Site t2 = treehouse;   // effectively final for the lambda
-            src.sendSuccess(() -> Component.literal("[ds] " + queued
+            src.sendSuccess(() -> Component.literal("[ds] " + n
                     + " Episode 1 site(s) queued around the Wilderness Treehouse ("
                     + t2.x() + ", " + t2.y() + ", " + t2.z() + ")."), false);
         }
