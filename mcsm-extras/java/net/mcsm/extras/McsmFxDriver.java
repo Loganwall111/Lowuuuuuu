@@ -2,6 +2,7 @@ package net.mcsm.extras;
 
 import net.dabicco.witherstormmod.entity.WitherStormEntity;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
@@ -206,6 +207,20 @@ public final class McsmFxDriver {
                   int count, double dx, double dy, double dz, double speed);
     }
 
+    /**
+     * Wall clock of the last server-side death arming. In single-player the
+     * client shares this JVM, so the sky latch in McsmBlobCarrierPatch reads it
+     * and starts the 16 s band even for a death the client never sees the
+     * entity enter -- /kill removes the storm outright, without it ever
+     * reporting isDeadOrDying() to a client-side scan.
+     */
+    private static volatile long lastDeathArmMs = 0L;
+
+    /** Read by the client sky latch; 0 before any death has armed. */
+    public static long lastDeathArmMs() {
+        return lastDeathArmMs;
+    }
+
     /** Game time of the last client step, so frames cannot outrun ticks. */
     private static long lastClientGameTime = Long.MIN_VALUE;
 
@@ -223,6 +238,16 @@ public final class McsmFxDriver {
         double floorY = self.getBoundingBox().minY;
         BLASTS.put(self.getUUID(), new double[]{
                 srv.getGameTime(), kind, x, y, z, floorY, y - floorY});
+        // MCSM 1.9.110 -- say so in chat. These are two rare events per storm
+        // life, and the line is the proof that the hook fired at all when the
+        // report is "no shockwave happened".
+        String msg = kind == KIND_DEATH
+                ? "[mcsm] death sequence armed: expanding blast 5s + sky band 16s"
+                : "[mcsm] phase " + kind + " rise shockwave armed: front expands 3s";
+        for (ServerPlayer sp : srv.getPlayers(
+                q -> q.distanceToSqr(x, y, z) < 600.0 * 600.0)) {
+            sp.sendSystemMessage(Component.literal(msg));
+        }
     }
 
     /**
@@ -359,6 +384,16 @@ public final class McsmFxDriver {
         if (self == null || level == null || level.isClientSide()) return;
         if (!(level instanceof ServerLevel srv)) return;
         try {
+            // MCSM 1.9.110 -- die() AND remove() both lead here now, because
+            // /kill never calls die(); the second arrival must not restart the
+            // blast or fire the one-shot rings twice.
+            double[] st = STATE.computeIfAbsent(self.getUUID(),
+                    k -> new double[]{self.getPhase(), 0.0});
+            if (st[1] > 0.0) {
+                return;
+            }
+            st[1] = 1.0;
+            lastDeathArmMs = System.currentTimeMillis();
             McsmExtrasConfig.load();
             long gt = level.getGameTime();
             if (McsmExtrasConfig.deathCinematic || McsmExtrasConfig.supernovaRings) {
@@ -367,7 +402,6 @@ public final class McsmFxDriver {
             if (McsmExtrasConfig.realityTear) {
                 recover(srv, self);
             }
-            STATE.computeIfAbsent(self.getUUID(), k -> new double[]{self.getPhase(), 0.0})[1] = 1.0;
         } catch (Throwable ignored) {
         }
     }
@@ -483,13 +517,32 @@ public final class McsmFxDriver {
         if (len < 2.0) {
             return;
         }
+        if (gt % 2L != 0L) {
+            return;   // halve the rate: three strands now cost triple
+        }
+        // MCSM 1.9.110 -- three strands and a brighter core. A single 0.9-scale
+        // dust line at two hundred blocks read as nothing at all; "there are no
+        // beams coming out of the sky" was a visibility failure, not a missing
+        // feature. The beam also runs UP from the core, so it reads as a beam
+        // out of the sky and not just a scratch on the storm's belly.
         int steps = 26;
         for (int i = 0; i <= steps; i++) {
             double t = i / (double) steps;
-            spawn(srv, dust(0xbfffe8, 0.9f), x, y - len * t, z, 1, 0.03, 0.0, 0.03, 0.0);
+            double wy = y - len * t;
+            for (int strand = -1; strand <= 1; strand++) {
+                double off = strand * 0.45D;
+                spawn(srv, dust(strand == 0 ? 0xd8fff2 : 0xbfffe8,
+                                strand == 0 ? 1.4f : 0.9f),
+                      x + off, wy, z + off, 1, 0.03, 0.0, 0.03, 0.0);
+            }
+        }
+        for (int i = 1; i <= 12; i++) {
+            spawn(srv, dust(0xbfffe8, 0.9f), x, y + i * 3.0D, z,
+                  1, 0.05, 0.0, 0.05, 0.0);
         }
         double pt = (gt % 30L) / 30.0;
-        spawn(srv, dust(0xffb347, 1.2f), x, y - len * pt, z, 2, 0.05, 0.05, 0.05, 0.0);
+        spawn(srv, dust(0xffb347, 1.8f), x, y - len * pt, z, 3, 0.05, 0.05, 0.05, 0.0);
+        spawn(srv, dust(0xffb347, 1.8f), x, y + pt * 36.0D, z, 3, 0.05, 0.05, 0.05, 0.0);
         if (gt % 20L == 0L) {
             for (int i = 0; i < 16; i++) {
                 double a = (i / 16.0) * Math.PI * 2.0;

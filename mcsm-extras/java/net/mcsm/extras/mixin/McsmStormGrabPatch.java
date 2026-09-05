@@ -54,6 +54,28 @@ public abstract class McsmStormGrabPatch extends net.minecraft.world.entity.boss
         McsmFxDriver.deathCinematic(self, level);
     }
 
+    // MCSM 1.9.110 -- /kill (and any command-based removal) never calls die():
+    // it removes the entity outright, so the death sequence silently never
+    // began. From the player's seat that is exactly "nothing happens when the
+    // storm dies, no shockwave, no rings". remove() is on every removal path,
+    // so this is the net that catches them all; the guard inside
+    // deathCinematic() keeps an ordinary damage-death from firing twice.
+    @Inject(method = {"remove"}, at = @At("HEAD"))
+    private void mcsm$removed(net.minecraft.world.entity.Entity.RemovalReason reason,
+                              CallbackInfo ci) {
+        WitherStormEntity self = (WitherStormEntity) (Object) this;
+        Level level = self.level();
+        if (level == null || level.isClientSide()) return;
+        try {
+            if (reason == net.minecraft.world.entity.Entity.RemovalReason.KILLED
+                    || self.isDeadOrDying()) {
+                McsmFxDriver.deathCinematic(self, level);
+            }
+        } catch (Throwable ignored) {
+            // a death visual must never break removal
+        }
+    }
+
     @Inject(method = {"addSubGrowth"}, at = @At("TAIL"))
     private void mcsm$phaseShockwave(int amount, CallbackInfo ci) {
         McsmExtrasConfig.load();

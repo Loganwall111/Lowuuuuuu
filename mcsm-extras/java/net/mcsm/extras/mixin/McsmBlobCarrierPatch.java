@@ -4,6 +4,8 @@ import net.dabicco.witherstormmod.client.StormSkyGradient;
 import net.dabicco.witherstormmod.entity.WitherStormEntity;
 import net.mcsm.extras.McsmDiag;
 import net.mcsm.extras.McsmExtrasConfig;
+import net.mcsm.extras.McsmFxDriver;
+import net.mcsm.extras.client.McsmClientChat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.fog.FogData;
@@ -168,6 +170,8 @@ public abstract class McsmBlobCarrierPatch {
                 mcsm$deathStartNs = now;
                 McsmDiag.death("START -- storm is dying; stamping the 1906..2906 sky band for "
                                + (int) DEATH_SECONDS + "s");
+                McsmClientChat.say("[mcsm] death cinematic START: sky band 1906..2900 for "
+                                   + (int) DEATH_SECONDS + "s");
             }
             if (mcsm$deathStartNs == 0L) {
                 return;
@@ -178,6 +182,7 @@ public abstract class McsmBlobCarrierPatch {
                 mcsm$deathStartNs = 0L;
                 mcsm$dyingCache = false;
                 McsmDiag.death("END -- sky band released, normal fog resumes");
+                McsmClientChat.say("[mcsm] death cinematic END: sky band released");
                 return;
             }
             if (t < 0.0) {
@@ -215,6 +220,15 @@ public abstract class McsmBlobCarrierPatch {
             if (pl == null || mc.level == null) {
                 mcsm$dyingCache = false;
                 return false;
+            }
+            // MCSM 1.9.110 -- the single-player bridge to the server half.
+            // /kill removes the storm without the client ever observing
+            // isDeadOrDying(), so the scan below would find nothing and the
+            // sky band would never start. The server stamps this clock when it
+            // arms the death blast; a fresh stamp IS the death, observed.
+            if (System.currentTimeMillis() - McsmFxDriver.lastDeathArmMs() < 1500L) {
+                mcsm$dyingCache = true;
+                return true;
             }
             // The storm is tracked out to ~1400 blocks by the gradient; 4096
             // leaves room for a dying storm that has already stopped updating.

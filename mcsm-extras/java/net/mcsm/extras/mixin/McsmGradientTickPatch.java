@@ -8,6 +8,7 @@ import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.mcsm.extras.McsmDiag;
 import net.mcsm.extras.McsmGate;
 import net.mcsm.extras.client.McsmClientBlasts;
+import net.mcsm.extras.client.McsmClientChat;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -74,6 +75,10 @@ public abstract class McsmGradientTickPatch {
         try {
             McsmGate.openClient();
             McsmDiag.banner();
+            // MCSM 1.9.110 -- speak the build number in chat once per world
+            // load. Chat is the one place the player is guaranteed to look, so
+            // "which jar is actually running?" stops needing a log hunt.
+            McsmClientChat.announceBuildOnce();
             StormSkyGradient.update(cameraState.pos);
             // Report what update() produced. This is the value the glare blob
             // depends on -- if it never reports ACTIVE, the blob cannot draw
