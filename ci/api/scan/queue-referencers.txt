@@ -1,0 +1,7 @@
+net/dabicco/witherstormmod/DabyWitherStormMod.class
+net/dabicco/witherstormmod/command/DabyWSCommand.class
+net/dabicco/witherstormmod/structures/McsmCommand.class
+net/dabicco/witherstormmod/structures/McsmWorldgen$Job.class
+net/dabicco/witherstormmod/structures/McsmWorldgen$Site.class
+net/dabicco/witherstormmod/structures/McsmWorldgen.class
+net/dabicco/witherstormmod/structures/StructureBuilder.class
