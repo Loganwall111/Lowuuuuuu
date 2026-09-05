@@ -31,8 +31,8 @@ set -x
 trap 'rc=$?; mkdir -p out 2>/dev/null; { echo "MCSM build FAILURE (run ${GITHUB_RUN_NUMBER:-local})"; echo "exit: $rc"; echo "line: $LINENO"; echo "cmd:  $BASH_COMMAND"; } > out/FAILURE.txt 2>/dev/null; cat out/FAILURE.txt 2>/dev/null; echo "::error title=MCSM build failed (exit $rc) line $LINENO::$BASH_COMMAND"' ERR
 
 VER="${1:-$(cat VERSION | tr -d '[:space:]')}"
-JAR_ID="${VER}-26.2-beta-mcsm"
-echo "[build] MCSM ${JAR_ID}"
+JAR_ID="${VER}-26.2-beta-ds"
+echo "[build] Devouring Storms ${JAR_ID}"
 
 EVIDENCE_REPO="https://github.com/Loganwall111/Lowuuuuuu.git"
 # MCSM 1.9.109 -- evidence lands on whichever branch triggered the build, so a
@@ -280,7 +280,22 @@ shopt -u nullglob
 if [ "${#FRESH_CLASSES[@]}" -gt 0 ]; then
   cp -r "${FRESH_CLASSES[@]}" "$FX/cls/"
 fi
-sed -i "s/\"version\": \"[0-9.]*-26.2-beta-mcsm\"/\"version\": \"${JAR_ID}\"/" "$FX/cls/fabric.mod.json"
+sed -i "s/\"version\": \"[0-9.]*-26.2-beta[a-z-]*\"/\"version\": \"${JAR_ID}\"/" "$FX/cls/fabric.mod.json"
+# Devouring Storms rebrand -- the DISPLAY name changes; the mod id
+# (dabywitherstormmod) and every registry namespace stay, because those are
+# compiled into the base jar and changing them without the source would break
+# worlds, configs and /give ids.
+python3 - "$FX/cls/fabric.mod.json" <<'PYNAME'
+import json, sys
+p = sys.argv[1]
+with open(p) as f:
+    d = json.load(f)
+d["name"] = "Devouring Storms: The Point of No Return"
+with open(p, "w") as f:
+    json.dump(d, f, indent=2)
+    f.write("\n")
+PYNAME
+echo "[build] fabric.mod.json name: $(python3 -c "import json;print(json.load(open('$FX/cls/fabric.mod.json'))['name'])")"
 
 # ---------------------------------------------------------------------------
 # MCSM 1.9.109 -- JAR AUDIT (hard gate).
@@ -383,14 +398,14 @@ fi
 echo "::notice title=jar audit::all mixins registered, fresh classes present, shaders current"
 echo "[audit] PASS"
 
-OUT="out/dabywitherstormmod-${JAR_ID}.jar"
+OUT="out/devouringstorms-${JAR_ID}.jar"
 rm -f "$OUT"
 ( cd "$FX/cls" && zip -q -r -X "$OLDPWD/$OUT" . -x '.*' )
 ( unzip -t "$OUT" > /dev/null )
 sha256sum "$OUT" | tee "$OUT.sha256"
 
 {
-  echo "MCSM build ${JAR_ID}"
+  echo "Devouring Storms build ${JAR_ID}"
   echo "date:        $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "run:         ${GITHUB_RUN_ID:-local} (#${GITHUB_RUN_NUMBER:-local})"
   echo "base jar:    ${BASE} ($(stat -c%s "$BASE") B)"

@@ -262,8 +262,8 @@ public final class McsmFxDriver {
         // life, and the line is the proof that the hook fired at all when the
         // report is "no shockwave happened".
         String msg = kind == KIND_DEATH
-                ? "[mcsm] death sequence armed: expanding blast 5s + sky band 16s"
-                : "[mcsm] phase " + kind + " rise shockwave armed: front expands 3s";
+                ? "[ds] death sequence armed: expanding blast 5s + sky band 16s"
+                : "[ds] phase " + kind + " rise shockwave armed: front expands 3s";
         for (ServerPlayer sp : srv.getPlayers(
                 q -> q.distanceToSqr(x, y, z) < 600.0 * 600.0)) {
             sp.sendSystemMessage(Component.literal(msg));

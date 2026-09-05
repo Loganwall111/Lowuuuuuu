@@ -20,7 +20,7 @@ package net.mcsm.extras;
  */
 public final class McsmDiag {
 
-    private static final String TAG = "[mcsm]";
+    private static final String TAG = "[ds]";
 
     /** Rate-limit for per-frame reporters: only print when the value changes. */
     private static String lastGate = null;
@@ -51,7 +51,7 @@ public final class McsmDiag {
         // exact confusion that made every fix look like "Minecraft did not
         // recognise the jar". Single source of truth: McsmExtrasConfig
         // .BUILD_VERSION, which ci/build.sh syncs from ./VERSION before javac.
-        say("MCSM extras " + McsmExtrasConfig.BUILD_VERSION + " active. Patches:");
+        say("Devouring Storms " + McsmExtrasConfig.BUILD_VERSION + " active. Patches:");
         say("  McsmShaderGatePatch      ShaderPackCompat.active() -> false");
         say("  McsmStormVisibilityPatch fogless()/reverseShading() -> false");
         say("  McsmBlobCarrierPatch     invertible cloudEnd carrier + death band");
@@ -61,7 +61,7 @@ public final class McsmDiag {
         say("Build " + McsmExtrasConfig.BUILD_VERSION
             + " -- if the mod list or the Extras header shows any OTHER number,");
         say("you are running an older jar: delete every other dabywitherstormmod*.jar from mods/.");
-        say("Grep this log for: [mcsm]  [dabywitherstormmod][shadow]");
+        say("Grep this log for: [ds]  [dabywitherstormmod][shadow]");
     }
 
     /**

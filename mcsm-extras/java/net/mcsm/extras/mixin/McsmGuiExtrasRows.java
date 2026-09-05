@@ -85,7 +85,7 @@ public abstract class McsmGuiExtrasRows {
         try {
             Screen sc = (Screen) self;
             Button direct = Button.builder(
-                    Component.literal("MCSM Extras"),
+                    Component.literal("Devouring Storms"),
                     b -> mcsm$openPanel(self))
                 .bounds(mcsm$buttonX(), mcsm$buttonY(sc), mcsm$buttonW(), mcsm$buttonH())
                 .build();
@@ -137,7 +137,7 @@ public abstract class McsmGuiExtrasRows {
             // screen always claimed to be an older version than the file the
             // user had just installed.
             mAdd.invoke(self, mHeader.invoke(null,
-                    "MCSM extras " + McsmExtrasConfig.BUILD_VERSION, 0));
+                    "Devouring Storms " + McsmExtrasConfig.BUILD_VERSION, 0));
             mAdd.invoke(self, mButton.invoke(null,
                     "Open the MCSM Control Panel",
                     "Glare size, aurora, death cinematic, supernova rings, smoke screen, purple sky, dust waves, reality tear, obliterate flash, and the gameplay patches.",
@@ -175,7 +175,7 @@ public abstract class McsmGuiExtrasRows {
             boolean hover = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
             g.fill(x - 1, y - 1, x + w + 1, y + h + 1, 0xFFB0A0C8);
             g.fill(x, y, x + w, y + h, hover ? 0xFF6E5A86 : 0xFF4E425E);
-            g.centeredText(sc.getFont(), "MCSM Extras", x + w / 2, y + 6, hover ? 0xFFFFE680 : 0xFFFFFFFF);
+            g.centeredText(sc.getFont(), "Devouring Storms", x + w / 2, y + 6, hover ? 0xFFFFE680 : 0xFFFFFFFF);
         } catch (Throwable t) {
             System.err.println("[MCSM] direct MCSM Extras render failed: " + t);
         }

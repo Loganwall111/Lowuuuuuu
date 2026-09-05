@@ -170,7 +170,7 @@ public abstract class McsmBlobCarrierPatch {
                 mcsm$deathStartNs = now;
                 McsmDiag.death("START -- storm is dying; stamping the 1906..2906 sky band for "
                                + (int) DEATH_SECONDS + "s");
-                McsmClientChat.say("[mcsm] death cinematic START: sky band 1906..2900 for "
+                McsmClientChat.say("[ds] death cinematic START: sky band 1906..2900 for "
                                    + (int) DEATH_SECONDS + "s");
             }
             if (mcsm$deathStartNs == 0L) {
@@ -182,7 +182,7 @@ public abstract class McsmBlobCarrierPatch {
                 mcsm$deathStartNs = 0L;
                 mcsm$dyingCache = false;
                 McsmDiag.death("END -- sky band released, normal fog resumes");
-                McsmClientChat.say("[mcsm] death cinematic END: sky band released");
+                McsmClientChat.say("[ds] death cinematic END: sky band released");
                 return;
             }
             if (t < 0.0) {

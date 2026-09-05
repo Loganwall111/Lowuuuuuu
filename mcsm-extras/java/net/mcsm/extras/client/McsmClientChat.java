@@ -58,9 +58,10 @@ public final class McsmClientChat {
                 return;
             }
             lastLevel = level;
-            say("[mcsm] MCSM extras " + McsmExtrasConfig.BUILD_VERSION
-                + " loaded. Mods list and Extras header must read the same"
-                + " number, or an older jar is still in mods/.");
+            say("[ds] Devouring Storms " + McsmExtrasConfig.BUILD_VERSION
+                + " loaded (base: Dabicco's Wither Storm Mod). Mods list and"
+                + " panel header must read the same number, or an older jar"
+                + " is still in mods/.");
         } catch (Throwable ignored) {
             // chat must never break a frame
         }

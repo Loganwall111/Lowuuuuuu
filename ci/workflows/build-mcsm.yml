@@ -1,4 +1,4 @@
-name: Build MCSM Wither Storm jar
+name: Build Devouring Storms jar
 
 # ----------------------------------------------------------------------------
 # The "GitHub compiler": the sandbox has no JDK and no route to Mojang/Maven,
@@ -57,14 +57,14 @@ jobs:
         run: |
           set -euo pipefail
           VER="$(cat VERSION | tr -d '[:space:]')"
-          TAG="mcsm-${VER}"
+          TAG="ds-${VER}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "release $TAG already exists — leaving it alone"
           else
             gh release create "$TAG" \
               --repo Loganwall111/Lowuuuuuu \
               --target "${GITHUB_REF#refs/heads/}" \
-              --title "MCSM Wither Storm ${VER}-26.2-beta" \
+              --title "Devouring Storms: The Point of No Return ${VER}-26.2-beta" \
               --notes-file ci/RELEASE_NOTES.md \
               out/*.jar out/*.sha256
           fi

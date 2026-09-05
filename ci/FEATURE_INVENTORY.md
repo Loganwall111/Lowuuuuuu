@@ -1,4 +1,15 @@
-# MCSM Extras — honest feature inventory
+# Devouring Storms — honest feature inventory
+
+> **Phase 31 rebrand (1.9.113+):** with the original author's permission the
+> mod is being rebranded as **Devouring Storms: The Point of No Return**.
+> Display name, jar filename, release tags, chat banner and panel headers are
+> ours as of 1.9.113. The mod id and registry namespaces stay
+> `dabywitherstormmod` until/unless the author hands over the SOURCE, at which
+> point a true fork (new namespace, source-level fixes, published under the
+> new name) becomes possible. Track A (no source): fix his broken features —
+> town build queue, /mcsm command gaps — with deep mixins, guided by the CI
+> deep-scan disassembly in ci/api/scan/. Track B (with source): full fork.
+
 
 **As of 1.9.112.** What is actually in the released jar, what only half-exists,
 what was never built, and what belongs to Dabicco's mod (which our overlay
