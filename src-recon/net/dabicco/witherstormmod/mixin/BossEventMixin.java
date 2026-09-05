@@ -23,7 +23,7 @@ public abstract class BossEventMixin {
       cancellable = true
    )
    private void dabyws$overrideName(CallbackInfoReturnable<Component> cir) {
-      if (this instanceof LerpingBossEvent) {
+      if (((Object)this) instanceof LerpingBossEvent) {
          Component original = (Component)cir.getReturnValue();
          if (original != null) {
             String name = original.getString();
@@ -67,7 +67,7 @@ public abstract class BossEventMixin {
    }
 
    private boolean dabyws$isStormBarOnClient() {
-      if (!(this instanceof LerpingBossEvent)) {
+      if (!(((Object)this) instanceof LerpingBossEvent)) {
          return false;
       } else {
          String name = this.getName().getString();

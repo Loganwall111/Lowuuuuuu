@@ -21,7 +21,7 @@ public abstract class WitherBossParticleMixin {
       )
    )
    private void dabyws$spreadStormParticles(Level level, ParticleOptions options, double x, double y, double z, double vx, double vy, double vz) {
-      if (this instanceof WitherStormEntity storm && storm.isPhase4()) {
+      if (((Object)this) instanceof WitherStormEntity storm && storm.isPhase4()) {
          AABB box = storm.getBoundingBox();
          RandomSource random = level.getRandom();
          x = Mth.lerp(random.nextDouble(), box.minX, box.maxX);
