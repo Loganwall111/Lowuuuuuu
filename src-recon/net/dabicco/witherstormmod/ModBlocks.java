@@ -55,12 +55,12 @@ public class ModBlocks {
       "withered_sand", props -> new ColoredFallingBlock(new ColorRGBA(10051214), props), Properties.of().strength(0.5F).sound(SoundType.SAND)
    );
    public static final Block WITHERED_COBBLESTONE_STAIRS = register(
-      "withered_cobblestone_stairs", props -> new StairBlock(WITHERED_COBBLESTONE.defaultBlockState(), props), stoneProps(SoundType.STONE)
+      "withered_cobblestone_stairs", props -> new StairBlock(WITHERED_COBBLESTONE.defaultBlockState(), props) {}, stoneProps(SoundType.STONE)
    );
    public static final Block WITHERED_COBBLESTONE_SLAB = register("withered_cobblestone_slab", SlabBlock::new, stoneProps(SoundType.STONE));
    public static final Block WITHERED_COBBLESTONE_WALL = register("withered_cobblestone_wall", WallBlock::new, stoneProps(SoundType.STONE).noOcclusion());
    public static final Block WITHERED_NETHERBRICK_STAIRS = register(
-      "withered_netherbrick_stairs", props -> new StairBlock(WITHERED_NETHERBRICK.defaultBlockState(), props), stoneProps(SoundType.NETHER_BRICKS)
+      "withered_netherbrick_stairs", props -> new StairBlock(WITHERED_NETHERBRICK.defaultBlockState(), props) {}, stoneProps(SoundType.NETHER_BRICKS)
    );
    public static final Block WITHERED_NETHERBRICK_SLAB = register("withered_netherbrick_slab", SlabBlock::new, stoneProps(SoundType.NETHER_BRICKS));
    public static final Block WITHERED_NETHERBRICK_WALL = register(
@@ -76,20 +76,20 @@ public class ModBlocks {
       Properties.of().instrument(NoteBlockInstrument.BASS).strength(2.0F).sound(SoundType.WOOD).ignitedByLava()
    );
    public static final Block WITHERED_PLANKS = register("withered_planks", Block::new, woodProps());
-   public static final Block WITHERED_STAIRS = register("withered_stairs", props -> new StairBlock(WITHERED_PLANKS.defaultBlockState(), props), woodProps());
+   public static final Block WITHERED_STAIRS = register("withered_stairs", props -> new StairBlock(WITHERED_PLANKS.defaultBlockState(), props) {}, woodProps());
    public static final Block WITHERED_SLAB = register("withered_slab", SlabBlock::new, woodProps());
    public static final Block WITHERED_FENCE = register("withered_fence", FenceBlock::new, woodProps());
    public static final Block WITHERED_BUTTON = register(
-      "withered_button", props -> new ButtonBlock(BlockSetType.OAK, 30, props), Properties.of().noCollision().strength(0.85F).sound(WITHERED_WOOD_SOUND)
+      "withered_button", props -> new ButtonBlock(BlockSetType.OAK, 30, props) {}, Properties.of().noCollision().strength(0.85F).sound(WITHERED_WOOD_SOUND)
    );
    public static final Block STRIPPED_WITHERED_PLANKS = register("stripped_withered_planks", Block::new, strippedWoodProps());
    public static final Block STRIPPED_WITHERED_STAIRS = register(
-      "stripped_withered_stairs", props -> new StairBlock(STRIPPED_WITHERED_PLANKS.defaultBlockState(), props), strippedWoodProps()
+      "stripped_withered_stairs", props -> new StairBlock(STRIPPED_WITHERED_PLANKS.defaultBlockState(), props) {}, strippedWoodProps()
    );
    public static final Block STRIPPED_WITHERED_SLAB = register("stripped_withered_slab", SlabBlock::new, strippedWoodProps());
    public static final Block STRIPPED_WITHERED_FENCE = register("stripped_withered_fence", FenceBlock::new, strippedWoodProps());
    public static final Block STRIPPED_WITHERED_BUTTON = register(
-      "stripped_withered_button", props -> new ButtonBlock(BlockSetType.OAK, 30, props), Properties.of().noCollision().strength(0.5F).sound(SoundType.WOOD)
+      "stripped_withered_button", props -> new ButtonBlock(BlockSetType.OAK, 30, props) {}, Properties.of().noCollision().strength(0.5F).sound(SoundType.WOOD)
    );
    public static final Block WITHERED_MUSHROOM = register(
       "withered_mushroom",
@@ -107,7 +107,7 @@ public class ModBlocks {
    );
    public static final Block WITHERED_STONE_STAIRS = register(
       "withered_stone_stairs",
-      props -> new StairBlock(WITHERED_STONE.defaultBlockState(), props),
+      props -> new StairBlock(WITHERED_STONE.defaultBlockState(), props) {},
       Properties.of().strength(1.5F, 6.0F).requiresCorrectToolForDrops().sound(SoundType.STONE)
    );
    public static final Block WITHERED_STONE_SLAB = register(
