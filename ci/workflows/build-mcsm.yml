@@ -1,62 +1,58 @@
 name: Build MCSM Wither Storm jar
 
-# ----------------------------------------------------------------------------
-# The "GitHub compiler" (user request): sandbox had no JDK and no Maven/Mojang
-# network, so every push to this branch builds the full jar on a runner that
-# has both. Artifacts appear on the run page; when the VERSION file bumps to a
-# version with no release yet, a release with the jar is created automatically.
-# ----------------------------------------------------------------------------
-
 on:
   push:
-    branches: [arena/01a06df7-lowuuuuuu]
+    branches: [arena/01a06f0e-lowuuuuuu]
   workflow_dispatch:
 
 permissions:
-  contents: write   # allow the job to publish the release with the built jar
+  contents: read
 
 concurrency:
-  group: mcsm-build
+  group: mcsm-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "25"
 
-      - name: Build the jar
-        run: bash ci/build.sh
+      - name: Test build safeguards
+        run: python3 -m unittest discover -s ci/tests -v
 
-      - name: Upload built jar
+      - name: Compile and verify the JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          bash ci/build.sh 2>&1 | tee out/build.log
+
+      - name: Upload compiled JAR
         uses: actions/upload-artifact@v4
         with:
           name: mcsm-jar-${{ github.run_number }}
           path: |
             out/*.jar
             out/*.sha256
+            out/BUILD_INFO.txt
+          if-no-files-found: error
+          retention-days: 30
 
-      - name: Publish release when VERSION is new
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          VER="$(cat VERSION | tr -d '[:space:]')"
-          TAG="mcsm-${VER}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "release $TAG already exists — leaving it alone"
-          else
-            gh release create "$TAG" \
-              --repo Loganwall111/Lowuuuuuu \
-              --target "${GITHUB_REF#refs/heads/}" \
-              --title "MCSM Wither Storm ${VER}-26.2-beta" \
-              --notes-file ci/RELEASE_NOTES.md \
-              out/*.jar out/*.sha256
-          fi
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcsm-build-logs-${{ github.run_number }}
+          path: out/*.log
+          if-no-files-found: ignore
+          retention-days: 30

@@ -1,57 +1,91 @@
-# README — How the mod gets compiled (the "GitHub compiler" and the local one)
+# Compile the MCSM JAR
 
-Two ways to build the jar. Both run the identical recipe in `ci/build.sh` /
-`ci/build.ps1`: compile the `mcsm-extras` Java sources with JDK 25, then lay
-them + the core shaders + `jar-overrides/` on top of the newest delivery jar
-and stamp the version.
+This branch builds the sources/assets from the requested revision
+[`2a9f780`](https://github.com/Loganwall111/Lowuuuuuu/commit/2a9f7806883438467300d92ed5b854fb154ae950),
+with Minecraft 26.2 GUI API fixes. `VERSION` is **1.9.101** to distinguish the
+result from the previously published, shaders-only 1.9.100 artifact.
 
-## A) GitHub Actions — automatic build on every push ("the GitHub compiler")
+This is an **overlay build**, not a rebuild of the entire upstream mod: the
+repository contains the MCSM Java sources and assets, plus a prebuilt base
+mod. The base's other classes, resources and mixin registrations are retained.
 
-The workflow is written and ready at **`ci/workflows/build-mcsm.yml`**. It
-cannot be pushed into `.github/workflows/` by the build bot (the app token
-lacks the `workflows` permission), so it needs one manual step from the repo
-owner:
+## GitHub Actions
 
-1. In the repo on GitHub, go to **Actions → New workflow → set up a workflow
-   yourself**.
-2. Paste the entire contents of `ci/workflows/build-mcsm.yml` from this branch
-   (or copy the file into `.github/workflows/build-mcsm.yml` locally and push).
-3. Commit — done. Every push to `arena/01a06df7-lowuuuuuu` then:
-   - installs Temurin JDK 25 on a clean runner,
-   - downloads the Minecraft 26.2 client jar + Mixin + deps (runners have
-     full network),
-   - runs the GLSL gate (`glslcheck/shimcheck.py`),
-   - compiles `mcsm-extras` with `javac --release 25`,
-   - assembles and zip-tests the new jar,
-   - attaches it as a run **Artifact**, and
-   - when `VERSION` is bumped to something with no release yet, creates a
-     GitHub Release automatically.
+The ready-to-install workflow is [`workflows/build-mcsm.yml`](workflows/build-mcsm.yml).
+It compiles with Temurin JDK 25, checks the shaders and assembled classes, and
+uploads a JAR, SHA-256 checksum and build report. It does **not** publish a
+release or commit anything back to the repository.
 
-Builds/artifacts appear at
-<https://github.com/Loganwall111/Lowuuuuuu/actions>.
+The current Arena GitHub connection rejected workflow-file pushes because it
+lacks **Workflows** permission. Reconnect GitHub in Arena with that permission,
+or install the workflow using GitHub's editor:
 
-## B) Local on your PC — no GitHub needed
+1. Copy the contents of `ci/workflows/build-mcsm.yml` on this branch.
+2. Open the [new workflow editor](https://github.com/Loganwall111/Lowuuuuuu/new/arena/01a06f0e-lowuuuuuu?filename=.github/workflows/build-mcsm.yml).
+3. Paste and commit on **arena/01a06f0e-lowuuuuuu**. That push starts the build.
 
-You already have JDK 25 (the Azul build you play Minecraft with) and internet.
+After it is installed, rebuild without editing files:
 
-```powershell
-cd C:\path\to\Lowuuuuuu
-powershell -ExecutionPolicy Bypass -File ci\build.ps1
+```bash
+gh workflow run build-mcsm.yml --repo Loganwall111/Lowuuuuuu --ref arena/01a06f0e-lowuuuuuu
 ```
 
-Output: `out\dabywitherstormmod-<version>-26.2-beta-mcsm.jar` (+ `.sha256`).
-Only that jar goes into `mods\` — delete older ones first.
+Download the **mcsm-jar-…** artifact from the successful run. The original
+[linked run](https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33930633043)
+failed. A subsequent [green run](https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33933807480)
+explicitly reported a Java compilation failure and a shaders-only fallback;
+its green status is **not proof of a successful Java compilation**.
 
-(Linux/macOS equivalent: `bash ci/build.sh`.)
+## Local Linux / WSL build
 
-## Rules that still apply (from delivery/HANDOFF.md)
+Install JDK **25 or newer**, Python **3.9 or newer**, `curl`, `unzip` and `zip`.
+The checked-in shader validator is a Linux x86-64 executable. Then:
 
-- Never reuse a retired version number — bump `VERSION` first.
-- Never ship without the embedded textures/shaders.
-- After ANY Java source edit, the jar must be recompiled (that's what these
-  scripts are for — a shader-only edit can be overlaid without javac).
-- After ANY shader edit, run `python3 glslcheck/shimcheck.py mcsm-core-shaders
-  jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh
-  jar-overrides/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh`
-  (42/42 expected — build.ps1 on GitHub runners does it for you; locally run
-  it yourself if you edited shaders).
+```bash
+bash ci/build.sh            # VERSION, currently 1.9.101
+bash ci/build.sh 1.9.102     # optional explicit version
+```
+
+The script works from any working directory. It prefers `$JAVA_HOME/bin`,
+otherwise `javac` on `PATH`. Set `MCSM_BASE_JAR` to select a particular base
+JAR; otherwise it uses the numerically newest JAR in `delivery/`.
+
+On Windows, `ci/build.ps1` runs this same build inside **WSL**, rather than
+maintaining a second, divergent compilation recipe. Install the listed tools
+in WSL (a Windows-only JDK does not satisfy that requirement).
+
+Output:
+
+- `out/dabywitherstormmod-1.9.101-26.2-beta-mcsm.jar`
+- The adjacent `.jar.sha256` (verify from `out/` with `sha256sum -c *.sha256`)
+- `out/BUILD_INFO.txt`, `out/javac.log` and `out/glsl.log`
+
+Dependencies and temporary compilation files are cached under `.cache/mcsm/`
+and are not committed. Minecraft's client and Java library versions come
+from its official **26.2** manifest, with SHA-1 verification. Mixin comes from
+Fabric's Maven repository. No stale hardcoded client URL is used as a fallback.
+
+## Success criteria
+
+A build is successful only when all of these pass:
+
+1. The shader syntax gate (42 translation units).
+2. `javac --release 25` for **every** `mcsm-extras/java` source.
+3. Every source has a fresh Java 25 class in the assembled JAR, byte-for-byte.
+4. All registered mixins exist and all shader/texture overrides match source.
+5. The assembled ZIP passes its integrity check.
+
+A compiler failure exits nonzero and **never** assembles a shaders-only JAR.
+A repeat failure removes any stale output with the same version. Compiler
+errors are also emitted as a GitHub Checks annotation, so they remain readable
+when an environment cannot download Actions logs.
+
+Each valid JAR includes `META-INF/mcsm-build.json` recording the source
+commit, source/base/class hashes and the compiler version. This is build
+verification, **not** an in-game rendering or runtime Mixin test.
+
+Run the offline build-safety tests with:
+
+```bash
+python3 -m unittest discover -s ci/tests -v
+```

@@ -1,70 +1,101 @@
 #!/usr/bin/env bash
-# ============================================================================
-# ci/build.sh — the MCSM jar build, runnable locally AND in GitHub Actions.
-#
-# Provenance: delivery/HANDOFF.md §8 (the original recipe needed a local JDK 25
-# + Mojang/Maven network; the sandbox had neither, so this script moves the
-# compile step to CI runners, which do).
-#
-# Steps: fetch deps -> javac the mcsm-extras sources --release 25 -> overlay
-# core shaders + jar-overrides + fresh classes onto the newest delivery jar ->
-# bump fabric.mod.json version -> zip -> sha256. Output in ./out/.
-#
-# Usage:  bash ci/build.sh            # version from ./VERSION
-#         bash ci/build.sh 1.9.98     # explicit
-# ============================================================================
+# Compile the requested MCSM sources, then overlay fresh classes and assets on
+# the supplied base mod. Compilation failure MUST NOT produce a release JAR.
+# Usage: bash ci/build.sh [1.9.101]  (JDK 25+, Python 3.9+, curl, unzip, zip)
 set -euo pipefail
 
-VER="${1:-$(cat VERSION | tr -d '[:space:]')}"
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+VER="${1:-$(tr -d '[:space:]' < VERSION)}"
+[[ "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid version: $VER" >&2; exit 1; }
 JAR_ID="${VER}-26.2-beta-mcsm"
-echo "[build] MCSM ${JAR_ID}"
+OUT="$ROOT/out/dabywitherstormmod-${JAR_ID}.jar"
+mkdir -p "$ROOT/out"
+# Prevent a failed repeat build from leaving an old artifact that looks fresh.
+rm -f "$OUT" "$OUT.sha256" "$ROOT/out/BUILD_INFO.txt" "$ROOT/out/javac.log"
 
-BASE="$(ls -1v delivery/dabywitherstormmod-*-26.2-beta-mcsm.jar | tail -1)"
-echo "[build] base jar: ${BASE}"
+if [[ -n "${JAVA_HOME:-}" ]]; then export PATH="$JAVA_HOME/bin:$PATH"; fi
+for tool in javac python3 curl unzip zip; do
+    command -v "$tool" >/dev/null || { echo "[build] Missing $tool (JDK 25+ is required)." >&2; exit 1; }
+done
+JAVAC_VERSION="$(javac -version 2>&1)"
+JAVA_MAJOR="$(printf '%s\n' "$JAVAC_VERSION" | sed -n 's/^javac \([0-9]*\).*/\1/p')"
+[[ -n "$JAVA_MAJOR" && "$JAVA_MAJOR" -ge 25 ]] || { echo "[build] JDK 25+ required; found $JAVAC_VERSION" >&2; exit 1; }
 
-DL=/tmp/mcsm-dl
-mkdir -p "$DL"
-fetch() { # url -> file
-  local out="$DL/$(basename "$2")"
-  if [ ! -s "$out" ]; then
-    curl -fsSL --retry 3 --retry-delay 3 -o "$out" "$1"
-  fi
-  echo "[deps] $(basename "$out") $(stat -c%s "$out") B"
-}
-fetch "https://piston-data.mojang.com/v1/objects/2dc72797acbc1b63fc16a11c4ac393605f453754/client.jar" client.jar
-fetch "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar" mixin.jar
-fetch "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar" jspecify.jar
-fetch "https://repo1.maven.org/maven2/it/unimi/dsi/fastutil/8.5.15/fastutil-8.5.15.jar" fastutil.jar
-fetch "https://libraries.minecraft.net/com/mojang/datafixerupper/8.0.16/datafixerupper-8.0.16.jar" dfu.jar
-fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" joml.jar
+BASE="${MCSM_BASE_JAR:-$(python3 - <<'PY'
+from pathlib import Path
+import re
+jars = []
+for p in Path('delivery').glob('dabywitherstormmod-*-26.2-beta-mcsm.jar'):
+    m = re.fullmatch(r'dabywitherstormmod-(\d+)\.(\d+)\.(\d+)-26\.2-beta-mcsm\.jar', p.name)
+    if m:
+        jars.append((tuple(map(int, m.groups())), str(p.resolve())))
+if not jars:
+    raise SystemExit('No base mod JAR found in delivery/')
+print(max(jars)[1])
+PY
+)}"
+BASE="$(python3 -c 'from pathlib import Path; import sys; print(Path(sys.argv[1]).resolve())' "$BASE")"
+unzip -t "$BASE" >/dev/null
+printf '[build] MCSM %s\n[build] Base: %s\n[build] %s\n' "$JAR_ID" "$BASE" "$JAVAC_VERSION"
 
-echo "[glsl] shader gate (glslang via shimcheck)"
-chmod +x glslcheck/bin/glslang || true
+DL="$ROOT/.cache/mcsm/deps"
+python3 ci/download_deps.py "$DL"
+CP="$(cat "$DL/classpath.txt"):$BASE"
+
 python3 glslcheck/shimcheck.py mcsm-core-shaders \
-  jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
-  jar-overrides/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh
+    jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
+    jar-overrides/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh \
+    | tee "$ROOT/out/glsl.log"
 
-echo "[javac] mcsm-extras"
-rm -rf /tmp/mcsm-build
-mkdir -p /tmp/mcsm-build
-CP="$DL/client.jar:$BASE:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
-javac -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
-  $(find mcsm-extras/java -name '*.java')
-echo "[javac] OK: $(find /tmp/mcsm-build -name '*.class' | wc -l) classes"
+WORK="$(mktemp -d "$ROOT/.cache/mcsm/build.XXXXXXXX")"
+trap 'rm -rf -- "$WORK"' EXIT
+mkdir -p "$WORK/classes" "$WORK/jar"
+mapfile -d '' SOURCES < <(find mcsm-extras/java -name '*.java' -print0 | sort -z)
+[[ ${#SOURCES[@]} -gt 0 ]] || { echo '[javac] No Java sources found' >&2; exit 1; }
+if javac -nowarn --release 25 -proc:none -cp "$CP" -d "$WORK/classes" \
+    "${SOURCES[@]}" > "$ROOT/out/javac.log" 2>&1; then
+    cat "$ROOT/out/javac.log"
+else
+    status=$?
+    cat "$ROOT/out/javac.log" >&2
+    if [[ "${GITHUB_ACTIONS:-}" == true ]]; then
+        # Logs/artifact hosts may be unreachable from the agent. An annotation
+        # exposes the real compiler errors through the GitHub Checks API too.
+        python3 - <<'PY'
+from pathlib import Path
+log = Path('out/javac.log').read_text(errors='replace')[:50000]
+log = log.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+print('::error title=Java compilation failed::' + log)
+PY
+    fi
+    echo '[javac] FAILED. No JAR assembled; old classes are NOT a fallback.' >&2
+    exit "$status"
+fi
+N_CLASSES="$(find "$WORK/classes" -name '*.class' | wc -l | tr -d '[:space:]')"
+[[ "$N_CLASSES" -gt 0 ]] || { echo '[javac] No classes emitted' >&2; exit 1; }
+echo "[javac] OK: $N_CLASSES fresh classes from ${#SOURCES[@]} sources"
 
-echo "[assemble] overlay onto base"
-FX=/tmp/mcsm-fx
-rm -rf "$FX" && mkdir -p "$FX/cls"
-( cd "$FX/cls" && unzip -o -q "$OLDPWD/$BASE" )
-cp -r mcsm-core-shaders/* "$FX/cls/assets/minecraft/shaders/"
-cp -r jar-overrides/* "$FX/cls/"
-cp -r /tmp/mcsm-build/* "$FX/cls/"
-sed -i "s/\"version\": \"[0-9.]*-26.2-beta-mcsm\"/\"version\": \"${JAR_ID}\"/" "$FX/cls/fabric.mod.json"
-
-mkdir -p out
-OUT="out/dabywitherstormmod-${JAR_ID}.jar"
-rm -f "$OUT"
-( cd "$FX/cls" && zip -q -r -X "$OLDPWD/$OUT" . -x '.*' )
-( unzip -t "$OUT" > /dev/null )
-sha256sum "$OUT" | tee "$OUT.sha256"
-echo "[done] $OUT ($(stat -c%s "$OUT") B)"
+(cd "$WORK/jar" && unzip -q "$BASE")
+mkdir -p "$WORK/jar/assets/minecraft/shaders"
+cp -R mcsm-core-shaders/. "$WORK/jar/assets/minecraft/shaders/"
+cp -R jar-overrides/. "$WORK/jar/"
+cp -R "$WORK/classes/." "$WORK/jar/"
+python3 ci/verify_build.py "$WORK/jar" "$WORK/classes" "$BASE" "$JAR_ID" "$JAVAC_VERSION"
+(cd "$WORK/jar" && zip -q -r -X "$WORK/assembled.jar" . -x '.*')
+unzip -t "$WORK/assembled.jar" >/dev/null
+mv "$WORK/assembled.jar" "$OUT"
+cp "$WORK/jar/META-INF/mcsm-build.json" "$ROOT/out/BUILD_INFO.txt"
+python3 - "$OUT" <<'PY'
+import hashlib
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+sha = hashlib.sha256(p.read_bytes()).hexdigest()
+p.with_suffix(p.suffix + '.sha256').write_text(f'{sha}  {p.name}\n')
+print(f'[sha256] {sha}')
+PY
+printf '[done] %s\n' "$OUT"
+if [[ "${GITHUB_ACTIONS:-}" == true ]]; then
+    echo "::notice title=Full Java build verified::${JAR_ID}: ${N_CLASSES} fresh Java 25 classes; shaders and mixin registrations verified."
+fi

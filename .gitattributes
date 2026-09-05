@@ -1,3 +1,8 @@
 *.spv filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
 *.py filter=lfs diff=lfs merge=lfs -text
+
+# Build tooling must be executable source, not Git LFS pointer files.
+ci/*.py -filter diff merge text eol=lf
+ci/tests/*.py -filter diff merge text eol=lf
+glslcheck/shimcheck.py -filter diff merge text eol=lf
