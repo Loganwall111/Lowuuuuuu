@@ -44,7 +44,7 @@ public final class McsmDiag {
             return;
         }
         bannerDone = true;
-        say("MCSM extras 1.9.105 active. Patches:");
+        say("MCSM extras 1.9.106 active. Patches:");
         say("  McsmShaderGatePatch      ShaderPackCompat.active() -> false");
         say("  McsmStormVisibilityPatch fogless()/reverseShading() -> false");
         say("  McsmBlobCarrierPatch     invertible cloudEnd carrier");

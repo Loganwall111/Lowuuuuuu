@@ -114,7 +114,13 @@ vec3 mcsm_sun_halo(vec3 sky, float dirDotSun, float p, float sunUp) {
     // retarget the wrong way. Fourth instance of the same trap: an additive term
     // calibrated against the old 2.2x-brighter dome (cf. phase 15 blob core,
     // phase 16 lightning).
-    return sky + gc * (core * 0.85 + bloom * 0.22) * amt * 0.46;
+    // 1.9.106: phase 6 screenshots showed this swelling into a huge magenta
+    // ceiling light. Keep the sun punch, but tighten and dim the wide halo hard
+    // as the storm reaches 6.0 so the sky stays ominous instead of washed out.
+    float late = mcsm_ramp(p, 5.88, 6.06);
+    float coreScale  = mix(0.58, 0.36, late);
+    float bloomScale = mix(0.10, 0.025, late);
+    return sky + gc * (core * coreScale + bloom * bloomScale) * amt * 0.34;
 }
 
 // ------------------------------------------------------------ cloud shadow
@@ -507,8 +513,8 @@ vec3 mcsm_halo_color(float p) {
 //     #291740/#2D1C41, lifted rim #3F255A.
 // They stay as RGB triples here because the rest of this shader's Story Mode
 // grading works in the same artist-space constants.
-const float MCSM_OVAL_X = 1.08;  // 1.0 would be a mathematically perfect circle
-const float MCSM_OVAL_Y = 0.94;  // slight oval, but still reads round in-game
+const float MCSM_OVAL_X = 1.22;  // wider on the sides so it wraps the storm
+const float MCSM_OVAL_Y = 0.82;  // shorter vertically; no more giant phase-5/6 wall
 
 // Dome-plane oval field for a view ray.
 //   .x = u      0 at the centre .. 1 on the oval silhouette edge
@@ -564,7 +570,7 @@ vec3 mcsm_measured_halo_gradient(float p, float u) {
 // of the storm").
 float mcsm_mass_cover(vec3 wd, vec3 bd, float p) {
     float mcsmSize = mcsm_glare_size();
-    float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
+    float outer = mix(13.5, 18.0, mcsm_ramp(p, 5.10, 5.90)) * mcsmSize;
     float ang = degrees(acos(clamp(dot(normalize(wd), normalize(bd)), -1.0, 1.0)));
     if (ang >= outer * 3.0) return 0.0;
     vec3 f = mcsm_mass_field(normalize(wd), normalize(bd), outer);
@@ -583,10 +589,10 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     vec3 bd = normalize(bossDir);
     float ang = degrees(acos(clamp(dot(wd, bd), -1.0, 1.0)));
     // MCSM 1.9.102 -- circular/oval halo again. Size still comes from the wide
-    // carrier (mcsm_glare_size) so the user's slider and the phase growth curve
-    // keep working; only the silhouette and colour ramp changed.
+    // carrier (mcsm_glare_size), but the base angular radius is now much smaller
+    // than 1.9.105; phase 5 should hug the storm instead of filling the sky.
     float mcsmSize = mcsm_glare_size();
-    float outer = mix(24.0, 36.0, clamp((p - 4.40) / 3.70, 0.0, 1.0)) * mcsmSize;
+    float outer = mix(13.5, 18.0, mcsm_ramp(p, 5.10, 5.90)) * mcsmSize;
     if (ang >= outer * 3.0) return vec4(0.0, 0.0, 0.0, 0.0);
 
     vec3 fld = mcsm_mass_field(wd, bd, outer);

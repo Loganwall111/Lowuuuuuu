@@ -1,6 +1,7 @@
 package net.mcsm.extras.client;
 
 import net.mcsm.extras.McsmExtrasConfig;
+import net.mcsm.extras.McsmGate;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -128,6 +129,7 @@ public final class McsmExtrasScreen extends Screen {
         Button b = Button.builder(toggleLabel(label, get.getAsBoolean()), btn -> {
             set.accept(!get.getAsBoolean());
             McsmExtrasConfig.save();
+            McsmGate.reset();
             btn.setMessage(toggleLabel(label, get.getAsBoolean()));
         }).bounds(x, y, colW, 20).build();
         this.addWidget(b);
@@ -187,6 +189,7 @@ public final class McsmExtrasScreen extends Screen {
         protected void applyValue() {
             this.set.accept(this.actual());
             McsmExtrasConfig.save();
+            McsmGate.reset();
         }
     }
 
