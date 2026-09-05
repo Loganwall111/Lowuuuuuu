@@ -43,12 +43,12 @@ void main() {
     // TWO falloffs summed, not one. A single exponent gives either a hard little disc or a wash
     // over half the sky; a tight core for the sun itself plus a wide, weak halo is what real haze
     // around a light looks like, and the wide term is the part that actually knits into the fog.
-    float core = pow(toward, GlowColor.a);
+    float core = pow(toward, GlowColor.a) * 0.58;
     // MCSM 1.9.96 -- "shrink the glare, it's way too big": the wide halo term is
     // what read as a giant orange wash. Exponent 4 -> 7 shrinks its reach
     // (pow(0.5,7)=0.008 vs pow(0.5,4)=0.0625 -- an ~8x smaller half-width) and
     // 0.35 -> 0.18 dims what remains.
-    float halo = pow(toward, 7.0) * 0.18;
+    float halo = pow(toward, 12.0) * 0.055;
 
     // MCSM 1.9.96 -- "the one in phase 5.5 is really orange ... it should be dark
     // red pink purple magenta ... and a tinsy blue". The Java side feeds a warm

@@ -9,6 +9,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.lang.reflect.Method;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.Minecraft;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.Unique;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.mcsm.extras.client.McsmExtrasScreen;
 
 /**
  * MCSM - extras entry inside the mod's own config screen.
@@ -28,17 +37,94 @@ import java.lang.reflect.Method;
  * (verified from the shipped jar's method table: rebuild() regenerates and
  * would drop us -- never call it).
  *
+ * MCSM 1.9.104: also adds a direct fixed-position button via Screen.addWidget
+ * reflection. The row API can visually mis-layout at the bottom of this screen
+ * on some GUI scales (black off-screen rectangle / no clickable panel). The
+ * fixed button does not depend on their tab/row/fold machinery at all.
+ * MCSM 1.9.105: render/click are injected directly too, so even if their
+ * custom screen never draws normal child widgets the bottom-left button is
+ * visible and opens from our own mouse handler.
+ *
  * Fully silent on any failure: a future refactor of their GUI costs us the
- * two rows, never a crash.
+ * injected controls, never a crash.
  */
 @Mixin(WitherStormConfigScreen.class)
 public abstract class McsmGuiExtrasRows {
+
+    @Unique private int mcsm$lastMouseX = 0;
+    @Unique private int mcsm$lastMouseY = 0;
+
+    @Unique
+    private static int mcsm$buttonX() { return 8; }
+
+    @Unique
+    private static int mcsm$buttonY(Screen sc) { return Math.max(8, sc.height - 58); }
+
+    @Unique
+    private static int mcsm$buttonW() { return 154; }
+
+    @Unique
+    private static int mcsm$buttonH() { return 20; }
+
+    private static void mcsm$openPanel(Object self) {
+        try {
+            Screen panel = new McsmExtrasScreen((Screen) self);
+            Minecraft.getInstance().setScreenAndShow(panel);
+            System.err.println("[MCSM] extras panel opened via setScreenAndShow");
+        } catch (Throwable t) {
+            try {
+                Minecraft.getInstance().gui.setScreen(new McsmExtrasScreen((Screen) self));
+                System.err.println("[MCSM] extras panel opened via gui.setScreen fallback");
+            } catch (Throwable t2) {
+                System.err.println("[MCSM] extras panel open FAILED: " + t + " / " + t2);
+            }
+        }
+    }
+
+    private static void mcsm$addDirectButton(Object self) {
+        try {
+            Screen sc = (Screen) self;
+            Button direct = Button.builder(
+                    Component.literal("MCSM Extras"),
+                    b -> mcsm$openPanel(self))
+                .bounds(mcsm$buttonX(), mcsm$buttonY(sc), mcsm$buttonW(), mcsm$buttonH())
+                .build();
+
+            // 26.2 keeps addWidget protected/non-public. Search by shape so a
+            // descriptor change from AbstractWidget to GuiEventListener does not
+            // break compilation or runtime discovery.
+            Method add = null;
+            Class<?> k = Screen.class;
+            while (k != null && add == null) {
+                for (Method m : k.getDeclaredMethods()) {
+                    if (!m.getName().equals("addWidget") || m.getParameterCount() != 1) continue;
+                    Class<?> pt = m.getParameterTypes()[0];
+                    if (pt.isAssignableFrom(Button.class) || pt.isAssignableFrom(direct.getClass())
+                            || pt.getName().contains("GuiEventListener") || pt == Object.class) {
+                        add = m;
+                        break;
+                    }
+                }
+                k = k.getSuperclass();
+            }
+            if (add != null) {
+                add.setAccessible(true);
+                add.invoke(sc, direct);
+                System.err.println("[MCSM] direct MCSM Extras button added");
+            } else {
+                System.err.println("[MCSM] direct MCSM Extras button skipped: Screen.addWidget not found");
+            }
+        } catch (Throwable t) {
+            System.err.println("[MCSM] direct MCSM Extras button failed: " + t);
+        }
+    }
 
     @Inject(method = {"init"}, at = @At("TAIL"))
     private void mcsm$extrasRows(CallbackInfo ci) {
         try {
             McsmExtrasConfig.load();
             final Object self = this;
+            mcsm$addDirectButton(self);
             Class<?> screen = WitherStormConfigScreen.class;
             Class<?> rowCls = Class.forName("net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen$Row");
             Method mHeader = rowCls.getDeclaredMethod("header", String.class, int.class);
@@ -46,13 +132,11 @@ public abstract class McsmGuiExtrasRows {
             Method mAdd = screen.getDeclaredMethod("addRowWidget", rowCls);
             for (Method m : new Method[]{mHeader, mButton, mAdd}) m.setAccessible(true);
 
-            mAdd.invoke(self, mHeader.invoke(null, "MCSM extras 1.9.98", 0));
+            mAdd.invoke(self, mHeader.invoke(null, "MCSM extras 1.9.105", 0));
             mAdd.invoke(self, mButton.invoke(null,
                     "Open the MCSM Control Panel",
                     "Glare size, aurora, death cinematic, supernova rings, smoke screen, purple sky, dust waves, reality tear, obliterate flash, and the gameplay patches.",
-                    // 26.2: screen switching moved to Minecraft.gui.setScreen(...)
-                    (Runnable) () -> net.minecraft.client.Minecraft.getInstance().gui.setScreen(
-                            new net.mcsm.extras.client.McsmExtrasScreen((net.minecraft.client.gui.screens.Screen) self))));
+                    (Runnable) () -> mcsm$openPanel(self)));
 
             // exact-name relayout (see class doc for why repositionRows, not rebuild)
             try {
@@ -67,4 +151,51 @@ public abstract class McsmGuiExtrasRows {
             System.err.println("[MCSM] extras GUI rows skipped: " + t);
         }
     }
+
+
+    @Inject(
+        method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
+        at = @At("TAIL")
+    )
+    private void mcsm$renderDirectButton(GuiGraphicsExtractor g, int mouseX, int mouseY,
+                                         float partialTick, CallbackInfo ci) {
+        try {
+            Screen sc = (Screen) (Object) this;
+            this.mcsm$lastMouseX = mouseX;
+            this.mcsm$lastMouseY = mouseY;
+            int x = mcsm$buttonX();
+            int y = mcsm$buttonY(sc);
+            int w = mcsm$buttonW();
+            int h = mcsm$buttonH();
+            boolean hover = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+            g.fill(x - 1, y - 1, x + w + 1, y + h + 1, 0xFFB0A0C8);
+            g.fill(x, y, x + w, y + h, hover ? 0xFF6E5A86 : 0xFF4E425E);
+            g.centeredText(sc.getFont(), "MCSM Extras", x + w / 2, y + 6, hover ? 0xFFFFE680 : 0xFFFFFFFF);
+        } catch (Throwable t) {
+            System.err.println("[MCSM] direct MCSM Extras render failed: " + t);
+        }
+    }
+
+    @Inject(
+        method = "mouseClicked(Lnet/minecraft/client/input/MouseButtonEvent;Z)Z",
+        at = @At("HEAD"),
+        cancellable = true
+    )
+    private void mcsm$clickDirectButton(MouseButtonEvent event, boolean doubleClick,
+                                        CallbackInfoReturnable<Boolean> cir) {
+        try {
+            Screen sc = (Screen) (Object) this;
+            int x = mcsm$buttonX();
+            int y = mcsm$buttonY(sc);
+            int mx = this.mcsm$lastMouseX;
+            int my = this.mcsm$lastMouseY;
+            if (mx >= x && mx < x + mcsm$buttonW() && my >= y && my < y + mcsm$buttonH()) {
+                mcsm$openPanel(this);
+                cir.setReturnValue(Boolean.TRUE);
+            }
+        } catch (Throwable t) {
+            System.err.println("[MCSM] direct MCSM Extras click failed: " + t);
+        }
+    }
+
 }

@@ -114,7 +114,13 @@ vec3 mcsm_sun_halo(vec3 sky, float dirDotSun, float p, float sunUp) {
     // retarget the wrong way. Fourth instance of the same trap: an additive term
     // calibrated against the old 2.2x-brighter dome (cf. phase 15 blob core,
     // phase 16 lightning).
-    return sky + gc * (core * 0.85 + bloom * 0.22) * amt * 0.46;
+    // 1.9.106: phase 6 screenshots showed this swelling into a huge magenta
+    // ceiling light. Keep the sun punch, but tighten and dim the wide halo hard
+    // as the storm reaches 6.0 so the sky stays ominous instead of washed out.
+    float late = mcsm_ramp(p, 5.88, 6.06);
+    float coreScale  = mix(0.58, 0.36, late);
+    float bloomScale = mix(0.10, 0.025, late);
+    return sky + gc * (core * coreScale + bloom * bloomScale) * amt * 0.34;
 }
 
 // ------------------------------------------------------------ cloud shadow
