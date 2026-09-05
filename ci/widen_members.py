@@ -84,6 +84,31 @@ def utf8(cp, idx):
     return e[1] if e and e[0] == 1 else b""
 
 
+def patch_inner_classes(payload, cp, names):
+    """Widen inner_class_access_flags for nested types named in `names`.
+
+    javac decides nested-type accessibility from the ENCLOSING class's
+    InnerClasses attribute, so flipping the nested class's own flags is not
+    enough."""
+    r = Reader(payload)
+    n = r.u2()
+    out = bytearray(struct.pack(">H", n))
+    changed = False
+    for _ in range(n):
+        inner_info = r.u2()
+        outer_info = r.u2()
+        name_idx = r.u2()
+        flags = r.u2()
+        nm = utf8(cp, name_idx).decode("utf-8", "replace")
+        if nm in names:
+            nf = widen_flags(flags)
+            if nf != flags:
+                changed = True
+            flags = nf
+        out += struct.pack(">HHHH", inner_info, outer_info, name_idx, flags)
+    return (bytes(out) if changed else None), changed
+
+
 def skip_attrs(r):
     n = r.u2()
     for _ in range(n):
@@ -145,9 +170,20 @@ def widen_class_bytes(data, member_names, class_level):
 
     fields = members(member_names)
     methods = members(member_names)
-    attrs_start = r2.i
-    skip_attrs(r2)
-    class_attrs = data[attrs_start:r2.i]
+    n_attr = r2.u2()
+    attr_parts = [struct.pack(">H", n_attr)]
+    for _ in range(n_attr):
+        a_name_idx = r2.u2()
+        a_len = r2.u4()
+        payload = r2.take(a_len)
+        if utf8(cp, a_name_idx) == b"InnerClasses" and member_names:
+            new_pl, ic_changed = patch_inner_classes(payload, cp, member_names)
+            if ic_changed:
+                changed = True
+                payload = new_pl
+        attr_parts.append(struct.pack(">HI", a_name_idx, len(payload)))
+        attr_parts.append(payload)
+    class_attrs = b"".join(attr_parts)
 
     if not changed:
         return None, set(), False
@@ -207,6 +243,8 @@ def main():
                 cands = basename_index.get(simple, [])
             for c in cands:
                 plan.setdefault(c, set()).add(name)
+                if name == owner.rsplit(".", 1)[-1]:
+                    plan[c].add("<init>")
             # nested class form: Owner$Name.class
             simple = owner.rsplit(".", 1)[-1]
             for nested in basename_index.get(simple + "$" + name, []):
