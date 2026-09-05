@@ -332,8 +332,9 @@ public class WitherStormConfigScreen extends Screen {
          int top = this.height / 2 - PHASE_LABELS.length * 22 / 2;
 
          for (int i = 0; i < PHASE_LABELS.length; i++) {
+            final int fi = i;
             this.addChrome(Button.builder(Component.literal(PHASE_LABELS[i]), b -> {
-               this.previewPhase = i;
+               this.previewPhase = fi;
                this.phasePickerOpen = false;
                this.resetPreviewCamera();
                this.rebuild();
@@ -348,9 +349,10 @@ public class WitherStormConfigScreen extends Screen {
          int top = this.height / 2 - StormModelPreview.SUBPHASE_LABELS.length * 22 / 2;
 
          for (int i = 0; i < StormModelPreview.SUBPHASE_LABELS.length; i++) {
+            final int fi = i;
             String var28 = PHASE_LABELS[Mth.clamp(this.previewPhase, 0, PHASE_LABELS.length - 1)];
             this.addChrome(Button.builder(Component.literal(var28 + StormModelPreview.SUBPHASE_LABELS[i]), b -> {
-               this.previewSub = i;
+               this.previewSub = fi;
                this.subPickerOpen = false;
                this.rebuild();
             }).bounds(this.width / 2 - 70, top + i * 22, 140, 20).build());
@@ -364,8 +366,9 @@ public class WitherStormConfigScreen extends Screen {
          int top = this.height / 2 - net.dabicco.witherstormmod.client.PreviewScene.BACKDROP_LABELS.length * 22 / 2;
 
          for (int i = 0; i < net.dabicco.witherstormmod.client.PreviewScene.BACKDROP_LABELS.length; i++) {
+            final int fi = i;
             this.addChrome(Button.builder(Component.literal(net.dabicco.witherstormmod.client.PreviewScene.BACKDROP_LABELS[i]), b -> {
-               this.previewBackdrop = i;
+               this.previewBackdrop = fi;
                this.backdropPickerOpen = false;
                this.rebuild();
             }).bounds(this.width / 2 - 70, top + i * 22, 140, 20).build());
@@ -380,8 +383,9 @@ public class WitherStormConfigScreen extends Screen {
          int top = this.height / 2 - labels.length * 24 / 2;
 
          for (int i = 0; i < labels.length; i++) {
+            final int fi = i;
             Button option = Button.builder(Component.literal(labels[i]), b -> {
-               this.presetSelection = i;
+               this.presetSelection = fi;
                this.presetPickerOpen = false;
                this.rebuild();
             }).bounds(this.width / 2 - 90, top + i * 24, 180, 20).build();
