@@ -40,7 +40,7 @@ public class GrabTentacleEntity extends Entity {
    }
 
    public int getStormId() {
-      return (Integer)(Object)this.entityData.get(STORM_ID);
+      return (Integer)(Object)(Object)this.entityData.get(STORM_ID);
    }
 
    public void setVictimId(int id) {
@@ -48,7 +48,7 @@ public class GrabTentacleEntity extends Entity {
    }
 
    public int getVictimId() {
-      return (Integer)(Object)this.entityData.get(VICTIM_ID);
+      return (Integer)(Object)(Object)this.entityData.get(VICTIM_ID);
    }
 
    public void setGrabbed(boolean g) {
@@ -56,7 +56,7 @@ public class GrabTentacleEntity extends Entity {
    }
 
    public boolean isGrabbed() {
-      return (Boolean)(Object)this.entityData.get(GRABBED);
+      return (Boolean)(Object)(Object)this.entityData.get(GRABBED);
    }
 
    public boolean isNoGravity() {

@@ -37,7 +37,7 @@ public class FurnaceFilterBlock extends BaseEntityBlock {
 
    public FurnaceFilterBlock(Properties properties) {
       super(properties);
-      this.registerDefaultState((BlockState)((BlockState)(Object)this.stateDefinition.any()).setValue(BlockStateProperties.LIT, false));
+      this.registerDefaultState((BlockState)((BlockState)(Object)(Object)this.stateDefinition.any()).setValue(BlockStateProperties.LIT, false));
    }
 
    protected MapCodec<? extends BaseEntityBlock> codec() {

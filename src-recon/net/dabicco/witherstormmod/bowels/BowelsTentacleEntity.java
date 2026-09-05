@@ -219,27 +219,27 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public float getEmerge() {
-      return (Float)(Object)this.entityData.get(EMERGE);
+      return (Float)(Object)(Object)this.entityData.get(EMERGE);
    }
 
    public float getRigid() {
-      return (Float)(Object)this.entityData.get(RIGID);
+      return (Float)(Object)(Object)this.entityData.get(RIGID);
    }
 
    public float getCoil() {
-      return (Float)(Object)this.entityData.get(COIL);
+      return (Float)(Object)(Object)this.entityData.get(COIL);
    }
 
    public int getStance() {
-      return (Integer)(Object)this.entityData.get(STANCE);
+      return (Integer)(Object)(Object)this.entityData.get(STANCE);
    }
 
    public boolean isCuttable() {
-      return (Boolean)(Object)this.entityData.get(CUTTABLE);
+      return (Boolean)(Object)(Object)this.entityData.get(CUTTABLE);
    }
 
    public float getWrap() {
-      return (Float)(Object)this.entityData.get(WRAP);
+      return (Float)(Object)(Object)this.entityData.get(WRAP);
    }
 
    public boolean stillFunctional() {
@@ -274,7 +274,7 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public int getBones() {
-      return (Integer)(Object)this.entityData.get(BONES);
+      return (Integer)(Object)(Object)this.entityData.get(BONES);
    }
 
    public void setBones(int v) {
@@ -282,7 +282,7 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public float getScale() {
-      return (Float)(Object)this.entityData.get(SCALE);
+      return (Float)(Object)(Object)this.entityData.get(SCALE);
    }
 
    public void setScale(float v) {
@@ -296,11 +296,11 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public int getMode() {
-      return (Integer)(Object)this.entityData.get(MODE);
+      return (Integer)(Object)(Object)this.entityData.get(MODE);
    }
 
    public float getCurl() {
-      return (Float)(Object)this.entityData.get(CURL);
+      return (Float)(Object)(Object)this.entityData.get(CURL);
    }
 
    public void setCurl(float v) {
@@ -308,7 +308,7 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public float getMountYaw() {
-      return (Float)(Object)this.entityData.get(MOUNT_YAW);
+      return (Float)(Object)(Object)this.entityData.get(MOUNT_YAW);
    }
 
    public void setMountYaw(float v) {
@@ -316,7 +316,7 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public float getPhase() {
-      return (Float)(Object)this.entityData.get(PHASE);
+      return (Float)(Object)(Object)this.entityData.get(PHASE);
    }
 
    public void setPhase(float v) {
@@ -324,15 +324,15 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public float getAim() {
-      return (Float)(Object)this.entityData.get(AIM);
+      return (Float)(Object)(Object)this.entityData.get(AIM);
    }
 
    public int getTargetId() {
-      return (Integer)(Object)this.entityData.get(TARGET);
+      return (Integer)(Object)(Object)this.entityData.get(TARGET);
    }
 
    public boolean isGuard() {
-      return (Boolean)(Object)this.entityData.get(GUARD);
+      return (Boolean)(Object)(Object)this.entityData.get(GUARD);
    }
 
    public void setGuard(boolean v) {
@@ -340,7 +340,7 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public int getOrder() {
-      return (Integer)(Object)this.entityData.get(ORDER);
+      return (Integer)(Object)(Object)this.entityData.get(ORDER);
    }
 
    public void setOrder(int v) {
@@ -348,19 +348,19 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public boolean isOnEnd() {
-      return (Boolean)(Object)this.entityData.get(ON_END);
+      return (Boolean)(Object)(Object)this.entityData.get(ON_END);
    }
 
    public int getGrabPrompt() {
-      return (Integer)(Object)this.entityData.get(GRAB_PROMPT);
+      return (Integer)(Object)(Object)this.entityData.get(GRAB_PROMPT);
    }
 
    public int getGrabFor() {
-      return (Integer)(Object)this.entityData.get(GRAB_FOR);
+      return (Integer)(Object)(Object)this.entityData.get(GRAB_FOR);
    }
 
    public boolean isGrabRight() {
-      return (Boolean)(Object)this.entityData.get(GRAB_RIGHT);
+      return (Boolean)(Object)(Object)this.entityData.get(GRAB_RIGHT);
    }
 
    public static boolean ridingAny(Level level, Player player) {
@@ -376,11 +376,11 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public int getRiderId() {
-      return (Integer)(Object)this.entityData.get(RIDER);
+      return (Integer)(Object)(Object)this.entityData.get(RIDER);
    }
 
    public float getRideAt() {
-      return (Float)(Object)this.entityData.get(RIDE_AT);
+      return (Float)(Object)(Object)this.entityData.get(RIDE_AT);
    }
 
    private void ridership() {
@@ -508,15 +508,15 @@ public class BowelsTentacleEntity extends Entity {
    }
 
    public float getOpen() {
-      return (Float)(Object)this.entityData.get(OPEN);
+      return (Float)(Object)(Object)this.entityData.get(OPEN);
    }
 
    public float getSway() {
-      return (Float)(Object)this.entityData.get(SWAY);
+      return (Float)(Object)(Object)this.entityData.get(SWAY);
    }
 
    public boolean isWhack() {
-      return (Boolean)(Object)this.entityData.get(WHACK);
+      return (Boolean)(Object)(Object)this.entityData.get(WHACK);
    }
 
    public void setWhack(boolean v) {

@@ -41,7 +41,7 @@ public class SuperSkullEntity extends Entity {
    }
 
    public boolean isExtinguished() {
-      return (Boolean)(Object)this.entityData.get(EXTINGUISHED);
+      return (Boolean)(Object)(Object)this.entityData.get(EXTINGUISHED);
    }
 
    public boolean isNoGravity() {

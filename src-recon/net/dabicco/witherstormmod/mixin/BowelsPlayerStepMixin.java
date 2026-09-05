@@ -21,7 +21,7 @@ public abstract class BowelsPlayerStepMixin {
       at = {@At("HEAD")}
    )
    private void dabyws$intoFrame(CallbackInfo ci) {
-      BowelsFrame.stepIn((Player)this);
+      BowelsFrame.stepIn((Player)(Object)this);
    }
 
    @Inject(
@@ -29,7 +29,7 @@ public abstract class BowelsPlayerStepMixin {
       at = {@At("RETURN")}
    )
    private void dabyws$outOfFrame(CallbackInfo ci) {
-      BowelsFrame.stepOut((Player)this);
+      BowelsFrame.stepOut((Player)(Object)this);
    }
 
    @Inject(
@@ -38,7 +38,7 @@ public abstract class BowelsPlayerStepMixin {
       cancellable = true
    )
    private void dabyws$fitsTurned(Pose pose, CallbackInfoReturnable<Boolean> cir) {
-      Player self = (Player)(Object)this;
+      Player self = (Player)(Object)(Object)this;
       Direction gravity = BowelsFrame.boxAxis(self);
       if (gravity != Direction.DOWN) {
          EntityDimensions size = self.getDimensions(pose);
@@ -53,7 +53,7 @@ public abstract class BowelsPlayerStepMixin {
       cancellable = true
    )
    private void dabyws$edgeInFrame(Vec3 movement, MoverType mover, CallbackInfoReturnable<Vec3> cir) {
-      Player self = (Player)(Object)this;
+      Player self = (Player)(Object)(Object)this;
       Direction gravity = BowelsFrame.boxAxis(self);
       if (gravity != Direction.DOWN
          && !self.getAbilities().flying

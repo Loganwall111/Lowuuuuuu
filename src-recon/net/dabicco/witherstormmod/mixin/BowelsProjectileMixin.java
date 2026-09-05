@@ -25,7 +25,7 @@ public abstract class BowelsProjectileMixin {
    private void dabyws$shootInFrame(Entity shooter, float xRot, float yRot, float zRot, float velocity, float inaccuracy, CallbackInfo ci) {
       Direction gravity = BowelsFrame.boxAxis(shooter);
       if (gravity != Direction.DOWN) {
-         Projectile self = (Projectile)(Object)this;
+         Projectile self = (Projectile)(Object)(Object)this;
          Vec3 from = shooter.getEyePosition().add(BowelsFrame.down(gravity).scale(0.1));
          self.setPos(from.x, from.y, from.z);
          float pitch = xRot * (float) (Math.PI / 180.0);

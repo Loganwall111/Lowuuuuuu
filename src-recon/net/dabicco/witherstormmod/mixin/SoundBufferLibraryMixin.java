@@ -21,7 +21,7 @@ public class SoundBufferLibraryMixin {
    )
    private void dabyws$monoBuffer(Identifier id, CallbackInfoReturnable<CompletableFuture<SoundBuffer>> cir) {
       if (id.getNamespace().equals("dabywitherstormmod")) {
-         cir.setReturnValue(((CompletableFuture)cir.getReturnValue()).thenApply(MonoDownmix::toMono));
+         cir.setReturnValue(cir.getReturnValue().thenApply(MonoDownmix::toMono));
       }
    }
 
@@ -33,7 +33,7 @@ public class SoundBufferLibraryMixin {
    private void dabyws$monoStream(Identifier id, boolean looping, CallbackInfoReturnable<CompletableFuture<AudioStream>> cir) {
       if (id.getNamespace().equals("dabywitherstormmod")) {
          cir.setReturnValue(
-            ((CompletableFuture)cir.getReturnValue())
+            cir.getReturnValue()
                .thenApply(stream -> (AudioStream)(MonoDownmix.isStereo16(stream.getFormat()) ? new MonoAudioStream(stream) : stream))
          );
       }

@@ -290,7 +290,7 @@ public class WitherStormHeadEntity extends Entity {
    }
 
    public float getLit() {
-      return (Float)(Object)this.entityData.get(LIT);
+      return (Float)(Object)(Object)this.entityData.get(LIT);
    }
 
    public boolean isDormant() {
@@ -354,7 +354,7 @@ public class WitherStormHeadEntity extends Entity {
    }
 
    public int getSuckedId() {
-      return (Integer)(Object)this.entityData.get(SUCKED_ID);
+      return (Integer)(Object)(Object)this.entityData.get(SUCKED_ID);
    }
 
    public void markJustSpawned() {
@@ -362,19 +362,19 @@ public class WitherStormHeadEntity extends Entity {
    }
 
    public long getSpawnGameTime() {
-      return (Long)(Object)this.entityData.get(SPAWN_GAME_TIME);
+      return (Long)(Object)(Object)this.entityData.get(SPAWN_GAME_TIME);
    }
 
    public long getFireStartTime() {
-      return (Long)(Object)this.entityData.get(FIRE_START_TIME);
+      return (Long)(Object)(Object)this.entityData.get(FIRE_START_TIME);
    }
 
    public long getHurtStartTime() {
-      return (Long)(Object)this.entityData.get(HURT_START_TIME);
+      return (Long)(Object)(Object)this.entityData.get(HURT_START_TIME);
    }
 
    public long getRoarStartTime() {
-      return (Long)(Object)this.entityData.get(ROAR_START_TIME);
+      return (Long)(Object)(Object)this.entityData.get(ROAR_START_TIME);
    }
 
    public boolean isFiring() {
@@ -406,7 +406,7 @@ public class WitherStormHeadEntity extends Entity {
    }
 
    public Vec3 getBeamEndExact() {
-      Vector3fc v = (Vector3fc)(Object)this.entityData.get(BEAM_END_EXACT);
+      Vector3fc v = (Vector3fc)(Object)(Object)this.entityData.get(BEAM_END_EXACT);
       return new Vec3(v.x(), v.y(), v.z());
    }
 
@@ -424,7 +424,7 @@ public class WitherStormHeadEntity extends Entity {
    }
 
    public int getStormId() {
-      return (Integer)(Object)this.entityData.get(STORM_ID);
+      return (Integer)(Object)(Object)this.entityData.get(STORM_ID);
    }
 
    public UUID getStormUUID() {
@@ -432,15 +432,15 @@ public class WitherStormHeadEntity extends Entity {
    }
 
    public int getHeadIndex() {
-      return (Integer)(Object)this.entityData.get(HEAD_INDEX_DATA);
+      return (Integer)(Object)(Object)this.entityData.get(HEAD_INDEX_DATA);
    }
 
    public float getLocalYaw() {
-      return (Float)(Object)this.entityData.get(HEAD_LOCAL_YAW);
+      return (Float)(Object)(Object)this.entityData.get(HEAD_LOCAL_YAW);
    }
 
    public float getRoll() {
-      return (Float)(Object)this.entityData.get(HEAD_ROLL);
+      return (Float)(Object)(Object)this.entityData.get(HEAD_ROLL);
    }
 
    public void setBaseYaw(float baseYaw) {
@@ -565,7 +565,7 @@ public class WitherStormHeadEntity extends Entity {
       this.prevYawForJaw = this.getYRot();
       float turning = Math.max(Math.abs(yawDelta) - 1.5F, 0.0F);
       float jawTarget = Mth.clamp(turning * 2.5F, 0.0F, 25.0F);
-      long vocal = (Long)(Object)this.entityData.get(VOCAL_TIME);
+      long vocal = (Long)(Object)(Object)this.entityData.get(VOCAL_TIME);
       long now = this.level().getGameTime();
       if (vocal >= 0L && vocal != this.lastVocalKick && now - vocal >= 0L && now - vocal < 40L) {
          this.lastVocalKick = vocal;
@@ -594,25 +594,25 @@ public class WitherStormHeadEntity extends Entity {
          this.tickEchoes();
          this.tickVocals();
          if (this.level() instanceof ServerLevel sl) {
-            if ((Integer)(Object)this.entityData.get(STORM_ID) == -1 && this.stormUUID != null) {
+            if ((Integer)(Object)(Object)this.entityData.get(STORM_ID) == -1 && this.stormUUID != null) {
                Entity storm = sl.getEntity(this.stormUUID);
                if (storm != null) {
                   this.entityData.set(STORM_ID, storm.getId());
                }
             }
 
-            if ((Integer)(Object)this.entityData.get(HEAD_INDEX_DATA) != this.headIndex) {
+            if ((Integer)(Object)(Object)this.entityData.get(HEAD_INDEX_DATA) != this.headIndex) {
                this.entityData.set(HEAD_INDEX_DATA, this.headIndex);
             }
 
-            Entity stormE = sl.getEntity((Integer)(Object)this.entityData.get(STORM_ID));
+            Entity stormE = sl.getEntity((Integer)(Object)(Object)this.entityData.get(STORM_ID));
             if (stormE instanceof net.dabicco.witherstormmod.entity.StormHeadHost host) {
                this.baseYaw = stormE.getYRot() + host.headYawOffsetFor(this.getHeadIndex());
                this.baseRoll = host.headRollOffsetFor(this.getHeadIndex());
                this.distressed = host.headsDistressed();
                this.yawRange = host.headYawRangeFor(this.getHeadIndex());
                float lit = host.headLitFor(this.getHeadIndex());
-               if ((Float)(Object)this.entityData.get(LIT) != lit) {
+               if ((Float)(Object)(Object)this.entityData.get(LIT) != lit) {
                   this.entityData.set(LIT, lit);
                }
             }
@@ -851,7 +851,7 @@ public class WitherStormHeadEntity extends Entity {
                   this.releaseAll(server, true);
                }
 
-               if ((Integer)(Object)this.entityData.get(SUCKED_ID) != -1) {
+               if ((Integer)(Object)(Object)this.entityData.get(SUCKED_ID) != -1) {
                   this.entityData.set(SUCKED_ID, -1);
                }
             } else {
@@ -882,7 +882,7 @@ public class WitherStormHeadEntity extends Entity {
                      boolean eat = WitherStormConfigs.get(server).mobPickup != 0
                         && this.level().getEntity(this.getStormId()) instanceof net.dabicco.witherstormmod.entity.WitherStormEntity;
                      net.dabicco.witherstormmod.entity.WitherStormEntity ws = eat
-                        ? (net.dabicco.witherstormmod.entity.WitherStormEntity)(Object)this.level().getEntity(this.getStormId())
+                        ? (net.dabicco.witherstormmod.entity.WitherStormEntity)(Object)(Object)this.level().getEntity(this.getStormId())
                         : null;
                      if (ws != null) {
                         for (LivingEntity v : new ArrayList<>(this.victims)) {
@@ -1423,7 +1423,7 @@ public class WitherStormHeadEntity extends Entity {
       this.victims.clear();
       this.wardenCharging = null;
       this.wardenChargeTicks = 0;
-      if ((Integer)(Object)this.entityData.get(SUCKED_ID) != -1) {
+      if ((Integer)(Object)(Object)this.entityData.get(SUCKED_ID) != -1) {
          this.entityData.set(SUCKED_ID, -1);
       }
 
@@ -1978,7 +1978,7 @@ public class WitherStormHeadEntity extends Entity {
       }
 
       output.putInt("HeadIndex", this.headIndex);
-      output.putLong("SpawnGameTime", (Long)(Object)this.entityData.get(SPAWN_GAME_TIME));
+      output.putLong("SpawnGameTime", (Long)(Object)(Object)this.entityData.get(SPAWN_GAME_TIME));
    }
 
    private record Echo(int[] delay, SoundEvent event, float volume, float pitch) {

@@ -313,6 +313,10 @@ public final class BowelsFrame {
       }
    }
 
+   public static Vec3 eye(Direction gravity, Vec3 feet, double eyeHeight) {
+      return feet.subtract(down(gravity).scale(eyeHeight));
+   }
+
    public static AABB footprint(Direction gravity, AABB box) {
       double skin = 1.0E-6;
       AABB var10000;

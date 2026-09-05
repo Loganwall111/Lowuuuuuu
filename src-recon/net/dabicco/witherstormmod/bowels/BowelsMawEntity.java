@@ -92,31 +92,31 @@ public class BowelsMawEntity extends WitherStormHeadEntity {
    }
 
    public int getSide() {
-      return (Integer)(Object)this.entityData.get(SIDE);
+      return (Integer)(Object)(Object)this.entityData.get(SIDE);
    }
 
    public boolean isBlind() {
-      return (Boolean)(Object)this.entityData.get(BLIND);
+      return (Boolean)(Object)(Object)this.entityData.get(BLIND);
    }
 
    public boolean isRightHand() {
-      return (Boolean)(Object)this.entityData.get(RIGHT_HAND);
+      return (Boolean)(Object)(Object)this.entityData.get(RIGHT_HAND);
    }
 
    public int getHeldId() {
-      return (Integer)(Object)this.entityData.get(HELD);
+      return (Integer)(Object)(Object)this.entityData.get(HELD);
    }
 
    public int getPrompt() {
-      return (Integer)(Object)this.entityData.get(PROMPT);
+      return (Integer)(Object)(Object)this.entityData.get(PROMPT);
    }
 
    public int getPromptFor() {
-      return (Integer)(Object)this.entityData.get(PROMPT_FOR);
+      return (Integer)(Object)(Object)this.entityData.get(PROMPT_FOR);
    }
 
    public float getClimb() {
-      return (Float)(Object)this.entityData.get(CLIMB);
+      return (Float)(Object)(Object)this.entityData.get(CLIMB);
    }
 
    public void placeAt(int side) {

@@ -467,7 +467,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
 
    @Override
    public float getBodyRoll() {
-      return (Float)(Object)this.entityData.get(BODY_ROLL);
+      return (Float)(Object)(Object)this.entityData.get(BODY_ROLL);
    }
 
    @Override
@@ -595,7 +595,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    }
 
    public int getSnatchId() {
-      return (Integer)(Object)this.entityData.get(SNATCH_ID);
+      return (Integer)(Object)(Object)this.entityData.get(SNATCH_ID);
    }
 
    public void clientSyncPose(float bodyRoll, boolean phase4) {
@@ -612,11 +612,11 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
       super.onSyncedDataUpdated(key);
       if (key == PHASE_DATA && this.level().isClientSide()) {
-         this.phase = ((Float)(Object)this.entityData.get(PHASE_DATA)).floatValue();
+         this.phase = ((Float)(Object)(Object)this.entityData.get(PHASE_DATA)).floatValue();
       }
 
       if (key == PHASE4_DATA) {
-         this.phase4 = (Boolean)(Object)this.entityData.get(PHASE4_DATA);
+         this.phase4 = (Boolean)(Object)(Object)this.entityData.get(PHASE4_DATA);
          this.refreshDimensions();
          if (!this.level().isClientSide() && !this.loadingFromSave) {
             if (this.phase4) {
@@ -650,7 +650,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
                this.updateChunkLoading();
                if (this.spawnFreezeTotalTicks > 0) {
                   float p = 1.0F - (float)this.spawnFreezeTicks / this.spawnFreezeTotalTicks;
-                  ((WitherBossAccessor)this).getBossEvent().setProgress(Mth.clamp(p, 0.0F, 1.0F));
+                  ((WitherBossAccessor)(Object)this).getBossEvent().setProgress(Mth.clamp(p, 0.0F, 1.0F));
                }
             } else {
                this.updatePhase5Stamp(this.phase);
@@ -716,7 +716,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
 
                   if (this.phase >= 3.0) {
                      this.cocoonTick(nearest);
-                  } else if ((Float)(Object)this.entityData.get(BODY_ROLL) != 0.0F) {
+                  } else if ((Float)(Object)(Object)this.entityData.get(BODY_ROLL) != 0.0F) {
                      this.entityData.set(BODY_ROLL, 0.0F);
                   }
                }
@@ -751,7 +751,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
                      this.getZ(),
                      this.getYRot(),
                      this.getXRot(),
-                     (Float)(Object)this.entityData.get(BODY_ROLL),
+                     (Float)(Object)(Object)this.entityData.get(BODY_ROLL),
                      (float)this.phase,
                      elapsedTicksSince(this.getPhase5AnimGameTime(), gameTime),
                      elapsedTicksSince(this.getPhase58AnimGameTime(), gameTime),
@@ -780,7 +780,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
                }
 
                if (this.level() instanceof ServerLevel) {
-                  ServerBossEvent bossBar = ((WitherBossAccessor)this).getBossEvent();
+                  ServerBossEvent bossBar = ((WitherBossAccessor)(Object)this).getBossEvent();
                   boolean shouldShow = !this.isCollapsed();
                   if (bossBar.isVisible() != shouldShow) {
                      bossBar.setVisible(shouldShow);
@@ -801,7 +801,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
                      }
                   }
 
-                  if ((Integer)(Object)this.entityData.get(SNATCH_ID) != reach) {
+                  if ((Integer)(Object)(Object)this.entityData.get(SNATCH_ID) != reach) {
                      this.entityData.set(SNATCH_ID, reach);
                   }
                }
@@ -1292,7 +1292,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    }
 
    public long getCollapseGameTime() {
-      return (Long)(Object)this.entityData.get(COLLAPSE_GAME_TIME);
+      return (Long)(Object)(Object)this.entityData.get(COLLAPSE_GAME_TIME);
    }
 
    public boolean isPostBombChasing() {
@@ -1606,8 +1606,8 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
       if (this.level().isClientSide()) {
          super.aiStep();
          if (this.isPhase4()) {
-            float syncedYaw = (Float)(Object)this.entityData.get(TARGET_YAW);
-            float syncedPitch = (Float)(Object)this.entityData.get(TARGET_PITCH);
+            float syncedYaw = (Float)(Object)(Object)this.entityData.get(TARGET_YAW);
+            float syncedPitch = (Float)(Object)(Object)this.entityData.get(TARGET_PITCH);
             float smoothedYaw = Mth.rotLerp(0.3F, this.getYRot(), syncedYaw);
             this.setYRot(smoothedYaw);
             this.setYBodyRot(smoothedYaw);
@@ -1822,7 +1822,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
 
    private void updatePhase5Stamp(double newPhase) {
       if (!this.level().isClientSide()) {
-         long stamp = (Long)(Object)this.entityData.get(PHASE5_ANIM_GAME_TIME);
+         long stamp = (Long)(Object)(Object)this.entityData.get(PHASE5_ANIM_GAME_TIME);
          if (newPhase >= 5.0) {
             if (stamp < 0L) {
                this.entityData.set(PHASE5_ANIM_GAME_TIME, this.level().getGameTime());
@@ -1831,7 +1831,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
             this.entityData.set(PHASE5_ANIM_GAME_TIME, -1L);
          }
 
-         long miniStamp = (Long)(Object)this.entityData.get(MINI_HEAD_ANIM_GAME_TIME);
+         long miniStamp = (Long)(Object)(Object)this.entityData.get(MINI_HEAD_ANIM_GAME_TIME);
          if (newPhase >= 2.0) {
             if (miniStamp < 0L) {
                this.entityData.set(MINI_HEAD_ANIM_GAME_TIME, this.level().getGameTime());
@@ -1844,7 +1844,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
             this.miniHeadBitPlayed = false;
          }
 
-         long tentacleStamp = (Long)(Object)this.entityData.get(TENTACLE_ANIM_GAME_TIME);
+         long tentacleStamp = (Long)(Object)(Object)this.entityData.get(TENTACLE_ANIM_GAME_TIME);
          if (newPhase >= 3.0) {
             if (tentacleStamp < 0L) {
                this.entityData.set(TENTACLE_ANIM_GAME_TIME, this.level().getGameTime());
@@ -1853,7 +1853,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
             this.entityData.set(TENTACLE_ANIM_GAME_TIME, -1L);
          }
 
-         long stamp58 = (Long)(Object)this.entityData.get(PHASE58_ANIM_GAME_TIME);
+         long stamp58 = (Long)(Object)(Object)this.entityData.get(PHASE58_ANIM_GAME_TIME);
          if (newPhase >= 5.8) {
             if (stamp58 < 0L) {
                this.entityData.set(PHASE58_ANIM_GAME_TIME, this.level().getGameTime());
@@ -1865,11 +1865,11 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    }
 
    public long getFrontTentacleAnimGameTime() {
-      return (Long)(Object)this.entityData.get(TENTACLE_ANIM_GAME_TIME);
+      return (Long)(Object)(Object)this.entityData.get(TENTACLE_ANIM_GAME_TIME);
    }
 
    public long getMiniHeadAnimGameTime() {
-      return (Long)(Object)this.entityData.get(MINI_HEAD_ANIM_GAME_TIME);
+      return (Long)(Object)(Object)this.entityData.get(MINI_HEAD_ANIM_GAME_TIME);
    }
 
    private void tickMiniHeadEmergence() {
@@ -1914,11 +1914,11 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    }
 
    public long getPhase5AnimGameTime() {
-      return (Long)(Object)this.entityData.get(PHASE5_ANIM_GAME_TIME);
+      return (Long)(Object)(Object)this.entityData.get(PHASE5_ANIM_GAME_TIME);
    }
 
    public long getPhase58AnimGameTime() {
-      return (Long)(Object)this.entityData.get(PHASE58_ANIM_GAME_TIME);
+      return (Long)(Object)(Object)this.entityData.get(PHASE58_ANIM_GAME_TIME);
    }
 
    private static int elapsedTicksSince(long stamp, long gameTime) {
@@ -1942,7 +1942,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    }
 
    public boolean isPhase4() {
-      return (Boolean)(Object)this.entityData.get(PHASE4_DATA);
+      return (Boolean)(Object)(Object)this.entityData.get(PHASE4_DATA);
    }
 
    public boolean isPushable() {
@@ -2035,7 +2035,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
          desiredY = grabY;
       } else {
          if (this.snatchVictim != null) {
-            this.endSnatch((ServerLevel)(Object)this.level(), true);
+            this.endSnatch((ServerLevel)(Object)(Object)this.level(), true);
          }
 
          this.despawnGrabTentacle();
@@ -2369,7 +2369,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    }
 
    public int getSiegeStage() {
-      return (Integer)(Object)this.entityData.get(SIEGE_STAGE);
+      return (Integer)(Object)(Object)this.entityData.get(SIEGE_STAGE);
    }
 
    public int siegeProgress() {
@@ -2437,7 +2437,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    }
 
    private void syncSiege() {
-      if ((Integer)(Object)this.entityData.get(SIEGE_STAGE) != this.siegeStage) {
+      if ((Integer)(Object)(Object)this.entityData.get(SIEGE_STAGE) != this.siegeStage) {
          this.entityData.set(SIEGE_STAGE, this.siegeStage);
       }
    }
@@ -2670,7 +2670,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
 
    private void updateBossBar() {
       if (!this.level().isClientSide()) {
-         ServerBossEvent bar = ((WitherBossAccessor)this).getBossEvent();
+         ServerBossEvent bar = ((WitherBossAccessor)(Object)this).getBossEvent();
          bar.setOverlay(this.phase4 ? BossBarOverlay.NOTCHED_10 : BossBarOverlay.PROGRESS);
          bar.setName(this.getDisplayName());
       }
@@ -2689,7 +2689,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    }
 
    public long getSpawnAnimGameTime() {
-      return (Long)(Object)this.entityData.get(SPAWN_ANIM_GAME_TIME);
+      return (Long)(Object)(Object)this.entityData.get(SPAWN_ANIM_GAME_TIME);
    }
 
    public boolean isPlayingSpawnAnimation() {
@@ -2785,7 +2785,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
       this.setYHeadRot(this.preP4Yaw);
       double lean = this.preP4LeanAmount();
       if (lean <= 0.001) {
-         if ((Float)(Object)this.entityData.get(BODY_ROLL) != 0.0F) {
+         if ((Float)(Object)(Object)this.entityData.get(BODY_ROLL) != 0.0F) {
             this.entityData.set(BODY_ROLL, 0.0F);
          }
 
@@ -3538,7 +3538,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
          double rad = Math.toRadians(bodyYaw);
          double cos = Math.cos(rad);
          double sin = Math.sin(rad);
-         double rollRad = Math.toRadians(((Float)(Object)this.entityData.get(BODY_ROLL)).floatValue());
+         double rollRad = Math.toRadians(((Float)(Object)(Object)this.entityData.get(BODY_ROLL)).floatValue());
          double cosR = Math.cos(rollRad);
          double sinR = Math.sin(rollRad);
          double pitchRad = Math.toRadians(this.getXRot());
@@ -3689,7 +3689,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
       this.spawnFreezeTotalTicks = this.spawnFreezeTicks;
       this.spawnWailPending = true;
       if (this.spawnFreezeTicks > 0) {
-         ((WitherBossAccessor)this).getBossEvent().setProgress(0.0F);
+         ((WitherBossAccessor)(Object)this).getBossEvent().setProgress(0.0F);
       }
    }
 
@@ -3927,7 +3927,7 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
    protected void addAdditionalSaveData(ValueOutput output) {
       output.putDouble("Phase", this.phase);
       output.putInt("SubGrowth", this.subGrowth);
-      output.putLong("SpawnAnimGameTime", (Long)(Object)this.entityData.get(SPAWN_ANIM_GAME_TIME));
+      output.putLong("SpawnAnimGameTime", (Long)(Object)(Object)this.entityData.get(SPAWN_ANIM_GAME_TIME));
       output.putInt("SpawnFreezeTicks", this.spawnFreezeTicks);
       output.putInt("SpawnFreezeTotalTicks", this.spawnFreezeTotalTicks);
       output.putBoolean("SpawnWailPending", this.spawnWailPending);
@@ -3946,8 +3946,8 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
       output.putInt("DistractionTicksLeft", this.distractionTicksLeft);
       output.putDouble("DistractX", this.distractX);
       output.putDouble("DistractZ", this.distractZ);
-      output.putLong("Phase5Elapsed", this.elapsedSince((Long)(Object)this.entityData.get(PHASE5_ANIM_GAME_TIME)));
-      output.putLong("Phase58Elapsed", this.elapsedSince((Long)(Object)this.entityData.get(PHASE58_ANIM_GAME_TIME)));
+      output.putLong("Phase5Elapsed", this.elapsedSince((Long)(Object)(Object)this.entityData.get(PHASE5_ANIM_GAME_TIME)));
+      output.putLong("Phase58Elapsed", this.elapsedSince((Long)(Object)(Object)this.entityData.get(PHASE58_ANIM_GAME_TIME)));
       StringBuilder forcedChunks = new StringBuilder();
 
       for (ChunkPos pos : this.forcedByUs) {
@@ -4387,11 +4387,11 @@ public class WitherStormEntity extends WitherBoss implements net.dabicco.withers
       this.restoreAnimStamp(PHASE5_ANIM_GAME_TIME, input.getLongOr("Phase5Elapsed", -1L));
       this.restoreAnimStamp(PHASE58_ANIM_GAME_TIME, input.getLongOr("Phase58Elapsed", -1L));
       long longDone = this.level().getGameTime() - 1200L;
-      if (this.phase >= 5.0 && (Long)(Object)this.entityData.get(PHASE5_ANIM_GAME_TIME) < 0L) {
+      if (this.phase >= 5.0 && (Long)(Object)(Object)this.entityData.get(PHASE5_ANIM_GAME_TIME) < 0L) {
          this.entityData.set(PHASE5_ANIM_GAME_TIME, longDone);
       }
 
-      if (this.phase >= 5.8 && (Long)(Object)this.entityData.get(PHASE58_ANIM_GAME_TIME) < 0L) {
+      if (this.phase >= 5.8 && (Long)(Object)(Object)this.entityData.get(PHASE58_ANIM_GAME_TIME) < 0L) {
          this.entityData.set(PHASE58_ANIM_GAME_TIME, longDone);
       }
 

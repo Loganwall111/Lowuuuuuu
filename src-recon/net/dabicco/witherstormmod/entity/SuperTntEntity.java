@@ -50,7 +50,7 @@ public class SuperTntEntity extends Entity {
    }
 
    public int getFuse() {
-      return (Integer)(Object)this.entityData.get(DATA_FUSE);
+      return (Integer)(Object)(Object)this.entityData.get(DATA_FUSE);
    }
 
    public boolean isPickable() {

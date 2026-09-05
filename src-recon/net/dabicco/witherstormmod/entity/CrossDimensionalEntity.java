@@ -92,16 +92,16 @@ public class CrossDimensionalEntity extends Entity {
    }
 
    public int getProbeState() {
-      return (Integer)(Object)this.entityData.get(STATE);
+      return (Integer)(Object)(Object)this.entityData.get(STATE);
    }
 
    public float getExtend() {
-      return (Float)(Object)this.entityData.get(EXTEND);
+      return (Float)(Object)(Object)this.entityData.get(EXTEND);
    }
 
    public Vec3 getTipOffset() {
       return new Vec3(
-         ((Float)(Object)this.entityData.get(TIP_X)).floatValue(), ((Float)(Object)this.entityData.get(TIP_Y)).floatValue(), ((Float)(Object)this.entityData.get(TIP_Z)).floatValue()
+         ((Float)(Object)(Object)this.entityData.get(TIP_X)).floatValue(), ((Float)(Object)(Object)this.entityData.get(TIP_Y)).floatValue(), ((Float)(Object)(Object)this.entityData.get(TIP_Z)).floatValue()
       );
    }
 
@@ -198,7 +198,7 @@ public class CrossDimensionalEntity extends Entity {
    }
 
    private void tickGrab(ServerLevel server) {
-      if (server.getEntity((Integer)(Object)this.entityData.get(VICTIM_ID)) instanceof ServerPlayer player && player.isAlive()) {
+      if (server.getEntity((Integer)(Object)(Object)this.entityData.get(VICTIM_ID)) instanceof ServerPlayer player && player.isAlive()) {
          Vec3 mouth = this.position();
          Vec3 toMouth = mouth.subtract(player.position());
          this.setTip(player.position().subtract(this.position()));

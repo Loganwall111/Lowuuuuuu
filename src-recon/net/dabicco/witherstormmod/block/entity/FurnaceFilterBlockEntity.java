@@ -92,7 +92,7 @@ public class FurnaceFilterBlockEntity extends BlockEntity implements Container, 
 
       while (this.progress >= 8) {
          this.progress -= 8;
-         ItemStack out = (ItemStack)(Object)this.items.get(1);
+         ItemStack out = (ItemStack)(Object)(Object)this.items.get(1);
          if (out.isEmpty()) {
             this.items.set(1, new ItemStack(ModItems.COMMAND_ESSENCE));
          } else {
@@ -121,7 +121,7 @@ public class FurnaceFilterBlockEntity extends BlockEntity implements Container, 
    }
 
    public ItemStack getOutput() {
-      return (ItemStack)(Object)this.items.get(1);
+      return (ItemStack)(Object)(Object)this.items.get(1);
    }
 
    public int getProgress() {
@@ -137,11 +137,11 @@ public class FurnaceFilterBlockEntity extends BlockEntity implements Container, 
    }
 
    public boolean isEmpty() {
-      return ((ItemStack)(Object)this.items.get(1)).isEmpty();
+      return ((ItemStack)(Object)(Object)this.items.get(1)).isEmpty();
    }
 
    public ItemStack getItem(int slot) {
-      return slot == 0 ? this.previewStack() : (ItemStack)(Object)this.items.get(slot);
+      return slot == 0 ? this.previewStack() : (ItemStack)(Object)(Object)this.items.get(slot);
    }
 
    public ItemStack removeItem(int slot, int amount) {
@@ -161,7 +161,7 @@ public class FurnaceFilterBlockEntity extends BlockEntity implements Container, 
       if (slot == 0) {
          return ItemStack.EMPTY;
       } else {
-         ItemStack r = (ItemStack)(Object)this.items.get(slot);
+         ItemStack r = (ItemStack)(Object)(Object)this.items.get(slot);
          this.items.set(slot, ItemStack.EMPTY);
          return r;
       }
@@ -194,7 +194,7 @@ public class FurnaceFilterBlockEntity extends BlockEntity implements Container, 
 
    protected void saveAdditional(ValueOutput output) {
       super.saveAdditional(output);
-      NonNullList<ItemStack> tmp = NonNullList.withSize(1, (ItemStack)(Object)this.items.get(1));
+      NonNullList<ItemStack> tmp = NonNullList.withSize(1, (ItemStack)(Object)(Object)this.items.get(1));
       ContainerHelper.saveAllItems(output, tmp);
       output.putInt("Progress", this.progress);
       output.putInt("LastGunpowder", this.lastOutputGunpowder);

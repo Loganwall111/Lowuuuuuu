@@ -81,7 +81,7 @@ public class FormidibombEntity extends Entity {
    }
 
    public int getTicks() {
-      return (Integer)(Object)this.entityData.get(DATA_TICKS);
+      return (Integer)(Object)(Object)this.entityData.get(DATA_TICKS);
    }
 
    private void setTicks(int t) {
@@ -108,7 +108,7 @@ public class FormidibombEntity extends Entity {
       int t = this.getTicks() + 1;
       boolean sucking;
       if (this.level().isClientSide()) {
-         sucking = (Boolean)(Object)this.entityData.get(DATA_SUCKING);
+         sucking = (Boolean)(Object)(Object)this.entityData.get(DATA_SUCKING);
       } else {
          sucking = this.tickSuck(t);
          this.entityData.set(DATA_SUCKING, sucking);

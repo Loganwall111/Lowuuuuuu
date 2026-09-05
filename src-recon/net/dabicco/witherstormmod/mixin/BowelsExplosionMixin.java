@@ -16,6 +16,6 @@ public abstract class BowelsExplosionMixin {
       argsOnly = true
    )
    private ExplosionInteraction dabyws$noDiggingInHere(ExplosionInteraction given) {
-      return BowelsGravity.isBowels((Level)this) ? ExplosionInteraction.NONE : given;
+      return BowelsGravity.isBowels((Level)(Object)this) ? ExplosionInteraction.NONE : given;
    }
 }

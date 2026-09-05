@@ -16,7 +16,7 @@ public class LevelRainShelterMixin {
    )
    private void dabyws$shelteredFromRain(float partialTick, CallbackInfoReturnable<Float> cir) {
       float level = (Float)cir.getReturnValue();
-      if (!(level <= 0.0F) && ((Level)this).isClientSide()) {
+      if (!(level <= 0.0F) && ((Level)(Object)this).isClientSide()) {
          float cover = StormRainShelter.cover();
          if (cover > 0.0F) {
             cir.setReturnValue(level * (1.0F - cover));

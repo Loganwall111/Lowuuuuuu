@@ -93,7 +93,7 @@ public class SeveredTentacleEntity extends Entity {
    }
 
    public float getScale() {
-      return (Float)(Object)this.entityData.get(SCALE);
+      return (Float)(Object)(Object)this.entityData.get(SCALE);
    }
 
    public float[][] ropeJoints() {
@@ -140,8 +140,8 @@ public class SeveredTentacleEntity extends Entity {
          0.0F,
          0.0F,
          0.0F,
-         (Float)(Object)this.entityData.get(OPEN),
-         (Float)(Object)this.entityData.get(SWAY)
+         (Float)(Object)(Object)this.entityData.get(OPEN),
+         (Float)(Object)(Object)this.entityData.get(SWAY)
       );
    }
 
@@ -152,7 +152,7 @@ public class SeveredTentacleEntity extends Entity {
    }
 
    public void beginSuck(net.dabicco.witherstormmod.bowels.BowelsMawEntity maw) {
-      if (!this.level().isClientSide() && (Integer)(Object)this.entityData.get(EATER) == -1) {
+      if (!this.level().isClientSide() && (Integer)(Object)(Object)this.entityData.get(EATER) == -1) {
          this.entityData.set(EATER, maw.getId());
          this.entityData.set(RESTED, -1);
          this.level().playSound((Entity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_SQUISH, SoundSource.HOSTILE, 0.7F, 1.4F);
@@ -160,11 +160,11 @@ public class SeveredTentacleEntity extends Entity {
    }
 
    public int getEaterId() {
-      return (Integer)(Object)this.entityData.get(EATER);
+      return (Integer)(Object)(Object)this.entityData.get(EATER);
    }
 
    private net.dabicco.witherstormmod.bowels.BowelsMawEntity eater() {
-      int id = (Integer)(Object)this.entityData.get(EATER);
+      int id = (Integer)(Object)(Object)this.entityData.get(EATER);
       if (id == -1) {
          return null;
       } else if (this.level().getEntity(id) instanceof net.dabicco.witherstormmod.bowels.BowelsMawEntity maw && !maw.isRemoved() && !maw.isBlind()) {
@@ -199,35 +199,35 @@ public class SeveredTentacleEntity extends Entity {
    }
 
    public int getStart() {
-      return (Integer)(Object)this.entityData.get(START);
+      return (Integer)(Object)(Object)this.entityData.get(START);
    }
 
    public int getCount() {
-      return (Integer)(Object)this.entityData.get(COUNT);
+      return (Integer)(Object)(Object)this.entityData.get(COUNT);
    }
 
    public float getYaw() {
-      return (Float)(Object)this.entityData.get(YAW);
+      return (Float)(Object)(Object)this.entityData.get(YAW);
    }
 
    public float getCurl() {
-      return (Float)(Object)this.entityData.get(CURL);
+      return (Float)(Object)(Object)this.entityData.get(CURL);
    }
 
    public float getPhase() {
-      return (Float)(Object)this.entityData.get(PHASE);
+      return (Float)(Object)(Object)this.entityData.get(PHASE);
    }
 
    public float getFrozenAt() {
-      return (Float)(Object)this.entityData.get(FROZEN_AT);
+      return (Float)(Object)(Object)this.entityData.get(FROZEN_AT);
    }
 
    public boolean isResting() {
-      return (Integer)(Object)this.entityData.get(RESTED) >= 0;
+      return (Integer)(Object)(Object)this.entityData.get(RESTED) >= 0;
    }
 
    public int startBone() {
-      return (Integer)(Object)this.entityData.get(START);
+      return (Integer)(Object)(Object)this.entityData.get(START);
    }
 
    public boolean isPickable() {
@@ -335,9 +335,9 @@ public class SeveredTentacleEntity extends Entity {
       output.putFloat("Curl", this.getCurl());
       output.putFloat("Phase", this.getPhase());
       output.putFloat("FrozenAt", this.getFrozenAt());
-      output.putInt("Rested", (Integer)(Object)this.entityData.get(RESTED));
+      output.putInt("Rested", (Integer)(Object)(Object)this.entityData.get(RESTED));
       output.putFloat("Scale", this.getScale());
-      output.putFloat("Open", (Float)(Object)this.entityData.get(OPEN));
-      output.putFloat("Sway", (Float)(Object)this.entityData.get(SWAY));
+      output.putFloat("Open", (Float)(Object)(Object)this.entityData.get(OPEN));
+      output.putFloat("Sway", (Float)(Object)(Object)this.entityData.get(SWAY));
    }
 }

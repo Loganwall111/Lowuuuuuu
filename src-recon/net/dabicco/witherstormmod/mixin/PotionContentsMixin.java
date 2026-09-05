@@ -19,7 +19,7 @@ public class PotionContentsMixin {
       index = 2
    )
    private float dabyws$fullDurationOnApply(float durationScale) {
-      PotionContents self = (PotionContents)(Object)this;
+      PotionContents self = (PotionContents)(Object)(Object)this;
       return self.potion().filter(ModPotions::isHyperInvisibility).isPresent() ? 1.0F : durationScale;
    }
 

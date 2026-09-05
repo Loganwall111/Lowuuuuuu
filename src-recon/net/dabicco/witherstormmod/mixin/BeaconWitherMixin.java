@@ -51,7 +51,7 @@ public abstract class BeaconWitherMixin implements WitheredBeacon {
 
    public void dabyws$setWithered(boolean value) {
       this.dabyws$withered = value;
-      BeaconBlockEntity self = (BeaconBlockEntity)(Object)this;
+      BeaconBlockEntity self = (BeaconBlockEntity)(Object)(Object)this;
       Level level = self.getLevel();
       if (level != null) {
          if (value) {
@@ -97,7 +97,7 @@ public abstract class BeaconWitherMixin implements WitheredBeacon {
       at = {@At("TAIL")}
    )
    private void dabyws$removed(CallbackInfo ci) {
-      BeaconBlockEntity self = (BeaconBlockEntity)(Object)this;
+      BeaconBlockEntity self = (BeaconBlockEntity)(Object)(Object)this;
       if (self.getLevel() != null) {
          WitheredBeacons.remove(self.getLevel(), self.getBlockPos());
       }
@@ -129,7 +129,7 @@ public abstract class BeaconWitherMixin implements WitheredBeacon {
    @Unique
    public void dabyws$boost(Level level, BlockPos pos) {
       if (this.levels > 0) {
-         var self = (net.dabicco.witherstormmod.mixin.BeaconWitherMixin & BeaconBlockEntity)this;
+         BeaconBlockEntity self = (BeaconBlockEntity)(Object)this;
          WitheredBeacon flags = (WitheredBeacon)self;
          if (flags.dabyws$isWithered() || flags.dabyws$isAffected()) {
             double range = this.levels * 10 + 10;

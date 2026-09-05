@@ -146,10 +146,10 @@ public class DabyWitherStormMod implements ModInitializer {
       FabricPotionBrewingBuilder.BUILD.register((BuildCallback)builder -> {
          Ingredient fragment = Ingredient.of(ModItems.WITHER_FRAGMENT);
          Ingredient redstone = Ingredient.of(Items.REDSTONE);
-         builder.registerPotionRecipe(Potions.INVISIBILITY, fragment, ModPotions.HYPER_INVISIBILITY);
-         builder.registerPotionRecipe(Potions.LONG_INVISIBILITY, fragment, ModPotions.HYPER_INVISIBILITY);
-         builder.registerPotionRecipe(ModPotions.HYPER_INVISIBILITY, redstone, ModPotions.LONG_HYPER_INVISIBILITY);
-         builder.registerPotionRecipe(ModPotions.LONG_HYPER_INVISIBILITY, redstone, ModPotions.EXTENDED_HYPER_INVISIBILITY);
+         ((net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder)(Object)builder).registerPotionRecipe(Potions.INVISIBILITY, fragment, ModPotions.HYPER_INVISIBILITY);
+         ((net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder)(Object)builder).registerPotionRecipe(Potions.LONG_INVISIBILITY, fragment, ModPotions.HYPER_INVISIBILITY);
+         ((net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder)(Object)builder).registerPotionRecipe(ModPotions.HYPER_INVISIBILITY, redstone, ModPotions.LONG_HYPER_INVISIBILITY);
+         ((net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder)(Object)builder).registerPotionRecipe(ModPotions.LONG_HYPER_INVISIBILITY, redstone, ModPotions.EXTENDED_HYPER_INVISIBILITY);
       });
    }
 

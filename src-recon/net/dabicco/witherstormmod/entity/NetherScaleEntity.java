@@ -90,16 +90,16 @@ public class NetherScaleEntity extends Entity {
    }
 
    public float getProgress() {
-      return (Float)(Object)this.entityData.get(PROGRESS);
+      return (Float)(Object)(Object)this.entityData.get(PROGRESS);
    }
 
    public float getScale() {
-      return (Float)(Object)this.entityData.get(SCALE);
+      return (Float)(Object)(Object)this.entityData.get(SCALE);
    }
 
    public Vec3 getTipOffset() {
       return new Vec3(
-         ((Float)(Object)this.entityData.get(TIP_X)).floatValue(), ((Float)(Object)this.entityData.get(TIP_Y)).floatValue(), ((Float)(Object)this.entityData.get(TIP_Z)).floatValue()
+         ((Float)(Object)(Object)this.entityData.get(TIP_X)).floatValue(), ((Float)(Object)(Object)this.entityData.get(TIP_Y)).floatValue(), ((Float)(Object)(Object)this.entityData.get(TIP_Z)).floatValue()
       );
    }
 

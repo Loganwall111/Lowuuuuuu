@@ -63,7 +63,7 @@ public class BowelsPedestalEntity extends Entity {
    }
 
    public long getSeed() {
-      return (Long)(Object)this.entityData.get(SEED);
+      return (Long)(Object)(Object)this.entityData.get(SEED);
    }
 
    public boolean isNoGravity() {
@@ -87,7 +87,7 @@ public class BowelsPedestalEntity extends Entity {
    }
 
    private float progress(float partialTick) {
-      float ticks = ((Integer)(Object)this.entityData.get(RISEN)).intValue() + partialTick;
+      float ticks = ((Integer)(Object)(Object)this.entityData.get(RISEN)).intValue() + partialTick;
       return net.dabicco.witherstormmod.bowels.BowelsTentacleShape.smoothstep(Mth.clamp((ticks - 15.0F) / 110.0F, 0.0F, 1.0F));
    }
 
@@ -111,7 +111,7 @@ public class BowelsPedestalEntity extends Entity {
             this.shoveClear(server);
          }
 
-         int ticks = (Integer)(Object)this.entityData.get(RISEN);
+         int ticks = (Integer)(Object)(Object)this.entityData.get(RISEN);
          this.entityData.set(RISEN, ticks + 1);
          float lift = this.pedestalLift(0.0F);
          this.carryPassengers(server, lift);
@@ -241,7 +241,7 @@ public class BowelsPedestalEntity extends Entity {
    }
 
    protected void addAdditionalSaveData(ValueOutput output) {
-      output.putInt("Risen", (Integer)(Object)this.entityData.get(RISEN));
+      output.putInt("Risen", (Integer)(Object)(Object)this.entityData.get(RISEN));
       output.putLong("Seed", this.getSeed());
       output.putBoolean("Picked", this.picked);
    }
