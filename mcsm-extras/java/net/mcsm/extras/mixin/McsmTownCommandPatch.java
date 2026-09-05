@@ -88,6 +88,8 @@ public abstract class McsmTownCommandPatch {
                                     StringArgumentType.getString(ctx, "site")))));
             towns.then(Commands.literal("status")
                     .executes(ctx -> ds$status(ctx.getSource())));
+            towns.then(Commands.literal("start")
+                    .executes(ctx -> ds$start(ctx.getSource())));
             dispatcher.register(Commands.literal("ds").then(towns));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
@@ -161,6 +163,63 @@ public abstract class McsmTownCommandPatch {
         src.sendFailure(Component.literal("[ds] no site called '" + name
                 + "'. /ds towns lists every site."));
         return 0;
+    }
+
+    /**
+     * Devouring Storms 1.9.115 -- the story starts where the story starts:
+     * the treehouse in the wilderness outside EnderCon (Episode 1 opening).
+     * Builds the three-site opening cluster and stands the player at the
+     * treehouse. Site labels come from the recovered 1.9.100 source
+     * (src-recon/.../McsmWorldgen.java layout()).
+     */
+    private static final String[] DS$EPISODE_ONE = {
+            "Wilderness Treehouse", "The Wilderness", "EnderCon Town Fair",
+    };
+
+    private static int ds$start(CommandSourceStack src) {
+        ServerPlayer p = src.getPlayer();
+        McsmWorldgen.Site treehouse = null;
+        int queued = 0;
+        for (String want : DS$EPISODE_ONE) {
+            for (McsmWorldgen.Site s : McsmWorldgen.layout()) {
+                if (!s.label().equalsIgnoreCase(want)) {
+                    continue;
+                }
+                try {
+                    McsmSchematic sch = McsmSchematic.load(
+                            src.getServer().getResourceManager(), s.path());
+                    McsmWorldgen.enqueue(sch, new BlockPos(s.x(), s.y(), s.z()), s.label());
+                    queued++;
+                    src.sendSuccess(() -> Component.literal("[ds] building " + s.label()
+                            + " at (" + s.x() + ", " + s.y() + ", " + s.z() + ")"), false);
+                } catch (Throwable t) {
+                    src.sendFailure(Component.literal("[ds] " + s.label()
+                            + ": could not load schematic (" + t + ")"));
+                }
+                if (s.label().equalsIgnoreCase("Wilderness Treehouse")) {
+                    treehouse = s;
+                }
+                break;
+            }
+        }
+        if (treehouse == null) {
+            src.sendFailure(Component.literal("[ds] the Wilderness Treehouse site is missing"
+                    + " from this jar's layout -- /ds towns still lists what exists."));
+            return 0;
+        }
+        if (p != null) {
+            McsmWorldgen.Site t = treehouse;
+            p.teleportTo(src.getLevel(), t.x() + 0.5, t.y() + 2.0, t.z() + 0.5,
+                    Collections.emptySet(), p.getYRot(), p.getXRot(), false);
+            src.sendSuccess(() -> Component.literal("[ds] the story starts here: the treehouse"
+                    + " in the wilderness outside EnderCon (" + t.x() + ", " + t.y() + ", " + t.z()
+                    + "). " + queued + " site(s) queued -- they rise within seconds."), false);
+        } else {
+            src.sendSuccess(() -> Component.literal("[ds] " + queued
+                    + " Episode 1 site(s) queued around the Wilderness Treehouse ("
+                    + treehouse.x() + ", " + treehouse.y() + ", " + treehouse.z() + ")."), false);
+        }
+        return queued;
     }
 
     private static int ds$status(CommandSourceStack src) {

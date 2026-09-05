@@ -33,8 +33,8 @@ public final class McsmStory {
         line(ChatFormatting.GOLD, "A lit beacon calls it. The storm beacon block calls it too."),
         line(ChatFormatting.RED, "Phase 4 is the point of no return."),
         line(ChatFormatting.DARK_PURPLE, "Survive until the tear closes. That is the whole story."),
-        line(ChatFormatting.AQUA, "Story Mode towns: /ds towns lists every site with its"),
-        line(ChatFormatting.AQUA, "coordinates -- /ds towns build all, then /ds towns tp <name>."),
+        line(ChatFormatting.AQUA, "The story starts at the treehouse outside EnderCon:"),
+        line(ChatFormatting.AQUA, "/ds towns start -- or /ds towns for all 35 sites + coords."),
     };
 
     /** Brief a player once. Cheap: a set lookup after the first call. */
