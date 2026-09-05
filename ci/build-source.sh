@@ -11,11 +11,12 @@
 # ours to make (Devouring Storms 2.0.0).
 #
 # Known exclusions (documented in src-recon/RECON_SUMMARY.txt):
-#   entity/model/WitherStormDevourer.java + entity/model/WitherStormP4.java
-#   -- vineflower OOM'd inside their createBodyLayer() model builders
-#   (multi-thousand-call chains, 300+ locals); until a high-heap single-class
-#   pass recovers them, those TWO classes keep coming from the base jar at
-#   assembly time (compile-time fallback below).
+#   Six model classes whose createBodyLayer() builders OOM'd Vineflower
+#   (multi-thousand-call chains, 300+ locals): WitherStormDevourer,
+#   WitherStormP4, HugeAssBackModel, HunchbackGrowth, SeveredWitherStorm,
+#   WitherStormTentacles5. Until a high-heap single-class recovery pass
+#   lands, those SIX classes keep coming from the base jar at assembly time
+#   (compile-time fallback below).
 #
 # This script only reports (annotations + out/source-build-report.txt); it
 # never publishes. The shipping pipeline (build.sh) is untouched.
@@ -142,7 +143,7 @@ CP="$CP:$DL/base-fallback.jar"
 
 # --- source set: recovered mod + our overlay, minus the broken decompile ---
 rm -f /tmp/ds-src.args
-find src-recon -name '*.java' ! -name 'WitherStormDevourer.java' ! -name 'WitherStormP4.java' > /tmp/ds-src.args
+find src-recon -name '*.java' ! -name 'WitherStormDevourer.java' ! -name 'WitherStormP4.java' ! -name 'HugeAssBackModel.java' ! -name 'HunchbackGrowth.java' ! -name 'SeveredWitherStorm.java' ! -name 'WitherStormTentacles5.java' > /tmp/ds-src.args
 find mcsm-extras/java -name '*.java' >> /tmp/ds-src.args
 find ci/stubs -name '*.java' >> /tmp/ds-src.args
 N_SRC=$(wc -l < /tmp/ds-src.args)

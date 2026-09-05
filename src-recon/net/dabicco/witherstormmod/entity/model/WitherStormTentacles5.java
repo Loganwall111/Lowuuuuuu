@@ -360,7 +360,7 @@ public class WitherStormTentacles5 extends EntityModel<WitherStormRenderState> {
    }
 
    private static void collectNames(ModelPart part, Set<String> out) {
-      Map<String, ModelPart> kids = ((ModelPartAccessor)part).getChildren();
+      Map<String, ModelPart> kids = ((ModelPartAccessor)(Object)part).getChildren();
 
       for (Entry<String, ModelPart> e : kids.entrySet()) {
          out.add(e.getKey());
@@ -370,7 +370,7 @@ public class WitherStormTentacles5 extends EntityModel<WitherStormRenderState> {
 
    private static void collectParts(ModelPart part, List<ModelPart> out) {
       out.add(part);
-      Map<String, ModelPart> kids = ((ModelPartAccessor)part).getChildren();
+      Map<String, ModelPart> kids = ((ModelPartAccessor)(Object)part).getChildren();
 
       for (ModelPart child : kids.values()) {
          collectParts(child, out);

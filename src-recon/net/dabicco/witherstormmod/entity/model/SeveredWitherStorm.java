@@ -14949,7 +14949,7 @@ public class SeveredWitherStorm extends EntityModel<SeveredWitherStormRenderStat
    }
 
    private static Map<String, ModelPart> children(ModelPart part) {
-      return ((ModelPartAccessor)part).getChildren();
+      return ((ModelPartAccessor)(Object)part).getChildren();
    }
 
    public void setupAnim(SeveredWitherStormRenderState state) {

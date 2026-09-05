@@ -295,7 +295,7 @@ public final class TentacleRagdoll {
       if (at == target) {
          return true;
       } else {
-         for (ModelPart child : ((ModelPartAccessor)at).getChildren().values()) {
+         for (ModelPart child : ((ModelPartAccessor)(Object)at).getChildren().values()) {
             if (findPath(child, target, acc)) {
                return true;
             }

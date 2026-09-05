@@ -267,7 +267,7 @@ public final class StormShadowMap {
             GEOM.clear();
          }
 
-         List<Cube> cubes = ((ModelPartCubesAccessor)part).dabyws$getCubes();
+         List<Cube> cubes = ((ModelPartCubesAccessor)(Object)part).dabyws$getCubes();
          int quads = 0;
 
          for (Cube cube : cubes) {
@@ -395,7 +395,7 @@ public final class StormShadowMap {
             }
          }
 
-         for (ModelPart child : ((ModelPartAccessor)part).getChildren().values()) {
+         for (ModelPart child : ((ModelPartAccessor)(Object)part).getChildren().values()) {
             walk(child, pose);
          }
 

@@ -46,7 +46,7 @@ public class ModEntityTypes {
    );
    public static final EntityType<net.dabicco.witherstormmod.entity.SuperTntEntity> SUPER_TNT = register(
       "super_tnt",
-      Builder.of((t, l) -> new net.dabicco.witherstormmod.entity.SuperTntEntity(t, l), MobCategory.MISC)
+      Builder.of(net.dabicco.witherstormmod.entity.SuperTntEntity::new, MobCategory.MISC)
          .sized(0.98F, 0.98F)
          .clientTrackingRange(10000)
          .updateInterval(10)
@@ -54,7 +54,7 @@ public class ModEntityTypes {
    );
    public static final EntityType<net.dabicco.witherstormmod.entity.FormidibombEntity> FORMIDIBOMB = register(
       "formidibomb",
-      Builder.of((t, l) -> new net.dabicco.witherstormmod.entity.FormidibombEntity(t, l), MobCategory.MISC)
+      Builder.of(net.dabicco.witherstormmod.entity.FormidibombEntity::new, MobCategory.MISC)
          .sized(0.98F, 0.98F)
          .clientTrackingRange(10000)
          .updateInterval(1)
@@ -62,7 +62,7 @@ public class ModEntityTypes {
    );
    public static final EntityType<net.dabicco.witherstormmod.entity.GrappledTntEntity> GRAPPLED_TNT = register(
       "grappled_tnt",
-      Builder.of((t, l) -> new net.dabicco.witherstormmod.entity.GrappledTntEntity(t, l), MobCategory.MISC)
+      Builder.of(net.dabicco.witherstormmod.entity.GrappledTntEntity::new, MobCategory.MISC)
          .sized(0.98F, 0.98F)
          .clientTrackingRange(10000)
          .updateInterval(1)
