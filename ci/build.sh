@@ -206,6 +206,22 @@ else
   exit 1
 fi
 
+# Story Look resource-pack shaders must validate as well.
+for SL in storylook/assets/minecraft/shaders/core/*; do
+  case "$SL" in
+    *.fsh) SLE=frag ;;
+    *.vsh) SLE=vert ;;
+    *) continue ;;
+  esac
+  cp "$SL" "/tmp/storylook-check.$SLE"
+  if ! ./glslcheck/bin/glslang "/tmp/storylook-check.$SLE" > /tmp/storylook-glsl.log 2>&1; then
+    cat /tmp/storylook-glsl.log
+    echo "[glsl] Story Look shader FAILED validation: $SL"
+    exit 1
+  fi
+done
+echo "[glsl] story look shaders validate"
+
 # ---------------------------------------------------------------------------
 # MCSM 1.9.109 -- VERSION SINGLE-SOURCE + DRIFT GATE.
 #

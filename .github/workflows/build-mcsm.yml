@@ -79,3 +79,18 @@ jobs:
               --notes-file ci/RELEASE_NOTES.md \
               out/*.jar out/*.sha256
           fi
+
+      - name: Attach Story Look resource pack to the release
+        if: success() && startsWith(github.ref, 'refs/heads/arena/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="ds-${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            ( cd storylook && zip -q -r "/tmp/devouringstorms-storylook-${VER}.zip" . )
+            gh release upload "$TAG" "/tmp/devouringstorms-storylook-${VER}.zip" --clobber \
+              || echo "::warning::story look pack upload failed"
+          else
+            echo "no release $TAG yet - skipping story look attach"
+          fi

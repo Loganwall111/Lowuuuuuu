@@ -54,3 +54,13 @@ Repairs that got it there, all committed:
     inside their createBodyLayer() builders; the base jar lends those six
     classes at compile time (next step: high-heap single-class recovery).
 This pipeline is report-only; the shipped jar still comes from build.sh.
+
+=== 2026-09-05b: model-builder recovery (Track B step 2b) ===
+ci/recover-models.sh re-decompiled the six OOM'd model classes at 12 GB per
+class: WitherStormP4, HugeAssBackModel, WitherStormTentacles5 came back via
+Vineflower; SeveredWitherStorm and HunchbackGrowth via CFR; their
+createBodyLayer() bodies were spliced into this tree and their compile
+exclusions lifted in ci/build-source.sh. WitherStormDevourer's builder
+defeats BOTH decompilers even at 12 GB (the method is a single ~57 KB
+bytecode chain) and remains base-jar-borrowed; next attempt will be a
+hand-rebuild from its bytecode dump.
