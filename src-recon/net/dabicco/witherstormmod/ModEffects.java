@@ -1,4 +1,5 @@
 package net.dabicco.witherstormmod;
+import net.minecraft.world.effect.MobEffectCategory;
 
 import net.dabicco.witherstormmod.ModEffects.HyperInvisibility;
 import net.minecraft.core.Holder;
@@ -21,5 +22,10 @@ public final class ModEffects {
    }
 
    public static void initialize() {
+   }
+   static final class HyperInvisibility extends MobEffect {
+      HyperInvisibility() {
+         super(MobEffectCategory.BENEFICIAL, 5922416);
+      }
    }
 }

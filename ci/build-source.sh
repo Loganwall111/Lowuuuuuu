@@ -78,6 +78,14 @@ FAPI_CP="$(find "$DL/fapi" -name '*.jar' | tr '\n' ':')"
 
 CP="$DL/client.jar:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$FAPI_CP"
 
+# Compile-time fallback, LAST on the classpath: the single class Vineflower
+# could not recover (WitherStormDevourer.createBodyLayer -- OOM on a
+# multi-thousand-call model builder). Every other symbol must resolve from
+# the explicit source set, which javac prefers over classpath jars. When a
+# CFR pass or a hand-rebuild recovers that method, drop this fallback.
+fetch "https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-1.9.100/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar" base-fallback.jar || exit 1
+CP="$CP:$DL/base-fallback.jar"
+
 # --- source set: recovered mod + our overlay, minus the broken decompile ---
 rm -f /tmp/ds-src.args
 find src-recon -name '*.java' ! -name 'WitherStormDevourer.java' > /tmp/ds-src.args

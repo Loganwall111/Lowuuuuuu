@@ -148,4 +148,13 @@ public final class BowelsMantle {
          return 0;
       }
    }
+   interface Face {
+      double at(double var1, double var3);
+   }
+   interface Line {
+      double at(double var1);
+   }
+   interface RingFace {
+      double at(double var1, double var3, double var5);
+   }
 }
