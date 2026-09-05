@@ -64,6 +64,10 @@ public final class McsmExtrasConfig {
     /** Force the world config on: building tear, corruption, shockwave
      *  particles, structure raids, withered mobs, cave rumble. */
     public static boolean forceMcsmWorld = true;
+    /** Taut glowing wire from the storm's core down to its ground anchor. */
+    public static boolean commandWire = true;
+    /** Brief a player the first time they get close to a live storm. */
+    public static boolean mcsmInstructions = true;
 
     private static boolean loaded = false;
     private static long stamp = -1L;
@@ -99,6 +103,8 @@ public final class McsmExtrasConfig {
             p.setProperty("obliterate_kick", String.valueOf(obliterateKick));
             p.setProperty("force_mcsm_look", String.valueOf(forceMcsmLook));
             p.setProperty("force_mcsm_world", String.valueOf(forceMcsmWorld));
+            p.setProperty("command_wire", String.valueOf(commandWire));
+            p.setProperty("mcsm_instructions", String.valueOf(mcsmInstructions));
             try (OutputStream out = new FileOutputStream(f)) {
                 p.store(out, "MCSM - storm gameplay patches + 1.9.98 visuals + 1.9.100 gates (glare size, aurora, death cinematic, supernova, smoke, tear, forced MCSM look/world)");
             }
@@ -156,6 +162,8 @@ public final class McsmExtrasConfig {
             obliterateKick     = bool(p, "obliterate_kick", obliterateKick);
             forceMcsmLook      = bool(p, "force_mcsm_look", forceMcsmLook);
             forceMcsmWorld     = bool(p, "force_mcsm_world", forceMcsmWorld);
+            commandWire        = bool(p, "command_wire", commandWire);
+            mcsmInstructions   = bool(p, "mcsm_instructions", mcsmInstructions);
         } catch (Throwable t) {
             // stay on defaults; never crash the game over a config file
         }

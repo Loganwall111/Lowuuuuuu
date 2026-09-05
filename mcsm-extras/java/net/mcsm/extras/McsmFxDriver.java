@@ -95,6 +95,16 @@ public final class McsmFxDriver {
             if (McsmExtrasConfig.smokeScreen && gt % 3L == 0L) {
                 smokePool(srv, self);
             }
+
+            // ---- the command wire: core to ground anchor, with a pulse -----
+            if (McsmExtrasConfig.commandWire) {
+                commandWire(srv, self, gt);
+            }
+
+            // ---- briefing: told once, the first time they get close -------
+            if (McsmExtrasConfig.mcsmInstructions && gt % 20L == 0L) {
+                briefNearby(srv, self);
+            }
         } catch (Throwable ignored) {
             // Never let a particle break a tick.
         }
@@ -189,6 +199,45 @@ public final class McsmFxDriver {
         double py = Math.max(self.getBoundingBox().minY, y - 30.0) + 1.0;
         srv.sendParticles(ParticleTypes.LARGE_SMOKE, x, py, z, 6, r * 0.7, 1.2, r * 0.7, 0.02);
         srv.sendParticles(ParticleTypes.SMOKE, x, py + 2.0, z, 8, r * 0.9, 2.0, r * 0.9, 0.03);
+    }
+
+    /**
+     * The wire: a taut line of end-rod motes from the storm's core down to its
+     * ground anchor, a pulse running down it, and a sparking node where it
+     * lands. The anchor is the bounding-box floor -- already used by the dust
+     * wave, so it needs no heightmap lookup.
+     */
+    private static void commandWire(ServerLevel srv, WitherStormEntity self, long gt) {
+        double x = self.getX(), y = self.getY(), z = self.getZ();
+        double gy = self.getBoundingBox().minY + 0.5;
+        double len = y - gy;
+        if (len < 2.0) {
+            return;
+        }
+        int steps = 26;
+        for (int i = 0; i <= steps; i++) {
+            double t = i / (double) steps;
+            srv.sendParticles(ParticleTypes.END_ROD, x, y - len * t, z, 1, 0.03, 0.0, 0.03, 0.0);
+        }
+        double pt = (gt % 30L) / 30.0;
+        srv.sendParticles(ParticleTypes.FLAME, x, y - len * pt, z, 2, 0.05, 0.05, 0.05, 0.0);
+        if (gt % 20L == 0L) {
+            for (int i = 0; i < 16; i++) {
+                double a = (i / 16.0) * Math.PI * 2.0;
+                srv.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                    x + Math.cos(a) * 1.6, gy + 0.3, z + Math.sin(a) * 1.6,
+                    1, 0.1, 0.2, 0.1, 0.02);
+            }
+        }
+    }
+
+    /** Brief anyone who has come within 120 blocks and not been told yet. */
+    private static void briefNearby(ServerLevel srv, WitherStormEntity self) {
+        double x = self.getX(), y = self.getY(), z = self.getZ();
+        for (ServerPlayer sp : srv.getPlayers(p -> p.isAlive()
+                && p.distanceToSqr(x, y, z) < 120.0 * 120.0)) {
+            McsmStory.brief(sp);
+        }
     }
 
     /** Forget a storm (entity removed) so the map cannot grow without bound. */

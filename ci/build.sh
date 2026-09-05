@@ -56,6 +56,60 @@ fetch "https://repo1.maven.org/maven2/it/unimi/dsi/fastutil/8.5.15/fastutil-8.5.
 fetch "https://libraries.minecraft.net/com/mojang/datafixerupper/8.0.16/datafixerupper-8.0.16.jar" dfu.jar
 fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" joml.jar
 
+# MCSM 1.9.100 -- close the loop: teach the sandbox the real API.
+# This sandbox has no JDK and no route to Mojang/Maven, so every client-side
+# class has been written blind against remembered signatures (the HUD move, the
+# command wire and the inventory shift are still unwritten for exactly that
+# reason). The runner has BOTH. So: javap the public API of everything we might
+# target, write it into ci/api/, and push it back to the branch.
+#   * actions/checkout persists credentials by default, so `git push` works.
+#   * a push made with the GITHUB_TOKEN does NOT start another workflow run,
+#     so this cannot recurse into itself.
+#   * every step is best-effort: a failed dump must never fail the build.
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  echo "[apidump] javap the real client + mod API"
+  mkdir -p ci/api
+  CP2="$DL/client.jar:$BASE:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
+  CLIENT_CLASSES="net.minecraft.client.Minecraft net.minecraft.client.gui.Gui \
+    net.minecraft.client.gui.GuiGraphics net.minecraft.client.gui.screens.Screen \
+    net.minecraft.client.gui.screens.inventory.AbstractContainerScreen \
+    net.minecraft.client.gui.screens.inventory.InventoryScreen \
+    net.minecraft.client.gui.components.AbstractWidget \
+    net.minecraft.client.gui.components.Button net.minecraft.client.gui.components.CycleButton \
+    net.minecraft.client.gui.components.AbstractSliderButton \
+    net.minecraft.client.gui.components.EditBox net.minecraft.client.gui.components.Tooltip \
+    net.minecraft.client.gui.layouts.LinearLayout net.minecraft.client.DeltaTracker \
+    net.minecraft.client.renderer.LevelRenderer net.minecraft.client.renderer.MultiBufferSource \
+    net.minecraft.client.renderer.RenderType net.minecraft.client.renderer.blockentity.BlockEntityRenderer \
+    net.minecraft.client.renderer.entity.EntityRenderer net.minecraft.client.Camera \
+    net.minecraft.client.player.LocalPlayer net.minecraft.world.entity.player.Player \
+    net.minecraft.world.entity.player.Inventory net.minecraft.world.inventory.AbstractContainerMenu \
+    net.minecraft.world.level.block.entity.CommandBlockEntity \
+    net.minecraft.network.chat.Component net.minecraft.ChatFormatting"
+  MOD_CLASSES="net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen \
+    net.dabicco.witherstormmod.client.ShaderPackCompat \
+    net.dabicco.witherstormmod.client.FoglessRenderTypes \
+    net.dabicco.witherstormmod.client.StormSkyGradient \
+    net.dabicco.witherstormmod.entity.WitherStormEntity \
+    net.dabicco.witherstormmod.command.DabyWSCommand"
+  javap -public -classpath "$CP2" $CLIENT_CLASSES > ci/api/client.txt 2>&1 || true
+  javap -public -classpath "$CP2" $MOD_CLASSES   > ci/api/mod.txt    2>&1 || true
+  # A class index so we can discover what this version renamed things to.
+  unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/client/.*\.class$' | sort \
+    > ci/api/client-index.txt || true
+  wc -l ci/api/*.txt || true
+  if [ -s ci/api/client.txt ]; then
+    git add -f ci/api || true
+    if ! git diff --cached --quiet -- ci/api; then
+      git -c user.email="ci@mcsm.local" -c user.name="MCSM build" \
+          commit -q -m "ci: api dump from the $MC_VER client (javap), so client-side code stops being written blind" || true
+      git pull --rebase -q origin "${GITHUB_REF_NAME:-arena/01a06df7-lowuuuuuu}" || true
+      git push origin "HEAD:${GITHUB_REF_NAME:-arena/01a06df7-lowuuuuuu}" || \
+        echo "[apidump] push failed (token may be read-only); the dump stays on the runner"
+    fi
+  fi
+fi
+
 echo "[glsl] shader gate (glslang via shimcheck)"
 chmod +x glslcheck/bin/glslang || true
 python3 glslcheck/shimcheck.py mcsm-core-shaders \

@@ -901,3 +901,38 @@ NEW CONFIG: forceMcsmLook, forceMcsmWorld (both default true, in
   config/mcsm_storm_extras.properties).
 Gotcha found by apicheck: DabyWSClientConfig.useNewFormidibomb is FINAL -- it
   cannot be assigned. Removed. Re-run apicheck after every java edit.
+
+### Phase 30g (2026-09-04) — closing the blind spot + two more features
+NO LOCAL API ACCESS: piston-meta/piston-data/repo1/libraries.minecraft.net are
+all unreachable (curl 000) and release-asset + raw.githubusercontent downloads
+are blocked too, so the Minecraft client jar can never be inspected here. Every
+client-side class (HUD move, inventory shift, command wire rendering) has
+therefore been written blind against remembered signatures -- which is why those
+items are still unwritten.
+FIX: ci/build.sh now dumps the REAL api on the runner (it has both the client
+jar and a JDK) and PUSHES it back to the branch as ci/api/{client,mod}.txt plus
+ci/api/client-index.txt (a class index of net/minecraft/client so renames in
+26.2 are discoverable). Mechanics worth remembering:
+  * actions/checkout persists credentials, so `git push` works from build.sh
+    with no extra token wiring;
+  * a push made with the GITHUB_TOKEN does NOT start another workflow run, so
+    this cannot recurse;
+  * every step is best-effort (|| true) -- a failed dump must never fail a build.
+After that push lands: `git pull` and read ci/api/client.txt before writing any
+more client-side java.
+NEW IN THIS BATCH
+  McsmStory.java -- the MCSM briefing. First time a player gets within 120
+    blocks of a live storm they get the seven-line Story Mode narration, once
+    per player per session. Server-side, plain sendSystemMessage, no client GUI.
+  McsmFxDriver.commandWire() -- a taut line of END_ROD motes from the storm's
+    core to its ground anchor (bounding-box floor, no heightmap lookup needed),
+    a FLAME pulse running down it, and a sparking node where it lands.
+  McsmFxDriver.briefNearby() -- drives the briefing from the storm tick.
+  Config: commandWire, mcsmInstructions (both default true).
+TOOLING: glslcheck/apicheck.py usage note -- it verifies net.dabicco.* symbols
+  only (vanilla symbols cannot be checked: no client jar locally).
+  Sanity gate after every java edit: brace/paren balance per file with comments
+  AND string literals stripped (stripping with re.DOTALL is a trap: `//.*` then
+  eats the rest of the file).
+STILL UNWRITTEN, waiting on the api dump: HUD/inventory move to the side,
+  3D command block rendering.
