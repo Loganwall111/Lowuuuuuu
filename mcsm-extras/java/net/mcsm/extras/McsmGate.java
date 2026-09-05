@@ -5,6 +5,8 @@ import net.dabicco.witherstormmod.config.WitherStormConfigs;
 import net.dabicco.witherstormmod.config.WitherStormWorldConfig;
 import net.minecraft.world.level.Level;
 
+import java.lang.reflect.Field;
+
 /**
  * MCSM 1.9.100 -- the "it's already written, it's just switched off" gate.
  *
@@ -47,72 +49,80 @@ public final class McsmGate {
         McsmExtrasConfig.load();
         clientDone = true;
         if (!McsmExtrasConfig.forceMcsmLook) {
+            McsmDiag.say("MCSM client gate disabled by mcsm_storm_extras.properties");
             return;
         }
+        int changed = 0;
         try {
+            Class<?> c = DabyWSClientConfig.class;
+
             // ---- storm body + sky -----------------------------------------
-            DabyWSClientConfig.distantStorms = true;
-            DabyWSClientConfig.distantFog = true;
-            DabyWSClientConfig.customSkyboxes = true;
-            DabyWSClientConfig.cloudDeckLayer = true;
-            DabyWSClientConfig.regionalBiomeFog = true;
-            DabyWSClientConfig.phaseAnim = true;
-            DabyWSClientConfig.filledSubphases = true;
-            DabyWSClientConfig.scaledSubphaseGrowth = true;
-            DabyWSClientConfig.tentaclePhysics = true;
-            DabyWSClientConfig.optimizeDistantAnimations = true;
-            DabyWSClientConfig.flatbackFlipFix = true;
+            changed += setBool(c, "distantStorms", true);
+            changed += setBool(c, "distantFog", true);
+            changed += setBool(c, "customSkyboxes", true);
+            changed += setBool(c, "cloudDeckLayer", true);
+            changed += setBool(c, "regionalBiomeFog", true);
+            changed += setBool(c, "phaseAnim", true);
+            changed += setBool(c, "filledSubphases", true);
+            changed += setBool(c, "scaledSubphaseGrowth", true);
+            changed += setBool(c, "tentaclePhysics", true);
+            changed += setBool(c, "optimizeDistantAnimations", true);
+            changed += setBool(c, "flatbackFlipFix", true);
 
             // ---- the halo / glare the user has been chasing ----------------
-            DabyWSClientConfig.sunGlow = true;
-            DabyWSClientConfig.blackGlare = true;
-            DabyWSClientConfig.glareEjecta = true;
-            DabyWSClientConfig.headEyeGlow = true;
-            DabyWSClientConfig.devourerDebrisGlow = true;
+            changed += setBool(c, "sunGlow", true);
+            changed += setBool(c, "blackGlare", true);
+            changed += setBool(c, "glareEjecta", true);
+            changed += setBool(c, "headEyeGlow", true);
+            changed += setBool(c, "devourerDebrisGlow", true);
 
             // ---- ground shadows for trees and mobs (user request) ---------
-            DabyWSClientConfig.trailerShadows = true;
-            DabyWSClientConfig.stormShadow = true;
-            DabyWSClientConfig.stormShadowTerrain = true;
-            DabyWSClientConfig.stormShadowSoftEdge = true;
-            DabyWSClientConfig.stormShadowHeightmap = true;
+            changed += setBool(c, "trailerShadows", true);
+            changed += setBool(c, "stormShadow", true);
+            changed += setBool(c, "stormShadowTerrain", true);
+            changed += setBool(c, "stormShadowSoftEdge", true);
+            changed += setBool(c, "stormShadowHeightmap", true);
 
             // ---- screen: smoke screen, tremor, sickness, glitch -----------
-            DabyWSClientConfig.stormProximityVignette = true;
-            DabyWSClientConfig.sicknessVeinOverlay = true;
-            DabyWSClientConfig.groundShakingTremors = true;
-            DabyWSClientConfig.dynamicScreenShake = true;
-            DabyWSClientConfig.purpleLightningSparks = true;
+            changed += setBool(c, "stormProximityVignette", true);
+            changed += setBool(c, "sicknessVeinOverlay", true);
+            changed += setBool(c, "groundShakingTremors", true);
+            changed += setBool(c, "dynamicScreenShake", true);
+            changed += setBool(c, "purpleLightningSparks", true);
 
             // ---- presentation ---------------------------------------------
-            DabyWSClientConfig.storyModeBossbar = true;
-            DabyWSClientConfig.storyModeTitleScreen = true;
-            DabyWSClientConfig.stormAmbience = true;
-            DabyWSClientConfig.beamHum = true;
-            DabyWSClientConfig.beamDeactivateSound = true;
-            DabyWSClientConfig.infectedMobSound = true;
+            changed += setBool(c, "storyModeBossbar", true);
+            changed += setBool(c, "storyModeTitleScreen", true);
+            changed += setBool(c, "stormAmbience", true);
+            changed += setBool(c, "beamHum", true);
+            changed += setBool(c, "beamDeactivateSound", true);
+            changed += setBool(c, "infectedMobSound", true);
 
             // ---- numeric floors (raise only, never lower) ------------------
-            DabyWSClientConfig.vignetteIntensity = floor(DabyWSClientConfig.vignetteIntensity, 0.85);
-            DabyWSClientConfig.sicknessVeinIntensity = floor(DabyWSClientConfig.sicknessVeinIntensity, 0.7);
-            DabyWSClientConfig.screenTremorIntensity = floor(DabyWSClientConfig.screenTremorIntensity, 0.8);
-            DabyWSClientConfig.chromaticGlitchStrength = floor(DabyWSClientConfig.chromaticGlitchStrength, 0.35);
-            DabyWSClientConfig.debrisDustParticles = floor(DabyWSClientConfig.debrisDustParticles, 1.0);
-            DabyWSClientConfig.debrisAmount = floor(DabyWSClientConfig.debrisAmount, 1.0);
-            DabyWSClientConfig.volumetricFogDensity = floor(DabyWSClientConfig.volumetricFogDensity, 0.6);
-            DabyWSClientConfig.stormGlowStrength = floor(DabyWSClientConfig.stormGlowStrength, 1.0);
-            DabyWSClientConfig.sunGlowStrength = floor(DabyWSClientConfig.sunGlowStrength, 1.0);
-            DabyWSClientConfig.blackGlareStrength = floor(DabyWSClientConfig.blackGlareStrength, 1.0);
-            DabyWSClientConfig.stormShadowStrength = floor(DabyWSClientConfig.stormShadowStrength, 1.0);
-            DabyWSClientConfig.glowStrength = floor(DabyWSClientConfig.glowStrength, 1.0);
-            DabyWSClientConfig.ambienceVolume = floor(DabyWSClientConfig.ambienceVolume, 0.8);
-            DabyWSClientConfig.headSoundsVolume = floor(DabyWSClientConfig.headSoundsVolume, 0.8);
-            DabyWSClientConfig.beamSoundsVolume = floor(DabyWSClientConfig.beamSoundsVolume, 0.8);
-            DabyWSClientConfig.infectedMobSoundVolume = floor(DabyWSClientConfig.infectedMobSoundVolume, 0.8);
-            DabyWSClientConfig.phaseAnimStrength = floor(DabyWSClientConfig.phaseAnimStrength, 1.0);
-            DabyWSClientConfig.mirrorBackDetail = floor(DabyWSClientConfig.mirrorBackDetail, 1.0);
-        } catch (Throwable ignored) {
-            // A renamed field after a mod update costs a visual, never a crash.
+            changed += floorField(c, null, "vignetteIntensity", 0.85);
+            changed += floorField(c, null, "sicknessVeinIntensity", 0.7);
+            changed += floorField(c, null, "screenTremorIntensity", 0.8);
+            changed += floorField(c, null, "chromaticGlitchStrength", 0.35);
+            changed += floorField(c, null, "debrisDustParticles", 1.0);
+            changed += floorField(c, null, "debrisAmount", 1.0);
+            changed += floorField(c, null, "volumetricFogDensity", 0.6);
+            changed += floorField(c, null, "stormGlowStrength", 1.0);
+            changed += floorField(c, null, "sunGlowStrength", 1.0);
+            changed += floorField(c, null, "blackGlareStrength", 1.0);
+            changed += floorField(c, null, "stormShadowStrength", 1.0);
+            changed += floorField(c, null, "glowStrength", 1.0);
+            changed += floorField(c, null, "ambienceVolume", 0.8);
+            changed += floorField(c, null, "headSoundsVolume", 0.8);
+            changed += floorField(c, null, "beamSoundsVolume", 0.8);
+            changed += floorField(c, null, "infectedMobSoundVolume", 0.8);
+            changed += floorField(c, null, "phaseAnimStrength", 1.0);
+            changed += floorField(c, null, "mirrorBackDetail", 1.0);
+            McsmDiag.say("MCSM client gate opened: " + changed + " config fields raised/enabled");
+        } catch (Throwable t) {
+            // Only a class-level failure should land here. Individual renamed
+            // fields are handled by the helpers below so one missing option can
+            // no longer block every later MCSM visual.
+            McsmDiag.say("MCSM client gate failed before field loop: " + t);
         }
     }
 
@@ -135,41 +145,107 @@ public final class McsmGate {
                 return;
             }
             worldDone = true;
+            Class<?> c = cfg.getClass();
+            int changed = 0;
 
             // ---- reality tear: the storm rips buildings out of the world ---
-            cfg.buildingDestruction = Math.max(cfg.buildingDestruction, 1);
-            cfg.buildingTearRadius = floor(cfg.buildingTearRadius, 28.0);
-            cfg.buildingTearInterval = lowerInterval(cfg.buildingTearInterval, 20);
+            changed += floorField(c, cfg, "buildingDestruction", 1.0);
+            changed += floorField(c, cfg, "buildingTearRadius", 28.0);
+            changed += ceilInterval(c, cfg, "buildingTearInterval", 20);
 
             // ---- shockwaves you can see ------------------------------------
-            cfg.groundShockwaveParticles = Math.max(cfg.groundShockwaveParticles, 600);
+            changed += floorField(c, cfg, "groundShockwaveParticles", 600.0);
 
             // ---- structures: the storm raids them --------------------------
-            cfg.structureRaid = Math.max(cfg.structureRaid, 1);
-            cfg.structureRaidInterval = lowerInterval(cfg.structureRaidInterval, 5);
-            cfg.structureRaidRadius = floor(cfg.structureRaidRadius, 96.0);
-            cfg.structureTearClusters = Math.max(cfg.structureTearClusters, 8);
+            changed += floorField(c, cfg, "structureRaid", 1.0);
+            changed += ceilInterval(c, cfg, "structureRaidInterval", 5);
+            changed += floorField(c, cfg, "structureRaidRadius", 96.0);
+            changed += floorField(c, cfg, "structureTearClusters", 8.0);
 
             // ---- corruption: wither sickness + withered mobs ---------------
-            cfg.witherSickness = Math.max(cfg.witherSickness, 1);
-            cfg.witheredMobs = Math.max(cfg.witheredMobs, 1);
-            cfg.witheredMax = Math.max(cfg.witheredMax, 32);
-            cfg.witheredMaxCaves = Math.max(cfg.witheredMaxCaves, 16);
+            changed += floorField(c, cfg, "witherSickness", 1.0);
+            changed += floorField(c, cfg, "witheredMobs", 1.0);
+            changed += floorField(c, cfg, "witheredMax", 32.0);
+            changed += floorField(c, cfg, "witheredMaxCaves", 16.0);
 
             // ---- the ground itself reacts ----------------------------------
-            cfg.caveRumble = Math.max(cfg.caveRumble, 1);
-        } catch (Throwable ignored) {
-            // World config is saved data; if its shape changed, skip quietly.
+            changed += floorField(c, cfg, "caveRumble", 1.0);
+            McsmDiag.say("MCSM world gate opened: " + changed + " world fields raised/enabled");
+        } catch (Throwable t) {
+            McsmDiag.say("MCSM world gate failed before field loop: " + t);
         }
     }
 
-    private static double floor(double v, double min) {
-        return v < min ? min : v;
+    private static int setBool(Class<?> owner, String name, boolean value) {
+        try {
+            Field f = owner.getField(name);
+            f.setBoolean(null, value);
+            return 1;
+        } catch (Throwable ignored) {
+            return 0;
+        }
     }
 
-    /** Intervals count DOWN in desirability: a smaller number fires sooner. */
-    private static int lowerInterval(int v, int max) {
-        return (v <= 0 || v > max) ? max : v;
+    /** Raise static or instance numeric fields without assuming int/double type. */
+    private static int floorField(Class<?> owner, Object instance, String name, double min) {
+        try {
+            Field f = owner.getField(name);
+            Class<?> t = f.getType();
+            if (t == int.class) {
+                int old = f.getInt(instance);
+                int nv = Math.max(old, (int) Math.round(min));
+                if (nv != old) f.setInt(instance, nv);
+                return 1;
+            }
+            if (t == float.class) {
+                float old = f.getFloat(instance);
+                float nv = Math.max(old, (float) min);
+                if (nv != old) f.setFloat(instance, nv);
+                return 1;
+            }
+            if (t == double.class) {
+                double old = f.getDouble(instance);
+                double nv = Math.max(old, min);
+                if (nv != old) f.setDouble(instance, nv);
+                return 1;
+            }
+            if (t == long.class) {
+                long old = f.getLong(instance);
+                long nv = Math.max(old, (long) Math.round(min));
+                if (nv != old) f.setLong(instance, nv);
+                return 1;
+            }
+        } catch (Throwable ignored) {
+        }
+        return 0;
+    }
+
+    /** Intervals count DOWN in desirability: a smaller positive number fires sooner. */
+    private static int ceilInterval(Class<?> owner, Object instance, String name, int max) {
+        try {
+            Field f = owner.getField(name);
+            Class<?> t = f.getType();
+            if (t == int.class) {
+                int old = f.getInt(instance);
+                int nv = (old <= 0 || old > max) ? max : old;
+                if (nv != old) f.setInt(instance, nv);
+                return 1;
+            }
+            if (t == double.class) {
+                double old = f.getDouble(instance);
+                double nv = (old <= 0.0 || old > max) ? max : old;
+                if (nv != old) f.setDouble(instance, nv);
+                return 1;
+            }
+            if (t == float.class) {
+                float old = f.getFloat(instance);
+                float nv = (old <= 0.0F || old > max) ? (float) max : old;
+                if (nv != old) f.setFloat(instance, nv);
+                return 1;
+            }
+        } catch (Throwable ignored) {
+        }
+        return 0;
     }
 
     /** Called on session teardown so a world change re-applies the gates. */

@@ -9,6 +9,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.lang.reflect.Method;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.mcsm.extras.client.McsmExtrasScreen;
 
 /**
  * MCSM - extras entry inside the mod's own config screen.
@@ -46,13 +49,24 @@ public abstract class McsmGuiExtrasRows {
             Method mAdd = screen.getDeclaredMethod("addRowWidget", rowCls);
             for (Method m : new Method[]{mHeader, mButton, mAdd}) m.setAccessible(true);
 
-            mAdd.invoke(self, mHeader.invoke(null, "MCSM extras 1.9.98", 0));
+            mAdd.invoke(self, mHeader.invoke(null, "MCSM extras 1.9.103", 0));
             mAdd.invoke(self, mButton.invoke(null,
                     "Open the MCSM Control Panel",
                     "Glare size, aurora, death cinematic, supernova rings, smoke screen, purple sky, dust waves, reality tear, obliterate flash, and the gameplay patches.",
-                    // 26.2: screen switching moved to Minecraft.gui.setScreen(...)
-                    (Runnable) () -> net.minecraft.client.Minecraft.getInstance().gui.setScreen(
-                            new net.mcsm.extras.client.McsmExtrasScreen((net.minecraft.client.gui.screens.Screen) self))));
+                    (Runnable) () -> {
+                        try {
+                            Screen panel = new McsmExtrasScreen((Screen) self);
+                            Minecraft.getInstance().setScreenAndShow(panel);
+                            System.err.println("[MCSM] extras panel opened via setScreenAndShow");
+                        } catch (Throwable t) {
+                            try {
+                                Minecraft.getInstance().gui.setScreen(new McsmExtrasScreen((Screen) self));
+                                System.err.println("[MCSM] extras panel opened via gui.setScreen fallback");
+                            } catch (Throwable t2) {
+                                System.err.println("[MCSM] extras panel open FAILED: " + t + " / " + t2);
+                            }
+                        }
+                    }));
 
             // exact-name relayout (see class doc for why repositionRows, not rebuild)
             try {

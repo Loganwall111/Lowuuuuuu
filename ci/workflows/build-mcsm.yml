@@ -40,13 +40,15 @@ jobs:
       - name: Build the jar
         run: bash ci/build.sh
 
-      - name: Upload built jar
+      - name: Upload built jar and build logs
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: mcsm-jar-${{ github.run_number }}
           path: |
             out/*.jar
             out/*.sha256
+            out/*.txt
 
       - name: Publish release when VERSION is new
         if: success() && github.ref == 'refs/heads/arena/01a06df7-lowuuuuuu'
