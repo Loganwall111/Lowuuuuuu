@@ -297,6 +297,56 @@ with open(p, "w") as f:
 PYNAME
 echo "[build] fabric.mod.json name: $(python3 -c "import json;print(json.load(open('$FX/cls/fabric.mod.json'))['name'])")"
 
+# Devouring Storms 1.9.114 -- mixin config MERGE. The base jar's mixin config
+# is frozen at whatever the 1.9.100 build listed; any mixin class added since
+# (McsmShaderGatePatch, McsmTownCommandPatch, ...) must be appended at assembly
+# time or it silently never applies -- the audit below would then fail the
+# build, but the merge keeps it from ever getting that far. Client-side mixins
+# (anything importing net.minecraft.client) go in the config's "client" list,
+# the rest in "mixins", matching the existing entry style (simple name when the
+# config declares a package, fully qualified otherwise).
+python3 - "$FX/cls" <<'PYMERGE'
+import json, os, sys, glob
+cls_dir = sys.argv[1]
+fmj = json.load(open(os.path.join(cls_dir, "fabric.mod.json")))
+mix = fmj.get("mixins", [])
+if isinstance(mix, str):
+    mix = [mix]
+cfgs = [x if isinstance(x, str) else (x.get("config") or "") for x in mix]
+cfgs = [c for c in cfgs if c and os.path.isfile(os.path.join(cls_dir, c))]
+if not cfgs:
+    print("[merge] no mixin config file found in jar -- audit will fail")
+    raise SystemExit(0)
+FQ = "net.mcsm.extras.mixin."
+added = []
+for src in sorted(glob.glob("mcsm-extras/java/net/mcsm/extras/mixin/*.java")):
+    cls = os.path.basename(src)[:-5]
+    is_client = "net.minecraft.client" in open(src).read()
+    present = False
+    for cfg in cfgs:
+        d = json.load(open(os.path.join(cls_dir, cfg)))
+        for key in ("mixins", "client"):
+            for e in d.get(key) or []:
+                if e == cls or e == FQ + cls:
+                    present = True
+    if present:
+        continue
+    key = "client" if is_client else "mixins"
+    for cfg in cfgs:
+        p = os.path.join(cls_dir, cfg)
+        d = json.load(open(p))
+        entries = d.get("mixins") or []
+        style_fq = any("." in e for e in entries + (d.get("client") or []))
+        d.setdefault(key, [])
+        d[key].append(FQ + cls if style_fq else cls)
+        with open(p, "w") as f:
+            json.dump(d, f, indent=2)
+            f.write("\n")
+        added.append(cls + " -> " + cfg + ":" + key)
+        break
+print("[merge] appended mixins: " + (", ".join(added) if added else "(none, all listed)"))
+PYMERGE
+
 # ---------------------------------------------------------------------------
 # MCSM 1.9.109 -- JAR AUDIT (hard gate).
 #
