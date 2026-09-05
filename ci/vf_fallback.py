@@ -37,7 +37,7 @@ def parse_args(desc):
             else:
                 i += 1
             kinds.append("L")
-        elif c in "IF":
+        elif c in "IFZ":
             kinds.append(c)
             i += 1
         else:
@@ -54,6 +54,7 @@ def fmt(kind, val):
 
 def translate(comments, param_name):
     stack = []  # entries: (kind, text) kind in int/float/str/expr/new
+    statements = []  # popped expression results (void methods)
     for line in comments:
         m = re.match(r"^\s*// [0-9a-f]{4}: (.*)$", line)
         if not m:
@@ -99,7 +100,12 @@ def translate(comments, param_name):
             meth, desc = arg.split(" ", 1)
             kinds = parse_args(desc)
             vals = [stack.pop() for _ in kinds][::-1]
-            args_s = ", ".join(fmt(k, v) for (k, v), kk in zip(vals, kinds))
+            def argfmt(kv, kk):
+                k, v = kv
+                if kk == "Z" and k == "int":
+                    return {"0": "false", "1": "true"}.get(v, v)
+                return fmt(k, v)
+            args_s = ", ".join(argfmt(kv, kk) for kv, kk in zip(vals, kinds))
             short = meth.split(".")[-1]
             if op == "invokestatic":
                 cls = meth.rsplit(".", 1)[0].rsplit("/", 1)[-1]
@@ -109,10 +115,19 @@ def translate(comments, param_name):
                 if recv[0] not in ("expr", "str"):
                     raise SystemExit("bad receiver %r" % (recv,))
                 stack.append(("expr", "%s.%s(%s)" % (fmt(*recv), short, args_s)))
+        elif op == "pop":
+            v = stack.pop()
+            if v[0] != "expr":
+                raise SystemExit("pop of non-expression %r" % (v,))
+            statements.append(v[1])
+        elif op == "return":
+            if stack:
+                raise SystemExit("void return with %d stack slots" % len(stack))
+            return ("void", statements)
         elif op == "areturn":
             if len(stack) != 1:
                 raise SystemExit("areturn with %d stack slots" % len(stack))
-            return stack.pop()
+            return ("expr2", stack.pop(), statements)
         else:
             raise SystemExit("unsupported opcode %r — refusing to guess" % op)
     raise SystemExit("no areturn reached")
@@ -141,13 +156,22 @@ def main():
             break
     if end_i is None:
         raise SystemExit("no bytecode comment block found under %s" % name)
-    kind, body = translate(comments, param_name)
-    if kind != "expr":
-        raise SystemExit("returned value is not an expression (%s)" % kind)
-    body = body.replace(".texOffs(", "\n            .texOffs(").replace(".addBox(", "\n            .addBox(")
+    res = translate(comments, param_name)
+    print(sig)
+    if res[0] == "void":
+        for stmt in res[1]:
+            stmt = stmt.replace(".texOffs(", "\n            .texOffs(").replace(".addBox(", "\n            .addBox(").replace(".mirror(", "\n            .mirror(")
+            print("      " + stmt + ";")
+        print("   }")
+        print("###REPLACE %d %d" % (sig_i + 1, end_i + 1), file=sys.stderr)
+        return
+    kind, kv, stmts = res
+    if stmts or kind != "expr2" or kv[0] != "expr":
+        raise SystemExit("unexpected translate result %r" % (res,))
+    body = kv[1]
+    body = body.replace(".texOffs(", "\n            .texOffs(").replace(".addBox(", "\n            .addBox(").replace(".mirror(", "\n            .mirror(")
     first = body.split("\n", 1)[0]
     rest = body[len(first):]
-    print(sig)
     print("      return " + first + rest + ";")
     print("   }")
     print("###REPLACE %d %d" % (sig_i + 1, end_i + 1), file=sys.stderr)

@@ -2083,99 +2083,23 @@ public class WitherStormTentacles5 extends EntityModel<WitherStormRenderState> {
       }
    }
 
-   private static Matrix4f toWorld(WitherStormRenderState param0) {
-      // $VF: Couldn't be decompiled
-      // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
-      //
-      // Bytecode:
-      // 00: new org/joml/Matrix4f
-      // 03: dup
-      // 04: invokespecial org/joml/Matrix4f.<init> ()V
-      // 07: astore 1
-      // 08: aload 1
-      // 09: aload 0
-      // 0a: getfield net/dabicco/witherstormmod/entity/state/WitherStormRenderState.x D
-      // 0d: d2f
-      // 0e: aload 0
-      // 0f: getfield net/dabicco/witherstormmod/entity/state/WitherStormRenderState.y D
-      // 12: d2f
-      // 13: aload 0
-      // 14: getfield net/dabicco/witherstormmod/entity/state/WitherStormRenderState.z D
-      // 17: d2f
-      // 18: invokevirtual org/joml/Matrix4f.translate (FFF)Lorg/joml/Matrix4f;
-      // 1b: pop
-      // 1c: aload 1
-      // 1d: getstatic com/mojang/math/Axis.YP Lcom/mojang/math/Axis;
-      // 20: ldc_w 180.0
-      // 23: aload 0
-      // 24: getfield net/dabicco/witherstormmod/entity/state/WitherStormRenderState.bodyRot F
-      // 27: fsub
-      // 28: invokeinterface com/mojang/math/Axis.rotationDegrees (F)Lorg/joml/Quaternionf; 2
-      // 2d: invokevirtual org/joml/Matrix4f.rotate (Lorg/joml/Quaternionfc;)Lorg/joml/Matrix4f;
-      // 30: pop
-      // 31: aload 0
-      // 32: getfield net/dabicco/witherstormmod/entity/state/WitherStormRenderState.collapseTicks F
-      // 35: invokestatic net/dabicco/witherstormmod/entity/CollapseAnim.bodyPitch (F)F
-      // 38: fstore 2
-      // 39: fload 2
-      // 3a: fconst_0
-      // 3b: fcmpl
-      // 3c: ifeq 7a
-      // 3f: aload 0
-      // 40: getfield net/dabicco/witherstormmod/entity/state/WitherStormRenderState.collapseTicks F
-      // 43: invokestatic net/dabicco/witherstormmod/entity/CollapseAnim.down (F)F
-      // 46: fstore 3
-      // 47: ldc_w 17.0
-      // 4a: fstore 4
-      // 4c: aload 1
-      // 4d: fconst_0
-      // 4e: ldc_w -18.5
-      // 51: fload 3
-      // 52: fmul
-      // 53: fconst_0
-      // 54: invokevirtual org/joml/Matrix4f.translate (FFF)Lorg/joml/Matrix4f;
-      // 57: pop
-      // 58: aload 1
-      // 59: fconst_0
-      // 5a: fload 4
-      // 5c: fconst_0
-      // 5d: invokevirtual org/joml/Matrix4f.translate (FFF)Lorg/joml/Matrix4f;
-      // 60: pop
-      // 61: aload 1
-      // 62: getstatic com/mojang/math/Axis.XP Lcom/mojang/math/Axis;
-      // 65: fload 2
-      // 66: fneg
-      // 67: invokeinterface com/mojang/math/Axis.rotationDegrees (F)Lorg/joml/Quaternionf; 2
-      // 6c: invokevirtual org/joml/Matrix4f.rotate (Lorg/joml/Quaternionfc;)Lorg/joml/Matrix4f;
-      // 6f: pop
-      // 70: aload 1
-      // 71: fconst_0
-      // 72: fload 4
-      // 74: fneg
-      // 75: fconst_0
-      // 76: invokevirtual org/joml/Matrix4f.translate (FFF)Lorg/joml/Matrix4f;
-      // 79: pop
-      // 7a: aload 1
-      // 7b: getstatic com/mojang/math/Axis.ZN Lcom/mojang/math/Axis;
-      // 7e: aload 0
-      // 7f: getfield net/dabicco/witherstormmod/entity/state/WitherStormRenderState.bodyRoll F
-      // 82: invokeinterface com/mojang/math/Axis.rotationDegrees (F)Lorg/joml/Quaternionf; 2
-      // 87: invokevirtual org/joml/Matrix4f.rotate (Lorg/joml/Quaternionfc;)Lorg/joml/Matrix4f;
-      // 8a: pop
-      // 8b: aload 1
-      // 8c: fconst_0
-      // 8d: ldc_w 6.0
-      // 90: ldc_w 1.25
-      // 93: invokevirtual org/joml/Matrix4f.translate (FFF)Lorg/joml/Matrix4f;
-      // 96: pop
-      // 97: aload 1
-      // 98: ldc_w -5.0
-      // 9b: ldc_w -5.0
-      // 9e: ldc_w 5.0
-      // a1: invokevirtual org/joml/Matrix4f.scale (FFF)Lorg/joml/Matrix4f;
-      // a4: pop
-      // a5: aload 1
-      // a6: areturn
+   private static Matrix4f toWorld(WitherStormRenderState state) {
+      Matrix4f matrix4f = new Matrix4f();
+      matrix4f.translate((float)state.x, (float)state.y, (float)state.z);
+      matrix4f.rotate(com.mojang.math.Axis.YP.rotationDegrees(180.0F - state.bodyRot));
+      float pitch = net.dabicco.witherstormmod.entity.CollapseAnim.bodyPitch(state.collapseTicks);
+      if (pitch != 0.0F) {
+         float down = net.dabicco.witherstormmod.entity.CollapseAnim.down(state.collapseTicks);
+         float lift = 17.0F;
+         matrix4f.translate(0.0F, -18.5F * down, 0.0F);
+         matrix4f.translate(0.0F, lift, 0.0F);
+         matrix4f.rotate(com.mojang.math.Axis.XP.rotationDegrees(-pitch));
+         matrix4f.translate(0.0F, -lift, 0.0F);
+      }
+      matrix4f.rotate(com.mojang.math.Axis.ZN.rotationDegrees(state.bodyRoll));
+      matrix4f.translate(0.0F, 6.0F, 1.25F);
+      matrix4f.scale(-5.0F, -5.0F, 5.0F);
+      return matrix4f;
    }
 
    private boolean ragdoll(List<ModelPart> chain, WitherStormRenderState state, int chainIndex, float droop) {
