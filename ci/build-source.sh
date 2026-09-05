@@ -202,8 +202,8 @@ N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
   echo "jar reference:   385 mod classes (+ our overlay) in the 1.9.100 base"
   echo "--- widen list ---"
   cat "$WIDEN" 2>/dev/null || true
-  echo "--- first 30 errors with detail ---"
-  grep -A2 -E "error:" "$JAVAC_LOG" | head -90 || true
+  echo "--- first 25 errors with detail ---"
+  grep -A4 -E "error:" "$JAVAC_LOG" | head -120 || true
   echo "--- javac log head ---"
   head -5 "$JAVAC_LOG" || true
   echo "--- javac log tail ---"
@@ -215,13 +215,13 @@ if [ "$RC" -eq 0 ]; then
 else
   N_ERR=$(grep -cE "error:" "$JAVAC_LOG" || true)
   echo "::error title=source-build::javac reported $N_ERR errors across $N_SRC files; first lines in annotations and out/source-build-report.txt"
-  grep -A2 -E "error:" "$JAVAC_LOG" | grep -v '^--$' | head -30 | while IFS= read -r line; do
+  grep -A4 -E "error:" "$JAVAC_LOG" | grep -E "error:|symbol:|location:|required:|found:" | head -12 | while IFS= read -r line; do
     echo "::error title=javac::${line:0:400}"
   done
-  grep -E "error:" "$JAVAC_LOG" | sed -E 's/.*error: //; s/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -8 | while IFS= read -r line; do
+  grep -E "error:" "$JAVAC_LOG" | sed -E 's/.*error: //; s/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -10 | while IFS= read -r line; do
     echo "::error title=error-kinds::${line:0:300}"
   done
-  grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -15 | while read -r c f; do
+  grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -10 | while read -r c f; do
     echo "::error title=errors-in::${c} ${f}"
   done
   if [ "$N_ERR" -eq 0 ]; then
