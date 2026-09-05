@@ -30,3 +30,27 @@ it with CFR, keep the binary class from the jar for that one file, or
 reconstruct it from the 1.9.60 clean source if present there (it is not).
 BowelsFrame/BowelsGravity enum-switch errors CAN be cross-checked against
 the author's clean 1.9.60 copies in net/.
+
+
+=== 2026-09-05: WHOLE-MOD SOURCE COMPILE IS GREEN (Track B step 2) ===
+ci/build-source.sh + .github/workflows/build-source.yml now compile the ENTIRE
+recovered source (341 java files: 331 recon + our overlay, minus six model
+builders) against the raw 26.2 client jar + full fabric-api module set:
+javac exit 0, 413 classes out (report: ci/reports/source-build-latest.txt,
+republished by CI on every run).
+Repairs that got it there, all committed:
+  * enum switches grafted back from the 1.9.60 donors (BowelsFrame/Gravity)
+  * nested $-named types folded home; synthetic switchmap files deleted
+  * anonymous-class import lines stripped; anonymous BlockTintSource restored
+  * JSpecify type annotations stripped from a COMPILE-ONLY client copy
+    (javac attach bug) + declaration-only stubs in ci/stubs/
+  * self-widening loop (ci/widen_members.py): InnerClasses-aware access
+    widening of six vanilla members in the compile-only jar (Loom-style)
+  * decompiler idiom repairs at scale: (X)this -> (X)(Object)this (40 files),
+    intersection casts, Object-mediated instanceof, lambda-capture finals,
+    typed generics (entity/component/sound), protected-ctor anon subclasses
+  * WitherStormP4/WitherStormDevourer/HugeAssBackModel/HunchbackGrowth/
+    SeveredWitherStorm/WitherStormTentacles5 stay EXCLUDED: Vineflower OOM'd
+    inside their createBodyLayer() builders; the base jar lends those six
+    classes at compile time (next step: high-heap single-class recovery).
+This pipeline is report-only; the shipped jar still comes from build.sh.
