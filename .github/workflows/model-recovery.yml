@@ -37,4 +37,6 @@ jobs:
           java-version: "25"
 
       - name: Recover the six model builders
+        env:
+          BOT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash ci/recover-models.sh

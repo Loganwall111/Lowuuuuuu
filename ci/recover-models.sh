@@ -108,49 +108,48 @@ def method_span(src, m):
     return None
 
 spliced = []
+bs_path = os.path.join(repo, "ci/build-source.sh")
 for C in ["WitherStormDevourer", "WitherStormP4", "HugeAssBackModel",
           "HunchbackGrowth", "SeveredWitherStorm", "WitherStormTentacles5"]:
     pf = os.path.join(work, f"splice-{C}.path")
     if not os.path.isfile(pf):
         continue
-    newp = open(pf).read().strip()
-    oldp = os.path.join(repo, "src-recon/net/dabicco/witherstormmod/entity/model", C + ".java")
-    new = open(newp).read()
-    old = open(oldp).read()
-    mn = SIG.search(new)
-    mo = SIG.search(old)
-    if not mn or not mo:
-        report.write(f"{C}: splice skipped (signature not found new={bool(mn)} old={bool(mo)})\n")
-        continue
-    sn = method_span(new, mn)
-    so = method_span(old, mo)
-    if not sn or not so:
-        report.write(f"{C}: splice skipped (unbalanced braces)\n")
-        continue
-    body = new[sn[0]:sn[1]]
-    # merge missing imports
-    head_end = old.index("public class") if "public class" in old else old.index("class ")
-    added = []
-    for imp in re.findall(r'^import ([\w.]+);$', new, re.M):
-        simple = imp.rsplit(".", 1)[-1]
-        if simple in body and ("import " + simple) not in old and (simple + ";") not in old[:head_end]:
-            if re.search(r'\b' + re.escape(simple) + r'\b', old[:head_end]) is None:
+    try:
+        newp = open(pf).read().strip()
+        oldp = os.path.join(repo, "src-recon/net/dabicco/witherstormmod/entity/model", C + ".java")
+        new = open(newp).read()
+        old = open(oldp).read()
+        mn = SIG.search(new)
+        mo = SIG.search(old)
+        if not mn or not mo:
+            report.write(f"{C}: splice skipped (signature new={bool(mn)} old={bool(mo)})\n")
+            continue
+        sn = method_span(new, mn)
+        so = method_span(old, mo)
+        if not sn or not so:
+            report.write(f"{C}: splice skipped (unbalanced braces)\n")
+            continue
+        body = new[sn[0]:sn[1]]
+        # merge missing imports: insert after the last existing import line
+        imports_old = list(re.finditer(r'^import [\w.]+;$', old, re.M))
+        added = []
+        for imp in re.findall(r'^import ([\w.]+);$', new, re.M):
+            simple = imp.rsplit(".", 1)[-1]
+            if re.search(r'\b' + re.escape(simple) + r'\b', body) and not re.search(r'^import [\w.]*\.' + re.escape(simple) + r';$', old, re.M):
                 added.append("import " + imp + ";")
-    out = old[:so[0]] + body + old[so[1]:]
-    if added:
-        cut = out.rindex("import ", 0, out.index("public class") if "public class" in out else out.index("class "))
-        cut = out.index("\n", cut)
-        out = out[:cut + 1] + "\n".join(added) + out[cut:]
-    open(oldp, "w").write(out)
-    spliced.append(C)
-    report.write(f"{C}: createBodyLayer spliced from {os.path.basename(newp)} (+{len(added)} imports)\n")
-
-# lift compile exclusions for spliced classes
-bs = os.path.join(repo, "ci/build-source.sh")
-s = open(bs).read()
-for C in spliced:
-    s = s.replace(f" ! -name '{C}.java'", "")
-open(bs, "w").write(s)
+        added = list(dict.fromkeys(added))
+        out = old[:so[0]] + body + old[so[1]:]
+        if added and imports_old:
+            pos = imports_old[-1].end()
+            out = out[:pos] + "\n" + "\n".join(added) + out[pos:]
+        open(oldp, "w").write(out)
+        spliced.append(C)
+        bs = open(bs_path).read()
+        bs = bs.replace(f" ! -name '{C}.java'", "")
+        open(bs_path, "w").write(bs)
+        report.write(f"{C}: createBodyLayer spliced (+{len(added)} imports), exclusion lifted\n")
+    except Exception as e:
+        report.write(f"{C}: splice FAILED: {type(e).__name__}: {e}\n")
 report.write(f"spliced: {', '.join(spliced) or 'NONE'}\n")
 report.close()
 print("[recovery] spliced:", ", ".join(spliced) or "NONE")
@@ -167,7 +166,7 @@ if ! git diff --quiet -- src-recon ci/build-source.sh ci/reports 2>/dev/null; th
   git config user.email "ci@devouringstorms.local"
   git add src-recon ci/build-source.sh ci/reports
   git commit -m "Source recon: recover ${SPLICE_COUNT:-model} createBodyLayer builders at 12g heap [no-ci]" || true
-  git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:${GITHUB_REF_NAME} \
+  git push "https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:${GITHUB_REF_NAME} \
     || echo "::warning title=recovery::push failed"
 else
   echo "::notice title=recovery::nothing changed -- no splice landed"
