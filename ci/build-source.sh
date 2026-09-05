@@ -42,6 +42,18 @@ fetch "https://libraries.minecraft.net/com/mojang/datafixerupper/10.0.21/datafix
 fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" joml.jar || exit 1
 fetch "https://libraries.minecraft.net/com/mojang/brigadier/1.3.10/brigadier-1.3.10.jar" brigadier.jar || exit 1
 fetch "https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.19.3/fabric-loader-0.19.3.jar" fabric-loader.jar || exit 1
+fetch "https://libraries.minecraft.net/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar" gson.jar || exit 1
+fetch "https://libraries.minecraft.net/org/slf4j/slf4j-api/2.0.7/slf4j-api-2.0.7.jar" slf4j.jar || exit 1
+
+# modmenu: newest release from the TerraformersMC maven (API surface is stable)
+MODMENU_VER="$(curl -fsSL https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml \
+  | grep -oE '<version>[^<]*</version>' | sed 's/<[^>]*>//g' | tail -1 || true)"
+if [ -z "$MODMENU_VER" ]; then
+  echo "::error title=source-build::could not resolve a modmenu version"
+  exit 1
+fi
+echo "[deps] modmenu resolved: $MODMENU_VER"
+fetch "https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/${MODMENU_VER}/modmenu-${MODMENU_VER}.jar" modmenu.jar || exit 1
 
 # fabric-api: pick the newest build for MC 26.2 from Fabric's maven metadata
 FAPI_VER="$(curl -fsSL https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml \
@@ -76,7 +88,7 @@ while IFS=$'\t' read -r url name; do
 done < "$DL/fapi-list.txt"
 FAPI_CP="$(find "$DL/fapi" -name '*.jar' | tr '\n' ':')"
 
-CP="$DL/client.jar:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$FAPI_CP"
+CP="$DL/client.jar:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$DL/gson.jar:$DL/slf4j.jar:$DL/modmenu.jar:$FAPI_CP"
 
 # Compile-time fallback, LAST on the classpath: the single class Vineflower
 # could not recover (WitherStormDevourer.createBodyLayer -- OOM on a
