@@ -6,7 +6,7 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 
 public class ModComponents {
-   public static final DataComponentType<RetrieverContents> RETRIEVER_CONTENTS = DataComponentType.builder()
+   public static final DataComponentType<RetrieverContents> RETRIEVER_CONTENTS = DataComponentType.<RetrieverContents>builder()
       .persistent(RetrieverContents.CODEC)
       .networkSynchronized(RetrieverContents.STREAM_CODEC)
       .cacheEncoding()
