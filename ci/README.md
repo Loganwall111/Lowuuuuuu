@@ -11,24 +11,30 @@ mod. The base's other classes, resources and mixin registrations are retained.
 
 ## GitHub Actions
 
-The ready-to-install workflow is [`workflows/build-mcsm.yml`](workflows/build-mcsm.yml).
+The workflow is installed at
+[`.github/workflows/build-mcsm.yml`](../.github/workflows/build-mcsm.yml),
+with a matching template in [`workflows/build-mcsm.yml`](workflows/build-mcsm.yml).
 It compiles with Temurin JDK 25, checks the shaders and assembled classes, and
 uploads a JAR, SHA-256 checksum and build report. It does **not** publish a
 release or commit anything back to the repository.
 
-The current Arena GitHub connection rejected workflow-file pushes because it
-lacks **Workflows** permission. Reconnect GitHub in Arena with that permission,
-or install the workflow using GitHub's editor:
+**Verified build:** [run 33953179051](https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33953179051)
+succeeded on 2026-09-05: **15 fresh Java 25 classes**, 42 shader checks and
+11 build-safety tests. The checked artifact is
+[mcsm-jar-3](https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33953179051/artifacts/9965495492).
+Unzip it to get the 1.9.101 JAR, checksum and build report. Artifacts are
+retained for 30 days; rerun the workflow if an older artifact has expired.
 
-1. Copy the contents of `ci/workflows/build-mcsm.yml` on this branch.
-2. Open the [new workflow editor](https://github.com/Loganwall111/Lowuuuuuu/new/arena/01a06f0e-lowuuuuuu?filename=.github/workflows/build-mcsm.yml).
-3. Paste and commit on **arena/01a06f0e-lowuuuuuu**. That push starts the build.
-
-After it is installed, rebuild without editing files:
+Rebuild without editing files:
 
 ```bash
 gh workflow run build-mcsm.yml --repo Loganwall111/Lowuuuuuu --ref arena/01a06f0e-lowuuuuuu
 ```
+
+Normal source pushes to this branch also trigger a build. The owner installed
+the workflow through GitHub because Arena's GitHub connection could not write
+workflow files, even after reconnecting. Future workflow-file edits still need
+that permission or the owner's GitHub editor; ordinary source changes do not.
 
 Download the **mcsm-jar-…** artifact from the successful run. The original
 [linked run](https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33930633043)

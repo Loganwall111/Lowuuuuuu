@@ -1,3 +1,16 @@
+LATEST COMPILED BUILD: 1.9.101 (2026-09-05)
+=========================================
+Download the mcsm-jar-3 artifact, then extract the JAR:
+https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33953179051/artifacts/9965495492
+
+This run compiled 15 fresh Java 25 classes and verified the JAR and shaders.
+It targets Minecraft 26.2 / Fabric. See ci/README.md for build instructions.
+The 1.9.87 and 1.9.100 JARs in this folder are BASE INPUTS, not this new build.
+The new JAR and its checksum are in the GitHub artifact (30-day retention).
+In-game behavior has not been tested here.
+
+The rest of this README is the historical 1.9.87 handoff:
+
 ================================================================
  MCSM WITHER STORM  --  1.9.87-26.2-beta-mcsm
  Multi-phase fix: visibility, shadows, glare blob, sky, rim
