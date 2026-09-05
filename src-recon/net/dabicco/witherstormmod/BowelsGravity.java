@@ -54,9 +54,9 @@ public final class BowelsGravity {
    // $VF: Unable to simplify switch on enum
    // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
    public static Quaternionf frame(Direction pull, Quaternionf dest) {
-      float QUARTER = (float) (Math.PI / 2);
-
-      return switch (pull) {
+      float QUARTER = ((float)Math.PI / 2F);
+      Quaternionf var10000;
+      switch (pull) {
          case DOWN -> var10000 = dest.identity();
          case UP -> var10000 = dest.rotationZ((float)Math.PI);
          case EAST -> var10000 = dest.rotationZ(((float)Math.PI / 2F));
@@ -65,6 +65,8 @@ public final class BowelsGravity {
          case SOUTH -> var10000 = dest.rotationX((-(float)Math.PI / 2F));
          default -> throw new MatchException((String)null, (Throwable)null);
       }
+
+      return var10000;
    }
 
    public static void tick(ServerLevel level) {
