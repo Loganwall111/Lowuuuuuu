@@ -1,0 +1,479 @@
+
+### net/dabicco/witherstormmod/BowelsEndRoom.class
+    teleportTo
+
+### net/dabicco/witherstormmod/BowelsGravity.class
+    getOwner
+    structured
+
+### net/dabicco/witherstormmod/BowelsPortal.class
+    getOwner
+    teleportTo
+
+### net/dabicco/witherstormmod/DabyWitherStormMod.class
+    8net/dabicco/witherstormmod/network/SpawnStructurePayload
+    3net/dabicco/witherstormmod/structures/McsmGuidebook
+    2net/dabicco/witherstormmod/structures/McsmWorldgen
+    1net/dabicco/witherstormmod/structures/McsmCommand
+
+### net/dabicco/witherstormmod/DabyWitherStormModClient.class
+    8net/dabicco/witherstormmod/network/SpawnStructurePayload
+    P(Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;)Ljava/lang/Runnable;
+    (Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;Lnet/fabricmc/fabric/api/client/networking/v1/ClientPlayNetworking$Context;)V
+    :Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;
+    =(Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;)V
+
+### net/dabicco/witherstormmod/StormSpawnPlatform.class
+    getStructureManager
+    X()Lnet/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplateManager;
+    STRUCTURE
+    Tnet/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplateManager
+    Mnet/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate
+    Rnet/minecraft/world/level/levelgen/structure/templatesystem/StructurePlaceSettings
+    (Lnet/minecraft/world/level/ServerLevelAccessor;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/levelgen/structure/templatesystem/StructurePlaceSettings;Lnet/minec
+    4[storm platform] structure {} not found; not placing
+    OLnet/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate;
+    TLnet/minecraft/world/level/levelgen/structure/templatesystem/StructurePlaceSettings;
+    k(Lnet/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate;)Lnet/minecraft/core/Vec3i;
+
+### net/dabicco/witherstormmod/block/SuperTntBlock.class
+    getOwner
+
+### net/dabicco/witherstormmod/bowels/BowelsMawEntity.class
+    devour
+
+### net/dabicco/witherstormmod/bowels/SeveredTentacleEntity.class
+    devour
+
+### net/dabicco/witherstormmod/client/DistantStormRenderer.class
+    devourer
+    setDevourerTint
+
+### net/dabicco/witherstormmod/client/PreviewScene.class
+     textures/sky/mcsm_cosmic_sky.png
+    MCSM Day
+    MCSM Sunset
+    MCSM Night
+
+### net/dabicco/witherstormmod/client/StormAtmosphereOverlay.class
+    lTHE DEVOURER
+
+### net/dabicco/witherstormmod/client/StormBloom.class
+    status
+    lastStatus
+
+### net/dabicco/witherstormmod/client/StormCloudDeck.class
+    textures/misc/mcsm_cloud.png
+
+### net/dabicco/witherstormmod/client/StormDebris.class
+    devourerDebrisGlow
+    devourer
+
+### net/dabicco/witherstormmod/client/StormMusic$Cue.class
+    DEVOURER
+
+### net/dabicco/witherstormmod/client/StormMusic.class
+    DEVOURER
+    devourerPick
+
+### net/dabicco/witherstormmod/client/StormShadow.class
+    status
+
+### net/dabicco/witherstormmod/client/StormShadowMap.class
+    lastStatus
+    status
+
+### net/dabicco/witherstormmod/client/StormSkins.class
+    DEVOURER_OG
+    DEVOURER_CLASSIC
+    #textures/entity/devourer_assets.png
+    &textures/entity/devourer_assets_og.png
+    devourer
+
+### net/dabicco/witherstormmod/client/TentacleMeasure.class
+    lastStatus
+    status
+
+### net/dabicco/witherstormmod/client/gui/StormModelPreview.class
+    devourer
+
+### net/dabicco/witherstormmod/client/gui/WitherStormConfigScreen.class
+    statusText
+    statusColor
+    setStatus
+    Story-Mode Towns
+    townNpcPopulation
+    Death & Berserk
+    berserk
+    berserkHealth
+    berserkSlamInterval
+    A whole look in one setting. MCSM is the default. Legacy Java is the older, brighter look. Changing anything a preset covers drops you to Custom.
+    devourerDebrisGlow
+    Devourer Debris Glow
+    MCSM Cloud Deck
+    @Pick MCSM or Legacy Java first. Custom is just your own settings
+
+### net/dabicco/witherstormmod/command/DabyWSCommand.class
+    ?The spawn_tower structure isn't loaded, so its size is unknown.
+    :Couldn't place it: the spawn_tower structure wasn't found.
+    status
+    ": tentacle devour swoop initiated!
+    6net/dabicco/witherstormmod/structures/StructureBuilder
+    endertown
+    townNpcPopulation
+    structureRaid
+    teleportTo
+    stormStatus
+    towerStatus
+    &Click to put the teleport in your chat
+    movementStatus
+    lambda$movementStatus$0
+    lambda$stormStatus$0
+    lambda$towerStatus$1
+    lambda$towerStatus$0
+     (beacon | house | portal | church | town | endertown | temple | redstonia | boomtown | endercon | bunker | shrine | island | sky_fortress | farlands | ivor_lab | storm_nest | vault)
+
+### net/dabicco/witherstormmod/config/DabyWSClientConfig.class
+    wipedByRestructure
+    devourerDebrisGlow
+    MCSM OG Visuals
+    Obsidian Gloss is the OG MCSM skin: shiny near-black flesh with a purple sheen, and the command block belly redrawn as obsidian-purple tiles instead of vanilla orange. Classic keeps the plain textures
+    `Biome-tinted storm fog: the storm's purple fog takes on the colour of the biome it is devouring.
+    jLight the body from behind and below, the way MCSM does, so the faces turned toward you are the dark ones.
+    ~Past this much error the smoothing steps aside and the body simply arrives. Meant for teleports and respawns, not for turning.
+    consumeRestructureNotice
+
+### net/dabicco/witherstormmod/config/WitherStormWorldConfig.class
+    structureRaid
+    structureRaidInterval
+    structureRaidRadius
+    structureTearClusters
+    townNpcPopulation
+    berserk
+    berserkHealth
+    berserkSlamInterval
+    Structures
+    How the storm chooses where to go: Ultimate (fixed target), Natural (decides for itself), Nearest player, Group, or Structures (tours built structures and levels them)
+    While the storm is touring built structures (Structures targeting), it actively levels them, caving chunks out of the target as it dwells
+    &Ticks between structure-raid caved-ins
+    &Radius of each structure-raid caved-in
+    Chunks ripped out of a raided structure as flying clusters per raid - the building visibly breaks open and its pieces fly up to the storm
+    6Named Story Mode villagers placed when building a town
+    When the Devourer is wounded below a health threshold it flies into a rage, slamming its tentacles far more often (the desperate final act)
+    ;Health fraction (0-1) below which the Devourer goes berserk
+    ,Tentacle slam interval in ticks once berserk
+    dHurry the Devourer from phase 6 to 6.1, where its second head comes in, then return to normal growth
+    nAt phase 6.1, once the Devourer has grown its second head, endermen gather in front of it and it turns on them
+    bThe storm actively tears houses, village structures, and roofs apart into floating debris clusters
+    ;Overall health multiplier for the Wither Storm and Devourer
+
+### net/dabicco/witherstormmod/entity/BlackHoleEntity.class
+    devourAndKill
+    teleport
+    teleportTo
+    onDevour
+
+### net/dabicco/witherstormmod/entity/CrossDimensionalEntity.class
+    teleportTo
+
+### net/dabicco/witherstormmod/entity/GrappledTntEntity.class
+    getOwnerId
+
+### net/dabicco/witherstormmod/entity/SeveredWitherStormEntity.class
+    isDevourer
+    isDevourerForm
+
+### net/dabicco/witherstormmod/entity/StormHeadHost.class
+    isDevourerForm
+
+### net/dabicco/witherstormmod/entity/StoryNpcSpawner.class
+    STRUCTURE
+
+### net/dabicco/witherstormmod/entity/WitherStormEntity.class
+    devourerHeadsReturnTick
+    structureTarget
+    structureArrived
+    structureDistracted
+    structureDwell
+    structureSearchAt
+    structuresVisited
+    clusterPopulationFull
+    isDevourerForm
+    isDevourer
+    lastCarveStatus
+    berserk
+    berserkHealth
+    berserkSlamInterval
+    structureRaid
+    structureRaidInterval
+    structureRaidRadius
+    structureTearClusters
+    raidStructureTick
+    structureGoal
+    findNextStructure
+    STRUCTURE
+    findNearestMapStructure
+    DEVOURER_HEAD_RETURN_GAP
+    DEVOURER_HEADS_RETURN
+    DEVOURER_SETTLE_PHASE
+    DEVOURER_HEAD_BACK
+    DEVOURER_HEAD_UP
+    MAX_DEVOURER_PHASE
+    DEVOURER_PHASE
+    STRUCTURE_SEARCH_CHUNKS
+    STRUCTURE_ARRIVE
+    STRUCTURE_DWELL_TICKS
+    STRUCTURE_SEARCH_INTERVAL
+    STRUCTURE_DISTRACT_RANGE
+    ULnet/minecraft/tags/TagKey<Lnet/minecraft/world/level/levelgen/structure/Structure;>;
+    STRUCTURE_PROBE_OFFSET
+    carveStatus
+    devourer
+    ^Lnet/minecraft/core/HolderSet$Named<Lnet/minecraft/world/level/levelgen/structure/Structure;>;
+    _Lnet/minecraft/core/HolderSet$Direct<Lnet/minecraft/world/level/levelgen/structure/Structure;>;
+    WLnet/minecraft/core/Registry<Lnet/minecraft/world/level/levelgen/structure/Structure;>;
+    tLjava/util/Optional<Lnet/minecraft/core/HolderSet$Named<Lnet/minecraft/world/level/levelgen/structure/Structure;>;>;
+    gLjava/util/List<Lnet/minecraft/core/Holder<Lnet/minecraft/world/level/levelgen/structure/Structure;>;>;
+    XLnet/minecraft/core/HolderSet<Lnet/minecraft/world/level/levelgen/structure/Structure;>;
+    Lcom/mojang/datafixers/util/Pair<Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Holder<Lnet/minecraft/world/level/levelgen/structure/Structure;>;>;
+    (Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/HolderSet<Lnet/minecraft/world/level/levelgen/structure/Structure;>;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/core/BlockPos;
+
+### net/dabicco/witherstormmod/entity/WitherStormHeadEntity.class
+    setOwner
+
+### net/dabicco/witherstormmod/entity/model/ModEntityModelLayers.class
+    WITHER_STORM_DEVOURER
+    WITHER_STORM_TENTACLES_DEVOURER
+    wither_storm_devourer
+    wither_storm_tentacles_devourer
+    ;net/dabicco/witherstormmod/entity/model/WitherStormDevourer
+    Dnet/dabicco/witherstormmod/entity/model/WitherStormTentaclesDevourer
+
+### net/dabicco/witherstormmod/entity/model/WitherStormDevourer.class
+    ;net/dabicco/witherstormmod/entity/model/WitherStormDevourer
+    witherstorm_devour
+    =Lnet/dabicco/witherstormmod/entity/model/WitherStormDevourer;
+    WitherStormDevourer.java
+
+### net/dabicco/witherstormmod/entity/model/WitherStormTentaclesDevourer.class
+    Dnet/dabicco/witherstormmod/entity/model/WitherStormTentaclesDevourer
+    witherstorm_devour
+    FLnet/dabicco/witherstormmod/entity/model/WitherStormTentaclesDevourer;
+    !WitherStormTentaclesDevourer.java
+
+### net/dabicco/witherstormmod/entity/renderer/GrappledTntRenderer.class
+    getOwnerId
+
+### net/dabicco/witherstormmod/entity/renderer/PreviewHeads.class
+    devourer
+
+### net/dabicco/witherstormmod/entity/renderer/SeveredWitherStormRenderer.class
+    devourer
+
+### net/dabicco/witherstormmod/entity/renderer/WitherStormHeadRenderer.class
+    devourerTint
+    devourerShift
+    isDevourerForm
+    devourer
+    setDevourerTint
+
+### net/dabicco/witherstormmod/entity/renderer/WitherStormRenderer.class
+    ;net/dabicco/witherstormmod/entity/model/WitherStormDevourer
+    WITHER_STORM_DEVOURER
+    devourerModel
+    =Lnet/dabicco/witherstormmod/entity/model/WitherStormDevourer;
+    Dnet/dabicco/witherstormmod/entity/model/WitherStormTentaclesDevourer
+    WITHER_STORM_TENTACLES_DEVOURER
+    devourerTentaclesModel
+    FLnet/dabicco/witherstormmod/entity/model/WitherStormTentaclesDevourer;
+    devourerShadowModel
+    devourerTentaclesShadowModel
+    isDevourer
+    devourer
+
+### net/dabicco/witherstormmod/entity/state/WitherStormHeadRenderState.class
+    devourer
+
+### net/dabicco/witherstormmod/entity/state/WitherStormRenderState.class
+    devourer
+
+### net/dabicco/witherstormmod/entity/withered/WitheredBlockEntity.class
+    getOwnerId
+    setOwnerId
+
+### net/dabicco/witherstormmod/entity/withered/WitheredMobs.class
+    setOwnerId
+    setOwner
+    getOwner
+
+### net/dabicco/witherstormmod/item/RocketRetrieverItem.class
+    boomtown
+
+### net/dabicco/witherstormmod/mixin/AbstractArrowMixin.class
+    getOwner
+    .setOwner(Lnet/minecraft/world/entity/Entity;)V
+
+### net/dabicco/witherstormmod/mixin/McsmFogCarrierMixin.class
+    4net/dabicco/witherstormmod/mixin/McsmFogCarrierMixin
+
+### net/dabicco/witherstormmod/mixin/StoryModeTitleScreenMixin.class
+     All Phases + Devourer
+
+### net/dabicco/witherstormmod/mixin/TitleScreenConfigNoticeMixin.class
+    consumeRestructureNotice
+
+### net/dabicco/witherstormmod/network/SpawnStructurePayload.class
+    8net/dabicco/witherstormmod/network/SpawnStructurePayload
+    N(Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;)Ljava/lang/String;
+    =(Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;)I
+    O(Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;Ljava/lang/Object;)Z
+    spawn_structure
+    Lnet/minecraft/network/protocol/common/custom/CustomPacketPayload$Type<Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;>;
+    Lnet/minecraft/network/codec/StreamCodec<Lnet/minecraft/network/RegistryFriendlyByteBuf;Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;>;
+    :Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;
+    k(Lnet/minecraft/network/RegistryFriendlyByteBuf;)Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;
+    l(Lnet/minecraft/network/RegistryFriendlyByteBuf;Lnet/dabicco/witherstormmod/network/SpawnStructurePayload;)V
+    SpawnStructurePayload.java
+
+### net/dabicco/witherstormmod/structures/LegacyBlocks.class
+    structure_void
+    structure_block
+    2net/dabicco/witherstormmod/structures/LegacyBlocks
+    4Lnet/dabicco/witherstormmod/structures/LegacyBlocks;
+
+### net/dabicco/witherstormmod/structures/McsmCommand.class
+    2net/dabicco/witherstormmod/structures/McsmWorldgen
+    7net/dabicco/witherstormmod/structures/McsmWorldgen$Site
+    1net/dabicco/witherstormmod/structures/McsmCommand
+    M(Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;)Ljava/lang/String;
+    status
+    ](Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;)Ljava/util/function/UnaryOperator;
+    3net/dabicco/witherstormmod/structures/McsmSchematic
+    (Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/lang/String;)Lnet/dabicco/witherstormmod/structures/McsmSchematic;
+    g(Lnet/dabicco/witherstormmod/structures/McsmSchematic;Lnet/minecraft/core/BlockPos;Ljava/lang/String;)V
+    !/mcsm tp must be run by a player.
+    teleportTo
+    X(Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;)Ljava/util/function/Supplier;
+    &Click to put the teleport in your chat
+    3Lnet/dabicco/witherstormmod/structures/McsmCommand;
+    9Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;
+    5Lnet/dabicco/witherstormmod/structures/McsmSchematic;
+    queued
+    KLjava/util/List<Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;>;
+    a(Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;)Lnet/minecraft/network/chat/Component;
+    lambda$status$0
+    (Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;Lnet/minecraft/network/chat/Style;)Lnet/minecraft/network/chat/Style;
+    'No location called '
+    '. Try /mcsm list.
+    Teleported to 
+    UQueued 
+     location(s). They build over the next few minutes 
+     /mcsm status to check.
+     queued build(s).
+     location(s) still building.
+
+### net/dabicco/witherstormmod/structures/McsmGuidebook.class
+    3net/dabicco/witherstormmod/structures/McsmGuidebook
+    BEACON TOWN
+    /mcsm list
+    /mcsm build all
+    /mcsm status
+    /mcsm tp sky_city
+    /mcsm tp sky_speakeasy
+    /mcsm tp jungle_fortress
+    /mcsm tp mushroom_island
+    [ Teleport there ]
+    5Lnet/dabicco/witherstormmod/structures/McsmGuidebook;
+
+### net/dabicco/witherstormmod/structures/McsmSchematic.class
+    3net/dabicco/witherstormmod/structures/McsmSchematic
+    L(Ljava/io/InputStream;)Lnet/dabicco/witherstormmod/structures/McsmSchematic;
+    #schematic missing Blocks/dimensions
+    5Lnet/dabicco/witherstormmod/structures/McsmSchematic;
+    (Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/lang/String;)Lnet/dabicco/witherstormmod/structures/McsmSchematic;
+    McsmSchematic.java
+    &assets/dabywitherstormmod/schematics/
+    schematics/
+    schematic not found: 
+
+### net/dabicco/witherstormmod/structures/McsmWorldgen$Job.class
+    6net/dabicco/witherstormmod/structures/McsmWorldgen$Job
+    5Lnet/dabicco/witherstormmod/structures/McsmSchematic;
+    3net/dabicco/witherstormmod/structures/McsmSchematic
+    g(Lnet/dabicco/witherstormmod/structures/McsmSchematic;Lnet/minecraft/core/BlockPos;Ljava/lang/String;)V
+    8Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Job;
+    2net/dabicco/witherstormmod/structures/McsmWorldgen
+
+### net/dabicco/witherstormmod/structures/McsmWorldgen$Site.class
+    7net/dabicco/witherstormmod/structures/McsmWorldgen$Site
+    M(Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;)Ljava/lang/String;
+    <(Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;)I
+    N(Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;Ljava/lang/Object;)Z
+    9Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;
+    2net/dabicco/witherstormmod/structures/McsmWorldgen
+
+### net/dabicco/witherstormmod/structures/McsmWorldgen.class
+    MC201/adv_beaconTown.schematic
+    Beacon Town
+    2net/dabicco/witherstormmod/structures/McsmWorldgen
+    'MC201/adv_beaconTownOutskirts.schematic
+    Beacon Town Outskirts
+    %MC201/adv_beaconTownMapShop.schematic
+    Beacon Town Map Shop
+    MC101/adv_townFair.schematic
+    EnderCon Town Fair
+    MC101/adv_templeHub.schematic
+    %MC101/adv_templeHubInterior.schematic
+    MC105/adv_skylandTown.schematic
+    $MC105/adv_skylandSpeakeasy.schematic
+    "MC105/adv_jungleFortress.schematic
+    5Additional/faceEast_adv_mushroomIsland_204B.schematic
+    MC101/adv_wilderness.schematic
+    'MC101/adv_wildernessTreehouse.schematic
+    #MC101/adv_wildernessTower.schematic
+    $MC101/adv_wildernessRavine.schematic
+    MC101/adv_forestStage.schematic
+    "MC102/adv_ellieCourtyard.schematic
+    $MC102/adv_magnusCourtyardA.schematic
+    "MC102/adv_sorenCourtyard.schematic
+    !MC102/adv_sorenInterior.schematic
+     MC103/adv_sorenGrinder.schematic
+    #MC103/adv_sorenPortalRoom.schematic
+    (MC104/adv_farlandsMazeExterior.schematic
+    !MC104/adv_farlandsSwamp.schematic
+    +MC104/adv_farlandsCottageBasement.schematic
+    !MC106/adv_creepyMansion.schematic
+     MC107/adv_badlandsMaze.schematic
+     MC108/adv_snowyVillage.schematic
+    MC201/adv_rivalTown.schematic
+    MC201/adv_seaTemple.schematic
+    &MC202/adv_wonderlandExterior.schematic
+    MC203/adv_prisonMaze.schematic
+    %MC205/adv_beaconTownTwisted.schematic
+    Beacon Town (Twisted)
+    )MC205/adv_terminalControlCenter.schematic
+    "MC101/adv_theNetherTrain.schematic
+    1MC101/_NetherParts/adv_theNetherStation.schematic
+    7net/dabicco/witherstormmod/structures/McsmWorldgen$Site
+    6net/dabicco/witherstormmod/structures/McsmWorldgen$Job
+    g(Lnet/dabicco/witherstormmod/structures/McsmSchematic;Lnet/minecraft/core/BlockPos;Ljava/lang/String;)V
+    d(Lnet/minecraft/server/level/ServerLevel;Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Job;I)I
+    5Lnet/dabicco/witherstormmod/structures/McsmSchematic;
+    3net/dabicco/witherstormmod/structures/McsmSchematic
+    2net/dabicco/witherstormmod/structures/LegacyBlocks
+    KLjava/util/Deque<Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Job;>;
+    4Lnet/dabicco/witherstormmod/structures/McsmWorldgen;
+    KLjava/util/List<Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;>;
+    M()Ljava/util/List<Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;>;
+    v(Ljava/util/List<Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Site;>;Ljava/lang/String;IIILjava/lang/String;Z)V
+    8Lnet/dabicco/witherstormmod/structures/McsmWorldgen$Job;
+
+### net/dabicco/witherstormmod/structures/StructureBuilder.class
+    endertown
+    boomtown
+    boom_town
+    6net/dabicco/witherstormmod/structures/StructureBuilder
+    8Lnet/dabicco/witherstormmod/structures/StructureBuilder;
+    StructureBuilder.java
+
+[scanstrings] 60 classes with keyword strings

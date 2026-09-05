@@ -1,0 +1,472 @@
+===== net.dabicco.witherstormmod.bowels.BowelsPlacedBlocks =====
+Compiled from "BowelsPlacedBlocks.java"
+public final class net.dabicco.witherstormmod.bowels.BowelsPlacedBlocks {
+  private static final int REMEMBERED;
+  private static final java.util.Set<net.minecraft.core.BlockPos> placed;
+  private net.dabicco.witherstormmod.bowels.BowelsPlacedBlocks();
+  public static void remember(net.minecraft.world.level.Level, net.minecraft.core.BlockPos);
+  public static void forget(net.minecraft.core.BlockPos);
+  public static net.minecraft.core.BlockPos anyIn(net.minecraft.server.level.ServerLevel, net.dabicco.witherstormmod.bowels.BowelsMawEntity);
+  static {};
+}
+===== net.dabicco.witherstormmod.client.ClientConfigCommandHandler =====
+Compiled from "ClientConfigCommandHandler.java"
+public class net.dabicco.witherstormmod.client.ClientConfigCommandHandler {
+  public net.dabicco.witherstormmod.client.ClientConfigCommandHandler();
+  public static void handle(net.minecraft.client.Minecraft, net.dabicco.witherstormmod.config.ClientConfigCommandPayload);
+  private static java.lang.String format(net.dabicco.witherstormmod.config.DabyWSClientConfig$Key, double);
+}
+===== net.dabicco.witherstormmod.client.CommandBlockPowerSound =====
+Compiled from "CommandBlockPowerSound.java"
+public class net.dabicco.witherstormmod.client.CommandBlockPowerSound extends net.minecraft.client.resources.sounds.AbstractTickableSoundInstance {
+  private static final int HOLD_TICKS;
+  private static final int FADE_TICKS;
+  private int age;
+  public net.dabicco.witherstormmod.client.CommandBlockPowerSound(double, double, double);
+  public void tick();
+}
+===== net.dabicco.witherstormmod.client.StoryModeClouds =====
+Compiled from "StoryModeClouds.java"
+public final class net.dabicco.witherstormmod.client.StoryModeClouds {
+  private static final float[] CLOUD_DAY;
+  private static final float[] CLOUD_SUNSET;
+  private static final float[] CLOUD_NIGHT;
+  private static final float[] CLOUD_DAWN;
+  private net.dabicco.witherstormmod.client.StoryModeClouds();
+  private static void mix(float[], float[], float[], float);
+  private static float ease(float);
+  public static void timeOfDayColor(long, float[]);
+  public static int tint(int);
+  static {};
+}
+===== net.dabicco.witherstormmod.client.StoryModeSkyTint =====
+Compiled from "StoryModeSkyTint.java"
+public final class net.dabicco.witherstormmod.client.StoryModeSkyTint {
+  private static final float[] SKY_DAY;
+  private static final float[] SKY_NIGHT;
+  private static final float[] SKY_DUSK;
+  private static final float[] SKY_DAWN;
+  private static final float[] LIGHT_DAY;
+  private static final float[] LIGHT_NIGHT;
+  private static final float[] LIGHT_DUSK;
+  private static final float[] LIGHT_DAWN;
+  private static final float[] HORIZON_DAY;
+  private static final float[] HORIZON_DUSK;
+  private static final float[] HORIZON_NIGHT;
+  private static final float[] HORIZON_DAWN;
+  private net.dabicco.witherstormmod.client.StoryModeSkyTint();
+  private static void mix(float[], float[], float[], float);
+  private static float ease(float);
+  private static void byTime(long, float[], float[], float[], float[], float[]);
+  public static void skyColor(long, float[]);
+  public static void lightColor(long, float[]);
+  public static void horizonColor(long, float[]);
+  public static void blockLightColor(float[]);
+  public static float fogStrength();
+  public static float strength();
+  public static float lightStrength();
+  static {};
+}
+===== net.dabicco.witherstormmod.command.DabyWSCommand =====
+Compiled from "DabyWSCommand.java"
+public class net.dabicco.witherstormmod.command.DabyWSCommand {
+  private static final com.mojang.brigadier.suggestion.SuggestionProvider<net.minecraft.commands.CommandSourceStack> SERVER_KEYS;
+  private static final com.mojang.brigadier.suggestion.SuggestionProvider<net.minecraft.commands.CommandSourceStack> CLIENT_KEYS;
+  private static final java.util.List<net.dabicco.witherstormmod.command.DabyWSCommand$PendingSpawn> PENDING;
+  private static final com.mojang.brigadier.suggestion.SuggestionProvider<net.minecraft.commands.CommandSourceStack> TARGETING_MODES;
+  public net.dabicco.witherstormmod.command.DabyWSCommand();
+  private static int mawReadout(net.minecraft.commands.CommandSourceStack);
+  private static int locateTower(net.minecraft.commands.CommandSourceStack);
+  private static int towerStatus(net.minecraft.commands.CommandSourceStack);
+  private static int towerMark(net.minecraft.commands.CommandSourceStack) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int towerPlace(net.minecraft.commands.CommandSourceStack) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  public static void register(com.mojang.brigadier.CommandDispatcher<net.minecraft.commands.CommandSourceStack>);
+  public static void registerTick();
+  private static void doSpawnBlackHole(net.minecraft.server.level.ServerLevel, net.minecraft.world.phys.Vec3, net.minecraft.commands.CommandSourceStack);
+  private static int spawnBlackHoleCountdown(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static int spawnBlackHoleNow(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static int getBlackHoleMass(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static int spawnWitherStorm(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static int setPhase(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, float);
+  private static int setPhaseSelected(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, float) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int growStorms(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, int) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int slamStorms(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int roarStorms(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int snatchStorms(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, boolean) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int stormStatus(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int consumeStorms(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, int) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int healStorms(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, float) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int killStorms(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int spawnStormAtPhase(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, float);
+  private static int stormBuild(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, java.lang.String);
+  private static int stormPreset(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, java.lang.String);
+  private static void registerExtra(com.mojang.brigadier.CommandDispatcher<net.minecraft.commands.CommandSourceStack>);
+  private static java.util.List<net.dabicco.witherstormmod.entity.WitherStormEntity> getStorms(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static java.lang.String stormLabel(net.dabicco.witherstormmod.entity.WitherStormEntity);
+  private static int targetingGet(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static int targetingSet(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static java.lang.String targetName(net.minecraft.commands.CommandSourceStack, java.util.UUID);
+  private static int movementTargetGet(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int movementTargetSet(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int movementTargetClear(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int movementTargetReroll(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int movementSetChasing(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, boolean) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int movementDistract(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int movementStatus(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int testPortalProbe(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static int testBowelsAdvance(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static int testNetherScale(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static int bowelsEnter(net.minecraft.commands.CommandSourceStack, java.util.Collection<? extends net.minecraft.world.entity.Entity>);
+  private static boolean mayEditServerConfig(net.minecraft.commands.CommandSourceStack);
+  private static java.lang.String formatValue(net.dabicco.witherstormmod.config.WitherStormWorldConfig$Key, double);
+  private static int listServerConfig(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static int getServerConfig(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, java.lang.String);
+  private static int setServerConfig(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, java.lang.String, double);
+  private static int clientConfigAction(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>, int, java.lang.String, double);
+  private static int openConfigGui(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack>);
+  private static net.minecraft.network.chat.Component lambda$setServerConfig$0(java.lang.String, net.dabicco.witherstormmod.config.WitherStormWorldConfig$Key, double, java.lang.String);
+  private static net.minecraft.network.chat.Component lambda$getServerConfig$0(java.lang.String, net.dabicco.witherstormmod.config.WitherStormWorldConfig$Key, double);
+  private static net.minecraft.network.chat.Component lambda$listServerConfig$1(net.dabicco.witherstormmod.config.WitherStormWorldConfig$Key, net.dabicco.witherstormmod.config.WitherStormWorldConfig);
+  private static net.minecraft.network.chat.Component lambda$listServerConfig$0();
+  private static net.minecraft.network.chat.Component lambda$bowelsEnter$0(int);
+  private static net.minecraft.network.chat.Component lambda$testNetherScale$1();
+  private static net.minecraft.network.chat.Component lambda$testNetherScale$0();
+  private static net.minecraft.network.chat.Component lambda$testBowelsAdvance$0(int, int);
+  private static net.minecraft.network.chat.Component lambda$testPortalProbe$0(net.minecraft.core.BlockPos);
+  private static net.minecraft.network.chat.Component lambda$movementStatus$0(java.lang.StringBuilder);
+  private static net.minecraft.network.chat.Component lambda$movementDistract$0(net.dabicco.witherstormmod.entity.WitherStormEntity);
+  private static net.minecraft.network.chat.Component lambda$movementSetChasing$0(net.dabicco.witherstormmod.entity.WitherStormEntity, boolean);
+  private static net.minecraft.network.chat.Component lambda$movementTargetReroll$0(net.dabicco.witherstormmod.entity.WitherStormEntity, java.lang.String);
+  private static net.minecraft.network.chat.Component lambda$movementTargetClear$0(net.dabicco.witherstormmod.entity.WitherStormEntity);
+  private static net.minecraft.network.chat.Component lambda$movementTargetSet$0(net.dabicco.witherstormmod.entity.WitherStormEntity, net.minecraft.server.level.ServerPlayer);
+  private static net.minecraft.network.chat.Component lambda$movementTargetGet$0(net.dabicco.witherstormmod.entity.WitherStormEntity, java.lang.String, java.lang.String);
+  private static net.minecraft.network.chat.Component lambda$targetingSet$0(java.lang.String);
+  private static net.minecraft.network.chat.Component lambda$targetingGet$0(java.lang.String);
+  private static int lambda$registerExtra$13(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$12(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$11(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$10(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$9(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$8(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$7(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$6(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$5(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$4(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$3(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$2(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$1(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$registerExtra$0(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static net.minecraft.network.chat.Component lambda$stormPreset$0(java.lang.String);
+  private static net.minecraft.network.chat.Component lambda$stormBuild$0(java.lang.String, int);
+  private static net.minecraft.network.chat.Component lambda$spawnStormAtPhase$0(float);
+  private static net.minecraft.network.chat.Component lambda$killStorms$0(net.dabicco.witherstormmod.entity.WitherStormEntity);
+  private static net.minecraft.network.chat.Component lambda$healStorms$0(net.dabicco.witherstormmod.entity.WitherStormEntity, float);
+  private static net.minecraft.network.chat.Component lambda$consumeStorms$0(net.dabicco.witherstormmod.entity.WitherStormEntity, int);
+  private static net.minecraft.network.chat.Component lambda$stormStatus$0(java.lang.String, net.dabicco.witherstormmod.entity.WitherStormEntity);
+  private static net.minecraft.network.chat.Component lambda$snatchStorms$0(java.lang.String, java.lang.String);
+  private static net.minecraft.network.chat.Component lambda$roarStorms$0(net.dabicco.witherstormmod.entity.WitherStormEntity);
+  private static net.minecraft.network.chat.Component lambda$slamStorms$0(net.dabicco.witherstormmod.entity.WitherStormEntity);
+  private static net.minecraft.network.chat.Component lambda$growStorms$0(net.dabicco.witherstormmod.entity.WitherStormEntity, int);
+  private static net.minecraft.network.chat.Component lambda$setPhaseSelected$0(net.dabicco.witherstormmod.entity.WitherStormEntity, float);
+  private static net.minecraft.network.chat.Component lambda$setPhase$0(float);
+  private static net.minecraft.network.chat.Component lambda$spawnWitherStorm$0(net.minecraft.world.phys.Vec3);
+  private static net.minecraft.network.chat.Component lambda$getBlackHoleMass$0(net.dabicco.witherstormmod.entity.BlackHoleEntity);
+  private static net.minecraft.network.chat.Component lambda$spawnBlackHoleCountdown$0();
+  private static net.minecraft.network.chat.Component lambda$doSpawnBlackHole$0(net.minecraft.world.phys.Vec3);
+  private static void lambda$registerTick$0(net.minecraft.server.MinecraftServer);
+  private static net.minecraft.network.chat.Component lambda$registerTick$1(int);
+  private static int lambda$register$19(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$18(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$17(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$16(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$15(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$14(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$13(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$12(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$11(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$10(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$9(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$8(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$7(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$6(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$5(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$4(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$3(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$2(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$1(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$0(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static net.minecraft.network.chat.Component lambda$towerPlace$0();
+  private static net.minecraft.network.chat.Component lambda$towerMark$0();
+  private static net.minecraft.network.chat.Component lambda$towerStatus$1(net.minecraft.world.phys.AABB);
+  private static net.minecraft.network.chat.Component lambda$towerStatus$0();
+  private static net.minecraft.network.chat.Component lambda$locateTower$0(java.lang.String, int);
+  private static net.minecraft.network.chat.Style lambda$locateTower$1(java.lang.String, net.minecraft.network.chat.Style);
+  private static net.minecraft.network.chat.Component lambda$mawReadout$2(java.lang.String);
+  private static net.minecraft.network.chat.Component lambda$mawReadout$1(net.minecraft.world.phys.Vec3);
+  private static net.minecraft.network.chat.Component lambda$mawReadout$0();
+  private static java.util.concurrent.CompletableFuture lambda$static$2(com.mojang.brigadier.context.CommandContext, com.mojang.brigadier.suggestion.SuggestionsBuilder) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static java.lang.String lambda$static$3(java.lang.String);
+  private static java.util.concurrent.CompletableFuture lambda$static$1(com.mojang.brigadier.context.CommandContext, com.mojang.brigadier.suggestion.SuggestionsBuilder) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static java.util.concurrent.CompletableFuture lambda$static$0(com.mojang.brigadier.context.CommandContext, com.mojang.brigadier.suggestion.SuggestionsBuilder) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  static {};
+}
+===== net.dabicco.witherstormmod.config.ClientConfigCommandPayload =====
+Compiled from "ClientConfigCommandPayload.java"
+public final class net.dabicco.witherstormmod.config.ClientConfigCommandPayload extends java.lang.Record implements net.minecraft.network.protocol.common.custom.CustomPacketPayload {
+  private final int mode;
+  private final java.lang.String key;
+  private final double value;
+  public static final int MODE_GET;
+  public static final int MODE_SET;
+  public static final int MODE_LIST;
+  public static final int MODE_OPEN_GUI;
+  public static final net.minecraft.network.protocol.common.custom.CustomPacketPayload$Type<net.dabicco.witherstormmod.config.ClientConfigCommandPayload> TYPE;
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, net.dabicco.witherstormmod.config.ClientConfigCommandPayload> CODEC;
+  public net.dabicco.witherstormmod.config.ClientConfigCommandPayload(int, java.lang.String, double);
+  public net.minecraft.network.protocol.common.custom.CustomPacketPayload$Type<? extends net.minecraft.network.protocol.common.custom.CustomPacketPayload> type();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public int mode();
+  public java.lang.String key();
+  public double value();
+  private static net.dabicco.witherstormmod.config.ClientConfigCommandPayload lambda$static$1(net.minecraft.network.RegistryFriendlyByteBuf);
+  private static void lambda$static$0(net.minecraft.network.RegistryFriendlyByteBuf, net.dabicco.witherstormmod.config.ClientConfigCommandPayload);
+  static {};
+}
+===== net.dabicco.witherstormmod.entity.StoryNpcSpawner =====
+Compiled from "StoryNpcSpawner.java"
+public final class net.dabicco.witherstormmod.entity.StoryNpcSpawner {
+  private static final java.lang.String[] NAMES;
+  private net.dabicco.witherstormmod.entity.StoryNpcSpawner();
+  public static int populate(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, int);
+  static {};
+}
+===== net.dabicco.witherstormmod.entity.animation.WitherCommandBlockAnim =====
+Compiled from "WitherCommandBlockAnim.java"
+public class net.dabicco.witherstormmod.entity.animation.WitherCommandBlockAnim {
+  public static final net.minecraft.client.animation.AnimationDefinition idle;
+  public static final net.minecraft.client.animation.AnimationDefinition deathtest;
+  public net.dabicco.witherstormmod.entity.animation.WitherCommandBlockAnim();
+  static {};
+}
+===== net.dabicco.witherstormmod.entity.model.WitherCommandBlock =====
+Compiled from "WitherCommandBlock.java"
+public class net.dabicco.witherstormmod.entity.model.WitherCommandBlock extends net.minecraft.client.model.EntityModel<net.dabicco.witherstormmod.entity.state.WitherStormRenderState> {
+  public static final net.minecraft.client.model.geom.ModelLayerLocation LAYER_LOCATION;
+  private final net.minecraft.client.model.geom.ModelPart upperBodyPart1;
+  private final net.minecraft.client.model.geom.ModelPart upperBodyPart2;
+  private final net.minecraft.client.model.geom.ModelPart head1;
+  private final net.minecraft.client.model.geom.ModelPart head2;
+  private final net.minecraft.client.model.geom.ModelPart head3;
+  private final net.minecraft.client.model.geom.ModelPart root;
+  private final net.minecraft.client.animation.KeyframeAnimation idleAnimation;
+  public net.dabicco.witherstormmod.entity.model.WitherCommandBlock(net.minecraft.client.model.geom.ModelPart);
+  public static net.minecraft.client.model.geom.builders.LayerDefinition createBodyLayer();
+  public void setupAnim(net.dabicco.witherstormmod.entity.state.WitherStormRenderState);
+  public void renderToBuffer(com.mojang.blaze3d.vertex.PoseStack, com.mojang.blaze3d.vertex.VertexConsumer, int, int);
+  public void setupAnim(java.lang.Object);
+  static {};
+}
+===== net.dabicco.witherstormmod.mixin.BowelsPlacementMixin =====
+Compiled from "BowelsPlacementMixin.java"
+public abstract class net.dabicco.witherstormmod.mixin.BowelsPlacementMixin {
+  public net.dabicco.witherstormmod.mixin.BowelsPlacementMixin();
+  private void dabyws$rememberWhatWasBuilt(net.minecraft.world.item.context.BlockPlaceContext, net.minecraft.world.level.block.state.BlockState, org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<java.lang.Boolean>);
+}
+===== net.dabicco.witherstormmod.mixin.StoryModeLightmapMixin =====
+Compiled from "StoryModeLightmapMixin.java"
+public class net.dabicco.witherstormmod.mixin.StoryModeLightmapMixin {
+  public net.dabicco.witherstormmod.mixin.StoryModeLightmapMixin();
+  private void dabyws$storyModeLight(net.minecraft.client.renderer.state.LightmapRenderState, float, org.spongepowered.asm.mixin.injection.callback.CallbackInfo);
+  private static org.joml.Vector3fc tint(org.joml.Vector3fc, float[], float);
+}
+===== net.dabicco.witherstormmod.mixin.StoryModeSkyDomeMixin =====
+Compiled from "StoryModeSkyDomeMixin.java"
+public class net.dabicco.witherstormmod.mixin.StoryModeSkyDomeMixin {
+  public net.dabicco.witherstormmod.mixin.StoryModeSkyDomeMixin();
+  private void dabyws$storyModeSkyDome(net.minecraft.client.multiplayer.ClientLevel, float, net.minecraft.client.Camera, net.minecraft.client.renderer.state.level.SkyRenderState, org.spongepowered.asm.mixin.injection.callback.CallbackInfo);
+  private static int blend(int, float[], float);
+}
+===== net.dabicco.witherstormmod.mixin.StoryModeTitleScreenMixin =====
+Compiled from "StoryModeTitleScreenMixin.java"
+public abstract class net.dabicco.witherstormmod.mixin.StoryModeTitleScreenMixin extends net.minecraft.client.gui.screens.Screen {
+  protected net.dabicco.witherstormmod.mixin.StoryModeTitleScreenMixin(net.minecraft.network.chat.Component);
+  private void dabyws$addStoryModeButtons(org.spongepowered.asm.mixin.injection.callback.CallbackInfo);
+  private void dabyws$renderStoryModeBanner(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float, org.spongepowered.asm.mixin.injection.callback.CallbackInfo);
+  private static void lambda$dabyws$addStoryModeButtons$1(net.minecraft.client.Minecraft, net.minecraft.client.gui.screens.TitleScreen, net.minecraft.client.gui.components.Button);
+  private static void lambda$dabyws$addStoryModeButtons$0(net.minecraft.client.Minecraft, net.minecraft.client.gui.screens.TitleScreen, net.minecraft.client.gui.components.Button);
+}
+===== net.dabicco.witherstormmod.network.CommandBlockPowerPayload =====
+Compiled from "CommandBlockPowerPayload.java"
+public final class net.dabicco.witherstormmod.network.CommandBlockPowerPayload extends java.lang.Record implements net.minecraft.network.protocol.common.custom.CustomPacketPayload {
+  private final double x;
+  private final double y;
+  private final double z;
+  public static final net.minecraft.network.protocol.common.custom.CustomPacketPayload$Type<net.dabicco.witherstormmod.network.CommandBlockPowerPayload> TYPE;
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, net.dabicco.witherstormmod.network.CommandBlockPowerPayload> CODEC;
+  public net.dabicco.witherstormmod.network.CommandBlockPowerPayload(double, double, double);
+  public net.minecraft.network.protocol.common.custom.CustomPacketPayload$Type<? extends net.minecraft.network.protocol.common.custom.CustomPacketPayload> type();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public double x();
+  public double y();
+  public double z();
+  private static net.dabicco.witherstormmod.network.CommandBlockPowerPayload lambda$static$1(net.minecraft.network.RegistryFriendlyByteBuf);
+  private static void lambda$static$0(net.minecraft.network.RegistryFriendlyByteBuf, net.dabicco.witherstormmod.network.CommandBlockPowerPayload);
+  static {};
+}
+===== net.dabicco.witherstormmod.network.SpawnStructurePayload =====
+Compiled from "SpawnStructurePayload.java"
+public final class net.dabicco.witherstormmod.network.SpawnStructurePayload extends java.lang.Record implements net.minecraft.network.protocol.common.custom.CustomPacketPayload {
+  private final boolean inside;
+  private final double x;
+  private final double floorY;
+  private final double z;
+  public static final net.minecraft.network.protocol.common.custom.CustomPacketPayload$Type<net.dabicco.witherstormmod.network.SpawnStructurePayload> TYPE;
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, net.dabicco.witherstormmod.network.SpawnStructurePayload> CODEC;
+  public net.dabicco.witherstormmod.network.SpawnStructurePayload(boolean, double, double, double);
+  public net.minecraft.network.protocol.common.custom.CustomPacketPayload$Type<? extends net.minecraft.network.protocol.common.custom.CustomPacketPayload> type();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public boolean inside();
+  public double x();
+  public double floorY();
+  public double z();
+  private static net.dabicco.witherstormmod.network.SpawnStructurePayload lambda$static$1(net.minecraft.network.RegistryFriendlyByteBuf);
+  private static void lambda$static$0(net.minecraft.network.RegistryFriendlyByteBuf, net.dabicco.witherstormmod.network.SpawnStructurePayload);
+  static {};
+}
+===== net.dabicco.witherstormmod.structures.LegacyBlocks =====
+Compiled from "LegacyBlocks.java"
+public final class net.dabicco.witherstormmod.structures.LegacyBlocks {
+  private net.dabicco.witherstormmod.structures.LegacyBlocks();
+  private static java.lang.String pick(int, java.lang.String[]);
+  public static java.lang.String of(int, int);
+}
+===== net.dabicco.witherstormmod.structures.McsmCommand =====
+Compiled from "McsmCommand.java"
+public final class net.dabicco.witherstormmod.structures.McsmCommand {
+  private static final com.mojang.brigadier.suggestion.SuggestionProvider<net.minecraft.commands.CommandSourceStack> SITES;
+  private net.dabicco.witherstormmod.structures.McsmCommand();
+  private static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestSites(com.mojang.brigadier.suggestion.SuggestionsBuilder);
+  public static java.lang.String key(net.dabicco.witherstormmod.structures.McsmWorldgen$Site);
+  private static boolean mayBuild(net.minecraft.commands.CommandSourceStack);
+  public static void register(com.mojang.brigadier.CommandDispatcher<net.minecraft.commands.CommandSourceStack>);
+  private static int list(net.minecraft.commands.CommandSourceStack);
+  private static int status(net.minecraft.commands.CommandSourceStack);
+  private static int cancel(net.minecraft.commands.CommandSourceStack);
+  private static int build(net.minecraft.commands.CommandSourceStack, java.lang.String);
+  private static int tp(net.minecraft.commands.CommandSourceStack, java.lang.String);
+  private static net.minecraft.network.chat.Component lambda$tp$0(net.dabicco.witherstormmod.structures.McsmWorldgen$Site);
+  private static net.minecraft.network.chat.Component lambda$build$0(int);
+  private static net.minecraft.network.chat.Component lambda$cancel$0(int);
+  private static net.minecraft.network.chat.Component lambda$status$0(int);
+  private static net.minecraft.network.chat.Component lambda$list$3(net.minecraft.network.chat.Component);
+  private static net.minecraft.network.chat.Style lambda$list$2(java.lang.String, net.minecraft.network.chat.Style);
+  private static net.minecraft.network.chat.Style lambda$list$1(net.dabicco.witherstormmod.structures.McsmWorldgen$Site, net.minecraft.network.chat.Style);
+  private static net.minecraft.network.chat.Component lambda$list$0();
+  private static int lambda$register$5(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$4(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$3(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$2(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$1(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static int lambda$register$0(com.mojang.brigadier.context.CommandContext) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  private static java.util.concurrent.CompletableFuture lambda$static$0(com.mojang.brigadier.context.CommandContext, com.mojang.brigadier.suggestion.SuggestionsBuilder) throws com.mojang.brigadier.exceptions.CommandSyntaxException;
+  static {};
+}
+===== net.dabicco.witherstormmod.structures.McsmGuidebook =====
+Compiled from "McsmGuidebook.java"
+public final class net.dabicco.witherstormmod.structures.McsmGuidebook {
+  private static final java.lang.String TITLE;
+  private static final java.lang.String AUTHOR;
+  private net.dabicco.witherstormmod.structures.McsmGuidebook();
+  public static void register();
+  private static boolean hasBook(net.minecraft.server.level.ServerPlayer);
+  public static net.minecraft.world.item.ItemStack create();
+  private static net.minecraft.network.chat.Component page(net.minecraft.network.chat.Component...);
+  private static net.minecraft.network.chat.Component line(java.lang.String, net.minecraft.ChatFormatting, boolean);
+  private static net.minecraft.network.chat.Component blank();
+  private static net.minecraft.network.chat.Component cmd(java.lang.String, java.lang.String);
+  private static net.minecraft.network.chat.Component tp(java.lang.String);
+  private static void lambda$register$0(net.minecraft.server.network.ServerGamePacketListenerImpl, net.fabricmc.fabric.api.networking.v1.PacketSender, net.minecraft.server.MinecraftServer);
+}
+===== net.dabicco.witherstormmod.structures.McsmSchematic =====
+Compiled from "McsmSchematic.java"
+public final class net.dabicco.witherstormmod.structures.McsmSchematic {
+  public final int width;
+  public final int height;
+  public final int length;
+  public final byte[] blocks;
+  public final byte[] data;
+  private static final int TAG_END;
+  private static final int TAG_BYTE;
+  private static final int TAG_SHORT;
+  private static final int TAG_INT;
+  private static final int TAG_LONG;
+  private static final int TAG_FLOAT;
+  private static final int TAG_DOUBLE;
+  private static final int TAG_BYTE_ARRAY;
+  private static final int TAG_STRING;
+  private static final int TAG_LIST;
+  private static final int TAG_COMPOUND;
+  private static final int TAG_INT_ARRAY;
+  private static final int TAG_LONG_ARRAY;
+  private net.dabicco.witherstormmod.structures.McsmSchematic(int, int, int, byte[], byte[]);
+  public int volume();
+  public int index(int, int, int);
+  public int blockId(int, int, int);
+  public int blockData(int, int, int);
+  public static net.dabicco.witherstormmod.structures.McsmSchematic load(net.minecraft.server.packs.resources.ResourceManager, java.lang.String) throws java.io.IOException;
+  public static net.dabicco.witherstormmod.structures.McsmSchematic read(java.io.InputStream) throws java.io.IOException;
+  private static void skip(java.io.DataInputStream, int) throws java.io.IOException;
+  private static void skipFully(java.io.DataInputStream, long) throws java.io.IOException;
+  public java.lang.String describe();
+  static void touch(net.minecraft.server.level.ServerLevel);
+}
+===== net.dabicco.witherstormmod.structures.McsmWorldgen =====
+Compiled from "McsmWorldgen.java"
+public final class net.dabicco.witherstormmod.structures.McsmWorldgen {
+  public static final int ANCHOR_X;
+  public static final int ANCHOR_Z;
+  private static final java.util.Deque<net.dabicco.witherstormmod.structures.McsmWorldgen$Job> QUEUE;
+  private static int budget;
+  private net.dabicco.witherstormmod.structures.McsmWorldgen();
+  public static java.util.List<net.dabicco.witherstormmod.structures.McsmWorldgen$Site> layout();
+  private static void add(java.util.List<net.dabicco.witherstormmod.structures.McsmWorldgen$Site>, java.lang.String, int, int, int, java.lang.String, boolean);
+  public static void setBudget(int);
+  public static int pending();
+  public static void clear();
+  public static void enqueue(net.dabicco.witherstormmod.structures.McsmSchematic, net.minecraft.core.BlockPos, java.lang.String);
+  public static int tick(net.minecraft.server.level.ServerLevel);
+  private static int step(net.minecraft.server.level.ServerLevel, net.dabicco.witherstormmod.structures.McsmWorldgen$Job, int);
+  private static net.minecraft.world.level.block.state.BlockState state(int, int);
+  static {};
+}
+===== net.dabicco.witherstormmod.structures.StructureBuilder =====
+Compiled from "StructureBuilder.java"
+public final class net.dabicco.witherstormmod.structures.StructureBuilder {
+  private net.dabicco.witherstormmod.structures.StructureBuilder();
+  public static int build(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, java.lang.String);
+  private static void set(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState);
+  private static int town(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int well(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int beacon(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int house(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int portalRuin(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int church(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int temple(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int redstonia(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int boomtown(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int endercon(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int bunker(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int shrine(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int floatingIsland(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int skyFortress(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int farLands(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int ivorLab(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int stormNest(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+  private static int treasureVault(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos);
+}
