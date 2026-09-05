@@ -9,6 +9,7 @@ import net.mcsm.extras.McsmStormBeaconBlock;
 import net.dabicco.witherstormmod.entity.WitherStormEntity;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -35,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class McsmStormGrabPatch extends net.minecraft.world.entity.boss.wither.WitherBoss {
 
     private static final Map<UUID, Long> MCSM$GRAB_CD = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> MCSM$LAST_PHASE_RING = new ConcurrentHashMap<>();
     private long mcsm$gt = -1L;
 
     private McsmStormGrabPatch() { super(null, null); }
@@ -42,6 +44,35 @@ public abstract class McsmStormGrabPatch extends net.minecraft.world.entity.boss
     // MCSM 1.9.101 -- 26.2 spelling of the particle call: options, not types.
     private static DustParticleOptions dust(int rgb, float scale) {
         return new DustParticleOptions(rgb, scale);
+    }
+
+    @Inject(method = {"die"}, at = @At("HEAD"))
+    private void mcsm$death(DamageSource source, CallbackInfo ci) {
+        WitherStormEntity self = (WitherStormEntity) (Object) this;
+        Level level = self.level();
+        // Fire before vanilla death cleanup/removal so the rings use the real storm position.
+        McsmFxDriver.deathCinematic(self, level);
+    }
+
+    @Inject(method = {"addSubGrowth"}, at = @At("TAIL"))
+    private void mcsm$phaseShockwave(int amount, CallbackInfo ci) {
+        McsmExtrasConfig.load();
+        if (!McsmExtrasConfig.enableRiseFx && !McsmExtrasConfig.supernovaRings) return;
+        WitherStormEntity self = (WitherStormEntity) (Object) this;
+        Level level = self.level();
+        if (level == null || level.isClientSide()) return;
+        int phase = (int) Math.floor(self.getPhase());
+        UUID id = self.getUUID();
+        int last = MCSM$LAST_PHASE_RING.getOrDefault(id, -1);
+        if (last < 4 && phase >= 4) {
+            McsmFxDriver.phaseShockwave(self, level, 4);
+        }
+        if (last < 7 && phase >= 7) {
+            McsmFxDriver.phaseShockwave(self, level, 7);
+        }
+        if (phase >= 4) {
+            MCSM$LAST_PHASE_RING.put(id, phase);
+        }
     }
 
     @Inject(method = {"tick"}, at = @At("TAIL"))

@@ -1,5 +1,7 @@
 # MCSM Wither Storm — Phase 29–30 build
 
+- **1.9.108 no-more-old-Java pass** — the CI build now hard-fails if the Java mixins do not compile, instead of publishing a shader-only jar with stale behavior. The Extras title shows the runtime build number, Force MCSM Look also forces the built-in Obsidian Gloss/OG skin, the legacy 1.18 glare default is migrated again, and direct hooks were added to `addSubGrowth()` and `die()` so phase-rise shockwaves and the death/supernova cinematic fire from the actual gameplay methods rather than relying only on tick polling.
+
 - **1.9.103 halo correction** — reverted the new map-pin/heart silhouette back to a round, slightly oval halo. Rebuilt the radial halo gradient from the supplied reference images: phase 5.5–5.9 uses the measured blue core/navy falloff (#6A8FF7 → #627FE3 → #263165), while phase 4/5.3 uses the measured purple-black ramp (#3F255A → #2D1C41 → #140B1B).
 
 - **1.9.107 atmosphere + config-scroll pass** — made the MCSM Extras panel scrollable, changed the default glare size to roughly half, tightened the storm halo again, made the black core more opaque, boosted 5.5-5.9 into dark-pink/purple instead of orange/over-purple, strengthened cold-biome aurora, made always-on cloud/tree-like ground shadows visibly move, and added shader-side emissive pop for torches/glowing blocks.
@@ -19,7 +21,7 @@ is embedded in the jar.
 
 ## Download
 
-GitHub Actions uploads the built 1.9.107 jar as an artifact from this branch. SHA-256 is emitted next to the artifact and recorded in `out/BUILD_INFO.txt`.
+GitHub Actions uploads the built 1.9.108 jar as an artifact from this branch. SHA-256 is emitted next to the artifact and recorded in `out/BUILD_INFO.txt`.
 
 ## Highlights in this build
 
@@ -38,10 +40,5 @@ GitHub Actions uploads the built 1.9.107 jar as an artifact from this branch. SH
 - **Devourer body slightly more opaque** (semi-transparent texels lifted).
 - Validated by the offline GLSL gate (42/42) in `glslcheck/shimcheck.py`.
 
-Plus in this build: **the death-sequence engine** (distortion, white cracks,
-shaking whitening implosion, in-rushing motes, flash, six-colour supernova
-rings, settling dust) — dormant until the Java driver (source already in
-`mcsm-extras/java`, compiles via `ci/build.ps1` or GitHub Actions) stamps the
-carrier. Glare size is slider-ready (same carrier). Dormant = invisible until
-activated; nothing changes in normal play.
+Plus in this build: the death/rise sequence is wired to the storm methods directly. If Java mixins fail to compile, no release is published.
 

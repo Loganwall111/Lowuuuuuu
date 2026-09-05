@@ -68,6 +68,10 @@ public final class McsmGate {
             changed += setBool(c, "tentaclePhysics", true);
             changed += setBool(c, "optimizeDistantAnimations", true);
             changed += setBool(c, "flatbackFlipFix", true);
+            // Obsidian Gloss is the mod's built-in OG/MCSM texture set. The
+            // user expects Force MCSM Look to make the body/teeth/command-block
+            // textures stop falling back to the Classic orange/plain skin.
+            changed += floorField(c, null, "stormSkin", 1.0);
 
             // ---- the halo / glare the user has been chasing ----------------
             changed += setBool(c, "sunGlow", true);

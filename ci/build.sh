@@ -11,9 +11,8 @@
 # delivery jar -> bump fabric.mod.json version -> zip -> sha256. Output ./out/.
 #
 # 2026-09-05 hardening (compile audit):
-#   * the old "survivable javac" was broken: on a compile error the class dir
-#     is empty, `cp -r /tmp/mcsm-build/*` then dies under `set -e` and the jar
-#     is never assembled. Fixed with a nullglob guard.
+#   * javac is a release gate: on a compile error the build stops instead of
+#     assembling a shaders-only jar with stale Java classes.
 #   * the FULL javac log now lands in out/JAVAC_FAILED.txt (was 60 lines).
 #   * out/BUILD_INFO.txt records the verdict (versions, hashes, class count).
 #   * build evidence (log, class list, sha256) is pushed best-effort to the
@@ -209,9 +208,9 @@ echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
 CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar"
-# A javac failure is survivable: the jar is still assembled from the previous
-# classes + the current shaders, the FULL javac output goes to
-# out/JAVAC_FAILED.txt, and the run is flagged with a GitHub error annotation.
+# A javac failure is NOT survivable anymore: publishing a shaders-only jar is
+# exactly how users can receive new-looking UI/shaders with old Java behavior.
+# Stop hard and keep the full log in out/JAVAC_FAILED.txt.
 JAVAC_LOG=/tmp/mcsm-javac.log
 JAVAC_RC=0
 javac -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
@@ -221,10 +220,11 @@ if [ "$JAVAC_RC" -eq 0 ]; then
   echo "[javac] OK: ${N_CLASSES} classes"
   rm -f out/JAVAC_FAILED.txt
 else
-  echo "::error::javac FAILED (exit ${JAVAC_RC}) — this jar has the NEW SHADERS but the OLD Java classes. Full log: out/JAVAC_FAILED.txt"
+  echo "::error::javac FAILED (exit ${JAVAC_RC}) — refusing to publish a shaders-only/old-Java jar. Full log: out/JAVAC_FAILED.txt"
   cp -f "$JAVAC_LOG" out/JAVAC_FAILED.txt
-  tail -80 "$JAVAC_LOG" || true
-  echo "[javac] FAILED (continuing with a shaders-only jar)"
+  tail -160 "$JAVAC_LOG" || true
+  echo "[javac] FAILED (hard stop so users never receive another old-behaviour jar)"
+  exit "$JAVAC_RC"
 fi
 
 echo "[assemble] overlay onto base"

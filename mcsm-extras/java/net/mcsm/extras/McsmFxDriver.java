@@ -126,6 +126,36 @@ public final class McsmFxDriver {
         return (ri << 16) | (gi << 8) | bi;
     }
 
+    /** Direct mixin hook: phase-up shockwave fired from addSubGrowth(), not only from tick polling. */
+    public static void phaseShockwave(WitherStormEntity self, Level level, int phase) {
+        if (self == null || level == null || level.isClientSide()) return;
+        McsmExtrasConfig.load();
+        if (!McsmExtrasConfig.enableRiseFx && !McsmExtrasConfig.supernovaRings) return;
+        if (!(level instanceof ServerLevel srv)) return;
+        try {
+            riseShockwave(srv, self, phase);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** Direct mixin hook: death blast must happen while die() still has a live entity position. */
+    public static void deathCinematic(WitherStormEntity self, Level level) {
+        if (self == null || level == null || level.isClientSide()) return;
+        if (!(level instanceof ServerLevel srv)) return;
+        try {
+            McsmExtrasConfig.load();
+            long gt = level.getGameTime();
+            if (McsmExtrasConfig.deathCinematic || McsmExtrasConfig.supernovaRings) {
+                supernova(srv, self, gt);
+            }
+            if (McsmExtrasConfig.realityTear) {
+                recover(srv, self);
+            }
+            STATE.computeIfAbsent(self.getUUID(), k -> new double[]{self.getPhase(), 0.0})[1] = 1.0;
+        } catch (Throwable ignored) {
+        }
+    }
+
     /** Expanding dust ring, ground to sky, plus the grey smoke of the impact. */
     private static void riseShockwave(ServerLevel srv, WitherStormEntity self, int phase) {
         double x = self.getX(), y = self.getY(), z = self.getZ();

@@ -14,6 +14,7 @@ import java.util.Properties;
  * the counterclockwise spiral pin). Written with defaults on first launch.
  */
 public final class McsmExtrasConfig {
+    public static final String BUILD_VERSION = "1.9.108";
     public static boolean enableTentacleGrab = true;
     public static double  grabIntervalSeconds = 11.0;
     public static boolean enableBeaconStorm = true;
@@ -82,7 +83,7 @@ public final class McsmExtrasConfig {
             File f = file();
             f.getParentFile().mkdirs();
             Properties p = new Properties();
-            p.setProperty("config_version", "1.9.107");
+            p.setProperty("config_version", BUILD_VERSION);
             p.setProperty("enable_tentacle_grab", String.valueOf(enableTentacleGrab));
             p.setProperty("grab_interval_seconds", String.valueOf(grabIntervalSeconds));
             p.setProperty("enable_beacon_storm", String.valueOf(enableBeaconStorm));
@@ -152,7 +153,10 @@ public final class McsmExtrasConfig {
             ogCemModels        = bool(p, "og_cem_models", ogCemModels);
             smudgeScale        = dbl(p, "smudge_scale", smudgeScale);
             glareSize          = dbl(p, "glare_size", glareSize);
-            if (p.getProperty("config_version") == null && Math.abs(glareSize - 1.18) < 0.001) {
+            String cv = p.getProperty("config_version");
+            if ((cv == null || !BUILD_VERSION.equals(cv.trim())) && Math.abs(glareSize - 1.18) < 0.001) {
+                // 1.9.106/early-1.9.107 saved the overlarge test value.
+                // Migrate only that exact legacy default; user-picked slider values remain intact.
                 glareSize = 0.58;
             }
             auroraEnabled      = bool(p, "aurora_enabled", auroraEnabled);

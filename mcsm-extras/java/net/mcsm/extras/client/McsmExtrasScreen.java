@@ -234,7 +234,7 @@ public final class McsmExtrasScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         g.fill(0, 0, this.width, this.height, 0xB0101010);
         applyScrollLayout();
-        g.centeredText(this.font, "MCSM Storm Control Panel", this.width / 2, 12, 0xFFFFFF);
+        g.centeredText(this.font, "MCSM Storm Control Panel  " + McsmExtrasConfig.BUILD_VERSION, this.width / 2, 12, 0xFFFFFF);
         g.centeredText(this.font, "Scroll wheel moves this panel. Changes save instantly.", this.width / 2, 23, 0xA0A0A0);
         if (this.contentBottom > this.height - 36) {
             g.centeredText(this.font, "scroll " + this.scrollPx + "/" + Math.max(0, this.contentBottom - (this.height - 36)), this.width - 62, 12, 0xA0A0A0);
