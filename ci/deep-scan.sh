@@ -80,5 +80,23 @@ grep -v -E 'McsmWorldgen|StructureBuilder' ci/api/scan/queue-referencers.txt \
   javap -p -c -classpath "$DL" "$cn" >> ci/api/scan/queue-callers-bytecode.txt 2>/dev/null || true
 done
 
+# ---------------------------------------------------------------------------
+# Round 3 -- the town-queue diagnosis set:
+#   * does the jar even SHIP the .schematic files /mcsm build loads?
+#   * what are ANCHOR_X/ANCHOR_Z (where in the world do towns land)?
+#   * how is McsmWorldgen.tick registered in onInitialize (which event, any
+#     condition)?
+# ---------------------------------------------------------------------------
+unzip -l "$DL/$BASE_NAME" | grep -Ei 'schematic' > ci/api/scan/jar-schematics.txt \
+  || echo "(NO schematic entries in the jar)" > ci/api/scan/jar-schematics.txt
+unzip -l "$DL/$BASE_NAME" | awk 'NR>3 {print $4}' | grep -v '\.class$' | grep -v '^$' \
+  | sort > ci/api/scan/jar-resources.txt || true
+javap -p -constants -classpath "$DL" net.dabicco.witherstormmod.structures.McsmWorldgen \
+  > ci/api/scan/worldgen-constants.txt 2>/dev/null || true
+javap -p -c -classpath "$DL" net.dabicco.witherstormmod.DabyWitherStormMod \
+  > ci/api/scan/mainmod-bytecode.txt 2>/dev/null || true
+grep -n "McsmWorldgen\|ServerTick\|WorldEvents\|AFTER_TICK\|END_SERVER" ci/api/scan/mainmod-bytecode.txt \
+  | head -30 > ci/api/scan/tick-registration.txt || true
+
 wc -l ci/api/scan/*.txt
 echo "[scan] done -- commit ci/api/scan back to the branch"
