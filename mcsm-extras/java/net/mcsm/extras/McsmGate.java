@@ -6,6 +6,8 @@ import net.dabicco.witherstormmod.config.WitherStormWorldConfig;
 import net.minecraft.world.level.Level;
 
 import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * MCSM 1.9.100 -- the "it's already written, it's just switched off" gate.
@@ -37,6 +39,50 @@ public final class McsmGate {
 
     private static boolean clientDone = false;
     private static boolean worldDone = false;
+
+    /**
+     * MCSM 1.9.112 -- memory of every value this gate writes, keyed by field.
+     *
+     * The gate re-runs whenever the Extras panel is touched (each toggle calls
+     * McsmGate.reset()). Until now every re-run re-forced the whole MCSM look,
+     * silently undoing any look preset (Netflix, Cinematic, Legacy ...) the
+     * player had just applied in the mod's own screen -- that is the real
+     * mechanism behind "presets change nothing, it goes back to normal": the
+     * preset DOES apply, and our next gate pass wipes it.
+     *
+     * New rule: on a re-run, a field that still holds the value we wrote gets
+     * kept; a field anything else has changed since is never touched again.
+     * The Extras panel's "Re-apply MCSM Look now" button clears this memory
+     * for the player who explicitly wants the force again.
+     */
+    private static final Map<String, Object> LAST_SET = new ConcurrentHashMap<>();
+
+    /** Forget every recorded value; the next gate run forces the look again. */
+    public static void clearMemory() {
+        LAST_SET.clear();
+    }
+
+    private static String memKey(Class<?> owner, Object instance, String name) {
+        return owner.getName() + ":" + name
+                + (instance == null ? ":static" : "@" + System.identityHashCode(instance));
+    }
+
+    private static double readNum(Field f, Object instance) throws IllegalAccessException {
+        Class<?> t = f.getType();
+        if (t == int.class) return f.getInt(instance);
+        if (t == long.class) return f.getLong(instance);
+        if (t == float.class) return f.getFloat(instance);
+        return f.getDouble(instance);
+    }
+
+    private static double writeNum(Field f, Object instance, double v) throws IllegalAccessException {
+        Class<?> t = f.getType();
+        if (t == int.class) { int nv = (int) Math.round(v); f.setInt(instance, nv); return nv; }
+        if (t == long.class) { long nv = Math.round(v); f.setLong(instance, nv); return nv; }
+        if (t == float.class) { float nv = (float) v; f.setFloat(instance, nv); return nv; }
+        f.setDouble(instance, v);
+        return v;
+    }
 
     /**
      * Client-side: force the Story Mode look on. Called from the frame driver
@@ -183,7 +229,14 @@ public final class McsmGate {
     private static int setBool(Class<?> owner, String name, boolean value) {
         try {
             Field f = owner.getField(name);
+            String key = memKey(owner, null, name);
+            boolean cur = f.getBoolean(null);
+            Object prev = LAST_SET.get(key);
+            if (prev instanceof Boolean b && cur != b) {
+                return 0;   // changed after us (preset/player): leave it alone
+            }
             f.setBoolean(null, value);
+            LAST_SET.put(key, value);
             return 1;
         } catch (Throwable ignored) {
             return 0;
@@ -194,62 +247,37 @@ public final class McsmGate {
     private static int floorField(Class<?> owner, Object instance, String name, double min) {
         try {
             Field f = owner.getField(name);
-            Class<?> t = f.getType();
-            if (t == int.class) {
-                int old = f.getInt(instance);
-                int nv = Math.max(old, (int) Math.round(min));
-                if (nv != old) f.setInt(instance, nv);
-                return 1;
+            String key = memKey(owner, instance, name);
+            double cur = readNum(f, instance);
+            Object prev = LAST_SET.get(key);
+            if (prev instanceof Double d && Math.abs(cur - d) > 1e-9) {
+                return 0;   // changed after us (preset/player): respect it
             }
-            if (t == float.class) {
-                float old = f.getFloat(instance);
-                float nv = Math.max(old, (float) min);
-                if (nv != old) f.setFloat(instance, nv);
-                return 1;
-            }
-            if (t == double.class) {
-                double old = f.getDouble(instance);
-                double nv = Math.max(old, min);
-                if (nv != old) f.setDouble(instance, nv);
-                return 1;
-            }
-            if (t == long.class) {
-                long old = f.getLong(instance);
-                long nv = Math.max(old, (long) Math.round(min));
-                if (nv != old) f.setLong(instance, nv);
-                return 1;
-            }
+            double nv = writeNum(f, instance, Math.max(cur, min));
+            LAST_SET.put(key, nv);
+            return 1;
         } catch (Throwable ignored) {
+            return 0;
         }
-        return 0;
     }
 
     /** Intervals count DOWN in desirability: a smaller positive number fires sooner. */
     private static int ceilInterval(Class<?> owner, Object instance, String name, int max) {
         try {
             Field f = owner.getField(name);
-            Class<?> t = f.getType();
-            if (t == int.class) {
-                int old = f.getInt(instance);
-                int nv = (old <= 0 || old > max) ? max : old;
-                if (nv != old) f.setInt(instance, nv);
-                return 1;
+            String key = memKey(owner, instance, name);
+            double cur = readNum(f, instance);
+            Object prev = LAST_SET.get(key);
+            if (prev instanceof Double d && Math.abs(cur - d) > 1e-9) {
+                return 0;   // changed after us: respect it
             }
-            if (t == double.class) {
-                double old = f.getDouble(instance);
-                double nv = (old <= 0.0 || old > max) ? max : old;
-                if (nv != old) f.setDouble(instance, nv);
-                return 1;
-            }
-            if (t == float.class) {
-                float old = f.getFloat(instance);
-                float nv = (old <= 0.0F || old > max) ? (float) max : old;
-                if (nv != old) f.setFloat(instance, nv);
-                return 1;
-            }
+            double want = (cur <= 0.0 || cur > max) ? max : cur;
+            double nv = writeNum(f, instance, want);
+            LAST_SET.put(key, nv);
+            return 1;
         } catch (Throwable ignored) {
+            return 0;
         }
-        return 0;
     }
 
     /** Called on session teardown so a world change re-applies the gates. */

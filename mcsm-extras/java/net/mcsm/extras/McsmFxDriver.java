@@ -188,6 +188,14 @@ public final class McsmFxDriver {
      */
     private static final Map<UUID, double[]> BLASTS = new ConcurrentHashMap<>();
 
+    /**
+     * Last game time a rise front was armed, per storm. Two observers can
+     * notice the same phase jump; without this latch the second one re-arms
+     * the blast and prints the armed line twice (seen in the player's chat
+     * screenshots for phase 4).
+     */
+    private static final Map<UUID, Long> RISE_ARMED = new ConcurrentHashMap<>();
+
     /** Blast kinds: a phase rise, or the death supernova. */
     private static final int KIND_RISE  = 4;
     private static final int KIND_DEATH = 99;
@@ -236,8 +244,20 @@ public final class McsmFxDriver {
     private static void startBlast(ServerLevel srv, WitherStormEntity self, int kind) {
         double x = self.getX(), y = self.getY(), z = self.getZ();
         double floorY = self.getBoundingBox().minY;
+        long gt = srv.getGameTime();
+        // MCSM 1.9.112 -- dedupe rise arming: one front per phase jump, even
+        // if more than one hook reports the transition. Phase 4 -> phase 7
+        // rises are minutes apart, so a 5-second window cannot swallow a
+        // legitimate second rise. Death keeps its own guard in deathCinematic.
+        if (kind == KIND_RISE) {
+            Long prev = RISE_ARMED.get(self.getUUID());
+            if (prev != null && gt - prev < 100L) {
+                return;
+            }
+            RISE_ARMED.put(self.getUUID(), gt);
+        }
         BLASTS.put(self.getUUID(), new double[]{
-                srv.getGameTime(), kind, x, y, z, floorY, y - floorY});
+                gt, kind, x, y, z, floorY, y - floorY});
         // MCSM 1.9.110 -- say so in chat. These are two rare events per storm
         // life, and the line is the proof that the hook fired at all when the
         // report is "no shockwave happened".

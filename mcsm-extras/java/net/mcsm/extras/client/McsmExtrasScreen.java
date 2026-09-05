@@ -137,8 +137,19 @@ public final class McsmExtrasScreen extends Screen {
         // look presets can be A/B tested; see McsmShaderGatePatch.
         addToggle(1, 13, fColW, gap, left, top, rowH, "Shader Pack Gate",
                 () -> McsmExtrasConfig.shaderPackGate, v -> McsmExtrasConfig.shaderPackGate = v);
+        // MCSM 1.9.112 -- the gate now respects anything changed after its
+        // first pass, so look presets applied in the mod's own screen survive
+        // this panel being opened and clicked. Forcing the full MCSM look
+        // again mid-session is therefore an explicit act: this button.
+        Button reapply = Button.builder(Component.literal("Re-apply MCSM Look now"), b -> {
+            McsmGate.clearMemory();
+            McsmGate.reset();
+        }).bounds(left + fColW + gap, top + 14 * rowH, fColW, 20).build();
+        this.addWidget(reapply);
+        this.chrome.add(reapply);
+        this.baseY.put(reapply, top + 14 * rowH);
 
-        this.contentBottom = top + 14 * rowH + 4;
+        this.contentBottom = top + 15 * rowH + 4;
         applyScrollLayout();
 
         Button done = Button.builder(Component.literal("Done"), b -> this.onClose())
