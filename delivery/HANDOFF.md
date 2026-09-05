@@ -1035,3 +1035,9 @@ dumped yet).
 STATE: this push -> javac expected green -> the FIRST genuine compile of
 the new Java, ever (1.9.101). If javac fails again, the ERR trap now
 reports the exact line + command as a GitHub annotation.
+RESULT (13:02): run 33967117138 GREEN, ZERO annotations -- no javac
+failure, no shaders-only verdict, all steps check. Artifact mcsm-jar-10
+(56,943,362 B zip; same size class as blockbuster's proven 07:39 full
+compile, 56,937,925 B, vs 57.36 MB for the overlays' final jars). The new
+Java is compiled for the first time, ever. Verify from the artifact:
+unzip -l | grep -E 'McsmGate|McsmFxDriver|McsmStory|McsmExtrasScreen'.

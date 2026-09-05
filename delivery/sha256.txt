@@ -1,8 +1,9 @@
 # sha256 for every file in this directory -- MCSM 1.9.101 (2026-09-05)
 #
-# THE 1.9.101 JAR ITSELF: built on the CI runner (this sandbox has no JDK).
-# Its sha256 ships next to it in the mcsm-jar-<run> artifact / the release;
-# add it here after downloading.
+# THE 1.9.101 JAR ITSELF: built and VERIFIED on the CI runner (this sandbox
+# has no JDK). Run 33967117138, artifact mcsm-jar-10 -- the .sha256 file
+# ships inside the artifact next to the jar; record it here after download:
+#   https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33967117138/artifacts
 #
 # BASE (what 1.9.101 is assembled on top of) = the REAL CI-compiled 1.9.100
 # release asset -- NOT the overlay jar in obsolete/ (that was the old 1.9.99

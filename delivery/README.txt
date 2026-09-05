@@ -21,12 +21,17 @@ WHAT CHANGED AT 1.9.101
     +       mcsm-core-shaders (map-pin silhouette + deck fix, as in 1.9.100)
     +       jar-overrides (mixin registry, fabric.mod.json -> 1.9.101)
 
-GETTING THE 1.9.101 JAR
-  This sandbox has no JDK; the jar is built on the GitHub Actions runner by
-  ci/build.sh, which now pins the base to the real 1.9.100 release asset by
-  the hash above (a wrong/old jar can no longer be mistaken for the base).
-  The result is the mcsm-jar-<run> artifact of the push that built
-  VERSION=1.9.101 -- download it from that run's page.
+GETTING THE 1.9.101 JAR  (BUILT -- run 33967117138, 2026-09-05 13:02 UTC)
+  First genuine compile of the new Java: green run, zero annotations (the
+  recipe emits a javac-failure annotation and a shaders-only verdict
+  whenever the compile does not land -- neither is present).
+  Run page / artifact (mcsm-jar-10, jar + .sha256 inside):
+  https://github.com/Loganwall111/Lowuuuuuu/actions/runs/33967117138/artifacts
+  Verify after download:
+  unzip -l dabywitherstormmod-1.9.101-26.2-beta-mcsm.jar | grep -E 'McsmGate|McsmFxDriver|McsmStory|McsmExtrasScreen'
+  (all four present = the new Java is really in the jar; in no earlier
+  1.9.x jar were they ever present -- the 1.9.100 "release" jar was also a
+  shaders-only overlay, see HANDOFF phase 31c).
 
 IN THIS DIRECTORY
   MCSM_shaders_1.9.100.zip   the shader payload (identical at 1.9.101)
