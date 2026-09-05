@@ -51,7 +51,7 @@ jobs:
             out/*.txt
 
       - name: Publish release when VERSION is new
-        if: success() && github.ref == 'refs/heads/arena/01a06df7-lowuuuuuu'
+        if: success() && (github.ref == 'refs/heads/arena/01a071bb-lowuuuuuu' || github.ref == 'refs/heads/arena/01a06df7-lowuuuuuu')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

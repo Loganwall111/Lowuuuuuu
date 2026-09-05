@@ -2,6 +2,8 @@
 
 - **1.9.103 halo correction** — reverted the new map-pin/heart silhouette back to a round, slightly oval halo. Rebuilt the radial halo gradient from the supplied reference images: phase 5.5–5.9 uses the measured blue core/navy falloff (#6A8FF7 → #627FE3 → #263165), while phase 4/5.3 uses the measured purple-black ramp (#3F255A → #2D1C41 → #140B1B).
 
+- **1.9.105 visible/clickable config button + release** — the **MCSM Extras** button is now drawn by our own render injection and opens through our own mouse handler, so it no longer depends on Dabicco's custom child-widget renderer. The workflow now publishes a proper `mcsm-1.9.105` GitHub Release from this Arena branch so you do not have to hunt for old artifacts.
+
 - **1.9.104 direct config access** — added a fixed **MCSM Extras** button to the bottom-left of Dabicco's config screen through `Screen.addWidget`, independent of the mod's folding row layout. This is meant to fix the dead/vanishing extras entry visible as an off-screen black rectangle on some GUI scales.
 
 - **1.9.103 config/menu unblock** — made the MCSM Extras button open the real panel with a second fallback path, exposed the missing force-look/world/command-wire/instructions toggles inside that panel, and changed the gate code so one renamed upstream config field can no longer silently block the rest of the Story Mode visuals.
@@ -13,7 +15,7 @@ is embedded in the jar.
 
 ## Download
 
-GitHub Actions uploads the built 1.9.104 jar as an artifact from this branch. SHA-256 is emitted next to the artifact and recorded in `out/BUILD_INFO.txt`.
+GitHub Actions uploads the built 1.9.105 jar as an artifact from this branch. SHA-256 is emitted next to the artifact and recorded in `out/BUILD_INFO.txt`.
 
 ## Highlights in this build
 
