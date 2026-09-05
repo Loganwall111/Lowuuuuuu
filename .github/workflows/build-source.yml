@@ -21,7 +21,7 @@ on:
       - src-recon/**
 
 permissions:
-  contents: read
+  contents: write   # the report-publish step pushes ci/reports/ back
 
 concurrency:
   group: build-source
@@ -57,7 +57,6 @@ jobs:
         env:
           GH_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f ci/reports/source-build-latest.txt ] && ! git diff --quiet -- ci/reports/ 2>/dev/null || [ -f ci/reports/source-build-latest.txt ] && [ -z "$(git status --porcelain -- ci/reports/)" ] && false; then :; fi
           if [ -f ci/reports/source-build-latest.txt ]; then
             git config user.name "ds-ci-bot"
             git config user.email "ci@devouringstorms.local"
