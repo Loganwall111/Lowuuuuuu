@@ -36,25 +36,40 @@ Everything else was already correct — including the mixin descriptors
 
 ## A) GitHub Actions — automatic build on every push ("the GitHub compiler")
 
-The workflow is written and ready at **`ci/workflows/build-mcsm.yml`**. It
-cannot be pushed into `.github/workflows/` by the build bot (the app token
-lacks the `workflows` permission), so it needs one manual step from the repo
-owner:
+**Status 2026-09-05:** `.github/workflows/build-mcsm.yml` is currently
+**missing from the branch tips** — commit `9fcce7f` had to delete it to get
+its push past the app token's missing `workflows` permission, and the push
+trigger reads the workflow file from the pushed commit. That is why no run
+has happened since `2a9f780`. The ready-to-paste workflow lives at
+**`ci/workflows/build-mcsm.yml`** and only the repo owner can restore it
+(the app token is rejected even for a byte-identical file).
 
-1. In the repo on GitHub, go to **Actions → New workflow → set up a workflow
-   yourself**.
-2. Paste the entire contents of `ci/workflows/build-mcsm.yml` from this branch
-   (or copy the file into `.github/workflows/build-mcsm.yml` locally and push).
-3. Commit — done. Every push to `arena/01a06df7-lowuuuuuu` then:
+To (re)install it — one time, ~30 seconds, no git needed:
+
+1. Open <https://github.com/Loganwall111/Lowuuuuuu/new/arena/01a06edf-lowuuuuuu?filename=.github/workflows/build-mcsm.yml>
+   (the new-file editor on the fix branch, filename pre-filled).
+2. Open `ci/workflows/build-mcsm.yml` on the same branch, click **Raw**,
+   select-all, copy.
+3. Paste into the editor and **Commit changes**.
+
+The push that creates the file immediately starts a build (the workflow
+triggers on pushes to `arena/01a06df7-lowuuuuuu` and
+`arena/01a06edf-lowuuuuuu`). Every build then:
    - installs Temurin JDK 25 on a clean runner,
-   - downloads the Minecraft 26.2 client jar + Mixin + deps (runners have
-     full network),
+   - downloads the Minecraft 26.2 client jar (resolved live from the version
+     manifest) + Mixin + deps (runners have full network),
    - runs the GLSL gate (`glslcheck/shimcheck.py`),
    - compiles `mcsm-extras` with `javac --release 25`,
    - assembles and zip-tests the new jar,
-   - attaches it as a run **Artifact**, and
-   - when `VERSION` is bumped to something with no release yet, creates a
-     GitHub Release automatically.
+   - attaches it as a run **Artifact**,
+   - publishes build evidence to `ci-out/run-<n>/` on the branch so results
+     are auditable without Actions log access, and
+   - when `VERSION` names a version with no release yet (currently
+     `1.9.100`), creates a GitHub Release with the jar automatically.
+
+Alternatively: **Settings → Applications → [Arena agent] → Repository
+permissions → Workflows: Read & write** lets the agent push workflow files
+itself, and this manual step stops being needed.
 
 Builds/artifacts appear at
 <https://github.com/Loganwall111/Lowuuuuuu/actions>.
