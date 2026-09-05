@@ -2,7 +2,6 @@ package net.dabicco.witherstormmod;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.dabicco.witherstormmod.DabyWitherStormModClient.1;
 import net.dabicco.witherstormmod.bowels.ModBowelsEntities;
 import net.dabicco.witherstormmod.bowels.client.BowelsCrackModel;
 import net.dabicco.witherstormmod.bowels.client.BowelsHeartRenderer;

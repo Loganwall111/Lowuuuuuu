@@ -1,6 +1,5 @@
 package net.dabicco.witherstormmod;
 
-import net.dabicco.witherstormmod.BowelsFrame.1;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos.MutableBlockPos;

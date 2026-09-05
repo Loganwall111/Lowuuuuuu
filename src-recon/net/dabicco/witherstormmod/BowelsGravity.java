@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import net.dabicco.witherstormmod.BowelsGravity.1;
 import net.dabicco.witherstormmod.bowels.BowelsFinale;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
