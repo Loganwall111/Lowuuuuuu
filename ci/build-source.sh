@@ -35,6 +35,10 @@ MANIFEST="$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v
 VURL="$(printf '%s' "$MANIFEST" | python3 -c 'import json,sys; m=json.load(sys.stdin); v=[x for x in m["versions"] if x["id"]=="26.2"]; print(v[0]["url"] if v else "")' || true)"
 CLIENT_URL="$(curl -fsSL "$VURL" | python3 -c 'import json,sys; print(json.load(sys.stdin)["downloads"]["client"]["url"])' || true)"
 fetch "$CLIENT_URL" client.jar || exit 1
+# javac hard-fails on JSpecify type annotations in the raw vanilla class files
+# (FriendlyByteBuf.readNullable); strip those attributes into a compile-only copy.
+python3 ci/strip_typeann.py "$DL/client.jar" "$DL/client-stripped.jar" || {
+  echo "::error title=source-build::client jar type-annotation stripping failed"; exit 1; }
 fetch "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar" mixin.jar || exit 1
 fetch "https://libraries.minecraft.net/it/unimi/dsi/fastutil/8.5.18/fastutil-8.5.18.jar" fastutil.jar || exit 1
 fetch "https://libraries.minecraft.net/com/mojang/datafixerupper/10.0.21/datafixerupper-10.0.21.jar" dfu.jar || exit 1
@@ -97,7 +101,7 @@ while IFS=$'\t' read -r url name; do
 done < "$DL/fapi-list.txt"
 FAPI_CP="$(find "$DL/fapi" -name '*.jar' | tr '\n' ':')"
 
-CP="$DL/client.jar:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$DL/gson.jar:$DL/slf4j.jar:$DL/modmenu.jar:$FAPI_CP"
+CP="$DL/client-stripped.jar:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$DL/gson.jar:$DL/slf4j.jar:$DL/modmenu.jar:$FAPI_CP"
 
 # Compile-time fallback, LAST on the classpath: the single class Vineflower
 # could not recover (WitherStormDevourer.createBodyLayer -- OOM on a
