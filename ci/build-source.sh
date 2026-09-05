@@ -45,9 +45,11 @@ fetch "https://libraries.minecraft.net/com/google/code/gson/gson/2.11.0/gson-2.1
 fetch "https://libraries.minecraft.net/org/slf4j/slf4j-api/2.0.7/slf4j-api-2.0.7.jar" slf4j.jar || exit 1
 
 # modmenu: newest release from the TerraformersMC maven (API surface is stable)
+MODMENU_META="$(curl -fsSL https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml)"
+MODMENU_CANDIDATES="$(printf '%s' "$MODMENU_META" | grep -oE '<release>[^<]*</release>' | sed 's/<[^>]*>//g')
+$(printf '%s' "$MODMENU_META" | grep -oE '<version>[^<]*</version>' | sed 's/<[^>]*>//g' | sort -Vr | head -4)"
 MODMENU_OK=""
-for MODMENU_VER in $(curl -fsSL https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml \
-    | grep -oE '<version>[^<]*</version>' | sed 's/<[^>]*>//g' | tail -3); do
+for MODMENU_VER in $MODMENU_CANDIDATES; do
   echo "[deps] trying modmenu $MODMENU_VER"
   if curl -fsSL --retry 2 -o "$DL/modmenu.jar" \
       "https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/${MODMENU_VER}/modmenu-${MODMENU_VER}.jar" \
@@ -109,6 +111,7 @@ CP="$CP:$DL/base-fallback.jar"
 rm -f /tmp/ds-src.args
 find src-recon -name '*.java' ! -name 'WitherStormDevourer.java' > /tmp/ds-src.args
 find mcsm-extras/java -name '*.java' >> /tmp/ds-src.args
+find ci/stubs -name '*.java' >> /tmp/ds-src.args
 N_SRC=$(wc -l < /tmp/ds-src.args)
 echo "[source] $N_SRC java files in the compile set"
 
