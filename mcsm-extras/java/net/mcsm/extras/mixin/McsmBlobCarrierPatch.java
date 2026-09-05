@@ -223,7 +223,10 @@ public abstract class McsmBlobCarrierPatch {
             boolean found = false;
             for (Entity e : mc.level.getEntities(pl, box,
                     en -> en instanceof WitherStormEntity)) {
-                if (e.isDeadOrDying()) {
+                // getEntities() is typed to Entity, and isDeadOrDying() lives on
+                // LivingEntity -- hence the pattern match rather than a direct
+                // call (javac caught this on the runner: cannot find symbol).
+                if (e instanceof WitherStormEntity ws && ws.isDeadOrDying()) {
                     found = true;
                     break;
                 }

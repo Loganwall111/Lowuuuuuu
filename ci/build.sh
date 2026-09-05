@@ -258,10 +258,11 @@ else
   # MCSM 1.9.109 -- the sandbox can read check ANNOTATIONS (Checks API) but not
   # runner logs or artifacts, so the actual compiler errors have to travel as
   # annotations or the fix loop is blind. First 12 error lines, truncated.
-  grep -E "error:|symbol:|location:|required:|found:" "$JAVAC_LOG" 2>/dev/null | head -12 | \
+  { grep -E "error:|symbol:|location:|required:|found:" "$JAVAC_LOG" 2>/dev/null || true; } | \
+    head -12 | \
     while IFS= read -r line; do
       echo "::error title=javac::${line:0:400}"
-    done
+    done || true
   exit "$JAVAC_RC"
 fi
 
@@ -301,8 +302,8 @@ echo "[audit] ---- assembled jar ----"
 AUDIT_FAIL=0
 
 # 1. fresh classes
-NEW_COUNT=$(cd /tmp/mcsm-build && find net -name "*.class" 2>/dev/null | wc -l)
-JAR_COUNT=$(cd "$FX/cls" && find net/mcsm -name "*.class" 2>/dev/null | wc -l)
+NEW_COUNT=$(cd /tmp/mcsm-build && { find net -name "*.class" 2>/dev/null || true; } | wc -l)
+JAR_COUNT=$(cd "$FX/cls" && { find net/mcsm -name "*.class" 2>/dev/null || true; } | wc -l)
 echo "[audit] mcsm classes: jar=$JAR_COUNT freshly-compiled=$NEW_COUNT"
 if [ "$NEW_COUNT" -eq 0 ] || [ "$JAR_COUNT" -lt "$NEW_COUNT" ]; then
   echo "::error title=jar audit::fresh classes did not make it into the jar (jar=$JAR_COUNT compiled=$NEW_COUNT)"
