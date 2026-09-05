@@ -161,6 +161,8 @@ N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
   echo "jar reference:   385 mod classes (+ our overlay) in the 1.9.100 base"
   echo "--- first 40 error lines ---"
   grep -E "error:" "$JAVAC_LOG" | head -40 || true
+  echo "--- javac log tail ---"
+  tail -20 "$JAVAC_LOG" || true
 } > out/source-build-report.txt
 
 if [ "$RC" -eq 0 ]; then
@@ -174,5 +176,11 @@ else
   grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -15 | while read -r c f; do
     echo "::error title=errors-in::${c} ${f}"
   done
+  if [ "$N_ERR" -eq 0 ]; then
+    echo "::error title=javac-nonzero-exit::javac exited $RC with no 'error:' lines; log tail follows"
+    tail -12 "$JAVAC_LOG" | while IFS= read -r line; do
+      echo "::error title=javac-tail::${line:0:400}"
+    done
+  fi
 fi
 exit 0   # report-only pipeline: never fail the workflow itself
