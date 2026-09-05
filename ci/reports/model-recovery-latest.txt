@@ -1,0 +1,12 @@
+WitherStormDevourer: BOTH DECOMPILERS FAILED
+WitherStormP4: recovered via vineflower -> /tmp/mr-work/vf-WitherStormP4/WitherStormP4.java
+HugeAssBackModel: recovered via vineflower -> /tmp/mr-work/vf-HugeAssBackModel/HugeAssBackModel.java
+HunchbackGrowth: recovered via cfr -> /tmp/mr-work/cfr-HunchbackGrowth/net/dabicco/witherstormmod/entity/model/HunchbackGrowth.java
+SeveredWitherStorm: recovered via cfr -> /tmp/mr-work/cfr-SeveredWitherStorm/net/dabicco/witherstormmod/entity/model/SeveredWitherStorm.java
+WitherStormTentacles5: recovered via vineflower -> /tmp/mr-work/vf-WitherStormTentacles5/WitherStormTentacles5.java
+WitherStormP4: createBodyLayer spliced (+5 imports), exclusion lifted
+HugeAssBackModel: createBodyLayer spliced (+0 imports), exclusion lifted
+HunchbackGrowth: createBodyLayer spliced (+0 imports), exclusion lifted
+SeveredWitherStorm: createBodyLayer spliced (+5 imports), exclusion lifted
+WitherStormTentacles5: createBodyLayer spliced (+0 imports), exclusion lifted
+spliced: WitherStormP4, HugeAssBackModel, HunchbackGrowth, SeveredWitherStorm, WitherStormTentacles5

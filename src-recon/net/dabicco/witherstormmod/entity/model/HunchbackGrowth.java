@@ -80,25 +80,23 @@ public class HunchbackGrowth extends EntityModel<WitherStormRenderState> {
    }
 
    public static LayerDefinition createBodyLayer() {
-      MeshDefinition meshdefinition = new MeshDefinition();
-      PartDefinition partdefinition = meshdefinition.getRoot();
-      PartDefinition upperBodyPart1 = partdefinition.addOrReplaceChild("upperBodyPart1", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
-      PartDefinition hunchmassivelowtaperfade = upperBodyPart1.addOrReplaceChild(
-         "hunchmassivelowtaperfade", CubeListBuilder.create(), PartPose.offset(4.0F, -10.0F, 9.0F)
-      );
-      PartDefinition covers = upperBodyPart1.addOrReplaceChild("covers", CubeListBuilder.create(), PartPose.offset(11.0F, -8.0F, -1.0F));
-      addGrowths0(hunchmassivelowtaperfade);
-      addGrowths1(hunchmassivelowtaperfade);
-      addGrowths2(hunchmassivelowtaperfade);
-      addGrowths3(hunchmassivelowtaperfade);
-      addGrowths4(hunchmassivelowtaperfade);
-      addGrowths5(hunchmassivelowtaperfade);
-      addGrowths6(hunchmassivelowtaperfade);
-      addGrowths7(hunchmassivelowtaperfade);
-      addCovers0(covers);
-      addCovers1(covers);
-      return LayerDefinition.create(meshdefinition, 128, 128);
-   }
+        MeshDefinition meshdefinition = new MeshDefinition();
+        PartDefinition partdefinition = meshdefinition.getRoot();
+        PartDefinition upperBodyPart1 = partdefinition.addOrReplaceChild("upperBodyPart1", CubeListBuilder.create(), PartPose.offset((float)0.0f, (float)24.0f, (float)0.0f));
+        PartDefinition hunchmassivelowtaperfade = upperBodyPart1.addOrReplaceChild("hunchmassivelowtaperfade", CubeListBuilder.create(), PartPose.offset((float)4.0f, (float)-10.0f, (float)9.0f));
+        PartDefinition covers = upperBodyPart1.addOrReplaceChild("covers", CubeListBuilder.create(), PartPose.offset((float)11.0f, (float)-8.0f, (float)-1.0f));
+        HunchbackGrowth.addGrowths0(hunchmassivelowtaperfade);
+        HunchbackGrowth.addGrowths1(hunchmassivelowtaperfade);
+        HunchbackGrowth.addGrowths2(hunchmassivelowtaperfade);
+        HunchbackGrowth.addGrowths3(hunchmassivelowtaperfade);
+        HunchbackGrowth.addGrowths4(hunchmassivelowtaperfade);
+        HunchbackGrowth.addGrowths5(hunchmassivelowtaperfade);
+        HunchbackGrowth.addGrowths6(hunchmassivelowtaperfade);
+        HunchbackGrowth.addGrowths7(hunchmassivelowtaperfade);
+        HunchbackGrowth.addCovers0(covers);
+        HunchbackGrowth.addCovers1(covers);
+        return LayerDefinition.create((MeshDefinition)meshdefinition, (int)128, (int)128);
+    }
 
    private static void addGrowths0(PartDefinition hunchmassivelowtaperfade) {
       PartDefinition growth = hunchmassivelowtaperfade.addOrReplaceChild(

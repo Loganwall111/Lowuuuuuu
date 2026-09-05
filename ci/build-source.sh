@@ -161,7 +161,7 @@ CP="$CP:$DL/base-fallback.jar"
 
 # --- source set: recovered mod + our overlay, minus the broken decompile ---
 rm -f /tmp/ds-src.args
-find src-recon -name '*.java' ! -name 'WitherStormDevourer.java' ! -name 'WitherStormP4.java' ! -name 'HugeAssBackModel.java' ! -name 'HunchbackGrowth.java' ! -name 'SeveredWitherStorm.java' ! -name 'WitherStormTentacles5.java' > /tmp/ds-src.args
+find src-recon -name '*.java' ! -name 'WitherStormDevourer.java' > /tmp/ds-src.args
 find mcsm-extras/java -name '*.java' >> /tmp/ds-src.args
 find ci/stubs -name '*.java' >> /tmp/ds-src.args
 N_SRC=$(wc -l < /tmp/ds-src.args)
