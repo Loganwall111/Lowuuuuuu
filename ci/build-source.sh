@@ -131,6 +131,24 @@ while IFS=$'\t' read -r url name; do
 done < "$DL/fapi-list.txt"
 FAPI_CP="$(find "$DL/fapi" -name '*.jar' | tr '\n' ':')"
 
+# One-shot API probe: show the fabric potion-brewing surface javac sees
+# (annotations are our only window into the runner).
+FAPI_HOLDER=""
+for j in "$DL"/fapi/*.jar; do
+  if unzip -l "$j" 2>/dev/null | grep -q "FabricPotionBrewingBuilder"; then FAPI_HOLDER="$j"; break; fi
+done
+if [ -n "$FAPI_HOLDER" ]; then
+  echo "[probe] FabricPotionBrewingBuilder lives in $(basename "$FAPI_HOLDER")"
+  javap -cp "$FAPI_HOLDER" net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder 2>/dev/null | head -12 | while IFS= read -r line; do
+    echo "::notice title=probe-fpbb::${line:0:280}"
+  done
+  javap -cp "$FAPI_HOLDER" 'net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder$Builder' 2>/dev/null | head -16 | while IFS= read -r line; do
+    echo "::notice title=probe-builder::${line:0:280}"
+  done
+else
+  echo "::warning title=source-build::FabricPotionBrewingBuilder not found in any fabric-api module jar"
+fi
+
 CP="$DL/client-stripped.jar:$LIBS_CP$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$DL/gson.jar:$DL/slf4j.jar:$DL/modmenu.jar:$FAPI_CP"
 
 # Compile-time fallback, LAST on the classpath: the single class Vineflower
@@ -215,14 +233,14 @@ if [ "$RC" -eq 0 ]; then
 else
   N_ERR=$(grep -cE "error:" "$JAVAC_LOG" || true)
   echo "::error title=source-build::javac reported $N_ERR errors across $N_SRC files; first lines in annotations and out/source-build-report.txt"
-  grep -A4 -E "error:" "$JAVAC_LOG" | grep -E "error:|symbol:|location:|required:|found:" | head -12 | while IFS= read -r line; do
-    echo "::error title=javac::${line:0:400}"
-  done
   grep -E "error:" "$JAVAC_LOG" | sed -E 's/.*error: //; s/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -10 | while IFS= read -r line; do
     echo "::error title=error-kinds::${line:0:300}"
   done
   grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -10 | while read -r c f; do
     echo "::error title=errors-in::${c} ${f}"
+  done
+  grep -A4 -E "error:" "$JAVAC_LOG" | grep -E "symbol:|location:|required:|found:" | sort -u | head -12 | while IFS= read -r line; do
+    echo "::error title=javac-detail::${line:0:400}"
   done
   if [ "$N_ERR" -eq 0 ]; then
     echo "::error title=javac-nonzero-exit::javac exited $RC with no 'error:' lines; log tail follows"
