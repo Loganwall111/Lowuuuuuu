@@ -121,6 +121,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
+import net.minecraft.client.renderer.item.tint.BlockTintSource;
+import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.dabicco.witherstormmod.block.WitheredDustBlock;
 public class DabyWitherStormModClient implements ClientModInitializer {
    private static final int SWIM_DELAY_TICKS = 60;
 
@@ -170,7 +174,15 @@ public class DabyWitherStormModClient implements ClientModInitializer {
             }
          );
       ClientTickEvents.START_CLIENT_TICK.register(ActionButtons::tick);
-      BlockColorRegistry.register(List.of(new 1(this)), new Block[]{ModBlocks.WITHERED_DUST});
+      BlockColorRegistry.register(List.of(new BlockTintSource() {
+         public int color(BlockState state) {
+            return WitheredDustBlock.tint((Integer)state.getValue(RedStoneWireBlock.POWER));
+         }
+
+         public Set<Property<?>> relevantProperties() {
+            return Set.of(RedStoneWireBlock.POWER);
+         }
+      }), new Block[]{ModBlocks.WITHERED_DUST});
       ItemTintSourcesAccessor.dabyws$idMapper().put(Identifier.fromNamespaceAndPath("dabywitherstormmod", "panel_light"), ControlPanelLightTint.MAP_CODEC);
       ItemTintSourcesAccessor.dabyws$idMapper()
          .put(Identifier.fromNamespaceAndPath("dabywitherstormmod", "formidibomb_light"), FormidibombEmissiveTint.MAP_CODEC);

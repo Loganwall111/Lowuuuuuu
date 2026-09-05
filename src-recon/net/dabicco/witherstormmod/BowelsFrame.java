@@ -38,7 +38,8 @@ public final class BowelsFrame {
    // $VF: Unable to simplify switch on enum
    // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
    public static Vec3 toWorld(Direction gravity, Vec3 v) {
-      return switch (gravity) {
+      Vec3 var10000;
+      switch (gravity) {
          case DOWN -> var10000 = v;
          case UP -> var10000 = new Vec3(-v.x, -v.y, v.z);
          case EAST -> var10000 = new Vec3(-v.y, v.x, v.z);
@@ -47,12 +48,15 @@ public final class BowelsFrame {
          case SOUTH -> var10000 = new Vec3(v.x, v.z, -v.y);
          default -> throw new MatchException((String)null, (Throwable)null);
       }
+
+      return var10000;
    }
 
    // $VF: Unable to simplify switch on enum
    // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
    public static Vec3 toFrame(Direction gravity, Vec3 v) {
-      return switch (gravity) {
+      Vec3 var10000;
+      switch (gravity) {
          case DOWN -> var10000 = v;
          case UP -> var10000 = new Vec3(-v.x, -v.y, v.z);
          case EAST -> var10000 = new Vec3(v.y, -v.x, v.z);
@@ -61,6 +65,8 @@ public final class BowelsFrame {
          case SOUTH -> var10000 = new Vec3(v.x, -v.z, v.y);
          default -> throw new MatchException((String)null, (Throwable)null);
       }
+
+      return var10000;
    }
 
    public static Vec3 down(Direction gravity) {
@@ -70,7 +76,7 @@ public final class BowelsFrame {
    // $VF: Unable to simplify switch on enum
    // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
    public static AABB box(Direction gravity, Vec3 feet, double width, double height) {
-      double half = width * 0.5;
+      double half = width * (double)0.5F;
       double minX = feet.x - half;
       double maxX = feet.x + half;
       double minY = feet.y - half;
@@ -102,6 +108,8 @@ public final class BowelsFrame {
             minZ = feet.z - height;
             maxZ = feet.z;
       }
+
+      return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
    }
 
    public static BlockState viewBlocker(Player player, Direction gravity) {
@@ -304,5 +312,21 @@ public final class BowelsFrame {
       } else {
          return 0.0;
       }
+   }
+
+   public static AABB footprint(Direction gravity, AABB box) {
+      double skin = 1.0E-6;
+      AABB var10000;
+      switch (gravity) {
+         case DOWN -> var10000 = new AABB(box.minX, box.minY - skin, box.minZ, box.maxX, box.minY, box.maxZ);
+         case UP -> var10000 = new AABB(box.minX, box.maxY, box.minZ, box.maxX, box.maxY + skin, box.maxZ);
+         case EAST -> var10000 = new AABB(box.maxX, box.minY, box.minZ, box.maxX + skin, box.maxY, box.maxZ);
+         case WEST -> var10000 = new AABB(box.minX - skin, box.minY, box.minZ, box.minX, box.maxY, box.maxZ);
+         case NORTH -> var10000 = new AABB(box.minX, box.minY, box.minZ - skin, box.maxX, box.maxY, box.minZ);
+         case SOUTH -> var10000 = new AABB(box.minX, box.minY, box.maxZ, box.maxX, box.maxY, box.maxZ + skin);
+         default -> throw new MatchException((String)null, (Throwable)null);
+      }
+
+      return var10000;
    }
 }
