@@ -25,6 +25,11 @@
 # ============================================================================
 set -euo pipefail
 set -x
+# MCSM 1.9.101 -- failure visibility: the sandbox cannot read runner logs
+# (results-receiver egress blocked), so an ERR trap reports the failing
+# command + line as a GitHub annotation (readable via the Checks API) and
+# saves it to out/FAILURE.txt.
+trap 'rc=$?; mkdir -p out 2>/dev/null; { echo "MCSM build FAILURE (run ${GITHUB_RUN_NUMBER:-local})"; echo "exit: $rc"; echo "line: $LINENO"; echo "cmd:  $BASH_COMMAND"; } > out/FAILURE.txt 2>/dev/null; cat out/FAILURE.txt 2>/dev/null; echo "::error title=MCSM build failed (exit $rc) line $LINENO::$BASH_COMMAND"' ERR
 
 VER="${1:-$(cat VERSION | tr -d '[:space:]')}"
 JAR_ID="${VER}-26.2-beta-mcsm"
@@ -82,10 +87,14 @@ fi
 # identical sources passed with a base that had no mcsm classes). So the
 # classpath gets a base jar with net/mcsm stripped out; the ASSEMBLY still
 # unzips the full base (below), and the fresh classes overwrite the old ones.
+# Normalize to an absolute path: the assembly/unzip steps run inside
+# subshells that have cd'd elsewhere, where a relative path would re-anchor
+# to the wrong directory (run 33966642417 died on exactly this: exit 15).
+case "$BASE" in /*) ;; *) BASE="$(pwd)/$BASE" ;; esac
 STRIPPED="$DL/base-nomcsm.jar"
 rm -rf "$DL/base-x" "$STRIPPED" && mkdir -p "$DL/base-x"
 ( cd "$DL/base-x" && unzip -q "$BASE" && rm -rf net/mcsm \
-    && zip -q -r -X "$OLDPWD/$STRIPPED" . -x '.*' )
+    && zip -q -r -X "$STRIPPED" . -x '.*' )
 echo "[build] compile classpath base: ${STRIPPED} (net/mcsm stripped)"
 
 # The Minecraft client jar is resolved from the LIVE version manifest instead
@@ -206,7 +215,7 @@ fi
 echo "[assemble] overlay onto base"
 FX=/tmp/mcsm-fx
 rm -rf "$FX" && mkdir -p "$FX/cls"
-( cd "$FX/cls" && unzip -o -q "$OLDPWD/$BASE" )
+( cd "$FX/cls" && unzip -o -q "$BASE" )
 cp -r mcsm-core-shaders/* "$FX/cls/assets/minecraft/shaders/"
 cp -r jar-overrides/* "$FX/cls/"
 # nullglob guard: on a failed javac the class dir is empty and a bare
