@@ -67,8 +67,32 @@ echo "[recon] stage 3: decompile"
 # behind is the real success criterion, so the exit code is captured,
 # reported, and tolerated.
 VF_RC=0
-java -Xmx3g -jar "$VF" "$DL/net" "$DL/out" > "$DL/vineflower.log" 2>&1 || VF_RC=$?
-echo "[recon] vineflower exit code: $VF_RC (tolerated if the tree is complete)"
+# Run 33988747678: vineflower buffers the WHOLE tree and writes it in one
+# save() pass -- a 3g heap OOMed there and produced zero files despite
+# hundreds of "done" log lines. 6g + fewer threads lowers the peak, and if
+# the single pass still produces nothing, per-package passes write
+# incrementally and one huge class can no longer sink the recovery.
+java -Xmx6g -jar "$VF" --threads=2 "$DL/net" "$DL/out" > "$DL/vineflower.log" 2>&1 || VF_RC=$?
+echo "[recon] whole-tree pass exit code: $VF_RC"
+if [ ! -d "$DL/out/net" ]; then
+  echo "::notice title=source-recon::whole-tree pass produced nothing (rc=$VF_RC); falling back to per-package decompile"
+  rm -rf "$DL/out"
+  WS="$DL/net/dabicco/witherstormmod"
+  OUTWS="$DL/out/net/dabicco/witherstormmod"
+  mkdir -p "$OUTWS"
+  for d in "$WS"/*/; do
+    [ -d "$d" ] || continue
+    name=$(basename "$d")
+    echo "[recon] package: $name"
+    java -Xmx4g -jar "$VF" --threads=2 "$WS/$name" "$OUTWS" >> "$DL/vineflower.log" 2>&1 \
+      || echo "[recon] package $name exited $?"
+  done
+  for c in "$WS"/*.class; do
+    [ -e "$c" ] || continue
+    java -Xmx2g -jar "$VF" "$c" "$OUTWS" >> "$DL/vineflower.log" 2>&1 \
+      || echo "[recon] class $(basename "$c") exited $?"
+  done
+fi
 
 mkdir -p src-recon
 cp -r "$DL/out/net" src-recon/ 2>/dev/null || die "no decompiled tree produced (rc=$VF_RC)" "$DL/vineflower.log"
