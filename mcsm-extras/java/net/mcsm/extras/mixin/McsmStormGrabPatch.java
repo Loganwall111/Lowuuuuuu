@@ -58,7 +58,9 @@ public abstract class McsmStormGrabPatch extends net.minecraft.world.entity.boss
         if (McsmExtrasConfig.enableRiseFx && self.isPlayingSpawnAnimation() && gt % 3L == 0L
                 && level instanceof ServerLevel sl) {
             double x = self.getX(), y = self.getY(), z = self.getZ();
-            double r0 = self.getBoundingBox().getXsize() * 0.5 + 5.0;
+            // AABB.getXsize() could not be verified against 26.2 — the public
+            // minX/maxX fields are (BowelsFrame uses them), so compute it here.
+            double r0 = (self.getBoundingBox().maxX - self.getBoundingBox().minX) * 0.5 + 5.0;
             long seed = gt * 31L;
             for (int i = 0; i < 14; i++) {
                 double a = (i / 14.0 + ((seed >> 3 & 63) / 4096.0)) * Math.PI * 2.0;

@@ -50,7 +50,8 @@ public abstract class McsmGuiExtrasRows {
             mAdd.invoke(self, mButton.invoke(null,
                     "Open the MCSM Control Panel",
                     "Glare size, aurora, death cinematic, supernova rings, smoke screen, purple sky, dust waves, reality tear, obliterate flash, and the gameplay patches.",
-                    (Runnable) () -> net.minecraft.client.Minecraft.getInstance().setScreen(
+                    // 26.2: screen switching moved to Minecraft.gui.setScreen(...)
+                    (Runnable) () -> net.minecraft.client.Minecraft.getInstance().gui.setScreen(
                             new net.mcsm.extras.client.McsmExtrasScreen((net.minecraft.client.gui.screens.Screen) self))));
 
             // exact-name relayout (see class doc for why repositionRows, not rebuild)

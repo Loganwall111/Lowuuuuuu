@@ -9,7 +9,7 @@ name: Build MCSM Wither Storm jar
 
 on:
   push:
-    branches: [arena/01a06df7-lowuuuuuu]
+    branches: [arena/01a06df7-lowuuuuuu, arena/01a06edf-lowuuuuuu]
   workflow_dispatch:
 
 permissions:
