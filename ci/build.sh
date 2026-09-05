@@ -118,9 +118,12 @@ if [ "$(stat -c%s "$DL/client.jar")" -lt 10000000 ]; then
 fi
 fetch "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar" mixin.jar
 fetch "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar" jspecify.jar
-fetch "https://repo1.maven.org/maven2/it/unimi/dsi/fastutil/8.5.15/fastutil-8.5.15.jar" fastutil.jar
-fetch "https://libraries.minecraft.net/com/mojang/datafixerupper/8.0.16/datafixerupper-8.0.16.jar" dfu.jar
+fetch "https://libraries.minecraft.net/it/unimi/dsi/fastutil/8.5.18/fastutil-8.5.18.jar" fastutil.jar
+fetch "https://libraries.minecraft.net/com/mojang/datafixerupper/10.0.21/datafixerupper-10.0.21.jar" dfu.jar
 fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" joml.jar
+# MCSM 1.9.101 -- brigadier: 26.2's Component implements com.mojang.brigadier.Message,
+# so javac needs it on the classpath ("cannot access Message" without it).
+fetch "https://libraries.minecraft.net/com/mojang/brigadier/1.3.10/brigadier-1.3.10.jar" brigadier.jar
 
 # MCSM 1.9.100 -- close the loop: teach the sandbox the real API.
 # This sandbox has no JDK and no route to Mojang/Maven, so every client-side
@@ -135,7 +138,7 @@ fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" jom
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
   echo "[apidump] javap the real client + mod API"
   mkdir -p ci/api
-  CP2="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
+  CP2="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar"
   CLIENT_CLASSES="net.minecraft.client.Minecraft net.minecraft.client.gui.Gui \
     net.minecraft.client.gui.GuiGraphics net.minecraft.client.gui.screens.Screen \
     net.minecraft.client.gui.screens.inventory.AbstractContainerScreen \
@@ -165,11 +168,11 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
   # original dump never covered. Dump it, plus a package index of those
   # packages and every "message" entry in the client jar, so the sandbox can
   # see where 26.2 moved things.
-  LEVEL_CLASSES="net.minecraft.world.level.Level net.minecraft.world.level.ServerLevel \
-    net.minecraft.core.particles.ParticleType net.minecraft.client.particles.DustParticleOptions \
-    net.minecraft.network.chat.Component"
+  LEVEL_CLASSES="net.minecraft.world.level.Level net.minecraft.server.level.ServerLevel \
+    net.minecraft.server.level.ServerPlayer net.minecraft.core.particles.ParticleType \
+    net.minecraft.core.particles.DustParticleOptions net.minecraft.network.chat.Component"
   javap -public -classpath "$CP2" $LEVEL_CLASSES > ci/api/level.txt 2>&1 || true
-  unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/(world/level|core/particles|client/particles|network/chat)/' \
+  unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/(world/level|server/level|core/particles|client/particles|network/chat)/' \
     | sort > ci/api/api-classes-index.txt || true
   unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -iE 'message' > ci/api/message-locations.txt || true
   # A class index so we can discover what this version renamed things to.
@@ -205,7 +208,7 @@ fi
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
-CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar"
+CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar"
 # A javac failure is survivable: the jar is still assembled from the previous
 # classes + the current shaders, the FULL javac output goes to
 # out/JAVAC_FAILED.txt, and the run is flagged with a GitHub error annotation.
