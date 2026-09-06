@@ -19,26 +19,21 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Devouring Storms: mega-phase 2 - the storm blob, corrected.
+ * Devouring Storms: mega-phase 2+5 - the storm blob, corrected and welded.
  *
- * Re-submits the base mod's skybox billboard (sun/moon style: a quad pinned
- * at a fixed 220-block sky distance along the storm direction) with the
- * player's corrections:
- *
- *  - phases 5.5-5.9 get the PINKISH-VIOLET blob (purple_pink texture in a
- *    5.2-6.35 window) instead of the reddish/turquoise one;
- *  - the dark storm core (black quad) sits at the EXACT centre of the blob
- *    in every phase from 4 up, so the Wither Storm always looks welded to
- *    the middle of its blob instead of wandering inside it;
- *  - the centre direction is temporally smoothed, so blob and storm glide
- *    together like one skybox element (the Minecraft-sunset behaviour);
- *  - the red ember wash now starts later (6.5+) and weaker, killing the
- *    reddish cast the player flagged.
+ *  - phases 5.5-5.9 get the PINKISH-VIOLET blob; the reddish cast is gone;
+ *  - the dark storm heart sits dead-centre in every phase from 4 up;
+ *  - the centre direction is temporally smoothed (25% per frame) so blob
+ *    and storm glide as one sky element;
+ *  - the phase-6 HALO rides the SAME billboard as the blob, on the NEAREST
+ *    (main) storm only, sized from that storm's own angular body radius so
+ *    the ring hugs its flanks instead of floating far away in the sky;
+ *  - new for 5.5+: a PURPLE OVERLAY over the storm's face - an additive
+ *    fringe hugging the silhouette plus a faint violet wash across the
+ *    whole face, like a second silhouette layered on the creature.
  *
  * Every call is copied verbatim from the base mod's own compiled
- * StormBackdrop (verified 26.2 surface): submitCustomGeometry, addVertex /
- * setColor / setUv / setOverlay / setLight / setNormal, Identifier,
- * Mth, Vec3.
+ * StormBackdrop (verified 26.2 surface).
  */
 public final class McsmStormBlob {
 
@@ -56,6 +51,8 @@ public final class McsmStormBlob {
             "dabywitherstormmod", "textures/misc/backdrop_ember.png");
     private static final Identifier HALO = Identifier.fromNamespaceAndPath(
             "dabywitherstormmod", "textures/misc/storm_halo.png");
+    private static final Identifier STORM_FACE = Identifier.fromNamespaceAndPath(
+            "dabywitherstormmod", "textures/misc/storm_face.png");
 
     private static final Map<Integer, Vec3> SMOOTH = new HashMap<>();
 
@@ -100,6 +97,25 @@ public final class McsmStormBlob {
         PoseStack poseStack = ctx.poseStack();
         SubmitNodeCollector collector = ctx.submitNodeCollector();
         float master = 1.0F; // config-free: the corrected blob always runs
+
+        // pass 1: the NEAREST storm is the main one - halo and face overlay
+        // attach to it and nothing else
+        int mainKey = -1;
+        double mainDist = Double.MAX_VALUE;
+        int probe = 0;
+        for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
+            int key = probe++;
+            if (d.phase < 3.9F) {
+                continue;
+            }
+            Vec3 c = new Vec3(d.dispX, d.dispY, d.dispZ);
+            double dd = c.subtract(cam).length();
+            if (dd < mainDist) {
+                mainDist = dd;
+                mainKey = key;
+            }
+        }
+
         int idx = 0;
         for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
             int key = idx++;
@@ -110,7 +126,7 @@ public final class McsmStormBlob {
             Vec3 centre = new Vec3(d.dispX, d.dispY, d.dispZ);
             Vec3 prev = SMOOTH.get(key);
             if (prev != null) {
-                centre = prev.add(centre.subtract(prev).scale(0.12D));
+                centre = prev.add(centre.subtract(prev).scale(0.25D));
             }
             SMOOTH.put(key, centre);
             Vec3 toStorm = centre.subtract(cam);
@@ -134,14 +150,21 @@ public final class McsmStormBlob {
             baseR *= breathe;
             float a = master * distFade;
 
-            // phase windows, corrected per the reference frames
             float wBlue = ramp(phase, 3.95F, 4.2F) * (1.0F - ramp(phase, 4.6F, 5.0F));
             float wTurq = ramp(phase, 4.45F, 4.9F) * (1.0F - ramp(phase, 5.2F, 5.5F));
             float wViolet = ramp(phase, 5.2F, 5.5F) * (1.0F - ramp(phase, 6.0F, 6.35F));
             float wPurp = ramp(phase, 6.0F, 6.35F);
             float wPink = ramp(phase, 6.3F, 7.0F);
-            float wCore = ramp(phase, 4.0F, 4.3F); // dark heart, every phase
+            float wCore = ramp(phase, 4.0F, 4.3F);
+            float wHalo = ramp(phase, 5.5F, 5.9F);
+            float wFace = ramp(phase, 5.5F, 5.8F);
 
+            // halo FIRST, main storm only, sized off the body's own angular
+            // radius so the ring lands on the flanks, not out in the sky
+            if (key == mainKey && wHalo > 0.004F) {
+                quad(poseStack, collector, GlowRenderTypes.translucent(HALO), at, view,
+                        baseR * 1.13, 255, 255, 255, (int) (a * wHalo * 170.0F));
+            }
             if (wPink > 0.004F) {
                 quad(poseStack, collector, GlowRenderTypes.translucent(PURPLE_PINK), at, view,
                         baseR * 1.55, 255, 205, 225, (int) (a * wPink * 245.0F));
@@ -158,33 +181,25 @@ public final class McsmStormBlob {
                 quad(poseStack, collector, GlowRenderTypes.translucent(TURQUOISE), at, view,
                         baseR * 1.1, 255, 255, 255, (int) (a * wTurq * 250.0F));
             }
-            // red ember: later and weaker - kills the reddish cast
             if (phase >= 6.5F) {
                 quad(poseStack, collector, GlowRenderTypes.translucent(EMBER), at, view,
-                        baseR * 1.34, 255, 255, 255,
-                        (int) (a * 60.0F));
+                        baseR * 1.34, 255, 255, 255, (int) (a * 60.0F));
             }
-            // the dark storm heart, dead centre of the blob, always
             if (wCore > 0.004F) {
                 quad(poseStack, collector, GlowRenderTypes.translucent(BLACK), at, view,
-                        baseR * 0.85, 255, 255, 255,
-                        (int) (a * wCore * 235.0F));
+                        baseR * 0.85, 255, 255, 255, (int) (a * wCore * 235.0F));
+            }
+            // the purple overlay: additive fringe on the silhouette plus a
+            // faint violet wash across the whole face, 5.5 and up
+            if (key == mainKey && wFace > 0.004F) {
+                quad(poseStack, collector, GlowRenderTypes.glow(STORM_FACE), at, view,
+                        baseR * 1.06, 255, 255, 255, (int) (a * wFace * 140.0F));
+                quad(poseStack, collector, GlowRenderTypes.translucent(STORM_FACE), at, view,
+                        baseR * 0.92, 255, 255, 255, (int) (a * wFace * 55.0F));
             }
             if (wBlue > 0.004F) {
                 quad(poseStack, collector, GlowRenderTypes.glow(BLUE4), at, view,
-                        baseR * 0.95, 190, 215, 255,
-                        (int) (a * wBlue * 235.0F));
-            }
-            // mega-phase 3: the phase-6 dynamic sky, shrunk to a floating
-            // halo ring hugging the MAIN storm's sides - never overhead,
-            // never past its silhouette, detached storms excluded (key 0)
-            if (key == 0) {
-                float wHalo = ramp(phase, 5.5F, 5.9F);
-                if (wHalo > 0.004F) {
-                    quad(poseStack, collector, GlowRenderTypes.translucent(HALO), at, view,
-                            baseR * 1.28, 255, 255, 255,
-                            (int) (a * wHalo * 150.0F));
-                }
+                        baseR * 0.95, 190, 215, 255, (int) (a * wBlue * 235.0F));
             }
         }
     }

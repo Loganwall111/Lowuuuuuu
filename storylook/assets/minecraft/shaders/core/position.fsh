@@ -62,7 +62,7 @@ float fbm(vec3 p) {
 
 // layered cloud decks, shared by calm and storm skies
 vec3 paintDecks(vec3 dirS, vec3 col, float acc0, vec3 litCol, vec3 shadeCol,
-                float dayness, float warm) {
+                float dayness, float warm, float sideFade) {
     if (dirS.y <= 0.02) {
         return col;
     }
@@ -86,6 +86,8 @@ vec3 paintDecks(vec3 dirS, vec3 col, float acc0, vec3 litCol, vec3 shadeCol,
                 + ceilBonus * smoothstep(0.35, 0.6, cov) * pres;
         // soften the deck edge into the horizon: kills the roof/side seam
         a *= smoothstep(0.02, 0.12, dirS.y);
+        // storm skies keep their decks on the sides, not overhead
+        a *= mix(1.0, sideFade, smoothstep(0.30, 0.70, dirS.y));
         a = min(a, 0.92) * (1.0 - acc);
         float core = smoothstep(th - 0.12, th + 0.34, cov);
         vec3 dc = mix(shadeCol, litCol, 0.55 + 0.45 * core);
@@ -121,7 +123,7 @@ void main() {
               || (C.r > C.g * 1.25 && clum < 0.18);
     if (storm) {
         float greenK  = clamp((C.g - max(C.r, C.b)) * 2.5, 0.0, 1.0);
-        float orangeK = clamp((C.r - C.g) * 2.2, 0.0, 1.0) * (1.0 - greenK);
+        float orangeK = clamp((C.r - C.g) * 2.2, 0.0, 1.0) * step(C.b, C.g) * (1.0 - greenK);
         float pinkK   = clamp(1.0 - abs(C.r - C.b) * 3.0, 0.0, 1.0)
                       * step(C.g * 1.05, min(C.r, C.b)) * (1.0 - greenK);
         float magK    = clamp((C.r - C.b) * 2.0, 0.0, 1.0) * (1.0 - orangeK) * (1.0 - greenK);
@@ -175,9 +177,9 @@ void main() {
         vec3 ocol = mix(vec3(olum) * vec3(0.42, 0.30, 0.52), vec3(0.02, 0.012, 0.03), 0.55);
         col = mix(col, ocol, over * 0.85);
 
-        vec3 litC = mix(vec3(0.90, 0.88, 0.95), hor, 0.30);
-        vec3 shadeC = mix(zen, hor, 0.30) * 0.75;
-        col = paintDecks(dirS, col, 0.0, litC, shadeC, 0.35, 0.5);
+        vec3 litC = mix(vec3(0.52, 0.42, 0.62), hor, 0.35);
+        vec3 shadeC = mix(zen, hor, 0.30) * 0.60;
+        col = paintDecks(dirS, col, 0.0, litC, shadeC, 0.35, 0.5, 0.35);
 
         col = mix(col, hor * 0.45, smoothstep(0.0, -0.35, ty));
         float lum = dot(col, vec3(0.299, 0.587, 0.114));
@@ -214,8 +216,8 @@ void main() {
     mid = mix(mid, vec3(0.560, 0.620, 0.760), wk);
     hor = mix(hor, vec3(0.880, 0.760, 0.640), wk);
 
-    vec3 col = mix(zen, mid, smoothstep(0.05, 0.5, t));
-    col = mix(col, hor, smoothstep(0.5, 0.95, t));
+    vec3 col = mix(zen, mid, smoothstep(0.10, 0.60, t));
+    col = mix(col, hor, smoothstep(0.75, 0.98, t));
     col += hor * 0.14 * exp(-abs(ty) * 7.0);
 
     // crisp stars at night
@@ -227,7 +229,7 @@ void main() {
     // white story clouds with pale-blue shadowed fringes
     vec3 litC = mix(vec3(0.960, 0.975, 1.000), hor, 0.10);
     vec3 shadeC = mix(zen, hor, 0.35) * 0.85;
-    col = paintDecks(dirS, col, 0.0, litC, shadeC, day, 0.5);
+    col = paintDecks(dirS, col, 0.0, litC, shadeC, day, 0.5, 1.0);
 
     col = mix(col, hor * 0.5, smoothstep(0.0, -0.3, ty));
     float lum = dot(col, vec3(0.299, 0.587, 0.114));

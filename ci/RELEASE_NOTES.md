@@ -1,13 +1,21 @@
-# Devouring Storms: The Point of No Return — 1.9.135
-## Mega-phase 4/15: N-flash pulses
+# Devouring Storms: The Point of No Return — 1.9.136
+## Mega-phase 5a/15: the corrections batch
 
-- Phase 7+: every 30-50 seconds a **20-second purple N-flash pulse**
-  slowly rises and fades OVER the storm (deep violet gradient, brighter
-  at the top of the screen), with a **heartbeat double-thump** pacing it
-  (low dulled thuds, ~1.5 s apart) - the story's N-flash beat.
-- Pulses only run while a storm at phase 6.5+ is present, and degrade
-  silently on base jars without the storm manager.
+- **Halo welded to the storm**: the phase-6 halo ring now attaches to the
+  NEAREST (main) storm only, sized from that storm's own angular body
+  radius and drawn UNDER the blob quads - it hugs the flanks and travels
+  with the creature instead of floating far off in the sky.
+- **The purple face overlay (5.5+)**: an additive violet fringe hugging
+  the storm's silhouette PLUS a faint violet wash across the whole face -
+  a second purple silhouette layered on the creature, per the reference
+  frames. Texture generated at build time.
+- **Noon sky fixed**: the pink horizon is now a thin band (tightened
+  gradient stops) - midday reads story blue like the EnderCon frame.
+- **Teal/green sunrise quad remapped** to the pink-lavender story dawn
+  (the position_color band that leaked across dawn/dusk), and the sunset
+  palette key can no longer misfire on magenta storm tints (no more
+  orange-red night skies).
+- **Storm decks read purple-lit** instead of black overhead, and fade
+  toward the sides where the storm sky lives.
 
-Next: embedded shader pack with ON/OFF (default ON), fog/mist/portal
-warp, structures + Sky City altitude, dimensions, NPCs, vortex,
-Devourer rebuild, OG textures, 2.0.0.
+Phase 5b (embedded shader pack with ON/OFF) continues next.
