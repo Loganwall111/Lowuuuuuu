@@ -94,13 +94,14 @@ void main() {
     day = max(1.0 - night - dawn, 0.0);
 
     // Gradient stops, linear light, sampled from the reference images.
-    vec3 zen = day * vec3(0.108, 0.530, 0.830)
+    vec3 zen = day * vec3(0.086, 0.486, 0.848)
              + dawn * vec3(0.381, 0.456, 0.776)
              + night * vec3(0.0033, 0.0052, 0.029);
-    vec3 mid = day * vec3(0.210, 0.610, 0.840)
+    // deeper, richer story blues - no pale wash anywhere (round 4 match)
+    vec3 mid = day * vec3(0.182, 0.584, 0.856)
              + dawn * vec3(0.620, 0.560, 0.810)
              + night * vec3(0.010, 0.014, 0.070);
-    vec3 hor = day * vec3(0.420, 0.790, 0.940)
+    vec3 hor = day * vec3(0.372, 0.748, 0.930)
              + dawn * vec3(0.890, 0.680, 0.730)
              + night * vec3(0.019, 0.031, 0.130);
 
@@ -128,34 +129,44 @@ void main() {
     float star = smoothstep(0.996, 0.9995, sn) * night;
     col += star * (0.55 + 0.45 * hash13(sg + 7.7)) * vec3(0.92, 0.96, 1.0);
 
-    // Stacked cloud decks: nine heights, adjacent pairs, void gaps between
-    // groups, ridge noise nesting clouds inside clouds, front-to-back
-    // occlusion so low decks hide the ones far above, and a dense ceiling
-    // deck so the stack ends instead of going on forever. Patches are small
-    // and opaque white like the reference shots.
+    // Stacked cloud decks, round 4: THREE deck groups that read as separate
+    // layers from the ground. Whole groups vanish over wide regions (pres),
+    // so real void sky opens between a low deck, a gap, and the decks far
+    // above - the layered look from the reference shots. Each deck gets its
+    // own lighting: bright sunlit cores, fringes falling into blue shadow
+    // (a cheap self-shadow), higher decks catching more sun, and low viewing
+    // angles lengthening warm like late-afternoon light through cloud edges.
     if (dir.y > 0.02) {
         vec2 pxz = dir.xz / dir.y;
-        vec2 drift = vec2(0.0);
         float H[9];
         H[0] = 96.0;  H[1] = 146.0; H[2] = 152.0; H[3] = 420.0; H[4] = 430.0;
         H[5] = 1200.0; H[6] = 3500.0; H[7] = 9000.0; H[8] = 16000.0;
         float acc = 0.0;
         for (int i = 0; i < 9; i++) {
-            vec2 uv = pxz * (120.0 / pow(H[i] / 96.0, 0.55)) + drift * (1.0 + float(i) * 0.15) + vec2(float(i) * 7.3);
+            int grp = (i < 3) ? 0 : ((i < 6) ? 1 : 2);
+            vec2 uv = pxz * (120.0 / pow(H[i] / 96.0, 0.55)) + vec2(float(i) * 7.3);
+            // group presence: wide clean bands where a whole layer is absent,
+            // exposing true sky between the stacked decks
+            float pres = (grp == 0) ? 1.0
+                    : smoothstep(0.30, 0.44, fbm(vec3(pxz * 0.010 + vec2(float(grp) * 31.7), float(grp) * 13.0)));
             float cov = fbm(vec3(uv * 0.9, float(i) * 3.1));
-            // void gaps: a second low-frequency mask carves empty sky between
-            // cloud groups so the gaps read from the ground
-            float gapmask = smoothstep(0.34, 0.46, fbm(vec3(uv * 0.33, float(i) * 9.0)));
+            float gapmask = smoothstep(0.40, 0.54, fbm(vec3(uv * 0.33, float(i) * 9.0)));
             float nest = fbm(vec3(uv * 3.4 + 17.0, float(i) * 5.7));
-            // low decks sparse, mid decks bold, ceiling dense: distinct
-            // layers instead of one occluding blanket
-            float th = (i < 3) ? 0.60 : ((i < 7) ? 0.48 : 0.42);
+            float th = (i < 3) ? 0.62 : ((i < 7) ? 0.50 : 0.44);
             float ceilBonus = (i == 8) ? 0.25 : 0.0;
-            float a = smoothstep(th, th + 0.14, cov) * gapmask
-                    * (0.72 + 0.28 * smoothstep(0.35, 0.75, nest))
-                    + ceilBonus * smoothstep(0.35, 0.6, cov);
-            a = min(a, 0.9) * (1.0 - acc);
-            vec3 dc = mix(vec3(1.0), hor, 0.10) * (day * 1.0 + dawn * 0.97 + night * 0.25);
+            float a = smoothstep(th, th + 0.08, cov) * gapmask * pres
+                    * (0.70 + 0.30 * smoothstep(0.35, 0.75, nest))
+                    + ceilBonus * smoothstep(0.35, 0.6, cov) * pres;
+            a = min(a, 0.92) * (1.0 - acc);
+            // per-deck lighting: bright cores, blue-shadowed fringes,
+            // higher decks slightly brighter, low angles warmed
+            float core = smoothstep(th - 0.12, th + 0.34, cov);
+            vec3 lit = mix(vec3(1.0), hor, 0.08) * (0.97 + 0.05 * float(i));
+            vec3 shade = mix(zen, hor, 0.25) * 0.80;
+            vec3 dc = mix(shade, lit, 0.55 + 0.45 * core);
+            dc *= (day * 1.0 + dawn * 0.97 + night * 0.22);
+            dc = mix(dc, dc * vec3(1.06, 0.98, 0.88),
+                     (1.0 - clamp(dir.y, 0.0, 1.0)) * 0.5);
             dc *= (mod(float(i), 2.0) < 0.5) ? 1.0 : 0.955;
             col = mix(col, dc, a);
             acc += a * 0.85;
@@ -167,6 +178,13 @@ void main() {
         // Below the horizon: fade to a deeper void tone, never the pale wash.
         col = mix(col, hor * 0.5, smoothstep(0.0, -0.3, dir.y));
     }
+
+    // round 4 colour match: lift saturation so the blues read deep and rich
+    // like the reference frames, then a gentle contrast S-curve so nothing
+    // washes pale toward the horizon
+    float lum = dot(col, vec3(0.299, 0.587, 0.114));
+    col = mix(vec3(lum), col, 1.30);
+    col = mix(col, col * col * (3.0 - 2.0 * col), 0.30);
 
     fragColor = vec4(col, 1.0);
 }

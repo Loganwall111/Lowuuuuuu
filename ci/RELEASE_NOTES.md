@@ -1,14 +1,16 @@
-# Devouring Storms: The Point of No Return — 1.9.130
+# Devouring Storms: The Point of No Return — 1.9.131
 
-- **You now spawn INSIDE EnderCon** (Item 4, slice 2): on a fresh world
-  the EnderCon Town Fair builds itself automatically through the base
-  mod's own incremental builder while the MCSM episode card plays — and
-  the moment it's ready, you're teleported into the fair with the
-  "Episode One — A New Order" intro in chat. No more standing at world
-  spawn watching it assemble, no /mcsm build needed. If the fair already
-  exists, you simply arrive in it. Once per player per session.
-- Episode title card, MCSM menu, config reskin, dynamic lights, top-left
-  hotbar, built-in Story Look — all from previous builds.
+**Story Look visual round 4 — the reference-image match pass:**
+
+- **Layered clouds that finally read as layers**: the nine decks are now
+  grouped into three bands, and WHOLE bands vanish over wide regions of
+  sky — so you get a low deck, a true void gap of clean sky, then the
+  decks far above, exactly the stacked look of the reference shots.
+- **Per-deck lighting and shadowing**: bright sunlit cores, fringes that
+  fall into blue self-shadow, higher decks catching more sun, and low
+  viewing angles warming like late-afternoon light through cloud edges.
+- **Saturation + contrast match**: sky blues lifted to deep, rich story
+  saturation (1.30) with a gentle S-curve — no pale wash at the horizon.
 
 Remove ALL older jars from `mods/`; install only
-`devouringstorms-1.9.130-26.2-beta-ds.jar`.
+`devouringstorms-1.9.131-26.2-beta-ds.jar` (the pack rides inside).
