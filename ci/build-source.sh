@@ -219,12 +219,17 @@ N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
   # --- GUI surface probe: exact 26.2 names for the next GUI/lighting round ---
 {
   echo "gui surface probe (26.2 client jar, run-generated)"
+  echo "== hotbar / render-state class inventory"
+  ( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -iE "hotbar|guirenderstate|guigraphicsextractor|/hud" | head -30 )
   for C in net.minecraft.world.entity.item.ItemEntity \
            net.minecraft.client.gui.screens.TitleScreen \
            net.minecraft.client.gui.Gui \
+           net.minecraft.client.gui.Hud \
+           net.minecraft.client.gui.GuiGraphicsExtractor \
+           net.minecraft.client.renderer.state.gui.GuiRenderState \
            net.minecraft.client.gui.components.AbstractWidget; do
     echo "== $C"
-    javap -cp "$DL/client-stripped.jar" "$C" 2>/dev/null | head -45
+    javap -cp "$DL/client-stripped.jar" "$C" 2>/dev/null | head -80
   done
 } > ci/reports/gui-surface-latest.txt 2>/dev/null || true
 
