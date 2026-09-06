@@ -1,0 +1,140 @@
+gui surface probe (26.2 client jar, run-generated)
+== net.minecraft.world.entity.item.ItemEntity
+Compiled from "ItemEntity.java"
+public class net.minecraft.world.entity.item.ItemEntity extends net.minecraft.world.entity.Entity implements net.minecraft.world.entity.TraceableEntity {
+  public static final float EYE_HEIGHT;
+  public static final int DEFAULT_HEALTH;
+  public final float bobOffs;
+  public net.minecraft.world.entity.item.ItemEntity(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.item.ItemEntity>, net.minecraft.world.level.Level);
+  public net.minecraft.world.entity.item.ItemEntity(net.minecraft.world.level.Level, double, double, double, net.minecraft.world.item.ItemStack);
+  public net.minecraft.world.entity.item.ItemEntity(net.minecraft.world.level.Level, double, double, double, net.minecraft.world.item.ItemStack, double, double, double);
+  public boolean dampensVibrations();
+  public net.minecraft.world.entity.Entity getOwner();
+  public void restoreFrom(net.minecraft.world.entity.Entity);
+  protected net.minecraft.world.entity.Entity$MovementEmission getMovementEmission();
+  protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData$Builder);
+  protected double getDefaultGravity();
+  public void tick();
+  public net.minecraft.core.BlockPos getBlockPosBelowThatAffectsMyMovement();
+  public static boolean areMergable(net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack);
+  public static net.minecraft.world.item.ItemStack merge(net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack, int);
+  public boolean fireImmune();
+  protected boolean shouldPlayLavaHurtSound();
+  public final boolean hurtClient(net.minecraft.world.damagesource.DamageSource);
+  public final boolean hurtServer(net.minecraft.server.level.ServerLevel, net.minecraft.world.damagesource.DamageSource, float);
+  public boolean ignoreExplosion(net.minecraft.world.level.Explosion);
+  protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput);
+  protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput);
+  public void playerTouch(net.minecraft.world.entity.player.Player);
+  public net.minecraft.network.chat.Component getName();
+  public boolean isAttackable();
+  public net.minecraft.world.entity.Entity teleport(net.minecraft.world.level.portal.TeleportTransition);
+  public net.minecraft.world.item.ItemStack getItem();
+  public void setItem(net.minecraft.world.item.ItemStack);
+  public void setTarget(java.util.UUID);
+  public void setThrower(net.minecraft.world.entity.Entity);
+  public int getAge();
+  public void setDefaultPickUpDelay();
+  public void setNoPickUpDelay();
+  public void setNeverPickUp();
+  public void setPickUpDelay(int);
+  public boolean hasPickUpDelay();
+  public void setUnlimitedLifetime();
+  public void setExtendedLifetime();
+  public void makeFakeItem();
+  public static float getSpin(float, float);
+  public net.minecraft.sounds.SoundSource getSoundSource();
+  public float getVisualRotationYInDegrees();
+== net.minecraft.client.gui.screens.TitleScreen
+Compiled from "TitleScreen.java"
+public class net.minecraft.client.gui.screens.TitleScreen extends net.minecraft.client.gui.screens.Screen {
+  public net.minecraft.client.gui.screens.TitleScreen();
+  public net.minecraft.client.gui.screens.TitleScreen(boolean);
+  public net.minecraft.client.gui.screens.TitleScreen(boolean, net.minecraft.client.gui.components.LogoRenderer);
+  public void tick();
+  public static void registerTextures(net.minecraft.client.renderer.texture.TextureManager);
+  public boolean isPauseScreen();
+  public boolean shouldCloseOnEsc();
+  protected void init();
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public void extractBackground(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent, boolean);
+  public void removed();
+  public void added();
+  public boolean canInterruptWithAnotherScreen();
+  static {};
+}
+== net.minecraft.client.gui.Gui
+Compiled from "Gui.java"
+public class net.minecraft.client.gui.Gui {
+  public static final net.minecraft.network.chat.Component SAVING_LEVEL;
+  public final net.minecraft.client.gui.Hud hud;
+  public net.minecraft.client.gui.Gui(net.minecraft.client.Minecraft, net.minecraft.client.gui.Hud, net.minecraft.client.renderer.state.gui.GuiRenderState);
+  public void registerReloadListeners(net.minecraft.server.packs.resources.ReloadableResourceManager);
+  public void tick();
+  public void update();
+  public void extractRenderState(net.minecraft.client.DeltaTracker, boolean, boolean);
+  public net.minecraft.client.gui.screens.Screen screen();
+  public void setScreen(net.minecraft.client.gui.screens.Screen);
+  public net.minecraft.client.gui.screens.Overlay overlay();
+  public void setOverlay(net.minecraft.client.gui.screens.Overlay);
+  public boolean isPausing();
+  public net.minecraft.client.resources.SplashManager splashManager();
+  public net.minecraft.client.gui.components.toasts.ToastManager toastManager();
+  public net.minecraft.client.multiplayer.chat.ChatListener chatListener();
+  public void addSocialInteractionsToast();
+  public void setPauseScreen(boolean, boolean);
+  public void handleKeybinds();
+  public void openChatScreen(net.minecraft.client.gui.components.ChatComponent$ChatMethod);
+  public void openChatAndAddText(net.minecraft.client.gui.components.ChatComponent$ChatMethod, java.lang.String);
+  public java.lang.Runnable buildInitialScreens(net.minecraft.client.GameLoadCookie);
+  public boolean canInterruptScreen();
+  public void setClientLevelTeardownInProgress(boolean);
+  static {};
+}
+== net.minecraft.client.gui.components.AbstractWidget
+Compiled from "AbstractWidget.java"
+public abstract class net.minecraft.client.gui.components.AbstractWidget implements net.minecraft.client.gui.layouts.LayoutElement,net.minecraft.client.gui.components.Renderable,net.minecraft.client.gui.components.events.GuiEventListener,net.minecraft.client.gui.narration.NarratableEntry {
+  protected int width;
+  protected int height;
+  protected net.minecraft.network.chat.Component message;
+  protected boolean isHovered;
+  public boolean active;
+  public boolean visible;
+  protected float alpha;
+  public net.minecraft.client.gui.components.AbstractWidget(int, int, int, int, net.minecraft.network.chat.Component);
+  public int getHeight();
+  public final void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  protected void extractTooltipForNextRenderPass(net.minecraft.client.gui.GuiGraphicsExtractor, int, int);
+  protected void handleCursor(net.minecraft.client.gui.GuiGraphicsExtractor);
+  public void setTooltip(net.minecraft.client.gui.components.Tooltip);
+  public void setTooltipDelay(java.time.Duration);
+  protected net.minecraft.network.chat.MutableComponent createNarrationMessage();
+  public static net.minecraft.network.chat.MutableComponent wrapDefaultNarrationMessage(net.minecraft.network.chat.Component);
+  protected abstract void extractWidgetRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  protected void extractScrollingStringOverContents(net.minecraft.client.gui.ActiveTextCollector, net.minecraft.network.chat.Component, int);
+  public void onClick(net.minecraft.client.input.MouseButtonEvent, boolean);
+  public void onRelease(net.minecraft.client.input.MouseButtonEvent);
+  protected void onDrag(net.minecraft.client.input.MouseButtonEvent, double, double);
+  public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent, boolean);
+  public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent);
+  protected boolean isValidClickButton(net.minecraft.client.input.MouseButtonInfo);
+  public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent, double, double);
+  public net.minecraft.client.gui.ComponentPath nextFocusPath(net.minecraft.client.gui.navigation.FocusNavigationEvent);
+  public boolean isMouseOver(double, double);
+  public void playDownSound(net.minecraft.client.sounds.SoundManager);
+  public static void playButtonClickSound(net.minecraft.client.sounds.SoundManager);
+  public int getWidth();
+  public void setWidth(int);
+  public void setHeight(int);
+  public void setAlpha(float);
+  public float getAlpha();
+  public void setMessage(net.minecraft.network.chat.Component);
+  public net.minecraft.network.chat.Component getMessage();
+  public boolean isFocused();
+  public boolean isHovered();
+  public boolean isHoveredOrFocused();
+  public boolean isActive();
+  public void setFocused(boolean);
+  public net.minecraft.client.gui.narration.NarratableEntry$NarrationPriority narrationPriority();
+  public final void updateNarration(net.minecraft.client.gui.narration.NarrationElementOutput);
