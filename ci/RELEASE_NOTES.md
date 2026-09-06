@@ -1,18 +1,20 @@
-# Devouring Storms: The Point of No Return — 1.9.118
+# Devouring Storms: The Point of No Return — 1.9.119
 
-**Second launch-crash fix — this one is definitive.** 1.9.117 still crashed
-because Mixin prepends a config's declared `package` to *every* entry, even
-fully-qualified ones. 1.9.118 rewrites the mixin config at build time the
-only safe way: the `package` key is dropped and every entry (base mod's and
-ours) becomes fully qualified, so each one resolves to exactly one real
-class.
+**Third and final launch-crash fix — this one matches Mixin's actual rules,
+verified against your two crash logs.** Mixin configs have exactly one valid
+shape: a `package` key plus simple-name entries. 1.9.117 broke rule one
+(FQ entries got the package prepended again); 1.9.118 broke rule two (no
+package key ⇒ Mixin orphans EVERY entry — the base mod's own mixins stopped
+loading, hence the `ItemTintSourcesAccessor` AssertionError).
 
-The CI gate now mirrors Mixin's real resolution rule and fails the build if
-any entry would not resolve — 1.9.114–1.9.117 could not pass it.
+1.9.119 keeps the base config's `package` untouched and compiles the ten
+overlay mixins INTO that same package, so every entry resolves to exactly
+one real, freshly-compiled class. The CI gate now also proves each overlay
+mixin class in the jar is the fresh overlay (not a stale base copy), and
+fails on any package-less config.
 
 Remove ALL older jars from `mods/`; install only
-`devouringstorms-1.9.118-26.2-beta-ds.jar`. Expect
-`[ds] Devouring Storms 1.9.118 loaded…` in chat.
+`devouringstorms-1.9.119-26.2-beta-ds.jar`. Expect
+`[ds] Devouring Storms 1.9.119 loaded…` in chat.
 
-Story Look resource pack (stacked cloud decks, pastel lighting, halo sun)
-attached below as `devouringstorms-storylook-1.9.118.zip`.
+Story Look resource pack attached below.

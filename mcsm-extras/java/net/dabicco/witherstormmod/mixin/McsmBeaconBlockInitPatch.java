@@ -1,4 +1,4 @@
-package net.mcsm.extras.mixin;
+package net.dabicco.witherstormmod.mixin;
 
 import net.mcsm.extras.McsmExtrasConfig;
 import net.mcsm.extras.McsmStormFx;

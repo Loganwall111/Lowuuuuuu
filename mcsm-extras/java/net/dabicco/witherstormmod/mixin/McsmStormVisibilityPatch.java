@@ -1,4 +1,4 @@
-package net.mcsm.extras.mixin;
+package net.dabicco.witherstormmod.mixin;
 
 import net.dabicco.witherstormmod.client.FoglessRenderTypes;
 import org.spongepowered.asm.mixin.Mixin;

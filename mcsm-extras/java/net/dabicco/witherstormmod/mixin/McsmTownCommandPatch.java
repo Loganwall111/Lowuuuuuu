@@ -1,4 +1,4 @@
-package net.mcsm.extras.mixin;
+package net.dabicco.witherstormmod.mixin;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;

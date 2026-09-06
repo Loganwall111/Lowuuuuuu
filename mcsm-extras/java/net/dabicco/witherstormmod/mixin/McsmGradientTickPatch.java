@@ -1,4 +1,4 @@
-package net.mcsm.extras.mixin;
+package net.dabicco.witherstormmod.mixin;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;

@@ -333,17 +333,29 @@ cfgs = [c for c in cfgs if c and os.path.isfile(os.path.join(cls_dir, c))]
 if not cfgs:
     print("[merge] no mixin config file found in jar -- audit will fail")
     raise SystemExit(0)
-FQ = "net.mcsm.extras.mixin."
+# 1.9.119 -- Mixin's real config model, learned from two launch crashes:
+#  - 1.9.117: entries are ALWAYS resolved as package + "." + entry, even
+#    dotted ones (FQ entries became pkg.net.mcsm... -> ClassNotFound).
+#  - 1.9.118: without a "package" key EVERY entry is orphaned and skipped
+#    ("declares mixin classes ... but does not specify a package"), so all
+#    base mixins silently stopped applying -> accessor AssertionError.
+# Therefore: keep the config's package (net.dabicco.witherstormmod.mixin),
+# append overlay mixins as SIMPLE names, and the overlay mixin classes are
+# compiled INTO that same package (mcsm-extras/java/net/dabicco/...).
+PKG = "net.dabicco.witherstormmod.mixin."
 added = []
-for src in sorted(glob.glob("mcsm-extras/java/net/mcsm/extras/mixin/*.java")):
+for src in sorted(glob.glob("mcsm-extras/java/net/dabicco/witherstormmod/mixin/*.java")):
     cls = os.path.basename(src)[:-5]
     is_client = "net.minecraft.client" in open(src).read()
     present = False
     for cfg in cfgs:
         d = json.load(open(os.path.join(cls_dir, cfg)))
+        if d.get("package") and d["package"] + "." != PKG:
+            print("::error title=jar audit::config %s declares unexpected package %s" % (cfg, d["package"]))
+            raise SystemExit(1)
         for key in ("mixins", "client"):
             for e in d.get(key) or []:
-                if e == cls or e == FQ + cls:
+                if e == cls or e == PKG + cls:
                     present = True
     if present:
         continue
@@ -352,21 +364,7 @@ for src in sorted(glob.glob("mcsm-extras/java/net/mcsm/extras/mixin/*.java")):
         p = os.path.join(cls_dir, cfg)
         d = json.load(open(p))
         d.setdefault(key, [])
-        # 1.9.118 -- Mixin's REAL resolution rule: when a config declares
-        # "package", that package is prepended to EVERY entry, even dotted
-        # ones (1.9.117 proved it: the launch looked for
-        # net.dabicco.witherstormmod.mixin.net.mcsm.extras.mixin.
-        # McsmTownCommandPatch). 1.9.114-116 appended simple names, which
-        # resolved into the base package where our classes do not exist.
-        # The only safe shape: DROP the package key and fully qualify every
-        # entry -- base entries under the old package, ours under
-        # net.mcsm.extras.mixin. Mixin resolves package-less entries as FQ.
-        pkg = d.pop("package", "")
-        if pkg:
-            for k2 in ("mixins", "client", "server"):
-                if d.get(k2):
-                    d[k2] = [(pkg + "." + e) if "." not in e else e for e in d[k2]]
-        d[key].append(FQ + cls)
+        d[key].append(cls)
         with open(p, "w") as f:
             json.dump(d, f, indent=2)
             f.write("\n")
@@ -437,16 +435,25 @@ else
 
   MISSING=""
   N_MIXINS=0
-  for src in mcsm-extras/java/net/mcsm/extras/mixin/*.java; do
+  for src in mcsm-extras/java/net/dabicco/witherstormmod/mixin/*.java; do
     [ -f "$src" ] || continue
     N_MIXINS=$((N_MIXINS + 1))
     cls=$(basename "$src" .java)
-    # matches both "McsmFoo" and "net.mcsm.extras.mixin.McsmFoo"
+    # matches both "McsmFoo" and any dotted form
     if ! grep -q "${cls}\"" <<< "$ALL_CFG"; then
       MISSING="$MISSING $cls"
     fi
-    if [ ! -f "$FX/cls/net/mcsm/extras/mixin/$cls.class" ]; then
+    JARCLS="$FX/cls/net/dabicco/witherstormmod/mixin/$cls.class"
+    NEWCLS="/tmp/mcsm-build/net/dabicco/witherstormmod/mixin/$cls.class"
+    if [ ! -f "$JARCLS" ]; then
       echo "::error title=jar audit::mixin $cls has no compiled class in the jar"
+      AUDIT_FAIL=1
+    elif [ ! -f "$NEWCLS" ]; then
+      echo "::error title=jar audit::mixin $cls was not freshly compiled"
+      AUDIT_FAIL=1
+    elif ! cmp -s "$JARCLS" "$NEWCLS"; then
+      # a same-named BASE class would silently win over our overlay
+      echo "::error title=jar audit::mixin $cls in jar is NOT the freshly compiled overlay class (stale base copy?)"
       AUDIT_FAIL=1
     fi
   done
@@ -473,6 +480,9 @@ for cfg in sys.argv[2:]:
         continue
     d = json.load(open(p))
     pkg = d.get("package", "")
+    if not pkg and (d.get("mixins") or d.get("client")):
+        print("::error title=jar audit::config %s has entries but NO package key -- Mixin orphans every entry and nothing loads" % cfg)
+        bad = 1
     for key in ("mixins", "client"):
         for e in d.get(key) or []:
             n += 1

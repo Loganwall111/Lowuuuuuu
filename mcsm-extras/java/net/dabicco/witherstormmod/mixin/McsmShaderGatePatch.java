@@ -1,4 +1,4 @@
-package net.mcsm.extras.mixin;
+package net.dabicco.witherstormmod.mixin;
 
 import net.dabicco.witherstormmod.client.ShaderPackCompat;
 import net.mcsm.extras.McsmDiag;

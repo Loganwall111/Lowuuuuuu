@@ -1,4 +1,4 @@
-package net.mcsm.extras.mixin;
+package net.dabicco.witherstormmod.mixin;
 
 import net.dabicco.witherstormmod.client.StormSkyGradient;
 import net.dabicco.witherstormmod.entity.WitherStormEntity;
