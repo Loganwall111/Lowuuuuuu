@@ -295,7 +295,7 @@ CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL
 # Stop hard and keep the full log in out/JAVAC_FAILED.txt.
 JAVAC_LOG=/tmp/mcsm-javac.log
 JAVAC_RC=0
-javac -nowarn --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
+javac -nowarn -implicit:none --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
      $(find mcsm-extras/java -name '*.java') > "$JAVAC_LOG" 2>&1 || JAVAC_RC=$?
 N_CLASSES="$(find /tmp/mcsm-build -name '*.class' | wc -l)"
 if [ "$JAVAC_RC" -eq 0 ]; then

@@ -9,7 +9,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.dabicco.witherstormmod.client.ClientDistantStormManager;
 import net.dabicco.witherstormmod.client.GlowRenderTypes;
-import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -80,9 +79,14 @@ public final class McsmStormBlob {
     }
 
     public static void submit(LevelRenderContext ctx) {
-        if (!DabyWSClientConfig.stormBackdropQuad || !DabyWSClientConfig.stormBackdrop) {
-            return;
+        try {
+            submitInner(ctx);
+        } catch (Throwable ignored) {
+            // an unexpected base-jar surface degrades to no blob, never a crash
         }
+    }
+
+    private static void submitInner(LevelRenderContext ctx) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || ClientDistantStormManager.all().isEmpty()) {
             return;
@@ -93,10 +97,7 @@ public final class McsmStormBlob {
         Vec3 cam = ctx.levelState().cameraRenderState.pos;
         PoseStack poseStack = ctx.poseStack();
         SubmitNodeCollector collector = ctx.submitNodeCollector();
-        float master = (float) DabyWSClientConfig.stormBackdropStrength;
-        if (master <= 0.004F) {
-            return;
-        }
+        float master = 1.0F; // config-free: the corrected blob always runs
         int idx = 0;
         for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
             int key = idx++;
@@ -123,11 +124,11 @@ public final class McsmStormBlob {
             double skyDist = 220.0D;
             Vec3 at = cam.add(view.scale(skyDist));
             double angular = Mth.clamp(bodyRadius(phase) / Math.max(dist, 1.0), 0.012, 0.85);
-            double baseR = skyDist * angular * 1.5 * (float) DabyWSClientConfig.stormBackdropSize;
-            if (DabyWSClientConfig.stormBackdropGrow && phase > 5.5F) {
+            double baseR = skyDist * angular * 1.5;
+            if (phase > 5.5F) {
                 baseR *= 1.0F + (phase - 5.5F) * 0.26F;
             }
-            float breathe = 1.0F + 0.03F * Mth.sin(nowSec * 0.045F * (float) DabyWSClientConfig.stormBackdropPulse);
+            float breathe = 1.0F + 0.03F * Mth.sin(nowSec * 0.045F);
             baseR *= breathe;
             float a = master * distFade;
 
@@ -139,11 +140,11 @@ public final class McsmStormBlob {
             float wPink = ramp(phase, 6.3F, 7.0F);
             float wCore = ramp(phase, 4.0F, 4.3F); // dark heart, every phase
 
-            if (wPink > 0.004F && DabyWSClientConfig.stormBackdropPink) {
+            if (wPink > 0.004F) {
                 quad(poseStack, collector, GlowRenderTypes.translucent(PURPLE_PINK), at, view,
                         baseR * 1.55, 255, 205, 225, (int) (a * wPink * 245.0F));
             }
-            if (wPurp > 0.004F && DabyWSClientConfig.stormBackdropPurple) {
+            if (wPurp > 0.004F) {
                 quad(poseStack, collector, GlowRenderTypes.translucent(PURPLE), at, view,
                         baseR * 1.18, 236, 200, 255, (int) (a * wPurp * 250.0F));
             }
@@ -151,26 +152,26 @@ public final class McsmStormBlob {
                 quad(poseStack, collector, GlowRenderTypes.translucent(PURPLE_PINK), at, view,
                         baseR * 1.35, 255, 214, 236, (int) (a * wViolet * 240.0F));
             }
-            if (wTurq > 0.004F && DabyWSClientConfig.stormBackdropTurquoise) {
+            if (wTurq > 0.004F) {
                 quad(poseStack, collector, GlowRenderTypes.translucent(TURQUOISE), at, view,
                         baseR * 1.1, 255, 255, 255, (int) (a * wTurq * 250.0F));
             }
             // red ember: later and weaker - kills the reddish cast
-            if (DabyWSClientConfig.stormBackdropEmber && phase >= 6.5F) {
+            if (phase >= 6.5F) {
                 quad(poseStack, collector, GlowRenderTypes.translucent(EMBER), at, view,
                         baseR * 1.34, 255, 255, 255,
-                        (int) (a * 60.0F * (float) DabyWSClientConfig.stormBackdropEmberStrength));
+                        (int) (a * 60.0F));
             }
             // the dark storm heart, dead centre of the blob, always
-            if (wCore > 0.004F && DabyWSClientConfig.stormBackdropBlack) {
+            if (wCore > 0.004F) {
                 quad(poseStack, collector, GlowRenderTypes.translucent(BLACK), at, view,
                         baseR * 0.85, 255, 255, 255,
-                        (int) (a * wCore * 235.0F * (float) DabyWSClientConfig.stormBackdropBlackStrength));
+                        (int) (a * wCore * 235.0F));
             }
-            if (wBlue > 0.004F && DabyWSClientConfig.stormBackdropPhase4) {
+            if (wBlue > 0.004F) {
                 quad(poseStack, collector, GlowRenderTypes.glow(BLUE4), at, view,
                         baseR * 0.95, 190, 215, 255,
-                        (int) (a * wBlue * 235.0F * (float) DabyWSClientConfig.stormBackdropPhase4Strength));
+                        (int) (a * wBlue * 235.0F));
             }
         }
     }

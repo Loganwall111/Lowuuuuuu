@@ -20,7 +20,7 @@ import net.mcsm.extras.client.McsmStormBlob;
 @Mixin(StormBackdrop.class)
 public abstract class McsmStormBlobMixin {
 
-    @Inject(method = "submit", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "submit", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
     private static void dabyws$correctedBlob(LevelRenderContext ctx, CallbackInfo ci) {
         if (Minecraft.getInstance() != null) {
             McsmStormBlob.submit(ctx);
