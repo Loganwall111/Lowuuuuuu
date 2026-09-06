@@ -559,7 +559,11 @@ echo "[build] built-in story look pack embedded at resourcepacks/storylook"
 # on launch (MCSM Control Panel toggle, DEFAULT ON).
 mkdir -p "$FX/cls/assets/dabywitherstormmod/shaderpacks"
 rm -f "$FX/cls/assets/dabywitherstormmod/shaderpacks/devouringstorms.zip"
-( cd shaderpack-v5 && zip -q -r -X "$OLDPWD/$FX/cls/assets/dabywitherstormmod/shaderpacks/devouringstorms.zip" shaders )
+# $FX is absolute (/tmp/mcsm-fx): NO $OLDPWD prefix here - prepending it to an
+# absolute path re-anchors the zip under the repo and zip dies with exit 15
+# (run 34050631385). The repo-relative cd source is resolved before the cd.
+V5_ROOT="$(pwd)/shaderpack-v5"
+( cd "$V5_ROOT" && zip -q -r -X "$FX/cls/assets/dabywitherstormmod/shaderpacks/devouringstorms.zip" shaders )
 echo "[build] iris shader pack v5 embedded at assets/dabywitherstormmod/shaderpacks/devouringstorms.zip"
 
 # mega-phase 3: the phase-6 halo ring texture, generated at build time and

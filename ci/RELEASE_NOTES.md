@@ -1,4 +1,4 @@
-# Devouring Storms 1.9.137 — mega-phase 5b: the shader pack lives in the mod
+# Devouring Storms 1.9.138 — mega-phase 5b: the shader pack lives in the mod
 
 The standing order: the Story Mode shader pack is merged INTO the mod with an
 on/off toggle, DEFAULT ON, and the pack owns the clouds instead of reverting
@@ -28,7 +28,7 @@ them to vanilla. This build ships exactly that.
   combination (30 translation units, 0 failures) before the jar is built,
   and the jar audit fails the build if the embedded pack is missing.
 
-## Also in this release line (1.9.136)
+## Also in this release line (1.9.136-1.9.137)
 
 - Halo welded to the nearest storm at body scale; purple face overlay at
   5.5+; noon horizon band; teal sunrise-quad remap; sunset key gate;
