@@ -352,14 +352,20 @@ for src in sorted(glob.glob("mcsm-extras/java/net/mcsm/extras/mixin/*.java")):
         p = os.path.join(cls_dir, cfg)
         d = json.load(open(p))
         d.setdefault(key, [])
-        # ALWAYS fully qualified. 1.9.114-116 matched the config's entry
-        # style: the base config declares package net.dabicco.witherstormmod
-        # .mixin with simple-name entries, so our appended simple names
-        # resolved to net.dabicco.witherstormmod.mixin.<Cls> -- a class that
-        # either does not exist (launch crash: McsmTownCommandPatch, 1.9.116)
-        # or exists only as the STALE 1.9.100 base version (silent
-        # regression). FQ entries resolve to our compiled overlay classes
-        # regardless of the config's package declaration.
+        # 1.9.118 -- Mixin's REAL resolution rule: when a config declares
+        # "package", that package is prepended to EVERY entry, even dotted
+        # ones (1.9.117 proved it: the launch looked for
+        # net.dabicco.witherstormmod.mixin.net.mcsm.extras.mixin.
+        # McsmTownCommandPatch). 1.9.114-116 appended simple names, which
+        # resolved into the base package where our classes do not exist.
+        # The only safe shape: DROP the package key and fully qualify every
+        # entry -- base entries under the old package, ours under
+        # net.mcsm.extras.mixin. Mixin resolves package-less entries as FQ.
+        pkg = d.pop("package", "")
+        if pkg:
+            for k2 in ("mixins", "client", "server"):
+                if d.get(k2):
+                    d[k2] = [(pkg + "." + e) if "." not in e else e for e in d[k2]]
         d[key].append(FQ + cls)
         with open(p, "w") as f:
             json.dump(d, f, indent=2)
@@ -470,7 +476,9 @@ for cfg in sys.argv[2:]:
     for key in ("mixins", "client"):
         for e in d.get(key) or []:
             n += 1
-            fq = e if "." in e else (pkg + "." + e if pkg else e)
+            # Mixin prepends the declared package to EVERY entry, dotted or
+            # not (1.9.117 crash proved it). Mirror that exactly.
+            fq = (pkg + "." + e) if pkg else e
             path = os.path.join(cls_dir, fq.replace(".", "/") + ".class")
             if not os.path.isfile(path):
                 print("::error title=jar audit::mixin entry %s (%s:%s) resolves to %s which is NOT in the jar -- launch would crash" % (e, cfg, key, fq))

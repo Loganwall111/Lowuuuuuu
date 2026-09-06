@@ -1,15 +1,18 @@
-# Devouring Storms: The Point of No Return — 1.9.117
+# Devouring Storms: The Point of No Return — 1.9.118
 
-**This release fixes a launch crash introduced in 1.9.114.** If your game
-dies at startup with `The specified mixin 'net.dabicco.witherstormmod.mixin.
-McsmTownCommandPatch' was not found`, this is your fix: remove the old jar
-from `mods/` and install this one.
+**Second launch-crash fix — this one is definitive.** 1.9.117 still crashed
+because Mixin prepends a config's declared `package` to *every* entry, even
+fully-qualified ones. 1.9.118 rewrites the mixin config at build time the
+only safe way: the `package` key is dropped and every entry (base mod's and
+ours) becomes fully qualified, so each one resolves to exactly one real
+class.
 
-- Mixin config merge now appends fully-qualified overlay class names. The
-  old simple-name style resolved under the base mod's mixin package, which
-  crashed at launch (town command patch) or silently applied stale 1.9.100
-  classes for the other overlay mixins.
-- New hard CI gate: every mixin config entry must resolve to a real class
-  in the assembled jar, or the build refuses to publish.
-- Includes everything from 1.9.116: Devouring Storms branding (title logo,
-  panorama, mod icon) and the Story Look resource pack attached below.
+The CI gate now mirrors Mixin's real resolution rule and fails the build if
+any entry would not resolve — 1.9.114–1.9.117 could not pass it.
+
+Remove ALL older jars from `mods/`; install only
+`devouringstorms-1.9.118-26.2-beta-ds.jar`. Expect
+`[ds] Devouring Storms 1.9.118 loaded…` in chat.
+
+Story Look resource pack (stacked cloud decks, pastel lighting, halo sun)
+attached below as `devouringstorms-storylook-1.9.118.zip`.
