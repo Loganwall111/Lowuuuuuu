@@ -35,4 +35,5 @@ which this pack deliberately does not require.
 ## Install
 
 Drop the zip (or this folder) into `.minecraft/resourcepacks/` and enable
-"Devouring Storms: Story Look". Minecraft 26.1–26.2 (pack_format 84–88).
+"Devouring Storms: Story Look". Minecraft 26.1 and newer (min_format 84, no upper cap - the pack
+never trips the "broken or incompatible" flag on future updates).
