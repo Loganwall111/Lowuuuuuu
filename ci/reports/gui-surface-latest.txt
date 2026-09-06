@@ -1,4 +1,35 @@
 gui surface probe (26.2 client jar, run-generated)
+== hotbar / render-state class inventory
+net/minecraft/client/HotbarManager.class
+net/minecraft/client/gui/GuiGraphicsExtractor$HoveredTextEffects.class
+net/minecraft/client/gui/GuiGraphicsExtractor$RenderingTextCollector.class
+net/minecraft/client/gui/GuiGraphicsExtractor$ScissorStack.class
+net/minecraft/client/gui/GuiGraphicsExtractor.class
+net/minecraft/client/gui/Hud$1DisplayEntry.class
+net/minecraft/client/gui/Hud$ContextualInfo.class
+net/minecraft/client/gui/Hud$HeartType.class
+net/minecraft/client/gui/Hud.class
+net/minecraft/client/player/inventory/Hotbar.class
+net/minecraft/client/renderer/state/gui/GuiRenderState$Node.class
+net/minecraft/client/renderer/state/gui/GuiRenderState$TraverseRange.class
+net/minecraft/client/renderer/state/gui/GuiRenderState.class
+assets/minecraft/textures/gui/sprites/hud/
+assets/minecraft/textures/gui/sprites/hud/air.png
+assets/minecraft/textures/gui/sprites/hud/air_bursting.png
+assets/minecraft/textures/gui/sprites/hud/air_empty.png
+assets/minecraft/textures/gui/sprites/hud/armor_empty.png
+assets/minecraft/textures/gui/sprites/hud/armor_full.png
+assets/minecraft/textures/gui/sprites/hud/armor_half.png
+assets/minecraft/textures/gui/sprites/hud/crosshair.png
+assets/minecraft/textures/gui/sprites/hud/crosshair_attack_indicator_background.png
+assets/minecraft/textures/gui/sprites/hud/crosshair_attack_indicator_full.png
+assets/minecraft/textures/gui/sprites/hud/crosshair_attack_indicator_progress.png
+assets/minecraft/textures/gui/sprites/hud/effect_background.png
+assets/minecraft/textures/gui/sprites/hud/effect_background_ambient.png
+assets/minecraft/textures/gui/sprites/hud/experience_bar_background.png
+assets/minecraft/textures/gui/sprites/hud/experience_bar_progress.png
+assets/minecraft/textures/gui/sprites/hud/food_empty.png
+assets/minecraft/textures/gui/sprites/hud/food_empty_hunger.png
 == net.minecraft.world.entity.item.ItemEntity
 Compiled from "ItemEntity.java"
 public class net.minecraft.world.entity.item.ItemEntity extends net.minecraft.world.entity.Entity implements net.minecraft.world.entity.TraceableEntity {
@@ -45,6 +76,9 @@ public class net.minecraft.world.entity.item.ItemEntity extends net.minecraft.wo
   public static float getSpin(float, float);
   public net.minecraft.sounds.SoundSource getSoundSource();
   public float getVisualRotationYInDegrees();
+  public net.minecraft.world.entity.SlotAccess getSlot(int);
+  static {};
+}
 == net.minecraft.client.gui.screens.TitleScreen
 Compiled from "TitleScreen.java"
 public class net.minecraft.client.gui.screens.TitleScreen extends net.minecraft.client.gui.screens.Screen {
@@ -92,6 +126,145 @@ public class net.minecraft.client.gui.Gui {
   public void setClientLevelTeardownInProgress(boolean);
   static {};
 }
+== net.minecraft.client.gui.Hud
+Compiled from "Hud.java"
+public class net.minecraft.client.gui.Hud {
+  public static final net.minecraft.resources.Identifier NAUSEA_LOCATION;
+  public float vignetteBrightness;
+  public net.minecraft.client.gui.Hud(net.minecraft.client.Minecraft);
+  public void registerReloadListeners(net.minecraft.server.packs.resources.ReloadableResourceManager);
+  public void toggle();
+  public boolean isHidden();
+  public void resetTitleTimes();
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, net.minecraft.client.DeltaTracker);
+  public void extractDebugOverlay(net.minecraft.client.gui.GuiGraphicsExtractor);
+  public void extractDeferredSubtitles();
+  public static net.minecraft.resources.Identifier getMobEffectSprite(net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>);
+  public void tick(boolean);
+  public void setNowPlaying(net.minecraft.network.chat.Component);
+  public void setOverlayMessage(net.minecraft.network.chat.Component, boolean);
+  public void setTimes(int, int, int);
+  public void setSubtitle(net.minecraft.network.chat.Component);
+  public void setTitle(net.minecraft.network.chat.Component);
+  public void clearTitles();
+  public net.minecraft.client.gui.components.ChatComponent getChat();
+  public net.minecraft.client.resources.WaypointStyleManager getWaypointStyles();
+  public int getGuiTicks();
+  public net.minecraft.client.gui.Font getFont();
+  public net.minecraft.client.gui.components.spectator.SpectatorGui getSpectatorGui();
+  public net.minecraft.client.gui.components.PlayerTabOverlay getTabList();
+  public void onDisconnected();
+  public net.minecraft.client.gui.components.BossHealthOverlay getBossOverlay();
+  public net.minecraft.client.gui.components.DebugScreenOverlay getDebugOverlay();
+  public void clearCache();
+  public void extractSavingIndicator(net.minecraft.client.gui.GuiGraphicsExtractor, net.minecraft.client.DeltaTracker);
+  static {};
+}
+== net.minecraft.client.gui.GuiGraphicsExtractor
+Compiled from "GuiGraphicsExtractor.java"
+public class net.minecraft.client.gui.GuiGraphicsExtractor {
+  public net.minecraft.client.gui.GuiGraphicsExtractor(net.minecraft.client.Minecraft, net.minecraft.client.renderer.state.gui.GuiRenderState, int, int);
+  public void requestCursor(com.mojang.blaze3d.platform.cursor.CursorType);
+  public void applyCursor(com.mojang.blaze3d.platform.Window);
+  public int guiWidth();
+  public int guiHeight();
+  public org.joml.Matrix3x2fStack pose();
+  public void nextStratum();
+  public void blurBeforeThisStratum();
+  public void enableScissor(int, int, int, int);
+  public void disableScissor();
+  public boolean containsPointInScissor(int, int);
+  public void horizontalLine(int, int, int, int);
+  public void verticalLine(int, int, int, int);
+  public void fill(int, int, int, int, int);
+  public void fill(com.mojang.blaze3d.pipeline.RenderPipeline, int, int, int, int, int);
+  public void fillGradient(int, int, int, int, int, int);
+  public void fill(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.client.gui.render.TextureSetup, int, int, int, int);
+  public void outline(int, int, int, int, int);
+  public void textHighlight(int, int, int, int, boolean);
+  public void text(net.minecraft.client.gui.Font, java.lang.String, int, int, int);
+  public void text(net.minecraft.client.gui.Font, java.lang.String, int, int, int, boolean);
+  public void text(net.minecraft.client.gui.Font, net.minecraft.util.FormattedCharSequence, int, int, int);
+  public void text(net.minecraft.client.gui.Font, net.minecraft.util.FormattedCharSequence, int, int, int, boolean);
+  public void text(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, int);
+  public void text(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, int, boolean);
+  public void centeredText(net.minecraft.client.gui.Font, java.lang.String, int, int, int);
+  public void centeredText(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, int);
+  public void centeredText(net.minecraft.client.gui.Font, net.minecraft.util.FormattedCharSequence, int, int, int);
+  public void textWithWordWrap(net.minecraft.client.gui.Font, net.minecraft.network.chat.FormattedText, int, int, int, int);
+  public void textWithWordWrap(net.minecraft.client.gui.Font, net.minecraft.network.chat.FormattedText, int, int, int, int, boolean);
+  public void textWithBackdrop(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, int, int);
+  public void blit(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, float, float, int, int, int, int, int);
+  public void blit(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, float, float, int, int, int, int);
+  public void blit(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, float, float, int, int, int, int, int, int);
+  public void blit(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, float, float, int, int, int, int, int, int, int);
+  public void blit(net.minecraft.resources.Identifier, int, int, int, int, float, float, float, float);
+  public void blit(com.mojang.blaze3d.textures.GpuTextureView, com.mojang.blaze3d.textures.GpuSampler, int, int, int, int, float, float, float, float);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int, float);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int, int, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.client.renderer.texture.TextureAtlasSprite, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.client.renderer.texture.TextureAtlasSprite, int, int, int, int, int);
+  public void item(net.minecraft.world.item.ItemStack, int, int);
+  public void item(net.minecraft.world.item.ItemStack, int, int, int);
+  public void item(net.minecraft.world.entity.LivingEntity, net.minecraft.world.item.ItemStack, int, int, int);
+  public void fakeItem(net.minecraft.world.item.ItemStack, int, int);
+  public void fakeItem(net.minecraft.world.item.ItemStack, int, int, int);
+  public void itemDecorations(net.minecraft.client.gui.Font, net.minecraft.world.item.ItemStack, int, int);
+  public void itemDecorations(net.minecraft.client.gui.Font, net.minecraft.world.item.ItemStack, int, int, java.lang.String);
+  public void map(net.minecraft.client.renderer.state.MapRenderState);
+  public void entity(net.minecraft.client.renderer.entity.state.EntityRenderState, float, org.joml.Vector3fc, org.joml.Quaternionfc, org.joml.Quaternionfc, int, int, int, int);
+  public void skin(net.minecraft.client.model.Model$Simple, net.minecraft.resources.Identifier, float, float, float, float, int, int, int, int);
+  public void book(net.minecraft.client.model.object.book.BookModel, net.minecraft.resources.Identifier, float, float, float, int, int, int, int);
+  public void bannerPattern(net.minecraft.client.model.object.banner.BannerFlagModel, net.minecraft.world.item.DyeColor, net.minecraft.world.level.block.entity.BannerPatternLayers, int, int, int, int);
+  public void profilerChart(java.util.List<net.minecraft.util.profiling.ResultField>, int, int, int, int);
+  public void setTooltipForNextFrame(net.minecraft.network.chat.Component, int, int);
+  public void setTooltipForNextFrame(java.util.List<net.minecraft.util.FormattedCharSequence>, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, net.minecraft.world.item.ItemStack, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.network.chat.Component>, java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent>, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.network.chat.Component>, java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent>, int, int, net.minecraft.resources.Identifier);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.util.FormattedCharSequence>, java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent>, net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner, int, int, boolean, net.minecraft.resources.Identifier);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, net.minecraft.resources.Identifier);
+  public void setComponentTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.network.chat.Component>, int, int);
+  public void setComponentTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.network.chat.Component>, int, int, net.minecraft.resources.Identifier);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<? extends net.minecraft.util.FormattedCharSequence>, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<? extends net.minecraft.util.FormattedCharSequence>, int, int, net.minecraft.resources.Identifier);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.util.FormattedCharSequence>, net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner, int, int, boolean);
+  public void tooltip(net.minecraft.client.gui.Font, java.util.List<net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent>, int, int, net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner, net.minecraft.resources.Identifier);
+  public void setPreeditOverlay(net.minecraft.client.gui.components.Renderable);
+  public void extractDeferredElements(int, int, float);
+  public net.minecraft.client.renderer.texture.TextureAtlasSprite getSprite(net.minecraft.client.resources.model.sprite.SpriteId);
+  public net.minecraft.client.gui.ActiveTextCollector textRendererForWidget(net.minecraft.client.gui.components.AbstractWidget, net.minecraft.client.gui.GuiGraphicsExtractor$HoveredTextEffects);
+  public net.minecraft.client.gui.ActiveTextCollector textRenderer();
+  public net.minecraft.client.gui.ActiveTextCollector textRenderer(net.minecraft.client.gui.GuiGraphicsExtractor$HoveredTextEffects);
+  public net.minecraft.client.gui.ActiveTextCollector textRenderer(net.minecraft.client.gui.GuiGraphicsExtractor$HoveredTextEffects, java.util.function.Consumer<net.minecraft.network.chat.Style>);
+== net.minecraft.client.renderer.state.gui.GuiRenderState
+Compiled from "GuiRenderState.java"
+public class net.minecraft.client.renderer.state.gui.GuiRenderState {
+  public net.minecraft.client.renderer.state.gui.PanoramaRenderState panoramaRenderState;
+  public org.joml.Vector4f clearColorOverride;
+  public boolean isHudHidden;
+  public net.minecraft.client.renderer.state.gui.GuiRenderState();
+  public void nextStratum();
+  public void blurBeforeThisStratum();
+  public void up();
+  public void addItem(net.minecraft.client.renderer.state.gui.GuiItemRenderState);
+  public void addText(net.minecraft.client.renderer.state.gui.GuiTextRenderState);
+  public void addPicturesInPictureState(net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState);
+  public void addGuiElement(net.minecraft.client.renderer.state.gui.GuiElementRenderState);
+  public void addBlitToCurrentLayer(net.minecraft.client.renderer.state.gui.BlitRenderState);
+  public void addGlyphToCurrentLayer(net.minecraft.client.renderer.state.gui.GuiElementRenderState);
+  public java.util.Set<java.lang.Object> getItemModelIdentities();
+  public void forEachElement(java.util.function.Consumer<net.minecraft.client.renderer.state.gui.GuiElementRenderState>, net.minecraft.client.renderer.state.gui.GuiRenderState$TraverseRange);
+  public void forEachItem(java.util.function.Consumer<net.minecraft.client.renderer.state.gui.GuiItemRenderState>);
+  public void forEachText(java.util.function.Consumer<net.minecraft.client.renderer.state.gui.GuiTextRenderState>);
+  public void forEachPictureInPicture(java.util.function.Consumer<net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState>);
+  public void sortElements(java.util.Comparator<net.minecraft.client.renderer.state.gui.GuiElementRenderState>);
+  public void reset();
+}
 == net.minecraft.client.gui.components.AbstractWidget
 Compiled from "AbstractWidget.java"
 public abstract class net.minecraft.client.gui.components.AbstractWidget implements net.minecraft.client.gui.layouts.LayoutElement,net.minecraft.client.gui.components.Renderable,net.minecraft.client.gui.components.events.GuiEventListener,net.minecraft.client.gui.narration.NarratableEntry {
@@ -138,3 +311,18 @@ public abstract class net.minecraft.client.gui.components.AbstractWidget impleme
   public void setFocused(boolean);
   public net.minecraft.client.gui.narration.NarratableEntry$NarrationPriority narrationPriority();
   public final void updateNarration(net.minecraft.client.gui.narration.NarrationElementOutput);
+  protected abstract void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput);
+  protected void defaultButtonNarrationText(net.minecraft.client.gui.narration.NarrationElementOutput);
+  public int getX();
+  public void setX(int);
+  public int getY();
+  public void setY(int);
+  public int getRight();
+  public int getBottom();
+  public void visitWidgets(java.util.function.Consumer<net.minecraft.client.gui.components.AbstractWidget>);
+  public void setSize(int, int);
+  public net.minecraft.client.gui.navigation.ScreenRectangle getRectangle();
+  public void setRectangle(int, int, int, int);
+  public int getTabOrderGroup();
+  public void setTabOrderGroup(int);
+}
