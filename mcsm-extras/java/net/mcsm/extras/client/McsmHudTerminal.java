@@ -16,8 +16,8 @@ import net.mcsm.extras.McsmExtrasConfig;
  * The hotbar itself moves to the TOP-LEFT and gets bigger, MCSM-style:
  * nine large slots with real item icons, counts and durability
  * decorations, and a bright selection frame. The vanilla bottom hotbar
- * is covered by a cinematic dark bar (the clean engine-level cancellation
- * follows once the private Hud extract method is verified by the CI probe).
+ * is cancelled at engine level (McsmHotbarHideMixin on Hud#extractItemHotbar,
+ * verified by the CI GUI-surface probe).
  * Beneath the big hotbar sits the holographic terminal panel (build stamp,
  * storm state, position, world time), and while the storm is active the
  * letterbox bars close in like the episode cutscenes.
@@ -53,14 +53,6 @@ public final class McsmHudTerminal {
             g.fill(0, h - bar, w, h, 0xFF000000);
         }
 
-        // --- cover the vanilla bottom hotbar with a cinematic dark bar ------
-        // (24px from the bottom hides the hotbar strip, keeps the XP bar and
-        // hearts visible above it; goes away entirely in the letterbox above.)
-        if (!active) {
-            g.fill(0, h - 24, w, h, 0xF2080810);
-            g.fill(0, h - 25, w, h - 24, 0xFF3F255A);
-        }
-
         // --- MCSM hotbar: top-left, big, real icons -------------------------
         int px = 4;
         int py = 4;
@@ -69,7 +61,7 @@ public final class McsmHudTerminal {
         g.fill(px, py, px + pw, py + 1, 0xFF6A8FF7);
         g.fill(px, py + SLOT + 7, px + pw, py + SLOT + 8, 0xFF263165);
 
-        int selected = player.getInventory().selected;
+        int selected = player.getInventory().getSelectedSlot();
         Matrix3x2fStack pose = g.pose();
         for (int i = 0; i < SLOTS; i++) {
             int sx = px + 4 + i * SLOT;
