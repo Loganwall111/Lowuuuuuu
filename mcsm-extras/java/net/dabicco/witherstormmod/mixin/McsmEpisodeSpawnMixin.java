@@ -28,7 +28,7 @@ import net.minecraft.world.level.Level;
  *    queued through the base mod's own incremental builder (24k blocks
  *    per tick) instead of making anyone run /mcsm build.
  *  - While it builds, nobody is moved - the client-side MCSM episode
- *    card ("Episode One / A NEW ORDER", 1.9.129) plays over the wait,
+ *    card (Episode One / A NEW ORDER, shipped last build) plays over the wait,
  *    exactly like the Telltale loading sequence.
  *  - The moment the queue drains, every freshly-joined player (once per
  *    session each) is teleported into the fair with the episode intro
