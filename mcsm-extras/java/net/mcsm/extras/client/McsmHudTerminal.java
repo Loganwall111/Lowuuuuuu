@@ -39,6 +39,12 @@ public final class McsmHudTerminal {
     private static long cardStart = -1L;
     private static final long CARD_MS = 6500L;
 
+    // --- mega-phase 4: N-flash pulse state (phase 7+) ------------------------
+    private static long pulseNextAt = 0L;
+    private static long pulseStartAt = 0L;
+    private static long lastThumpAt = 0L;
+    private static int thumpStep = 0;
+
     private McsmHudTerminal() {
     }
 
@@ -121,6 +127,46 @@ public final class McsmHudTerminal {
                    + " " + player.blockPosition().getZ(),
             "time " + (mc.level.getOverworldClockTime() % 24000) / 1000 + "h",
         };
+        // --- mega-phase 4: the N-flash pulse ---------------------------------
+        // Phase 7+: every 30-50 s a 20 s purple gradient slowly appears and
+        // disappears OVER the storm, with a heartbeat double-thump, exactly
+        // like the story's N-flash beats.
+        long nowMs = System.currentTimeMillis();
+        boolean late = false;
+        try {
+            for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d
+                    : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
+                if (d.phase >= 6.5F) {
+                    late = true;
+                    break;
+                }
+            }
+        } catch (Throwable ignored) {
+            // older base jar without the manager: no pulses, never a crash
+        }
+        if (late) {
+            if (pulseStartAt > 0L) {
+                long pt = nowMs - pulseStartAt;
+                if (pt > 20000L) {
+                    pulseStartAt = 0L;
+                    pulseNextAt = nowMs + 30000L + (long) (Math.random() * 20000L);
+                } else {
+                    float env = (float) Math.sin(Math.PI * (pt / 20000.0D));
+                    int aTop = (int) (env * 110.0F);
+                    int aBot = aTop / 2;
+                    g.fillGradient(0, 0, w, h,
+                            (aTop << 24) | 0x6A2AC8, (aBot << 24) | 0x2A0A4A);
+                    if (nowMs - lastThumpAt > (thumpStep == 0 ? 1500L : 260L)) {
+                        thumpStep = (thumpStep + 1) % 2;
+                        lastThumpAt = nowMs;
+                        player.playSound(net.minecraft.sounds.SoundEvents.ANVIL_LAND, 0.42F, 0.42F);
+                    }
+                }
+            } else if (nowMs >= pulseNextAt) {
+                pulseStartAt = nowMs;
+            }
+        }
+
         int ty = py + SLOT + 12;
         int tw = 128;
         int th = lines.length * 11 + 8;
