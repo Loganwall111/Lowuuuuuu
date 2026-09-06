@@ -1,17 +1,11 @@
-# Devouring Storms: The Point of No Return — 1.9.121
+# Devouring Storms: The Point of No Return — 1.9.122
 
-- **Story Mode holographic terminal**: translucent panel pinned top-left,
-  stacking downward — build stamp, storm state, position, biome, world
-  time — with the hotbar mirrored beneath it as a vertical inventory
-  column. While a Wither Storm is alive, cinematic letterbox bars close
-  in top and bottom. Mixin-free (stable Fabric GUI API only).
-- Story Look pack round 3 (re-attached below): void-gap masks so the
-  stacked cloud decks and the gaps between them finally read from the
-  ground, per-biome sky variants (lush/warm/default story blue), distance
-  fog blended 85% to the sampled horizon haze (the white ground fog is
-  gone), MCSM torch glow (wider, hotter block-light falloff).
-- Sky phase key hardened: the mod's own warm story grade can no longer be
-  misread as sunrise; midday is Sky City cyan, dawn only at real sunrise.
+- **Story Look now ships INSIDE the mod jar** as a built-in resource pack
+  and turns itself on (Fabric resource-loader, DEFAULT_ENABLED). No separate
+  download, no pack-screen step; you can still disable it like any pack.
+  The standalone zip remains attached for people who want it elsewhere.
+- Holographic terminal + letterbox + Story Look round 3 from 1.9.121.
 
 Remove ALL older jars from `mods/`; install only
-`devouringstorms-1.9.121-26.2-beta-ds.jar`.
+`devouringstorms-1.9.122-26.2-beta-ds.jar`. You can now delete the
+storylook zip from `resourcepacks/` if you want - the mod carries it.

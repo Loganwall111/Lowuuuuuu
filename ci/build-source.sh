@@ -216,7 +216,19 @@ N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
   echo "source build report"
   echo "java files in:   $N_SRC"
   echo "classes out:     $N_CLS"
-  echo "javac exit:      $RC"
+  # --- GUI surface probe: exact 26.2 names for the next GUI/lighting round ---
+{
+  echo "gui surface probe (26.2 client jar, run-generated)"
+  for C in net.minecraft.world.entity.item.ItemEntity \
+           net.minecraft.client.gui.screens.TitleScreen \
+           net.minecraft.client.gui.Gui \
+           net.minecraft.client.gui.components.AbstractWidget; do
+    echo "== $C"
+    javap -cp "$DL/client-stripped.jar" "$C" 2>/dev/null | head -45
+  done
+} > ci/reports/gui-surface-latest.txt 2>/dev/null || true
+
+echo "javac exit:      $RC"
   echo "jar reference:   385 mod classes (+ our overlay) in the 1.9.100 base"
   echo "--- widen list ---"
   cat "$WIDEN" 2>/dev/null || true

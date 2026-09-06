@@ -61,6 +61,7 @@ jobs:
             git config user.name "ds-ci-bot"
             git config user.email "ci@devouringstorms.local"
             git add ci/reports/source-build-latest.txt
+            [ -f ci/reports/gui-surface-latest.txt ] && git add ci/reports/gui-surface-latest.txt || true
             if ! git diff --cached --quiet; then
               git commit -m "chore(ci): source-build report for run ${{ github.run_number }} [no-ci]"
               git push "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git" HEAD:${{ github.ref_name }} || echo "::warning::report push failed"
