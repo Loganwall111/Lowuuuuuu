@@ -1,31 +1,24 @@
-# Devouring Storms 1.9.139 — mega-phase 5c: the glare, rebuilt the way Telltale made it
+# Devouring Storms 1.9.140 — mega-phase 6a: the particle field from the frames
 
-The reference frames exposed the original construction of the Wither Storm
-glare, so the old hard-ring glare is deleted and replaced with exactly what
-the frames show.
+The four particle reads the reference frames show, now drawn by the storm
+renderer (stateless - every position is a hash of its index plus time, so
+nothing is stored, synced or spawned through the particle API):
 
-## What the frames exposed
+- **Black cubes** peeling off the silhouette edge and drifting out/down -
+  the signature debris read of every storm close-up.
+- **Sparkle dots riding down inside the beam cones**, fading as they fall,
+  spread widening toward the ground like the frames.
+- **Faint motes orbiting the whole storm** - the "subtle particles
+  everywhere" layer, half purple half pale white.
+- **Mist puffs clinging to the storm's base**, very low alpha violet-grey.
 
-- The wide aura is a **plain soft gradient quad hung behind the silhouette**
-  (purple at 5.5+, blue at phase 4-5, teal in the green phase) - not a bloom
-  pass, not a ring hugging the body. Trees and buildings occlude it because
-  terrain draws after the sky layer.
-- Up close, the "glow" is **flat emissive squares**: a cyan-white inner-mouth
-  square, a **U-arc of tiny white dashed teeth** (zigzagged), and one small
-  **magenta cube** floating above each of the three beam mouths. Their
-  softness comes from distance alone.
+All of it is batched into exactly two extra draws (one translucent, one
+additive) on the nearest storm only, gated from phase ~4 and fading with
+distance, so it costs nothing at range and never touches the particle
+engine's API surface.
 
-## What changed
+Unchanged: the 1.9.139 Telltale-construction glare (gradient backdrop +
+emissive mouth details), welded blob, purple face overlay, built-in Iris
+shader pack with the DEFAULT-ON toggle.
 
-- Old ring glare removed (texture, draw call and build step).
-- New `storm_glare.png` (soft radial gradient) drawn first, behind the body,
-  on the nearest storm; its scale still rides the **Glare Size** slider
-  (default 0.58).
-- New `storm_white.png` emissive primitive; the three mouths draw over the
-  body: inner-mouth square + 7 dashed teeth + magenta cube each, from
-  phase 4 up, fading with distance and hidden when too small to read.
-- Everything else from 1.9.136-1.9.138 is unchanged: welded blob, purple
-  face overlay 5.5+, built-in Iris shader pack with the DEFAULT-ON toggle.
-
-Install: drop the jar in `mods/`. Panel → Glare Size adjusts the aura width;
-the mouths need no configuration.
+Install: drop the jar in `mods/`.

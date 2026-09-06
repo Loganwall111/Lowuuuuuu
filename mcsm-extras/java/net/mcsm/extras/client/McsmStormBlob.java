@@ -236,6 +236,77 @@ public final class McsmStormBlob {
                 quad(poseStack, collector, GlowRenderTypes.glow(BLUE4), at, view,
                         baseR * 0.95, 190, 215, 255, (int) (a * wBlue * 235.0F));
             }
+            // PHASE-6 PARTICLE FIELD (batched into two draws): black cubes
+            // peeling off the body edge, sparkle dots travelling down inside
+            // the beam cones, faint motes orbiting the whole storm and mist
+            // puffs clinging to its base - exactly the four particle reads
+            // the reference frames show. Stateless: every position is a hash
+            // of its index plus time, so nothing is stored or synced.
+            if (key == mainKey && wGlare > 0.004F && baseR > 10.0) {
+                final float bR = (float) baseR;
+                final float tt = nowSec;
+                final float aa = a;
+                final float wg = wGlare;
+                collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(WHITE),
+                        (pose, consumer) -> {
+                    // black cubes: cycle outward off the silhouette edge
+                    for (int i = 0; i < 26; i++) {
+                        float sd = i * 0.618034F;
+                        float cyc = fract(tt * 0.05F + sd);
+                        float ang = fract(sd) * 6.28318F;
+                        float rr = (0.75F + 0.65F * cyc) * bR;
+                        float x = (float) Math.cos(ang) * rr * 0.95F;
+                        float y = (float) Math.sin(ang) * rr * 0.70F - cyc * 0.35F * bR;
+                        Vec3 pq = billboardOffset(at, view, x, y);
+                        float sz = bR * (0.020F + 0.020F * fract(sd * 7.3F));
+                        quadVerts(pose, consumer, pq, view, sz, 8, 6, 12,
+                                (int) (aa * wg * 210.0F * (1.0F - cyc * 0.7F)));
+                    }
+                    // mist puffs at the storm's base
+                    for (int i = 0; i < 6; i++) {
+                        float sd = i * 0.31F + 0.17F;
+                        float x = (fract(sd * 3.7F) * 2.4F - 1.2F) * bR;
+                        float y = -1.05F * bR + fract(sd * 9.1F) * 0.3F * bR;
+                        Vec3 pq = billboardOffset(at, view, x, y);
+                        quadVerts(pose, consumer, pq, view,
+                                bR * (0.35F + 0.2F * fract(sd * 5.3F)), 150, 130, 170,
+                                (int) (aa * wg * 26.0F));
+                    }
+                });
+                collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(WHITE),
+                        (pose, consumer) -> {
+                    // sparkle dots riding down inside each beam cone
+                    for (int m = 0; m < 3; m++) {
+                        for (int j = 0; j < 9; j++) {
+                            float sd = m * 0.37F + j * 0.111F;
+                            float tp = fract(tt * 0.22F + sd);
+                            float gx = MOUTH_X[m] * 2.6F;
+                            float gy = -1.5F;
+                            float x = MOUTH_X[m] + (gx - MOUTH_X[m]) * tp
+                                    + (fract(sd * 13.7F) - 0.5F) * 0.5F * tp;
+                            float y = MOUTH_Y[m] + (gy - MOUTH_Y[m]) * tp
+                                    + (fract(sd * 17.3F) - 0.5F) * 0.35F * tp;
+                            Vec3 pq = billboardOffset(at, view, bR * x, bR * y);
+                            quadVerts(pose, consumer, pq, view, bR * 0.012F, 235, 225, 255,
+                                    (int) (aa * wg * 190.0F * (1.0F - tp)));
+                        }
+                    }
+                    // faint motes orbiting the whole storm - the "subtle
+                    // particles everywhere" read
+                    for (int i = 0; i < 30; i++) {
+                        float sd = i * 0.4717F;
+                        float ang = fract(sd) * 6.28318F + tt * 0.04F;
+                        float rr = (0.35F + 1.25F * fract(sd * 5.1F)) * bR;
+                        Vec3 pq = billboardOffset(at, view,
+                                (float) Math.cos(ang) * rr, (float) Math.sin(ang) * rr * 0.8F);
+                        boolean purple = fract(sd * 3.3F) > 0.5F;
+                        quadVerts(pose, consumer, pq, view, bR * 0.010F,
+                                purple ? 200 : 240, purple ? 160 : 240, purple ? 255 : 250,
+                                (int) (aa * wg * 70.0F * (0.4F + 0.6F * fract(sd * 11.0F))));
+                    }
+                });
+            }
+
             // MOUTH DETAILS, LAST (over the body): the original frames show
             // each emitter as a cyan-white inner-mouth square, a U-arc of
             // tiny white dashed teeth (zigzagged), and one small magenta
@@ -267,6 +338,24 @@ public final class McsmStormBlob {
         }
     }
 
+    private static float fract(float x) {
+        return x - (float) Math.floor(x);
+    }
+
+    private static void quadVerts(Pose pose, VertexConsumer consumer, Vec3 at, Vec3 view,
+            double radius, int r, int g, int b, int a) {
+        Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
+        Vec3 right = view.cross(upHint).normalize();
+        Vec3 up = right.cross(view).normalize();
+        Vec3 rx = right.scale(radius * 1.15);
+        Vec3 uy = up.scale(radius);
+        int fa = Math.min(Math.max(a, 0), 255);
+        vertex(pose, consumer, at.subtract(rx).subtract(uy), 0.0F, 1.0F, r, g, b, fa);
+        vertex(pose, consumer, at.add(rx).subtract(uy), 1.0F, 1.0F, r, g, b, fa);
+        vertex(pose, consumer, at.add(rx).add(uy), 1.0F, 0.0F, r, g, b, fa);
+        vertex(pose, consumer, at.subtract(rx).add(uy), 0.0F, 0.0F, r, g, b, fa);
+    }
+
     private static Vec3 billboardOffset(Vec3 at, Vec3 view, double x, double y) {
         Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
         Vec3 right = view.cross(upHint).normalize();
@@ -284,17 +373,8 @@ public final class McsmStormBlob {
         if (alpha <= 2) {
             return;
         }
-        Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
-        Vec3 right = view.cross(upHint).normalize();
-        Vec3 up = right.cross(view).normalize();
-        Vec3 rx = right.scale(radius * 1.15);
-        Vec3 uy = up.scale(radius);
-        int fa = Math.min(alpha, 255);
         collector.submitCustomGeometry(poseStack, type, (pose, consumer) -> {
-            vertex(pose, consumer, at.subtract(rx).subtract(uy), 0.0F, 1.0F, r, g, b, fa);
-            vertex(pose, consumer, at.add(rx).subtract(uy), 1.0F, 1.0F, r, g, b, fa);
-            vertex(pose, consumer, at.add(rx).add(uy), 1.0F, 0.0F, r, g, b, fa);
-            vertex(pose, consumer, at.subtract(rx).add(uy), 0.0F, 0.0F, r, g, b, fa);
+            quadVerts(pose, consumer, at, view, radius, r, g, b, alpha);
         });
     }
 
