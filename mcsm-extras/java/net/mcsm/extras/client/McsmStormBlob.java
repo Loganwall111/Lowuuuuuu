@@ -16,6 +16,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.mcsm.extras.McsmExtrasConfig;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -25,9 +26,13 @@ import net.minecraft.world.phys.Vec3;
  *  - the dark storm heart sits dead-centre in every phase from 4 up;
  *  - the centre direction is temporally smoothed (25% per frame) so blob
  *    and storm glide as one sky element;
- *  - the phase-6 HALO rides the SAME billboard as the blob, on the NEAREST
- *    (main) storm only, sized from that storm's own angular body radius so
- *    the ring hugs its flanks instead of floating far away in the sky;
+ *  - the GLARE is the original game's construction, exposed by the reference
+ *    frames: one soft gradient billboard hung BEHIND the silhouette (wide
+ *    purple aura 5.5+, blue at 4-5), terrain occluding it for free - the old
+ *    hard ring glare is deleted;
+ *  - the MOUTHS are flat emissive squares over the body: cyan-white inner
+ *    mouth, a zigzagged U-arc of tiny white dashed teeth, one magenta cube
+ *    per emitter - exactly what the close-up frames show;
  *  - new for 5.5+: a PURPLE OVERLAY over the storm's face - an additive
  *    fringe hugging the silhouette plus a faint violet wash across the
  *    whole face, like a second silhouette layered on the creature.
@@ -49,10 +54,20 @@ public final class McsmStormBlob {
             "dabywitherstormmod", "textures/misc/backdrop_purple_pink.png");
     private static final Identifier EMBER = Identifier.fromNamespaceAndPath(
             "dabywitherstormmod", "textures/misc/backdrop_ember.png");
-    private static final Identifier HALO = Identifier.fromNamespaceAndPath(
-            "dabywitherstormmod", "textures/misc/storm_halo.png");
     private static final Identifier STORM_FACE = Identifier.fromNamespaceAndPath(
             "dabywitherstormmod", "textures/misc/storm_face.png");
+    // mega-phase 5c: the reference frames exposed how the original game
+    // builds the glare - a plain soft gradient quad BEHIND the silhouette,
+    // plus flat emissive squares for the mouth details. The old hard ring
+    // glare is gone.
+    private static final Identifier GLARE = Identifier.fromNamespaceAndPath(
+            "dabywitherstormmod", "textures/misc/storm_glare.png");
+    private static final Identifier WHITE = Identifier.fromNamespaceAndPath(
+            "dabywitherstormmod", "textures/misc/storm_white.png");
+
+    /** The three beam mouths, in billboard units of baseR (x right, y up). */
+    private static final float[] MOUTH_X = { -0.30F, 0.00F, 0.30F };
+    private static final float[] MOUTH_Y = { -0.04F, -0.14F, -0.02F };
 
     private static final Map<Integer, Vec3> SMOOTH = new HashMap<>();
 
@@ -156,14 +171,34 @@ public final class McsmStormBlob {
             float wPurp = ramp(phase, 6.0F, 6.35F);
             float wPink = ramp(phase, 6.3F, 7.0F);
             float wCore = ramp(phase, 4.0F, 4.3F);
-            float wHalo = ramp(phase, 5.5F, 5.9F);
             float wFace = ramp(phase, 5.5F, 5.8F);
+            float wGlare = ramp(phase, 3.95F, 4.3F);
+            float wMouth = ramp(phase, 3.9F, 4.3F);
 
-            // halo FIRST, main storm only, sized off the body's own angular
-            // radius so the ring lands on the flanks, not out in the sky
-            if (key == mainKey && wHalo > 0.004F) {
-                quad(poseStack, collector, GlowRenderTypes.translucent(HALO), at, view,
-                        baseR * 1.13, 255, 255, 255, (int) (a * wHalo * 170.0F));
+            // THE GLARE, FIRST: one soft gradient billboard hung behind the
+            // silhouette, exactly as the original frames expose it - wide
+            // purple aura at 5.5+, blue at phase 4-5, teal in the green
+            // phase. Terrain draws later, so trees and buildings occlude it
+            // for free. Scale rides the Glare Size slider (default 0.58).
+            if (key == mainKey && wGlare > 0.004F) {
+                McsmExtrasConfig.load();
+                double gs = Mth.clamp(McsmExtrasConfig.glareSize, 0.25, 3.05);
+                float gr = (float) (baseR * (1.7D + 2.2D * gs));
+                float wr = 0.30F * wBlue + 0.35F * wTurq + 0.48F * wViolet
+                        + 0.55F * wPurp + 0.72F * wPink;
+                float wg = 0.45F * wBlue + 0.85F * wTurq + 0.28F * wViolet
+                        + 0.22F * wPurp + 0.32F * wPink;
+                float wb = 0.92F * wBlue + 0.85F * wTurq + 0.80F * wViolet
+                        + 0.78F * wPurp + 0.62F * wPink;
+                float wsum = wBlue + wTurq + wViolet + wPurp + wPink;
+                if (wsum > 0.004F) {
+                    wr /= wsum; wg /= wsum; wb /= wsum;
+                } else {
+                    wr = 0.48F; wg = 0.28F; wb = 0.80F;
+                }
+                quad(poseStack, collector, GlowRenderTypes.glow(GLARE), at, view,
+                        gr, (int) (wr * 255.0F), (int) (wg * 255.0F), (int) (wb * 255.0F),
+                        (int) (a * wGlare * 110.0F));
             }
             if (wPink > 0.004F) {
                 quad(poseStack, collector, GlowRenderTypes.translucent(PURPLE_PINK), at, view,
@@ -201,7 +236,47 @@ public final class McsmStormBlob {
                 quad(poseStack, collector, GlowRenderTypes.glow(BLUE4), at, view,
                         baseR * 0.95, 190, 215, 255, (int) (a * wBlue * 235.0F));
             }
+            // MOUTH DETAILS, LAST (over the body): the original frames show
+            // each emitter as a cyan-white inner-mouth square, a U-arc of
+            // tiny white dashed teeth (zigzagged), and one small magenta
+            // cube floating above. Flat emissive squares - their softness
+            // comes from distance alone.
+            if (key == mainKey && wMouth > 0.004F && baseR > 12.0) {
+                for (int m = 0; m < 3; m++) {
+                    Vec3 mo = billboardOffset(at, view, baseR * MOUTH_X[m], baseR * MOUTH_Y[m]);
+                    // inner mouth: cyan-white emissive square
+                    quadAt(poseStack, collector, GlowRenderTypes.glow(WHITE), mo, view,
+                            baseR * 0.10, 140, 240, 235, (int) (a * wMouth * 120.0F));
+                    // dashed teeth: 7 tiny squares on a downward U-arc
+                    for (int i = 0; i < 7; i++) {
+                        float ang = (float) (Math.PI * (1.12 + 0.76 * i / 6.0));
+                        float tx = MOUTH_X[m] + (float) Math.cos(ang) * 0.115F;
+                        float ty = MOUTH_Y[m] + (float) Math.sin(ang) * 0.10F
+                                + ((i & 1) == 1 ? 0.014F : 0.0F);
+                        Vec3 tp = billboardOffset(at, view, baseR * tx, baseR * ty);
+                        quadAt(poseStack, collector, GlowRenderTypes.glow(WHITE), tp, view,
+                                baseR * 0.028, 255, 255, 255, (int) (a * wMouth * 235.0F));
+                    }
+                    // the magenta emitter cube above the mouth
+                    Vec3 cp = billboardOffset(at, view, baseR * MOUTH_X[m],
+                            baseR * (MOUTH_Y[m] + 0.17F));
+                    quadAt(poseStack, collector, GlowRenderTypes.glow(WHITE), cp, view,
+                            baseR * 0.045, 232, 40, 226, (int) (a * wMouth * 255.0F));
+                }
+            }
         }
+    }
+
+    private static Vec3 billboardOffset(Vec3 at, Vec3 view, double x, double y) {
+        Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
+        Vec3 right = view.cross(upHint).normalize();
+        Vec3 up = right.cross(view).normalize();
+        return at.add(right.scale(x * 1.15)).add(up.scale(y));
+    }
+
+    private static void quadAt(PoseStack poseStack, SubmitNodeCollector collector, RenderType type,
+            Vec3 at, Vec3 view, double radius, int r, int g, int b, int alpha) {
+        quad(poseStack, collector, type, at, view, radius, r, g, b, alpha);
     }
 
     private static void quad(PoseStack poseStack, SubmitNodeCollector collector, RenderType type,

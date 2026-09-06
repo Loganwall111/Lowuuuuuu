@@ -569,8 +569,12 @@ echo "[build] iris shader pack v5 embedded at assets/dabywitherstormmod/shaderpa
 # mega-phase 3: the phase-6 halo ring texture, generated at build time and
 # shipped inside the mod jar under the base mod's namespace
 mkdir -p "$FX/cls/assets/dabywitherstormmod/textures/misc"
-python3 ci/make_halo.py "$FX/cls/assets/dabywitherstormmod/textures/misc/storm_halo.png" \
-  || echo "::warning title=build::halo ring texture generation failed"
+# mega-phase 5c: the old hard-ring glare is gone - the reference frames
+# exposed the original construction (soft gradient backdrop + flat emissive
+# mouth squares), so the build generates exactly those two primitives.
+python3 ci/make_glare.py "$FX/cls/assets/dabywitherstormmod/textures/misc/storm_glare.png" \
+    "$FX/cls/assets/dabywitherstormmod/textures/misc/storm_white.png" \
+  || echo "::warning title=build::glare texture generation failed"
 python3 ci/make_stormface.py "$FX/cls/assets/dabywitherstormmod/textures/misc/storm_face.png" \
   || echo "::warning title=build::storm face overlay texture generation failed"
 
