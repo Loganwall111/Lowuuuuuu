@@ -62,11 +62,17 @@ float fbm(vec3 p) {
 
 // layered cloud decks, shared by calm and storm skies
 vec3 paintDecks(vec3 dirS, vec3 col, float acc0, vec3 litCol, vec3 shadeCol,
-                float dayness, float warm, float sideFade) {
-    if (dirS.y <= 0.02) {
+                float dayness, float warm, float sideFade, float mirror) {
+    // mirror = 1 paints the SAME decks mirrored into the lower hemisphere:
+    // the sky dome's bottom half only shows where terrain does not, so on
+    // the ground this reads as a far cloud sea past the edge, and from Sky
+    // City altitude it is the layers you fall through (user order: fall
+    // through 5-15 cloud layers). No camera-height uniform needed.
+    float dy = (mirror > 0.5) ? max(-dirS.y, 0.02) : dirS.y;
+    if (dy <= 0.02) {
         return col;
     }
-    vec2 pxz = dirS.xz / dirS.y;
+    vec2 pxz = dirS.xz / dy;
     float H[9];
     H[0] = 96.0;  H[1] = 146.0; H[2] = 152.0; H[3] = 420.0; H[4] = 430.0;
     H[5] = 1200.0; H[6] = 3500.0; H[7] = 9000.0; H[8] = 16000.0;
@@ -85,14 +91,20 @@ vec3 paintDecks(vec3 dirS, vec3 col, float acc0, vec3 litCol, vec3 shadeCol,
                 * (0.70 + 0.30 * smoothstep(0.35, 0.75, nest))
                 + ceilBonus * smoothstep(0.35, 0.6, cov) * pres;
         // soften the deck edge into the horizon: kills the roof/side seam
-        a *= smoothstep(0.02, 0.12, dirS.y);
-        // storm skies keep their decks on the sides, not overhead
-        a *= mix(1.0, sideFade, smoothstep(0.30, 0.70, dirS.y));
+        a *= smoothstep(0.02, 0.12, dy);
+        // storm skies keep their decks on the sides, not overhead (upward
+        // pass only - the mirrored sea below wants full coverage straight
+        // down); mirrored decks sit a touch thinner overall
+        if (mirror < 0.5) {
+            a *= mix(1.0, sideFade, smoothstep(0.30, 0.70, dy));
+        } else {
+            a *= 0.85;
+        }
         a = min(a, 0.92) * (1.0 - acc);
         float core = smoothstep(th - 0.12, th + 0.34, cov);
-        vec3 dc = mix(shadeCol, litCol, 0.55 + 0.45 * core);
+        vec3 dc = mix(shadeCol, litCol, min(mix(0.55, 0.82, mirror) + 0.45 * core, 1.0));
         dc *= (0.97 + 0.05 * float(i));
-        dc = mix(dc, dc * vec3(1.06, 0.98, 0.88), (1.0 - clamp(dirS.y, 0.0, 1.0)) * warm);
+        dc = mix(dc, dc * vec3(1.06, 0.98, 0.88), (1.0 - clamp(dy, 0.0, 1.0)) * warm);
         col = mix(col, dc, a);
         acc += a * 0.85;
         if (acc > 0.97) {
@@ -179,7 +191,8 @@ void main() {
 
         vec3 litC = mix(vec3(0.52, 0.42, 0.62), hor, 0.35);
         vec3 shadeC = mix(zen, hor, 0.30) * 0.60;
-        col = paintDecks(dirS, col, 0.0, litC, shadeC, 0.35, 0.5, 0.35);
+        col = paintDecks(dirS, col, 0.0, litC, shadeC, 0.35, 0.5, 0.35, 0.0);
+    col = paintDecks(dirS, col, 0.0, litC, shadeC, 0.35, 0.5, 0.80, 1.0);
 
         col = mix(col, hor * 0.45, smoothstep(0.0, -0.35, ty));
         float lum = dot(col, vec3(0.299, 0.587, 0.114));
@@ -229,7 +242,8 @@ void main() {
     // white story clouds with pale-blue shadowed fringes
     vec3 litC = mix(vec3(0.960, 0.975, 1.000), hor, 0.10);
     vec3 shadeC = mix(zen, hor, 0.35) * 0.85;
-    col = paintDecks(dirS, col, 0.0, litC, shadeC, day, 0.5, 1.0);
+    col = paintDecks(dirS, col, 0.0, litC, shadeC, day, 0.5, 1.0, 0.0);
+    col = paintDecks(dirS, col, 0.0, litC, shadeC, day, 0.5, 1.0, 1.0);
 
     col = mix(col, hor * 0.5, smoothstep(0.0, -0.3, ty));
     float lum = dot(col, vec3(0.299, 0.587, 0.114));

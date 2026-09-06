@@ -1,27 +1,31 @@
-# Devouring Storms 1.9.142 — mega-phase 6b: portals glow, and entry warps you through
+# Devouring Storms 1.9.143 — mega-phase 7: structures land whole, Sky City goes up
 
-The bowels mouth (the storm's portal sheet) now behaves like the story:
+## The segment bug, root-caused and fixed
+The base mod builds every schematic through a static queue with a 24,000
+blocks/tick budget: towns visibly rise slice by slice (the "spawning in
+segments" report), and because the queue is static it survives world
+loads - leftovers from the previous world keep placing into the new one
+(the "Sky City fragments scattered all over the world" report). Now:
+- the queue is cleared whenever the level instance changes (no cross-world
+  leftovers, ever);
+- the placement budget is raised so each schematic completes in about one
+  tick - structures appear whole.
 
-## Per-portal coloured light
-- **Teal** glow + teal dust breathing at the mouth bottom while the plates
-  are still closing (phase < 6.9).
-- **Magenta** glow + magenta dust once the mouth is open.
-- **Gold** glow at the return mouth inside the bowels hallway.
-- The glow rides the bottom of the screen and strengthens as you close in,
-  so the portal reads as a light source casting onto everything.
+## Sky City altitude
+Sky City and its floating sibling sites (Speakeasy, Jungle Fortress,
+Mushroom Island) are raised from y~296 to y~4200 - inside the 1000-10,000
+order, above the 3500 cloud deck. Jumping off falls you through seven of
+the story cloud decks on the way to the ground.
 
-## Warp entry instead of a loading screen
-- Touching the open mouth no longer snaps you across dimensions: the
-  teleport is intercepted and a 1.7 s sequence plays - letterbox bars
-  converge, a violet pull-grade washes the frame, your view is dragged
-  toward the mouth, the portal travel sound builds, a white flash closes
-  it - and only then does the server thread run the ORIGINAL teleport.
-- Singleplayer always gets the sequence; a dedicated server without the
-  mod keeps the instant teleport as the safe fallback.
-- Everything is Throwable-guarded: no portal code, no registry, no server
-  - the effect degrades to nothing instead of crashing.
+## The cloud sea below
+Both sky shaders (core storylook AND the built-in Iris pack) now paint the
+same layered decks mirrored into the lower hemisphere: from the ground it
+reads as a far cloud sea past the terrain edge; from Sky City altitude it
+is the layers streaming past as you fall. Decks seen from above show their
+lit tops. Validated: storylook glslang-clean, 30/30 Iris translation units.
 
-Unchanged: 1.9.140 particle field, 1.9.139 Telltale glare, welded blob,
-purple face overlay, built-in Iris pack with the DEFAULT-ON toggle.
+Unchanged: 6b warp portals, 6a particle field, 5c Telltale glare, welded
+blob, purple face overlay, built-in shader pack DEFAULT ON.
 
-Install: drop the jar in `mods/`.
+Install: drop the jar in `mods/`. Existing worlds pick the new Sky City
+altitude on fresh structure placement; already-placed blocks stay put.
