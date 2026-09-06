@@ -221,13 +221,15 @@ N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
   echo "gui surface probe (26.2 client jar, run-generated)"
   echo "== hotbar / render-state class inventory"
   ( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -iE "hotbar|guirenderstate|guigraphicsextractor|/hud" | head -30 )
-  for C in net.minecraft.client.gui.Hud \
-           net.minecraft.client.HotbarManager \
-           net.minecraft.client.gui.Gui \
-           net.minecraft.world.entity.player.Inventory; do
-    echo "== $C (private members)"
-    javap -p -cp "$DL/client-stripped.jar" "$C" 2>/dev/null | grep -iE "hotbar|selected|getItem|class |void |render|extract" | head -60
+  echo "== dynamic-light surface (private members, filtered)"
+  for C in net.minecraft.client.renderer.LevelRenderer \
+           net.minecraft.client.renderer.LightTexture \
+           net.minecraft.client.renderer.entity.EntityRenderDispatcher; do
+    echo "== $C"
+    javap -p -cp "$DL/client-stripped.jar" "$C" 2>/dev/null | grep -iE "light|brightness" | head -30
   done
+  echo "== net.minecraft.world.level.Level (light/particle methods)"
+  javap -cp "$DL/client-stripped.jar" net.minecraft.world.level.Level 2>/dev/null | grep -iE "light|particle" | head -20
 } > ci/reports/gui-surface-latest.txt 2>/dev/null || true
 
 echo "javac exit:      $RC"
