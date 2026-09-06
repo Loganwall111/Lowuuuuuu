@@ -1,7 +1,7 @@
 source build report
-java files in:   353
-classes out:     423
-javac exit:      0
+java files in:   350
+classes out:     0
+javac exit:      1
 jar reference:   385 mod classes (+ our overlay) in the 1.9.100 base
 --- widen list ---
 CreativeModeTab#Output
@@ -11,13 +11,56 @@ MenuScreens#register
 MenuType#MenuSupplier
 MenuType#MenuType
 --- first 25 errors with detail ---
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:3: error: package net.fabricmc.fabric.api.resource does not exist
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+                                       ^
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:4: error: package net.fabricmc.fabric.api.resource does not exist
+import net.fabricmc.fabric.api.resource.ResourcePackActivationPredicate;
+                                       ^
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:6: error: cannot find symbol
+import net.minecraft.resources.ResourceLocation;
+                              ^
+  symbol:   class ResourceLocation
+  location: package net.minecraft.resources
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:25: error: cannot find symbol
+                        ResourcePackActivationPredicate.DEFAULT_ENABLED));
+                        ^
+  symbol:   variable ResourcePackActivationPredicate
+  location: class McsmBuiltinPack
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:22: error: cannot find symbol
+                ResourceManagerHelper.registerBuiltinResourcePack(
+                ^
+  symbol:   variable ResourceManagerHelper
+  location: class McsmBuiltinPack
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:23: error: cannot find symbol
+                        ResourceLocation.fromNamespaceAndPath("dabywitherstormmod", "storylook"),
+                        ^
+  symbol:   variable ResourceLocation
+  location: class McsmBuiltinPack
 --- javac log head ---
-Note: Some input files use or override a deprecated API.
-Note: Recompile with -Xlint:deprecation for details.
-Note: Some input files use unchecked or unsafe operations.
-Note: Recompile with -Xlint:unchecked for details.
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:3: error: package net.fabricmc.fabric.api.resource does not exist
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+                                       ^
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:4: error: package net.fabricmc.fabric.api.resource does not exist
+import net.fabricmc.fabric.api.resource.ResourcePackActivationPredicate;
 --- javac log tail ---
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:25: error: cannot find symbol
+                        ResourcePackActivationPredicate.DEFAULT_ENABLED));
+                        ^
+  symbol:   variable ResourcePackActivationPredicate
+  location: class McsmBuiltinPack
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:22: error: cannot find symbol
+                ResourceManagerHelper.registerBuiltinResourcePack(
+                ^
+  symbol:   variable ResourceManagerHelper
+  location: class McsmBuiltinPack
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java:23: error: cannot find symbol
+                        ResourceLocation.fromNamespaceAndPath("dabywitherstormmod", "storylook"),
+                        ^
+  symbol:   variable ResourceLocation
+  location: class McsmBuiltinPack
 Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 Note: Some input files use unchecked or unsafe operations.
 Note: Recompile with -Xlint:unchecked for details.
+6 errors

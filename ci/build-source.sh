@@ -221,15 +221,20 @@ N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
   echo "gui surface probe (26.2 client jar, run-generated)"
   echo "== hotbar / render-state class inventory"
   ( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -iE "hotbar|guirenderstate|guigraphicsextractor|/hud" | head -30 )
-  echo "== dynamic-light surface (private members, filtered)"
-  for C in net.minecraft.client.renderer.LevelRenderer \
-           net.minecraft.client.renderer.LightTexture \
-           net.minecraft.client.renderer.entity.EntityRenderDispatcher; do
+  echo "== renderer classes matching level/light (26.2 renamed them)"
+  ( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -E "^net/minecraft/client/renderer/" | grep -iE "level|light|section" | head -25 )
+  echo "== light-ish methods across renderer candidates"
+  for f in $( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -E "^net/minecraft/client/renderer/[A-Za-z0-9$]+\.class$" | grep -iE "level|light" ); do
+    C="${f%.class}"; C="${C//\//.}"
     echo "== $C"
-    javap -p -cp "$DL/client-stripped.jar" "$C" 2>/dev/null | grep -iE "light|brightness" | head -30
+    javap -p -cp "$DL/client-stripped.jar" "$C" 2>/dev/null | grep -iE "light|brightness" | head -12
   done
-  echo "== net.minecraft.world.level.Level (light/particle methods)"
-  javap -cp "$DL/client-stripped.jar" net.minecraft.world.level.Level 2>/dev/null | grep -iE "light|particle" | head -20
+  echo "== light block classes"
+  ( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -iE "light.*block|block.*light" | grep -v textures | head -10 )
+  echo "== net.minecraft.world.level.Level (setBlock/light)"
+  javap -cp "$DL/client-stripped.jar" net.minecraft.world.level.Level 2>/dev/null | grep -iE "setblock|light" | head -12
+  echo "== EntityRenderDispatcher (light coords)"
+  javap -p -cp "$DL/client-stripped.jar" net.minecraft.client.renderer.entity.EntityRenderDispatcher 2>/dev/null | grep -iE "light" | head -8
 } > ci/reports/gui-surface-latest.txt 2>/dev/null || true
 
 echo "javac exit:      $RC"
