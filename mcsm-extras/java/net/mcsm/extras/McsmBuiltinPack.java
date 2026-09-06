@@ -41,7 +41,22 @@ public final class McsmBuiltinPack {
             }
             Object modContainer = ((Optional<?>) opt).get();
 
-            Class<?> rlCls = Class.forName("net.minecraft.resources.ResourceLocation");
+            // 26.2 renamed ResourceLocation -> Identifier; support both
+            Class<?> rlCls = null;
+            for (String n : new String[] {
+                    "net.minecraft.resources.Identifier",
+                    "net.minecraft.resources.ResourceLocation" }) {
+                try {
+                    rlCls = Class.forName(n);
+                    break;
+                } catch (ClassNotFoundException ignored) {
+                    // try the next name
+                }
+            }
+            if (rlCls == null) {
+                warn("no Identifier/ResourceLocation class on this minecraft version");
+                return;
+            }
             Object id = null;
             for (Method m : rlCls.getMethods()) {
                 Class<?>[] ps = m.getParameterTypes();

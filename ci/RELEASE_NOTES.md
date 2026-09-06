@@ -1,11 +1,13 @@
-# Devouring Storms: The Point of No Return — 1.9.122
+# Devouring Storms: The Point of No Return — 1.9.123
 
-- **Story Look now ships INSIDE the mod jar** as a built-in resource pack
-  and turns itself on (Fabric resource-loader, DEFAULT_ENABLED). No separate
-  download, no pack-screen step; you can still disable it like any pack.
-  The standalone zip remains attached for people who want it elsewhere.
-- Holographic terminal + letterbox + Story Look round 3 from 1.9.121.
+- **The hotbar itself now lives TOP-LEFT, MCSM-style, and is bigger**:
+  nine large slots with real item icons, counts, durability and a bright
+  selection frame. The vanilla bottom hotbar is covered by a cinematic
+  dark bar (engine-level removal follows in the next build).
+- **Built-in Story Look pack fix**: 26.2 renamed ResourceLocation to
+  Identifier — the auto-registration in 1.9.122 silently missed. It now
+  binds either name, so the pack inside the jar switches itself on.
+- Terminal panel (build/storm/xyz/time) moved beneath the big hotbar.
 
 Remove ALL older jars from `mods/`; install only
-`devouringstorms-1.9.122-26.2-beta-ds.jar`. You can now delete the
-storylook zip from `resourcepacks/` if you want - the mod carries it.
+`devouringstorms-1.9.123-26.2-beta-ds.jar`.
