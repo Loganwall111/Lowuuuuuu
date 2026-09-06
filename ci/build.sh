@@ -126,41 +126,6 @@ fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" jom
 # so javac needs it on the classpath ("cannot access Message" without it).
 fetch "https://libraries.minecraft.net/com/mojang/brigadier/1.3.10/brigadier-1.3.10.jar" brigadier.jar
 
-# MCSM 1.9.122 -- built-in Story Look pack: needs fabric-loader API and the
-# fabric resource-loader module (registerBuiltinResourcePack) at compile time.
-LOADER_VER="$(curl -fsSL https://maven.fabricmc.net/net/fabricmc/fabric-loader/maven-metadata.xml \
-  | grep -oE '<version>[^<]+</version>' | sed 's/<[^>]*>//g' | grep -v -E 'pre|beta|rc' | tail -1 || true)"
-[ -n "$LOADER_VER" ] || LOADER_VER="0.19.5"
-fetch "https://maven.fabricmc.net/net/fabricmc/fabric-loader/${LOADER_VER}/fabric-loader-${LOADER_VER}.jar" fabric-loader.jar
-FAPI_VER="$(curl -fsSL https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml \
-  | grep -oE '<version>[^<]*\+26\.2[^<]*</version>' | sed 's/<[^>]*>//g' | tail -1 || true)"
-if [ -n "$FAPI_VER" ]; then
-  curl -fsSL --retry 3 "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FAPI_VER}/fabric-api-${FAPI_VER}.pom" -o "$DL/fabric-api.pom" || true
-  mkdir -p "$DL/fapi"
-  python3 - "$DL/fabric-api.pom" "$DL/fapi-list.txt" <<'PYMOD'
-import re, sys
-try:
-    pom = open(sys.argv[1]).read()
-except OSError:
-    open(sys.argv[2], "w").write("")
-    sys.exit(0)
-want = {"fabric-resource-loader-v1", "fabric-api-base"}
-out = []
-for m in re.finditer(r'<dependency>\s*<groupId>([^<]+)</groupId>\s*<artifactId>([^<]+)</artifactId>\s*<version>([^<]+)</version>', pom):
-    g, a, v = m.groups()
-    if g == "net.fabricmc.fabric-api" and a in want:
-        out.append(f"https://maven.fabricmc.net/{g.replace('.', '/')}/{a}/{v}/{a}-{v}.jar\t{a}.jar")
-open(sys.argv[2], "w").write("\n".join(out))
-print(f"[deps] fabric modules wanted: {len(out)}")
-PYMOD
-  while IFS=$'\t' read -r url name; do
-    [ -n "$url" ] || continue
-    [ -s "$DL/fapi/$name" ] || curl -fsSL --retry 3 --retry-delay 2 -o "$DL/fapi/$name" "$url" \
-      || echo "::warning title=deps::fabric module download failed: $name"
-  done < "$DL/fapi-list.txt"
-fi
-FAPI_MINI_CP="$(find "$DL/fapi" -name '*.jar' 2>/dev/null | tr '\n' ':')"
-echo "[deps] loader ${LOADER_VER}, fabric-api ${FAPI_VER:-unresolved}"
 
 # MCSM 1.9.100 -- close the loop: teach the sandbox the real API.
 # This sandbox has no JDK and no route to Mojang/Maven, so every client-side
@@ -291,7 +256,7 @@ echo "[version] drift gate OK (no hardcoded version literals)"
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
-CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:${FAPI_MINI_CP}"
+CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar"
 # A javac failure is NOT survivable anymore: publishing a shaders-only jar is
 # exactly how users can receive new-looking UI/shaders with old Java behavior.
 # Stop hard and keep the full log in out/JAVAC_FAILED.txt.
@@ -312,7 +277,7 @@ else
   # runner logs or artifacts, so the actual compiler errors have to travel as
   # annotations or the fix loop is blind. First 12 error lines, truncated.
   { grep -E "error:|symbol:|location:|required:|found:" "$JAVAC_LOG" 2>/dev/null || true; } | \
-    head -12 | \
+    head -40 | \
     while IFS= read -r line; do
       echo "::error title=javac::${line:0:400}"
     done || true
