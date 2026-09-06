@@ -1,17 +1,18 @@
-# Devouring Storms: The Point of No Return — 1.9.133
-## Mega-phase 2/15: the corrected storm blob
+# Devouring Storms: The Point of No Return — 1.9.134
+## Mega-phase 3/15: the phase-6 sky, shrunk to the storm's sides
 
-- **Phases 5.5-5.9 blob is pinkish-VIOLET now** (purple-pink texture in a
-  5.2-6.35 window with a pink tint) — the reddish/turquoise cast is gone.
-- **The dark storm heart sits dead-centre in the blob in every phase from
-  4 up**, so the Wither Storm reads as welded to the middle of its blob
-  instead of wandering inside it.
-- **Skybox glide**: the blob's centre direction is temporally smoothed, so
-  blob + storm move as one infinite-distance sky element (sunset-style).
-- **Red ember wash starts later (6.5+) and 33% weaker** — no more reddish
-  tint over the violet phases.
-- Phase-4 blue rim quad keeps its cool tint.
+- **The overhead storm sky is gone**: above ~30° elevation the dome now
+  collapses into a dark calm violet instead of stretching the storm
+  palette across the whole sky. The coloured storm sky lives on the
+  SIDES and horizon band only.
+- **A floating halo ring hugs the main storm's flanks**: a generated
+  violet-pink annulus (empty centre, fade before the quad edge) rides the
+  same sky-distance billboard as the blob at 1.28× its radius from phase
+  5.5 up - a tiny dynamic sky around the storm, never overhead, never
+  past its silhouette, and only on the MAIN storm (detached ones keep
+  their plain look).
+- Halo texture is generated at build time and ships inside the jar.
 
-Next: phase-6 sky shrink, N-flash pulses, embedded shader pack, fog/mist/
-portal warp, structures + Sky City altitude, dimensions, NPCs, vortex,
-Devourer rebuild, OG textures, 2.0.0.
+Next: N-flash pulses (phase 7+), embedded shader pack with ON/OFF, fog/
+mist/portal warp, structures + Sky City altitude, dimensions, NPCs,
+vortex, Devourer rebuild, OG textures, 2.0.0.

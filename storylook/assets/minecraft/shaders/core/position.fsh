@@ -166,6 +166,14 @@ void main() {
         col = mix(col, vec3(0.40, 0.15, 0.85), topLine * 0.30);
         // darker back tone so the roof reads heavier than the sides
         col *= 1.0 - 0.38 * smoothstep(0.50, 1.0, ty);
+        // mega-phase 3: the storm sky SHRINKS to the sides. Overhead the
+        // dome collapses into a dark calm violet instead of stretching the
+        // storm palette across the whole sky; the coloured halo around the
+        // storm's flanks is carried by the mod's halo ring quad instead.
+        float over = smoothstep(0.30, 0.70, ty);
+        float olum = dot(col, vec3(0.299, 0.587, 0.114));
+        vec3 ocol = mix(vec3(olum) * vec3(0.42, 0.30, 0.52), vec3(0.02, 0.012, 0.03), 0.55);
+        col = mix(col, ocol, over * 0.85);
 
         vec3 litC = mix(vec3(0.90, 0.88, 0.95), hor, 0.30);
         vec3 shadeC = mix(zen, hor, 0.30) * 0.75;

@@ -546,6 +546,12 @@ cp -r storylook/pack.mcmeta storylook/pack.png "$FX/cls/resourcepacks/storylook/
 cp -r storylook/assets "$FX/cls/resourcepacks/storylook/"
 echo "[build] built-in story look pack embedded at resourcepacks/storylook"
 
+# mega-phase 3: the phase-6 halo ring texture, generated at build time and
+# shipped inside the mod jar under the base mod's namespace
+mkdir -p "$FX/cls/assets/dabywitherstormmod/textures/misc"
+python3 ci/make_halo.py "$FX/cls/assets/dabywitherstormmod/textures/misc/storm_halo.png" \
+  || echo "::warning title=build::halo ring texture generation failed"
+
 if [ ! -f "$FX/cls/resourcepacks/storylook/pack.mcmeta" ] || [ ! -f "$FX/cls/resourcepacks/storylook/assets/minecraft/shaders/core/position.fsh" ]; then
   echo "::error title=jar audit::built-in Story Look pack missing from the jar"
   AUDIT_FAIL=1

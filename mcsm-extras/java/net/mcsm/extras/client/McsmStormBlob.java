@@ -54,6 +54,8 @@ public final class McsmStormBlob {
             "dabywitherstormmod", "textures/misc/backdrop_purple_pink.png");
     private static final Identifier EMBER = Identifier.fromNamespaceAndPath(
             "dabywitherstormmod", "textures/misc/backdrop_ember.png");
+    private static final Identifier HALO = Identifier.fromNamespaceAndPath(
+            "dabywitherstormmod", "textures/misc/storm_halo.png");
 
     private static final Map<Integer, Vec3> SMOOTH = new HashMap<>();
 
@@ -172,6 +174,17 @@ public final class McsmStormBlob {
                 quad(poseStack, collector, GlowRenderTypes.glow(BLUE4), at, view,
                         baseR * 0.95, 190, 215, 255,
                         (int) (a * wBlue * 235.0F));
+            }
+            // mega-phase 3: the phase-6 dynamic sky, shrunk to a floating
+            // halo ring hugging the MAIN storm's sides - never overhead,
+            // never past its silhouette, detached storms excluded (key 0)
+            if (key == 0) {
+                float wHalo = ramp(phase, 5.5F, 5.9F);
+                if (wHalo > 0.004F) {
+                    quad(poseStack, collector, GlowRenderTypes.translucent(HALO), at, view,
+                            baseR * 1.28, 255, 255, 255,
+                            (int) (a * wHalo * 150.0F));
+                }
             }
         }
     }
