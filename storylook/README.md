@@ -1,38 +1,38 @@
-# Devouring Storms: Story Look
+# Devouring Storms: Story Look (26.1 – 26.2)
 
-A resource pack that recreates the Minecraft Story Mode look from the
-reference screenshots: pastel sky gradients, **stacked cloud decks with void
-gaps between them**, soft lavender-tinted shadows, and a halo-wrapped sun.
+Resource pack recreating the Minecraft Story Mode look from the reference
+screenshots, measured colour-by-colour:
 
-## What each piece does
+- **position.fsh/vsh** (the 26.x sky dome): exact three-stop gradients
+  sampled from the shots — dawn periwinkle→pink, midday cyan, night deep
+  blue — plus nine stacked cloud decks (adjacent pairs, void gaps, clouds
+  nested in clouds, front-to-back occlusion, hard ceiling at the top deck)
+  and sharpened stars. The vanilla pale horizon wash is gone.
+- **position_color.fsh**: sunrise/sunset tint remapped from orange to the
+  reference pink-lavender (never orange); everything else passes through.
+- **block.fsh**: story grading — lavender-lifted shadows that never crush
+  to black, gentle saturation + S-curve contrast, and distance fog blended
+  to the exact horizon haze of the current time of day.
+- **lightmap.fsh**: soft ambient floor on sky-lit shade (readable outdoor
+  shadows like the shots; caves keep vanilla darkness) and a cool tint in
+  sky shadow.
+- **rendertype_clouds.fsh**: near cloud deck pushed to pure white.
+- **sun.png**: small bright disc inside a wide soft halo, as in the dawn
+  shot.
 
-- `rendertype_sky` — replaces the flat sky box with a pastel gradient keyed
-  off vanilla's own day/night colour (dawn pink-lavender, noon cyan, night
-  deep blue), then draws **13 cloud decks** at rising heights: two adjacent
-  pairs, void gaps between the groups, and a hard ceiling at ~16 000 blocks
-  so the stack ends instead of going on forever. Decks accumulate
-  front-to-back, so from the ground the lowest deck hides everything above
-  it — exactly the "you cannot see the clouds way above" behaviour. Ridge
-  noise inside the coverage noise puts clouds inside clouds in each layer.
-- `rendertype_terrain` — story lighting: an ambient floor so shadows stay
-  soft instead of crushing to black, a cool lavender tint in skylight
-  shadow, a gentle saturation lift, and pastel distance haze.
-- `rendertype_clouds` — the near vanilla cloud deck, brightened with a cool
-  underside lift so it reads against the pastel sky.
-- `textures/environment/sun.png` / `moon_phases.png` — square core with a
-  wide soft halo (the glowing disc from the night screenshot).
+Every shader is a strict modification of the real 26.2 vanilla shader
+(fog/dynamictransforms UBOs copied verbatim) and is validated offline
+against the vanilla includes by `ci/expand_storylook.py` + the committed
+glslang on every CI build.
 
 ## Honest limits
 
-Core shaders cannot cast real sun shadows on the ground — the soft-shadow
-look is a lighting curve, not shadow maps. The stacked decks live on the
-sky dome, so they sit behind world geometry (you fly *under* them rather
-than through volumetric banks). Both choices match the reference shots at
-every angle we tested in shader-space; a true volumetric pass would need a
-shader mod (Iris/OptiFine), which this pack deliberately does not require.
+Core shaders cannot cast projected shadow maps — the soft-shadow look is a
+lighting curve in lightmap.fsh. The stacked decks live on the sky dome, so
+they sit behind world geometry. True volumetrics would need Iris/OptiFine,
+which this pack deliberately does not require.
 
 ## Install
 
 Drop the zip (or this folder) into `.minecraft/resourcepacks/` and enable
-"Devouring Storms: Story Look". Works with or without the Devouring Storms
-mod; the mod never forces it on you.
+"Devouring Storms: Story Look". Minecraft 26.1–26.2 (pack_format 84–88).

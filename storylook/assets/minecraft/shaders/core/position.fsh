@@ -1,0 +1,130 @@
+#version 330
+
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
+
+in float sphericalVertexDistance;
+in float cylindricalVertexDistance;
+in vec3 skyDir;
+
+out vec4 fragColor;
+
+uniform float GameTime;
+
+// ---------------------------------------------------------------------------
+// Devouring Storms: Story Look -- sky dome.
+// Palettes are linearized samples of the Minecraft Story Mode reference
+// shots: dawn (EnderCon gate), midday (Sky City), night (floating island).
+// The vanilla horizon wash (apply_fog on the dome) is replaced by an exact
+// three-stop gradient; stacked cloud decks with void gaps and a hard
+// ceiling are drawn procedurally; stars are sharpened at night.
+// ---------------------------------------------------------------------------
+
+float hash13(vec3 p) {
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+float vnoise(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash13(i);
+    float b = hash13(i + vec3(1.0, 0.0, 0.0));
+    float c = hash13(i + vec3(0.0, 1.0, 0.0));
+    float d = hash13(i + vec3(1.0, 1.0, 0.0));
+    float e = hash13(i + vec3(0.0, 0.0, 1.0));
+    float g = hash13(i + vec3(1.0, 0.0, 1.0));
+    float h = hash13(i + vec3(0.0, 1.0, 1.0));
+    float k = hash13(i + vec3(1.0, 1.0, 1.0));
+    return mix(mix(mix(a, b, f.x), mix(c, d, f.x), f.y),
+               mix(mix(e, g, f.x), mix(h, k, f.x), f.y), f.z);
+}
+
+float fbm(vec3 p) {
+    float s = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 4; i++) {
+        s += a * vnoise(p);
+        p *= 2.03;
+        a *= 0.5;
+    }
+    return s;
+}
+
+void main() {
+    // Non-opaque position-shader users (world-select highlight etc.) keep
+    // the exact vanilla behaviour.
+    if (ColorModulator.a < 0.99) {
+        fragColor = apply_fog(ColorModulator, sphericalVertexDistance, cylindricalVertexDistance,
+            FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
+        return;
+    }
+
+    // Time-of-day keys, derived from the sky colour the game itself chose
+    // (no GameTime dependency, so AMD GameTime=0 bugs cannot hurt us).
+    vec3 C = ColorModulator.rgb;
+    float lum = dot(C, vec3(0.2126, 0.7152, 0.0722));
+    float night = 1.0 - smoothstep(0.05, 0.22, lum);
+    float dawn = clamp((C.r - C.b) * 2.2, 0.0, 1.0) * (1.0 - night);
+    float day = (1.0 - night) * (1.0 - dawn);
+
+    // Gradient stops, linear light, sampled from the reference images.
+    vec3 zen = day * vec3(0.108, 0.530, 0.830)
+             + dawn * vec3(0.381, 0.456, 0.776)
+             + night * vec3(0.0033, 0.0052, 0.029);
+    vec3 mid = day * vec3(0.210, 0.610, 0.840)
+             + dawn * vec3(0.620, 0.560, 0.810)
+             + night * vec3(0.010, 0.014, 0.070);
+    vec3 hor = day * vec3(0.420, 0.790, 0.940)
+             + dawn * vec3(0.890, 0.680, 0.730)
+             + night * vec3(0.019, 0.031, 0.130);
+
+    vec3 dir = normalize(skyDir);
+    float t = pow(1.0 - clamp(dir.y, 0.0, 1.0), 1.5);
+    vec3 col = mix(zen, mid, smoothstep(0.05, 0.5, t));
+    col = mix(col, hor, smoothstep(0.5, 0.95, t));
+
+    // Crisp stars at night.
+    vec3 sg = floor(dir * 220.0);
+    float sn = hash13(sg);
+    float star = smoothstep(0.996, 0.9995, sn) * night;
+    col += star * (0.55 + 0.45 * hash13(sg + 7.7)) * vec3(0.92, 0.96, 1.0);
+
+    // Stacked cloud decks: nine heights, adjacent pairs, void gaps between
+    // groups, ridge noise nesting clouds inside clouds, front-to-back
+    // occlusion so low decks hide the ones far above, and a dense ceiling
+    // deck so the stack ends instead of going on forever.
+    if (dir.y > 0.02) {
+        vec2 pxz = dir.xz / dir.y;
+        vec2 drift = vec2(0.0);
+        if (GameTime > 0.0) {
+            drift = vec2(GameTime * 0.9, GameTime * 0.3);
+        }
+        float H[9];
+        H[0] = 96.0;  H[1] = 146.0; H[2] = 152.0; H[3] = 420.0; H[4] = 430.0;
+        H[5] = 1200.0; H[6] = 3500.0; H[7] = 9000.0; H[8] = 16000.0;
+        float acc = 0.0;
+        for (int i = 0; i < 9; i++) {
+            vec2 uv = pxz * (48.0 / pow(H[i] / 96.0, 0.55)) + drift * (1.0 + float(i) * 0.15) + vec2(float(i) * 7.3);
+            float cov = fbm(vec3(uv * 0.9, float(i) * 3.1));
+            float nest = fbm(vec3(uv * 3.4 + 17.0, float(i) * 5.7));
+            float ceilBonus = (i == 8) ? 0.22 : 0.0;
+            float a = smoothstep(0.52, 0.72, cov) * (0.5 + 0.5 * smoothstep(0.35, 0.75, nest))
+                    + ceilBonus * smoothstep(0.35, 0.6, cov);
+            a = clamp(a, 0.0, 1.0) * (1.0 - acc);
+            vec3 dc = mix(vec3(1.0), hor, 0.18) * (day * 1.0 + dawn * 0.97 + night * 0.25);
+            col = mix(col, dc, a * 0.92);
+            acc += a;
+            if (acc > 0.97) {
+                break;
+            }
+        }
+    } else {
+        // Below the horizon: fade to a deeper void tone, never the pale wash.
+        col = mix(col, hor * 0.5, smoothstep(0.0, -0.3, dir.y));
+    }
+
+    fragColor = vec4(col, 1.0);
+}

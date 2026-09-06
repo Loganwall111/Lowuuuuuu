@@ -213,7 +213,8 @@ for SL in storylook/assets/minecraft/shaders/core/*; do
     *.vsh) SLE=vert ;;
     *) continue ;;
   esac
-  cp "$SL" "/tmp/storylook-check.$SLE"
+  # inline the vanilla 26.2 moj_import includes before validating
+  python3 ci/expand_storylook.py "$SL" "/tmp/storylook-check.$SLE"
   if ! ./glslcheck/bin/glslang "/tmp/storylook-check.$SLE" > /tmp/storylook-glsl.log 2>&1; then
     cat /tmp/storylook-glsl.log
     echo "[glsl] Story Look shader FAILED validation: $SL"
