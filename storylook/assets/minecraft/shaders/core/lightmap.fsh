@@ -46,6 +46,9 @@ void main() {
     float sky_level = floor(texCoord.y * 16) / 15;
 
     float block_brightness = get_brightness(block_level) * lightmapInfo.BlockFactor;
+    // Story Mode torches throw real light: wider, hotter falloff so a torch
+    // reads as a source, not a decal.
+    block_brightness *= 1.0 + 0.40 * smoothstep(0.15, 0.85, block_level);
     float sky_brightness = get_brightness(sky_level) * lightmapInfo.SkyFactor;
 
     // Story Look: soft shadow floor, scaled by day strength and gated so
@@ -64,6 +67,7 @@ void main() {
 
     // Add block light
     vec3 BlockLightColor = mix(lightmapInfo.BlockLightTint, vec3(1.0), 0.9 * parabolicMixFactor(block_level));
+    BlockLightColor *= vec3(1.06, 0.97, 0.86);
     color += BlockLightColor * block_brightness;
 
     // Apply boss overlay darkening effect

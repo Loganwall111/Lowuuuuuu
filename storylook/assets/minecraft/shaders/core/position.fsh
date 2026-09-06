@@ -104,6 +104,19 @@ void main() {
              + dawn * vec3(0.890, 0.680, 0.730)
              + night * vec3(0.019, 0.031, 0.130);
 
+    // Story Mode had a distinct sky per biome. Vanilla hands us the biome's
+    // own sky colour in ColorModulator, so its hue family picks a variant
+    // palette: lush greens (swamp/jungle), warm sands (desert/badlands),
+    // or the default story blue.
+    float gk = clamp((C.g - max(C.r, C.b)) * 3.0, 0.0, 0.6) * day;
+    float wk = clamp((C.r - C.b) * 1.2, 0.0, 0.6) * day * (1.0 - dawn);
+    zen = mix(zen, vec3(0.130, 0.450, 0.500), gk);
+    mid = mix(mid, vec3(0.300, 0.600, 0.550), gk);
+    hor = mix(hor, vec3(0.550, 0.800, 0.700), gk);
+    zen = mix(zen, vec3(0.350, 0.450, 0.700), wk);
+    mid = mix(mid, vec3(0.550, 0.600, 0.750), wk);
+    hor = mix(hor, vec3(0.850, 0.750, 0.650), wk);
+
     vec3 dir = normalize(skyDir);
     float t = pow(1.0 - clamp(dir.y, 0.0, 1.0), 1.5);
     vec3 col = mix(zen, mid, smoothstep(0.05, 0.5, t));
@@ -130,14 +143,22 @@ void main() {
         for (int i = 0; i < 9; i++) {
             vec2 uv = pxz * (120.0 / pow(H[i] / 96.0, 0.55)) + drift * (1.0 + float(i) * 0.15) + vec2(float(i) * 7.3);
             float cov = fbm(vec3(uv * 0.9, float(i) * 3.1));
+            // void gaps: a second low-frequency mask carves empty sky between
+            // cloud groups so the gaps read from the ground
+            float gapmask = smoothstep(0.34, 0.46, fbm(vec3(uv * 0.33, float(i) * 9.0)));
             float nest = fbm(vec3(uv * 3.4 + 17.0, float(i) * 5.7));
+            // low decks sparse, mid decks bold, ceiling dense: distinct
+            // layers instead of one occluding blanket
+            float th = (i < 3) ? 0.60 : ((i < 7) ? 0.48 : 0.42);
             float ceilBonus = (i == 8) ? 0.25 : 0.0;
-            float a = smoothstep(0.46, 0.60, cov) * (0.72 + 0.28 * smoothstep(0.35, 0.75, nest))
+            float a = smoothstep(th, th + 0.14, cov) * gapmask
+                    * (0.72 + 0.28 * smoothstep(0.35, 0.75, nest))
                     + ceilBonus * smoothstep(0.35, 0.6, cov);
             a = min(a, 0.9) * (1.0 - acc);
             vec3 dc = mix(vec3(1.0), hor, 0.10) * (day * 1.0 + dawn * 0.97 + night * 0.25);
+            dc *= (mod(float(i), 2.0) < 0.5) ? 1.0 : 0.955;
             col = mix(col, dc, a);
-            acc += a;
+            acc += a * 0.85;
             if (acc > 0.97) {
                 break;
             }

@@ -38,7 +38,7 @@ void main() {
     // Saturation and filmic-ish contrast from the reference grading.
     l = dot(c, vec3(0.2126, 0.7152, 0.0722));
     c = mix(vec3(l), c, 1.08);
-    c = mix(c, c * c * (3.0 - 2.0 * c), 0.22);
+    c = mix(c, c * c * (3.0 - 2.0 * c), 0.30);
 
     // Exact fog: blend the game's fog toward the sampled horizon haze of
     // the current time of day (world clock; hue key only as AMD fallback).
@@ -53,8 +53,10 @@ void main() {
     vec3 phor = fday * vec3(0.420, 0.790, 0.940)
               + fdawn * vec3(0.890, 0.680, 0.730)
               + fnight * vec3(0.019, 0.031, 0.130);
+    // 0.85 toward the sampled horizon haze: the vanilla white distance fog
+    // is what washed the ground out; the reference shots haze to sky colour.
     vec4 fogCol = storm ? vec4(F, FogColor.a)
-                        : vec4(mix(F, phor, 0.55), FogColor.a);
+                        : vec4(mix(F, phor, 0.85), FogColor.a * 0.92);
 
     fragColor = apply_fog(vec4(c, color.a), sphericalVertexDistance, cylindricalVertexDistance,
         FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, fogCol);
