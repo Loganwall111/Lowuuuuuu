@@ -30,110 +30,299 @@ assets/minecraft/textures/gui/sprites/hud/experience_bar_background.png
 assets/minecraft/textures/gui/sprites/hud/experience_bar_progress.png
 assets/minecraft/textures/gui/sprites/hud/food_empty.png
 assets/minecraft/textures/gui/sprites/hud/food_empty_hunger.png
-== renderer classes matching level/light (26.2 renamed them)
-net/minecraft/client/renderer/DynamicUniforms$ChunkSectionInfo.class
-net/minecraft/client/renderer/LevelEventHandler.class
-net/minecraft/client/renderer/LevelRenderer$1.class
-net/minecraft/client/renderer/LevelRenderer$FinalizedGizmos.class
-net/minecraft/client/renderer/LevelRenderer.class
-net/minecraft/client/renderer/LevelTargetBundle.class
-net/minecraft/client/renderer/Lightmap.class
-net/minecraft/client/renderer/LightmapRenderStateExtractor.class
-net/minecraft/client/renderer/SectionBufferBuilderPack.class
-net/minecraft/client/renderer/SectionBufferBuilderPool.class
-net/minecraft/client/renderer/SectionOcclusionGraph$GraphState.class
-net/minecraft/client/renderer/SectionOcclusionGraph$GraphStorage.class
-net/minecraft/client/renderer/SectionOcclusionGraph$Node.class
-net/minecraft/client/renderer/SectionOcclusionGraph$SectionToNodeMap.class
-net/minecraft/client/renderer/SectionOcclusionGraph.class
-net/minecraft/client/renderer/UiLightmap.class
-net/minecraft/client/renderer/block/BlockModelLighter$1.class
-net/minecraft/client/renderer/block/BlockModelLighter$AdjacencyInfo.class
-net/minecraft/client/renderer/block/BlockModelLighter$AmbientVertexRemap.class
-net/minecraft/client/renderer/block/BlockModelLighter$Cache$1.class
-net/minecraft/client/renderer/block/BlockModelLighter$Cache$2.class
-net/minecraft/client/renderer/block/BlockModelLighter$Cache.class
-net/minecraft/client/renderer/block/BlockModelLighter$SizeInfo.class
-net/minecraft/client/renderer/block/BlockModelLighter.class
-net/minecraft/client/renderer/blockentity/state/BeaconRenderState$Section.class
-== light-ish methods across renderer candidates
-== net.minecraft.client.renderer.LevelEventHandler
-== net.minecraft.client.renderer.LevelRenderer$1
-== net.minecraft.client.renderer.LevelRenderer$FinalizedGizmos
-== net.minecraft.client.renderer.LevelRenderer
-== net.minecraft.client.renderer.LevelTargetBundle
-== net.minecraft.client.renderer.Lightmap
-Compiled from "Lightmap.java"
-public class net.minecraft.client.renderer.Lightmap implements java.lang.AutoCloseable {
-  private static final int LIGHTMAP_UBO_SIZE;
-  public net.minecraft.client.renderer.Lightmap();
-  public void render(net.minecraft.client.renderer.state.LightmapRenderState);
-  public static float getBrightness(net.minecraft.world.level.dimension.DimensionType, int);
-== net.minecraft.client.renderer.LightmapRenderStateExtractor
-Compiled from "LightmapRenderStateExtractor.java"
-public class net.minecraft.client.renderer.LightmapRenderStateExtractor {
-  private float blockLightFlicker;
-  public net.minecraft.client.renderer.LightmapRenderStateExtractor(net.minecraft.client.renderer.GameRenderer, net.minecraft.client.Minecraft);
-  public void extract(net.minecraft.client.renderer.state.LightmapRenderState, float);
-== net.minecraft.client.renderer.UiLightmap
-Compiled from "UiLightmap.java"
-public class net.minecraft.client.renderer.UiLightmap implements java.lang.AutoCloseable {
-  public net.minecraft.client.renderer.UiLightmap();
-== light block classes
-net/minecraft/client/renderer/block/BlockModelLighter$1.class
-net/minecraft/client/renderer/block/BlockModelLighter$AdjacencyInfo.class
-net/minecraft/client/renderer/block/BlockModelLighter$AmbientVertexRemap.class
-net/minecraft/client/renderer/block/BlockModelLighter$Cache$1.class
-net/minecraft/client/renderer/block/BlockModelLighter$Cache$2.class
-net/minecraft/client/renderer/block/BlockModelLighter$Cache.class
-net/minecraft/client/renderer/block/BlockModelLighter$SizeInfo.class
-net/minecraft/client/renderer/block/BlockModelLighter.class
-net/minecraft/client/renderer/debug/GameTestBlockHighlightRenderer$Marker.class
-net/minecraft/client/renderer/debug/GameTestBlockHighlightRenderer.class
-== net.minecraft.world.level.Level (setBlock/light)
-  public boolean setBlock(net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, int);
-  public boolean setBlock(net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, int, int);
-  public boolean setBlockAndUpdate(net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState);
-  public void setBlocksDirty(net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.BlockState);
-  public net.minecraft.world.level.lighting.LevelLightEngine getLightEngine();
-  public void setBlockEntity(net.minecraft.world.level.block.entity.BlockEntity);
-== EntityRenderDispatcher (light coords)
-  public <E extends net.minecraft.world.entity.Entity> int getPackedLightCoords(E, float);
-== LightBlock (real light source block for phase 2b)
-Compiled from "LightBlock.java"
-public class net.minecraft.world.level.block.LightBlock extends net.minecraft.world.level.block.Block implements net.minecraft.world.level.block.SimpleWaterloggedBlock {
-  public static final com.mojang.serialization.MapCodec<net.minecraft.world.level.block.LightBlock> CODEC;
-  public static final int MAX_LEVEL;
-  public static final net.minecraft.world.level.block.state.properties.IntegerProperty LEVEL;
-  public static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED;
-  public static final java.util.function.ToIntFunction<net.minecraft.world.level.block.state.BlockState> LIGHT_EMISSION;
-  public com.mojang.serialization.MapCodec<net.minecraft.world.level.block.LightBlock> codec();
-  public net.minecraft.world.level.block.LightBlock(net.minecraft.world.level.block.state.BlockBehaviour$Properties);
-  protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition$Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
-  protected net.minecraft.world.InteractionResult useWithoutItem(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.entity.player.Player, net.minecraft.world.phys.BlockHitResult);
-  protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.phys.shapes.CollisionContext);
-  protected boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState);
-  protected net.minecraft.world.level.block.RenderShape getRenderShape(net.minecraft.world.level.block.state.BlockState);
-  protected float getShadeBrightness(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos);
-  protected net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelReader, net.minecraft.world.level.ScheduledTickAccess, net.minecraft.core.BlockPos, net.minecraft.core.Direction, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
-  protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState);
-  protected net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, boolean);
-  public static net.minecraft.world.item.ItemStack setLightOnStack(net.minecraft.world.item.ItemStack, int);
-  private static int lambda$static$0(net.minecraft.world.level.block.state.BlockState);
+== net.minecraft.world.entity.item.ItemEntity
+Compiled from "ItemEntity.java"
+public class net.minecraft.world.entity.item.ItemEntity extends net.minecraft.world.entity.Entity implements net.minecraft.world.entity.TraceableEntity {
+  public static final float EYE_HEIGHT;
+  public static final int DEFAULT_HEALTH;
+  public final float bobOffs;
+  public net.minecraft.world.entity.item.ItemEntity(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.item.ItemEntity>, net.minecraft.world.level.Level);
+  public net.minecraft.world.entity.item.ItemEntity(net.minecraft.world.level.Level, double, double, double, net.minecraft.world.item.ItemStack);
+  public net.minecraft.world.entity.item.ItemEntity(net.minecraft.world.level.Level, double, double, double, net.minecraft.world.item.ItemStack, double, double, double);
+  public boolean dampensVibrations();
+  public net.minecraft.world.entity.Entity getOwner();
+  public void restoreFrom(net.minecraft.world.entity.Entity);
+  protected net.minecraft.world.entity.Entity$MovementEmission getMovementEmission();
+  protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData$Builder);
+  protected double getDefaultGravity();
+  public void tick();
+  public net.minecraft.core.BlockPos getBlockPosBelowThatAffectsMyMovement();
+  public static boolean areMergable(net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack);
+  public static net.minecraft.world.item.ItemStack merge(net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack, int);
+  public boolean fireImmune();
+  protected boolean shouldPlayLavaHurtSound();
+  public final boolean hurtClient(net.minecraft.world.damagesource.DamageSource);
+  public final boolean hurtServer(net.minecraft.server.level.ServerLevel, net.minecraft.world.damagesource.DamageSource, float);
+  public boolean ignoreExplosion(net.minecraft.world.level.Explosion);
+  protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput);
+  protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput);
+  public void playerTouch(net.minecraft.world.entity.player.Player);
+  public net.minecraft.network.chat.Component getName();
+  public boolean isAttackable();
+  public net.minecraft.world.entity.Entity teleport(net.minecraft.world.level.portal.TeleportTransition);
+  public net.minecraft.world.item.ItemStack getItem();
+  public void setItem(net.minecraft.world.item.ItemStack);
+  public void setTarget(java.util.UUID);
+  public void setThrower(net.minecraft.world.entity.Entity);
+  public int getAge();
+  public void setDefaultPickUpDelay();
+  public void setNoPickUpDelay();
+  public void setNeverPickUp();
+  public void setPickUpDelay(int);
+  public boolean hasPickUpDelay();
+  public void setUnlimitedLifetime();
+  public void setExtendedLifetime();
+  public void makeFakeItem();
+  public static float getSpin(float, float);
+  public net.minecraft.sounds.SoundSource getSoundSource();
+  public float getVisualRotationYInDegrees();
+  public net.minecraft.world.entity.SlotAccess getSlot(int);
   static {};
 }
-== Blocks field scan for LIGHT
-  public static final net.minecraft.world.level.block.Block LIGHT_WEIGHTED_PRESSURE_PLATE;
-  public static final net.minecraft.world.level.block.Block LIGHT;
-  public static final net.minecraft.world.level.block.WeatheringCopperCollection<net.minecraft.world.level.block.Block> LIGHTNING_ROD;
-== Entity removal surface (cleanup hooks)
-  private net.minecraft.world.entity.Entity$RemovalReason removalReason;
-  public final void discard();
-  public void remove(net.minecraft.world.entity.Entity$RemovalReason);
-  public void onRemoval(net.minecraft.world.entity.Entity$RemovalReason);
-  public boolean isAlive();
-  public final boolean isRemoved();
-  public net.minecraft.world.entity.Entity$RemovalReason getRemovalReason();
-  public final void setRemoved(net.minecraft.world.entity.Entity$RemovalReason);
-  protected void unsetRemoved();
-== BlockState/Block light helpers
+== net.minecraft.client.gui.screens.TitleScreen
+Compiled from "TitleScreen.java"
+public class net.minecraft.client.gui.screens.TitleScreen extends net.minecraft.client.gui.screens.Screen {
+  public net.minecraft.client.gui.screens.TitleScreen();
+  public net.minecraft.client.gui.screens.TitleScreen(boolean);
+  public net.minecraft.client.gui.screens.TitleScreen(boolean, net.minecraft.client.gui.components.LogoRenderer);
+  public void tick();
+  public static void registerTextures(net.minecraft.client.renderer.texture.TextureManager);
+  public boolean isPauseScreen();
+  public boolean shouldCloseOnEsc();
+  protected void init();
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public void extractBackground(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent, boolean);
+  public void removed();
+  public void added();
+  public boolean canInterruptWithAnotherScreen();
+  static {};
+}
+== net.minecraft.client.gui.Gui
+Compiled from "Gui.java"
+public class net.minecraft.client.gui.Gui {
+  public static final net.minecraft.network.chat.Component SAVING_LEVEL;
+  public final net.minecraft.client.gui.Hud hud;
+  public net.minecraft.client.gui.Gui(net.minecraft.client.Minecraft, net.minecraft.client.gui.Hud, net.minecraft.client.renderer.state.gui.GuiRenderState);
+  public void registerReloadListeners(net.minecraft.server.packs.resources.ReloadableResourceManager);
+  public void tick();
+  public void update();
+  public void extractRenderState(net.minecraft.client.DeltaTracker, boolean, boolean);
+  public net.minecraft.client.gui.screens.Screen screen();
+  public void setScreen(net.minecraft.client.gui.screens.Screen);
+  public net.minecraft.client.gui.screens.Overlay overlay();
+  public void setOverlay(net.minecraft.client.gui.screens.Overlay);
+  public boolean isPausing();
+  public net.minecraft.client.resources.SplashManager splashManager();
+  public net.minecraft.client.gui.components.toasts.ToastManager toastManager();
+  public net.minecraft.client.multiplayer.chat.ChatListener chatListener();
+  public void addSocialInteractionsToast();
+  public void setPauseScreen(boolean, boolean);
+  public void handleKeybinds();
+  public void openChatScreen(net.minecraft.client.gui.components.ChatComponent$ChatMethod);
+  public void openChatAndAddText(net.minecraft.client.gui.components.ChatComponent$ChatMethod, java.lang.String);
+  public java.lang.Runnable buildInitialScreens(net.minecraft.client.GameLoadCookie);
+  public boolean canInterruptScreen();
+  public void setClientLevelTeardownInProgress(boolean);
+  static {};
+}
+== net.minecraft.client.gui.Hud
+Compiled from "Hud.java"
+public class net.minecraft.client.gui.Hud {
+  public static final net.minecraft.resources.Identifier NAUSEA_LOCATION;
+  public float vignetteBrightness;
+  public net.minecraft.client.gui.Hud(net.minecraft.client.Minecraft);
+  public void registerReloadListeners(net.minecraft.server.packs.resources.ReloadableResourceManager);
+  public void toggle();
+  public boolean isHidden();
+  public void resetTitleTimes();
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, net.minecraft.client.DeltaTracker);
+  public void extractDebugOverlay(net.minecraft.client.gui.GuiGraphicsExtractor);
+  public void extractDeferredSubtitles();
+  public static net.minecraft.resources.Identifier getMobEffectSprite(net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>);
+  public void tick(boolean);
+  public void setNowPlaying(net.minecraft.network.chat.Component);
+  public void setOverlayMessage(net.minecraft.network.chat.Component, boolean);
+  public void setTimes(int, int, int);
+  public void setSubtitle(net.minecraft.network.chat.Component);
+  public void setTitle(net.minecraft.network.chat.Component);
+  public void clearTitles();
+  public net.minecraft.client.gui.components.ChatComponent getChat();
+  public net.minecraft.client.resources.WaypointStyleManager getWaypointStyles();
+  public int getGuiTicks();
+  public net.minecraft.client.gui.Font getFont();
+  public net.minecraft.client.gui.components.spectator.SpectatorGui getSpectatorGui();
+  public net.minecraft.client.gui.components.PlayerTabOverlay getTabList();
+  public void onDisconnected();
+  public net.minecraft.client.gui.components.BossHealthOverlay getBossOverlay();
+  public net.minecraft.client.gui.components.DebugScreenOverlay getDebugOverlay();
+  public void clearCache();
+  public void extractSavingIndicator(net.minecraft.client.gui.GuiGraphicsExtractor, net.minecraft.client.DeltaTracker);
+  static {};
+}
+== net.minecraft.client.gui.GuiGraphicsExtractor
+Compiled from "GuiGraphicsExtractor.java"
+public class net.minecraft.client.gui.GuiGraphicsExtractor {
+  public net.minecraft.client.gui.GuiGraphicsExtractor(net.minecraft.client.Minecraft, net.minecraft.client.renderer.state.gui.GuiRenderState, int, int);
+  public void requestCursor(com.mojang.blaze3d.platform.cursor.CursorType);
+  public void applyCursor(com.mojang.blaze3d.platform.Window);
+  public int guiWidth();
+  public int guiHeight();
+  public org.joml.Matrix3x2fStack pose();
+  public void nextStratum();
+  public void blurBeforeThisStratum();
+  public void enableScissor(int, int, int, int);
+  public void disableScissor();
+  public boolean containsPointInScissor(int, int);
+  public void horizontalLine(int, int, int, int);
+  public void verticalLine(int, int, int, int);
+  public void fill(int, int, int, int, int);
+  public void fill(com.mojang.blaze3d.pipeline.RenderPipeline, int, int, int, int, int);
+  public void fillGradient(int, int, int, int, int, int);
+  public void fill(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.client.gui.render.TextureSetup, int, int, int, int);
+  public void outline(int, int, int, int, int);
+  public void textHighlight(int, int, int, int, boolean);
+  public void text(net.minecraft.client.gui.Font, java.lang.String, int, int, int);
+  public void text(net.minecraft.client.gui.Font, java.lang.String, int, int, int, boolean);
+  public void text(net.minecraft.client.gui.Font, net.minecraft.util.FormattedCharSequence, int, int, int);
+  public void text(net.minecraft.client.gui.Font, net.minecraft.util.FormattedCharSequence, int, int, int, boolean);
+  public void text(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, int);
+  public void text(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, int, boolean);
+  public void centeredText(net.minecraft.client.gui.Font, java.lang.String, int, int, int);
+  public void centeredText(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, int);
+  public void centeredText(net.minecraft.client.gui.Font, net.minecraft.util.FormattedCharSequence, int, int, int);
+  public void textWithWordWrap(net.minecraft.client.gui.Font, net.minecraft.network.chat.FormattedText, int, int, int, int);
+  public void textWithWordWrap(net.minecraft.client.gui.Font, net.minecraft.network.chat.FormattedText, int, int, int, int, boolean);
+  public void textWithBackdrop(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, int, int);
+  public void blit(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, float, float, int, int, int, int, int);
+  public void blit(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, float, float, int, int, int, int);
+  public void blit(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, float, float, int, int, int, int, int, int);
+  public void blit(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, float, float, int, int, int, int, int, int, int);
+  public void blit(net.minecraft.resources.Identifier, int, int, int, int, float, float, float, float);
+  public void blit(com.mojang.blaze3d.textures.GpuTextureView, com.mojang.blaze3d.textures.GpuSampler, int, int, int, int, float, float, float, float);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int, float);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.resources.Identifier, int, int, int, int, int, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.client.renderer.texture.TextureAtlasSprite, int, int, int, int);
+  public void blitSprite(com.mojang.blaze3d.pipeline.RenderPipeline, net.minecraft.client.renderer.texture.TextureAtlasSprite, int, int, int, int, int);
+  public void item(net.minecraft.world.item.ItemStack, int, int);
+  public void item(net.minecraft.world.item.ItemStack, int, int, int);
+  public void item(net.minecraft.world.entity.LivingEntity, net.minecraft.world.item.ItemStack, int, int, int);
+  public void fakeItem(net.minecraft.world.item.ItemStack, int, int);
+  public void fakeItem(net.minecraft.world.item.ItemStack, int, int, int);
+  public void itemDecorations(net.minecraft.client.gui.Font, net.minecraft.world.item.ItemStack, int, int);
+  public void itemDecorations(net.minecraft.client.gui.Font, net.minecraft.world.item.ItemStack, int, int, java.lang.String);
+  public void map(net.minecraft.client.renderer.state.MapRenderState);
+  public void entity(net.minecraft.client.renderer.entity.state.EntityRenderState, float, org.joml.Vector3fc, org.joml.Quaternionfc, org.joml.Quaternionfc, int, int, int, int);
+  public void skin(net.minecraft.client.model.Model$Simple, net.minecraft.resources.Identifier, float, float, float, float, int, int, int, int);
+  public void book(net.minecraft.client.model.object.book.BookModel, net.minecraft.resources.Identifier, float, float, float, int, int, int, int);
+  public void bannerPattern(net.minecraft.client.model.object.banner.BannerFlagModel, net.minecraft.world.item.DyeColor, net.minecraft.world.level.block.entity.BannerPatternLayers, int, int, int, int);
+  public void profilerChart(java.util.List<net.minecraft.util.profiling.ResultField>, int, int, int, int);
+  public void setTooltipForNextFrame(net.minecraft.network.chat.Component, int, int);
+  public void setTooltipForNextFrame(java.util.List<net.minecraft.util.FormattedCharSequence>, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, net.minecraft.world.item.ItemStack, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.network.chat.Component>, java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent>, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.network.chat.Component>, java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent>, int, int, net.minecraft.resources.Identifier);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.util.FormattedCharSequence>, java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent>, net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner, int, int, boolean, net.minecraft.resources.Identifier);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, net.minecraft.network.chat.Component, int, int, net.minecraft.resources.Identifier);
+  public void setComponentTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.network.chat.Component>, int, int);
+  public void setComponentTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.network.chat.Component>, int, int, net.minecraft.resources.Identifier);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<? extends net.minecraft.util.FormattedCharSequence>, int, int);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<? extends net.minecraft.util.FormattedCharSequence>, int, int, net.minecraft.resources.Identifier);
+  public void setTooltipForNextFrame(net.minecraft.client.gui.Font, java.util.List<net.minecraft.util.FormattedCharSequence>, net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner, int, int, boolean);
+  public void tooltip(net.minecraft.client.gui.Font, java.util.List<net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent>, int, int, net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner, net.minecraft.resources.Identifier);
+  public void setPreeditOverlay(net.minecraft.client.gui.components.Renderable);
+  public void extractDeferredElements(int, int, float);
+  public net.minecraft.client.renderer.texture.TextureAtlasSprite getSprite(net.minecraft.client.resources.model.sprite.SpriteId);
+  public net.minecraft.client.gui.ActiveTextCollector textRendererForWidget(net.minecraft.client.gui.components.AbstractWidget, net.minecraft.client.gui.GuiGraphicsExtractor$HoveredTextEffects);
+  public net.minecraft.client.gui.ActiveTextCollector textRenderer();
+  public net.minecraft.client.gui.ActiveTextCollector textRenderer(net.minecraft.client.gui.GuiGraphicsExtractor$HoveredTextEffects);
+  public net.minecraft.client.gui.ActiveTextCollector textRenderer(net.minecraft.client.gui.GuiGraphicsExtractor$HoveredTextEffects, java.util.function.Consumer<net.minecraft.network.chat.Style>);
+== net.minecraft.client.renderer.state.gui.GuiRenderState
+Compiled from "GuiRenderState.java"
+public class net.minecraft.client.renderer.state.gui.GuiRenderState {
+  public net.minecraft.client.renderer.state.gui.PanoramaRenderState panoramaRenderState;
+  public org.joml.Vector4f clearColorOverride;
+  public boolean isHudHidden;
+  public net.minecraft.client.renderer.state.gui.GuiRenderState();
+  public void nextStratum();
+  public void blurBeforeThisStratum();
+  public void up();
+  public void addItem(net.minecraft.client.renderer.state.gui.GuiItemRenderState);
+  public void addText(net.minecraft.client.renderer.state.gui.GuiTextRenderState);
+  public void addPicturesInPictureState(net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState);
+  public void addGuiElement(net.minecraft.client.renderer.state.gui.GuiElementRenderState);
+  public void addBlitToCurrentLayer(net.minecraft.client.renderer.state.gui.BlitRenderState);
+  public void addGlyphToCurrentLayer(net.minecraft.client.renderer.state.gui.GuiElementRenderState);
+  public java.util.Set<java.lang.Object> getItemModelIdentities();
+  public void forEachElement(java.util.function.Consumer<net.minecraft.client.renderer.state.gui.GuiElementRenderState>, net.minecraft.client.renderer.state.gui.GuiRenderState$TraverseRange);
+  public void forEachItem(java.util.function.Consumer<net.minecraft.client.renderer.state.gui.GuiItemRenderState>);
+  public void forEachText(java.util.function.Consumer<net.minecraft.client.renderer.state.gui.GuiTextRenderState>);
+  public void forEachPictureInPicture(java.util.function.Consumer<net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState>);
+  public void sortElements(java.util.Comparator<net.minecraft.client.renderer.state.gui.GuiElementRenderState>);
+  public void reset();
+}
+== net.minecraft.client.gui.components.AbstractWidget
+Compiled from "AbstractWidget.java"
+public abstract class net.minecraft.client.gui.components.AbstractWidget implements net.minecraft.client.gui.layouts.LayoutElement,net.minecraft.client.gui.components.Renderable,net.minecraft.client.gui.components.events.GuiEventListener,net.minecraft.client.gui.narration.NarratableEntry {
+  protected int width;
+  protected int height;
+  protected net.minecraft.network.chat.Component message;
+  protected boolean isHovered;
+  public boolean active;
+  public boolean visible;
+  protected float alpha;
+  public net.minecraft.client.gui.components.AbstractWidget(int, int, int, int, net.minecraft.network.chat.Component);
+  public int getHeight();
+  public final void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  protected void extractTooltipForNextRenderPass(net.minecraft.client.gui.GuiGraphicsExtractor, int, int);
+  protected void handleCursor(net.minecraft.client.gui.GuiGraphicsExtractor);
+  public void setTooltip(net.minecraft.client.gui.components.Tooltip);
+  public void setTooltipDelay(java.time.Duration);
+  protected net.minecraft.network.chat.MutableComponent createNarrationMessage();
+  public static net.minecraft.network.chat.MutableComponent wrapDefaultNarrationMessage(net.minecraft.network.chat.Component);
+  protected abstract void extractWidgetRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  protected void extractScrollingStringOverContents(net.minecraft.client.gui.ActiveTextCollector, net.minecraft.network.chat.Component, int);
+  public void onClick(net.minecraft.client.input.MouseButtonEvent, boolean);
+  public void onRelease(net.minecraft.client.input.MouseButtonEvent);
+  protected void onDrag(net.minecraft.client.input.MouseButtonEvent, double, double);
+  public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent, boolean);
+  public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent);
+  protected boolean isValidClickButton(net.minecraft.client.input.MouseButtonInfo);
+  public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent, double, double);
+  public net.minecraft.client.gui.ComponentPath nextFocusPath(net.minecraft.client.gui.navigation.FocusNavigationEvent);
+  public boolean isMouseOver(double, double);
+  public void playDownSound(net.minecraft.client.sounds.SoundManager);
+  public static void playButtonClickSound(net.minecraft.client.sounds.SoundManager);
+  public int getWidth();
+  public void setWidth(int);
+  public void setHeight(int);
+  public void setAlpha(float);
+  public float getAlpha();
+  public void setMessage(net.minecraft.network.chat.Component);
+  public net.minecraft.network.chat.Component getMessage();
+  public boolean isFocused();
+  public boolean isHovered();
+  public boolean isHoveredOrFocused();
+  public boolean isActive();
+  public void setFocused(boolean);
+  public net.minecraft.client.gui.narration.NarratableEntry$NarrationPriority narrationPriority();
+  public final void updateNarration(net.minecraft.client.gui.narration.NarrationElementOutput);
+  protected abstract void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput);
+  protected void defaultButtonNarrationText(net.minecraft.client.gui.narration.NarrationElementOutput);
+  public int getX();
+  public void setX(int);
+  public int getY();
+  public void setY(int);
+  public int getRight();
+  public int getBottom();
+  public void visitWidgets(java.util.function.Consumer<net.minecraft.client.gui.components.AbstractWidget>);
+  public void setSize(int, int);
+  public net.minecraft.client.gui.navigation.ScreenRectangle getRectangle();
+  public void setRectangle(int, int, int, int);
+  public int getTabOrderGroup();
+  public void setTabOrderGroup(int);
+}
