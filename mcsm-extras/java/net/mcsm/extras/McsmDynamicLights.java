@@ -59,7 +59,51 @@ public final class McsmDynamicLights {
         put(Items.PRISMARINE_CRYSTALS, 0x66FFCC);
     }
 
+    private static final Map<Item, Integer> LEVEL = new HashMap<>();
+
+    private static void level(Item item, int lvl) {
+        LEVEL.put(item, lvl);
+    }
+
+    static {
+        level(Items.GLOWSTONE, 15);
+        level(Items.GLOWSTONE_DUST, 12);
+        level(Items.SHROOMLIGHT, 14);
+        level(Items.BEACON, 15);
+        level(Items.NETHER_STAR, 14);
+        level(Items.SEA_LANTERN, 13);
+        level(Items.LANTERN, 12);
+        level(Items.COPPER_TORCH, 11);
+        level(Items.TORCH, 14);
+        level(Items.REDSTONE_TORCH, 9);
+        level(Items.SOUL_TORCH, 11);
+        level(Items.SOUL_LANTERN, 10);
+        level(Items.LAVA_BUCKET, 15);
+        level(Items.FIRE_CHARGE, 12);
+        level(Items.FLINT_AND_STEEL, 8);
+        level(Items.MAGMA_CREAM, 10);
+        level(Items.BLAZE_ROD, 10);
+        level(Items.BLAZE_POWDER, 8);
+        level(Items.GLOW_BERRIES, 9);
+        level(Items.GLOW_INK_SAC, 8);
+        level(Items.AMETHYST_SHARD, 7);
+        level(Items.EMERALD, 9);
+        level(Items.DIAMOND, 8);
+        level(Items.END_ROD, 14);
+        level(Items.REDSTONE, 6);
+        level(Items.PRISMARINE_CRYSTALS, 8);
+    }
+
     private McsmDynamicLights() {
+    }
+
+    /** Block-light level (0-15) this dropped stack radiates, 0 = none. */
+    public static int lightLevel(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return 0;
+        }
+        Integer l = LEVEL.get(stack.getItem());
+        return l == null ? 0 : l.intValue();
     }
 
     /** Packed ARGB glow colour for this stack, or 0 when it does not glow. */

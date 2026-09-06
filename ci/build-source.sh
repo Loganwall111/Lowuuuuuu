@@ -235,6 +235,14 @@ N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
   javap -cp "$DL/client-stripped.jar" net.minecraft.world.level.Level 2>/dev/null | grep -iE "setblock|light" | head -12
   echo "== EntityRenderDispatcher (light coords)"
   javap -p -cp "$DL/client-stripped.jar" net.minecraft.client.renderer.entity.EntityRenderDispatcher 2>/dev/null | grep -iE "light" | head -8
+  echo "== LightBlock (real light source block for phase 2b)"
+  javap -p -cp "$DL/client-stripped.jar" net.minecraft.world.level.block.LightBlock 2>/dev/null | head -25
+  echo "== Blocks field scan for LIGHT"
+  javap -cp "$DL/client-stripped.jar" net.minecraft.world.level.block.Blocks 2>/dev/null | grep -iE " LIGHT|LightBlock" | head -5
+  echo "== Entity removal surface (cleanup hooks)"
+  javap -p -cp "$DL/client-stripped.jar" net.minecraft.world.entity.Entity 2>/dev/null | grep -iE "setremoved|discard|isremoved|removalreason|isalive" | head -10
+  echo "== BlockState/Block light helpers"
+  javap -cp "$DL/client-stripped.jar" net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase 2>/dev/null | grep -iE "light|getvalue|setvalue" | head -10
 } > ci/reports/gui-surface-latest.txt 2>/dev/null || true
 
 echo "javac exit:      $RC"
