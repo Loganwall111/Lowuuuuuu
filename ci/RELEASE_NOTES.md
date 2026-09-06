@@ -1,16 +1,23 @@
-# Devouring Storms: The Point of No Return — 1.9.131
+# Devouring Storms: The Point of No Return — 1.9.132
+## Mega-phase 1/15: the reference-frame sky rebuild
 
-**Story Look visual round 4 — the reference-image match pass:**
+Every gradient stop is now sampled from YOUR Story Mode frames and mapped
+to the phase whose sky colour the mod feeds the shader:
 
-- **Layered clouds that finally read as layers**: the nine decks are now
-  grouped into three bands, and WHOLE bands vanish over wide regions of
-  sky — so you get a low deck, a true void gap of clean sky, then the
-  decks far above, exactly the stacked look of the reference shots.
-- **Per-deck lighting and shadowing**: bright sunlit cores, fringes that
-  fall into blue self-shadow, higher decks catching more sun, and low
-  viewing angles warming like late-afternoon light through cloud edges.
-- **Saturation + contrast match**: sky blues lifted to deep, rich story
-  saturation (1.30) with a gentle S-curve — no pale wash at the horizon.
+- **Phases 5.5-5.9**: pinkish-VIOLET sky (violet zenith, magenta mid,
+  SALMON-PINK horizon) - the purple body comes from the blob, not the sky.
+- **Green-teal frames' phase**: desaturated teal dome, pale green horizon.
+- **Sunset frames**: mauve-brown zenith into burnt-orange horizon.
+- **Deep-purple frames**: purple zenith, magenta mid, pink horizon.
+- **Regular overworld**: EnderCon-gate/Sky-City pastels - soft story blue
+  overhead, pink-warm horizon, white clouds with blue-shadowed fringes.
+- **Blending fixed**: no roof/side seam anywhere; horizon glow band,
+  blue silhouette rim hugging the horizon all around (phases 4/5),
+  gigantic purple line across the upper vault, darker roof tone.
+- Layered decks (layer / void gap / layer above) now fade softly into the
+  horizon instead of cutting off.
 
-Remove ALL older jars from `mods/`; install only
-`devouringstorms-1.9.131-26.2-beta-ds.jar` (the pack rides inside).
+Next phases: blob colour + storm centring + skybox attachment, phase-6 sky
+shrink, N-flash pulses, embedded shader pack with ON/OFF, fog/mist/portal
+warp, structure fixes + Sky City altitude, dimensions, NPCs, vortex,
+Devourer rebuild, OG textures, 2.0.0.
