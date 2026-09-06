@@ -46,8 +46,6 @@ public final class McsmHudTerminal {
             g.fill(0, h - bar, w, h, 0xFF000000);
         }
 
-        String bio = mc.level.getBiome(player.blockPosition())
-                .unwrapKey().map(k -> k.location().getPath()).orElse("?");
         String[] lines = new String[] {
             "\u00a79DEVOURING STORMS",
             "build " + McsmExtrasConfig.BUILD_VERSION,
@@ -55,8 +53,7 @@ public final class McsmHudTerminal {
             "xyz " + player.blockPosition().getX()
                    + " " + player.blockPosition().getY()
                    + " " + player.blockPosition().getZ(),
-            "biome " + bio,
-            "time " + (mc.level.getDayTime() % 24000) / 1000 + "h",
+            "time " + (mc.level.getOverworldClockTime() % 24000) / 1000 + "h",
         };
         int pw = 128;
         int ph = lines.length * 11 + 8;
