@@ -9,8 +9,6 @@ in vec3 skyDir;
 
 out vec4 fragColor;
 
-uniform float GameTime;
-
 // ---------------------------------------------------------------------------
 // Devouring Storms: Story Look -- sky dome (26.2).
 // Palettes are linearized samples of the Minecraft Story Mode reference
@@ -86,20 +84,14 @@ void main() {
         fragColor = vec4(scol, 1.0);
         return;
     }
-    if (GameTime > 0.0001) {
-        // 0.0 = sunrise, 0.25 = noon, 0.5 = sunset, 0.75 = midnight
-        float sunElev = cos((GameTime - 0.25) * 6.2831853);
-        day = smoothstep(-0.06, 0.28, sunElev);
-        night = 1.0 - smoothstep(-0.30, -0.06, sunElev);
-        dawn = exp(-(sunElev * sunElev) / 0.0484) * (1.0 - night);
-        day = max(day - dawn, 0.0);
-    } else {
-        // AMD fallback: key off the sky colour the game chose.
-        float lum = clum;
-        night = 1.0 - smoothstep(0.05, 0.22, lum);
-        dawn = clamp((C.r - C.b) * 2.2, 0.0, 1.0) * (1.0 - night);
-        day = (1.0 - night) * (1.0 - dawn);
-    }
+    // Night = dark sky. Dawn = STRONG orange only (vanilla sunrise), and
+    // never when the sky is cool/lavender (the mod's story grade tints the
+    // sky warm at midday; the old keys read that as sunrise and painted the
+    // whole dome periwinkle).
+    night = 1.0 - smoothstep(0.05, 0.22, clum);
+    float orange = C.r - C.b;
+    dawn = smoothstep(0.25, 0.50, orange) * step(C.b, C.g) * (1.0 - night);
+    day = max(1.0 - night - dawn, 0.0);
 
     // Gradient stops, linear light, sampled from the reference images.
     vec3 zen = day * vec3(0.108, 0.530, 0.830)
@@ -131,9 +123,6 @@ void main() {
     if (dir.y > 0.02) {
         vec2 pxz = dir.xz / dir.y;
         vec2 drift = vec2(0.0);
-        if (GameTime > 0.0) {
-            drift = vec2(GameTime * 0.9, GameTime * 0.3);
-        }
         float H[9];
         H[0] = 96.0;  H[1] = 146.0; H[2] = 152.0; H[3] = 420.0; H[4] = 430.0;
         H[5] = 1200.0; H[6] = 3500.0; H[7] = 9000.0; H[8] = 16000.0;

@@ -12,8 +12,6 @@ in vec2 texCoord0;
 
 out vec4 fragColor;
 
-uniform float GameTime;
-
 // ---------------------------------------------------------------------------
 // Devouring Storms: Story Look -- terrain grading.
 // Vanilla structure untouched (texture * lightmap-baked vertexColor *
@@ -48,21 +46,10 @@ void main() {
     // Storm phases keep the mod's own fog colour untouched.
     bool storm = (F.r > F.g * 1.25 && F.b > F.g * 1.05)
               || (F.r > F.g * 1.25 && dot(F, vec3(0.2126, 0.7152, 0.0722)) < 0.18);
-    float fnight = 0.0;
-    float fdawn = 0.0;
-    float fday = 1.0;
-    if (GameTime > 0.0001) {
-        float sunElev = cos((GameTime - 0.25) * 6.2831853);
-        fday = smoothstep(-0.06, 0.28, sunElev);
-        fnight = 1.0 - smoothstep(-0.30, -0.06, sunElev);
-        fdawn = exp(-(sunElev * sunElev) / 0.0484) * (1.0 - fnight);
-        fday = max(fday - fdawn, 0.0);
-    } else {
-        float fl = dot(F, vec3(0.2126, 0.7152, 0.0722));
-        fnight = 1.0 - smoothstep(0.05, 0.22, fl);
-        fdawn = clamp((F.r - F.b) * 2.2, 0.0, 1.0) * (1.0 - fnight);
-        fday = (1.0 - fnight) * (1.0 - fdawn);
-    }
+    float fl = dot(F, vec3(0.2126, 0.7152, 0.0722));
+    float fnight = 1.0 - smoothstep(0.05, 0.22, fl);
+    float fdawn = smoothstep(0.25, 0.50, F.r - F.b) * step(F.b, F.g) * (1.0 - fnight);
+    float fday = max(1.0 - fnight - fdawn, 0.0);
     vec3 phor = fday * vec3(0.420, 0.790, 0.940)
               + fdawn * vec3(0.890, 0.680, 0.730)
               + fnight * vec3(0.019, 0.031, 0.130);
