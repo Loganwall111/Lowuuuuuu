@@ -257,6 +257,14 @@ for SL in storylook/assets/minecraft/shaders/core/*; do
 done
 echo "[glsl] story look shaders validate"
 
+# Mega-phase 5b: the embedded Iris shader pack must validate too - every
+# program, in every [0 1] toggle combination, through the glslcheck shim.
+if ! python3 ci/iris_tu.py shaderpack-v5/shaders; then
+  echo "[glsl] shaderpack-v5 FAILED validation - not shipping a broken pack"
+  exit 1
+fi
+echo "[glsl] shaderpack-v5 validates"
+
 # ---------------------------------------------------------------------------
 # MCSM 1.9.109 -- VERSION SINGLE-SOURCE + DRIFT GATE.
 #
@@ -546,6 +554,14 @@ cp -r storylook/pack.mcmeta storylook/pack.png "$FX/cls/resourcepacks/storylook/
 cp -r storylook/assets "$FX/cls/resourcepacks/storylook/"
 echo "[build] built-in story look pack embedded at resourcepacks/storylook"
 
+# Mega-phase 5b: the Devouring Storms Iris pack rides inside the mod jar;
+# McsmShaderPackInstall extracts it into shaderpacks/ and selects it in Iris
+# on launch (MCSM Control Panel toggle, DEFAULT ON).
+mkdir -p "$FX/cls/assets/dabywitherstormmod/shaderpacks"
+rm -f "$FX/cls/assets/dabywitherstormmod/shaderpacks/devouringstorms.zip"
+( cd shaderpack-v5 && zip -q -r -X "$OLDPWD/$FX/cls/assets/dabywitherstormmod/shaderpacks/devouringstorms.zip" shaders )
+echo "[build] iris shader pack v5 embedded at assets/dabywitherstormmod/shaderpacks/devouringstorms.zip"
+
 # mega-phase 3: the phase-6 halo ring texture, generated at build time and
 # shipped inside the mod jar under the base mod's namespace
 mkdir -p "$FX/cls/assets/dabywitherstormmod/textures/misc"
@@ -557,6 +573,17 @@ python3 ci/make_stormface.py "$FX/cls/assets/dabywitherstormmod/textures/misc/st
 if [ ! -f "$FX/cls/resourcepacks/storylook/pack.mcmeta" ] || [ ! -f "$FX/cls/resourcepacks/storylook/assets/minecraft/shaders/core/position.fsh" ]; then
   echo "::error title=jar audit::built-in Story Look pack missing from the jar"
   AUDIT_FAIL=1
+fi
+
+# mega-phase 5b: the embedded Iris pack must actually be in the jar, and its
+# zip must contain the v5 sky pass - an installer with nothing to install is
+# the same silent no-op the audit exists to catch.
+EMBED_PACK="$FX/cls/assets/dabywitherstormmod/shaderpacks/devouringstorms.zip"
+if [ ! -s "$EMBED_PACK" ] || ! unzip -Z1 "$EMBED_PACK" 2>/dev/null | grep -q "shaders/gbuffers_skybasic.fsh"; then
+  echo "::error title=jar audit::embedded Iris shader pack missing or incomplete"
+  AUDIT_FAIL=1
+else
+  echo "[audit] embedded shader pack: $(unzip -Z1 "$EMBED_PACK" | wc -l) entries"
 fi
 
 # shader spot-check: the jar must carry THIS source, not the base's

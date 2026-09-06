@@ -78,6 +78,12 @@ public final class McsmExtrasConfig {
     /** Brief a player the first time they get close to a live storm. */
     public static boolean mcsmInstructions = true;
 
+    // ---- MCSM 1.9.137 -- mega-phase 5b ------------------------------------
+    /** Ship + auto-install the Devouring Storms Iris shader pack from inside
+     *  the mod jar (user order: merged into the mod, DEFAULT ON). Applies at
+     *  launch; see McsmShaderPackInstall. */
+    public static boolean embeddedShaderPack = true;
+
     private static boolean loaded = false;
     private static long stamp = -1L;
 
@@ -116,6 +122,7 @@ public final class McsmExtrasConfig {
             p.setProperty("force_mcsm_world", String.valueOf(forceMcsmWorld));
             p.setProperty("command_wire", String.valueOf(commandWire));
             p.setProperty("mcsm_instructions", String.valueOf(mcsmInstructions));
+            p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
             try (OutputStream out = new FileOutputStream(f)) {
                 p.store(out, "MCSM - storm gameplay patches + visuals + gates (glare size, aurora, death cinematic, supernova, smoke, tear, forced MCSM look/world). config_version below is the build that wrote this file.");
             }
@@ -182,6 +189,7 @@ public final class McsmExtrasConfig {
             forceMcsmWorld     = bool(p, "force_mcsm_world", forceMcsmWorld);
             commandWire        = bool(p, "command_wire", commandWire);
             mcsmInstructions   = bool(p, "mcsm_instructions", mcsmInstructions);
+            embeddedShaderPack = bool(p, "embedded_shader_pack", embeddedShaderPack);
         } catch (Throwable t) {
             // stay on defaults; never crash the game over a config file
         }

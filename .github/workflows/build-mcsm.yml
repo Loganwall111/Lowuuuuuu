@@ -94,3 +94,18 @@ jobs:
           else
             echo "no release $TAG yet - skipping story look attach"
           fi
+
+      - name: Attach the Devouring Storms shader pack to the release
+        if: success() && startsWith(github.ref, 'refs/heads/arena/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="ds-${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            ( cd shaderpack-v5 && zip -q -r "/tmp/devouringstorms-shaderpack-v5-${VER}.zip" shaders )
+            gh release upload "$TAG" "/tmp/devouringstorms-shaderpack-v5-${VER}.zip" --clobber \
+              || echo "::warning::shader pack upload failed"
+          else
+            echo "no release $TAG yet - skipping shader pack attach"
+          fi

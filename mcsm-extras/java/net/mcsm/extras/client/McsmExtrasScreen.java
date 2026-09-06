@@ -105,6 +105,10 @@ public final class McsmExtrasScreen extends Screen {
                 () -> McsmExtrasConfig.ogCemModels, v -> McsmExtrasConfig.ogCemModels = v);
         addSlider(0, 10, fColW, gap, left, top, rowH, "Smudge Scale", "%.2fx",
                 0.10, 2.00, () -> McsmExtrasConfig.smudgeScale, v -> McsmExtrasConfig.smudgeScale = v);
+        // MCSM 1.9.137 -- the shader pack now ships inside the mod and picks
+        // itself in Iris at launch; this is the on/off the user asked for.
+        addToggle(0, 11, fColW, gap, left, top, rowH, "Built-in Shader Pack",
+                () -> McsmExtrasConfig.embeddedShaderPack, v -> McsmExtrasConfig.embeddedShaderPack = v);
 
         // ---- column 2: gameplay ---------------------------------------------
         addToggle(1, 0, fColW, gap, left, top, rowH, "Obliterate Flash",

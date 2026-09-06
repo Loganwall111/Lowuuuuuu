@@ -30,6 +30,9 @@ public final class McsmBuiltinPack {
             return;
         }
         attempted = true;
+        // mega-phase 5b: the Iris shader pack that ships inside this jar
+        // installs itself here, before Iris reads its config on the client.
+        McsmShaderPackInstall.install();
         try {
             Class<?> loaderCls = Class.forName("net.fabricmc.loader.api.FabricLoader");
             Object loader = loaderCls.getMethod("getInstance").invoke(null);
