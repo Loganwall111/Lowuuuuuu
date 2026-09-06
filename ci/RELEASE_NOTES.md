@@ -1,24 +1,27 @@
-# Devouring Storms 1.9.140 — mega-phase 6a: the particle field from the frames
+# Devouring Storms 1.9.141 — mega-phase 6b: portals glow, and entry warps you through
 
-The four particle reads the reference frames show, now drawn by the storm
-renderer (stateless - every position is a hash of its index plus time, so
-nothing is stored, synced or spawned through the particle API):
+The bowels mouth (the storm's portal sheet) now behaves like the story:
 
-- **Black cubes** peeling off the silhouette edge and drifting out/down -
-  the signature debris read of every storm close-up.
-- **Sparkle dots riding down inside the beam cones**, fading as they fall,
-  spread widening toward the ground like the frames.
-- **Faint motes orbiting the whole storm** - the "subtle particles
-  everywhere" layer, half purple half pale white.
-- **Mist puffs clinging to the storm's base**, very low alpha violet-grey.
+## Per-portal coloured light
+- **Teal** glow + teal dust breathing at the mouth bottom while the plates
+  are still closing (phase < 6.9).
+- **Magenta** glow + magenta dust once the mouth is open.
+- **Gold** glow at the return mouth inside the bowels hallway.
+- The glow rides the bottom of the screen and strengthens as you close in,
+  so the portal reads as a light source casting onto everything.
 
-All of it is batched into exactly two extra draws (one translucent, one
-additive) on the nearest storm only, gated from phase ~4 and fading with
-distance, so it costs nothing at range and never touches the particle
-engine's API surface.
+## Warp entry instead of a loading screen
+- Touching the open mouth no longer snaps you across dimensions: the
+  teleport is intercepted and a 1.7 s sequence plays - letterbox bars
+  converge, a violet pull-grade washes the frame, your view is dragged
+  toward the mouth, the portal travel sound builds, a white flash closes
+  it - and only then does the server thread run the ORIGINAL teleport.
+- Singleplayer always gets the sequence; a dedicated server without the
+  mod keeps the instant teleport as the safe fallback.
+- Everything is Throwable-guarded: no portal code, no registry, no server
+  - the effect degrades to nothing instead of crashing.
 
-Unchanged: the 1.9.139 Telltale-construction glare (gradient backdrop +
-emissive mouth details), welded blob, purple face overlay, built-in Iris
-shader pack with the DEFAULT-ON toggle.
+Unchanged: 1.9.140 particle field, 1.9.139 Telltale glare, welded blob,
+purple face overlay, built-in Iris pack with the DEFAULT-ON toggle.
 
 Install: drop the jar in `mods/`.

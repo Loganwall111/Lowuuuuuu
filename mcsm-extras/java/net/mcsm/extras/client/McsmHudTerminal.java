@@ -176,6 +176,187 @@ public final class McsmHudTerminal {
             g.text(mc.font, lines[i], px + 6, ty + 4 + i * 11,
                     i == 0 ? 0xFFBFD3FF : 0xFF9FB4D8, false);
         }
+
+        // --- mega-phase 6b: portal glow + the warp entry sequence -----------
+        paintPortal(mc, player, g, w, h);
+        paintWarp(mc, player, g, w, h);
+    }
+
+    // --- mega-phase 6b state -------------------------------------------------
+    private static float portalNear = 0.0F;
+    private static float portalYaw = 0.0F;
+    private static boolean warpSoundDone = false;
+    private static boolean warpReleased = false;
+
+    /**
+     * Per-portal coloured bottom glow + coloured dust breathing at the
+     * storm mouth (user order: "glowing lights at the bottom casting
+     * different-coloured light per portal"). Teal while the plates are
+     * still closing, magenta once the mouth is open, gold inside the
+     * bowels hallway where the return mouth sits.
+     */
+    private static void paintPortal(Minecraft mc, LocalPlayer player,
+            GuiGraphicsExtractor g, int w, int h) {
+        portalNear = 0.0F;
+        try {
+            boolean inBowels = false;
+            try {
+                Class<?> bg = Class.forName("net.dabicco.witherstormmod.BowelsGravity");
+                Object key = bg.getField("BOWELS").get(null);
+                inBowels = player.level().dimension().equals(key);
+            } catch (Throwable ignored) {
+                // no bowels registry on this jar: overworld behaviour only
+            }
+            if (inBowels) {
+                bottomGlow(g, w, h, 0xFFE666, 0.55F + 0.10F * (float) Math.sin(System.currentTimeMillis() * 0.004D));
+                return;
+            }
+            net.dabicco.witherstormmod.entity.WitherStormEntity storm = null;
+            double best = Double.MAX_VALUE;
+            for (net.dabicco.witherstormmod.entity.WitherStormEntity e
+                    : player.level().getEntitiesOfClass(
+                            net.dabicco.witherstormmod.entity.WitherStormEntity.class,
+                            player.getBoundingBox().inflate(48.0D))) {
+                double d = e.distanceToSqr(player);
+                if (d < best) {
+                    best = d;
+                    storm = e;
+                }
+            }
+            if (storm == null) {
+                return;
+            }
+            net.minecraft.world.phys.Vec3 mouth = mouthOf(storm);
+            double d = mouth.distanceTo(player.position());
+            if (d > 30.0D) {
+                return;
+            }
+            float near = (float) (1.0D - d / 30.0D);
+            portalNear = near;
+            double dx = mouth.x - player.position().x;
+            double dz = mouth.z - player.position().z;
+            portalYaw = (float) Math.toDegrees(Math.atan2(-dx, -dz));
+            boolean open = phaseOf(storm) >= 6.9D;
+            int col = open ? 0xCC33FF : 0x33FFE6;
+            bottomGlow(g, w, h, col, near);
+            // coloured dust breathing up from the mouth bottom
+            if (System.currentTimeMillis() % 100L < 50L) {
+                net.minecraft.core.particles.DustParticleOptions dust =
+                        new net.minecraft.core.particles.DustParticleOptions(col | 0xFF000000, 0.8F);
+                for (int i = 0; i < 2; i++) {
+                    player.level().addParticle(dust,
+                            mouth.x + (Math.random() - 0.5) * 4.0D,
+                            mouth.y - 2.0D + Math.random() * 1.2D,
+                            mouth.z + (Math.random() - 0.5) * 4.0D,
+                            0.0D, 0.06D, 0.0D);
+                }
+            }
+        } catch (Throwable ignored) {
+            // spectacle only - never crash the HUD
+        }
+    }
+
+    private static void bottomGlow(GuiGraphicsExtractor g, int w, int h, int col, float near) {
+        float s = Math.min(Math.max(near, 0.0F), 1.0F);
+        int a1 = (int) (70.0F * s);
+        int a2 = (int) (110.0F * s);
+        int a3 = (int) (170.0F * s);
+        g.fillGradient(0, h - (int) (h * 0.42 * s), w, h, (0 << 24) | col, (a1 << 24) | col);
+        g.fillGradient(0, h - (int) (h * 0.24 * s), w, h, (0 << 24) | col, (a2 << 24) | col);
+        g.fillGradient(0, h - (int) (h * 0.10 * s), w, h, (a2 << 24) | col, (a3 << 24) | col);
+    }
+
+    private static net.minecraft.world.phys.Vec3 mouthOf(
+            net.dabicco.witherstormmod.entity.WitherStormEntity storm) {
+        try {
+            Class<?> bp = Class.forName("net.dabicco.witherstormmod.BowelsPortal");
+            Object bb = bp.getMethod("mouth", net.minecraft.world.entity.Entity.class)
+                    .invoke(null, storm);
+            if (bb instanceof net.minecraft.world.phys.AABB b) {
+                return b.getCenter();
+            }
+        } catch (Throwable ignored) {
+            // fall through to the hardcoded mouth offset
+        }
+        // fromModel(26, -192, -32) at BODY_SCALE, turned by the storm yaw
+        double lx = 1.7890D;
+        double ly = 8.2580D;
+        double lz = 2.2018D;
+        double yaw = Math.toRadians(storm.getYRot());
+        double c = Math.cos(yaw);
+        double sn = Math.sin(yaw);
+        return storm.position().add(new net.minecraft.world.phys.Vec3(
+                lx * c - lz * sn, ly, lx * sn + lz * c));
+    }
+
+    private static double phaseOf(net.dabicco.witherstormmod.entity.WitherStormEntity storm) {
+        try {
+            Object o = storm.getClass().getMethod("getPhase").invoke(storm);
+            if (o instanceof Number n) {
+                return n.doubleValue();
+            }
+        } catch (Throwable ignored) {
+            // unreadable phase: assume the mouth can open
+        }
+        return 7.0D;
+    }
+
+    /**
+     * The warp entry sequence: converging letterbox, violet pull grade,
+     * camera yaw dragged toward the mouth, white flash - then the server
+     * thread runs the ORIGINAL bowels teleport once. No loading screen.
+     */
+    private static void paintWarp(Minecraft mc, LocalPlayer player,
+            GuiGraphicsExtractor g, int w, int h) {
+        java.util.UUID id = player.getUUID();
+        if (!net.mcsm.extras.McsmWarp.warping(id)) {
+            warpSoundDone = false;
+            warpReleased = false;
+            return;
+        }
+        float p = net.mcsm.extras.McsmWarp.progress(id);
+        if (!warpSoundDone) {
+            warpSoundDone = true;
+            player.playSound(net.minecraft.sounds.SoundEvents.PORTAL_TRAVEL, 1.0F, 0.8F);
+        }
+        int e = (int) (h * 0.5D * p * p);
+        g.fill(0, 0, w, e, 0xFF000000);
+        g.fill(0, h - e, w, h, 0xFF000000);
+        int a = (int) (130.0F * p);
+        g.fillGradient(0, 0, w, h, (a << 24) | 0x2A0A4A, (a << 24) | 0x6A2AC8);
+        if (portalNear > 0.02F) {
+            float cur = player.getYRot();
+            float diff = portalYaw - cur;
+            while (diff > 180.0F) {
+                diff -= 360.0F;
+            }
+            while (diff < -180.0F) {
+                diff += 360.0F;
+            }
+            player.setYRot(cur + diff * 0.10F * p);
+        }
+        if (p > 0.85F) {
+            int fa = (int) (255.0F * (p - 0.85F) / 0.15F);
+            g.fill(0, 0, w, h, (fa << 24) | 0xFFFFFF);
+        }
+        if (p >= 1.0F && !warpReleased) {
+            warpReleased = true;
+            if (mc.getServer() != null) {
+                mc.getServer().execute(() -> {
+                    try {
+                        net.minecraft.server.level.ServerPlayer sp =
+                                mc.getServer().getPlayerList().getPlayer(id);
+                        if (sp != null) {
+                            net.mcsm.extras.McsmWarp.release(sp);
+                        }
+                    } catch (Throwable ignored) {
+                        // never crash on the way through the portal
+                    }
+                });
+            } else {
+                net.mcsm.extras.McsmWarp.cancel(id);
+            }
+        }
     }
 
     /**
