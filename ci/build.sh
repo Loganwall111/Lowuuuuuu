@@ -126,6 +126,39 @@ fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" jom
 # so javac needs it on the classpath ("cannot access Message" without it).
 fetch "https://libraries.minecraft.net/com/mojang/brigadier/1.3.10/brigadier-1.3.10.jar" brigadier.jar
 
+# MCSM 1.9.133 -- the extras storm-blob resubmit references the Fabric
+# rendering context type, so the rendering-v1 module (+api-base) joins the
+# extras compile classpath, fetched exactly like build-source does it.
+FAPI_VER="$(curl -fsSL https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml \
+  | grep -oE '<version>[^<]*\+26\.2[^<]*</version>' | sed 's/<[^>]*>//g' | tail -1 || true)"
+mkdir -p "$DL/fapi2"
+: > "$DL/fapi2-list.txt"
+if [ -n "$FAPI_VER" ]; then
+  curl -fsSL --retry 3 "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FAPI_VER}/fabric-api-${FAPI_VER}.pom" -o "$DL/fabric-api2.pom" || true
+  python3 - "$DL/fabric-api2.pom" "$DL/fapi2-list.txt" <<'PYMOD'
+import re, sys
+try:
+    pom = open(sys.argv[1]).read()
+except OSError:
+    open(sys.argv[2], "w").write("")
+    sys.exit(0)
+want = {"fabric-rendering-v1", "fabric-api-base"}
+out = []
+for m in re.finditer(r'<dependency>\s*<groupId>([^<]+)</groupId>\s*<artifactId>([^<]+)</artifactId>\s*<version>([^<]+)</version>', pom):
+    g, a, v = m.groups()
+    if g == "net.fabricmc.fabric-api" and a in want:
+        out.append(f"https://maven.fabricmc.net/{g.replace('.', '/')}/{a}/{v}/{a}-{v}.jar" + chr(9) + f"{a}.jar")
+open(sys.argv[2], "w").write(chr(10).join(out) + (chr(10) if out else ""))
+print(f"[deps] rendering modules wanted: {len(out)}")
+PYMOD
+  while IFS=$'\t' read -r url name; do
+    [ -n "$url" ] || continue
+    [ -s "$DL/fapi2/$name" ] || curl -fsSL --retry 3 --retry-delay 2 -o "$DL/fapi2/$name" "$url" \
+      || echo "::warning title=deps::fabric module download failed: $name"
+  done < "$DL/fapi2-list.txt"
+fi
+FAPI2_CP="$(find "$DL/fapi2" -name '*.jar' 2>/dev/null | tr '\n' ':')"
+
 
 # MCSM 1.9.100 -- close the loop: teach the sandbox the real API.
 # This sandbox has no JDK and no route to Mojang/Maven, so every client-side
@@ -256,7 +289,7 @@ echo "[version] drift gate OK (no hardcoded version literals)"
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
-CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar"
+CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:${FAPI2_CP}"
 # A javac failure is NOT survivable anymore: publishing a shaders-only jar is
 # exactly how users can receive new-looking UI/shaders with old Java behavior.
 # Stop hard and keep the full log in out/JAVAC_FAILED.txt.
