@@ -314,6 +314,24 @@ with open(p, "w") as f:
 PYNAME
 echo "[build] fabric.mod.json name: $(python3 -c "import json;print(json.load(open('$FX/cls/fabric.mod.json'))['name'])")"
 
+# Devouring Storms 1.9.121 -- register the holographic terminal client
+# entrypoint (the Story Mode top-left sidebar + cinematic letterbox).
+python3 - "$FX/cls/fabric.mod.json" <<'PYEP'
+import json, sys
+p = sys.argv[1]
+d = json.load(open(p))
+eps = d.setdefault("entrypoints", {})
+cl = eps.setdefault("client", [])
+if "net.mccm.extras.client.McsmHudTerminal" in cl:
+    cl.remove("net.mccm.extras.client.McsmHudTerminal")
+if "net.mcsm.extras.client.McsmHudTerminal" not in cl:
+    cl.append("net.mcsm.extras.client.McsmHudTerminal")
+with open(p, "w") as f:
+    json.dump(d, f, indent=2)
+    f.write("\n")
+print("[build] client entrypoints: " + ", ".join(cl))
+PYEP
+
 # Devouring Storms 1.9.114 -- mixin config MERGE. The base jar's mixin config
 # is frozen at whatever the 1.9.100 build listed; any mixin class added since
 # (McsmShaderGatePatch, McsmTownCommandPatch, ...) must be appended at assembly
@@ -513,6 +531,12 @@ for f in core/sky.fsh include/mcsm_visuals.glsl; do
     AUDIT_FAIL=1
   fi
 done
+
+# the terminal entrypoint must survive assembly or the sidebar never draws
+if ! python3 -c "import json,sys; d=json.load(open('$FX/cls/fabric.mod.json')); sys.exit(0 if 'net.mcsm.extras.client.McsmHudTerminal' in d.get('entrypoints',{}).get('client',[]) else 1)"; then
+  echo "::error title=jar audit::McsmHudTerminal client entrypoint missing from fabric.mod.json"
+  AUDIT_FAIL=1
+fi
 
 if [ "$AUDIT_FAIL" -ne 0 ]; then
   echo "[audit] FAILED -- refusing to publish a jar whose hooks may never run"
