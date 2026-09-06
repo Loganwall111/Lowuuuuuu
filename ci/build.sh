@@ -504,6 +504,14 @@ sys.exit(bad)
 PYRES
 fi
 
+# MCSM 1.9.122 -- ship Story Look INSIDE the mod jar as a built-in resource
+# pack (Fabric resource-loader registers it from resourcepacks/<name>/ and
+# DEFAULT_ENABLED turns it on without the user installing anything).
+mkdir -p "$FX/cls/resourcepacks/storylook"
+cp -r storylook/pack.mcmeta storylook/pack.png "$FX/cls/resourcepacks/storylook/"
+cp -r storylook/assets "$FX/cls/resourcepacks/storylook/"
+echo "[build] built-in story look pack embedded at resourcepacks/storylook"
+
 if [ ! -f "$FX/cls/resourcepacks/storylook/pack.mcmeta" ] || [ ! -f "$FX/cls/resourcepacks/storylook/assets/minecraft/shaders/core/position.fsh" ]; then
   echo "::error title=jar audit::built-in Story Look pack missing from the jar"
   AUDIT_FAIL=1
@@ -527,13 +535,6 @@ fi
 echo "::notice title=jar audit::all mixins registered, fresh classes present, shaders current"
 echo "[audit] PASS"
 
-# MCSM 1.9.122 -- ship Story Look INSIDE the mod jar as a built-in resource
-# pack (Fabric resource-loader registers it from resourcepacks/<name>/ and
-# DEFAULT_ENABLED turns it on without the user installing anything).
-mkdir -p "$FX/cls/resourcepacks/storylook"
-cp -r storylook/pack.mcmeta storylook/pack.png "$FX/cls/resourcepacks/storylook/"
-cp -r storylook/assets "$FX/cls/resourcepacks/storylook/"
-echo "[build] built-in story look pack embedded at resourcepacks/storylook"
 
 OUT="out/devouringstorms-${JAR_ID}.jar"
 rm -f "$OUT"
