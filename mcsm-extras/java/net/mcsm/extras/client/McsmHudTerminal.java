@@ -341,11 +341,15 @@ public final class McsmHudTerminal {
         }
         if (p >= 1.0F && !warpReleased) {
             warpReleased = true;
-            if (mc.getServer() != null) {
-                mc.getServer().execute(() -> {
+            // 26.2: the client reaches its integrated server through
+            // getSingleplayerServer() (verified in ci/api/client.txt);
+            // Minecraft.getServer() no longer exists.
+            var srv = mc.getSingleplayerServer();
+            if (srv != null) {
+                srv.execute(() -> {
                     try {
                         net.minecraft.server.level.ServerPlayer sp =
-                                mc.getServer().getPlayerList().getPlayer(id);
+                                srv.getPlayerList().getPlayer(id);
                         if (sp != null) {
                             net.mcsm.extras.McsmWarp.release(sp);
                         }

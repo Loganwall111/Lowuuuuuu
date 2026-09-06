@@ -1,4 +1,4 @@
-# Devouring Storms 1.9.141 — mega-phase 6b: portals glow, and entry warps you through
+# Devouring Storms 1.9.142 — mega-phase 6b: portals glow, and entry warps you through
 
 The bowels mouth (the storm's portal sheet) now behaves like the story:
 
