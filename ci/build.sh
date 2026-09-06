@@ -343,33 +343,37 @@ if not cfgs:
 # append overlay mixins as SIMPLE names, and the overlay mixin classes are
 # compiled INTO that same package (mcsm-extras/java/net/dabicco/...).
 PKG = "net.dabicco.witherstormmod.mixin."
+# The jar declares TWO configs: the base mod's dabywitherstormmod.mixins.json
+# (package net.dabicco.witherstormmod.mixin) and the original author's own
+# mcsm_extras.mixins.json (package net.mcsm.extras.mixin). Only the first one
+# is ours to extend; every other config is left EXACTLY as shipped.
+target = None
+for cfg in cfgs:
+    d = json.load(open(os.path.join(cls_dir, cfg)))
+    if d.get("package") and d["package"] + "." == PKG:
+        target = cfg
+if target is None:
+    print("::error title=jar audit::no mixin config with package %s found" % PKG)
+    raise SystemExit(1)
 added = []
 for src in sorted(glob.glob("mcsm-extras/java/net/dabicco/witherstormmod/mixin/*.java")):
     cls = os.path.basename(src)[:-5]
     is_client = "net.minecraft.client" in open(src).read()
-    present = False
-    for cfg in cfgs:
-        d = json.load(open(os.path.join(cls_dir, cfg)))
-        if d.get("package") and d["package"] + "." != PKG:
-            print("::error title=jar audit::config %s declares unexpected package %s" % (cfg, d["package"]))
-            raise SystemExit(1)
-        for key in ("mixins", "client"):
-            for e in d.get(key) or []:
-                if e == cls or e == PKG + cls:
-                    present = True
+    d = json.load(open(os.path.join(cls_dir, target)))
+    present = any(e in (cls, PKG + cls)
+                  for key in ("mixins", "client")
+                  for e in (d.get(key) or []))
     if present:
         continue
     key = "client" if is_client else "mixins"
-    for cfg in cfgs:
-        p = os.path.join(cls_dir, cfg)
-        d = json.load(open(p))
-        d.setdefault(key, [])
-        d[key].append(cls)
-        with open(p, "w") as f:
-            json.dump(d, f, indent=2)
-            f.write("\n")
-        added.append(cls + " -> " + cfg + ":" + key)
-        break
+    p = os.path.join(cls_dir, target)
+    d = json.load(open(p))
+    d.setdefault(key, [])
+    d[key].append(cls)
+    with open(p, "w") as f:
+        json.dump(d, f, indent=2)
+        f.write("\n")
+    added.append(cls + " -> " + target + ":" + key)
 print("[merge] appended mixins: " + (", ".join(added) if added else "(none, all listed)"))
 PYMERGE
 
