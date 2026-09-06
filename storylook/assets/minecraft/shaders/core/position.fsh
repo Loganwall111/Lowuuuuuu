@@ -12,12 +12,11 @@ out vec4 fragColor;
 uniform float GameTime;
 
 // ---------------------------------------------------------------------------
-// Devouring Storms: Story Look -- sky dome.
+// Devouring Storms: Story Look -- sky dome (26.2).
 // Palettes are linearized samples of the Minecraft Story Mode reference
 // shots: dawn (EnderCon gate), midday (Sky City), night (floating island).
-// The vanilla horizon wash (apply_fog on the dome) is replaced by an exact
-// three-stop gradient; stacked cloud decks with void gaps and a hard
-// ceiling are drawn procedurally; stars are sharpened at night.
+// Time of day comes from the world clock (GameTime); the sky-colour hue key
+// is only a fallback for the AMD GameTime==0 driver bug.
 // ---------------------------------------------------------------------------
 
 float hash13(vec3 p) {
@@ -62,13 +61,45 @@ void main() {
         return;
     }
 
-    // Time-of-day keys, derived from the sky colour the game itself chose
-    // (no GameTime dependency, so AMD GameTime=0 bugs cannot hurt us).
+    // --- time-of-day weights -------------------------------------------------
+    float night = 0.0;
+    float dawn = 0.0;
+    float day = 1.0;
+    // Storm override: the Devouring Storms mod tints the sky dark
+    // red/pink/purple/magenta during storm phases. That colour must pass
+    // through, not be reinterpreted as a sunrise (1.9.120 shipped that bug:
+    // a lavender mush at midday whenever a storm tint was active).
     vec3 C = ColorModulator.rgb;
-    float lum = dot(C, vec3(0.2126, 0.7152, 0.0722));
-    float night = 1.0 - smoothstep(0.05, 0.22, lum);
-    float dawn = clamp((C.r - C.b) * 2.2, 0.0, 1.0) * (1.0 - night);
-    float day = (1.0 - night) * (1.0 - dawn);
+    float clum = dot(C, vec3(0.2126, 0.7152, 0.0722));
+    bool storm = (C.r > C.g * 1.25 && C.b > C.g * 1.05)
+              || (C.r > C.g * 1.25 && clum < 0.18);
+    if (storm) {
+        float t = pow(1.0 - clamp(normalize(skyDir).y, 0.0, 1.0), 1.4);
+        vec3 scol = mix(C * 0.45, C * 1.05, t);
+        vec3 dirS = normalize(skyDir);
+        if (dirS.y > 0.02) {
+            vec2 pxz = dirS.xz / dirS.y;
+            float cov = fbm(vec3(pxz * 1.6, 3.7));
+            float a = smoothstep(0.50, 0.66, cov) * 0.5;
+            scol = mix(scol, mix(C * 1.3, vec3(1.0), 0.25), a);
+        }
+        fragColor = vec4(scol, 1.0);
+        return;
+    }
+    if (GameTime > 0.0001) {
+        // 0.0 = sunrise, 0.25 = noon, 0.5 = sunset, 0.75 = midnight
+        float sunElev = cos((GameTime - 0.25) * 6.2831853);
+        day = smoothstep(-0.06, 0.28, sunElev);
+        night = 1.0 - smoothstep(-0.30, -0.06, sunElev);
+        dawn = exp(-(sunElev * sunElev) / 0.0484) * (1.0 - night);
+        day = max(day - dawn, 0.0);
+    } else {
+        // AMD fallback: key off the sky colour the game chose.
+        float lum = clum;
+        night = 1.0 - smoothstep(0.05, 0.22, lum);
+        dawn = clamp((C.r - C.b) * 2.2, 0.0, 1.0) * (1.0 - night);
+        day = (1.0 - night) * (1.0 - dawn);
+    }
 
     // Gradient stops, linear light, sampled from the reference images.
     vec3 zen = day * vec3(0.108, 0.530, 0.830)
@@ -95,7 +126,8 @@ void main() {
     // Stacked cloud decks: nine heights, adjacent pairs, void gaps between
     // groups, ridge noise nesting clouds inside clouds, front-to-back
     // occlusion so low decks hide the ones far above, and a dense ceiling
-    // deck so the stack ends instead of going on forever.
+    // deck so the stack ends instead of going on forever. Patches are small
+    // and opaque white like the reference shots.
     if (dir.y > 0.02) {
         vec2 pxz = dir.xz / dir.y;
         vec2 drift = vec2(0.0);
@@ -107,15 +139,15 @@ void main() {
         H[5] = 1200.0; H[6] = 3500.0; H[7] = 9000.0; H[8] = 16000.0;
         float acc = 0.0;
         for (int i = 0; i < 9; i++) {
-            vec2 uv = pxz * (48.0 / pow(H[i] / 96.0, 0.55)) + drift * (1.0 + float(i) * 0.15) + vec2(float(i) * 7.3);
+            vec2 uv = pxz * (120.0 / pow(H[i] / 96.0, 0.55)) + drift * (1.0 + float(i) * 0.15) + vec2(float(i) * 7.3);
             float cov = fbm(vec3(uv * 0.9, float(i) * 3.1));
             float nest = fbm(vec3(uv * 3.4 + 17.0, float(i) * 5.7));
-            float ceilBonus = (i == 8) ? 0.22 : 0.0;
-            float a = smoothstep(0.52, 0.72, cov) * (0.5 + 0.5 * smoothstep(0.35, 0.75, nest))
+            float ceilBonus = (i == 8) ? 0.25 : 0.0;
+            float a = smoothstep(0.46, 0.60, cov) * (0.72 + 0.28 * smoothstep(0.35, 0.75, nest))
                     + ceilBonus * smoothstep(0.35, 0.6, cov);
-            a = clamp(a, 0.0, 1.0) * (1.0 - acc);
-            vec3 dc = mix(vec3(1.0), hor, 0.18) * (day * 1.0 + dawn * 0.97 + night * 0.25);
-            col = mix(col, dc, a * 0.92);
+            a = min(a, 0.9) * (1.0 - acc);
+            vec3 dc = mix(vec3(1.0), hor, 0.10) * (day * 1.0 + dawn * 0.97 + night * 0.25);
+            col = mix(col, dc, a);
             acc += a;
             if (acc > 0.97) {
                 break;
