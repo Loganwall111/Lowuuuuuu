@@ -351,10 +351,16 @@ for src in sorted(glob.glob("mcsm-extras/java/net/mcsm/extras/mixin/*.java")):
     for cfg in cfgs:
         p = os.path.join(cls_dir, cfg)
         d = json.load(open(p))
-        entries = d.get("mixins") or []
-        style_fq = any("." in e for e in entries + (d.get("client") or []))
         d.setdefault(key, [])
-        d[key].append(FQ + cls if style_fq else cls)
+        # ALWAYS fully qualified. 1.9.114-116 matched the config's entry
+        # style: the base config declares package net.dabicco.witherstormmod
+        # .mixin with simple-name entries, so our appended simple names
+        # resolved to net.dabicco.witherstormmod.mixin.<Cls> -- a class that
+        # either does not exist (launch crash: McsmTownCommandPatch, 1.9.116)
+        # or exists only as the STALE 1.9.100 base version (silent
+        # regression). FQ entries resolve to our compiled overlay classes
+        # regardless of the config's package declaration.
+        d[key].append(FQ + cls)
         with open(p, "w") as f:
             json.dump(d, f, indent=2)
             f.write("\n")
@@ -444,6 +450,34 @@ else
   else
     echo "[audit] all $N_MIXINS mixin classes are registered in a loaded config"
   fi
+
+  # MCSM 1.9.117 -- entry-resolution gate. Listing is not enough: every entry
+  # in every config must RESOLVE to a real class file in the assembled jar
+  # (package + simple name, or the FQ name itself). This is the gate that
+  # 1.9.116 needed: its appended simple-name entries resolved under the base
+  # config package and the game died at launch with ClassNotFoundException.
+  python3 - "$FX/cls" $CFG_LIST <<'PYRES' || AUDIT_FAIL=1
+import json, os, sys
+cls_dir = sys.argv[1]
+bad = 0
+n = 0
+for cfg in sys.argv[2:]:
+    p = os.path.join(cls_dir, cfg)
+    if not os.path.isfile(p):
+        continue
+    d = json.load(open(p))
+    pkg = d.get("package", "")
+    for key in ("mixins", "client"):
+        for e in d.get(key) or []:
+            n += 1
+            fq = e if "." in e else (pkg + "." + e if pkg else e)
+            path = os.path.join(cls_dir, fq.replace(".", "/") + ".class")
+            if not os.path.isfile(path):
+                print("::error title=jar audit::mixin entry %s (%s:%s) resolves to %s which is NOT in the jar -- launch would crash" % (e, cfg, key, fq))
+                bad = 1
+print("[audit] resolved %d mixin config entries against the jar" % n)
+sys.exit(bad)
+PYRES
 fi
 
 # shader spot-check: the jar must carry THIS source, not the base's

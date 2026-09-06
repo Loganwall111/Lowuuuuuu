@@ -55,18 +55,28 @@ def fmt(kind, val):
 def translate(comments, param_name):
     stack = []  # entries: (kind, text) kind in int/float/str/expr/new
     statements = []  # popped expression results (void methods)
+    locals_ = {}  # slot -> rendered expression
     for line in comments:
-        m = re.match(r"^\s*// [0-9a-f]{4}: (.*)$", line)
+        m = re.match(r"^\s*// [0-9a-f]{2,6}: (.*)$", line)
         if not m:
             continue
         parts = m.group(1).split(" ", 1)
         op = parts[0]
         arg = parts[1].strip() if len(parts) > 1 else ""
         if op in ("aload", "aload_0"):
-            n = "0" if op == "aload_0" else arg
-            if n != "0":
-                raise SystemExit("only param loads supported (aload %s)" % n)
-            stack.append(("expr", param_name))
+            n = int("0" if op == "aload_0" else arg)
+            if n in locals_:
+                stack.append(("expr", locals_[n]))
+            elif n == 0 and param_name is not None:
+                stack.append(("expr", param_name))
+            else:
+                raise SystemExit("aload of unknown local %s" % n)
+        elif op in ("astore", "astore_0", "astore_1", "astore_2", "astore_3"):
+            n = op[-1] if op.startswith("astore_") else arg
+            v = stack.pop()
+            if v[0] != "expr":
+                raise SystemExit("astore of non-expression %r" % (v,))
+            locals_[int(n)] = v[1]
         elif op in ("ldc", "ldc_w"):
             if arg.startswith('"'):
                 stack.append(("str", arg))
@@ -86,16 +96,22 @@ def translate(comments, param_name):
             stack.append(stack[-1])
         elif op == "invokespecial":
             meth, desc = arg.split(" ", 1)
-            if not meth.endswith("<init>") or "CubeDeformation" not in meth:
-                raise SystemExit("unsupported ctor %s" % meth)
+            if not meth.endswith("<init>"):
+                raise SystemExit("unsupported special call %s" % meth)
             kinds = parse_args(desc)
             vals = [stack.pop() for _ in kinds][::-1]
             dupped = stack.pop()
             orig = stack.pop()
             if dupped[0] != "new" or orig[0] != "new":
                 raise SystemExit("ctor without matching new/dup pair")
+            cls = orig[1]
+            def cfmt(kv, kk):
+                k, v = kv
+                if kk == "Z" and k == "int":
+                    return {"0": "false", "1": "true"}.get(v, v)
+                return fmt(k, v)
             stack.append(("expr", "new %s(%s)" % (
-                orig[1], ", ".join(fmt(k, v) for (k, v), kk in zip(vals, kinds)))))
+                cls, ", ".join(cfmt(kv, kk) for kv, kk in zip(vals, kinds)))))
         elif op in ("invokevirtual", "invokestatic", "invokeinterface"):
             meth, desc = arg.split(" ", 1)
             kinds = parse_args(desc)
@@ -145,11 +161,13 @@ def main():
         raise SystemExit("method %s not found" % name)
     sig = lines[sig_i]
     pm = re.search(r"\(\s*(?:final\s+)?[\w.<>\[\]]+\s+(\w+)\s*\)", sig)
-    param_name = pm.group(1) if pm else "param0"
+    param_name = pm.group(1) if pm else None
+    if param_name is None and not re.search(r"\(\s*\)", sig):
+        param_name = "param0"
     comments = []
     end_i = None
     for j in range(sig_i + 1, len(lines)):
-        if re.match(r"^\s*// [0-9a-f]{4}: ", lines[j]):
+        if re.match(r"^\s*// [0-9a-f]{2,6}: ", lines[j]):
             comments.append(lines[j])
         elif lines[j].strip() == "}" and comments:
             end_i = j

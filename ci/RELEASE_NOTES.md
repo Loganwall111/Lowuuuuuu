@@ -1,66 +1,15 @@
-# Devouring Storms: The Point of No Return — Phase 31 build
+# Devouring Storms: The Point of No Return — 1.9.117
 
-- **1.9.116 "your name on the sky" pass** — the branding you supplied is now the game's face: the title screen's wordmark slot (`assets/minecraft/textures/gui/title/minecraft.png`) carries YOUR logo — "MINECRAFT DEVOURING STORMS [THE POINT OF NO RETURN]" — with its black background keyed to transparency so the panorama shows through; the mods-list icon is the same artwork fit-centred into 256x256; and the title-screen panorama is rebuilt from YOUR storm screenshot (the purple 5.5 sky, blue halo ring, white eyes and beams): four horizontal quarters become the 360-degree side faces so the rotating background reconstructs your shot, plus a sky cap and ground cap, written to BOTH the modern `textures/gui/title/background/` and legacy `textures/gui/panorama/` paths so every version of the title screen picks them up. Everything is baked by `ci/make_branding.py` (pure-python PNG codec, committed) from `branding/logo.png` + `branding/panorama.png`, so re-baking is one command. Nothing else in the jar moved: the build is still the hash-pinned 1.9.100 base plus our cumulative additive overlay — this release only ADDS texture overrides. Behind the scenes the whole-mod source compile (Track B step 2) is converging in its own report-only pipeline: 345 of 351 source files compile clean from the recovered source, with six model-builder classes (Vineflower OOM'd inside their `createBodyLayer()`) still borrowed from the base jar; that work does not touch the shipped jar yet.
+**This release fixes a launch crash introduced in 1.9.114.** If your game
+dies at startup with `The specified mixin 'net.dabicco.witherstormmod.mixin.
+McsmTownCommandPatch' was not found`, this is your fix: remove the old jar
+from `mods/` and install this one.
 
-- **1.9.115 "the story starts at the treehouse" pass** — the recovered 1.9.100 source (`src-recon/`) exposes the full 35-site Story Mode layout, including the Episode 1 opening: **Wilderness Treehouse** at (-760, 64, -984), with The Wilderness and the EnderCon Town Fair nearby. New **`/ds towns start`** builds that three-site opening cluster and teleports the player to the treehouse, because that is where the story canonically begins; the world-load briefing now says so. `/ds towns` still lists every site with coordinates for the rest of the map.
-
-
-- **1.9.114 "the towns were never lost" pass** — the CI deep-scan (three rounds, committed under `ci/api/scan/`) fully decoded the original author's town system and the verdict is: it is not broken, it is unfindable. `McsmWorldgen` keeps a static build queue; `McsmWorldgen.tick` runs on every server tick via `END_LEVEL_TICK` and places up to **24000 blocks per tick** (towns appear in seconds — "they build over the next few minutes" is flavour text); all **33** referenced schematics ship inside the jar; and every site builds at an ABSOLUTE anchor — `ANCHOR_X=-640, ANCHOR_Z=256` plus offsets out to ~1400 blocks, with Sky City floating at y=296. The queue the player fed with `/mcsm build` almost certainly DID run — hundreds or thousands of blocks away — and the discovery path is broken UX: `/mcsm tp all` is not a valid call, site keys are hidden slugs (`Beacon Town` → `beacon_town`), and the queued message prints no coordinates. So this release adds **`/ds towns`** on top of their machinery (list with absolute coords, build one/all with coords printed, tp with tab-complete, status), registered at the TAIL of their own `McsmCommand.register`, plus a briefing line so new players are told the towns exist and where. Build-side: a mixin-config MERGE step now appends any newly compiled mixin into the jar's frozen 1.9.100 config at assembly time (client-detected by import scan), which is what lets new mixins ship at all.
-
-
-- **1.9.113 "the rebrand begins" pass** — with the original author's blessing the mod is now **Devouring Storms: The Point of No Return**. This release is the display-level rebrand: the mods-list name, the jar filename (`devouringstorms-…`), the release tag (`ds-…`), the chat banner (`[ds] Devouring Storms 1.9.113 loaded (base: Dabicco's Wither Storm Mod)`), the config-screen button and the panel header all carry the new name. The mod **id** (`dabywitherstormmod`) and every registry namespace deliberately stay — they are compiled into the base jar, and changing them without the source would break existing worlds, configs and `/give` ids. A new dispatched **deep-scan** workflow downloads the base jar on a runner and commits javap disassembly of the original author's town-builder/command classes back to the repo (`ci/api/scan/`), which is the first step of fixing HIS broken features (the town build queue that queues and never builds) with mixins instead of working around them.
-
-
-- **1.9.112 "presets stop being wiped" pass** — found and fixed the actual mechanism behind "presets change nothing / go back to normal": every click in the MCSM Extras panel calls the gate reset, and the gate's re-run re-forced the whole MCSM look, silently undoing any preset (Netflix, Cinematic, Legacy ...) applied moments earlier in Dabicco's own screen. The gate now remembers every value it wrote: on a re-run it keeps fields nobody touched and never fights a value a preset or player changed afterwards. A new **Re-apply MCSM Look now** button (MCSM Extras, column 2, bottom) clears that memory when you genuinely want the force again. Also fixed: the phase-4 rise shockwave armed itself twice per jump (the tick watcher and an `addSubGrowth` hook both fired), printing two identical chat lines and restarting the expanding front mid-flight — the tick watcher is now the single owner, with a 5-second re-arm latch as the safety net. `ci/FEATURE_INVENTORY.md` is new: an honest LIVE / PARTIAL / NOT BUILT / DABICCO-SIDE ledger of everything in the jar.
-
-
-- **1.9.111 "legible from a town away" pass** — the 1.9.110 chat lines proved the death sequence arms and the sky band starts, which isolated the remaining failure to pure visibility: at 300+ blocks a 2-scale dust mote is sub-pixel, so an expanding ring can be technically running and still read as nothing. Death blasts now use motes twice as fat, a third altitude layer, a white column from the storm's floor to the sky for the first half of the blast, and pink embers raining out of the dying front. The MCSM Extras panel now carries the build number as a widget row (the drawn header was not reaching the screen in practice), and a new **Shader Pack Gate** toggle hands `ShaderPackCompat.active()` back to Dabicco's mod when off, so the look presets (Cinematic, Netflix, ...) can be A/B tested — with the gate forced on, part of what those presets change routes through a path the gate closes and the presets appear to do nothing.
-
-
-- **1.9.110 "/kill, chat proof, and a beam you can see" pass** — `/kill` never calls `die()`: it removes the entity outright, so the entire death sequence silently never began for anyone who tested with the kill command (and the client never even observed `isDeadOrDying()`, so the 16 s sky band never latched either). `remove()` is now hooked as the net that catches every removal path, and the server stamps a clock the client sky latch reads in single-player. The build now **announces itself in chat once per world load** (`[mcsm] MCSM extras 1.9.110 loaded ...`), and rise/death sequences report in chat when they arm — so "which jar is running?" and "did the hook fire?" are answerable from a screenshot with no log hunting. The command wire is three strands with a brighter core and a continuation up through the storm into the sky, because one 0.9-scale dust line at 200 blocks was invisible in practice.
-
-
-- **1.9.109 "the particles were being thrown away" pass** — root-caused why the shockwaves and most Java-driven effects were never visible. All nineteen particle calls in `McsmFxDriver` used the `ServerLevel.sendParticles(...)` overload that forwards `force = false`, and the server silently drops those packets for any player more than **32 blocks** from the particle. A Wither Storm's core and its ring geometry are hundreds of blocks away and overhead, so the rise shockwave, the supernova, the purple motes and most of the dust waves were discarded before they ever left the server — while player-centred effects (the heal burst, the lower command wire, smoke underfoot) did arrive. That is exactly the split between what was reported visible and what was not, and no config or gate check could have found it. All calls now go through a forced-delivery helper. Shockwaves also became real **expanding blasts**: a state machine walks the ring front outward over 3 s (phase 4/7 rise) or 5 s (death) with an ease-out curve, two verticals per segment so it reads as a wall, debris trailing behind it, and the MCSM colour palette travelling with the front. The death blast is advanced from the *client* render loop, because the storm's entity stops ticking about a second after `die()` and a server-driven animation freezes there — that was the "one-tick puff". The full death cinematic (white cracks → shake → implosion → ring flare → fade) is now wired to the shader band `FogSkyEnd 1906..2900` that `core/sky.fsh` already implemented but nothing ever stamped. Finally, the build number is single-sourced: `./VERSION` → `BUILD_VERSION`, with a drift gate that fails the build on any hardcoded version literal, and a jar audit that fails the build if a compiled mixin is missing from the Mixin config (an unlisted mixin never applies, which makes the whole Java side silently inert while every diagnostic still reads "enabled").
-
-- **1.9.108 no-more-old-Java pass** — the CI build now hard-fails if the Java mixins do not compile, instead of publishing a shader-only jar with stale behavior. The Extras title shows the runtime build number, Force MCSM Look also forces the built-in Obsidian Gloss/OG skin, the legacy 1.18 glare default is migrated again, and direct hooks were added to `addSubGrowth()` and `die()` so phase-rise shockwaves and the death/supernova cinematic fire from the actual gameplay methods rather than relying only on tick polling.
-
-- **1.9.103 halo correction** — reverted the new map-pin/heart silhouette back to a round, slightly oval halo. Rebuilt the radial halo gradient from the supplied reference images: phase 5.5–5.9 uses the measured blue core/navy falloff (#6A8FF7 → #627FE3 → #263165), while phase 4/5.3 uses the measured purple-black ramp (#3F255A → #2D1C41 → #140B1B).
-
-- **1.9.107 atmosphere + config-scroll pass** — made the MCSM Extras panel scrollable, changed the default glare size to roughly half, tightened the storm halo again, made the black core more opaque, boosted 5.5-5.9 into dark-pink/purple instead of orange/over-purple, strengthened cold-biome aurora, made always-on cloud/tree-like ground shadows visibly move, and added shader-side emissive pop for torches/glowing blocks.
-
-- **1.9.106 halo scale pass** — phase-5 storm halo is much smaller vertically, wider only around the storm sides, and phase-6 sun/glare bloom is heavily tightened/dimmed so it no longer fills the whole ceiling. Config changes now reset the MCSM gates so toggling options can re-apply without restarting.
-
-- **1.9.105 visible/clickable config button + release** — the **MCSM Extras** button is now drawn by our own render injection and opens through our own mouse handler, so it no longer depends on Dabicco's custom child-widget renderer. The workflow now publishes a proper `mcsm-1.9.105` GitHub Release from this Arena branch so you do not have to hunt for old artifacts.
-
-- **1.9.104 direct config access** — added a fixed **MCSM Extras** button to the bottom-left of Dabicco's config screen through `Screen.addWidget`, independent of the mod's folding row layout. This is meant to fix the dead/vanishing extras entry visible as an off-screen black rectangle on some GUI scales.
-
-- **1.9.103 config/menu unblock** — made the MCSM Extras button open the real panel with a second fallback path, exposed the missing force-look/world/command-wire/instructions toggles inside that panel, and changed the gate code so one renamed upstream config field can no longer silently block the rest of the Story Mode visuals.
-
-**Install:** put this jar in `mods/` for Minecraft 26.2 (Fabric, with
-fabric-api, Sodium, Iris, cloth-config — the usual stack). Remove any older
-`dabywitherstormmod` jar first. Everything needed (textures, shaders, mixins)
-is embedded in the jar.
-
-## Download
-
-GitHub Actions uploads the built 1.9.108 jar as an artifact from this branch. SHA-256 is emitted next to the artifact and recorded in `out/BUILD_INFO.txt`.
-
-## Highlights in this build
-
-- **Storm glare lives in the skybox, centred on the storm** — antipode bug
-  fixed (it used to render at the mirrored point of the sky and clip through
-  the storm). It is painted into the sky itself, follows the storm always, and
-  is a touch larger than 1.9.95. A size slider follows in Phase 30.
-- **Phase 5.5–5.9 halo palette** — measured blue centre and navy falloff from
-  the supplied reference; no orange, no map-pin silhouette.
-- **Blue silhouette glow** around the storm; turquoise teeth now actually read
-  as turquoise (white-core washout reduced 0.22 → 0.08).
-- **Aurora borealis in the mod itself** — appears at night, strongest in cold
-  biomes. (The Iris pack has its own independent aurora toggle.)
-- **More vivid/contrasty world grade** (saturation 1.06→1.14, contrast
-  1.04→1.08 — capped deliberately to protect the reference sky gradients).
-- **Devourer body slightly more opaque** (semi-transparent texels lifted).
-- Validated by the offline GLSL gate (42/42) in `glslcheck/shimcheck.py`.
-
-Plus in this build: the death/rise sequence is wired to the storm methods directly. If Java mixins fail to compile, no release is published.
-
+- Mixin config merge now appends fully-qualified overlay class names. The
+  old simple-name style resolved under the base mod's mixin package, which
+  crashed at launch (town command patch) or silently applied stale 1.9.100
+  classes for the other overlay mixins.
+- New hard CI gate: every mixin config entry must resolve to a real class
+  in the assembled jar, or the build refuses to publish.
+- Includes everything from 1.9.116: Devouring Storms branding (title logo,
+  panorama, mod icon) and the Story Look resource pack attached below.
