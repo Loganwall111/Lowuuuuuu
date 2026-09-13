@@ -157,3 +157,48 @@ jobs:
           ( cd shaderpack-superduper && zip -q -r "/tmp/devouringstorms-superduper-default-${VER}-build365.zip" shaders DEVOURING_STORMS_MERGE.md pack.mcmeta )
           gh release upload "$TAG" "/tmp/devouringstorms-superduper-default-${VER}-build365.zip" --clobber \
             || echo "::warning::super duper default shader pack upload failed"
+
+      - name: "Deploy the gloss-sheen + phase 6 merge as Build #368"
+        # Session deploy step: publishes the fresh full-compile jar of the
+        # active menu base merged with the native Tattletale gloss overlay
+        # (secondary translucent pass on storm_gloss.png) and the Phase 6+
+        # 4-quadrant cosmic atlas rule. Technical version stays
+        # 10000.0.0-alpha.338. Gated to this session branch and idempotent:
+        # once ds-10000.0.0-alpha.338-build368 exists it is left alone.
+        if: success() && github.ref == 'refs/heads/arena/01a09c3d-lowuuuuuu'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="ds-${VER}-build368"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists — leaving it alone"
+            exit 0
+          fi
+          {
+            cat ci/RELEASE_NOTES.md
+            echo ""
+            echo "---"
+            echo "**Build #368 deployment evidence**"
+            echo ""
+            echo "- commit:   ${GITHUB_SHA}"
+            echo "- run:      https://github.com/Loganwall111/Lowuuuuuu/actions/runs/${GITHUB_RUN_ID}"
+            echo "- jar:      $(basename out/*.jar | head -1)"
+            echo "- sha256:   $(cut -d' ' -f1 out/*.sha256 | head -1)"
+          } > /tmp/release-notes-build368.md
+          gh release create "$TAG" \
+            --repo Loganwall111/Lowuuuuuu \
+            --target "${GITHUB_SHA}" \
+            --title "Devouring Storms: The Point of No Return ${VER}-26.2-beta (Build #368)" \
+            --notes-file /tmp/release-notes-build368.md \
+            out/*.jar out/*.sha256
+          ( cd storylook && zip -q -r "/tmp/devouringstorms-storylook-${VER}-build368.zip" . )
+          gh release upload "$TAG" "/tmp/devouringstorms-storylook-${VER}-build368.zip" --clobber \
+            || echo "::warning::story look pack upload failed"
+          ( cd shaderpack-v5 && zip -q -r "/tmp/devouringstorms-shaderpack-v5-${VER}-build368.zip" shaders )
+          gh release upload "$TAG" "/tmp/devouringstorms-shaderpack-v5-${VER}-build368.zip" --clobber \
+            || echo "::warning::shader pack upload failed"
+          ( cd shaderpack-superduper && zip -q -r "/tmp/devouringstorms-superduper-default-${VER}-build368.zip" shaders DEVOURING_STORMS_MERGE.md pack.mcmeta )
+          gh release upload "$TAG" "/tmp/devouringstorms-superduper-default-${VER}-build368.zip" --clobber \
+            || echo "::warning::super duper default shader pack upload failed"

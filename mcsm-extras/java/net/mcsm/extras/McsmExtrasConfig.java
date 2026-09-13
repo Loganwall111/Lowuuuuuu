@@ -59,6 +59,12 @@ public final class McsmExtrasConfig {
     public static double  animHeadSwayGain = 1.0;
     public static boolean lockCanonicalTexture = true;
 
+    // ---- Native Tattletale Gloss Sheen (Build #368) -----------------------
+    // Secondary translucent pass that re-renders the storm body against the
+    // scrolling storm_gloss.png sheet. On by default: shiny out of the box,
+    // no external shader pack required.
+    public static boolean nativeGlossSheen = true;
+
     // ---- Nightglow & Silhouette Halo Expansion ---------------------------
     public static boolean nightglowBodyOutline = true; // Outline whole body bottom tail to top of phase 5
     public static boolean nightglowBluishGlow = true; // Bluish halo base
@@ -156,6 +162,7 @@ public final class McsmExtrasConfig {
             p.setProperty("custom_eye_b", String.valueOf(customEyeB));
             p.setProperty("anim_idle_speed", String.valueOf(animIdleSpeed));
             p.setProperty("anim_roar_intensity", String.valueOf(animRoarIntensity));
+            p.setProperty("native_gloss_sheen", String.valueOf(nativeGlossSheen));
             p.setProperty("nightglow_body_outline", String.valueOf(nightglowBodyOutline));
             p.setProperty("nightglow_bluish_glow", String.valueOf(nightglowBluishGlow));
             p.setProperty("nightglow_purple_glow55", String.valueOf(nightglowPurpleGlow55));
@@ -224,6 +231,7 @@ public final class McsmExtrasConfig {
             animRoarIntensity = dbl(p, "anim_roar_intensity", animRoarIntensity);
             nightglowBodyOutline = bool(p, "nightglow_body_outline", nightglowBodyOutline);
             nightglowBluishGlow = bool(p, "nightglow_bluish_glow", nightglowBluishGlow);
+            nativeGlossSheen = bool(p, "native_gloss_sheen", nativeGlossSheen);
             nightglowPurpleGlow55 = bool(p, "nightglow_purple_glow55", nightglowPurpleGlow55);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);

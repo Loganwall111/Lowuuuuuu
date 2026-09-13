@@ -1,3 +1,11 @@
+# Devouring Storms 10000.0.0-alpha.338 — Build #368 (Tattletale gloss + Phase 6 cosmic merge)
+
+- Merged the native Tattletale gloss layer and the Phase 6 cosmic texture rule into the active menu base. `McsmExtrasScreen.java` and the Sun Shadow / Skybox / Geometry Thinning sliders are untouched - the layout is exactly as before.
+- **Native Tattletale gloss overlay:** a new secondary translucent pass (`McsmGlossSheen` + body-model mixins) re-renders the storm body's model part against the scrolling `storm_gloss.png` sheet via the proven `GlowRenderTypes.translucent` pipeline. The sheet sweeps around the body with the native `glossUOffset`/`glossVOffset` time drivers, so the blocky body reads as a shiny, reflective wet-obsidian shell right out of the box - no laggy external shader pack required. Toggle: `native_gloss_sheen` (default ON) in the MCSM extras config.
+- **Phase 6 cosmic atlas rule re-confirmed active:** when the storm reaches Phase 6+, `StormSkins` dynamically swaps the body texture to the custom 4-quadrant cosmic sheet (`phase_4_assets_p6.png`); Phases 1-5 keep the smooth solid vanilla-black canonical map. No grainy files.
+- Technical version number kept at `10000.0.0-alpha.338` (`VERSION`, `gradle.properties`, `fabric.mod.json`); the menu option and config screen header still explicitly render `Open Devouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338`.
+- Fresh full compile pass (javac gate + GLSL gate + jar audit) pushed clean as this build.
+
 # Devouring Storms 10000.0.0-alpha.338 — Build #365 (repaired Build #358 codebase + jar)
 
 - Repaired and force-compiled the Build #358 code layout (`feat: implement native Tattletale energy swirl gloss sheen overlay via GlowRenderTypes framework`, commit `448562f`).
