@@ -232,6 +232,8 @@ GLSL_LOG=/tmp/mcsm-glsl.log
 if python3 glslcheck/shimcheck.py mcsm-core-shaders \
      src/main/resources/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
      src/main/resources/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh \
+     jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
+     jar-overrides/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh \
      > "$GLSL_LOG" 2>&1; then
   tail -2 "$GLSL_LOG"
 else
@@ -340,15 +342,23 @@ CS="$FX/cls/assets/minecraft/shaders/core"
 if [ -f "$CS/terrain.fsh" ]; then cp -f "$CS/terrain.fsh" "$CS/block.fsh"; cp -f "$CS/terrain.vsh" "$CS/block.vsh"; fi
 if [ -f "$CS/sky.fsh" ]; then cp -f "$CS/sky.fsh" "$CS/position.fsh"; cp -f "$CS/sky.vsh" "$CS/position.vsh"; fi
 echo "[build] 26.2 shader aliases: block<-terrain position<-sky"
-# Build #365: jar-overrides/ was purged and the mod assets were consolidated into
-# src/main/resources/assets (namespaces: dabywitherstormmod, witherstormmod, minecraft).
-# Overlay those consolidated assets onto the base jar instead.
+# Build #369: the approved Build #364 assembly is restored — consolidated
+# src assets first, then the full jar-overrides/ map on top (it wins on
+# overlap: new mod icon, colors.json, internal shaders, main-menu panorama,
+# canonical witherstormmod set).
 for NS in src/main/resources/assets/*/; do
   NSNAME="$(basename "$NS")"
   mkdir -p "$FX/cls/assets/$NSNAME"
   cp -r "$NS/." "$FX/cls/assets/$NSNAME/"
 done
 echo "[build] consolidated src assets overlaid onto jar tree"
+if [ -d jar-overrides ]; then
+  cp -r jar-overrides/* "$FX/cls/"
+  echo "[build] jar-overrides restored onto jar tree ($(find jar-overrides -type f | wc -l) files)"
+else
+  echo "::error title=build::jar-overrides/ missing — the Build #364 asset map (icon, panorama, shaders) would not ship"
+  exit 1
+fi
 # nullglob guard: on a failed javac the class dir is empty and a bare
 # `cp -r /tmp/mcsm-build/*` would die under set -e (that bug ate the jar).
 shopt -s nullglob
@@ -732,12 +742,38 @@ for need in \
   fi
 done
 
+# Build #369: prove the jar-overrides asset map (the Build #364 restore)
+# survived assembly — new mod icon, main-menu panorama + title background,
+# colors.json, internal shaders, canonical witherstormmod textures, villager
+# recolors. Any miss means the client would fall back to the old base-jar
+# look (old icon / vanilla menu background) and the user would see the
+# "really old" build all over again.
+for need in \
+  assets/dabywitherstormmod/icon.png \
+  assets/dabywitherstormmod/config/colors.json \
+  assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
+  assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh \
+  assets/dabywitherstormmod/textures/mcsm_atmosphere/sky/phase4.png \
+  assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase4.png \
+  assets/minecraft/textures/gui/panorama/panorama_0.png \
+  assets/minecraft/textures/gui/title/background/panorama_0.png \
+  assets/minecraft/textures/gui/title/minecraft.png \
+  assets/witherstormmod/textures/entity/wither_storm/wither_storm.png \
+  assets/witherstormmod/config/colors.json \
+  assets/minecraft/textures/entity/villager/villager.png; do
+  if [ ! -s "$FX/cls/$need" ]; then
+    echo "::error title=jar audit::jar-overrides asset missing from jar: $need"
+    AUDIT_FAIL=1
+  fi
+done
+
 # Build #368: prove the restored cosmic/phase entity textures (from Build
 # #364, commit 85ab8d3) and the Tattletale gloss sheet survived assembly
 # BYTE-FOR-BYTE. A shrunken placeholder or a stale base-jar copy would
 # silently render flat color instead of the cosmic sheet, and no other
 # gate would catch it. Every working-tree mod texture must exist in the
-# assembled jar and cmp clean against the source.
+# assembled jar and cmp clean against the EFFECTIVE source (Build #369:
+# jar-overrides wins on overlap, mirroring the assembly order).
 TEX_TOTAL=0
 TEX_BAD=0
 while IFS= read -r tex; do
@@ -746,12 +782,17 @@ while IFS= read -r tex; do
     storm_glare.png|storm_white.png|storm_face.png) continue ;;
   esac
   TEX_TOTAL=$((TEX_TOTAL + 1))
-  rel="assets/dabywitherstormmod/textures/${tex#src/main/resources/assets/dabywitherstormmod/textures/}"
+  sub="${tex#src/main/resources/assets/dabywitherstormmod/textures/}"
+  rel="assets/dabywitherstormmod/textures/$sub"
+  eff_src="$tex"
+  if [ -f "jar-overrides/assets/dabywitherstormmod/textures/$sub" ]; then
+    eff_src="jar-overrides/assets/dabywitherstormmod/textures/$sub"
+  fi
   if [ ! -f "$FX/cls/$rel" ]; then
     echo "::error title=jar audit::texture missing from jar: $rel"
     TEX_BAD=$((TEX_BAD + 1))
     AUDIT_FAIL=1
-  elif ! cmp -s "$tex" "$FX/cls/$rel"; then
+  elif ! cmp -s "$eff_src" "$FX/cls/$rel"; then
     echo "::error title=jar audit::texture in jar differs from source (stale base copy or placeholder?): $rel"
     TEX_BAD=$((TEX_BAD + 1))
     AUDIT_FAIL=1

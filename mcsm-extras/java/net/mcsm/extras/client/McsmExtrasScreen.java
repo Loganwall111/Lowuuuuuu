@@ -315,7 +315,9 @@ public final class McsmExtrasScreen extends Screen {
         }
 
         applyScrollLayout();
-        g.text(this.font, "§bDevouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338 Control Panel", 30, 10, 0xFFEAF2FF, false);
+        // Build #351: the header hardcodes the visual title string so the config
+        // screen always shows exactly which Devouring Storms build is loaded.
+        g.text(this.font, "§bOpen Devouring Storms §8· §710000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338", 30, 10, 0xFFEAF2FF, false);
         g.text(this.font, "§8Ctrl+C / Shift+C toggles panel. Scroll wheel navigates controls.", 30, 20, 0xFFA0A0A0, false);
 
         for (AbstractWidget widget : this.widgetsList) {
