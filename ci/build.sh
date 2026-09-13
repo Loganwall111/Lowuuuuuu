@@ -731,6 +731,49 @@ for need in \
     AUDIT_FAIL=1
   fi
 done
+
+# Build #368: prove the restored cosmic/phase entity textures (from Build
+# #364, commit 85ab8d3) and the Tattletale gloss sheet survived assembly
+# BYTE-FOR-BYTE. A shrunken placeholder or a stale base-jar copy would
+# silently render flat color instead of the cosmic sheet, and no other
+# gate would catch it. Every working-tree mod texture must exist in the
+# assembled jar and cmp clean against the source.
+TEX_TOTAL=0
+TEX_BAD=0
+while IFS= read -r tex; do
+  TEX_TOTAL=$((TEX_TOTAL + 1))
+  rel="assets/dabywitherstormmod/textures/${tex#src/main/resources/assets/dabywitherstormmod/textures/}"
+  if [ ! -f "$FX/cls/$rel" ]; then
+    echo "::error title=jar audit::texture missing from jar: $rel"
+    TEX_BAD=$((TEX_BAD + 1))
+    AUDIT_FAIL=1
+  elif ! cmp -s "$tex" "$FX/cls/$rel"; then
+    echo "::error title=jar audit::texture in jar differs from source (stale base copy or placeholder?): $rel"
+    TEX_BAD=$((TEX_BAD + 1))
+    AUDIT_FAIL=1
+  fi
+done < <(find src/main/resources/assets/dabywitherstormmod/textures -type f | sort)
+if [ "$TEX_TOTAL" -lt 25 ]; then
+  echo "::error title=jar audit::only $TEX_TOTAL mod textures in working tree — asset tree looks truncated"
+  AUDIT_FAIL=1
+else
+  echo "[audit] $((TEX_TOTAL - TEX_BAD))/$TEX_TOTAL mod textures in jar match source byte-for-byte"
+fi
+# The two Phase-6 cosmic sheets the user actually sees must be real
+# full-resolution files, not the 2-3 KB placeholder canvases that
+# Build #365 accidentally shipped.
+for sheet in \
+  assets/dabywitherstormmod/textures/entity/phase_4_assets_p6.png \
+  assets/dabywitherstormmod/textures/entity/devourer_assets_p6.png; do
+  SZ=$(stat -c %s "$FX/cls/$sheet" 2>/dev/null || echo 0)
+  if [ "$SZ" -lt 50000 ]; then
+    echo "::error title=jar audit::phase-6 cosmic sheet $sheet is only ${SZ} bytes — placeholder, not the cosmic texture"
+    AUDIT_FAIL=1
+  else
+    echo "[audit] phase-6 cosmic sheet in jar: $sheet (${SZ} bytes)"
+  fi
+done
+
 if grep -R -a -q 'MCSM extras 1\.9\.95' "$FX/cls" 2>/dev/null; then
   echo "::error title=jar audit::stale visible config label MCSM extras 1.9.95 survived assembly"
   AUDIT_FAIL=1
