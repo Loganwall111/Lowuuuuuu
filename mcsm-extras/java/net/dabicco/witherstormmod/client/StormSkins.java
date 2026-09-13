@@ -10,16 +10,22 @@ import net.minecraft.resources.Identifier;
  * "witherstormmod:textures/entity/wither_storm/wither_storm.png".
  * Phase 6 transitions to the smooth 4-quadrant dark navy/indigo Phase 6 atlas:
  * "dabywitherstormmod:textures/entity/phase_4_assets_p6.png".
+ * LabPBR specular maps (_s.png) provide wet/glossy obsidian reflections for shader engines.
  */
 public final class StormSkins {
     private static final Identifier CANONICAL_TEXTURE = Identifier.fromNamespaceAndPath(
             "witherstormmod", "textures/entity/wither_storm/wither_storm.png");
     private static final Identifier CANONICAL_ALT = Identifier.fromNamespaceAndPath(
             "dabywitherstormmod", "textures/entity/wither_storm/wither_storm.png");
+    private static final Identifier CANONICAL_SPECULAR = Identifier.fromNamespaceAndPath(
+            "witherstormmod", "textures/entity/wither_storm/wither_storm_s.png");
+    private static final Identifier CANONICAL_SPECULAR_ALT = Identifier.fromNamespaceAndPath(
+            "dabywitherstormmod", "textures/entity/wither_storm/wither_storm_s.png");
 
     private static final Identifier LEGACY_CLASSIC = id("textures/entity/wither_storm.png");
     private static final Identifier LEGACY_OG = id("textures/entity/wither_storm_og.png");
     private static final Identifier PHASE6_BODY = id("textures/entity/phase_4_assets_p6.png");
+    private static final Identifier PHASE6_SPECULAR = id("textures/entity/phase_4_assets_p6_s.png");
     private static final Identifier PHASE6_EMISSIVE = id("textures/entity/phase_4_assets_e.png");
     private static final Identifier PHASE6_DEVOURER = id("textures/entity/devourer_assets_p6.png");
 
@@ -59,9 +65,20 @@ public final class StormSkins {
         return phase >= 6.0D ? PHASE6_BODY : CANONICAL_TEXTURE;
     }
 
+    /** LabPBR Specular Material Map (_s.png) for glossy shader reflections. */
+    public static Identifier specular(double phase) {
+        setPhaseHint(phase);
+        return phase >= 6.0D ? PHASE6_SPECULAR : CANONICAL_SPECULAR;
+    }
+
     /** Dedicated Phase 6 quadrant body atlas. */
     public static Identifier phase6Body() {
         return PHASE6_BODY;
+    }
+
+    /** Dedicated Phase 6 specular reflection atlas. */
+    public static Identifier phase6Specular() {
+        return PHASE6_SPECULAR;
     }
 
     /** Dedicated native-model eye/teeth emissive atlas. */
