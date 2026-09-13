@@ -229,9 +229,14 @@ fi
 echo "[glsl] shader gate (glslang via shimcheck)"
 chmod +x glslcheck/bin/glslang || true
 GLSL_LOG=/tmp/mcsm-glsl.log
-if python3 glslcheck/shimcheck.py mcsm-core-shaders \
-     jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
-     jar-overrides/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh \
+EXTRA_SHADERS=()
+if [ -f src/main/resources/assets/dabywitherstormmod/shaders/core/storm_glow.fsh ]; then
+  EXTRA_SHADERS+=(src/main/resources/assets/dabywitherstormmod/shaders/core/storm_glow.fsh)
+fi
+if [ -f src/main/resources/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh ]; then
+  EXTRA_SHADERS+=(src/main/resources/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh)
+fi
+if python3 glslcheck/shimcheck.py mcsm-core-shaders "${EXTRA_SHADERS[@]}" \
      > "$GLSL_LOG" 2>&1; then
   tail -2 "$GLSL_LOG"
 else
@@ -340,7 +345,9 @@ CS="$FX/cls/assets/minecraft/shaders/core"
 if [ -f "$CS/terrain.fsh" ]; then cp -f "$CS/terrain.fsh" "$CS/block.fsh"; cp -f "$CS/terrain.vsh" "$CS/block.vsh"; fi
 if [ -f "$CS/sky.fsh" ]; then cp -f "$CS/sky.fsh" "$CS/position.fsh"; cp -f "$CS/sky.vsh" "$CS/position.vsh"; fi
 echo "[build] 26.2 shader aliases: block<-terrain position<-sky"
-cp -r jar-overrides/* "$FX/cls/"
+if [ -d jar-overrides ] && [ -n "$(ls -A jar-overrides 2>/dev/null)" ]; then
+  cp -r jar-overrides/* "$FX/cls/"
+fi
 # nullglob guard: on a failed javac the class dir is empty and a bare
 # `cp -r /tmp/mcsm-build/*` would die under set -e (that bug ate the jar).
 shopt -s nullglob
