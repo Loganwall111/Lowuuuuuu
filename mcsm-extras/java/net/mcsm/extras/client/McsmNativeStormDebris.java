@@ -10,6 +10,7 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.util.RandomSource;
 
 /**
  * Native-block replacement for the retired custom StormDebris cube mesh.
@@ -54,6 +55,7 @@ public final class McsmNativeStormDebris {
                 LAST_TICK.clear();
             }
 
+            RandomSource random = RandomSource.create();
             float phase = (float) state.phase;
             boolean finale = phase >= 6.80F;
             int count = finale ? 160 : phase >= 6.0F ? 70 : phase >= 5.0F ? 42
@@ -63,19 +65,19 @@ public final class McsmNativeStormDebris {
                     : phase >= 4.0F ? 14.0F : 7.0F + phase * 2.0F;
 
             for (int i = 0; i < count; i++) {
-                double angle = level.random.nextDouble() * Math.PI * 2.0D;
-                float scale = 1.5F + level.random.nextFloat() * 2.5F;
-                double radial = radius * (0.48D + level.random.nextDouble() * 0.70D) * scale / 2.75D;
-                double height = (level.random.nextDouble() - 0.42D) * radius * 0.85D * scale / 2.75D;
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                float scale = 1.5F + random.nextFloat() * 2.5F;
+                double radial = radius * (0.48D + random.nextDouble() * 0.70D) * scale / 2.75D;
+                double height = (random.nextDouble() - 0.42D) * radius * 0.85D * scale / 2.75D;
                 double x = state.worldX + Math.cos(angle) * radial;
                 double y = state.worldY + 9.0D + height;
                 double z = state.worldZ + Math.sin(angle) * radial;
-                double tangent = (0.16D + level.random.nextDouble() * 0.18D) * scale;
+                double tangent = (0.16D + random.nextDouble() * 0.18D) * scale;
                 double inward = 0.018D * scale;
                 double vx = -Math.sin(angle) * tangent - Math.cos(angle) * inward;
                 double vz = Math.cos(angle) * tangent - Math.sin(angle) * inward;
-                double vy = (level.random.nextDouble() - 0.38D) * 0.07D * scale;
-                BlockParticleOption block = level.random.nextFloat() < 0.68F
+                double vy = (random.nextDouble() - 0.38D) * 0.07D * scale;
+                BlockParticleOption block = random.nextFloat() < 0.68F
                         ? OBSIDIAN : CRYING_OBSIDIAN;
 
                 // Native block particles have a provider-owned sprite scale,
@@ -86,26 +88,26 @@ public final class McsmNativeStormDebris {
                 for (int j = 0; j < cluster; j++) {
                     double jitter = j == 0 ? 0.0D : 0.22D * scale;
                     level.addParticle(block,
-                            x + (level.random.nextDouble() - 0.5D) * jitter,
-                            y + (level.random.nextDouble() - 0.5D) * jitter,
-                            z + (level.random.nextDouble() - 0.5D) * jitter,
+                            x + (random.nextDouble() - 0.5D) * jitter,
+                            y + (random.nextDouble() - 0.5D) * jitter,
+                            z + (random.nextDouble() - 0.5D) * jitter,
                             vx, vy, vz);
                 }
             }
 
             int mistCount = finale ? 44 : phase >= 6.0F ? 28 : phase >= 4.0F ? 18 : 8;
             for (int i = 0; i < mistCount; i++) {
-                double angle = level.random.nextDouble() * Math.PI * 2.0D;
-                double radial = radius * (0.72D + level.random.nextDouble() * 0.36D);
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                double radial = radius * (0.72D + random.nextDouble() * 0.36D);
                 double x = state.worldX + Math.cos(angle) * radial;
                 double y = state.worldY + 7.0D
-                        + (level.random.nextDouble() - 0.5D) * radius * 0.62D;
+                        + (random.nextDouble() - 0.5D) * radius * 0.62D;
                 double z = state.worldZ + Math.sin(angle) * radial;
-                double tangent = 0.42D + level.random.nextDouble() * 0.30D;
-                level.addParticle(level.random.nextBoolean() ? PURPLE_MIST : VIOLET_MIST,
+                double tangent = 0.42D + random.nextDouble() * 0.30D;
+                level.addParticle(random.nextBoolean() ? PURPLE_MIST : VIOLET_MIST,
                         x, y, z,
                         -Math.sin(angle) * tangent,
-                        (level.random.nextDouble() - 0.5D) * 0.035D,
+                        (random.nextDouble() - 0.5D) * 0.035D,
                         Math.cos(angle) * tangent);
             }
         } catch (Throwable ignored) {
