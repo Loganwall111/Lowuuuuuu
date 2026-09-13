@@ -1,7 +1,7 @@
 #version 330
 
 // ============================================================================
-//  MCSM visuals - sky.fsh (version 7000.0.0-MCSM-CINEMATIC-FINAL)
+//  MCSM visuals - sky.fsh (version 7001.0.0-MCSM-CINEMATIC-FINAL)
 //  Procedural Multi-Layer Sky Blending Overlay with smoothstep Y-axis interpolation
 // ============================================================================
 

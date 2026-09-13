@@ -281,7 +281,7 @@ echo "[glsl] shaderpack-v5 validates"
 # fails the build instead of shipping.
 # ---------------------------------------------------------------------------
 CFG=mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
-sed -i "s/BUILD_VERSION = \"[0-9][0-9.]*\"/BUILD_VERSION = \"${VER}\"/" "$CFG"
+sed -i "s/BUILD_VERSION = \"[^\"]*\"/BUILD_VERSION = \"${VER}\"/" "$CFG"
 echo "[version] BUILD_VERSION synced to ${VER}"
 
 DRIFT="$(grep -rn '"[^"]*1\.9\.[0-9]' --include='*.java' mcsm-extras/java \
@@ -349,7 +349,7 @@ shopt -u nullglob
 if [ "${#FRESH_CLASSES[@]}" -gt 0 ]; then
   cp -r "${FRESH_CLASSES[@]}" "$FX/cls/"
 fi
-sed -i "s/\"version\": \"[0-9.]*-26.2-beta[a-z-]*\"/\"version\": \"${JAR_ID}\"/" "$FX/cls/fabric.mod.json"
+sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${JAR_ID}\"/" "$FX/cls/fabric.mod.json"
 # Devouring Storms rebrand -- the DISPLAY name changes; the mod id
 # (dabywitherstormmod) and every registry namespace stay, because those are
 # compiled into the base jar and changing them without the source would break

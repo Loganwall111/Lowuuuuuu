@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 
 /**
- * Devouring Storms: Sci-Fi & Story Mode Config Control Panel (Version 7000.0.0-MCSM-CINEMATIC-FINAL).
+ * Devouring Storms: Sci-Fi & Story Mode Config Control Panel (Version 7001.0.0-MCSM-CINEMATIC-FINAL).
  *
  * Features:
  * - Silver pixelated border lines & corner frame (image 3 style)
