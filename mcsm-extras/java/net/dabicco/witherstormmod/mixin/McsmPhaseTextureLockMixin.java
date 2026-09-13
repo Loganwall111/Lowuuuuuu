@@ -10,8 +10,8 @@ import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyReturnValue;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Build #369 repair: locks the storm body's texture to the entity's ACTUAL
@@ -25,8 +25,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *  1. HEAD of submit: stamp this storm's real phase for the whole frame, so
  *     every StormSkins call in the frame (body, growth pieces, tentacles,
  *     devourer, mini heads) resolves the correct skin.
- *  2. getTextureLocation: re-resolve the main body texture directly from
- *     state.phase / state.devourer — no volatile involved.
+ *  2. getTextureLocation RETURN: re-resolve the main body texture directly
+ *     from state.phase / state.devourer — no volatile involved. (This
+ *     shipped Mixin build has no ModifyReturnValue — see
+ *     McsmWorldgenPatch — so a RETURN injection with CallbackInfoReturnable
+ *     is used instead, same proven pattern as McsmEntityLightMixin.)
  *
  * Client-only, cosmetic. remap=false require=0 per house style.
  */
@@ -44,13 +47,13 @@ public abstract class McsmPhaseTextureLockMixin {
         StormSkins.body(state.phase);
     }
 
-    @ModifyReturnValue(
+    @Inject(
         method = "getTextureLocation(Lnet/dabicco/witherstormmod/entity/state/WitherStormRenderState;)Lnet/minecraft/resources/Identifier;",
         at = @At("RETURN"),
         remap = false,
         require = 0
     )
-    private Identifier mcsm$phaseAccurateBody(Identifier original, WitherStormRenderState state) {
-        return state.devourer ? StormSkins.devourer(state.phase) : StormSkins.body(state.phase);
+    private void mcsm$phaseAccurateBody(WitherStormRenderState state, CallbackInfoReturnable<Identifier> cir) {
+        cir.setReturnValue(state.devourer ? StormSkins.devourer(state.phase) : StormSkins.body(state.phase));
     }
 }
