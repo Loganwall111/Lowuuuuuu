@@ -8,12 +8,12 @@ import java.io.OutputStream;
 import java.util.Properties;
 
 /**
- * MCSM extras config (Version 7002.0.0-MCSM-CINEMATIC-FINAL).
+ * MCSM extras config (Version 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338).
  * Drives all MCSM additions, atmosphere parameters, debris editor, color customization,
  * animation controller, nightglow halo expansion, and sci-fi UI parameters.
  */
 public final class McsmExtrasConfig {
-    public static final String BUILD_VERSION = "7002.0.0-MCSM-CINEMATIC-FINAL";
+    public static final String BUILD_VERSION = "10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338";
 
     // ---- Core Gameplay & Storm Mechanics -----------------------------------
     public static boolean enableTentacleGrab = true;
@@ -183,7 +183,7 @@ public final class McsmExtrasConfig {
             p.setProperty("global_shadows", String.valueOf(globalShadows));
             p.setProperty("wither_storm_enhanced_ai", String.valueOf(witherStormEnhancedAi));
             try (OutputStream out = new FileOutputStream(f)) {
-                p.store(out, "MCSM Devouring Storms Config Version 7002.0.0-MCSM-CINEMATIC-FINAL");
+                p.store(out, "MCSM Devouring Storms Config Version 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338");
             }
             stamp = f.lastModified();
         } catch (Throwable ignored) {
