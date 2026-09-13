@@ -2,6 +2,7 @@ package net.dabicco.witherstormmod.client;
 
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 /**
  * Texture policy for every native storm model pass.
@@ -10,8 +11,8 @@ import net.minecraft.resources.Identifier;
  * "witherstormmod:textures/entity/wither_storm/wither_storm.png".
  * Phase 6 transitions to the smooth 4-quadrant dark navy/indigo Phase 6 atlas:
  * "dabywitherstormmod:textures/entity/phase_4_assets_p6.png".
- * Native scrolling gloss layer ("storm_gloss.png") provides Tattletale-style moving shine
- * without requiring external shader packs.
+ * Native Tattletale-style energy swirl gloss sheen overlay ("storm_gloss.png") renders natively
+ * via GlowRenderTypes.translucent without external shader dependencies.
  */
 public final class StormSkins {
     private static final Identifier CANONICAL_TEXTURE = Identifier.fromNamespaceAndPath(
@@ -67,14 +68,19 @@ public final class StormSkins {
         return NATIVE_GLOSS_TEXTURE;
     }
 
-    /** Dynamic scrolling U-offset calculation for scrolling gloss sheen. */
+    /** Dynamic scrolling U-offset calculation for energy swirl gloss sheen. */
     public static float glossUOffset(long gameTime) {
         return (float) ((gameTime % 200L) / 200.0D);
     }
 
-    /** Dynamic scrolling V-offset calculation for scrolling gloss sheen. */
+    /** Dynamic scrolling V-offset calculation for energy swirl gloss sheen. */
     public static float glossVOffset(long gameTime) {
         return (float) (((gameTime * 2) % 300L) / 300.0D);
+    }
+
+    /** Native energy swirl translucent RenderType for Tattletale-style moving sheen overlay. */
+    public static RenderType glossSwirlRenderType() {
+        return GlowRenderTypes.translucent(NATIVE_GLOSS_TEXTURE);
     }
 
     /** Dedicated Phase 6 quadrant body atlas. */
