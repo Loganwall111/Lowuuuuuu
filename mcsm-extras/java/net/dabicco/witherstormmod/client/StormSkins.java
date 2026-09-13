@@ -7,8 +7,8 @@ import net.minecraft.resources.Identifier;
  * Texture policy for every native storm model pass.
  *
  * Phase 0 deliberately keeps its tiny starter atlas. Every later storm body,
- * head, jaw, skull, neck, and tentacle uses the matching dark Phase 6 atlas
- * for its model UV layout; detached pieces use their dedicated Phase 6 sheet.
+ * head, jaw, skull, neck, and tentacle uses a matching 512x512 phase atlas
+ * with the native UV layout; detached pieces use their dedicated 256x256 sheet.
  * Emissive layers may still use their dedicated eye/teeth sheets.
  */
 public final class StormSkins {
@@ -17,15 +17,14 @@ public final class StormSkins {
     // This is the Phase 6 atlas for the main/head/tentacle UV layout. The
     // nested 160x160 vanilla sheet is a different UV layout and must not be
     // bound to these 512x512 models.
-    private static final Identifier PHASE6_BODY = id("textures/entity/phase_4_assets_p6.png");
-    // Same 512x512 UV layout as the Phase 6 body atlas, but transparent except
-    // for the eye/teeth emissive islands. Never substitute the 160x160 CEM
-    // sheets here: native head UVs are not compatible with those sheets.
+    // Same 512x512 UV layout as the phase body atlases, but transparent
+    // except for the eye/teeth emissive islands. Never substitute the 160x160
+    // CEM sheets here: native head UVs are not compatible with those sheets.
     private static final Identifier PHASE6_EMISSIVE = id("textures/entity/phase_4_assets_e.png");
-    private static final Identifier PHASE6_DEVOURER = id("textures/entity/devourer_assets_p6.png");
 
-    // Retained as compatibility constants for callers that still ask for the
-    // old phase ladder. They are intentionally no longer selected for bodies.
+    // All of these opaque phase atlases are 512x512 and share the native
+    // model UV layout. They are safe to select by phase; the 160x160 CEM
+    // sheets remain reserved for their CEM model path.
     private static final Identifier PHASE4_CLASSIC = id("textures/entity/phase_4_assets.png");
     private static final Identifier PHASE4_OG = id("textures/entity/phase_4_assets_og.png");
     private static final Identifier PHASE55_CLASSIC = id("textures/entity/phase_4_assets_p55.png");
@@ -64,23 +63,23 @@ public final class StormSkins {
         return Math.round(DabyWSClientConfig.stormSkin) >= 1L;
     }
 
-    /**
-     * Phase 0 only: retain the tiny starter model's original atlas. Once the
-     * entity has entered Phase 1, the universal Phase 6 body sheet takes over.
-     */
+    /** Phase 0 only: retain the tiny starter model's original atlas. */
     public static Identifier legacy() {
-        return phaseHint >= 1.0D ? PHASE6_BODY : (og() ? LEGACY_OG : LEGACY_CLASSIC);
+        return phaseHint >= 1.0D ? bodyAtlas(phaseHint) : (og() ? LEGACY_OG : LEGACY_CLASSIC);
     }
 
-    /** Select the universal skin without changing the Phase 0 starter atlas. */
+    /** Select the phase-safe skin without changing the Phase 0 starter atlas. */
     public static Identifier body(double phase) {
         setPhaseHint(phase);
-        return phase >= 1.0D ? PHASE6_BODY : (og() ? LEGACY_OG : LEGACY_CLASSIC);
+        return phase >= 1.0D ? bodyAtlas(phase) : (og() ? LEGACY_OG : LEGACY_CLASSIC);
     }
 
-    /** The one opaque body atlas used by all Phase 1 and later model passes. */
+    /**
+     * Phase-safe opaque body atlas. Each selected sheet is 512x512 and uses
+     * the same native UV layout; only the palette/texture evolves.
+     */
     public static Identifier phase6Body() {
-        return PHASE6_BODY;
+        return bodyAtlas(phaseHint);
     }
 
     /** Dedicated native-model eye/teeth emissive atlas with matching 512 UVs. */
@@ -90,12 +89,40 @@ public final class StormSkins {
 
     /** Compatibility name used by older renderer bytecode; head/body callers are Phase 1+. */
     public static Identifier phase4() {
-        return PHASE6_BODY;
+        return bodyAtlas(phaseHint);
     }
 
-    /** Detached/devourer pieces use their matching Phase 6 UV atlas. */
+    /** Detached/devourer pieces use the matching 256x256 phase atlas. */
     public static Identifier devourer() {
-        return PHASE6_DEVOURER;
+        return devourerAtlas(phaseHint);
+    }
+
+    private static Identifier bodyAtlas(double phase) {
+        boolean ogSkin = DabyWSClientConfig.stormSkin >= 0.5;
+        if (phase >= 7.0D) {
+            return ogSkin ? PHASE7_OG : PHASE7_CLASSIC;
+        }
+        if (phase >= 6.0D) {
+            return ogSkin ? PHASE6_OG : PHASE6_CLASSIC;
+        }
+        if (phase >= 5.5D) {
+            return ogSkin ? PHASE55_OG : PHASE55_CLASSIC;
+        }
+        return ogSkin ? PHASE4_OG : PHASE4_CLASSIC;
+    }
+
+    private static Identifier devourerAtlas(double phase) {
+        boolean ogSkin = DabyWSClientConfig.stormSkin >= 0.5;
+        if (phase >= 7.0D) {
+            return ogSkin ? DEVOURER7_OG : DEVOURER7_CLASSIC;
+        }
+        if (phase >= 6.0D) {
+            return ogSkin ? DEVOURER6_OG : DEVOURER6_CLASSIC;
+        }
+        if (phase >= 5.5D) {
+            return ogSkin ? DEVOURER55_OG : DEVOURER55_CLASSIC;
+        }
+        return ogSkin ? DEVOURER_OG : DEVOURER_CLASSIC;
     }
 
     /** Actual emissive teeth atlases; never bind the opaque body sheet as glow. */
