@@ -15,6 +15,15 @@ import net.mcsm.extras.McsmExtrasConfig;
 
 /**
  * Devouring Storms: Main menu overhaul with Image 3 silver pixel border frame.
+ *
+ * BUILD #371 — STORY-MODE MAIN MENU. The background is a fully procedural
+ * cinematic "panorama" (no texture assets, no blit/texture API — only
+ * fill / fillGradient / text, all proven): deep indigo night sky, drifting
+ * nebula wisps, twinkling stars, a cool moon, the OG golden 3D sun-slab
+ * rising on the horizon with god rays, and three layers of dark mountain
+ * silhouettes. The base story-mode banner (top) and this cinematic bar
+ * (bottom) frame it like a movie title card. Toggle: "Cinematic
+ * Story-Mode Menu" in the MCSM Extras panel (off = the plain gradient).
  */
 @Mixin(TitleScreen.class)
 public abstract class McsmTitleOverhaulMixin extends Screen {
@@ -29,20 +38,142 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         ci.cancel();
         int w = this.width;
         int h = this.height;
-        // deep violet night -> near black
-        g.fillGradient(0, 0, w, h, 0xFF120A1E, 0xFF05030A);
-        // storm glow on the horizon
-        g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x553F255A);
-        // deterministic twinkling stars over upper two thirds
-        long seed = 20260906L;
-        for (int i = 0; i < 120; i++) {
+        if (McsmExtrasConfig.storyMenuBackdrop) {
+            dabyws$paintCinematic(g, w, h);
+        } else {
+            // Fallback: the plain gradient (pre-#371 look).
+            g.fillGradient(0, 0, w, h, 0xFF120A1E, 0xFF05030A);
+            g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x553F255A);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // BUILD #371 — the cinematic scene
+    // ------------------------------------------------------------------
+
+    private static void dabyws$paintCinematic(GuiGraphicsExtractor g, int w, int h) {
+        double t = System.currentTimeMillis() * 0.001D;
+        int horizon = h * 72 / 100;
+
+        // 1. sky: deep space indigo -> violet, ember at the horizon
+        g.fillGradient(0, 0, w, h / 3, 0xFF050310, 0xFF0E0824);
+        g.fillGradient(0, h / 3, w, h * 2 / 3, 0xFF0E0824, 0xFF22104A);
+        g.fillGradient(0, h * 2 / 3, w, horizon, 0xFF22104A, 0xFF4A1E5C);
+        g.fillGradient(0, horizon - h / 20, w, horizon, 0x006A2A5A, 0xAA8A3A5E);
+        // ground below the horizon
+        g.fillGradient(0, horizon, w, h, 0xFF0A0616, 0xFF030208);
+
+        // 2. drifting nebula wisps
+        dabyws$nebulaBand(g, w, h * 16 / 100, h * 9 / 100, 0x265A2A8A, t, 0.0D);
+        dabyws$nebulaBand(g, w, h * 26 / 100, h * 12 / 100, 0x1E2A6A8A, t, 2.1D);
+        dabyws$nebulaBand(g, w, h * 44 / 100, h * 10 / 100, 0x1A6A3A6A, t, 4.3D);
+
+        // 3. stars (three brightness tiers, twinkle)
+        dabyws$stars(g, w, (int) (horizon * 0.94), 150, t);
+
+        // 4. cool moon (kept clear of the vanilla logo and the top banner)
+        dabyws$disc(g, (int) (w * 0.30), (int) (h * 0.17), 22, 0x18C8D8FF);
+        dabyws$disc(g, (int) (w * 0.30), (int) (h * 0.17), 13, 0xFFDCE6FF);
+        int mx = (int) (w * 0.30);
+        int my = (int) (h * 0.17);
+        g.fill(mx - 5, my - 5, mx - 2, my - 2, 0xBBA9BCE6);
+        g.fill(mx + 1, my + 1, mx + 5, my + 4, 0xBBA9BCE6);
+        g.fill(mx - 6, my + 3, mx - 4, my + 5, 0xBBA9BCE6);
+
+        // 5. the OG 3D sun-slab on the horizon, right of centre
+        dabyws$sunSlab(g, (int) (w * 0.62), horizon, (int) (h * 0.42), t);
+
+        // 6. three layers of dark mountain silhouettes (far -> near)
+        dabyws$ridge(g, w, horizon, h, 0xFF241138, 0.16, 0.011, 0.0D);
+        dabyws$ridge(g, w, horizon, h, 0xFF120A22, 0.26, 0.017, 2.6D);
+        dabyws$ridge(g, w, horizon, h, 0xFF05030C, 0.38, 0.013, 5.2D);
+
+        // 7. cinematic vignette
+        g.fillGradient(0, 0, w, h * 8 / 100, 0x99030208, 0x00030208);
+        g.fillGradient(0, h - h * 8 / 100, w, h, 0x00030208, 0x99030208);
+        g.fillGradient(0, 0, w * 6 / 100, h, 0x55030208, 0x00030208);
+        g.fillGradient(w - w * 6 / 100, 0, w, h, 0x00030208, 0x55030208);
+    }
+
+    /** A soft horizontal nebula band with feathered top and bottom edges. */
+    private static void dabyws$nebulaBand(GuiGraphicsExtractor g, int w, int y, int bandH, int color, double t, double phase) {
+        int drift = (int) (Math.sin(t * 0.05D + phase) * w * 0.02D);
+        int x1 = (int) (w * 0.04D) + drift;
+        int x2 = (int) (w * 0.96D) + drift;
+        g.fillGradient(x1, y, x2, y + bandH / 3, 0x00000000, color);
+        g.fillGradient(x1, y + bandH / 3, x2, y + bandH * 2 / 3, color, color);
+        g.fillGradient(x1, y + bandH * 2 / 3, x2, y + bandH, color, 0x00000000);
+    }
+
+    /** Deterministic twinkling starfield (LCG — same sky every launch). */
+    private static void dabyws$stars(GuiGraphicsExtractor g, int w, int maxY, int count, double t) {
+        long seed = 20260913L;
+        for (int i = 0; i < count; i++) {
             seed = seed * 6364136223846793005L + 1442695040888963407L;
             int sx = (int) Math.floorMod(seed >> 33, Math.max(1, w));
             seed = seed * 6364136223846793005L + 1442695040888963407L;
-            int sy = (int) Math.floorMod(seed >> 33, Math.max(1, h * 2 / 3));
-            double tw = Math.sin(System.currentTimeMillis() * 0.0011D + i * 1.7D) * 0.5D + 0.5D;
-            int alpha = 60 + (int) (tw * 110);
-            g.fill(sx, sy, sx + 1, sy + 1, (alpha << 24) | 0xC8D8FF);
+            int sy = (int) Math.floorMod(seed >> 33, Math.max(1, maxY));
+            double tw = Math.sin(t * 1.1D + i * 1.7D) * 0.5D + 0.5D;
+            int tier = i % 7;
+            int size = tier == 0 ? 2 : 1;
+            int base = tier == 0 ? 170 : (tier < 3 ? 120 : 70);
+            int alpha = (int) (base * (0.4D + tw * 0.6D));
+            int rgb = tier == 0 ? 0xFFFFFF : 0xC8D8FF;
+            g.fill(sx, sy, sx + size, sy + size, (alpha << 24) | rgb);
+        }
+    }
+
+    /** Filled disc, one fill call per scanline (moon, halos). */
+    private static void dabyws$disc(GuiGraphicsExtractor g, int cx, int cy, int r, int color) {
+        for (int dy = -r; dy <= r; dy++) {
+            int rr = r * r - dy * dy;
+            int dx = (int) Math.sqrt(rr);
+            g.fill(cx - dx, cy + dy, cx + dx, cy + dy + 1, color);
+        }
+    }
+
+    /**
+     * The OG "SAGE MCSM" 3D sun-slab: a wide golden slab sitting on the
+     * horizon with a rising glow, a horizontal god-ray band and a warm bloom.
+     * Pulses slowly like a real star.
+     */
+    private static void dabyws$sunSlab(GuiGraphicsExtractor g, int cx, int horizon, int maxW, double t) {
+        double pulse = 0.5D + 0.5D * Math.sin(t * 0.6D);
+        int slabW = maxW;
+        int slabH = Math.max(16, maxW / 7);
+        int top = horizon - slabH + 3;
+
+        // wide ambient bloom
+        int bloomA = (int) (30 + pulse * 22);
+        g.fill(cx - slabW, top - slabH * 2, cx + slabW, horizon + slabH, (bloomA << 24) | 0x8A4A2A);
+        // soft glow rising above the slab
+        int glowA = (int) (36 + pulse * 30);
+        g.fillGradient(cx - slabW / 2, top - slabH * 3, cx + slabW / 2, top, 0x00FFB84D, (glowA << 24) | 0xFFB84D);
+        // horizontal god-ray band across the whole screen
+        int rayA = (int) (44 + pulse * 38);
+        g.fillGradient(cx - slabW * 2, top + slabH / 2 - 5, cx + slabW * 2, top + slabH / 2 + 5,
+                0x00FFB84D, (rayA << 24) | 0xFFB84D);
+        // the slab itself: warm gold -> white-hot core
+        g.fill(cx - slabW / 2, top, cx + slabW / 2, top + slabH, 0xFFE0903C);
+        g.fill(cx - slabW / 3, top + 2, cx + slabW / 3, top + slabH - 2, 0xFFF2B964);
+        g.fill(cx - slabW / 6, top + 4, cx + slabW / 6, top + slabH - 4, 0xFFFFF0CE);
+    }
+
+    /**
+     * A continuous dark mountain silhouette: column fills whose height is a
+     * layered sine noise, base sitting on the horizon (gap-free).
+     */
+    private static void dabyws$ridge(GuiGraphicsExtractor g, int w, int horizon, int h, int color,
+            double amp, double freq, double phase) {
+        int step = 8;
+        int baseH = (int) (h * 0.035D);
+        for (int x = -step; x <= w + step; x += step) {
+            double n = Math.sin(x * freq + phase) * 0.55D
+                    + Math.sin(x * freq * 2.7D + phase * 1.7D) * 0.30D
+                    + Math.sin(x * freq * 0.6D + phase * 0.3D) * 0.45D;
+            n = n * 0.5D + 0.5D;
+            int peakH = Math.max(4, (int) (baseH + h * amp * n));
+            g.fill(x, horizon - peakH, x + step, horizon + 2, color);
         }
     }
 

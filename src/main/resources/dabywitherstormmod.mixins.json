@@ -93,6 +93,7 @@
     "McsmItemGroundLightMixin",
     "McsmPresenceFxPatch",
     "McsmPresetFixPatch",
+    "McsmPresetMeshSyncMixin",
     "McsmQuickConfigKeyMixin",
     "McsmShaderGatePatch",
     "McsmSpiralPatch",

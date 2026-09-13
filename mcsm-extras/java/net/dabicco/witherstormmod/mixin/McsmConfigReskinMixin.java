@@ -1,7 +1,6 @@
 package net.dabicco.witherstormmod.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -12,16 +11,14 @@ import net.mcsm.extras.McsmExtrasConfig;
 
 /**
  * Devouring Storms: WitherStormConfigScreen reskin with Image 3 silver pixel border frame.
+ *
+ * Build #371 — MENU UNFREEZE. The ctor injection that forced {@code previewShown = false}
+ * has been REMOVED: the 3D preview (which contains the Phase / Sub-phase picker buttons)
+ * is now shown by its base default, so the Stage sub-phase buttons are fully unlocked,
+ * interactive and toggleable out of the box.
  */
 @Mixin(WitherStormConfigScreen.class)
 public abstract class McsmConfigReskinMixin {
-
-    @Shadow private boolean previewShown;
-
-    @Inject(method = "<init>(Lnet/minecraft/client/gui/screens/Screen;Z)V", at = @At("RETURN"), remap = false, require = 0)
-    private void dabyws$previewOffByDefault(CallbackInfo ci) {
-        this.previewShown = false;
-    }
 
     @Inject(method = "extractRenderState", at = @At("HEAD"), remap = false)
     private void dabyws$mcsPlate(GuiGraphicsExtractor g, int mouseX, int mouseY,

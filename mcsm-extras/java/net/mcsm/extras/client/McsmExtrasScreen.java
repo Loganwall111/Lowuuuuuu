@@ -75,8 +75,25 @@ public final class McsmExtrasScreen extends Screen {
         int r2 = 0;
 
         if (currentTab == 0) { // Visuals & Sky
+            addSectionHeader(left, top + r1++ * rowH, "OG Look & Geometry (Build #371)");
+            addToggle(0, r1++, colW, gap, left, top, rowH, "OG Traced Shading Body (Ph 4-5.5)", () -> McsmExtrasConfig.tracedShadingBody, v -> McsmExtrasConfig.tracedShadingBody = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Blockbench Custom Mesh (Preset)", () -> McsmExtrasConfig.customMeshModel, v -> McsmExtrasConfig.customMeshModel = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "OG 3D Sun Glow (SAGE MCSM)", () -> McsmExtrasConfig.ogSunGlow, v -> {
+                McsmExtrasConfig.ogSunGlow = v;
+                McsmGate.clientBool("sunGlow", v);
+            });
+            addSlider(0, r1++, colW, gap, left, top, rowH, "OG Sun Glow Strength", "%.2f", 0.0, 3.0, () -> McsmExtrasConfig.ogSunGlowStrength, v -> {
+                McsmExtrasConfig.ogSunGlowStrength = v;
+                if (McsmExtrasConfig.ogSunGlow) {
+                    McsmGate.clientNum("sunGlowStrength", v);
+                }
+            });
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Cinematic Story-Mode Menu", () -> McsmExtrasConfig.storyMenuBackdrop, v -> McsmExtrasConfig.storyMenuBackdrop = v);
+
             addSectionHeader(left, top + r1++ * rowH, "Procedural Sky & Horizon Blending");
-            addToggle(0, r1++, colW, gap, left, top, rowH, "Multi-Layer Sky Blending", () -> true, v -> {});
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Multi-Layer Sky Blending",
+                    () -> McsmGate.clientBoolGet("cloudDeckLayer", true),
+                    v -> McsmGate.clientBool("cloudDeckLayer", v));
             addSlider(0, r1++, colW, gap, left, top, rowH, "Phase 5.5 Threshold", "%.2f", 5.0, 6.0, () -> McsmExtrasConfig.phase55Threshold, v -> McsmExtrasConfig.phase55Threshold = v);
             addSlider(0, r1++, colW, gap, left, top, rowH, "Phase 5.9 Pink Intensity", "%.2fx", 0.2, 3.0, () -> McsmExtrasConfig.phase5_9PinkIntensity, v -> McsmExtrasConfig.phase5_9PinkIntensity = v);
             addSlider(0, r1++, colW, gap, left, top, rowH, "Night Navy Opacity", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.nightSkyOpacity, v -> McsmExtrasConfig.nightSkyOpacity = v);
@@ -169,6 +186,22 @@ public final class McsmExtrasScreen extends Screen {
             addToggle(1, r2++, colW, gap, left, top, rowH, "Force MCSM World", () -> McsmExtrasConfig.forceMcsmWorld, v -> McsmExtrasConfig.forceMcsmWorld = v);
             addToggle(1, r2++, colW, gap, left, top, rowH, "Silver Border Lines (Image 3)", () -> McsmExtrasConfig.uiBorderLines, v -> McsmExtrasConfig.uiBorderLines = v);
             addToggle(1, r2++, colW, gap, left, top, rowH, "MCSM Instructions", () -> McsmExtrasConfig.mcsmInstructions, v -> McsmExtrasConfig.mcsmInstructions = v);
+            // BUILD #371 — UNFREEZE: the ONLY explicit re-force. Panel changes
+            // now persist; use this when you want the MCSM baseline look
+            // re-applied on top of your current settings.
+            {
+                int x = left + 1 * (colW + gap);
+                int y = top + r2++ * rowH;
+                Button reapply = Button.builder(Component.literal("§bRe-apply MCSM Look now"), b -> {
+                    McsmExtrasConfig.save();
+                    McsmGate.clearMemory();
+                    McsmGate.reset();
+                }).bounds(x, y, colW, 20).build();
+                this.addWidget(reapply);
+                this.widgetsList.add(reapply);
+                this.baseYMap.put(reapply, y);
+                this.contentBottom = Math.max(this.contentBottom, y + 20);
+            }
         }
 
         int maxRow = Math.max(r1, r2 + 1);
@@ -197,7 +230,9 @@ public final class McsmExtrasScreen extends Screen {
         Button b = Button.builder(toggleLabel(label, get.getAsBoolean()), btn -> {
             set.accept(!get.getAsBoolean());
             McsmExtrasConfig.save();
-            McsmGate.reset();
+            // BUILD #371 — UNFREEZE: no McsmGate.reset() re-arm here. Panel
+            // changes apply immediately and persist; the gate only re-runs on
+            // world load or the explicit "Re-apply MCSM Look now" button.
             btn.setMessage(toggleLabel(label, get.getAsBoolean()));
         }).bounds(x, y, colW, 20).build();
         this.addWidget(b);
@@ -256,7 +291,7 @@ public final class McsmExtrasScreen extends Screen {
         protected void applyValue() {
             this.set.accept(this.actual());
             McsmExtrasConfig.save();
-            McsmGate.reset();
+            // BUILD #371 — UNFREEZE: no McsmGate.reset() re-arm here.
         }
     }
 

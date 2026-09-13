@@ -563,13 +563,20 @@ if [ "$NEW_COUNT" -eq 0 ] || [ "$JAR_MATCH" -lt "$NEW_COUNT" ]; then
   AUDIT_FAIL=1
 fi
 
-# 1b. Build #370 -- reconstructed Phase 4/5.5 geometry gate.
-# WitherStormP4 was rewritten from the clean MCSM Blockbench StageB source
-# (ci/modelgen/boxify.py): 495 dense maximal boxes, verified 0 silhouette
-# holes and 0 overhang. The class in the assembled jar MUST be the compiled
-# rewrite, not the base-jar twin (old flat top-truncated transcription,
-# 1259 scattered cubes). Bytecode counts catch a stale class the path check
-# above would pass: the base jar ships the same FQCN.
+# 1b. Build #371 -- DUAL-MODE Phase 4/5.5 geometry gate.
+# WitherStormP4 carries BOTH body geometries, dispatched at runtime on
+# McsmExtrasConfig.customMeshModel:
+#   default (false) -> dabyws$buildOriginalMesh: ORIGINAL base-mod geometry
+#                      verbatim (1259 cubes / 302 parts) — fixes the
+#                      summon-time vertex-overflow crash.
+#   opt-in (true)   -> dabyws$buildCustomMesh: the clean 495-cube Blockbench
+#                      StageB rewrite (ci/modelgen/boxify.py), 0 silhouette
+#                      holes / 0 overhang — bound strictly to the Netflix /
+#                      Custom preset path (McsmPresetMeshSync + panel).
+# The class in the assembled jar MUST be the compiled dual-mode rewrite, not
+# the base-jar twin (1259 cubes only). Bytecode counts catch a stale class
+# the path check above would pass: the base jar ships the same FQCN.
+# Expected totals: addBox 1259+495=1754, partDefs 302+302=604.
 P4_SRC="mcsm-extras/java/net/dabicco/witherstormmod/entity/model/WitherStormP4.java"
 P4_JAR="$FX/cls/net/dabicco/witherstormmod/entity/model/WitherStormP4.class"
 if [ ! -f "$P4_SRC" ]; then
@@ -590,21 +597,21 @@ else
   else
     # javap unavailable/failed: fall back to the generated source (same
     # numbers: the compile gate above already proved the source builds).
-    P4_ADDBOX=$(grep -c "addBox(" "$P4_SRC" || true)
-    P4_PARTS=$(grep -c "addOrReplaceChild(" "$P4_SRC" || true)
+    P4_ADDBOX=$(grep -o "addBox(" "$P4_SRC" | wc -l)
+    P4_PARTS=$(grep -o "addOrReplaceChild(" "$P4_SRC" | wc -l)
     P4_RING=$(grep -c "DebrisRing" "$P4_SRC" || true)
     P4_MODE=source-fallback
   fi
-  echo "[audit] P4 rewrite in jar ($P4_MODE): addBox=$P4_ADDBOX partDefs=$P4_PARTS DebrisRingRefs=$P4_RING"
-  # 495 generated cubes; allow generation drift 450-600. Parts must stay the
-  # full 302-name tree (animation/physics depend on the names); the
-  # DebrisRing subtree is preserved verbatim.
-  if [ "$P4_ADDBOX" -lt 450 ] || [ "$P4_ADDBOX" -gt 600 ]; then
-    echo "::error title=jar audit::Build #370: P4 addBox count $P4_ADDBOX outside 450-600 (stale or runaway geometry)"
+  echo "[audit] P4 dual-mode in jar ($P4_MODE): addBox=$P4_ADDBOX partDefs=$P4_PARTS DebrisRingRefs=$P4_RING"
+  # 1259 original + 495 custom = 1754; allow generation drift 1700-1800.
+  # Parts must be the FULL 302-name tree TWICE (default + custom); animations
+  # and physics depend on the names; the DebrisRing subtree is preserved.
+  if [ "$P4_ADDBOX" -lt 1700 ] || [ "$P4_ADDBOX" -gt 1800 ]; then
+    echo "::error title=jar audit::Build #371: P4 addBox count $P4_ADDBOX outside 1700-1800 (stale, single-mode or runaway geometry)"
     AUDIT_FAIL=1
   fi
-  if [ "$P4_PARTS" -lt 290 ]; then
-    echo "::error title=jar audit::Build #370: P4 part defs $P4_PARTS < 290 (part tree damaged — animations will crash)"
+  if [ "$P4_PARTS" -lt 580 ]; then
+    echo "::error title=jar audit::Build #371: P4 part defs $P4_PARTS < 580 (dual part trees damaged — animations will crash)"
     AUDIT_FAIL=1
   fi
   if [ "$P4_RING" -lt 2 ]; then

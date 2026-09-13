@@ -65,6 +65,26 @@ public final class McsmExtrasConfig {
     // no external shader pack required.
     public static boolean nativeGlossSheen = true;
 
+    // ---- Build #371 — Dual Geometry, Traced Shading, OG Sun & Story Menu --
+    // Dual-mode WitherStormP4 body. FALSE (default) = ORIGINAL base-mod
+    // geometry verbatim (fixes the summon-time vertex-overflow crash).
+    // TRUE = the clean 495-cube Blockbench/StageB matrix, bound strictly to
+    // the Netflix / Custom preset path (McsmPresetMeshSync + panel toggle).
+    public static boolean customMeshModel = false;
+    // OG traced-shading body texture (the authentic StageB mottle) as the
+    // DEFAULT for phases 4-5.5. TRUE (default) = traced look out of the box;
+    // FALSE = the regular flat deep-black canonical sheet ("the OG ones"
+    // stay the plain option). Phases 1-5.5 never use the cosmic sheet.
+    public static boolean tracedShadingBody = true;
+    // OG "SAGE MCSM" 3D sun glow (screen-space storm_sun_glow post shader),
+    // restored to the base default strength. On by default, configurable.
+    public static boolean  ogSunGlow = true;
+    public static double   ogSunGlowStrength = 2.2; // base default, range 0-3
+    // Build #371 — cinematic STORY-MODE main menu backdrop (procedural
+    // panorama: night sky, sun slab, moon, nebula, mountain silhouettes).
+    // TRUE (default) = the cinematic scene; FALSE = the plain gradient.
+    public static boolean  storyMenuBackdrop = true;
+
     // ---- Nightglow & Silhouette Halo Expansion ---------------------------
     public static boolean nightglowBodyOutline = true; // Outline whole body bottom tail to top of phase 5
     public static boolean nightglowBluishGlow = true; // Bluish halo base
@@ -163,6 +183,11 @@ public final class McsmExtrasConfig {
             p.setProperty("anim_idle_speed", String.valueOf(animIdleSpeed));
             p.setProperty("anim_roar_intensity", String.valueOf(animRoarIntensity));
             p.setProperty("native_gloss_sheen", String.valueOf(nativeGlossSheen));
+            p.setProperty("custom_mesh_model", String.valueOf(customMeshModel));
+            p.setProperty("traced_shading_body", String.valueOf(tracedShadingBody));
+            p.setProperty("og_sun_glow", String.valueOf(ogSunGlow));
+            p.setProperty("og_sun_glow_strength", String.valueOf(ogSunGlowStrength));
+            p.setProperty("story_menu_backdrop", String.valueOf(storyMenuBackdrop));
             p.setProperty("nightglow_body_outline", String.valueOf(nightglowBodyOutline));
             p.setProperty("nightglow_bluish_glow", String.valueOf(nightglowBluishGlow));
             p.setProperty("nightglow_purple_glow55", String.valueOf(nightglowPurpleGlow55));
@@ -232,6 +257,11 @@ public final class McsmExtrasConfig {
             nightglowBodyOutline = bool(p, "nightglow_body_outline", nightglowBodyOutline);
             nightglowBluishGlow = bool(p, "nightglow_bluish_glow", nightglowBluishGlow);
             nativeGlossSheen = bool(p, "native_gloss_sheen", nativeGlossSheen);
+            customMeshModel = bool(p, "custom_mesh_model", customMeshModel);
+            tracedShadingBody = bool(p, "traced_shading_body", tracedShadingBody);
+            ogSunGlow = bool(p, "og_sun_glow", ogSunGlow);
+            ogSunGlowStrength = dbl(p, "og_sun_glow_strength", ogSunGlowStrength);
+            storyMenuBackdrop = bool(p, "story_menu_backdrop", storyMenuBackdrop);
             nightglowPurpleGlow55 = bool(p, "nightglow_purple_glow55", nightglowPurpleGlow55);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);

@@ -43,17 +43,16 @@ public final class McsmGate {
     /**
      * MCSM 1.9.112 -- memory of every value this gate writes, keyed by field.
      *
-     * The gate re-runs whenever the Extras panel is touched (each toggle calls
-     * McsmGate.reset()). Until now every re-run re-forced the whole MCSM look,
-     * silently undoing any look preset (Netflix, Cinematic, Legacy ...) the
-     * player had just applied in the mod's own screen -- that is the real
-     * mechanism behind "presets change nothing, it goes back to normal": the
-     * preset DOES apply, and our next gate pass wipes it.
+     * BUILD #371 -- UNFROZEN: the Extras panel no longer re-arms this gate on
+     * every toggle (that re-arm was the mechanism silently undoing look
+     * presets and base-screen changes -- "presets change nothing, it goes
+     * back to normal"). The gate now runs once per session; only the
+     * explicit "Re-apply MCSM Look now" button (clearMemory + reset) forces
+     * the baseline again.
      *
-     * New rule: on a re-run, a field that still holds the value we wrote gets
-     * kept; a field anything else has changed since is never touched again.
-     * The Extras panel's "Re-apply MCSM Look now" button clears this memory
-     * for the player who explicitly wants the force again.
+     * Memory rule (still in force): on a re-run, a field that still holds the
+     * value we wrote gets kept; a field anything else has changed since is
+     * never touched again.
      */
     private static final Map<String, Object> LAST_SET = new ConcurrentHashMap<>();
 
@@ -120,7 +119,17 @@ public final class McsmGate {
             changed += floorField(c, null, "stormSkin", 1.0);
 
             // ---- the halo / glare the user has been chasing ----------------
-            changed += setBool(c, "sunGlow", true);
+            // BUILD #371 — OG "SAGE MCSM" 3D sun glow. Restored to the base
+            // default (full strength 2.2) instead of the old 0.45 ceiling that
+            // dimmed it. ON by default; the Extras panel toggle/slider can
+            // turn it off or re-strength it (applied directly, no re-run).
+            if (McsmExtrasConfig.ogSunGlow) {
+                changed += setBool(c, "sunGlow", true);
+                changed += setExactNum(c, null, "sunGlowStrength", McsmExtrasConfig.ogSunGlowStrength);
+            } else {
+                // explicit user choice: the sun glow stays off across sessions
+                changed += setBool(c, "sunGlow", false);
+            }
             changed += setBool(c, "blackGlare", true);
             changed += setBool(c, "glareEjecta", false);
             changed += setBool(c, "headEyeGlow", true);
@@ -157,7 +166,7 @@ public final class McsmGate {
             changed += ceilingField(c, null, "debrisAmount", 0.0);
             changed += floorField(c, null, "volumetricFogDensity", 0.6);
             changed += floorField(c, null, "stormGlowStrength", 1.0);
-            changed += ceilingField(c, null, "sunGlowStrength", 0.45);
+            // (sunGlowStrength is no longer ceilinged — see the OG sun block above)
             changed += ceilingField(c, null, "blackGlareStrength", 0.65);
             changed += floorField(c, null, "stormShadowStrength", 1.0);
             changed += floorField(c, null, "glowStrength", 1.0);
@@ -266,6 +275,29 @@ public final class McsmGate {
         }
     }
 
+    /**
+     * Set a static or instance numeric field to an EXACT value (BUILD #371).
+     * Unlike floor/ceiling, this writes the target directly so the OG sun
+     * glow lands at its authentic base default (2.2). LAST_SET memory applies:
+     * a value the user changes afterwards is respected on later passes.
+     */
+    private static int setExactNum(Class<?> owner, Object instance, String name, double target) {
+        try {
+            Field f = owner.getField(name);
+            String key = memKey(owner, instance, name);
+            double cur = readNum(f, instance);
+            Object prev = LAST_SET.get(key);
+            if (prev instanceof Double d && Math.abs(cur - d) > 1e-9) {
+                return 0;   // changed after us (user/preset): respect it
+            }
+            double nv = writeNum(f, instance, target);
+            LAST_SET.put(key, nv);
+            return 1;
+        } catch (Throwable ignored) {
+            return 0;
+        }
+    }
+
     /** Intervals count DOWN in desirability: a smaller positive number fires sooner. */
     private static int ceilingField(Class<?> owner, Object instance, String name, double max) {
         try {
@@ -306,6 +338,61 @@ public final class McsmGate {
     public static synchronized void reset() {
         clientDone = false;
         worldDone = false;
+    }
+
+    // ---------------------------------------------------------------------
+    // BUILD #371 — UNFREEZE: direct single-field apply (no gate re-run).
+    //
+    // The Extras panel no longer calls reset() on every toggle: re-arming the
+    // whole force-look pass on each click was the mechanism silently wiping
+    // base-screen changes and look presets ("it goes back to normal").
+    // Controls that map to a base DabyWSClientConfig field now apply that ONE
+    // field directly. These are explicit user actions, so the value is
+    // recorded in LAST_SET: a normal gate pass respects it afterwards, and
+    // only the explicit "Re-apply MCSM Look now" button (clearMemory+reset)
+    // forces the baseline again.
+    // ---------------------------------------------------------------------
+
+    /** Read a base client boolean (default if the field is gone/renamed). */
+    public static boolean clientBoolGet(String name, boolean dflt) {
+        try {
+            return DabyWSClientConfig.class.getField(name).getBoolean(null);
+        } catch (Throwable t) {
+            return dflt;
+        }
+    }
+
+    /** Read a base client number (default if the field is gone/renamed). */
+    public static double clientNumGet(String name, double dflt) {
+        try {
+            Field f = DabyWSClientConfig.class.getField(name);
+            Class<?> t = f.getType();
+            if (t == int.class) return f.getInt(null);
+            if (t == long.class) return f.getLong(null);
+            if (t == float.class) return f.getFloat(null);
+            return f.getDouble(null);
+        } catch (Throwable t) {
+            return dflt;
+        }
+    }
+
+    /** Write ONE base client boolean directly (explicit user action). */
+    public static void clientBool(String name, boolean value) {
+        try {
+            DabyWSClientConfig.class.getField(name).setBoolean(null, value);
+            LAST_SET.put(memKey(DabyWSClientConfig.class, null, name), value);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** Write ONE base client number directly (explicit user action). */
+    public static void clientNum(String name, double value) {
+        try {
+            Field f = DabyWSClientConfig.class.getField(name);
+            double nv = writeNum(f, null, value);
+            LAST_SET.put(memKey(DabyWSClientConfig.class, null, name), nv);
+        } catch (Throwable ignored) {
+        }
     }
 
     private McsmGate() {}

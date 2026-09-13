@@ -1,15 +1,22 @@
 package net.dabicco.witherstormmod.client;
 
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
+import net.mcsm.extras.McsmExtrasConfig;
 import net.minecraft.resources.Identifier;
 
 /**
  * Texture policy for every native storm model pass.
  *
- * Phase 1 through Phase 5 strictly use the clean, solid pitch-black texture map:
+ * Build #371 (default): phases 4-5.5 use the authentic OG traced-shading body
+ * sheet ("dabywitherstormmod:textures/entity/wither_storm/wither_storm_traced.png"
+ * — the original StageB mottle, bilinear-smoothed), ON by default. Phases 1-3.9
+ * keep the clean solid pitch-black map; turning the traced option OFF restores
+ * the regular plain-black body for 4-5.5.
+ *
+ * Phase 1 through Phase 5.5 strictly use the clean, solid pitch-black texture map:
  * "witherstormmod:textures/entity/wither_storm/wither_storm.png".
  * Phase 6 transitions to the smooth 4-quadrant dark navy/indigo Phase 6 atlas:
- * "dabywitherstormmod:textures/entity/phase_4_assets_p6.png".
+ * "dabywitherstormmod:textures/entity/phase_4_assets_p6.png" (HARD-LOCKED).
  * Native scrolling gloss sheen ("storm_gloss.png") provides Tattletale-style moving
  * shine via UV offsets only - no external shader dependencies.
  *
@@ -24,6 +31,8 @@ public final class StormSkins {
 
     private static final Identifier LEGACY_CLASSIC = id("textures/entity/wither_storm.png");
     private static final Identifier LEGACY_OG = id("textures/entity/wither_storm_og.png");
+    /** Build #371 — authentic OG traced-shading body sheet (16x16 StageB mottle). */
+    private static final Identifier TRACED_P4 = id("textures/entity/wither_storm/wither_storm_traced.png");
     private static final Identifier PHASE6_BODY = id("textures/entity/phase_4_assets_p6.png");
     private static final Identifier PHASE6_EMISSIVE = id("textures/entity/phase_4_assets_e.png");
     private static final Identifier PHASE6_DEVOURER = id("textures/entity/devourer_assets_p6.png");
@@ -54,15 +63,27 @@ public final class StormSkins {
         return CANONICAL_TEXTURE;
     }
 
-    /** Phase 0-5 use clean solid black; Phase 6+ uses the Phase 6 quadrant atlas. */
-    public static Identifier legacy() {
-        return phaseHint >= 6.0D ? PHASE6_BODY : CANONICAL_TEXTURE;
+    /**
+     * Build #371 traced-shading resolution for phases 4-5.9: the authentic
+     * OG traced sheet when ON (default); the regular plain black when OFF.
+     * Phases below 4.0 always stay the canonical deep-black sheet.
+     */
+    private static Identifier tracedOrCanonical(double phase) {
+        if (phase >= 4.0D && McsmExtrasConfig.tracedShadingBody) {
+            return TRACED_P4;
+        }
+        return CANONICAL_TEXTURE;
     }
 
-    /** Select clean solid black for Phase 1-5; transition to quadrant atlas for Phase 6+. */
+    /** Phase 0-5.9 use traced (default) or plain black; Phase 6+ uses the quadrant atlas. */
+    public static Identifier legacy() {
+        return phaseHint >= 6.0D ? PHASE6_BODY : tracedOrCanonical(phaseHint);
+    }
+
+    /** Build #371: Phase 1-3.9 clean black, Phase 4-5.9 OG traced shading (default ON), Phase 6+ quadrant atlas. */
     public static Identifier body(double phase) {
         setPhaseHint(phase);
-        return phase >= 6.0D ? PHASE6_BODY : CANONICAL_TEXTURE;
+        return phase >= 6.0D ? PHASE6_BODY : tracedOrCanonical(phase);
     }
 
     /** Native scrolling gloss sheen texture for Tattletale-style live specular reflections. */
@@ -90,9 +111,9 @@ public final class StormSkins {
         return PHASE6_EMISSIVE;
     }
 
-    /** Phase 4/5 callers receive clean solid black. */
+    /** Build #371: Phase 4/5 callers receive the OG traced sheet (default ON) or plain black. */
     public static Identifier phase4() {
-        return phaseHint >= 6.0D ? PHASE6_BODY : CANONICAL_TEXTURE;
+        return phaseHint >= 6.0D ? PHASE6_BODY : tracedOrCanonical(phaseHint);
     }
 
     /** Detached/devourer pieces use Phase 6 devourer sheet for Phase 6+, clean black otherwise. */
