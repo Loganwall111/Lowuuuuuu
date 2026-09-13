@@ -6,10 +6,10 @@ import net.minecraft.resources.Identifier;
 /**
  * Texture policy for every native storm model pass.
  *
- * All storm body, head, jaw, skull, neck, and tentacle model passes use the
- * smooth, solid pitch-black canonical dark texture map:
- * "witherstormmod:textures/entity/wither_storm/wither_storm.png"
- * eliminating all visible pixel grain and static noise artifacts.
+ * Phase 1 through Phase 5 strictly use the clean, solid pitch-black texture map:
+ * "witherstormmod:textures/entity/wither_storm/wither_storm.png".
+ * Phase 6 transitions to the smooth 4-quadrant dark navy/indigo Phase 6 atlas:
+ * "dabywitherstormmod:textures/entity/phase_4_assets_p6.png".
  */
 public final class StormSkins {
     private static final Identifier CANONICAL_TEXTURE = Identifier.fromNamespaceAndPath(
@@ -17,7 +17,11 @@ public final class StormSkins {
     private static final Identifier CANONICAL_ALT = Identifier.fromNamespaceAndPath(
             "dabywitherstormmod", "textures/entity/wither_storm/wither_storm.png");
 
+    private static final Identifier LEGACY_CLASSIC = id("textures/entity/wither_storm.png");
+    private static final Identifier LEGACY_OG = id("textures/entity/wither_storm_og.png");
+    private static final Identifier PHASE6_BODY = id("textures/entity/phase_4_assets_p6.png");
     private static final Identifier PHASE6_EMISSIVE = id("textures/entity/phase_4_assets_e.png");
+    private static final Identifier PHASE6_DEVOURER = id("textures/entity/devourer_assets_p6.png");
 
     private static volatile double phaseHint;
 
@@ -44,31 +48,38 @@ public final class StormSkins {
         return CANONICAL_TEXTURE;
     }
 
+    /** Phase 0-5 use clean solid black; Phase 6+ uses the Phase 6 quadrant atlas. */
     public static Identifier legacy() {
-        return CANONICAL_TEXTURE;
+        return phaseHint >= 6.0D ? PHASE6_BODY : CANONICAL_TEXTURE;
     }
 
+    /** Select clean solid black for Phase 1-5; transition to quadrant atlas for Phase 6+. */
     public static Identifier body(double phase) {
         setPhaseHint(phase);
-        return CANONICAL_TEXTURE;
+        return phase >= 6.0D ? PHASE6_BODY : CANONICAL_TEXTURE;
     }
 
+    /** Dedicated Phase 6 quadrant body atlas. */
     public static Identifier phase6Body() {
-        return CANONICAL_TEXTURE;
+        return PHASE6_BODY;
     }
 
+    /** Dedicated native-model eye/teeth emissive atlas. */
     public static Identifier phase6Emissive() {
         return PHASE6_EMISSIVE;
     }
 
+    /** Phase 4/5 callers receive clean solid black. */
     public static Identifier phase4() {
-        return CANONICAL_TEXTURE;
+        return phaseHint >= 6.0D ? PHASE6_BODY : CANONICAL_TEXTURE;
     }
 
+    /** Detached/devourer pieces use Phase 6 devourer sheet for Phase 6+, clean black otherwise. */
     public static Identifier devourer() {
-        return CANONICAL_TEXTURE;
+        return phaseHint >= 6.0D ? PHASE6_DEVOURER : CANONICAL_TEXTURE;
     }
 
+    /** Isolated emissive teeth and eye facial glow maps. */
     public static Identifier teethGlow(double phase) {
         setPhaseHint(phase);
         boolean ogSkin = DabyWSClientConfig.stormSkin >= 0.5;
