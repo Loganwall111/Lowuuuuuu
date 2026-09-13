@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.dabicco.witherstormmod.client.StormBackdrop;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
+import net.mcsm.extras.client.McsmEarlyStormBackdrop;
 import net.mcsm.extras.client.McsmExperimentalStoryStage;
 import net.mcsm.extras.client.McsmStormBlob;
 
@@ -28,6 +29,9 @@ public abstract class McsmStormBlobMixin {
             // not cancel the base method. Restoring StormBackdrop.submit brings
             // back the smooth original phase backdrop instead of the retired
             // generated black rings/oval cards.
+            // The native backdrop owns phases 3.9 through 9; this restrained
+            // companion only fills the earlier phase-1 to phase-3 buildup.
+            McsmEarlyStormBackdrop.submit(ctx);
             McsmExperimentalStoryStage.submit(ctx);
             McsmStormBlob.submit(ctx);
         }
