@@ -241,8 +241,9 @@ public final class McsmGate {
             changed += floorField(c, null, "chromaticGlitchStrength", 0.35);
             changed += ceilingField(c, null, "debrisDustParticles", 0.0);
             // The native StormDebris renderer is the only debris source now;
-            // restore its full authored amount (phase 9 expands its count via
-            // McsmPhase9DebrisCountMixin, earlier phases keep 2,500 entries).
+            // Native block particles now own the debris pass; keep the
+            // original amount option at full strength for every phase, while
+            // the native bonus density/radius increases only at Phase 9.
             changed += hardFloorNum(c, null, "debrisAmount", 2.0);
             changed += floorField(c, null, "volumetricFogDensity", 0.6);
             changed += hardFloorNum(c, null, "stormGlowStrength", 1.0);

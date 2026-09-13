@@ -12,9 +12,9 @@ import net.minecraft.client.Minecraft;
  *   phase 4          small cool-white/cyan glow on the three heads
  *   phase 5          flat white teeth, no big glow
  *   phase 5.5        white teeth with glow
- *   phase 4.5-5.4    sea-green teeth channels (#00A877)
- *   phase 5.5+       neon-cyan teeth channels (#00F3FF)
- *   all late phases  purple eye lens with a full-bright bloom source
+ *   phase 4 through 5.5  neon-cyan eye/teeth channels (#00F3FF)
+ *   phase 6+              sea-green eye/teeth channels (#00A877)
+ *   all phases            dedicated full-bright emissive texture paths
  */
 public final class McsmTeethPhaseTint {
 
@@ -26,11 +26,11 @@ public final class McsmTeethPhaseTint {
         // Use the renderer's phase hint as well as the distant-storm tracker;
         // local storms do not always publish a DistantStormData entry.
         double phase = Math.max(StormSkins.phaseHint(), McsmStormAtmosphere.nearestPhase());
-        if (phase >= 5.5D) {
-            return rgb(0.0F, 0.953F, 1.0F);   // #00F3FF
-        }
-        if (phase >= 4.5D) {
+        if (phase >= 6.0D) {
             return rgb(0.0F, 0.659F, 0.467F); // #00A877
+        }
+        if (phase >= 4.0D) {
+            return rgb(0.0F, 0.953F, 1.0F);   // #00F3FF
         }
         return rgb((float) DabyWSClientConfig.eyeColorR,
                 (float) DabyWSClientConfig.eyeColorG,
@@ -39,12 +39,16 @@ public final class McsmTeethPhaseTint {
 
     /** Packed full-bright ARGB used by the exact native eye hook. */
     public static int eyeTintArgb() {
-        // Dedicated eyes stay on RenderType.eyes; only the phase tint shifts
-        // between the requested sea-green and neon-cyan decks.
-        double phase = McsmStormAtmosphere.nearestPhase();
-        // The eye lens is the small purple focal light; teeth remain on the
-        // separate sea-green/neon-cyan palette below.
-        return rgb(0.694F, 0.302F, 1.0F); // #B14DFF
+        // Dedicated eyes stay on RenderType.eyes and use the same phase track
+        // as the teeth, without inheriting world light or shadow attenuation.
+        double phase = Math.max(StormSkins.phaseHint(), McsmStormAtmosphere.nearestPhase());
+        return phase >= 6.0D
+                ? rgb(0.0F, 0.659F, 0.467F) // #00A877
+                : phase >= 4.0D
+                    ? rgb(0.0F, 0.953F, 1.0F) // #00F3FF
+                    : rgb((float) DabyWSClientConfig.eyeColorR,
+                          (float) DabyWSClientConfig.eyeColorG,
+                          (float) DabyWSClientConfig.eyeColorB);
     }
 
     private static int rgb(float r, float g, float b) {
@@ -73,14 +77,13 @@ public final class McsmTeethPhaseTint {
             }
             float r, g, b, inten;
             boolean glow;
-            if (phase >= 5.5F) {
-                // Neon-cyan deck requested for the late cinematic pass.
-                r = 0.00F; g = 0.953F; b = 1.00F; inten = 4.20F; glow = true; // #00F3FF
-            } else if (phase >= 4.5F) {
-                // Sea-green initialization through the slate transition.
-                r = 0.00F; g = 0.659F; b = 0.467F; inten = 3.90F; glow = true; // #00A877
+            if (phase >= 6.0F) {
+                // Sea-green begins at Phase 6 and stays emissive through the
+                // final skull/devourer phases.
+                r = 0.00F; g = 0.659F; b = 0.467F; inten = 4.20F; glow = true; // #00A877
             } else if (phase >= 4.0F) {
-                r = 0.82F; g = 1.00F; b = 0.96F; inten = 3.60F; glow = true;
+                // Neon-cyan runs through the Phase 5.5 transition.
+                r = 0.00F; g = 0.953F; b = 1.00F; inten = 3.90F; glow = true; // #00F3FF
             } else {
                 r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;
             }
@@ -99,17 +102,15 @@ public final class McsmTeethPhaseTint {
                 DabyWSClientConfig.glowStrength = Math.max(DabyWSClientConfig.glowStrength, 1.0);
             }
 
-            // 1.9.217 -- beamColor tints the EYEBALL itself (WitherStormHeadRenderer.eyeTint).
-            // The eyes must read neon PURPLE, the beam colour constraint, not the
-            // teeth colours; day/night only nudges the brightness, never the hue.
-            if (phase >= 5.5F) {
-                DabyWSClientConfig.beamColorR = 0.00F;
-                DabyWSClientConfig.beamColorG = 0.953F;
-                DabyWSClientConfig.beamColorB = 1.00F;
-            } else if (phase >= 4.5F) {
+            // Keep beam and eye materials on the same full-bright phase track.
+            if (phase >= 6.0F) {
                 DabyWSClientConfig.beamColorR = 0.00F;
                 DabyWSClientConfig.beamColorG = 0.659F;
                 DabyWSClientConfig.beamColorB = 0.467F;
+            } else if (phase >= 4.0F) {
+                DabyWSClientConfig.beamColorR = 0.00F;
+                DabyWSClientConfig.beamColorG = 0.953F;
+                DabyWSClientConfig.beamColorB = 1.00F;
             }
         } catch (Throwable ignored) {
         }

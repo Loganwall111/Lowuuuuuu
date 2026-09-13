@@ -142,9 +142,22 @@ public abstract class McsmGradientTickPatch {
             float t = (float) (mc.level.getGameTime() % 24000L);
             float day = 0.5F + 0.5F * (float) Math.cos(((t - 6000.0F) / 24000.0F) * Math.PI * 2.0D);
             DabyWSClientConfig.beamOpacity = 0.85F + 0.75F * day;
-            DabyWSClientConfig.beamColorR  = 0.48F + 0.18F * day;
-            DabyWSClientConfig.beamColorG  = 0.10F + 0.12F * day;
-            DabyWSClientConfig.beamColorB  = 1.00F;
+            double phase = Math.max(StormSkins.phaseHint(),
+                    net.mcsm.extras.client.McsmStormAtmosphere.nearestPhase());
+            if (phase >= 6.0D) {
+                DabyWSClientConfig.beamColorR = 0.00F;
+                DabyWSClientConfig.beamColorG = 0.659F;
+                DabyWSClientConfig.beamColorB = 0.467F;
+            } else if (phase >= 4.0D) {
+                DabyWSClientConfig.beamColorR = 0.00F;
+                DabyWSClientConfig.beamColorG = 0.953F;
+                DabyWSClientConfig.beamColorB = 1.00F;
+            } else {
+                // Calm/early phases keep the violet cinematic beam family.
+                DabyWSClientConfig.beamColorR = 0.48F + 0.18F * day;
+                DabyWSClientConfig.beamColorG = 0.10F + 0.12F * day;
+                DabyWSClientConfig.beamColorB = 1.00F;
+            }
         } catch (Throwable ignored) {
         }
     }
