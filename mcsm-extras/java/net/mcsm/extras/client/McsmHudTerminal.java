@@ -75,6 +75,33 @@ public final class McsmHudTerminal {
         float storm = net.dabicco.witherstormmod.client.StormSkyDarken.factor();
         boolean active = storm > 0.04F;
 
+        // --- Image 3 Silver Pixel Border Frame for Gameplay ---
+        if (McsmExtrasConfig.uiBorderLines) {
+            int borderCol = 0xFF8A8A9E; // Silver-gray border
+            int innerCol = 0xFF2A2A38;
+            // Border lines around screen
+            g.fill(0, 0, w, 2, borderCol);
+            g.fill(0, h - 2, w, h, borderCol);
+            g.fill(0, 0, 2, h, borderCol);
+            g.fill(w - 2, 0, w, h, borderCol);
+
+            // Inset lines
+            g.fill(4, 4, w - 4, 5, innerCol);
+            g.fill(4, h - 5, w - 4, h - 4, innerCol);
+            g.fill(4, 4, 5, h - 4, innerCol);
+            g.fill(w - 5, 4, w - 4, h - 4, innerCol);
+
+            // Image 3 L-Shape Pixel Corner Accents
+            g.fill(2, 2, 10, 4, borderCol);
+            g.fill(2, 2, 4, 10, borderCol);
+            g.fill(w - 10, 2, w - 2, 4, borderCol);
+            g.fill(w - 4, 2, w - 2, 10, borderCol);
+            g.fill(2, h - 4, 10, h - 2, borderCol);
+            g.fill(2, h - 10, 4, h - 2, borderCol);
+            g.fill(w - 10, h - 4, w - 2, h - 2, borderCol);
+            g.fill(w - 4, h - 10, w - 2, h - 2, borderCol);
+        }
+
         if (active) {
             int bar = Math.max(14, h / 12);
             g.fill(0, 0, w, bar, 0xFF000000);
