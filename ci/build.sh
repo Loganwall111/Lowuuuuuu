@@ -70,10 +70,14 @@ if [ -s "$BASE_LOCAL" ] && [[ "$(sha256sum "$BASE_LOCAL" | cut -d' ' -f1)" == "$
   echo "[build] base jar: ${BASE} (delivery copy, hash verified)"
 else
   echo "[build] delivery/${BASE_NAME} absent or wrong hash -- fetching the mcsm-${BASE_VER} release asset"
-  fetch "https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-${BASE_VER}/${BASE_NAME}" "$BASE_NAME"
+  fetch "https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-${BASE_VER}/${BASE_NAME}" "$BASE_NAME" || {
+    echo "::error title=base::fetching the pinned base jar FAILED (network/CDN) — run can be retried"
+    exit 1
+  }
   got="$(sha256sum "$DL/$BASE_NAME" | cut -d' ' -f1)"
   if [[ "$got" != "$BASE_SHA" ]]; then
     echo "[base] HASH MISMATCH: got ${got}, want ${BASE_SHA}" >&2
+    echo "::error title=base::base jar HASH MISMATCH got=${got} want=${BASE_SHA} (corrupt download or asset changed — retry or re-pin)"
     exit 1
   fi
   BASE="$DL/$BASE_NAME"
@@ -113,9 +117,14 @@ if [ -n "$MANIFEST" ]; then
   fi
 fi
 echo "[deps] minecraft $MC_VER -> $CLIENT_URL"
-fetch "$CLIENT_URL" client.jar
+fetch "$CLIENT_URL" client.jar || {
+  echo "::error title=deps::client.jar fetch FAILED (network/CDN) — run can be retried"
+  exit 1
+}
 if [ "$(stat -c%s "$DL/client.jar")" -lt 10000000 ]; then
-  echo "[deps] client.jar is suspiciously small — refusing"; exit 1
+  echo "[deps] client.jar is suspiciously small — refusing"
+  echo "::error title=deps::client.jar is suspiciously small ($(stat -c%s "$DL/client.jar") B) — piston/manifest resolution problem, retry"
+  exit 1
 fi
 fetch "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar" mixin.jar
 fetch "https://repo1.maven.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar" jspecify.jar
