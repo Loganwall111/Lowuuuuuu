@@ -741,6 +741,10 @@ done
 TEX_TOTAL=0
 TEX_BAD=0
 while IFS= read -r tex; do
+  case "$(basename "$tex")" in
+    # regenerated at build time by ci/make_glare.py / ci/make_stormface.py
+    storm_glare.png|storm_white.png|storm_face.png) continue ;;
+  esac
   TEX_TOTAL=$((TEX_TOTAL + 1))
   rel="assets/dabywitherstormmod/textures/${tex#src/main/resources/assets/dabywitherstormmod/textures/}"
   if [ ! -f "$FX/cls/$rel" ]; then
