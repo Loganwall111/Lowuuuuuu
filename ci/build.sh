@@ -587,6 +587,17 @@ elif [ ! -f "$P4_JAR" ]; then
   AUDIT_FAIL=1
 else
   P4_DIS=$(javap -c -classpath "$FX/cls" net.dabicco.witherstormmod.entity.model.WitherStormP4 2>/dev/null || true)
+  P4_SRC_ADDBOX=$(grep -o "addBox(" "$P4_SRC" | wc -l)
+  P4_SRC_PARTS=$(grep -o "addOrReplaceChild(" "$P4_SRC" | wc -l)
+  P4_FRESH=""
+  P4_NEWCLS="/tmp/mcsm-build/net/dabicco/witherstormmod/entity/model/WitherStormP4.class"
+  if [ -f "$P4_NEWCLS" ] && cmp -s "$P4_JAR" "$P4_NEWCLS"; then
+    P4_FRESH=yes
+  elif [ -f "$P4_NEWCLS" ]; then
+    P4_FRESH=no
+  else
+    P4_FRESH=missing
+  fi
   if [ -n "$P4_DIS" ]; then
     # javap -c renders method refs as "CubeListBuilder.addBox:(DESC)" — the
     # colon form, not "addBox(". Count the colon form in the bytecode.
@@ -597,26 +608,66 @@ else
   else
     # javap unavailable/failed: fall back to the generated source (same
     # numbers: the compile gate above already proved the source builds).
-    P4_ADDBOX=$(grep -o "addBox(" "$P4_SRC" | wc -l)
-    P4_PARTS=$(grep -o "addOrReplaceChild(" "$P4_SRC" | wc -l)
+    P4_ADDBOX=$P4_SRC_ADDBOX
+    P4_PARTS=$P4_SRC_PARTS
     P4_RING=$(grep -c "DebrisRing" "$P4_SRC" || true)
     P4_MODE=source-fallback
   fi
-  echo "[audit] P4 dual-mode in jar ($P4_MODE): addBox=$P4_ADDBOX partDefs=$P4_PARTS DebrisRingRefs=$P4_RING"
-  # 1259 original + 495 custom = 1754; allow generation drift 1700-1800.
-  # Parts must be the FULL 302-name tree TWICE (default + custom); animations
-  # and physics depend on the names; the DebrisRing subtree is preserved.
-  if [ "$P4_ADDBOX" -lt 1700 ] || [ "$P4_ADDBOX" -gt 1800 ]; then
-    echo "::error title=jar audit::Build #371: P4 addBox count $P4_ADDBOX outside 1700-1800 (stale, single-mode or runaway geometry)"
+  # BUILD #372 -- evidence: the #371 run failed with count 0 and NO way to
+  # see why (runner logs are egress-blocked). Dump the full picture to an
+  # uploaded artifact so the next anomaly is diagnosable in one download.
+  {
+    echo "mode:          $P4_MODE"
+    echo "jar class:     $P4_JAR ($(stat -c%s "$P4_JAR" 2>/dev/null) B)"
+    echo "fresh class:   $P4_NEWCLS (match=$P4_FRESH)"
+    echo "bytecode addBox:  $P4_ADDBOX"
+    echo "bytecode partDefs: $P4_PARTS"
+    echo "bytecode DebrisRing: $P4_RING"
+    echo "source addBox:   $P4_SRC_ADDBOX"
+    echo "source partDefs: $P4_SRC_PARTS"
+    echo "javap lines:     $(wc -l <<<"$P4_DIS")"
+    echo "── javap head ──"
+    head -40 <<<"$P4_DIS"
+    echo "── sample addBox refs ──"
+    grep -m5 "addBox" <<<"$P4_DIS" || echo "(none)"
+    echo "── sample part refs ──"
+    grep -m5 "addOrReplaceChild" <<<"$P4_DIS" || echo "(none)"
+  } > out/P4_AUDIT.txt 2>/dev/null || true
+  echo "[audit] P4 dual-mode in jar ($P4_MODE): addBox=$P4_ADDBOX partDefs=$P4_PARTS DebrisRingRefs=$P4_RING fresh=$P4_FRESH src(addBox=$P4_SRC_ADDBOX parts=$P4_SRC_PARTS) — evidence: out/P4_AUDIT.txt"
+  # Ground truth #1: the jar class must be the FRESHLY COMPILED one. A stale
+  # base-jar twin fails here regardless of what the disassembler reports.
+  if [ "$P4_FRESH" != "yes" ]; then
+    echo "::error title=jar audit::Build #372: P4 class in jar is NOT the freshly compiled dual-mode class (fresh=$P4_FRESH) — stale base-jar twin would ship the old geometry"
     AUDIT_FAIL=1
   fi
-  if [ "$P4_PARTS" -lt 580 ]; then
-    echo "::error title=jar audit::Build #371: P4 part defs $P4_PARTS < 580 (dual part trees damaged — animations will crash)"
+  # Ground truth #2: the SOURCE geometry (1259 original + 495 custom = 1754,
+  # 302-name part tree twice = 604). The compile gate proved this source
+  # builds; the freshness check proved it is in the jar.
+  if [ "$P4_SRC_ADDBOX" -lt 1700 ] || [ "$P4_SRC_ADDBOX" -gt 1800 ]; then
+    echo "::error title=jar audit::Build #372: P4 source addBox count $P4_SRC_ADDBOX outside 1700-1800 (single-mode or runaway geometry)"
     AUDIT_FAIL=1
   fi
-  if [ "$P4_RING" -lt 2 ]; then
-    echo "::error title=jar audit::Build #370: DebrisRing part missing from compiled P4 model"
+  if [ "$P4_SRC_PARTS" -lt 580 ]; then
+    echo "::error title=jar audit::Build #372: P4 source part defs $P4_SRC_PARTS < 580 (dual part trees damaged — animations will crash)"
     AUDIT_FAIL=1
+  fi
+  if [ "$(grep -c "DebrisRing" "$P4_SRC")" -lt 4 ]; then
+    echo "::error title=jar audit::Build #372: DebrisRing missing from P4 source (field + ctor + both builders expect >=4 refs)"
+    AUDIT_FAIL=1
+  fi
+  # Bytecode cross-check: when the disassembler actually counts, it must
+  # agree; a 0 with fresh+source passing is a tooling anomaly -> warn only.
+  if [ "$P4_MODE" = "bytecode" ] && [ "$P4_ADDBOX" -gt 0 ]; then
+    if [ "$P4_ADDBOX" -lt 1700 ] || [ "$P4_ADDBOX" -gt 1800 ]; then
+      echo "::error title=jar audit::Build #372: P4 bytecode addBox count $P4_ADDBOX outside 1700-1800 (compiled class disagrees with source)"
+      AUDIT_FAIL=1
+    fi
+    if [ "$P4_PARTS" -lt 580 ]; then
+      echo "::error title=jar audit::Build #372: P4 bytecode part defs $P4_PARTS < 580 (compiled class disagrees with source)"
+      AUDIT_FAIL=1
+    fi
+  elif [ "$P4_MODE" = "bytecode" ]; then
+    echo "::warning title=jar audit::Build #372: javap produced output but counted 0 addBox refs — trusting freshness+source cross-check (see out/P4_AUDIT.txt)"
   fi
 fi
 

@@ -348,3 +348,52 @@ jobs:
           ( cd shaderpack-superduper && zip -q -r "/tmp/devouringstorms-superduper-default-${VER}-build371.zip" shaders DEVOURING_STORMS_MERGE.md pack.mcmeta )
           gh release upload "$TAG" "/tmp/devouringstorms-superduper-default-${VER}-build371.zip" --clobber \
             || echo "::warning::super duper default shader pack upload failed"
+      - name: "Deploy the story-mode console + audit repair as Build #372"
+        # Session deploy step: publishes the jar with the Build #372 work —
+        # the total Telltale-style interface overhaul of the control panel
+        # (scrolling chapter sidebar, translucent episodic cards, pill
+        # toggles, geometric dot tracks + text input value fields, sun
+        # shadow / 3D sun slab celestial controls), the repaired self-
+        # diagnosing dual-geometry jar audit (freshness cmp + source
+        # cross-check + out/P4_AUDIT.txt evidence), and the carried Build
+        # #371 work (OG geometry default, Netflix preset mesh binding,
+        # traced-shading default, OG sun glow, cinematic menu). Gated to
+        # this session branch and idempotent: once
+        # ds-10000.0.0-alpha.338-build372 exists it is left alone.
+        if: success() && github.ref == 'refs/heads/arena/01a09c3d-lowuuuuuu'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="ds-${VER}-build372"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists — leaving it alone"
+            exit 0
+          fi
+          {
+            cat ci/RELEASE_NOTES.md
+            echo ""
+            echo "---"
+            echo "**Build #372 deployment evidence**"
+            echo ""
+            echo "- commit:   ${GITHUB_SHA}"
+            echo "- run:      https://github.com/Loganwall111/Lowuuuuuu/actions/runs/${GITHUB_RUN_ID}"
+            echo "- jar:      $(basename out/*.jar | head -1)"
+            echo "- sha256:   $(cut -d' ' -f1 out/*.sha256 | head -1)"
+          } > /tmp/release-notes-build372.md
+          gh release create "$TAG" \
+            --repo Loganwall111/Lowuuuuuu \
+            --target "${GITHUB_SHA}" \
+            --title "Devouring Storms: The Point of No Return ${VER}-26.2-beta (Build #372)" \
+            --notes-file /tmp/release-notes-build372.md \
+            out/*.jar out/*.sha256
+          ( cd storylook && zip -q -r "/tmp/devouringstorms-storylook-${VER}-build372.zip" . )
+          gh release upload "$TAG" "/tmp/devouringstorms-storylook-${VER}-build372.zip" --clobber \
+            || echo "::warning::story look pack upload failed"
+          ( cd shaderpack-v5 && zip -q -r "/tmp/devouringstorms-shaderpack-v5-${VER}-build372.zip" shaders )
+          gh release upload "$TAG" "/tmp/devouringstorms-shaderpack-v5-${VER}-build372.zip" --clobber \
+            || echo "::warning::shader pack upload failed"
+          ( cd shaderpack-superduper && zip -q -r "/tmp/devouringstorms-superduper-default-${VER}-build372.zip" shaders DEVOURING_STORMS_MERGE.md pack.mcmeta )
+          gh release upload "$TAG" "/tmp/devouringstorms-superduper-default-${VER}-build372.zip" --clobber \
+            || echo "::warning::super duper default shader pack upload failed"
