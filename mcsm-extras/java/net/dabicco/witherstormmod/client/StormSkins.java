@@ -11,8 +11,8 @@ import net.minecraft.client.renderer.rendertype.RenderType;
  * "witherstormmod:textures/entity/wither_storm/wither_storm.png".
  * Phase 6 transitions to the smooth 4-quadrant dark navy/indigo Phase 6 atlas:
  * "dabywitherstormmod:textures/entity/phase_4_assets_p6.png".
- * Native Tattletale-style energy swirl gloss sheen overlay ("storm_gloss.png") renders natively
- * via GlowRenderTypes.translucent without external shader dependencies.
+ * Native translucent gloss sheen overlay ("gloss_layer.png") provides moving light reflections
+ * natively using standard translucent blend modes without external shader dependencies.
  */
 public final class StormSkins {
     private static final Identifier CANONICAL_TEXTURE = Identifier.fromNamespaceAndPath(
@@ -25,7 +25,7 @@ public final class StormSkins {
     private static final Identifier PHASE6_BODY = id("textures/entity/phase_4_assets_p6.png");
     private static final Identifier PHASE6_EMISSIVE = id("textures/entity/phase_4_assets_e.png");
     private static final Identifier PHASE6_DEVOURER = id("textures/entity/devourer_assets_p6.png");
-    private static final Identifier NATIVE_GLOSS_TEXTURE = id("textures/misc/storm_gloss.png");
+    private static final Identifier GLOSS_LAYER_TEXTURE = id("textures/entity/wither_storm/gloss_layer.png");
 
     private static volatile double phaseHint;
 
@@ -63,24 +63,26 @@ public final class StormSkins {
         return phase >= 6.0D ? PHASE6_BODY : CANONICAL_TEXTURE;
     }
 
-    /** Native scrolling gloss sheen texture for Tattletale-style live specular reflections. */
+    /** Native translucent gloss layer texture for animated specular sheen reflections. */
     public static Identifier glossTexture() {
-        return NATIVE_GLOSS_TEXTURE;
+        return GLOSS_LAYER_TEXTURE;
     }
 
-    /** Dynamic scrolling U-offset calculation for energy swirl gloss sheen. */
-    public static float glossUOffset(long gameTime) {
-        return (float) ((gameTime % 200L) / 200.0D);
+    /** Animated sliding U-offset calculated natively from system tick time. */
+    public static float glossUOffset() {
+        long time = System.currentTimeMillis();
+        return (float) ((time % 4000L) / 4000.0D);
     }
 
-    /** Dynamic scrolling V-offset calculation for energy swirl gloss sheen. */
-    public static float glossVOffset(long gameTime) {
-        return (float) (((gameTime * 2) % 300L) / 300.0D);
+    /** Animated sliding V-offset calculated natively from system tick time. */
+    public static float glossVOffset() {
+        long time = System.currentTimeMillis();
+        return (float) (((time * 2) % 6000L) / 6000.0D);
     }
 
-    /** Native energy swirl translucent RenderType for Tattletale-style moving sheen overlay. */
-    public static RenderType glossSwirlRenderType() {
-        return GlowRenderTypes.translucent(NATIVE_GLOSS_TEXTURE);
+    /** Standard translucent RenderType for native moving gloss sheen overlay pass. */
+    public static RenderType glossRenderType() {
+        return GlowRenderTypes.translucent(GLOSS_LAYER_TEXTURE);
     }
 
     /** Dedicated Phase 6 quadrant body atlas. */
