@@ -1,3 +1,11 @@
+# Devouring Storms 10000.0.0-alpha.338 — Build #364 (restored clean codebase + jar)
+
+- Restored the stable Build #351 configuration layout: `fabric.mod.json`, `gradle.properties`, and `McsmExtrasScreen.java` come back from the Build #351 commit (custom Devouring Storms layout, not the generic template).
+- Technical build version locked strictly to `10000.0.0-alpha.338` in `VERSION`, `gradle.properties`, and `fabric.mod.json`.
+- Visual title string hardcoded so the in-game UI can never drift: the config-screen header and the "Open Devouring Storms" row now explicitly display `Open Devouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338`.
+- Re-stitched the working model/texture registry from Build #338: phases 1–5 load the smooth solid vanilla black canonical texture map; phase 6 loads the custom 4-quadrant cosmic texture sheet (`phase_4_assets_p6.png`) with its clean emissive (`phase_4_assets_e.png`). No grainy textures, and the `jar-overrides/` set is the intact Build #338 registry.
+- Fresh full compile pass (javac gate + GLSL gate + jar audit all green) deployed as this build.
+
 # 1.9.200 — Sky City haze included in verified build
 
 - Includes the high-altitude Sky City blue haze blend in the published jar, ramping in above tall build heights without changing normal ground-level play.
