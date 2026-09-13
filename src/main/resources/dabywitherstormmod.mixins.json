@@ -23,7 +23,13 @@
     "WitherBossAccessor",
     "WitherBossParticleMixin",
     "WitherSkullBlockMixin",
-    "WitheredDustConnectMixin"
+    "WitheredDustConnectMixin",
+    "McsmBeaconBlockInitPatch",
+    "McsmBeaconStormPatch",
+    "McsmEpisodeSpawnMixin",
+    "McsmStormGrabPatch",
+    "McsmTownCommandPatch",
+    "McsmWorldgenPatch"
   ],
   "client": [
     "AvatarRendererMixin",
@@ -71,7 +77,31 @@
     "TitleScreenConfigNoticeMixin",
     "VanillaMusicFadeMixin",
     "WorldOptionsScreenAccessor",
-    "WorldOptionsScreenMixin"
+    "WorldOptionsScreenMixin",
+    "McsmBlobCarrierPatch",
+    "McsmBowelsWarpMixin",
+    "McsmBuiltinPackMixin",
+    "McsmConfigReskinMixin",
+    "McsmDebrisKillPatch",
+    "McsmEntityLightMixin",
+    "McsmGradientTickPatch",
+    "McsmGuiExtrasRows",
+    "McsmHeadPhaseSkinMixin",
+    "McsmHotbarHideMixin",
+    "McsmHudAttachMixin",
+    "McsmItemGlowMixin",
+    "McsmItemGroundLightMixin",
+    "McsmPresenceFxPatch",
+    "McsmPresetFixPatch",
+    "McsmQuickConfigKeyMixin",
+    "McsmShaderGatePatch",
+    "McsmSpiralPatch",
+    "McsmStormBlobMixin",
+    "McsmStormSwayMixin",
+    "McsmStormVisibilityPatch",
+    "McsmStoryCameraMixin",
+    "McsmStorySpawnEggInitPatch",
+    "McsmTitleOverhaulMixin"
   ],
   "server": []
 }

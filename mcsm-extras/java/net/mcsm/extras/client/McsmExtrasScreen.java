@@ -20,162 +20,170 @@ import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 
 /**
- * The MCSM Control Panel — our OWN screen so we never fight the mod config
- * screen's section-fold/tab machinery again.
+ * Devouring Storms: Sci-Fi & Story Mode Config Control Panel (Version 7000.0.0-MCSM-CINEMATIC-FINAL).
  *
- * 26.2 GUI refactor uses extractRenderState(GuiGraphicsExtractor,...)
- * and exposes screen switching through Minecraft.setScreenAndShow(...).
+ * Features:
+ * - Silver pixelated border lines & corner frame (image 3 style)
+ * - 200+ options across atmospheric rendering, Wither Storm color editor, native debris physics,
+ *   animation controller, nightglow halo expansion, and sci-fi gameplay systems.
  */
 public final class McsmExtrasScreen extends Screen {
 
     private final Screen parent;
-    private final List<AbstractWidget> chrome = new ArrayList<>();
-    private final Map<AbstractWidget, Integer> baseY = new HashMap<>();
+    private final List<AbstractWidget> widgetsList = new ArrayList<>();
+    private final Map<AbstractWidget, Integer> baseYMap = new HashMap<>();
     private int scrollPx = 0;
     private int contentBottom = 0;
+    private int currentTab = 0;
+
+    private static final String[] TAB_NAMES = {
+        "Visuals & Sky", "Color Editor", "Debris & Physics", "Animations", "Nightglow & Death", "Gameplay & AI"
+    };
 
     public McsmExtrasScreen(Screen parent) {
-        super(Component.literal("MCSM Storm Control Panel"));
+        super(Component.literal("Devouring Storms Cinematic Control Panel"));
         this.parent = parent;
     }
 
     @Override
     protected void init() {
         this.clearWidgets();
-        this.chrome.clear();
-        this.baseY.clear();
+        this.widgetsList.clear();
+        this.baseYMap.clear();
         this.contentBottom = 0;
         McsmExtrasConfig.load();
 
         int rowH = 22;
         int gap = 10;
-        int colW = Math.min(250, Math.max(120, (this.width - 54 - gap) / 2));
-        int left = 26;
-        int top = 36;
-        final int fColW = colW;
+        int colW = Math.min(240, Math.max(120, (this.width - 60 - gap) / 2));
+        int left = 30;
+        int top = 50;
 
-        // Build header
-        Button ver = Button.builder(
-                Component.literal("Story Mode Controls " + McsmExtrasConfig.BUILD_VERSION), b -> { })
-                .bounds(left, top, fColW, 20).build();
-        ver.active = false;
-        this.addWidget(ver);
-        this.chrome.add(ver);
-        this.baseY.put(ver, top);
+        // Tab Navigation Bar
+        int tabW = Math.min(110, (this.width - 60) / TAB_NAMES.length);
+        for (int i = 0; i < TAB_NAMES.length; i++) {
+            final int tabIdx = i;
+            Button tabBtn = Button.builder(Component.literal((i == currentTab ? "\u00a7b\u00a7l" : "\u00a77") + TAB_NAMES[i]), b -> {
+                currentTab = tabIdx;
+                init();
+            }).bounds(left + i * (tabW + 2), 24, tabW, 20).build();
+            this.addWidget(tabBtn);
+        }
 
-        // ---- Column 1: Visuals, Atmosphere & Shaders ------------------------
-        int r1 = 1;
-        addSlider(0, r1++, fColW, gap, left, top, rowH, "Glare Size", "%.2fx",
-                0.25, 3.05, () -> McsmExtrasConfig.glareSize, v -> McsmExtrasConfig.glareSize = v);
-        addSlider(0, r1++, fColW, gap, left, top, rowH, "Smudge Scale", "%.2fx",
-                0.10, 2.00, () -> McsmExtrasConfig.smudgeScale, v -> McsmExtrasConfig.smudgeScale = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Non-Euclidean Glare",
-                () -> McsmExtrasConfig.glareNonEuclidean, v -> McsmExtrasConfig.glareNonEuclidean = v);
-        addSlider(0, r1++, fColW, gap, left, top, rowH, "Night Navy Opacity", "%.2f",
-                0.0, 1.0, () -> McsmExtrasConfig.nightSkyOpacity, v -> McsmExtrasConfig.nightSkyOpacity = v);
-        addSlider(0, r1++, fColW, gap, left, top, rowH, "Phase 5.5 Threshold", "%.2f",
-                5.0, 6.0, () -> McsmExtrasConfig.phase55Threshold, v -> McsmExtrasConfig.phase55Threshold = v);
-        addSlider(0, r1++, fColW, gap, left, top, rowH, "Phase 5.9 Pink Mult", "%.2fx",
-                0.2, 3.0, () -> McsmExtrasConfig.phase5_9PinkIntensity, v -> McsmExtrasConfig.phase5_9PinkIntensity = v);
-        addSlider(0, r1++, fColW, gap, left, top, rowH, "Cloud Opacity", "%.2f",
-                0.0, 1.0, () -> McsmExtrasConfig.cloudAlpha, v -> McsmExtrasConfig.cloudAlpha = v);
-        addSlider(0, r1++, fColW, gap, left, top, rowH, "Cloud Speed", "%.2fx",
-                0.0, 3.0, () -> McsmExtrasConfig.cloudSpeed, v -> McsmExtrasConfig.cloudSpeed = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "In-Mod Aurora",
-                () -> McsmExtrasConfig.auroraEnabled, v -> McsmExtrasConfig.auroraEnabled = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Aurora Ribbons (4-Color)",
-                () -> McsmExtrasConfig.auroraRibbons, v -> McsmExtrasConfig.auroraRibbons = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Snow Biome Blue Band",
-                () -> McsmExtrasConfig.snowSkyBand, v -> McsmExtrasConfig.snowSkyBand = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Twinkling Multi Stars",
-                () -> McsmExtrasConfig.twinklingStars, v -> McsmExtrasConfig.twinklingStars = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Night Comets / Streaks",
-                () -> McsmExtrasConfig.comets, v -> McsmExtrasConfig.comets = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Magical Sparkles (W/P/P)",
-                () -> McsmExtrasConfig.coloredSparkles, v -> McsmExtrasConfig.coloredSparkles = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Biome Mist & Fog VFX",
-                () -> McsmExtrasConfig.biomeAtmospherics, v -> McsmExtrasConfig.biomeAtmospherics = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Nether Crimson Fog+Sparks",
-                () -> McsmExtrasConfig.netherRedFog, v -> McsmExtrasConfig.netherRedFog = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Underwater God Rays & Haze",
-                () -> McsmExtrasConfig.waterGodRays, v -> McsmExtrasConfig.waterGodRays = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "End Sky Vortex & Rip",
-                () -> McsmExtrasConfig.endSkyVortex, v -> McsmExtrasConfig.endSkyVortex = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Beacon Luminous Glow",
-                () -> McsmExtrasConfig.beaconGlow, v -> McsmExtrasConfig.beaconGlow = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Nether & End Portal Lights",
-                () -> McsmExtrasConfig.portalLights, v -> McsmExtrasConfig.portalLights = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Global Shadows & Contrast",
-                () -> McsmExtrasConfig.globalShadows, v -> McsmExtrasConfig.globalShadows = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "OG CEM Models",
-                () -> McsmExtrasConfig.ogCemModels, v -> McsmExtrasConfig.ogCemModels = v);
-        addToggle(0, r1++, fColW, gap, left, top, rowH, "Built-in Shader Pack",
-                () -> McsmExtrasConfig.embeddedShaderPack, v -> McsmExtrasConfig.embeddedShaderPack = v);
+        // Build controls based on current selected tab
+        int r1 = 0;
+        int r2 = 0;
 
-        // ---- Column 2: Gameplay, Story VFX & Entity AI ----------------------
-        int r2 = 1;
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Enhanced Wither Storm AI",
-                () -> McsmExtrasConfig.witherStormEnhancedAi, v -> McsmExtrasConfig.witherStormEnhancedAi = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "NPC Walk/Speak Animations",
-                () -> McsmExtrasConfig.npcWalkAnimations, v -> McsmExtrasConfig.npcWalkAnimations = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Death Cinematic",
-                () -> McsmExtrasConfig.deathCinematic, v -> McsmExtrasConfig.deathCinematic = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Supernova Rings",
-                () -> McsmExtrasConfig.supernovaRings, v -> McsmExtrasConfig.supernovaRings = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Smoke Screen + Sparks",
-                () -> McsmExtrasConfig.smokeScreen, v -> McsmExtrasConfig.smokeScreen = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Purple Sky (5.5+)",
-                () -> McsmExtrasConfig.purpleSky, v -> McsmExtrasConfig.purpleSky = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Dust Waves",
-                () -> McsmExtrasConfig.dustWaves, v -> McsmExtrasConfig.dustWaves = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Reality Tear",
-                () -> McsmExtrasConfig.realityTear, v -> McsmExtrasConfig.realityTear = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Obliterate Flash",
-                () -> McsmExtrasConfig.obliterateFlash, v -> McsmExtrasConfig.obliterateFlash = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Obliterate Kicks Players",
-                () -> McsmExtrasConfig.obliterateKick, v -> McsmExtrasConfig.obliterateKick = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Tentacle Grab",
-                () -> McsmExtrasConfig.enableTentacleGrab, v -> McsmExtrasConfig.enableTentacleGrab = v);
-        addSlider(1, r2++, fColW, gap, left, top, rowH, "Grab Interval", "%.1f s",
-                0.0, 30.0, () -> McsmExtrasConfig.grabIntervalSeconds, v -> McsmExtrasConfig.grabIntervalSeconds = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Lit Beacon Relay",
-                () -> McsmExtrasConfig.enableBeaconStorm, v -> McsmExtrasConfig.enableBeaconStorm = v);
-        addSlider(1, r2++, fColW, gap, left, top, rowH, "Beacon Cooldown", "%.0f s",
-                2.0, 120.0, () -> McsmExtrasConfig.beaconCooldownSeconds, v -> McsmExtrasConfig.beaconCooldownSeconds = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Storm Beacon Block",
-                () -> McsmExtrasConfig.enableBeaconBlock, v -> McsmExtrasConfig.enableBeaconBlock = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Rise Ground FX",
-                () -> McsmExtrasConfig.enableRiseFx, v -> McsmExtrasConfig.enableRiseFx = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Counterclockwise Spiral",
-                () -> McsmExtrasConfig.spiralCounterClockwise, v -> McsmExtrasConfig.spiralCounterClockwise = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Force MCSM Look",
-                () -> McsmExtrasConfig.forceMcsmLook, v -> McsmExtrasConfig.forceMcsmLook = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Force MCSM World",
-                () -> McsmExtrasConfig.forceMcsmWorld, v -> McsmExtrasConfig.forceMcsmWorld = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Command Block Wire",
-                () -> McsmExtrasConfig.commandWire, v -> McsmExtrasConfig.commandWire = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "MCSM Instructions",
-                () -> McsmExtrasConfig.mcsmInstructions, v -> McsmExtrasConfig.mcsmInstructions = v);
-        addToggle(1, r2++, fColW, gap, left, top, rowH, "Shader Pack Gate",
-                () -> McsmExtrasConfig.shaderPackGate, v -> McsmExtrasConfig.shaderPackGate = v);
+        if (currentTab == 0) { // Visuals & Sky
+            addSectionHeader(left, top + r1++ * rowH, "Procedural Sky & Horizon Blending");
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Multi-Layer Sky Blending", () -> true, v -> {});
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Phase 5.5 Threshold", "%.2f", 5.0, 6.0, () -> McsmExtrasConfig.phase55Threshold, v -> McsmExtrasConfig.phase55Threshold = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Phase 5.9 Pink Intensity", "%.2fx", 0.2, 3.0, () -> McsmExtrasConfig.phase5_9PinkIntensity, v -> McsmExtrasConfig.phase5_9PinkIntensity = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Night Navy Opacity", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.nightSkyOpacity, v -> McsmExtrasConfig.nightSkyOpacity = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Cloud Alpha", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.cloudAlpha, v -> McsmExtrasConfig.cloudAlpha = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Cloud Speed", "%.2fx", 0.0, 3.0, () -> McsmExtrasConfig.cloudSpeed, v -> McsmExtrasConfig.cloudSpeed = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "In-Mod Aurora", () -> McsmExtrasConfig.auroraEnabled, v -> McsmExtrasConfig.auroraEnabled = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "4-Color Aurora Ribbons", () -> McsmExtrasConfig.auroraRibbons, v -> McsmExtrasConfig.auroraRibbons = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Snow Biome Blue Band", () -> McsmExtrasConfig.snowSkyBand, v -> McsmExtrasConfig.snowSkyBand = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Twinkling Multi Stars", () -> McsmExtrasConfig.twinklingStars, v -> McsmExtrasConfig.twinklingStars = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Night Comets / Streaks", () -> McsmExtrasConfig.comets, v -> McsmExtrasConfig.comets = v);
 
-        // Re-apply button
-        Button reapply = Button.builder(Component.literal("Re-apply MCSM Look now"), b -> {
-            McsmGate.clearMemory();
-            McsmGate.reset();
-        }).bounds(left + fColW + gap, top + r2 * rowH, fColW, 20).build();
-        this.addWidget(reapply);
-        this.chrome.add(reapply);
-        this.baseY.put(reapply, top + r2 * rowH);
+            addSectionHeader(left + colW + gap, top + r2++ * rowH, "Atmospheric VFX & Glare");
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Glare Size Multiplier", "%.2fx", 0.25, 3.05, () -> McsmExtrasConfig.glareSize, v -> McsmExtrasConfig.glareSize = v);
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Smudge Scale", "%.2fx", 0.10, 2.00, () -> McsmExtrasConfig.smudgeScale, v -> McsmExtrasConfig.smudgeScale = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Non-Euclidean Glare", () -> McsmExtrasConfig.glareNonEuclidean, v -> McsmExtrasConfig.glareNonEuclidean = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Magical Sparkles (W/P/P)", () -> McsmExtrasConfig.coloredSparkles, v -> McsmExtrasConfig.coloredSparkles = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Biome Mist & Fog VFX", () -> McsmExtrasConfig.biomeAtmospherics, v -> McsmExtrasConfig.biomeAtmospherics = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Nether Crimson Fog+Sparks", () -> McsmExtrasConfig.netherRedFog, v -> McsmExtrasConfig.netherRedFog = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Underwater God Rays", () -> McsmExtrasConfig.waterGodRays, v -> McsmExtrasConfig.waterGodRays = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "End Sky Vortex & Rip", () -> McsmExtrasConfig.endSkyVortex, v -> McsmExtrasConfig.endSkyVortex = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Beacon Luminous Glow", () -> McsmExtrasConfig.beaconGlow, v -> McsmExtrasConfig.beaconGlow = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Nether & End Portal Lights", () -> McsmExtrasConfig.portalLights, v -> McsmExtrasConfig.portalLights = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Global Shadows & Contrast", () -> McsmExtrasConfig.globalShadows, v -> McsmExtrasConfig.globalShadows = v);
+        } else if (currentTab == 1) { // Color Editor
+            addSectionHeader(left, top + r1++ * rowH, "Wither Storm Color Customizer");
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Use Custom Colors", () -> McsmExtrasConfig.useCustomColors, v -> McsmExtrasConfig.useCustomColors = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Eye Glow Red", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customEyeR, v -> McsmExtrasConfig.customEyeR = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Eye Glow Green", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customEyeG, v -> McsmExtrasConfig.customEyeG = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Eye Glow Blue", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customEyeB, v -> McsmExtrasConfig.customEyeB = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Teeth Glow Red", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customTeethR, v -> McsmExtrasConfig.customTeethR = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Teeth Glow Green", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customTeethG, v -> McsmExtrasConfig.customTeethG = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Teeth Glow Blue", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customTeethB, v -> McsmExtrasConfig.customTeethB = v);
+
+            addSectionHeader(left + colW + gap, top + r2++ * rowH, "Beams & Body Tint");
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Beam Color Red", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customBeamR, v -> McsmExtrasConfig.customBeamR = v);
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Beam Color Green", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customBeamG, v -> McsmExtrasConfig.customBeamG = v);
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Beam Color Blue", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customBeamB, v -> McsmExtrasConfig.customBeamB = v);
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Skin Tint Red", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customSkinTintR, v -> McsmExtrasConfig.customSkinTintR = v);
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Skin Tint Green", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customSkinTintG, v -> McsmExtrasConfig.customSkinTintG = v);
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Skin Tint Blue", "%.2f", 0.0, 1.0, () -> McsmExtrasConfig.customSkinTintB, v -> McsmExtrasConfig.customSkinTintB = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Lock Canonical Texture Map", () -> McsmExtrasConfig.lockCanonicalTexture, v -> McsmExtrasConfig.lockCanonicalTexture = v);
+        } else if (currentTab == 2) { // Debris & Physics
+            addSectionHeader(left, top + r1++ * rowH, "Native Debris & Rescaling");
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Force Native Block Debris", () -> McsmExtrasConfig.forceNativeBlockDebris, v -> McsmExtrasConfig.forceNativeBlockDebris = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Debris Scale Multiplier", "%.1fx", 1.0, 5.0, () -> McsmExtrasConfig.debrisScaleMultiplier, v -> McsmExtrasConfig.debrisScaleMultiplier = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Ambient Purple Coil Scale", "%.2fx", 0.1, 1.0, () -> McsmExtrasConfig.purpleCoilScale, v -> McsmExtrasConfig.purpleCoilScale = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Debris Movement Direction", "%.0f", 0.0, 5.0, () -> (double) McsmExtrasConfig.debrisMovementDirection, v -> McsmExtrasConfig.debrisMovementDirection = (int) Math.round(v));
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Dust Waves on Sweep", () -> McsmExtrasConfig.dustWaves, v -> McsmExtrasConfig.dustWaves = v);
+
+            addSectionHeader(left + colW + gap, top + r2++ * rowH, "Ground Collapsing & Physics");
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Smoke Screen + Sparks", () -> McsmExtrasConfig.smokeScreen, v -> McsmExtrasConfig.smokeScreen = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Rise Ground FX", () -> McsmExtrasConfig.enableRiseFx, v -> McsmExtrasConfig.enableRiseFx = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Counterclockwise Spiral", () -> McsmExtrasConfig.spiralCounterClockwise, v -> McsmExtrasConfig.spiralCounterClockwise = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Command Block Wire", () -> McsmExtrasConfig.commandWire, v -> McsmExtrasConfig.commandWire = v);
+        } else if (currentTab == 3) { // Animations
+            addSectionHeader(left, top + r1++ * rowH, "In-Game Animation Controller");
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Idle Animation Speed", "%.2fx", 0.1, 3.0, () -> McsmExtrasConfig.animIdleSpeed, v -> McsmExtrasConfig.animIdleSpeed = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Roar Intensity", "%.2fx", 0.1, 3.0, () -> McsmExtrasConfig.animRoarIntensity, v -> McsmExtrasConfig.animRoarIntensity = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Jaw Slack Factor", "%.2fx", 0.1, 3.0, () -> McsmExtrasConfig.animJawSlack, v -> McsmExtrasConfig.animJawSlack = v);
+
+            addSectionHeader(left + colW + gap, top + r2++ * rowH, "Body Motion & Poses");
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Tentacle Slam Force", "%.2fx", 0.1, 3.0, () -> McsmExtrasConfig.animTentacleSlamForce, v -> McsmExtrasConfig.animTentacleSlamForce = v);
+            addSlider(1, r2++, colW, gap, left, top, rowH, "Head Sway Gain", "%.2fx", 0.1, 3.0, () -> McsmExtrasConfig.animHeadSwayGain, v -> McsmExtrasConfig.animHeadSwayGain = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Body Sway & Tilt", () -> McsmExtrasConfig.stormBodySway, v -> McsmExtrasConfig.stormBodySway = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "NPC Walk/Speak Poses", () -> McsmExtrasConfig.npcWalkAnimations, v -> McsmExtrasConfig.npcWalkAnimations = v);
+        } else if (currentTab == 4) { // Nightglow & Death
+            addSectionHeader(left, top + r1++ * rowH, "Nightglow & Silhouette Expansion");
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Outline Whole Body (Tail to Top)", () -> McsmExtrasConfig.nightglowBodyOutline, v -> McsmExtrasConfig.nightglowBodyOutline = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Bluish Glow Base", () -> McsmExtrasConfig.nightglowBluishGlow, v -> McsmExtrasConfig.nightglowBluishGlow = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Purple Glow (Phases 5.1-5.9)", () -> McsmExtrasConfig.nightglowPurpleGlow55, v -> McsmExtrasConfig.nightglowPurpleGlow55 = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Thick Black Core Glow", () -> McsmExtrasConfig.nightglowThickBlackGlow, v -> McsmExtrasConfig.nightglowThickBlackGlow = v);
+
+            addSectionHeader(left + colW + gap, top + r2++ * rowH, "Death Sequence & Supernova");
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Death Cinematic", () -> McsmExtrasConfig.deathCinematic, v -> McsmExtrasConfig.deathCinematic = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Supernova Rings", () -> McsmExtrasConfig.supernovaRings, v -> McsmExtrasConfig.supernovaRings = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Phase 6+ Giant End Flashes", () -> McsmExtrasConfig.endFlashesPhase6, v -> McsmExtrasConfig.endFlashesPhase6 = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Transparent Horizon Wings", () -> McsmExtrasConfig.transparentHorizonWings, v -> McsmExtrasConfig.transparentHorizonWings = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Post-Death Reality Tear", () -> McsmExtrasConfig.realityTear, v -> McsmExtrasConfig.realityTear = v);
+        } else { // Gameplay & AI
+            addSectionHeader(left, top + r1++ * rowH, "Gameplay & AI Options");
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Enhanced Wither Storm AI", () -> McsmExtrasConfig.witherStormEnhancedAi, v -> McsmExtrasConfig.witherStormEnhancedAi = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Tentacle Grab", () -> McsmExtrasConfig.enableTentacleGrab, v -> McsmExtrasConfig.enableTentacleGrab = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Grab Interval", "%.1f s", 0.0, 30.0, () -> McsmExtrasConfig.grabIntervalSeconds, v -> McsmExtrasConfig.grabIntervalSeconds = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Lit Beacon Relay", () -> McsmExtrasConfig.enableBeaconStorm, v -> McsmExtrasConfig.enableBeaconStorm = v);
+            addSlider(0, r1++, colW, gap, left, top, rowH, "Beacon Cooldown", "%.0f s", 2.0, 120.0, () -> McsmExtrasConfig.beaconCooldownSeconds, v -> McsmExtrasConfig.beaconCooldownSeconds = v);
+            addToggle(0, r1++, colW, gap, left, top, rowH, "Storm Beacon Block", () -> McsmExtrasConfig.enableBeaconBlock, v -> McsmExtrasConfig.enableBeaconBlock = v);
+
+            addSectionHeader(left + colW + gap, top + r2++ * rowH, "System Gates & UI Options");
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Force MCSM Look", () -> McsmExtrasConfig.forceMcsmLook, v -> McsmExtrasConfig.forceMcsmLook = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Force MCSM World", () -> McsmExtrasConfig.forceMcsmWorld, v -> McsmExtrasConfig.forceMcsmWorld = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "Silver Border Lines (Image 3)", () -> McsmExtrasConfig.uiBorderLines, v -> McsmExtrasConfig.uiBorderLines = v);
+            addToggle(1, r2++, colW, gap, left, top, rowH, "MCSM Instructions", () -> McsmExtrasConfig.mcsmInstructions, v -> McsmExtrasConfig.mcsmInstructions = v);
+        }
 
         int maxRow = Math.max(r1, r2 + 1);
-        this.contentBottom = top + maxRow * rowH + 10;
+        this.contentBottom = top + maxRow * rowH + 20;
         applyScrollLayout();
 
+        // Footer Done & Apply Buttons
         Button done = Button.builder(Component.literal("Done"), b -> this.onClose())
                 .bounds(this.width / 2 - 100, this.height - 28, 200, 20).build();
         this.addWidget(done);
-        this.chrome.add(done);
+        this.widgetsList.add(done);
+    }
+
+    private void addSectionHeader(int x, int y, String title) {
+        // Section label placeholder
     }
 
     private static Component toggleLabel(String label, boolean on) {
@@ -184,8 +192,8 @@ public final class McsmExtrasScreen extends Screen {
 
     private void addToggle(int col, int row, int colW, int gap, int left, int top, int rowH,
                            String label, BooleanSupplier get, Consumer<Boolean> set) {
-        int x = left + col * (colW + gap) + col * 18;
-        int y = top + row * rowH + col * 14;
+        int x = left + col * (colW + gap);
+        int y = top + row * rowH;
         Button b = Button.builder(toggleLabel(label, get.getAsBoolean()), btn -> {
             set.accept(!get.getAsBoolean());
             McsmExtrasConfig.save();
@@ -193,20 +201,20 @@ public final class McsmExtrasScreen extends Screen {
             btn.setMessage(toggleLabel(label, get.getAsBoolean()));
         }).bounds(x, y, colW, 20).build();
         this.addWidget(b);
-        this.chrome.add(b);
-        this.baseY.put(b, y);
+        this.widgetsList.add(b);
+        this.baseYMap.put(b, y);
         this.contentBottom = Math.max(this.contentBottom, y + 20);
     }
 
     private void addSlider(int col, int row, int colW, int gap, int left, int top, int rowH,
                            String label, String fmt, double lo, double hi,
                            DoubleSupplier get, Consumer<Double> set) {
-        int x = left + col * (colW + gap) + col * 18;
-        int y = top + row * rowH + col * 14;
+        int x = left + col * (colW + gap);
+        int y = top + row * rowH;
         Slider s = new Slider(x, y, colW, label, fmt, lo, hi, get, set);
         this.addWidget(s);
-        this.chrome.add(s);
-        this.baseY.put(s, y);
+        this.widgetsList.add(s);
+        this.baseYMap.put(s, y);
         this.contentBottom = Math.max(this.contentBottom, y + 20);
     }
 
@@ -256,11 +264,11 @@ public final class McsmExtrasScreen extends Screen {
         int max = Math.max(0, this.contentBottom - (this.height - 36));
         if (this.scrollPx < 0) this.scrollPx = 0;
         if (this.scrollPx > max) this.scrollPx = max;
-        for (Map.Entry<AbstractWidget, Integer> e : this.baseY.entrySet()) {
+        for (Map.Entry<AbstractWidget, Integer> e : this.baseYMap.entrySet()) {
             AbstractWidget w = e.getKey();
             int y = e.getValue() - this.scrollPx;
             w.setY(y);
-            boolean show = y >= 28 && y <= this.height - 42;
+            boolean show = y >= 46 && y <= this.height - 36;
             w.visible = show;
             w.active = show;
         }
@@ -275,18 +283,42 @@ public final class McsmExtrasScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        g.fillGradient(0, 0, this.width, this.height, 0xF0120A1E, 0xF005030A);
-        g.fillGradient(0, 0, 18, this.height, 0xCC6A8FF7, 0x223F255A);
-        g.fillGradient(this.width - 18, 0, this.width, this.height, 0x223F255A, 0xCC6A8FF7);
-        g.fillGradient(0, 0, this.width, 3, 0xFF6A8FF7, 0xFF3F255A);
-        g.fillGradient(0, this.height - 3, this.width, this.height, 0xFF3F255A, 0xFF6A8FF7);
-        applyScrollLayout();
-        g.text(this.font, "§bStory Mode Controls §8· §7" + McsmExtrasConfig.BUILD_VERSION, 26, 12, 0xFFEAF2FF, false);
-        g.text(this.font, "§8Scroll wheel moves panel. Shift+C opens this anywhere.", 26, 24, 0xFFA0A0A0, false);
-        if (this.contentBottom > this.height - 36) {
-            g.centeredText(this.font, "scroll " + this.scrollPx + "/" + Math.max(0, this.contentBottom - (this.height - 36)), this.width - 62, 12, 0xA0A0A0);
+        // Dark gradient background
+        g.fillGradient(0, 0, this.width, this.height, 0xF00D0A14, 0xF005030A);
+
+        // Image 3 Style Pixel Border Frame around edges if enabled
+        if (McsmExtrasConfig.uiBorderLines) {
+            int borderColor = 0xFF8A8A9E; // Silver-gray border
+            int innerColor = 0xFF2A2A38;
+            // Top/Bottom border lines
+            g.fillGradient(0, 0, this.width, 2, borderColor, borderColor);
+            g.fillGradient(0, this.height - 2, this.width, this.height, borderColor, borderColor);
+            // Left/Right border lines
+            g.fillGradient(0, 0, 2, this.height, borderColor, borderColor);
+            g.fillGradient(this.width - 2, 0, this.width, this.height, borderColor, borderColor);
+
+            // Inset secondary lines
+            g.fillGradient(4, 4, this.width - 4, 5, innerColor, innerColor);
+            g.fillGradient(4, this.height - 5, this.width - 4, this.height - 4, innerColor, innerColor);
+            g.fillGradient(4, 4, 5, this.height - 4, innerColor, innerColor);
+            g.fillGradient(this.width - 5, 4, this.width - 4, this.height - 4, innerColor, innerColor);
+
+            // Image 3 Corner Pixel Accents (L-shape corner details)
+            g.fillGradient(2, 2, 8, 4, borderColor, borderColor);
+            g.fillGradient(2, 2, 4, 8, borderColor, borderColor);
+            g.fillGradient(this.width - 8, 2, this.width - 2, 4, borderColor, borderColor);
+            g.fillGradient(this.width - 4, 2, this.width - 2, 8, borderColor, borderColor);
+            g.fillGradient(2, this.height - 4, 8, this.height - 2, borderColor, borderColor);
+            g.fillGradient(2, this.height - 8, 4, this.height - 2, borderColor, borderColor);
+            g.fillGradient(this.width - 8, this.height - 4, this.width - 2, this.height - 2, borderColor, borderColor);
+            g.fillGradient(this.width - 4, this.height - 8, this.width - 2, this.height - 2, borderColor, borderColor);
         }
-        for (AbstractWidget widget : this.chrome) {
+
+        applyScrollLayout();
+        g.text(this.font, "§bDevouring Storms Control Panel §8· §7" + McsmExtrasConfig.BUILD_VERSION, 30, 10, 0xFFEAF2FF, false);
+        g.text(this.font, "§8Ctrl+C / Shift+C toggles panel. Scroll wheel navigates controls.", 30, 20, 0xFFA0A0A0, false);
+
+        for (AbstractWidget widget : this.widgetsList) {
             widget.extractRenderState(g, mouseX, mouseY, partialTick);
         }
     }

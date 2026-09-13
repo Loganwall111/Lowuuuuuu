@@ -5,14 +5,11 @@ import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.minecraft.client.Minecraft;
 
 /**
- * Drives model teeth/eye glow colours from the nearest storm phase so the
- * base-mod teethBoost pass matches the MCSM frames without Iris:
- *   phase 3          no teeth glow
- *   phase 4          small cool-white/cyan glow on the three heads
- *   phase 5          flat white teeth, no big glow
- *   phase 5.5        white teeth with glow
- *   phase 6          blue/cyan glowing teeth after the split
- *   phase 7+         green-blue glowing teeth
+ * Native Teeth & Eye Glow Pass:
+ * Keeps eye pupils and phase-shifting teeth bone vertex grids fully emissive and bright.
+ * Color tracks:
+ *   - Electrical Neon Cyan (#00F3FF) up through Phase 5.5
+ *   - Toxic Glowing Sea-Green (#00A877) starting in Phase 6
  */
 public final class McsmTeethPhaseTint {
 
@@ -36,33 +33,35 @@ public final class McsmTeethPhaseTint {
             if (phase < 0.5F) {
                 return;
             }
+
             float r, g, b, inten;
-            boolean glow;
-            if (phase >= 7.0F) {
-                r = 0.44F; g = 1.00F; b = 0.92F; inten = 2.35F; glow = true;   // bright green-blue late storm
-            } else if (phase >= 6.0F) {
-                r = 0.18F; g = 0.92F; b = 1.00F; inten = 2.45F; glow = true;   // stronger blue/cyan split teeth
-            } else if (phase >= 5.5F) {
-                r = 0.82F; g = 1.00F; b = 1.00F; inten = 2.05F; glow = true;   // white-cyan teeth, glowing
-            } else if (phase >= 5.0F) {
-                r = 0.92F; g = 1.00F; b = 0.96F; inten = 0.70F; glow = true;   // phase 5: readable flat white with cyan edge, low bloom
-            } else if (phase >= 4.0F) {
-                r = 0.72F; g = 0.98F; b = 1.00F; inten = 1.25F; glow = true;   // slight phase-4 cyan-white glow
+            boolean glow = true;
+
+            if (phase >= 6.0F) {
+                // Toxic Sea-Green (#00A877)
+                r = 0.000F;
+                g = 0.659F;
+                b = 0.467F;
+                inten = 2.50F;
             } else {
-                r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;  // phase 3: no glowing teeth
+                // Electrical Neon Cyan (#00F3FF)
+                r = 0.000F;
+                g = 0.953F;
+                b = 1.000F;
+                inten = 2.20F;
             }
+
             DabyWSClientConfig.eyeColorR = r;
             DabyWSClientConfig.eyeColorG = g;
             DabyWSClientConfig.eyeColorB = b;
             DabyWSClientConfig.turquoiseTeethIntensity = inten;
             DabyWSClientConfig.turquoiseTeeth = glow;
 
-            // Tractor beams should follow the same sky/storm family instead of
-            // staying solid pink-purple all day. Keep them soft but phase-aware.
-            float day = 0.55F + 0.45F * (float)Math.sin((mc.level.getGameTime() % 24000L) / 24000.0D * Math.PI * 2.0D);
-            float br = phase >= 7.0F ? 0.42F : (phase >= 6.0F ? 0.30F : (phase >= 5.5F ? 0.78F : 0.62F));
-            float bg = phase >= 7.0F ? 0.96F : (phase >= 6.0F ? 0.64F : (phase >= 5.5F ? 0.52F : 0.30F));
-            float bb = phase >= 7.0F ? 0.86F : (phase >= 6.0F ? 1.00F : (phase >= 5.5F ? 1.00F : 0.95F));
+            // Tractor beam color follows phase palette
+            float day = 0.55F + 0.45F * (float) Math.sin((mc.level.getGameTime() % 24000L) / 24000.0D * Math.PI * 2.0D);
+            float br = phase >= 6.0F ? 0.00F : 0.00F;
+            float bg = phase >= 6.0F ? 0.66F : 0.95F;
+            float bb = phase >= 6.0F ? 0.47F : 1.00F;
             DabyWSClientConfig.beamColorR = br * (0.82F + 0.18F * day);
             DabyWSClientConfig.beamColorG = bg * (0.82F + 0.18F * day);
             DabyWSClientConfig.beamColorB = bb;
