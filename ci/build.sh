@@ -61,18 +61,23 @@ fetch() { # url -> file
 # use it; otherwise the runner fetches the release asset and verifies the
 # hash, aborting on mismatch. (The sandbox cannot download release assets, so
 # a LOCAL build needs the file dropped into delivery/ first; CI needs nothing.)
-BASE_VER="1.9.306"
-BASE_TAG="ds-1.9.306"
-BASE_NAME="devouringstorms-1.9.306-26.2-beta-ds.jar"
+BASE_VER="1.9.100"
+BASE_NAME="dabywitherstormmod-${BASE_VER}-26.2-beta-mcsm.jar"
+BASE_SHA="6adcf07e1ad810703c12cb25d7d135aca7b8f66f7d12c273ad3f00b5abdb6599"
 BASE_LOCAL="delivery/${BASE_NAME}"
-if [ -s "$BASE_LOCAL" ]; then
+if [ -s "$BASE_LOCAL" ] && [[ "$(sha256sum "$BASE_LOCAL" | cut -d' ' -f1)" == "$BASE_SHA" ]]; then
   BASE="$BASE_LOCAL"
-  echo "[build] base jar: ${BASE} (delivery copy)"
+  echo "[build] base jar: ${BASE} (delivery copy, hash verified)"
 else
-  echo "[build] delivery/${BASE_NAME} absent -- fetching the ${BASE_TAG} release asset"
-  fetch "https://github.com/Loganwall111/Lowuuuuuu/releases/download/${BASE_TAG}/${BASE_NAME}" "$BASE_NAME"
+  echo "[build] delivery/${BASE_NAME} absent or wrong hash -- fetching the mcsm-${BASE_VER} release asset"
+  fetch "https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-${BASE_VER}/${BASE_NAME}" "$BASE_NAME"
+  got="$(sha256sum "$DL/$BASE_NAME" | cut -d' ' -f1)"
+  if [[ "$got" != "$BASE_SHA" ]]; then
+    echo "[base] HASH MISMATCH: got ${got}, want ${BASE_SHA}" >&2
+    exit 1
+  fi
   BASE="$DL/$BASE_NAME"
-  echo "[build] base jar: ${BASE} (release asset ${BASE_TAG} verified)"
+  echo "[build] base jar: ${BASE} (release asset, hash verified)"
 fi
 
 # MCSM 1.9.101 -- the COMPILE classpath must not contain stale copies of the
