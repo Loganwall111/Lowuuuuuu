@@ -345,6 +345,9 @@ CS="$FX/cls/assets/minecraft/shaders/core"
 if [ -f "$CS/terrain.fsh" ]; then cp -f "$CS/terrain.fsh" "$CS/block.fsh"; cp -f "$CS/terrain.vsh" "$CS/block.vsh"; fi
 if [ -f "$CS/sky.fsh" ]; then cp -f "$CS/sky.fsh" "$CS/position.fsh"; cp -f "$CS/sky.vsh" "$CS/position.vsh"; fi
 echo "[build] 26.2 shader aliases: block<-terrain position<-sky"
+if [ -d src/main/resources ]; then
+  cp -r src/main/resources/* "$FX/cls/"
+fi
 if [ -d jar-overrides ] && [ -n "$(ls -A jar-overrides 2>/dev/null)" ]; then
   cp -r jar-overrides/* "$FX/cls/"
 fi
