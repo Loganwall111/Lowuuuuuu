@@ -103,7 +103,7 @@ public abstract class McsmGuiExtrasRows {
             // looked like duplicate Devouring Storms rows and made the base
             // config screen feel broken.
             mAdd.invoke(self, mButton.invoke(null,
-                    "Open Devouring Storms " + McsmExtrasConfig.BUILD_VERSION,
+                    "Open Devouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338",
                     "Full Story Mode control panel: atmosphere, shaders, NPCs, storm VFX, world/story toggles.",
                     (Runnable) () -> mcsm$openPanel(self)));
 
