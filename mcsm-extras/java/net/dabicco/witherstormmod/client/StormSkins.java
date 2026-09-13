@@ -100,6 +100,17 @@ public final class StormSkins {
         return phaseHint >= 6.0D ? PHASE6_DEVOURER : CANONICAL_TEXTURE;
     }
 
+    /**
+     * Phase-aware devourer variant: resolves from the entity's ACTUAL phase
+     * instead of the shared hint (which other storms or off-frame ticks can
+     * pollute). Used by the renderer's texture hook so the Phase 6 devourer
+     * body can never render on a stale skin.
+     */
+    public static Identifier devourer(double phase) {
+        setPhaseHint(phase);
+        return phase >= 6.0D ? PHASE6_DEVOURER : CANONICAL_TEXTURE;
+    }
+
     /** Isolated emissive teeth and eye facial glow maps. */
     public static Identifier teethGlow(double phase) {
         setPhaseHint(phase);
