@@ -581,8 +581,10 @@ elif [ ! -f "$P4_JAR" ]; then
 else
   P4_DIS=$(javap -c -classpath "$FX/cls" net.dabicco.witherstormmod.entity.model.WitherStormP4 2>/dev/null || true)
   if [ -n "$P4_DIS" ]; then
-    P4_ADDBOX=$(grep -c "addBox(" <<<"$P4_DIS" || true)
-    P4_PARTS=$(grep -c "addOrReplaceChild(" <<<"$P4_DIS" || true)
+    # javap -c renders method refs as "CubeListBuilder.addBox:(DESC)" — the
+    # colon form, not "addBox(". Count the colon form in the bytecode.
+    P4_ADDBOX=$(grep -c "CubeListBuilder.addBox:" <<<"$P4_DIS" || true)
+    P4_PARTS=$(grep -c "PartDefinition.addOrReplaceChild:" <<<"$P4_DIS" || true)
     P4_RING=$(grep -c "DebrisRing" <<<"$P4_DIS" || true)
     P4_MODE=bytecode
   else
