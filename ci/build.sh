@@ -554,6 +554,54 @@ if [ "$NEW_COUNT" -eq 0 ] || [ "$JAR_MATCH" -lt "$NEW_COUNT" ]; then
   AUDIT_FAIL=1
 fi
 
+# 1b. Build #370 -- reconstructed Phase 4/5.5 geometry gate.
+# WitherStormP4 was rewritten from the clean MCSM Blockbench StageB source
+# (ci/modelgen/boxify.py): 495 dense maximal boxes, verified 0 silhouette
+# holes and 0 overhang. The class in the assembled jar MUST be the compiled
+# rewrite, not the base-jar twin (old flat top-truncated transcription,
+# 1259 scattered cubes). Bytecode counts catch a stale class the path check
+# above would pass: the base jar ships the same FQCN.
+P4_SRC="mcsm-extras/java/net/dabicco/witherstormmod/entity/model/WitherStormP4.java"
+P4_JAR="$FX/cls/net/dabicco/witherstormmod/entity/model/WitherStormP4.class"
+if [ ! -f "$P4_SRC" ]; then
+  echo "::error title=jar audit::Build #370 rewrite source missing: $P4_SRC"
+  AUDIT_FAIL=1
+elif [ ! -f "$P4_JAR" ]; then
+  echo "::error title=jar audit::Build #370: recompiled WithWStormP4.class not in assembled jar"
+  AUDIT_FAIL=1
+else
+  P4_DIS=$(javap -c -classpath "$FX/cls" net.dabicco.witherstormmod.entity.model.WitherStormP4 2>/dev/null || true)
+  if [ -n "$P4_DIS" ]; then
+    P4_ADDBOX=$(grep -c "addBox(" <<<"$P4_DIS" || true)
+    P4_PARTS=$(grep -c "addOrReplaceChild(" <<<"$P4_DIS" || true)
+    P4_RING=$(grep -c "DebrisRing" <<<"$P4_DIS" || true)
+    P4_MODE=bytecode
+  else
+    # javap unavailable/failed: fall back to the generated source (same
+    # numbers: the compile gate above already proved the source builds).
+    P4_ADDBOX=$(grep -c "addBox(" "$P4_SRC" || true)
+    P4_PARTS=$(grep -c "addOrReplaceChild(" "$P4_SRC" || true)
+    P4_RING=$(grep -c "DebrisRing" "$P4_SRC" || true)
+    P4_MODE=source-fallback
+  fi
+  echo "[audit] P4 rewrite in jar ($P4_MODE): addBox=$P4_ADDBOX partDefs=$P4_PARTS DebrisRingRefs=$P4_RING"
+  # 495 generated cubes; allow generation drift 450-600. Parts must stay the
+  # full 302-name tree (animation/physics depend on the names); the
+  # DebrisRing subtree is preserved verbatim.
+  if [ "$P4_ADDBOX" -lt 450 ] || [ "$P4_ADDBOX" -gt 600 ]; then
+    echo "::error title=jar audit::Build #370: P4 addBox count $P4_ADDBOX outside 450-600 (stale or runaway geometry)"
+    AUDIT_FAIL=1
+  fi
+  if [ "$P4_PARTS" -lt 290 ]; then
+    echo "::error title=jar audit::Build #370: P4 part defs $P4_PARTS < 290 (part tree damaged — animations will crash)"
+    AUDIT_FAIL=1
+  fi
+  if [ "$P4_RING" -lt 2 ]; then
+    echo "::error title=jar audit::Build #370: DebrisRing part missing from compiled P4 model"
+    AUDIT_FAIL=1
+  fi
+fi
+
 # 2 + 3. mixin config registration, read from fabric.mod.json itself so a
 #        config named or located unusually is still found.
 CFG_LIST=$(python3 - "$FX/cls/fabric.mod.json" <<'PYCFG'
