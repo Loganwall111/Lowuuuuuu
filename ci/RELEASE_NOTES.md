@@ -1,10 +1,11 @@
-# Devouring Storms 10000.0.0-alpha.338 — Build #364 (restored clean codebase + jar)
+# Devouring Storms 10000.0.0-alpha.338 — Build #365 (repaired Build #358 codebase + jar)
 
-- Restored the stable Build #351 configuration layout: `fabric.mod.json`, `gradle.properties`, and `McsmExtrasScreen.java` come back from the Build #351 commit (custom Devouring Storms layout, not the generic template).
-- Technical build version locked strictly to `10000.0.0-alpha.338` in `VERSION`, `gradle.properties`, and `fabric.mod.json`.
-- Visual title string hardcoded so the in-game UI can never drift: the config-screen header and the "Open Devouring Storms" row now explicitly display `Open Devouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338`.
-- Re-stitched the working model/texture registry from Build #338: phases 1–5 load the smooth solid vanilla black canonical texture map; phase 6 loads the custom 4-quadrant cosmic texture sheet (`phase_4_assets_p6.png`) with its clean emissive (`phase_4_assets_e.png`). No grainy textures, and the `jar-overrides/` set is the intact Build #338 registry.
-- Fresh full compile pass (javac gate + GLSL gate + jar audit all green) deployed as this build.
+- Repaired and force-compiled the Build #358 code layout (`feat: implement native Tattletale energy swirl gloss sheen overlay via GlowRenderTypes framework`, commit `448562f`).
+- Removed the broken native EnergySwirl API call (`glossSwirlRenderType()` / `GlowRenderTypes.translucent` swirl pass) from `StormSkins.java`; the Tattletale gloss sheen now renders through the proven translucent pipeline with UV-offset scrolling only.
+- Root-caused the Build #358 Exit Code 1 failure: the GLSL gate and jar-assembly overlay still pointed at the purged `jar-overrides/` folder, so `shimcheck.py` crashed on the missing shader path. Both now target the consolidated `src/main/resources/assets` tree (verified: GLSL gate 58/58 pass locally).
+- Texture policy locked: Phases 1–5 strictly load the smooth solid vanilla-black canonical map (`witherstormmod:textures/entity/wither_storm/wither_storm.png`); Phase 6 strictly loads the smooth 4-quadrant cosmic atlas (`dabywitherstormmod:textures/entity/phase_4_assets_p6.png`). No grainy textures in the tree.
+- Technical version fixed at `10000.0.0-alpha.338` (`VERSION`, `gradle.properties`, `fabric.mod.json`); the menu option and config screen header explicitly render `Open Devouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338`.
+- Fresh full compile pass (javac gate + GLSL gate + jar audit) deployed as this build.
 
 # 1.9.200 — Sky City haze included in verified build
 

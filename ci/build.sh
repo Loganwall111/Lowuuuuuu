@@ -7,7 +7,7 @@
 # compile step to CI runners, which do).
 #
 # Steps: fetch deps -> GLSL gate -> javac the mcsm-extras sources --release 25
-# -> overlay core shaders + jar-overrides + fresh classes onto the newest
+# -> overlay core shaders + consolidated src assets + fresh classes onto the newest
 # delivery jar -> bump fabric.mod.json version -> zip -> sha256. Output ./out/.
 #
 # 2026-09-05 hardening (compile audit):
@@ -230,8 +230,8 @@ echo "[glsl] shader gate (glslang via shimcheck)"
 chmod +x glslcheck/bin/glslang || true
 GLSL_LOG=/tmp/mcsm-glsl.log
 if python3 glslcheck/shimcheck.py mcsm-core-shaders \
-     jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
-     jar-overrides/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh \
+     src/main/resources/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
+     src/main/resources/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh \
      > "$GLSL_LOG" 2>&1; then
   tail -2 "$GLSL_LOG"
 else
@@ -340,7 +340,15 @@ CS="$FX/cls/assets/minecraft/shaders/core"
 if [ -f "$CS/terrain.fsh" ]; then cp -f "$CS/terrain.fsh" "$CS/block.fsh"; cp -f "$CS/terrain.vsh" "$CS/block.vsh"; fi
 if [ -f "$CS/sky.fsh" ]; then cp -f "$CS/sky.fsh" "$CS/position.fsh"; cp -f "$CS/sky.vsh" "$CS/position.vsh"; fi
 echo "[build] 26.2 shader aliases: block<-terrain position<-sky"
-cp -r jar-overrides/* "$FX/cls/"
+# Build #365: jar-overrides/ was purged and the mod assets were consolidated into
+# src/main/resources/assets (namespaces: dabywitherstormmod, witherstormmod, minecraft).
+# Overlay those consolidated assets onto the base jar instead.
+for NS in src/main/resources/assets/*/; do
+  NSNAME="$(basename "$NS")"
+  mkdir -p "$FX/cls/assets/$NSNAME"
+  cp -r "$NS/." "$FX/cls/assets/$NSNAME/"
+done
+echo "[build] consolidated src assets overlaid onto jar tree"
 # nullglob guard: on a failed javac the class dir is empty and a bare
 # `cp -r /tmp/mcsm-build/*` would die under set -e (that bug ate the jar).
 shopt -s nullglob
