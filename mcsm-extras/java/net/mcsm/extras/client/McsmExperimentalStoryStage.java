@@ -96,9 +96,14 @@ public final class McsmExperimentalStoryStage {
     }
 
     private static float stagePhase() {
-        float phase = McsmNativeSkyRenderer.stormPhase();
-        if (!(phase >= 5.0F)) {
-            return 5.0F;
+        float phase = 5.0F;
+        try {
+            for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData storm : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
+                if (storm.phase > phase) {
+                    phase = storm.phase;
+                }
+            }
+        } catch (Throwable ignored) {
         }
         return Mth.clamp(phase, 5.0F, 7.0F);
     }
