@@ -369,7 +369,7 @@ else
   # MCSM 1.9.109 -- the sandbox can read check ANNOTATIONS (Checks API) but not
   # runner logs or artifacts, so the actual compiler errors have to travel as
   # annotations or the fix loop is blind. First 12 error lines, truncated.
-  { grep -E "error:|symbol:|location:|required:|found:" "$JAVAC_LOG" 2>/dev/null || true; } | \
+  { grep -E "error:|symbol:|location:|required:|found:|OutOfMemory|out of resources|Exception|too large|code too" "$JAVAC_LOG" 2>/dev/null || true; } | \
     head -40 | \
     while IFS= read -r line; do
       echo "::error title=javac::${line:0:400}"
