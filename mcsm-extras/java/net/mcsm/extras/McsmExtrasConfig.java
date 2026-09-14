@@ -98,7 +98,7 @@ public final class McsmExtrasConfig {
     // The three actual Telltale glare/atmosphere images, layered as big
     // slowly-swirling sky shells around every storm (the "3D-like
     // atmospheric effect"). FALSE = off (no glare shells).
-    public static boolean  glareBackdrop = false; // flips ON the moment the 3 real Telltale sheets land (Phase 1 commit)
+    public static boolean  glareBackdrop = true; // 3 real Telltale glare sheets (glare_1/2/3.png) bound to the moving storm origin
     /** Glare shell size multiplier (0.3 - 2.5). */
     public static double   glareBackdropSize = 1.0;
     /** Glare shell opacity multiplier (0.0 - 2.0). */
