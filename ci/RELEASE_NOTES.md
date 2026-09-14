@@ -1,3 +1,18 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.399 — Build #399: per-phase traced-shading body atlases
+
+The baseline bound ONE body atlas (phase_4_assets_p6) to every Phase 1+ storm
+piece, so phases 4-5.9 wore the phase-6 material. McsmStormSkinPhaseAtlasMixin
+now re-routes StormSkins.body/phase6Body/phase4 onto the traced charcoal
+family per phase band, matching the reference frames:
+
+  4.0-5.4  phase_4_assets[_og].png       teal-black traced shading
+  5.5-5.9  phase_4_assets[_og]_p55.png   darker traced shading
+  6.0-6.9  phase_4_assets[_og]_p6.png    blue-black traced (split storm)
+  7+       phase_4_assets[_og]_p7.png
+
+OG/custom profile keeps its _og traced variants exactly as-is (default); the
+emissive/teeth atlases and the halo/beam/sky systems are untouched.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.398 — Build #398: re-based onto the EXACT reference commit (5aa1de7)
 
 The precise reference build was identified: commit 5aa1de7 "carry storm
