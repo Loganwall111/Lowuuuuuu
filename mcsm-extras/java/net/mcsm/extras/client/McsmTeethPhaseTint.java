@@ -16,6 +16,31 @@ import net.minecraft.client.Minecraft;
  */
 public final class McsmTeethPhaseTint {
 
+    /**
+     * BUILD #390 PHASE 2 -- the cosmic blue both the beam lasers and the lower
+     * spotlight nodes are pinned to. #4D4DFF, i.e. 77/255, 77/255, 255/255: a
+     * vibrant blue-violet that reads as "show-accurate" against the Story Mode
+     * frames without tipping into the purple the halo rings already own.
+     */
+    public static final float COSMIC_BLUE_R = 0.302F;
+    public static final float COSMIC_BLUE_G = 0.302F;
+    public static final float COSMIC_BLUE_B = 1.000F;
+
+    /** #4D4DFF as the 0..255 triple the glow pass wants. */
+    public static int[] cosmicBlue() {
+        return new int[] {(int) (COSMIC_BLUE_R * 255.0F + 0.5F),
+                          (int) (COSMIC_BLUE_G * 255.0F + 0.5F),
+                          (int) (COSMIC_BLUE_B * 255.0F + 0.5F)};
+    }
+
+    /** The same colour at a fraction of the intensity, for falloff layers. */
+    public static int[] cosmicBlue(float mul) {
+        int[] c = cosmicBlue();
+        return new int[] {Math.min(255, (int) (c[0] * mul + 0.5F)),
+                          Math.min(255, (int) (c[1] * mul + 0.5F)),
+                          Math.min(255, (int) (c[2] * mul + 0.5F))};
+    }
+
     private McsmTeethPhaseTint() {
     }
 
@@ -57,15 +82,26 @@ public final class McsmTeethPhaseTint {
             DabyWSClientConfig.turquoiseTeethIntensity = inten;
             DabyWSClientConfig.turquoiseTeeth = glow;
 
-            // Tractor beams should follow the same sky/storm family instead of
-            // staying solid pink-purple all day. Keep them soft but phase-aware.
-            float day = 0.55F + 0.45F * (float)Math.sin((mc.level.getGameTime() % 24000L) / 24000.0D * Math.PI * 2.0D);
-            float br = phase >= 7.0F ? 0.42F : (phase >= 6.0F ? 0.30F : (phase >= 5.5F ? 0.78F : 0.62F));
-            float bg = phase >= 7.0F ? 0.96F : (phase >= 6.0F ? 0.64F : (phase >= 5.5F ? 0.52F : 0.30F));
-            float bb = phase >= 7.0F ? 0.86F : (phase >= 6.0F ? 1.00F : (phase >= 5.5F ? 1.00F : 0.95F));
-            DabyWSClientConfig.beamColorR = br * (0.82F + 0.18F * day);
-            DabyWSClientConfig.beamColorG = bg * (0.82F + 0.18F * day);
-            DabyWSClientConfig.beamColorB = bb;
+            // BUILD #390 PHASE 2 -- TRACTOR BEAMS GO COSMIC BLUE.
+            //
+            // The beams used to follow the storm family per phase (magenta at
+            // 5.5, cyan at 6, green-blue at 7). The build note fixes them to a
+            // single vibrant, high-intensity cosmic blue instead:
+            // #4D4DFF == (77, 77, 255) == (0.302, 0.302, 1.0).
+            //
+            // Two things this table must do:
+            //   * stay pinned at #4D4DFF for every phase (the base renderer
+            //     multiplies by its own day-cycle term, so the table is NOT
+            //     day-modulated any more -- that was what shifted the hue),
+            //   * be re-written every tick, because the mod's own config presets
+            //     (PRESET_MCSM / PRESET_LEGACY) reset beamColorR/G/B and would
+            //     otherwise drag the beams back to purple/pink.
+            //
+            // The upper halo rings are untouched -- that is a different pass and
+            // the note is explicit about leaving them alone.
+            DabyWSClientConfig.beamColorR = COSMIC_BLUE_R;
+            DabyWSClientConfig.beamColorG = COSMIC_BLUE_G;
+            DabyWSClientConfig.beamColorB = COSMIC_BLUE_B;
         } catch (Throwable ignored) {
         }
     }

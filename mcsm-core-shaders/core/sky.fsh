@@ -192,6 +192,18 @@ void main() {
         sky += mcsm_horizon_glow(1.0 - up, dayW, duskW);
         sky = mcsm_biome_tint(sky);
 
+        // MCSM build #390 -- FOLDING LERP into the shipped sheets. The three
+        // overworld maps (blue day / lavender night / sunset split) are baked
+        // into MCSM_SHEET_VANILLA by ci/make_sky_lut.py. The row position is the
+        // same day/night/dusk weight triangle vanilla handed us, and the blend
+        // weight rises toward 1.0 as a storm closes in -- the calm sky keeps its
+        // own gradient, but it is now folded into the reference sheets.
+        {
+            float mcsmApproach = mcsm_approach(FogSkyEnd);
+            float mcsmW = mcsm_sheet_w_vanilla(mcsmApproach);
+            sky = mcsm_sheet_fold(sky, mcsm_sheet_vanilla(up, dayW, nightW, duskW), mcsmW);
+        }
+
         // MCSM 1.9.96: AURORA in the mod itself (user ask: "Aurora Borealis to
         // the sky in cold biomes, in the mod as well"). Night-only, gated by a
         // cold-biome bias read off the fog colour (snowy biomes carry a bluer
@@ -229,6 +241,21 @@ void main() {
     vec3 dome = mcsm_storm_dome(up, mcsmP);
     // below the horizon, continue darkening rather than holding one colour
     dome *= mix(0.62, 1.0, clamp(height * 4.0 + 1.0, 0.0, 1.0));
+
+    // MCSM build #390 -- FOLDING LERP into the storm sheets. MCSM_SHEET_STORM
+    // holds eight phase rows baked from the shipped gradient maps:
+    //   5.00 teal | 5.50 purple | 6.00 salmon, plus the timeline rows the
+    // references cover (4.45 green, 5.20 violet, 5.90 pink-lavender, 7.00 dark
+    // red, 8.00 near-black). mcsm_sheet_storm() LERPs the two rows the current
+    // phase sits between, so the dome cross-fades sheet-to-sheet as the storm
+    // evolves, and the approach term pulls the fold in as it closes the last
+    // 1400 blocks. All the additive passes below (lightning, glare blob) still
+    // land on top of the folded result -- the sheets are the backdrop.
+    {
+        float mcsmApproach = mcsm_approach(FogSkyEnd);
+        float mcsmW = mcsm_sheet_w_storm(mcsmP, mcsmApproach);
+        dome = mcsm_sheet_fold(dome, mcsm_sheet_storm(up, mcsmP), mcsmW);
+    }
 
     // MCSM-FLASH: storm lightning. One bright blink with a dim echo every
     // ~4.3 s once the storm is up (phase 5.04-8.1), brighter toward zenith.

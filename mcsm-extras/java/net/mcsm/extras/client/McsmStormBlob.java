@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.dabicco.witherstormmod.client.ClientDistantStormManager;
 import net.dabicco.witherstormmod.client.GlowRenderTypes;
+import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -65,6 +66,11 @@ public final class McsmStormBlob {
             "dabywitherstormmod", "textures/misc/storm_glare.png");
     private static final Identifier WHITE = Identifier.fromNamespaceAndPath(
             "dabywitherstormmod", "textures/misc/storm_white.png");
+    /** BUILD #390 -- the soft radial sprite the base mod's own lower light uses
+     *  (StormGlowRenderer.GLOW_SPRITE). Reusing it keeps the spotlight read
+     *  identical and adds no new texture dependency. */
+    private static final Identifier GLOW_SPRITE = Identifier.fromNamespaceAndPath(
+            "dabywitherstormmod", "textures/entity/tractor_beam.png");
 
     /** The three beam mouths, in billboard units of baseR (x right, y up). */
     private static final float[] MOUTH_X = { -0.30F, 0.00F, 0.30F };
@@ -98,6 +104,135 @@ public final class McsmStormBlob {
             submitSkyVolume(ctx);
         } catch (Throwable ignored) {
             // an unexpected base-jar surface degrades to no blob, never a crash
+        }
+        try {
+            submitSpotlights(ctx);
+        } catch (Throwable ignored) {
+            // same contract: a visual never breaks the frame
+        }
+    }
+
+    /**
+     * BUILD #390 PHASE 2 -- COSMIC BLUE SPOTLIGHT NODES.
+     *
+     * The base mod's lower spotlight pass is
+     * `WitherStormRenderer.submitNightLight` -> `StormGlowRenderer.submitLight`
+     * with three lavender-white layers
+     * (`NIGHT_LAYER_COLOURS {{240,232,255},{210,185,255},{178,140,255}}`,
+     * sizes {0.45,0.75,1.0}, alphas {0.85,0.45,0.22}, radius 26+9*(phase-4),
+     * centre (0, r*0.55, 0) + view*(r*0.9)). Those constants live in the sealed
+     * base jar, so the only way to change their colour is to draw the light
+     * ourselves -- which is what this does, at the same place, at the same size,
+     * in #4D4DFF.
+     *
+     * Shape: a vertical stack of camera-facing discs tracing the storm's
+     * underside plus the pooled light where the beams land, i.e. the "spotlight
+     * nodes" the frames show hanging below the mass. The halo rings ABOVE the
+     * storm are not touched -- they belong to the sky-volume pass and to
+     * McsmPhaseSky, and the build note is explicit about leaving them alone.
+     */
+    private static void submitSpotlights(LevelRenderContext ctx) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        McsmExtrasConfig.load();
+        if (!McsmExtrasConfig.cosmicSpotlights) return;
+        float strength = (float) Mth.clamp(DabyWSClientConfig.stormGlowStrength, 0.0, 4.0);
+        if (strength <= 0.01F) return;
+
+        Vec3 cam = ctx.levelState().cameraRenderState.pos;
+        ClientDistantStormManager.StormData best = null;
+        double bestD = Double.MAX_VALUE;
+        for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
+            if (d.phase < 4.0F) continue;
+            double dd = cam.subtract(d.dispX, d.dispY, d.dispZ).lengthSqr();
+            if (dd < bestD) { bestD = dd; best = d; }
+        }
+        if (best == null) return;
+        double dist = Math.sqrt(bestD);
+        if (dist < 1.0D || dist > 2800.0D) return;
+
+        float phase = best.phase;
+        // Base-mod geometry, reproduced: the radius grows with the phase.
+        double radius = 26.0D + 9.0D * Math.max(0.0D, phase - 4.0D);
+        Vec3 storm = new Vec3(best.dispX, best.dispY, best.dispZ);
+        Vec3 view = storm.subtract(cam).scale(1.0D / dist);
+        // The frames are lit day and night; the base only drew this at night.
+        // 0.34 floor keeps the nodes readable in daylight, night takes it to 1.
+        float night = Mth.clamp(net.dabicco.witherstormmod.client.StormGlowRenderer.nightFactor(mc.level), 0.0F, 1.0F);
+        float amount = (0.34F + 0.66F * night) * strength;
+        // Far-away storms dim out instead of popping off at the 2800 fence.
+        amount *= (float) (1.0D - Mth.clamp((dist - 1900.0D) / 900.0D, 0.0D, 1.0D));
+        if (amount <= 0.01F) return;
+
+        // Aim point: the base's centre = (0, r*0.55, 0) + view*(r*0.9) in the
+        // storm's own camera-relative frame, which in world space is the storm
+        // position pushed toward the viewer.
+        Vec3 centre = storm.add(view.scale(radius * 0.9D)).add(0.0D, radius * 0.55D, 0.0D);
+
+        PoseStack poseStack = ctx.poseStack();
+        SubmitNodeCollector collector = ctx.submitNodeCollector();
+
+        // The stack: four discs down the underside. Sizes/alphas mirror the base
+        // layer set (0.45/0.75/1.0) so the silhouette of the light is unchanged
+        // -- only the colour and the vertical spread are ours.
+        final float[] SIZES = {1.00F, 0.78F, 0.55F, 0.36F};
+        final float[] ALPHAS = {0.60F, 0.46F, 0.30F, 0.18F};
+        for (int i = 0; i < SIZES.length; i++) {
+            // top disc sits near the body, the rest march down toward the ground
+            double dy = -radius * (0.95D * i / (SIZES.length - 1.0D)) + radius * 0.30D;
+            Vec3 at = centre.add(0.0D, dy, 0.0D);
+            int alpha = (int) (Mth.clamp(ALPHAS[i] * amount, 0.0F, 1.0F) * 255.0F);
+            if (alpha <= 2) continue;
+            // inner discs run hotter: the beam mouths above are the brightest
+            float mul = 1.0F - 0.30F * (i / (float) (SIZES.length - 1));
+            int[] c = McsmTeethPhaseTint.cosmicBlue(mul);
+            final double rr = radius * SIZES[i];
+            final int[] cc = c;
+            final int aa = alpha;
+            collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(GLOW_SPRITE),
+                    (pose, consumer) -> {
+                        Vec3 upHint = Math.abs(view.y) > 0.98D
+                                ? new Vec3(1.0D, 0.0D, 0.0D) : new Vec3(0.0D, 1.0D, 0.0D);
+                        Vec3 right = view.cross(upHint).normalize();
+                        Vec3 up = right.cross(view).normalize();
+                        Vec3 rx = right.scale(rr);
+                        Vec3 uy = up.scale(rr);
+                        vertex(pose, consumer, at.subtract(rx).subtract(uy), 0.0F, 0.0F, cc[0], cc[1], cc[2], aa);
+                        vertex(pose, consumer, at.add(rx).subtract(uy), 1.0F, 0.0F, cc[0], cc[1], cc[2], aa);
+                        vertex(pose, consumer, at.add(rx).add(uy), 1.0F, 1.0F, cc[0], cc[1], cc[2], aa);
+                        vertex(pose, consumer, at.subtract(rx).add(uy), 0.0F, 1.0F, cc[0], cc[1], cc[2], aa);
+                    });
+        }
+
+        // Ground pool: where the beams land, a wide flat wash of the same blue.
+        double bodyR = bodyRadius(phase);
+        Vec3 ground = new Vec3(storm.x, storm.y - bodyR * 1.05D, storm.z);
+        Vec3 toGround = ground.subtract(cam);
+        double gd = toGround.length();
+        if (gd > 1.0D) {
+            Vec3 gv = toGround.scale(1.0D / gd);
+            int ga = (int) (Mth.clamp(0.42F * amount, 0.0F, 1.0F) * 255.0F);
+            if (ga > 2) {
+                int[] c = McsmTeethPhaseTint.cosmicBlue(0.62F);
+                final Vec3 gat = ground;
+                final Vec3 gv2 = gv;
+                final double gr = bodyR * 0.85D;
+                final int[] cc = c;
+                final int aav = ga;
+                collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(GLOW_SPRITE),
+                        (pose, consumer) -> {
+                            Vec3 upHint = Math.abs(gv2.y) > 0.98D
+                                    ? new Vec3(1.0D, 0.0D, 0.0D) : new Vec3(0.0D, 1.0D, 0.0D);
+                            Vec3 right = gv2.cross(upHint).normalize();
+                            Vec3 up = right.cross(gv2).normalize();
+                            Vec3 rx = right.scale(gr);
+                            Vec3 uy = up.scale(gr * 0.42D);
+                            vertex(pose, consumer, gat.subtract(rx).subtract(uy), 0.0F, 0.0F, cc[0], cc[1], cc[2], aav);
+                            vertex(pose, consumer, gat.add(rx).subtract(uy), 1.0F, 0.0F, cc[0], cc[1], cc[2], aav);
+                            vertex(pose, consumer, gat.add(rx).add(uy), 1.0F, 1.0F, cc[0], cc[1], cc[2], aav);
+                            vertex(pose, consumer, gat.subtract(rx).add(uy), 0.0F, 1.0F, cc[0], cc[1], cc[2], aav);
+                        });
+            }
         }
     }
 

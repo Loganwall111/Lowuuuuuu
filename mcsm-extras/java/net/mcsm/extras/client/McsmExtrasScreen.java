@@ -11,6 +11,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import org.joml.Matrix3x2fStack;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,14 +27,42 @@ import java.util.function.DoubleSupplier;
  *
  * 26.2 GUI refactor uses extractRenderState(GuiGraphicsExtractor,...)
  * and exposes screen switching through Minecraft.setScreenAndShow(...).
+ *
+ * BUILD #390 (phase 1) ports the two premium UI pieces onto this stable
+ * framework:
+ *   * a vertical CHAPTER RAIL down the left edge — diamond nodes on a hairline
+ *     track, hover/active states, click-to-jump to that chapter (the panel is
+ *     one long scroll, the rail is the vertical navigation), and
+ *   * DIAMOND-DOT SLIDERS — every slider handle is a rotated square drawn
+ *     through the extractor's pose stack, with a cosmic-blue fill on the track.
+ * Both are drawn with the exact primitive set already proven in this codebase
+ * (fill / fillGradient / text / pose() pushMatrix-translate-rotate-scale-pop),
+ * and no widget is re-implemented from a 26.1-era signature.
  */
 public final class McsmExtrasScreen extends Screen {
+
+    private static final int RAIL_X = 5;
+    private static final int RAIL_W = 12;
+    private static final int RAIL_TOP = 30;
+    private static final int RAIL_BOTTOM_PAD = 40;
+
+    /** A chapter anchor on the rail: a label plus the panel row it starts at. */
+    private static final class Chapter {
+        final String label;
+        int y;
+        Chapter(String label, int y) {
+            this.label = label;
+            this.y = y;
+        }
+    }
 
     private final Screen parent;
     private final List<AbstractWidget> chrome = new ArrayList<>();
     private final Map<AbstractWidget, Integer> baseY = new HashMap<>();
+    private final List<Chapter> chapters = new ArrayList<>();
     private int scrollPx = 0;
     private int contentBottom = 0;
+    private int railHover = -1;
 
     public McsmExtrasScreen(Screen parent) {
         super(Component.literal("MCSM Storm Control Panel"));
@@ -44,13 +74,14 @@ public final class McsmExtrasScreen extends Screen {
         this.clearWidgets();
         this.chrome.clear();
         this.baseY.clear();
+        this.chapters.clear();
         this.contentBottom = 0;
         McsmExtrasConfig.load();
 
         int rowH = 22;
         int gap = 10;
         int colW = Math.min(250, Math.max(120, (this.width - 54 - gap) / 2));
-        int left = 26;
+        int left = 34;   // clears the chapter rail
         int top = 36;
         final int fColW = colW;
 
@@ -65,12 +96,15 @@ public final class McsmExtrasScreen extends Screen {
 
         // ---- Column 1: Visuals, Atmosphere & Shaders ------------------------
         int r1 = 1;
+        chapter("VISUALS", top + 1 * rowH);
         addSlider(0, r1++, fColW, gap, left, top, rowH, "Glare Size", "%.2fx",
                 0.25, 3.05, () -> McsmExtrasConfig.glareSize, v -> McsmExtrasConfig.glareSize = v);
         addSlider(0, r1++, fColW, gap, left, top, rowH, "Smudge Scale", "%.2fx",
                 0.10, 2.00, () -> McsmExtrasConfig.smudgeScale, v -> McsmExtrasConfig.smudgeScale = v);
         addToggle(0, r1++, fColW, gap, left, top, rowH, "Non-Euclidean Glare",
                 () -> McsmExtrasConfig.glareNonEuclidean, v -> McsmExtrasConfig.glareNonEuclidean = v);
+        addToggle(0, r1++, fColW, gap, left, top, rowH, "Cosmic Blue Spotlights",
+                () -> McsmExtrasConfig.cosmicSpotlights, v -> McsmExtrasConfig.cosmicSpotlights = v);
         addSlider(0, r1++, fColW, gap, left, top, rowH, "Night Navy Opacity", "%.2f",
                 0.0, 1.0, () -> McsmExtrasConfig.nightSkyOpacity, v -> McsmExtrasConfig.nightSkyOpacity = v);
         addSlider(0, r1++, fColW, gap, left, top, rowH, "Phase 5.5 Threshold", "%.2f",
@@ -81,6 +115,7 @@ public final class McsmExtrasScreen extends Screen {
                 0.0, 1.0, () -> McsmExtrasConfig.cloudAlpha, v -> McsmExtrasConfig.cloudAlpha = v);
         addSlider(0, r1++, fColW, gap, left, top, rowH, "Cloud Speed", "%.2fx",
                 0.0, 3.0, () -> McsmExtrasConfig.cloudSpeed, v -> McsmExtrasConfig.cloudSpeed = v);
+        chapter("ATMOSPHERE", top + r1 * rowH);
         addToggle(0, r1++, fColW, gap, left, top, rowH, "In-Mod Aurora",
                 () -> McsmExtrasConfig.auroraEnabled, v -> McsmExtrasConfig.auroraEnabled = v);
         addToggle(0, r1++, fColW, gap, left, top, rowH, "Aurora Ribbons (4-Color)",
@@ -101,6 +136,7 @@ public final class McsmExtrasScreen extends Screen {
                 () -> McsmExtrasConfig.waterGodRays, v -> McsmExtrasConfig.waterGodRays = v);
         addToggle(0, r1++, fColW, gap, left, top, rowH, "End Sky Vortex & Rip",
                 () -> McsmExtrasConfig.endSkyVortex, v -> McsmExtrasConfig.endSkyVortex = v);
+        chapter("LIGHTING", top + r1 * rowH);
         addToggle(0, r1++, fColW, gap, left, top, rowH, "Beacon Luminous Glow",
                 () -> McsmExtrasConfig.beaconGlow, v -> McsmExtrasConfig.beaconGlow = v);
         addToggle(0, r1++, fColW, gap, left, top, rowH, "Nether & End Portal Lights",
@@ -130,6 +166,7 @@ public final class McsmExtrasScreen extends Screen {
                 () -> McsmExtrasConfig.dustWaves, v -> McsmExtrasConfig.dustWaves = v);
         addToggle(1, r2++, fColW, gap, left, top, rowH, "Reality Tear",
                 () -> McsmExtrasConfig.realityTear, v -> McsmExtrasConfig.realityTear = v);
+        chapter("STORY VFX", top + r2 * rowH + 14);
         addToggle(1, r2++, fColW, gap, left, top, rowH, "Obliterate Flash",
                 () -> McsmExtrasConfig.obliterateFlash, v -> McsmExtrasConfig.obliterateFlash = v);
         addToggle(1, r2++, fColW, gap, left, top, rowH, "Obliterate Kicks Players",
@@ -148,6 +185,7 @@ public final class McsmExtrasScreen extends Screen {
                 () -> McsmExtrasConfig.enableRiseFx, v -> McsmExtrasConfig.enableRiseFx = v);
         addToggle(1, r2++, fColW, gap, left, top, rowH, "Counterclockwise Spiral",
                 () -> McsmExtrasConfig.spiralCounterClockwise, v -> McsmExtrasConfig.spiralCounterClockwise = v);
+        chapter("AI & WORLD", top + r2 * rowH + 14);
         addToggle(1, r2++, fColW, gap, left, top, rowH, "Force MCSM Look",
                 () -> McsmExtrasConfig.forceMcsmLook, v -> McsmExtrasConfig.forceMcsmLook = v);
         addToggle(1, r2++, fColW, gap, left, top, rowH, "Force MCSM World",
@@ -176,6 +214,21 @@ public final class McsmExtrasScreen extends Screen {
                 .bounds(this.width / 2 - 100, this.height - 28, 200, 20).build();
         this.addWidget(done);
         this.chrome.add(done);
+    }
+
+    /**
+     * Record a rail anchor. `y` is the panel y of the chapter's first row
+     * (already including the column offset), so clicking a node scrolls that
+     * chapter to the top of the viewport.
+     */
+    private void chapter(String label, int y) {
+        for (Chapter c : this.chapters) {
+            if (c.label.equals(label)) {
+                c.y = y;
+                return;
+            }
+        }
+        this.chapters.add(new Chapter(label, y));
     }
 
     private static Component toggleLabel(String label, boolean on) {
@@ -210,7 +263,22 @@ public final class McsmExtrasScreen extends Screen {
         this.contentBottom = Math.max(this.contentBottom, y + 20);
     }
 
+    /**
+     * BUILD #390 -- the diamond-dot slider.
+     *
+     * AbstractSliderButton still owns the value/drag plumbing (setValueFromMouse
+     * / onDrag / mouseClicked are not touched), but the drawing is ours: a thin
+     * recessed track, a cosmic-blue fill up to the value, and a rotated-square
+     * handle with a hot white core. Rotation goes through the extractor's own
+     * pose stack, which is the exact mechanism the shipped HUD terminal already
+     * uses for its scaled item icons.
+     */
     private static final class Slider extends AbstractSliderButton {
+        private static final int DIAMOND = 0xFF4D4DFF;
+        private static final int DIAMOND_HOT = 0xFFEAF0FF;
+        private static final int TRACK = 0x88120A1E;
+        private static final int TRACK_FILL = 0xCC6A8FF7;
+
         private final String label;
         private final String fmt;
         private final double lo;
@@ -250,6 +318,47 @@ public final class McsmExtrasScreen extends Screen {
             McsmExtrasConfig.save();
             McsmGate.reset();
         }
+
+        @Override
+        public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+            int x = this.getX();
+            int y = this.getY();
+            int w = this.getWidth();
+            int h = this.getHeight();
+            int cy = y + h / 2;
+
+            // track + fill up to the handle
+            g.fill(x, cy - 2, x + w, cy + 2, TRACK);
+            int fillTo = x + (int) Math.round(this.value * w);
+            if (fillTo > x) {
+                g.fill(x, cy - 2, fillTo, cy + 2, TRACK_FILL);
+            }
+            g.fill(x, cy - 2, x + w, cy - 1, 0x33FFFFFF);
+            g.fill(x, cy + 1, x + w, cy + 2, 0x66000000);
+
+            // diamond handle
+            int hx = clampInt(fillTo, x + 2, x + w - 2);
+            Matrix3x2fStack pose = g.pose();
+            pose.pushMatrix();
+            pose.translate(hx, cy);
+            pose.rotate((float) (Math.PI / 4.0));
+            boolean hot = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+            g.fill(-5, -5, 5, 5, 0xAA05030A);
+            g.fill(-4, -4, 4, 4, DIAMOND);
+            if (hot) {
+                g.fill(-2, -2, 2, 2, DIAMOND_HOT);
+            }
+            pose.popMatrix();
+
+            // label centred in the track (the vanilla slider look, kept)
+            var font = Minecraft.getInstance().font;
+            String text = this.getMessage().getString();
+            g.centeredText(font, text, x + w / 2, y + h / 2 - 4, 0xFFFFFFFF);
+        }
+
+        private static int clampInt(int v, int lo, int hi) {
+            return v < lo ? lo : (v > hi ? hi : v);
+        }
     }
 
     private void applyScrollLayout() {
@@ -273,6 +382,88 @@ public final class McsmExtrasScreen extends Screen {
         return true;
     }
 
+    /**
+     * BUILD #390 -- the chapter rail's click target. A rail entry scrolls the
+     * panel so that chapter's first row sits at the top of the viewport; the
+     * existing scroll clamp keeps it from overshooting the end.
+     */
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int hit = railHit(mouseX, mouseY);
+        if (hit >= 0) {
+            Chapter c = this.chapters.get(hit);
+            this.scrollPx = Math.max(0, c.y - 36);
+            applyScrollLayout();
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    /** Which rail node is under the cursor, or -1. */
+    private int railHit(double mouseX, double mouseY) {
+        if (mouseX < RAIL_X - 2 || mouseX > RAIL_X + RAIL_W + 2) {
+            return -1;
+        }
+        int y0 = RAIL_TOP;
+        int y1 = this.height - RAIL_BOTTOM_PAD;
+        int n = Math.max(1, this.chapters.size());
+        int step = Math.max(14, (y1 - y0) / n);
+        for (int i = 0; i < this.chapters.size(); i++) {
+            int cy = y0 + i * step + step / 2;
+            if (Math.abs(mouseY - cy) <= step / 2) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void drawChapterRail(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        if (this.chapters.isEmpty()) {
+            return;
+        }
+        int y0 = RAIL_TOP;
+        int y1 = this.height - RAIL_BOTTOM_PAD;
+        int n = this.chapters.size();
+        int step = Math.max(14, (y1 - y0) / n);
+        var font = Minecraft.getInstance().font;
+
+        // hairline track
+        int cyFirst = y0 + step / 2;
+        int cyLast = y0 + (n - 1) * step + step / 2;
+        g.fill(RAIL_X + RAIL_W / 2, cyFirst, RAIL_X + RAIL_W / 2 + 1, cyLast, 0x55C8D4F0);
+
+        // active chapter = the last anchor scrolled past the top of the viewport
+        int active = 0;
+        for (int i = 0; i < n; i++) {
+            if (this.chapters.get(i).y - this.scrollPx <= 40) {
+                active = i;
+            }
+        }
+        this.railHover = railHit(mouseX, mouseY);
+
+        for (int i = 0; i < n; i++) {
+            int cy = y0 + i * step + step / 2;
+            boolean isActive = i == active;
+            boolean isHover = i == this.railHover;
+            int size = isActive ? 5 : (isHover ? 4 : 3);
+            int col = isActive ? 0xFF4D4DFF : (isHover ? 0xFF9FB4D8 : 0x669AA6C0);
+            Matrix3x2fStack pose = g.pose();
+            pose.pushMatrix();
+            pose.translate(RAIL_X + RAIL_W / 2, cy);
+            pose.rotate((float) (Math.PI / 4.0));
+            g.fill(-size, -size, size, size, isActive ? 0xFF05030A : 0x00000000);
+            g.fill(-size + 1, -size + 1, size - 1, size - 1, col);
+            if (isActive) {
+                g.fill(-2, -2, 2, 2, 0xFFEAF0FF);
+            }
+            pose.popMatrix();
+            if (isActive || isHover) {
+                g.text(font, this.chapters.get(i).label, RAIL_X + RAIL_W + 4, cy - 4,
+                        isActive ? 0xFFEAF2FF : 0xFFA0B4D8, true);
+            }
+        }
+    }
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         g.fillGradient(0, 0, this.width, this.height, 0xF0120A1E, 0xF005030A);
@@ -281,8 +472,9 @@ public final class McsmExtrasScreen extends Screen {
         g.fillGradient(0, 0, this.width, 3, 0xFF6A8FF7, 0xFF3F255A);
         g.fillGradient(0, this.height - 3, this.width, this.height, 0xFF3F255A, 0xFF6A8FF7);
         applyScrollLayout();
-        g.text(this.font, "§bStory Mode Controls §8· §7" + McsmExtrasConfig.BUILD_VERSION, 26, 12, 0xFFEAF2FF, false);
-        g.text(this.font, "§8Scroll wheel moves panel. Shift+C opens this anywhere.", 26, 24, 0xFFA0A0A0, false);
+        drawChapterRail(g, mouseX, mouseY);
+        g.text(this.font, "§bStory Mode Controls §8· §7" + McsmExtrasConfig.BUILD_VERSION, 34, 12, 0xFFEAF2FF, false);
+        g.text(this.font, "§8Rail jumps chapters · scroll wheel moves the panel · Shift+C opens this anywhere.", 34, 24, 0xFFA0A0A0, false);
         if (this.contentBottom > this.height - 36) {
             g.centeredText(this.font, "scroll " + this.scrollPx + "/" + Math.max(0, this.contentBottom - (this.height - 36)), this.width - 62, 12, 0xA0A0A0);
         }

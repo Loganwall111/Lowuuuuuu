@@ -15,7 +15,7 @@ import java.util.Properties;
  * Written with defaults on first launch.
  */
 public final class McsmExtrasConfig {
-    public static final String BUILD_VERSION = "1.9.200";
+    public static final String BUILD_VERSION = "1.9.201";
     public static boolean enableTentacleGrab = true;
     public static double  grabIntervalSeconds = 11.0;
     public static boolean enableBeaconStorm = true;
@@ -44,6 +44,11 @@ public final class McsmExtrasConfig {
     public static boolean smokeScreen = true;
     /** Phase 5.5+: purple lightning strikes + purple motes in the sky. */
     public static boolean purpleSky = true;
+
+    /** BUILD #390 -- the cosmic-blue spotlight nodes under the storm body
+     *  (#4D4DFF), re-drawn by McsmStormBlob because the base mod's own lower
+     *  light is lavender-white and lives in the sealed jar. */
+    public static boolean cosmicSpotlights = true;
     /** Dust trails when the storm sweeps blocks. */
     public static boolean dustWaves = true;
     /** Post-death reality tear with the black aurora + corruption spread. */
@@ -171,6 +176,7 @@ public final class McsmExtrasConfig {
             p.setProperty("supernova_rings", String.valueOf(supernovaRings));
             p.setProperty("smoke_screen", String.valueOf(smokeScreen));
             p.setProperty("purple_sky", String.valueOf(purpleSky));
+            p.setProperty("cosmic_spotlights", String.valueOf(cosmicSpotlights));
             p.setProperty("dust_waves", String.valueOf(dustWaves));
             p.setProperty("reality_tear", String.valueOf(realityTear));
             p.setProperty("obliterate_flash", String.valueOf(obliterateFlash));
@@ -269,6 +275,7 @@ public final class McsmExtrasConfig {
             supernovaRings     = bool(p, "supernova_rings", supernovaRings);
             smokeScreen        = bool(p, "smoke_screen", smokeScreen);
             purpleSky          = bool(p, "purple_sky", purpleSky);
+            cosmicSpotlights = bool(p, "cosmic_spotlights", cosmicSpotlights);
             dustWaves          = bool(p, "dust_waves", dustWaves);
             realityTear        = bool(p, "reality_tear", realityTear);
             obliterateFlash    = bool(p, "obliterate_flash", obliterateFlash);

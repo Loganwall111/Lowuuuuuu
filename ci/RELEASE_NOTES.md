@@ -1,3 +1,29 @@
+# 1.9.201 — Build #390: cosmic-blue beams, gradient-sheet sky LERP, premium panel
+
+Build #390 lands the first two of the three sequenced phases on top of the stable DS 7000.0.0 baseline, plus the requested sky assets. Phase 1's model re-initialization is staged next: the panel and slider work is in this jar, the `WitherStormP4` model port follows in its own build so a bad model constant can never take the shader and UI work down with it.
+
+**Phase 2 — cosmic blue spotlights + tractor beams**
+- Tractor beams are pinned to a single vibrant cosmic blue `#4D4DFF` (77,77,255) instead of the old per-phase pink/cyan/green ramp. The table is re-written every client tick, so the mod's own config presets can no longer drag the beams back to purple.
+- The lower spotlight nodes under the storm body are re-drawn in the same cosmic blue by the overlay (`McsmStormBlob`): a four-disc camera-facing stack down the underside plus the pooled light where the beams land, on the base mod's own radii (26 + 9·(phase−4)) and its own soft glow sprite. They now read day and night (0.34 floor, 1.0 at night) because the sampled frames show the nodes lit in daylight too.
+- The upper halo rings are untouched, as specified.
+
+**Phase 3 — native skybox gradient LERP**
+- All six gradient sheets are generated into both asset roots (mod resources and jar overrides) and re-authored from an explicit stop table: storm `phase5_teal`, `phase55` (violet→purple→pink), `phase6` (salmon/ember), side-by-side with vanilla `day`, `night`, `sunset`. Aliases (`p55_purple`, `p6_salmon`, `vanilla_day_blue`, `vanilla_night_lavender`, `vanilla_sunset_split`) point at the same bytes, so either naming resolves.
+- The sky pass now folds into those sheets with a single smooth LERP. `mcsm_visuals.glsl` (and the standalone Story Look `position.fsh`, which cannot include it) carry a baked 8-row × 8-stop table generated from the PNGs by `ci/make_sky_lut.py` — drop a replacement `image_*.png` on the target path, re-run the script, and the tables follow. No new sampler is declared: the `position` pipeline's bind group has no spare slot, and a sampler the pipeline does not bind is a hard Vulkan crash.
+- Storm timeline rows: 4.45 green glare, **5.00 teal**, 5.20 violet, **5.50 purple**, 5.90 pink-lavender, **6.00 salmon**, 7.00 dark red, 8.00 near-black. Adjacent rows cross-fade, so the sky folds sheet-to-sheet as the storm evolves instead of snapping.
+- Vanilla rows follow the same day/night/dusk weight triangle the calm sky already computes, so the overworld cycle slides through blue → lavender → sunset split continuously.
+- A storm-approach term rides the existing 1395..1855 phase carrier slot as a sub-unit fraction, so a closing storm pulls the fold in from 1400 blocks out. An older jar-side writer leaves the fraction at zero and the fold simply rides the phase.
+- Skin: new `cosmic_spotlights` toggle in the control panel, `McsmExtrasConfig` migration unchanged.
+
+**Phase 1 — premium panel controls (model pass pending)**
+- `McsmExtrasScreen` gains the vertical chapter rail: diamond nodes on a hairline track down the left edge, hover and active states, click-to-jump to Visuals / Atmosphere / Lighting / Story VFX / AI & World, labels shown for the active and hovered node.
+- Every slider handle is now a rotated diamond with a hot white core, drawn through the extractor's pose stack; the track is recessed with a cosmic-blue fill to the handle. Value/drag plumbing is untouched.
+- A `Cosmic Blue Spotlights` switch joins the Visuals group.
+
+**Notes**
+- CI: shimcheck 56/56 on `mcsm-core-shaders`; Story Look `position.fsh` expands and compiles clean under glslang in both pack copies; `ci/make_sky_lut.py --check` gates the baked tables against the shipped sheets.
+- Previous sheets are backed up under `ci/legacy_sky_sheets/` (outside the shipped trees) so the pre-390 look is one copy away.
+
 # 1.9.200 — Sky City haze included in verified build
 
 - Includes the high-altitude Sky City blue haze blend in the published jar, ramping in above tall build heights without changing normal ground-level play.
