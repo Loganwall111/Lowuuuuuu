@@ -31,6 +31,14 @@ public final class McsmEarlyStormBackdrop {
     }
 
     public static void submit(LevelRenderContext context) {
+        // Build #384: purged with the legacy stage merge - early phases keep
+        // the strict vanilla sky (no backdrop disc), Phase 4+ glare comes
+        // from McsmStormBlob / McsmGlareBackdrop only.
+        return;
+    }
+
+    @SuppressWarnings("unused")
+    private static void submitLegacy(LevelRenderContext context) {
         if (context == null || !DabyWSClientConfig.stormBackdropQuad
                 || !DabyWSClientConfig.stormBackdrop) {
             return;

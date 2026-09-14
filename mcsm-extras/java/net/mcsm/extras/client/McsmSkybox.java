@@ -131,8 +131,12 @@ public final class McsmSkybox {
             } catch (Throwable ignored) {
                 // entity scan is best-effort; the packet manager still works
             }
-            int target = (!McsmExtrasConfig.skyboxEnabled || bestPhase < 0.0F)
-                    ? 0 : setForPhase(Mth.clamp(bestPhase, 1.0F, 9.0F));
+            // Build #384 (user directive): early phases render the standard
+            // vanilla day overworld STRICTLY by default - the sphere only
+            // ignites from Phase 4 (teal haze shell) onward, with the
+            // lavender/purple chaos skies locked to the later evolution.
+            int target = (!McsmExtrasConfig.skyboxEnabled || bestPhase < 3.95F)
+                    ? 0 : setForPhase(Mth.clamp(bestPhase, 4.0F, 9.0F));
 
             // start a new cross-fade when the target changes
             if (target != setB) {

@@ -83,16 +83,11 @@ public final class McsmExperimentalStoryStage {
             return;
         }
 
-        PoseStack poseStack = ctx.poseStack();
-        SubmitNodeCollector collector = ctx.submitNodeCollector();
-        Vec3 center = stageCenter(level);
-        Vec3 camera = ctx.levelState().cameraRenderState.pos;
-        float phase = stagePhase();
-
-        RenderType shell = GlowRenderTypes.translucent(WHITE);
-        submitDome(poseStack, collector, shell, center, phase, cameraOutside(level, camera));
-        submitPadAndEdge(poseStack, collector, shell, center, cameraOutside(level, camera));
-        submitPaperMountains(poseStack, collector, shell, center, camera, phase);
+        // Build #384: LEGACY STAGE MERGE SCRUBBED. The hardcoded dome / pad /
+        // paper-mountain shell is purged - it resurfaced as the black ceiling
+        // box glitch over the early-phase sky. horizonColor() stays for the
+        // palette API; only the world-space stage geometry is removed.
+        return;
     }
 
     private static float stagePhase() {

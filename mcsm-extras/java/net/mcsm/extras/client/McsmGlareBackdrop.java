@@ -18,6 +18,12 @@ import net.mcsm.extras.McsmExtrasConfig;
 /**
  * Build #375 -- the REAL Telltale glare backdrops.
  *
+ * Build #384 (phase-3 lock, verified): the glare_1/2/3 sheets stay pinned
+ * strictly to the moving entity vector (storm dispX/dispY/dispZ origin),
+ * world-space quads completely separate from the background skybox canvas.
+ * They ignite with Phase 4 only; the McsmExtrasScreen scrolling chapter
+ * rail + diamond-dot sliders remain fully active.
+ *
  * The user supplied the three actual glare/atmosphere images from the
  * Telltale game (used EXACTLY as given, never regenerated):
  *
@@ -70,7 +76,10 @@ public final class McsmGlareBackdrop {
             Identifier[] textures = {TEAL, PURPLE, BLOOM};
             for (ClientDistantStormManager.StormData storm : ClientDistantStormManager.all()) {
                 float phase = storm.phase;
-                if (phase < 1.0F) {
+                // Build #384: the teal glare matrix ignites strictly with
+                // Phase 4 - nothing rides the sky during the calm early
+                // phases (vanilla sky renders by default there).
+                if (phase < 3.9F) {
                     continue;
                 }
                 Vec3 centre = new Vec3(storm.dispX, storm.dispY, storm.dispZ);
