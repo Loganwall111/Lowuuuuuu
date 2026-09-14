@@ -71,14 +71,14 @@ public final class StoryModeSkyTint {
    }
 
    public static float fogStrength() {
-      return DabyWSClientConfig.storyModeSky ? Mth.clamp((float)DabyWSClientConfig.storyModeFogStrength, 0.0F, 1.0F) : 0.0F;
+      return 0.0F;
    }
 
    public static float strength() {
-      return DabyWSClientConfig.storyModeSky ? Mth.clamp((float)DabyWSClientConfig.storyModeSkyStrength, 0.0F, 1.0F) : 0.0F;
+      return 0.0F;
    }
 
    public static float lightStrength() {
-      return DabyWSClientConfig.storyModeLighting ? Mth.clamp((float)DabyWSClientConfig.storyModeLightingStrength, 0.0F, 1.0F) : 0.0F;
+      return 0.0F;
    }
 }

@@ -118,25 +118,15 @@ public final class StoryModeSkyTint {
    }
 
    public static float fogStrength() {
-      float base = DabyWSClientConfig.storyModeSky
-            ? Mth.clamp((float)DabyWSClientConfig.storyModeFogStrength * 0.42F, 0.0F, 0.42F) : 0.0F;
-      try {
-         float b = McsmStormAtmosphere.skyBlend(TMP);
-         float skyCity = skyCityBlend();
-         // storm fog denser; high-altitude Sky City adds clean blue haze.
-         return Mth.clamp(base + b * 0.35F + skyCity * 0.28F, 0.0F, 0.85F);
-      } catch (Throwable t) {
-         return base;
-      }
+      return 0.0F;
    }
 
    public static float strength() {
-      return DabyWSClientConfig.storyModeSky
-            ? Mth.clamp((float)DabyWSClientConfig.storyModeSkyStrength, 0.0F, 1.0F) : 0.0F;
+      return 0.0F;
    }
 
    public static float lightStrength() {
-      return DabyWSClientConfig.storyModeLighting
-            ? Mth.clamp((float)DabyWSClientConfig.storyModeLightingStrength, 0.0F, 1.0F) : 0.0F;
+      return 0.0F;
    }
+
 }

@@ -64,15 +64,19 @@ public final class StormPresenceFX {
          float gt = (float)(mc.level.getGameTime() % 240000L) + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
          float nowSec = gt * 0.05F;
          Vec3 cam = ctx.levelState().cameraRenderState.pos;
+         net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData owner =
+            net.dabicco.witherstormmod.client.ClientDistantStormManager.nearestCustomWeather(cam);
+         if (owner == null) return;
          PoseStack poseStack = ctx.poseStack();
          SubmitNodeCollector collector = ctx.submitNodeCollector();
          float[] col = new float[3];
 
          for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
+            if (d != owner) continue;
             float phase = d.phase;
-            Vec3 centre = new Vec3(d.dispX, d.dispY, d.dispZ);
+            Vec3 centre = d.getStormOrigin();
             double bodyR = bodyRadius(phase);
-            if (DabyWSClientConfig.blackGlare && phase >= 4.0F) {
+            if (DabyWSClientConfig.blackGlare && phase >= 5.0F) {
                float strength = (float)DabyWSClientConfig.blackGlareStrength * Mth.clamp((phase - 3.6F) / 0.8F, 0.0F, 1.0F);
                if (strength > 0.004F) {
                   Vec3 view = centre.subtract(cam).normalize();
@@ -105,8 +109,8 @@ public final class StormPresenceFX {
                }
             }
 
-            if (DabyWSClientConfig.atmospherePulse && phase >= 4.5F) {
-               float ramp = Mth.clamp((phase - 4.5F) / 0.6F, 0.0F, 1.0F);
+            if (DabyWSClientConfig.atmospherePulse && phase >= 5.0F) {
+               float ramp = Mth.clamp((phase - 5.0F) / 0.6F, 0.0F, 1.0F);
                float breathe = pulseWave(d.entityId, nowSec);
                float amount = (float)DabyWSClientConfig.pulseStrength * ramp * (0.25F + 0.75F * breathe);
                if (amount > 0.004F) {
@@ -257,8 +261,8 @@ public final class StormPresenceFX {
 
          if (DabyWSClientConfig.glareEjecta) {
             for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
-               if (!(d.phase < 4.5F)) {
-                  float rate = (float)DabyWSClientConfig.ejectaRate * Mth.clamp((d.phase - 4.0F) / 1.8F, 0.15F, 1.0F);
+               if (d.phase >= 5.0F) {
+                  float rate = (float)DabyWSClientConfig.ejectaRate * Mth.clamp((d.phase - 5.0F) / 1.8F, 0.15F, 1.0F);
                   emitAcc += rate * 0.02F;
 
                   while (emitAcc >= 1.0F) {
@@ -275,7 +279,7 @@ public final class StormPresenceFX {
             Vec3 cam = mc.player != null ? mc.player.position() : null;
             if (cam != null) {
                for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData dx : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
-                  if (!(dx.phase < 4.5F)) {
+                  if (dx.phase >= 5.0F) {
                      double dist = cam.distanceTo(new Vec3(dx.dispX, dx.dispY, dx.dispZ));
                      if (dist < best) {
                         best = dist;

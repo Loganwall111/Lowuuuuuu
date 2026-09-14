@@ -21,43 +21,42 @@ public final class StormSkyGradient {
    private StormSkyGradient() {
    }
 
-   public static void update(Vec3 var0) {
-      float var1 = 0.0F;
-      float var2 = 0.0F;
-      float var3 = 0.0F;
-      float var4 = 0.0F;
-
-      for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData var6 : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
-         if (!(var6.phase < 4.5F)) {
-            double var7 = var6.dispX - var0.x;
-            double var9 = var6.dispZ - var0.z;
-            double var11 = var6.dispY - var0.y;
-            double var13 = Math.sqrt(var7 * var7 + var9 * var9);
-            if (!(var13 > 1400.0)) {
-               float var15 = var13 <= 700.0 ? 1.0F : smooth((float)(1.0 - (var13 - 700.0) / 700.0));
-               float var16 = ramp(var6.phase, 4.45F, 4.9F);
-               float var17 = var15 * var16;
-               if (var17 > var1) {
-                  var1 = var17;
-                  var3 = (float)(Math.atan2(var11, Math.max(var13, 1.0)) * (180.0 / Math.PI));
-                  var2 = (float)(Math.atan2(var9, var7) * (180.0 / Math.PI));
-                  var4 = var6.phase;
-               }
-            }
+   public static void update(Vec3 camera) {
+      float selected = 0.0F;
+      float selectedYaw = 0.0F;
+      float selectedPitch = 0.0F;
+      net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData state =
+         ClientDistantStormManager.nearestCustomWeather(camera);
+      if (state != null) {
+         Vec3 origin = state.getStormOrigin();
+         double dx = origin.x - camera.x;
+         double dy = origin.y - camera.y;
+         double dz = origin.z - camera.z;
+         double horizontal = Math.sqrt(dx * dx + dz * dz);
+         if (horizontal <= 1400.0D) {
+            float distanceWeight = horizontal <= 700.0D
+               ? 1.0F : smooth((float) (1.0D - (horizontal - 700.0D) / 700.0D));
+            selected = distanceWeight * ramp(state.phase, 5.0F, 5.12F);
+            selectedYaw = (float) (Math.atan2(dz, dx) * (180.0D / Math.PI));
+            selectedPitch = (float) (Math.atan2(dy, Math.max(horizontal, 1.0D)) * (180.0D / Math.PI));
          }
       }
 
-      strength = strength + (var1 - strength) * 0.05F;
-      if (strength < 0.003F) {
+      if (selected <= 0.0F) {
          strength = 0.0F;
+         phase = 0.0F;
+         active = false;
+         return;
       }
-
-      if (var4 > 0.0F) {
-         phase = var4;
-         yawDeg = var2;
-         pitchDeg = var3;
+      strength += (selected - strength) * 0.05F;
+      if (strength < 0.003F) strength = 0.0F;
+      if (selected > 0.0F) {
+         phase = state.phase;
+         yawDeg = selectedYaw;
+         pitchDeg = selectedPitch;
+      } else if (strength <= 0.0F) {
+         phase = 0.0F;
       }
-
       active = strength > 0.0F;
    }
 

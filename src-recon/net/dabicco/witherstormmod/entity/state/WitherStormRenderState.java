@@ -41,4 +41,9 @@ public class WitherStormRenderState extends LivingEntityRenderState {
    public double snatchRelY;
    public double snatchRelZ;
    public PreviewScene preview;
+
+   /** True storm origin shared by the sky and backdrop controllers. */
+   public Vec3 getStormOrigin() {
+      return new Vec3(this.worldX, this.worldY, this.worldZ);
+   }
 }

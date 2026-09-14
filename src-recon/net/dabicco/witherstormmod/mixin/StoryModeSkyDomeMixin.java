@@ -21,28 +21,20 @@ public class StoryModeSkyDomeMixin {
       at = {@At("TAIL")}
    )
    private void dabyws$storyModeSkyDome(ClientLevel level, float partialTick, Camera camera, SkyRenderState state, CallbackInfo ci) {
-      float s = StoryModeSkyTint.strength();
-      if (!(s <= 0.0F) && level != null) {
-         float[] sky = new float[3];
-         StoryModeSkyTint.skyColor(level.getOverworldClockTime(), sky);
-         state.skyColor = blend(state.skyColor, sky, s);
-         float[] horizon = new float[3];
-         StoryModeSkyTint.horizonColor(level.getOverworldClockTime(), horizon);
-         state.sunriseAndSunsetColor = blend(state.sunriseAndSunsetColor, horizon, s * 0.85F);
-         StormSkyDome.update(camera.position());
-         float storm = StormSkyDome.strength();
-         if (storm > 0.0F) {
-            float[] sc = new float[3];
-            StormSkyDome.skyColor(sc);
-            state.skyColor = blend(state.skyColor, sc, storm * 0.45F);
-            float core = StormSkyDome.coreStrength() * storm * 0.35F;
-            if (core > 0.0F) {
-               state.skyColor = blend(state.skyColor, new float[]{0.0F, 0.0F, 0.0F}, core);
-            }
-
-            state.sunriseAndSunsetColor = blend(state.sunriseAndSunsetColor, sc, storm * 0.6F);
-         }
+      if (level == null || camera == null || state == null) {
+         return;
       }
+      // Vanilla day/night gradients and cloud layers remain authoritative in
+      // phases 1-4. Only the one storm-origin overlay may blend over them.
+      StormSkyDome.update(camera.position());
+      float storm = StormSkyDome.strength();
+      if (storm <= 0.0F) {
+         return;
+      }
+      float[] sc = new float[3];
+      StormSkyDome.skyColor(sc);
+      state.skyColor = blend(state.skyColor, sc, storm);
+      state.sunriseAndSunsetColor = blend(state.sunriseAndSunsetColor, sc, storm);
    }
 
    private static int blend(int argb, float[] rgb, float amount) {

@@ -33,7 +33,7 @@ public final class StormFog {
          double best = Double.MAX_VALUE;
 
          for (Entity entity : mc.level.entitiesForRendering()) {
-            if (entity instanceof WitherStormEntity) {
+            if (entity instanceof WitherStormEntity storm && storm.getPhase() >= 5.0D) {
                double d = entity.distanceToSqr(cam.x, cam.y, cam.z);
                if (d < best) {
                   best = d;
@@ -42,9 +42,11 @@ public final class StormFog {
          }
 
          for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData s : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
-            double dx = s.x - cam.x;
-            double dy = s.y - cam.y;
-            double dz = s.z - cam.z;
+            if (!net.dabicco.witherstormmod.client.ClientDistantStormManager.customWeatherActive(s.phase)) continue;
+            Vec3 origin = s.getStormOrigin();
+            double dx = origin.x - cam.x;
+            double dy = origin.y - cam.y;
+            double dz = origin.z - cam.z;
             double d = dx * dx + dy * dy + dz * dz;
             if (d < best) {
                best = d;

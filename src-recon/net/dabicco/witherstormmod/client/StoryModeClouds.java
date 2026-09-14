@@ -52,7 +52,16 @@ public final class StoryModeClouds {
       float r = ARGB.red(color) / 255.0F;
       float g = ARGB.green(color) / 255.0F;
       float b = ARGB.blue(color) / 255.0F;
-      if (DabyWSClientConfig.storyModeClouds && mc.level != null) {
+      net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData owner =
+         mc.level != null && mc.player != null
+            ? net.dabicco.witherstormmod.client.ClientDistantStormManager.nearestCustomWeather(mc.player.position())
+            : null;
+      boolean customStorm = owner != null && owner.getStormOrigin().distanceToSqr(mc.player.position()) <= 1700.0D * 1700.0D;
+      if (!customStorm) {
+         // Vanilla CloudRenderer owns the complete day/night cloud colour.
+         return color;
+      }
+      if (DabyWSClientConfig.storyModeClouds && customStorm) {
          float[] c = new float[3];
          timeOfDayColor(mc.level.getOverworldClockTime(), c);
          float amt = Mth.clamp((float)DabyWSClientConfig.storyModeCloudStrength, 0.0F, 1.0F);

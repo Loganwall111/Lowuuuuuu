@@ -37,6 +37,11 @@ public final class StormCloudDeck {
             float gt = (float)(mc.level.getGameTime() % 240000L) + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
             float nowSec = gt * 0.05F;
             Vec3 cam = ctx.levelState().cameraRenderState.pos;
+            net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData owner =
+               net.dabicco.witherstormmod.client.ClientDistantStormManager.nearestCustomWeather(cam);
+            if (owner == null) {
+               return;
+            }
             PoseStack poseStack = ctx.poseStack();
             SubmitNodeCollector collector = ctx.submitNodeCollector();
             float baseAlpha = mode >= 2 ? 0.16F : 0.105F;
@@ -48,7 +53,7 @@ public final class StormCloudDeck {
                   float[] col = new float[3];
 
                   for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
-                     if (!(d.phase < 1.0F)) {
+                     if (d == owner && d.phase >= 5.0F) {
                         double spread = 130.0 + 90.0 * Math.min((double)d.phase, 6.0);
                         int slabs = Mth.clamp((int)(26.0F * coverage * (mode >= 2 ? 1.7F : 1.0F)), 4, 72);
                         net.dabicco.witherstormmod.client.StormPalettes.cloudColor(d.phase, col);

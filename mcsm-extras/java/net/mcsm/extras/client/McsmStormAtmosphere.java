@@ -23,34 +23,13 @@ public final class McsmStormAtmosphere {
         return t * t * (3.0F - 2.0F * t);
     }
 
-    /** Nearest active storm phase, or 0 if none / far. */
+    /** Shared phase of the one storm owning the atmospheric overlay. */
     public static float nearestPhase() {
         try {
             Minecraft mc = Minecraft.getInstance();
-            if (mc == null || mc.level == null || mc.player == null) {
-                return 0.0F;
-            }
-            float best = 0.0F;
-            double bestD = Double.MAX_VALUE;
-            var pos = mc.player.position();
-            for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-                if (d.phase < 4.0F) {
-                    continue;
-                }
-                double dx = d.dispX - pos.x;
-                double dy = d.dispY - pos.y;
-                double dz = d.dispZ - pos.z;
-                double dd = dx * dx + dy * dy + dz * dz;
-                if (dd < bestD) {
-                    bestD = dd;
-                    best = d.phase;
-                }
-            }
-            // beyond this range the sky/fog is vanilla Story Mode calm again
-            if (bestD > 1700.0 * 1700.0) {
-                return 0.0F;
-            }
-            return best;
+            if (mc == null || mc.level == null || mc.player == null) return 0.0F;
+            ClientDistantStormManager.StormData state = McsmStormOrigin.nearest(mc.player.position());
+            return state == null ? 0.0F : state.phase;
         } catch (Throwable t) {
             return 0.0F;
         }
@@ -60,18 +39,10 @@ public final class McsmStormAtmosphere {
         try {
             Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.level == null || mc.player == null) return 0.0F;
-            double bestD = Double.MAX_VALUE;
-            var pos = mc.player.position();
-            for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-                if (d.phase < 4.0F) continue;
-                double dx = d.dispX - pos.x;
-                double dy = d.dispY - pos.y;
-                double dz = d.dispZ - pos.z;
-                bestD = Math.min(bestD, dx * dx + dy * dy + dz * dz);
-            }
-            if (bestD == Double.MAX_VALUE) return 0.0F;
-            double dist = Math.sqrt(bestD);
-            return 1.0F - Mth.clamp((float)((dist - 900.0D) / 800.0D), 0.0F, 1.0F);
+            ClientDistantStormManager.StormData state = McsmStormOrigin.nearest(mc.player.position());
+            if (state == null) return 0.0F;
+            double distance = McsmStormOrigin.getStormOrigin(state).distanceTo(mc.player.position());
+            return 1.0F - Mth.clamp((float)((distance - 900.0D) / 800.0D), 0.0F, 1.0F);
         } catch (Throwable t) {
             return 0.0F;
         }
@@ -79,11 +50,11 @@ public final class McsmStormAtmosphere {
 
     /**
      * Write storm sky RGB into out[3] when storm owns the sky.
-     * Returns blend 0..1 (0 = pure calm StoryModeSkyTint).
+     * Returns blend 0..1 (0 = pure vanilla overworld sky; 1 = full storm wash).
      */
     public static float skyBlend(float[] out) {
         float p = nearestPhase();
-        if (p < 4.9F) {
+        if (p < 5.0F) {
             return 0.0F;
         }
         // phase colour decks — sampled from the user's uploaded gradient set:
@@ -97,7 +68,7 @@ public final class McsmStormAtmosphere {
         if (tot < 0.02F) {
             return 0.0F;
         }
-        float[] teal = {0.02F, 0.28F, 0.25F};
+        float[] teal = {0.22F, 0.145F, 0.325F};
         float[] purp = {0.26F, 0.10F, 0.36F};
         float[] pink = {0.48F, 0.16F, 0.40F};
         float[] late = {0.34F, 0.12F, 0.48F};
@@ -111,7 +82,7 @@ public final class McsmStormAtmosphere {
         float blend = Mth.clamp(tot, 0.0F, 1.0F) * distanceInfluence();
         // Keep purple/pink as storm atmosphere only; do not repaint the entire
         // normal night sky purple when the player is merely nearby.
-        return blend * 0.46F;
+        return Mth.clamp(blend, 0.0F, 1.0F);
     }
 
     public static void tick() {

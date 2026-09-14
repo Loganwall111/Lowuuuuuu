@@ -124,7 +124,7 @@ public abstract class McsmBlobCarrierPatch {
         int sizeIdx = mcsm$sizeIdx(McsmExtrasConfig.glareSize);
         mcsm$lastSizeIdx = sizeIdx;
 
-        if (gradient && p >= 4.42F && p <= 8.06F) {
+        if (gradient && p >= 5.0F && p <= 8.06F) {
             float yaw = StormSkyGradient.yaw();
             float pitch = StormSkyGradient.pitch();
 

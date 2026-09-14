@@ -22,7 +22,7 @@ public final class StormBackdrop {
    private static final Identifier PURPLE_PINK = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_purple_pink.png");
    private static final Identifier EMBER = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_ember.png");
    private static final int FULL_BRIGHT = 15728880;
-   private static final double SKY_DISTANCE = 220.0;
+   private static final double SKY_DISTANCE = 1200.0;
 
    private StormBackdrop() {
    }
@@ -57,33 +57,33 @@ public final class StormBackdrop {
                PoseStack poseStack = ctx.poseStack();
                SubmitNodeCollector collector = ctx.submitNodeCollector();
                float master = (float)DabyWSClientConfig.stormBackdropStrength;
-               if (!(master <= 0.004F)) {
+               net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData owner =
+                  net.dabicco.witherstormmod.client.ClientDistantStormManager.nearestCustomWeather(cam);
+               if (!(master <= 0.004F) && owner != null) {
                   for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
+                     if (d != owner) continue;
                      float phase = d.phase;
-                     if (!(phase < 3.9F)) {
-                        Vec3 centre = new Vec3(d.dispX, d.dispY, d.dispZ);
+                     if (phase >= 5.0F) {
+                        Vec3 centre = d.getStormOrigin();
                         Vec3 toStorm = centre.subtract(cam);
                         double dist = toStorm.length();
                         if (!(dist < 1.0E-4)) {
                            Vec3 view = toStorm.scale(1.0 / dist);
                            float distFade = 1.0F - Mth.clamp((float)((dist - 1200.0) / 900.0), 0.0F, 1.0F);
                            if (!(distFade <= 0.004F)) {
-                              double bodyR = bodyRadius(phase);
-                              double skyDist = 220.0;
-                              Vec3 at = cam.add(view.scale(skyDist));
-                              double angular = Mth.clamp(bodyR / Math.max(dist, 1.0), 0.012, 0.85);
-                              double baseR = skyDist * angular * 1.5 * (float)DabyWSClientConfig.stormBackdropSize;
+                              Vec3 at = centre.add(view.scale(SKY_DISTANCE));
+                              double baseR = Mth.clamp(24.0 * (float)DabyWSClientConfig.stormBackdropSize, 6.0, 32.0);
                               if (DabyWSClientConfig.stormBackdropGrow && phase > 5.5F) {
                                  baseR *= 1.0F + (phase - 5.5F) * 0.26F;
                               }
 
                               float breathe = 1.0F + 0.03F * Mth.sin(nowSec * 0.045F * (float)DabyWSClientConfig.stormBackdropPulse);
                               baseR *= breathe;
-                              float wBlue = ramp(phase, 3.95F, 4.2F) * (1.0F - ramp(phase, 4.6F, 5.0F));
-                              float wTurq = ramp(phase, 4.45F, 4.9F) * (1.0F - ramp(phase, 6.0F, 6.35F));
-                              float wPurp = ramp(phase, 6.0F, 6.35F);
-                              float wPink = ramp(phase, 6.3F, 7.0F);
-                              float wBlack = ramp(phase, 4.45F, 4.85F);
+                              float wBlue = ramp(phase, 5.0F, 5.12F) * (1.0F - ramp(phase, 4.6F, 5.0F));
+                              float wTurq = ramp(phase, 5.0F, 5.35F) * (1.0F - ramp(phase, 5.35F, 5.65F));
+                              float wPurp = ramp(phase, 5.35F, 5.65F);
+                              float wPink = ramp(phase, 5.65F, 6.2F);
+                              float wBlack = ramp(phase, 5.0F, 5.25F);
                               float a = master * distFade;
                               if (wPink > 0.004F && DabyWSClientConfig.stormBackdropPink) {
                                  quad(

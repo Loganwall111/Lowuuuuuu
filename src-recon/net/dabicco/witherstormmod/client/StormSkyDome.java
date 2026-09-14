@@ -5,12 +5,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 public final class StormSkyDome {
-   private static final float[] TURQ = new float[]{0.094F, 0.184F, 0.18F};
+   private static final float[] TURQ = new float[]{0.220F, 0.145F, 0.325F};
    private static final float[] PURP = new float[]{0.22F, 0.145F, 0.325F};
    private static final float[] MAGE = new float[]{0.463F, 0.102F, 0.404F};
    private static final float[] PINK = new float[]{0.639F, 0.18F, 0.573F};
    private static final float[] RED = new float[]{0.4F, 0.075F, 0.145F};
-   private static final double RANGE = 900.0;
+   private static final double RANGE = 1700.0;
    private static float displayed;
    private static float displayedCore;
    private static float phaseSeen;
@@ -18,44 +18,48 @@ public final class StormSkyDome {
    private StormSkyDome() {
    }
 
-   public static void update(Vec3 var0) {
-      float var1 = 0.0F;
-      float var2 = 0.0F;
-      float var3 = 0.0F;
-
-      for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData var5 : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
-         if (!(var5.phase < 4.5F)) {
-            double var6 = var5.dispX - var0.x;
-            double var8 = var5.dispY - var0.y;
-            double var10 = var5.dispZ - var0.z;
-            double var12 = Math.sqrt(var6 * var6 + var8 * var8 + var10 * var10);
-            if (!(var12 > 900.0)) {
-               double var14 = var12 / 900.0;
-               float var16 = var14 <= 0.55 ? 1.0F : smooth((float)(1.0 - (var14 - 0.55) / 0.45));
-               float var17 = ramp(var5.phase, 4.45F, 4.9F);
-               float var18 = var16 * var17;
-               if (var18 > var1) {
-                  var1 = var18;
-                  var3 = var5.phase;
-               }
-
-               var2 = Math.max(var2, var16 * ramp(var5.phase, 4.45F, 5.2F));
-            }
+   public static void update(Vec3 camera) {
+      float influence = 0.0F;
+      float core = 0.0F;
+      float selectedPhase = 0.0F;
+      net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData state =
+         ClientDistantStormManager.nearestCustomWeather(camera);
+      if (state == null) {
+         displayed = 0.0F;
+         displayedCore = 0.0F;
+         phaseSeen = 0.0F;
+         return;
+      }
+      if (state != null) {
+         Vec3 origin = state.getStormOrigin();
+         double dx = origin.x - camera.x;
+         double dy = origin.y - camera.y;
+         double dz = origin.z - camera.z;
+         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+         if (distance > RANGE) {
+            displayed = 0.0F;
+            displayedCore = 0.0F;
+            phaseSeen = 0.0F;
+            return;
+         }
+         if (distance <= RANGE) {
+            double fraction = distance / RANGE;
+            float distanceWeight = fraction <= 0.55D
+               ? 1.0F : smooth((float) (1.0D - (fraction - 0.55D) / 0.45D));
+            influence = distanceWeight * ramp(state.phase, 5.0F, 5.12F);
+            core = distanceWeight * ramp(state.phase, 5.0F, 5.35F);
+            selectedPhase = state.phase;
          }
       }
 
-      displayed = displayed + (var1 - displayed) * 0.05F;
-      displayedCore = displayedCore + (var2 - displayedCore) * 0.05F;
-      if (displayed < 0.002F) {
-         displayed = 0.0F;
-      }
-
-      if (displayedCore < 0.002F) {
-         displayedCore = 0.0F;
-      }
-
-      if (var3 > 0.0F) {
-         phaseSeen = var3;
+      displayed += (influence - displayed) * 0.05F;
+      displayedCore += (core - displayedCore) * 0.05F;
+      if (displayed < 0.002F) displayed = 0.0F;
+      if (displayedCore < 0.002F) displayedCore = 0.0F;
+      if (selectedPhase > 0.0F) {
+         phaseSeen = selectedPhase;
+      } else if (displayed < 0.01F) {
+         phaseSeen = 0.0F;
       }
    }
 
@@ -73,8 +77,8 @@ public final class StormSkyDome {
 
    public static void skyColor(float[] var0) {
       float var1 = phaseSeen;
-      float var2 = 1.0F - ramp(var1, 5.04F, 5.12F);
-      float var3 = ramp(var1, 5.04F, 5.12F) * (1.0F - ramp(var1, 5.15F, 5.23F));
+      float var2 = 1.0F - ramp(var1, 5.0F, 5.12F);
+      float var3 = ramp(var1, 5.0F, 5.12F) * (1.0F - ramp(var1, 5.15F, 5.23F));
       float var4 = ramp(var1, 5.15F, 5.23F) * (1.0F - ramp(var1, 5.26F, 5.34F));
       float var5 = ramp(var1, 5.26F, 5.34F) * (1.0F - ramp(var1, 5.42F, 5.52F));
       float var6 = ramp(var1, 5.42F, 5.52F) * (1.0F - ramp(var1, 5.96F, 6.1F));

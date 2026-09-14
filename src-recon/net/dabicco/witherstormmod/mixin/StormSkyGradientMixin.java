@@ -28,13 +28,7 @@ public abstract class StormSkyGradientMixin {
       require = 1
    )
    private void dabyws$stormSkyGradient(GpuBufferSlice var1, SkyRenderState var2, CallbackInfo var3) {
-      if (StormSkyGradient.fogStampActive()) {
-         int var4 = StormSkyGradient.color();
-         if (var4 >>> 24 >= 3) {
-            float var5 = (float)Math.toRadians(StormSkyGradient.yaw());
-            PoseStack var6 = new PoseStack();
-            this.skyRenderer.renderSunriseAndSunset(var6, var5, var4);
-         }
-      }
+      // Direction/phase remains available to fog carriers; no second sky
+      // billboard is emitted. McsmStormBlob is the single atmospheric overlay.
    }
 }

@@ -77,62 +77,42 @@ public final class StormSkyDarken {
 
    public static void update(Vec3 cameraPos, float partialTick) {
       float target = 0.0F;
-
-      for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
-         if (!(d.phase < 5.0)) {
-            double dx = d.dispX - cameraPos.x;
-            double dy = d.dispY - cameraPos.y;
-            double dz = d.dispZ - cameraPos.z;
-            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (!(dist > 420.0)) {
-               float phaseRamp = (float)Mth.clamp((d.phase - 5.0) / 0.7999999999999998, 0.0, 1.0);
-               double frac = dist / 420.0;
-               float proximity;
-               if (frac <= 0.6) {
-                  proximity = 1.0F;
-               } else {
-                  float edge = (float)(1.0 - (frac - 0.6) / 0.4);
-                  proximity = edge * edge * (3.0F - 2.0F * edge);
-               }
-
-               float intensity = (float)DabyWSClientConfig.skyDarkenIntensity;
-               target = Math.max(target, proximity * phaseRamp * 0.94F * intensity);
-            }
+      net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData owner =
+         net.dabicco.witherstormmod.client.ClientDistantStormManager.nearestCustomWeather(cameraPos);
+      {
+         Vec3 origin = owner.getStormOrigin();
+         double dx = origin.x - cameraPos.x;
+         double dy = origin.y - cameraPos.y;
+         double dz = origin.z - cameraPos.z;
+         double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+         if (dist <= 420.0D) {
+            float phaseRamp = (float) Mth.clamp((owner.phase - 5.0D) / 0.8D, 0.0D, 1.0D);
+            double frac = dist / 420.0D;
+            float proximity = frac <= 0.6D
+               ? 1.0F
+               : (float) (1.0D - (frac - 0.6D) / 0.4D);
+            proximity = proximity * proximity * (3.0F - 2.0F * proximity);
+            target = proximity * phaseRamp * 0.94F * (float) DabyWSClientConfig.skyDarkenIntensity;
          }
       }
 
-      displayed = displayed + (target - displayed) * 0.06F;
-      if (displayed < 0.002F) {
+      if (owner == null || target <= 0.0F && owner.getStormOrigin().distanceToSqr(cameraPos) > 420.0D * 420.0D) {
          displayed = 0.0F;
-      }
-
-      float phaseTarget = 0.0F;
-
-      for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData dx : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
-         double dxx = dx.dispX - cameraPos.x;
-         double dy = dx.dispY - cameraPos.y;
-         double dz = dx.dispZ - cameraPos.z;
-         double dist = Math.sqrt(dxx * dxx + dy * dy + dz * dz);
-         if (dist <= 620.0 && dx.phase >= 0.5F) {
-            float proximity = 1.0F;
-            if (dist > 240.0) {
-               proximity = (float)(1.0 - (dist - 240.0) / 380.0);
-            }
-
-            if (proximity > 0.05F && dx.phase * proximity > phaseTarget) {
-               phaseTarget = dx.phase * proximity;
-            }
-         }
-      }
-
-      palettePhase = palettePhase + (phaseTarget - palettePhase) * 0.045F;
-      if (palettePhase < 0.01F) {
          palettePhase = 0.0F;
+         return;
       }
+      displayed += (target - displayed) * 0.06F;
+      if (displayed < 0.002F) displayed = 0.0F;
+      float phaseTarget = owner.phase;
+      if (owner != null) {
+         Vec3 origin = owner.getStormOrigin();
+         double dx = origin.x - cameraPos.x;
+         double dz = origin.z - cameraPos.z;
+         double dist = Math.sqrt(dx * dx + dz * dz);
+         if (dist > 620.0D) phaseTarget = 0.0F;
+      }
+      palettePhase += (phaseTarget - palettePhase) * 0.045F;
+      if (palettePhase < 0.01F) palettePhase = 0.0F;
    }
 
-   public static void clear() {
-      displayed = 0.0F;
-      palettePhase = 0.0F;
-   }
 }

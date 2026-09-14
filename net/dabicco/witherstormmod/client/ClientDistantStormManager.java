@@ -108,6 +108,34 @@ public class ClientDistantStormManager {
       return STORMS.values();
    }
 
+   /**
+    * Phases 1 through 4 belong entirely to vanilla's overworld sky and clouds.
+    * The storm owns the environment only once phase 5 has begun.
+    */
+   public static boolean customWeatherActive(float phase) {
+      return phase >= 5.0F;
+   }
+
+   /**
+    * Selects the one state that owns the atmospheric overlay. Every visual
+    * pass uses this selection and the state's getStormOrigin() accessor.
+    */
+   public static StormData nearestCustomWeather(Vec3 camera) {
+      StormData best = null;
+      double bestDistance = Double.MAX_VALUE;
+      for (StormData state : all()) {
+         if (!customWeatherActive(state.phase)) {
+            continue;
+         }
+         double distance = state.getStormOrigin().distanceToSqr(camera);
+         if (distance < bestDistance) {
+            bestDistance = distance;
+            best = state;
+         }
+      }
+      return best;
+   }
+
    public static void remove(int entityId) {
       STORMS.remove(entityId);
    }
@@ -154,5 +182,14 @@ public class ClientDistantStormManager {
       public final double[] sevDispZ = new double[2];
       public final float[] sevDispYaw = new float[2];
       public boolean severedInitialized = false;
+
+      /**
+       * Authoritative packet/entity origin.  Rendering interpolation belongs
+       * to the model pass; atmospheric placement must not drift with a
+       * camera-relative or independently smoothed billboard position.
+       */
+      public Vec3 getStormOrigin() {
+         return new Vec3(this.x, this.y, this.z);
+      }
    }
 }

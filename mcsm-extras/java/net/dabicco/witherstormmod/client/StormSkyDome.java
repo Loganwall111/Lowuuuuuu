@@ -11,14 +11,14 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class StormSkyDome {
    // phase 5 teal
-   private static final float[] TEAL = new float[]{0.060F, 0.280F, 0.270F};
+   private static final float[] TEAL = new float[]{0.220F, 0.145F, 0.325F};
    // phase 5.4 purple
    private static final float[] PURP = new float[]{0.220F, 0.070F, 0.320F};
    // phase 5.5 pink-magenta, restrained so normal night does not become purple
    private static final float[] PINK = new float[]{0.380F, 0.120F, 0.320F};
    // phase 6+ storm-grey with only a little purple undertone
    private static final float[] SIX = new float[]{0.190F, 0.170F, 0.210F};
-   private static final double RANGE = 900.0;
+   private static final double RANGE = 1700.0;
    private static float displayed;
    private static float displayedCore;
    private static float phaseSeen;
@@ -26,48 +26,42 @@ public final class StormSkyDome {
    private StormSkyDome() {
    }
 
-   public static void update(Vec3 var0) {
-      float var1 = 0.0F;
-      float var2 = 0.0F;
-      float var3 = 0.0F;
-
-      for (ClientDistantStormManager.StormData var5 : ClientDistantStormManager.all()) {
-         // only phase 5+ owns the fog/sky tint
-         if (!(var5.phase < 4.95F)) {
-            double var6 = var5.dispX - var0.x;
-            double var8 = var5.dispY - var0.y;
-            double var10 = var5.dispZ - var0.z;
-            double var12 = Math.sqrt(var6 * var6 + var8 * var8 + var10 * var10);
-            if (!(var12 > RANGE)) {
-               double var14 = var12 / RANGE;
-               float var16 = var14 <= 0.55 ? 1.0F : smooth((float)(1.0 - (var14 - 0.55) / 0.45));
-               float var17 = ramp(var5.phase, 4.95F, 5.15F);
-               float var18 = var16 * var17;
-               if (var18 > var1) {
-                  var1 = var18;
-                  var3 = var5.phase;
-               }
-
-               var2 = Math.max(var2, var16 * ramp(var5.phase, 4.95F, 5.35F));
-            }
+   public static void update(Vec3 camera) {
+      float influence = 0.0F;
+      float core = 0.0F;
+      float selectedPhase = 0.0F;
+      net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData state =
+         net.mcsm.extras.client.McsmStormOrigin.nearest(camera);
+      if (state == null) {
+         displayed = 0.0F;
+         displayedCore = 0.0F;
+         phaseSeen = 0.0F;
+         return;
+      }
+      if (state != null) {
+         Vec3 origin = net.mcsm.extras.client.McsmStormOrigin.getStormOrigin(state);
+         double distance = origin.distanceTo(camera);
+         if (distance > RANGE) {
+            displayed = 0.0F;
+            displayedCore = 0.0F;
+            phaseSeen = 0.0F;
+            return;
+         }
+         if (distance <= RANGE) {
+            double fraction = distance / RANGE;
+            float distanceWeight = fraction <= 0.55D
+               ? 1.0F : smooth((float) (1.0D - (fraction - 0.55D) / 0.45D));
+            influence = distanceWeight * ramp(state.phase, 5.0F, 5.12F);
+            core = distanceWeight * ramp(state.phase, 5.0F, 5.35F);
+            selectedPhase = state.phase;
          }
       }
-
-      displayed = displayed + (var1 - displayed) * 0.05F;
-      displayedCore = displayedCore + (var2 - displayedCore) * 0.05F;
-      if (displayed < 0.002F) {
-         displayed = 0.0F;
-      }
-
-      if (displayedCore < 0.002F) {
-         displayedCore = 0.0F;
-      }
-
-      if (var3 > 0.0F) {
-         phaseSeen = var3;
-      } else if (displayed < 0.01F) {
-         phaseSeen = 0.0F;
-      }
+      displayed += (influence - displayed) * 0.05F;
+      displayedCore += (core - displayedCore) * 0.05F;
+      if (displayed < 0.002F) displayed = 0.0F;
+      if (displayedCore < 0.002F) displayedCore = 0.0F;
+      if (selectedPhase > 0.0F) phaseSeen = selectedPhase;
+      else if (displayed < 0.01F) phaseSeen = 0.0F;
    }
 
    public static float strength() {
@@ -76,10 +70,10 @@ public final class StormSkyDome {
       if (!DabyWSClientConfig.stormBackdrop) {
          return 0.0F;
       }
-      if (phaseSeen < 4.95F) {
+      if (phaseSeen < 5.0F) {
          return 0.0F;
       }
-      return Mth.clamp(displayed * (float)DabyWSClientConfig.stormBackdropStrength * 0.32F, 0.0F, 0.32F);
+      return Mth.clamp(displayed * (float)DabyWSClientConfig.stormBackdropStrength, 0.0F, 1.0F);
    }
 
    public static float coreStrength() {
@@ -92,12 +86,12 @@ public final class StormSkyDome {
 
    public static void skyColor(float[] var0) {
       float p = phaseSeen;
-      float wTeal = ramp(p, 4.95F, 5.10F) * (1.0F - ramp(p, 5.30F, 5.42F));
+      float wTeal = ramp(p, 5.0F, 5.10F) * (1.0F - ramp(p, 5.30F, 5.42F));
       float wPurp = ramp(p, 5.30F, 5.42F) * (1.0F - ramp(p, 5.52F, 5.65F));
       float wPink = ramp(p, 5.52F, 5.65F) * (1.0F - ramp(p, 5.92F, 6.10F));
       float wSix  = ramp(p, 5.92F, 6.15F);
       float tot = wTeal + wPurp + wPink + wSix;
-      if (tot <= 1.0E-4F || p < 4.9F) {
+      if (tot <= 1.0E-4F || p < 5.0F) {
          // no phase tint — leave fog alone (calm blue night)
          var0[0] = 0.012F;
          var0[1] = 0.035F;
