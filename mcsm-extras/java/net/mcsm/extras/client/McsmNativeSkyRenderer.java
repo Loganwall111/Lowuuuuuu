@@ -33,51 +33,14 @@ public final class McsmNativeSkyRenderer {
     public static void apply(ClientLevel level, SkyRenderState state) {
         ownsSky = false;
         McsmSkyArtifactGuard.disableExtraSkyLayers();
-        if (level == null || state == null || !McsmSkyArtifactGuard.stormSkyActive()) {
-            return;
-        }
-
-        // BUILD #403 -- CONTINUOUS vanilla sky, no dome band. Instead of
-        // flattening the sky to one colour and deleting the sunrise/sunset
-        // fan (which left a hard seam where the flat dome met the horizon
-        // fog), tint BOTH of vanilla's gradient anchors toward the storm's
-        // 1:1 extracted zenith/horizon colours and let Minecraft's own sky
-        // renderer interpolate between them. The blend weight carries
-        // distanceInfluence(), so the storm sky melts back into the regular
-        // vanilla sky far from the storm.
-        float[] zen = new float[3];
-        float b = McsmStormAtmosphere.skyBlend(zen);
-        float[] hor = new float[3];
-        float b2 = McsmStormAtmosphere.skyHorizonBlend(hor);
-        if (b <= 0.01F && b2 <= 0.01F) {
-            return;
-        }
-        int skyNow = state.skyColor;
-        if ((skyNow & 0x00FFFFFF) == 0) {
-            skyNow = state.sunriseAndSunsetColor;
-        }
-        if ((skyNow & 0x00FFFFFF) == 0) {
-            float[] fb = new float[3];
-            StoryModeSkyTint.horizonColor(level.getOverworldClockTime(), fb);
-            skyNow = 0xFF000000
-                    | (Math.round(fb[0] * 255.0F) & 0xFF) << 16
-                    | (Math.round(fb[1] * 255.0F) & 0xFF) << 8
-                    | (Math.round(fb[2] * 255.0F) & 0xFF);
-        }
-        int fanNow = state.sunriseAndSunsetColor;
-        if ((fanNow & 0x00FFFFFF) == 0) {
-            fanNow = skyNow;
-        }
-        // #404: the whole storm sky is ONE colour -- both gradient anchors
-        // get the same tinted value so vanilla renders a single continuous
-        // hue with no zenith/horizon seam; distance still fades to vanilla.
-        int uniform = mcsm$mixArgb(skyNow, zen, b);
-        uniform = mcsm$mixArgb(uniform, hor, b2 * 0.35F);
-        state.skyColor = uniform;
-        state.sunriseAndSunsetColor = uniform;
-        state.shouldRenderDarkDisc = false;
-        ownsSky = true;
+        // #409 user directive: "remove the horizon band, don't use a dome,
+        // use the regular sky". The native tint (even the continuous #404
+        // variant) still fought the shader pack's gradient and left a seam
+        // at the horizon, so the mod no longer touches sky colours at all.
+        // The superduper pack (or plain vanilla with no pack) owns the sky.
+        return;
     }
+
 
     private static int mcsm$mixArgb(int current, float[] target, float t) {
         if (t <= 0.0F) return current;
@@ -91,16 +54,9 @@ public final class McsmNativeSkyRenderer {
 
     /** Return the storm's native horizon colour and its distance blend. */
     public static float fogColor(ClientLevel level, float[] out) {
-        if (level == null || out == null || out.length < 3 || !McsmSkyArtifactGuard.stormSkyActive()) {
-            return 0.0F;
-        }
-        float phase = McsmStormAtmosphere.nearestPhase();
-        phaseFogColor(phase, out);
-        // The green 4.5 deck is deliberately denser; later tracks remain
-        // visible but never become an opaque fullscreen plate.
-        float density = phase < 5.0F ? 0.86F : (phase < 5.5F ? 0.72F : 0.66F);
-        return Math.min(0.86F, Math.max(0.0F,
-                density * McsmStormAtmosphere.distanceInfluence()));
+        // #409 user directive: regular sky, no horizon band. The storm no
+        // longer tints world fog; the shader pack (or vanilla) owns it.
+        return 0.0F;
     }
 
     private static void phaseFogColor(float phase, float[] out) {

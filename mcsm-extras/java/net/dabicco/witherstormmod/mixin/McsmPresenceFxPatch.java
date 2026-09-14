@@ -56,8 +56,12 @@ public abstract class McsmPresenceFxPatch {
         try {
             // The user explicitly wants these layers back. Keep the old pass
             // enabled as well so its debris and pulse colors are not lost.
-            DabyWSClientConfig.cataclysmHalos = true;
-            DabyWSClientConfig.blackGlare = true;
+            // #409: the base pass's BLACK GLARE ring drew the giant dark disc
+            // around the storm ("why is it in a circle") and the Cataclysm
+            // halo pair drew the old purple ring artifact. Both stay OFF;
+            // the phase-coloured glare layers below ARE the halo now.
+            DabyWSClientConfig.cataclysmHalos = false;
+            DabyWSClientConfig.blackGlare = false;
             DabyWSClientConfig.atmospherePulse = true;
             DabyWSClientConfig.glareEjecta = true;
             submitExpandedHalos(ctx);

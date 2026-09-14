@@ -1,3 +1,21 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.409 — Build #409: regular sky (no dome/band), bright glare, no dark disc, no vein wires
+
+- REGULAR SKY, PER USER DIRECTIVE: the mod-side native sky tint and storm fog
+  tint are fully retired (McsmNativeSkyRenderer is a no-op). No dome, no
+  horizon band, no seam -- the superduper pack gradient (or plain vanilla
+  without a pack) is the only sky.
+- DARK CIRCLE GONE, TWO CAUSES KILLED: (1) the base pass's Black Glare ring
+  and Cataclysm halo pair are now force-OFF at submit (they painted the
+  giant dark disc / purple ring); (2) the phase glare PNGs themselves had a
+  near-opaque BLACK core -- regenerated as bright radial glares (hot tinted
+  centre, transparent fringe) so the halo finally READS as coloured glare
+  over the shader sky instead of a void.
+- PURPLE LINT GONE: transparent override for textures/entity/wither_veins.png
+  (the base mod's violet vein-wire overlay on the storm body), on top of
+  .408's OUTLINES 0.
+- WATER horizon blend: rough sheen 0.30 -> 0.45 so the sea catches the sky
+  colour at grazing angles and the sea/sky line stops reading as a band.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.408 — Build #408: outlines off (purple wire glint), shaded chunky clouds, no white-void sky
 
 - PURPLE WIREFRAME GLINT REMOVED: the pack's Dungeons-style outline pass

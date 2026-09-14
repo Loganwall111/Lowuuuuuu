@@ -298,7 +298,7 @@
                     // 1.9.406: slight rough sheen so the indigo surface picks
                     // up the story-mode sky colours (getSkyReflection) like
                     // the mirror lakes in the cutscenes, without mirror glass.
-                    material.smoothness = 0.30;
+                    material.smoothness = 0.45;
                 #endif
 
                 #ifdef WATER_FOAM
