@@ -79,9 +79,10 @@ public final class StormSkins {
      */
     private static Identifier tracedOrCanonical(double phase) {
         if (phase >= 4.0D && McsmExtrasConfig.tracedShadingBody) {
-            // Build #385: the authentic tile_witherBloodA traced sheet (bound
-            // at wither_storm_trayshaded.png) is the PRIMARY body map - no
-            // generated placeholder art remains in the default path.
+            // Build #375 Phase 1.3: the main body skin map stays the smooth
+            // vanilla-black sheet (wither_storm_trayshaded.png). The authentic
+            // tile_witherBloodA traced tile is NEVER the body texture - it
+            // lives only at wither_storm_traced.png for non-body reference.
             return TRAY_SHADED_P4;
         }
         return CANONICAL_TEXTURE;
