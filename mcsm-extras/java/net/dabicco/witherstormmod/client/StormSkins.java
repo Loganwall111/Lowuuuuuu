@@ -163,7 +163,11 @@ public final class StormSkins {
             // flat/dark. The p4 map is the isolated bright face for that stage.
             path = ogSkin ? "textures/entity/wither_storm_og_p4_e.png" : "textures/entity/wither_storm_p4_e.png";
         } else {
-            path = "textures/entity/wither_storm_no_teeth_glow_e.png";
+            // 1.9.116: the early-phase face (eyes + teeth, UV 20,65 - 49,79 of
+            // the canonical sheet) got a real isolated emissive map instead of
+            // the blank 160x160 "no teeth glow" placeholder, so the Phase 1-3.9
+            // face actively glows in the dark on its own full-bright channel.
+            path = "textures/entity/wither_storm_legacy_e.png";
         }
         return id(path);
     }

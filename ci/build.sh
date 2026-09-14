@@ -917,6 +917,8 @@ for need in \
   assets/minecraft/textures/gui/title/minecraft.png \
   assets/witherstormmod/textures/entity/wither_storm/wither_storm.png \
   assets/witherstormmod/config/colors.json \
+  assets/dabywitherstormmod/textures/entity/wither_storm_legacy_e.png \
+  net/dabicco/witherstormmod/entity/model/WitherCommandBlock.class \
   assets/minecraft/textures/entity/villager/villager.png; do
   if [ ! -s "$FX/cls/$need" ]; then
     echo "::error title=jar audit::jar-overrides asset missing from jar: $need"
