@@ -1,6 +1,6 @@
-# 1.9.202 — Build #390: cosmic-blue beams, gradient-sheet sky LERP, premium panel
+# 1.9.390 — Build #390: cosmic-blue beams, gradient-sheet sky LERP, premium panel
 
-(Build #390 shipped as 1.9.202: tag `ds-1.9.201` was already claimed on 2026-09-10 by an earlier branch's build, and the release step never touches an existing tag — so this milestone re-tags one version up. Content is Build #390 as described below, plus the 26.2 GUI-signature fix and the sheet re-trace from the attached artist PNGs.)
+(Build #390 ships as **1.9.390** — the version number is the build number. Tags `ds-1.9.201`/`ds-1.9.202` were already claimed on 2026-09-10 by an earlier branch's builds, and the release step never touches an existing tag, so this milestone takes the free 1.9.390 slot. Content is Build #390 as described below, plus the 26.2 GUI-signature fix and the sheet re-trace from the attached artist PNGs.)
 
 Build #390 lands the first two of the three sequenced phases on top of the stable DS 7000.0.0 baseline, plus the requested sky assets. Phase 1's model re-initialization is staged next: the panel and slider work is in this jar, the `WitherStormP4` model port follows in its own build so a bad model constant can never take the shader and UI work down with it.
 
