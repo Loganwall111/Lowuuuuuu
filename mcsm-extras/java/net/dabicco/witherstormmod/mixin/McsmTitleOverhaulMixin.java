@@ -16,14 +16,17 @@ import net.mcsm.extras.McsmExtrasConfig;
 /**
  * Devouring Storms: Main menu overhaul with Image 3 silver pixel border frame.
  *
- * BUILD #371 — STORY-MODE MAIN MENU. The background is a fully procedural
- * cinematic "panorama" (no texture assets, no blit/texture API — only
- * fill / fillGradient / text, all proven): deep indigo night sky, drifting
- * nebula wisps, twinkling stars, a cool moon, the OG golden 3D sun-slab
- * rising on the horizon with god rays, and three layers of dark mountain
- * silhouettes. The base story-mode banner (top) and this cinematic bar
- * (bottom) frame it like a movie title card. Toggle: "Cinematic
- * Story-Mode Menu" in the MCSM Extras panel (off = the plain gradient).
+ * BUILD #374 — STORY MODE ACCURATE MAIN MENU (the whole section). The
+ * backdrop is the base's own OG Story Mode cube panorama + OG sun/moon (the
+ * in-scene Wither Storm shot — the standing "panorama + sun/moon OG"
+ * order), no longer replaced by a procedural scene. On top of it this mixin
+ * adds the Telltale episodic framing: a light readability vignette, dark
+ * translucent panel boxes with thin edges behind every menu button (gold
+ * frame + corner ticks on hover), the base story-mode banner (top), the
+ * silver pixel border frame, and the cinematic bottom bar with the saga
+ * line + build number. Toggle: "Cinematic Story-Mode Menu" in the Story
+ * Mode Console (off = the plain gradient). The #371 procedural scene
+ * helpers remain in this file as reference material.
  */
 @Mixin(TitleScreen.class)
 public abstract class McsmTitleOverhaulMixin extends Screen {
@@ -32,18 +35,83 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         super(title);
     }
 
+    /**
+     * Build #374 -- STORY MODE ACCURATE main menu. The #371 procedural night
+     * scene is retired as the ON-path: the user's standing order is the OG
+     * panorama + OG sun/moon (the base's own Story Mode menu backdrop, the
+     * in-scene Wither Storm shot), framed like a Telltale episode menu. So:
+     *  - toggle ON  -> do NOT cancel: the base draws its OG cube panorama and
+     *                  sun, then the TAIL hook adds the episodic chrome
+     *                  (readability vignette + dark translucent panels with
+     *                  gold hover frames behind every menu button).
+     *  - toggle OFF -> the plain gradient (pre-#371 look), base cancelled.
+     */
     @Inject(method = "extractBackground", at = @At("HEAD"), cancellable = true)
     private void dabyws$stormBackdrop(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
-        ci.cancel();
-        int w = this.width;
-        int h = this.height;
-        if (McsmExtrasConfig.storyMenuBackdrop) {
-            dabyws$paintCinematic(g, w, h);
-        } else {
-            // Fallback: the plain gradient (pre-#371 look).
+        if (!McsmExtrasConfig.storyMenuBackdrop) {
+            ci.cancel();
+            int w = this.width;
+            int h = this.height;
             g.fillGradient(0, 0, w, h, 0xFF120A1E, 0xFF05030A);
             g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x553F255A);
+        }
+        // ON: fall through — the base paints the OG panorama + sun/moon.
+    }
+
+    /**
+     * Drawn AFTER the base backdrop, BEFORE the widgets: the Telltale
+     * episodic framing. Panels sit behind the vanilla buttons so the menu
+     * reads like a Story Mode episode select: dark boxes, thin edge, gold
+     * frame on hover.
+     */
+    @Inject(method = "extractBackground", at = @At("TAIL"))
+    private void dabyws$storyModeFraming(GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick, CallbackInfo ci) {
+        if (!McsmExtrasConfig.storyMenuBackdrop) {
+            return;
+        }
+        int w = this.width;
+        int h = this.height;
+
+        // readability vignette (kept light so the OG panorama stays vivid)
+        g.fillGradient(0, 0, w, 42, 0x66030208, 0x00030208);
+        g.fillGradient(0, h - 96, w, h - 32, 0x00030208, 0xAA030208);
+        g.fillGradient(0, 0, 26, h, 0x44030208, 0x00030208);
+        g.fillGradient(w - 26, 0, w, h, 0x00030208, 0x44030208);
+
+        // episodic panels behind every menu button
+        for (Object child : this.children()) {
+            if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
+                continue;
+            }
+            net.minecraft.client.gui.components.AbstractButton b =
+                    (net.minecraft.client.gui.components.AbstractButton) child;
+            if (!b.visible || !b.active) {
+                continue;
+            }
+            int px = b.getX() - 10;
+            int py = b.getY() - 5;
+            int pw = b.getWidth() + 20;
+            int ph = b.getHeight() + 10;
+            boolean hov = b.isHovered();
+            g.fill(px, py, px + pw, py + ph, hov ? 0xF0171B24 : 0xE60A0C11);
+            int edge = hov ? 0xFFD9A441 : 0xFF2A3140;
+            g.fill(px, py, px + pw, py + 1, edge);
+            g.fill(px, py + ph - 1, px + pw, py + ph, edge);
+            g.fill(px, py, px + 1, py + ph, edge);
+            g.fill(px + pw - 1, py, px + pw, py + ph, edge);
+            if (hov) {
+                // gold corner ticks — the Telltale hover signature
+                g.fill(px, py, px + 7, py + 2, 0xFFD9A441);
+                g.fill(px, py, px + 2, py + 7, 0xFFD9A441);
+                g.fill(px + pw - 7, py, px + pw, py + 2, 0xFFD9A441);
+                g.fill(px + pw - 2, py, px + pw, py + 7, 0xFFD9A441);
+                g.fill(px, py + ph - 2, px + 7, py + ph, 0xFFD9A441);
+                g.fill(px, py + ph - 7, px + 2, py + ph, 0xFFD9A441);
+                g.fill(px + pw - 7, py + ph - 2, px + pw, py + ph, 0xFFD9A441);
+                g.fill(px + pw - 2, py + ph - 7, px + pw, py + ph, 0xFFD9A441);
+            }
         }
     }
 
