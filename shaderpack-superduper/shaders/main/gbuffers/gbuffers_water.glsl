@@ -278,12 +278,12 @@
                 #endif
 
                 #ifdef MCSM_DARK_OPAQUE_WATER
-                    // Minecraft: Story Mode water: not mirror glass and NOT
-                    // near-black (1.9.208 -- "the water is way too dark").
-                    // Flat story-mode blue, opaque, rough: reflections cannot
-                    // shine and the lake reads bright against the dark storm.
+                    // Minecraft: Story Mode water (1.9.406 re-grade): the
+                    // reference frames show saturated indigo/violet lakes that
+                    // catch the colourful sky at grazing angles -- not the old
+                    // flat steel blue and not mirror glass.
                     float shallow = clamp(blockDepth * 0.060, 0.0, 1.0);
-                    material.albedo.rgb = mix(vec3(0.105, 0.245, 0.415), vec3(0.16, 0.335, 0.53), shallow);
+                    material.albedo.rgb = mix(vec3(0.145, 0.135, 0.520), vec3(0.300, 0.310, 0.820), shallow);
                     // 1.9.212: vanilla-style flow stripes -- light diagonal
                     // bands so the surface reads as moving water instead of a
                     // flat blue sheet. 1.9.213: STATIC pattern -- the previous
@@ -295,7 +295,10 @@
                     material.albedo.rgb = mix(material.albedo.rgb, material.albedo.rgb * 1.28, band * 0.22);
                     material.albedo.a = max(material.albedo.a, 0.96);
                     material.metallic = 0.0;
-                    material.smoothness = 0.0;
+                    // 1.9.406: slight rough sheen so the indigo surface picks
+                    // up the story-mode sky colours (getSkyReflection) like
+                    // the mirror lakes in the cutscenes, without mirror glass.
+                    material.smoothness = 0.30;
                 #endif
 
                 #ifdef WATER_FOAM

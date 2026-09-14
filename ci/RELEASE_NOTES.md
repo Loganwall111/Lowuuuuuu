@@ -1,3 +1,22 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.406 — Build #406: restored sky renderer — MCSM skies, aurora, stars, 3 cloud decks, indigo water
+
+- ROOT CAUSE FIXED: the imported Super Duper pack was MISSING its sky
+  renderer (getSkyBasic/getFullSkyRender/getSkyFogRender/getSkyReflection
+  were called but never defined), so Iris dropped deferred1/composite and
+  every atmospheric VFX silently vanished. New lib/atmospherics/skyRender.glsl
+  implements them in the Story Mode look.
+- COLOURFUL SKIES: per-time-of-day gradient palette — teal-black night,
+  deep-blue dusk with cyan horizon band, salmon sunset, lavender day, bright
+  noon — matching the reference frames.
+- NIGHT VFX: teal aurora curtains + twinkling stars; soft sun/moon discs with
+  warm sunset tinting.
+- CLOUDS PART OF THE SKY, FLY-ABOVE-ABLE: three chunky rectangular decks at
+  y=176 (infinite sea), y=224 (blocky) and y=288 (wispy) via ray/plane
+  layers, distance- and horizon-faded — fly above one and the next is there.
+- WATER: re-graded to saturated Story Mode indigo/violet (deep 0.145,0.135,
+  0.520 -> shallow 0.300,0.310,0.820) with a rough 0.30 sheen so lakes catch
+  the colourful sky at grazing angles like the cutscene mirrors.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.405 — Build #405: shader-less glow, phase-6 blue beams, story-look bloom
 
 - SHADER-LESS GLOW: additive radial billboards (teeth_glow_white/cyan/blue)

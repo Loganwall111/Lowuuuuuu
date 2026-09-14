@@ -196,6 +196,8 @@
 
     #include "/lib/atmospherics/fogRender.glsl"
 
+    #include "/lib/atmospherics/skyRender.glsl"
+
     #include "/lib/rayTracing/rayTracer.glsl"
 
     #include "/lib/lighting/complexShadingDeferred.glsl"
