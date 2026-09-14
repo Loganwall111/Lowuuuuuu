@@ -277,7 +277,11 @@ public final class McsmStormBlob {
             // puffs clinging to its base - exactly the four particle reads
             // the reference frames show. Stateless: every position is a hash
             // of its index plus time, so nothing is stored or synced.
-            if (key == mainKey && wGlare > 0.004F && baseR > 10.0) {
+            // Build #385 phase-3 lock: the chaotic purple particle field is
+            // HARD-LOCKED to late-game storm configurations (phase 5+) - it
+            // can never leak into the phase-4 teal window or the standard
+            // day/night cycle.
+            if (key == mainKey && wGlare > 0.004F && baseR > 10.0 && phase >= 5.0F) {
                 final float bR = (float) baseR;
                 final float tt = nowSec;
                 final float aa = a;
