@@ -1,3 +1,20 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.408 — Build #408: outlines off (purple wire glint), shaded chunky clouds, no white-void sky
+
+- PURPLE WIREFRAME GLINT REMOVED: the pack's Dungeons-style outline pass
+  (OUTLINES 2) was drawing violet edge wires over the Wither Storm body and
+  masking the traced Story Look shading. OUTLINES is now 0 -- the Story Mode
+  frames have no block outlines, and the OG shaded textures read as-is.
+- CLOUDS NO LONGER FLAT CARDBOARD: plates get softened borders, per-plate
+  brightness variation and sun-lit tops / shaded undersides; decks tightened
+  (scale 46/70/110, coverage 0.42/0.30/0.18) so they read as chunky puffs;
+  grazing-angle streaks faded out harder (0.02-0.14 |dir.y|).
+- WHITE VOID FIX: noon/day horizon keys were near-white, so looking down at
+  the cloud sea filled the upper screen with white haze. Horizons are now
+  saturated blue/lavender and the zenith gradient steepens earlier (pow 0.42).
+- Reminder: the dark straight-edged wedge sometimes crossing the sky is the
+  BASE mod's "The Sun Shadow" storm shadow volume (config category in the
+  Devouring Storms screen), not a shader artifact.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.407 — Build #407: shaderpack compiles again (uniform redefinition fix)
 
 - .406 FAILED TO LOAD in Iris: the restored skyRender.glsl re-declared

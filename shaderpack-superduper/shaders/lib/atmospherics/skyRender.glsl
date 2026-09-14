@@ -40,8 +40,8 @@ void mcsmSkyKeys(in float s, out vec3 zen, out vec3 hor){
     vec3 z0 = vec3(0.016, 0.055, 0.075); vec3 h0 = vec3(0.030, 0.160, 0.150); // night: teal-black
     vec3 z1 = vec3(0.055, 0.095, 0.360); vec3 h1 = vec3(0.130, 0.760, 0.720); // dusk: deep blue + cyan band
     vec3 z2 = vec3(0.640, 0.270, 0.260); vec3 h2 = vec3(0.960, 0.640, 0.520); // sunset: salmon rose
-    vec3 z3 = vec3(0.520, 0.490, 0.830); vec3 h3 = vec3(0.800, 0.790, 0.930); // day: lavender periwinkle
-    vec3 z4 = vec3(0.380, 0.580, 0.900); vec3 h4 = vec3(0.720, 0.840, 0.960); // noon: bright blue
+    vec3 z3 = vec3(0.520, 0.490, 0.830); vec3 h3 = vec3(0.660, 0.680, 0.920); // day: lavender periwinkle
+    vec3 z4 = vec3(0.300, 0.520, 0.920); vec3 h4 = vec3(0.500, 0.700, 0.950); // noon: bright blue
 
     zen = z0; hor = h0;
     float f1 = smoothstep(0.20, 0.60, s); zen = mix(zen, z1, f1); hor = mix(hor, h1, f1);
@@ -54,9 +54,13 @@ float mcsmNightAmount(in float s){ return 1.0 - smoothstep(0.25, 0.75, s); }
 float mcsmSunsetAmount(in float s){ return 1.0 - smoothstep(0.35, 0.60, abs(s - 1.0)); }
 
 // One chunky rectangular cloud deck (ray/plane intersect at a real height).
+// 1.9.408: soft plate edges + per-plate shade out-param so decks read as
+// lit chunky puffs instead of flat grey cardboard tiles.
 float mcsmCloudDeck(in vec3 dir, in vec2 camXZ, in float camY, in float height,
-                    in float scale, in float coverage, in float seed, out float tOut){
+                    in float scale, in float coverage, in float seed,
+                    out float tOut, out float shadeOut){
     tOut = -1.0;
+    shadeOut = 1.0;
     if(abs(dir.y) < 0.010) return 0.0;
     float t = (height - camY) / dir.y;
     if(t <= 0.0) return 0.0;
@@ -69,16 +73,24 @@ float mcsmCloudDeck(in vec3 dir, in vec2 camXZ, in float camY, in float height,
     float presence = step(1.0 - coverage, mcsmHash(cell + seed));
     float wx = 0.40 + 0.55 * mcsmHash(cell + 11.7);
     float wy = 0.40 + 0.55 * mcsmHash(cell + 27.3);
-    float plate = step(0.5 - 0.5 * wx, f.x) * step(f.x, 0.5 + 0.5 * wx)
-                * step(0.5 - 0.5 * wy, f.y) * step(f.y, 0.5 + 0.5 * wy);
+    float lo_x = 0.5 - 0.5 * wx, hi_x = 0.5 + 0.5 * wx;
+    float lo_y = 0.5 - 0.5 * wy, hi_y = 0.5 + 0.5 * wy;
+    float plate = step(lo_x, f.x) * step(f.x, hi_x)
+                * step(lo_y, f.y) * step(f.y, hi_y);
+    // soften the rectangle borders so plates do not read as cut cardboard
+    float edge = min(min(f.x - lo_x, hi_x - f.x), min(f.y - lo_y, hi_y - f.y));
+    plate *= smoothstep(0.0, 0.10, edge);
 
     // secondary smaller puff grid for the chunky MCSM silhouette
     vec2 cell2 = floor(uv * 2.0);
     float puff = step(1.0 - coverage * 0.9, mcsmHash(cell2 + 5.1));
 
+    // per-plate brightness variation (sun-lit chunkiness, not flat fill)
+    shadeOut = 0.80 + 0.40 * mcsmHash(cell + 3.3);
+
     float a = presence * max(plate, puff * 0.9);
     a *= 1.0 - smoothstep(650.0, 950.0, t);      // distance fade
-    a *= smoothstep(0.0, 0.06, abs(dir.y));      // no hard plane at the horizon
+    a *= smoothstep(0.02, 0.14, abs(dir.y));     // no streaks at grazing angles
     return a;
 }
 
@@ -87,7 +99,7 @@ vec3 getSkyBasic(in float nEyePosY, in float skyPosZ){
     mcsmSkyKeys(dayCycle, zen, hor);
 
     float h = saturate(nEyePosY);
-    vec3 col = mix(hor, zen, pow(h, 0.50));
+    vec3 col = mix(hor, zen, pow(h, 0.42));
     // below the horizon the gradient settles to a dimmer horizon haze
     col = mix(col, hor * 0.55, saturate(-nEyePosY * 2.0));
 
@@ -135,25 +147,27 @@ vec3 getFullSkyRender(in vec3 nEyePlayerPos, in vec3 skyPos, in vec3 baseCol){
     // ---- three chunky story-mode cloud decks ----
     vec2 camXZ = cameraPosition.xz;
     float camY = cameraPosition.y;
-    float t1, t2, t3;
-    float a1 = mcsmCloudDeck(nEyePlayerPos, camXZ, camY, 176.0,  64.0, 0.50,  3.1, t1);
-    float a2 = mcsmCloudDeck(nEyePlayerPos, camXZ, camY, 224.0,  96.0, 0.34, 17.7, t2);
-    float a3 = mcsmCloudDeck(nEyePlayerPos, camXZ, camY, 288.0, 140.0, 0.20, 41.3, t3);
+    float t1, t2, t3, s1, s2, s3;
+    float a1 = mcsmCloudDeck(nEyePlayerPos, camXZ, camY, 176.0,  46.0, 0.42,  3.1, t1, s1);
+    float a2 = mcsmCloudDeck(nEyePlayerPos, camXZ, camY, 224.0,  70.0, 0.30, 17.7, t2, s2);
+    float a3 = mcsmCloudDeck(nEyePlayerPos, camXZ, camY, 288.0, 110.0, 0.18, 41.3, t3, s3);
 
     vec3 cloudCol = mix(vec3(0.13, 0.17, 0.26), vec3(0.98, 0.98, 1.00), dayAmt);
     cloudCol = mix(cloudCol, vec3(1.00, 0.74, 0.64), sunsetAmt * 0.65);
     cloudCol = mix(cloudCol, vec3(0.35, 0.38, 0.46), rainStrength * 0.7);
-    if(nEyePlayerPos.y < 0.0) cloudCol *= 0.82; // undersides read darker
+    // sun-lit tops, shaded undersides
+    float topLit = mix(0.78, 1.12, smoothstep(-0.3, 0.3, nEyePlayerPos.y));
+    vec3 litTop = cloudCol * topLit;
 
     // over-composite nearest deck first (order flips when looking down)
     if(nEyePlayerPos.y > 0.0){
-        col = mix(col, cloudCol, a1);
-        col = mix(col, cloudCol * 1.02, a2);
-        col = mix(col, cloudCol * 1.04, a3);
+        col = mix(col, litTop * s1, a1);
+        col = mix(col, litTop * s2, a2);
+        col = mix(col, litTop * s3, a3);
     }else{
-        col = mix(col, cloudCol * 1.04, a3);
-        col = mix(col, cloudCol * 1.02, a2);
-        col = mix(col, cloudCol, a1);
+        col = mix(col, litTop * s3, a3);
+        col = mix(col, litTop * s2, a2);
+        col = mix(col, litTop * s1, a1);
     }
 
     return col;
