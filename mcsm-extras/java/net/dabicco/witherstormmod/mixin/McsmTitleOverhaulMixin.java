@@ -30,7 +30,12 @@ import net.mcsm.extras.McsmExtrasConfig;
  * Mode Console (off = the plain gradient). The #371 procedural scene
  * helpers remain in this file as reference material.
  */
-@Mixin(TitleScreen.class)
+// Build #376: priority 1500 (> the base StoryModeTitleScreenMixin's default
+// 1000). Mixin applies lower-priority mixins first and inserts each
+// later-applied mixin's TAIL callback AFTER the earlier ones, so at
+// extractRenderState TAIL this mixin's chrome executes AFTER the base's
+// banner - which is what lets dabyws$mcsMenuChrome paint the banner away.
+@Mixin(value = TitleScreen.class, priority = 1500)
 public abstract class McsmTitleOverhaulMixin extends Screen {
 
     /** The DS title icon (new menu asset, 128x128). */
@@ -164,6 +169,23 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             float partialTick, CallbackInfo ci) {
         int w = this.width;
         int h = this.height;
+
+        // --- Build #376: remove the base "3D Storm Preview" button ---------
+        // The base StoryModeTitleScreenMixin adds it at (width-142, 27,
+        // 136, 18) in init. User order: no "Preview" wording. Hiding it here
+        // (before the widgets render) takes it off the screen; the "Storm
+        // Config" button directly above it (y=6) is untouched.
+        for (Object child : this.children()) {
+            if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
+                continue;
+            }
+            net.minecraft.client.gui.components.AbstractButton pb =
+                    (net.minecraft.client.gui.components.AbstractButton) child;
+            if (pb.getY() == 27 && pb.getWidth() == 136 && pb.getHeight() == 18) {
+                pb.visible = false;
+                pb.active = false;
+            }
+        }
 
         // turntable input: left-drag orbits, wheel zooms (per-frame poll)
         mcsm$pollStormInput();
@@ -485,6 +507,16 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         int w = this.width;
         int h = this.height;
         Font font = Minecraft.getInstance().font;
+
+        // --- Build #376: remove the base "MINECRAFT: STORY MODE | WITHER
+        //     STORM ULTIMATE" banner ---------------------------------------
+        // The base StoryModeTitleScreenMixin still paints its dark band +
+        // two text lines (top strip) and a bottom band at extractRenderState
+        // TAIL. This hook runs AFTER the base banner (mixin priority 1500
+        // vs the base's 1000) and repaints the top strip with the clean
+        // storm-space gradient. The bottom band is already covered by the
+        // cinematic bar below.
+        g.fillGradient(0, 0, w, 54, 0xFF07050E, 0xFF070510);
 
         // --- Build #375: the DS title --------------------------------------
         // The vanilla logo (with its "Java Edition" line) is not drawn on
