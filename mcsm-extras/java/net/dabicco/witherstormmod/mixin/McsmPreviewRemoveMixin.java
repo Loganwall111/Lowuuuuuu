@@ -43,4 +43,35 @@ public abstract class McsmPreviewRemoveMixin {
             ci.cancel();
         }
     }
+
+    // Build #378 — remove the leftover "Preview" wording from the settings.
+    // The base screen still adds two preview-toggle buttons in the bottom
+    // row, "Model: ON/OFF" and "Gigantic: ON/OFF", even though the 3D preview
+    // they control is gated off above (so they do nothing by default). Hide
+    // them while the preview is disabled; they reappear as the working
+    // preview controls if the "Giant 3D Preview" console toggle is enabled.
+    @Inject(method = "extractRenderState", at = @At("HEAD"), remap = false)
+    private void dabyws$hidePreviewToggles(GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick, CallbackInfo ci) {
+        if (Minecraft.getInstance() == null || McsmExtrasConfig.giantPreviewEnabled) {
+            return;
+        }
+        WitherStormConfigScreen self = (WitherStormConfigScreen) (Object) this;
+        for (Object child : self.children()) {
+            if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
+                continue;
+            }
+            net.minecraft.client.gui.components.AbstractButton b =
+                    (net.minecraft.client.gui.components.AbstractButton) child;
+            net.minecraft.network.chat.Component msg = b.getMessage();
+            if (msg == null) {
+                continue;
+            }
+            String s = msg.getString();
+            if (s.startsWith("Model") || s.startsWith("Gigantic")) {
+                b.visible = false;
+                b.active = false;
+            }
+        }
+    }
 }
