@@ -197,7 +197,13 @@ public final class McsmExtrasScreen extends Screen {
           .val("Skin Tint Red", () -> McsmExtrasConfig.customSkinTintR, v -> McsmExtrasConfig.customSkinTintR = v, 0.0, 1.0)
           .val("Skin Tint Green", () -> McsmExtrasConfig.customSkinTintG, v -> McsmExtrasConfig.customSkinTintG = v, 0.0, 1.0)
           .val("Skin Tint Blue", () -> McsmExtrasConfig.customSkinTintB, v -> McsmExtrasConfig.customSkinTintB = v, 0.0, 1.0)
-          .bool("Lock Canonical Texture Map", () -> McsmExtrasConfig.lockCanonicalTexture, v -> McsmExtrasConfig.lockCanonicalTexture = v);
+          .bool("Lock Canonical Texture Map", () -> McsmExtrasConfig.lockCanonicalTexture, v -> McsmExtrasConfig.lockCanonicalTexture = v)
+          .act("Open Storm Texture Painter (Make Your Own Texture)", () -> {
+              net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+              if (mc != null) {
+                  mc.setScreenAndShow(new net.mcsm.extras.client.McsmTexturePainterScreen(this));
+              }
+          });
         categories.add(c2);
 
         Category c3 = new Category("III", "DEBRIS & PHYSICS", "Native block debris, rescaling and ground behaviour.");
