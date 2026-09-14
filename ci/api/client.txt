@@ -1029,3 +1029,113 @@ public final class net.minecraft.ChatFormatting extends java.lang.Enum<net.minec
   public static java.lang.String stripFormatting(java.lang.String);
   public static net.minecraft.ChatFormatting getByCode(char);
 }
+Compiled from "ClientboundCommandSuggestionsPacket.java"
+public final class net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket extends java.lang.Record implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> {
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket> STREAM_CODEC;
+  public net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket(int, com.mojang.brigadier.suggestion.Suggestions);
+  public net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket(int, int, int, java.util.List<net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket$Entry>);
+  public net.minecraft.network.protocol.PacketType<net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket> type();
+  public void handle(net.minecraft.network.protocol.game.ClientGamePacketListener);
+  public com.mojang.brigadier.suggestion.Suggestions toSuggestions();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public int id();
+  public int start();
+  public int length();
+  public java.util.List<net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket$Entry> suggestions();
+  public void handle(net.minecraft.network.PacketListener);
+}
+Compiled from "ClientboundCommandsPacket.java"
+public class net.minecraft.network.protocol.game.ClientboundCommandsPacket implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> {
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.FriendlyByteBuf, net.minecraft.network.protocol.game.ClientboundCommandsPacket> STREAM_CODEC;
+  public <S> net.minecraft.network.protocol.game.ClientboundCommandsPacket(com.mojang.brigadier.tree.RootCommandNode<S>, net.minecraft.network.protocol.game.ClientboundCommandsPacket$NodeInspector<S>);
+  public net.minecraft.network.protocol.PacketType<net.minecraft.network.protocol.game.ClientboundCommandsPacket> type();
+  public void handle(net.minecraft.network.protocol.game.ClientGamePacketListener);
+  public <S> com.mojang.brigadier.tree.RootCommandNode<S> getRoot(net.minecraft.commands.CommandBuildContext, net.minecraft.network.protocol.game.ClientboundCommandsPacket$NodeBuilder<S>);
+  public void handle(net.minecraft.network.PacketListener);
+}
+Compiled from "ServerboundChatCommandPacket.java"
+public final class net.minecraft.network.protocol.game.ServerboundChatCommandPacket extends java.lang.Record implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ServerGamePacketListener> {
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.FriendlyByteBuf, net.minecraft.network.protocol.game.ServerboundChatCommandPacket> STREAM_CODEC;
+  public net.minecraft.network.protocol.game.ServerboundChatCommandPacket(java.lang.String);
+  public net.minecraft.network.protocol.PacketType<net.minecraft.network.protocol.game.ServerboundChatCommandPacket> type();
+  public void handle(net.minecraft.network.protocol.game.ServerGamePacketListener);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String command();
+  public void handle(net.minecraft.network.PacketListener);
+}
+Compiled from "ServerboundChatCommandSignedPacket.java"
+public final class net.minecraft.network.protocol.game.ServerboundChatCommandSignedPacket extends java.lang.Record implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ServerGamePacketListener> {
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.FriendlyByteBuf, net.minecraft.network.protocol.game.ServerboundChatCommandSignedPacket> STREAM_CODEC;
+  public net.minecraft.network.protocol.game.ServerboundChatCommandSignedPacket(java.lang.String, java.time.Instant, long, net.minecraft.commands.arguments.ArgumentSignatures, net.minecraft.network.chat.LastSeenMessages$Update);
+  public net.minecraft.network.protocol.PacketType<net.minecraft.network.protocol.game.ServerboundChatCommandSignedPacket> type();
+  public void handle(net.minecraft.network.protocol.game.ServerGamePacketListener);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String command();
+  public java.time.Instant timeStamp();
+  public long salt();
+  public net.minecraft.commands.arguments.ArgumentSignatures argumentSignatures();
+  public net.minecraft.network.chat.LastSeenMessages$Update lastSeenMessages();
+  public void handle(net.minecraft.network.PacketListener);
+}
+Compiled from "ServerboundClientCommandPacket.java"
+public class net.minecraft.network.protocol.game.ServerboundClientCommandPacket implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ServerGamePacketListener> {
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.FriendlyByteBuf, net.minecraft.network.protocol.game.ServerboundClientCommandPacket> STREAM_CODEC;
+  public net.minecraft.network.protocol.game.ServerboundClientCommandPacket(net.minecraft.network.protocol.game.ServerboundClientCommandPacket$Action);
+  public net.minecraft.network.protocol.PacketType<net.minecraft.network.protocol.game.ServerboundClientCommandPacket> type();
+  public void handle(net.minecraft.network.protocol.game.ServerGamePacketListener);
+  public net.minecraft.network.protocol.game.ServerboundClientCommandPacket$Action getAction();
+  public void handle(net.minecraft.network.PacketListener);
+}
+Compiled from "ServerboundCommandSuggestionPacket.java"
+public class net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ServerGamePacketListener> {
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.FriendlyByteBuf, net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket> STREAM_CODEC;
+  public net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket(int, java.lang.String);
+  public net.minecraft.network.protocol.PacketType<net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket> type();
+  public void handle(net.minecraft.network.protocol.game.ServerGamePacketListener);
+  public int getId();
+  public java.lang.String getCommand();
+  public void handle(net.minecraft.network.PacketListener);
+}
+Compiled from "ServerboundPlayerCommandPacket.java"
+public class net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ServerGamePacketListener> {
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.FriendlyByteBuf, net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket> STREAM_CODEC;
+  public net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket(net.minecraft.world.entity.Entity, net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket$Action);
+  public net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket(net.minecraft.world.entity.Entity, net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket$Action, int);
+  public net.minecraft.network.protocol.PacketType<net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket> type();
+  public void handle(net.minecraft.network.protocol.game.ServerGamePacketListener);
+  public int getId();
+  public net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket$Action getAction();
+  public int getData();
+  public void handle(net.minecraft.network.PacketListener);
+}
+Compiled from "ServerboundSetCommandBlockPacket.java"
+public class net.minecraft.network.protocol.game.ServerboundSetCommandBlockPacket implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ServerGamePacketListener> {
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.FriendlyByteBuf, net.minecraft.network.protocol.game.ServerboundSetCommandBlockPacket> STREAM_CODEC;
+  public net.minecraft.network.protocol.game.ServerboundSetCommandBlockPacket(net.minecraft.core.BlockPos, java.lang.String, net.minecraft.world.level.block.entity.CommandBlockEntity$Mode, boolean, boolean, boolean);
+  public net.minecraft.network.protocol.PacketType<net.minecraft.network.protocol.game.ServerboundSetCommandBlockPacket> type();
+  public void handle(net.minecraft.network.protocol.game.ServerGamePacketListener);
+  public net.minecraft.core.BlockPos getPos();
+  public java.lang.String getCommand();
+  public boolean isTrackOutput();
+  public boolean isConditional();
+  public boolean isAutomatic();
+  public net.minecraft.world.level.block.entity.CommandBlockEntity$Mode getMode();
+  public void handle(net.minecraft.network.PacketListener);
+}
+Compiled from "ServerboundSetCommandMinecartPacket.java"
+public class net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ServerGamePacketListener> {
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.FriendlyByteBuf, net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket> STREAM_CODEC;
+  public net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket(int, java.lang.String, boolean);
+  public net.minecraft.network.protocol.PacketType<net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket> type();
+  public void handle(net.minecraft.network.protocol.game.ServerGamePacketListener);
+  public net.minecraft.world.level.BaseCommandBlock getCommandBlock(net.minecraft.world.level.Level);
+  public java.lang.String getCommand();
+  public boolean isTrackOutput();
+  public void handle(net.minecraft.network.PacketListener);
+}

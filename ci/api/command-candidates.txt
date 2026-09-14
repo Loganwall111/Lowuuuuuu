@@ -1,0 +1,9 @@
+net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket
+net.minecraft.network.protocol.game.ClientboundCommandsPacket
+net.minecraft.network.protocol.game.ServerboundChatCommandPacket
+net.minecraft.network.protocol.game.ServerboundChatCommandSignedPacket
+net.minecraft.network.protocol.game.ServerboundClientCommandPacket
+net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket
+net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket
+net.minecraft.network.protocol.game.ServerboundSetCommandBlockPacket
+net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket
