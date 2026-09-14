@@ -43,6 +43,13 @@ public abstract class McsmPresenceFxPatch {
     private static final Identifier GLARE55 = id("textures/mcsm_atmosphere/glare/phase55.png"); // #87529C
     private static final Identifier GLARE6 = id("textures/mcsm_atmosphere/glare/phase6.png");   // #D89874
     private static final Identifier GLARE89 = id("textures/mcsm_atmosphere/glare/phase89.png"); // #CE5A1F
+    // BUILD #405 -- shader-less teeth/eye glow: additive radial billboards at
+    // the mouth cluster so the glow reads even with NO shader pack installed
+    // (emissive texture + additive blending + full-bright light, no bloom pass
+    // required). Tinted per phase band like the teeth table.
+    private static final Identifier GLOW_WHITE = id("textures/misc/teeth_glow_white.png");
+    private static final Identifier GLOW_CYAN = id("textures/misc/teeth_glow_cyan.png");
+    private static final Identifier GLOW_BLUE = id("textures/misc/teeth_glow_blue.png");
 
     @Inject(method = "submit", at = @At("HEAD"), remap = false, require = 0)
     private static void dabyws$restorePresenceFx(LevelRenderContext ctx, CallbackInfo ci) {
@@ -135,6 +142,21 @@ public abstract class McsmPresenceFxPatch {
                     * (1.0F - smoothstep(phase, 5.70F, 5.96F));
             double ringWidth = bodyRadius * (4.35D + 3.05D * phase55Circle);
             double ringHeight = bodyRadius * (2.82D + 2.45D * phase55Circle);
+            // #405: shader-less mouth glow (fake bloom via additive sprites)
+            Vec3 mouth = haloCentre.add(0.0D, -bodyRadius * 0.95D, 0.0D);
+            layer(poseStack, collector, GLOW_WHITE, mouth, view,
+                    bodyRadius * 1.00D, bodyRadius * 0.75D,
+                    w4 * distanceFade * 0.45F);
+            layer(poseStack, collector, GLOW_WHITE, mouth, view,
+                    bodyRadius * 1.15D, bodyRadius * 0.85D,
+                    w5 * distanceFade * 0.55F);
+            layer(poseStack, collector, GLOW_CYAN, mouth, view,
+                    bodyRadius * 1.15D, bodyRadius * 0.85D,
+                    (w55 + w54 * 0.5F) * distanceFade * 0.55F);
+            layer(poseStack, collector, GLOW_BLUE, mouth, view,
+                    bodyRadius * 1.15D, bodyRadius * 0.85D,
+                    (w6 + w89) * distanceFade * 0.55F);
+
             // #404: ring card retired -- it read as a concentric artifact
             // floating in the sky; the reference halos are pure soft glare.
             ringWidth = 0.0D; ringHeight = 0.0D; ring = 0.0F;

@@ -1,3 +1,20 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.405 — Build #405: shader-less glow, phase-6 blue beams, story-look bloom
+
+- SHADER-LESS GLOW: additive radial billboards (teeth_glow_white/cyan/blue)
+  now sit at the mouth cluster per phase band -- emissive texture + additive
+  blending + full-bright light, so teeth/eye glow reads even with NO shader
+  pack installed. With the shipped superduper pack on HIGH/ULTRA you also get
+  true bloom on top (strengths raised 0.12->0.20 / 0.14->0.22).
+- PHASE 6 BEAMS BLUISH (user override of the purple-everywhere policy):
+  6.0-6.9 writes beam colour (0.30,0.42,1.0); all other phases stay show
+  purple (0.55,0.15,1.0).
+- Halos remain six cross-faded colour-gradient layers (blue/green/bridge/
+  purple/salmon/ember) at full blend -- multi-colour gradients exactly like
+  the reference frames.
+- The shipped superduper shader pack IS the story-mode look-alike: shadows
+  and lighting on, reflections/god-rays off, colourful grade; use profile
+  HIGH or ULTRA for bloom.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.404 — Build #404: glossy charcoal body, one-colour sky, no ring artifact
 
 - BODY: dark neutral vertex tint (0x6A6A6A) keeps the traced body glossy

@@ -101,6 +101,17 @@ public final class McsmTeethPhaseTint {
             DabyWSClientConfig.eyeColorB = b;
             DabyWSClientConfig.turquoiseTeethIntensity = inten;
             DabyWSClientConfig.turquoiseTeeth = glow;
+            // BUILD #405 user override: phase 6 beams read bluish (reference
+            // close-up frames); every other phase keeps show purple.
+            if (phase >= 6.0F && phase < 7.0F) {
+                DabyWSClientConfig.beamColorR = 0.30F;
+                DabyWSClientConfig.beamColorG = 0.42F;
+                DabyWSClientConfig.beamColorB = 1.00F;
+            } else {
+                DabyWSClientConfig.beamColorR = 0.55F;
+                DabyWSClientConfig.beamColorG = 0.15F;
+                DabyWSClientConfig.beamColorB = 1.00F;
+            }
             if (phase >= 5.0F) {
                 // The native head renderer owns both eye lenses and the teeth
                 // overlay. Keep both emissive submissions alive for the
