@@ -1,0 +1,5 @@
+{
+  "mcsm.ds_btn_hover": { "sounds": [ "mcsm:ds_btn_hover" ], "subtitle": "subtitles.ui.button" },
+  "mcsm.ds_btn_click": { "sounds": [ "mcsm:ds_btn_click" ], "subtitle": "subtitles.ui.button" },
+  "mcsm.ds_menu_open": { "sounds": [ "mcsm:ds_menu_open" ], "subtitle": "subtitles.ui.button" }
+}

@@ -31,32 +31,43 @@ import net.mcsm.extras.McsmExtrasConfig;
 @Mixin(TitleScreen.class)
 public abstract class McsmTitleOverhaulMixin extends Screen {
 
+    /** The DS title icon (new menu asset, 128x128). */
+    private static final net.minecraft.resources.Identifier DS_ICON =
+            net.minecraft.resources.Identifier.fromNamespaceAndPath("mcsm", "menu/ds_icon.png");
+
+    /** Per-button animation state (Build #375 3D button effects). */
+    private static final java.util.Map<Object, Boolean> MC$HOVER = new java.util.IdentityHashMap<>();
+    private static final java.util.Map<Object, Long> MC$HOVER_MS = new java.util.IdentityHashMap<>();
+    private static final java.util.Map<Object, Long> MC$PRESS_MS = new java.util.IdentityHashMap<>();
+
     protected McsmTitleOverhaulMixin(Component title) {
         super(title);
     }
 
+    @Inject(method = "added", at = @At("TAIL"))
+    private void dabyws$menuOpenSound(CallbackInfo ci) {
+        try {
+            net.mcsm.extras.client.McsmButtonSounds.menuOpen();
+        } catch (Throwable ignored) {
+            // sound only
+        }
+    }
+
     /**
-     * Build #374 -- STORY MODE ACCURATE main menu. The #371 procedural night
-     * scene is retired as the ON-path: the user's standing order is the OG
-     * panorama + OG sun/moon (the base's own Story Mode menu backdrop, the
-     * in-scene Wither Storm shot), framed like a Telltale episode menu. So:
-     *  - toggle ON  -> do NOT cancel: the base draws its OG cube panorama and
-     *                  sun, then the TAIL hook adds the episodic chrome
-     *                  (readability vignette + dark translucent panels with
-     *                  gold hover frames behind every menu button).
-     *  - toggle OFF -> the plain gradient (pre-#371 look), base cancelled.
+     * Build #375 -- THE PANORAMA IS DELETED. The standing "OG panorama"
+     * order is reversed: the main menu's backdrop is now the LITERAL 3D
+     * Wither Storm (McsmStormMenuScene) - a genuine blocky three-headed
+     * model on a turntable you can drag to spin and scroll to zoom - over a
+     * deep storm-space field. The base cube panorama never draws at all.
      */
     @Inject(method = "extractBackground", at = @At("HEAD"), cancellable = true)
     private void dabyws$stormBackdrop(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
-        if (!McsmExtrasConfig.storyMenuBackdrop) {
-            ci.cancel();
-            int w = this.width;
-            int h = this.height;
-            g.fillGradient(0, 0, w, h, 0xFF120A1E, 0xFF05030A);
-            g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x553F255A);
-        }
-        // ON: fall through — the base paints the OG panorama + sun/moon.
+        ci.cancel(); // the panorama is gone, on or off
+        int w = this.width;
+        int h = this.height;
+        g.fillGradient(0, 0, w, h, 0xFF07050E, 0xFF0B0716);
+        g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x552A1A4A);
     }
 
     /**
@@ -74,6 +85,14 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         int w = this.width;
         int h = this.height;
 
+        // THE 3D WITHER STORM - the literal scrollable/movable creature
+        // (drag to orbit, scroll to zoom), replacing the deleted panorama.
+        try {
+            net.mcsm.extras.client.McsmStormMenuScene.draw(g, w, h, partialTick);
+        } catch (Throwable ignored) {
+            // the menu creature must never break a frame
+        }
+
         // readability vignette (kept light so the OG panorama stays vivid)
         g.fillGradient(0, 0, w, 42, 0x66030208, 0x00030208);
         g.fillGradient(0, h - 96, w, h - 32, 0x00030208, 0xAA030208);
@@ -81,6 +100,7 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         g.fillGradient(w - 26, 0, w, h, 0x00030208, 0x44030208);
 
         // episodic panels behind every menu button
+        long nowMs = System.currentTimeMillis();
         for (Object child : this.children()) {
             if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
                 continue;
@@ -90,13 +110,40 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             if (!b.visible || !b.active) {
                 continue;
             }
+            boolean hov = b.isHovered();
+            if (hov && !Boolean.TRUE.equals(MC$HOVER.get(b))) {
+                MC$HOVER_MS.put(b, nowMs);
+                try {
+                    net.mcsm.extras.client.McsmButtonSounds.hover();
+                } catch (Throwable ignored) {
+                }
+            }
+            MC$HOVER.put(b, hov);
+            if (!hov) {
+                MC$HOVER_MS.remove(b);
+            }
+
+            // 3D lift: the panel rises 2px and gains a drop shadow on hover
+            int lift = hov ? 2 : 0;
             int px = b.getX() - 10;
-            int py = b.getY() - 5;
+            int py = b.getY() - 5 - lift;
             int pw = b.getWidth() + 20;
             int ph = b.getHeight() + 10;
-            boolean hov = b.isHovered();
+            if (hov) {
+                g.fill(px + 2, py + ph + 2, px + pw + 2, py + ph + 3, 0x55000000);
+            }
             g.fill(px, py, px + pw, py + ph, hov ? 0xF0171B24 : 0xE60A0C11);
             int edge = hov ? 0xFFD9A441 : 0xFF2A3140;
+            // pulsing glow frame while hovered (the "crazy cool" idle energy)
+            if (hov) {
+                long sinceHover = nowMs - (MC$HOVER_MS.getOrDefault(b, nowMs));
+                float pulse = (float) (Math.sin(sinceHover * 0.012D) * 0.5D + 0.5D);
+                int glowA = (int) (40 + pulse * 70);
+                g.fill(px - 2, py - 2, px + pw + 2, py - 1, (glowA << 24) | 0xFFD9A441);
+                g.fill(px - 2, py + ph + 1, px + pw + 2, py + ph + 2, (glowA << 24) | 0xFFD9A441);
+                g.fill(px - 2, py - 2, px - 1, py + ph + 2, (glowA << 24) | 0xFF9FEFFF);
+                g.fill(px + pw + 1, py - 2, px + pw + 2, py + ph + 2, (glowA << 24) | 0xFF9FEFFF);
+            }
             g.fill(px, py, px + pw, py + 1, edge);
             g.fill(px, py + ph - 1, px + pw, py + ph, edge);
             g.fill(px, py, px + 1, py + ph, edge);
@@ -111,7 +158,45 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
                 g.fill(px, py + ph - 7, px + 2, py + ph, 0xFFD9A441);
                 g.fill(px + pw - 7, py + ph - 2, px + pw, py + ph, 0xFFD9A441);
                 g.fill(px + pw - 2, py + ph - 7, px + pw, py + ph, 0xFFD9A441);
+                // sparkle burst on hover-in (700ms, hash-driven, stateless)
+                long sparkT = nowMs - MC$HOVER_MS.getOrDefault(b, nowMs);
+                if (sparkT >= 0L && sparkT < 700L) {
+                    dabyws$sparkles(g, px, py, pw, ph, sparkT);
+                }
             }
+            // press flash: a bright gold wash for 160ms after the click
+            Long press = MC$PRESS_MS.get(b);
+            if (press != null) {
+                long pt = nowMs - press;
+                if (pt >= 0L && pt < 160L) {
+                    float fade = 1.0F - (float) (pt / 160.0D);
+                    int a = (int) (fade * 120.0F);
+                    g.fill(px, py, px + pw, py + ph, (a << 24) | 0xFFFFF0CE);
+                } else {
+                    MC$PRESS_MS.remove(b);
+                }
+            }
+        }
+    }
+
+    /** Eight hash-driven sparkle motes flying off the panel corners,
+     *  fading over the burst lifetime. Gold + cyan, Telltale style. */
+    private static void dabyws$sparkles(GuiGraphicsExtractor g, int px, int py, int pw, int ph, long tMs) {
+        float t = (float) (tMs / 700.0D);
+        int[] cornersX = {px, px + pw, px, px + pw, px + pw / 2, px + pw / 2, px + 8, px + pw - 8};
+        int[] cornersY = {py, py, py + ph, py + ph, py, py + ph, py, py + ph};
+        for (int i = 0; i < 8; i++) {
+            long seed = (i + 1) * 0x9E3779B97F4A7CL;
+            double ang = ((seed >>> 40) / (double) (1L << 24)) * 6.28318D + i * 0.8D;
+            double spd = 26.0D + ((seed >>> 20) & 0xFF) / 255.0D * 30.0D;
+            double sx = cornersX[i] + Math.cos(ang) * spd * t;
+            double sy = cornersY[i] + Math.sin(ang) * spd * t + 8.0D * t * t;
+            int a = (int) (200.0F * (1.0F - t));
+            if (a <= 0) {
+                continue;
+            }
+            int rgb = (i % 3 == 0) ? 0xFF9FEFFF : ((i % 3 == 1) ? 0xFFD9A441 : 0xFFF4EAD0);
+            g.fill((int) sx, (int) sy, (int) sx + 2, (int) sy + 2, (a << 24) | rgb);
         }
     }
 
@@ -290,6 +375,12 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
                 int cx = b.getX() + b.getWidth() / 2;
                 int cy = b.getY() + b.getHeight() / 2;
                 net.mcsm.extras.client.McsmCinematic.shatterButton(cx, cy);
+                // Build #375: the press flash + the new chime sound
+                MC$PRESS_MS.put(b, System.currentTimeMillis());
+                try {
+                    net.mcsm.extras.client.McsmButtonSounds.click();
+                } catch (Throwable ignored) {
+                }
             }
         } catch (Throwable ignored) {
             // cosmetic only
@@ -306,6 +397,34 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         int w = this.width;
         int h = this.height;
         Font font = Minecraft.getInstance().font;
+
+        // --- Build #375: the DS title --------------------------------------
+        // The vanilla logo (with its "Java Edition" line) is not drawn on
+        // the title anymore; this is the mod's own identity: the new icon +
+        // a crisp two-line wordmark (native font size - measured, centred,
+        // never squished).
+        String word = "§6§lDEVOURING STORMS";
+        String sub = "§5The Point of No Return";
+        int wordW = font.width(word);
+        int subW = font.width(sub);
+        int iconSize = 44;
+        int titleW = iconSize + 8 + Math.max(wordW, subW);
+        int tx0 = (w - titleW) / 2;
+        int ty0 = 58;
+        // icon with a soft glow frame
+        g.fill(tx0 - 2, ty0 - 2, tx0 + iconSize + 2, ty0 + iconSize + 2, 0x662A1A4A);
+        try {
+            g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, DS_ICON,
+                    tx0, ty0, 0.0F, 0.0F, iconSize, iconSize, 128, 128);
+        } catch (Throwable ignored) {
+            g.fill(tx0, ty0, tx0 + iconSize, ty0 + iconSize, 0xFF1A1426);
+        }
+        int textX = tx0 + iconSize + 8;
+        long pulseMs = System.currentTimeMillis();
+        float subPulse = (float) (Math.sin(pulseMs * 0.003D) * 0.5D + 0.5D);
+        int subCol = 0xFF000000 | 0x9F << 16 | (int) (0x6A + subPulse * 0x40) << 8 | 0xD9;
+        g.text(font, word, textX + (Math.max(wordW, subW) - wordW) / 2, ty0 + 6, 0xFFF2E3C2, true);
+        g.text(font, sub, textX + (Math.max(wordW, subW) - subW) / 2, ty0 + 27, subCol, false);
 
         // Image 3 Silver Pixel Border Frame
         if (McsmExtrasConfig.uiBorderLines) {

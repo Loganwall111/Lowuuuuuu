@@ -209,7 +209,9 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.minecraft.client.gui.screens.CreateBuffetWorldScreen \
     net.minecraft.client.gui.screens.packs.PackSelectionScreen \
     net.minecraft.client.gui.screens.LevelLoadingScreen \
-    net.minecraft.client.gui.screens.PauseScreen"
+    net.minecraft.client.gui.screens.PauseScreen \
+    net.minecraft.client.gui.components.events.AbstractContainerEventHandler \
+    net.minecraft.client.gui.components.AbstractButton"
   MOD_CLASSES="net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen \
     net.dabicco.witherstormmod.client.ShaderPackCompat \
     net.dabicco.witherstormmod.client.FoglessRenderTypes \

@@ -77,6 +77,59 @@ public final class McsmCinematic {
         }
     }
 
+    /**
+     * Build #375: the intro plays DURING the Mojang loading scene.
+     * Called from the LogoRenderer hook (the startup logo phase, before any
+     * screen exists). It consumes the same one-shot boot state as
+     * tickMenu(): the sequence starts on the first logo frame and the title
+     * screen never replays it afterwards. Any key skips it, exactly like
+     * the title version.
+     */
+    public static boolean tickLogo() {
+        if (!McsmExtrasConfig.cinematicBootEnabled) {
+            preGameDone = true;
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        if (!preGameDone) {
+            if (preGameStartMs < 0L) {
+                preGameStartMs = now;
+            }
+            long t = now - preGameStartMs;
+            if (t >= PRE_GAME_MS || anyKeyPressed()) {
+                preGameDone = true;
+                burstStartMs = now;
+            }
+            return true;
+        }
+        if (burstStartMs > 0L && now - burstStartMs < BURST_MS) {
+            return true;
+        }
+        return false;
+    }
+
+    /** The full boot sequence drawn full-screen (used on the logo scene,
+     *  where no Screen object exists yet). */
+    public static void drawLogoSequence(GuiGraphicsExtractor g, int w, int h) {
+        drawMenuSequenceRaw(g, w, h);
+    }
+
+    private static void drawMenuSequenceRaw(GuiGraphicsExtractor g, int w, int h) {
+        if (!preGameDone) {
+            long t = System.currentTimeMillis() - preGameStartMs;
+            if (t >= 0L) {
+                drawPreGame(g, w, h, Math.min(1.0D, t / (double) PRE_GAME_MS));
+            }
+            return;
+        }
+        if (burstStartMs > 0L) {
+            long bt = System.currentTimeMillis() - burstStartMs;
+            if (bt >= 0L && bt < BURST_MS) {
+                drawBurst(g, w, h, bt / (double) BURST_MS);
+            }
+        }
+    }
+
     /** Called from the TitleScreen render hook. Returns true while a boot
      *  sequence (pre-game cinematic or command block burst) is playing. */
     public static boolean tickMenu() {
@@ -238,23 +291,10 @@ public final class McsmCinematic {
     /** Drawn over the TitleScreen. Returns true while the sequence owns the
      *  screen (the menu chrome should stand down). */
     public static void drawMenuSequence(GuiGraphicsExtractor g, Screen screen) {
-        if (!preGameDone) {
-            long t = System.currentTimeMillis() - preGameStartMs;
-            if (t >= 0L) {
-                drawPreGame(g, screen, Math.min(1.0D, t / (double) PRE_GAME_MS));
-            }
-            return;
-        }
-        if (burstStartMs > 0L) {
-            long bt = System.currentTimeMillis() - burstStartMs;
-            if (bt >= 0L && bt < BURST_MS) {
-                drawBurst(g, screen, bt / (double) BURST_MS);
-            }
-        }
+        drawMenuSequenceRaw(g, screen.width, screen.height);
     }
 
-    private static void drawPreGame(GuiGraphicsExtractor g, Screen sc, double t) {
-        int w = sc.width, h = sc.height;
+    private static void drawPreGame(GuiGraphicsExtractor g, int w, int h, double t) {
         net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
 
         // black frame -> faint deep blue at the horizon
@@ -308,8 +348,7 @@ public final class McsmCinematic {
         }
     }
 
-    private static void drawBurst(GuiGraphicsExtractor g, Screen sc, double t) {
-        int w = sc.width, h = sc.height;
+    private static void drawBurst(GuiGraphicsExtractor g, int w, int h, double t) {
         int cx = w / 2, cy = (int) (h * 0.44D);
         double base = Math.min(w, h) * 0.16D;
 
