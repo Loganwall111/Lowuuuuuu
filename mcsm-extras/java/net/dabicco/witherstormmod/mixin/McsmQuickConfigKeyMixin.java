@@ -13,7 +13,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
- * Devouring Storms quick menu hotkey (Control + C and Shift + C).
+ * Devouring Storms quick menu hotkeys.
+ *  - Control + C / Shift + C (original)
+ *  - Shift + A (Build #374 -- the exact same config console)
  *
  * Allows opening the Devouring Storms Control Panel directly from gameplay or screens.
  */
@@ -45,7 +47,7 @@ public abstract class McsmQuickConfigKeyMixin {
             if (parent instanceof McsmExtrasScreen) return;
 
             mc.setScreenAndShow(new McsmExtrasScreen(parent));
-            System.out.println("[MCSM] Control+C / Shift+C opened Devouring Storms Control Panel");
+            System.out.println("[MCSM] Shift+C / Shift+A opened Devouring Storms Control Panel");
         } catch (Throwable t) {
             System.err.println("[MCSM] Quick panel hotkey check failed: " + t);
         }
@@ -96,14 +98,17 @@ public abstract class McsmQuickConfigKeyMixin {
             int rightShift = ((Number) glfw.getField("GLFW_KEY_RIGHT_SHIFT").get(null)).intValue();
             int leftCtrl = ((Number) glfw.getField("GLFW_KEY_LEFT_CONTROL").get(null)).intValue();
             int rightCtrl = ((Number) glfw.getField("GLFW_KEY_RIGHT_CONTROL").get(null)).intValue();
+            int keyA = ((Number) glfw.getField("GLFW_KEY_A").get(null)).intValue();
 
             boolean cPressed = ((Number) getKey.invoke(null, handle, keyC)).intValue() == press;
+            boolean aPressed = ((Number) getKey.invoke(null, handle, keyA)).intValue() == press;
             boolean shiftPressed = ((Number) getKey.invoke(null, handle, leftShift)).intValue() == press
                     || ((Number) getKey.invoke(null, handle, rightShift)).intValue() == press;
             boolean ctrlPressed = ((Number) getKey.invoke(null, handle, leftCtrl)).intValue() == press
                     || ((Number) getKey.invoke(null, handle, rightCtrl)).intValue() == press;
 
-            return cPressed && (shiftPressed || ctrlPressed);
+            // Shift+C / Ctrl+C (original) or Shift+A (Build #374)
+            return (cPressed && (shiftPressed || ctrlPressed)) || (aPressed && shiftPressed);
         } catch (Throwable ignored) {
             return false;
         }

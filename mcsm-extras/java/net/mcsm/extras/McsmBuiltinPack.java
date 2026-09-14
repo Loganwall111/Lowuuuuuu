@@ -27,6 +27,9 @@ public final class McsmBuiltinPack {
     private static volatile String ogcCemStatus = "pending";
     private static volatile String shaderStatus = "pending";
 
+    /** Packs already registered with the Fabric loader this launch. */
+    private static final java.util.Set<String> registered = new java.util.HashSet<>();
+
     public static void register() {
         if (attempted) {
             return;
@@ -34,11 +37,48 @@ public final class McsmBuiltinPack {
         attempted = true;
         shaderStatus = McsmShaderPackInstall.install();
         McsmCommandBlockUse.register();
-        boolean story = registerBuiltIn("storylook", "Story Look");
-        storyLookStatus = story ? "built-in, default enabled"
-                : (summonZip("storylook", "Story Look.zip") ? "extracted to resourcepacks/ (enable it in the pack screen)" : "MISSING - install the storylook zip from the release");
-        boolean cems = registerBuiltIn("ogs-cem", "OGS CEM preset/model pack");
-        ogcCemStatus = cems ? "built-in, default enabled" : "built-in registration failed";
+        summonPacks();
+    }
+
+    private static void summonPacks() {
+        if (!registered.contains("storylook")) {
+            boolean story = registerBuiltIn("storylook", "Story Look");
+            if (story) {
+                registered.add("storylook");
+            }
+            storyLookStatus = story ? "built-in, default enabled"
+                    : (summonZip("storylook", "Story Look.zip") ? "extracted to resourcepacks/ (enable it in the pack screen)" : "MISSING - install the storylook zip from the release");
+        } else {
+            storyLookStatus = "built-in, default enabled";
+        }
+        if (!registered.contains("ogs-cem")) {
+            boolean cems = registerBuiltIn("ogs-cem", "OGS CEM preset/model pack");
+            if (cems) {
+                registered.add("ogs-cem");
+            }
+            ogcCemStatus = cems ? "built-in, default enabled" : "built-in registration failed";
+        } else {
+            ogcCemStatus = "built-in, default enabled";
+        }
+    }
+
+    /**
+     * Build #374: the console action "Re-summon packs + auto-select shader
+     * now". Re-runs the shader installer (extract + Iris auto-select) and the
+     * resource-pack summon for anything not already registered this launch.
+     * Takes effect fully on the next resource reload / restart.
+     */
+    public static String resummon() {
+        try {
+            McsmExtrasConfig.load();
+            McsmShaderPackInstall.resetAttempt();
+            shaderStatus = McsmShaderPackInstall.install();
+            summonPacks();
+            System.out.println("[ds] packs re-summoned: " + summary());
+        } catch (Throwable t) {
+            warn("packs", "re-summon failed: " + t);
+        }
+        return summary();
     }
 
     /**

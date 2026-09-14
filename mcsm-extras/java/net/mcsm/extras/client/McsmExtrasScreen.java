@@ -257,6 +257,28 @@ public final class McsmExtrasScreen extends Screen {
               McsmGate.reset();
           });
         categories.add(c6);
+
+        // Build #374 -- the new options: the real cube skybox and the
+        // built-in pack summoning (resource + shader packs).
+        Category c7 = new Category("VII", "SKY & BUILT-IN PACKS", "The real Story Mode skybox and the summoned packs.");
+        c7.bool("MCSM Skybox (Real Cube, Not Dome)", () -> McsmExtrasConfig.skyboxEnabled, v -> {
+            McsmExtrasConfig.skyboxEnabled = v;
+            McsmExtrasConfig.save();
+        })
+          .val("Skybox Fade (sec)", () -> McsmExtrasConfig.skyboxFadeSeconds, v -> {
+              McsmExtrasConfig.skyboxFadeSeconds = v;
+              McsmExtrasConfig.save();
+          }, 0.5, 20.0)
+          .val("Skybox Size", () -> McsmExtrasConfig.skyboxSize, v -> {
+              McsmExtrasConfig.skyboxSize = v;
+              McsmExtrasConfig.save();
+          }, 0.5, 1.5)
+          .bool("Embedded Shader Pack (Auto-Install)", () -> McsmExtrasConfig.embeddedShaderPack, v -> {
+              McsmExtrasConfig.embeddedShaderPack = v;
+              McsmExtrasConfig.save();
+          })
+          .act("Re-summon packs + auto-select shader now", () -> net.mcsm.extras.McsmBuiltinPack.resummon());
+        categories.add(c7);
     }
 
     public McsmExtrasScreen(Screen parent) {

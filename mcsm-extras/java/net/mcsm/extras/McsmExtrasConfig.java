@@ -206,6 +206,7 @@ public final class McsmExtrasConfig {
             p.setProperty("og_sun_glow", String.valueOf(ogSunGlow));
             p.setProperty("og_sun_glow_strength", String.valueOf(ogSunGlowStrength));
             p.setProperty("story_menu_backdrop", String.valueOf(storyMenuBackdrop));
+            p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
             p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
             p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
             p.setProperty("skybox_size", String.valueOf(skyboxSize));
@@ -283,6 +284,7 @@ public final class McsmExtrasConfig {
             ogSunGlow = bool(p, "og_sun_glow", ogSunGlow);
             ogSunGlowStrength = dbl(p, "og_sun_glow_strength", ogSunGlowStrength);
             storyMenuBackdrop = bool(p, "story_menu_backdrop", storyMenuBackdrop);
+            embeddedShaderPack = bool(p, "embedded_shader_pack", embeddedShaderPack);
             skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
             skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
             skyboxSize = dbl(p, "skybox_size", skyboxSize);

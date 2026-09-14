@@ -46,6 +46,12 @@ public final class McsmShaderPackInstall {
     private McsmShaderPackInstall() {
     }
 
+    /** Build #374: let the console's "re-summon" action run the installer again. */
+    public static void resetAttempt() {
+        attempted = false;
+        lastStatus = "pending";
+    }
+
     /**
      * Build #374: returns a short human-readable outcome ("auto-selected
      * DevouringStorms-SuperDuperDefault.zip", "off (embedded-pack toggle)",

@@ -203,10 +203,22 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.dabicco.witherstormmod.client.ShaderPackCompat \
     net.dabicco.witherstormmod.client.FoglessRenderTypes \
     net.dabicco.witherstormmod.client.StormSkyGradient \
+    net.dabicco.witherstormmod.client.StormBackdrop \
+    net.dabicco.witherstormmod.client.ClientDistantStormManager \
+    net.dabicco.witherstormmod.client.GlowRenderTypes \
+    net.dabicco.witherstormmod.config.DabyWSClientConfig \
     net.dabicco.witherstormmod.entity.WitherStormEntity \
+    net.dabicco.witherstormmod.entity.renderer.WitherStormRenderer \
     net.dabicco.witherstormmod.command.DabyWSCommand"
   javap -public -classpath "$CP2" $CLIENT_CLASSES > ci/api/client.txt 2>&1 || true
   javap -public -classpath "$CP2" $MOD_CLASSES   > ci/api/mod.txt    2>&1 || true
+  # Build #374: PRIVATE-member dumps for the two classes whose internals the
+  # next console round needs (the giant 3D preview field on the base config
+  # screen; the AI/targeting fields on the storm entity for the hunt upgrade).
+  javap -p -classpath "$CP2" \
+    net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen \
+    net.dabicco.witherstormmod.entity.WitherStormEntity \
+    > ci/api/mod-private.txt 2>&1 || true
   # MCSM 1.9.101 -- the 1.9.101 javac errors (sendParticles overload,
   # "cannot access Message") live in the particle/level/chat API, which the
   # original dump never covered. Dump it, plus a package index of those
