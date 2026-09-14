@@ -275,17 +275,18 @@ public final class McsmStormMenuScene {
      *  in-game Phase 6 particle field. */
     private static void drawDebris(GuiGraphicsExtractor g, int cx, int cy, float scale,
                                    double cosY, double sinY, double cosP, double sinP) {
-        float tt = bobPhase * 0.5F;
+        // pure double arithmetic (the 26.2 javac gate rejects float/double mixing)
+        double tt = bobPhase * 0.5D;
         for (int i = 0; i < 26; i++) {
-            float sd = i * 0.618034F;
-            float cyc = fract(tt * 0.05F + fract(sd));
-            float ang = fract(sd * 3.1F) * 6.28318F + tt * 0.06F;
-            double mx = Math.cos(ang) * (18.0D + 14.0D * fract(sd * 5.7D)) * cyc + (fract(sd * 9.3F) - 0.5D) * 10.0D;
-            double my = 26.0D + Math.sin(ang) * (10.0D + 8.0D * fract(sd * 7.1D)) - cyc * 26.0D;
-            double mz = Math.sin(ang) * (16.0D + 12.0D * fract(sd * 4.3D));
+            double sd = i * 0.618034D;
+            double cyc = fractD(tt * 0.05D + fractD(sd));
+            double ang = fractD(sd * 3.1D) * 6.28318D + tt * 0.06D;
+            double mx = Math.cos(ang) * (18.0D + 14.0D * fractD(sd * 5.7D)) * cyc + (fractD(sd * 9.3D) - 0.5D) * 10.0D;
+            double my = 26.0D + Math.sin(ang) * (10.0D + 8.0D * fractD(sd * 7.1D)) - cyc * 26.0D;
+            double mz = Math.sin(ang) * (16.0D + 12.0D * fractD(sd * 4.3D));
             double[] p = project(mx, my, mz, cosY, sinY, cosP, sinP, cx, cy, scale);
-            int s = Math.max(1, (int) (scale * (1.2D + 1.4D * fract(sd * 7.3D))));
-            int a = (int) (150.0F * (1.0F - cyc * 0.8F));
+            int s = Math.max(1, (int) (scale * (1.2D + 1.4D * fractD(sd * 7.3D))));
+            int a = (int) (150.0D * (1.0D - cyc * 0.8D));
             if (a > 8) {
                 g.fill((int) p[0] - s / 2, (int) p[1] - s / 2, (int) p[0] + s / 2, (int) p[1] + s / 2,
                         (0xFF0A0810 & 0x00FFFFFF) | (a << 24));
@@ -293,14 +294,18 @@ public final class McsmStormMenuScene {
         }
     }
 
-    private static float fract(float x) {
-        return x - (float) Math.floor(x);
+    private static double fractD(double x) {
+        return x - Math.floor(x);
+    }
+
+    private static int clamp255(double v) {
+        return (int) Math.max(0.0D, Math.min(255.0D, v));
     }
 
     private static int shade(int r, int g, int b, float f) {
         return 0xFF000000
-                | (Mth.clamp((int) (r * f), 0, 255) << 16)
-                | (Mth.clamp((int) (g * f), 0, 255) << 8)
-                | Mth.clamp((int) (b * f), 0, 255);
+                | (clamp255(r * (double) f) << 16)
+                | (clamp255(g * (double) f) << 8)
+                | clamp255(b * (double) f);
     }
 }

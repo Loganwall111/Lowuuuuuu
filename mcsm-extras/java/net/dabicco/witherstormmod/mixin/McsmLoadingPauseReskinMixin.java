@@ -9,7 +9,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.mcsm.extras.client.McsmCinematic;
-import net.mcsm.extras.client.McsmExtrasConfig;
+import net.mcsm.extras.McsmExtrasConfig;
 
 /**
  * Build #375 -- the DS reskin for the two screens the generic Screen

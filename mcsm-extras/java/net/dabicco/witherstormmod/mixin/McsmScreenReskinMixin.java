@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.mcsm.extras.client.McsmExtrasConfig;
+import net.mcsm.extras.McsmExtrasConfig;
 
 /**
  * Build #375 -- the DS reskin for EVERY screen the mod does not already
