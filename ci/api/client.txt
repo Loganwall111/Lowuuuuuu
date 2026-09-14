@@ -945,6 +945,21 @@ public class net.minecraft.world.level.block.entity.CommandBlockEntity extends n
   public boolean isConditional();
   public void removeComponentsFromTag(net.minecraft.world.level.storage.ValueOutput);
 }
+Compiled from "ChatListener.java"
+public class net.minecraft.client.multiplayer.chat.ChatListener {
+  public net.minecraft.client.multiplayer.chat.ChatListener(net.minecraft.client.Minecraft);
+  public void tick();
+  public void setMessageDelay(double);
+  public void acceptNextDelayedMessage();
+  public long queueSize();
+  public void flushQueue();
+  public boolean removeFromDelayedMessageQueue(net.minecraft.network.chat.MessageSignature);
+  public void handlePlayerChatMessage(net.minecraft.network.chat.PlayerChatMessage, com.mojang.authlib.GameProfile, net.minecraft.network.chat.ChatType$Bound);
+  public void handleChatMessageError(java.util.UUID, net.minecraft.network.chat.MessageSignature, net.minecraft.network.chat.ChatType$Bound);
+  public void handleDisguisedChatMessage(net.minecraft.network.chat.Component, net.minecraft.network.chat.ChatType$Bound);
+  public void handleSystemMessage(net.minecraft.network.chat.Component, boolean);
+  public void handleOverlay(net.minecraft.network.chat.Component);
+}
 Compiled from "Component.java"
 public interface net.minecraft.network.chat.Component extends com.mojang.brigadier.Message,net.minecraft.network.chat.FormattedText {
   public abstract net.minecraft.network.chat.Style getStyle();
