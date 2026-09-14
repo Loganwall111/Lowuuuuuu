@@ -46,19 +46,45 @@ public abstract class McsmStormSkinPhaseAtlasMixin {
     private static Identifier mcsm$tracedFor(double phase) {
         if (phase < 1.0D) return null; // Phase 0 starter atlas stays native
         boolean og = DabyWSClientConfig.stormSkin >= 0.5D;
+        int band = mcsm$band(phase);
         String suffix;
-        if (phase >= 7.0D) {
-            suffix = og ? "_og_p7" : "_p7";
-        } else if (phase >= 6.0D) {
-            suffix = og ? "_og_p6" : "_p6";
-        } else if (phase >= 5.5D) {
-            suffix = og ? "_og_p55" : "_p55";
-        } else if (phase >= 4.0D) {
-            suffix = og ? "_og" : "";
-        } else {
-            suffix = og ? "_og" : "";
+        switch (band) {
+            case 3:  suffix = og ? "_og_p7" : "_p7"; break;
+            case 2:  suffix = og ? "_og_p6" : "_p6"; break;
+            case 1:  suffix = og ? "_og_p55" : "_p55"; break;
+            default: suffix = og ? "_og" : ""; break;
         }
         return Identifier.fromNamespaceAndPath("dabywitherstormmod",
                 "textures/entity/phase_4_assets" + suffix + ".png");
+    }
+
+    /** Raw band for a phase: 0 = 4-5.4, 1 = 5.5-5.9, 2 = 6-6.9, 3 = 7+. */
+    private static int mcsm$raw(double p) {
+        return p >= 7.0D ? 3 : p >= 6.0D ? 2 : p >= 5.5D ? 1 : 0;
+    }
+
+    private static final double[] BAND_LO = {4.0D, 5.5D, 6.0D, 7.0D};
+    private static final double[] BAND_HI = {5.5D, 6.0D, 7.0D, 99.0D};
+    private static volatile int mcsm$lastBand = -1;
+
+    /**
+     * BUILD #400 -- hysteresis: the phase hint jitters by a few hundredths as
+     * the storm moves, which made the body atlas flip-flop across a band
+     * boundary ("colours change every time it moves"). A band only changes
+     * once the phase is 0.15 past the boundary, so motion never pops the
+     * material; genuine phase progressions still cross within one tick.
+     */
+    private static int mcsm$band(double p) {
+        int last = mcsm$lastBand;
+        int band;
+        if (last < 0) {
+            band = mcsm$raw(p);
+        } else if (p >= BAND_HI[last] + 0.15D || p < BAND_LO[last] - 0.15D) {
+            band = mcsm$raw(p);
+        } else {
+            band = last;
+        }
+        mcsm$lastBand = band;
+        return band;
     }
 }

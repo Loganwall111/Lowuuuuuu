@@ -1,3 +1,17 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.400 — Build #400: motion-stable traced skins + halo state pinned
+
+- Atlas band hysteresis: the phase hint jitters as the storm moves, which made
+  the traced body material flip-flop across the 5.5/6/7 boundaries ("colours
+  change every time it moves"). Bands now only switch 0.15 past a boundary, so
+  motion never pops the skin while real phase progressions still land.
+- Ambient lighting on the traced charcoal is show-correct and untouched: the
+  body reads tan in bright daylight (see the 2026-09-06 143811 reference) and
+  black at night; the vertex tint stays neutral so no purple ever leaks in.
+- Halo state pinned to the last-three-reference look: the generated hard ring
+  card stays retired (blackGlare off), cataclysmHalos + StormBackdrop supply
+  the soft wide glare, and the black core is the opaque traced body itself,
+  covering to the very top of the storm. Beams stay show purple (0.55,0.15,1.0).
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.399 — Build #399: per-phase traced-shading body atlases
 
 The baseline bound ONE body atlas (phase_4_assets_p6) to every Phase 1+ storm
