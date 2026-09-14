@@ -286,6 +286,18 @@ public final class McsmExtrasScreen extends Screen {
           })
           .act("Re-summon packs + auto-select shader now", () -> net.mcsm.extras.McsmBuiltinPack.resummon());
         categories.add(c7);
+
+        // Build #374 -- cinematic boot + epic depth animation controls.
+        Category c8 = new Category("VIII", "CINEMATICS", "The boot cutscene, the command block burst and the world cracks.");
+        c8.bool("Cinematic Boot (Pre-Game Cutscene + Command Block Burst)", () -> McsmExtrasConfig.cinematicBootEnabled, v -> {
+            McsmExtrasConfig.cinematicBootEnabled = v;
+            McsmExtrasConfig.save();
+        })
+          .bool("World Crack Intro (World Loads Cracking Apart)", () -> McsmExtrasConfig.worldCrackIntro, v -> {
+            McsmExtrasConfig.worldCrackIntro = v;
+            McsmExtrasConfig.save();
+        });
+        categories.add(c8);
     }
 
     public McsmExtrasScreen(Screen parent) {

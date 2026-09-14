@@ -94,6 +94,11 @@ public final class McsmExtrasConfig {
     public static double   skyboxFadeSeconds = 2.5;
     /** Cube size multiplier (0.5 - 1.5). */
     public static double   skyboxSize = 1.0;
+    // ---- Build #374 — cinematic boot + epic depth animations -------------
+    /** Pre-game side-view cutscene + command block burst into the main menu. */
+    public static boolean  cinematicBootEnabled = true;
+    /** The world "cracks apart" (fissures + sky shockwaves) on world load. */
+    public static boolean  worldCrackIntro = true;
 
     // ---- Nightglow & Silhouette Halo Expansion ---------------------------
     public static boolean nightglowBodyOutline = true; // Outline whole body bottom tail to top of phase 5
@@ -216,6 +221,8 @@ public final class McsmExtrasConfig {
             p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
             p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
             p.setProperty("skybox_size", String.valueOf(skyboxSize));
+            p.setProperty("cinematic_boot_enabled", String.valueOf(cinematicBootEnabled));
+            p.setProperty("world_crack_intro", String.valueOf(worldCrackIntro));
             p.setProperty("nightglow_body_outline", String.valueOf(nightglowBodyOutline));
             p.setProperty("nightglow_bluish_glow", String.valueOf(nightglowBluishGlow));
             p.setProperty("nightglow_purple_glow55", String.valueOf(nightglowPurpleGlow55));
@@ -297,6 +304,8 @@ public final class McsmExtrasConfig {
             skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
             skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
             skyboxSize = dbl(p, "skybox_size", skyboxSize);
+            cinematicBootEnabled = bool(p, "cinematic_boot_enabled", cinematicBootEnabled);
+            worldCrackIntro = bool(p, "world_crack_intro", worldCrackIntro);
             nightglowPurpleGlow55 = bool(p, "nightglow_purple_glow55", nightglowPurpleGlow55);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);

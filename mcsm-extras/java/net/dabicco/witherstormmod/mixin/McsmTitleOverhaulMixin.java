@@ -245,9 +245,64 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         }
     }
 
+    /**
+     * Build #374: while the boot cinematic owns the screen (pre-game
+     * cutscene or the command block burst), the chrome stands down and the
+     * sequence draws on top of everything.
+     */
+    @Inject(method = "extractRenderState", at = @At("HEAD"))
+    private void dabyws$cinematicBoot(GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick, CallbackInfo ci) {
+        try {
+            if (net.mcsm.extras.client.McsmCinematic.tickMenu()) {
+                net.mcsm.extras.client.McsmCinematic.drawMenuSequence(g, this);
+            }
+        } catch (Throwable ignored) {
+            // the cinematic must never break a frame
+        }
+    }
+
+    /**
+     * Build #374: input guard for the boot cinematic + the button
+     * break-apart trigger. While a sequence is playing the clicks are
+     * swallowed (any key skips); otherwise a click on a menu button spawns
+     * the shatter spray at the button centre.
+     */
+    @Inject(method = "mouseClicked(Lnet/minecraft/client/input/MouseButtonEvent;Z)Z",
+            at = @At("HEAD"), cancellable = true)
+    private void dabyws$cinematicClick(net.minecraft.client.input.MouseButtonEvent event,
+            boolean doubleClick,
+            org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir) {
+        try {
+            if (net.mcsm.extras.client.McsmCinematic.tickMenu()) {
+                cir.setReturnValue(true);
+                return;
+            }
+            for (Object child : this.children()) {
+                if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
+                    continue;
+                }
+                net.minecraft.client.gui.components.AbstractButton b =
+                        (net.minecraft.client.gui.components.AbstractButton) child;
+                if (!b.active || !b.visible || !b.isMouseOver(event.x(), event.y())) {
+                    continue;
+                }
+                int cx = b.getX() + b.getWidth() / 2;
+                int cy = b.getY() + b.getHeight() / 2;
+                net.mcsm.extras.client.McsmCinematic.shatterButton(cx, cy);
+            }
+        } catch (Throwable ignored) {
+            // cosmetic only
+        }
+    }
+
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void dabyws$mcsMenuChrome(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
+        // Build #374: no chrome while the boot cinematic owns the screen
+        if (net.mcsm.extras.client.McsmCinematic.isSequenceActive()) {
+            return;
+        }
         int w = this.width;
         int h = this.height;
         Font font = Minecraft.getInstance().font;
