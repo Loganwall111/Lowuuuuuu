@@ -11,7 +11,12 @@ import net.minecraft.world.phys.Vec3;
  * is allowed to derive a second centre from a head, billboard, or camera.
  */
 public final class McsmStormOrigin {
-    private static final Method ORIGIN_METHOD = findOriginMethod();
+    private static final Method ORIGIN_METHOD = findMethod("getStormOrigin");
+    // The shipping overlay compiles against the pinned base jar, while the
+    // whole-source build supplies the newer per-frame capture API. Reflect on
+    // it so both build tracks remain compatible.
+    private static final Method CAPTURE_METHOD = findManagerMethod("captureAtmosphere", Vec3.class);
+    private static final Method NEAREST_METHOD = findManagerMethod("nearestCustomWeather", Vec3.class);
 
     private McsmStormOrigin() {
     }
@@ -34,14 +39,43 @@ public final class McsmStormOrigin {
     }
 
     public static ClientDistantStormManager.StormData nearest(Vec3 camera) {
-        // The base manager captures this once at LevelRenderer.render HEAD.
-        // Never run a second nearest-storm search in an atmospheric pass.
-        return ClientDistantStormManager.nearestCustomWeather(camera);
+        // The source build captures this once at LevelRenderer.render HEAD.
+        // The pinned delivery jar predates that API, so retain a reflective
+        // fallback rather than making the overlay uncompilable against it.
+        if (CAPTURE_METHOD != null && NEAREST_METHOD != null) {
+            try {
+                return (ClientDistantStormManager.StormData) NEAREST_METHOD.invoke(null, camera);
+            } catch (Throwable ignored) {
+                // Fall through to the compatible legacy scan.
+            }
+        }
+
+        ClientDistantStormManager.StormData best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (ClientDistantStormManager.StormData state : ClientDistantStormManager.all()) {
+            if (state.phase < 5.0F) {
+                continue;
+            }
+            double distance = getStormOrigin(state).distanceToSqr(camera);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = state;
+            }
+        }
+        return best;
     }
 
-    private static Method findOriginMethod() {
+    private static Method findManagerMethod(String name, Class<?>... parameterTypes) {
         try {
-            return ClientDistantStormManager.StormData.class.getMethod("getStormOrigin");
+            return ClientDistantStormManager.class.getMethod(name, parameterTypes);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static Method findMethod(String name) {
+        try {
+            return ClientDistantStormManager.StormData.class.getMethod(name);
         } catch (Throwable ignored) {
             return null;
         }
