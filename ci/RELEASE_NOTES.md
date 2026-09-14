@@ -1,3 +1,19 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.396 — Build #396: build-string repair + no-screen config handoff
+
+- ROOT CAUSE of "duplicates of the exact same build": the in-game build string
+  (McsmExtrasConfig.BUILD_VERSION, shown on the title screen, config footer and
+  HUD banner) was never bumped past .393 — the .394/.395 version sed patterns
+  missed the line, so three different jars all announced themselves as
+  "...FINAL.393". .396 fixes the string with a suffix-independent replacement.
+  KEEP ONLY ONE Devouring Storms jar in your mods folder: delete every
+  ds-1.9.39x / ds-7000.0.0...393 / ...395 / plain-7000.0.0 jar before installing.
+- The reference build has NO tabbed config screen: every config entry point now
+  hands off on its first drawn frame to the revamped rail panel
+  (McsmGuiExtrasRows handoff with an 800 ms re-entry guard, so closing the panel
+  still lands on a usable screen instead of looping).
+- Shading/sky/beam/teeth content identical to #395 (black glossy body, enlarged
+  black halo core, phase-true skies, extreme-distance blend-back).
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.395 — Build #395: re-issue of the #394 shading pass
 
 Identical content to build #394 (black glossy storm body, enlarged black halo core on the same oval geometry, sheet-purple 5.5 blur, phase-true skies for 5 / 5.5-5.9 / split-6, extreme-distance blend-back into the story sky). The #394 tag never materialised — the runner's release-publish step no-oped on both of its runs without leaving a tag or release, and runner artifacts are unreachable from the build sandbox — so the same tree ships under a fresh version to get a clean release with all five assets.
