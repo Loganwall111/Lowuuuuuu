@@ -84,6 +84,16 @@ public final class McsmExtrasConfig {
     // panorama: night sky, sun slab, moon, nebula, mountain silhouettes).
     // TRUE (default) = the cinematic scene; FALSE = the plain gradient.
     public static boolean  storyMenuBackdrop = true;
+    // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
+    // Textured cube around the camera; 6 phase skies (lavender day, midnight
+    // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
+    // nearest storm's phase and fade back to the regular vanilla sky.
+    // FALSE = the vanilla variant (plain regular Minecraft sky).
+    public static boolean  skyboxEnabled = true;
+    /** Seconds for the sky cross-fade / fade-back-to-vanilla (0.25 - 20). */
+    public static double   skyboxFadeSeconds = 2.5;
+    /** Cube size multiplier (0.5 - 1.5). */
+    public static double   skyboxSize = 1.0;
 
     // ---- Nightglow & Silhouette Halo Expansion ---------------------------
     public static boolean nightglowBodyOutline = true; // Outline whole body bottom tail to top of phase 5
@@ -196,6 +206,9 @@ public final class McsmExtrasConfig {
             p.setProperty("og_sun_glow", String.valueOf(ogSunGlow));
             p.setProperty("og_sun_glow_strength", String.valueOf(ogSunGlowStrength));
             p.setProperty("story_menu_backdrop", String.valueOf(storyMenuBackdrop));
+            p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
+            p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
+            p.setProperty("skybox_size", String.valueOf(skyboxSize));
             p.setProperty("nightglow_body_outline", String.valueOf(nightglowBodyOutline));
             p.setProperty("nightglow_bluish_glow", String.valueOf(nightglowBluishGlow));
             p.setProperty("nightglow_purple_glow55", String.valueOf(nightglowPurpleGlow55));
@@ -270,6 +283,9 @@ public final class McsmExtrasConfig {
             ogSunGlow = bool(p, "og_sun_glow", ogSunGlow);
             ogSunGlowStrength = dbl(p, "og_sun_glow_strength", ogSunGlowStrength);
             storyMenuBackdrop = bool(p, "story_menu_backdrop", storyMenuBackdrop);
+            skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
+            skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
+            skyboxSize = dbl(p, "skybox_size", skyboxSize);
             nightglowPurpleGlow55 = bool(p, "nightglow_purple_glow55", nightglowPurpleGlow55);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);

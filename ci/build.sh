@@ -884,6 +884,23 @@ for need in \
   fi
 done
 
+# Build #374: the REAL skybox is 6 phases x 6 cube faces. Any missing face
+# means one phase sky renders with a missing-texture purple panel, so gate it.
+SKYBOX_MISSING=0
+for s in 1 2 3 4 5 6; do
+  for f in nz px pz nx py ny; do
+    p="assets/dabywitherstormmod/textures/skybox/phase${s}_${f}.png"
+    if [ ! -s "$FX/cls/$p" ]; then
+      echo "::error title=jar audit::skybox face missing from jar: $p"
+      SKYBOX_MISSING=1
+      AUDIT_FAIL=1
+    fi
+  done
+done
+if [ "$SKYBOX_MISSING" = "0" ]; then
+  echo "[audit] skybox cube faces: 36/36 present"
+fi
+
 # Build #368: prove the restored cosmic/phase entity textures (from Build
 # #364, commit 85ab8d3) and the Tattletale gloss sheet survived assembly
 # BYTE-FOR-BYTE. A shrunken placeholder or a stale base-jar copy would

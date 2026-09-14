@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.mcsm.extras.client.McsmEarlyStormBackdrop;
 import net.mcsm.extras.client.McsmExperimentalStoryStage;
+import net.mcsm.extras.client.McsmSkybox;
 import net.mcsm.extras.client.McsmStormBlob;
 
 /**
@@ -33,6 +34,7 @@ public abstract class McsmStormBlobMixin {
             // companion only fills the earlier phase-1 to phase-3 buildup.
             McsmEarlyStormBackdrop.submit(ctx);
             McsmExperimentalStoryStage.submit(ctx);
+            McsmSkybox.submit(ctx);
             McsmStormBlob.submit(ctx);
         }
         ci.cancel();
