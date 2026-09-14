@@ -13,7 +13,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -63,6 +62,10 @@ public final class McsmStormBlob {
     // glare is gone.
     private static final Identifier GLARE = Identifier.fromNamespaceAndPath(
             "dabywitherstormmod", "textures/misc/storm_glare.png");
+    // Build #375: the Telltale black blur - a soft dark ring hugging the
+    // storm silhouette (transparent centre, fades out to the sky).
+    private static final Identifier STORM_BLUR = Identifier.fromNamespaceAndPath(
+            "dabywitherstormmod", "textures/misc/storm_blur.png");
     private static final Identifier WHITE = Identifier.fromNamespaceAndPath(
             "dabywitherstormmod", "textures/misc/storm_white.png");
 
@@ -95,121 +98,15 @@ public final class McsmStormBlob {
 
     public static void submit(LevelRenderContext ctx) {
         try {
-            submitSkyVolume(ctx);
+            // Build #375: the old 520-550 shell "sky volume" is deleted - it
+            // was the second sky layer (the "weird layer") visible inside the
+            // real sky sphere. The storm's dark atmosphere is now the
+            // Telltale black blur ring, welded to the storm itself, drawn in
+            // submitInner below.
             submitInner(ctx);
         } catch (Throwable ignored) {
             // an unexpected base-jar surface degrades to no blob, never a crash
         }
-    }
-
-    /**
-     * MCSM-style storm backdrop: a curved sky-volume/wash, not a flat card.
-     * The reference frames read like a storm-bearing skybox layer: the colour
-     * is locked to the direction of the storm, blacks out the horizon behind
-     * it, and forms a broad foggy lobe above/behind the body.
-     */
-    private static void submitSkyVolume(LevelRenderContext ctx) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || ClientDistantStormManager.all().isEmpty()) return;
-        Vec3 cam = ctx.levelState().cameraRenderState.pos;
-        ClientDistantStormManager.StormData best = null;
-        double bestD = Double.MAX_VALUE;
-        for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-            if (d.phase < 3.9F) continue;
-            double dx = d.dispX - cam.x, dy = d.dispY - cam.y, dz = d.dispZ - cam.z;
-            double dd = dx * dx + dy * dy + dz * dz;
-            if (dd < bestD) { bestD = dd; best = d; }
-        }
-        if (best == null) return;
-        float phase = best.phase;
-        double dist = Math.sqrt(bestD);
-        if (dist < 1.0D || dist > 2800.0D) return;
-        float gt = (float)(mc.level.getGameTime() % 240000L)
-                + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        Vec3 centre = new Vec3(best.dispX, best.dispY, best.dispZ)
-                .add(sway(phase, gt * 0.05F, bodyRadius(phase)));
-        Vec3 dir = centre.subtract(cam).normalize();
-        if (dir.lengthSqr() < 1.0E-4D) return;
-        float amp = ramp(phase, 3.95F, 4.25F)
-                * (1.0F - Mth.clamp((float)((dist - 1500.0D) / 1200.0D), 0.0F, 1.0F));
-        if (amp <= 0.01F) return;
-
-        // Palettes pulled from the uploaded gradient references by phase:
-        // phase 5 turquoise+black, phase 5.5 pink/purple/orange+black,
-        // phase 5.9 purple/blue/pink, phase 6 brown-pink/purple/black.
-        float wP5 = ramp(phase, 4.90F, 5.08F) * (1.0F - ramp(phase, 5.24F, 5.38F));
-        float w55 = ramp(phase, 5.28F, 5.48F) * (1.0F - ramp(phase, 5.78F, 5.92F));
-        float w59 = ramp(phase, 5.72F, 5.90F) * (1.0F - ramp(phase, 5.95F, 6.08F));
-        float w6 = ramp(phase, 5.95F, 6.22F);
-        float wEarly = Math.max(0.0F, 1.0F - Math.min(1.0F, wP5 + w55 + w59 + w6));
-        float sum = Math.max(0.001F, wEarly + wP5 + w55 + w59 + w6);
-        final float rr = (0.05F*wEarly + 0.02F*wP5 + 0.42F*w55 + 0.30F*w59 + 0.34F*w6) / sum;
-        final float gg = (0.10F*wEarly + 0.34F*wP5 + 0.13F*w55 + 0.10F*w59 + 0.15F*w6) / sum;
-        final float bb = (0.30F*wEarly + 0.30F*wP5 + 0.36F*w55 + 0.44F*w59 + 0.28F*w6) / sum;
-        final float aa = Math.min(1.0F, amp * 1.55F);
-        final Vec3 bearing = dir;
-        ctx.submitNodeCollector().submitCustomGeometry(ctx.poseStack(), RenderTypes.entityTranslucentEmissive(WHITE),
-                (pose, consumer) -> {
-            // Main thick oval: top/sides around the storm, not a horizon strip.
-            emitDomePatch(pose, consumer, cam, bearing.add(new Vec3(0.0D, 0.20D, 0.0D)).normalize(),
-                    535.0D, 46.0D, 40.0D, rr, gg, bb, aa * 155.0F, 0.12F);
-            // Deep black upper cap like the references: darkness curls over the body.
-            emitDomePatch(pose, consumer, cam, bearing.add(new Vec3(0.0D, 0.38D, 0.0D)).normalize(),
-                    548.0D, 42.0D, 24.0D, 0.010F, 0.010F, 0.022F, aa * 185.0F, 0.22F);
-            // Saturated colour core behind the heads/tractor beams.
-            emitDomePatch(pose, consumer, cam, bearing.add(new Vec3(0.0D, 0.06D, 0.0D)).normalize(),
-                    520.0D, 30.0D, 26.0D, Math.min(1.0F, rr * 1.35F), Math.min(1.0F, gg * 1.20F), Math.min(1.0F, bb * 1.45F), aa * 92.0F, -0.02F);
-        });
-    }
-
-    private static Vec3 sway(float phase, float timeSec, double bodyR) {
-        if (phase < 4.0F || bodyR <= 0.0D) return Vec3.ZERO;
-        float amp = (float)(bodyR * (0.025D + 0.020D * Mth.clamp((phase - 4.0F) / 3.0F, 0.0F, 1.0F)));
-        return new Vec3(Mth.sin(timeSec * 0.20F) * amp,
-                Mth.sin(timeSec * 0.11F) * amp * 0.16F,
-                Mth.sin(timeSec * 0.16F + 1.3F) * amp * 0.45F);
-    }
-
-    private static void emitDomePatch(Pose pose, VertexConsumer consumer, Vec3 cam, Vec3 dir,
-            double shell, double halfDegX, double halfDegY, float r, float g, float b, float alpha, float yBias) {
-        Vec3 upHint = Math.abs(dir.y) > 0.96D ? new Vec3(1.0D, 0.0D, 0.0D) : new Vec3(0.0D, 1.0D, 0.0D);
-        Vec3 right = dir.cross(upHint).normalize();
-        Vec3 up = right.cross(dir).normalize();
-        int sx = 18, sy = 12;
-        double hx = Math.toRadians(halfDegX), hy = Math.toRadians(halfDegY);
-        for (int iy = 0; iy < sy; iy++) {
-            for (int ix = 0; ix < sx; ix++) {
-                domeQuad(pose, consumer, cam, dir, right, up, shell, hx, hy,
-                        ix / (float)sx, iy / (float)sy, (ix + 1) / (float)sx, (iy + 1) / (float)sy,
-                        r, g, b, alpha, yBias);
-            }
-        }
-    }
-
-    private static void domeQuad(Pose pose, VertexConsumer consumer, Vec3 cam, Vec3 dir, Vec3 right, Vec3 up,
-            double shell, double hx, double hy, float u0, float v0, float u1, float v1,
-            float r, float g, float b, float alpha, float yBias) {
-        domeVtx(pose, consumer, cam, dir, right, up, shell, hx, hy, u0, v1, r, g, b, alpha, yBias);
-        domeVtx(pose, consumer, cam, dir, right, up, shell, hx, hy, u1, v1, r, g, b, alpha, yBias);
-        domeVtx(pose, consumer, cam, dir, right, up, shell, hx, hy, u1, v0, r, g, b, alpha, yBias);
-        domeVtx(pose, consumer, cam, dir, right, up, shell, hx, hy, u0, v0, r, g, b, alpha, yBias);
-    }
-
-    private static void domeVtx(Pose pose, VertexConsumer consumer, Vec3 cam, Vec3 dir, Vec3 right, Vec3 up,
-            double shell, double hx, double hy, float u, float v, float r, float g, float b, float alpha, float yBias) {
-        double x = (u * 2.0D - 1.0D) * hx;
-        double y = (v * 2.0D - 1.0D) * hy;
-        Vec3 d = dir.add(right.scale(Math.tan(x))).add(up.scale(Math.tan(y + yBias * hy))).normalize();
-        double rx = (u * 2.0D - 1.0D), ry = (v * 2.0D - 1.0D);
-        double fall = Math.max(0.0D, 1.0D - Math.pow(Math.abs(rx), 2.6D))
-                * Math.max(0.0D, 1.0D - Math.pow(Math.abs(ry), 2.2D));
-        fall = fall * fall * (3.0D - 2.0D * fall);
-        int a = Mth.clamp((int)(alpha * fall), 0, 255);
-        Vec3 p = cam.add(d.scale(shell));
-        vertex(pose, consumer, p, u, v,
-                Mth.clamp((int)(r * 255.0F), 0, 255),
-                Mth.clamp((int)(g * 255.0F), 0, 255),
-                Mth.clamp((int)(b * 255.0F), 0, 255), a);
     }
 
     private static void submitInner(LevelRenderContext ctx) {
@@ -276,6 +173,23 @@ public final class McsmStormBlob {
             float breathe = 1.0F + 0.03F * Mth.sin(nowSec * 0.045F);
             baseR *= breathe;
             float a = master * distFade;
+
+            // Build #375: THE TELLTALE BLACK BLUR - the real technique from
+            // the reference frames: a soft dark radial ring welded to the
+            // storm centre (NOT a fixed sky position, NOT a shell around the
+            // camera). It moves with the storm, the storm body and terrain
+            // occlude its centre for free through the depth test, and the
+            // transparent middle keeps the creature visible. Phase 4 up.
+            if (McsmExtrasConfig.stormBlurEnabled) {
+                double blurR = bodyRadius(phase) * 2.5D
+                        * Mth.clamp(McsmExtrasConfig.stormBlurSize, 0.4D, 2.5D);
+                int blurA = (int) (a * ramp(phase, 3.95F, 4.25F)
+                        * Mth.clamp(McsmExtrasConfig.stormBlurStrength, 0.0D, 2.0D) * 255.0F);
+                if (blurR > 1.0D && blurA > 4) {
+                    quad(poseStack, collector, GlowRenderTypes.translucent(STORM_BLUR),
+                            centre, view, blurR, 255, 255, 255, blurA);
+                }
+            }
 
             float wBlue = ramp(phase, 3.95F, 4.2F) * (1.0F - ramp(phase, 4.6F, 5.0F));
             float wTurq = ramp(phase, 4.45F, 4.9F) * (1.0F - ramp(phase, 5.2F, 5.5F));

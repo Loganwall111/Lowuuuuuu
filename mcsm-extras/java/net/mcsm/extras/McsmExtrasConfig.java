@@ -94,6 +94,16 @@ public final class McsmExtrasConfig {
     public static double   skyboxFadeSeconds = 2.5;
     /** Cube size multiplier (0.5 - 1.5). */
     public static double   skyboxSize = 1.0;
+    /** When the cube is fully opaque, cancel the vanilla sky pass entirely so
+     *  the base storm-darken/void tint cannot show through as a second layer. */
+    public static boolean  skyPassCancel = true;
+    /** Build #375: the Telltale black blur - a soft dark ring hugging the storm
+     *  silhouette (attached to the storm, moves with it). */
+    public static boolean  stormBlurEnabled = true;
+    /** Blur ring size multiplier (0.4 - 2.5). */
+    public static double   stormBlurSize = 1.0;
+    /** Blur ring darkness multiplier (0 - 2). */
+    public static double   stormBlurStrength = 1.0;
     // ---- Build #374 — cinematic boot + epic depth animations -------------
     /** Pre-game side-view cutscene + command block burst into the main menu. */
     public static boolean  cinematicBootEnabled = true;
@@ -224,6 +234,10 @@ public final class McsmExtrasConfig {
             p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
             p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
             p.setProperty("skybox_size", String.valueOf(skyboxSize));
+            p.setProperty("sky_pass_cancel", String.valueOf(skyPassCancel));
+            p.setProperty("storm_blur_enabled", String.valueOf(stormBlurEnabled));
+            p.setProperty("storm_blur_size", String.valueOf(stormBlurSize));
+            p.setProperty("storm_blur_strength", String.valueOf(stormBlurStrength));
             p.setProperty("cinematic_boot_enabled", String.valueOf(cinematicBootEnabled));
             p.setProperty("world_crack_intro", String.valueOf(worldCrackIntro));
             p.setProperty("nightglow_body_outline", String.valueOf(nightglowBodyOutline));
@@ -309,6 +323,10 @@ public final class McsmExtrasConfig {
             skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
             skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
             skyboxSize = dbl(p, "skybox_size", skyboxSize);
+            skyPassCancel = bool(p, "sky_pass_cancel", skyPassCancel);
+            stormBlurEnabled = bool(p, "storm_blur_enabled", stormBlurEnabled);
+            stormBlurSize = dbl(p, "storm_blur_size", stormBlurSize);
+            stormBlurStrength = dbl(p, "storm_blur_strength", stormBlurStrength);
             cinematicBootEnabled = bool(p, "cinematic_boot_enabled", cinematicBootEnabled);
             worldCrackIntro = bool(p, "world_crack_intro", worldCrackIntro);
             nightglowPurpleGlow55 = bool(p, "nightglow_purple_glow55", nightglowPurpleGlow55);

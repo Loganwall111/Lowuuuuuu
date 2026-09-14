@@ -5,9 +5,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.dabicco.witherstormmod.client.ClientDistantStormManager;
+import net.dabicco.witherstormmod.client.GlowRenderTypes;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -15,40 +15,47 @@ import net.mcsm.extras.McsmExtrasConfig;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Build #374 -- the REAL Story Mode skybox: a textured CUBE around the
- * camera (explicitly NOT a dome). Six faces per phase, converted offline
- * from equirectangular Story Mode sky panoramas into seam-free cube faces
- * (jar-overrides/assets/dabywitherstormmod/textures/skybox/phaseN_*.png;
- * 12/12 face adjacencies verified to share identical physical edges).
+ * Devouring Storms: The Point of No Return - the REAL rendered sky.
+ *
+ * A closed 360-degree rendered sky sphere around the camera - genuine 3D
+ * geometry (a full UV sphere, not a backdrop card, not a half dome, and not
+ * the seamed 6-face cube whose corner gaps showed a line). Textured with the
+ * six exact Story Mode skies (1024x512 equirectangular, zero banding):
+ *
+ *   1 lavender day   2 midnight blue   3 sunset
+ *   4 turquoise      5 purple          6 brown-purple witherstorm
  *
  *  - per STORM: the nearest tracked storm drives the sky, so a storm at
- *    phase 4 and one at phase 6 each show their own sky (nearest wins, the
- *    same rule as the sky volume).
- *  - per PHASE: 1 lavender day / 2 midnight blue / 3 sunset / 4 turquoise /
- *    5 purple / 6 brown-purple witherstorm. The storm eye sits at the
- *    front-centre of the sky: the cube yaws so its front face points at the
- *    storm, pitch-locked so the horizon stays level.
- *  - fade: cross-fades between phase skies, and fades back to the regular
- *    vanilla sky when the storm despawns or the toggle goes off.
- *  - vanilla variant: "MCSM Skybox" toggle OFF in the config console.
+ *    phase 4 and one at phase 6 each show their own sky (nearest wins).
+ *  - per PHASE: cross-fades between the phase skies, and fades back to the
+ *    regular vanilla sky when the storm despawns or the toggle goes off.
+ *  - the sky is attached to the storm: its palette follows the storm's
+ *    phase and the Telltale black blur (McsmStormBlob) rides the storm
+ *    itself, so everything moves as one element and never clips (the
+ *    sphere is centred on the camera, so the camera is always 540 blocks
+ *    from every point of it).
+ *  - when the sphere is fully faded in, the vanilla sky pass is cancelled
+ *    (McsmSkyPassGateMixin) so the base storm-darken/void tint cannot show
+ *    through as a second layer - no giant void, no weird layer.
  *
- * Render plumbing is the exact proven pattern of McsmStormBlob.
- * submitSkyVolume (RenderTypes.entityTranslucentEmissive +
- * submitCustomGeometry + the ~540-block shell already inside the far clip).
+ * Render plumbing: GlowRenderTypes.translucent - alpha-blended, textured,
+ * no culling, NO FOG, depth-tested but no depth write, so terrain and the
+ * real storm body always draw in front of the sky for free.
  */
 public final class McsmSkybox {
 
-    /** Cube half-size in blocks (the sky volume uses shells of 520-550). */
+    /** Sphere radius in blocks (the sky volume uses shells of 520-550). */
     private static final double HALF = 540.0D;
 
-    private static final String[] FACE_NAMES = {"nz", "px", "pz", "nx", "py", "ny"};
+    private static final int LON = 48;
+    private static final int LAT = 24;
 
     private McsmSkybox() {
     }
 
-    private static Identifier tex(int set, int face) {
+    private static Identifier tex(int set) {
         return Identifier.fromNamespaceAndPath("dabywitherstormmod",
-                "textures/skybox/phase" + set + "_" + FACE_NAMES[face] + ".png");
+                "textures/skybox/phase" + set + "_equirect.png");
     }
 
     /** Phase -> sky set: 1 day, 2 midnight, 3 sunset, 4 turquoise, 5 purple, 6 witherstorm. */
@@ -71,25 +78,19 @@ public final class McsmSkybox {
         return 6;
     }
 
-    /** Face direction for corner (u, v in 0..1), cube-local.
-     * Tangents derived so the outside panorama is continuous:
-     * nz/px/pz/nx: v -> -Y; py: u -> +X, v -> +Z; ny: u -> +X, v -> -Z. */
-    private static Vec3 faceDir(int face, float u, float v) {
-        double ux = 2.0D * u - 1.0D, vy = 2.0D * v - 1.0D;
-        switch (face) {
-            case 0: return new Vec3(-ux, -vy, -1.0D).normalize();
-            case 1: return new Vec3(1.0D, -vy, -ux).normalize();
-            case 2: return new Vec3(ux, -vy, 1.0D).normalize();
-            case 3: return new Vec3(-1.0D, -vy, ux).normalize();
-            case 4: return new Vec3(ux, 1.0D, vy).normalize();
-            default: return new Vec3(ux, -1.0D, -vy).normalize();
-        }
-    }
-
     // ---- cross-fade state --------------------------------------------------
     private static int setA = 0, setB = 0;
     private static float alphaA = 0.0F, alphaB = 0.0F;
     private static double lastTicks = -1.0D;
+
+    /** True while the sphere fully covers the view - the sky pass gate uses
+     *  this to cancel the vanilla sky (and the base storm-darken/void tint)
+     *  so no second sky layer can show through or paint over the sphere. */
+    private static boolean skyPassCancellable = false;
+
+    public static boolean skyPassCancellable() {
+        return skyPassCancellable && McsmExtrasConfig.skyPassCancel;
+    }
 
     public static void submit(LevelRenderContext ctx) {
         try {
@@ -149,66 +150,77 @@ public final class McsmSkybox {
                 alphaA = 0.0F;
                 setB = 0;
                 alphaB = 0.0F;
+                skyPassCancellable = false;
                 return;
             }
             if (setA == setB && alphaB <= 0.004F && setB != 0) {
+                skyPassCancellable = false;
                 return; // nothing visible yet
             }
 
-            // yaw the cube so its front face (the storm eye) points at the storm
-            double yaw = 0.0D;
-            if (best != null) {
-                yaw = Math.atan2(-(best.dispX - cam.x), -(best.dispZ - cam.z));
-            }
+            // the sphere only fully hides the vanilla sky once its fade is done
+            skyPassCancellable = setB != 0 && alphaB >= 0.995F;
+
             double half = HALF * Mth.clamp(McsmExtrasConfig.skyboxSize, 0.5D, 1.5D);
             PoseStack poseStack = ctx.poseStack();
+            net.minecraft.client.renderer.SubmitNodeCollector collector = ctx.submitNodeCollector();
 
             if (setB != 0 && alphaB > 0.004F) {
-                drawCube(ctx, poseStack, setB, alphaB, yaw, half, cam);
+                drawSphere(collector, poseStack, setB, alphaB, half, cam);
             }
             if (setA != 0 && setA != setB && alphaA > 0.004F) {
-                drawCube(ctx, poseStack, setA, alphaA, yaw, half, cam);
+                drawSphere(collector, poseStack, setA, alphaA, half, cam);
             }
         } catch (Throwable ignored) {
-            // a skybox must never break a frame
+            // a sky must never break a frame
         }
     }
 
-    private static void drawCube(LevelRenderContext ctx, PoseStack poseStack, int set, float alpha,
-                                 double yaw, double half, Vec3 cam) {
+    /** One closed UV sphere: 48x24 quads, poles converging to exact points,
+     *  u = longitude, v = latitude (texture row 0 = zenith). The equirect
+     *  texture is rotationally symmetric, so no yaw is needed and there is
+     *  no seam anywhere on the sphere. */
+    private static void drawSphere(net.minecraft.client.renderer.SubmitNodeCollector collector,
+                                   PoseStack poseStack, int set, float alpha, double half, Vec3 cam) {
         int a = Mth.clamp((int) (alpha * 255.0F), 1, 255);
-        float cos = (float) Math.cos(yaw);
-        float sin = (float) Math.sin(yaw);
         final int fa = a;
-        final float cc = cos, cs = sin;
         final double hx = half;
         final Vec3 camF = cam;
-        for (int f = 0; f < 6; f++) {
-            final int ff = f;
-            ctx.submitNodeCollector().submitCustomGeometry(poseStack,
-                    RenderTypes.entityTranslucentEmissive(tex(set, ff)),
-                    (pose, consumer) -> emitFace(pose, consumer, camF, cc, cs, hx, ff, fa));
-        }
+        final float invLon = 1.0F / LON;
+        final float invLat = 1.0F / LAT;
+        collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(tex(set)), (pose, consumer) -> {
+            for (int iy = 0; iy < LAT; iy++) {
+                double latTop = (0.5 - (iy + 0.0) * invLat) * Math.PI;
+                double latBot = (0.5 - (iy + 1.0) * invLat) * Math.PI;
+                float vTop = (iy + 0.0F) * invLat;
+                float vBot = (iy + 1.0F) * invLat;
+                for (int ix = 0; ix < LON; ix++) {
+                    float uL = (ix + 0.0F) * invLon;
+                    float uR = (ix + 1.0F) * invLon;
+                    double lonL = (ix + 0.0) * invLon * (Math.PI * 2.0D);
+                    double lonR = (ix + 1.0) * invLon * (Math.PI * 2.0D);
+                    vertex(pose, consumer, camF, hx, latTop, lonL, uL, vTop, fa);
+                    vertex(pose, consumer, camF, hx, latTop, lonR, uR, vTop, fa);
+                    vertex(pose, consumer, camF, hx, latBot, lonR, uR, vBot, fa);
+                    vertex(pose, consumer, camF, hx, latBot, lonL, uL, vBot, fa);
+                }
+            }
+        });
     }
 
-    /** Emits the four corners of face f in the proven quad order:
-     * (u,v) = (0,0) top-left, (1,0) top-right, (1,1) bottom-right, (0,1) bottom-left. */
-    private static void emitFace(Pose pose, VertexConsumer consumer, Vec3 cam,
-                                 float cos, float sin, double half, int face, int alpha) {
-        float[][] corners = {{0.0F, 0.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}, {0.0F, 1.0F}};
-        float[][] uvs = {{0.0F, 0.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}, {0.0F, 1.0F}};
-        for (int i = 0; i < 4; i++) {
-            Vec3 d = faceDir(face, corners[i][0], corners[i][1]);
-            // yaw rotation about Y: x' = x cos + z sin ; z' = -x sin + z cos
-            float x = (float) (d.x * cos + d.z * sin);
-            float z = (float) (-d.x * sin + d.z * cos);
-            Vec3 p = cam.add(new Vec3(x * half, d.y * half, z * half));
-            consumer.addVertex(pose, (float) p.x, (float) p.y, (float) p.z)
-                    .setColor(255, 255, 255, alpha)
-                    .setUv(uvs[i][0], uvs[i][1])
-                    .setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(15728880)
-                    .setNormal(pose, 0.0F, 1.0F, 0.0F);
-        }
+    private static void vertex(Pose pose, VertexConsumer consumer, Vec3 cam,
+                               double radius, double lat, double lon, float u, float v, int alpha) {
+        double cl = Math.cos(lat);
+        Vec3 p = cam.add(new Vec3(
+                cl * Math.cos(lon) * radius,
+                Math.sin(lat) * radius,
+                cl * Math.sin(lon) * radius));
+        consumer.addVertex(pose, (float) p.x, (float) p.y, (float) p.z)
+                .setColor(255, 255, 255, alpha)
+                .setUv(u, v)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(15728880)
+                .setNormal(pose, 0.0F, 1.0F, 0.0F);
     }
+
 }
