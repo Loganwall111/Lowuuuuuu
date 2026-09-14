@@ -17,6 +17,14 @@ public class ClientDistantStormManager {
    private static final long EXPIRE_MILLIS = 10000L;
    private static long lastCheckMillis = 0L;
    private static ResourceKey<Level> cachedDim;
+   /**
+    * One atmospheric owner captured at LevelRenderer.render HEAD. Every sky,
+    * fog, cloud, backdrop, and HUD pass in that frame reads this immutable
+    * selection instead of independently choosing a nearest storm.
+    */
+   private static StormData atmosphericOwner;
+   private static Vec3 atmosphericOrigin = Vec3.ZERO;
+   private static boolean atmosphereCaptured;
 
    public static void update(WitherStormPositionPacket p) {
       net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d = STORMS.computeIfAbsent(p.entityId(), id -> {
@@ -119,31 +127,61 @@ public class ClientDistantStormManager {
    }
 
    /**
-    * Selects the one state that owns the atmospheric overlay. Every visual
-    * pass uses this selection and the state's getStormOrigin() accessor.
+    * Captures the one state that owns the atmospheric overlay for the current
+    * render frame. This is called once from the LevelRenderer HEAD hook before
+    * any sky/fog/cloud/backdrop pass runs. The origin is copied from the
+    * authoritative StormData accessor at the same time, so later passes cannot
+    * drift to a different storm or a camera-relative centre.
     */
-   public static StormData nearestCustomWeather(Vec3 camera) {
+   public static void captureAtmosphere(Vec3 camera) {
       StormData best = null;
       double bestDistance = Double.MAX_VALUE;
       for (StormData state : all()) {
          if (!customWeatherActive(state.phase)) {
             continue;
          }
-         double distance = state.getStormOrigin().distanceToSqr(camera);
+         Vec3 origin = state.getStormOrigin();
+         double distance = origin.distanceToSqr(camera);
          if (distance < bestDistance) {
             bestDistance = distance;
             best = state;
          }
       }
-      return best;
+      atmosphericOwner = best;
+      atmosphericOrigin = best == null ? Vec3.ZERO : best.getStormOrigin();
+      atmosphereCaptured = true;
+   }
+
+   /**
+    * Returns the owner captured for this frame. The lazy fallback preserves
+    * compatibility for callers outside LevelRenderer while normal rendering
+    * always uses the explicit per-frame capture above.
+    */
+   public static StormData nearestCustomWeather(Vec3 camera) {
+      if (!atmosphereCaptured) {
+         captureAtmosphere(camera);
+      }
+      return atmosphericOwner;
+   }
+
+   /** Authoritative origin paired with nearestCustomWeather(). */
+   public static Vec3 atmosphericOrigin() {
+      return atmosphericOrigin;
    }
 
    public static void remove(int entityId) {
       STORMS.remove(entityId);
+      if (atmosphericOwner != null && atmosphericOwner.entityId == entityId) {
+         atmosphericOwner = null;
+         atmosphericOrigin = Vec3.ZERO;
+      }
    }
 
    public static void clear() {
       STORMS.clear();
+      atmosphericOwner = null;
+      atmosphericOrigin = Vec3.ZERO;
+      atmosphereCaptured = false;
    }
 
    public static final class StormData {

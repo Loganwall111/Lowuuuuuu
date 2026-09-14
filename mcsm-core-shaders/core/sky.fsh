@@ -255,23 +255,12 @@ void main() {
               * vec3(0.82, 0.66, 1.0) * 0.46;
     }
 
-    // The glare blob: follows the storm, punches a dark core, rims it.
-    vec3 camWorld = vec3(CameraBlockPos) + CameraOffset;
-    vec4 aim = mcsm_boss_dir(camWorld);
-    // MCSM 1.9.90: the sky-dome blob now lives ONLY in its r1 window,
-    // 5.10-5.90 (INSTRUCTIONS.md phase table: "giant colour-shifting centre
-    // blob, 5.1-5.9"). Below that the phase-4 light-blue halo quad and the
-    // turquoise sky carry the look; above it the purple/crimson rear-fog
-    // quads and the storm dome do. The storm-attached backdrop quads
-    // (McsmStormBackdropPatch) own the mass now -- a dome-wide blob at every
-    // phase was reading as "a fog in the sky", the user's standing complaint.
-    if (aim.w > 0.5 && mcsmP >= 5.10 && mcsmP <= 5.90) {
-        vec4 blob = mcsm_blob(worldDir, aim.xyz, mcsmP, clock, dome);
-        // 1.9.76: blob.w is now a full occlusion factor (already includes its
-        // own strength curve), so it multiplies the dome directly. The extra
-        // 0.85 that used to be applied here is folded into mcsm_blob().
-        dome = dome * (1.0 - blob.w) + blob.rgb;
-    }
+    // The old mcsm_blob sky pass is intentionally not called here. It creates
+    // a camera-facing circular/oval shader mass, which is the giant purple
+    // disc seen in the captures. The atmosphere is already supplied by this
+    // global storm dome, while the single cinematic backdrop is rendered in
+    // world space by McsmStormBlob behind state.getStormOrigin(). Keeping the
+    // shader blob disabled prevents a second camera-relative overlay.
 
     // Bodies: tinted briefly at the start, then fade to nothing - no sun or
     // moon may shine through the storm dome (user: "being above the

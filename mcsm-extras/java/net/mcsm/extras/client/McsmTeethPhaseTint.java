@@ -3,6 +3,7 @@ package net.mcsm.extras.client;
 import net.dabicco.witherstormmod.client.ClientDistantStormManager;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Drives model teeth/eye glow colours from the nearest storm phase so the
@@ -26,12 +27,9 @@ public final class McsmTeethPhaseTint {
             if (mc == null || mc.level == null) {
                 return;
             }
-            float phase = 0.0F;
-            for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
-                if (d.phase > phase) {
-                    phase = d.phase;
-                }
-            }
+            ClientDistantStormManager.StormData owner =
+                McsmStormOrigin.nearest(mc.player != null ? mc.player.position() : Vec3.ZERO);
+            float phase = owner == null ? 0.0F : owner.phase;
             net.dabicco.witherstormmod.client.StormSkins.setPhaseHint(phase);
             if (phase < 0.5F) {
                 return;

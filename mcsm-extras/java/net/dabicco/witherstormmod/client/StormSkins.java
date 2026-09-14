@@ -14,22 +14,8 @@ public final class StormSkins {
     private static final Identifier LEGACY_OG = id("textures/entity/wither_storm_og.png");
     private static final Identifier PHASE4_CLASSIC = id("textures/entity/phase_4_assets.png");
     private static final Identifier PHASE4_OG = id("textures/entity/phase_4_assets_og.png");
-    private static final Identifier PHASE55_CLASSIC = id("textures/entity/phase_4_assets_p55.png");
-    private static final Identifier PHASE55_OG = id("textures/entity/phase_4_assets_og_p55.png");
-    private static final Identifier PHASE6_CLASSIC = id("textures/entity/phase_4_assets_p6.png");
-    private static final Identifier PHASE6_OG = id("textures/entity/phase_4_assets_og_p6.png");
-    private static final Identifier PHASE7_CLASSIC = id("textures/entity/phase_4_assets_p7.png");
-    private static final Identifier PHASE7_OG = id("textures/entity/phase_4_assets_og_p7.png");
     private static final Identifier DEVOURER_CLASSIC = id("textures/entity/devourer_assets.png");
     private static final Identifier DEVOURER_OG = id("textures/entity/devourer_assets_og.png");
-    private static final Identifier DEVOURER55_CLASSIC = id("textures/entity/devourer_assets_p55.png");
-    private static final Identifier DEVOURER55_OG = id("textures/entity/devourer_assets_og_p55.png");
-    private static final Identifier DEVOURER6_CLASSIC = id("textures/entity/devourer_assets_p6.png");
-    private static final Identifier DEVOURER6_OG = id("textures/entity/devourer_assets_og_p6.png");
-    private static final Identifier DEVOURER7_CLASSIC = id("textures/entity/devourer_assets_p7.png");
-    private static final Identifier DEVOURER7_OG = id("textures/entity/devourer_assets_og_p7.png");
-
-    private static volatile double phaseHint = 0.0D;
 
     private StormSkins() {
     }
@@ -38,8 +24,13 @@ public final class StormSkins {
         return Identifier.fromNamespaceAndPath("dabywitherstormmod", path);
     }
 
+    /**
+     * Retained for binary/source compatibility with the head render-state
+     * hook. Body UVs are intentionally phase-independent now; atmospheric
+     * colour and teeth emissives carry the phase transition instead.
+     */
     public static void setPhaseHint(double phase) {
-        phaseHint = phase;
+        // No-op: never select an optional phase atlas at runtime.
     }
 
     public static boolean og() {
@@ -56,21 +47,18 @@ public final class StormSkins {
     }
 
     public static Identifier phase4() {
-        boolean ogSkin = og();
-        double p = phaseHint;
-        if (p >= 7.0D) return ogSkin ? PHASE7_OG : PHASE7_CLASSIC;
-        if (p >= 6.0D) return ogSkin ? PHASE6_OG : PHASE6_CLASSIC;
-        if (p >= 5.5D) return ogSkin ? PHASE55_OG : PHASE55_CLASSIC;
-        return ogSkin ? PHASE4_OG : PHASE4_CLASSIC;
+        // The phase-specific P55/P6/P7 atlas files are optional presentation
+        // variants. The model itself must never select one as its required
+        // body sheet: an absent optional overlay becomes Minecraft's magenta
+        // missing-texture checkerboard. The verified dark vanilla-black atlas
+        // is the single stable body source for every phase.
+        return og() ? PHASE4_OG : PHASE4_CLASSIC;
     }
 
     public static Identifier devourer() {
-        boolean ogSkin = og();
-        double p = phaseHint;
-        if (p >= 7.0D) return ogSkin ? DEVOURER7_OG : DEVOURER7_CLASSIC;
-        if (p >= 6.0D) return ogSkin ? DEVOURER6_OG : DEVOURER6_CLASSIC;
-        if (p >= 5.5D) return ogSkin ? DEVOURER55_OG : DEVOURER55_CLASSIC;
-        return ogSkin ? DEVOURER_OG : DEVOURER_CLASSIC;
+        // Keep the large devourer chassis on its verified base atlas as well;
+        // phase-specific colour belongs to the sky/emissive pass, not geometry.
+        return og() ? DEVOURER_OG : DEVOURER_CLASSIC;
     }
 
     public static Identifier teethGlow(double phase) {

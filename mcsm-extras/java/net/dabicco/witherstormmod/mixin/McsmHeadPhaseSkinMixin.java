@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Keeps detached head rendering on the same phase-specific atlas as the body. */
+/** Keeps the detached-head hook compatible with the single verified body atlas. */
 @Mixin(net.dabicco.witherstormmod.entity.renderer.WitherStormHeadRenderer.class)
 public abstract class McsmHeadPhaseSkinMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"), remap = false, require = 0)

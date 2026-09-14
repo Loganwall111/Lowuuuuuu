@@ -34,21 +34,9 @@ public final class McsmStormOrigin {
     }
 
     public static ClientDistantStormManager.StormData nearest(Vec3 camera) {
-        ClientDistantStormManager.StormData best = null;
-        double bestDistance = Double.MAX_VALUE;
-        for (ClientDistantStormManager.StormData state : ClientDistantStormManager.all()) {
-            // Keep the extras overlay binary-compatible with the base jar; the
-            // shared phase boundary is deliberately explicit here.
-            if (state.phase < 5.0F) {
-                continue;
-            }
-            double distance = getStormOrigin(state).distanceToSqr(camera);
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                best = state;
-            }
-        }
-        return best;
+        // The base manager captures this once at LevelRenderer.render HEAD.
+        // Never run a second nearest-storm search in an atmospheric pass.
+        return ClientDistantStormManager.nearestCustomWeather(camera);
     }
 
     private static Method findOriginMethod() {

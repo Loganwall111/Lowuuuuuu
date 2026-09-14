@@ -22,6 +22,9 @@ public final class StormSkyGradient {
    }
 
    public static void update(Vec3 camera) {
+      // This is the single per-frame capture point. All other atmospheric
+      // systems consume the same owner and authoritative origin snapshot.
+      ClientDistantStormManager.captureAtmosphere(camera);
       float selected = 0.0F;
       float selectedYaw = 0.0F;
       float selectedPitch = 0.0F;

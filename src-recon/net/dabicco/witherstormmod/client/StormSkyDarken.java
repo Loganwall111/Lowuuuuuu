@@ -79,7 +79,7 @@ public final class StormSkyDarken {
       float target = 0.0F;
       net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData owner =
          net.dabicco.witherstormmod.client.ClientDistantStormManager.nearestCustomWeather(cameraPos);
-      {
+      if (owner != null) {
          Vec3 origin = owner.getStormOrigin();
          double dx = origin.x - cameraPos.x;
          double dy = origin.y - cameraPos.y;
