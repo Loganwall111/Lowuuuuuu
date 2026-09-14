@@ -48,6 +48,10 @@ import java.util.function.DoubleSupplier;
  * value chips. Chapters VII (SKY & BUILT-IN PACKS) and VIII (CINEMATICS)
  * ride the same rail/framework; the base config screen's entry rows
  * (McsmGuiExtrasRows) open this exact screen.
+ *
+ * Build #384 phase-3 lock (verified): rail + diamond-dot sliders remain
+ * fully active; glare_1/2/3 stay pinned to the moving storm origin in
+ * McsmGlareBackdrop, separate from the skybox canvas.
  */
 public final class McsmExtrasScreen extends Screen {
 
