@@ -40,6 +40,14 @@ import java.util.function.DoubleSupplier;
  * No vanilla control widgets are used at all — input is handled directly
  * (mouse click / drag / scroll), and the only widget instantiated is the
  * transient EditBox while a value is being typed.
+ *
+ * BUILD #374 SYNC-FORWARD: the full Build #372 premium structure is intact
+ * and authoritative — the scrolling chapter rail (data-driven Category
+ * registry, chapters I-VIII), the dark translucent episodic cards, the
+ * sliding pills, the geometric diamond-dot scrub tracks and the text-input
+ * value chips. Chapters VII (SKY & BUILT-IN PACKS) and VIII (CINEMATICS)
+ * ride the same rail/framework; the base config screen's entry rows
+ * (McsmGuiExtrasRows) open this exact screen.
  */
 public final class McsmExtrasScreen extends Screen {
 
