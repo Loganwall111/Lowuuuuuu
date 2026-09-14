@@ -51,9 +51,9 @@ public final class McsmGlareBackdrop {
     private static final double SKY_OFFSET = 150.0D;
 
     // per-shell: size factor, spin speed (rad/s), base alpha
-    private static final double SIZE = new double[]{1.55D, 1.15D, 0.82D};
-    private static final double SPIN = new double[]{0.011D, -0.017D, 0.026D};
-    private static final float ALPHA = new float[]{0.30F, 0.38F, 0.46F};
+    private static final double[] SIZE = new double[]{1.55D, 1.15D, 0.82D};
+    private static final double[] SPIN = new double[]{0.011D, -0.017D, 0.026D};
+    private static final float[] ALPHA = new float[]{0.30F, 0.38F, 0.46F};
 
     private McsmGlareBackdrop() {
     }
