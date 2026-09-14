@@ -57,23 +57,28 @@ vec3 mcsm_storm_sky(float height, float p, vec3 worldDir) {
     vec3 greenHorizon = vec3(0.165, 0.294, 0.251);
     vec3 col45 = mix(greenHorizon, greenZenith, tY);
 
-    // Phase 5: Deep slate-teal (#1D2B2B) zenith -> flat misty ash-gray (#6E7873) horizon
-    vec3 slateZenith  = vec3(0.114, 0.169, 0.169); // #1D2B2B
-    vec3 slateHorizon = vec3(0.431, 0.471, 0.451); // #6E7873
+    // Phase 5 (BUILD #394, matched to the teal reference frame): slate-teal
+    // zenith -> PALE SAGE horizon (the old ash-gray read too dark in game)
+    vec3 slateZenith  = vec3(0.150, 0.240, 0.230);
+    vec3 slateHorizon = vec3(0.700, 0.750, 0.690);
     vec3 col5 = mix(slateHorizon, slateZenith, tY);
 
-    // Phase 5.5 Glow Pass: Pitch midnight-purple (#1A0A2A) zenith -> glowing magenta-violet (#7F3AA6) horizon
+    // Phase 5.5 Glow Pass (BUILD #394, matched to the 5.5 reference frame):
+    // midnight-purple zenith -> PINK-MAGENTA horizon (the old violet horizon
+    // missed the rosy band the frames show)
     vec3 purpleZenith  = vec3(0.102, 0.039, 0.165); // #1A0A2A
-    vec3 magentaHorizon= vec3(0.498, 0.227, 0.651); // #7F3AA6
+    vec3 magentaHorizon= vec3(0.720, 0.330, 0.520);
     vec3 col55 = mix(magentaHorizon, purpleZenith, tY);
 
     // Volumetric white halo around storm bounds in Phase 5.5+
     float backHalo = pow(clamp(1.0 - abs(worldDir.y), 0.0, 1.0), 3.0);
     col55 += vec3(0.25, 0.22, 0.30) * backHalo;
 
-    // Phase 6+ Sunset Split: Dark plum-mauve (#422E3B) zenith -> soft horizon peach-rose (#A0757E)
-    vec3 plumZenith  = vec3(0.259, 0.180, 0.231); // #422E3B
-    vec3 peachHorizon= vec3(0.627, 0.459, 0.494); // #A0757E
+    // Phase 6+ Sunset Split (BUILD #394, matched to the split-storm frame:
+    // lighter mauve zenith, pale peach horizon -- the split storm's sky is a
+    // different family from the 5.x skies, on purpose)
+    vec3 plumZenith  = vec3(0.420, 0.360, 0.460);
+    vec3 peachHorizon= vec3(0.900, 0.680, 0.620);
     vec3 col6 = mix(peachHorizon, plumZenith, tY);
 
     // Phase blend weights
@@ -83,6 +88,12 @@ vec3 mcsm_storm_sky(float height, float p, vec3 worldDir) {
     float w6  = mcsm_ramp(p, 5.95, 6.08);
 
     vec3 sky = col45 * w45 + col5 * w5 + col55 * w55 + col6 * w6;
+
+    // BUILD #394 -- the rosy horizon band the 5.5-5.9 frames show under the
+    // purple blur: a narrow exponential band hugging the horizon, gated to
+    // the 5.5 family so phase 5 teal and phase 6 peach keep their own look.
+    float pinkBand = mcsm_ramp(p, 5.35, 5.55) * (1.0 - mcsm_ramp(p, 5.95, 6.05));
+    sky += vec3(0.45, 0.18, 0.22) * exp(-clamp(height, 0.0, 1.0) * 7.0) * pinkBand;
 
     // Zenith mask node wide enough vertically to permanently block out all overworld blue sky bleed
     float zenithMask = smoothstep(0.0, 0.60, height);
@@ -95,6 +106,20 @@ vec3 mcsm_storm_sky(float height, float p, vec3 worldDir) {
 vec3 mcsm_horizon_glow(float hy, float dayW, float duskW) {
     float g = exp(-hy * 6.0) * 0.18;
     return vec3(1.000, 0.850, 0.600) * g * dayW + vec3(1.000, 0.520, 0.250) * g * 1.4 * duskW;
+}
+
+// BUILD #394 -- the regular story/vanilla sky as a reusable function, so the
+// storm pass can blend BACK into it at extreme distance instead of popping.
+vec3 mcsm_vanilla_sky(float up, float clock, out float dayW, out float nightW, out float duskW) {
+    float t = fract(clock / 24000.0) * 24000.0;
+    dayW   = smoothstep(1000.0, 3000.0, t) * (1.0 - smoothstep(9500.0, 12000.0, t));
+    nightW = smoothstep(12500.0, 15000.0, t) * (1.0 - smoothstep(21000.0, 23500.0, t));
+    duskW  = clamp(1.0 - dayW - nightW, 0.0, 1.0);
+    vec3 sky = mcsm_sky6(SKY_DAY[0], SKY_DAY[1], SKY_DAY[2], SKY_DAY[3], SKY_DAY[4], SKY_DAY[5], up) * dayW
+             + mcsm_sky6(SKY_NIGHT[0], SKY_NIGHT[1], SKY_NIGHT[2], SKY_NIGHT[3], SKY_NIGHT[4], SKY_NIGHT[5], up) * nightW
+             + mcsm_sky6(SKY_DUSK[0], SKY_DUSK[1], SKY_DUSK[2], SKY_DUSK[3], SKY_DUSK[4], SKY_DUSK[5], up) * duskW;
+    sky += mcsm_horizon_glow(1.0 - up, dayW, duskW);
+    return sky;
 }
 
 void main() {
@@ -137,15 +162,9 @@ void main() {
                                   FogSkyEnd, FogSkyEnd, FogSkyEnd, FogColor);
             return;
         }
-        float t = fract(clock / 24000.0) * 24000.0;
-        float dayW   = smoothstep(1000.0, 3000.0, t) * (1.0 - smoothstep(9500.0, 12000.0, t));
-        float nightW = smoothstep(12500.0, 15000.0, t) * (1.0 - smoothstep(21000.0, 23500.0, t));
-        float duskW  = clamp(1.0 - dayW - nightW, 0.0, 1.0);
         float up = clamp(height * 0.5 + 0.5, 0.0, 1.0);
-        vec3 sky = mcsm_sky6(SKY_DAY[0], SKY_DAY[1], SKY_DAY[2], SKY_DAY[3], SKY_DAY[4], SKY_DAY[5], up) * dayW
-                 + mcsm_sky6(SKY_NIGHT[0], SKY_NIGHT[1], SKY_NIGHT[2], SKY_NIGHT[3], SKY_NIGHT[4], SKY_NIGHT[5], up) * nightW
-                 + mcsm_sky6(SKY_DUSK[0], SKY_DUSK[1], SKY_DUSK[2], SKY_DUSK[3], SKY_DUSK[4], SKY_DUSK[5], up) * duskW;
-        sky += mcsm_horizon_glow(1.0 - up, dayW, duskW);
+        float dayW, nightW, duskW;
+        vec3 sky = mcsm_vanilla_sky(up, clock, dayW, nightW, duskW);
         // BUILD #393 -- vanilla hours fold into the day/night/sunset-split
         // sheets the same way: one LERP at the baked row-triangle position.
         sky = mcsm_sheet_fold(sky, mcsm_sheet_vanilla(up, dayW, nightW, duskW),
@@ -172,13 +191,21 @@ void main() {
               * vec3(0.82, 0.66, 1.0) * 0.46;
     }
 
-    // BUILD #393 -- fold the procedural dome into the packed gradient sheets:
-    // one smooth LERP (mcsm_sheet_fold) toward the baked sheet row for this
-    // phase -- teal at 5, purple through 5.5-5.9, salmon from 6 -- with the
-    // neighbouring rows cross-fading, so the sky folds sheet-to-sheet as the
-    // storm evolves. Master's halo/topDark character stays dominant (0.55 cap).
+    // BUILD #394 -- extreme distance blends BACK into the regular story sky:
+    // the approach carrier (1 near -> 0 past ~1400 blocks) gates both the dome
+    // and the sheet fold, so flying away melts the storm sky into the vanilla
+    // story gradient instead of popping it off at the tracking boundary.
+    float upV = clamp(height * 0.5 + 0.5, 0.0, 1.0);
+    float vanDay, vanNight, vanDusk;
+    vec3 van = mcsm_vanilla_sky(upV, clock, vanDay, vanNight, vanDusk);
+    float nearW = smoothstep(0.02, 0.40, mcsm_approach(FogSkyEnd));
+    dome = mix(van, dome, nearW);
+
+    // BUILD #393/#394 -- fold the procedural dome into the packed gradient
+    // sheets: one smooth LERP toward the baked sheet row for this phase,
+    // neighbouring rows cross-fading as the storm evolves.
     dome = mcsm_sheet_fold(dome, mcsm_sheet_storm(clamp(height, 0.0, 1.0), mcsmP),
-                           0.55 * mcsm_sheet_w_storm(mcsmP, 0.0));
+                           0.70 * mcsm_sheet_w_storm(mcsmP, 0.0) * nearW);
 
     vec3 camWorld = vec3(CameraBlockPos) + CameraOffset;
     vec4 aim = mcsm_boss_dir(camWorld);

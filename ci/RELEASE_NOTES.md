@@ -1,3 +1,13 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.394 — Build #394: black glossy storm, bigger black halo core, phase-true skies, distance blend-back
+
+Shading pass on the migrated master, matched frame-by-frame to the reference set:
+
+- **The purple hue on the storm body is gone.** `mcsm_sky_body_tint` multiplied the silhouette magenta at 5.2-6.0, salmon at 6-6.9 and ember at 7+ — that is the colouration the references do not have. The body now renders fully black at every phase with a small scalar that keeps the block-shading variation, i.e. the glossiness of the close-up reference (glossy black blocks, cyan teeth) survives.
+- **Bigger black halo core, same halo geometry.** The 5.5 blob's black core plateau now reaches u≈0.85 (was 0.58) — the occluded black mass covers the silhouette up to the very top of the storm — while the oval field, shoulder and rim keep their exact shape. The core contributes occlusion but almost no emission, so it stays black; the purple blur lives on the shoulder/rim and is now recoloured from the packed sheet purple (storm row 3), so halo and sky fold from the same colours.
+- **Phase skies matched to their frames:** phase 5 teal keeps the slate zenith but gets the pale-sage horizon of the teal frame; 5.5-5.9 gets the pink-magenta horizon plus the rosy horizon band under the purple blur; phase 6 (the split storm — a different family on purpose) gets the lighter mauve zenith and pale-peach horizon of its frame. The sheet fold cap rises 0.55 → 0.70 so the traced sheets dominate the blend.
+- **Extreme distance blends back to the story sky.** The approach carrier now gates the storm dome AND the sheet fold (`smoothstep(0.02, 0.40, approach)`), so flying away melts the storm sky into the regular vanilla/story gradient instead of popping at the tracking boundary.
+- Shader gates: shimcheck 56/56 (a forward prototype was needed — the blob now calls the generated sheet tables), LUT `--check` ok, Story Look position pipeline validates.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.393 — Build #393: emergency migration onto the true DS 7000.0.0 master framework
 
 The 1.9.39x line was building on the wrong skeleton — the in-game frames proved it (banded black/magenta sky, thin blue beams). This build hard-migrates the branch onto the authentic `DS 7000.0.0-MCSM-CINEMATIC-FINAL` master commit (`f96894f`, the same ancestor our branch was cut from, cherry-picked and conflict-resolved by hand), then re-ports everything verified from the 390-line on top:

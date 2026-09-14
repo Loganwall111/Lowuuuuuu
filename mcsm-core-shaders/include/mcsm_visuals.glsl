@@ -586,6 +586,11 @@ float mcsm_mass_cover(vec3 wd, vec3 bd, float p) {
     return clamp(0.82 * core + 0.62 * skirt + 0.25 * rim, 0.0, 0.93);
 }
 
+// BUILD #394 -- forward prototype: the baked sheet tables are generated at the
+// bottom of this include (MCSM_SKY_SHEETS block), but mcsm_blob below already
+// colours the 5.5 blur from them. GLSL needs the declaration first.
+vec3 mcsm_sheet_row_storm(int row, float up);
+
 vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     vec3 wd = normalize(worldDir);
     vec3 bd = normalize(bossDir);
@@ -603,12 +608,21 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
 
     // Radial structure, measured to match the supplied references: strongest
     // in the middle, coloured shoulder, dark falloff at the silhouette edge.
-    float core  = 1.0 - smoothstep(0.03, 0.58, u);
+    // BUILD #394 -- the BLACK CORE is sized up to the very top of the storm:
+    // the core plateau now reaches u~0.85 (was 0.58), same oval field/geometry,
+    // so the occluded black mass covers the whole silhouette while the purple
+    // blur keeps its shoulder+rim shape exactly where it was.
+    float core  = 1.0 - smoothstep(0.10, 0.88, u);
     float mid   = smoothstep(0.22, 0.66, u) * (1.0 - smoothstep(0.72, 0.98, u));
     float rim   = smoothstep(0.66, 0.90, u) * (1.0 - smoothstep(0.94, 1.0, u));
     float fade  = 1.0 - smoothstep(0.92, 1.0, u);
 
     vec3 grad = mcsm_measured_halo_gradient(p, u);
+    // BUILD #394 -- the 5.5 blur takes the packed sheet purple (row 3 of the
+    // storm table) instead of the old measured violet, so halo and sky fold
+    // from the same colours.
+    grad = mix(grad, mcsm_sheet_row_storm(3, 0.45),
+               0.60 * mcsm_ramp(p, 5.30, 5.55) * (1.0 - mcsm_ramp(p, 5.92, 6.05)));
 
     // Adapt gently to the dome underneath. Bright day skies get slightly more
     // occlusion/contrast; dark storm skies let the measured glow colour carry.
@@ -621,9 +635,13 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     // Use the sampled colours directly instead of hue-normalising them; this is
     // what preserves the blue centre / navy edge and the purple phase-4/5.3
     // falloff exactly instead of washing every phase into the same brightness.
-    float strength = (0.98 * core + 0.74 * mid + 0.50 * rim) * fade;
+    // BUILD #394 -- the widened core contributes OCCLUSION (the black mass,
+    // via occl above) but almost no emission: the blur lives on the shoulder
+    // and rim, the core stays black like the references.
+    float strength = (0.22 * core + 0.74 * mid + 0.50 * rim) * fade;
     strength *= mix(1.08, 0.86, dk);
     vec3 emis = grad * strength;
+    emis *= 1.0 - 0.70 * core;
     emis *= 0.94 + 0.06 * sin(clock * 3.0);   // slow roar pulse (~2.1 s)
     return vec4(emis, occl);
 }
@@ -668,10 +686,17 @@ vec3 mcsm_star_tint(float p) {
 }
 
 vec3 mcsm_sky_body_tint(float p, vec3 body) {
+    // BUILD #394 -- the storm body reads FULLY BLACK with its gloss kept.
+    // The old per-phase multipliers (magenta 5.2-6.0, salmon 6-6.9, ember 7+)
+    // are the purple/colour hue the references do NOT have: image 5's mass is
+    // glossy black blocks with cyan teeth, image 1's a black silhouette. The
+    // small scalar keeps the block-shading variation (the glossiness) while
+    // crushing the hue; the split storm (6+) stays a touch lifted so its two
+    // halves separate against the salmon sky.
     if (p < 5.19) return body * 0.22;
-    if (p < 6.00) return body * vec3(0.95, 0.45, 0.80) * 0.5;
-    if (p < 6.90) return body * vec3(1.00, 0.55, 0.60);
-    return body * vec3(1.25, 0.45, 0.25);
+    if (p < 6.00) return body * 0.14;
+    if (p < 6.90) return body * 0.18;
+    return body * 0.20;
 }
 
 // ------------------------------------------------------------- attachments
