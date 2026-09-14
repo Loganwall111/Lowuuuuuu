@@ -19,7 +19,7 @@ import net.mcsm.extras.client.McsmSkybox;
 @Mixin(LevelRenderer.class)
 public class McsmSkyPassGateMixin {
 
-    @Inject(method = "lambda$addSkyPass$0", at = @At("HEAD"), require = 1)
+    @Inject(method = "lambda$addSkyPass$0", at = @At("HEAD"), cancellable = true, require = 1)
     private void dabyws$mcsmSkyPassGate(CallbackInfo ci) {
         if (McsmSkybox.skyPassCancellable()) {
             ci.cancel();
