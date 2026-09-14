@@ -50,6 +50,7 @@ public abstract class McsmPhaseTextureLockMixin {
     @Inject(
         method = "getTextureLocation(Lnet/dabicco/witherstormmod/entity/state/WitherStormRenderState;)Lnet/minecraft/resources/Identifier;",
         at = @At("RETURN"),
+        cancellable = true,
         remap = false,
         require = 0
     )

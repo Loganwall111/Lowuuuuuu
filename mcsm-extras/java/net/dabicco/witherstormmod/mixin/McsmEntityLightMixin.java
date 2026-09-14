@@ -27,7 +27,7 @@ import net.mcsm.extras.McsmDynamicLights;
 @Mixin(EntityRenderDispatcher.class)
 public abstract class McsmEntityLightMixin {
 
-    @Inject(method = "getPackedLightCoords", at = @At("RETURN"))
+    @Inject(method = "getPackedLightCoords", at = @At("RETURN"), cancellable = true)
     private void dabyws$glowingDropLightsItself(Entity entity, float partialTick,
             CallbackInfoReturnable<Integer> cir) {
         if (!(entity instanceof ItemEntity)) {
