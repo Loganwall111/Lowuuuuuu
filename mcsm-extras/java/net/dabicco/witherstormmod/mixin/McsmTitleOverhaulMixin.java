@@ -40,6 +40,10 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
     private static final java.util.Map<Object, Long> MC$HOVER_MS = new java.util.IdentityHashMap<>();
     private static final java.util.Map<Object, Long> MC$PRESS_MS = new java.util.IdentityHashMap<>();
 
+    /** Storm turntable input state (GLFW poll, Build #375). */
+    private static double MC$CUR_X = -1.0D;
+    private static double MC$CUR_Y = -1.0D;
+
     protected McsmTitleOverhaulMixin(Component title) {
         super(title);
     }
@@ -50,6 +54,83 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             net.mcsm.extras.client.McsmButtonSounds.menuOpen();
         } catch (Throwable ignored) {
             // sound only
+        }
+    }
+
+    @Inject(method = "removed", at = @At("TAIL"))
+    private void dabyws$resetTurntableInput(CallbackInfo ci) {
+        MC$CUR_X = -1.0D;
+        MC$CUR_Y = -1.0D;
+    }
+
+    /**
+     * Build #375: the turntable's mouse input. Screen/TitleScreen do not
+     * declare mouseDragged/mouseScrolled in 26.2 (they are ContainerEvent
+     * Handler interface defaults), so instead of a fragile interface mixin
+     * this polls the cursor + wheel straight from GLFW - the exact
+     * reflection pattern the console hotkey (McsmQuickConfigKeyMixin)
+     * already proves on this version:
+     *   - left-drag anywhere  -> orbit the storm (yaw + a little pitch)
+     *   - mouse wheel         -> zoom (0.45x - 2.2x)
+     * Called once per frame from the title's render hook.
+     */
+    private static void mcsm$pollStormInput() {
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            Object windowObj = null;
+            for (java.lang.reflect.Method m : Minecraft.class.getMethods()) {
+                if (m.getParameterCount() == 0 && m.getName().equals("getWindow")) {
+                    windowObj = m.invoke(mc);
+                    break;
+                }
+            }
+            if (windowObj == null) {
+                return;
+            }
+            long handle = 0L;
+            for (java.lang.reflect.Method m : windowObj.getClass().getMethods()) {
+                if (m.getParameterCount() == 0 && m.getName().equals("getWindow")) {
+                    Object v = m.invoke(windowObj);
+                    if (v instanceof Number) {
+                        handle = ((Number) v).longValue();
+                    }
+                    break;
+                }
+            }
+            if (handle == 0L) {
+                return;
+            }
+            Class<?> glfw = Class.forName("org.lwjgl.glfw.GLFW");
+            long[] pos = new long[2];
+            glfw.getMethod("glfwGetCursorPos", long.class, long[].class)
+                    .invoke(null, handle, pos);
+            double sx = pos[0];
+            double sy = pos[1];
+
+            // wheel -> zoom (GLFW accumulates the delta since last read)
+            Method scrollM = glfw.getMethod("glfwGetScrollDelta", long.class);
+            double scroll = ((Number) scrollM.invoke(null, handle)).doubleValue();
+            if (Math.abs(scroll) > 0.001D) {
+                net.mcsm.extras.client.McsmStormMenuScene.zoomBy(scroll);
+            }
+
+            // left-drag -> orbit; a huge one-frame jump (window focus,
+            // cursor teleport) is dropped so it never yanks the turntable
+            int press = ((Number) glfw.getField("GLFW_PRESS").get(null)).intValue();
+            int left = ((Number) glfw.getMethod("glfwGetMouseButton", long.class, int.class)
+                    .invoke(null, handle, 0)).intValue();
+            if (left == press && MC$CUR_X >= 0.0D) {
+                double dx = sx - MC$CUR_X;
+                double dy = sy - MC$CUR_Y;
+                if (Math.abs(dx) < 90.0D && Math.abs(dy) < 90.0D) {
+                    net.mcsm.extras.client.McsmStormMenuScene.orbitBy(dx, dy);
+                }
+            }
+            MC$CUR_X = sx;
+            MC$CUR_Y = sy;
+        } catch (Throwable ignored) {
+            MC$CUR_X = -1.0D;
+            MC$CUR_Y = -1.0D;
         }
     }
 
@@ -81,6 +162,9 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             float partialTick, CallbackInfo ci) {
         int w = this.width;
         int h = this.height;
+
+        // turntable input: left-drag orbits, wheel zooms (per-frame poll)
+        mcsm$pollStormInput();
 
         // THE 3D WITHER STORM - the literal scrollable/movable creature
         // (drag to orbit, scroll to zoom), replacing the deleted panorama.

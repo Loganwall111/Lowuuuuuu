@@ -64,8 +64,25 @@ public final class McsmStormMenuScene {
     // y grows up. Colours: (r, g, b) body tone; the face boxes carry the
     // cyan eye/teeth detail on their front face.
 
-    private record Box(float cx, float cy, float cz, float hx, float hy, float hz,
-                       int r, int g, int b, boolean face) {
+    /** Plain holder class (records would force accessor-method syntax). */
+    private static final class Box {
+        final float cx, cy, cz, hx, hy, hz;
+        final int r, g, b;
+        final boolean face;
+
+        Box(float cx, float cy, float cz, float hx, float hy, float hz,
+                int r, int g, int b, boolean face) {
+            this.cx = cx;
+            this.cy = cy;
+            this.cz = cz;
+            this.hx = hx;
+            this.hy = hy;
+            this.hz = hz;
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.face = face;
+        }
     }
 
     private static final Box[] BOXES = buildModel();
