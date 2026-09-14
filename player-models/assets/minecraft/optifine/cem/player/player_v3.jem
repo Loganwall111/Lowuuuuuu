@@ -1,0 +1,48 @@
+{
+  "credit": "Devouring Storms - player model V3: Storm Guardian (brawny)",
+  "textureSize": [64, 64],
+  "models": [
+    {
+      "part": "body",
+      "id": "body",
+      "boxes": [
+        {"coordinates": [-5.5, 11, -3, 11, 13, 6], "textureOffset": [16, 20]}
+      ]
+    },
+    {
+      "part": "head",
+      "id": "head",
+      "boxes": [
+        {"coordinates": [-4.5, 24, -4.5, 9, 9, 9], "textureOffset": [8, 8]}
+      ]
+    },
+    {
+      "part": "rightArm",
+      "id": "rightArm",
+      "boxes": [
+        {"coordinates": [6, 22, -2, 5, 12, 5], "textureOffset": [40, 20]}
+      ]
+    },
+    {
+      "part": "leftArm",
+      "id": "leftArm",
+      "boxes": [
+        {"coordinates": [-11, 22, -2, 5, 12, 5], "textureOffset": [32, 52]}
+      ]
+    },
+    {
+      "part": "rightLeg",
+      "id": "rightLeg",
+      "boxes": [
+        {"coordinates": [0.5, 11, -2, 5, 12, 4], "textureOffset": [4, 20]}
+      ]
+    },
+    {
+      "part": "leftLeg",
+      "id": "leftLeg",
+      "boxes": [
+        {"coordinates": [-5.5, 11, -2, 5, 12, 4], "textureOffset": [20, 52]}
+      ]
+    }
+  ]
+}

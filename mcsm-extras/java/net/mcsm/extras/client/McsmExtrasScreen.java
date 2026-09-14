@@ -249,6 +249,13 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.giantPreviewEnabled = v;
               McsmExtrasConfig.save();
           })
+          .act("Player Model Versions — how to switch (1/2/3)", () -> {
+              net.mcsm.extras.client.McsmClientChat.say("[ds] Player models: run  /scoreboard objectives add mcsmplyr dummy  then");
+              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 1  = Telltale Hero (big head)");
+              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 2  = Scout (slim)");
+              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 3  = Storm Guardian (brawny)");
+              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 0  = back to the vanilla model. (Needs the EMF/CEM mod installed.)");
+          })
           .bool("Tentacle Grab", () -> McsmExtrasConfig.enableTentacleGrab, v -> McsmExtrasConfig.enableTentacleGrab = v)
           .val("Grab Interval", () -> McsmExtrasConfig.grabIntervalSeconds, v -> McsmExtrasConfig.grabIntervalSeconds = v, 0.0, 30.0)
           .bool("Lit Beacon Relay", () -> McsmExtrasConfig.enableBeaconStorm, v -> McsmExtrasConfig.enableBeaconStorm = v)

@@ -198,6 +198,7 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.minecraft.client.player.LocalPlayer net.minecraft.world.entity.player.Player \
     net.minecraft.world.entity.player.Inventory net.minecraft.world.inventory.AbstractContainerMenu \
     net.minecraft.world.level.block.entity.CommandBlockEntity \
+    net.minecraft.client.multiplayer.chat.ChatListener \
     net.minecraft.network.chat.Component net.minecraft.ChatFormatting"
   MOD_CLASSES="net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen \
     net.dabicco.witherstormmod.client.ShaderPackCompat \
@@ -812,6 +813,15 @@ else
   echo "::warning title=build::ogs-cem pack missing — Totally Accurate models will not ship"
 fi
 
+# Build #374: the 3 player model versions (EMF/CEM) ship as a third
+# DEFAULT_ENABLED built-in pack + an extractable zip.
+mkdir -p "$FX/cls/resourcepacks/player-models"
+cp -r player-models/pack.mcmeta player-models/pack.png "$FX/cls/resourcepacks/player-models/"
+cp -r player-models/assets "$FX/cls/resourcepacks/player-models/"
+rm -f "$FX/cls/assets/dabywitherstormmod/resourcepacks/player-models.zip"
+( cd "$FX/cls/resourcepacks/player-models" && zip -q -r -X "$FX/cls/assets/dabywitherstormmod/resourcepacks/player-models.zip" pack.mcmeta pack.png assets )
+echo "[build] player model versions pack embedded at resourcepacks/player-models"
+
 # Mega-phase 5b / 1.9.176: the managed Iris/Oculus pack rides inside the mod jar.
 # The default managed pack is now the user-supplied Super Duper Vanilla shader
 # source from shaderpack-superduper/, while shaderpack-v5 remains the lighter
@@ -863,8 +873,11 @@ for need in \
   assets/witherstormmod/textures/entity/wither_storm/wither_storm.png \
   resourcepacks/ogs-cem/assets/minecraft/optifine/cem/dabywitherstormmod/wither_storm_phase5.jem \
   resourcepacks/ogs-cem/assets/minecraft/optifine/cem/witherstormmod/wither_storm_phase5.jem \
+  resourcepacks/player-models/assets/minecraft/optifine/cem/player/player_v1.jem \
+  resourcepacks/player-models/assets/minecraft/optifine/cem/player/player_v3.properties \
   assets/dabywitherstormmod/resourcepacks/storylook.zip \
-  assets/dabywitherstormmod/resourcepacks/ogs-cem.zip; do
+  assets/dabywitherstormmod/resourcepacks/ogs-cem.zip \
+  assets/dabywitherstormmod/resourcepacks/player-models.zip; do
   if [ ! -s "$FX/cls/$need" ]; then
     echo "::error title=jar audit::restored OGS asset missing from jar: $need"
     AUDIT_FAIL=1

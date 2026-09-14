@@ -25,6 +25,7 @@ public final class McsmBuiltinPack {
     /** Per-pack outcome, reported once in chat by McsmClientChat. */
     private static volatile String storyLookStatus = "pending";
     private static volatile String ogcCemStatus = "pending";
+    private static volatile String playerModelsStatus = "pending";
     private static volatile String shaderStatus = "pending";
 
     /** Packs already registered with the Fabric loader this launch. */
@@ -59,6 +60,16 @@ public final class McsmBuiltinPack {
             ogcCemStatus = cems ? "built-in, default enabled" : "built-in registration failed";
         } else {
             ogcCemStatus = "built-in, default enabled";
+        }
+        // Build #374: the 3 player model versions (EMF reads the CEM rules)
+        if (!registered.contains("player-models")) {
+            boolean pm = registerBuiltIn("player-models", "Player Model Versions pack");
+            if (pm) {
+                registered.add("player-models");
+            }
+            playerModelsStatus = pm ? "built-in, default enabled" : "built-in registration failed";
+        } else {
+            playerModelsStatus = "built-in, default enabled";
         }
     }
 
@@ -122,6 +133,7 @@ public final class McsmBuiltinPack {
     public static String summary() {
         return "Story Look: " + storyLookStatus
                 + " | OG CEM: " + ogcCemStatus
+                + " | Player Models: " + playerModelsStatus
                 + " | shader pack: " + shaderStatus;
     }
 
