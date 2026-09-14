@@ -154,6 +154,12 @@ public final class McsmExtrasConfig {
     public static boolean endSkyVortex = true;
     public static boolean globalShadows = true;
     public static boolean witherStormEnhancedAi = true;
+    /**
+     * Build #374: the giant 3D storm preview in the base config screen.
+     * DEFAULT FALSE = removed (user order: "remove the giant preview in the
+     * config menu"); the console toggle brings it back.
+     */
+    public static boolean giantPreviewEnabled = false;
     public static boolean npcWalkAnimations = true;
     public static boolean stormBodySway = true;
     public static boolean infiniteBackGrowth = false;
@@ -236,6 +242,7 @@ public final class McsmExtrasConfig {
             p.setProperty("snow_sky_band", String.valueOf(snowSkyBand));
             p.setProperty("global_shadows", String.valueOf(globalShadows));
             p.setProperty("wither_storm_enhanced_ai", String.valueOf(witherStormEnhancedAi));
+            p.setProperty("giant_preview_enabled", String.valueOf(giantPreviewEnabled));
             try (OutputStream out = new FileOutputStream(f)) {
                 p.store(out, "MCSM Devouring Storms Config Version 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338");
             }
@@ -263,6 +270,8 @@ public final class McsmExtrasConfig {
             }
             enableTentacleGrab = bool(p, "enable_tentacle_grab", enableTentacleGrab);
             grabIntervalSeconds = dbl(p, "grab_interval_seconds", grabIntervalSeconds);
+            witherStormEnhancedAi = bool(p, "wither_storm_enhanced_ai", witherStormEnhancedAi);
+            giantPreviewEnabled = bool(p, "giant_preview_enabled", giantPreviewEnabled);
             enableBeaconStorm  = bool(p, "enable_beacon_storm", enableBeaconStorm);
             beaconCooldownSeconds = dbl(p, "beacon_cooldown_seconds", beaconCooldownSeconds);
             enableRiseFx       = bool(p, "enable_rise_fx", enableRiseFx);

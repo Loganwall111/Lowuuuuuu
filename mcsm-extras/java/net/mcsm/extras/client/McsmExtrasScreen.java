@@ -235,7 +235,14 @@ public final class McsmExtrasScreen extends Screen {
         categories.add(c5);
 
         Category c6 = new Category("VI", "GAMEPLAY & SYSTEMS", "Storm AI, beacon relay, gates and the sun shadow.");
-        c6.bool("Enhanced Wither Storm AI", () -> McsmExtrasConfig.witherStormEnhancedAi, v -> McsmExtrasConfig.witherStormEnhancedAi = v)
+        c6.bool("Enhanced Wither Storm AI (Hunts You)", () -> McsmExtrasConfig.witherStormEnhancedAi, v -> {
+            McsmExtrasConfig.witherStormEnhancedAi = v;
+            McsmExtrasConfig.save();
+        })
+          .bool("Giant 3D Preview (Config Menu)", () -> McsmExtrasConfig.giantPreviewEnabled, v -> {
+              McsmExtrasConfig.giantPreviewEnabled = v;
+              McsmExtrasConfig.save();
+          })
           .bool("Tentacle Grab", () -> McsmExtrasConfig.enableTentacleGrab, v -> McsmExtrasConfig.enableTentacleGrab = v)
           .val("Grab Interval", () -> McsmExtrasConfig.grabIntervalSeconds, v -> McsmExtrasConfig.grabIntervalSeconds = v, 0.0, 30.0)
           .bool("Lit Beacon Relay", () -> McsmExtrasConfig.enableBeaconStorm, v -> McsmExtrasConfig.enableBeaconStorm = v)
