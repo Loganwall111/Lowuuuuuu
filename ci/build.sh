@@ -257,6 +257,18 @@ for SL in storylook/assets/minecraft/shaders/core/*; do
 done
 echo "[glsl] story look shaders validate"
 
+# BUILD #390 -- the baked sky-sheet LUT tables must match the shipped PNGs.
+# ci/make_sky_lut.py bakes const-vec3 gradient tables out of the six sheet
+# PNGs into mcsm_visuals.glsl and both Story Look position.fsh copies; --check
+# re-derives them and fails if any target drifted (edited table by hand,
+# replaced a sheet without re-running the generator, ...).
+if ! python3 ci/make_sky_lut.py --check > /tmp/sky-lut-check.log 2>&1; then
+  cat /tmp/sky-lut-check.log
+  echo "[glsl] sky sheet LUT gate FAILED — run python3 ci/make_sky_lut.py and commit"
+  exit 1
+fi
+echo "[glsl] sky sheet LUT tables match the shipped sheets"
+
 # Mega-phase 5b: the embedded Iris shader pack must validate too - every
 # program, in every [0 1] toggle combination, through the glslcheck shim.
 if ! python3 ci/iris_tu.py shaderpack-v5/shaders; then

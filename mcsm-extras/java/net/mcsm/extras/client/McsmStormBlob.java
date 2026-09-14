@@ -110,6 +110,14 @@ public final class McsmStormBlob {
         } catch (Throwable ignored) {
             // same contract: a visual never breaks the frame
         }
+        try {
+            // BUILD #390 addenda -- the reverted big purple ring + blob glare
+            // pass lives in McsmPhaseSky; drawn after the sky volume and the
+            // cosmic-blue spotlights so the ring sits on top of the halo.
+            McsmPhaseSky.submit(ctx);
+        } catch (Throwable ignored) {
+            // same contract: a visual never breaks the frame
+        }
     }
 
     /**
