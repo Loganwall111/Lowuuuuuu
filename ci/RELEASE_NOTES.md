@@ -1,3 +1,18 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.402 — Build #402: 1:1 extracted skies + 100%-blend halo gradients
+
+- Storm sky zenith AND horizon now carry the 1:1 values extracted from the
+  reference frames, cross-faded across full band widths (100% blend):
+    P5   zenith #263D3B teal      horizon #B3BFB0 pale sage   (09-06 143811)
+    P5.5 zenith #1A0A2A magenta    horizon #B85484 pink        (09-14 065011)
+    P6   zenith #6B5C75 plum       horizon #E6AD9E peach       (09-06 152252)
+  The old pink-boost horizon hack is gone; horizon blends its own channel.
+  Storm density raised to 0.90 so the storm sky reads full-strength.
+- Vanilla lavender stays: calm day sky #7A75E0 lavender-blue and the navy
+  lavender dusk are untouched; the 09-08 072557 pink-lavender look is exactly
+  vanilla sunset blending with the storm purple at 5.5.
+- Halo glare layers now submit at full-blend alpha (1.0 peak, ring 0.95,
+  under-halo 0.45) on the #401 accurate hues -- gradients blend 100%.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.401 — Build #401: accurate per-phase halo colours
 
 The live halo layers were cross-fading the backdrop oval family (teal ->

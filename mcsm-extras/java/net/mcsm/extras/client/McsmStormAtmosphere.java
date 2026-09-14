@@ -87,19 +87,38 @@ public final class McsmStormAtmosphere {
             // Phase 4 remains entirely vanilla.
             return 0.0F;
         }
-        float[] green = {0x6E / 255.0F, 0x8F / 255.0F, 0x73 / 255.0F};
-        float[] slate = {0x6E / 255.0F, 0x78 / 255.0F, 0x73 / 255.0F};
-        float[] purple = {0x7F / 255.0F, 0x3A / 255.0F, 0xA6 / 255.0F};
-        float[] plum = {0xA0 / 255.0F, 0x75 / 255.0F, 0x7E / 255.0F};
-        if (phase < 5.0F) {
-            blend(green, slate, ramp(phase, 4.45F, 5.0F), out);
-        } else if (phase < 5.5F) {
-            blend(slate, purple, ramp(phase, 5.0F, 5.5F), out);
+        // BUILD #402 -- 1:1 extracted zenith colours from the reference
+        // frames: P5 teal day (2026-09-06 143811), P5.5 midnight magenta
+        // (2026-09-14 065011), P6 split-storm plum (2026-09-06 152252).
+        // Bands cross-fade over their full width (100% blend gradients).
+        float[] zen5  = {0.150F, 0.240F, 0.230F};
+        float[] zen55 = {0.102F, 0.039F, 0.165F};
+        float[] zen6  = {0.420F, 0.360F, 0.460F};
+        if (phase < 5.5F) {
+            blend(zen5, zen55, ramp(phase, 5.0F, 5.5F), out);
         } else {
-            blend(purple, plum, ramp(phase, 5.5F, 6.0F), out);
+            blend(zen55, zen6, ramp(phase, 5.5F, 6.0F), out);
         }
-        float density = phase < 5.0F ? 0.86F : (phase < 5.5F ? 0.72F : 0.66F);
-        return Mth.clamp(density * distanceInfluence(), 0.0F, 0.86F);
+        float density = 0.90F;
+        return Mth.clamp(density * distanceInfluence(), 0.0F, 0.90F);
+    }
+
+    /** BUILD #402: matching 1:1 extracted horizon colours per band. */
+    public static float skyHorizonBlend(float[] out) {
+        float phase = nearestPhase();
+        if (phase < 4.45F || out == null || out.length < 3) {
+            return 0.0F;
+        }
+        float[] hor5  = {0.700F, 0.750F, 0.690F}; // pale sage (143811)
+        float[] hor55 = {0.720F, 0.330F, 0.520F}; // pink-magenta (065011)
+        float[] hor6  = {0.900F, 0.680F, 0.620F}; // peach-salmon (152252)
+        if (phase < 5.5F) {
+            blend(hor5, hor55, ramp(phase, 5.0F, 5.5F), out);
+        } else {
+            blend(hor55, hor6, ramp(phase, 5.5F, 6.0F), out);
+        }
+        float density = 0.90F;
+        return Mth.clamp(density * distanceInfluence(), 0.0F, 0.90F);
     }
 
     private static void blend(float[] a, float[] b, float t, float[] out) {

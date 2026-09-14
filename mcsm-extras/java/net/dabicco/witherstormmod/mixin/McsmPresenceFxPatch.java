@@ -107,22 +107,22 @@ public abstract class McsmPresenceFxPatch {
 
             layer(poseStack, collector, GLARE4, haloCentre, view,
                     bodyRadius * 3.35D, bodyRadius * 2.25D,
-                    w4 * distanceFade * 0.72F);
+                    w4 * distanceFade * 1.0F);
             layer(poseStack, collector, GLARE5, haloCentre, view,
                     bodyRadius * 3.55D, bodyRadius * 2.35D,
-                    w5 * distanceFade * 0.70F);
+                    w5 * distanceFade * 1.0F);
             layer(poseStack, collector, GLARE54, haloCentre, view,
                     bodyRadius * 3.70D, bodyRadius * 2.45D,
-                    w54 * distanceFade * 0.70F);
+                    w54 * distanceFade * 1.0F);
             layer(poseStack, collector, GLARE55, haloCentre, view,
                     bodyRadius * 3.85D, bodyRadius * 2.55D,
-                    w55 * distanceFade * 0.74F);
+                    w55 * distanceFade * 1.0F);
             layer(poseStack, collector, GLARE6, haloCentre, view,
                     bodyRadius * 4.05D, bodyRadius * 2.65D,
-                    w6 * distanceFade * 0.62F);
+                    w6 * distanceFade * 0.95F);
             layer(poseStack, collector, GLARE89, haloCentre, view,
                     bodyRadius * 4.05D, bodyRadius * 2.65D,
-                    w89 * distanceFade * 0.62F);
+                    w89 * distanceFade * 0.95F);
 
             // The purple/pink oval ring is the older Catalyst Halo that was
             // present in the newer builds. Its width is intentionally larger
@@ -137,11 +137,11 @@ public abstract class McsmPresenceFxPatch {
             double ringHeight = bodyRadius * (2.82D + 2.45D * phase55Circle);
             layer(poseStack, collector, HALO_RING, haloCentre, view,
                     ringWidth, ringHeight,
-                    ring * distanceFade * 0.88F);
+                    ring * distanceFade * 0.95F);
             if (phase >= 5.82F) {
                 layer(poseStack, collector, HALO_RING, haloCentre, view,
                         bodyRadius * 3.05D, bodyRadius * 1.98D,
-                        smoothstep(phase, 5.82F, 6.12F) * distanceFade * 0.46F);
+                        smoothstep(phase, 5.82F, 6.12F) * distanceFade * 0.55F);
                 // This is the retained white under-halo from the newer asset
                 // set. The texture is black outside its luminous shape, so it
                 // is submitted through the additive glow pipeline rather than
@@ -149,7 +149,7 @@ public abstract class McsmPresenceFxPatch {
                 Vec3 under = haloCentre.add(0.0D, -bodyRadius * 0.38D, 0.0D);
                 layer(poseStack, collector, HALO_WHITE, under, view,
                         bodyRadius * 3.25D, bodyRadius * 2.80D,
-                        smoothstep(phase, 5.82F, 6.18F) * distanceFade * 0.34F);
+                        smoothstep(phase, 5.82F, 6.18F) * distanceFade * 0.45F);
             }
         }
     }
