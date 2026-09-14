@@ -11,16 +11,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  *
  * The reference close-up (bright white-cyan tooth ring + cyan eyes) shows
  * the emissive channel at full blast. The base glow tint already applies the
- * user's eye colour + the shader glow gain; here it is lifted a further step
- * toward full brightness on the additive eyes channel, so the eyes and teeth
- * read as genuinely glowing instead of faintly lit. Flat +40 per channel:
- * a cyan (100,220,230) becomes (140,255,255) - noticeably brighter, never a
- * blown-out white blob.
+ * user's eye colour + the shader glow gain; Build #384 (user directive)
+ * multiplies the pixel light output for the eyes and teeth by 3.0x so they
+ * emit a true, brilliant glow in the dark instead of rendering dim.
+ * Channels clamp at 255 so the additive eyes channel never blows out.
  */
 @Mixin(WitherStormHeadRenderer.class)
 public class McsmGlowBoostMixin {
 
-    private static final int LIFT = 40;
+    private static final double GAIN = 3.0D;
 
     // cancellable=true is REQUIRED: setReturnValue() internally cancels the
     // callback and throws CancellationException on a non-cancellable inject
@@ -28,9 +27,9 @@ public class McsmGlowBoostMixin {
     @Inject(method = "glowTint", at = @At("RETURN"), remap = false, require = 0, cancellable = true)
     private static void mcsm$glowBoost(CallbackInfoReturnable<Integer> cir) {
         int c = cir.getReturnValueI();
-        int r = Math.min(255, (c >> 16 & 0xFF) + LIFT);
-        int g = Math.min(255, (c >> 8 & 0xFF) + LIFT);
-        int b = Math.min(255, (c & 0xFF) + LIFT);
+        int r = Math.min(255, (int) ((c >> 16 & 0xFF) * GAIN));
+        int g = Math.min(255, (int) ((c >> 8 & 0xFF) * GAIN));
+        int b = Math.min(255, (int) ((c & 0xFF) * GAIN));
         cir.setReturnValue(0xFF000000 | (r << 16) | (g << 8) | b);
     }
 }
