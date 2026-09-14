@@ -104,11 +104,11 @@ public abstract class McsmQuickConfigKeyMixin {
             boolean aPressed = ((Number) getKey.invoke(null, handle, keyA)).intValue() == press;
             boolean shiftPressed = ((Number) getKey.invoke(null, handle, leftShift)).intValue() == press
                     || ((Number) getKey.invoke(null, handle, rightShift)).intValue() == press;
-            boolean ctrlPressed = ((Number) getKey.invoke(null, handle, leftCtrl)).intValue() == press
-                    || ((Number) getKey.invoke(null, handle, rightCtrl)).intValue() == press;
 
-            // Shift+C / Ctrl+C (original) or Shift+A (Build #374)
-            return (cPressed && (shiftPressed || ctrlPressed)) || (aPressed && shiftPressed);
+            // Build #375: Ctrl+C is FREE again - it is the standard in-game
+            // copy and must never be hijacked by the console hotkey. The
+            // console opens on Shift+C or Shift+A only.
+            return (cPressed && shiftPressed) || (aPressed && shiftPressed);
         } catch (Throwable ignored) {
             return false;
         }

@@ -200,7 +200,16 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.minecraft.world.level.block.entity.CommandBlockEntity \
     net.minecraft.client.multiplayer.chat.ChatListener \
     net.minecraft.client.multiplayer.ClientPacketListener \
-    net.minecraft.network.chat.Component net.minecraft.ChatFormatting"
+    net.minecraft.network.chat.Component net.minecraft.ChatFormatting \
+    net.minecraft.client.gui.components.LogoRenderer \
+    net.minecraft.client.gui.components.SplashRenderer \
+    net.minecraft.client.gui.screens.TitleScreen \
+    net.minecraft.client.gui.components.PanoramaWidget \
+    net.minecraft.client.gui.screens.worldselection.SelectWorldScreen \
+    net.minecraft.client.gui.screens.CreateBuffetWorldScreen \
+    net.minecraft.client.gui.screens.packs.PackSelectionScreen \
+    net.minecraft.client.gui.screens.LevelLoadingScreen \
+    net.minecraft.client.gui.screens.PauseScreen"
   MOD_CLASSES="net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen \
     net.dabicco.witherstormmod.client.ShaderPackCompat \
     net.dabicco.witherstormmod.client.FoglessRenderTypes \

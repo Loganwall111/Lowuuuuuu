@@ -254,7 +254,7 @@ public final class McsmExtrasScreen extends Screen {
             McsmExtrasConfig.witherStormEnhancedAi = v;
             McsmExtrasConfig.save();
         })
-          .bool("Giant 3D Preview (Config Menu)", () -> McsmExtrasConfig.giantPreviewEnabled, v -> {
+          .bool("3D Storm Model in Config Menu", () -> McsmExtrasConfig.giantPreviewEnabled, v -> {
               McsmExtrasConfig.giantPreviewEnabled = v;
               McsmExtrasConfig.save();
           })
@@ -691,7 +691,7 @@ public final class McsmExtrasScreen extends Screen {
         g.fill(14, h - FOOT_H + 3, 15, h - FOOT_H + 21, ACCENT);
         g.fill(73, h - FOOT_H + 3, 74, h - FOOT_H + 21, ACCENT);
         g.text(this.font, "§6DONE", 28, h - FOOT_H + 8, VALUE_GOLD, true);
-        g.text(this.font, "§8Ctrl+C / Shift+C toggles console · click a value to type it · drag the diamond dots to scrub",
+        g.text(this.font, "§8Shift+A / Shift+C toggles console (Ctrl+C is free for copy) · click a value to type it · drag the diamond dots to scrub",
                 88, h - FOOT_H + 9, TEXT_DIM, false);
     }
 }
