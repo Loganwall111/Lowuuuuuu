@@ -50,6 +50,11 @@ public final class StormSkins {
         return og() ? LEGACY_OG : LEGACY_CLASSIC;
     }
 
+    /** Dark chassis atlas used by split Stage B shell builders. */
+    public static Identifier darkVanillaBlack() {
+        return phase4();
+    }
+
     public static Identifier phase4() {
         boolean ogSkin = og();
         double p = phaseHint;
