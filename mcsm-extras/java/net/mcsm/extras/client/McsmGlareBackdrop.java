@@ -99,7 +99,7 @@ public final class McsmGlareBackdrop {
                 // blend order: far first, near last (near is on top)
                 for (int i = 2; i >= 0; i--) {
                     double radius = baseRadius * SIZE[i];
-                    float alpha = (int) (255.0F * ALPHA[i] * phaseFade * distanceFade
+                    int alpha = (int) (255.0F * ALPHA[i] * phaseFade * distanceFade
                             * McsmExtrasConfig.glareBackdropStrength);
                     submitQuad(poseStack, collector,
                             centre.add(view.scale(SKY_OFFSET)), view, radius,
