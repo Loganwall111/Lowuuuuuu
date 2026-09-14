@@ -54,7 +54,8 @@ public abstract class McsmHunterAiMixin {
 
             ServerPlayer prey = null;
             double best = Double.MAX_VALUE;
-            for (ServerPlayer p : level.players()) {
+            // 26.2: players() lives on ServerLevel, not Level (dump-verified)
+            for (ServerPlayer p : ((ServerLevel) level).players()) {
                 double dx = p.getX() - self.getX();
                 double dy = p.getY() - self.getY();
                 double dz = p.getZ() - self.getZ();

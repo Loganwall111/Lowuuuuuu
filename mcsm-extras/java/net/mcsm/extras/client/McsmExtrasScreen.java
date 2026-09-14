@@ -40,7 +40,6 @@ import java.util.function.DoubleSupplier;
  * No vanilla control widgets are used at all — input is handled directly
  * (mouse click / drag / scroll), and the only widget instantiated is the
  * transient EditBox while a value is being typed.
-<<<<<<< HEAD
  *
  * BUILD #374 SYNC-FORWARD: the full Build #372 premium structure is intact
  * and authoritative — the scrolling chapter rail (data-driven Category
@@ -49,8 +48,6 @@ import java.util.function.DoubleSupplier;
  * value chips. Chapters VII (SKY & BUILT-IN PACKS) and VIII (CINEMATICS)
  * ride the same rail/framework; the base config screen's entry rows
  * (McsmGuiExtrasRows) open this exact screen.
-=======
->>>>>>> 44200e4 (ci: fix(model) repair phase 1 body geometry and wire face emissive glow maps)
  */
 public final class McsmExtrasScreen extends Screen {
 
@@ -242,10 +239,7 @@ public final class McsmExtrasScreen extends Screen {
         Category c5 = new Category("V", "NIGHTGLOW & DEATH", "Silhouette halos and the end-game sequence.");
         c5.bool("Outline Whole Body (Tail to Top)", () -> McsmExtrasConfig.nightglowBodyOutline, v -> McsmExtrasConfig.nightglowBodyOutline = v)
           .bool("Bluish Glow Base", () -> McsmExtrasConfig.nightglowBluishGlow, v -> McsmExtrasConfig.nightglowBluishGlow = v)
-<<<<<<< HEAD
           .bool("Blue Storm Halo (Phase 4+, Chassis-Welded)", () -> McsmExtrasConfig.stormHaloEnabled, v -> McsmExtrasConfig.stormHaloEnabled = v)
-=======
->>>>>>> 44200e4 (ci: fix(model) repair phase 1 body geometry and wire face emissive glow maps)
           .bool("Purple Glow (Phases 5.1-5.9)", () -> McsmExtrasConfig.nightglowPurpleGlow55, v -> McsmExtrasConfig.nightglowPurpleGlow55 = v)
           .bool("Thick Black Core Glow", () -> McsmExtrasConfig.nightglowThickBlackGlow, v -> McsmExtrasConfig.nightglowThickBlackGlow = v)
           .bool("Death Cinematic", () -> McsmExtrasConfig.deathCinematic, v -> McsmExtrasConfig.deathCinematic = v)
@@ -264,19 +258,10 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.giantPreviewEnabled = v;
               McsmExtrasConfig.save();
           })
-<<<<<<< HEAD
           .act("Player Model Versions — how to switch (F8 or 1/2/3)", () -> {
               net.mcsm.extras.client.McsmClientChat.say("[ds] Player models: press  F8  in-game to cycle  vanilla -> Telltale Hero -> Scout -> Storm Guardian -> vanilla");
               net.mcsm.extras.client.McsmClientChat.say("[ds] Or manually:  /scoreboard objectives add mcsmplyr dummy  then  /scoreboard players set @s mcsmplyr 1 | 2 | 3 | 0");
               net.mcsm.extras.client.McsmClientChat.say("[ds]  1 = Telltale Hero (big head)  2 = Scout (slim)  3 = Storm Guardian (brawny)  0 = vanilla. (Needs the EMF/CEM mod installed.)");
-=======
-          .act("Player Model Versions — how to switch (1/2/3)", () -> {
-              net.mcsm.extras.client.McsmClientChat.say("[ds] Player models: run  /scoreboard objectives add mcsmplyr dummy  then");
-              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 1  = Telltale Hero (big head)");
-              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 2  = Scout (slim)");
-              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 3  = Storm Guardian (brawny)");
-              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 0  = back to the vanilla model. (Needs the EMF/CEM mod installed.)");
->>>>>>> 44200e4 (ci: fix(model) repair phase 1 body geometry and wire face emissive glow maps)
           })
           .bool("Tentacle Grab", () -> McsmExtrasConfig.enableTentacleGrab, v -> McsmExtrasConfig.enableTentacleGrab = v)
           .val("Grab Interval", () -> McsmExtrasConfig.grabIntervalSeconds, v -> McsmExtrasConfig.grabIntervalSeconds = v, 0.0, 30.0)

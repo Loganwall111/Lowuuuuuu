@@ -1,6 +1,6 @@
 package net.mcsm.extras.client;
 
-import com.mojang.blaze3d.vertex.Pose;
+import com.mojang.blaze3d.vertex.PoseStack.Pose;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 

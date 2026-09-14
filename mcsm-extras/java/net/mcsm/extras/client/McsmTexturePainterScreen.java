@@ -13,7 +13,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.mcsm.extras.McsmClientChat;
+import net.mcsm.extras.client.McsmClientChat;
 
 /**
  * Build #374 -- the IN-GAME STORM TEXTURE PAINTER (user order: "an in-game

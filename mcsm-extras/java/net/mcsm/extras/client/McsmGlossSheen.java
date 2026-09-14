@@ -7,10 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-<<<<<<< HEAD
-=======
-import com.mojang.math.Axis;
->>>>>>> 44200e4 (ci: fix(model) repair phase 1 body geometry and wire face emissive glow maps)
 import net.dabicco.witherstormmod.client.GlowRenderTypes;
 import net.dabicco.witherstormmod.client.StormSkins;
 import net.dabicco.witherstormmod.entity.state.WitherStormRenderState;
@@ -107,7 +103,6 @@ public final class McsmGlossSheen {
             if (frame == null || part == null || type == null) {
                 return;
             }
-<<<<<<< HEAD
             // Build #374: never coat the pre-phase-4 stages (command block /
             // hunchback) — their native pose must stay untouched, and the coat
             // ghost made the Phase 1 blocks read as floating apart in air.
@@ -122,20 +117,6 @@ public final class McsmGlossSheen {
             // artifacts are gone.
             frame.collector.submitCustomGeometry(poseStack, type, (pose, consumer) ->
                     part.render(pose, consumer, light, overlay));
-=======
-            long ticks = (long) frame.state.idleTimeTicks;
-            // Native scrolling drivers from StormSkins: a full 10s sweep plus a
-            // gentle Z tilt so the streaks glide rather than rotate rigidly.
-            float sweep = StormSkins.glossUOffset(ticks) * 360.0F;
-            float tilt = (float) Math.sin(StormSkins.glossVOffset(ticks) * 6.28318D) * 5.0F;
-
-            poseStack.pushPose();
-            poseStack.mulPose(Axis.YP.rotationDegrees(sweep));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(tilt));
-            frame.collector.submitCustomGeometry(poseStack, type, (pose, consumer) ->
-                    part.render(poseStack, consumer, light, overlay));
-            poseStack.popPose();
->>>>>>> 44200e4 (ci: fix(model) repair phase 1 body geometry and wire face emissive glow maps)
         } catch (Throwable ignored) {
             // Cosmetic pass only - never let the sheen take down the storm.
         }

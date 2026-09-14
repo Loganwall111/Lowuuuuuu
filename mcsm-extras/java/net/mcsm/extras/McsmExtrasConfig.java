@@ -103,12 +103,9 @@ public final class McsmExtrasConfig {
     // ---- Nightglow & Silhouette Halo Expansion ---------------------------
     public static boolean nightglowBodyOutline = true; // Outline whole body bottom tail to top of phase 5
     public static boolean nightglowBluishGlow = true; // Bluish halo base
-<<<<<<< HEAD
     /** Build #374: the restored working blue halo — chassis-welded ring that
      *  ramps in at phase 4.0 and holds through every later stage. */
     public static boolean stormHaloEnabled = true;
-=======
->>>>>>> 44200e4 (ci: fix(model) repair phase 1 body geometry and wire face emissive glow maps)
     public static boolean nightglowPurpleGlow55 = true; // Gigantic purple glow for phases 5.1-5.9
     public static boolean nightglowThickBlackGlow = true; // Thick black core glow
     public static double  nightglowRadiusMultiplier = 1.5;
@@ -231,10 +228,7 @@ public final class McsmExtrasConfig {
             p.setProperty("world_crack_intro", String.valueOf(worldCrackIntro));
             p.setProperty("nightglow_body_outline", String.valueOf(nightglowBodyOutline));
             p.setProperty("nightglow_bluish_glow", String.valueOf(nightglowBluishGlow));
-<<<<<<< HEAD
             p.setProperty("storm_halo_enabled", String.valueOf(stormHaloEnabled));
-=======
->>>>>>> 44200e4 (ci: fix(model) repair phase 1 body geometry and wire face emissive glow maps)
             p.setProperty("nightglow_purple_glow55", String.valueOf(nightglowPurpleGlow55));
             p.setProperty("nightglow_thick_black_glow", String.valueOf(nightglowThickBlackGlow));
             p.setProperty("end_flashes_phase6", String.valueOf(endFlashesPhase6));
@@ -304,10 +298,7 @@ public final class McsmExtrasConfig {
             animRoarIntensity = dbl(p, "anim_roar_intensity", animRoarIntensity);
             nightglowBodyOutline = bool(p, "nightglow_body_outline", nightglowBodyOutline);
             nightglowBluishGlow = bool(p, "nightglow_bluish_glow", nightglowBluishGlow);
-<<<<<<< HEAD
             stormHaloEnabled = bool(p, "storm_halo_enabled", stormHaloEnabled);
-=======
->>>>>>> 44200e4 (ci: fix(model) repair phase 1 body geometry and wire face emissive glow maps)
             nativeGlossSheen = bool(p, "native_gloss_sheen", nativeGlossSheen);
             customMeshModel = bool(p, "custom_mesh_model", customMeshModel);
             tracedShadingBody = bool(p, "traced_shading_body", tracedShadingBody);

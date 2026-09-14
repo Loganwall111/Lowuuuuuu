@@ -3,7 +3,7 @@ package net.mcsm.extras.client;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.mojang.blaze3d.vertex.Pose;
+import com.mojang.blaze3d.vertex.PoseStack.Pose;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
