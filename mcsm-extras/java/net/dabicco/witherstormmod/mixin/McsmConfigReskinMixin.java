@@ -133,9 +133,10 @@ public abstract class McsmConfigReskinMixin {
         g.fill(24, 57, w - 24, 58, 0xFF3A2A55);
         g.fill(24, 58, w - 24, 59, 0xFF14101F);
         // wordmark + console tag
-        g.text(self.font, "\u00a7lSTORM CONFIGURATION", 28, 12, 0xFFEDE7F8, false);
+        net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
+        g.text(font, "\u00a7lSTORM CONFIGURATION", 28, 12, 0xFFEDE7F8, false);
         String tag = "EPISODE CONSOLE";
-        g.text(self.font, tag, w - 28 - self.font.width(tag), 14, 0xFF7F6FA0, false);
+        g.text(font, tag, w - 28 - font.width(tag), 14, 0xFF7F6FA0, false);
         // accent underline beneath the active tab (active==false marks it)
         for (Object child : self.children()) {
             if (!(child instanceof AbstractButton ab) || ab.getMessage() == null) {
