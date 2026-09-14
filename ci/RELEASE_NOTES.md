@@ -1,3 +1,7 @@
+# 1.9.392 — Build #392: teeth/eye glow tuned to the show spec
+
+- Emissive teeth and eyes now follow the phase table exactly as specified: phase 4 cyan-white, phase 5 whitish with glow, phase 5.5 cyan-blue, phase 6 blue, phase 7 toxic green, phase 8 white — every phase glowing, phase 3 dark. The tractor beams stay pinned to cosmic blue `#4D4DFF` regardless (that pin is a separate write in the same tick).
+
 # 1.9.391 — Build #391: model layer restored, purple ring back as soft blobs, LUT gate wired
 
 - **Original mod model code re-initialized (Phase 1 close-out).** The live source tree was missing the base mod's whole model/render layer: `WitherStormP4` and 11 more models, all 12 `entity/renderer` classes (incl. `WitherStormRenderer`), 10 render-state/animation support classes and `ModelPartAccessor` are restored from the reconstructed sources, import-closure checked against the live tree. Solid block physics and the blocky keyframe animation come back with them; textures still resolve through `StormSkins`, whose OG default keeps the traced charcoal sheets wrapped on the blocks.
