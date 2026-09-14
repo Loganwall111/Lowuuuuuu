@@ -890,7 +890,8 @@ for need in \
   assets/dabywitherstormmod/resourcepacks/ogs-cem.zip \
   assets/dabywitherstormmod/resourcepacks/player-models.zip \
   assets/dabywitherstormmod/textures/entity/wither_storm_og_p4_e.png \
-  assets/dabywitherstormmod/textures/entity/wither_storm_p4_e.png; do
+  assets/dabywitherstormmod/textures/entity/wither_storm_p4_e.png \
+  assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_trayshaded.png; do
   if [ ! -s "$FX/cls/$need" ]; then
     echo "::error title=jar audit::restored OGS asset missing from jar: $need"
     AUDIT_FAIL=1

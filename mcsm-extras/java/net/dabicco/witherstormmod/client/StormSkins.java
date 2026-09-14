@@ -32,7 +32,16 @@ public final class StormSkins {
     private static final Identifier LEGACY_CLASSIC = id("textures/entity/wither_storm.png");
     private static final Identifier LEGACY_OG = id("textures/entity/wither_storm_og.png");
     /** Build #371 — authentic OG traced-shading body sheet (16x16 StageB mottle). */
-    private static final Identifier TRACED_P4 = id("textures/entity/wither_storm/wither_storm_traced.png");
+    private static final Identifier TRACED_P4_LEGACY = id("textures/entity/wither_storm/wither_storm_traced.png");
+    /**
+     * Build #374 — the "tray shaded" MCSM Blockbench blueprint, injected: the
+     * blueprint's traced StageB body mottle tiled across the full 160x160 body
+     * UV space (exactly how the blueprint's 16px repeat texture renders), with
+     * the witherBloodA traced tile's luminance baked in as pre-baked shading
+     * depth. This is the DEFAULT body look for phases 4-5.9.
+     */
+    private static final Identifier TRAY_SHADED_P4 = id("textures/entity/wither_storm/wither_storm_trayshaded.png");
+    private static final Identifier TRACED_P4 = TRAY_SHADED_P4;
     private static final Identifier PHASE6_BODY = id("textures/entity/phase_4_assets_p6.png");
     private static final Identifier PHASE6_EMISSIVE = id("textures/entity/phase_4_assets_e.png");
     private static final Identifier PHASE6_DEVOURER = id("textures/entity/devourer_assets_p6.png");

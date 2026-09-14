@@ -36,6 +36,9 @@ public abstract class McsmStormBlobMixin {
             McsmExperimentalStoryStage.submit(ctx);
             McsmSkybox.submit(ctx);
             McsmStormBlob.submit(ctx);
+            // Build #374: the restored working blue halo, welded to the
+            // storm chassis from phase 4 through every later stage.
+            net.mcsm.extras.client.McsmStormHalo.submit(ctx);
         }
         ci.cancel();
     }

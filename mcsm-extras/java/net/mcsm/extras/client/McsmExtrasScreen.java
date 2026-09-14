@@ -231,6 +231,7 @@ public final class McsmExtrasScreen extends Screen {
         Category c5 = new Category("V", "NIGHTGLOW & DEATH", "Silhouette halos and the end-game sequence.");
         c5.bool("Outline Whole Body (Tail to Top)", () -> McsmExtrasConfig.nightglowBodyOutline, v -> McsmExtrasConfig.nightglowBodyOutline = v)
           .bool("Bluish Glow Base", () -> McsmExtrasConfig.nightglowBluishGlow, v -> McsmExtrasConfig.nightglowBluishGlow = v)
+          .bool("Blue Storm Halo (Phase 4+, Chassis-Welded)", () -> McsmExtrasConfig.stormHaloEnabled, v -> McsmExtrasConfig.stormHaloEnabled = v)
           .bool("Purple Glow (Phases 5.1-5.9)", () -> McsmExtrasConfig.nightglowPurpleGlow55, v -> McsmExtrasConfig.nightglowPurpleGlow55 = v)
           .bool("Thick Black Core Glow", () -> McsmExtrasConfig.nightglowThickBlackGlow, v -> McsmExtrasConfig.nightglowThickBlackGlow = v)
           .bool("Death Cinematic", () -> McsmExtrasConfig.deathCinematic, v -> McsmExtrasConfig.deathCinematic = v)
