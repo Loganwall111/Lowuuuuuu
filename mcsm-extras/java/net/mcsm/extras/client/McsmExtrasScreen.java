@@ -258,12 +258,10 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.giantPreviewEnabled = v;
               McsmExtrasConfig.save();
           })
-          .act("Player Model Versions — how to switch (1/2/3)", () -> {
-              net.mcsm.extras.client.McsmClientChat.say("[ds] Player models: run  /scoreboard objectives add mcsmplyr dummy  then");
-              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 1  = Telltale Hero (big head)");
-              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 2  = Scout (slim)");
-              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 3  = Storm Guardian (brawny)");
-              net.mcsm.extras.client.McsmClientChat.say("[ds]  /scoreboard players set @s mcsmplyr 0  = back to the vanilla model. (Needs the EMF/CEM mod installed.)");
+          .act("Player Model Versions — how to switch (F8 or 1/2/3)", () -> {
+              net.mcsm.extras.client.McsmClientChat.say("[ds] Player models: press  F8  in-game to cycle  vanilla -> Telltale Hero -> Scout -> Storm Guardian -> vanilla");
+              net.mcsm.extras.client.McsmClientChat.say("[ds] Or manually:  /scoreboard objectives add mcsmplyr dummy  then  /scoreboard players set @s mcsmplyr 1 | 2 | 3 | 0");
+              net.mcsm.extras.client.McsmClientChat.say("[ds]  1 = Telltale Hero (big head)  2 = Scout (slim)  3 = Storm Guardian (brawny)  0 = vanilla. (Needs the EMF/CEM mod installed.)");
           })
           .bool("Tentacle Grab", () -> McsmExtrasConfig.enableTentacleGrab, v -> McsmExtrasConfig.enableTentacleGrab = v)
           .val("Grab Interval", () -> McsmExtrasConfig.grabIntervalSeconds, v -> McsmExtrasConfig.grabIntervalSeconds = v, 0.0, 30.0)

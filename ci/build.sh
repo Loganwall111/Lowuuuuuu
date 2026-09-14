@@ -199,6 +199,7 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.minecraft.world.entity.player.Inventory net.minecraft.world.inventory.AbstractContainerMenu \
     net.minecraft.world.level.block.entity.CommandBlockEntity \
     net.minecraft.client.multiplayer.chat.ChatListener \
+    net.minecraft.client.multiplayer.ClientPacketListener \
     net.minecraft.network.chat.Component net.minecraft.ChatFormatting"
   MOD_CLASSES="net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen \
     net.dabicco.witherstormmod.client.ShaderPackCompat \
