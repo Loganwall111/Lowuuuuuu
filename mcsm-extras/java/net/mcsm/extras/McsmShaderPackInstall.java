@@ -40,20 +40,28 @@ public final class McsmShaderPackInstall {
     private static final String MARKER    = "DevouringStorms.version";
 
     private static boolean attempted = false;
+    /** Build #374: outcome string, reported once in chat by McsmClientChat. */
+    private static volatile String lastStatus = "pending";
 
     private McsmShaderPackInstall() {
     }
 
-    public static void install() {
+    /**
+     * Build #374: returns a short human-readable outcome ("auto-selected
+     * DevouringStorms-SuperDuperDefault.zip", "off (embedded-pack toggle)",
+     * ...) so the launch chat can prove the summon happened.
+     */
+    public static String install() {
         if (attempted) {
-            return;
+            return lastStatus;
         }
         attempted = true;
         try {
             McsmExtrasConfig.load();
             File gameDir = gameDir();
             if (gameDir == null) {
-                return;
+                lastStatus = "unavailable (game dir)";
+                return lastStatus;
             }
             File packs  = new File(gameDir, "shaderpacks");
             File target = new File(packs, PACK_NAME);
@@ -65,7 +73,8 @@ public final class McsmShaderPackInstall {
                 if (!target.isFile() || !McsmExtrasConfig.BUILD_VERSION.equals(have)) {
                     InputStream in = McsmShaderPackInstall.class.getResourceAsStream(PACK_RES);
                     if (in == null) {
-                        return; // jar without the embedded pack: nothing to do
+                        lastStatus = "embedded zip missing from jar";
+                        return lastStatus; // jar without the embedded pack: nothing to do
                     }
                     try {
                         packs.mkdirs();
@@ -83,11 +92,15 @@ public final class McsmShaderPackInstall {
                 if (marker.isFile()) {
                     marker.delete();
                 }
+                lastStatus = "off (embedded-pack toggle)";
             }
-            selectIris(gameDir, want);
+            if (want) {
+                lastStatus = selectIris(gameDir, want);
+            }
         } catch (Throwable t) {
-            // never crash the game over a shader pack
+            lastStatus = "unavailable (" + t + ")";
         }
+        return lastStatus;
     }
 
     /**
@@ -95,7 +108,7 @@ public final class McsmShaderPackInstall {
      * mod's common initialization, i.e. before Iris reads that file on the
      * client side, so the choice normally applies to the very same launch.
      */
-    private static void selectIris(File gameDir, boolean want) {
+    private static String selectIris(File gameDir, boolean want) {
         try {
             File cfgDir = new File(gameDir, "config");
             File propsFile = new File(cfgDir, "iris.properties");
@@ -110,13 +123,13 @@ public final class McsmShaderPackInstall {
             boolean free = cur.isEmpty() || "(internal)".equals(cur) || "none".equalsIgnoreCase(cur);
             if (want) {
                 if (!ours && !free) {
-                    return; // the player chose another pack - respect it
+                    return "installed, kept your own pack: " + cur; // the player chose another pack - respect it
                 }
                 p.setProperty("shaderPack", PACK_NAME);
                 p.setProperty("enableShaders", "true");
             } else {
                 if (!ours) {
-                    return; // not ours to remove
+                    return "off (embedded-pack toggle)"; // not ours to remove
                 }
                 p.setProperty("shaderPack", "(internal)");
                 p.setProperty("enableShaders", "false");
@@ -125,8 +138,9 @@ public final class McsmShaderPackInstall {
             try (OutputStream out = new FileOutputStream(propsFile)) {
                 p.store(out, "Iris config (Devouring Storms manages the shaderPack line for its built-in pack; MCSM Control Panel toggle)");
             }
+            return want ? "auto-selected " + PACK_NAME : "(internal) restored";
         } catch (Throwable t) {
-            // best-effort only
+            return "installed (Iris config not writable: " + t + ")";
         }
     }
 

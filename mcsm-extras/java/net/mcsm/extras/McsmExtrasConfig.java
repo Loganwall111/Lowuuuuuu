@@ -148,7 +148,15 @@ public final class McsmExtrasConfig {
     public static boolean stormBodySway = true;
     public static boolean infiniteBackGrowth = false;
     public static double infiniteBackGrowthSpeed = 0.10;
-    public static boolean embeddedShaderPack = false;
+    /**
+     * Build #374 -- DEFAULT ON. The user's standing order: "on first play the
+     * built-in resource pack and shader pack get summoned/extracted and
+     * applied". With the default false the installer ran in uninstall mode on
+     * every launch (deleted the zip, reset Iris to (internal)) which is why
+     * the game booted into "Loaded Shaderpack: (off) (fallback)". The
+     * panel toggle still lets a player switch it off.
+     */
+    public static boolean embeddedShaderPack = true;
 
     private static boolean loaded = false;
     private static long stamp = -1L;

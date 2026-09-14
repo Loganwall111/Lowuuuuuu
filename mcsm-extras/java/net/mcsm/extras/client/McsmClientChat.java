@@ -62,6 +62,13 @@ public final class McsmClientChat {
                 + " loaded (base: Dabicco's Wither Storm Mod). Mods list and"
                 + " panel header must read the same number, or an older jar"
                 + " is still in mods/.");
+            // Build #374 -- pack summon proof: which built-in packs came up
+            // and which shader pack the installer auto-selected this launch.
+            try {
+                say("[ds] packs: " + net.mcsm.extras.McsmBuiltinPack.summary());
+            } catch (Throwable ignored) {
+                // chat must never break a frame
+            }
         } catch (Throwable ignored) {
             // chat must never break a frame
         }
