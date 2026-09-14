@@ -28,8 +28,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * the command-block model through the dedicated eyes RenderType with the
  * 64x96 face glow map, full-bright light and the live eye/teeth glow tint.
  *
- *  - phase < 2.0 only: that is exactly when the command-block head is visible
- *    (the base model hides the whole early body at phase >= 2);
+ *  - phase < 4.0: the command-block head is the visible face for the whole
+ *    early game (Build #375 restores the full blocky wither for Phase 2-3
+ *    via McsmCommandWitherPhaseMixin, so its face plate keeps glowing here
+ *    too);
  *    - the 64x96 maps (wither_storm_og_e.png / wither_storm_e.png) are the
  *    isolated eye+teeth silhouettes for this layer's UV space;
  *    - the same turquoiseTeeth toggle governs it, and the preview shadow pass
@@ -45,7 +47,7 @@ public abstract class McsmFaceGlowMixin {
     @Inject(method = "submitHunchback", at = @At("TAIL"), remap = false, require = 0)
     private void mcsm$commandBlockFaceGlow(WitherStormRenderState state, PoseStack poseStack,
                                            SubmitNodeCollector submitNodeCollector, CallbackInfo ci) {
-        if (state.phase >= 2.0D) {
+        if (state.phase >= 4.0D) {
             return;
         }
         if (previewShadowPass) {

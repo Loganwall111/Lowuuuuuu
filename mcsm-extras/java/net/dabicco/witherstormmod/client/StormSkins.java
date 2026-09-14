@@ -125,9 +125,10 @@ public final class StormSkins {
         return phaseHint >= 6.0D ? PHASE6_BODY : tracedOrCanonical(phaseHint);
     }
 
-    /** Detached/devourer pieces use Phase 6 devourer sheet for Phase 6+, clean black otherwise. */
+    /** Detached/devourer pieces use Phase 6 devourer sheet for Phase 6+,
+     *  tray-shaded for 4.0-5.9 (Build #375), clean black otherwise. */
     public static Identifier devourer() {
-        return phaseHint >= 6.0D ? PHASE6_DEVOURER : CANONICAL_TEXTURE;
+        return devourer(phaseHint);
     }
 
     /**
@@ -138,7 +139,17 @@ public final class StormSkins {
      */
     public static Identifier devourer(double phase) {
         setPhaseHint(phase);
-        return phase >= 6.0D ? PHASE6_DEVOURER : CANONICAL_TEXTURE;
+        if (phase >= 6.0D) {
+            return PHASE6_DEVOURER;
+        }
+        // Build #375: detached/devourer pieces follow the tray-shaded body
+        // policy for 4.0-5.9 — "some parts still using the original" plain
+        // black is gone. The tray-shaded sheet is a 16px repeat mottle tile,
+        // so it renders coherently in the devourer UV space too.
+        if (phase >= 4.0D && McsmExtrasConfig.tracedShadingBody) {
+            return TRAY_SHADED_P4;
+        }
+        return CANONICAL_TEXTURE;
     }
 
     /** Isolated emissive teeth and eye facial glow maps. */
