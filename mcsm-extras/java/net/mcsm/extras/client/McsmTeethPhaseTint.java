@@ -77,15 +77,24 @@ public final class McsmTeethPhaseTint {
             }
             float r, g, b, inten;
             boolean glow;
-            if (phase >= 6.0F) {
-                // Sea-green begins at Phase 6 and stays emissive through the
-                // final skull/devourer phases.
-                r = 0.00F; g = 0.659F; b = 0.467F; inten = 4.20F; glow = true; // #00A877
+            // SHOW-SPEC TEETH TABLE with BUILD #403 intensity fix: the
+            // teethBoost pass needs ~3.2-4.3 to read as glowing (the 1.1-2.45
+            // magnitudes from the 7000-FINAL era rendered dark on this
+            // renderer -- "teeth do not glow"). Hues stay show-spec.
+            if (phase >= 8.0F) {
+                r = 1.00F; g = 1.00F; b = 1.00F; inten = 4.30F; glow = true;   // phase 8: blinding white
+            } else if (phase >= 7.0F) {
+                r = 0.55F; g = 1.00F; b = 0.20F; inten = 4.20F; glow = true;   // phase 7: toxic green
+            } else if (phase >= 6.0F) {
+                r = 0.20F; g = 0.45F; b = 1.00F; inten = 4.20F; glow = true;   // phase 6: cinematic blue
+            } else if (phase >= 5.5F) {
+                r = 0.35F; g = 0.90F; b = 1.00F; inten = 3.90F; glow = true;   // phase 5.5: cyan-blue
+            } else if (phase >= 5.0F) {
+                r = 0.92F; g = 1.00F; b = 0.96F; inten = 3.60F; glow = true;   // phase 5: pure white with glow
             } else if (phase >= 4.0F) {
-                // Neon-cyan runs through the Phase 5.5 transition.
-                r = 0.00F; g = 0.953F; b = 1.00F; inten = 3.90F; glow = true; // #00F3FF
+                r = 0.72F; g = 0.98F; b = 1.00F; inten = 3.60F; glow = true;   // phase 4: cyan-white
             } else {
-                r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;
+                r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;  // phase 3: no glowing teeth
             }
             DabyWSClientConfig.eyeColorR = r;
             DabyWSClientConfig.eyeColorG = g;

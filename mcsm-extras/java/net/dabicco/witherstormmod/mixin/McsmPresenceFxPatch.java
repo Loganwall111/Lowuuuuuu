@@ -31,11 +31,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(StormPresenceFX.class)
 public abstract class McsmPresenceFxPatch {
-    private static final Identifier TURQUOISE = id("textures/misc/backdrop_turquoise.png");
-    private static final Identifier PURPLE = id("textures/misc/backdrop_purple.png");
-    private static final Identifier PURPLE_PINK = id("textures/misc/backdrop_purple_pink.png");
     private static final Identifier HALO_RING = id("textures/misc/halo_ring.png");
     private static final Identifier HALO_WHITE = id("textures/mcsm_atmosphere/halo.png");
+    // BUILD #401 -- the accurate per-phase halo colours (sampled from the
+    // reference frames and baked into the glare asset set): blue at 4,
+    // sage-green at 5, purple 5.5-5.9, salmon at 6, ember at 7+. Same oval
+    // geometry as before; only the colour layers change texture.
+    private static final Identifier GLARE4 = id("textures/mcsm_atmosphere/glare/phase4.png");   // #5962D0
+    private static final Identifier GLARE5 = id("textures/mcsm_atmosphere/glare/phase5.png");   // #6A9A78
+    private static final Identifier GLARE54 = id("textures/mcsm_atmosphere/glare/phase54.png"); // #703887
+    private static final Identifier GLARE55 = id("textures/mcsm_atmosphere/glare/phase55.png"); // #87529C
+    private static final Identifier GLARE6 = id("textures/mcsm_atmosphere/glare/phase6.png");   // #D89874
+    private static final Identifier GLARE89 = id("textures/mcsm_atmosphere/glare/phase89.png"); // #CE5A1F
 
     @Inject(method = "submit", at = @At("HEAD"), remap = false, require = 0)
     private static void dabyws$restorePresenceFx(LevelRenderContext ctx, CallbackInfo ci) {
@@ -83,29 +90,39 @@ public abstract class McsmPresenceFxPatch {
             Vec3 haloCentre = centre.add(0.0D, haloLift(phase, bodyRadius), 0.0D);
             Vec3 view = haloCentre.subtract(camera).normalize();
 
-            // These are the actual colored backdrop assets, not placeholder
-            // geometry. Cross-fade them through teal -> purple -> pink while
-            // keeping the phase-5 deck green/teal as in the reference.
-            float teal = smoothstep(phase, 4.45F, 5.05F)
-                    * (1.0F - smoothstep(phase, 5.02F, 5.28F));
-            float purple = smoothstep(phase, 5.00F, 5.30F)
-                    * (1.0F - smoothstep(phase, 5.42F, 5.72F));
-            float pink = smoothstep(phase, 5.34F, 5.68F)
-                    * (1.0F - smoothstep(phase, 5.92F, 6.12F));
-            float phaseSix = smoothstep(phase, 5.86F, 6.12F);
+            // BUILD #401: accurate per-phase halo colours from the glare asset
+            // set, cross-faded on the approved storm mapping (blue 4, green 5,
+            // purple 5.5-5.9, salmon 6, ember 7+). Oval sizes/alphas keep the
+            // established geometry; only the textures carry the phase colour.
+            float w4 = 1.0F - smoothstep(phase, 4.95F, 5.15F);
+            float w5 = smoothstep(phase, 4.95F, 5.15F)
+                    * (1.0F - smoothstep(phase, 5.35F, 5.50F));
+            float w54 = smoothstep(phase, 5.35F, 5.50F)
+                    * (1.0F - smoothstep(phase, 5.50F, 5.62F));
+            float w55 = smoothstep(phase, 5.50F, 5.62F)
+                    * (1.0F - smoothstep(phase, 5.88F, 6.05F));
+            float w6 = smoothstep(phase, 5.88F, 6.05F)
+                    * (1.0F - smoothstep(phase, 6.90F, 7.10F));
+            float w89 = smoothstep(phase, 6.90F, 7.10F);
 
-            layer(poseStack, collector, TURQUOISE, haloCentre, view,
+            layer(poseStack, collector, GLARE4, haloCentre, view,
                     bodyRadius * 3.35D, bodyRadius * 2.25D,
-                    teal * distanceFade * 0.72F);
-            layer(poseStack, collector, PURPLE, haloCentre, view,
+                    w4 * distanceFade * 1.0F);
+            layer(poseStack, collector, GLARE5, haloCentre, view,
                     bodyRadius * 3.55D, bodyRadius * 2.35D,
-                    purple * distanceFade * 0.68F);
-            layer(poseStack, collector, PURPLE_PINK, haloCentre, view,
+                    w5 * distanceFade * 1.0F);
+            layer(poseStack, collector, GLARE54, haloCentre, view,
+                    bodyRadius * 3.70D, bodyRadius * 2.45D,
+                    w54 * distanceFade * 1.0F);
+            layer(poseStack, collector, GLARE55, haloCentre, view,
                     bodyRadius * 3.85D, bodyRadius * 2.55D,
-                    pink * distanceFade * 0.74F);
-            layer(poseStack, collector, PURPLE_PINK, haloCentre, view,
+                    w55 * distanceFade * 1.0F);
+            layer(poseStack, collector, GLARE6, haloCentre, view,
                     bodyRadius * 4.05D, bodyRadius * 2.65D,
-                    phaseSix * distanceFade * 0.48F);
+                    w6 * distanceFade * 0.95F);
+            layer(poseStack, collector, GLARE89, haloCentre, view,
+                    bodyRadius * 4.05D, bodyRadius * 2.65D,
+                    w89 * distanceFade * 0.95F);
 
             // The purple/pink oval ring is the older Catalyst Halo that was
             // present in the newer builds. Its width is intentionally larger
@@ -120,11 +137,11 @@ public abstract class McsmPresenceFxPatch {
             double ringHeight = bodyRadius * (2.82D + 2.45D * phase55Circle);
             layer(poseStack, collector, HALO_RING, haloCentre, view,
                     ringWidth, ringHeight,
-                    ring * distanceFade * 0.88F);
+                    ring * distanceFade * 0.95F);
             if (phase >= 5.82F) {
                 layer(poseStack, collector, HALO_RING, haloCentre, view,
                         bodyRadius * 3.05D, bodyRadius * 1.98D,
-                        smoothstep(phase, 5.82F, 6.12F) * distanceFade * 0.46F);
+                        smoothstep(phase, 5.82F, 6.12F) * distanceFade * 0.55F);
                 // This is the retained white under-halo from the newer asset
                 // set. The texture is black outside its luminous shape, so it
                 // is submitted through the additive glow pipeline rather than
@@ -132,7 +149,7 @@ public abstract class McsmPresenceFxPatch {
                 Vec3 under = haloCentre.add(0.0D, -bodyRadius * 0.38D, 0.0D);
                 layer(poseStack, collector, HALO_WHITE, under, view,
                         bodyRadius * 3.25D, bodyRadius * 2.80D,
-                        smoothstep(phase, 5.82F, 6.18F) * distanceFade * 0.34F);
+                        smoothstep(phase, 5.82F, 6.18F) * distanceFade * 0.45F);
             }
         }
     }

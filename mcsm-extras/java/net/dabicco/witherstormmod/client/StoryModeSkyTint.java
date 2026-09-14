@@ -111,11 +111,12 @@ public final class StoryModeSkyTint {
    public static void horizonColor(long clockTime, float[] out) {
       byTime(clockTime, HORIZON_DAY, HORIZON_DUSK, HORIZON_NIGHT, HORIZON_DAWN, out);
       try {
-         float b = McsmStormAtmosphere.skyBlend(TMP);
+         // BUILD #402: the horizon has its own 1:1 extracted band colours
+         // (pale sage -> pink-magenta -> peach-salmon); no pink-boost hack.
+         float b = McsmStormAtmosphere.skyHorizonBlend(TMP);
          if (b > 0.01F) {
-            // horizon picks up more pink on 5.5
-            out[0] = out[0] + (Math.min(1.0F, TMP[0] * 1.25F) - out[0]) * b;
-            out[1] = out[1] + (TMP[1] * 0.9F - out[1]) * b;
+            out[0] = out[0] + (TMP[0] - out[0]) * b;
+            out[1] = out[1] + (TMP[1] - out[1]) * b;
             out[2] = out[2] + (TMP[2] - out[2]) * b;
          }
       } catch (Throwable ignored) {

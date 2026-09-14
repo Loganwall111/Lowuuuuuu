@@ -26,13 +26,16 @@ public abstract class McsmStormSkyColorPatch {
         McsmNativeSkyRenderer.apply(level, state);
     }
 
-    /** Do not let the directional sunrise fan reopen a top colour band. */
+    /**
+     * BUILD #403: the sunrise/sunset fan is no longer cancelled. It carries
+     * the tinted horizon colour and is what makes vanilla's sky interpolate
+     * continuously zenith -> horizon; deleting it left the flat-dome seam
+     * the user reported as "that band at the top".
+     */
     @Inject(method = "renderSunriseAndSunset", at = @At("HEAD"),
             cancellable = true, require = 1)
     private void mcsm$removeSunriseBand(PoseStack poseStack, float angle,
             int color, CallbackInfo ci) {
-        if (McsmNativeSkyRenderer.ownsSky()) {
-            ci.cancel();
-        }
+        // intentionally a no-op now
     }
 }

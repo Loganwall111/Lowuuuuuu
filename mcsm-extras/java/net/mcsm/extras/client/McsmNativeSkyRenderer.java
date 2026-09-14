@@ -37,30 +37,51 @@ public final class McsmNativeSkyRenderer {
             return;
         }
 
-        // SkyRenderState.skyColor is the live colour selected by Minecraft for
-        // the current time/biome.  Prefer it over a second palette so the
-        // lower, already-correct sky remains authoritative.
-        int authoritative = state.skyColor;
-        if ((authoritative & 0x00FFFFFF) == 0) {
-            authoritative = state.sunriseAndSunsetColor;
+        // BUILD #403 -- CONTINUOUS vanilla sky, no dome band. Instead of
+        // flattening the sky to one colour and deleting the sunrise/sunset
+        // fan (which left a hard seam where the flat dome met the horizon
+        // fog), tint BOTH of vanilla's gradient anchors toward the storm's
+        // 1:1 extracted zenith/horizon colours and let Minecraft's own sky
+        // renderer interpolate between them. The blend weight carries
+        // distanceInfluence(), so the storm sky melts back into the regular
+        // vanilla sky far from the storm.
+        float[] zen = new float[3];
+        float b = McsmStormAtmosphere.skyBlend(zen);
+        float[] hor = new float[3];
+        float b2 = McsmStormAtmosphere.skyHorizonBlend(hor);
+        if (b <= 0.01F && b2 <= 0.01F) {
+            return;
         }
-        if ((authoritative & 0x00FFFFFF) == 0) {
-            float[] horizon = new float[3];
-            StoryModeSkyTint.horizonColor(level.getOverworldClockTime(), horizon);
-            authoritative = 0xFF000000
-                    | (Math.round(horizon[0] * 255.0F) & 0xFF) << 16
-                    | (Math.round(horizon[1] * 255.0F) & 0xFF) << 8
-                    | (Math.round(horizon[2] * 255.0F) & 0xFF);
+        int skyNow = state.skyColor;
+        if ((skyNow & 0x00FFFFFF) == 0) {
+            skyNow = state.sunriseAndSunsetColor;
         }
-
-        // Keep the ordinary native sky as the only colour/geometry path. The
-        // sunrise/sunset fan is the separate upper band; make it transparent
-        // and cancel its geometry submission as well. The attached lower deck
-        // remains green/teal without washing the entire sky green.
-        state.skyColor = authoritative;
-        state.sunriseAndSunsetColor = 0;
+        if ((skyNow & 0x00FFFFFF) == 0) {
+            float[] fb = new float[3];
+            StoryModeSkyTint.horizonColor(level.getOverworldClockTime(), fb);
+            skyNow = 0xFF000000
+                    | (Math.round(fb[0] * 255.0F) & 0xFF) << 16
+                    | (Math.round(fb[1] * 255.0F) & 0xFF) << 8
+                    | (Math.round(fb[2] * 255.0F) & 0xFF);
+        }
+        int fanNow = state.sunriseAndSunsetColor;
+        if ((fanNow & 0x00FFFFFF) == 0) {
+            fanNow = skyNow;
+        }
+        state.skyColor = mcsm$mixArgb(skyNow, zen, b);
+        state.sunriseAndSunsetColor = mcsm$mixArgb(fanNow, hor, b2);
         state.shouldRenderDarkDisc = false;
         ownsSky = true;
+    }
+
+    private static int mcsm$mixArgb(int current, float[] target, float t) {
+        if (t <= 0.0F) return current;
+        if (t > 1.0F) t = 1.0F;
+        int r = (current >> 16) & 0xFF, g = (current >> 8) & 0xFF, bl = current & 0xFF;
+        r = Math.round(r + (target[0] * 255.0F - r) * t);
+        g = Math.round(g + (target[1] * 255.0F - g) * t);
+        bl = Math.round(bl + (target[2] * 255.0F - bl) * t);
+        return 0xFF000000 | (r & 0xFF) << 16 | (g & 0xFF) << 8 | (bl & 0xFF);
     }
 
     /** Return the storm's native horizon colour and its distance blend. */

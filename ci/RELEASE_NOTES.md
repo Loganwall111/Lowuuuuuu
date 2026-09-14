@@ -1,3 +1,25 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.403 — Build #403: lineage tip + charcoal skins + glowing teeth + continuous sky
+
+- Re-based onto the reference lineage TIP 97f8a92 (three commits past
+  5aa1de7): native block-particle debris swirls (the missing animations),
+  client-safe particle random source, native atlas routing hooks.
+- BODY SKIN FIX: the 512 phase atlases were teal-tinted checkers, which lit
+  green-teal in daylight. All eight phase_4_assets atlases re-encoded as
+  luminance-preserving NEUTRAL charcoal -- black at night, tan in daylight,
+  exactly like the reference frames; per-phase identity now comes from the
+  emissive/teeth decks and halo hues.
+- TEETH GLOW FIX: show-spec hues kept but intensities raised to the
+  renderer's real magnitudes (3.6-4.3 instead of 1.1-2.45) -- the old numbers
+  rendered dark on this teethBoost pass ("teeth do not glow").
+- CONTINUOUS SKY FIX: no more flat dome + deleted fan (the hard band at the
+  top). Vanilla's own sky renderer now interpolates zenith -> horizon between
+  two tinted anchors (1:1 extracted storm colours), and the blend weight
+  carries distanceInfluence() so the storm sky fades back to regular vanilla
+  sky far from the storm.
+- Carried: accurate per-phase halo hues at full-blend alpha, 1:1 zenith and
+  horizon palettes, hysteresis-stable skins, no-screen rail handoff, story
+  HUD/intro/borders native.
+
 # Devouring Storms 7000.0.0-MCSM-CINEMATIC-FINAL -- procedural cinematic atmosphere, native Halo cleanup, and phase-7 Vortex
 
 This candidate includes the 1.9.315 active-sky ownership and transparent
