@@ -90,7 +90,9 @@ public final class McsmGlareBackdrop {
                 return;
             }
             double distance = Math.sqrt(bestD);
-            if (distance < 1.0E-4D || distance > 2600.0D) {
+            // No weather storm nearby = completely regular vanilla: the
+            // backdrop (like the sky) exists only while the storm is near.
+            if (distance < 1.0E-4D || distance > 1700.0D) {
                 return;
             }
             Vec3 view = bestPos.subtract(camera).scale(1.0D / distance);

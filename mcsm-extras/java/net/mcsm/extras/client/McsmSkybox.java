@@ -128,8 +128,12 @@ public final class McsmSkybox {
             // Build #389 (user-corrected): the sphere ignites ONLY at phase 5.
             // Phase 4 and earlier is NOTHING - the completely regular vanilla
             // overworld sky, day clouds and all. Lavender/purple chaos skies
-            // stay locked to the late evolution.
-            int target = (!McsmExtrasConfig.skyboxEnabled || bestPhase < 4.95F)
+            // stay locked to the late evolution. AND the lavender sky is
+            // attached to the storm weather only: with no weather storm
+            // nearby (beyond ~1700 blocks) the world is completely regular
+            // vanilla again.
+            boolean stormNear = bestD <= 1700.0D * 1700.0D;
+            int target = (!McsmExtrasConfig.skyboxEnabled || bestPhase < 4.95F || !stormNear)
                     ? 0 : setForPhase(Mth.clamp(bestPhase, 5.0F, 9.0F));
 
             // start a new cross-fade when the target changes
