@@ -232,6 +232,17 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
   unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/(world/level|server/level|core/particles|client/particles|network/chat)/' \
     | sort > ci/api/api-classes-index.txt || true
   unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -iE 'message' > ci/api/message-locations.txt || true
+  # Build #374: LocalPlayer/Player have NO sendCommand in 26.2 — find the
+  # command-request PACKET class by name and dump its API too, so the
+  # player-model cycle key can send /scoreboard commands client-side.
+  unzip -Z1 "$DL/client.jar" 2>/dev/null \
+    | grep -E '^net/minecraft/network/protocol/[A-Za-z/]*Command[A-Za-z]*\.class$' \
+    | grep -v '/\$' \
+    | sed -e 's#\.class$##' -e 's#/#.#g' > ci/api/command-candidates.txt || true
+  if [ -s ci/api/command-candidates.txt ]; then
+    javap -public -classpath "$CP2" $(tr '\n' ' ' < ci/api/command-candidates.txt) \
+      >> ci/api/client.txt 2>&1 || true
+  fi
   # A class index so we can discover what this version renamed things to.
   unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/client/.*\.class$' | sort \
     > ci/api/client-index.txt || true
