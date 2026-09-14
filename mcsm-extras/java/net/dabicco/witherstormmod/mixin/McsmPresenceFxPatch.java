@@ -62,6 +62,13 @@ public abstract class McsmPresenceFxPatch {
             // the phase-coloured glare layers below ARE the halo now.
             DabyWSClientConfig.cataclysmHalos = false;
             DabyWSClientConfig.blackGlare = false;
+            // #410: the world-anchored STORM BACKDROP quad is the flat purple
+            // sky card with the razor horizon edge and the dark core that
+            // survived #409 -- it paints over the real sky. User directive:
+            // regular sky, no bands. The phase glare layers supply the
+            // atmosphere instead.
+            DabyWSClientConfig.stormBackdropQuad = false;
+            DabyWSClientConfig.stormBackdropBlack = false;
             DabyWSClientConfig.atmospherePulse = true;
             DabyWSClientConfig.glareEjecta = true;
             submitExpandedHalos(ctx);

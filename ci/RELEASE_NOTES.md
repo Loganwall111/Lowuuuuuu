@@ -1,3 +1,16 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.410 — Build #410: storm backdrop quad OFF (the last fake-sky layer), purple-sky specks default OFF
+
+- The flat purple sky card with the razor horizon edge and the dark core that
+  survived #409 was the base mod's world-anchored STORM BACKDROP quad
+  (stormBackdropQuad). It is now force-OFF at submit together with the black
+  cylinder variant -- the real sky (superduper gradient or vanilla) is the
+  only sky, per the standing "regular sky, no bands" directive.
+- McsmExtrasConfig.purpleSky (the 5.5+ purple storm-sky specks, toggle in
+  Story Mode Controls) now defaults OFF; the "no purple tint" mandate wins.
+  Toggle it back on in Story Mode Controls if ever wanted.
+- With the backdrop gone, the #409 bright phase glare layers, the shaded
+  cloud decks and the pack sky are finally unobstructed.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.409 — Build #409: regular sky (no dome/band), bright glare, no dark disc, no vein wires
 
 - REGULAR SKY, PER USER DIRECTIVE: the mod-side native sky tint and storm fog

@@ -15,7 +15,7 @@ import java.util.Properties;
  * Written with defaults on first launch.
  */
 public final class McsmExtrasConfig {
-    public static final String BUILD_VERSION = "7000.0.0-MCSM-CINEMATIC-FINAL.409";
+    public static final String BUILD_VERSION = "7000.0.0-MCSM-CINEMATIC-FINAL.410";
     public static boolean enableTentacleGrab = true;
     // Automatic schematic/town placement is deliberately OFF.  It can queue
     // three large structures and thousands of chunk rebuilds on first join,
@@ -55,7 +55,7 @@ public final class McsmExtrasConfig {
     /** Skull impacts: grey ground smoke + yellow electric sparks + crackle. */
     public static boolean smokeScreen = true;
     /** Phase 5.5+: purple lightning strikes + purple motes in the sky. */
-    public static boolean purpleSky = true;
+    public static boolean purpleSky = false; // #410: default OFF -- the purple storm-sky specks contradict the "regular sky, no purple tint" directive; toggle stays available in Story Mode Controls.
     /** Dust trails when the storm sweeps blocks. */
     public static boolean dustWaves = true;
     /** Post-death reality tear with the black aurora + corruption spread. */
