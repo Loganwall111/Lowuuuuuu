@@ -680,11 +680,12 @@ else
     echo "::error title=jar audit::Build #372: P4 class in jar is NOT the freshly compiled dual-mode class (fresh=$P4_FRESH) — stale base-jar twin would ship the old geometry"
     AUDIT_FAIL=1
   fi
-  # Ground truth #2: the SOURCE geometry (1259 original + 495 custom = 1754,
-  # 302-name part tree twice = 604). The compile gate proved this source
-  # builds; the freshness check proved it is in the jar.
-  if [ "$P4_SRC_ADDBOX" -lt 1700 ] || [ "$P4_SRC_ADDBOX" -gt 1800 ]; then
-    echo "::error title=jar audit::Build #372: P4 source addBox count $P4_SRC_ADDBOX outside 1700-1800 (single-mode or runaway geometry)"
+  # Ground truth #2: the SOURCE geometry (1259 original + 495 custom + 264
+  # sealed StageB shell = 2018, Build #386 baseline; 302-name part tree twice
+  # = 604). The compile gate proved this source builds; the freshness check
+  # proved it is in the jar.
+  if [ "$P4_SRC_ADDBOX" -lt 1950 ] || [ "$P4_SRC_ADDBOX" -gt 2100 ]; then
+    echo "::error title=jar audit::Build #372: P4 source addBox count $P4_SRC_ADDBOX outside 1950-2100 (single-mode or runaway geometry)"
     AUDIT_FAIL=1
   fi
   if [ "$P4_SRC_PARTS" -lt 580 ]; then
@@ -698,8 +699,8 @@ else
   # Bytecode cross-check: when the disassembler actually counts, it must
   # agree; a 0 with fresh+source passing is a tooling anomaly -> warn only.
   if [ "$P4_MODE" = "bytecode" ] && [ "$P4_ADDBOX" -gt 0 ]; then
-    if [ "$P4_ADDBOX" -lt 1700 ] || [ "$P4_ADDBOX" -gt 1800 ]; then
-      echo "::error title=jar audit::Build #372: P4 bytecode addBox count $P4_ADDBOX outside 1700-1800 (compiled class disagrees with source)"
+    if [ "$P4_ADDBOX" -lt 1950 ] || [ "$P4_ADDBOX" -gt 2100 ]; then
+      echo "::error title=jar audit::Build #372: P4 bytecode addBox count $P4_ADDBOX outside 1950-2100 (compiled class disagrees with source)"
       AUDIT_FAIL=1
     fi
     if [ "$P4_PARTS" -lt 580 ]; then
