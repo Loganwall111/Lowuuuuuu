@@ -300,6 +300,18 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyboxSize = v;
               McsmExtrasConfig.save();
           }, 0.5, 1.5)
+          .bool("Telltale Glare Backdrops (3 Real Images)", () -> McsmExtrasConfig.glareBackdrop, v -> {
+              McsmExtrasConfig.glareBackdrop = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Glare Backdrop Size", () -> McsmExtrasConfig.glareBackdropSize, v -> {
+              McsmExtrasConfig.glareBackdropSize = v;
+              McsmExtrasConfig.save();
+          }, 0.3, 2.5)
+          .val("Glare Backdrop Strength", () -> McsmExtrasConfig.glareBackdropStrength, v -> {
+              McsmExtrasConfig.glareBackdropStrength = v;
+              McsmExtrasConfig.save();
+          }, 0.0, 2.0)
           .bool("Embedded Shader Pack (Auto-Install)", () -> McsmExtrasConfig.embeddedShaderPack, v -> {
               McsmExtrasConfig.embeddedShaderPack = v;
               McsmExtrasConfig.save();

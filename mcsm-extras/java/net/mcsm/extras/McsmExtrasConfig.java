@@ -94,6 +94,15 @@ public final class McsmExtrasConfig {
     public static double   skyboxFadeSeconds = 2.5;
     /** Cube size multiplier (0.5 - 1.5). */
     public static double   skyboxSize = 1.0;
+    // ---- Build #375 — the REAL Telltale glare shells ----------------------
+    // The three actual Telltale glare/atmosphere images, layered as big
+    // slowly-swirling sky shells around every storm (the "3D-like
+    // atmospheric effect"). FALSE = off (no glare shells).
+    public static boolean  glareBackdrop = false; // flips ON the moment the 3 real Telltale sheets land (Phase 1 commit)
+    /** Glare shell size multiplier (0.3 - 2.5). */
+    public static double   glareBackdropSize = 1.0;
+    /** Glare shell opacity multiplier (0.0 - 2.0). */
+    public static double   glareBackdropStrength = 1.0;
     /** When the cube is fully opaque, cancel the vanilla sky pass entirely so
      *  the base storm-darken/void tint cannot show through as a second layer. */
     public static boolean  skyPassCancel = true;
@@ -234,6 +243,9 @@ public final class McsmExtrasConfig {
             p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
             p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
             p.setProperty("skybox_size", String.valueOf(skyboxSize));
+            p.setProperty("glare_backdrop", String.valueOf(glareBackdrop));
+            p.setProperty("glare_backdrop_size", String.valueOf(glareBackdropSize));
+            p.setProperty("glare_backdrop_strength", String.valueOf(glareBackdropStrength));
             p.setProperty("sky_pass_cancel", String.valueOf(skyPassCancel));
             p.setProperty("storm_blur_enabled", String.valueOf(stormBlurEnabled));
             p.setProperty("storm_blur_size", String.valueOf(stormBlurSize));
@@ -323,6 +335,9 @@ public final class McsmExtrasConfig {
             skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
             skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
             skyboxSize = dbl(p, "skybox_size", skyboxSize);
+            glareBackdrop = bool(p, "glare_backdrop", glareBackdrop);
+            glareBackdropSize = dbl(p, "glare_backdrop_size", glareBackdropSize);
+            glareBackdropStrength = dbl(p, "glare_backdrop_strength", glareBackdropStrength);
             skyPassCancel = bool(p, "sky_pass_cancel", skyPassCancel);
             stormBlurEnabled = bool(p, "storm_blur_enabled", stormBlurEnabled);
             stormBlurSize = dbl(p, "storm_blur_size", stormBlurSize);

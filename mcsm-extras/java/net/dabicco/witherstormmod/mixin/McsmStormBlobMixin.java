@@ -35,6 +35,11 @@ public abstract class McsmStormBlobMixin {
             McsmEarlyStormBackdrop.submit(ctx);
             McsmExperimentalStoryStage.submit(ctx);
             McsmSkybox.submit(ctx);
+            // Build #375: the REAL Telltale glare shells - the three actual
+            // glare images layered as big slowly-swirling sky backdrops
+            // around every storm (drawn over the sky sphere, under the
+            // blob + halo so the body stays in front).
+            net.mcsm.extras.client.McsmGlareBackdrop.submit(ctx);
             McsmStormBlob.submit(ctx);
             // Build #374: the restored working blue halo, welded to the
             // storm chassis from phase 4 through every later stage.
