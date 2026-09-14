@@ -2,7 +2,6 @@ package net.dabicco.witherstormmod.mixin;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -72,10 +71,34 @@ public abstract class McsmPlayerModelCycleMixin {
 
     @Unique
     private static void mcsm$sendCommand(LocalPlayer player, String command) {
+        // 26.2: commands go out as ServerboundChatCommandPacket over the
+        // client connection (LocalPlayer.sendCommand no longer exists).
+        // Fully reflective on purpose: javac 25 hard-fails reading the
+        // 26.2 packet classfiles from the client jar ("Cannot attach type
+        // annotations ... FriendlyByteBuf.readNullable"), so the packet
+        // class must never enter compile-time attribution — the same
+        // reflection constraint the hotkey GLFW poll and the pack
+        // installer work under.
         try {
-            // 26.2: commands are ServerboundChatCommandPacket over the
-            // client connection (LocalPlayer.sendCommand no longer exists).
-            player.connection.send(new ServerboundChatCommandPacket(command));
+            Object conn = null;
+            for (java.lang.reflect.Field f : player.getClass().getFields()) {
+                if (f.getName().equals("connection")) {
+                    conn = f.get(player);
+                    break;
+                }
+            }
+            if (conn == null) {
+                return;
+            }
+            Class<?> pktCls = Class.forName(
+                    "net.minecraft.network.protocol.game.ServerboundChatCommandPacket");
+            Object pkt = pktCls.getConstructor(String.class).newInstance(command);
+            for (java.lang.reflect.Method m : conn.getClass().getMethods()) {
+                if (m.getName().equals("send") && m.getParameterCount() == 1) {
+                    m.invoke(conn, pkt);
+                    return;
+                }
+            }
         } catch (Throwable ignored) {
             // Fall through: the manual /scoreboard commands still work.
         }
