@@ -58,6 +58,11 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
     @Inject(method = "added", at = @At("TAIL"))
     private void dabyws$menuOpenSound(CallbackInfo ci) {
         try {
+            // Build #380: the boot cinematic is a one-shot on the startup
+            // loading scene. The instant the title screen exists, mark it
+            // consumed so it never re-plays or bleeds onto the menu (it used
+            // to overlap the menu buttons after boot).
+            net.mcsm.extras.client.McsmCinematic.markBootDone();
             net.mcsm.extras.client.McsmButtonSounds.menuOpen();
         } catch (Throwable ignored) {
             // sound only

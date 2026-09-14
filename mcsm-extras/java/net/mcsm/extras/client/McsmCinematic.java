@@ -155,6 +155,24 @@ public final class McsmCinematic {
         return false;
     }
 
+    /**
+     * Build #380: the boot cinematic is a one-shot that belongs to the
+     * startup (Mojang loading) scene. The moment the title screen exists,
+     * this is called to mark the sequence fully consumed so it can never
+     * bleed onto the main menu or in-game UI (user report: it was
+     * "overlapping a bunch of other stuff" after boot). Idempotent.
+     */
+    public static void markBootDone() {
+        // Only consume it if it actually started on the boot scene. If the
+        // logo hook never ran (so the sequence is still pristine), leave the
+        // state untouched so the menu can still show it once as a fallback -
+        // the intro must never silently disappear.
+        if (preGameStartMs >= 0L) {
+            preGameDone = true;
+            burstStartMs = -1L;
+        }
+    }
+
     /** State query (no side effects): is a boot sequence currently playing? */
     public static boolean isSequenceActive() {
         if (!preGameDone) {
