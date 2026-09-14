@@ -888,7 +888,9 @@ for need in \
   resourcepacks/player-models/assets/minecraft/optifine/cem/player/player_v3.properties \
   assets/dabywitherstormmod/resourcepacks/storylook.zip \
   assets/dabywitherstormmod/resourcepacks/ogs-cem.zip \
-  assets/dabywitherstormmod/resourcepacks/player-models.zip; do
+  assets/dabywitherstormmod/resourcepacks/player-models.zip \
+  assets/dabywitherstormmod/textures/entity/wither_storm_og_p4_e.png \
+  assets/dabywitherstormmod/textures/entity/wither_storm_p4_e.png; do
   if [ ! -s "$FX/cls/$need" ]; then
     echo "::error title=jar audit::restored OGS asset missing from jar: $need"
     AUDIT_FAIL=1

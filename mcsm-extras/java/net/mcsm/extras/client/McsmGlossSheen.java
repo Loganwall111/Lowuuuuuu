@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import net.dabicco.witherstormmod.client.GlowRenderTypes;
 import net.dabicco.witherstormmod.client.StormSkins;
 import net.dabicco.witherstormmod.entity.state.WitherStormRenderState;
@@ -104,18 +103,20 @@ public final class McsmGlossSheen {
             if (frame == null || part == null || type == null) {
                 return;
             }
-            long ticks = (long) frame.state.idleTimeTicks;
-            // Native scrolling drivers from StormSkins: a full 10s sweep plus a
-            // gentle Z tilt so the streaks glide rather than rotate rigidly.
-            float sweep = StormSkins.glossUOffset(ticks) * 360.0F;
-            float tilt = (float) Math.sin(StormSkins.glossVOffset(ticks) * 6.28318D) * 5.0F;
-
-            poseStack.pushPose();
-            poseStack.mulPose(Axis.YP.rotationDegrees(sweep));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(tilt));
+            // Build #374: never coat the pre-phase-4 stages (command block /
+            // hunchback) — their native pose must stay untouched, and the coat
+            // ghost made the Phase 1 blocks read as floating apart in air.
+            if (!frame.state.phase4) {
+                return;
+            }
+            // The coat re-renders the body part in the model's LIVE pose,
+            // exactly aligned with the base pass. The old implementation
+            // swept the pose around Y by up to a full 360° per gloss cycle
+            // (rotating the ghost coat, not the texture) and even rendered
+            // with the outer stack instead of the collector's pose — both
+            // artifacts are gone.
             frame.collector.submitCustomGeometry(poseStack, type, (pose, consumer) ->
-                    part.render(poseStack, consumer, light, overlay));
-            poseStack.popPose();
+                    part.render(pose, consumer, light, overlay));
         } catch (Throwable ignored) {
             // Cosmetic pass only - never let the sheen take down the storm.
         }

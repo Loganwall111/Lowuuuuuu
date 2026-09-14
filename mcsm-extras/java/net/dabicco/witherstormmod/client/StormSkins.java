@@ -148,7 +148,11 @@ public final class StormSkins {
         } else if (phase >= 5.0D) {
             path = ogSkin ? "textures/entity/wither_storm_og_p5_e.png" : "textures/entity/wither_storm_p5_e.png";
         } else if (phase >= 4.0D) {
-            path = ogSkin ? "textures/entity/wither_storm_og_e.png" : "textures/entity/wither_storm_e.png";
+            // Build #374: the phase 4.0-4.9 face needs a BODY-space (160x160)
+            // glow map — the old branch pointed at the 64x96 head-space map,
+            // so the face region sampled wrong atlas quarters and rendered
+            // flat/dark. The p4 map is the isolated bright face for that stage.
+            path = ogSkin ? "textures/entity/wither_storm_og_p4_e.png" : "textures/entity/wither_storm_p4_e.png";
         } else {
             path = "textures/entity/wither_storm_no_teeth_glow_e.png";
         }
