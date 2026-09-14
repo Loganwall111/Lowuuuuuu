@@ -1,3 +1,25 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.398 — Build #398: re-based onto the EXACT reference commit (5aa1de7)
+
+The precise reference build was identified: commit 5aa1de7 "carry storm
+atmosphere through early phases" (run 34760234547, 2026-09-13 13:34 UTC) —
+downstream of eb7471a, adding the early-phase storm atmosphere carry,
+phase-9 debris windows, the retired-halo cleanup and the purple eye-lens
+deck. This build re-bases onto exactly that commit:
+
+- Everything native stays native: story rail/bars/intro/animations/water,
+  atmospheric-mesh sky, halo rings, beams, debris, traced textures.
+- Overlay deltas kept: show-spec teeth table (phases 3-8) inside the
+  baseline's McsmTeethPhaseTint (its improved phase-hint accessors and
+  purple eye lens retained), and the no-screen config handoff to the rail
+  panel. The #4D4DFF auxiliary spotlights remain retired with the f96894f
+  blob system — this baseline has no aux spotlight nodes, and the beam
+  policy (purple primaries) is native.
+- Release publishing re-enabled in the workflow (the rebased lineage had it
+  disabled via 'if: false') with a verify-and-retry loop, so a green run can
+  never again leave the release missing.
+- KEEP ONLY ONE Devouring Storms jar in mods/ and remove duplicate mod
+  folders before installing.
+
 # Devouring Storms 7000.0.0-MCSM-CINEMATIC-FINAL -- procedural cinematic atmosphere, native Halo cleanup, and phase-7 Vortex
 
 This candidate includes the 1.9.315 active-sky ownership and transparent

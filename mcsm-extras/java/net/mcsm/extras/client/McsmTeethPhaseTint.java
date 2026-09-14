@@ -73,16 +73,22 @@ public final class McsmTeethPhaseTint {
             }
             float r, g, b, inten;
             boolean glow;
-            if (phase >= 5.5F) {
-                // Neon-cyan deck requested for the late cinematic pass.
-                r = 0.00F; g = 0.953F; b = 1.00F; inten = 4.20F; glow = true; // #00F3FF
-            } else if (phase >= 4.5F) {
-                // Sea-green initialization through the slate transition.
-                r = 0.00F; g = 0.659F; b = 0.467F; inten = 3.90F; glow = true; // #00A877
+            // SHOW-SPEC TEETH TABLE (carried acceptance criterion): per-phase
+            // glow colour + intensity straight from the Story Mode frames.
+            if (phase >= 8.0F) {
+                r = 1.00F; g = 1.00F; b = 1.00F; inten = 2.20F; glow = true;   // phase 8: blinding white
+            } else if (phase >= 7.0F) {
+                r = 0.55F; g = 1.00F; b = 0.20F; inten = 2.35F; glow = true;   // phase 7: toxic green
+            } else if (phase >= 6.0F) {
+                r = 0.20F; g = 0.45F; b = 1.00F; inten = 2.45F; glow = true;   // phase 6: cinematic blue
+            } else if (phase >= 5.5F) {
+                r = 0.35F; g = 0.90F; b = 1.00F; inten = 2.05F; glow = true;   // phase 5.5: cyan-blue
+            } else if (phase >= 5.0F) {
+                r = 0.92F; g = 1.00F; b = 0.96F; inten = 1.10F; glow = true;   // phase 5: pure white with glow
             } else if (phase >= 4.0F) {
-                r = 0.82F; g = 1.00F; b = 0.96F; inten = 3.60F; glow = true;
+                r = 0.72F; g = 0.98F; b = 1.00F; inten = 1.25F; glow = true;   // phase 4: cyan-white
             } else {
-                r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;
+                r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;  // phase 3: no glowing teeth
             }
             DabyWSClientConfig.eyeColorR = r;
             DabyWSClientConfig.eyeColorG = g;
