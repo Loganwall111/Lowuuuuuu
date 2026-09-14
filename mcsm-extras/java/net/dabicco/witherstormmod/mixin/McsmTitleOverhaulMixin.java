@@ -79,18 +79,20 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
     @Inject(method = "extractBackground", at = @At("TAIL"))
     private void dabyws$storyModeFraming(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
-        if (!McsmExtrasConfig.storyMenuBackdrop) {
-            return;
-        }
         int w = this.width;
         int h = this.height;
 
         // THE 3D WITHER STORM - the literal scrollable/movable creature
         // (drag to orbit, scroll to zoom), replacing the deleted panorama.
+        // Unconditional: it IS the main-menu backdrop now.
         try {
             net.mcsm.extras.client.McsmStormMenuScene.draw(g, w, h, partialTick);
         } catch (Throwable ignored) {
             // the menu creature must never break a frame
+        }
+
+        if (!McsmExtrasConfig.storyMenuBackdrop) {
+            return; // panels/chrome are the toggleable part
         }
 
         // readability vignette (kept light so the OG panorama stays vivid)

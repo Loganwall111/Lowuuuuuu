@@ -27,16 +27,16 @@ import net.minecraft.util.RandomSource;
  */
 public final class McsmButtonSounds {
 
-    private static final SoundEvent HOVER = register("mcsm.ds_btn_hover");
-    private static final SoundEvent CLICK = register("mcsm.ds_btn_click");
-    private static final SoundEvent OPEN = register("mcsm.ds_menu_open");
+    private static final SoundEvent HOVER = register("ds_btn_hover");
+    private static final SoundEvent CLICK = register("ds_btn_click");
+    private static final SoundEvent OPEN = register("ds_menu_open");
 
     private McsmButtonSounds() {
     }
 
-    private static SoundEvent register(String name) {
+    private static SoundEvent register(String path) {
         try {
-            Identifier id = Identifier.fromNamespaceAndPath("mcsm", name);
+            Identifier id = Identifier.fromNamespaceAndPath("mcsm", path);
             return (SoundEvent) Registry.register(BuiltInRegistries.SOUND_EVENT, id,
                     SoundEvent.createVariableRangeEvent(id));
         } catch (Throwable t) {

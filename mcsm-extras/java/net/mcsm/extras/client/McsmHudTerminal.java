@@ -216,6 +216,24 @@ public final class McsmHudTerminal {
         // --- mega-phase 6b: portal glow + the warp entry sequence -----------
         paintPortal(mc, player, g, w, h);
         paintWarp(mc, player, g, w, h);
+
+        // --- Build #375: the Story Mode Console is discoverable in-game -----
+        // A quiet persistent chip (bottom-left) pointing at the 300-tab
+        // framework + texture painter: the user asked for these options to
+        // be visible, not buried.
+        try {
+            net.minecraft.client.gui.Font font = mc.font;
+            if (font != null) {
+                String chip = "⚙ Shift+A — Story Mode Console";
+                int cw = font.width(chip) + 10;
+                int cy = h - 16;
+                g.fill(4, cy - 3, 4 + cw, cy + 11, 0x55060409);
+                g.fill(4, cy - 3, 5, cy + 11, 0x883A2A5A);
+                g.text(font, "§7⚙ §8Shift+A — Story Mode Console", 9, cy, 0xB89FB8E8, false);
+            }
+        } catch (Throwable ignored) {
+            // cosmetic only
+        }
     }
 
     // --- mega-phase 6b state -------------------------------------------------

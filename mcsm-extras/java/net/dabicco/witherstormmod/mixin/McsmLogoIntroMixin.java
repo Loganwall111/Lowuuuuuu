@@ -79,7 +79,9 @@ public abstract class McsmLogoIntroMixin {
                 return;
             }
             if (McsmCinematic.tickLogo()) {
-                McsmCinematic.drawLogoSequence(g, mcsm$windowWidth(mc), mcsm$windowHeight(mc));
+                // guiWidth/guiHeight are the proven GUI-space dimensions
+                // (the base HUD terminal uses the same pair)
+                McsmCinematic.drawLogoSequence(g, g.guiWidth(), g.guiHeight());
             }
         } catch (Throwable ignored) {
             // a boot cinematic must never break a frame
@@ -97,31 +99,5 @@ public abstract class McsmLogoIntroMixin {
         } catch (Throwable ignored) {
         }
         return null;
-    }
-
-    private static int mcsm$windowWidth(Minecraft mc) {
-        return mcsm$windowDim(mc, "getWidth", 854);
-    }
-
-    private static int mcsm$windowHeight(Minecraft mc) {
-        return mcsm$windowDim(mc, "getHeight", 480);
-    }
-
-    private static int mcsm$windowDim(Minecraft mc, String method, int fallback) {
-        try {
-            Object window = mc.getWindow();
-            if (window != null) {
-                for (java.lang.reflect.Method m : window.getClass().getMethods()) {
-                    if (m.getName().equals(method) && m.getParameterCount() == 0) {
-                        Object v = m.invoke(window);
-                        if (v instanceof Number) {
-                            return ((Number) v).intValue();
-                        }
-                    }
-                }
-            }
-        } catch (Throwable ignored) {
-        }
-        return fallback;
     }
 }
