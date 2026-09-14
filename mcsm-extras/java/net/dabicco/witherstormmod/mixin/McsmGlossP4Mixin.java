@@ -20,6 +20,9 @@ public abstract class McsmGlossP4Mixin {
     @Inject(method = "renderToBuffer", at = @At("TAIL"), remap = false, require = 0)
     private void mcsm$glossCoat(PoseStack poseStack, VertexConsumer consumer,
                                 int light, int overlay, CallbackInfo ci) {
-        McsmGlossSheen.coatFor(this, poseStack, light, overlay);
+        // Build #385: flat gloss coat REMOVED - the plastic sheen is gone;
+        // the living light roll now comes from the animated PBR glint in
+        // entity.fsh instead of this overlay pass.
+        return;
     }
 }

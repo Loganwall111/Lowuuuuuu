@@ -27,7 +27,8 @@ public abstract class McsmGlossSheenHookMixin {
     )
     private void mcsm$glossBegin(WitherStormRenderState state, PoseStack poseStack,
                                  SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
-        McsmGlossSheen.begin(state, collector);
+        // Build #385: gloss sheen pass removed (animated PBR glint replaces it).
+        return;
     }
 
     @Inject(
@@ -38,6 +39,7 @@ public abstract class McsmGlossSheenHookMixin {
     )
     private void mcsm$glossEnd(WitherStormRenderState state, PoseStack poseStack,
                                SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
-        McsmGlossSheen.end();
+        // Build #385: gloss sheen pass removed.
+        return;
     }
 }

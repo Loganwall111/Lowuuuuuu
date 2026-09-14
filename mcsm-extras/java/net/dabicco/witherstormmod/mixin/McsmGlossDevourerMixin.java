@@ -19,6 +19,7 @@ public abstract class McsmGlossDevourerMixin {
     @Inject(method = "renderToBuffer", at = @At("TAIL"), remap = false, require = 0)
     private void mcsm$glossCoat(PoseStack poseStack, VertexConsumer consumer,
                                 int light, int overlay, CallbackInfo ci) {
-        McsmGlossSheen.coatFor(this, poseStack, light, overlay);
+        // Build #385: flat gloss coat REMOVED (animated PBR glint replaces it).
+        return;
     }
 }
