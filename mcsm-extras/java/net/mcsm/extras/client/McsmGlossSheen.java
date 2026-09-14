@@ -116,7 +116,7 @@ public final class McsmGlossSheen {
             // with the outer stack instead of the collector's pose — both
             // artifacts are gone.
             frame.collector.submitCustomGeometry(poseStack, type, (pose, consumer) ->
-                    part.render(pose, consumer, light, overlay));
+                    part.render(poseStack, consumer, light, overlay));
         } catch (Throwable ignored) {
             // Cosmetic pass only - never let the sheen take down the storm.
         }

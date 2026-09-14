@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -37,6 +38,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(WitherStormRenderer.class)
 public abstract class McsmFaceGlowMixin {
 
+    /** Target-private fields the injected pass needs (merged at apply time). */
+    @Shadow(remap = false) private boolean previewShadowPass;
+    @Shadow(remap = false) private net.dabicco.witherstormmod.entity.model.WitherCommandBlock commandBlockModel;
+
     @Inject(method = "submitHunchback", at = @At("TAIL"), remap = false, require = 0)
     private void mcsm$commandBlockFaceGlow(WitherStormRenderState state, PoseStack poseStack,
                                            SubmitNodeCollector submitNodeCollector, CallbackInfo ci) {
@@ -50,9 +55,11 @@ public abstract class McsmFaceGlowMixin {
             return;
         }
         try {
-            boolean ogSkin = DabyWSClientConfig.stormSkin >= 0.5;
+            // The command-block face plate (r1, texOffs 0,64) samples the
+            // 160x160 body-sheet UV space — the legacy face map carries the
+            // exact face pixels (UV 20,65-49,79) on a transparent field.
             Identifier glow = Identifier.fromNamespaceAndPath("dabywitherstormmod",
-                    ogSkin ? "textures/entity/wither_storm_og_e.png" : "textures/entity/wither_storm_e.png");
+                    "textures/entity/wither_storm_legacy_e.png");
             submitNodeCollector.submitModel(
                     commandBlockModel,
                     state,
