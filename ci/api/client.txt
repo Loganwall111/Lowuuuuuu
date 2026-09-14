@@ -1204,6 +1204,86 @@ public final class net.minecraft.ChatFormatting extends java.lang.Enum<net.minec
   public static java.lang.String stripFormatting(java.lang.String);
   public static net.minecraft.ChatFormatting getByCode(char);
 }
+Compiled from "LogoRenderer.java"
+public class net.minecraft.client.gui.components.LogoRenderer {
+  public static final net.minecraft.resources.Identifier MINECRAFT_LOGO;
+  public static final net.minecraft.resources.Identifier EASTER_EGG_LOGO;
+  public static final net.minecraft.resources.Identifier MINECRAFT_EDITION;
+  public static final int LOGO_WIDTH;
+  public static final int LOGO_HEIGHT;
+  public static final int DEFAULT_HEIGHT_OFFSET;
+  public net.minecraft.client.gui.components.LogoRenderer(boolean);
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, float);
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, float, int);
+  public boolean keepLogoThroughFade();
+}
+Compiled from "SplashRenderer.java"
+public class net.minecraft.client.gui.components.SplashRenderer {
+  public static final net.minecraft.client.gui.components.SplashRenderer CHRISTMAS;
+  public static final net.minecraft.client.gui.components.SplashRenderer NEW_YEAR;
+  public static final net.minecraft.client.gui.components.SplashRenderer HALLOWEEN;
+  public net.minecraft.client.gui.components.SplashRenderer(net.minecraft.network.chat.Component);
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, net.minecraft.client.gui.Font, float);
+}
+Compiled from "TitleScreen.java"
+public class net.minecraft.client.gui.screens.TitleScreen extends net.minecraft.client.gui.screens.Screen {
+  public net.minecraft.client.gui.screens.TitleScreen();
+  public net.minecraft.client.gui.screens.TitleScreen(boolean);
+  public net.minecraft.client.gui.screens.TitleScreen(boolean, net.minecraft.client.gui.components.LogoRenderer);
+  public void tick();
+  public static void registerTextures(net.minecraft.client.renderer.texture.TextureManager);
+  public boolean isPauseScreen();
+  public boolean shouldCloseOnEsc();
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public void extractBackground(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent, boolean);
+  public void removed();
+  public void added();
+  public boolean canInterruptWithAnotherScreen();
+}
+Error: class not found: net.minecraft.client.gui.components.PanoramaWidget
+Compiled from "SelectWorldScreen.java"
+public class net.minecraft.client.gui.screens.worldselection.SelectWorldScreen extends net.minecraft.client.gui.screens.Screen {
+  public static final net.minecraft.world.level.levelgen.WorldOptions TEST_OPTIONS;
+  public net.minecraft.client.gui.screens.worldselection.SelectWorldScreen(net.minecraft.client.gui.screens.Screen);
+  public void onClose();
+  public void updateButtonStatus(net.minecraft.world.level.storage.LevelSummary);
+  public void removed();
+}
+Compiled from "CreateBuffetWorldScreen.java"
+public class net.minecraft.client.gui.screens.CreateBuffetWorldScreen extends net.minecraft.client.gui.screens.Screen {
+  public net.minecraft.client.gui.screens.CreateBuffetWorldScreen(net.minecraft.client.gui.screens.Screen, net.minecraft.client.gui.screens.worldselection.WorldCreationContext, java.util.function.Consumer<net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>>);
+  public void onClose();
+}
+Compiled from "PackSelectionScreen.java"
+public class net.minecraft.client.gui.screens.packs.PackSelectionScreen extends net.minecraft.client.gui.screens.Screen {
+  public net.minecraft.client.gui.screens.packs.PackSelectionScreen(net.minecraft.server.packs.repository.PackRepository, java.util.function.Consumer<net.minecraft.server.packs.repository.PackRepository>, java.nio.file.Path, net.minecraft.network.chat.Component);
+  public void onClose();
+  public void tick();
+  public void onFilesDrop(java.util.List<java.nio.file.Path>);
+}
+Compiled from "LevelLoadingScreen.java"
+public class net.minecraft.client.gui.screens.LevelLoadingScreen extends net.minecraft.client.gui.screens.Screen {
+  public net.minecraft.client.gui.screens.LevelLoadingScreen(net.minecraft.client.multiplayer.LevelLoadTracker, net.minecraft.client.gui.screens.LevelLoadingScreen$Reason);
+  public void update(net.minecraft.client.multiplayer.LevelLoadTracker, net.minecraft.client.gui.screens.LevelLoadingScreen$Reason);
+  public boolean shouldCloseOnEsc();
+  public void tick();
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public static void extractChunksForRendering(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, int, int, net.minecraft.server.level.progress.ChunkLoadStatusView);
+  public void extractBackground(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public void onClose();
+  public boolean isPauseScreen();
+}
+Compiled from "PauseScreen.java"
+public class net.minecraft.client.gui.screens.PauseScreen extends net.minecraft.client.gui.screens.Screen {
+  public net.minecraft.client.gui.screens.PauseScreen(boolean);
+  public boolean showsPauseMenu();
+  public void tick();
+  public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public void extractBackground(net.minecraft.client.gui.GuiGraphicsExtractor, int, int, float);
+  public void onClose();
+  public boolean rendersNowPlayingToast();
+}
 Compiled from "ClientboundCommandSuggestionsPacket.java"
 public final class net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket extends java.lang.Record implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> {
   public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket> STREAM_CODEC;
