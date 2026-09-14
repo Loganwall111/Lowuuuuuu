@@ -15,21 +15,19 @@
 //     infinite deck, then the blocky deck, then the wispy one -- exactly like
 //     the Story Mode cutscene skies.
 
+// Uniforms dayCycle / dayCycleAdjust / rainStrength / fragmentFrameTime are
+// declared by the including programs (main/composite.glsl, main/deferred1.glsl).
+// GLSL forbids re-declaring them here (Iris error: 'dayCycle' : redefinition,
+// build .406). Dimensions that force-disable the day cycle / weather skip
+// those declarations, so supply compile-time constants there instead.
 #ifdef FORCE_DISABLE_DAY_CYCLE
     const float dayCycle = 2.0;
     const float dayCycleAdjust = 1.0;
-#else
-    uniform float dayCycle;
-    uniform float dayCycleAdjust;
 #endif
 
 #ifdef FORCE_DISABLE_WEATHER
     const float rainStrength = 0.0;
-#else
-    uniform float rainStrength;
 #endif
-
-uniform float fragmentFrameTime;
 
 float mcsmHash(in vec2 p){
     p = fract(p * vec2(123.34, 456.21));

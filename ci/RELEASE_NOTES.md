@@ -1,3 +1,22 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.407 — Build #407: shaderpack compiles again (uniform redefinition fix)
+
+- .406 FAILED TO LOAD in Iris: the restored skyRender.glsl re-declared
+  dayCycle / dayCycleAdjust / rainStrength / fragmentFrameTime, which the
+  including programs already declare -- GLSL treats that as a redefinition
+  error and Iris dropped the entire pack ("The shaderpack failed to load").
+- .407 declares NOTHING that the hosts declare; dimensions that force-disable
+  the day cycle/weather (Nether) get compile-time constants instead.
+- With the pack loading, .406's content finally reaches the screen: MCSM
+  colourful sky palette, aurora + stars at night, sun/moon glow, three
+  fly-above-able chunky cloud decks (y=176/224/288), indigo story-mode water
+  with sky sheen, on top of the .405 shader-less mouth glow and phase-6 blue
+  beams.
+- NOTE FOR INSTALLS: 10000.0.0-alpha.338 is the ORIGINAL upstream Devouring
+  Storms jar, not this build. If it stays in mods/ Minecraft may load it
+  instead and none of the 7000.0.0-MCSM changes appear. Keep ONLY the
+  devouringstorms-7000.0.0-MCSM-CINEMATIC-FINAL.407 jar; the mod prints a
+  warning when the mods-list number and panel header disagree.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.406 — Build #406: restored sky renderer — MCSM skies, aurora, stars, 3 cloud decks, indigo water
 
 - ROOT CAUSE FIXED: the imported Super Duper pack was MISSING its sky
