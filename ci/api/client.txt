@@ -1284,6 +1284,22 @@ public class net.minecraft.client.gui.screens.PauseScreen extends net.minecraft.
   public void onClose();
   public boolean rendersNowPlayingToast();
 }
+Compiled from "AbstractContainerEventHandler.java"
+public abstract class net.minecraft.client.gui.components.events.AbstractContainerEventHandler implements net.minecraft.client.gui.components.events.ContainerEventHandler {
+  public net.minecraft.client.gui.components.events.AbstractContainerEventHandler();
+  public final boolean isDragging();
+  public final void setDragging(boolean);
+  public net.minecraft.client.gui.components.events.GuiEventListener getFocused();
+  public void setFocused(net.minecraft.client.gui.components.events.GuiEventListener);
+}
+Compiled from "AbstractButton.java"
+public abstract class net.minecraft.client.gui.components.AbstractButton extends net.minecraft.client.gui.components.AbstractWidget$WithInactiveMessage {
+  public net.minecraft.client.gui.components.AbstractButton(int, int, int, int, net.minecraft.network.chat.Component);
+  public abstract void onPress(net.minecraft.client.input.InputWithModifiers);
+  public void onClick(net.minecraft.client.input.MouseButtonEvent, boolean);
+  public boolean keyPressed(net.minecraft.client.input.KeyEvent);
+  public void setOverrideRenderHighlightedSprite(java.util.function.Supplier<java.lang.Boolean>);
+}
 Compiled from "ClientboundCommandSuggestionsPacket.java"
 public final class net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket extends java.lang.Record implements net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> {
   public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket> STREAM_CODEC;
