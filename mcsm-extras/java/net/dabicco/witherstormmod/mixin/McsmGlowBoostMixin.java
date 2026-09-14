@@ -22,7 +22,10 @@ public class McsmGlowBoostMixin {
 
     private static final int LIFT = 40;
 
-    @Inject(method = "glowTint", at = @At("RETURN"), remap = false, require = 0)
+    // cancellable=true is REQUIRED: setReturnValue() internally cancels the
+    // callback and throws CancellationException on a non-cancellable inject
+    // (crashed the render thread, Build #381 fix).
+    @Inject(method = "glowTint", at = @At("RETURN"), remap = false, require = 0, cancellable = true)
     private static void mcsm$glowBoost(CallbackInfoReturnable<Integer> cir) {
         int c = cir.getReturnValueI();
         int r = Math.min(255, (c >> 16 & 0xFF) + LIFT);

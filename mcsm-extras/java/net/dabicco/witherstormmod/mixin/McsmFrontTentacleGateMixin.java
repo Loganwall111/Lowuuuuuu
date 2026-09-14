@@ -21,7 +21,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(WitherStormRenderer.class)
 public class McsmFrontTentacleGateMixin {
 
-    @Inject(method = "submitFrontTentacle", at = @At("HEAD"), remap = false, require = 0)
+    // cancellable=true is REQUIRED: ci.cancel() throws CancellationException
+    // on a non-cancellable inject (same bug class as the glowTint crash).
+    @Inject(method = "submitFrontTentacle", at = @At("HEAD"), remap = false, require = 0, cancellable = true)
     private void mcsm$frontTentacleGate(WitherStormRenderState state, PoseStack poseStack,
                                         SubmitNodeCollector submitNodeCollector, CallbackInfo ci) {
         if (state.phase >= 2.0D && state.phase < 4.0D) {

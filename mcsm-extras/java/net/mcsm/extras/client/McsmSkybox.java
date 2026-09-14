@@ -101,19 +101,38 @@ public final class McsmSkybox {
             McsmExtrasConfig.load();
             Vec3 cam = ctx.levelState().cameraRenderState.pos;
 
-            // nearest tracked storm drives the sky (per-storm, per-phase)
-            ClientDistantStormManager.StormData best = null;
+            // nearest tracked storm drives the sky (per-storm, per-phase).
+            // The position-packet manager only knows storms the server reports
+            // (the distant ones); a commanded wither standing right in front of
+            // the player is a real level entity and never appears in it, which
+            // left the sky on the base storm-darken instead of the calm lavender
+            // day sphere (Build #381: scan the level for real storm entities).
             double bestD = Double.MAX_VALUE;
+            float bestPhase = -1.0F;
             for (ClientDistantStormManager.StormData d : ClientDistantStormManager.all()) {
                 double dx = d.dispX - cam.x, dy = d.dispY - cam.y, dz = d.dispZ - cam.z;
                 double dd = dx * dx + dy * dy + dz * dz;
                 if (dd < bestD) {
                     bestD = dd;
-                    best = d;
+                    bestPhase = d.phase;
                 }
             }
-            int target = (!McsmExtrasConfig.skyboxEnabled || best == null)
-                    ? 0 : setForPhase(Mth.clamp(best.phase, 1.0F, 9.0F));
+            try {
+                for (net.minecraft.world.entity.Entity e : mc.level.getAllEntities()) {
+                    if (e instanceof net.dabicco.witherstormmod.entity.WitherStormEntity ws) {
+                        double dx = ws.getX() - cam.x, dy = ws.getY() - cam.y, dz = ws.getZ() - cam.z;
+                        double dd = dx * dx + dy * dy + dz * dz;
+                        if (dd < bestD) {
+                            bestD = dd;
+                            bestPhase = (float) ws.getPhase();
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+                // entity scan is best-effort; the packet manager still works
+            }
+            int target = (!McsmExtrasConfig.skyboxEnabled || bestPhase < 0.0F)
+                    ? 0 : setForPhase(Mth.clamp(bestPhase, 1.0F, 9.0F));
 
             // start a new cross-fade when the target changes
             if (target != setB) {

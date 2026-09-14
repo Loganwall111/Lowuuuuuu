@@ -35,6 +35,12 @@ public final class McsmEarlyStormBackdrop {
                 || !DabyWSClientConfig.stormBackdrop) {
             return;
         }
+        if (McsmSkybox.skyPassCancellable()) {
+            // Build #381: the rendered phase-sky sphere fully covers the view
+            // now; this quad would only show as a wrong pale disc floating on
+            // top of the intended sky (the "giant lavender disc" artifact).
+            return;
+        }
         try {
             Vec3 camera = context.levelState().cameraRenderState.pos;
             SubmitNodeCollector collector = context.submitNodeCollector();
