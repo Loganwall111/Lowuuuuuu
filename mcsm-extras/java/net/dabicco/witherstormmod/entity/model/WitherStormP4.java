@@ -641,10 +641,13 @@ public class WitherStormP4 extends EntityModel<WitherStormRenderState> {
 
    public static LayerDefinition createBodyLayer() {
       MeshDefinition mesh = new MeshDefinition();
+      // Build #385 (user directive): the official pre-baked Stage-B matrix is
+      // the DEFAULT shape baseline - its sealed box layout closes the hollow
+      // body cracks. The legacy original mesh is now the opt-in alternate.
       if (net.mcsm.extras.McsmExtrasConfig.customMeshModel) {
-         dabyws$buildCustomMesh(mesh);
-      } else {
          dabyws$buildOriginalMesh(mesh);
+      } else {
+         dabyws$buildCustomMesh(mesh);
       }
       return LayerDefinition.create(mesh, 512, 512);
    }
