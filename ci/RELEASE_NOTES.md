@@ -1,3 +1,7 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.395 — Build #395: re-issue of the #394 shading pass
+
+Identical content to build #394 (black glossy storm body, enlarged black halo core on the same oval geometry, sheet-purple 5.5 blur, phase-true skies for 5 / 5.5-5.9 / split-6, extreme-distance blend-back into the story sky). The #394 tag never materialised — the runner's release-publish step no-oped on both of its runs without leaving a tag or release, and runner artifacts are unreachable from the build sandbox — so the same tree ships under a fresh version to get a clean release with all five assets.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.394 — Build #394: black glossy storm, bigger black halo core, phase-true skies, distance blend-back
 
 Shading pass on the migrated master, matched frame-by-frame to the reference set:
