@@ -1,3 +1,21 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.401 — Build #401: accurate per-phase halo colours
+
+The live halo layers were cross-fading the backdrop oval family (teal ->
+purple -> pink) with windows that broke the approved mapping (purple from
+5.0, pink at 6). The halo colour layers now bind the accurate glare asset
+set on the approved storm mapping, geometry unchanged:
+
+  4.0-5.0   glare/phase4.png   #5962D0 blue
+  5.0-5.4   glare/phase5.png   #6A9A78 sage-green
+  5.4-5.5   glare/phase54.png  #703887 bridge purple
+  5.5-5.9   glare/phase55.png  #87529C purple
+  6.0-6.9   glare/phase6.png   #D89874 salmon
+  7+        glare/phase89.png  #CE5A1F ember
+
+The enlarged oval ring (swallows the storm top at 5.5) and the white
+under-halo from 5.82 keep their exact geometry; early-phase (<4.45) backdrop
+and the native cataclysmHalos/atmosphere are untouched.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.400 — Build #400: motion-stable traced skins + halo state pinned
 
 - Atlas band hysteresis: the phase hint jitters as the storm moves, which made
