@@ -199,12 +199,12 @@ public final class McsmGate {
             // Retire the generated black glare ring; the restored backdrop
             // already supplies the smooth phase atmosphere.
             changed += disableBool(c, "blackGlare");
-            changed += setBool(c, "glareEjecta", true);
+            changed += setBool(c, "glareEjecta", false); // #404: purple ejecta spray is not in the reference frames
             changed += setBool(c, "cataclysmHalos", true);
             changed += setBool(c, "atmospherePulse", true);
             changed += setBool(c, "headEyeGlow", true);
             changed += setBool(c, "turquoiseTeeth", true);
-            changed += setBool(c, "devourerDebrisGlow", true);
+            changed += setBool(c, "devourerDebrisGlow", false); // #404: debris reads black/white in the reference
 
             // ---- stability on the Intel UHD path --------------------------
             // The active shadow renderer was allocating roughly 2 GB of G1

@@ -135,13 +135,11 @@ public abstract class McsmPresenceFxPatch {
                     * (1.0F - smoothstep(phase, 5.70F, 5.96F));
             double ringWidth = bodyRadius * (4.35D + 3.05D * phase55Circle);
             double ringHeight = bodyRadius * (2.82D + 2.45D * phase55Circle);
-            layer(poseStack, collector, HALO_RING, haloCentre, view,
-                    ringWidth, ringHeight,
-                    ring * distanceFade * 0.95F);
+            // #404: ring card retired -- it read as a concentric artifact
+            // floating in the sky; the reference halos are pure soft glare.
+            ringWidth = 0.0D; ringHeight = 0.0D; ring = 0.0F;
             if (phase >= 5.82F) {
-                layer(poseStack, collector, HALO_RING, haloCentre, view,
-                        bodyRadius * 3.05D, bodyRadius * 1.98D,
-                        smoothstep(phase, 5.82F, 6.12F) * distanceFade * 0.55F);
+                // second ring card retired as well (#404)
                 // This is the retained white under-halo from the newer asset
                 // set. The texture is black outside its luminous shape, so it
                 // is submitted through the additive glow pipeline rather than

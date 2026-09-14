@@ -21,7 +21,11 @@ public abstract class McsmStormBodyNeutralTintMixin {
     private void mcsm$neutralStormBodyTint(WitherStormRenderState state,
                                             CallbackInfoReturnable<Integer> cir) {
         if (!this.previewShadowPass) {
-            cir.setReturnValue(-1);
+            // BUILD #404: glossy charcoal, not daylight brown. A dark neutral
+            // vertex multiplier keeps the traced body near-black under noon
+            // sun while the emissive islands supply the show's sheen; night
+            // already reads black. Preview/shadow passes stay untinted.
+            cir.setReturnValue(0xFF6A6A6A);
         }
     }
 }

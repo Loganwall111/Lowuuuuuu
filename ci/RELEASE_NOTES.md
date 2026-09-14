@@ -1,3 +1,21 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.404 — Build #404: glossy charcoal body, one-colour sky, no ring artifact
+
+- BODY: dark neutral vertex tint (0x6A6A6A) keeps the traced body glossy
+  charcoal at every hour -- no more daylight brown; the emissive islands
+  supply the show's sheen. Night stays black.
+- PURPLE SPECKLE SPRAY: glareEjecta and devourerDebrisGlow disabled -- the
+  violet ejecta particles were the "purple tint on top of it"; reference
+  debris is black/white native blocks.
+- SKY: both vanilla gradient anchors now receive the SAME tinted value, so
+  the storm sky is one continuous colour with no zenith/horizon band; the
+  blend still fades to regular vanilla sky with distance.
+- HALO: both halo_ring cards retired (they rendered as a concentric artifact
+  floating in the sky); halos are now purely the soft per-phase glare
+  gradients + the white under-halo from 5.82.
+- TEETH/EYES: glowStrength floor raised 1.0 -> 2.5 so the emissive teeth and
+  eye lenses bloom like the reference frames (with the shipped superduper
+  shader pack installed the bloom matches the frames one-for-one).
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.403 — Build #403: lineage tip + charcoal skins + glowing teeth + continuous sky
 
 - Re-based onto the reference lineage TIP 97f8a92 (three commits past

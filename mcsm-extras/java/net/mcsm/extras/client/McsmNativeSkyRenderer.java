@@ -68,8 +68,13 @@ public final class McsmNativeSkyRenderer {
         if ((fanNow & 0x00FFFFFF) == 0) {
             fanNow = skyNow;
         }
-        state.skyColor = mcsm$mixArgb(skyNow, zen, b);
-        state.sunriseAndSunsetColor = mcsm$mixArgb(fanNow, hor, b2);
+        // #404: the whole storm sky is ONE colour -- both gradient anchors
+        // get the same tinted value so vanilla renders a single continuous
+        // hue with no zenith/horizon seam; distance still fades to vanilla.
+        int uniform = mcsm$mixArgb(skyNow, zen, b);
+        uniform = mcsm$mixArgb(uniform, hor, b2 * 0.35F);
+        state.skyColor = uniform;
+        state.sunriseAndSunsetColor = uniform;
         state.shouldRenderDarkDisc = false;
         ownsSky = true;
     }

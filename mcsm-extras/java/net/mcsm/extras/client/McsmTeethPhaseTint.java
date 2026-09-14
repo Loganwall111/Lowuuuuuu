@@ -108,7 +108,7 @@ public final class McsmTeethPhaseTint {
                 // zero glow setting; the render type is full-bright and bloom
                 // remains fail-soft in the base renderer.
                 DabyWSClientConfig.headEyeGlow = true;
-                DabyWSClientConfig.glowStrength = Math.max(DabyWSClientConfig.glowStrength, 1.0);
+                DabyWSClientConfig.glowStrength = Math.max(DabyWSClientConfig.glowStrength, 2.5); // #404
             }
 
             // Keep beam and eye materials on the same full-bright phase track.
