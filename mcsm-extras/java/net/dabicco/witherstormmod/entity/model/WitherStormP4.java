@@ -2323,6 +2323,11 @@ PartDefinition bone = root.addOrReplaceChild(
 
 
    /** Build #386: sealed StageB hull part - voxelized from the official traced mesh. */
+   // Build #389: both shell paths render in the model's ONE render pass; the
+   // bound texture is the active StormSkins registry pointer
+   // (McsmPhaseTextureLockMixin -> StormSkins.body/devourer), which resolves
+   // to the smooth vanilla-black sheet for phases 4-5.9. Every shell face
+   // therefore maps to the dark sheet - the neon-pink glitch cannot return.
    private static void dabyws$buildStageBShellA(MeshDefinition mesh) {
       PartDefinition root = mesh.getRoot();
       root.addOrReplaceChild(
@@ -2464,6 +2469,11 @@ PartDefinition bone = root.addOrReplaceChild(
          PartPose.ZERO);
    }
    /** Build #386: sealed StageB hull part - voxelized from the official traced mesh. */
+   // Build #389: both shell paths render in the model's ONE render pass; the
+   // bound texture is the active StormSkins registry pointer
+   // (McsmPhaseTextureLockMixin -> StormSkins.body/devourer), which resolves
+   // to the smooth vanilla-black sheet for phases 4-5.9. Every shell face
+   // therefore maps to the dark sheet - the neon-pink glitch cannot return.
    private static void dabyws$buildStageBShellB(MeshDefinition mesh) {
       PartDefinition root = mesh.getRoot();
       root.addOrReplaceChild(

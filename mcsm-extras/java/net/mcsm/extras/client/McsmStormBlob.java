@@ -202,7 +202,10 @@ public final class McsmStormBlob {
             // giant texture. Teeth now come from the real storm model/tint path;
             // this pass is only a soft atmospheric halo.
             float wFace = 0.0F;
-            float wGlare = ramp(phase, 3.95F, 4.3F);
+            // Build #389 (user-corrected): the glare aura ignites at phase 5,
+            // not phase 4 - the whole phase-4 window keeps the plain vanilla
+            // sky with nothing riding it.
+            float wGlare = ramp(phase, 4.95F, 5.3F);
             float wMouth = 0.0F;
             float mouthBoost = phase >= 7.0F ? 1.85F : (phase >= 6.0F ? 1.70F : (phase >= 5.5F ? 1.45F : 0.82F));
             float mouthAlphaScale = phase >= 7.0F ? 1.18F : (phase >= 6.0F ? 1.12F : (phase >= 5.5F ? 1.0F : (phase >= 5.0F ? 0.36F : 0.48F)));

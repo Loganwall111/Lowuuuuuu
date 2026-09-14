@@ -58,18 +58,12 @@ public final class McsmSkybox {
                 "textures/skybox/phase" + set + "_equirect.png");
     }
 
-    /** Phase -> sky set: 1 day, 2 midnight, 3 sunset, 4 turquoise, 5 purple, 6 witherstorm. */
+    /** Phase -> sky set. Build #389 (user-corrected pattern): phases below 5
+     *  render the REGULAR vanilla cycle (day/midnight/sunset by time of day,
+     *  sets 1-3 are never phase-driven), phase 5-5.5 turquoise, 5.5-6 purple,
+     *  6+ the witherstorm mauve. */
     private static int setForPhase(float phase) {
-        if (phase < 2.0F) {
-            return 1;
-        }
-        if (phase < 3.0F) {
-            return 2;
-        }
-        if (phase < 4.0F) {
-            return 3;
-        }
-        if (phase < 5.0F) {
+        if (phase < 5.5F) {
             return 4;
         }
         if (phase < 6.0F) {
@@ -131,12 +125,12 @@ public final class McsmSkybox {
             } catch (Throwable ignored) {
                 // entity scan is best-effort; the packet manager still works
             }
-            // Build #384 (user directive): early phases render the standard
-            // vanilla day overworld STRICTLY by default - the sphere only
-            // ignites from Phase 4 (teal haze shell) onward, with the
-            // lavender/purple chaos skies locked to the later evolution.
-            int target = (!McsmExtrasConfig.skyboxEnabled || bestPhase < 3.95F)
-                    ? 0 : setForPhase(Mth.clamp(bestPhase, 4.0F, 9.0F));
+            // Build #389 (user-corrected): the sphere ignites ONLY at phase 5.
+            // Phase 4 and earlier is NOTHING - the completely regular vanilla
+            // overworld sky, day clouds and all. Lavender/purple chaos skies
+            // stay locked to the late evolution.
+            int target = (!McsmExtrasConfig.skyboxEnabled || bestPhase < 4.95F)
+                    ? 0 : setForPhase(Mth.clamp(bestPhase, 5.0F, 9.0F));
 
             // start a new cross-fade when the target changes
             if (target != setB) {

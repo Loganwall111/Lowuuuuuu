@@ -47,15 +47,14 @@ vec3 mcsm_storm_sky(float height, float p, vec3 worldDir) {
     // Smooth Y-axis interpolation over horizon -> zenith
     float tY = smoothstep(-0.20, 0.80, height);
 
-    // Phase 4: Vanilla atmosphere maintained (p < 4.42)
-    if (p < 4.42) {
+    // Build #389: NOTHING storm-related before phase ~5. The entire phase-4
+    // window (and earlier) renders the strict vanilla overworld sky, and the
+    // old green "phase 4.5" sky layer is PURGED (the green skybox glitch).
+    // The teal/purple/mauve decks below are horizon-wrapped environmental
+    // gradients - they stretch across the whole sky, never a ball.
+    if (p < 4.95) {
         return vec3(-1.0); // signal to use vanilla sky
     }
-
-    // Phase 4.5: Green sky layer & thick green fog
-    vec3 greenZenith  = vec3(0.094, 0.184, 0.180);
-    vec3 greenHorizon = vec3(0.165, 0.294, 0.251);
-    vec3 col45 = mix(greenHorizon, greenZenith, tY);
 
     // Phase 5: Deep slate-teal (#1D2B2B) zenith -> flat misty ash-gray (#6E7873) horizon
     vec3 slateZenith  = vec3(0.114, 0.169, 0.169); // #1D2B2B
@@ -77,12 +76,11 @@ vec3 mcsm_storm_sky(float height, float p, vec3 worldDir) {
     vec3 col6 = mix(peachHorizon, plumZenith, tY);
 
     // Phase blend weights
-    float w45 = mcsm_ramp(p, 4.42, 4.52) * (1.0 - mcsm_ramp(p, 4.88, 4.98));
     float w5  = mcsm_ramp(p, 4.95, 5.05) * (1.0 - mcsm_ramp(p, 5.38, 5.48));
     float w55 = mcsm_ramp(p, 5.42, 5.52) * (1.0 - mcsm_ramp(p, 5.92, 6.00));
     float w6  = mcsm_ramp(p, 5.95, 6.08);
 
-    vec3 sky = col45 * w45 + col5 * w5 + col55 * w55 + col6 * w6;
+    vec3 sky = col5 * w5 + col55 * w55 + col6 * w6;
 
     // Zenith mask node wide enough vertically to permanently block out all overworld blue sky bleed
     float zenithMask = smoothstep(0.0, 0.60, height);
@@ -130,7 +128,7 @@ void main() {
         return;
     }
 
-    if (!mcsm_sky_active(mcsmP) || mcsmP < 4.42) {
+    if (!mcsm_sky_active(mcsmP) || mcsmP < 4.95) {
         if (isBody > 0.5) {
             fragColor = apply_fog(ColorModulator, sphericalVertexDistance,
                                   cylindricalVertexDistance, 0.0,
