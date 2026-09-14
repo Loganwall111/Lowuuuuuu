@@ -9,6 +9,7 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 import org.joml.Matrix3x2fStack;
@@ -319,8 +320,14 @@ public final class McsmExtrasScreen extends Screen {
             McsmGate.reset();
         }
 
+        /**
+         * BUILD #390 fix -- AbstractWidget.extractRenderState is FINAL in 26.2;
+         * the overridable paint hook a widget gets is extractWidgetRenderState,
+         * which the final wrapper delegates to (same hook AbstractSliderButton
+         * itself implements for the vanilla slider look).
+         */
         @Override
-        public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        public void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
             int x = this.getX();
             int y = this.getY();
             int w = this.getWidth();
@@ -388,15 +395,15 @@ public final class McsmExtrasScreen extends Screen {
      * existing scroll clamp keeps it from overshooting the end.
      */
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int hit = railHit(mouseX, mouseY);
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
+        int hit = railHit(event.x(), event.y());
         if (hit >= 0) {
             Chapter c = this.chapters.get(hit);
             this.scrollPx = Math.max(0, c.y - 36);
             applyScrollLayout();
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubled);
     }
 
     /** Which rail node is under the cursor, or -1. */

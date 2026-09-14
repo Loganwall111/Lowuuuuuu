@@ -75,8 +75,8 @@ STORM_ROWS = [
 ]
 
 VANILLA_ROWS = [
-    ("day BLUE", VANILLA_SHEET_SRC + "/day.png", None),
-    ("night LAVENDER", VANILLA_SHEET_SRC + "/night.png", None),
+    ("day PERIWINKLE", VANILLA_SHEET_SRC + "/day.png", None),
+    ("night MIDNIGHT BLUE", VANILLA_SHEET_SRC + "/night.png", None),
     ("dusk SUNSET SPLIT", VANILLA_SHEET_SRC + "/sunset.png", None),
     ("void spare", None, [(0.00, (0.010, 0.008, 0.022)), (0.35, (0.030, 0.024, 0.060)),
                           (0.70, (0.070, 0.055, 0.120)), (1.00, (0.130, 0.100, 0.200))]),

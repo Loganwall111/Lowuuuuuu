@@ -8,7 +8,7 @@ Build #390 lands the first two of the three sequenced phases on top of the stabl
 - The upper halo rings are untouched, as specified.
 
 **Phase 3 — native skybox gradient LERP**
-- All six gradient sheets are generated into both asset roots (mod resources and jar overrides) and re-authored from an explicit stop table: storm `phase5_teal`, `phase55` (violet→purple→pink), `phase6` (salmon/ember), side-by-side with vanilla `day`, `night`, `sunset`. Aliases (`p55_purple`, `p6_salmon`, `vanilla_day_blue`, `vanilla_night_lavender`, `vanilla_sunset_split`) point at the same bytes, so either naming resolves.
+- All six gradient sheets are generated into both asset roots (mod resources and jar overrides) and re-traced stop-by-stop from the attached artist sheets: storm `phase5_teal` (teal dome → sage horizon), `phase55` (deep violet → orchid), `phase6` (plum → dusty rose), side-by-side with vanilla `day` (periwinkle → lilac), `night` (midnight blue), `sunset` (teal → orange band → maroon). Aliases (`p55_purple`, `p6_salmon`, `vanilla_day_blue`, `vanilla_night_lavender`, `vanilla_sunset_split`) point at the same bytes, so either naming resolves.
 - The sky pass now folds into those sheets with a single smooth LERP. `mcsm_visuals.glsl` (and the standalone Story Look `position.fsh`, which cannot include it) carry a baked 8-row × 8-stop table generated from the PNGs by `ci/make_sky_lut.py` — drop a replacement `image_*.png` on the target path, re-run the script, and the tables follow. No new sampler is declared: the `position` pipeline's bind group has no spare slot, and a sampler the pipeline does not bind is a hard Vulkan crash.
 - Storm timeline rows: 4.45 green glare, **5.00 teal**, 5.20 violet, **5.50 purple**, 5.90 pink-lavender, **6.00 salmon**, 7.00 dark red, 8.00 near-black. Adjacent rows cross-fade, so the sky folds sheet-to-sheet as the storm evolves instead of snapping.
 - Vanilla rows follow the same day/night/dusk weight triangle the calm sky already computes, so the overworld cycle slides through blue → lavender → sunset split continuously.
@@ -17,7 +17,7 @@ Build #390 lands the first two of the three sequenced phases on top of the stabl
 
 **Phase 1 — premium panel controls (model pass pending)**
 - `McsmExtrasScreen` gains the vertical chapter rail: diamond nodes on a hairline track down the left edge, hover and active states, click-to-jump to Visuals / Atmosphere / Lighting / Story VFX / AI & World, labels shown for the active and hovered node.
-- Every slider handle is now a rotated diamond with a hot white core, drawn through the extractor's pose stack; the track is recessed with a cosmic-blue fill to the handle. Value/drag plumbing is untouched.
+- Every slider handle is now a rotated diamond with a hot white core, drawn through the extractor's pose stack; the track is recessed with a cosmic-blue fill to the handle. Value/drag plumbing is untouched. The custom paint rides `AbstractSliderButton.extractWidgetRenderState` — 26.2 made `AbstractWidget.extractRenderState` final — and the rail's click hook uses the 26.2 `mouseClicked(MouseButtonEvent, boolean)` input signature, so the panel compiles clean against the stable engine jar.
 - A `Cosmic Blue Spotlights` switch joins the Visuals group.
 
 **Notes**
