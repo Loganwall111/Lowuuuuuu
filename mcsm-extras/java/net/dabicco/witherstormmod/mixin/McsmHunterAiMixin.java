@@ -42,7 +42,8 @@ public abstract class McsmHunterAiMixin {
     @Inject(method = "tick", at = @At("TAIL"), remap = false)
     private void dabyws$hunterMode(CallbackInfo ci) {
         try {
-            Level level = this.level();
+            WitherStormEntity self = (WitherStormEntity) (Object) this;
+            Level level = self.level();
             if (level == null || level.isClientSide() || !(level instanceof ServerLevel)) {
                 return;
             }
@@ -50,7 +51,6 @@ public abstract class McsmHunterAiMixin {
             if (!McsmExtrasConfig.witherStormEnhancedAi) {
                 return;
             }
-            WitherStormEntity self = (WitherStormEntity) (Object) this;
 
             ServerPlayer prey = null;
             double best = Double.MAX_VALUE;
