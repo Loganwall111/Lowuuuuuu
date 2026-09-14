@@ -118,7 +118,7 @@ public final class McsmSkybox {
                 }
             }
             try {
-                for (net.minecraft.world.entity.Entity e : mc.level.getAllEntities()) {
+                for (net.minecraft.world.entity.Entity e : mc.level.entitiesForRendering()) {
                     if (e instanceof net.dabicco.witherstormmod.entity.WitherStormEntity ws) {
                         double dx = ws.getX() - cam.x, dy = ws.getY() - cam.y, dz = ws.getZ() - cam.z;
                         double dd = dx * dx + dy * dy + dz * dz;
