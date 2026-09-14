@@ -1,3 +1,13 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.393 — Build #393: emergency migration onto the true DS 7000.0.0 master framework
+
+The 1.9.39x line was building on the wrong skeleton — the in-game frames proved it (banded black/magenta sky, thin blue beams). This build hard-migrates the branch onto the authentic `DS 7000.0.0-MCSM-CINEMATIC-FINAL` master commit (`f96894f`, the same ancestor our branch was cut from, cherry-picked and conflict-resolved by hand), then re-ports everything verified from the 390-line on top:
+
+- **Real skies, no dome, no band.** Master's `sky.fsh` is a procedural multi-layer blend with smoothstep Y interpolation — a generated-style gradient sky like the mod-dev skyboxes, not a dome card or a horizon band. The 1.9.39x banded fold is gone: both Story Look `position.fsh` copies are now byte-identical to master's marker-free core pipeline, and the baked sheet tables live in the shared `mcsm_visuals.glsl` include only.
+- **The sheets still drive the sky.** Master's procedural phase constants ARE the traced sheets (#1D2B2B→#6E7873 teal, #1A0A2A→#7F3AA6 purple, #422E3B→#A0757E salmon, periwinkle/midnight/sunset vanilla); on top of them `sky.fsh` now folds into the baked sheet rows with one smooth LERP (`mcsm_sheet_fold`, 0.55 storm / 0.45 vanilla cap), adjacent rows cross-fading as the storm evolves or the clock turns.
+- **Locked master defaults:** solid charcoal block models with the heavy tentacle animation trees, native debris block physics, and the thick purple-to-blue conic tractor beams — the primary beams stay purple exactly as the target frames show; cosmic blue `#4D4DFF` now lives ONLY on the lower auxiliary spotlight nodes/emitters (`McsmStormBlob.submitSpotlights`), the old unconditional beam pin is removed.
+- **Ported straight over:** the crash-free `McsmExtrasScreen` (vertical chapter rail + diamond-dot sliders), the show-spec teeth/eye table (4 cyan-white, 5 pure white, 5.5 cyan-blue, 6 cinematic blue, 7 toxic green, 8 blinding white, all emissive), the six packed gradient sheets + aliases, the blob-shaped purple ring glare pass, and every config key from both lines (master's debris/nightglow set merged with the overlay's).
+- CI gates: story-look glslang, `make_sky_lut.py --check` (now include-only), mixin merge audit and the version-drift grep all pass; jar assembled and published by the remote runner.
+
 # 1.9.392 — Build #392: teeth/eye glow tuned to the show spec
 
 - Emissive teeth and eyes now follow the phase table exactly as specified: phase 4 cyan-white, phase 5 whitish with glow, phase 5.5 cyan-blue, phase 6 blue, phase 7 toxic green, phase 8 white — every phase glowing, phase 3 dark. The tractor beams stay pinned to cosmic blue `#4D4DFF` regardless (that pin is a separate write in the same tick).

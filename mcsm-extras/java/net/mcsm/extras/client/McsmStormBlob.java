@@ -102,6 +102,7 @@ public final class McsmStormBlob {
     public static void submit(LevelRenderContext ctx) {
         try {
             submitSkyVolume(ctx);
+            submitInner(ctx);
         } catch (Throwable ignored) {
             // an unexpected base-jar surface degrades to no blob, never a crash
         }
@@ -563,7 +564,7 @@ public final class McsmStormBlob {
                         Vec3 pq = billboardOffset(at, view,
                                 (float) Math.cos(ang) * rr, (float) Math.sin(ang) * rr * 0.8F);
                         boolean purple = fract(sd * 3.3F) > 0.5F;
-                        quadVerts(pose, consumer, pq, view, bR * 0.010F,
+                        quadVerts(pose, consumer, pq, view, bR * 0.0035F,
                                 purple ? 200 : 240, purple ? 160 : 240, purple ? 255 : 250,
                                 (int) (aa * wg * 70.0F * (0.4F + 0.6F * fract(sd * 11.0F))));
                     }

@@ -62,49 +62,40 @@ public final class McsmTeethPhaseTint {
             if (phase < 0.5F) {
                 return;
             }
+
             float r, g, b, inten;
             boolean glow;
             if (phase >= 8.0F) {
-                r = 1.00F; g = 1.00F; b = 1.00F; inten = 2.20F; glow = true;   // phase 8: white
+                r = 1.00F; g = 1.00F; b = 1.00F; inten = 2.20F; glow = true;   // phase 8: blinding white
             } else if (phase >= 7.0F) {
                 r = 0.55F; g = 1.00F; b = 0.20F; inten = 2.35F; glow = true;   // phase 7: toxic green
             } else if (phase >= 6.0F) {
-                r = 0.20F; g = 0.45F; b = 1.00F; inten = 2.45F; glow = true;   // phase 6: blue
+                r = 0.20F; g = 0.45F; b = 1.00F; inten = 2.45F; glow = true;   // phase 6: cinematic blue
             } else if (phase >= 5.5F) {
                 r = 0.35F; g = 0.90F; b = 1.00F; inten = 2.05F; glow = true;   // phase 5.5: cyan-blue
             } else if (phase >= 5.0F) {
-                r = 0.92F; g = 1.00F; b = 0.96F; inten = 1.10F; glow = true;   // phase 5: whitish with glow
+                r = 0.92F; g = 1.00F; b = 0.96F; inten = 1.10F; glow = true;   // phase 5: pure white with glow
             } else if (phase >= 4.0F) {
                 r = 0.72F; g = 0.98F; b = 1.00F; inten = 1.25F; glow = true;   // phase 4: cyan-white
             } else {
                 r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;  // phase 3: no glowing teeth
             }
+
             DabyWSClientConfig.eyeColorR = r;
             DabyWSClientConfig.eyeColorG = g;
             DabyWSClientConfig.eyeColorB = b;
             DabyWSClientConfig.turquoiseTeethIntensity = inten;
             DabyWSClientConfig.turquoiseTeeth = glow;
 
-            // BUILD #390 PHASE 2 -- TRACTOR BEAMS GO COSMIC BLUE.
-            //
-            // The beams used to follow the storm family per phase (magenta at
-            // 5.5, cyan at 6, green-blue at 7). The build note fixes them to a
-            // single vibrant, high-intensity cosmic blue instead:
-            // #4D4DFF == (77, 77, 255) == (0.302, 0.302, 1.0).
-            //
-            // Two things this table must do:
-            //   * stay pinned at #4D4DFF for every phase (the base renderer
-            //     multiplies by its own day-cycle term, so the table is NOT
-            //     day-modulated any more -- that was what shifted the hue),
-            //   * be re-written every tick, because the mod's own config presets
-            //     (PRESET_MCSM / PRESET_LEGACY) reset beamColorR/G/B and would
-            //     otherwise drag the beams back to purple/pink.
-            //
-            // The upper halo rings are untouched -- that is a different pass and
-            // the note is explicit about leaving them alone.
-            DabyWSClientConfig.beamColorR = COSMIC_BLUE_R;
-            DabyWSClientConfig.beamColorG = COSMIC_BLUE_G;
-            DabyWSClientConfig.beamColorB = COSMIC_BLUE_B;
+            // BUILD #393 (master migration) -- THE PRIMARY TRACTOR BEAMS STAY
+            // PURPLE. The target frames (DS 7000.0.0 master) show thick
+            // purple-to-blue conic beams; the build note keeps them exactly as
+            // the base config preset renders them, so this tick writes NO beam
+            // colour at all any more (the #4D4DFF pin of build #390 and the
+            // master's phase-cyan/green beams are both gone). Cosmic blue
+            // #4D4DFF now lives ONLY on the lower auxiliary spotlight nodes
+            // and beam emitters, drawn by McsmStormBlob.submitSpotlights.
+            // The upper halo rings remain untouched, as always.
         } catch (Throwable ignored) {
         }
     }

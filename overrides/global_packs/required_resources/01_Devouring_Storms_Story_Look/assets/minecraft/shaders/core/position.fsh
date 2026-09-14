@@ -1,580 +1,126 @@
 #version 330
 
+// Alias for 26.2 position.fsh matching sky.fsh
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:globals.glsl>
+#moj_import <minecraft:mcsm_visuals.glsl>
 
 in float sphericalVertexDistance;
 in float cylindricalVertexDistance;
-in vec3 skyDir;
+in vec3 mcsmCamRay;
 
 out vec4 fragColor;
 
-// ---------------------------------------------------------------------------
-// Devouring Storms: Story Look -- sky dome (26.2), round 5.
-// Every palette below is a gradient stop sampled from the Minecraft Story
-// Mode reference frames supplied by the player, mapped to the phase whose
-// sky colour the mod feeds us through ColorModulator:
-//   day      - EnderCon gate / Sky City aerials (soft pastel story blue)
-//   dawn     - vanilla-strong-orange sunrise only
-//   night    - floating-island night
-//   pinkK    - phases 5.5-5.9: violet zenith, magenta mid, SALMON-PINK
-//              horizon (the purple body comes from the storm blob, not sky)
-//   greenK   - the green-teal frames: desaturated teal dome, pale horizon
-//   orangeK  - sunset frames: mauve-brown zenith into burnt orange horizon
-//   magK     - deep-purple frames: purple zenith, magenta mid, pink horizon
-// Blending is continuous everywhere (no roof/side seam), with a horizon glow
-// band, a blue silhouette rim hugging the horizon (phases 4/5), a purple line
-// across the upper vault and a darker roof tone, exactly per the notes.
-// ---------------------------------------------------------------------------
+const vec3 SKY_DAY[6] = vec3[](
+    vec3(0.514, 0.478, 0.906), vec3(0.580, 0.529, 0.980), vec3(0.651, 0.580, 0.984),
+    vec3(0.710, 0.616, 0.988), vec3(0.749, 0.643, 0.984), vec3(0.796, 0.659, 0.988));
+const vec3 SKY_NIGHT[6] = vec3[](
+    vec3(0.067, 0.067, 0.278), vec3(0.082, 0.082, 0.345), vec3(0.098, 0.106, 0.431),
+    vec3(0.133, 0.153, 0.565), vec3(0.176, 0.224, 0.714), vec3(0.247, 0.318, 0.871));
+const vec3 SKY_DUSK[6] = vec3[](
+    vec3(0.388, 0.122, 0.196), vec3(0.520, 0.150, 0.220), vec3(0.660, 0.200, 0.250),
+    vec3(0.820, 0.290, 0.220), vec3(0.933, 0.400, 0.180), vec3(0.980, 0.560, 0.280));
 
-float hash13(vec3 p) {
-    p = fract(p * 0.1031);
-    p += dot(p, p.yzx + 33.33);
-    return fract((p.x + p.y) * p.z);
-}
-
-float vnoise(vec3 p) {
-    vec3 i = floor(p);
-    vec3 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    float a = hash13(i);
-    float b = hash13(i + vec3(1.0, 0.0, 0.0));
-    float c = hash13(i + vec3(0.0, 1.0, 0.0));
-    float d = hash13(i + vec3(1.0, 1.0, 0.0));
-    float e = hash13(i + vec3(0.0, 0.0, 1.0));
-    float g = hash13(i + vec3(1.0, 0.0, 1.0));
-    float h = hash13(i + vec3(0.0, 1.0, 1.0));
-    float k = hash13(i + vec3(1.0, 1.0, 1.0));
-    return mix(mix(mix(a, b, f.x), mix(c, d, f.x), f.y),
-               mix(mix(e, g, f.x), mix(h, k, f.x), f.y), f.z);
-}
-
-float fbm(vec3 p) {
-    float s = 0.0;
-    float a = 0.5;
-    for (int i = 0; i < 4; i++) {
-        s += a * vnoise(p);
-        p *= 2.03;
-        a *= 0.5;
-    }
-    return s;
-}
-
-// layered cloud decks, shared by calm and storm skies
-// 1.9.175: this now has TWO systems:
-//   * the nearby Story Mode decks players see from the ground,
-//   * a mathematical 1024-layer high-atmosphere stack reaching y=1,000,000.
-// The high stack is altitude-gated and clustered into huge void gaps, so the
-// million-block decks do NOT smear across the ground view; they become visible
-// only when the camera is actually up inside the stratosphere stack.
-float mcsmDeckNoise(vec3 p) { return fbm(p); }
-float mcsmDeckCameraY() { return float(CameraBlockPos.y) + CameraOffset.y; }
-float mcsmDeckClock() { return GameTime * 1200.0; }
-float mcsmLayerHash(float i) { return fract(sin(i * 41.731 + 19.17) * 43758.5453); }
-float mcsmMegaHeight(float idx) {
-    float q = clamp(idx / 1023.0, 0.0, 1.0);
-    return 192.0 * pow(1000000.0 / 192.0, q);
-}
-
-vec3 paintMegaStrata(vec3 dirS, vec3 col, vec3 litCol, vec3 shadeCol,
-                     float warm, float mirror) {
-    const float LAYERS = 1024.0;
-    float camY = clamp(mcsmDeckCameraY(), -256.0, 1000000.0);
-    float highGate = smoothstep(850.0, 4200.0, camY);
-    if (highGate <= 0.001) return col;
-
-    float dyRaw = dirS.y;
-    float dy = abs(dyRaw);
-    if (dy <= 0.035) return col; // giant void gaps stay invisible from ground-horizon views
-
-    float baseIdx = log(max(camY, 192.0) / 192.0) / log(1000000.0 / 192.0) * (LAYERS - 1.0);
-    baseIdx = clamp(baseIdx, 0.0, LAYERS - 1.0);
-    float acc = 0.0;
-
-    // 41 samples around the current altitude represent the full 1024 physical
-    // layers. Layers are clustered 12-at-a-time, then separated by 52 empty
-    // slots: the "gigantic void gaps" the player asked for.
-    for (int i = 0; i < 41; i++) {
-        float idx = clamp(floor(baseIdx + (float(i) - 20.0) * 3.0), 0.0, LAYERS - 1.0);
-        float inCluster = mod(idx, 64.0);
-        float stackGate = smoothstep(0.0, 3.0, inCluster) * (1.0 - smoothstep(12.0, 20.0, inCluster));
-        if (stackGate <= 0.001) continue;
-
-        float h = mcsmMegaHeight(idx);
-        float rel = h - camY;
-        if (mirror < 0.5 && rel <= 2.0) continue;
-        if (mirror > 0.5 && rel >= -2.0) continue;
-
-        float rayLen = abs(rel) / max(dy, 0.035);
-        float localGate = 1.0 - smoothstep(36000.0, 140000.0, rayLen);
-        localGate *= smoothstep(0.060, 0.180, dy);
-        if (localGate <= 0.001) continue;
-
-        vec2 hit = dirS.xz * rayLen;
-        float q = idx / (LAYERS - 1.0);
-        vec2 uv = hit * mix(0.010, 0.00042, q)
-                + vec2(idx * 2.173, idx * 0.731)
-                + vec2(mcsmDeckClock() * 0.00035, -mcsmDeckClock() * 0.00018);
-        float cov = mcsmDeckNoise(vec3(uv, idx * 0.113));
-        float gapNibble = mcsmDeckNoise(vec3(uv * 0.23 + idx * 0.017, idx * 0.071));
-        float a = smoothstep(0.49, 0.64, cov) * smoothstep(0.35, 0.58, gapNibble);
-        a *= stackGate * localGate * highGate * 0.28;
-        a *= (mirror > 0.5) ? 0.92 : 1.0;
-        a *= 0.70 + 0.30 * mcsmLayerHash(idx);
-        a *= (1.0 - acc);
-
-        vec3 layerLit = mix(litCol, vec3(0.78, 0.86, 1.00), q * 0.35);
-        vec3 layerShade = mix(shadeCol, vec3(0.18, 0.20, 0.36), q * 0.55);
-        vec3 dc = mix(layerShade, layerLit, smoothstep(0.45, 0.78, cov));
-        dc = mix(dc, dc * vec3(1.05, 0.98, 1.10), warm * 0.45);
-        col = mix(col, dc, a);
-        acc += a * 0.72;
-        if (acc > 0.86) break;
-    }
-    return col;
-}
-
-vec3 paintDecks(vec3 dirS, vec3 col, float acc0, vec3 litCol, vec3 shadeCol,
-                float dayness, float warm, float sideFade, float mirror) {
-    // mirror = 1 paints the SAME decks mirrored into the lower hemisphere:
-    // the sky dome's bottom half only shows where terrain does not, so on
-    // the ground this reads as a far cloud sea past the edge, and from Sky
-    // City altitude it is the layers you fall through.
-    float dy = (mirror > 0.5) ? max(-dirS.y, 0.02) : dirS.y;
-    if (dy <= 0.02) {
-        return paintMegaStrata(dirS, col, litCol, shadeCol, warm, mirror);
-    }
-    vec2 pxz = dirS.xz / dy;
-    float H[9];
-    H[0] = 96.0;  H[1] = 146.0; H[2] = 152.0; H[3] = 420.0; H[4] = 430.0;
-    H[5] = 1200.0; H[6] = 3500.0; H[7] = 9000.0; H[8] = 16000.0;
-    float acc = acc0;
-    for (int i = 0; i < 9; i++) {
-        int grp = (i < 3) ? 0 : ((i < 6) ? 1 : 2);
-        vec2 uv = pxz * (120.0 / pow(H[i] / 96.0, 0.55)) + vec2(float(i) * 7.3);
-        float pres = (grp == 0) ? 1.0
-                : smoothstep(0.30, 0.44, fbm(vec3(pxz * 0.010 + vec2(float(grp) * 31.7), float(grp) * 13.0)));
-        float cov = fbm(vec3(uv * 0.9, float(i) * 3.1));
-        float gapmask = smoothstep(0.40, 0.54, fbm(vec3(uv * 0.33, float(i) * 9.0)));
-        float nest = fbm(vec3(uv * 3.4 + 17.0, float(i) * 5.7));
-        float th = (i < 3) ? 0.62 : ((i < 7) ? 0.50 : 0.44);
-        float ceilBonus = (i == 8) ? 0.25 : 0.0;
-        float a = smoothstep(th, th + 0.08, cov) * gapmask * pres
-                * (0.70 + 0.30 * smoothstep(0.35, 0.75, nest))
-                + ceilBonus * smoothstep(0.35, 0.6, cov) * pres;
-        // soften the deck edge into the horizon: kills the roof/side seam
-        a *= smoothstep(0.02, 0.12, dy);
-        if (mirror < 0.5) {
-            a *= mix(1.0, sideFade, smoothstep(0.30, 0.70, dy));
-        } else {
-            a *= 0.85;
-        }
-        a = min(a, 0.92) * (1.0 - acc);
-        float core = smoothstep(th - 0.12, th + 0.34, cov);
-        vec3 dc = mix(shadeCol, litCol, min(mix(0.55, 0.82, mirror) + 0.45 * core, 1.0));
-        dc *= (0.97 + 0.05 * float(i));
-        dc = mix(dc, dc * vec3(1.06, 0.98, 0.88), (1.0 - clamp(dy, 0.0, 1.0)) * warm);
-        col = mix(col, dc, a);
-        acc += a * 0.85;
-        if (acc > 0.97) {
-            break;
-        }
-    }
-    col = paintMegaStrata(dirS, col, litCol, shadeCol, warm, mirror);
-    return col;
-}
-
-// ===========================================================================
-// BUILD #390 PHASE 3 -- gradient-sheet LUT + folding LERP (generated block).
-// The three overworld sheets drive the calm cycle; the storm rows drive the
-// phase timeline. Regenerate with `python3 ci/make_sky_lut.py`.
-// ===========================================================================
-// >>> MCSM_SKY_SHEETS:BEGIN
-// GENERATED by ci/make_sky_lut.py from the gradient sheets in
-//   src/main/resources/assets/dabywitherstormmod/textures/mcsm_atmosphere/sky
-//   src/main/resources/assets/dabywitherstormmod/textures/sky
-// Replace those PNGs (your image_*.png maps to the same targets -- see
-// ci/SKY_SHEETS.md) and re-run the script; never edit this block by hand.
-// Storm rows: 4.45 green glare | 5.00 TEAL | 5.20 violet | 5.50 PURPLE | 5.90 pink-lavender | 6.00 SALMON | 7.00 dark red | 8.00 near-black
-// Vanilla rows: day PERIWINKLE | night MIDNIGHT BLUE | dusk SUNSET SPLIT | void spare
-const vec3 MCSM_SHEET_STORM[64] = vec3[64](
-    vec3(0.0120, 0.0200, 0.0160),
-    vec3(0.0193, 0.0486, 0.0348),
-    vec3(0.0267, 0.0771, 0.0536),
-    vec3(0.0390, 0.1147, 0.0773),
-    vec3(0.0553, 0.1596, 0.1050),
-    vec3(0.0724, 0.2048, 0.1324),
-    vec3(0.0962, 0.2524, 0.1562),
-    vec3(0.1200, 0.3000, 0.1800),
-    vec3(0.0745, 0.1451, 0.1569),
-    vec3(0.1412, 0.2196, 0.2157),
-    vec3(0.2196, 0.2941, 0.2863),
-    vec3(0.2941, 0.3647, 0.3529),
-    vec3(0.3804, 0.4471, 0.4275),
-    vec3(0.4667, 0.5255, 0.5020),
-    vec3(0.5529, 0.6118, 0.5725),
-    vec3(0.6196, 0.6745, 0.6235),
-    vec3(0.0300, 0.0120, 0.0580),
-    vec3(0.0545, 0.0214, 0.0874),
-    vec3(0.0790, 0.0308, 0.1168),
-    vec3(0.1102, 0.0440, 0.1502),
-    vec3(0.1469, 0.0603, 0.1869),
-    vec3(0.1848, 0.0776, 0.2238),
-    vec3(0.2324, 0.1038, 0.2619),
-    vec3(0.2800, 0.1300, 0.3000),
-    vec3(0.1647, 0.0588, 0.1922),
-    vec3(0.2314, 0.0941, 0.2627),
-    vec3(0.2941, 0.1294, 0.3294),
-    vec3(0.3569, 0.1608, 0.3961),
-    vec3(0.4314, 0.2118, 0.4706),
-    vec3(0.5098, 0.2667, 0.5451),
-    vec3(0.5961, 0.3176, 0.6392),
-    vec3(0.6588, 0.3608, 0.7059),
-    vec3(0.0700, 0.0300, 0.1200),
-    vec3(0.1149, 0.0524, 0.1649),
-    vec3(0.1598, 0.0749, 0.2098),
-    vec3(0.2204, 0.1086, 0.2592),
-    vec3(0.2939, 0.1514, 0.3122),
-    vec3(0.3724, 0.1990, 0.3667),
-    vec3(0.4962, 0.2895, 0.4333),
-    vec3(0.6200, 0.3800, 0.5000),
-    vec3(0.3255, 0.2784, 0.3255),
-    vec3(0.3961, 0.3373, 0.3765),
-    vec3(0.4392, 0.3647, 0.4078),
-    vec3(0.4784, 0.3922, 0.4392),
-    vec3(0.5451, 0.4510, 0.4863),
-    vec3(0.6078, 0.5059, 0.5294),
-    vec3(0.7137, 0.5725, 0.6078),
-    vec3(0.7843, 0.6118, 0.6510),
-    vec3(0.0180, 0.0020, 0.0090),
-    vec3(0.0482, 0.0049, 0.0147),
-    vec3(0.0784, 0.0077, 0.0204),
-    vec3(0.1189, 0.0121, 0.0250),
-    vec3(0.1679, 0.0179, 0.0287),
-    vec3(0.2171, 0.0252, 0.0326),
-    vec3(0.2686, 0.0476, 0.0388),
-    vec3(0.3200, 0.0700, 0.0450),
-    vec3(0.0060, 0.0020, 0.0080),
-    vec3(0.0158, 0.0044, 0.0129),
-    vec3(0.0256, 0.0069, 0.0178),
-    vec3(0.0412, 0.0093, 0.0222),
-    vec3(0.0616, 0.0118, 0.0263),
-    vec3(0.0829, 0.0148, 0.0305),
-    vec3(0.1114, 0.0224, 0.0352),
-    vec3(0.1400, 0.0300, 0.0400));
-
-const vec3 MCSM_SHEET_VANILLA[32] = vec3[32](
-    vec3(0.4784, 0.4784, 0.8745),
-    vec3(0.5255, 0.5137, 0.9020),
-    vec3(0.5647, 0.5333, 0.9137),
-    vec3(0.6000, 0.5569, 0.9255),
-    vec3(0.6627, 0.5961, 0.9373),
-    vec3(0.7294, 0.6392, 0.9451),
-    vec3(0.8000, 0.6824, 0.9529),
-    vec3(0.8667, 0.7373, 0.9686),
-    vec3(0.0510, 0.0510, 0.1569),
-    vec3(0.0941, 0.1059, 0.2706),
-    vec3(0.1137, 0.1333, 0.3373),
-    vec3(0.1333, 0.1569, 0.4039),
-    vec3(0.1647, 0.1922, 0.5020),
-    vec3(0.1961, 0.2275, 0.6039),
-    vec3(0.2510, 0.3059, 0.7451),
-    vec3(0.2314, 0.2588, 0.6392),
-    vec3(0.1176, 0.3255, 0.3686),
-    vec3(0.2392, 0.3647, 0.3804),
-    vec3(0.3255, 0.3961, 0.3922),
-    vec3(0.6039, 0.3765, 0.2275),
-    vec3(0.9569, 0.3725, 0.0353),
-    vec3(0.7843, 0.2745, 0.1490),
-    vec3(0.6000, 0.2039, 0.2078),
-    vec3(0.4314, 0.1569, 0.2118),
-    vec3(0.0100, 0.0080, 0.0220),
-    vec3(0.0182, 0.0145, 0.0375),
-    vec3(0.0263, 0.0211, 0.0530),
-    vec3(0.0390, 0.0310, 0.0735),
-    vec3(0.0553, 0.0436, 0.0980),
-    vec3(0.0729, 0.0571, 0.1238),
-    vec3(0.1014, 0.0786, 0.1619),
-    vec3(0.1300, 0.1000, 0.2000));
-
-
-// Self-contained on purpose: this block is also baked into the standalone Story
-// Look `position.fsh`, which has no include of mcsm_visuals.glsl.
-float mcsm_sheet_ramp(float v, float lo, float hi) {
-    if (hi <= lo) return v >= hi ? 1.0 : 0.0;
-    float t = clamp((v - lo) / (hi - lo), 0.0, 1.0);
-    return t * t * (3.0 - 2.0 * t);
-}
-
-// ---- baked sheet tables, 8 storm rows / 4 vanilla rows,
-// 8 stops per row (index 0 = zenith, last = horizon). -----------------
-#define MCSM_SHEET_COLS 8
-
-vec3 mcsm_sheet_grad(const vec3 c[MCSM_SHEET_COLS], float up) {
-    // up: 0 horizon .. 1 zenith (the same convention the sky arrays use), so the
-    // table is read from the zenith end downwards.
-    float t = clamp(1.0 - up, 0.0, 1.0) * float(MCSM_SHEET_COLS - 1);
+vec3 mcsm_sky6(const vec3 c0, const vec3 c1, const vec3 c2, const vec3 c3,
+               const vec3 c4, const vec3 c5, float up) {
+    float t = clamp(up, 0.0, 1.0) * 5.0;
     int i = int(floor(t));
     float f = t - floor(t);
-    if (i >= MCSM_SHEET_COLS - 1) return c[MCSM_SHEET_COLS - 1];
-    return mix(c[i], c[i + 1], f);
+    vec3 a = c0, b = c1;
+    if (i == 0)      { a = c0; b = c1; }
+    else if (i == 1) { a = c1; b = c2; }
+    else if (i == 2) { a = c2; b = c3; }
+    else if (i == 3) { a = c3; b = c4; }
+    else if (i == 4) { a = c4; b = c5; }
+    else             { a = c5; b = c5; }
+    return mix(a, b, f);
 }
 
-vec3 mcsm_sheet_row_storm(int row, float up) {
-    vec3 c[MCSM_SHEET_COLS];
-    for (int i = 0; i < MCSM_SHEET_COLS; i++) c[i] = MCSM_SHEET_STORM[row * MCSM_SHEET_COLS + i];
-    return mcsm_sheet_grad(c, up);
-}
+vec3 mcsm_storm_sky(float height, float p, vec3 worldDir) {
+    float tY = smoothstep(-0.20, 0.80, height);
+    if (p < 4.42) return vec3(-1.0);
 
-vec3 mcsm_sheet_row_vanilla(int row, float up) {
-    vec3 c[MCSM_SHEET_COLS];
-    for (int i = 0; i < MCSM_SHEET_COLS; i++) c[i] = MCSM_SHEET_VANILLA[row * MCSM_SHEET_COLS + i];
-    return mcsm_sheet_grad(c, up);
-}
+    vec3 greenZenith  = vec3(0.094, 0.184, 0.180);
+    vec3 greenHorizon = vec3(0.165, 0.294, 0.251);
+    vec3 col45 = mix(greenHorizon, greenZenith, tY);
 
-// Phase -> fractional row in the storm table. The knots are the phases the
-// sheets are keyed to, so crossing a knot IS the cross-fade.
-float mcsm_sheet_storm_row(float p) {
-    if (p < 5.00) return 0.0 + mcsm_sheet_ramp(p, 4.45, 5.00);
-    if (p < 5.20) return 1.0 + mcsm_sheet_ramp(p, 5.00, 5.20);
-    if (p < 5.50) return 2.0 + mcsm_sheet_ramp(p, 5.20, 5.50);
-    if (p < 5.90) return 3.0 + mcsm_sheet_ramp(p, 5.50, 5.90);
-    if (p < 6.00) return 4.0 + mcsm_sheet_ramp(p, 5.90, 6.00);
-    if (p < 7.00) return 5.0 + mcsm_sheet_ramp(p, 6.00, 7.00);
-    return 6.0 + mcsm_sheet_ramp(p, 7.00, 8.00);
-}
+    vec3 slateZenith  = vec3(0.114, 0.169, 0.169); // #1D2B2B
+    vec3 slateHorizon = vec3(0.431, 0.471, 0.451); // #6E7873
+    vec3 col5 = mix(slateHorizon, slateZenith, tY);
 
-// The storm backdrop the build is specified around: teal at phase 5, purple
-// through 5.5-5.9, salmon from 6.0. Adjacent rows are LERPed, so the sky folds
-// from one sheet into the next as the storm grows instead of snapping.
-vec3 mcsm_sheet_storm(float up, float p) {
-    float v = mcsm_sheet_storm_row(p);
-    int a = int(floor(v));
-    int b = a + 1;
-    if (b > 7) b = 7;
-    float f = v - floor(v);
-    return mix(mcsm_sheet_row_storm(a, up), mcsm_sheet_row_storm(b, up), f);
-}
+    vec3 purpleZenith  = vec3(0.102, 0.039, 0.165); // #1A0A2A
+    vec3 magentaHorizon= vec3(0.498, 0.227, 0.651); // #7F3AA6
+    vec3 col55 = mix(magentaHorizon, purpleZenith, tY);
 
-// Vanilla cycle: row 0 blue (day), 1 lavender (night), 2 sunset split (dusk).
-// The weights vanilla already computes pick the position in that row triangle.
-vec3 mcsm_sheet_vanilla(float up, float dayW, float nightW, float duskW) {
-    float v = (0.0 * dayW + 1.0 * nightW + 2.0 * duskW) / max(dayW + nightW + duskW, 0.0001);
-    int a = int(floor(v));
-    int b = a + 1;
-    if (a > 1) a = 1;
-    if (b > 2) b = 2;
-    float f = clamp(v - floor(v), 0.0, 1.0);
-    return mix(mcsm_sheet_row_vanilla(a, up), mcsm_sheet_row_vanilla(b, up), f);
-}
+    float backHalo = pow(clamp(1.0 - abs(worldDir.y), 0.0, 1.0), 3.0);
+    col55 += vec3(0.25, 0.22, 0.30) * backHalo;
 
-// The folding blend itself: one LERP, driven by w (0 = untouched sky,
-// 1 = the sheet is the sky).
-vec3 mcsm_sheet_fold(vec3 base, vec3 sheet, float w) {
-    return mix(base, sheet, clamp(w, 0.0, 1.0));
-}
+    vec3 plumZenith  = vec3(0.259, 0.180, 0.231); // #422E3B
+    vec3 peachHorizon= vec3(0.627, 0.459, 0.494); // #A0757E
+    vec3 col6 = mix(peachHorizon, plumZenith, tY);
 
-// ---- storm-approach carrier -------------------------------------------------
-// The 1395..1855 slot carries PHASE only (a base-mod writer owns the integer
-// part). McsmBlobCarrierPatch re-stamps the same slot at TAIL with
-//     skyEnd = 1000 + phase*100 + 0.008 * approach        (approach 0..1)
-// which is +0..0.008 on a value that is exact in float32 to ~1e-4, so the
-// fraction survives the round trip. A legacy writer leaves the fraction at 0,
-// which decodes to approach 0 -- the sheets then fold on phase alone.
-float mcsm_approach(float fogSkyEnd) {
-    if (!(fogSkyEnd > 1395.0 && fogSkyEnd < 1855.0)) return 0.0;
-    float raw = (fogSkyEnd - 1000.0) * 100.0;
-    return clamp((raw - floor(raw)) / 0.8, 0.0, 1.0);
-}
+    float w45 = mcsm_ramp(p, 4.42, 4.52) * (1.0 - mcsm_ramp(p, 4.88, 4.98));
+    float w5  = mcsm_ramp(p, 4.95, 5.05) * (1.0 - mcsm_ramp(p, 5.38, 5.48));
+    float w55 = mcsm_ramp(p, 5.42, 5.52) * (1.0 - mcsm_ramp(p, 5.92, 6.00));
+    float w6  = mcsm_ramp(p, 5.95, 6.08);
 
-// Storm fold weight: the teal sheet IS the phase-5 sky, so this reaches 1.0 by
-// 5.02 and stays there -- later phases cross-fade between ROWS instead of
-// changing the weight. A closing storm pulls the fold in early.
-float mcsm_sheet_w_storm(float p, float approach) {
-    return clamp(mcsm_sheet_ramp(p, 4.45, 5.02) * (1.0 + 0.25 * approach), 0.0, 1.0);
-}
+    vec3 sky = col45 * w45 + col5 * w5 + col55 * w55 + col6 * w6;
 
-// Vanilla fold weight: the three overworld sheets ARE the calm sky. Raise
-// MCSM_SHEET_VANILLA_BASE to 1.0 for "sheets only" -- the sampled
-// SKY_DAY/NIGHT/DUSK arrays then no longer show through.
-#define MCSM_SHEET_VANILLA_BASE 0.65
-float mcsm_sheet_w_vanilla(float approach) {
-    return clamp(MCSM_SHEET_VANILLA_BASE + (1.0 - MCSM_SHEET_VANILLA_BASE) * approach,
-                 0.0, 1.0);
-}
+    float zenithMask = smoothstep(0.0, 0.60, height);
+    vec3 topDark = mix(vec3(0.05, 0.02, 0.08), plumZenith, mcsm_ramp(p, 5.95, 6.10));
+    sky = mix(sky, topDark, zenithMask * 0.85);
 
-// <<< MCSM_SKY_SHEETS:END
+    return sky;
+}
 
 void main() {
-    // Non-opaque position-shader users (world-select highlight etc.) keep
-    // the exact vanilla behaviour.
-    if (ColorModulator.a < 0.99) {
-        fragColor = apply_fog(ColorModulator, sphericalVertexDistance, cylindricalVertexDistance,
-            FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
+    float mcsmP = mcsm_phase(FogSkyEnd, FogColor, FogRenderDistanceEnd);
+    float clock = mcsm_clock(GameTime);
+    vec3 worldDir = normalize(transpose(mat3(ModelViewMat)) * normalize(mcsmCamRay));
+    float height = clamp(worldDir.y, -1.0, 1.0);
+
+    float isBody = step(0.10, length(ColorModulator.rgb - FogColor.rgb));
+
+    float mcsmDt = mcsm_death(FogSkyEnd);
+    if (mcsmDt >= 0.0) {
+        vec3 ddir = mcsm_death_dir(worldDir, mcsmDt, clock);
+        vec3 ddome = mcsm_storm_sky(ddir.y, 7.6, ddir);
+        if (ddome.r < 0.0) ddome = vec3(0.05, 0.02, 0.08);
+        ddome *= 1.0 - 0.78 * mcsm_ramp(mcsmDt, 0.0, 0.55);
+        vec3 camWd = vec3(CameraBlockPos) + CameraOffset;
+        vec4 aimD = mcsm_boss_dir(camWd);
+        vec3 dadd = mcsm_death_cracks(ddir, mcsmDt, clock);
+        if (aimD.w > 0.5) {
+            dadd += mcsm_death_implosion(worldDir, aimD.xyz, mcsmDt, clock);
+            dadd += mcsm_supernova(ddir, aimD.xyz, mcsmDt, clock);
+        }
+        vec3 dsky = ddome + dadd + vec3(1.0, 0.98, 0.97) * mcsm_death_flash(mcsmDt);
+        dsky *= 0.35 + 0.65 * (1.0 - mcsm_ramp(mcsmDt, 0.95, 1.0));
+        fragColor = vec4(mcsm_story_grade(dsky), isBody > 0.5 ? 0.0 : 1.0);
         return;
     }
 
-    vec3 C = ColorModulator.rgb;
-    float clum = dot(C, vec3(0.2126, 0.7152, 0.0722));
-    vec3 dirS = normalize(skyDir);
-    float ty = clamp(dirS.y, -1.0, 1.0);
-    float t = pow(1.0 - clamp(ty, 0.0, 1.0), 1.35);
-
-    // --- storm phases: the mod tints the sky per phase; map that tint to the
-    //     reference frame whose palette belongs to it -------------------------
-    bool storm = (C.r > C.g * 1.25 && C.b > C.g * 1.05)
-              || (C.r > C.g * 1.25 && clum < 0.18);
-    if (storm) {
-        float greenK  = clamp((C.g - max(C.r, C.b)) * 2.5, 0.0, 1.0);
-        float orangeK = clamp((C.r - C.g) * 2.2, 0.0, 1.0) * step(C.b, C.g) * (1.0 - greenK);
-        float pinkK   = clamp(1.0 - abs(C.r - C.b) * 3.0, 0.0, 1.0)
-                      * step(C.g * 1.05, min(C.r, C.b)) * (1.0 - greenK);
-        float magK    = clamp((C.r - C.b) * 2.0, 0.0, 1.0) * (1.0 - orangeK) * (1.0 - greenK);
-        float wsum = pinkK + greenK + orangeK + magK;
-        if (wsum < 0.02) {
-            magK = 1.0;
-            wsum = 1.0;
+    if (!mcsm_sky_active(mcsmP) || mcsmP < 4.42) {
+        if (isBody > 0.5) {
+            fragColor = apply_fog(ColorModulator, sphericalVertexDistance,
+                                  cylindricalVertexDistance, 0.0,
+                                  FogSkyEnd, FogSkyEnd, FogSkyEnd, FogColor);
+            return;
         }
-        // 5.5-5.9 pinkish-violet (violet zenith, salmon-pink horizon)
-        vec3 z1 = vec3(0.055, 0.022, 0.130);
-        vec3 m1 = vec3(0.200, 0.060, 0.230);
-        vec3 h1 = vec3(0.640, 0.300, 0.310);
-        // green-teal frames
-        vec3 z2 = vec3(0.050, 0.110, 0.095);
-        vec3 m2 = vec3(0.120, 0.220, 0.180);
-        vec3 h2 = vec3(0.440, 0.560, 0.360);
-        // sunset-orange frames
-        vec3 z3 = vec3(0.120, 0.060, 0.080);
-        vec3 m3 = vec3(0.350, 0.140, 0.110);
-        vec3 h3 = vec3(0.780, 0.280, 0.100);
-        // deep purple / magenta frames
-        vec3 z4 = vec3(0.070, 0.022, 0.120);
-        vec3 m4 = vec3(0.230, 0.055, 0.220);
-        vec3 h4 = vec3(0.560, 0.220, 0.320);
-        vec3 zen = (z1 * pinkK + z2 * greenK + z3 * orangeK + z4 * magK) / wsum;
-        vec3 mid = (m1 * pinkK + m2 * greenK + m3 * orangeK + m4 * magK) / wsum;
-        vec3 hor = (h1 * pinkK + h2 * greenK + h3 * orangeK + h4 * magK) / wsum;
-        // keep the mod's own tint in the mix so the blob colour still reads
-        zen = mix(zen, C * 0.35, 0.30);
-        mid = mix(mid, C * 0.80, 0.30);
-        hor = mix(hor, C * 1.35, 0.22);
-
-        vec3 col = mix(zen, mid, smoothstep(0.04, 0.45, t));
-        col = mix(col, hor, smoothstep(0.45, 0.95, t));
-
-        // BUILD #390 PHASE 3 -- FOLD into the storm gradient sheets. The base
-        // branch above still shapes the dome (it carries the mod's own tint),
-        // then one LERP folds it into the baked MCSM_SHEET_STORM rows: 5.00
-        // teal, 5.50 purple, 6.00 salmon, cross-fading row-to-row as the phase
-        // climbs. Later additive passes (decks, rim, roofline) still land on
-        // top of the folded result.
-        {
-            // Row is picked from the SAME palette keys this branch already
-            // derived from the mod's tint: green frames -> the teal sheet,
-            // purple/magenta frames -> the purple sheet, orange/ember frames ->
-            // the salmon sheet. (There is no phase value in this pass, and this
-            // avoids inventing one from a single channel.)
-            float mcsmRow = (1.0 * greenK + 3.05 * pinkK + 2.75 * magK + 5.0 * orangeK) / wsum;
-            mcsmRow = clamp(mcsmRow, 0.0, 7.0);
-            // Convert the row back to the phase the fold helpers expect, then
-            // fold. Row 1 == 5.00, row 3 == 5.50, row 5 == 6.00, row 7 == 8.00.
-            float mcsmP390 = mcsmRow <= 1.0 ? (4.45 + mcsmRow * 0.55)
-                           : (mcsmRow <= 3.0 ? (5.00 + (mcsmRow - 1.0) * 0.25)
-                                             : (5.50 + (mcsmRow - 3.0) * 0.25));
-            float mcsmUp = clamp(ty * 0.5 + 0.5, 0.0, 1.0);
-            col = mcsm_sheet_fold(col, mcsm_sheet_storm(mcsmUp, mcsmP390),
-                                  mcsm_sheet_w_storm(mcsmP390, 0.0) * 0.85);
-        }
-        // soft horizon glow band, continuous - no seam between vault and rim
-        col += hor * 0.22 * exp(-abs(ty) * 6.0);
-        // blue silhouette rim hugging the horizon, all the way around
-        float rim = exp(-abs(ty - 0.015) * 42.0);
-        col = mix(col, vec3(0.16, 0.34, 0.95), rim * 0.50);
-        // gigantic purple line across the upper vault
-        float topLine = exp(-abs(ty - 0.72) * 26.0);
-        col = mix(col, vec3(0.40, 0.15, 0.85), topLine * 0.30);
-        // darker back tone so the roof reads heavier than the sides
-        col *= 1.0 - 0.38 * smoothstep(0.50, 1.0, ty);
-        // mega-phase 3: the storm sky SHRINKS to the sides. Overhead the
-        // dome collapses into a dark calm violet instead of stretching the
-        // storm palette across the whole sky; the coloured halo around the
-        // storm's flanks is carried by the mod's halo ring quad instead.
-        float over = smoothstep(0.30, 0.70, ty);
-        float olum = dot(col, vec3(0.299, 0.587, 0.114));
-        vec3 ocol = mix(vec3(olum) * vec3(0.42, 0.30, 0.52), vec3(0.02, 0.012, 0.03), 0.55);
-        col = mix(col, ocol, over * 0.85);
-
-        vec3 litC = mix(vec3(0.52, 0.42, 0.62), hor, 0.35);
-        vec3 shadeC = mix(zen, hor, 0.30) * 0.60;
-        col = paintDecks(dirS, col, 0.0, litC, shadeC, 0.35, 0.5, 0.35, 0.0);
-    col = paintDecks(dirS, col, 0.0, litC, shadeC, 0.35, 0.5, 0.80, 1.0);
-
-        col = mix(col, hor * 0.45, smoothstep(0.0, -0.35, ty));
-        float lum = dot(col, vec3(0.299, 0.587, 0.114));
-        col = mix(vec3(lum), col, 1.22);
-        col = mix(col, col * col * (3.0 - 2.0 * col), 0.25);
-        fragColor = vec4(col, 1.0);
+        float up = clamp(height * 0.5 + 0.5, 0.0, 1.0);
+        vec3 sky = mcsm_sky6(SKY_DAY[0], SKY_DAY[1], SKY_DAY[2], SKY_DAY[3], SKY_DAY[4], SKY_DAY[5], up);
+        fragColor = vec4(max(mcsm_story_grade(sky), vec3(0.0)), 1.0);
         return;
     }
 
-    // --- calm sky: time-of-day weights ---------------------------------------
-    float night = 1.0 - smoothstep(0.05, 0.22, clum);
-    float orange = C.r - C.b;
-    float dawn = smoothstep(0.25, 0.50, orange) * step(C.b, C.g) * (1.0 - night);
-    float day = max(1.0 - night - dawn, 0.0);
-
-    // EnderCon gate / Sky City pastels: soft story blue, pink-warm horizon
-    vec3 zen = day * vec3(0.216, 0.394, 0.716)
-             + dawn * vec3(0.620, 0.560, 0.810)
-             + night * vec3(0.010, 0.014, 0.070);
-    vec3 mid = day * vec3(0.394, 0.578, 0.806)
-             + dawn * vec3(0.620, 0.560, 0.810)
-             + night * vec3(0.010, 0.014, 0.070);
-    vec3 hor = day * vec3(0.870, 0.745, 0.690)
-             + dawn * vec3(0.890, 0.680, 0.730)
-             + night * vec3(0.019, 0.031, 0.130);
-
-    // per-biome variants (vanilla hands us the biome sky hue in ColorModulator)
-    float gk = clamp((C.g - max(C.r, C.b)) * 3.0, 0.0, 0.6) * day;
-    float wk = clamp((C.r - C.b) * 1.2, 0.0, 0.6) * day * (1.0 - dawn);
-    zen = mix(zen, vec3(0.150, 0.420, 0.470), gk);
-    mid = mix(mid, vec3(0.320, 0.580, 0.530), gk);
-    hor = mix(hor, vec3(0.620, 0.800, 0.700), gk);
-    zen = mix(zen, vec3(0.350, 0.450, 0.700), wk);
-    mid = mix(mid, vec3(0.560, 0.620, 0.760), wk);
-    hor = mix(hor, vec3(0.880, 0.760, 0.640), wk);
-
-    vec3 col = mix(zen, mid, smoothstep(0.10, 0.60, t));
-    col = mix(col, hor, smoothstep(0.75, 0.98, t));
-    col += hor * 0.14 * exp(-abs(ty) * 7.0);
-
-    // BUILD #390 PHASE 3 -- the calm sky folds into the three overworld sheets
-    // (blue day / lavender night / sunset split). The row position is the same
-    // day/night/dawn weight triangle this branch just computed, so the fold
-    // slides smoothly through the cycle instead of snapping at the horizon.
-    {
-        float mcsmUp = clamp(ty * 0.5 + 0.5, 0.0, 1.0);
-        col = mcsm_sheet_fold(col, mcsm_sheet_vanilla(mcsmUp, day, night, dawn),
-                              mcsm_sheet_w_vanilla(0.0));
+    vec3 dome = mcsm_storm_sky(height, mcsmP, worldDir);
+    if (dome.r < 0.0) {
+        dome = vec3(0.05, 0.02, 0.08);
     }
 
-    // crisp stars at night
-    vec3 sg = floor(dirS * 220.0);
-    float sn = hash13(sg);
-    float star = smoothstep(0.996, 0.9995, sn) * night;
-    col += star * (0.55 + 0.45 * hash13(sg + 7.7)) * vec3(0.92, 0.96, 1.0);
-
-    // white story clouds with pale-blue shadowed fringes
-    vec3 litC = mix(vec3(0.960, 0.975, 1.000), hor, 0.10);
-    vec3 shadeC = mix(zen, hor, 0.35) * 0.85;
-    col = paintDecks(dirS, col, 0.0, litC, shadeC, day, 0.5, 1.0, 0.0);
-    col = paintDecks(dirS, col, 0.0, litC, shadeC, day, 0.5, 1.0, 1.0);
-
-    col = mix(col, hor * 0.5, smoothstep(0.0, -0.3, ty));
-    float lum = dot(col, vec3(0.299, 0.587, 0.114));
-    col = mix(vec3(lum), col, 1.15);
-    col = mix(col, col * col * (3.0 - 2.0 * col), 0.22);
-
-    fragColor = vec4(col, 1.0);
+    float hide = mcsm_ramp(mcsmP, 5.05, 5.20);
+    vec3 body = mcsm_sky_body_tint(mcsmP, ColorModulator.rgb);
+    float a = mix(ColorModulator.a, 0.0, hide);
+    fragColor = vec4(mcsm_story_grade(mix(dome, body, isBody)), mix(1.0, a, isBody));
 }

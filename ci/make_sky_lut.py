@@ -82,10 +82,13 @@ VANILLA_ROWS = [
                           (0.70, (0.070, 0.055, 0.120)), (1.00, (0.130, 0.100, 0.200))]),
 ]
 
+# BUILD #393 (master migration): the sheet tables bake into the shared include
+# only. Master's real-sky sky.fsh imports it and folds the baked rows in with
+# mcsm_sheet_fold; the Story Look position.fsh copies are now byte-identical to
+# mcsm-core-shaders/core/position.fsh (marker-free, no folded rows of their own
+# -- that fold was the banded-sky artifact of the 1.9.39x line).
 TARGETS = [
     ("mcsm-core-shaders/include/mcsm_visuals.glsl", "       "),
-    ("overrides/resourcepacks/01_Devouring_Storms_Story_Look/assets/minecraft/shaders/core/position.fsh", " "),
-    ("overrides/global_packs/required_resources/01_Devouring_Storms_Story_Look/assets/minecraft/shaders/core/position.fsh", " "),
 ]
 
 
