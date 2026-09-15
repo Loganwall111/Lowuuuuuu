@@ -37,11 +37,14 @@ float mcsmHash(in vec2 p){
 
 // Story Mode sky palette keys. s = dayCycle (0 midnight, 1 horizon, 2 noon).
 void mcsmSkyKeys(in float s, out vec3 zen, out vec3 hor){
+    // #411 reference-calibrated (Sept 6/8 stills): muted cinematic hues, not
+    // candy colours. Day = overcast teal-sage; dusk = purple-mauve; sunset =
+    // pink-salmon; night = teal-black.
     vec3 z0 = vec3(0.016, 0.055, 0.075); vec3 h0 = vec3(0.030, 0.160, 0.150); // night: teal-black
-    vec3 z1 = vec3(0.055, 0.095, 0.360); vec3 h1 = vec3(0.130, 0.760, 0.720); // dusk: deep blue + cyan band
-    vec3 z2 = vec3(0.640, 0.270, 0.260); vec3 h2 = vec3(0.960, 0.640, 0.520); // sunset: salmon rose
-    vec3 z3 = vec3(0.520, 0.490, 0.830); vec3 h3 = vec3(0.660, 0.680, 0.920); // day: lavender periwinkle
-    vec3 z4 = vec3(0.300, 0.520, 0.920); vec3 h4 = vec3(0.500, 0.700, 0.950); // noon: bright blue
+    vec3 z1 = vec3(0.100, 0.080, 0.260); vec3 h1 = vec3(0.550, 0.350, 0.550); // dusk: purple zenith, mauve horizon
+    vec3 z2 = vec3(0.350, 0.180, 0.380); vec3 h2 = vec3(0.930, 0.620, 0.600); // sunset: purple zenith, pink-salmon horizon
+    vec3 z3 = vec3(0.300, 0.420, 0.420); vec3 h3 = vec3(0.700, 0.740, 0.660); // day: teal-sage zenith, pale sage horizon
+    vec3 z4 = vec3(0.360, 0.500, 0.550); vec3 h4 = vec3(0.720, 0.800, 0.800); // noon: muted teal
 
     zen = z0; hor = h0;
     float f1 = smoothstep(0.20, 0.60, s); zen = mix(zen, z1, f1); hor = mix(hor, h1, f1);
@@ -75,11 +78,10 @@ float mcsmCloudDeck(in vec3 dir, in vec2 camXZ, in float camY, in float height,
     float wy = 0.40 + 0.55 * mcsmHash(cell + 27.3);
     float lo_x = 0.5 - 0.5 * wx, hi_x = 0.5 + 0.5 * wx;
     float lo_y = 0.5 - 0.5 * wy, hi_y = 0.5 + 0.5 * wy;
-    float plate = step(lo_x, f.x) * step(f.x, hi_x)
-                * step(lo_y, f.y) * step(f.y, hi_y);
-    // soften the rectangle borders so plates do not read as cut cardboard
-    float edge = min(min(f.x - lo_x, hi_x - f.x), min(f.y - lo_y, hi_y - f.y));
-    plate *= smoothstep(0.0, 0.10, edge);
+    // #411: soft penumbra edges (the reference clouds are fuzzy slabs, not
+    // cut cardboard) -- smoothstep each border over 30% of the plate.
+    float plate = smoothstep(lo_x, lo_x + 0.30 * wx, f.x) * smoothstep(hi_x, hi_x - 0.30 * wx, f.x)
+                * smoothstep(lo_y, lo_y + 0.30 * wy, f.y) * smoothstep(hi_y, hi_y - 0.30 * wy, f.y);
 
     // secondary smaller puff grid for the chunky MCSM silhouette
     vec2 cell2 = floor(uv * 2.0);

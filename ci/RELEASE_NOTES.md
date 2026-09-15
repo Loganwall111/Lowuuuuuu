@@ -1,3 +1,27 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.411 — Build #411: reference calibration pass (Sept 6/8 stills), no new systems
+
+User verdict on .404-.410: "none of this is accurate, only worse". This build
+changes ONLY four visual parameters, each matched to the reference stills:
+
+- SKY PALETTE re-calibrated to the muted cinematic hues of the refs: day =
+  overcast teal-sage (not lavender), dusk = purple zenith/mauve horizon,
+  sunset = purple zenith/pink-salmon horizon, noon = muted teal. The candy
+  lavender/salmon keys are gone.
+- CLOUDS: razor rectangle plates replaced with soft-penumbra slabs
+  (smoothstep borders over 30% of each plate) like the fuzzy chunky clouds
+  in the refs.
+- BEAMS: tractor_beam texture regenerated with a white-hot core column and
+  smooth cone falloff so beams read saturated with a bloomed white centre
+  like the reference cones (blue at phase 6, purple elsewhere, unchanged).
+- BODY: neutral tint lifted 0xFF6A6A6A -> 0xFF948F8A so the traced block
+  shading reads as textured warm-grey (reference dome shot) instead of a
+  flat dark blob; dusk silhouettes stay dark via lighting.
+
+Everything removed in .408-.410 stays removed (outlines, vein wires, black
+glare, cataclysm halo, backdrop quad, native sky tint, purple specks).
+Rollback points if any single change is wrong: .410 (pre-calibration),
+.405 (pre-sky-renderer), 5aa1de7 (exact old reference build).
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.410 — Build #410: storm backdrop quad OFF (the last fake-sky layer), purple-sky specks default OFF
 
 - The flat purple sky card with the razor horizon edge and the dark core that
