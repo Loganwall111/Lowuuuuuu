@@ -2,6 +2,7 @@ package net.dabicco.witherstormmod.mixin;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
+import net.dabicco.witherstormmod.client.ClientDistantStormManager;
 import net.dabicco.witherstormmod.client.StormSkins;
 import net.dabicco.witherstormmod.client.StormSkyGradient;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
@@ -10,6 +11,7 @@ import net.mcsm.extras.McsmGate;
 import net.mcsm.extras.client.McsmClientBlasts;
 import net.mcsm.extras.client.McsmClientChat;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.joml.Matrix4fc;
@@ -26,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * and active. A whole-jar bytecode scan for callers of that method returns
  * NOTHING -- it is dead code. Three classes read the results:
  *
- *     StormSkyGradientMixin   -> yaw(), color(), fogStampActive()
+ *     native SkyRenderer state -> phase/time sky carriers
  *     McsmFogCarrierMixin     -> yaw(), pitch(), phase(), fogStampActive()
  *     McsmBlobCarrierPatch    -> yaw(), pitch(), phase(), fogStampActive()
  *
@@ -80,6 +82,8 @@ public abstract class McsmGradientTickPatch {
             // "which jar is actually running?" stops needing a log hunt.
             McsmClientChat.announceBuildOnce();
             StormSkyGradient.update(cameraState.pos);
+            // The native SkyRenderer owns the atmosphere; no external
+            // skybox is toggled from the frame driver.
             net.mcsm.extras.client.McsmTeethPhaseTint.tick();
             // Report what update() produced. This is the value the glare blob
             // depends on -- if it never reports ACTIVE, the blob cannot draw
@@ -112,8 +116,49 @@ public abstract class McsmGradientTickPatch {
             // has been removed, and this hook runs for as long as the world is
             // being rendered. It steps at most once per game tick internally.
             McsmClientBlasts.tick();
+            // The generated particle/ring debris vortex is intentionally
+            // retired. Native StormDebris remains the single debris source;
+            // its authored outer entries expand in the phase-9 window.
+            // 1.9.208 -- volumetric beam strength rides the time of day:
+            // near-noon the tractor beams flare hardest; deep night they
+            // dim to a faint purple shaft. Written live every frame so the
+            // base renderer picks the value up as it draws.
+            mcsm$beamDayNight(cameraState);
+            // The residual shader sky-blob carrier was removed in 1.9.318.
+            // Halo ownership stays in the tethered native render pass; do not
+            // upload a second camera/sky attachment here.
         } catch (Throwable ignored) {
             // Never let a visual helper break the frame.
+        }
+    }
+
+    /** Day/night beam modulation; a bad field name must cost nothing. */
+    private static void mcsm$beamDayNight(Object cameraState) {
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || mc.level == null) {
+                return;
+            }
+            float t = (float) (mc.level.getGameTime() % 24000L);
+            float day = 0.5F + 0.5F * (float) Math.cos(((t - 6000.0F) / 24000.0F) * Math.PI * 2.0D);
+            DabyWSClientConfig.beamOpacity = 0.85F + 0.75F * day;
+            double phase = Math.max(StormSkins.phaseHint(),
+                    net.mcsm.extras.client.McsmStormAtmosphere.nearestPhase());
+            if (phase >= 6.0D) {
+                DabyWSClientConfig.beamColorR = 0.00F;
+                DabyWSClientConfig.beamColorG = 0.659F;
+                DabyWSClientConfig.beamColorB = 0.467F;
+            } else if (phase >= 4.0D) {
+                DabyWSClientConfig.beamColorR = 0.00F;
+                DabyWSClientConfig.beamColorG = 0.953F;
+                DabyWSClientConfig.beamColorB = 1.00F;
+            } else {
+                // Calm/early phases keep the violet cinematic beam family.
+                DabyWSClientConfig.beamColorR = 0.48F + 0.18F * day;
+                DabyWSClientConfig.beamColorG = 0.10F + 0.12F * day;
+                DabyWSClientConfig.beamColorB = 1.00F;
+            }
+        } catch (Throwable ignored) {
         }
     }
 }

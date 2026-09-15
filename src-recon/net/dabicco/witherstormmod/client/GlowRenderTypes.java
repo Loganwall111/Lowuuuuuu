@@ -45,7 +45,13 @@ public final class GlowRenderTypes {
             .withShaderDefine("NO_OVERLAY")
             .withShaderDefine("NO_CARDINAL_LIGHTING")
             .withColorTargetState(new ColorTargetState(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE, BlendFactor.ZERO, BlendFactor.ONE)))
-            .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
+            // MCSM 7000.0.0-M migration fix: LESS, not GREATER_THAN_OR_EQUAL.
+            // Against the cleared sky buffer (depth 1.0) a GREATEQ test can
+            // never pass, which silently discarded every background-layer
+            // pixel (halo oval, starfield, glare sheets, skybox stickers).
+            // LESS passes sky + anything farther than the quad and still
+            // rejects nearer terrain, so the atmosphere stays a background.
+            .withDepthStencilState(new DepthStencilState(CompareOp.LESS, false))
             .withCull(false)
             .build();
       }
@@ -218,7 +224,10 @@ public final class GlowRenderTypes {
             .withShaderDefine("NO_OVERLAY")
             .withShaderDefine("NO_CARDINAL_LIGHTING")
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
+            // MCSM 7000.0.0-M migration fix: see pipeline() -- LESS keeps the
+            // translucent background layers visible against the cleared sky
+            // while nearer world geometry still occludes them.
+            .withDepthStencilState(new DepthStencilState(CompareOp.LESS, false))
             .withCull(false)
             .build();
       }

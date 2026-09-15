@@ -278,14 +278,27 @@
                 #endif
 
                 #ifdef MCSM_DARK_OPAQUE_WATER
-                    // Minecraft: Story Mode water: not mirror glass. Keep the
-                    // shader shadowing, but force a dark, opaque blue albedo
-                    // and rough material data so reflection passes cannot shine.
+                    // Minecraft: Story Mode water (1.9.406 re-grade): the
+                    // reference frames show saturated indigo/violet lakes that
+                    // catch the colourful sky at grazing angles -- not the old
+                    // flat steel blue and not mirror glass.
                     float shallow = clamp(blockDepth * 0.060, 0.0, 1.0);
-                    material.albedo.rgb = mix(vec3(0.020, 0.045, 0.135), vec3(0.035, 0.085, 0.235), shallow);
+                    material.albedo.rgb = mix(vec3(0.145, 0.135, 0.520), vec3(0.300, 0.310, 0.820), shallow);
+                    // 1.9.212: vanilla-style flow stripes -- light diagonal
+                    // bands so the surface reads as moving water instead of a
+                    // flat blue sheet. 1.9.213: STATIC pattern -- the previous
+                    // version referenced frameTimeCounter, which this pack
+                    // never declares, and that broke the whole program.
+                    vec3 wpos = vertexWorldPos;
+                    float flow = sin((wpos.x + wpos.z) * 0.55 + wpos.y * 0.9);
+                    float band = smoothstep(0.55, 1.0, flow) * smoothstep(0.55, 0.0, -flow);
+                    material.albedo.rgb = mix(material.albedo.rgb, material.albedo.rgb * 1.28, band * 0.22);
                     material.albedo.a = max(material.albedo.a, 0.96);
                     material.metallic = 0.0;
-                    material.smoothness = 0.0;
+                    // 1.9.406: slight rough sheen so the indigo surface picks
+                    // up the story-mode sky colours (getSkyReflection) like
+                    // the mirror lakes in the cutscenes, without mirror glass.
+                    material.smoothness = 0.45;
                 #endif
 
                 #ifdef WATER_FOAM

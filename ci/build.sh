@@ -31,7 +31,9 @@ set -x
 trap 'rc=$?; mkdir -p out 2>/dev/null; { echo "MCSM build FAILURE (run ${GITHUB_RUN_NUMBER:-local})"; echo "exit: $rc"; echo "line: $LINENO"; echo "cmd:  $BASH_COMMAND"; } > out/FAILURE.txt 2>/dev/null; cat out/FAILURE.txt 2>/dev/null; echo "::error title=MCSM build failed (exit $rc) line $LINENO::$BASH_COMMAND"' ERR
 
 VER="${1:-$(cat VERSION | tr -d '[:space:]')}"
-JAR_ID="${VER}-26.2-beta-ds"
+# Keep the artifact and fabric.mod.json identity byte-for-byte equal to VERSION.
+# The custom identity intentionally avoids the repository's old numeric tag list.
+JAR_ID="${VER}"
 echo "[build] Devouring Storms ${JAR_ID}"
 
 EVIDENCE_REPO="https://github.com/Loganwall111/Lowuuuuuu.git"
@@ -129,8 +131,20 @@ fetch "https://libraries.minecraft.net/com/mojang/brigadier/1.3.10/brigadier-1.3
 # MCSM 1.9.133 -- the extras storm-blob resubmit references the Fabric
 # rendering context type, so the rendering-v1 module (+api-base) joins the
 # extras compile classpath, fetched exactly like build-source does it.
-FAPI_VER="$(curl -fsSL https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml \
-  | grep -oE '<version>[^<]*\+26\.2[^<]*</version>' | sed 's/<[^>]*>//g' | tail -1 || true)"
+FAPI_VER=""
+for attempt in 1 2 3; do
+  FAPI_META="$(curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \
+      https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml 2>/dev/null || true)"
+  [ -z "$FAPI_META" ] && sleep 5 && continue
+  FAPI_VER="$(printf '%s' "$FAPI_META" \
+    | grep -oE '<version>[^<]*\+26\.2[^<]*</version>' | sed 's/<[^>]*>//g' | tail -1 || true)"
+  [ -n "$FAPI_VER" ] && break
+  # 1.9.209: if the exact +26.2 build tag vanished from metadata, fall back to
+  # any 26.x build so the rendering modules still land on the classpath.
+  FAPI_VER="$(printf '%s' "$FAPI_META" \
+    | grep -oE '<version>[^<]*\+26[^<]*</version>' | sed 's/<[^>]*>//g' | tail -1 || true)"
+  [ -n "$FAPI_VER" ] && break
+done
 mkdir -p "$DL/fapi2"
 : > "$DL/fapi2-list.txt"
 if [ -n "$FAPI_VER" ]; then
@@ -142,7 +156,7 @@ try:
 except OSError:
     open(sys.argv[2], "w").write("")
     sys.exit(0)
-want = {"fabric-rendering-v1", "fabric-api-base"}
+want = {"fabric-rendering-v1", "fabric-api-base", "fabric-object-builder-api-v1", "fabric-lifecycle-events-v1"}
 out = []
 for m in re.finditer(r'<dependency>\s*<groupId>([^<]+)</groupId>\s*<artifactId>([^<]+)</artifactId>\s*<version>([^<]+)</version>', pom):
     g, a, v = m.groups()
@@ -158,6 +172,12 @@ PYMOD
   done < "$DL/fapi2-list.txt"
 fi
 FAPI2_CP="$(find "$DL/fapi2" -name '*.jar' 2>/dev/null | tr '\n' ':')"
+FAPI2_COUNT="$(find "$DL/fapi2" -name '*.jar' 2>/dev/null | wc -l)"
+echo "[deps] fabric rendering modules on classpath: $FAPI2_COUNT"
+if [ "$FAPI2_COUNT" -lt 4 ]; then
+  echo "::error::fabric-api rendering modules missing from the compile classpath ($FAPI2_COUNT/4) -- the maven metadata fetch flaked; re-run the build"
+  exit 1
+fi
 
 
 # MCSM 1.9.100 -- close the loop: teach the sandbox the real API.
@@ -184,8 +204,11 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.minecraft.client.gui.components.EditBox net.minecraft.client.gui.components.Tooltip \
     net.minecraft.client.gui.layouts.LinearLayout net.minecraft.client.DeltaTracker \
     net.minecraft.client.renderer.LevelRenderer net.minecraft.client.renderer.MultiBufferSource \
+    net.minecraft.client.renderer.SkyRenderer \
+    net.minecraft.client.renderer.state.level.SkyRenderState \
     net.minecraft.client.renderer.RenderType net.minecraft.client.renderer.blockentity.BlockEntityRenderer \
-    net.minecraft.client.renderer.entity.EntityRenderer net.minecraft.client.Camera \
+    net.minecraft.client.renderer.entity.EntityRenderer net.minecraft.client.renderer.CloudRenderer \
+    net.minecraft.client.multiplayer.ClientChunkCache net.minecraft.client.Camera \
     net.minecraft.client.player.LocalPlayer net.minecraft.world.entity.player.Player \
     net.minecraft.world.entity.player.Inventory net.minecraft.world.inventory.AbstractContainerMenu \
     net.minecraft.world.level.block.entity.CommandBlockEntity \
@@ -197,6 +220,9 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.dabicco.witherstormmod.entity.WitherStormEntity \
     net.dabicco.witherstormmod.command.DabyWSCommand"
   javap -public -classpath "$CP2" $CLIENT_CLASSES > ci/api/client.txt 2>&1 || true
+  # SkyRenderer's celestial helper is private in 26.2; include it so native
+  # mixin invokers can be checked against the actual client signature.
+  javap -private -classpath "$CP2" net.minecraft.client.renderer.SkyRenderer >> ci/api/client.txt 2>&1 || true
   javap -public -classpath "$CP2" $MOD_CLASSES   > ci/api/mod.txt    2>&1 || true
   # MCSM 1.9.101 -- the 1.9.101 javac errors (sendParticles overload,
   # "cannot access Message") live in the particle/level/chat API, which the
@@ -207,6 +233,25 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.minecraft.server.level.ServerPlayer net.minecraft.core.particles.ParticleType \
     net.minecraft.core.particles.DustParticleOptions net.minecraft.network.chat.Component"
   javap -public -classpath "$CP2" $LEVEL_CLASSES > ci/api/level.txt 2>&1 || true
+  # 1.9.204 -- entity/renderer API for the Story Mode character entity round.
+  ENTITY_CLASSES="net.minecraft.world.entity.EntityType net.minecraft.world.entity.EntityType\$Builder \
+    net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.Mob net.minecraft.world.entity.LivingEntity \
+    net.minecraft.world.entity.ai.attributes.AttributeSupplier net.minecraft.world.entity.ai.attributes.Attributes \
+    net.minecraft.world.entity.ai.goal.GoalSelector net.minecraft.world.entity.MobCategory \
+    net.minecraft.client.renderer.entity.HumanoidMobRenderer net.minecraft.client.renderer.entity.LivingEntityRenderer \
+    net.minecraft.client.renderer.entity.MobRenderer net.minecraft.client.renderer.entity.EntityRendererProvider\$Context \
+    net.minecraft.client.renderer.entity.EntityRenderers net.minecraft.client.renderer.entity.state.HumanoidRenderState \
+    net.minecraft.client.renderer.entity.state.LivingEntityRenderState net.minecraft.client.model.HumanoidModel \
+    net.minecraft.client.model.player.PlayerModel net.minecraft.client.model.geom.ModelLayers \
+    net.minecraft.client.model.geom.ModelLayerLocation net.minecraft.client.model.geom.builders.LayerDefinition \
+    net.minecraft.client.renderer.entity.ZombieRenderer net.minecraft.client.renderer.entity.AbstractZombieRenderer \
+    net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry \
+    net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry \
+    net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry \
+    net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder \
+    net.minecraft.core.registries.BuiltInRegistries net.minecraft.core.Registry net.minecraft.core.registries.Registries \
+    net.minecraft.resources.ResourceKey net.minecraft.resources.Identifier"
+  javap -public -classpath "$CP2:$FAPI2_CP" $ENTITY_CLASSES > ci/api/entity.txt 2>&1 || true
   unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/(world/level|server/level|core/particles|client/particles|network/chat)/' \
     | sort > ci/api/api-classes-index.txt || true
   unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -iE 'message' > ci/api/message-locations.txt || true
@@ -214,7 +259,7 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
   unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/client/.*\.class$' | sort \
     > ci/api/client-index.txt || true
   wc -l ci/api/*.txt || true
-  if [ -s ci/api/client.txt ]; then
+  if [ -s ci/api/client.txt ] || [ -s ci/api/entity.txt ]; then
     git add -f ci/api || true
     if ! git diff --cached --quiet -- ci/api; then
       git -c user.email="ci@mcsm.local" -c user.name="MCSM build" \
@@ -335,12 +380,33 @@ rm -rf "$FX" && mkdir -p "$FX/cls"
 # supplied/generated.  /ds towns build/start and the first-spawn fallback rely on
 # these resources so the player can actually arrive in Story Mode locations now.
 cp -r mcsm-core-shaders/* "$FX/cls/assets/minecraft/shaders/"
-# 1.9.167: 26.2 loads position/block, not sky/terrain. Alias so vivid grade+shadows actually bind.
+# 1.9.167: 26.2 loads block rather than terrain for the native block pass.
+# Native SkyRenderer owns sky colour; no custom sky/position alias is shipped.
 CS="$FX/cls/assets/minecraft/shaders/core"
 if [ -f "$CS/terrain.fsh" ]; then cp -f "$CS/terrain.fsh" "$CS/block.fsh"; cp -f "$CS/terrain.vsh" "$CS/block.vsh"; fi
-if [ -f "$CS/sky.fsh" ]; then cp -f "$CS/sky.fsh" "$CS/position.fsh"; cp -f "$CS/sky.vsh" "$CS/position.vsh"; fi
-echo "[build] 26.2 shader aliases: block<-terrain position<-sky"
+# The 26.2 fixed-function block path also asks for position; reuse the same
+# vivid-light-safe block program rather than reviving any sky shader alias.
+if [ ! -f "$CS/position.fsh" ] && [ -f "$CS/block.fsh" ]; then cp -f "$CS/block.fsh" "$CS/position.fsh"; fi
+if [ ! -f "$CS/position.vsh" ] && [ -f "$CS/block.vsh" ]; then cp -f "$CS/block.vsh" "$CS/position.vsh"; fi
+echo "[build] 26.2 shader aliases: block<-terrain (when present), position<-block; native SkyRenderer owns sky"
 cp -r jar-overrides/* "$FX/cls/"
+# 1.9.206: src/main/resources was never overlaid -- the merged Story Look
+# textures (sun/moon, villager cast skins) and the story_character skins
+# silently missed every jar. Overlay it after jar-overrides.
+# Only assets/ (never its fabric.mod.json / mixins.json), and only files the
+# jar does not already have, so the tuned jar-overrides atlases stay in charge.
+if [ -d src/main/resources/assets ]; then
+  N_SRC=0
+  while IFS= read -r -d '' f; do
+    rel="${f#src/main/resources/}"
+    if [ ! -e "$FX/cls/$rel" ]; then
+      mkdir -p "$FX/cls/$(dirname "$rel")"
+      cp "$f" "$FX/cls/$rel"
+      N_SRC=$((N_SRC + 1))
+    fi
+  done < <(find src/main/resources/assets -type f -print0)
+  echo "[build] overlaid $N_SRC new files from src/main/resources/assets"
+fi
 # nullglob guard: on a failed javac the class dir is empty and a bare
 # `cp -r /tmp/mcsm-build/*` would die under set -e (that bug ate the jar).
 shopt -s nullglob
@@ -349,7 +415,45 @@ shopt -u nullglob
 if [ "${#FRESH_CLASSES[@]}" -gt 0 ]; then
   cp -r "${FRESH_CLASSES[@]}" "$FX/cls/"
 fi
+# Native SkyRenderer is authoritative. Purge legacy texture-pack sky paths from
+# the base jar as well as from the overlay so they cannot be discovered by a
+# loader or win an ordering race at runtime.
+rm -rf "$FX/cls/assets/fabricskyboxes" \
+       "$FX/cls/assets/dabywitherstormmod/textures/sky" \
+       "$FX/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/sky"
+find "$FX/cls/assets/dabywitherstormmod/textures/environment" -maxdepth 1 \
+     -type f -name 'storymode_sky_*.png' -delete 2>/dev/null || true
+# Remove stale overlay bytecode from a previously published base jar. These
+# classes are intentionally absent from the fresh source set and must not be
+# left reachable through an old class file.
+rm -f "$FX/cls/net/mcsm/extras/client/McsmBlobOval.class" \
+      "$FX/cls/net/mcsm/extras/client/McsmBlobShape.class" \
+      "$FX/cls/net/mcsm/extras/client/McsmSkyDome.class" \
+      "$FX/cls/net/mcsm/extras/client/McsmStormSkyLayer.class" \
+      "$FX/cls/net/dabicco/witherstormmod/mixin/StormSkyGradientMixin.class" \
+      "$FX/cls/net/dabicco/witherstormmod/mixin/StoryModeSkyDomeMixin.class"
+find "$FX/cls/net/mcsm/extras/client" -type f \
+     \( -name 'McsmBlobOval$*.class' -o -name 'McsmBlobShape$*.class' \) -delete 2>/dev/null || true
 sed -i "s/\"version\": \"[0-9.]*-26.2-beta[a-z-]*\"/\"version\": \"${JAR_ID}\"/" "$FX/cls/fabric.mod.json"
+# MCSM 1.9.215 R2 -- the sed above only rewrites versions shaped exactly like
+# "<digits>-26.2-beta<letters>"; if the base jar's fabric.mod.json carries any
+# other format the rewrite silently does nothing and the mods screen keeps
+# showing the BASE jar's old number -- which reads as "the game loaded the
+# build from before this release". A JSON rewrite always stamps the current
+# version no matter what the old value looked like, and the notice below
+# makes the stamped value visible as a check-run annotation.
+python3 - "$FX/cls/fabric.mod.json" "$JAR_ID" <<'PYVER'
+import json, sys
+p, ver = sys.argv[1], sys.argv[2]
+d = json.load(open(p, encoding="utf-8"))
+old = d.get("version")
+d["version"] = ver
+with open(p, "w", encoding="utf-8") as f:
+    json.dump(d, f, indent=2)
+    f.write("\n")
+print(f"[build] fabric.mod.json version: {old} -> {ver}")
+PYVER
+echo "::notice title=jar version::fabric.mod.json version = ${JAR_ID} (mods screen shows this)"
 # Devouring Storms rebrand -- the DISPLAY name changes; the mod id
 # (dabywitherstormmod) and every registry namespace stay, because those are
 # compiled into the base jar and changing them without the source would break
@@ -473,6 +577,23 @@ for cfg in cfgs:
 if target is None:
     print("::error title=jar audit::no mixin config with package %s found" % PKG)
     raise SystemExit(1)
+# These two entries belong to the retired texture/dome sky path.  Their class
+# files are purged below; remove the base-jar registrations as well or Mixin
+# will fail launch before the native SkyRenderer hook can run.
+p = os.path.join(cls_dir, target)
+d = json.load(open(p))
+retired_sky_mixins = {"StormSkyGradientMixin", "StoryModeSkyDomeMixin"}
+removed = []
+for key in ("mixins", "client"):
+    old = d.get(key) or []
+    new = [e for e in old if e not in retired_sky_mixins]
+    removed.extend(e for e in old if e not in new)
+    d[key] = new
+if removed:
+    with open(p, "w") as f:
+        json.dump(d, f, indent=2)
+        f.write("\n")
+    print("[merge] removed retired sky mixins: " + ", ".join(removed))
 added = []
 for src in sorted(glob.glob("mcsm-extras/java/net/dabicco/witherstormmod/mixin/*.java")):
     cls = os.path.basename(src)[:-5]
@@ -534,6 +655,24 @@ echo "[audit] fresh classes: matched=$JAR_MATCH compiled=$NEW_COUNT"
 if [ "$NEW_COUNT" -eq 0 ] || [ "$JAR_MATCH" -lt "$NEW_COUNT" ]; then
   echo "::error title=jar audit::fresh classes did not make it into the jar (matched=$JAR_MATCH compiled=$NEW_COUNT)"
   AUDIT_FAIL=1
+fi
+# Experimental stage delivery gate: the opt-in renderer, chunk boundary hook,
+# and persisted uppercase key must travel together.  This catches a partial
+# overlay where the menu appears but the stage is inert (or vice versa).
+for stage_class in \
+  net/mcsm/extras/client/McsmExperimentalStoryStage.class \
+  net/dabicco/witherstormmod/mixin/McsmStageChunkBoundaryMixin.class; do
+  if [ ! -f "$FX/cls/$stage_class" ]; then
+    echo "::error title=jar audit::experimental stage class missing: $stage_class"
+    AUDIT_FAIL=1
+  fi
+done
+if ! grep -q 'ENABLE_EXPERIMENTAL_STORY_MODE_STAGE' mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java \
+   || ! grep -q 'ENABLE_EXPERIMENTAL_STORY_MODE_STAGE = false' mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java; then
+  echo "::error title=jar audit::experimental stage key/default is missing or not false"
+  AUDIT_FAIL=1
+else
+  echo "[audit] experimental Story Mode stage is explicitly opt-in (default false)"
 fi
 
 # 2 + 3. mixin config registration, read from fabric.mod.json itself so a
@@ -702,10 +841,38 @@ if [ -d "$FX/cls/resourcepacks/storylook/assets/minecraft/shaders" ]; then
   echo "::error title=jar audit::external Story Look pack still overrides vanilla core shaders; Sodium will reject it"
   AUDIT_FAIL=1
 fi
+if [ -e "$FX/cls/assets/fabricskyboxes" ] \
+   || [ -d "$FX/cls/assets/dabywitherstormmod/textures/sky" ] \
+   || [ -d "$FX/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/sky" ] \
+   || find "$FX/cls/assets/dabywitherstormmod/textures/environment" -maxdepth 1 -name 'storymode_sky_*.png' -print -quit 2>/dev/null | grep -q .; then
+  echo "::error title=jar audit::legacy texture-pack sky assets survived assembly"
+  AUDIT_FAIL=1
+else
+  echo "[audit] legacy texture-pack sky assets removed"
+fi
 
 if [ ! -f "$FX/cls/resourcepacks/ogs-cem/pack.mcmeta" ] \
    || [ ! -f "$FX/cls/resourcepacks/ogs-cem/assets/minecraft/optifine/cem/dabywitherstormmod/wither_storm.jem" ]; then
   echo "::error title=jar audit::built-in OG CEM pack missing from the jar"
+  AUDIT_FAIL=1
+fi
+
+# 1.9.318: prove the offline extracted traced materials and per-stage CEM
+# atlases survived assembly. The source .bbmodel files are never shipped or
+# parsed by the client.
+for traced_need in \
+  resourcepacks/ogs-cem/assets/minecraft/textures/entity/cem/wither_storm_stage_a.png \
+  resourcepacks/ogs-cem/assets/minecraft/textures/entity/cem/wither_storm_stage_b.png \
+  resourcepacks/ogs-cem/assets/minecraft/textures/entity/cem/wither_storm_stage_c_massive.png \
+  resourcepacks/ogs-cem/assets/minecraft/textures/entity/cem/wither_storm_stage_d_massive.png \
+  resourcepacks/ogs-cem/assets/traced_asset_manifest.json; do
+  if [ ! -s "$FX/cls/$traced_need" ]; then
+    echo "::error title=jar audit::offline traced model material missing: $traced_need"
+    AUDIT_FAIL=1
+  fi
+done
+if [ -e "shaderpack-superduper/shaders/lib/mcsm/skyBlob.glsl" ]; then
+  echo "::error title=jar audit::retired shader sky-box attachment survived source assembly"
   AUDIT_FAIL=1
 fi
 
@@ -734,18 +901,18 @@ SCHEMATIC_COUNT="$(find "$FX/cls/assets/dabywitherstormmod" -path '*/schematics/
 echo "[audit] legacy schematic fallback assets available: ${SCHEMATIC_COUNT}"
 
 # mega-phase 5b: the embedded Iris pack must actually be in the jar, and its
-# zip must contain the v5 sky pass - an installer with nothing to install is
-# the same silent no-op the audit exists to catch.
+# zip must contain the retained glare composite - an installer with nothing to install
+# is the same silent no-op the audit exists to catch.
 EMBED_PACK="$FX/cls/assets/dabywitherstormmod/shaderpacks/devouringstorms.zip"
-if [ ! -s "$EMBED_PACK" ] || ! unzip -Z1 "$EMBED_PACK" 2>/dev/null | grep -Eq "shaders/(gbuffers_skybasic|world0/gbuffers_skybasic)\.fsh"; then
+if [ ! -s "$EMBED_PACK" ] || ! unzip -Z1 "$EMBED_PACK" 2>/dev/null | grep -Eq "shaders/(main/)?composite6?\.glsl"; then
   echo "::error title=jar audit::embedded managed Iris shader pack missing or incomplete"
   AUDIT_FAIL=1
 else
   echo "[audit] embedded shader pack: $(unzip -Z1 "$EMBED_PACK" | wc -l) entries"
 fi
 
-# shader spot-check: the jar must carry THIS source, not the base's
-for f in core/sky.fsh include/mcsm_visuals.glsl; do
+# shader spot-check: the jar must carry the shared visual include, not a stale base copy.
+for f in include/mcsm_visuals.glsl; do
   if [ -f "$FX/cls/assets/minecraft/shaders/$f" ] && \
      cmp -s "mcsm-core-shaders/$f" "$FX/cls/assets/minecraft/shaders/$f"; then
     echo "[audit] shader up to date: $f"
@@ -771,6 +938,7 @@ sha256sum "$OUT" | tee "$OUT.sha256"
 
 {
   echo "Devouring Storms build ${JAR_ID}"
+  echo "mod version: ${JAR_ID} (fabric.mod.json)"
   echo "date:        $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "run:         ${GITHUB_RUN_ID:-local} (#${GITHUB_RUN_NUMBER:-local})"
   echo "base jar:    ${BASE} ($(stat -c%s "$BASE") B)"

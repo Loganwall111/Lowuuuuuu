@@ -44,6 +44,15 @@ public final class StormBackdrop {
    private static final Identifier SHEET_TEAL = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_phase5_teal.png");
    private static final Identifier SHEET_VIOLET = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_phase55_violet.png");
    private static final Identifier SHEET_PLUM = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_phase6_plum.png");
+   // MCSM 7000.0.0-M migration: the bright glare sheets (glow baked into the
+   // texture) lost their submitter when the 412 lineage deleted McsmPhaseSky.
+   // They ride the same flat sky-plane sticker stack now, additive, so the
+   // halo glow returns to the background sky layer.
+   private static final Identifier GLARE_4 = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/mcsm_atmosphere/glare/phase4.png");
+   private static final Identifier GLARE_5 = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/mcsm_atmosphere/glare/phase5.png");
+   private static final Identifier GLARE_54 = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/mcsm_atmosphere/glare/phase54.png");
+   private static final Identifier GLARE_55 = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/mcsm_atmosphere/glare/phase55.png");
+   private static final Identifier GLARE_6 = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/mcsm_atmosphere/glare/phase6.png");
    private static final int FULL_BRIGHT = 15728880;
    /** Fixed sky-plane distance: far beyond any world geometry, inside the far clip. */
    private static final double SKY_PLANE = 4096.0;
@@ -83,7 +92,7 @@ public final class StormBackdrop {
          phase = Math.max(phase, d.phase);
       }
 
-      if (phase < 4.55F) {
+      if (phase < 3.9F) {
          return;
       }
 
@@ -131,6 +140,33 @@ public final class StormBackdrop {
 
       if (wTeal > 0.004F && DabyWSClientConfig.stormBackdropTurquoise) {
          sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(SHEET_TEAL), cam, view, rightV, upV, SKY_PLANE + 64.0, half, master * wTeal * breathe);
+      }
+
+      // ---- additive glare-glow sheets (halo glow baked in the texture) -----
+      float g4 = ramp(phase, 3.95F, 4.2F) * (1.0F - ramp(phase, 4.6F, 5.0F));
+      float g5 = ramp(phase, 4.6F, 5.0F) * (1.0F - ramp(phase, 5.35F, 5.45F));
+      float g54 = ramp(phase, 5.35F, 5.45F) * (1.0F - ramp(phase, 5.5F, 5.6F));
+      float g55 = ramp(phase, 5.5F, 5.6F) * (1.0F - ramp(phase, 5.9F, 6.05F));
+      float g6 = ramp(phase, 5.9F, 6.05F);
+      float glareMaster = master * 0.55F * breathe;
+      if (g4 > 0.004F) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.glow(GLARE_4), cam, view, rightV, upV, SKY_PLANE + 48.0, half * 0.95, glareMaster * g4);
+      }
+
+      if (g5 > 0.004F) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.glow(GLARE_5), cam, view, rightV, upV, SKY_PLANE + 40.0, half * 0.98, glareMaster * g5);
+      }
+
+      if (g54 > 0.004F) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.glow(GLARE_54), cam, view, rightV, upV, SKY_PLANE + 32.0, half, glareMaster * g54);
+      }
+
+      if (g55 > 0.004F) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.glow(GLARE_55), cam, view, rightV, upV, SKY_PLANE + 24.0, half * 1.02, glareMaster * g55);
+      }
+
+      if (g6 > 0.004F) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.glow(GLARE_6), cam, view, rightV, upV, SKY_PLANE + 16.0, half * 1.05, glareMaster * g6);
       }
    }
 

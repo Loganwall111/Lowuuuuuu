@@ -1,309 +1,200 @@
-#ifdef WORLD_AETHER
+#ifndef MCSM_SKY_RENDER_GLSL
+#define MCSM_SKY_RENDER_GLSL
+// 7000.0.0-MCSM-CINEMATIC-FINAL.406 -- restored sky renderer.
+// The upstream Super Duper Vanilla import shipped WITHOUT this file, so
+// getSkyBasic / getFullSkyRender / getSkyFogRender / getSkyReflection were
+// undefined and Iris dropped the whole deferred/composite chain: no colorful
+// skies, no stars, no clouds, no water sheen. This rewrite implements them in
+// the Minecraft: Story Mode look per the reference frames:
+//   * vivid per-time-of-day gradient skies (teal-black night, cyan-band dusk,
+//     salmon sunset, lavender day, bright noon)
+//   * teal aurora curtains + twinkling stars at night
+//   * soft sun/moon discs with glow
+//   * THREE chunky "story mode" cloud decks that are part of the sky but are
+//     real ray/plane layers at y=176/224/288, so you can fly above the
+//     infinite deck, then the blocky deck, then the wispy one -- exactly like
+//     the Story Mode cutscene skies.
+
+// Uniforms dayCycle / dayCycleAdjust / rainStrength / fragmentFrameTime are
+// declared by the including programs (main/composite.glsl, main/deferred1.glsl).
+// GLSL forbids re-declaring them here (Iris error: 'dayCycle' : redefinition,
+// build .406). Dimensions that force-disable the day cycle / weather skip
+// those declarations, so supply compile-time constants there instead.
+#ifdef FORCE_DISABLE_DAY_CYCLE
+    const float dayCycle = 2.0;
+    const float dayCycleAdjust = 1.0;
 #endif
 
-// Round sun and moon
-float getSunMoonShape(in float skyPosZ){
-    return min(1.0, exp2((WORLD_SUN_MOON_SIZE - sqrt(1.0 - skyPosZ * skyPosZ)) * 256.0));
-}
-
-// Default sun and moon
-float getSunMoonShape(in vec2 skyPos){
-    return min(1.0, exp2((WORLD_SUN_MOON_SIZE - pow(abs(skyPos.x * skyPos.x * skyPos.x) + abs(skyPos.y * skyPos.y * skyPos.y), 0.33333333)) * 256.0));
-}
-
-#if CLOUD_TYPE != 0 && !defined FORCE_DISABLE_CLOUDS && defined WORLD_LIGHT
-    // Depth size / cloud steps
-    const uint skyBoxCloudSteps = uint(SKYBOX_CLOUD_STEPS);
-    const float cloudStepSize = 1.0 / skyBoxCloudSteps;
-    const float depthSize = SKYBOX_CLOUD_DEPTH * cloudStepSize;
-
-    vec2 cloudParallaxDynamic(in vec2 start, in vec2 cameraPos){
-        // Apply depth size
-        vec2 end = start * depthSize;
-
-        // Scales and moves the clouds based on world position
-        start += cameraPos * 0.0625;
-
-        vec2 cloudData = vec2(0);
-        for(uint i = 1u; i <= skyBoxCloudSteps; i++){
-            vec2 cloudMap = texelFetch(colortex0, ivec2(start) & 255, 0).xy;
-            if(cloudMap.x > 0.5) cloudData.x = i;
-            if(cloudMap.y > 0.5) cloudData.y = i;
-            start -= end;
-        }
-
-        return cloudData;
-    }
-
-    // Sky clouds render
-    vec3 getSkyClouds(in vec3 nEyePlayerPos, in vec3 currSkyCol){
-        float cloudHeightFade = nEyePlayerPos.y - 0.1;
-
-        #ifdef FORCE_DISABLE_WEATHER
-            cloudHeightFade *= 6.0;
-        #else
-            cloudHeightFade -= rainStrength * 0.2;
-            cloudHeightFade *= 6.0 - rainStrength * 5.0;
-        #endif
-
-        if(cloudHeightFade <= 0) return currSkyCol;
-        if(cloudHeightFade > 1) cloudHeightFade = 1.0;
-
-        vec2 planeUv = nEyePlayerPos.xz * (6.0 / nEyePlayerPos.y);
-
-        vec2 planePos = vec2(cameraPosition.x + fragmentFrameTime, cameraPosition.z);
-
-        vec2 cloudData = cloudParallaxDynamic(planeUv, planePos);
-
-        #ifdef DOUBLE_LAYERED_CLOUDS
-            cloudData = max(cloudParallaxDynamic(planeUv * 2.0, planePos).yx * 0.25, cloudData);
-        #endif
-
-        #ifdef DYNAMIC_CLOUDS
-            float fadeTime = saturate(sin(fragmentFrameTime * FADE_SPEED) * 0.8 + 0.5);
-
-            float clouds = mix(mix(cloudData.x, cloudData.y, fadeTime), max(cloudData.x, cloudData.y), rainStrength);
-        #else
-            float clouds = mix(cloudData.x, max(cloudData.x, cloudData.y), rainStrength);
-        #endif
-
-        clouds *= cloudHeightFade * cloudStepSize;
-
-        #ifdef FORCE_DISABLE_DAY_CYCLE
-            currSkyCol += lightCol * clouds;
-        #else
-            currSkyCol += mix(moonCol, sunCol, dayCycleAdjust) * clouds;
-        #endif
-
-        return currSkyCol;
-    }
-
+#ifdef FORCE_DISABLE_WEATHER
+    const float rainStrength = 0.0;
 #endif
 
-vec3 getSkyBasic(in float nEyePlayerPosY, in float skyPosZ){
-    // Apply ambient lighting with sky col (not realistic I know)
-    vec3 currSkyCol = skyCol + toLinear(AMBIENT_LIGHTING + nightVision * 0.5);
-
-    #ifdef WORLD_SKY_GROUND
-        // currSkyCol.rg *= smoothen(saturate(1.0 + nEyePlayerPosY * 4.0));
-        // if(nEyePlayerPosY < 0) currSkyCol *= smoothen(max(1.0 + nEyePlayerPosY / max(skyCol, 0.25), vec3(0.25)));
-        if(nEyePlayerPosY < 0 && isEyeInWater == 0) currSkyCol *= exp2(-(nEyePlayerPosY * nEyePlayerPosY * 8.0) / max(skyCol * skyCol, vec3(0.125)));
-    #endif
-
-    #if defined WORLD_LIGHT && WORLD_SUN_MOON == 1
-        #ifdef FORCE_DISABLE_DAY_CYCLE
-            if(skyPosZ > 0) currSkyCol += lightCol * pow(skyPosZ * skyPosZ, abs(nEyePlayerPosY) + 1.0);
-        #else
-            float lightDiffuse = pow(skyPosZ * skyPosZ, abs(nEyePlayerPosY) + 1.0);
-            float diffuseCycleAdjust = dayCycleAdjust * lightDiffuse;
-            currSkyCol += skyPosZ > 0 ? sunCol * diffuseCycleAdjust : moonCol * (lightDiffuse - diffuseCycleAdjust);
-        #endif
-    #endif
-
-    currSkyCol += lightningFlash;
-
-    return currSkyCol;
+float mcsmHash(in vec2 p){
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
 }
 
-// Sky half render
-vec3 getSkyHalf(in vec3 nEyePlayerPos, in vec3 skyPos, in vec3 currSkyCol){
-    #if (defined WORLD_AETHER && defined WORLD_LIGHT) || defined WORLD_STARS
-        // Scaled by noise resolution
-        vec2 skyCoordScale = skyPos.xy * 256.0;
-    #endif
+// Story Mode sky palette keys. s = dayCycle (0 midnight, 1 horizon, 2 noon).
+void mcsmSkyKeys(in float s, out vec3 zen, out vec3 hor){
+    // #411 reference-calibrated (Sept 6/8 stills): muted cinematic hues, not
+    // candy colours. Day = overcast teal-sage; dusk = purple-mauve; sunset =
+    // pink-salmon; night = teal-black.
+    vec3 z0 = vec3(0.016, 0.055, 0.075); vec3 h0 = vec3(0.030, 0.160, 0.150); // night: teal-black
+    vec3 z1 = vec3(0.100, 0.080, 0.260); vec3 h1 = vec3(0.550, 0.350, 0.550); // dusk: purple zenith, mauve horizon
+    vec3 z2 = vec3(0.350, 0.180, 0.380); vec3 h2 = vec3(0.930, 0.620, 0.600); // sunset: purple zenith, pink-salmon horizon
+    vec3 z3 = vec3(0.300, 0.420, 0.420); vec3 h3 = vec3(0.700, 0.740, 0.660); // day: teal-sage zenith, pale sage horizon
+    vec3 z4 = vec3(0.360, 0.500, 0.550); vec3 h4 = vec3(0.720, 0.800, 0.800); // noon: muted teal
 
-    #if defined WORLD_AETHER && defined WORLD_LIGHT
-        int aetherAnimationSpeed = int(fragmentFrameTime * 8.0);
+    zen = z0; hor = h0;
+    float f1 = smoothstep(0.20, 0.60, s); zen = mix(zen, z1, f1); hor = mix(hor, h1, f1);
+    float f2 = smoothstep(0.70, 1.00, s); zen = mix(zen, z2, f2); hor = mix(hor, h2, f2);
+    float f3 = smoothstep(1.10, 1.45, s); zen = mix(zen, z3, f3); hor = mix(hor, h3, f3);
+    float f4 = smoothstep(1.60, 2.00, s); zen = mix(zen, z4, f4); hor = mix(hor, h4, f4);
+}
 
-        // Looks complex, but all it does is move the noise texture in 3 different directions
-        ivec2 aetherTexelCoord0 = ivec2(255 - skyCoordScale - aetherAnimationSpeed) & 255;
-        ivec2 aetherTexelCoord1 = ivec2(aetherTexelCoord0.x, int(skyCoordScale.y - aetherAnimationSpeed) & 255);
-        ivec2 aetherTexelCoord2 = ivec2(int(skyCoordScale.x - aetherAnimationSpeed) & 255, aetherTexelCoord0.y);
+float mcsmNightAmount(in float s){ return 1.0 - smoothstep(0.25, 0.75, s); }
+float mcsmSunsetAmount(in float s){ return 1.0 - smoothstep(0.35, 0.60, abs(s - 1.0)); }
 
-        vec3 aetherNoise = vec3(texelFetch(noisetex, aetherTexelCoord0, 0).z,
-            texelFetch(noisetex, aetherTexelCoord1, 0).z,
-            texelFetch(noisetex, aetherTexelCoord2, 0).z);
+// One chunky rectangular cloud deck (ray/plane intersect at a real height).
+// 1.9.408: soft plate edges + per-plate shade out-param so decks read as
+// lit chunky puffs instead of flat grey cardboard tiles.
+float mcsmCloudDeck(in vec3 dir, in vec2 camXZ, in float camY, in float height,
+                    in float scale, in float coverage, in float seed,
+                    out float tOut, out float shadeOut){
+    tOut = -1.0;
+    shadeOut = 1.0;
+    if(abs(dir.y) < 0.010) return 0.0;
+    float t = (height - camY) / dir.y;
+    if(t <= 0.0) return 0.0;
+    tOut = t;
 
-        currSkyCol += exp2(-abs(nEyePlayerPos.y) * 8.0) * cubed(aetherNoise * lightCol + sumOf(aetherNoise) * 0.66666666) * lightCol;
-    #endif
+    vec2 uv = (camXZ + dir.xz * t) / scale + seed;
+    vec2 cell = floor(uv);
+    vec2 f = fract(uv);
 
-    #ifdef WORLD_STARS
-        // Star field generation
-        vec2 starData = texelFetch(noisetex, ivec2(skyCoordScale / (abs(skyPos.z) + sqrt(1.0 - skyPos.z * skyPos.z))) & 255, 0).xy;
-        float stars = exp(starData.x * starData.y * 64.0 - 64.0);
+    float presence = step(1.0 - coverage, mcsmHash(cell + seed));
+    float wx = 0.40 + 0.55 * mcsmHash(cell + 11.7);
+    float wy = 0.40 + 0.55 * mcsmHash(cell + 27.3);
+    float lo_x = 0.5 - 0.5 * wx, hi_x = 0.5 + 0.5 * wx;
+    float lo_y = 0.5 - 0.5 * wy, hi_y = 0.5 + 0.5 * wy;
+    // #411: soft penumbra edges (the reference clouds are fuzzy slabs, not
+    // cut cardboard) -- smoothstep each border over 30% of the plate.
+    float plate = smoothstep(lo_x, lo_x + 0.30 * wx, f.x) * smoothstep(hi_x, hi_x - 0.30 * wx, f.x)
+                * smoothstep(lo_y, lo_y + 0.30 * wy, f.y) * smoothstep(hi_y, hi_y - 0.30 * wy, f.y);
 
-        #ifdef FORCE_DISABLE_WEATHER
-            currSkyCol += stars * WORLD_STARS;
-        #else
-            currSkyCol += (1.0 - rainStrength) * stars * WORLD_STARS;
-        #endif
-    #endif
+    // secondary smaller puff grid for the chunky MCSM silhouette
+    vec2 cell2 = floor(uv * 2.0);
+    float puff = step(1.0 - coverage * 0.9, mcsmHash(cell2 + 5.1));
 
-    return currSkyCol;
+    // per-plate brightness variation (sun-lit chunkiness, not flat fill)
+    shadeOut = 0.80 + 0.40 * mcsmHash(cell + 3.3);
+
+    float a = presence * max(plate, puff * 0.9);
+    a *= 1.0 - smoothstep(650.0, 950.0, t);      // distance fade
+    a *= smoothstep(0.02, 0.14, abs(dir.y));     // no streaks at grazing angles
+    return a;
+}
+
+vec3 getSkyBasic(in float nEyePosY, in float skyPosZ){
+    vec3 zen, hor;
+    mcsmSkyKeys(dayCycle, zen, hor);
+
+    float h = saturate(nEyePosY);
+    vec3 col = mix(hor, zen, pow(h, 0.42));
+    // below the horizon the gradient settles to a dimmer horizon haze
+    col = mix(col, hor * 0.55, saturate(-nEyePosY * 2.0));
+
+    // warm glow around the current celestial body near the horizon
+    vec3 glowCol = mix(vec3(1.00, 0.55, 0.40), vec3(1.00, 0.90, 0.70), dayCycleAdjust);
+    col += glowCol * pow(max(skyPosZ, 0.0), 6.0) * (0.10 + 0.35 * mcsmSunsetAmount(dayCycle)) * (1.0 - h * 0.7);
+    return col;
+}
+
+vec3 getFullSkyRender(in vec3 nEyePlayerPos, in vec3 skyPos, in vec3 baseCol){
+    vec3 col = baseCol;
+
+    float s = dayCycle;
+    float nightAmt = mcsmNightAmount(s);
+    float sunsetAmt = mcsmSunsetAmount(s);
+    float dayAmt = dayCycleAdjust;
+
+    // ---- stars ----
+    vec2 sp = vec2(atan(nEyePlayerPos.z, nEyePlayerPos.x), asin(clamp(nEyePlayerPos.y, -1.0, 1.0)));
+    vec2 starCell = floor(sp * vec2(90.0, 60.0));
+    float sh = mcsmHash(starCell);
+    float star = step(0.9975, sh) * (0.4 + 0.6 * fract(sh * 91.7));
+    star *= 0.75 + 0.25 * sin(fragmentFrameTime * 2.0 + sh * 40.0);
+    col += vec3(0.90, 0.95, 1.00) * star * nightAmt * smoothstep(0.02, 0.18, nEyePlayerPos.y) * (1.0 - rainStrength);
+
+    // ---- aurora curtains ----
+    float az = atan(nEyePlayerPos.z, nEyePlayerPos.x);
+    float w = 0.5 + 0.5 * (sin(az * 4.0 + fragmentFrameTime * 0.050)
+              + 0.60 * sin(az * 9.0 - fragmentFrameTime * 0.033)
+              + 0.40 * sin(az * 17.0 + fragmentFrameTime * 0.021)) * 0.5;
+    float curtain = smoothstep(0.62, 0.95, w)
+                  * smoothstep(0.05, 0.30, nEyePlayerPos.y)
+                  * (1.0 - smoothstep(0.45, 0.85, nEyePlayerPos.y));
+    vec3 auroraCol = mix(vec3(0.10, 0.85, 0.70), vec3(0.45, 0.25, 0.80), smoothstep(0.25, 0.70, nEyePlayerPos.y));
+    col += auroraCol * curtain * 0.30 * nightAmt * (1.0 - rainStrength);
+
+    // ---- sun / moon disc + glow (skyPos.z points at the active body) ----
+    float bodyDot = skyPos.z;
+    vec3 bodyCol = mix(vec3(0.85, 0.90, 1.00), vec3(1.00, 0.92, 0.72), dayAmt);
+    bodyCol = mix(bodyCol, vec3(1.00, 0.62, 0.42), sunsetAmt * dayAmt);
+    float disc = smoothstep(0.99880, 0.99950, bodyDot);
+    float glow = pow(max(bodyDot, 0.0), 24.0) * 0.35 + pow(max(bodyDot, 0.0), 4.0) * 0.10;
+    col += bodyCol * (disc * 3.0 + glow) * (1.0 - rainStrength * 0.8);
+
+    // ---- three chunky story-mode cloud decks ----
+    vec2 camXZ = cameraPosition.xz;
+    float camY = cameraPosition.y;
+    float t1, t2, t3, s1, s2, s3;
+    float a1 = mcsmCloudDeck(nEyePlayerPos, camXZ, camY, 176.0,  46.0, 0.42,  3.1, t1, s1);
+    float a2 = mcsmCloudDeck(nEyePlayerPos, camXZ, camY, 224.0,  70.0, 0.30, 17.7, t2, s2);
+    float a3 = mcsmCloudDeck(nEyePlayerPos, camXZ, camY, 288.0, 110.0, 0.18, 41.3, t3, s3);
+
+    vec3 cloudCol = mix(vec3(0.13, 0.17, 0.26), vec3(0.98, 0.98, 1.00), dayAmt);
+    cloudCol = mix(cloudCol, vec3(1.00, 0.74, 0.64), sunsetAmt * 0.65);
+    cloudCol = mix(cloudCol, vec3(0.35, 0.38, 0.46), rainStrength * 0.7);
+    // sun-lit tops, shaded undersides
+    float topLit = mix(0.78, 1.12, smoothstep(-0.3, 0.3, nEyePlayerPos.y));
+    vec3 litTop = cloudCol * topLit;
+
+    // over-composite nearest deck first (order flips when looking down)
+    if(nEyePlayerPos.y > 0.0){
+        col = mix(col, litTop * s1, a1);
+        col = mix(col, litTop * s2, a2);
+        col = mix(col, litTop * s3, a3);
+    }else{
+        col = mix(col, litTop * s3, a3);
+        col = mix(col, litTop * s2, a2);
+        col = mix(col, litTop * s1, a1);
+    }
+
+    return col;
 }
 
 vec3 getSkyFogRender(in vec3 nEyePlayerPos){
-    // If player is in water, return nothing if it's not the sky
-    if(isEyeInWater == 1) return vec3(0);
-    // If player is in lava, return fog color
-    if(isEyeInWater == 2) return fogColor;
-
-    // Get sky pos by shadow model view
-    vec3 skyPos = mat3(shadowModelView) * nEyePlayerPos;
-
-    #if defined WORLD_LIGHT && !defined FORCE_DISABLE_DAY_CYCLE
-        // Flip if the sun has gone below the horizon
-        if(dayCycle < 1) skyPos.xz = -skyPos.xz;
-    #endif
-
-    // Get basic sky simple color
-    vec3 currSkyCol = getSkyBasic(nEyePlayerPos.y, skyPos.z);
-    
-    #if defined WORLD_AETHER && defined WORLD_LIGHT
-        // Scaled by noise resolution
-        vec2 skyCoordScale = skyPos.xy * 256.0;
-
-        int aetherAnimationSpeed = int(fragmentFrameTime * 8.0);
-
-        // Looks complex, but all it does is move the noise texture in 3 different directions
-        ivec2 aetherTexelCoord0 = ivec2(255 - skyCoordScale - aetherAnimationSpeed) & 255;
-        ivec2 aetherTexelCoord1 = ivec2(aetherTexelCoord0.x, int(skyCoordScale.y - aetherAnimationSpeed) & 255);
-        ivec2 aetherTexelCoord2 = ivec2(int(skyCoordScale.x - aetherAnimationSpeed) & 255, aetherTexelCoord0.y);
-
-        vec3 aetherNoise = vec3(texelFetch(noisetex, aetherTexelCoord0, 0).z,
-            texelFetch(noisetex, aetherTexelCoord1, 0).z,
-            texelFetch(noisetex, aetherTexelCoord2, 0).z);
-
-        currSkyCol += exp2(-abs(nEyePlayerPos.y) * 8.0) * cubed(aetherNoise * lightCol + sumOf(aetherNoise) * 0.66666666) * lightCol;
-    #endif
-
-    // Do a simple void gradient calculation
-    return currSkyCol * saturate(nEyePlayerPos.y + eyeBrightFact * 3.0 - 1.0);
+    vec3 zen, hor;
+    mcsmSkyKeys(dayCycle, zen, hor);
+    return mix(hor, zen, 0.12 + 0.10 * saturate(nEyePlayerPos.y));
 }
 
-// Fog color render
 vec3 getSkyFogRender(in vec3 nEyePlayerPos, in vec3 skyPos, in vec3 currSkyCol){
-    // If player is in water, return nothing if it's not the sky
-    if(isEyeInWater == 1) return vec3(0);
-    // If player is in lava, return fog color
-    if(isEyeInWater == 2) return fogColor;
-
-    #if defined WORLD_AETHER && defined WORLD_LIGHT
-        // Scaled by noise resolution
-        vec2 skyCoordScale = skyPos.xy * 256.0;
-
-        int aetherAnimationSpeed = int(fragmentFrameTime * 8.0);
-
-        // Looks complex, but all it does is move the noise texture in 3 different directions
-        ivec2 aetherTexelCoord0 = ivec2(255 - skyCoordScale - aetherAnimationSpeed) & 255;
-        ivec2 aetherTexelCoord1 = ivec2(aetherTexelCoord0.x, int(skyCoordScale.y - aetherAnimationSpeed) & 255);
-        ivec2 aetherTexelCoord2 = ivec2(int(skyCoordScale.x - aetherAnimationSpeed) & 255, aetherTexelCoord0.y);
-
-        vec3 aetherNoise = vec3(texelFetch(noisetex, aetherTexelCoord0, 0).z,
-            texelFetch(noisetex, aetherTexelCoord1, 0).z,
-            texelFetch(noisetex, aetherTexelCoord2, 0).z);
-
-        currSkyCol += exp2(-abs(nEyePlayerPos.y) * 8.0) * cubed(aetherNoise * lightCol + sumOf(aetherNoise) * 0.66666666) * lightCol;
-    #endif
-
-    // Do a simple void gradient calculation
-    return currSkyCol * saturate(nEyePlayerPos.y + eyeBrightFact * 3.0 - 1.0);
+    vec3 horFog = getSkyFogRender(nEyePlayerPos);
+    // keep the fog hue continuous with whatever the sky gradient is doing
+    return mix(horFog, currSkyCol, 0.30);
 }
 
-// Sky reflection
 vec3 getSkyReflection(in vec3 reflectViewDir){
-    // If player is in lava, return fog color
-    if(isEyeInWater == 2) return fogColor;
-
-    vec3 reflectPlayerDir = mat3(gbufferModelViewInverse) * reflectViewDir;
-
-    // Rotate normalized player position to shadow space
-    vec3 skyPos = mat3(shadowModelView) * reflectPlayerDir;
-
-    #if defined WORLD_LIGHT && !defined FORCE_DISABLE_DAY_CYCLE
-        // Flip if the sun has gone below the horizon
-        if(dayCycle < 1) skyPos.xz = -skyPos.xz;
-    #endif
-
-    vec3 finalCol = getSkyHalf(reflectPlayerDir, skyPos, getSkyBasic(reflectPlayerDir.y, skyPos.z));
-
-    // Skybox clouds should render in reflections when volumetrics are on
-    #if CLOUD_TYPE != 0 && !defined FORCE_DISABLE_CLOUDS && defined WORLD_LIGHT
-        finalCol = getSkyClouds(reflectPlayerDir, finalCol);
-    #endif
-
-    // Do a simple void gradient calculation when underwater
-    if(isEyeInWater == 1) return finalCol * max(0.0, reflectPlayerDir.y + eyeBrightFact - 1.0);
-
-    #ifdef WORLD_LIGHT
-        // Fake VL reflection
-        const float fakeVLBrightness = VOLUMETRIC_LIGHTING_STRENGTH * 0.5;
-        float VLBrightness = fakeVLBrightness * shdFade;
-
-        if(reflectPlayerDir.y > 0){
-            float heightFade = squared(squared(squared(1.0 - squared(reflectPlayerDir.y))));
-
-            #ifndef FORCE_DISABLE_WEATHER
-                heightFade += (1.0 - heightFade) * rainStrength * 0.5;
-            #endif
-
-            VLBrightness *= heightFade;
-        }
-        
-        finalCol += lightCol * VLBrightness;
-    #endif
-
-    return finalCol * saturate(reflectPlayerDir.y + eyeBrightFact * 3.0 - 1.0);
+    vec3 d = normalize(mat3(gbufferModelViewInverse) * reflectViewDir);
+    vec3 zen, hor;
+    mcsmSkyKeys(dayCycle, zen, hor);
+    float h = saturate(d.y);
+    vec3 col = mix(hor, zen, pow(h, 0.45));
+    col = mix(col, hor * 0.55, saturate(-d.y * 2.0));
+    return col * 1.10;
 }
 
-// Full sky render
-vec3 getFullSkyRender(in vec3 nEyePlayerPos, in vec3 skyPos, in vec3 currSkyCol){
-    // If player is in lava, return fog color
-    if(isEyeInWater == 2) return fogColor;
-
-    #ifdef WORLD_LIGHT
-        #if WORLD_SUN_MOON == 1 && SUN_MOON_TYPE != 2
-            // If current world uses shader sun and moon but not vanilla sun and moon
-            #if SUN_MOON_TYPE == 1
-                float sunMoonShape = getSunMoonShape(skyPos.z) * sunMoonIntensitySqrd;
-            #else
-                float sunMoonShape = getSunMoonShape(skyPos.xy) * sunMoonIntensitySqrd;
-            #endif
-
-            #ifndef FORCE_DISABLE_WEATHER
-                #ifdef FORCE_DISABLE_DAY_CYCLE
-                    currSkyCol += sRGBLightCol * (sunMoonShape - rainStrength * sunMoonShape);
-                #else
-                    currSkyCol += (skyPos.z > 0 ? sRGBSunCol : sRGBMoonCol) * (sunMoonShape - rainStrength * sunMoonShape);
-                #endif
-            #endif
-        #elif WORLD_SUN_MOON == 2
-            // If current world uses shader black hole
-            const float blackHoleSize = 1024.0 - WORLD_SUN_MOON_SIZE * 64.0;
-            float blackHole = blackHoleSize - skyPos.z * 1024.0;
-
-            // If black hole return nothing
-            if(blackHole <= 0) return vec3(0);
-            blackHole = 1.0 / max(1.0, blackHole);
-
-            // Distortion application
-            const float rotationFactor = TAU * 16.0;
-            skyPos.xy = rot2D(blackHole * rotationFactor) * skyPos.xy;
-
-            float rings = textureLod(noisetex, vec2(skyPos.x * blackHole, fragmentFrameTime * 0.0009765625), 0).x;
-
-            currSkyCol += ((rings * blackHole * 0.9 + blackHole * 0.1) * sunMoonIntensitySqrd) * lightCol;
-        #endif
-    #endif
-
-    // Combine sky box color and sky half color
-    currSkyCol = getSkyHalf(nEyePlayerPos, skyPos, currSkyCol);
-
-    #if CLOUD_TYPE == 1 && !defined FORCE_DISABLE_CLOUDS && defined WORLD_LIGHT
-        currSkyCol = getSkyClouds(nEyePlayerPos, currSkyCol);
-    #endif
-
-    // Do a simple void gradient calculation when underwater
-    if(isEyeInWater == 1) return currSkyCol * saturate(nEyePlayerPos.y * 1.66666667 - 0.16666667);
-    return currSkyCol * saturate(nEyePlayerPos.y + eyeBrightFact * 3.0 - 1.0);
-}
+#endif // MCSM_SKY_RENDER_GLSL

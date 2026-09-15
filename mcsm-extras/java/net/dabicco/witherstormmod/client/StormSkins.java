@@ -4,14 +4,27 @@ import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.minecraft.resources.Identifier;
 
 /**
- * Storm body + teeth emissive atlas selection.
- * Textures must stay UV-safe: AI/image-generated art is useful as reference,
- * but the live atlases are constrained rewrites so the model's teeth, eyes,
- * command block, and body islands do not slide out of place.
+ * Texture policy for every native storm model pass.
+ *
+ * Phase 0 deliberately keeps its tiny starter atlas. Every later storm body,
+ * head, jaw, skull, neck, and tentacle uses a matching 512x512 phase atlas
+ * with the native UV layout; detached pieces use their dedicated 256x256 sheet.
+ * Emissive layers may still use their dedicated eye/teeth sheets.
  */
 public final class StormSkins {
     private static final Identifier LEGACY_CLASSIC = id("textures/entity/wither_storm.png");
     private static final Identifier LEGACY_OG = id("textures/entity/wither_storm_og.png");
+    // This is the Phase 6 atlas for the main/head/tentacle UV layout. The
+    // nested 160x160 vanilla sheet is a different UV layout and must not be
+    // bound to these 512x512 models.
+    // Same 512x512 UV layout as the phase body atlases, but transparent
+    // except for the eye/teeth emissive islands. Never substitute the 160x160
+    // CEM sheets here: native head UVs are not compatible with those sheets.
+    private static final Identifier PHASE6_EMISSIVE = id("textures/entity/phase_4_assets_e.png");
+
+    // All of these opaque phase atlases are 512x512 and share the native
+    // model UV layout. They are safe to select by phase; the 160x160 CEM
+    // sheets remain reserved for their CEM model path.
     private static final Identifier PHASE4_CLASSIC = id("textures/entity/phase_4_assets.png");
     private static final Identifier PHASE4_OG = id("textures/entity/phase_4_assets_og.png");
     private static final Identifier PHASE55_CLASSIC = id("textures/entity/phase_4_assets_p55.png");
@@ -29,7 +42,7 @@ public final class StormSkins {
     private static final Identifier DEVOURER7_CLASSIC = id("textures/entity/devourer_assets_p7.png");
     private static final Identifier DEVOURER7_OG = id("textures/entity/devourer_assets_og_p7.png");
 
-    private static volatile double phaseHint = 0.0D;
+    private static volatile double phaseHint;
 
     private StormSkins() {
     }
@@ -42,51 +55,96 @@ public final class StormSkins {
         phaseHint = phase;
     }
 
+    public static double phaseHint() {
+        return phaseHint;
+    }
+
     public static boolean og() {
         return Math.round(DabyWSClientConfig.stormSkin) >= 1L;
     }
 
+    /** Phase 0 only: retain the tiny starter model's original atlas. */
     public static Identifier legacy() {
-        return og() ? LEGACY_OG : LEGACY_CLASSIC;
+        return phaseHint >= 1.0D ? bodyAtlas(phaseHint) : (og() ? LEGACY_OG : LEGACY_CLASSIC);
     }
 
+    /** Select the phase-safe skin without changing the Phase 0 starter atlas. */
+    public static Identifier body(double phase) {
+        setPhaseHint(phase);
+        return phase >= 1.0D ? bodyAtlas(phase) : (og() ? LEGACY_OG : LEGACY_CLASSIC);
+    }
+
+    /**
+     * Phase-safe opaque body atlas. Each selected sheet is 512x512 and uses
+     * the same native UV layout; only the palette/texture evolves.
+     */
+    public static Identifier phase6Body() {
+        return bodyAtlas(phaseHint);
+    }
+
+    /** Dedicated native-model eye/teeth emissive atlas with matching 512 UVs. */
+    public static Identifier phase6Emissive() {
+        return PHASE6_EMISSIVE;
+    }
+
+    /** Compatibility name used by older renderer bytecode; head/body callers are Phase 1+. */
     public static Identifier phase4() {
-        boolean ogSkin = og();
-        double p = phaseHint;
-        if (p >= 7.0D) return ogSkin ? PHASE7_OG : PHASE7_CLASSIC;
-        if (p >= 6.0D) return ogSkin ? PHASE6_OG : PHASE6_CLASSIC;
-        if (p >= 5.5D) return ogSkin ? PHASE55_OG : PHASE55_CLASSIC;
+        return bodyAtlas(phaseHint);
+    }
+
+    /** Detached/devourer pieces use the matching 256x256 phase atlas. */
+    public static Identifier devourer() {
+        return devourerAtlas(phaseHint);
+    }
+
+    private static Identifier bodyAtlas(double phase) {
+        boolean ogSkin = DabyWSClientConfig.stormSkin >= 0.5;
+        if (phase >= 7.0D) {
+            return ogSkin ? PHASE7_OG : PHASE7_CLASSIC;
+        }
+        if (phase >= 6.0D) {
+            return ogSkin ? PHASE6_OG : PHASE6_CLASSIC;
+        }
+        if (phase >= 5.5D) {
+            return ogSkin ? PHASE55_OG : PHASE55_CLASSIC;
+        }
         return ogSkin ? PHASE4_OG : PHASE4_CLASSIC;
     }
 
-    public static Identifier devourer() {
-        boolean ogSkin = og();
-        double p = phaseHint;
-        if (p >= 7.0D) return ogSkin ? DEVOURER7_OG : DEVOURER7_CLASSIC;
-        if (p >= 6.0D) return ogSkin ? DEVOURER6_OG : DEVOURER6_CLASSIC;
-        if (p >= 5.5D) return ogSkin ? DEVOURER55_OG : DEVOURER55_CLASSIC;
+    private static Identifier devourerAtlas(double phase) {
+        boolean ogSkin = DabyWSClientConfig.stormSkin >= 0.5;
+        if (phase >= 7.0D) {
+            return ogSkin ? DEVOURER7_OG : DEVOURER7_CLASSIC;
+        }
+        if (phase >= 6.0D) {
+            return ogSkin ? DEVOURER6_OG : DEVOURER6_CLASSIC;
+        }
+        if (phase >= 5.5D) {
+            return ogSkin ? DEVOURER55_OG : DEVOURER55_CLASSIC;
+        }
         return ogSkin ? DEVOURER_OG : DEVOURER_CLASSIC;
     }
 
+    /** Actual emissive teeth atlases; never bind the opaque body sheet as glow. */
     public static Identifier teethGlow(double phase) {
         setPhaseHint(phase);
         boolean ogSkin = DabyWSClientConfig.stormSkin >= 0.5;
         String path;
-        if (phase >= 7.0) {
+        if (phase >= 7.0D) {
             path = ogSkin ? "textures/entity/wither_storm_og_p7_e.png" : "textures/entity/wither_storm_p7_e.png";
-        } else if (phase >= 6.0) {
+        } else if (phase >= 6.0D) {
             path = ogSkin ? "textures/entity/wither_storm_og_p6_e.png" : "textures/entity/wither_storm_p6_e.png";
-        } else if (phase >= 5.5) {
+        } else if (phase >= 5.5D) {
             path = ogSkin ? "textures/entity/wither_storm_og_p55_e.png" : "textures/entity/wither_storm_p55_e.png";
-        } else if (phase >= 5.1) {
+        } else if (phase >= 5.1D) {
             path = ogSkin ? "textures/entity/wither_storm_og_p51_e.png" : "textures/entity/wither_storm_p51_e.png";
-        } else if (phase >= 5.0) {
+        } else if (phase >= 5.0D) {
             path = ogSkin ? "textures/entity/wither_storm_og_p5_e.png" : "textures/entity/wither_storm_p5_e.png";
-        } else if (phase >= 4.0) {
+        } else if (phase >= 4.0D) {
             path = ogSkin ? "textures/entity/wither_storm_og_e.png" : "textures/entity/wither_storm_e.png";
         } else {
             path = "textures/entity/wither_storm_no_teeth_glow_e.png";
         }
-        return Identifier.fromNamespaceAndPath("dabywitherstormmod", path);
+        return id(path);
     }
 }

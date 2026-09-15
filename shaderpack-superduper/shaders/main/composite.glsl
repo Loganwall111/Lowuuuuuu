@@ -194,8 +194,9 @@
 
     #include "/lib/utility/noiseFunctions.glsl"
 
-    #include "/lib/atmospherics/skyRender.glsl"
     #include "/lib/atmospherics/fogRender.glsl"
+
+    #include "/lib/atmospherics/skyRender.glsl"
 
     #include "/lib/rayTracing/rayTracer.glsl"
 

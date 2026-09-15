@@ -1,7 +1,6 @@
 package net.mcsm.extras.client;
 
 import net.dabicco.witherstormmod.client.ClientDistantStormManager;
-import net.dabicco.witherstormmod.client.StoryModeSkyTint;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 
@@ -81,37 +80,51 @@ public final class McsmStormAtmosphere {
      * Write storm sky RGB into out[3] when storm owns the sky.
      * Returns blend 0..1 (0 = pure calm StoryModeSkyTint).
      */
+    /** Compatibility colour for older fog callers; native SkyRenderer is authoritative. */
     public static float skyBlend(float[] out) {
-        float p = nearestPhase();
-        if (p < 4.9F) {
+        float phase = nearestPhase();
+        if (phase < 4.45F || out == null || out.length < 3) {
+            // Phase 4 remains entirely vanilla.
             return 0.0F;
         }
-        // phase colour decks — sampled from the user's uploaded gradient set:
-        // 5 turquoise, 5.5 pink/purple/orange, 5.9 purple-blue-pink, 6 brown-pink/black.
-        float wTeal = ramp(p, 4.90F, 5.10F) * (1.0F - ramp(p, 5.25F, 5.40F));
-        float wPurp = ramp(p, 5.20F, 5.42F) * (1.0F - ramp(p, 5.48F, 5.60F));
-        float wPink = ramp(p, 5.48F, 5.65F) * (1.0F - ramp(p, 5.78F, 5.94F));
-        float wLate = ramp(p, 5.78F, 5.92F) * (1.0F - ramp(p, 5.96F, 6.10F));
-        float wSix  = ramp(p, 5.95F, 6.20F);
-        float tot = wTeal + wPurp + wPink + wLate + wSix;
-        if (tot < 0.02F) {
+        // BUILD #402 -- 1:1 extracted zenith colours from the reference
+        // frames: P5 teal day (2026-09-06 143811), P5.5 midnight magenta
+        // (2026-09-14 065011), P6 split-storm plum (2026-09-06 152252).
+        // Bands cross-fade over their full width (100% blend gradients).
+        float[] zen5  = {0.150F, 0.240F, 0.230F};
+        float[] zen55 = {0.102F, 0.039F, 0.165F};
+        float[] zen6  = {0.420F, 0.360F, 0.460F};
+        if (phase < 5.5F) {
+            blend(zen5, zen55, ramp(phase, 5.0F, 5.5F), out);
+        } else {
+            blend(zen55, zen6, ramp(phase, 5.5F, 6.0F), out);
+        }
+        float density = 0.90F;
+        return Mth.clamp(density * distanceInfluence(), 0.0F, 0.90F);
+    }
+
+    /** BUILD #402: matching 1:1 extracted horizon colours per band. */
+    public static float skyHorizonBlend(float[] out) {
+        float phase = nearestPhase();
+        if (phase < 4.45F || out == null || out.length < 3) {
             return 0.0F;
         }
-        float[] teal = {0.02F, 0.28F, 0.25F};
-        float[] purp = {0.26F, 0.10F, 0.36F};
-        float[] pink = {0.48F, 0.16F, 0.40F};
-        float[] late = {0.34F, 0.12F, 0.48F};
-        float[] six  = {0.32F, 0.16F, 0.26F};
-        out[0] = (teal[0] * wTeal + purp[0] * wPurp + pink[0] * wPink + late[0] * wLate + six[0] * wSix) / tot;
-        out[1] = (teal[1] * wTeal + purp[1] * wPurp + pink[1] * wPink + late[1] * wLate + six[1] * wSix) / tot;
-        out[2] = (teal[2] * wTeal + purp[2] * wPurp + pink[2] * wPink + late[2] * wLate + six[2] * wSix) / tot;
-        // presence scales with phase weight; 5.5 is strongest purple-pink, and
-        // fades back to calm/vanilla Story Mode sky when the player gets far
-        // away from the storm.
-        float blend = Mth.clamp(tot, 0.0F, 1.0F) * distanceInfluence();
-        // Keep purple/pink as storm atmosphere only; do not repaint the entire
-        // normal night sky purple when the player is merely nearby.
-        return blend * 0.46F;
+        float[] hor5  = {0.700F, 0.750F, 0.690F}; // pale sage (143811)
+        float[] hor55 = {0.720F, 0.330F, 0.520F}; // pink-magenta (065011)
+        float[] hor6  = {0.900F, 0.680F, 0.620F}; // peach-salmon (152252)
+        if (phase < 5.5F) {
+            blend(hor5, hor55, ramp(phase, 5.0F, 5.5F), out);
+        } else {
+            blend(hor55, hor6, ramp(phase, 5.5F, 6.0F), out);
+        }
+        float density = 0.90F;
+        return Mth.clamp(density * distanceInfluence(), 0.0F, 0.90F);
+    }
+
+    private static void blend(float[] a, float[] b, float t, float[] out) {
+        out[0] = a[0] + (b[0] - a[0]) * t;
+        out[1] = a[1] + (b[1] - a[1]) * t;
+        out[2] = a[2] + (b[2] - a[2]) * t;
     }
 
     public static void tick() {

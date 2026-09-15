@@ -141,6 +141,9 @@ public class DistantStormRenderer {
                      headState.lightCoords = 15728880;
                      headState.jawAngle = 0.0F;
                      headState.damaged = false;
+                     headState.devourer = d.phase >= 6.0F;
+                     headState.earlyPhase = d.phase < 4.0F;
+                     headState.headScale = 6.0F;
                      headState.idleTimeTicks = now;
                      headState.spawnElapsedTicks = Float.MAX_VALUE;
                      headState.fireElapsedTicks = d.headFireStart[i] >= 0L ? (float)(gt - d.headFireStart[i]) + frac : -1.0F;
@@ -177,7 +180,7 @@ public class DistantStormRenderer {
                         headModel,
                         headState,
                         pose,
-                        net.dabicco.witherstormmod.client.FoglessRenderTypes.bodyCutout(net.dabicco.witherstormmod.client.StormSkins.phase4()),
+                        net.dabicco.witherstormmod.client.FoglessRenderTypes.bodyCutout(net.dabicco.witherstormmod.client.StormSkins.body(d.phase)),
                         15728880,
                         OverlayTexture.NO_OVERLAY,
                         -1,
@@ -189,7 +192,7 @@ public class DistantStormRenderer {
                         headGlowModel,
                         headState,
                         pose,
-                        net.dabicco.witherstormmod.client.FoglessRenderTypes.eyes(net.dabicco.witherstormmod.client.StormSkins.phase4()),
+                        net.minecraft.client.renderer.rendertype.RenderTypes.eyes(net.dabicco.witherstormmod.client.StormSkins.body(d.phase)),
                         15728880,
                         OverlayTexture.NO_OVERLAY,
                         WitherStormHeadRenderer.glowTint(),
@@ -320,7 +323,7 @@ public class DistantStormRenderer {
                   headModel,
                   hs,
                   pose,
-                  net.dabicco.witherstormmod.client.FoglessRenderTypes.bodyCutout(net.dabicco.witherstormmod.client.StormSkins.phase4()),
+                  net.dabicco.witherstormmod.client.FoglessRenderTypes.bodyCutout(net.dabicco.witherstormmod.client.StormSkins.body(d.phase)),
                   15728880,
                   OverlayTexture.NO_OVERLAY,
                   -1,
@@ -332,7 +335,7 @@ public class DistantStormRenderer {
                   headGlowModel,
                   hs,
                   pose,
-                  net.dabicco.witherstormmod.client.FoglessRenderTypes.eyes(net.dabicco.witherstormmod.client.StormSkins.phase4()),
+                  net.minecraft.client.renderer.rendertype.RenderTypes.eyes(net.dabicco.witherstormmod.client.StormSkins.body(d.phase)),
                   15728880,
                   OverlayTexture.NO_OVERLAY,
                   WitherStormHeadRenderer.glowTint(),

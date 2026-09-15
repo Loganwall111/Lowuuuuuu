@@ -115,41 +115,26 @@ public abstract class McsmBlobCarrierPatch {
         require = 1
     )
     private void mcsm$stampBlobCarrier(FogData data, CallbackInfo ci) {
-        McsmExtrasConfig.load();
-
+        // McsmGradientTickPatch loads the small config state before this fog
+        // hook runs. Avoid a render-thread filesystem probe here.
         boolean gradient = StormSkyGradient.fogStampActive();
-        float p = gradient ? StormSkyGradient.phase() : 0.0F;
 
-        // glare-size nibble, shared by both paths below
+        // glare-size nibble, retained for the optional death cinematic carrier
         int sizeIdx = mcsm$sizeIdx(McsmExtrasConfig.glareSize);
         mcsm$lastSizeIdx = sizeIdx;
 
-        if (gradient && p >= 4.42F && p <= 8.06F) {
-            float yaw = StormSkyGradient.yaw();
-            float pitch = StormSkyGradient.pitch();
-
-            // normalise yaw into [-180,180] before indexing
-            yaw = yaw % 360.0F;
-            if (yaw > 180.0F) {
-                yaw -= 360.0F;
-            }
-            if (yaw < -180.0F) {
-                yaw += 360.0F;
-            }
-            if (pitch > 90.0F) {
-                pitch = 90.0F;
-            }
-            if (pitch < -90.0F) {
-                pitch = -90.0F;
-            }
-            mcsm$lastYaw = yaw;
-            mcsm$lastPitch = pitch;
-
-            data.cloudEnd = mcsm$pack(yaw, pitch, sizeIdx);
-            McsmDiag.carrier(data.cloudEnd, Math.round(yaw) + 180, Math.round(pitch) + 90);
-        }
+        // The normal phase-5+ blob is now owned by McsmStormBlob's native
+        // render-only radial material.  Do not write the old FogData carrier:
+        // the built-in shader's procedural sky blob is a second, expensive
+        // full-screen projection and was responsible for the giant faceted
+        // black/blue wall seen when the player approached the storm.  The
+        // carrier remains reserved for the death cinematic below.
 
         mcsm$driveDeathCinematic(data, gradient, sizeIdx);
+
+        // Normal storm blob rendering stays native and render-only.  No
+        // shader carrier is stamped here, so this pass cannot add a second
+        // full-screen sky layer or its per-fragment noise cost.
     }
 
     /** Latch, advance and stamp the dying sequence. Never throws. */

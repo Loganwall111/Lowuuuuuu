@@ -128,6 +128,12 @@
 
     #include "/lib/post/tonemap.glsl"
 
+    // MCSM 1.9.219 -- optional volumetric cloud deck (the original raymarch
+    // formula). OFF by default: the tethered native Halo is the live look.
+    // Uncomment the line below only to opt into the extra volume.
+    // #define MCSM_STORM_VOLUME_EXTRA
+    #include "/lib/mcsm/stormVolume.glsl"
+
     void main(){
         // Screen texel coordinates
         ivec2 screenTexelCoord = ivec2(gl_FragCoord.xy);
@@ -170,6 +176,28 @@
             #else
                 if(isSky) postColOut += getLensFlare(texCoord - 0.5, shdLightDirScreenSpace.xy - 0.5) * (1.0 - blindness) * (1.0 - darknessFactor) * (1.0 - rainStrength);
             #endif
+        #endif
+
+        // 1.9.318 -- no shader sky-box attachment.  The live Halo is the
+        // tethered native mesh submitted with the storm.  Keeping this
+        // composite free of the old angular sky projection prevents a second
+        // black object from following the Halo.
+
+        // MCSM 1.9.219 -- OPTIONAL volumetric cloud deck (off by default):
+        // ray-box isolated raymarch around the camera-centered cloud box,
+        // storm-warped simplex turbulence with exponential density near
+        // uStormPos and the exact P5/P5.5/P6 hex ramps.
+        #ifdef MCSM_STORM_VOLUME_EXTRA
+        {
+            float sceneDepth = textureLod(depthtex0, texCoord, 0).x;
+            bool skyPixel = sceneDepth >= 0.99998;
+            vec4 vol = mcsmStormVolume(texCoord);
+            if (skyPixel) {
+                postColOut = mix(postColOut, vol.rgb * 2.6, clamp(vol.a * 2.4, 0.0, 0.94));
+            } else {
+                postColOut += vol.rgb * vol.a * 0.30;
+            }
+        }
         #endif
 
         #ifdef AUTO_EXPOSURE

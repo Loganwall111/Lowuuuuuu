@@ -10,7 +10,8 @@ public final class StormPalettes {
    private static final float[] FOG_PINK = new float[]{0.620F, 0.160F, 0.480F};
    private static final float[] FOG_SIX = new float[]{0.420F, 0.100F, 0.360F};
    private static final float[] PULSE_EARLY = new float[]{0.42F, 0.33F, 0.95F};
-   private static final float[] PULSE_FIVE = new float[]{0.38F, 0.52F, 0.98F};
+   // Phase 5 atmosphere is green/teal; reserve cyan for the early/mid eye FX.
+   private static final float[] PULSE_FIVE = new float[]{0.12F, 0.78F, 0.42F};
    private static final float[] PULSE_CATACLYSM = new float[]{0.48F, 0.2F, 0.72F};
    private static final float[] HALO_RING = new float[]{0.36F, 0.46F, 1.0F};
    private static final float[] HALO_UNDER = new float[]{0.92F, 0.94F, 1.0F};
@@ -21,7 +22,7 @@ public final class StormPalettes {
    private static final float[] STAR_PURPLE = new float[]{0.74F, 0.58F, 1.0F};
    private static final float[] STAR_TEAL = new float[]{0.45F, 0.95F, 0.85F};
    public static final float[] EJECTA_TEAL = new float[]{0.2F, 0.95F, 0.72F};
-   public static final float[] EJECTA_GREEN = new float[]{0.35F, 0.88F, 0.3F};
+   public static final float[] EJECTA_GREEN = new float[]{0.24F, 0.36F, 0.55F}; // compatibility name; neutral navy now
    public static final float[] EJECTA_PALE = new float[]{0.8F, 0.68F, 1.0F};
 
    private StormPalettes() {

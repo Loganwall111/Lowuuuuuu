@@ -37,6 +37,11 @@ jobs:
           distribution: temurin
           java-version: "25"
 
+      - name: Read build identity
+        id: build_identity
+        shell: bash
+        run: echo "value=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+
       - name: Build the jar
         run: bash ci/build.sh
 
@@ -44,14 +49,15 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: mcsm-jar-${{ github.run_number }}
+          name: mcsm-jar-${{ steps.build_identity.outputs.value }}
           path: |
             out/*.jar
             out/*.sha256
             out/*.txt
 
       - name: Publish release when VERSION is new
-        if: success() && (github.ref == 'refs/heads/arena/01a071bb-lowuuuuuu' || github.ref == 'refs/heads/arena/01a06df7-lowuuuuuu')
+        # Releases are intentionally disabled for Arena development builds.
+        if: false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -70,7 +76,8 @@ jobs:
           fi
 
       - name: Attach the Devouring Storms shader pack to the release
-        if: success() && startsWith(github.ref, 'refs/heads/arena/')
+        # Releases are intentionally disabled for Arena development builds.
+        if: false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

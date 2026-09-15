@@ -39,7 +39,6 @@ public class DabyWSClientConfig {
    public static double chromaticGlitchStrength = 1.0;
    public static boolean storyModeBossbar = true;
    public static boolean storyModeTitleScreen = true;
-   public static boolean customSkyboxes = true;
    public static boolean cloudDeckLayer = true;
    public static boolean regionalBiomeFog = true;
    public static boolean purpleLightningSparks = true;
@@ -149,12 +148,15 @@ public class DabyWSClientConfig {
    public static double pulsePeriod = 4.0;
    public static double pulseSize = 1.0;
    public static boolean stormBackdrop = true;
-   public static boolean stormBackdropQuad = false;
+   // The world-anchored Story Mode backdrop is on by default; the retired
+   // full-screen/cylinder cloud layers remain separately disabled.
+   public static boolean stormBackdropQuad = true;
    public static double stormBackdropStrength = 1.0;
    public static double stormBackdropSize = 6.0;
    public static double stormBackdropPulse = 1.0;
    public static boolean stormBackdropGrow = true;
-   public static boolean stormBackdropBlack = true;
+   /** Keep the central black cylinder/blur off by default; the backdrop supplies the atmosphere. */
+   public static boolean stormBackdropBlack = false;
    public static double stormBackdropBlackStrength = 1.0;
    public static boolean stormBackdropPhase4 = true;
    public static double stormBackdropPhase4Strength = 1.0;
@@ -748,7 +750,7 @@ public class DabyWSClientConfig {
       key("pulseSize", "How far the glow reaches past the body.", 0.5, 2.0, false, () -> pulseSize, v -> pulseSize = v);
       key(
          "stormBackdrop",
-         "The gradient sky that hangs behind the Wither Storm and follows it. Not a halo - it recolours the patch of sky the storm stands in front of.",
+         "Atmospheric W's Cloud: the infinite, wide smog layer that hangs behind the Wither Storm and follows its sky direction.",
          0.0,
          1.0,
          true,
@@ -1568,15 +1570,6 @@ public class DabyWSClientConfig {
          true,
          () -> storyModeTitleScreen ? 1.0 : 0.0,
          v -> storyModeTitleScreen = v >= 0.5
-      );
-      key(
-         "customSkyboxes",
-         "Dynamic Story Mode FabricSkyBoxes with day, night, and cataclysm skies.",
-         0.0,
-         1.0,
-         true,
-         () -> customSkyboxes ? 1.0 : 0.0,
-         v -> customSkyboxes = v >= 0.5
       );
       key(
          "cloudDeckLayer",

@@ -123,22 +123,9 @@ public class WitherStormRenderer
       return super.getBoundingBoxForCulling(entity).inflate(512.0);
    }
 
+   /** Keep every opaque storm skin pass at neutral white vertex tint. */
    protected int getModelTint(WitherStormRenderState state) {
-      if (this.previewShadowPass) {
-         return 940578856;
-      } else {
-         int argb = super.getModelTint(state);
-         float w = Mth.clamp(state.changeover, 0.0F, 1.0F);
-         if (w <= 0.001F) {
-            return argb;
-         } else {
-            int a = argb >>> 24 & 0xFF;
-            int r = (int)Mth.lerp(w, argb >> 16 & 0xFF, 255.0F);
-            int g = (int)Mth.lerp(w, argb >> 8 & 0xFF, 255.0F);
-            int b = (int)Mth.lerp(w, argb & 0xFF, 255.0F);
-            return a << 24 | r << 16 | g << 8 | b;
-         }
-      }
+      return this.previewShadowPass ? 940578856 : -1;
    }
 
    private static void applyChangeoverShake(PoseStack poseStack, WitherStormRenderState state) {
@@ -528,6 +515,10 @@ public class WitherStormRenderer
    }
 
    public void submit(WitherStormRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+      // Texture selection must follow this entity, not the last distant storm
+      // ticked by the client palette driver. Command-spawned phase storms can
+      // otherwise borrow the previous storm's atlas for their first frame.
+      StormSkins.setPhaseHint(state.phase);
       poseStack.pushPose();
       applyChangeoverShake(poseStack, state);
       this.frameCollector = submitNodeCollector;
@@ -579,11 +570,17 @@ public class WitherStormRenderer
                this.submitNightLight(state, poseStack, submitNodeCollector, camera);
             }
 
-            if (state.phase >= 4.5) {
+            // The black growth/back layers are the complete baby body. Keep
+            // them through 5.9 so the purple/pink phase-5.5 CEM face can grow
+            // into that body. At phase 6 the authoritative CEM model changes
+            // to the Wither Storm skull silhouette; the old growth and
+            // tentacle passes must not remain underneath it.
+            boolean babyBody = state.phase < 6.0D;
+            if (babyBody && state.phase >= 4.5D) {
                this.submitGrowth5(state, poseStack, submitNodeCollector);
             }
 
-            if (state.phase >= 5.0) {
+            if (babyBody && state.phase >= 5.0D) {
                this.submitTentacles5(state, poseStack, submitNodeCollector);
             }
          } else {
@@ -597,22 +594,32 @@ public class WitherStormRenderer
             }
          }
 
-         super.submit(state, poseStack, submitNodeCollector, camera);
-         if (!this.previewShadowPass && DabyWSClientConfig.turquoiseTeeth) {
-            Identifier glow = StormSkins.teethGlow(state.phase);
-            if (glow != null) {
-               submitNodeCollector.submitModel(
-                  this.previewShadowPass ? this.hunchbackShadowModel : this.hunchbackModel,
-                  state,
-                  poseStack,
-                  FoglessRenderTypes.eyes(glow),
-                  15728880,
-                  OverlayTexture.NO_OVERLAY,
-                  -1,
-                  null,
-                  0,
-                  null
-               );
+         // Phase 6 is not a devourer body with a few extra tentacles. The
+         // host's WitherStormHeadEntity children are the authoritative skull
+         // form and are rendered by WitherStormHeadRenderer with their synced
+         // head state, scale, jaw, eye, and beam data. The preview path has
+         // already submitted the same WitherStormHead model instances above.
+         // Do not submit the generic parent body or its old hunchback teeth
+         // pass under those skulls.
+         boolean skullForm = state.phase >= 6.0D;
+         if (!skullForm) {
+            super.submit(state, poseStack, submitNodeCollector, camera);
+            if (!this.previewShadowPass && DabyWSClientConfig.turquoiseTeeth) {
+               Identifier glow = StormSkins.teethGlow(state.phase);
+               if (glow != null) {
+                  submitNodeCollector.submitModel(
+                     this.previewShadowPass ? this.hunchbackShadowModel : this.hunchbackModel,
+                     state,
+                     poseStack,
+                     RenderTypes.eyes(glow),
+                     15728880,
+                     OverlayTexture.NO_OVERLAY,
+                     -1,
+                     null,
+                     0,
+                     null
+                  );
+               }
             }
          }
       } finally {
@@ -635,7 +642,7 @@ public class WitherStormRenderer
             this.previewShadowPass ? this.hunchbackShadowModel : this.hunchbackModel,
             state,
             poseStack,
-            this.pieceType(StormSkins.phase4()),
+            this.pieceType(StormSkins.body(state.phase)),
             state.lightCoords,
             OverlayTexture.NO_OVERLAY,
             this.pieceTint(),
@@ -667,7 +674,7 @@ public class WitherStormRenderer
          poseStack.mulPose(Axis.XP.rotationDegrees(36.0F));
          poseStack.scale(0.42F, 0.42F, 0.42F);
          submitNodeCollector.submitModel(
-            tentacle, state, poseStack, this.pieceType(StormSkins.phase4()), state.lightCoords, OverlayTexture.NO_OVERLAY, this.pieceTint(), null, 0, null
+            tentacle, state, poseStack, this.pieceType(StormSkins.body(state.phase)), state.lightCoords, OverlayTexture.NO_OVERLAY, this.pieceTint(), null, 0, null
          );
          poseStack.popPose();
       }
@@ -716,7 +723,7 @@ public class WitherStormRenderer
                state.idleTimeTicks,
                state.devourer,
                early,
-               StormSkins.phase4()
+               StormSkins.phase6Body()
             );
       }
    }
@@ -936,7 +943,7 @@ public class WitherStormRenderer
          this.miniHeadModel,
          headState,
          poseStack,
-         FoglessRenderTypes.bodyCutout(StormSkins.phase4()),
+         FoglessRenderTypes.bodyCutout(StormSkins.body(state.phase)),
          state.lightCoords,
          OverlayTexture.NO_OVERLAY,
          -1,
@@ -948,7 +955,7 @@ public class WitherStormRenderer
          this.miniHeadGlowModel,
          headState,
          poseStack,
-         RenderTypes.eyes(StormSkins.phase4()),
+         RenderTypes.eyes(StormSkins.body(state.phase)),
          15728880,
          OverlayTexture.NO_OVERLAY,
          WitherStormHeadRenderer.glowTint(),
@@ -1007,10 +1014,10 @@ public class WitherStormRenderer
    }
 
    public Identifier getTextureLocation(WitherStormRenderState state) {
-      if (state.devourer) {
-         return StormSkins.devourer();
-      } else {
-         return state.phase4 ? StormSkins.phase4() : StormSkins.legacy();
-      }
+      // Phase 0 alone keeps the tiny starter atlas. Every later opaque pass
+      // uses the correct dark Phase 6 atlas for its model family.
+      return state.devourer
+         ? StormSkins.devourer()
+         : state.phase >= 1.0D ? StormSkins.phase6Body() : StormSkins.legacy();
    }
 }
