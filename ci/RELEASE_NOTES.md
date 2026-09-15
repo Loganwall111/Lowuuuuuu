@@ -1,3 +1,10 @@
+# 7000.0.0-M — master version label re-lock
+
+- Master version string re-locked from 1.9.201 to **7000.0.0-M** in `VERSION`, `McsmExtrasConfig.BUILD_VERSION`, `gradle.properties` (`mod_version`) and `src/main/resources/fabric.mod.json`.
+- Every display surface reads the single `BUILD_VERSION` constant, so the HUD terminal chip, the title-screen build line, the control-panel header, the config-screen entry button and the `/ds diag` chat banner all now show 7000.0.0-M with no per-screen literals.
+- CI sync seds (`BUILD_VERSION` sync + `fabric.mod.json` stamp) verified idempotent against the new label: the runner cannot clobber it back to a 1.9.x string, and the version-drift gate stays green.
+- All 1.9.201 visual work is carried forward byte-identical: 2D skybox sticker sheets (`backdrop_sheet_phase5_teal/phase55_violet/phase6_plum.png`), the `MCSM_VOID_BODY` void-black body passes + rolling glint, the phase-shifting emissive teeth track, the 4.0x emissive bloom injection, cosmic-blue spotlight nodes and the 90 diamond-dot sliders with the chapter rail.
+
 # 1.9.201 — 2D background skybox sticker layout + true-emissive master hybrid
 
 - **Strict structural exclusions**: every physical world-space backdrop mesh is gone. No dome meshes, no rigid glare discs, no camera-clipping background bulbs, no world-anchored backdrop cards. `StormBackdrop` no longer places quads at a sky distance or reads storm world positions for the backdrop at all.
