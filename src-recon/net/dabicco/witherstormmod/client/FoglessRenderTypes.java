@@ -84,6 +84,12 @@ public final class FoglessRenderTypes {
                .withShaderDefine("ALPHA_CUTOUT", 0.1F)
                .withShaderDefine("FOG_MIX", fog)
                .withShaderDefine("NO_OVERLAY")
+               // MCSM 1.9.201: the storm body blocks render through the
+               // void-black palette lock in fogless_entity.fsh (keyed to
+               // StormBodyPalette.KEY -- textures/misc/body_palette_key.png,
+               // #0A0E14 navy-black | #000000 void-black) plus the animated
+               // rolling glint pass. No legacy gray/brown vanilla sheets.
+               .withShaderDefine("MCSM_VOID_BODY")
                .withCull(cull);
             if (reverse) {
                b.withShaderDefine("REVERSE_SHADING");

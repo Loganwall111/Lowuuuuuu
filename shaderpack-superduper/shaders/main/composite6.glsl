@@ -146,6 +146,13 @@
             // Average the total samples (1 / 5 bloom tiles multiplied by 1 / 4 samples used for the box blur)
             bloomCol *= 0.05;
 
+            // MCSM 1.9.201 -- NATIVE EMISSIVE FACE BOOST (4.0x). The purple
+            // eyes and phase-shifting teeth ride the full-bright emissive
+            // layer; their pixel brightness multiplier is amplified 4.0x
+            // inside this post stack so the bloom tiles carry a massive
+            // radiant neon field out into the night sky.
+            bloomCol *= 1.0 + 3.0 * smoothstep(0.50, 0.85, dot(bloomCol, vec3(0.2126, 0.7152, 0.0722)));
+
             float bloomLuma = sumOf(bloomCol);
             // Apply bloom by tonemapped luma and BLOOM_STRENGTH
             postColOut += (bloomCol - postColOut) * ((BLOOM_STRENGTH * bloomLuma) / (3.0 + bloomLuma));

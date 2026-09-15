@@ -1,3 +1,14 @@
+# 1.9.201 — 2D background skybox sticker layout + true-emissive master hybrid
+
+- **Strict structural exclusions**: every physical world-space backdrop mesh is gone. No dome meshes, no rigid glare discs, no camera-clipping background bulbs, no world-anchored backdrop cards. `StormBackdrop` no longer places quads at a sky distance or reads storm world positions for the backdrop at all.
+- **2D skybox sticker architecture**: the phase backdrop sheets now render as flat, camera-axis-locked stickers on the native background sky layer (depth-gated so they can only paint cleared-sky pixels, always behind terrain, entities and beams). Sheet bindings: phase 5 organic teal, phase 5.5-5.9 deep violet, phase 6 plum-to-salmon twilight (new smoky alpha assets in `textures/misc/`).
+- **Vanilla sky preserved**: `sky.fsh` keeps the untouched overworld daylight cycle at standard hours and crossfades into the true-color storm sheet state only while a storm is active (smooth 4.90-5.06 ramp instead of the old hard branch).
+- **Void-black body shading**: new `body_palette_key.png` split atlas (#0A0E14 navy-black | #000000 void-black) registered as the master boundary key; storm body pipelines stamp `MCSM_VOID_BODY` and `fogless_entity.fsh` locks creases/AO/structural layers to solid #000000 with an animated rolling glint sheen replacing the old flat plastic gloss coat.
+- **True native emissive faces**: eyes/teeth passes bind to Minecraft's native emissive layer (`RenderTypes.eyes`, the Enderman-eye channel) — full-bright, fog-cutting, shadow-immune — with the phase-shifting teeth track re-keyed: 4 cyan-white, 5 pure white, 5.5 cyan-blue, 6 cinematic blue, 7 toxic green, 8 blinding white.
+- **4.0x emissive bloom injection** in both post stacks (shaderpack-v5 final and the managed Super Duper composite6/final): emissive face pixels get a 4.0x brightness multiplier so eyes/teeth project a massive neon bloom field; bloom ships enabled at 0.90 strength in v5.
+- **Cosmic blue spotlight nodes**: lower auxiliary spotlight emitters/impact light nodes now output #4D4DFF cosmic blue at 1.25x intensity, separating them from the retained purple tractor-beam cones.
+- **Premium UI woken up**: the MCSM Control Panel now carries a vertical scrolling chapter-rail sidebar (12 tracking nodes, click-to-jump, scroll bead) and 90 diamond-dot configuration sliders bound live to extras + base-mod config.
+
 # 1.9.200 — Sky City haze included in verified build
 
 - Includes the high-altitude Sky City blue haze blend in the published jar, ramping in above tall build heights without changing normal ground-level play.

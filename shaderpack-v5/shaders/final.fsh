@@ -19,8 +19,8 @@ uniform float viewHeight;
 uniform float frameTimeCounter;
 uniform vec3 fogColor;
 
-#define BLOOM             0     // [0 1]
-#define BLOOM_STRENGTH    0.00  // [0.00 0.20 0.35 0.60 0.90 1.30]
+#define BLOOM             1     // [0 1]
+#define BLOOM_STRENGTH    0.90  // [0.00 0.20 0.35 0.60 0.90 1.30]
 #define SSAO              1     // [0 1]
 #define SSAO_STRENGTH     0.40  // [0.00 0.20 0.40 0.60 0.80 1.00]
 #define TONEMAP           1     // [0 1]
@@ -34,6 +34,22 @@ uniform vec3 fogColor;
 
 const vec3 STORM_TINT = vec3(0.42, 0.20, 0.62);
 
+// MCSM 1.9.201 -- NATIVE EMISSIVE FACE BOOST (4.0x).
+// The purple eyes and the phase-shifting teeth are the frame's emissive layer
+// (full-bright, fog-cutting). Their pixel brightness multiplier is amplified
+// 4.0x inside this post-processing stack so they project a massive radiant
+// neon bloom field out into the surrounding night sky. The mask keys on the
+// emissive luminance floor: only face-coordinate pixels this bright exist on
+// the teeth arcs, the eye dots and the beam emitter cubes.
+float mcsmEmissiveMask(vec3 c) {
+    float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    return smoothstep(0.50, 0.85, lum);
+}
+
+vec3 mcsmEmissiveBoost(vec3 c) {
+    return c * (1.0 + 3.0 * mcsmEmissiveMask(c));   // -> 4.0x at face coords
+}
+
 vec3 bloomPass(vec2 uv) {
     vec2 px = 1.0 / vec2(viewWidth, viewHeight);
     vec3 sum = vec3(0.0);
@@ -42,7 +58,7 @@ vec3 bloomPass(vec2 uv) {
         for (int j = -3; j <= 3; j++) {
             if (abs(i) + abs(j) > 4) continue;
             vec2 o = vec2(float(i), float(j)) * px * 2.4;
-            vec3 c = texture(colortex0, uv + o).rgb;
+            vec3 c = mcsmEmissiveBoost(texture(colortex0, uv + o).rgb);
             float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
             float w = smoothstep(0.60, 1.0, lum);
             sum += c * w;
@@ -83,6 +99,9 @@ float mcsmHash(float n) { return fract(sin(n * 91.7) * 4313.7); }
 
 void main() {
     vec3 col = texture(colortex0, texcoord).rgb;
+    // MCSM 1.9.201: 4.0x emissive face boost first, so every downstream stage
+    // (bloom taps, tonemap, vibrance) sees the amplified eyes/teeth energy.
+    col = mcsmEmissiveBoost(col);
 
     // Screen-space contact shadows & ambient occlusion
     float ao = ssaoPass(texcoord);

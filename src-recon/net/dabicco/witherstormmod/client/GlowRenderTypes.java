@@ -173,14 +173,22 @@ public final class GlowRenderTypes {
    }
 
    public static RenderType emitterMark(Identifier texture) {
-      return net.dabicco.witherstormmod.client.ShaderPackCompat.active()
-         ? RenderTypes.eyes(texture)
-         : MARK_TYPES.computeIfAbsent(
+      // MCSM 1.9.201 -- TRUE NATIVE EMISSIVE. The eyes/teeth passes now bind
+      // straight to Minecraft's native emissive layer pipeline (RenderTypes.eyes,
+      // the exact channel Enderman eyes use): 100% full-bright, no lightmap,
+      // no ambient shadow, no fog attenuation -- they cut through background
+      // fog completely. The custom mark pipeline stays only as a hard fallback
+      // if the vanilla eyes type is ever unavailable.
+      try {
+         return RenderTypes.eyes(texture);
+      } catch (Throwable t) {
+         return MARK_TYPES.computeIfAbsent(
             texture,
             tex -> RenderTypeInvoker.dabyws$create(
                "dabywitherstormmod:storm_emitter_mark:" + tex, RenderSetup.builder(markPipeline()).withTexture("Sampler0", tex).createRenderSetup()
             )
          );
+      }
    }
 
    public static RenderType glow(Identifier texture) {

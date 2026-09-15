@@ -98,5 +98,11 @@
         #if ANTI_ALIASING != 0 && defined SHARPEN_FILTER
             finalColOut = sharpenFilter(finalColOut, texCoord, pixelSize);
         #endif
+
+        // MCSM 1.9.201 -- NATIVE EMISSIVE FACE BOOST (4.0x): the storm's purple
+        // eyes and phase-shifting teeth are native full-bright emissive pixels;
+        // amplifying their brightness multiplier 4.0x here makes them project
+        // a high-intensity radiant neon bloom field into the night sky.
+        finalColOut *= 1.0 + 3.0 * smoothstep(0.50, 0.85, dot(finalColOut, vec3(0.2126, 0.7152, 0.0722)));
     }
 #endif

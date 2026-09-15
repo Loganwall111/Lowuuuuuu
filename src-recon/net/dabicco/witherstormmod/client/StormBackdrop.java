@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -12,17 +13,40 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3fc;
 
+/**
+ * MCSM 1.9.201 -- 2D BACKGROUND SKYBOX STICKER ARCHITECTURE.
+ *
+ * The old build placed the atmospheric backdrop as WORLD-SPACE quads 220 blocks
+ * in front of the camera, aimed at the storm centre (a rigid geometric card
+ * that clipped through the camera and read as a "disc in the sky"). That whole
+ * rendering path is purged: no dome meshes, no glare discs, no camera-clipping
+ * bulbs, no world-anchored cards.
+ *
+ * The backdrop now lives on Minecraft's native BACKGROUND SKY LAYER: three flat
+ * smoky alpha sheets are pinned to the camera axes at a fixed sky-plane depth
+ * (an infinite, parallax-free cinematic canvas) and submitted through the
+ * storm_translucent pipeline, whose GREATER_THAN_OR_EQUAL depth test with no
+ * depth write means the sheets can ONLY paint pixels where the depth buffer is
+ * still the cleared sky value. Terrain, entities, beams and the storm body all
+ * write depth closer than the sky plane, so the sticker sits safely behind the
+ * main entity and every world object, exactly like the vanilla sky dome.
+ *
+ * Sheet bindings (storyboard):
+ *   phase 5.00-5.50  organic teal sheet          backdrop_sheet_phase5_teal.png
+ *   phase 5.50-5.95  deep violet sheet           backdrop_sheet_phase55_violet.png
+ *   phase 5.95+      plum-to-salmon twilight     backdrop_sheet_phase6_plum.png
+ * Outside an active storm the sheets fade to zero alpha and sky.fsh hands the
+ * frame back to the untouched vanilla overworld daylight cycle.
+ */
 public final class StormBackdrop {
-   private static final String NS = "dabywitherstormmod";
-   private static final Identifier BLUE4 = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_phase4_blue.png");
-   private static final Identifier BLACK = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_black.png");
-   private static final Identifier TURQUOISE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_turquoise.png");
-   private static final Identifier PURPLE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_purple.png");
-   private static final Identifier PURPLE_PINK = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_purple_pink.png");
-   private static final Identifier EMBER = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_ember.png");
+   private static final Identifier SHEET_TEAL = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_phase5_teal.png");
+   private static final Identifier SHEET_VIOLET = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_phase55_violet.png");
+   private static final Identifier SHEET_PLUM = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_phase6_plum.png");
    private static final int FULL_BRIGHT = 15728880;
-   private static final double SKY_DISTANCE = 220.0;
+   /** Fixed sky-plane distance: far beyond any world geometry, inside the far clip. */
+   private static final double SKY_PLANE = 4096.0;
 
    private StormBackdrop() {
    }
@@ -36,176 +60,115 @@ public final class StormBackdrop {
       }
    }
 
-   private static double bodyRadius(float phase) {
-      if (phase < 4.0F) {
-         return 4.0F + 1.5F * phase;
-      } else if (phase < 5.0F) {
-         return 10.0F + 8.0F * (phase - 4.0F);
-      } else {
-         return phase < 6.0F ? 18.0F + 22.0F * (phase - 5.0F) : 40.0F + 30.0F * (phase - 6.0F);
-      }
-   }
-
    public static void submit(LevelRenderContext ctx) {
-      if (DabyWSClientConfig.stormBackdropQuad) {
-         if (DabyWSClientConfig.stormBackdrop) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.level != null && !net.dabicco.witherstormmod.client.ClientDistantStormManager.all().isEmpty()) {
-               float gt = (float)(mc.level.getGameTime() % 240000L) + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-               float nowSec = gt * 0.05F;
-               Vec3 cam = ctx.levelState().cameraRenderState.pos;
-               PoseStack poseStack = ctx.poseStack();
-               SubmitNodeCollector collector = ctx.submitNodeCollector();
-               float master = (float)DabyWSClientConfig.stormBackdropStrength;
-               if (!(master <= 0.004F)) {
-                  for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
-                     float phase = d.phase;
-                     if (!(phase < 3.9F)) {
-                        Vec3 centre = new Vec3(d.dispX, d.dispY, d.dispZ);
-                        Vec3 toStorm = centre.subtract(cam);
-                        double dist = toStorm.length();
-                        if (!(dist < 1.0E-4)) {
-                           Vec3 view = toStorm.scale(1.0 / dist);
-                           float distFade = 1.0F - Mth.clamp((float)((dist - 1200.0) / 900.0), 0.0F, 1.0F);
-                           if (!(distFade <= 0.004F)) {
-                              double bodyR = bodyRadius(phase);
-                              double skyDist = 220.0;
-                              Vec3 at = cam.add(view.scale(skyDist));
-                              double angular = Mth.clamp(bodyR / Math.max(dist, 1.0), 0.012, 0.85);
-                              double baseR = skyDist * angular * 1.5 * (float)DabyWSClientConfig.stormBackdropSize;
-                              if (DabyWSClientConfig.stormBackdropGrow && phase > 5.5F) {
-                                 baseR *= 1.0F + (phase - 5.5F) * 0.26F;
-                              }
+      if (!DabyWSClientConfig.stormBackdrop) {
+         return;
+      }
 
-                              float breathe = 1.0F + 0.03F * Mth.sin(nowSec * 0.045F * (float)DabyWSClientConfig.stormBackdropPulse);
-                              baseR *= breathe;
-                              float wBlue = ramp(phase, 3.95F, 4.2F) * (1.0F - ramp(phase, 4.6F, 5.0F));
-                              float wTurq = ramp(phase, 4.45F, 4.9F) * (1.0F - ramp(phase, 6.0F, 6.35F));
-                              float wPurp = ramp(phase, 6.0F, 6.35F);
-                              float wPink = ramp(phase, 6.3F, 7.0F);
-                              float wBlack = ramp(phase, 4.45F, 4.85F);
-                              float a = master * distFade;
-                              if (wPink > 0.004F && DabyWSClientConfig.stormBackdropPink) {
-                                 quad(
-                                    poseStack,
-                                    collector,
-                                    net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(PURPLE_PINK),
-                                    at,
-                                    view,
-                                    baseR * 1.55,
-                                    255,
-                                    255,
-                                    255,
-                                    (int)(a * wPink * 245.0F)
-                                 );
-                              }
+      Minecraft mc = Minecraft.getInstance();
+      if (mc.level == null || net.dabicco.witherstormmod.client.ClientDistantStormManager.all().isEmpty()) {
+         return;
+      }
 
-                              if (wPurp > 0.004F && DabyWSClientConfig.stormBackdropPurple) {
-                                 quad(
-                                    poseStack,
-                                    collector,
-                                    net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(PURPLE),
-                                    at,
-                                    view,
-                                    baseR * 1.18,
-                                    255,
-                                    255,
-                                    255,
-                                    (int)(a * wPurp * 250.0F)
-                                 );
-                              }
+      float master = (float)DabyWSClientConfig.stormBackdropStrength;
+      if (master <= 0.004F) {
+         return;
+      }
 
-                              if (wTurq > 0.004F && DabyWSClientConfig.stormBackdropTurquoise) {
-                                 quad(
-                                    poseStack,
-                                    collector,
-                                    net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(TURQUOISE),
-                                    at,
-                                    view,
-                                    baseR * 1.1,
-                                    255,
-                                    255,
-                                    255,
-                                    (int)(a * wTurq * 250.0F)
-                                 );
-                              }
+      // Highest phase among the tracked storms drives the sheet selection. The
+      // manager is now a pure data feed: nothing here reads a world position.
+      float phase = 0.0F;
 
-                              if (DabyWSClientConfig.stormBackdropEmber && phase >= 6.0F) {
-                                 quad(
-                                    poseStack,
-                                    collector,
-                                    net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(EMBER),
-                                    at,
-                                    view,
-                                    baseR * 1.34,
-                                    255,
-                                    255,
-                                    255,
-                                    (int)(a * 90.0F * (float)DabyWSClientConfig.stormBackdropEmberStrength)
-                                 );
-                              }
+      for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
+         phase = Math.max(phase, d.phase);
+      }
 
-                              if (wBlack > 0.004F && DabyWSClientConfig.stormBackdropBlack) {
-                                 quad(
-                                    poseStack,
-                                    collector,
-                                    net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(BLACK),
-                                    at,
-                                    view,
-                                    baseR * 0.82,
-                                    255,
-                                    255,
-                                    255,
-                                    (int)(a * wBlack * 250.0F * (float)DabyWSClientConfig.stormBackdropBlackStrength)
-                                 );
-                              }
+      if (phase < 4.55F) {
+         return;
+      }
 
-                              if (wBlue > 0.004F && DabyWSClientConfig.stormBackdropPhase4) {
-                                 quad(
-                                    poseStack,
-                                    collector,
-                                    net.dabicco.witherstormmod.client.GlowRenderTypes.glow(BLUE4),
-                                    at,
-                                    view,
-                                    baseR * 0.95,
-                                    255,
-                                    255,
-                                    255,
-                                    (int)(a * wBlue * 235.0F * (float)DabyWSClientConfig.stormBackdropPhase4Strength)
-                                 );
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-            }
-         }
+      float gt = (float)(mc.level.getGameTime() % 240000L) + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+      float nowSec = gt * 0.05F;
+      Camera camera = mc.gameRenderer.mainCamera();
+      if (!camera.isInitialized()) {
+         return;
+      }
+
+      Vec3 cam = ctx.levelState().cameraRenderState.pos;
+      // Camera-locked axes: the canvas rides the view rotation only, never the
+      // view position, so it has no parallax and no world anchor -- it IS the
+      // background sky layer.
+      Vector3fc fwd = camera.forwardVector();
+      Vector3fc up = camera.upVector();
+      Vector3fc left = camera.leftVector();
+      Vec3 view = new Vec3((double)fwd.x(), (double)fwd.y(), (double)fwd.z()).normalize();
+      Vec3 upV = new Vec3((double)up.x(), (double)up.y(), (double)up.z()).normalize();
+      Vec3 rightV = new Vec3(-(double)left.x(), -(double)left.y(), -(double)left.z()).normalize();
+
+      float scale = Mth.clamp((float)(DabyWSClientConfig.stormBackdropSize / 6.0), 0.35F, 2.5F);
+      // Over-cover the frustum at the sky plane; the sheets' own alpha does the
+      // framing, so no hard quad edge is ever on screen.
+      double half = SKY_PLANE * 1.15 * (double)scale;
+      float breathe = 0.88F + 0.12F * Mth.sin(nowSec * 0.045F * (float)DabyWSClientConfig.stormBackdropPulse);
+
+      float wTeal = ramp(phase, 4.55F, 4.95F) * (1.0F - ramp(phase, 5.42F, 5.58F));
+      float wViolet = ramp(phase, 5.42F, 5.58F) * (1.0F - ramp(phase, 5.90F, 6.06F));
+      float wPlum = ramp(phase, 5.90F, 6.06F);
+
+      PoseStack poseStack = ctx.poseStack();
+      SubmitNodeCollector collector = ctx.submitNodeCollector();
+
+      // Back-to-front layering on the sky plane: twilight sheet deepest, then
+      // violet, teal on top; each at its own depth sliver so the submissions
+      // keep a stable order in the background queue.
+      if (wPlum > 0.004F && DabyWSClientConfig.stormBackdropPink) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(SHEET_PLUM), cam, view, rightV, upV, SKY_PLANE + 192.0, half * 1.12, master * wPlum * breathe);
+      }
+
+      if (wViolet > 0.004F && DabyWSClientConfig.stormBackdropPurple) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(SHEET_VIOLET), cam, view, rightV, upV, SKY_PLANE + 128.0, half * 1.06, master * wViolet * breathe);
+      }
+
+      if (wTeal > 0.004F && DabyWSClientConfig.stormBackdropTurquoise) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(SHEET_TEAL), cam, view, rightV, upV, SKY_PLANE + 64.0, half, master * wTeal * breathe);
       }
    }
 
-   private static void quad(
-      PoseStack poseStack, SubmitNodeCollector collector, RenderType type, Vec3 at, Vec3 view, double radius, int r, int g, int b, int alpha
+   /**
+    * One flat, screen-locked backdrop sheet on the background sky layer. The
+    * quad is a pure function of the camera AXES (never the storm's world
+    * position or distance), so it cannot clip the camera, cannot parallax and
+    * cannot read as a 3D object in the world grid.
+    */
+   private static void sticker(
+      PoseStack poseStack,
+      SubmitNodeCollector collector,
+      RenderType type,
+      Vec3 cam,
+      Vec3 view,
+      Vec3 right,
+      Vec3 up,
+      double dist,
+      double half,
+      float alpha
    ) {
-      if (alpha > 2) {
-         Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
-         Vec3 right = view.cross(upHint).normalize();
-         Vec3 up = right.cross(view).normalize();
-         Vec3 rx = right.scale(radius * 1.15);
-         Vec3 uy = up.scale(radius);
-         int fa = Math.min(alpha, 255);
+      int a = (int)(Mth.clamp(alpha, 0.0F, 1.0F) * 235.0F);
+      if (a > 2) {
+         Vec3 at = cam.add(view.scale(dist));
+         Vec3 rx = right.scale(half * 1.15);
+         Vec3 uy = up.scale(half);
          collector.submitCustomGeometry(poseStack, type, (pose, consumer) -> {
-            vertex(pose, consumer, at.subtract(rx).subtract(uy), 0.0F, 1.0F, r, g, b, fa);
-            vertex(pose, consumer, at.add(rx).subtract(uy), 1.0F, 1.0F, r, g, b, fa);
-            vertex(pose, consumer, at.add(rx).add(uy), 1.0F, 0.0F, r, g, b, fa);
-            vertex(pose, consumer, at.subtract(rx).add(uy), 0.0F, 0.0F, r, g, b, fa);
+            vertex(pose, consumer, at.subtract(rx).subtract(uy), 0.0F, 1.0F, a);
+            vertex(pose, consumer, at.add(rx).subtract(uy), 1.0F, 1.0F, a);
+            vertex(pose, consumer, at.add(rx).add(uy), 1.0F, 0.0F, a);
+            vertex(pose, consumer, at.subtract(rx).add(uy), 0.0F, 0.0F, a);
          });
       }
    }
 
-   private static void vertex(Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int r, int g, int b, int a) {
+   private static void vertex(Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int a) {
       consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z)
-         .setColor(r, g, b, a)
+         .setColor(255, 255, 255, a)
          .setUv(u, v)
          .setOverlay(OverlayTexture.NO_OVERLAY)
          .setLight(15728880)

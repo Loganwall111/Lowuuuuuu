@@ -12,6 +12,16 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * MCSM 1.9.201 -- PURE DATA FEED. Every world-space backdrop rendering path
+ * that used to consume this manager (the 220-block sky-distance cards, the
+ * angular body-radius discs, the distance-faded bulbs) has been purged along
+ * with StormBackdrop's world-space mesh code. The distant storm silhouette and
+ * the atmospheric weather sheets now render as flat 2D stickers on the native
+ * background sky layer (see StormBackdrop), reading only {@code phase} from
+ * this manager. The disp* fields remain solely for the main entity renderer
+ * and the tractor beams, which are real world objects and stay world-space.
+ */
 public class ClientDistantStormManager {
    private static final Map<Integer, net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData> STORMS = new HashMap<>();
    private static final long EXPIRE_MILLIS = 10000L;

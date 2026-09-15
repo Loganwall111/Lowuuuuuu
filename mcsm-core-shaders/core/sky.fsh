@@ -174,7 +174,17 @@ void main() {
     }
 
 
-    if (!mcsm_sky_active(mcsmP)) {
+    // MCSM 1.9.201 -- ENVIRONMENT LOOP REWORK (2D skybox sticker architecture).
+    // The calm overworld column below is the VANILLA daylight cycle path and
+    // stays byte-for-byte the look of standard hours: no storm term may touch
+    // the frame while stormW is zero. Only once an active storm stamps the fog
+    // channel does stormW ramp 4.90->5.06 and crossfade the frame into the
+    // true-color atmospheric sheet state (the dome stops here + the flat
+    // backdrop stickers Java submits on this same sky layer). The old hard
+    // `if (!mcsm_sky_active())` branch snapped; the blend does not.
+    float stormW = mcsm_ramp(mcsmP, 4.90, 5.06) * (1.0 - mcsm_ramp(mcsmP, 8.02, 8.10));
+
+    if (stormW <= 0.001) {
         if (isBody > 0.5) {
             fragColor = apply_fog(ColorModulator, sphericalVertexDistance,
                                   cylindricalVertexDistance, 0.0,
@@ -216,6 +226,19 @@ void main() {
     }
 
     // ---- storm -------------------------------------------------------------
+    // The calm column is still evaluated during the crossfade so the handoff
+    // from vanilla daylight into the sheet state is a blend, never a cut.
+    float tCalm = fract(clock / 24000.0) * 24000.0;
+    float dayWC   = smoothstep(1000.0, 3000.0, tCalm) * (1.0 - smoothstep(9500.0, 12000.0, tCalm));
+    float nightWC = smoothstep(12500.0, 15000.0, tCalm) * (1.0 - smoothstep(21000.0, 23500.0, tCalm));
+    float duskWC  = clamp(1.0 - dayWC - nightWC, 0.0, 1.0);
+    float upC = clamp(height * 0.5 + 0.5, 0.0, 1.0);
+    vec3 calm = mcsm_sky6(SKY_DAY[0], SKY_DAY[1], SKY_DAY[2], SKY_DAY[3], SKY_DAY[4], SKY_DAY[5], upC) * dayWC
+              + mcsm_sky6(SKY_NIGHT[0], SKY_NIGHT[1], SKY_NIGHT[2], SKY_NIGHT[3], SKY_NIGHT[4], SKY_NIGHT[5], upC) * nightWC
+              + mcsm_sky6(SKY_DUSK[0], SKY_DUSK[1], SKY_DUSK[2], SKY_DUSK[3], SKY_DUSK[4], SKY_DUSK[5], upC) * duskWC;
+    calm += mcsm_horizon_glow(1.0 - upC, dayWC, duskWC);
+    calm = mcsm_biome_tint(calm);
+
     // MCSM 1.9.84 -- FIX "weird layer on top of the sky".
     // The old mapping was up = height*0.5+0.5, so the whole LOWER hemisphere
     // (height < 0) squeezed into up < 0.5 and everything at/below the horizon
@@ -279,7 +302,11 @@ void main() {
     float hide = mcsm_ramp(mcsmP, 5.05, 5.20);
     vec3 body = mcsm_sky_body_tint(mcsmP, ColorModulator.rgb);
     float a = mix(ColorModulator.a, 0.0, hide);
+    // MCSM 1.9.201: crossfade the finished vanilla column into the true-color
+    // storm sheet state with stormW, so standard hours keep the untouched
+    // overworld cycle and an active storm owns the frame completely by 5.06.
+    vec3 graded = mix(calm, dome, stormW);
     // MCSM v8: keep the storm dome on the same vivid Story Mode curve as the
     // clear sky, so switching into the storm does not change the grade.
-    fragColor = vec4(mcsm_story_grade(mix(dome, body, isBody)), mix(1.0, a, isBody));
+    fragColor = vec4(mcsm_story_grade(mix(graded, body, isBody)), mix(1.0, a, isBody));
 }

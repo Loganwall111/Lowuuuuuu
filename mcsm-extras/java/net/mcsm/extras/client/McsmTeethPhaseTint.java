@@ -36,18 +36,30 @@ public final class McsmTeethPhaseTint {
             if (phase < 0.5F) {
                 return;
             }
+            // MCSM 1.9.201 -- TRUE PHASE-SHIFTING TEETH GLOW TRACK.
+            // The emissive teeth/eye colour keys follow the evolution track
+            // exactly as storyboarded; the shader pass reads the storm state
+            // every tick and re-keys the native emissive layer:
+            //   phase 4   cyan-white glow
+            //   phase 5   pure white glow
+            //   phase 5.5 cyan-blue glow
+            //   phase 6   cinematic blue glow
+            //   phase 7   toxic green glow
+            //   phase 8   blinding white glow
             float r, g, b, inten;
             boolean glow;
-            if (phase >= 7.0F) {
-                r = 0.44F; g = 1.00F; b = 0.92F; inten = 2.35F; glow = true;   // bright green-blue late storm
+            if (phase >= 8.0F) {
+                r = 1.00F; g = 1.00F; b = 1.00F; inten = 3.20F; glow = true;   // phase 8: blinding white
+            } else if (phase >= 7.0F) {
+                r = 0.36F; g = 1.00F; b = 0.28F; inten = 2.35F; glow = true;   // phase 7: toxic green
             } else if (phase >= 6.0F) {
-                r = 0.18F; g = 0.92F; b = 1.00F; inten = 2.45F; glow = true;   // stronger blue/cyan split teeth
+                r = 0.22F; g = 0.50F; b = 1.00F; inten = 2.45F; glow = true;   // phase 6: cinematic blue
             } else if (phase >= 5.5F) {
-                r = 0.82F; g = 1.00F; b = 1.00F; inten = 2.05F; glow = true;   // white-cyan teeth, glowing
+                r = 0.40F; g = 0.80F; b = 1.00F; inten = 2.05F; glow = true;   // phase 5.5: cyan-blue
             } else if (phase >= 5.0F) {
-                r = 0.92F; g = 1.00F; b = 0.96F; inten = 0.70F; glow = true;   // phase 5: readable flat white with cyan edge, low bloom
+                r = 1.00F; g = 1.00F; b = 1.00F; inten = 0.90F; glow = true;   // phase 5: pure white, readable
             } else if (phase >= 4.0F) {
-                r = 0.72F; g = 0.98F; b = 1.00F; inten = 1.25F; glow = true;   // slight phase-4 cyan-white glow
+                r = 0.72F; g = 0.98F; b = 1.00F; inten = 1.25F; glow = true;   // phase 4: cyan-white
             } else {
                 r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;  // phase 3: no glowing teeth
             }

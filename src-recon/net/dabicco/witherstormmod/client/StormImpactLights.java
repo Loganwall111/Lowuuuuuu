@@ -126,15 +126,23 @@ public final class StormImpactLights {
                   float brightness = (float)(0.75F * (level / 15.0F) * Math.max(0.0, DabyWSClientConfig.impactLightBrightness));
                   float core = (float)(6.0 * Math.max(0.05, DabyWSClientConfig.impactLightSize));
                   if (!(brightness <= 0.0F) && !(radius <= 0.0F)) {
+                     // MCSM 1.9.201 -- COSMIC BLUE SPOTLIGHT NODES (#4D4DFF).
+                     // The thick purple conic tractor beams stay exactly as
+                     // they are, but the LOWER auxiliary spotlight emitters
+                     // and light nodes (these ground-impact pools) now output
+                     // high-intensity cosmic blue so they separate cleanly
+                     // from the purple core. The beam-colour config may only
+                     // nudge 25% of its hue into the cosmic base.
+                     tintR = 0.302F;
+                     tintG = 0.302F;
+                     tintB = 1.0F;
                      if (DabyWSClientConfig.impactLightUseBeamColor) {
-                        tintR = (float)Mth.lerp(0.45F, Mth.clamp(DabyWSClientConfig.beamColorR, 0.0, 1.0), 1.0);
-                        tintG = (float)Mth.lerp(0.45F, Mth.clamp(DabyWSClientConfig.beamColorG, 0.0, 1.0), 1.0);
-                        tintB = (float)Mth.lerp(0.45F, Mth.clamp(DabyWSClientConfig.beamColorB, 0.0, 1.0), 1.0);
-                     } else {
-                        tintB = 1.0F;
-                        tintG = 1.0F;
-                        tintR = 1.0F;
+                        tintR = Mth.lerp(0.75F, tintR, (float)Mth.clamp(DabyWSClientConfig.beamColorR, 0.0, 1.0));
+                        tintG = Mth.lerp(0.75F, tintG, (float)Mth.clamp(DabyWSClientConfig.beamColorG, 0.0, 1.0));
+                        tintB = Mth.lerp(0.75F, tintB, (float)Mth.clamp(DabyWSClientConfig.beamColorB, 0.0, 1.0));
                      }
+
+                     brightness *= 1.25F;
 
                      tintA = brightness;
                      count = 0;
