@@ -1,3 +1,15 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.412 — Build #412: dark disc + purple card + thin beams fixed against ref 065011
+
+- DARK DISC = base mod stormProximityVignette (screen-space radial darkening
+  centred on the storm; it darkened terrain too). Force-OFF at submit.
+- RAZOR HORIZON LINE = bottom edge of the base mod stormBackdrop sky card
+  (main flag, still on after #410 killed only its quad variant). Force-OFF.
+- BEAMS: #411 falloff was too steep (thin wisps). Regenerated tractor_beam
+  with a wide uniform cone (bright to 70% half-width, soft outer 30%) plus a
+  hot core stripe -- matches the wide glowing cones of ref 065011.
+- With vignette+card gone the #411 calibrated sky gradient, soft clouds,
+  glare halo and teeth glow are finally unobstructed.
+
 # 7000.0.0-MCSM-CINEMATIC-FINAL.411 — Build #411: reference calibration pass (Sept 6/8 stills), no new systems
 
 User verdict on .404-.410: "none of this is accurate, only worse". This build

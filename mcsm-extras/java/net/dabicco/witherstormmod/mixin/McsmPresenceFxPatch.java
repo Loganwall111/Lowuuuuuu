@@ -69,6 +69,14 @@ public abstract class McsmPresenceFxPatch {
             // atmosphere instead.
             DabyWSClientConfig.stormBackdropQuad = false;
             DabyWSClientConfig.stormBackdropBlack = false;
+            // #412: two more base-mod layers that sat between the player and
+            // the real picture. stormBackdrop (main flag) draws the flat
+            // purple sky card whose bottom edge was the razor horizon line;
+            // stormProximityVignette is a screen-space radial darkening
+            // centred on the storm (it darkened terrain too) -- the "dark
+            // disc". Both off; the reference stills have neither.
+            DabyWSClientConfig.stormBackdrop = false;
+            DabyWSClientConfig.stormProximityVignette = false;
             DabyWSClientConfig.atmospherePulse = true;
             DabyWSClientConfig.glareEjecta = true;
             submitExpandedHalos(ctx);
