@@ -122,6 +122,8 @@ public final class McsmExtrasConfig {
      * with no shader pack installed.
      */
     public static boolean skyFloorBand = true;
+    /** BUILD #447 -- cutscenes beyond the boot sequence (eight, in the world). */
+    public static boolean cutscenes = true;
     /** BUILD #445 -- the reader's own page in the future-book (kept between sessions). */
     public static String futureBookNote = "";
     /** The countdown day the reader's page was written on. */
@@ -429,6 +431,7 @@ public final class McsmExtrasConfig {
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
             p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
+            p.setProperty("cutscenes", String.valueOf(cutscenes));
             p.setProperty("future_book_note", futureBookNote);
             p.setProperty("future_book_note_day", String.valueOf(futureBookNoteDay));
             p.setProperty("storage_mazes", String.valueOf(storageMazes));
@@ -568,6 +571,7 @@ public final class McsmExtrasConfig {
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
+            cutscenes = bool(p, "cutscenes", cutscenes);
             futureBookNote = str(p, "future_book_note", futureBookNote);
             futureBookNoteDay = (int) dbl(p, "future_book_note_day", futureBookNoteDay);
             storageMazes = bool(p, "storage_mazes", storageMazes);

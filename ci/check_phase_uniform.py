@@ -2123,6 +2123,103 @@ def main():
           "super(Component.literal(\"The Infinite Future-Book\"));" in bookui
           and "import net.minecraft.network.chat.Component;" in bookui)
 
+    # ------------------------------------------------------------------
+    # BUILD #447 -- CUTSCENES BEYOND THE BOOT SEQUENCE.
+    #
+    # Eight scenes, each fired by something the player does in the world. The gate
+    # holds the table and the runtime together: every scene in the catalogue must
+    # have a trigger implemented, and every trigger implemented must be a scene --
+    # a catalogue that drifts from its own switch is how a cutscene silently stops
+    # ever playing.
+    # ------------------------------------------------------------------
+    table = read("mcsm-extras/java/net/mcsm/extras/McsmSceneTable.java") or ""
+    scenes = read("mcsm-extras/java/net/mcsm/extras/client/McsmScenes.java") or ""
+
+    check("there are eight in-world cutscenes, and every one is a real scene",
+          table.count("new Scene(") == 8
+          and 'new Scene("first_district"' in table
+          and 'new Scene("first_maze"' in table
+          and 'new Scene("first_racks"' in table
+          and 'new Scene("the_rift"' in table
+          and 'new Scene("adams_gate"' in table
+          and 'new Scene("the_waking"' in table
+          and 'new Scene("the_creator"' in table
+          and 'new Scene("phase_six"' in table
+          and "record Scene(String id, String title, String[] lines, long ms, String trigger,"
+                  in table)
+    # the trigger switch alone (the wash table below it also has cases, which is why
+    # this reads the method rather than the file)
+    fires_body = scenes.split("private static boolean fires(")[1].split(
+        "private static boolean beastNear(")[0]
+    check("every scene in the catalogue has a trigger in the runtime, and no orphan triggers",
+          all(('case "' + sid + '":') in fires_body for sid in (
+              "first_district", "first_maze", "first_racks", "the_rift", "adams_gate",
+              "the_waking", "the_creator", "phase_six"))
+          and fires_body.count('case "') == 8)
+    check("the catalogue is server-safe: no client class in it, so /ds scene can list it",
+          "GuiGraphicsExtractor" not in table
+          and "import net.minecraft.client" not in table
+          and "public static String summary()" in table
+          and "McsmSceneTable.summary()" in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java")
+              or ""))
+    check("the scenes ride the proven hooks, not a new render path",
+          "McsmScenes.tick();" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java") or "")
+          and "net.mcsm.extras.client.McsmScenes.draw(g, delta);" in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java")
+              or "")
+          and "g.guiWidth()" in scenes and "g.guiHeight()" in scenes
+          and "g.centeredText(mc.font" in scenes)
+    check("the camera turns the player reflectively, and puts them back afterwards",
+          'call(player, "setYRot", yaw);' in scenes
+          and 'call(player, "setXRot", pitch);' in scenes
+          and 'field(player, "yRotO", yaw);' in scenes
+          and "restore = new float[]{player.getYRot(), player.getXRot()};" in scenes
+          and "aim(mc.player, restore[0], restore[1]);" in scenes)
+    check("the frame is a cutscene: bars, a title card, typed lines, and any key skips",
+          "int bar = (int) (h * 0.12D);" in scenes
+          and "scene.title(), w / 2" in scenes
+          and "int typed = (int) (lines * Math.clamp((t - 0.2D) / 0.5D, 0.0D, 1.0D));" in scenes
+          and "skipRequested()" in scenes
+          and "McsmKeyboard.poll()" in scenes
+          and '"any key skips"' not in scenes
+          and "k == McsmKeyboard.SPACE || k == McsmKeyboard.ENTER || k == McsmKeyboard.ESCAPE"
+                  in scenes)
+    check("the scenes know their own distance shapes (the two probes differ)",
+          # nearestCity answers {dx, dz, distance}; nearestMaze / nearestRoom answer
+          # {x, z, distanceSquared}. Reading them the same way would fire the city
+          # scene 96 blocks late and the other two would never fire at all.
+          "return near != null && near[2] < 96;" in scenes
+          and scenes.count("return near != null && near[2] < 96 * 96;") == 2
+          and "McsmCities.nearestCity((int) Math.floor(x), (int) Math.floor(z))" in scenes
+          and "McsmMazes.nearestMaze((int) Math.floor(x), (int) Math.floor(z))" in scenes
+          and "McsmServerRooms.nearestRoom((int) Math.floor(x), (int) Math.floor(z))" in scenes)
+    check("the big two are found by the entity scan the HUD already proves",
+          "player.level().getEntitiesOfClass(McsmBeast.class," in scenes
+          and "player.getBoundingBox().inflate(range)" in scenes
+          and "beastNear(player, McsmBeast.MAS, 128.0D)" in scenes
+          and "beastNear(player, McsmBeast.CREATOR, 192.0D)" in scenes
+          and "McsmStormPhase.active() && McsmStormPhase.phase() >= 6.0F" in scenes
+          and "player.level().dimension().equals(McsmReality.DECAYED_REALITY)" in scenes
+          and "player.level().dimension().equals(McsmAdams.ADAMS)" in scenes)
+    check("cutscenes can be switched off, and N plays the next one you have not seen",
+          "public static boolean cutscenes = true;" in cfg
+          and "cutscenes = bool(p, \"cutscenes\", cutscenes);" in cfg
+          and 'p.setProperty("cutscenes", String.valueOf(cutscenes));' in cfg
+          and "Cutscenes (eight, in world: cities, mazes, racks, rift, adams)" in extras
+          and "public static final int N = 78;" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmKeyboard.java") or "")
+          and "mcsm$fallbackSceneKey();" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java") or "")
+          and "McsmScenes.nextUnplayed()" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java") or "")
+          and "public static String nextUnplayed()" in scenes)
+    check("the scenes are once each, and never while a screen is open",
+          "private static final Set<String> PLAYED = ConcurrentHashMap.newKeySet();" in scenes
+          and "PLAYED.contains(scene.id())" in scenes
+          and "if (!McsmExtrasConfig.cutscenes || mc.screen != null) {" in scenes)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

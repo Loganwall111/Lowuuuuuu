@@ -37,6 +37,7 @@ public final class McsmTerminalClient {
     /** BUILD #424 -- the direct C read's edge state. */
     private static boolean mcsm$cWasDown;
     private static boolean mcsm$bWasDown;
+    private static boolean mcsm$nWasDown;
 
     private McsmTerminalClient() {
     }
@@ -54,6 +55,8 @@ public final class McsmTerminalClient {
             ClientTickEvents.START_CLIENT_TICK.register(client -> {
                 pollKey();
                 McsmMassgSky.tick();
+                // BUILD #447 -- the in-world cutscenes: triggers and their clock.
+                McsmScenes.tick();
             });
             bindKey();
             System.out.println("[ds] the terminal's C key is live");
@@ -93,6 +96,8 @@ public final class McsmTerminalClient {
         mcsm$fallbackKey();
         // BUILD #445 -- and the book, on its own key.
         mcsm$fallbackBookKey();
+        // BUILD #447 -- and a preview key for the cutscenes.
+        mcsm$fallbackSceneKey();
         if (keyMapping == null) {
             return;
         }
@@ -173,6 +178,43 @@ public final class McsmTerminalClient {
                 }
             } else if (current == null) {
                 McsmFutureBookScreen.show();
+            }
+        } catch (Throwable ignored) {
+            // never break a tick over a key
+        }
+    }
+
+    /**
+     * BUILD #447 -- N previews the next cutscene you have not seen.
+     *
+     * The scenes fire on their own, in the world, the first time their trigger
+     * happens. This key exists so that they can also be watched deliberately --
+     * for a player who wants to see them all, and for anyone checking the build.
+     */
+    private static void mcsm$fallbackSceneKey() {
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || mc.player == null) {
+                return;
+            }
+            boolean down = mcsm$isKeyDown(McsmKeyboard.N);
+            if (!down) {
+                mcsm$nWasDown = false;
+                return;
+            }
+            if (mcsm$nWasDown) {
+                return;
+            }
+            mcsm$nWasDown = true;
+            if (currentScreen(mc) != null) {
+                return;
+            }
+            String next = McsmScenes.nextUnplayed();
+            if (next != null) {
+                McsmScenes.play(next);
+            } else if (McsmScenes.allPlayed()) {
+                // seen them all: N then replays the catalogue from the top
+                McsmScenes.play(net.mcsm.extras.McsmSceneTable.ids().get(0));
             }
         } catch (Throwable ignored) {
             // never break a tick over a key

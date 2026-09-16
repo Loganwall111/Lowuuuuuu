@@ -136,6 +136,12 @@ public abstract class McsmTownCommandPatch {
             maze.then(Commands.literal("where").executes(ctx -> ds$maze(ctx.getSource())));
             maze.then(Commands.literal("build").executes(ctx -> ds$mazeBuild(ctx.getSource())));
 
+            // BUILD #447 -- the cutscenes, listed from the shared table (the server
+            // never loads the drawing class).
+            LiteralArgumentBuilder<CommandSourceStack> scene = Commands.literal("scene");
+            scene.executes(ctx -> ds$scene(ctx.getSource()));
+            scene.then(Commands.literal("list").executes(ctx -> ds$scene(ctx.getSource())));
+
             // BUILD #445 -- the future-book, for anyone who wants the countdown in chat
             // rather than on a page.
             LiteralArgumentBuilder<CommandSourceStack> book = Commands.literal("book");
@@ -147,7 +153,7 @@ public abstract class McsmTownCommandPatch {
             server.then(Commands.literal("shell").executes(ctx -> ds$serverShell(ctx.getSource())));
 
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
-                    .then(ritual).then(reality).then(maze).then(server).then(book));
+                    .then(ritual).then(reality).then(maze).then(server).then(book).then(scene));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -479,6 +485,21 @@ public abstract class McsmTownCommandPatch {
                         net.mcsm.extras.McsmFutureBook.daysLeft()) + 1) + " of "
                         + net.mcsm.extras.McsmFutureBook.count()
                         + " -- press B in game to read it, the last page is blank"), false);
+        return 1;
+    }
+
+    private static int ds$scene(CommandSourceStack src) {
+        src.sendSuccess(() -> Component.literal("[ds] cutscenes: "
+                + net.mcsm.extras.McsmSceneTable.summary()), false);
+        for (net.mcsm.extras.McsmSceneTable.Scene scene : net.mcsm.extras.McsmSceneTable.all()) {
+            src.sendSuccess(() -> Component.literal("[ds]   " + scene.id() + " -- "
+                    + scene.title() + " (" + (scene.ms() / 1000L) + "s, fires on "
+                    + scene.trigger() + ")"), false);
+        }
+        src.sendSuccess(() -> Component.literal(
+                "[ds] they fire themselves in the world, once each, the first time their "
+                + "trigger happens -- or press N in game to play the next one you have not seen"),
+                false);
         return 1;
     }
 }

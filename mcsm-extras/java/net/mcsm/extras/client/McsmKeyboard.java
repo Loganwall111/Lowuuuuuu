@@ -41,6 +41,7 @@ public final class McsmKeyboard {
     public static final int B = 66;
     public static final int W = 87;
     public static final int S = 83;
+    public static final int N = 78;
 
     private McsmKeyboard() {
     }

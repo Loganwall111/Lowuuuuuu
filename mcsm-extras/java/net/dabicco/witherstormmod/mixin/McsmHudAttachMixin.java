@@ -33,5 +33,8 @@ public abstract class McsmHudAttachMixin {
         // colour shockwaves, on the same proven per-frame hook.
         net.mcsm.extras.client.McsmCinematic.tickEnding();
         net.mcsm.extras.client.McsmCinematic.drawEnding(g);
+        // BUILD #447 -- the in-world cutscenes, drawn over the world on the same
+        // proven per-frame hook (bars, title card, typed lines).
+        net.mcsm.extras.client.McsmScenes.draw(g, delta);
     }
 }

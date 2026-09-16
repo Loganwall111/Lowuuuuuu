@@ -411,6 +411,11 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyFloorBand = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #447 -- the cutscenes that happen in the world.
+          .bool("Cutscenes (eight, in world: cities, mazes, racks, rift, adams)", () -> McsmExtrasConfig.cutscenes, v -> {
+              McsmExtrasConfig.cutscenes = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #444 -- the two underground structures.
           .bool("Storage Mazes (carved warehouses, hatches)", () -> McsmExtrasConfig.storageMazes, v -> {
               McsmExtrasConfig.storageMazes = v;
