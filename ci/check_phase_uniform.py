@@ -2451,6 +2451,16 @@ def main():
           and "public static final int CATCH_Y = -70;" in void_java
           and "public static final int SHELF_Y = 210;" in void_java)
     spectrum = re.findall(r"0xFF[0-9A-F]{6},", floor)
+    check("one shelf builder: regions and landings both carve through shelfInto",
+          # run 534 -- the region pass called the plan-returning shelf() and handed a
+          # Planner to a parameter asking for a ServerLevel. There is one carve now.
+          "shelfInto(planner, key, x, y, z, false);" in void_java
+          and "shelf(planner," not in void_java
+          and "private static void shelfInto(McsmBuildQueue.Planner planner, long key," in void_java
+          and "return planner.plan(key ^ 0x5F0L);" in void_java
+          # and the region plan has the room for seven of them: put() past capacity
+          # is a silent skip, which would have shipped a region with four shelves
+          and "new McsmBuildQueue.Planner(120000);" in void_java)
     check("the bottom is RGB rays: a full spectrum, rotating, brightest at the floor",
           len(spectrum) == 12
           and len(set(spectrum)) == 12

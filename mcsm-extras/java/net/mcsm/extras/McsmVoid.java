@@ -292,7 +292,9 @@ public final class McsmVoid {
     }
 
     private static McsmBuildQueue.Plan plan(ServerLevel level, long key, int ox, int oz) {
-        McsmBuildQueue.Planner planner = new McsmBuildQueue.Planner(26000);
+        // a region is SEVEN shelves in one plan, and one shelf can ask for ten thousand
+        // blocks of its own: 26000 would have silently dropped the last four shelves
+        McsmBuildQueue.Planner planner = new McsmBuildQueue.Planner(120000);
         for (int i = 0; i < SHELVES_PER_REGION; i++) {
             long seed = mix(key * 0x9E3779B97F4A7C15L + i * 0x5DEECE66DL);
             int x = ox + (int) (Math.floorMod(seed, 2L * REGION) - REGION);
@@ -300,7 +302,7 @@ public final class McsmVoid {
             int z = oz + (int) (Math.floorMod(seed2, 2L * REGION) - REGION);
             long seed3 = mix(seed2 * 0x2545F491L);
             int y = 24 + (int) Math.floorMod(seed3, 220L);
-            shelf(planner, key, x, y, z, false);
+            shelfInto(planner, key, x, y, z, false);
         }
         return planner.plan(key);
     }
@@ -311,7 +313,20 @@ public final class McsmVoid {
      */
     private static McsmBuildQueue.Plan shelf(ServerLevel level, long key, int cx, int cy, int cz,
                                              boolean landing) {
-        McsmBuildQueue.Planner planner = new McsmBuildQueue.Planner(26000);
+        McsmBuildQueue.Planner planner = new McsmBuildQueue.Planner(32000);
+        shelfInto(planner, key, cx, cy, cz, landing);
+        return planner.plan(key ^ 0x5F0L);
+    }
+
+    /**
+     * One shelf, carved straight into somebody else's planner -- because a region is
+     * ONE plan made of many shelves, and a landing is one plan made of one, and the
+     * two have to go through the same builder. (Run 534 was the first compile of this
+     * file: the region pass still called the plan-returning shelf() and handed a
+     * Planner to a parameter asking for a ServerLevel.)
+     */
+    private static void shelfInto(McsmBuildQueue.Planner planner, long key, int cx, int cy, int cz,
+                                  boolean landing) {
         long seed = mix(key ^ ((long) cx * 31L) ^ ((long) cz * 17L));
         int w = 14 + (int) Math.floorMod(seed, 12L);
         int d = 14 + (int) Math.floorMod(mix(seed), 12L);
@@ -322,7 +337,7 @@ public final class McsmVoid {
                 if (edge > 1.0D) {
                     continue;
                 }
-                int surface = (int) Math.round(SHELF_Y * 0.0D + cy + 3.0D
+                int surface = (int) Math.round(cy + 3.0D
                         - Math.max(0.0D, edge - 0.55D) * 6.0D);
                 planner.put(cx + x, surface, cz + z, STONE);
                 planner.put(cx + x, surface + 1, cz + z, AIR);
@@ -363,7 +378,6 @@ public final class McsmVoid {
                 }
             }
         }
-        return planner.plan(key ^ 0x5F0L);
     }
 
     /** A house in the nothing: walls, glass windows, planks, a roof with a hole. */
