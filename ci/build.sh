@@ -536,6 +536,20 @@ N_CLASSES="$(find /tmp/mcsm-build -name '*.class' | wc -l)"
 if [ "$JAVAC_RC" -eq 0 ]; then
   echo "[javac] OK: ${N_CLASSES} classes"
   rm -f out/JAVAC_FAILED.txt
+  # BUILD #416 -- a clean javac exit is not the same as "the new pass is in the
+  # jar". Some of this build's classes only ADD behaviour: if one of them silently
+  # failed to be produced, the jar would still build and still load, and the effect
+  # would simply never draw -- which is exactly how the death cinematic stayed
+  # invisible for a dozen builds. So the classes that carry new behaviour are
+  # required to exist in the compiled output. find() is used instead of a fixed
+  # path so a layout change can never turn this into a false failure.
+  for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch; do
+    if ! find /tmp/mcsm-build -name "${cls}.class" -print -quit | grep -q .; then
+      echo "::error title=build::compiled output is missing ${cls}.class -- new behaviour would silently not draw"
+      exit 1
+    fi
+  done
+  echo "[javac] new-behaviour classes present (white column, conic renderer, phase model, presence pass)"
 else
   echo "::error::javac FAILED (exit ${JAVAC_RC}) — refusing to publish a shaders-only/old-Java jar. Full log: out/JAVAC_FAILED.txt"
   cp -f "$JAVAC_LOG" out/JAVAC_FAILED.txt
