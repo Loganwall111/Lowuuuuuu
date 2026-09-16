@@ -245,40 +245,14 @@ public final class McsmExperimentalStoryStage {
                 / (DOME_RADIUS_Y * 2.0D)), 0.0F, 1.0F);
     }
 
-    /** Exact phase decks requested for the experimental stage shell. */
+    /** The stage shell wears the SAME traced columns as the sky and the atmosphere wall. */
     private static int palette(float phase, float vertical, float alpha) {
-        int p5Top = rgb(0x10, 0x16, 0x17);
-        int p5Mid = rgb(0x1D, 0x33, 0x35);
-        int p5Hor = rgb(0x55, 0x70, 0x61);
-        int p55Top = rgb(0x05, 0x02, 0x08);
-        int p55Mid = rgb(0x2A, 0x12, 0x3D);
-        int p55Hor = rgb(0x4B, 0x1E, 0x5E);
-        int p6Top = rgb(0x10, 0x0A, 0x1A);
-        int p6Mid = rgb(0x33, 0x1C, 0x3D);
-        int p6Hor = rgb(0xC4, 0x7A, 0x5A);
-
-        int top;
-        int mid;
-        int hor;
-        float phaseBlend = Mth.clamp((phase - 5.0F) / 0.5F, 0.0F, 1.0F);
-        if (phase < 5.5F) {
-            top = mixColor(p5Top, p55Top, phaseBlend);
-            mid = mixColor(p5Mid, p55Mid, phaseBlend);
-            hor = mixColor(p5Hor, p55Hor, phaseBlend);
-        } else {
-            float t = Mth.clamp((phase - 5.5F) / 0.5F, 0.0F, 1.0F);
-            top = mixColor(p55Top, p6Top, t);
-            mid = mixColor(p55Mid, p6Mid, t);
-            hor = mixColor(p55Hor, p6Hor, t);
-        }
-
-        int color;
-        if (vertical < 0.38F) {
-            color = mixColor(hor, mid, vertical / 0.38F);
-        } else {
-            color = mixColor(mid, top, (vertical - 0.38F) / 0.62F);
-        }
-        return (color & 0x00FFFFFF) | (clamp((int) alpha, 0, 255) << 24);
+        // BUILD #430: this shell used to carry its own hand-typed p5/p55/p6 ramp
+        // -- a third colour source, disagreeing with the other two. It now reads
+        // the one generated palette. `vertical` runs horizon (0) -> zenith (1)
+        // here, the palette's t runs the other way.
+        return McsmBackdropPalette.argb(McsmBackdropPalette.column(phase, 1.0F - vertical),
+                clamp((int) alpha, 0, 255));
     }
 
     private static void submitPadAndEdge(PoseStack poseStack, SubmitNodeCollector collector,
@@ -368,14 +342,6 @@ public final class McsmExperimentalStoryStage {
 
     private static Vec3 normal(Vec3 value) {
         return value.lengthSqr() < 1.0E-8D ? new Vec3(0.0D, 1.0D, 0.0D) : value.normalize();
-    }
-
-    private static int mixColor(int a, int b, float amount) {
-        float t = Mth.clamp(amount, 0.0F, 1.0F);
-        int r = (int) (((a >> 16) & 0xFF) + (((b >> 16) & 0xFF) - ((a >> 16) & 0xFF)) * t);
-        int g = (int) (((a >> 8) & 0xFF) + (((b >> 8) & 0xFF) - ((a >> 8) & 0xFF)) * t);
-        int blue = (int) ((a & 0xFF) + ((b & 0xFF) - (a & 0xFF)) * t);
-        return rgb(r, g, blue);
     }
 
     private static int rgb(int r, int g, int b) {

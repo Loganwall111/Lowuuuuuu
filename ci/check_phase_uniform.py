@@ -1510,6 +1510,52 @@ def main():
           and "STORY_CHARACTER" in cities and "CHARACTERS" in cities
           and "if (OPS.isEmpty()) {\n                spawnLife(level);" in cities)
 
+    # ------------------------------------------------------------------
+    # BUILD #430 -- ONE BACKDROP PALETTE.
+    #
+    # "the colours haven't really changed at all", "backdrops still not the
+    # accurate colours" and "you fixed the the Halos I mean the atmos back drop".
+    # The sky's columns were traced off the supplied sheets and parity checked;
+    # the two BACKDROP renderers each carried a hand-typed ramp and were in no
+    # chain at all, so they could disagree with the sheets and with each other
+    # and no gate could see it.
+    # ------------------------------------------------------------------
+    palette = read("mcsm-extras/java/net/mcsm/extras/client/McsmBackdropPalette.java") or ""
+    atmosphere = read("mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java") or ""
+    stage = read("mcsm-extras/java/net/mcsm/extras/client/McsmExperimentalStoryStage.java") or ""
+    skyref = read("mcsm-core-shaders/core/sky.fsh") or ""
+
+    check("both backdrops read the one generated palette and keep no colour of their own",
+          "MCSM_BACKDROP_PALETTE_BEGIN" in palette
+          and "public static int column(float phase, float t)" in palette
+          and "McsmBackdropPalette.column(phase, 1.0F - vertical)" in atmosphere
+          and "McsmBackdropPalette.column(phase, 1.0F - vertical)" in stage)
+    check("the atmosphere wall's own hand-typed decks are gone",
+          "phase45" not in atmosphere and "phase55" not in atmosphere
+          and "verticalGradient" not in atmosphere
+          and "0x6E, 0x78, 0x73" not in atmosphere and "0x7F, 0x3A, 0xA6" not in atmosphere
+          and "0xA0, 0x75, 0x7E" not in atmosphere
+          and "McsmBackdropPalette.VOID_BLACK" in atmosphere)
+    check("the story stage shell's own hand-typed decks are gone",
+          "p5Hor" not in stage and "p55Hor" not in stage and "p6Hor" not in stage
+          and "mixColor" not in stage
+          and "McsmBackdropPalette.argb(" in stage)
+    check("the generated block carries the sheets' four columns and the sky's routing",
+          "public static final int[] TEAL = {" in palette
+          and "public static final int[] EMBER = {" in palette
+          and "public static final float TEAL_TO_PURPLE_LO = 5.100F;" in palette
+          and "public static final float PURPLE_TO_ROSE_HI = 6.050F;" in palette
+          and "public static final float ROSE_TO_EMBER_HI = 8.050F;" in palette)
+    check("the sky eases through the bands instead of jumping a sixth of a phase early",
+          "vec3 col = mix(mix(teal, pur, mcsm_ramp(p, 5.1, 5.5)), rose, mcsm_ramp(p, 5.75, 6.05));"
+          in skyref
+          and "if (p < 5.9) return mix(pur, rose" not in skyref)
+    check("the pack's position program and the Java sky feed keep the same three ramps",
+          "mix(mix(teal, purple, mcsm_ramp(p, 5.1, 5.5))" in (
+              read("mcsm-core-shaders/core/position.fsh") or "")
+          and "ramp(p, 5.75F, 6.05F)" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java") or ""))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

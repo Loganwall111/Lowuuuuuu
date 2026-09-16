@@ -777,6 +777,13 @@ if [ $EMISSIVE_RC -ne 0 ]; then
   echo "::error title=emissive masks::the phase >= 4 teeth/eye masks are not pure white -- the glow cannot reach the emissive floor. Run 'python3 ci/make_emissive_whites.py'"
   exit 1
 fi
+BACKDROP_CHECK="$(python3 ci/sync_backdrop_palette.py --check 2>&1)"
+BACKDROP_RC=$?
+printf '%s\n' "$BACKDROP_CHECK" | tail -2
+if [ $BACKDROP_RC -ne 0 ]; then
+  echo "::error title=backdrop palette::the atmosphere wall and the story stage no longer wear the supplied sheets' traced columns. Run 'python3 ci/sync_backdrop_palette.py'"
+  exit 1
+fi
 CONTENT_CHECK="$(python3 ci/check_content_textures.py 2>&1)"
 CONTENT_RC=$?
 printf '%s\n' "$CONTENT_CHECK" | tail -4
@@ -1260,6 +1267,7 @@ fi
 # overlay where the menu appears but the stage is inert (or vice versa).
 for stage_class in \
   net/mcsm/extras/client/McsmExperimentalStoryStage.class \
+  net/mcsm/extras/client/McsmBackdropPalette.class \
   net/dabicco/witherstormmod/mixin/McsmStageChunkBoundaryMixin.class; do
   if [ ! -f "$FX/cls/$stage_class" ]; then
     echo "::error title=jar audit::experimental stage class missing: $stage_class"

@@ -157,71 +157,27 @@ public final class McsmAtmosphericMeshComponent {
                 .setNormal(pose, (float) normal.x, (float) normal.y, (float) normal.z);
     }
 
-    /** Exact phase decks: p5, p5.5-5.9, and p6+. */
+    /** The deck of the band owning this quad, at this quad's height on the wall. */
     private static int colour(float phase, double x, double y, float phaseFade) {
         float radius = Mth.clamp((float) Math.sqrt(x * x + y * y), 0.0F, 1.0F);
         float vertical = Mth.clamp((float) ((y + 1.0D) * 0.5D), 0.0F, 1.0F);
-        int p45 = phase45(vertical);
-        int p5 = phase5(vertical);
-        int p55 = phase55(vertical);
-        int p6 = phase6(vertical);
-
-        int rgb;
-        if (phase < 5.0F) {
-            rgb = mix(p45, p5, smoothstep(phase, 4.45F, 5.0F));
-        } else if (phase < 5.5F) {
-            rgb = mix(p5, p55, smoothstep(phase, 5.0F, 5.5F));
-        } else {
-            rgb = mix(p55, p6, smoothstep(phase, 5.5F, 6.0F));
-        }
+        // BUILD #430 -- the wall wears the SUPPLIED SHEETS' columns, read out of
+        // the one generated palette the story stage shell shares. This file used
+        // to carry its own hand-typed horizon/zenith pair per phase and could
+        // drift from the sky without any gate noticing. The palette's t runs
+        // zenith (0) -> horizon (1); this wall's vertical runs the other way, so
+        // the horizon row lands on the wall's bottom edge where it belongs, and
+        // the band routing is sky.fsh's own (5.10-5.50, 5.75-6.05, 7.00-8.05).
+        int rgb = McsmBackdropPalette.column(phase, 1.0F - vertical);
 
         float outerFade = 1.0F - smoothstep(radius, 0.68F, 1.0F);
         float corePass = phase >= 5.0F
                 ? 0.22F + 0.78F * smoothstep(radius, 0.0F, 0.42F)
                 : 1.0F;
         float bottomSilhouette = 1.0F - smoothstep(vertical, 0.0F, 0.32F);
-        rgb = mix(rgb, rgb(0x01, 0x03, 0x08), bottomSilhouette * 0.82F);
+        rgb = mix(rgb, McsmBackdropPalette.VOID_BLACK, bottomSilhouette * 0.82F);
         float alpha = MAX_ALPHA * phaseFade * outerFade * corePass;
         return (Mth.clamp((int) (alpha * 255.0F), 0, 255) << 24) | (rgb & 0x00FFFFFF);
-    }
-
-    /** Phase 4.5 green initialization, used only after the vanilla 4.0 path. */
-    private static int phase45(float vertical) {
-        return verticalGradient(rgb(0x6E, 0x8F, 0x73), rgb(0x17, 0x3B, 0x32), vertical);
-    }
-
-    /** Exact Phase 5 slate-teal track: #6E7873 horizon to #1D2B2B zenith. */
-    private static int phase5(float vertical) {
-        return verticalGradient(rgb(0x6E, 0x78, 0x73), rgb(0x1D, 0x2B, 0x2B), vertical);
-    }
-
-    /** Exact Phase 5.5 track: #7F3AA6 horizon to #1A0A2A zenith. */
-    private static int phase55(float vertical) {
-        return verticalGradient(rgb(0x7F, 0x3A, 0xA6), rgb(0x1A, 0x0A, 0x2A), vertical);
-    }
-
-    /** Exact Phase 6+ track: #A0757E horizon to #422E3B zenith. */
-    private static int phase6(float vertical) {
-        return verticalGradient(rgb(0xA0, 0x75, 0x7E), rgb(0x42, 0x2E, 0x3B), vertical);
-    }
-
-    private static int verticalGradient(int horizon, int zenith, float vertical) {
-        return mix(horizon, zenith, smoothstep(vertical, 0.0F, 1.0F));
-    }
-
-    private static double bodyRadius(float phase) {
-        if (phase < 5.0F) {
-            return 25.0D + 20.0D * Math.max(0.0D, phase - 4.45D);
-        }
-        if (phase < 6.0F) {
-            return 36.0D + 26.0D * (phase - 5.0D);
-        }
-        return Math.min(340.0D, 40.0D + 30.0D * (phase - 6.0D));
-    }
-
-    private static float smoothstep(float value, float low, float high) {
-        float t = Mth.clamp((value - low) / (high - low), 0.0F, 1.0F);
-        return t * t * (3.0F - 2.0F * t);
     }
 
     private static int mix(int a, int b, float amount) {

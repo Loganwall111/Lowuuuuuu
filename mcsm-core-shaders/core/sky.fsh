@@ -128,11 +128,17 @@ vec3 mcsm_sky_reference(float t, float p) {
     vec3 rose = mcsm_sky_column(PHASE6_ROSE, t);
     vec3 ember = mcsm_sky_column(EMBER_END, t);
 
-    if (p < 5.1) return mix(teal, pur, mcsm_ramp(p, 5.1, 5.5));          // 5.0-5.1 teal, then toward purple
-    if (p < 5.5) return mix(teal, pur, mcsm_ramp(p, 5.1, 5.5));          // 5.1-5.5 blend
-    if (p < 5.9) return mix(pur, rose, mcsm_ramp(p, 5.75, 6.05));        // 5.5-5.9 purple, easing to rose
-    if (p < 7.0) return mix(rose, ember, mcsm_ramp(p, 7.0, 8.05));       // 6.0-7.0 rose -> ember
-    return mix(rose, ember, mcsm_ramp(p, 7.0, 8.05));
+    // BUILD #430 -- ONE nested easing, the same three ramps the pack's position
+    // program, McsmStormPhase.java and McsmBackdropPalette.java use, all of them
+    // expanded from the supplied sheets' anchors.
+    //
+    // The branchy version this replaces ran the purple->rose easing across
+    // 5.75-6.05 but stopped TAKING that branch at p = 5.9: crossing 5.9 snapped
+    // the sky from a half-blended purple/rose to a flat rose, i.e. it changed
+    // band a sixth of a phase early, in one frame, with no blend. That is one of
+    // the "the colours haven't really changed at all" seams.
+    vec3 col = mix(mix(teal, pur, mcsm_ramp(p, 5.1, 5.5)), rose, mcsm_ramp(p, 5.75, 6.05));
+    return mix(col, ember, mcsm_ramp(p, 7.0, 8.05));
 }
 
 // Regular cycle: cross-fade day -> sunset -> night by true sun elevation, so
