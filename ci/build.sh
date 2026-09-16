@@ -213,12 +213,45 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.minecraft.world.entity.player.Inventory net.minecraft.world.inventory.AbstractContainerMenu \
     net.minecraft.world.level.block.entity.CommandBlockEntity \
     net.minecraft.network.chat.Component net.minecraft.ChatFormatting"
-  MOD_CLASSES="net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen \
-    net.dabicco.witherstormmod.client.ShaderPackCompat \
+  # BUILD #416 -- the FULL base-jar surface mcsm-extras calls into, not just the
+  # six classes the first pass happened to name. mcsm-extras is compiled against
+  # this FROZEN base release asset and can only ever call what it declares, so
+  # ci/api/mod.txt is the authority for what exists; check_phase_uniform.py now
+  # fails the build when mcsm-extras calls a base-jar method that is declared
+  # nowhere in it. (The first conic-column attempt added glowWhite to the
+  # *reference copy* of GlowRenderTypes under net/ -- a tree that is on no compile
+  # classpath -- and only found out from javac. This dump is what catches that
+  # class of mistake in seconds instead of in a red run.)
+  MOD_CLASSES="net.dabicco.witherstormmod.BowelsGravity \
+    net.dabicco.witherstormmod.BowelsPortal \
+    net.dabicco.witherstormmod.DabyWitherStormMod \
+    net.dabicco.witherstormmod.DabyWitherStormModClient \
+    net.dabicco.witherstormmod.ModBlocks \
+    net.dabicco.witherstormmod.ModItems \
+    net.dabicco.witherstormmod.WitherStormSummon \
+    net.dabicco.witherstormmod.client.ClientDistantStormManager \
     net.dabicco.witherstormmod.client.FoglessRenderTypes \
+    net.dabicco.witherstormmod.client.GlowRenderTypes \
+    net.dabicco.witherstormmod.client.ShaderPackCompat \
+    net.dabicco.witherstormmod.client.StormBloom \
+    net.dabicco.witherstormmod.client.StormDebris \
+    net.dabicco.witherstormmod.client.StormSkyDarken \
     net.dabicco.witherstormmod.client.StormSkyGradient \
+    net.dabicco.witherstormmod.client.TentaclePhysics \
+    net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen \
+    net.dabicco.witherstormmod.command.DabyWSCommand \
+    net.dabicco.witherstormmod.config.DabyWSClientConfig \
+    net.dabicco.witherstormmod.config.WitherStormConfigs \
+    net.dabicco.witherstormmod.config.WitherStormWorldConfig \
     net.dabicco.witherstormmod.entity.WitherStormEntity \
-    net.dabicco.witherstormmod.command.DabyWSCommand"
+    net.dabicco.witherstormmod.entity.WitherStormHeadEntity \
+    net.dabicco.witherstormmod.entity.cluster.WitherStormClusterEntity \
+    net.dabicco.witherstormmod.client.StormShadow \
+    net.dabicco.witherstormmod.mixin.RenderPipelinesAccessor \
+    net.dabicco.witherstormmod.mixin.RenderTypeInvoker \
+    net.dabicco.witherstormmod.structures.McsmCommand \
+    net.dabicco.witherstormmod.structures.McsmSchematic \
+    net.dabicco.witherstormmod.structures.McsmWorldgen"
   javap -public -classpath "$CP2" $CLIENT_CLASSES > ci/api/client.txt 2>&1 || true
   # SkyRenderer's celestial helper is private in 26.2; include it so native
   # mixin invokers can be checked against the actual client signature.

@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.dabicco.witherstormmod.client.ClientDistantStormManager;
-import net.dabicco.witherstormmod.client.GlowRenderTypes;
+import net.dabicco.witherstormmod.client.McsmWhiteGlow;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -33,7 +33,7 @@ import net.mcsm.extras.McsmExtrasConfig;
  *
  * HOW IT IS BUILT. The column is a stack of additive glow quads sharing the
  * teeth/eye glow shader, `core/storm_glow`, through the dedicated white pipeline
- * ({@link GlowRenderTypes#glowWhite}). That matters for two reasons: the falloff
+ * ({@link McsmWhiteGlow#glowWhite}). That matters for two reasons: the falloff
  * is computed PER PIXEL (so the column has no polygonal edge anywhere and its
  * sides fade into the sky instead of ending at a line), and the pipeline pins the
  * pool to WHITE, so the atmosphere the storm throws is white even in the phases
@@ -135,7 +135,7 @@ public final class McsmHaloSkyRenderer {
             float size = Mth.clamp((float) McsmExtrasConfig.glareSize, 0.35F, 3.05F);
             double sizeScale = 0.85D + 0.15D * size;
 
-            RenderType material = GlowRenderTypes.glowWhite(WHITE);
+            RenderType material = McsmWhiteGlow.glowWhite(WHITE);
             PoseStack poseStack = ctx.poseStack();
             SubmitNodeCollector collector = ctx.submitNodeCollector();
             final Vec3 base = stormPos.add(0.0D, baseLift, 0.0D);

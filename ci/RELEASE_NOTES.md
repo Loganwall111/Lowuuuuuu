@@ -304,3 +304,32 @@ The block below `mcsm_blob_color` is **not** dead: `core/rendertype_clouds.fsh` 
 60 functions are reachable from shipped shaders. The other 17 are dormant by design and
 are now an explicit allowlist: the port's live entry point must stay wired, and a new
 orphan fails the build instead of accumulating quietly.
+
+### The white column's material had to move — and a guard so that class of mistake cannot recur
+
+The first attempt at the conic column added `glowWhite()` next to `GlowRenderTypes`, in
+the reference copy of the base mod's source. That copy is on **no compile classpath**:
+CI compiles `mcsm-extras/java` only and assembles the rest of the jar from the FROZEN
+base release asset (`dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar`, pinned by sha256 in
+`ci/build.sh`). javac therefore resolved `GlowRenderTypes` from the jar, found no
+`glowWhite`, and the build stopped with `cannot find symbol` — a one-line definition in a
+documentation tree that looked exactly like the real thing.
+
+The white pipeline now lives in `net/dabicco/witherstormmod/client/McsmWhiteGlow.java`,
+inside `mcsm-extras` — a class that is genuinely compiled and genuinely overwrites into
+that package at assembly time. Same shader, same additive blend, same 4x gain as the aura
+pool; only the `MCSM_GLOW_WHITE` define separates them, so the atmosphere is white while
+the aura around the teeth and eyes keeps the phase colour.
+
+Two guards came out of it:
+
+- `ci/build.sh` now dumps the API of **every** base class mcsm-extras calls into (24
+  classes, up from 6). `ci/api/mod.txt` is the frozen jar's own `javap` output, so it is
+  the authority for what exists rather than a remembered signature.
+- `ci/check_phase_uniform.py` gained the frozen-base-symbol guard: every method mcsm-extras
+  calls on a base-jar class must be declared somewhere in that dump, or the build fails with
+  the file and the symbol named. Fields, nested types and type names are deliberately not
+  checked, classes javap cannot load are reported rather than failed, and classes we compile
+  ourselves are excluded — so it stays precise and cannot false-fail.
+
+Checkpoint count: 40 -> 76.
