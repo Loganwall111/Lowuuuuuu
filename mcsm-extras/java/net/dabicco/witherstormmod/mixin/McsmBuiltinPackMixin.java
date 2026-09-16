@@ -7,10 +7,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.dabicco.witherstormmod.DabyWitherStormMod;
 import net.mcsm.extras.McsmBuiltinPack;
+import net.mcsm.extras.McsmAdams;
 import net.mcsm.extras.McsmBlackHole;
 import net.mcsm.extras.McsmCities;
 import net.mcsm.extras.McsmMassg;
 import net.mcsm.extras.McsmSkyVortexes;
+import net.mcsm.extras.McsmRituals;
 import net.mcsm.extras.McsmSounds;
 import net.mcsm.extras.McsmTentacles;
 import net.mcsm.extras.McsmTerminal;
@@ -65,6 +67,9 @@ public abstract class McsmBuiltinPackMixin {
         // finally puts something on the ground. Same level-tick hook, same
         // registry-by-id creature resolution as the rest of the extras.
         McsmSkyVortexes.register();
+        // BUILD #443 -- the rituals, and the endless dimension they open.
+        McsmRituals.register();
+        McsmAdams.register();
         // Build #416 (D.8, phase 5) -- the story terminal: the antenna's
         // restricted console, the radio signals it picks up, the password the
         // world keeps for itself. It owns no packet channel any more (the

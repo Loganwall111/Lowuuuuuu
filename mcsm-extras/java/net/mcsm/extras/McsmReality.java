@@ -87,6 +87,28 @@ public final class McsmReality {
     }
 
     /** Panel button / hotkey entry. Client-safe: works through the local server. */
+    /**
+     * BUILD #443 -- the ritual door. {@link McsmRituals} builds a real ring of rift
+     * anchors and asks the world to answer; the answer is this, i.e. exactly the
+     * arrival path the sneak gesture has always used. Public because a ritual is
+     * not a client and must not have to fake a key press.
+     */
+    public static boolean enter(ServerPlayer player) {
+        try {
+            if (player == null || player.level().getServer() == null) {
+                return false;
+            }
+            ServerLevel target = player.level().getServer().getLevel(DECAYED_REALITY);
+            if (target == null) {
+                return false;
+            }
+            send(player, target, true);
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     public static boolean enterFromClient() {
         try {
             Object mc = Class.forName("net.minecraft.client.Minecraft").getMethod("getInstance").invoke(null);

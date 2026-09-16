@@ -1854,6 +1854,89 @@ def main():
           and "GlowRenderTypes.emitterMark(Identifier)" in oracle
           and "no RenderTypes.eyes call at all" in oracle)
 
+    # ------------------------------------------------------------------
+    # BUILD #443 -- RITUALS, AND THE INFINITE DIMENSION OF ADAMS.
+    #
+    # The wishlist asks for "rituals" and for "the infinite dimension of adams".
+    # A ritual is not a block: it is ring + offering + condition -> the world
+    # answers, and the answer has to be a real one. "Infinite" is not a keyword
+    # either: a datapack dimension is endless in extent, so the word has to be
+    # earned by the GENERATOR, which has no end state at all.
+    # ------------------------------------------------------------------
+    rituals = read("mcsm-extras/java/net/mcsm/extras/McsmRituals.java") or ""
+    adams = read("mcsm-extras/java/net/mcsm/extras/McsmAdams.java") or ""
+    adams_dim = read("jar-overrides/data/mcsm/dimension/adams_infinity.json") or ""
+    adams_type = read("jar-overrides/data/mcsm/dimension_type/adams_infinity.json") or ""
+    boot = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""
+
+    check("a ritual is a shape, a price and a condition -- not a block",
+          "private static int ringCount(ServerLevel level, BlockPos core, Ritual ritual)" in rituals
+          and "private static boolean holding(ServerPlayer player, String offering)" in rituals
+          and "if (phase < ritual.phase())" in rituals
+          and "RING_NEEDED = 10" in rituals and "RING_SAMPLES = 12" in rituals)
+    check("all six rites are registered with a ring, a core, an offering and an effect",
+          rituals.count("new Ritual(\"") == 6
+          and "EFFECT_RIFT" in rituals and "EFFECT_WAKING" in rituals and "EFFECT_SWARM" in rituals
+          and "EFFECT_CORRUPTION" in rituals and "EFFECT_BLACK_SUN" in rituals
+          and "EFFECT_ADAMS" in rituals)
+    check("the effects are the mod's own systems, called through public doors",
+          # a ritual must not fake a key press or a packet: it asks the same
+          # systems a player would, through doors added for it.
+          "McsmReality.enter(player)" in rituals
+          and "McsmMassg.summon(level, player)" in rituals
+          and "McsmCreatures.release(level, core.above(2), 4," in rituals
+          and "McsmBlackHole.openNear(level, player)" in rituals
+          and "McsmAdams.enter(player)" in rituals
+          and "public static boolean enter(ServerPlayer player)" in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmReality.java") or "")
+          and "public static boolean openNear(ServerLevel level, ServerPlayer player)" in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmBlackHole.java") or ""))
+    check("a ritual cannot be farmed at one spot",
+          "private static final Set<Long> SPENT = ConcurrentHashMap.newKeySet();" in rituals
+          and "if (!SPENT.add(spent))" in rituals
+          and "COOLDOWN_TICKS = 200L" in rituals)
+    check("the scan is bounded: one ritual per player per pass, on a period",
+          "SCAN_PERIOD = 30" in rituals
+          and "CURSOR.merge(player.getUUID(), 1, Integer::sum)" in rituals
+          and "if (last != null && now - last < SCAN_PERIOD)" in rituals)
+    check("adams is a real dimension with its own type, layers and sky",
+          '"type": "mcsm:adams_infinity"' in adams_dim
+          and '"type": "minecraft:flat"' in adams_dim
+          and '"has_skylight": true' in adams_type
+          and '"skybox": "overworld"' in adams_type
+          and '"height": 384' in adams_type and '"min_y": -64' in adams_type)
+    check("the surface the generator builds on matches its own layer stack",
+          # 1 void_core + 60 stone + 40 road + 26 tiles + 1 surface = 128 layers over
+          # min_y -64, so the top solid block is y = 63 -- and the placement code
+          # reads SURFACE_Y, so the two can never drift apart silently.
+          adams_dim.count('"height"') == 5
+          and '"height": 60' in adams_dim and '"height": 40' in adams_dim
+          and '"height": 26' in adams_dim
+          and "public static final int SURFACE_Y = 63;" in adams)
+    check("adams has no end state: it plans, writes and never completes",
+          "public static void tick(ServerLevel level)" in adams
+          and "REGIONS.add(planRegion(level, prx + dx, prz + dz, key))" in adams
+          and "BUILT.add(head.key)" in adams
+          and "MAX_PENDING = 6" in adams
+          and "hasCity" not in adams)
+    check("a chamber always holds salvage and sometimes holds something else",
+          "container.setItem(Math.floorMod((int) (h >> 41), slots)" in adams
+          and "McsmCreatures.release(level, new BlockPos(x, y, z)," in adams
+          and "private static void finish(ServerLevel level, Region region)" in adams)
+    check("both systems are booted, and booted with their imports",
+          "McsmRituals.register();" in boot and "McsmAdams.register();" in boot
+          and "import net.mcsm.extras.McsmRituals;" in boot
+          and "import net.mcsm.extras.McsmAdams;" in boot)
+    check("the panel and /ds can both reach them",
+          "Rituals (ring + offering -> the world answers)" in extras
+          and "The Infinite Dimension of Adams" in extras
+          and "public static boolean rituals = true;" in cfg
+          and "public static boolean adamsReality = true;" in cfg
+          and 'Commands.literal("ritual")' in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or "")
+          and 'Commands.literal("adams")' in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

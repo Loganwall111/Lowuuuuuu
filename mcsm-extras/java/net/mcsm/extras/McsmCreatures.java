@@ -381,6 +381,33 @@ public final class McsmCreatures {
         return null;
     }
 
+    /**
+     * BUILD #443 -- release the bestiary on demand, around a point.
+     *
+     * The ambient swarm has its own budget (7 per player, 72 per level) so that a
+     * player standing still is not buried. A RITUAL and a chamber in the infinite
+     * dimension are the opposite case: the player has deliberately opened
+     * something, so they get a fixed, announced handful -- still under the same
+     * level cap, because a ritual should not be able to erase a world's budget.
+     */
+    public static int release(ServerLevel level, BlockPos at, int count, double phase) {
+        int spawned = 0;
+        try {
+            RandomSource rng = level.getRandom();
+            int room = LEVEL_CAP - MANAGED.size();
+            for (int i = 0; i < Math.min(count, Math.max(0, room)); i++) {
+                Kind kind = BESTIARY[Math.floorMod(at.getX() * 31 + at.getZ() * 17 + i * 7,
+                        BESTIARY.length)];
+                if (spawnCreature(level, at, kind, phase, rng) != null) {
+                    spawned++;
+                }
+            }
+        } catch (Throwable ignored) {
+            // a ritual that spawns nothing is still a completed ritual
+        }
+        return spawned;
+    }
+
     private static Mob spawnCreature(ServerLevel level, BlockPos at, Kind kind, double phase,
             RandomSource rng) {
         Mob mob = spawn(level, at, kind.path, kind.name, EntitySpawnReason.EVENT, false);

@@ -120,6 +120,24 @@ public final class McsmBlackHole {
     // Opening and closing
     // ---------------------------------------------------------------------
 
+    /**
+     * BUILD #443 -- the ritual door. The Black Sun rite is a player deliberately
+     * building the shape that the ambient event does on its own timer, so it calls
+     * the same opener; the guards inside (one at a time per level, never within
+     * {@code MIN_DISTANCE} of another) still apply, and the caller is told when
+     * they do.
+     */
+    public static boolean openNear(ServerLevel level, ServerPlayer player) {
+        try {
+            if (!McsmExtrasConfig.blackHoleEvent) {
+                return false;
+            }
+            return open(level, player);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     private static boolean open(ServerLevel level, ServerPlayer player) {
         try {
             RandomSource rng = level.getRandom();

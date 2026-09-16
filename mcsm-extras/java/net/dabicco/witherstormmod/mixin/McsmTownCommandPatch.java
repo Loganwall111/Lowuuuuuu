@@ -118,7 +118,20 @@ public abstract class McsmTownCommandPatch {
                     .then(Commands.argument("speed", DoubleArgumentType.doubleArg(0.01D, 12.0D))
                             .executes(ctx -> ds$backGrowthSpeed(ctx.getSource(),
                                     DoubleArgumentType.getDouble(ctx, "speed")))));
-            dispatcher.register(Commands.literal("ds").then(towns).then(storm));
+            // BUILD #443 -- rituals and the two dimensions behind them.
+            LiteralArgumentBuilder<CommandSourceStack> ritual = Commands.literal("ritual");
+            ritual.executes(ctx -> ds$ritualList(ctx.getSource()));
+            ritual.then(Commands.literal("list").executes(ctx -> ds$ritualList(ctx.getSource())));
+            ritual.then(Commands.literal("check").executes(ctx -> ds$ritualCheck(ctx.getSource())));
+
+            LiteralArgumentBuilder<CommandSourceStack> reality = Commands.literal("reality");
+            reality.executes(ctx -> ds$realityStatus(ctx.getSource()));
+            reality.then(Commands.literal("status").executes(ctx -> ds$realityStatus(ctx.getSource())));
+            reality.then(Commands.literal("adams").executes(ctx -> ds$adams(ctx.getSource())));
+            reality.then(Commands.literal("decayed").executes(ctx -> ds$decayed(ctx.getSource())));
+
+            dispatcher.register(Commands.literal("ds").then(towns).then(storm)
+                    .then(ritual).then(reality));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -293,5 +306,74 @@ public abstract class McsmTownCommandPatch {
                 + " job(s) pending. The queue drains safely every server tick at up to"
                 + " 4096 blocks/tick; use /ds towns tp <site> to watch fixed-coordinate builds."), false);
         return pending;
+    }
+
+
+    // ---------------------------------------------------------------------
+    // BUILD #443 -- rituals, and the dimensions the rites open
+    // ---------------------------------------------------------------------
+
+    private static int ds$ritualList(CommandSourceStack src) {
+        src.sendSuccess(() -> Component.literal("[ds] the ritual catalogue -- build the ring, "
+                + "stand inside it holding the offering:"), false);
+        for (String line : net.mcsm.extras.McsmRituals.catalogue()) {
+            src.sendSuccess(() -> Component.literal("  - " + line), false);
+        }
+        src.sendSuccess(() -> Component.literal("  (the ring may have gaps: 10 of 12 sample "
+                + "points is enough. /ds ritual check reads your own ring.)"), false);
+        return net.mcsm.extras.McsmRituals.RITUALS.size();
+    }
+
+    private static int ds$ritualCheck(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            String line = net.mcsm.extras.McsmRituals.nearest(src.getLevel(), player);
+            src.sendSuccess(() -> Component.literal("[ds] " + line), false);
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds ritual check has to be run by a "
+                    + "player standing at a ring"), false);
+        }
+        return 1;
+    }
+
+    private static int ds$realityStatus(CommandSourceStack src) {
+        src.sendSuccess(() -> Component.literal("[ds] the decayed reality: "
+                + (net.mcsm.extras.McsmExtrasConfig.decayedReality ? "ON" : "OFF")
+                + " \u00b7 the infinite dimension of adams: "
+                + (net.mcsm.extras.McsmExtrasConfig.adamsReality ? "ON" : "OFF")
+                + " \u00b7 rituals: "
+                + (net.mcsm.extras.McsmExtrasConfig.rituals ? "ON" : "OFF")), false);
+        src.sendSuccess(() -> Component.literal("[ds] adams has written "
+                + net.mcsm.extras.McsmAdams.builtRegions() + " regions, "
+                + net.mcsm.extras.McsmAdams.pendingRegions() + " still queued \u00b7 "
+                + "/ds reality adams goes in, /ds reality decayed goes through the rift"), false);
+        return 1;
+    }
+
+    private static int ds$adams(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            if (net.mcsm.extras.McsmAdams.enter(player)) {
+                src.sendSuccess(() -> Component.literal("[ds] the gate opens"), false);
+                return 1;
+            }
+            src.sendSuccess(() -> Component.literal("[ds] the gate refused (the dimension is "
+                    + "switched off or not loaded)"), false);
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds reality adams has to be run by a "
+                    + "player (the gate needs someone to walk through it)"), false);
+        }
+        return 0;
+    }
+
+    private static int ds$decayed(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            return net.mcsm.extras.McsmReality.enter(player) ? 1 : 0;
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds reality decayed has to be run by a "
+                    + "player"), false);
+            return 0;
+        }
     }
 }

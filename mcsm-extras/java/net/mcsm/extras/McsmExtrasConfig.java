@@ -122,6 +122,10 @@ public final class McsmExtrasConfig {
      * with no shader pack installed.
      */
     public static boolean skyFloorBand = true;
+    /** BUILD #443 -- rituals: ring + offering + condition -> the world answers. */
+    public static boolean rituals = true;
+    /** BUILD #443 -- the infinite dimension of adams, and its endless generator. */
+    public static boolean adamsReality = true;
     /** BUILD #438 -- the body wears the live phase's own hue, not a fixed grey. */
     public static boolean phaseTintedBody = true;
     /**
@@ -417,6 +421,8 @@ public final class McsmExtrasConfig {
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
             p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
+            p.setProperty("rituals", String.valueOf(rituals));
+            p.setProperty("adams_reality", String.valueOf(adamsReality));
             p.setProperty("phase_tinted_body", String.valueOf(phaseTintedBody));
             p.setProperty("body_phase_tint", String.valueOf(bodyPhaseTint));
             p.setProperty("reality_creatures", String.valueOf(realityCreatures));
@@ -550,6 +556,8 @@ public final class McsmExtrasConfig {
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
+            rituals = bool(p, "rituals", rituals);
+            adamsReality = bool(p, "adams_reality", adamsReality);
             phaseTintedBody = bool(p, "phase_tinted_body", phaseTintedBody);
             bodyPhaseTint = dbl(p, "body_phase_tint", bodyPhaseTint);
             realityCreatures = bool(p, "reality_creatures", realityCreatures);

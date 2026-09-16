@@ -411,6 +411,15 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyFloorBand = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #443 -- rituals, and the dimension one of them opens.
+          .bool("Rituals (ring + offering -> the world answers)", () -> McsmExtrasConfig.rituals, v -> {
+              McsmExtrasConfig.rituals = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("The Infinite Dimension of Adams", () -> McsmExtrasConfig.adamsReality, v -> {
+              McsmExtrasConfig.adamsReality = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #438 -- the body stops being colourless.
           .bool("Body Wears the Phase Colour", () -> McsmExtrasConfig.phaseTintedBody, v -> {
               McsmExtrasConfig.phaseTintedBody = v;
