@@ -8,10 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndLevelTick;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.mcsm.extras.net.McsmTerminalC2S;
-import net.mcsm.extras.net.McsmTerminalS2C;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -56,6 +52,10 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class McsmTerminal {
 
+    /** One line the client report prints instead of a wall of page names. */
+    private static final String GUIDE_PAGES_HINT =
+            "cover, rift, cities, bestiary, ladder, creator, blackhole, tornado, antenna";
+
     /**
      * The admin code. It is written down in exactly one place in the world: the
      * record Ivor carries in the secret room of the abandoned city hospital
@@ -92,14 +92,30 @@ public final class McsmTerminal {
     /** Called from the mod's own onInitialize, while registries are open. */
     public static void register() {
         try {
-            PayloadTypeRegistry.serverboundPlay().register(McsmTerminalC2S.TYPE, McsmTerminalC2S.CODEC);
-            PayloadTypeRegistry.clientboundPlay().register(McsmTerminalS2C.TYPE, McsmTerminalS2C.CODEC);
-            ServerPlayNetworking.registerGlobalReceiver(McsmTerminalC2S.TYPE, (payload, context) ->
-                    context.server().execute(() -> handle(context.player(), payload)));
+            // BUILD #416 (D.8, phase 5) -- NO CUSTOM PACKETS.
+            //
+            // The terminal used to register two payload types on Fabric's
+            // networking module. That module is not on this build's compile
+            // classpath (only the four Fabric RENDERING modules are), so the
+            // whole channel was compiled out and the run failed at javac -- and
+            // even if it had compiled, a story screen does not need a network:
+            //
+            //   * the console, the guide and the radio are CLIENT screens. The
+            //     antenna and the C key open them on the client, where the player
+            //     is, exactly like this build's other screens;
+            //   * the password is checked against the constant below, which the
+            //     client already carries;
+            //   * the only thing that has to cross from the world to the screen is
+            //     the MASSG's countdown, and that travels in the creature's own
+            //     synced custom name (see McsmMassg.encode / McsmMassgSky), which
+            //     needs no channel at all.
+            //
+            // So all this registers now is the ONE server-side job the antenna
+            // has: picking signals up out of the air for whoever is carrying it.
             ServerTickEvents.END_LEVEL_TICK.register((EndLevelTick) McsmTerminal::tick);
-            System.out.println("[ds] the terminal is listening (antenna signals + a restricted console)");
+            System.out.println("[ds] the terminal is listening (antenna signals, no channel needed)");
         } catch (Throwable t) {
-            System.err.println("[ds] the terminal could not register its channels: " + t);
+            System.err.println("[ds] the terminal could not register its tick: " + t);
         }
     }
 
@@ -195,7 +211,13 @@ public final class McsmTerminal {
                     SoundSource.PLAYERS, 0.35F, 1.4F);
             level.sendParticles(new DustParticleOptions(0x8FE6FF, 0.6F),
                     at.x, at.y + 1.2D, at.z, 6, 0.5D, 0.4D, 0.5D, 0.01D);
-            send(player, new McsmTerminalS2C("radio", station[0], station[1]));
+            // The station is read out in chat, because chat is the one channel
+            // this overlay can always reach: no payload, no registry, and it
+            // works on a client that has never heard of this mod's screens.
+            player.sendSystemMessage(Component.literal("\u00a7b" + station[0])
+                    .withStyle(ChatFormatting.AQUA));
+            player.sendSystemMessage(Component.literal("\u00a77  " + station[1])
+                    .withStyle(ChatFormatting.GRAY));
         } catch (Throwable ignored) {
         }
     }
@@ -204,41 +226,20 @@ public final class McsmTerminal {
     // The terminal channel
     // ---------------------------------------------------------------------
 
-    private static void handle(ServerPlayer player, McsmTerminalC2S payload) {
-        try {
-            if (!McsmExtrasConfig.storyTerminal) {
-                return;
-            }
-            String action = payload.action() == null ? "" : payload.action();
-            switch (action) {
-                case "open":
-                    send(player, new McsmTerminalS2C("open",
-                            granted(player) ? "console" : "login", greeting(player)));
-                    break;
-                case "code":
-                    verify(player, payload.a());
-                    break;
-                case "guide":
-                    send(player, new McsmTerminalS2C("open", "guide", guide(player, payload.a())));
-                    break;
-                case "hint":
-                    send(player, new McsmTerminalS2C("line", "login", hint(player)));
-                    break;
-                case "close":
-                    send(player, new McsmTerminalS2C("close", "", ""));
-                    break;
-                default:
-                    break;
-            }
-        } catch (Throwable t) {
-            send(player, new McsmTerminalS2C("line", "login", "terminal error: " + t.getMessage()));
-        }
-    }
-
-    /** The one check that matters. Failures are cinematic, not silent. */
-    private static void verify(ServerPlayer player, String code) {
+    /**
+     * The one check that matters. It runs on the SERVER, so a client cannot make
+     * the world believe the code was entered; what it grants is the server's own
+     * permission (see {@link #granted}), which is what gates the MASSG.
+     *
+     * The screen the player is looking at is a client screen and checks the same
+     * constant locally -- it has to, because this build's overlay compiles
+     * against the client jar and the Fabric rendering modules only, so there is
+     * no packet channel to send a verdict down. The security that matters is
+     * here: nothing in the WORLD happens without this method having run.
+     */
+    public static boolean verify(ServerPlayer player, String code) {
         if (code == null) {
-            return;
+            return false;
         }
         String typed = code.trim().toUpperCase(java.util.Locale.ROOT);
         if (typed.equals(CODE)) {
@@ -246,15 +247,17 @@ public final class McsmTerminal {
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.4F, 1.2F);
             player.sendSystemMessage(Component.literal(
-                    "ACCESS GRANTED -- welcome back, operator.").withStyle(ChatFormatting.AQUA));
-            send(player, new McsmTerminalS2C("granted", "console", greeting(player)));
-            return;
+                    "OPERATOR ACCESS GRANTED -- welcome back.").withStyle(ChatFormatting.AQUA));
+            player.sendSystemMessage(Component.literal(
+                    "The console is open on your client. Sneak-use the antenna to release "
+                    + "the MASSG; there is no way back from it.").withStyle(ChatFormatting.GRAY));
+            return true;
         }
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 0.8F, 0.5F);
-        String hint = hint(player);
-        send(player, new McsmTerminalS2C("denied", "login",
-                "ACCESS DENIED\n\n" + hint));
+        player.sendSystemMessage(Component.literal("ACCESS DENIED").withStyle(ChatFormatting.RED));
+        player.sendSystemMessage(Component.literal(hint(player)).withStyle(ChatFormatting.GRAY));
+        return false;
     }
 
     /** Whether the player may use the console at all. */
@@ -374,7 +377,7 @@ public final class McsmTerminal {
         return out.toString();
     }
 
-    /** The state of the world, as the console prints it. */
+    /** The state of the world, as the console prints it, on the server. */
     public static String worldReport(ServerPlayer player) {
         StringBuilder out = new StringBuilder();
         try {
@@ -505,27 +508,6 @@ public final class McsmTerminal {
     // ---------------------------------------------------------------------
     // Sending
     // ---------------------------------------------------------------------
-
-    public static void send(ServerPlayer player, McsmTerminalS2C payload) {
-        try {
-            ServerPlayNetworking.send(player, payload);
-        } catch (Throwable ignored) {
-            // a player on an old client simply does not get the console
-        }
-    }
-
-    /** Called by the antenna and the guide book when they are used. */
-    public static void openFor(ServerPlayer player, String mode) {
-        if (!McsmExtrasConfig.storyTerminal) {
-            return;
-        }
-        if ("guide".equals(mode)) {
-            send(player, new McsmTerminalS2C("open", "guide", guide(player, "")));
-        } else {
-            send(player, new McsmTerminalS2C("open",
-                    granted(player) ? "console" : "login", greeting(player)));
-        }
-    }
 
     /**
      * The vault the pages point at: the centre of the nearest city district in

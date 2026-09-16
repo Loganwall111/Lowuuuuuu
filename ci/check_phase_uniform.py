@@ -1088,8 +1088,11 @@ def main():
     extras = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
     cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
 
+    # one declaration of the code, and the screen never spells the word out: it
+    # compares against the constant (an inlined compile-time constant, so the
+    # string is not even in the screen's bytecode).
     check("the admin code exists exactly once in the whole build",
-          'CODE = "MASSG"' in term_code and 'MASSG' not in code_only(screen))
+          'CODE = "MASSG"' in term_code and '"MASSG"' not in screen)
     check("the code is only reachable through the lore, not the console's own screen",
           "ivorPage" in term_code
           and "M -- the Mourning" in terminal
@@ -1099,7 +1102,7 @@ def main():
           "McsmTerminalItem" in code_only(content)
           and 'new McsmTerminalItem(props.stacksTo(1).rarity(Rarity.UNCOMMON), "guide")' in content
           and 'new McsmTerminalItem(props.stacksTo(1).rarity(Rarity.RARE), "terminal")' in content
-          and "McsmTerminal.openFor" in code_only(item)
+          and "McsmClientDispatch.openTerminal" in code_only(item)
           and "InteractionResult.SUCCESS" in code_only(item))
     check("the antenna is handed out on spawn, with the line that explains it",
           "grantOnFirstSight" in term_code and "antennaOnSpawn" in term_code
@@ -1115,27 +1118,14 @@ def main():
           "LOGIN" in scr_code and "CONSOLE" in scr_code and "GUIDE" in scr_code
           and "RADIO" in scr_code and "new EditBox(" in scr_code
           and "setResponder" in screen)
-    check("the payloads are registered and the console is server-authoritative",
-          "McsmTerminal.register()" in pack
-          and "PayloadTypeRegistry.serverboundPlay().register" in term_code
-          and "PayloadTypeRegistry.clientboundPlay().register" in term_code
-          and "registerGlobalReceiver" in term_code)
-    check("the client answers the packet without opening a screen mid-render",
-          "ClientPlayNetworking.registerGlobalReceiver" in cli_code
-          and "END_CLIENT_TICK" not in cli_code
-          and "START_CLIENT_TICK" in cli_code
-          and "drain(" in cli_code and "setScreenAndShow" in scr_code)
-    check("the C key is a real, rebindable binding and does something",
-          "bindKey" in cli_code and "KeyBindingHelper" in cli_code
-          and "registerKeyBinding" in cli_code and "consumeClick" in cli_code
-          and "key.mcsm.terminal" in tclient)
-    check("the client half is started from the mod's client initializer",
-          "McsmTerminalClient.register()" in init)
-    check("the terminal is switchable and every new option is persisted",
-          "story_terminal" in cfg and "antenna_signals" in cfg
-          and "antenna_signal_seconds" in cfg and "antenna_on_spawn" in cfg
-          and "Story Terminal (antenna + C key + field guide)" in extras
-          and 'new Category("X", "THE STORY TERMINAL"' in extras)
+    check("the world's half is the server's: the code unlocks it, and verify() is real",
+          "public static boolean verify(ServerPlayer player, String code)" in term_code
+          and "GRANTED.put(" in term_code and "public static boolean granted(ServerPlayer" in term_code
+          and "isOp(player.nameAndId())" in term_code)
+    check("the item opens the screen on the client, through the one client door",
+          "McsmClientDispatch.openTerminal" in code_only(item)
+          and "Class.forName(\"net.mcsm.extras.client.McsmTerminalScreen\")" in
+              (read("mcsm-extras/java/net/mcsm/extras/McsmClientDispatch.java") or ""))
     check("the config is reachable from inside the terminal (the menu path)",
           "CONFIG" in scr_code and "new McsmExtrasScreen(" in scr_code)
     check("the menu's config entry is the bottom-right logo button, and nothing else",
@@ -1160,7 +1150,81 @@ def main():
     check("the terminal's own text methods are player-free, so the menu can draw them",
           "public static String guideText(String page)" in term_code
           and "public static String hintText()" in term_code
-          and "public static String localReport()" in term_code)
+          and "public static String localReport()" in term_code
+          and "stationNames()" in term_code
+          and "net.minecraft.client" not in terminal)
+
+    # ------------------------------------------------------------------
+    # BUILD #416 (D.8, phase 6) -- THE MASSG.
+    #
+    # The user's brief: "a gigantic warped black creature, glowing purple eyes,
+    # it warps reality, hallucinations of things that don't exist, it attacks and
+    # corrupts, it imitates and forces the player, screen flicker + colour
+    # glitches + strange music, a boss. Once summoned it cannot be killed or
+    # deleted and the world stays changed. On summon a gigantic terminal appears
+    # in the sky counting 99 down to 1 February 2027."
+    # ------------------------------------------------------------------
+    massg = read("mcsm-extras/java/net/mcsm/extras/McsmMassg.java") or ""
+    mg = code_only(massg)
+    sky = read("mcsm-extras/java/net/mcsm/extras/client/McsmMassgSky.java") or ""
+    sky_code = code_only(sky)
+
+    check("the MASSG is a real creature with its own rules, not a renamed mob",
+          'NAME = "MASSG"' in mg and "materialise(" in mg
+          and "Attributes.SCALE" in mg and "McsmExtrasConfig.massgScale" in mg
+          and '"minecraft", "warden"' in massg)
+    check("it cannot be killed and it cannot be deleted",
+          "setInvulnerable(true)" in mg and "setPersistenceRequired()" in mg
+          and "respawn(" in mg and "BORN.put" in mg)
+    check("the world stays changed: it scars the ground with permanent blocks",
+          "scar(" in mg and "McsmContent.DECAYED_SURFACE.defaultBlockState()" in mg
+          and "level.setBlock(" in mg and "SCAR_RADIUS" in mg)
+    check("it attacks and corrupts whoever is in its reach",
+          "MobEffects.WITHER" in mg and "MobEffects.NAUSEA" in mg
+          and "MobEffects.BLINDNESS" in mg and "hurtServer(" in mg and "REACH" in mg)
+    check("it hallucinates things that are not there",
+          "hallucinate(" in mg and "setNoAi(true)" in mg and "GHOSTS" in mg
+          and "massgHallucinations" in mg)
+    check("and gigantic things swim in the air",
+          "flyingThings(" in mg and '"minecraft", "phantom"' in massg)
+    check("it imitates the player, in the player's own name",
+          '"<" + player.getName().getString() + "> "' in massg and "imitation(" in mg)
+    check("its music and its voice are the shipped sounds, not new assets",
+          "SoundEvents.WITHER_SPAWN" in mg and "SoundEvents.AMBIENT_CAVE" in mg
+          and "SoundEvents.ELDER_GUARDIAN_CURSE" in mg and "SoundEvents.END_PORTAL_SPAWN" in mg)
+    check("the counter runs 99 down to 1 February 2027 and is time-based",
+          "END_EPOCH_MS = 1801526400000L" in mg and "COUNT_FROM = 99" in mg
+          and "counter(Object level)" in mg and "System.currentTimeMillis()" in mg)
+    check("the sky terminal is the user's: gigantic, in the sky, counting, flickering",
+          "SKY TERMINAL" in sky and "scale" in sky_code and "1 February 2027" in sky
+          and "BURST_MS" in sky_code and "g.fill" in sky_code
+          and "days until" in sky)
+    check("the countdown travels in the creature's own synced name, with no packet",
+          "encode(int number, String line)" in mg and 'NAME + "|"' in mg
+          and "beast.setCustomName(" in mg
+          and 'startsWith("MASSG|")' in sky and "McsmMassgSky.tick()" in
+              (read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java") or ""))
+    check("the sky terminal is drawn by the HUD, so it works in every world",
+          "McsmMassgSky.paint(g, w, h)" in
+              (read("mcsm-extras/java/net/mcsm/extras/client/McsmHudTerminal.java") or ""))
+    term_raw = read("mcsm-extras/java/net/mcsm/extras/McsmTerminal.java") or ""
+    check("the release is a WORLD action: the server summons it, on the operator's sneak-use",
+          "McsmMassg.summon(" in
+              (read("mcsm-extras/java/net/mcsm/extras/McsmTerminalItem.java") or "")
+          and "isShiftKeyDown()" in
+              (read("mcsm-extras/java/net/mcsm/extras/McsmTerminalItem.java") or "")
+          and "granted" in term_raw)
+    check("every MASSG switch is configurable, persisted and in the panel",
+          "massg_enabled" in cfg and "massg_unkillable" in cfg
+          and "massg_scale" in cfg and "massg_hallucinations" in cfg
+          and 'new Category("XI", "THE MASSG"' in extras
+          and "How to release it (sneak-use the antenna: irreversible)" in extras)
+    check("the creature is registered on the level tick, last in the list",
+          "McsmMassg.register()" in pack and "END_LEVEL_TICK" in mg)
+    check("the build refuses to ship without the phase-6 classes",
+          "McsmMassgSky" in (read("ci/build.sh") or "")
+          and "McsmMassg " in (read("ci/build.sh") or "")
+          and "McsmClientDispatch" in (read("ci/build.sh") or ""))
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

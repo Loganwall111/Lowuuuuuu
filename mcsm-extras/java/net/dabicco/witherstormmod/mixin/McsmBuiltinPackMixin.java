@@ -63,5 +63,9 @@ public abstract class McsmBuiltinPackMixin {
         // receiver lives on the server side, so the code can never be read off
         // the client.
         McsmTerminal.register();
+        // Build #416 (D.8, phase 6) -- THE MASSG. The creature that cannot be
+        // killed and cannot be deleted, its hallucinations, and the countdown it
+        // runs in the sky. Registered last on purpose: it is the end of the list.
+        McsmMassg.register();
     }
 }

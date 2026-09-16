@@ -131,6 +131,16 @@ public final class McsmExtrasConfig {
      *  which is the user's "given on spawn": it arrives with a line of lore in
      *  chat, once, and is never handed out again if they still have one. */
     public static boolean antennaOnSpawn = true;
+
+    // ---- Build #416 (D.8, phase 6): THE MASSG ------------------------------
+    /** The creature, its hallucinations and its sky terminal. */
+    public static boolean massgEnabled = true;
+    /** It cannot be killed. Leave this on: it is the whole point of it. */
+    public static boolean massgUnkillable = true;
+    /** Its size. 3 is a tower; 8 is a skyline. */
+    public static double massgScale = 5.0;
+    /** Hallucinated shapes, false storms in chat, things swimming in the air. */
+    public static boolean massgHallucinations = true;
     // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
     // Textured cube around the camera; 6 phase skies (lavender day, midnight
     // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
@@ -399,6 +409,10 @@ public final class McsmExtrasConfig {
             p.setProperty("antenna_signals", String.valueOf(antennaSignals));
             p.setProperty("antenna_signal_seconds", String.valueOf(antennaSignalSeconds));
             p.setProperty("antenna_on_spawn", String.valueOf(antennaOnSpawn));
+            p.setProperty("massg_enabled", String.valueOf(massgEnabled));
+            p.setProperty("massg_unkillable", String.valueOf(massgUnkillable));
+            p.setProperty("massg_scale", String.valueOf(massgScale));
+            p.setProperty("massg_hallucinations", String.valueOf(massgHallucinations));
             p.setProperty("dust_waves", String.valueOf(dustWaves));
             p.setProperty("reality_tear", String.valueOf(realityTear));
             p.setProperty("force_mcsm_look", String.valueOf(forceMcsmLook));
@@ -513,6 +527,10 @@ public final class McsmExtrasConfig {
             antennaSignals = bool(p, "antenna_signals", antennaSignals);
             antennaSignalSeconds = dbl(p, "antenna_signal_seconds", antennaSignalSeconds);
             antennaOnSpawn = bool(p, "antenna_on_spawn", antennaOnSpawn);
+            massgEnabled = bool(p, "massg_enabled", massgEnabled);
+            massgUnkillable = bool(p, "massg_unkillable", massgUnkillable);
+            massgScale = dbl(p, "massg_scale", massgScale);
+            massgHallucinations = bool(p, "massg_hallucinations", massgHallucinations);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);
             transparentHorizonWings = bool(p, "transparent_horizon_wings", transparentHorizonWings);

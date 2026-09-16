@@ -1,81 +1,67 @@
 package net.mcsm.extras.client;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.mcsm.extras.net.McsmTerminalC2S;
-import net.mcsm.extras.net.McsmTerminalS2C;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 
 /**
  * BUILD #416 (D.8, phase 5) -- the CLIENT half of the terminal.
  *
- * WHY THE SCREEN IS OPENED FROM A TICK AND NOT FROM THE PACKET. A packet arrives
- * on the render thread, and this Minecraft asserts when a screen is opened while
- * a screen is already being rendered -- the mod's own config payload handles this
- * by hopping through {@code context.client().execute(...)}, and this goes one
- * step further: the payload is only queued here, and the queue is drained on the
- * client tick. That is also what makes the terminal work when it is opened BY A
- * SCREEN (the field guide used in hand) rather than by an item.
+ * WHAT CHANGED, AND WHY. This class used to receive two custom payload types. It
+ * turns out the overlay is compiled against the client jar and the four Fabric
+ * RENDERING modules -- Fabric's networking module is not on that classpath at
+ * all -- so the channel could not compile, and run 500 failed at javac. The
+ * channel is gone, and nothing here needs one:
  *
- * TWO ENTRY POINTS, ONE TERMINAL:
- *   * the server sends "open" (the antenna, or the C key asking for the console);
- *   * the player presses C anywhere, which asks the server to open it -- the key
- *     is bound in the controls screen ("Open story terminal", default C) so a
- *     player can rebind it, and pressing it again closes the terminal.
+ *   * the C key opens the console (interface, and the player is here);
+ *   * the antenna and the field guide open it from their own {@code use};
+ *   * the world's half of the story -- the radio signals, the operator's report,
+ *     the MASSG -- is the SERVER's job, and it speaks in chat and in world state,
+ *     channels that exist without anybody registering anything;
+ *   * the one thing the screen needs from the world -- the MASSG's countdown --
+ *     is read from the creature's own name, which the game already syncs (see
+ *     {@link McsmMassgSky}).
+ *
+ * THE C KEY. There was no binding at all, which is why it "doesn't really do
+ * anything". A KeyMapping has to be registered through Fabric's keybinding
+ * helper, and that helper is not on this classpath either, so the mapping is
+ * built and registered REFLECTIVELY -- constructor, helper and consumeClick all
+ * by name -- inside one try/catch. If any part of that is unavailable the mod
+ * simply has no key and everything else still works.
  */
 public final class McsmTerminalClient {
 
-    private static final List<McsmTerminalS2C> QUEUE = new ArrayList<>();
     private static boolean registered = false;
+    private static Object keyMapping;
 
     private McsmTerminalClient() {
     }
 
-    /** Called from the mod's client initializer (McsmStoryRendererMixin's hook). */
+    /** Called from the mod's client initializer. */
     public static void register() {
         if (registered) {
             return;
         }
         registered = true;
         try {
-            ClientPlayNetworking.registerGlobalReceiver(McsmTerminalS2C.TYPE, (payload, context) ->
-                    context.client().execute(() -> {
-                        synchronized (QUEUE) {
-                            QUEUE.add(payload);
-                        }
-                    }));
             // ClientTickEvents.START_CLIENT_TICK with a one-argument lambda is
             // the base mod's own registration (DabyWitherStormModClient), so the
             // event and its SAM shape are both proven.
             ClientTickEvents.START_CLIENT_TICK.register(client -> {
-                drain(client);
                 pollKey();
+                McsmMassgSky.tick();
             });
             bindKey();
-            System.out.println("[ds] terminal client channel up");
+            System.out.println("[ds] the terminal's C key is live");
         } catch (Throwable t) {
-            System.err.println("[ds] terminal client channel failed: " + t);
+            System.err.println("[ds] the terminal client failed: " + t);
         }
     }
 
     // ---------------------------------------------------------------------
     // The C key
     // ---------------------------------------------------------------------
-    // "The control C button doesn't really do anything": there was no binding at
-    // all. A KeyMapping has to be registered through Fabric's keybinding helper,
-    // which this overlay's compile classpath does not carry, so the mapping is
-    // built and registered REFLECTIVELY -- constructor, helper and consumeClick
-    // all by name -- inside one try/catch. If any part of that is unavailable the
-    // mod simply has no key and everything else (the antenna, the guide book, the
-    // server's own opens) still works exactly as before. The key is registered in
-    // the controls screen under Miscellaneous, so it can be rebound.
-
-    private static Object keyMapping;
 
     private static void bindKey() {
         try {
@@ -85,9 +71,9 @@ public final class McsmTerminalClient {
             java.lang.reflect.Constructor<?> ctor = mapping.getConstructor(
                     String.class, int.class, String.class);
             Object key = ctor.newInstance("key.mcsm.terminal", 67, "key.categories.misc");
-            Object registered = helper.getMethod("registerKeyBinding", mapping)
+            Object registeredKey = helper.getMethod("registerKeyBinding", mapping)
                     .invoke(null, key);
-            keyMapping = registered == null ? key : registered;
+            keyMapping = registeredKey == null ? key : registeredKey;
         } catch (Throwable t) {
             keyMapping = null;
         }
@@ -98,8 +84,7 @@ public final class McsmTerminalClient {
             return;
         }
         try {
-            java.lang.reflect.Method consume = keyMapping.getClass()
-                    .getMethod("consumeClick");
+            java.lang.reflect.Method consume = keyMapping.getClass().getMethod("consumeClick");
             boolean clicked = false;
             while (Boolean.TRUE.equals(consume.invoke(keyMapping))) {
                 clicked = true;
@@ -113,7 +98,7 @@ public final class McsmTerminalClient {
         }
     }
 
-    /** The C key (or a rebind) asks the server for the console; ESC closes it. */
+    /** C opens the console; C again, or ESC, closes it. */
     public static void onKeyPressed() {
         try {
             Minecraft mc = Minecraft.getInstance();
@@ -126,21 +111,19 @@ public final class McsmTerminalClient {
                 return;
             }
             if (current != null) {
-                // a screen is open (a chest, the console): do not steal the key
+                // a screen is open (a chest, the config): do not steal the key
                 return;
             }
-            ClientPlayNetworking.send(new McsmTerminalC2S("open", "", ""));
+            McsmTerminalScreen.show("login",
+                    "RESTRICTED AREA\n\nEnter the admin password to continue.\n"
+                    + "The set is locked to the operator who buried this world.");
         } catch (Throwable ignored) {
             // a key that does nothing is better than one that crashes
         }
     }
 
-    /**
-     * The screen on show. {@code mc.gui.screen()} is the accessor this overlay
-     * already uses (McsmGuiExtrasRows), so it is the one used here rather than a
-     * field that may not exist under this mapping.
-     */
-    private static Screen currentScreen(Minecraft mc) {
+    /** The screen on show, read the way this overlay reads it elsewhere. */
+    static Screen currentScreen(Minecraft mc) {
         try {
             if (mc != null && mc.gui != null) {
                 return mc.gui.screen();
@@ -149,27 +132,5 @@ public final class McsmTerminalClient {
             // no gui yet (during startup) -- no screen, no problem
         }
         return null;
-    }
-
-    private static void drain(Minecraft client) {
-        McsmTerminalS2C next;
-        synchronized (QUEUE) {
-            if (QUEUE.isEmpty()) {
-                return;
-            }
-            next = QUEUE.remove(0);
-            QUEUE.clear();
-        }
-        if (client == null) {
-            return;
-        }
-        String action = next.action() == null ? "" : next.action();
-        if (currentScreen(client) instanceof McsmTerminalScreen terminal) {
-            terminal.accept(action, next.a(), next.b());
-            return;
-        }
-        if ("open".equals(action)) {
-            McsmTerminalScreen.show(next.a(), next.b());
-        }
     }
 }

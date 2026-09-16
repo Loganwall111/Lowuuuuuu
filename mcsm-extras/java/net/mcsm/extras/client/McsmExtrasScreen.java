@@ -425,8 +425,40 @@ public final class McsmExtrasScreen extends Screen {
           .bool("Antenna On Spawn (every new player gets one)", () -> McsmExtrasConfig.antennaOnSpawn, v -> {
               McsmExtrasConfig.antennaOnSpawn = v;
               McsmExtrasConfig.save();
-          });
+          })
+          .act("How to release the MASSG (it is a world action, not a menu one)", () ->
+                  McsmClientChat.say("\u00a75Sneak-use the antenna in a world to release the MASSG. "
+                          + "Enter MASSG in the console first: it answers only to the operator. "
+                          + "It cannot be undone."));
         categories.add(c10);
+
+        Category c11 = new Category("XI", "THE MASSG",
+                "The creature the console counts down to. Once it is here it never leaves: "
+                + "it cannot be killed, it cannot be deleted, and the world it walks on stays changed.");
+        c11.bool("The MASSG (its summon, its countdown, its sky terminal)", () -> McsmExtrasConfig.massgEnabled, v -> {
+            McsmExtrasConfig.massgEnabled = v;
+            McsmExtrasConfig.save();
+        })
+          .bool("It Cannot Be Killed (off = it can die, on = it cannot)", () -> McsmExtrasConfig.massgUnkillable, v -> {
+              McsmExtrasConfig.massgUnkillable = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Its Size (3 is a tower, 8 is a skyline)", () -> McsmExtrasConfig.massgScale, v -> {
+              McsmExtrasConfig.massgScale = v;
+              McsmExtrasConfig.save();
+          }, 2.0, 10.0)
+          .bool("Hallucinations (things that are not there, and things in the air)", () -> McsmExtrasConfig.massgHallucinations, v -> {
+              McsmExtrasConfig.massgHallucinations = v;
+              McsmExtrasConfig.save();
+          })
+          .act("How to release it (sneak-use the antenna: irreversible)", () ->
+                  McsmClientChat.say("\u00a75Sneak-use the antenna. The sky starts counting the moment "
+                          + "it arrives, and nothing in this build can put it back."))
+          .act("Open the console (the code is MASSG, and it is written down in the world)", () ->
+                  net.mcsm.extras.client.McsmTerminalScreen.show("login",
+                          "RESTRICTED AREA\n\nEnter the admin password to continue.\n"
+                          + "It is not on this screen: it is written down in the world."));
+        categories.add(c11);
     }
 
     /** Small indirection so the panel never imports the client chat class

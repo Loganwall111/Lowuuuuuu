@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.mcsm.extras.McsmTerminal;
-import net.mcsm.extras.net.McsmTerminalC2S;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
@@ -126,6 +124,51 @@ public final class McsmTerminalScreen extends Screen {
         }
     }
 
+    /**
+     * THE CONSOLE'S REPORT, drawn from what the client already knows.
+     *
+     * It is deliberately the CLIENT's own reading of the world -- the dimension
+     * it is standing in, where it is standing, what it is holding -- because the
+     * server's copy of those numbers cannot reach a screen in this build (the
+     * overlay compiles against the client jar and the Fabric rendering modules
+     * only; see McsmTerminal.register, which explains why there is no channel).
+     * The server still speaks: use the antenna and it answers in chat with the
+     * numbers only it can compute (surface, storm band, the nearest hub).
+     */
+    private static String worldReport(boolean menu) {
+        StringBuilder out = new StringBuilder();
+        out.append("DEVOURING STORMS :: STORY TERMINAL\n");
+        out.append("-----------------------------------------------------------\n");
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (menu || mc == null || mc.player == null || mc.level == null) {
+                return McsmTerminal.localReport();
+            }
+            net.minecraft.core.BlockPos at = mc.player.blockPosition();
+            out.append("position    : ").append(at.getX()).append(", ")
+               .append(at.getY()).append(", ").append(at.getZ()).append('\n');
+            net.minecraft.world.item.ItemStack held = mc.player.getMainHandItem();
+            out.append("holding     : ").append(held.isEmpty()
+                    ? "nothing" : held.getItem().getClass().getSimpleName()).append('\n');
+            float storm = net.dabicco.witherstormmod.client.StormSkyDarken.factor();
+            out.append("storm sky   : ").append(storm > 0.04F
+                    ? "dark (the storm owns the sky here)" : "clear").append('\n');
+        } catch (Throwable t) {
+            return McsmTerminal.localReport();
+        }
+        out.append("-----------------------------------------------------------\n");
+        out.append("The set answers in chat when you use it: the server prints the\n");
+        out.append("dimension, the surface, the storm band and the nearest hub.\n");
+        out.append("-----------------------------------------------------------\n");
+        out.append("Guide pages : cover, rift, cities, bestiary, ladder, creator,\n");
+        out.append("              blackhole, tornado, antenna\n");
+        out.append("Radio       : ").append(McsmTerminal.stationNames().size())
+           .append(" stations on this set.\n");
+        out.append("The MASSG    : released by the operator -- sneak-use the antenna.\n");
+        out.append("               It cannot be killed, and it cannot be undone.\n");
+        return out.toString();
+    }
+
     // ---------------------------------------------------------------------
     // Layout
     // ---------------------------------------------------------------------
@@ -243,9 +286,10 @@ public final class McsmTerminalScreen extends Screen {
         g.text(this.font, "[ESC] close   [C] open anywhere   [H] ask IVOR   the code is in the world",
                 px, b - 18, TEXT_DIM, false);
 
-        // Widgets are NOT drawn by the base call in this version -- the mod's own
-        // config screen draws each one itself (WitherStormConfigScreen does
-        // exactly this). So the login field is drawn here, last, over the panel.
+        // Widgets are NOT drawn by the base call in this version -- the base
+        // mod's own config screen draws each one itself (WitherStormConfigScreen
+        // does exactly this). So the login field is drawn here, last, over the
+        // panel.
         if (codeField != null) {
             codeField.extractRenderState(g, mouseX, mouseY, partialTick);
         }
@@ -362,33 +406,20 @@ public final class McsmTerminalScreen extends Screen {
             switch (hit) {
                 case 0:
                     mode = Mode.GUIDE;
-                    if (local) {
-                        body = McsmTerminal.guideText(
-                                GUIDE_PAGES[Math.max(0, Math.min(GUIDE_PAGES.length - 1, guidePage))]);
-                    } else {
-                        ClientPlayNetworking.send(new McsmTerminalC2S("guide",
-                                GUIDE_PAGES[Math.max(0, Math.min(GUIDE_PAGES.length - 1, guidePage))], ""));
-                    }
+                    body = McsmTerminal.guideText(
+                            GUIDE_PAGES[Math.max(0, Math.min(GUIDE_PAGES.length - 1, guidePage))]);
                     break;
                 case 1:
                     mode = Mode.RADIO;
                     break;
                 case 2:
                     mode = Mode.CONSOLE;
-                    if (local) {
-                        body = McsmTerminal.localReport();
-                    } else {
-                        ClientPlayNetworking.send(new McsmTerminalC2S("open", "", ""));
-                    }
+                    body = worldReport(local);
                     break;
                 case 3:
                     guidePage = (guidePage + 1) % GUIDE_PAGES.length;
                     mode = Mode.GUIDE;
-                    if (!local) {
-                        ClientPlayNetworking.send(new McsmTerminalC2S("guide", GUIDE_PAGES[guidePage], ""));
-                    } else {
-                        body = McsmTerminal.guideText(GUIDE_PAGES[guidePage]);
-                    }
+                    body = McsmTerminal.guideText(GUIDE_PAGES[guidePage]);
                     break;
                 case 4:
                     // The settings console, opened from inside the terminal: this
@@ -421,10 +452,6 @@ public final class McsmTerminalScreen extends Screen {
 
     @Override
     public void onClose() {
-        try {
-            ClientPlayNetworking.send(new McsmTerminalC2S("close", "", ""));
-        } catch (Throwable ignored) {
-        }
         Minecraft mc = Minecraft.getInstance();
         if (mc != null) {
             // back to the game (the same call the story console's Done uses)
@@ -487,28 +514,24 @@ public final class McsmTerminalScreen extends Screen {
         return typed;
     }
 
+    /**
+     * The code is checked HERE and now, because the screen is where the player
+     * is. What that unlocks is the console's own content -- the report, the
+     * guide, the radio -- all of which is client-side, and none of which changes
+     * the world. The one thing in the world that the code gates is the MASSG, and
+     * THAT is granted by the server ({@code McsmTerminal.verify}) when the player
+     * has actually entered the code where it counts: the set in their hand.
+     */
     public void submitCode() {
-        String typed = typedCode();
-        if (local) {
-            // No server to ask (this is the menu, not a world): the code is
-            // checked against the same constant the server uses. Nothing here
-            // grants anything in a world -- that is still the server's call.
-            if (McsmTerminal.CODE.equalsIgnoreCase(typed.trim())) {
-                accept("granted", "console", McsmTerminal.localReport());
-            } else {
-                accept("denied", "login", "ACCESS DENIED\n\nThe code is in the world, in IVOR's hands.");
-            }
-            return;
+        if (McsmTerminal.CODE.equalsIgnoreCase(typedCode().trim())) {
+            accept("granted", "console", worldReport(local));
+        } else {
+            accept("denied", "login", "ACCESS DENIED\n\nThe code is in the world, in IVOR's hands.");
         }
-        ClientPlayNetworking.send(new McsmTerminalC2S("code", typed, ""));
     }
 
     public void askHint() {
-        if (local) {
-            accept("line", "login", McsmTerminal.hintText());
-            return;
-        }
-        ClientPlayNetworking.send(new McsmTerminalC2S("hint", "", ""));
+        accept("line", "login", McsmTerminal.hintText());
     }
 
     public boolean isLogin() {

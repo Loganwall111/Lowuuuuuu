@@ -75,6 +75,15 @@ public final class McsmHudTerminal {
             }
         }
 
+        // BUILD #416 (D.8, phase 6) -- THE SKY TERMINAL, drawn over everything
+        // else this HUD does, because when it is up it is the only thing on
+        // screen that matters.
+        try {
+            net.mcsm.extras.client.McsmMassgSky.paint(g, w, h);
+        } catch (Throwable ignored) {
+            // a glitch pass must never take a frame down
+        }
+
         float storm = net.dabicco.witherstormmod.client.StormSkyDarken.factor();
         boolean active = storm > 0.04F;
 
