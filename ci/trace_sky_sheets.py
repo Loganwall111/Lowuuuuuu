@@ -190,32 +190,91 @@ def trace_column(path):
 # writing the trace back into the sources
 # ---------------------------------------------------------------------------
 def glsl_rows(stops):
-    rows = ["    " + ", ".join("vec3(%.3f, %.3f, %.3f)" % tuple(s) for s in stops[i:i + 3])
-            + ("," if i + 3 < len(stops) else ");")
-            for i in range(0, len(stops), 3)]
+    """Rows for a `const vec3 NAME[6] = vec3[](...);` initialiser.
+
+    The closing `);` is supplied by the caller's regex replacement, so the last
+    row must NOT carry it -- emitting it here is what produced a doubled
+    terminator the first time this ran.
+    """
+    rows = []
+    for i in range(0, len(stops), 3):
+        line = "    " + ", ".join("vec3(%.3f, %.3f, %.3f)" % tuple(s) for s in stops[i:i + 3])
+        if i + 3 < len(stops):
+            line += ","
+        rows.append(line)
     return "\n".join(rows)
 
 
 def java_rows(stops):
-    rows = ["        " + ", ".join("{%.3fF, %.3fF, %.3fF}" % tuple(s) for s in stops[i:i + 3])
-            + ("," if i + 3 < len(stops) else ",")
-            for i in range(0, len(stops), 3)]
+    """Rows for a `float[][] NAME = { ... };` initialiser, one row per source
+    line group. A trailing comma is legal in Java and keeps every row uniform."""
+    rows = []
+    for i in range(0, len(stops), 3):
+        rows.append("        " + ", ".join("{%.3fF, %.3fF, %.3fF}" % tuple(s)
+                                           for s in stops[i:i + 3]) + ",")
     return "\n".join(rows)
 
 
-def patch(path, regex_tpl, token, body):
+def patched_text(path, regex_tpl, token, body):
+    """Return (new_text, changed) for one array declaration. Pure: never writes."""
+    """Rewrite one array declaration in place.
+
+    Deliberately structural rather than clever. Two earlier versions of this
+    function corrupted the file:
+      * a non-greedy regex group left a doubled `);` when re-run over its own
+        output (a GLSL syntax error), and
+      * searching for the terminator with `\n\s*\)\s*;` assumed the closing
+        bracket sits on its own line, but the pristine files close the array on
+        the last row's line -- so the search ran past the declaration and ate
+        the NEXT one.
+    A row never contains `);` (GLSL) or `};` (Java), so the first literal
+    occurrence after the opener is always the terminator. Any duplicated
+    terminators from an older mangled write are swallowed, and the result is
+    asserted to contain exactly one declaration of the token.
+    """
     full = os.path.join(ROOT, path)
     with open(full, encoding="utf-8") as f:
         text = f.read()
-    rx = re.compile(regex_tpl % re.escape(token), re.S)
-    if not rx.search(text):
+
+    opener = re.compile(regex_tpl % re.escape(token), re.S)
+    m = opener.search(text)
+    if not m:
         raise SystemExit("[trace] %s: could not find %s to rewrite" % (path, token))
-    new = rx.sub(lambda m: m.group(1) + "\n" + body + "\n" + m.group(3).lstrip(), text, count=1)
-    if new == text:
-        return False
-    with open(full, "w", encoding="utf-8") as f:
-        f.write(new)
-    return True
+
+    terminator = "};" if path.endswith(".java") else ");"
+    # m.end(1) is the end of the OPENING group -- m.end() is the end of the
+    # whole match, which already includes the array body and its terminator.
+    # Using m.end() here made the scan start inside the NEXT declaration.
+    close_at = text.find(terminator, m.end(1))
+    if close_at < 0:
+        raise SystemExit("[trace] %s: no terminator for %s" % (path, token))
+
+    start = m.start()
+    end = close_at + len(terminator)
+    # swallow duplicated terminators left behind by an earlier bad write
+    probe = re.compile(r"\s*\n\s*" + re.escape(terminator))
+    while True:
+        dm = probe.match(text, end)
+        if not dm:
+            break
+        end = dm.end()
+
+    new_text = text[:start] + m.group(1) + "\n" + body + "\n" + terminator + text[end:]
+
+    # structural assertions: the declaration survived exactly once
+    if new_text.count("const vec3 %s[" % token) > 1 or new_text.count(token) != text.count(token):
+        raise SystemExit("[trace] %s: refusing to write -- %s would be duplicated or lost"
+                         % (path, token))
+    return new_text, new_text != text
+
+
+def patch(path, regex_tpl, token, body):
+    """Write patched_text() through to disk. Returns True when the file changed."""
+    new_text, changed = patched_text(path, regex_tpl, token, body)
+    if changed:
+        with open(os.path.join(ROOT, path), "w", encoding="utf-8") as f:
+            f.write(new_text)
+    return changed
 
 
 def rewrite_derived(apply):
@@ -234,9 +293,10 @@ def rewrite_derived(apply):
         else:
             base = list(pal.sample_column(pal.rows(role), value))
         c = [v * scale for v in base]
-        body = "const vec3 %s = vec3(%.1f, %.1f, %.1f) / 255.0;" % (
-            name, c[0] * 255.0, c[1] * 255.0, c[2] * 255.0)
-        rx = re.compile(r"const\s+vec3\s+%s\s*=\s*vec3\([^;]*?\)\s*/\s*255\.0;" % re.escape(name))
+        body = "const vec3 %s = vec3(%.1f, %.1f, %.1f) / 255.0;   // %s" % (
+            name, c[0] * 255.0, c[1] * 255.0, c[2] * 255.0, pal._hex(c))
+        # replace the whole line, INCLUDING any stale `// #RRGGBB` comment
+        rx = re.compile(r"const\s+vec3\s+%s\s*=\s*vec3\([^;]*?\)\s*/\s*255\.0;[^\n]*" % re.escape(name))
         if not rx.search(text):
             print("  ! %s not found in %s" % (name, pal.VISUALS))
             continue
@@ -249,6 +309,68 @@ def rewrite_derived(apply):
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
     return changed
+
+
+def rewrite_from_hex(apply):
+    """BUILD #416 -- write the SUPPLIED hex anchors into every consumer.
+
+    The artist's three hexes per sheet (ceiling / middle / horizon) are the
+    ground truth. They live in ci/palette_tables.SHEET_HEX; this expands them to
+    the six-stop column the shaders use and rewrites sky.fsh, position.fsh,
+    McsmStormPhase.java and the derived constants in mcsm_visuals.glsl. No image
+    decoding is involved, which is the point: the numbers are injected, not read.
+    """
+    traced = {role: pal.hex_column(role) for role in pal.SHEET_HEX}
+    print("[hex] supplied anchors (ceiling / middle / horizon):")
+    for role, anchors in pal.SHEET_HEX.items():
+        print("  %-7s %s   -> %s ... %s" % (role, "  ".join(anchors),
+                                            pal._hex(traced[role][0]),
+                                            pal._hex(traced[role][-1])))
+    writes = []
+    for path, tpl, tokens in GLSL_CONSUMERS:
+        for role, token in tokens.items():
+            if role in traced:
+                writes.append((path, tpl, token, glsl_rows(traced[role])))
+    path, tpl, tokens = JAVA_CONSUMER
+    for role, token in tokens.items():
+        if role in traced:
+            writes.append((path, tpl, token, java_rows(traced[role])))
+
+    if not apply:
+        # BUILD #416 -- this used to print the number of SITES it would write,
+        # which is not a drift measurement: it read "9 table sites ... would be
+        # rewritten" even on a tree that was byte-for-byte correct, so it could
+        # never fail. It now dry-runs every rewrite and counts the ones whose
+        # output actually differs, and exits non-zero when any drifted.
+        drift = []
+        for path, tpl, token, body in writes:
+            _new, changed = patched_text(path, tpl, token, body)
+            if changed:
+                drift.append("%s :: %s" % (path, token))
+        derived = rewrite_derived(False)
+        if drift or derived:
+            for site in drift:
+                print("[hex] DRIFT %s" % site)
+            if derived:
+                print("[hex] DRIFT %s (%d derived constants)" % (pal.VISUALS, derived))
+            print("[hex] --check: FAILED -- %d table sites + %d derived constants out of date; "
+                  "run --from-hex --apply" % (len(drift), derived))
+            return 1
+        print("[hex] --check: OK -- %d table sites + the derived constants already match "
+              "the supplied anchors" % len(writes))
+        return 0
+
+    changed = 0
+    for path, tpl, token, body in writes:
+        if patch(path, tpl, token, body):
+            changed += 1
+            print("  wrote %s :: %s" % (path, token))
+    changed += rewrite_derived(True)
+    rc = subprocess.call([sys.executable, os.path.join(HERE, "palette_tables.py"), "--quiet"])
+    print("[hex] %d sites rewritten; parity gate %s" % (changed, "OK" if rc == 0 else "FAILED"))
+    if rc != 0:
+        print("[hex] rerun 'python3 ci/make_backdrop_sheets.py' then shimcheck")
+    return rc
 
 
 def find_sheets(extra_dir):
@@ -307,6 +429,30 @@ def self_test():
     return 0 if ok else 1
 
 
+def verify_hex():
+    """The shipped tables must match the SUPPLIED hex anchors exactly."""
+    ok = True
+    for role in pal.SHEET_HEX:
+        want = pal.hex_column(role)
+        got = pal.rows(role)
+        worst = 0.0
+        where = ""
+        for i in range(STOPS):
+            g = pal.sample_column(got, i / (STOPS - 1.0))
+            d = max(abs(want[i][k] - g[k]) for k in range(3))
+            if d > worst:
+                worst = d
+                where = "stop %d: shipped %s vs hex %s" % (i, pal._hex(g), pal._hex(want[i]))
+        if worst > 2.0 / 255.0:
+            ok = False
+            print("  FAIL hex %-7s drift %.4f -- %s" % (role, worst, where))
+        else:
+            print("  ok   hex %-7s matches the supplied anchors (%.4f)" % (role, worst))
+    print("[trace] %s" % ("the shipped tables ARE the supplied hexes" if ok
+                          else "HEX DRIFT: run 'trace_sky_sheets.py --from-hex --apply'"))
+    return 0 if ok else 1
+
+
 def verify(traced):
     """Compare a fresh trace against the tables the shaders ship right now."""
     ok = True
@@ -339,10 +485,16 @@ def main():
                     help="trace and FAIL if the shipped tables disagree with the sheets")
     ap.add_argument("--dir", help="directory holding the three sheets")
     ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--from-hex", action="store_true", dest="from_hex",
+                    help="inject the supplied ci/palette_tables.SHEET_HEX anchors "
+                         "(no image decoding); combine with --apply to write")
     args = ap.parse_args()
 
     if args.self_test:
         return self_test()
+
+    if args.from_hex:
+        return rewrite_from_hex(args.apply)
 
     found = find_sheets(args.dir)
     missing = [role for role, _f, _p in SHEETS if role not in found]
@@ -368,7 +520,9 @@ def main():
               % (role, phase, lo, hi, os.path.basename(found[role])))
 
     if args.verify:
-        return verify(traced)
+        rc_hex = verify_hex()
+        rc_png = verify(traced) if not missing else 0
+        return rc_png if rc_hex == 0 else rc_hex
 
     writes = []
     for path, tpl, tokens in GLSL_CONSUMERS:

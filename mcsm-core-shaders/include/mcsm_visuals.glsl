@@ -513,20 +513,20 @@ vec3 mcsm_blob_color(float p, float clock) {
 // and the storm it hangs in cannot separate again.
 //
 // PHASE 5 -- GREEN/TEAL MASS           (tables: PHASE5_TEAL)
-const vec3 P5_CORE  = vec3(4.4,   8.4,  8.8  ) / 255.0;   // #040809
-const vec3 P5_MID   = vec3(54.8, 73.9, 72.0  ) / 255.0;   // #374A48
-const vec3 P5_EDGE  = vec3(119.8, 135.2, 128.8) / 255.0;  // #788781
+const vec3 P5_CORE = vec3(2.6, 4.0, 4.8) / 255.0;   // #030405
+const vec3 P5_MID = vec3(18.6, 27.7, 32.9) / 255.0;   // #131C21
+const vec3 P5_EDGE = vec3(24.7, 36.5, 42.3) / 255.0;   // #19242A
 const vec3 P5_BEAM  = vec3(132.0, 147.0, 255.0) / 255.0;  // #8493FF ambient bleed
 // PHASE 5.5-5.9 -- PURPLE & MAGENTA VOID MASS  (tables: PHASE55_PUR)
-const vec3 P55_CORE = vec3(9.3,   3.3,  11.0 ) / 255.0;   // #09030B
-const vec3 P55_MID  = vec3(76.6,  33.8, 85.4 ) / 255.0;   // #4D2255
-const vec3 P55_EDGE = vec3(133.9, 70.1, 142.0) / 255.0;   // #86468E
-const vec3 P55_HIGH = vec3(164.5, 89.0, 177.0) / 255.0;   // #A459B1 ambient bleed
+const vec3 P55_CORE = vec3(4.8, 2.2, 7.2) / 255.0;   // #050207
+const vec3 P55_MID = vec3(43.6, 18.4, 60.1) / 255.0;   // #2C123C
+const vec3 P55_EDGE = vec3(64.5, 26.5, 85.7) / 255.0;   // #411B56
+const vec3 P55_HIGH = vec3(80.5, 32.3, 104.6) / 255.0;   // #502069
 // PHASE 6 -- THE FOUR-COLOUR SUNSET SPLIT MASS (vertical)  (tables: PHASE6_ROSE)
-const vec3 P6_TOP   = vec3(18.5,  15.8, 18.5 ) / 255.0;   // #121012 zenith (the black smudge)
-const vec3 P6_UMID  = vec3(111.9, 93.3, 104.4) / 255.0;   // #705D68 upper smudge
-const vec3 P6_LMID  = vec3(156.1, 130.1, 135.9) / 255.0;  // #9C8288 lower smudge
-const vec3 P6_BOT   = vec3(199.9, 58.7, 24.0 ) / 255.0;   // #C83B18 horizon glow (ember row 3)
+const vec3 P6_TOP = vec3(6.4, 4.6, 5.5) / 255.0;   // #060505
+const vec3 P6_UMID = vec3(51.3, 35.4, 43.0) / 255.0;   // #33232B
+const vec3 P6_LMID = vec3(72.7, 49.5, 60.7) / 255.0;   // #49313D
+const vec3 P6_BOT = vec3(199.9, 58.7, 24.0) / 255.0;   // #C83B18
 
 // The blob is intentionally compact around the storm bearing.  The old
 // 1.9.305 ellipse used one analytic radius, which made the sky read as a
@@ -752,10 +752,10 @@ float mcsm_fog_density(float p) {
 // the rose sky. These four constants are the traced columns' mid row lifted
 // toward white by a per-phase amount (0.55 / 0.10 / 0.35 / 0.12), and
 // ci/palette_tables.py re-derives every one of them.
-const vec3 MCSM_CLOUD_TEAL   = vec3(164.9, 173.5, 172.7) / 255.0;   // #A5AEAD pale puffs
-const vec3 MCSM_CLOUD_PURPLE = vec3( 94.5,  55.9, 102.4) / 255.0;   // #5E3866 dark violet banks
-const vec3 MCSM_CLOUD_ROSE   = vec3(162.0, 149.9, 157.1) / 255.0;   // #A2969D warm mauve
-const vec3 MCSM_CLOUD_EMBER  = vec3(160.0,  71.0,  61.3) / 255.0;   // #A0473D ember-lit
+const vec3 MCSM_CLOUD_TEAL = vec3(148.6, 152.7, 155.1) / 255.0;   // #95999B
+const vec3 MCSM_CLOUD_PURPLE = vec3(64.7, 42.0, 79.5) / 255.0;   // #412A50
+const vec3 MCSM_CLOUD_ROSE = vec3(122.6, 112.3, 117.2) / 255.0;   // #7B7075
+const vec3 MCSM_CLOUD_EMBER = vec3(160.0, 71.0, 61.3) / 255.0;   // #A0473D
 
 vec3 mcsm_cloud_tint(float p) {
     // Below the storm the deck is the world's own cloud colour.

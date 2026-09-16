@@ -73,7 +73,16 @@ public final class FoglessRenderTypes {
       return (RenderPipeline)CUTOUT_PIPES.computeIfAbsent(fog + "|" + reverse + "|" + shade + "|" + sun + "|" + cull, (k) -> {
          RenderPipeline.Builder var10000 = RenderPipeline.builder(new RenderPipeline.Snippet[]{RenderPipelinesAccessor.dabyws$entitySnippet()});
          String var10001 = tag(fog);
-         RenderPipeline.Builder b = var10000.withLocation(id("pipeline/fogless_entity_cutout_" + var10001 + (reverse ? "_rev" : "") + (shade ? "_lit" + sun : ""))).withVertexShader(id("core/fogless_entity")).withFragmentShader(id("core/fogless_entity")).withShaderDefine("ALPHA_CUTOUT", 0.1F).withShaderDefine("FOG_MIX", fog).withShaderDefine("NO_OVERLAY").withCull(cull);
+         // BUILD #416 -- MCSM_VOID_BODY is what turns the body shading in
+         // core/fogless_entity.fsh on at all: the void-black creases, the navy-black
+         // structural band and the light-adaptive surface plates are all behind
+         // that ifdef, and until now NO pipeline in the mod ever stamped it, so
+         // the whole block was dead code and the hull rendered as raw texture.
+         // The body cutout paths are exactly what it is written for, so they all
+         // stamp it. Every variant gets it, which keeps one shader program per
+         // define set and avoids two pipelines sharing a location with different
+         // defines.
+         RenderPipeline.Builder b = var10000.withLocation(id("pipeline/fogless_entity_cutout_" + var10001 + (reverse ? "_rev" : "") + (shade ? "_lit" + sun : ""))).withVertexShader(id("core/fogless_entity")).withFragmentShader(id("core/fogless_entity")).withShaderDefine("MCSM_VOID_BODY").withShaderDefine("ALPHA_CUTOUT", 0.1F).withShaderDefine("FOG_MIX", fog).withShaderDefine("NO_OVERLAY").withCull(cull);
          if (reverse) {
             b.withShaderDefine("REVERSE_SHADING");
          }

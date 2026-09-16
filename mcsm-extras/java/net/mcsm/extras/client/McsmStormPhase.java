@@ -39,17 +39,17 @@ public final class McsmStormPhase {
      *   ROSE   "phase6sky 6 witherstorm.png"    = phase 6.0 - 7.0
      */
     public static final float[][] SKY_TEAL = {
-        {0.078F, 0.149F, 0.157F}, {0.140F, 0.220F, 0.215F}, {0.290F, 0.360F, 0.350F},
-        {0.470F, 0.530F, 0.505F}, {0.600F, 0.660F, 0.615F}, {0.620F, 0.675F, 0.625F},
-    };
+        {0.047F, 0.071F, 0.086F}, {0.064F, 0.096F, 0.115F}, {0.082F, 0.121F, 0.143F},
+        {0.097F, 0.143F, 0.166F}, {0.111F, 0.162F, 0.185F}, {0.125F, 0.180F, 0.204F},
+};
     public static final float[][] SKY_PURPLE = {
-        {0.165F, 0.059F, 0.196F}, {0.240F, 0.100F, 0.270F}, {0.361F, 0.165F, 0.400F},
-        {0.525F, 0.275F, 0.557F}, {0.640F, 0.345F, 0.690F}, {0.660F, 0.361F, 0.706F},
-    };
+        {0.086F, 0.039F, 0.129F}, {0.143F, 0.061F, 0.200F}, {0.199F, 0.083F, 0.271F},
+        {0.253F, 0.104F, 0.336F}, {0.303F, 0.122F, 0.395F}, {0.353F, 0.141F, 0.455F},
+};
     public static final float[][] SKY_ROSE = {
-        {0.329F, 0.282F, 0.329F}, {0.400F, 0.340F, 0.380F}, {0.478F, 0.392F, 0.439F},
-        {0.612F, 0.510F, 0.533F}, {0.760F, 0.600F, 0.640F}, {0.784F, 0.612F, 0.651F},
-    };
+        {0.114F, 0.082F, 0.098F}, {0.172F, 0.120F, 0.145F}, {0.230F, 0.158F, 0.192F},
+        {0.285F, 0.194F, 0.238F}, {0.339F, 0.228F, 0.284F}, {0.392F, 0.263F, 0.329F},
+};
     /**
      * The fall the supplied sheets do not cover: phase 7.0 - 8.05 continues
      * toward the storyboard's ember/black end. Same six rows as sky.fsh's

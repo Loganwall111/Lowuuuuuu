@@ -164,3 +164,68 @@ declaration, which is exactly how it caught a missing `PUPIL_*` constant.
   `witherstorm_Phase` uniform declared, and the Java side publishing it. 22/22.
   `ci/palette_tables.py` adds the palette parity gate above. Both run before
   javac.
+
+## 6. Light-adaptive body shading, and the sky's true hexes (build #416, 7000.0.0-M)
+
+### The supplied hexes are now the source of truth
+
+The nine anchors supplied with this build (ceiling / middle / horizon per sheet)
+are ingested in `ci/palette_tables.py` as `SHEET_HEX` and expanded to the six-stop
+columns the shaders read:
+
+| sheet | ceiling | middle | horizon | expansion |
+|---|---|---|---|---|
+| `phase 5 turquoise sky.png` | `#0C1216` | `#172228` | `#202E34` | `#0C1216 #10181D #151F24 #19242A #1C292F #202E34` |
+| `phase5sky0purple sky.png` | `#160A21` | `#3A184E` | `#5A2474` | `#160A21 #241033 #331545 #401A56 #4D1F65 #5A2474` |
+| `phase6sky 6 witherstorm.png` | `#1D1519` | `#422D37` | `#644354` | `#1D1519 #2C1F25 #3B2831 #49313D #563A48 #644354` |
+
+`python3 ci/trace_sky_sheets.py --from-hex --apply` writes them into `sky.fsh`,
+`position.fsh`, `McsmStormPhase.java` and the derived constants in
+`mcsm_visuals.glsl`; the older trace drifted by **0.4984 / 0.3373 / 0.4212** and is
+gone. The twelve backdrop sheets were re-baked from the new columns, and
+`ci/REPORT_sky_columns_shipped.png` was regenerated (it had still been showing the
+superseded bright sky).
+
+### Two real defects fixed on the way
+
+- **The whole body-shading block was dead code.** `MCSM_VOID_BODY` was defined by
+  *no pipeline in the mod* — so the void-black creases, the structural band, the
+  glint sheen and the new light-adaptive plates would never have run in game
+  (only `glslcheck` ever passed that define). The body cutout pipelines now stamp
+  it, and `shimcheck` grew three combinations for the paths that actually run
+  (**93/93 -> 147/147**).
+- **The table rewriter corrupted its own output.** Two earlier versions of
+  `patch()` left a doubled `);` (a GLSL syntax error) and could eat a *second*
+  array declaration while looking for the first one's terminator. It is now
+  index-based, self-heals duplicated terminators, and refuses to write unless the
+  declaration survives exactly once. `--from-hex --check` was also a fake gate —
+  it printed a site count that could never fail; it now dry-runs every rewrite and
+  exits non-zero on real drift, and `ci/build.sh` enforces it.
+
+### The shading itself
+
+Four tone keys, all read from the ingested atlas or supplied by the brief:
+
+| role | hex | where |
+|---|---|---|
+| night / navy key | `#0A0E14` | ambient light low (night, cave) |
+| twilight blue | `#0D1B2A` | cool light (overcast, blue hour) |
+| ash gray | `#242A36` | warm light (day, sunset, lightning) |
+| void | `#000000` | crevices, structural joints, deep AO — permanent |
+
+The masks are computed from the **unlit albedo**, captured before
+`lightMapColor` multiplies in: keyed off the lit colour, midnight would have
+dragged every pixel under the crease floor and crushed the whole hull to void
+black. The ambient term is the platform lightmap scaled by the world clock using
+the *same sun maths as the sky shader* — the storm head is submitted full-bright,
+so the lightmap alone would have read "noon" at midnight, and the hull could never
+have taken its night key. Measured on lit faces: midnight `#0E1218` (torch-lit
+`#0B0F14`), noon `#1F2733`, sunset `#1F2229`, neutral ambient the exact midpoint
+of the two permitted daylight tones, and crevices `#000000` at noon, at midnight
+and under torchlight alike. The glint sheen is now light-aware too: invisible on a
+black midnight hull, visible where daylight or a flash has lifted the plates.
+
+`python3 ci/make_report_sky_columns.py --check` keeps the report honest, and is a
+build gate. `ci/sky_sheets/` is still not in the repository, so the image trace
+gate still reports a skip rather than a pass — the anchor gate above carries the
+ground truth until the PNGs are checked in.

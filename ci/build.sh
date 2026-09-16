@@ -301,6 +301,32 @@ echo "$PALETTE_LINE"
 # Annotations survive without runner-log access, so the gate result is auditable.
 echo "::notice title=palette::$PALETTE_LINE"
 
+# BUILD #416 -- the nine SUPPLIED hex anchors are ground truth for the sky, so
+# the shipped tables must equal their expansion to the byte. --from-hex --check
+# dry-runs every rewrite (sky.fsh, position.fsh, McsmStormPhase.java and the
+# derived constants) and exits non-zero the moment one of them drifts from the
+# anchors, which is what keeps a hand-edit from silently shipping a different sky.
+echo "[hex] supplied sky-anchor ingestion gate"
+HEX_OUT="$(python3 ci/trace_sky_sheets.py --from-hex --check 2>&1)" || {
+  echo "$HEX_OUT"
+  echo "::error title=build::the shipped sky tables drifted from the supplied anchors — run 'python3 ci/trace_sky_sheets.py --from-hex --apply'"
+  exit 1
+}
+HEX_LINE="$(printf '%s\n' "$HEX_OUT" | grep -F '[hex] --check:' | tail -1)"
+echo "$HEX_LINE"
+echo "::notice title=hex::$HEX_LINE"
+
+# BUILD #416 -- and the report picture of that sky must not go stale again. It
+# did once: it still showed the superseded bright trace after the anchors were
+# ingested, and nothing compared it to the tables.
+echo "[report] shipped sky-column report gate"
+REPORT_OUT="$(python3 ci/make_report_sky_columns.py --check 2>&1)" || {
+  echo "$REPORT_OUT"
+  echo "::error title=build::ci/REPORT_sky_columns_shipped.png no longer matches the supplied anchors — rerun 'python3 ci/make_report_sky_columns.py'"
+  exit 1
+}
+printf '%s\n' "$REPORT_OUT" | grep -F '[report]' | tail -1
+
 # BUILD #416 -- if the source sheets are checked in (ci/sky_sheets/), the traced
 # tables must still BE those sheets. Without the sheets the check reports that it
 # skipped rather than passing quietly; it never invents a pass.

@@ -33,6 +33,88 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
+# ===========================================================================
+# BUILD #416 -- GROUND-TRUTH SHEET HEXES (supplied by the artist, verbatim).
+#
+# These are the authoritative anchors for the three reference sheets. The trace
+# in the GLSL below (and everything derived from it) is expanded from these,
+# NOT the other way round:
+#
+#     anchors are at t = 0.0 (sky ceiling), 0.5 (middle gradient), 1.0 (horizon)
+#
+# so a six-stop column is their piecewise-linear expansion. `--from-hex` in
+# ci/trace_sky_sheets.py writes them into sky.fsh / position.fsh /
+# McsmStormPhase.java, and check_hex() fails the build if the shipped tables
+# ever stop matching these three arrays.
+# ===========================================================================
+SHEET_HEX = {
+    # phase 5 backdrop -- slate teal horizon sheet
+    "teal": ["#0C1216", "#172228", "#202E34"],
+    # phase 5.5-5.9 backdrop -- amethyst purple horizon sheet
+    "purple": ["#160A21", "#3A184E", "#5A2474"],
+    # phase 6 backdrop -- muted pink gray horizon sheet
+    "rose": ["#1D1519", "#422D37", "#644354"],
+}
+ANCHOR_T = [0.0, 0.5, 1.0]
+STOPS = 6
+
+
+def hex_to_rgb(h):
+    h = h.lstrip("#")
+    return [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
+
+
+def hex_column(role):
+    """The six-stop column expanded from SHEET_HEX[role]'s three anchors."""
+    anchors = [hex_to_rgb(h) for h in SHEET_HEX[role]]
+    out = []
+    for i in range(STOPS):
+        t = i / float(STOPS - 1)
+        # locate the anchor pair this stop falls between
+        if t <= ANCHOR_T[0]:
+            out.append(list(anchors[0]))
+            continue
+        for j in range(len(ANCHOR_T) - 1):
+            lo, hi = ANCHOR_T[j], ANCHOR_T[j + 1]
+            if t <= hi:
+                f = (t - lo) / (hi - lo)
+                a, b = anchors[j], anchors[j + 1]
+                out.append([a[k] + (b[k] - a[k]) * f for k in range(3)])
+                break
+        else:
+            out.append(list(anchors[-1]))
+    return out
+
+
+def check_hex(verbose=False):
+    """The shipped GLSL columns must BE the supplied hex anchors."""
+    ok = True
+    msgs = []
+    tables = load()
+    for role, anchors in SHEET_HEX.items():
+        want = hex_column(role)
+        got = tables.get(role)
+        if not got:
+            ok = False
+            msgs.append("hex: no %s column in the GLSL to compare" % role)
+            continue
+        worst = 0.0
+        where = ""
+        for i in range(STOPS):
+            g = sample_column(got, i / float(STOPS - 1))
+            d = max(abs(want[i][k] - g[k]) for k in range(3))
+            if d > worst:
+                worst = d
+                where = "stop %d: shipped %s vs hex %s" % (i, _hex(g), _hex(want[i]))
+        if worst > 2.0 / 255.0:
+            ok = False
+            msgs.append("hex drift %-6s %.4f -- %s (run: trace_sky_sheets.py --from-hex --apply)"
+                        % (role, worst, where))
+        elif verbose:
+            msgs.append("hex ok: %s == %s -> %s" % (role, " ".join(anchors),
+                                                    _hex(want[-1])))
+    return ok, msgs
+
 GLSL_SOURCES = [
     "mcsm-core-shaders/core/sky.fsh",
     "mcsm-core-shaders/core/position.fsh",
@@ -347,11 +429,13 @@ def main():
     verbose = "--quiet" not in sys.argv
     ok, msgs = check_parity(verbose=verbose)
     ok2, msgs2 = check_derived(verbose=verbose)
-    for m in msgs + msgs2:
+    ok3, msgs3 = check_hex(verbose=verbose)
+    for m in msgs + msgs2 + msgs3:
         print(("  ok   " if " ok" in m or " agree: " in m else "  FAIL ") + m)
-    ok = ok and ok2
-    print("[palette] %s (%d reference columns, %d derived constants)"
-          % ("parity OK" if ok else "PARITY BROKEN", len(load()), len(DERIVED)))
+    ok = ok and ok2 and ok3
+    print("[palette] %s (%d reference columns, %d derived constants, %d hex anchors)"
+          % ("parity OK" if ok else "PARITY BROKEN", len(load()), len(DERIVED),
+             sum(len(v) for v in SHEET_HEX.values())))
     return 0 if ok else 1
 
 

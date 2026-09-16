@@ -63,6 +63,13 @@ void main() {
 #ifndef NO_OVERLAY
     color.rgb = mix(overlayColor.rgb, color.rgb, overlayColor.a);
 #endif
+#ifdef MCSM_VOID_BODY
+    // captured BEFORE the platform light multiplies in. The crease / AO masks
+    // must key off the block's own albedo: if they keyed off the lit colour,
+    // midnight would drag every pixel under the crease floor and crush the
+    // whole body to void black instead of the navy night key.
+    float mcsmAlbedo = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+#endif
 #ifndef EMISSIVE
     color *= lightMapColor;
 #endif
@@ -78,15 +85,83 @@ void main() {
     // a clean, sharp depth line. Legacy light-gray / brown vanilla sheets
     // can no longer leak into the body: anything under the mid-tone floor
     // collapses to #000000 instead of reading as lit flesh.
-    const vec3 MCSM_NAVY_BLACK = vec3(0.0392, 0.0549, 0.0784);  // key left
-    const vec3 MCSM_VOID_BLACK = vec3(0.0, 0.0, 0.0);          // key right
-    float mcsmLum = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    // BUILD #416 -- the four tone keys of the light-adaptive shade. The first
+    // two are the ingested split-atlas keys; the second two are the plate tones
+    // the facets slide between as the world's light changes.
+    const vec3 MCSM_NAVY_BLACK = vec3(0.0392, 0.0549, 0.0784);   // #0A0E14  key left / night plates
+    const vec3 MCSM_VOID_BLACK = vec3(0.0, 0.0, 0.0);            // #000000  key right / permanent void
+    const vec3 MCSM_ASH_GRAY   = vec3(0.1412, 0.1647, 0.2118);   // #242A36  hard daylight
+    const vec3 MCSM_TWILIGHT   = vec3(0.0510, 0.1059, 0.1647);   // #0D1B2A  dusk / dawn light
+
+    float mcsmLum = mcsmAlbedo;
+
+    // ---- (1) PERMANENT VOID: crevices, structural joints, deep AO ---------
+    // Light-impenetrable. These pixels are #000000 at noon, at midnight and
+    // under a lightning flash -- nothing below can lift them again.
     float mcsmCrease = 1.0 - smoothstep(0.015, 0.20, mcsmLum);
     color.rgb = mix(color.rgb, MCSM_VOID_BLACK, mcsmCrease);
     // structural block layers: pull the mid band down toward the navy key
     // (never above it) so facets stay readable but stay cinematic-dark
     float mcsmBand = smoothstep(0.20, 0.42, mcsmLum) * (1.0 - smoothstep(0.42, 0.68, mcsmLum));
     color.rgb = mix(color.rgb, MCSM_NAVY_BLACK * 0.55, mcsmBand * 0.70);
+
+    // ---- (2) AMBIENT LIGHT ADAPTATION ------------------------------------
+    // The surface plates read the platform's own global ambient light -- the
+    // lightmap the vertex already carries -- and bilinearly interpolate a 2x2
+    // matrix of tones instead of a flat texture colour:
+    //
+    //              cool ambient          warm ambient
+    //   night      navy-black #0A0E14     navy-black #0A0E14
+    //   day        twilight   #0D1B2A     ash-gray   #242A36
+    //
+    // so a dark night cycle sits on the navy key, ordinary daylight lifts the
+    // plates to ash-gray, and the low warm light of a sunset (or our own
+    // sunset filter) leans them toward twilight blue. A lightning flash simply
+    // drives the ambient term to the top of the ramp on its own -- no flash
+    // detection needed, because the flash IS what the lightmap measures.
+    // The world clock, mirrored from the sky shader's own sun maths (this file
+    // imports only globals.glsl, so the values are recomputed locally rather
+    // than pulled from mcsm_visuals -- the extras shaders must never acquire a
+    // new uniform binding). Same numbers as the sky, so body and sky agree on
+    // what time it is. The second reason this exists: the storm head is
+    // submitted full-bright, so the lightmap on its own would read "noon" at
+    // midnight and the dawn hull would never get its night key.
+    float mcsmDay01 = fract(GameTime / 1200.0);
+    float mcsmSunY  = sin(mcsmDay01 * 6.2831853) * 0.9 + 0.02;
+    float mcsmSkyDay = clamp(mcsmSunY * 3.2, 0.0, 1.0);          // 1 = noon
+    float mcsmDuskW  = 1.0 - clamp(abs(mcsmSunY) * 3.2, 0.0, 1.0); // 1 = sun on the horizon
+
+    float mcsmAmb = 0.0;
+    float mcsmWarm = 0.5;
+#ifndef EMISSIVE
+    float mcsmLit = max(max(lightMapColor.r, lightMapColor.g), lightMapColor.b);
+    // platform ambient x the sky's actual light level: a full-bright midnight
+    // submission lands on 0.12 (deep night), a torch-lit face still contributes
+    // its block light, and noon lands on 1.0
+    mcsmAmb = mcsmLit * mix(0.12, 1.0, max(mcsmSkyDay, mcsmDuskW * 0.55));
+    // warm/cool ratio of the ambient light: a sunset has far more red than
+    // blue, noon is neutral, moonlight is blue-biased -- plus the low warm sun
+    // the clock can see even in a full-bright submission
+    mcsmWarm = clamp((lightMapColor.r - lightMapColor.b) * 3.0 + 0.5 + mcsmDuskW * 0.35, 0.0, 1.0);
+#endif
+    float mcsmDay = smoothstep(0.16, 0.78, mcsmAmb);
+    vec3 mcsmCoolPlate = mix(MCSM_NAVY_BLACK, MCSM_TWILIGHT, mcsmDay);
+    vec3 mcsmWarmPlate = mix(MCSM_NAVY_BLACK, MCSM_ASH_GRAY, mcsmDay);
+    vec3 mcsmPlate = mix(mcsmCoolPlate, mcsmWarmPlate, mcsmWarm);
+    // only the lit facets move: the creases were just locked to black and are
+    // excluded by (1.0 - mcsmCrease), so the adaptation can never touch them
+    // The mid band is deliberately NOT excluded here. The mandate is that the
+    // mid-tones adapt: the band pre-pass above has already shaped the small
+    // slice of texture that survives the plate blend, and blocking the blend
+    // here would leave the midnight hull reading as half-lit daylight texture.
+    float mcsmFacet = (1.0 - mcsmCrease) * (1.0 - smoothstep(0.70, 0.95, mcsmLum));
+    // The plate is mixed in unscaled, so the key tones are exact: #0A0E14 at
+    // night, #242A36 under a warm low sun, #0D1B2A under a cool sky. Neutral
+    // ambient reads as the midpoint of the two permitted tones, never a tone of
+    // its own. The gate is strongest in the dark (0.90) -- a midnight hull has
+    // to read as the navy key, not as 28% of the daylight texture -- and backs
+    // off to 0.72 in daylight so the block detail stays legible.
+    color.rgb = mix(color.rgb, mcsmPlate, mcsmFacet * mix(0.90, 0.72, mcsmDay));
     // Animated glint overlay: a subtle living sheen that rolls across the
     // dark block segments (Telltale reference presentation). Two drifting
     // sine fields, each raised to a high power so only narrow streaks survive,
@@ -103,7 +178,12 @@ void main() {
     float mcsmRoll = pow(max(sin((texCoord0.y * 3.9 - texCoord0.x * 1.7) * 6.2831853 - mcsmSec * 0.63), 0.0), 12.0);
     mcsmGlint = (mcsmGlint + mcsmRoll * 0.6)
               * (1.0 - mcsmCrease) * (1.0 - smoothstep(0.55, 0.85, mcsmLum));
-    color.rgb += vec3(0.30, 0.38, 0.52) * mcsmGlint * 0.20;
+    // BUILD #416 -- the sheen answers the light too: it is nearly invisible on
+    // a black midnight hull and rolls visibly across plates that daylight or a
+    // lightning flash has lifted, which is what keeps the body reading as a
+    // material rather than a flat silhouette.
+    color.rgb += mix(vec3(0.26, 0.32, 0.44), vec3(0.34, 0.40, 0.54), mcsmWarm)
+               * mcsmGlint * (0.08 + 0.30 * mcsmDay);
 #endif
 
 #ifdef EMISSIVE

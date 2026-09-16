@@ -164,6 +164,14 @@ def main():
         # gate. Flipping it on here means a broken blueprint branch fails CI
         # instead of shipping as dead code.
         ('sky_position', {'MCSM_SKY_POSITION': '1', 'REVERSE_SHADING': '1', 'NO_CARDINAL_LIGHTING': '1'}),
+        # BUILD #416: MCSM_VOID_BODY is now stamped by the body cutout pipelines
+        # (before this build NO Java ever defined it, so the void-black creases,
+        # the structural band, the light-adaptive plates and the glint sheen were
+        # all dead code). Gate the combinations that actually run: the cutout
+        # defines, plus the two shading variants the same pipeline can carry.
+        ('void_body', {'MCSM_VOID_BODY': '1', 'ALPHA_CUTOUT': '0.1F', 'FOG_MIX': '0.5', 'NO_OVERLAY': '1'}),
+        ('void_body_lit', {'MCSM_VOID_BODY': '1', 'ALPHA_CUTOUT': '0.1F', 'FOG_MIX': '0.5', 'NO_OVERLAY': '1', 'STORM_SHADING': '1', 'SUN_X': '0.30', 'SUN_Y': '0.80', 'SUN_Z': '0.50'}),
+        ('void_body_rev', {'MCSM_VOID_BODY': '1', 'ALPHA_CUTOUT': '0.1F', 'FOG_MIX': '0.5', 'NO_OVERLAY': '1', 'REVERSE_SHADING': '1'}),
     ]
     for path in cores:
         for tag, defines in combo_sets:
