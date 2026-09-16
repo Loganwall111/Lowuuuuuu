@@ -777,6 +777,13 @@ if [ $EMISSIVE_RC -ne 0 ]; then
   echo "::error title=emissive masks::the phase >= 4 teeth/eye masks are not pure white -- the glow cannot reach the emissive floor. Run 'python3 ci/make_emissive_whites.py'"
   exit 1
 fi
+STILLS_CHECK="$(python3 ci/measure_stills.py --check 2>&1)"
+STILLS_RC=$?
+printf '%s\n' "$STILLS_CHECK" | tail -2
+if [ $STILLS_RC -ne 0 ]; then
+  echo "::error title=atmosphere reference::the measured table no longer matches the frames the artist supplied. Run 'python3 ci/measure_stills.py'"
+  exit 1
+fi
 BACKDROP_CHECK="$(python3 ci/sync_backdrop_palette.py --check 2>&1)"
 BACKDROP_RC=$?
 printf '%s\n' "$BACKDROP_CHECK" | tail -2

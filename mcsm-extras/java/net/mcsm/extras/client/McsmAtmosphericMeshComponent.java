@@ -45,9 +45,21 @@ public final class McsmAtmosphericMeshComponent {
      * eyes and the teeth are seen against, and the reason no sky shows through
      * around the creature.
      */
-    private static final float CORE_RADIUS = 0.54F;
-    /** How opaque that core is. Not quite 1, so the very edge does not band. */
-    private static final float CORE_ALPHA = 0.97F;
+    private static final float CORE_RADIUS = 0.46F;
+    /**
+     * BUILD #435 -- THE PENUMBRA, NOT A DISC.
+     *
+     * The supplied frames are unambiguous about this: the dark mass around the
+     * body has NO rim. It leaves the silhouette as near-black and widens out
+     * through a broad soft penumbra into the aura, the way a shadow does. A
+     * constant-radius core with a 0.1 blend would have drawn a hard-edged black
+     * disc behind the creature -- exactly the "weird white circular mass" the
+     * halo work has been fighting in the opposite direction. So the core's blend
+     * is a THIRD of the radius wide by the time it reaches the aura.
+     */
+    private static final float CORE_FALLOFF = 0.34F;
+    /** How opaque the centre is. Not quite 1, so nothing bands. */
+    private static final float CORE_ALPHA = 0.94F;
 
     private McsmAtmosphericMeshComponent() {
     }
@@ -198,9 +210,15 @@ public final class McsmAtmosphericMeshComponent {
         // palette the story stage shell shares.
         int aura = McsmBackdropPalette.column(phase, 1.0F - vertical);
 
-        float core = 1.0F - smoothstep(radius, CORE_RADIUS, CORE_RADIUS + 0.10F);
+        // wide, soft, no rim: the dark mass leaves the silhouette and widens
+        float core = 1.0F - smoothstep(radius, CORE_RADIUS, CORE_RADIUS + CORE_FALLOFF);
+        // the aura only exists outside the penumbra, and fades out at the margin
         float ring = 1.0F - smoothstep(radius, 0.74F, 1.0F);
         float outer = Math.max(0.0F, ring - core);
+        // the field's own soft edges: it dissolves at the top and at the very
+        // bottom rather than stopping, so no edge of it is ever visible
+        float edge = topFade * smoothstep(vertical, 0.0F, 0.08F);
+        outer = Mth.clamp(outer * edge, 0.0F, 1.0F);
 
         // The lower end of the field still sinks into the void, so its bottom
         // edge darkens rather than stopping.
@@ -208,8 +226,7 @@ public final class McsmAtmosphericMeshComponent {
         aura = mix(aura, McsmBackdropPalette.VOID_BLACK, bottomSilhouette * 0.82F);
 
         int rgb = mix(aura, McsmBackdropPalette.VOID_BLACK, core);
-        float alpha = MAX_ALPHA * phaseFade * topFade
-                * (core * CORE_ALPHA + outer);
+        float alpha = MAX_ALPHA * phaseFade * (core * CORE_ALPHA * topFade + outer);
         return (Mth.clamp((int) (alpha * 255.0F), 0, 255) << 24) | (rgb & 0x00FFFFFF);
     }
 

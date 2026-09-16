@@ -1700,10 +1700,17 @@ def main():
           and "BUILD #434 -- THE FIELD WRAPS THE BODY." in field
           and "float topFade = smoothstep(1.0F - (float) ((y + 1.0D) * 0.5D), 0.0F, 0.22F);" in field)
     check("its centre is an empty, light-impenetrable black core",
-          "private static final float CORE_RADIUS = 0.54F;" in field
-          and "private static final float CORE_ALPHA = 0.97F;" in field
-          and "float core = 1.0F - smoothstep(radius, CORE_RADIUS, CORE_RADIUS + 0.10F);" in field
+          "private static final float CORE_RADIUS = 0.46F;" in field
+          and "private static final float CORE_ALPHA = 0.94F;" in field
+          and "float core = 1.0F - smoothstep(radius, CORE_RADIUS, CORE_RADIUS + CORE_FALLOFF);" in field
           and "int rgb = mix(aura, McsmBackdropPalette.VOID_BLACK, core);" in field)
+    check("the core is a penumbra, not a disc: the supplied frames have no rim",
+          # the dark mass leaves the silhouette as near-black and widens out the
+          # way a shadow does; a constant-radius core would draw a hard-edged
+          # black disc behind the creature.
+          "private static final float CORE_FALLOFF = 0.34F;" in field
+          and "float edge = topFade * smoothstep(vertical, 0.0F, 0.08F);" in field
+          and "outer = Mth.clamp(outer * edge, 0.0F, 1.0F);" in field)
     check("the aura lives only in the annulus, and wears the sheets' own column",
           "float ring = 1.0F - smoothstep(radius, 0.74F, 1.0F);" in field
           and "float outer = Math.max(0.0F, ring - core);" in field
