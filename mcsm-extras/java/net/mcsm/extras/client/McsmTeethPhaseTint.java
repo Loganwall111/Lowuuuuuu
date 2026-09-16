@@ -219,6 +219,22 @@ public final class McsmTeethPhaseTint {
         return 0xFF000000 | ir << 16 | ig << 8 | ib;
     }
 
+    /**
+     * The head eyes are a separate switch on the base mod's client config and it
+     * is set by name, so a build that does not carry it simply skips this rather
+     * than failing to load.
+     */
+    private static void mcsm$forceEyeGlow() {
+        try {
+            java.lang.reflect.Field f =
+                    net.dabicco.witherstormmod.config.DabyWSClientConfig.class
+                            .getField("headEyeGlow");
+            f.setBoolean(null, true);
+        } catch (Throwable ignored) {
+            // no such switch on this build: the teeth pass is the one that matters
+        }
+    }
+
     public static void tick() {
         try {
             net.mcsm.extras.client.McsmStormAtmosphere.tick();
@@ -251,6 +267,24 @@ public final class McsmTeethPhaseTint {
             DabyWSClientConfig.eyeColorB = b;
             DabyWSClientConfig.turquoiseTeethIntensity = inten;
             DabyWSClientConfig.turquoiseTeeth = glow;
+            // BUILD #422 -- THE GLOW IS GUARANTEED, NOT INFERRED.
+            //
+            // "For some reason the teeth and the eyes are still not glowing."
+            // Two things were between the emissive atlases and the screen: the
+            // atlases themselves (dim, and phase 4 nearly empty -- both fixed in
+            // ci/make_emissive_whites.py, they are pure white masks now) and this
+            // switch, which anything else in the mod can write. From phase 4 up
+            // the module (a) forces the native emissive pass back on every tick
+            // and (b) floors its intensity at the brief's 4.0x, so no other pass
+            // -- and no config file written by an older build -- can quietly
+            // leave a storm with no glow. Below phase 4 nothing is forced: no
+            // glowing teeth is correct there, and that is what the user's own
+            // phase table asks for.
+            if (phase >= 4.0F) {
+                DabyWSClientConfig.turquoiseTeeth = true;
+                DabyWSClientConfig.turquoiseTeethIntensity = Math.max(inten, 4.0F);
+                mcsm$forceEyeGlow();
+            }
             // BUILD #405 user override: phase 6 beams read bluish (reference
             // close-up frames); every other phase keeps show purple.
             // BUILD #415 FIX: there used to be a SECOND beam block below this

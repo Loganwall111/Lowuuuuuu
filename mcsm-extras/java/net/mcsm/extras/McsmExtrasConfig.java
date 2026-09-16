@@ -141,6 +141,13 @@ public final class McsmExtrasConfig {
     public static double massgScale = 5.0;
     /** Hallucinated shapes, false storms in chat, things swimming in the air. */
     public static boolean massgHallucinations = true;
+
+    // ---- Build #422: the sky and the backdrop ------------------------------
+    /** BUILD #422 (Phase 1) -- how far the 2D backdrop sticker's bottom half is
+     *  stretched below the horizon, as a multiple of its own height. 6 puts the
+     *  bottom edge of the sheet far past bedrock level, so there is no bottom
+     *  edge left to see; 1 or less leaves the base sticker alone. */
+    public static double backdropBottomStretch = 6.0;
     // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
     // Textured cube around the camera; 6 phase skies (lavender day, midnight
     // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
@@ -413,6 +420,7 @@ public final class McsmExtrasConfig {
             p.setProperty("massg_unkillable", String.valueOf(massgUnkillable));
             p.setProperty("massg_scale", String.valueOf(massgScale));
             p.setProperty("massg_hallucinations", String.valueOf(massgHallucinations));
+            p.setProperty("backdrop_bottom_stretch", String.valueOf(backdropBottomStretch));
             p.setProperty("dust_waves", String.valueOf(dustWaves));
             p.setProperty("reality_tear", String.valueOf(realityTear));
             p.setProperty("force_mcsm_look", String.valueOf(forceMcsmLook));
@@ -531,6 +539,7 @@ public final class McsmExtrasConfig {
             massgUnkillable = bool(p, "massg_unkillable", massgUnkillable);
             massgScale = dbl(p, "massg_scale", massgScale);
             massgHallucinations = bool(p, "massg_hallucinations", massgHallucinations);
+            backdropBottomStretch = dbl(p, "backdrop_bottom_stretch", backdropBottomStretch);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);
             transparentHorizonWings = bool(p, "transparent_horizon_wings", transparentHorizonWings);

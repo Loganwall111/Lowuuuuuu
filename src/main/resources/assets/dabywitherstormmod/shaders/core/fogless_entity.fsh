@@ -161,29 +161,27 @@ void main() {
     // its own. The gate is strongest in the dark (0.90) -- a midnight hull has
     // to read as the navy key, not as 28% of the daylight texture -- and backs
     // off to 0.72 in daylight so the block detail stays legible.
-    color.rgb = mix(color.rgb, mcsmPlate, mcsmFacet * mix(0.90, 0.72, mcsmDay));
-    // Animated glint overlay: a subtle living sheen that rolls across the
-    // dark block segments (Telltale reference presentation). Two drifting
-    // sine fields, each raised to a high power so only narrow streaks survive,
-    // plus a slow cross-roll band -- the sheen therefore travels along the
-    // block faces instead of sitting on them. Replaces the old flat shiny
-    // plastic gloss coat entirely: there is no static specular term left.
-    // (The shared twin of this function is mcsm_glint() in mcsm_visuals.glsl,
-    //  used by the core passes; this program cannot import it -- see the
-    //  EMISSIVE block below for the bind-group reason.)
-    float mcsmSec = GameTime * 1200.0;
-    float mcsmSweep = sin((texCoord0.x * 2.3 + texCoord0.y * 1.1) * 6.2831853 - mcsmSec * 0.45)
-                    + 0.5 * sin((texCoord0.x * 5.1 - texCoord0.y * 3.7) * 6.2831853 - mcsmSec * 0.31);
-    float mcsmGlint = pow(max(mcsmSweep * 0.6666, 0.0), 8.0);
-    float mcsmRoll = pow(max(sin((texCoord0.y * 3.9 - texCoord0.x * 1.7) * 6.2831853 - mcsmSec * 0.63), 0.0), 12.0);
-    mcsmGlint = (mcsmGlint + mcsmRoll * 0.6)
-              * (1.0 - mcsmCrease) * (1.0 - smoothstep(0.55, 0.85, mcsmLum));
-    // BUILD #416 -- the sheen answers the light too: it is nearly invisible on
-    // a black midnight hull and rolls visibly across plates that daylight or a
-    // lightning flash has lifted, which is what keeps the body reading as a
-    // material rather than a flat silhouette.
-    color.rgb += mix(vec3(0.26, 0.32, 0.44), vec3(0.34, 0.40, 0.54), mcsmWarm)
-               * mcsmGlint * (0.08 + 0.30 * mcsmDay);
+    //
+    // BUILD #422 -- THE GLINT OVERLAY IS GONE, AND THE TRACED CHARCOAL SHOWS.
+    //
+    // What was here: two drifting sine fields raised to the 8th and 12th power
+    // and added back over the whole body as a blue-grey sheen, driven by a
+    // light term that pushed it hardest exactly where the plates were lit. The
+    // user's report is that it was "the blinding purple glint mask ... drowning
+    // out the model textures", and it was: the additive term sat on top of the
+    // very mid-tones that carry the traced charcoal layout, so the layout went
+    // grey and the hull read as a flat, glossy, slightly violet slab.
+    //
+    // It is removed outright -- no sheen, no specular, no additive pass of any
+    // kind on the body. What is left is the material the traced sheets define:
+    //
+    //   #000000  the creases and joints, locked by (1) above and untouchable;
+    //   #0A0E14  the navy-black key the structural facets sit on;
+    //   the traced charcoal between them, now that the plate blend no longer
+    //   buries it (0.90/0.72 -> 0.52/0.30: the plate still governs the FACET
+    //   tone -- the hull can never read as lit flesh -- while the sheet's own
+    //   layout details stay visible under every light level).
+    color.rgb = mix(color.rgb, mcsmPlate, mcsmFacet * mix(0.52, 0.30, mcsmDay));
 #endif
 
 #ifdef EMISSIVE

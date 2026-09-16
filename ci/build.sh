@@ -745,8 +745,18 @@ stage backdrop-ok
 # and the generator have drifted apart -- which is also a failure.
 # ---------------------------------------------------------------------------
 echo "[content] generate the pack's own textures + item definitions"
+python3 ci/make_emissive_whites.py --two-way | tail -1
 python3 ci/make_mcsm_textures.py | tail -1
 python3 ci/make_mcsm_content_assets.py | tail -1
+set +e
+EMISSIVE_CHECK="$(python3 ci/make_emissive_whites.py --check 2>&1)"
+EMISSIVE_RC=$?
+set -e
+printf '%s\n' "$EMISSIVE_CHECK" | tail -4
+if [ $EMISSIVE_RC -ne 0 ]; then
+  echo "::error title=emissive masks::the phase >= 4 teeth/eye masks are not pure white -- the glow cannot reach the emissive floor. Run 'python3 ci/make_emissive_whites.py'"
+  exit 1
+fi
 CONTENT_CHECK="$(python3 ci/check_content_textures.py 2>&1)"
 CONTENT_RC=$?
 printf '%s\n' "$CONTENT_CHECK" | tail -4

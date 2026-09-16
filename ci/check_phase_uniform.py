@@ -114,6 +114,16 @@ DORMANT_ALLOWED = {
     "mcsm_cinematic_sky",      # storyboard sky variant
     "mcsm_inf_p6_split",       # dormant half of the infinite-skybox port
     "mcsm_inf_palette",        # dormant half of the infinite-skybox port
+    # BUILD #422 -- retired ON PURPOSE with the entity program's glint removal.
+    # mcsm_glint() was the two-sine sheen that drowned the traced charcoal; the
+    # mandate is that the body carries no additive sheen at all, so its include
+    # twin is dead code kept only so the story of the removal is readable.
+    # mcsm_void_crease() fed the black-mask helpers that were rebuilt in
+    # fogless_entity.fsh itself, and mcsm_void_black() (its only caller chain
+    # into the entity path) is superseded there as well.
+    "mcsm_glint",
+    "mcsm_void_crease",
+    "mcsm_void_black",
     "mcsm_k_bot", "mcsm_k_mid", "mcsm_k_top", "mcsm_keys",  # older key tables
     "mcsm_kill_teal",          # teal-kill grade, superseded by the story grade
     "mcsm_rd_raw",             # carrier guard for a band that was never used
@@ -1225,6 +1235,66 @@ def main():
           "McsmMassgSky" in (read("ci/build.sh") or "")
           and "McsmMassg " in (read("ci/build.sh") or "")
           and "McsmClientDispatch" in (read("ci/build.sh") or ""))
+
+    # ------------------------------------------------------------------
+    # BUILD #422 -- THE SKY FLOOR, THE TIME SCALAR, AND THE UN-GLITCHED BODY.
+    #
+    # The user's mandate, in their words: "there's a top layer but there isn't a
+    # bottom layer"; "stretch the bottom horizon colour coordinates downward
+    # infinitely, extending deep past bedrock level"; "inject a subtle ambient
+    # time-scalar overlay"; "completely strip off the blinding purple glint mask
+    # from the entity renderer"; "expose traced charcoal layers"; "secure
+    # emissive face glow ... 4.0x brightness".
+    # ------------------------------------------------------------------
+    sky = read("mcsm-core-shaders/core/sky.fsh") or ""
+    fog = read("src/main/resources/assets/dabywitherstormmod/shaders/core/fogless_entity.fsh") or ""
+    sticker = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStickerStretchMixin.java") or ""
+    early = read("mcsm-extras/java/net/mcsm/extras/client/McsmEarlyStormBackdrop.java") or ""
+    tint = read("mcsm-extras/java/net/mcsm/extras/client/McsmTeethPhaseTint.java") or ""
+
+    check("the sky's bottom is stretched past bedrock: one wall, no second edge",
+          "mcsm_sky_floor(" in sky and "max(t - 1.0, 0.0)" in sky
+          and "if (t > 1.0)" in sky and "mcsm_sky_floor(floorRow, t)" in sky)
+    check("the floor takes the colour of the band that owns the sky above it",
+          "vec3 floorRow = p > 4.4 ? mcsm_sky_reference(1.0, p) : mcsm_sky_regular(1.0, clock);" in sky)
+    check("the ambient time scalar reacts to the world clock without overwriting the storm",
+          "mcsm_time_overlay(" in sky and "MCSM_MIDNIGHT_INDIGO" in sky
+          and "0.0196, 0.0196, 0.0627" in sky
+          and "mcsm_sun_true(day01).y" in sky
+          and "col = mcsm_time_overlay(col, clock, up);" in sky)
+    check("the time scalar is subtle by day and keeps the storm band in the middle",
+          "0.035 * dayW" in sky and "nightW * margin * 0.55" in sky
+          and "smoothstep(0.15, 0.85, up)" in sky)
+    check("the 2D backdrop sticker's bottom half is stretched, not cut",
+          "mcsm$stretchedSticker" in code_only(sticker)
+          and "backdropBottomStretch" in sticker
+          and "0.5F, 0.5F + 0.0F" not in sticker and "1.0F, 0.5F" in sticker
+          and "ci.cancel();" in sticker)
+    check("the early backdrop pass has the same floor",
+          "stretch" in early and "McsmExtrasConfig.backdropBottomStretch" in early
+          and "Vec3 low = up.scale(-radius * stretch);" in early)
+    check("the purple glint mask is GONE from the entity program",
+          "mcsmGlint" not in fog and "mcsmSweep" not in fog and "mcsmRoll" not in fog
+          and "THE GLINT OVERLAY IS GONE" in fog)
+    check("the traced charcoal shows through instead of a flat plate",
+          "mcsmFacet * mix(0.52, 0.30, mcsmDay)" in fog
+          and "MCSM_NAVY_BLACK = vec3(0.0392, 0.0549, 0.0784)" in fog
+          and "MCSM_VOID_BLACK = vec3(0.0, 0.0, 0.0)" in fog)
+    check("the emissive face glow is kept: white teeth, phase aura, 4.0x",
+          "MCSM_MOUTH_GAIN = 4.0" in fog and "band = mix(aura, vec3(1.0), core);" in fog
+          and "0.36, 1.00, 0.28" in fog)
+    check("the glow is guaranteed from phase 4 up, at 4.0x, on every tick",
+          "if (phase >= 4.0F) {" in tint
+          and "DabyWSClientConfig.turquoiseTeeth = true;" in tint
+          and "Math.max(inten, 4.0F)" in tint
+          and "mcsm$forceEyeGlow()" in tint)
+    check("every phase >= 4 emissive atlas is a pure white mask the glow can reach",
+          os.path.isfile("ci/make_emissive_whites.py")
+          and "TRACED_MIN" in (read("ci/make_emissive_whites.py") or "")
+          and "make_emissive_whites.py --check" in (read("ci/build.sh") or ""))
+    check("the stretch is configurable and persisted",
+          "backdrop_bottom_stretch" in cfg
+          and "Backdrop Bottom Stretch (1 = base, 6 = past bedrock)" in extras)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

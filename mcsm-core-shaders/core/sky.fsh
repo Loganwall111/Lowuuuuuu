@@ -98,6 +98,29 @@ vec3 mcsm_sky_column(const vec3[6] col, float t) {
     return mix(a, b, f);
 }
 
+// ============================================================================
+//  BUILD #422 -- THE FLOOR STRETCH.
+//
+//  t = 1 - up, so t = 1 is the horizon and t > 1 is BELOW the player: the lower
+//  world void, all the way down past bedrock. The column used to clamp at the
+//  horizon row (clamp(t, 0.0, 1.0)), which means the gradient stopped existing
+//  the moment the ray tipped under the horizon -- and that is exactly the seam
+//  the user kept seeing: "there's a top layer but there isn't a bottom layer".
+//
+//  The floor row is now stretched downward INFINITELY. It is one continuous
+//  wall of the horizon colour with an asymptotic deepening (it settles at 0.86
+//  of the horizon row and never reaches it), so there is no second band, no
+//  second gradient and no edge anywhere under the player: the wall simply keeps
+//  going as far down as the world does.
+// ============================================================================
+vec3 mcsm_sky_floor(vec3 horizonCol, float t) {
+    float below = max(t - 1.0, 0.0);
+    // 1 - 0.14 * (1 - e^-1.6d): d = 0 -> 1.0, d -> inf -> 0.86. Monotonic, so
+    // the wall never bands and never returns to the sky above it.
+    float deepen = 1.0 - 0.14 * (1.0 - exp(-below * 1.6));
+    return horizonCol * deepen;
+}
+
 // The three supplied sheets, in the order the storyboard gives them.
 vec3 mcsm_sky_reference(float t, float p) {
     vec3 teal = mcsm_sky_column(PHASE5_TEAL, t);
@@ -125,6 +148,41 @@ vec3 mcsm_sky_regular(float t, float clock) {
     float dayW = clamp(sunY * 3.2, 0.0, 1.0);
     vec3 base = mix(night, day, dayW);
     return mix(base, dusk, duskW * 0.85);
+}
+
+// ============================================================================
+//  BUILD #422 -- THE TIME-SCALAR OVERLAY.
+//
+//  The world clock already reaches this program (GameTime -> mcsm_clock), and
+//  the storm's own palettes are NEVER overwritten by it. What the clock does is
+//  put a thin ambient film over whatever the active band is drawing:
+//
+//    * DAY   -- a very subtle WARM lift (a hair of gain plus a warm bias), so
+//               daylight reads as daylight on the storm band and on the
+//               ordinary sky.
+//    * NIGHT -- a deep midnight-indigo (#050510) film over the canvas margins:
+//               strongest at the zenith and at the bottom of the frame, zero
+//               across the middle of the view, so the storm's colour survives
+//               in the middle of the picture while the edges go to midnight.
+//
+//  Both are driven by the TRUE sun elevation (mcsm_sun_true), so `/time set day`
+//  and `/time set midnight` move the overlay the instant they move the clock.
+// ============================================================================
+const vec3 MCSM_MIDNIGHT_INDIGO = vec3(0.0196, 0.0196, 0.0627);   // #050510
+
+vec3 mcsm_time_overlay(vec3 col, float clock, float up) {
+    float day01 = fract(clock / 1200.0);
+    float sunY = mcsm_sun_true(day01).y;
+    float dayW = clamp(sunY * 3.2, 0.0, 1.0);          // 1 = noon
+    float nightW = clamp(-sunY * 3.2, 0.0, 1.0);       // 1 = midnight
+    // very subtle warm ambient, mixed in as a gain + a warm bias
+    col += col * (0.035 * dayW);
+    col += vec3(0.020, 0.013, 0.004) * dayW;
+    // midnight film on the canvas margins: 1 at the zenith, 1 at the very
+    // bottom, 0 through the middle band of the view
+    float margin = max(smoothstep(0.15, 0.85, up), smoothstep(-0.10, -0.75, up));
+    col = mix(col, MCSM_MIDNIGHT_INDIGO, nightW * margin * 0.55);
+    return col;
 }
 
 void main() {
@@ -171,6 +229,17 @@ void main() {
         col = mix(mcsm_sky_regular(t, clock), col, mcsm_ramp(p, 4.45, 4.9));
     }
 
+    // ---- BUILD #422 -- the floor stretch ----------------------------------
+    // Everything below the horizon keeps the horizon row, deepened with depth.
+    // The floor is taken from the SAME band that owns the sky above it, so the
+    // wall under the player is the storm's own colour and never a second
+    // gradient: no seam, no bottom layer, nothing left for the vanilla sky to
+    // bleed through.
+    if (t > 1.0) {
+        vec3 floorRow = p > 4.4 ? mcsm_sky_reference(1.0, p) : mcsm_sky_regular(1.0, clock);
+        col = mcsm_sky_floor(floorRow, t);
+    }
+
     // ---- horizon match ----------------------------------------------------
     // Fold the bottom of the column into the live fog colour. The sky and the
     // distance fog then agree at the horizon and the seam disappears: this is
@@ -199,6 +268,9 @@ void main() {
         col += mcsm_supernova(ray, bossDir, dt, clock);
         col *= 1.0 + mcsm_death_flash(dt);
     }
+
+    // ---- BUILD #422 -- the ambient time scalar ----------------------------
+    col = mcsm_time_overlay(col, clock, up);
 
     // ---- story grade ------------------------------------------------------
     col = mcsm_story_grade(col);

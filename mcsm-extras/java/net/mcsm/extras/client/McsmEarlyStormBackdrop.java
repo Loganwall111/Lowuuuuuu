@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack.Pose;
 import net.dabicco.witherstormmod.client.ClientDistantStormManager;
 import net.dabicco.witherstormmod.client.GlowRenderTypes;
 import net.dabicco.witherstormmod.config.DabyWSClientConfig;
+import net.mcsm.extras.McsmExtrasConfig;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -90,6 +91,12 @@ public final class McsmEarlyStormBackdrop {
         if (alpha <= 2) {
             return;
         }
+        // BUILD #422 -- the storey above the storm is the upper half of a quad;
+        // this one's lower half is stretched down past bedrock level so the
+        // early storm's backdrop has a bottom as well as a top (the user's
+        // "there's a top layer but there isn't a bottom layer"). Same colour,
+        // same sheet, no edge: see McsmStickerStretchMixin for the phase-4.7+
+        // pass, which is the same idea applied to the base mod's sticker.
         Vec3 upHint = Math.abs(view.y) > 0.98D
                 ? new Vec3(1.0D, 0.0D, 0.0D)
                 : new Vec3(0.0D, 1.0D, 0.0D);
@@ -97,13 +104,21 @@ public final class McsmEarlyStormBackdrop {
         Vec3 up = right.cross(view).normalize();
         Vec3 rx = right.scale(radius * 1.15D);
         Vec3 uy = up.scale(radius);
+        double stretch = Math.min(24.0D, Math.max(1.0D, McsmExtrasConfig.backdropBottomStretch));
+        Vec3 low = up.scale(-radius * stretch);
         int a = Math.min(alpha, 255);
         collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(texture),
                 (pose, consumer) -> {
-                    vertex(pose, consumer, at.subtract(rx).subtract(uy), 0.0F, 1.0F, a);
-                    vertex(pose, consumer, at.add(rx).subtract(uy), 1.0F, 1.0F, a);
-                    vertex(pose, consumer, at.add(rx).add(uy), 1.0F, 0.0F, a);
-                    vertex(pose, consumer, at.subtract(rx).add(uy), 0.0F, 0.0F, a);
+                    // upper half: the sheet's top, unmoved
+                    vertex(pose, consumer, at.add(uy).subtract(rx), 0.0F, 0.0F, a);
+                    vertex(pose, consumer, at.add(uy).add(rx), 1.0F, 0.0F, a);
+                    vertex(pose, consumer, at.add(rx), 1.0F, 0.5F, a);
+                    vertex(pose, consumer, at.subtract(rx), 0.0F, 0.5F, a);
+                    // lower half: same rows, stretched down out of the frustum
+                    vertex(pose, consumer, at.subtract(rx), 0.0F, 0.5F, a);
+                    vertex(pose, consumer, at.add(rx), 1.0F, 0.5F, a);
+                    vertex(pose, consumer, at.add(low).add(rx), 1.0F, 1.0F, a);
+                    vertex(pose, consumer, at.add(low).subtract(rx), 0.0F, 1.0F, a);
                 });
     }
 

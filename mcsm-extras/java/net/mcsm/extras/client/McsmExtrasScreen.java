@@ -451,6 +451,10 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.massgHallucinations = v;
               McsmExtrasConfig.save();
           })
+          .val("Backdrop Bottom Stretch (1 = base, 6 = past bedrock)", () -> McsmExtrasConfig.backdropBottomStretch, v -> {
+              McsmExtrasConfig.backdropBottomStretch = v;
+              McsmExtrasConfig.save();
+          }, 1.0, 24.0)
           .act("How to release it (sneak-use the antenna: irreversible)", () ->
                   McsmClientChat.say("\u00a75Sneak-use the antenna. The sky starts counting the moment "
                           + "it arrives, and nothing in this build can put it back."))
