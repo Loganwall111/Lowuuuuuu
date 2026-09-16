@@ -433,6 +433,12 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.voidLight = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #457 -- the painted sky, one per dimension.
+          .bool("Painted skies (a painted cube per dimension, no dome)",
+                  () -> McsmExtrasConfig.paintedSky, v -> {
+              McsmExtrasConfig.paintedSky = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #451 -- the void, and the doorways.
           .bool("The Void (a dimension of nothing, with things in it)",
                   () -> McsmExtrasConfig.voidReality, v -> {

@@ -137,6 +137,13 @@ public final class McsmExtrasConfig {
 
     /** BUILD #452 -- the bottom of the void: RGB rays and infinite white rings. */
     public static boolean voidLight = true;
+    /**
+     * BUILD #457 -- the painted sky. Each of the mod's dimensions (the decayed
+     * reality, the infinite dimension, the void) wears its own painted cube: four
+     * walls and a lid, painted by ci/make_skybox_textures.py, drawn in the world.
+     * No dome is involved anywhere, and the Overworld keeps the vanilla sky.
+     */
+    public static boolean paintedSky = true;
     /** BUILD #451 -- the void: a dimension that is mostly nothing. */
     public static boolean voidReality = true;
     /** BUILD #451 -- walk-in portals, one per dimension. */
@@ -459,6 +466,7 @@ public final class McsmExtrasConfig {
             p.setProperty("void_reality", String.valueOf(voidReality));
             p.setProperty("portals", String.valueOf(portals));
             p.setProperty("void_light", String.valueOf(voidLight));
+            p.setProperty("painted_sky", String.valueOf(paintedSky));
             p.setProperty("eye_glow", String.valueOf(eyeGlow));
             p.setProperty("eye_glow_strength", String.valueOf(eyeGlowStrength));
             p.setProperty("vanilla_glow", String.valueOf(vanillaGlow));
@@ -608,6 +616,7 @@ public final class McsmExtrasConfig {
             voidReality = bool(p, "void_reality", voidReality);
             portals = bool(p, "portals", portals);
             voidLight = bool(p, "void_light", voidLight);
+            paintedSky = bool(p, "painted_sky", paintedSky);
             eyeGlow = bool(p, "eye_glow", eyeGlow);
             eyeGlowStrength = dbl(p, "eye_glow_strength", eyeGlowStrength);
             vanillaGlow = bool(p, "vanilla_glow", vanillaGlow);

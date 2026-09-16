@@ -2708,6 +2708,93 @@ def main():
           and "(96, 512, 160.0, 8.0, 80.0)" in textures
           and "box(head, \"halo\" + i, 96, 512, S," in models)
 
+    # ------------------------------------------------------------------
+    # BUILD #457 -- THE PAINTED SKY. Every dimension wears its own cube.
+    #
+    # "custom skyboxes", "the sky is not fully the sky yet". Shader-side answers
+    # cannot reach a player without the pack, so the sky is drawn in the world: a
+    # camera-anchored CUBE -- four walls and a lid, no dome anywhere -- textured
+    # with paintings generated into the content pack.
+    # ------------------------------------------------------------------
+    sky = read("mcsm-extras/java/net/mcsm/extras/client/McsmPaintedSky.java") or ""
+    skygen = read("ci/make_skybox_textures.py") or ""
+    boots = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java") or ""
+    bsh = read("ci/build.sh") or ""
+
+    check("the sky is a CUBE: four walls and a lid, and no dome anywhere",
+          sky.count("collector.submitCustomGeometry(") == 2
+          and "for (int i = 0; i < 4; i++) {" in sky
+          and "private static final double RADIUS = 256.0D;" in sky
+          and "no dome anywhere" in sky
+          and "private static final double SKIRT = 8.0D;" in sky)
+    check("three dimensions, three different skies, and the Overworld keeps the vanilla one",
+          sky.count("new Sky(") == 3
+          and "McsmReality.inside(level)" in sky
+          and "level.dimension().equals(McsmAdams.ADAMS)" in sky
+          and "level.dimension().equals(McsmVoid.DIMENSION)" in sky
+          and "return null;" in sky
+          and skygen.count("seed=") == 3
+          and skygen.count("horizon=") == 3
+          and len(set([skygen.split("seed=")[i + 1].split(",")[0] for i in range(3)])) == 3)
+    check("the painted sky is submitted, switched, generated and gated",
+          "net.mcsm.extras.client.McsmPaintedSky.submit(ctx);" in boots
+          and "public static boolean paintedSky = true;" in cfg
+          and "painted_sky" in cfg
+          and "Painted skies (a painted cube per dimension, no dome)" in extras
+          and "python3 ci/make_skybox_textures.py | tail -1" in bsh
+          and "python3 ci/make_skybox_textures.py --check" in bsh)
+
+    # the paintings: on disk, the right size, and hazy at the horizon -- which is
+    # also what proves the v orientation (top row = horizon) the renderer depends on
+    skies = {}
+    try:
+        _ci = os.path.dirname(os.path.abspath(__file__))
+        if _ci not in sys.path:
+            sys.path.insert(0, _ci)
+        import pngutil as _png
+        for _dim in ("decayed", "adams", "void"):
+            for _face, _size in (("sides", (512, 128)), ("top", (256, 256))):
+                _w, _h, _px = _png.read_png(
+                    os.path.join("jar-overrides/assets/mcsm/textures/sky",
+                                 "%s_%s.png" % (_dim, _face)))
+                skies["%s_%s" % (_dim, _face)] = (_w, _h, _px, _size)
+    except Exception as _exc:
+        skies = {"error": str(_exc)}
+
+    def sides_ok(name):
+        """The walls: right size, and the haze is at the horizon row, which is the
+        orientation the renderer maps v=0 to."""
+        try:
+            w, h, px, want = skies[name]
+        except Exception:
+            return False
+        if (w, h) != want:
+            return False
+        top = [px[x] for x in range(0, w, 9)]
+        mid = [px[(h // 2) * w + x] for x in range(0, w, 9)]
+        top_lum = sum(sum(c[:3]) for c in top) / float(len(top))
+        mid_lum = sum(sum(c[:3]) for c in mid) / float(len(mid))
+        return top_lum > mid_lum * 1.4
+
+    def top_ok(name):
+        """The lid: right size, and painted -- a zenith with stars on it, so it is
+        not a flat fill."""
+        try:
+            w, h, px, want = skies[name]
+        except Exception:
+            return False
+        if (w, h) != want:
+            return False
+        lit = sum(1 for p in px if sum(p[:3]) > 420)
+        return lit >= 40
+
+    check("every painted wall exists at its size, with its haze at the horizon",
+          all(sides_ok(k) for k in ("decayed_sides", "adams_sides", "void_sides")),
+          "walls: %d read" % (0 if "error" in skies else len(skies)))
+    check("and every lid is painted with a starfield over its zenith",
+          all(top_ok(k) for k in ("decayed_top", "adams_top", "void_top")),
+          "lids: %d read" % (0 if "error" in skies else len(skies)))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

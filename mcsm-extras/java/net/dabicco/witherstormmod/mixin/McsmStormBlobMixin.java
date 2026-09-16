@@ -36,6 +36,10 @@ public abstract class McsmStormBlobMixin {
             McsmEarlyStormBackdrop.submit(ctx);
             McsmExperimentalStoryStage.submit(ctx);
             McsmStormBlob.submit(ctx);
+            // BUILD #457 -- the painted sky: a camera-anchored cube, one painting
+            // per dimension, drawn before the floor band so the band owns the
+            // under-world and the cube owns everything above it.
+            net.mcsm.extras.client.McsmPaintedSky.submit(ctx);
             // BUILD #434 -- the sky's bottom layer. Drawn in the world, not in
             // the shader, so it exists for players who never install the pack.
             McsmSkyFloorBand.submit(ctx);

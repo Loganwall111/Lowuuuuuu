@@ -758,6 +758,10 @@ echo "[content] generate the pack's own textures + item definitions"
 python3 ci/make_mcsm_sounds.py | tail -1
 python3 ci/make_emissive_whites.py --two-way | tail -1
 python3 ci/make_mcsm_textures.py | tail -1
+# BUILD #457 -- the painted skies: the same idea as the block textures, six faces
+# per dimension, generated here so the pack ships them and the build cannot lose
+# them silently.
+python3 ci/make_skybox_textures.py | tail -1
 python3 ci/make_mcsm_content_assets.py | tail -1
 set +e
 SOUND_CHECK="$(python3 ci/make_mcsm_sounds.py --check 2>&1)"
@@ -766,6 +770,15 @@ set -e
 printf '%s\n' "$SOUND_CHECK" | tail -3
 if [ $SOUND_RC -ne 0 ]; then
   echo "::error title=custom sounds::the mod's own Ogg files are missing or empty -- the radio and the creature would fall back to vanilla audio. Run 'python3 ci/make_mcsm_sounds.py'"
+  exit 1
+fi
+set +e
+SKY_CHECK="$(python3 ci/make_skybox_textures.py --check 2>&1)"
+SKY_RC=$?
+set -e
+printf '%s\n' "$SKY_CHECK" | tail -3
+if [ $SKY_RC -ne 0 ]; then
+  echo "::error title=painted sky::the painted sky faces are missing from the pack -- the mod's dimensions would fall back to the vanilla sky. Run 'python3 ci/make_skybox_textures.py'"
   exit 1
 fi
 set +e
