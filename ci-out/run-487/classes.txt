@@ -1,0 +1,2 @@
+./net/mcsm/extras/entity/McsmEntities.class
+./net/mcsm/extras/entity/StoryCharacterEntity.class
