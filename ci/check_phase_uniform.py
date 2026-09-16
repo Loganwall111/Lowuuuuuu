@@ -438,13 +438,19 @@ def main():
     # it, the sky becomes "a sky with a top on it" again and this fails first.
     dome = read(JAVA_DOME)
     if dome:
+        # BUILD #441 purged the dome down to the single honest answer: strength()
+        # returns nothing, because the sky is drawn by the native sky renderer.
+        # The old colour-zeroing entry point (skyColor / update / coreStrength /
+        # phase) is deliberately gone with it.
         check("dome shell is present but inert",
-              "returns 0.0F" in dome or "return 0.0F" in dome)
+              "return 0.0F" in dome and "There is no dome" in dome)
         check("dome shell submits no geometry",
               not any(k in dome for k in ("VertexConsumer", "submitCustomGeometry",
                                           "submitModel", "RenderType", "BufferBuilder")))
-        check("dome shell contributes no colour",
-              "out[0] = 0.0F" in dome and "out[1] = 0.0F" in dome and "out[2] = 0.0F" in dome)
+        check("dome shell keeps no entry point that could paint anything",
+              "skyColor" not in dome and "coreStrength" not in dome and "update(" not in dome)
+        check("the dome is no longer even named to the mixin system",
+              '"SkyRendererMixin"' not in (read("src/main/resources/dabywitherstormmod.mixins.json") or ""))
     else:
         check("dome shell present", False, JAVA_DOME)
 
@@ -1824,6 +1830,29 @@ def main():
           "javap could not read" in (read("ci/build.sh") or "")
           and "{ grep -Ei \"eyes|emitter|bloom|glow|mark|Fogless|RenderType|Skins\" || true; }" in (
               read("ci/build.sh") or ""))
+
+    # ------------------------------------------------------------------
+    # BUILD #442 -- THE TEETH AND EYES WEAR THE WHITE MASK.
+    #
+    # Run 521 answered it from the constant pool: the head renderer calls
+    # GlowRenderTypes.emitterMark and .bloomSource, and NEVER RenderTypes.eyes --
+    # so the redirect that was meant to keep the body atlas out of the head's glow
+    # pass could not fire, and the pass drew the opaque body texture. The two
+    # passes that exist now wear the dedicated emissive atlas, which the white
+    # mask gate holds to pure white from phase 4 up: white teeth with no shader.
+    # ------------------------------------------------------------------
+    headglow = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadEyesRenderTypeMixin.java") or ""
+    oracle = read("ci/API_ORACLE.md") or ""
+
+    check("the head's glow passes draw the dedicated emissive atlas",
+          headglow.count("return mcsm$emissive(texture);") == 2
+          and "RenderTypes.eyes(net.dabicco.witherstormmod.client.StormSkins.phase6Emissive())" in headglow)
+    check("the redirect that could never fire is gone, not left lying",
+          'target = "Lnet/minecraft/client/renderer/rendertype/RenderTypes;eyes(Lnet/minecraft/resources/Identifier;)Lnet/minecraft/client/renderer/rendertype/RenderType;"' not in headglow)
+    check("the oracle records the call sites this rests on",
+          "FoglessRenderTypes.eyes(Identifier)" in oracle
+          and "GlowRenderTypes.emitterMark(Identifier)" in oracle
+          and "no RenderTypes.eyes call at all" in oracle)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
