@@ -139,6 +139,23 @@ Dabicco's jar (towns queue, `/mcsm tp` names, preset mechanics) — the only one
 we ever made worse was the preset wipe, and 1.9.112 removes our foot from it.
 
 
-## 6. D.8 content (phases 1-2)
+## 6. D.8 content (phases 1-3)
 
 * The decayed reality dimension, the 38-block / 57-item content pack, and the abandoned-city generator are LIVE -- see ci/CONCEPT_DECAYED_REALITY.md.
+
+### Phase 3 -- the bestiary, the boss ladder and the Creator
+
+The user's phase-3 mandate: "creatures, monsters, bosses ... the Creator, giant
+octopus arms through rips in reality." What shipped:
+
+| Piece | Where | What it does |
+|---|---|---|
+| The bestiary | `net/mcsm/extras/McsmCreatures.java` | Eight storm-touched creatures (Ash Husk, Devourer Brute, Rift Crawler, Bone Rattler, Storm Wraith, Ash Knight, Ember Core, Devourer Colossus) spawn around a player inside the storm's reach and everywhere in the decayed reality. Every one is a VANILLA entity type re-kitted at spawn time (scale, health, damage, speed, armour, knockback, gear, aura) scaled by the storm's own live phase, so there is no new registry entry, no model, no renderer and nothing to keep in step client-side. |
+| The boss ladder | same file, `RUNGS` | Five rungs, one per band of the storm's growth: **The Bent Sentinel** (phase 2.0), **Herald of Ash** (3.5), **Maw of the Devourer** (5.0), **Warden of the Decayed Reality** (6.5) and **THE CREATOR** (7.4). Each is summoned once per storm, announced in chat and on the action bar, and fought in stages: at two thirds and one third of its health it calls adds and tears the sky open. Breaking a rung pays out a weapon from the content pack (withered blade, storm spear, storm heart shard, reality ripper, the Creator's judgement). |
+| The health bars | `net/mcsm/extras/McsmBossBar.java` | A real `ServerBossEvent`, resolved reflectively (class, colour enum, overlay enum and the four methods) with chat as the fallback, so a fight can never depend on a class being reachable in a build. |
+| The Creator's arms | `net/mcsm/extras/client/McsmCreatorArms.java` | Seven arms coming down through rips in the sky. Real world geometry -- the same camera-facing band idiom as the light column and the vortex -- submitted from the storm's own render pass, in the storm's own material. Each arm is a rip of white-violet light in the sky, a tapered limb that spirals out and hangs down, and a VIOLET tip, in the user's own lens colour. The rip mouth, the arm length and the band thickness all come from the storm's live phase, radius, height and scale, so the arms grow with the body; the manifestation fades in between phase 6.55 and 7.35 and fades out with distance. |
+| The world answering | `McsmCreatures.creator(...)` | Every few seconds an arm lands in front of the player: a rift of light opens at the top of the sky and is torn down to the ground, and anyone standing in the impact is thrown and hurt. |
+
+There is no dome, no skybox, no JSON model and no new entity anywhere in phase
+3: the arms are geometry, the creatures are vanilla mobs with the storm's own
+stats, and the ladder is driven by the storm's own phase.

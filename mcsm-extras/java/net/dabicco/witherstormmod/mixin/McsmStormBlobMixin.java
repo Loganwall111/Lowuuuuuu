@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.dabicco.witherstormmod.client.StormBackdrop;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
+import net.mcsm.extras.client.McsmCreatorArms;
 import net.mcsm.extras.client.McsmEarlyStormBackdrop;
 import net.mcsm.extras.client.McsmExperimentalStoryStage;
 import net.mcsm.extras.client.McsmStormBlob;
@@ -34,6 +35,9 @@ public abstract class McsmStormBlobMixin {
             McsmEarlyStormBackdrop.submit(ctx);
             McsmExperimentalStoryStage.submit(ctx);
             McsmStormBlob.submit(ctx);
+            // Build #416 (D.8, phase 3) -- the Creator's arms, through the rips.
+            // Drawn last so the limbs read over the backdrop they hang in front of.
+            McsmCreatorArms.submit(ctx);
         }
         // Intentionally no ci.cancel(): the original smooth backdrop owns this
         // pass. The custom ring/vortex generators are not submitted here.

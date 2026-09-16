@@ -210,6 +210,24 @@ public final class McsmExtrasConfig {
     // decision had no distance in it at all, so a storm on the far side of the
     // world still repainted the sky over the player's head.
     public static double skyFadeDistance = 500.0;
+
+    // BUILD #416 (D.8, phase 3) -- the bestiary, the boss ladder and the Creator.
+    //
+    // Phase 3 is the creatures. "Reality Creatures" (above, from the original
+    // mandate list) is the bestiary's own switch, kept exactly where it was so a
+    // player who already turned it off does not get mobs after this build. The
+    // two new switches are the parts the user named separately:
+    //
+    //   * bossLadder -- the five rungs, summoned once per storm as it grows, each
+    //     fought with a health bar, adds and a staged second half. Turning it off
+    //     leaves the bestiary running and the ladder never summons.
+    //   * creatorArms -- the top rung's payoff: seven arms coming down through
+    //     rips in the sky, drawn as world geometry and (server-side) opening the
+    //     sky over whoever is standing under them.
+    public static boolean bossLadder = true;
+    public static boolean creatorArms = true;
+    /** How heavy the Creator's arms read, 0.5x to 2x. */
+    public static double creatorArmScale = 1.0;
     public static boolean commandWire = true;
     public static boolean mcsmInstructions = true;
 
@@ -309,6 +327,9 @@ public final class McsmExtrasConfig {
             p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
             p.setProperty("shader_pack_gate_migrated", String.valueOf(shaderPackGateMigrated));
             p.setProperty("sky_fade_distance", String.valueOf(skyFadeDistance));
+            p.setProperty("boss_ladder", String.valueOf(bossLadder));
+            p.setProperty("creator_arms", String.valueOf(creatorArms));
+            p.setProperty("creator_arm_scale", String.valueOf(creatorArmScale));
             p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
             p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
             p.setProperty("skybox_size", String.valueOf(skyboxSize));
@@ -425,6 +446,9 @@ public final class McsmExtrasConfig {
                 shaderPackGateMigrated = true;
             }
             skyFadeDistance = dbl(p, "sky_fade_distance", skyFadeDistance);
+            bossLadder = bool(p, "boss_ladder", bossLadder);
+            creatorArms = bool(p, "creator_arms", creatorArms);
+            creatorArmScale = dbl(p, "creator_arm_scale", creatorArmScale);
             skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
             skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
             skyboxSize = dbl(p, "skybox_size", skyboxSize);

@@ -362,6 +362,18 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.realityCreatures = v;
               McsmExtrasConfig.save();
           })
+          .bool("Boss Ladder (5 rungs, one per storm band)", () -> McsmExtrasConfig.bossLadder, v -> {
+              McsmExtrasConfig.bossLadder = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("The Creator's Arms (through rips in the sky)", () -> McsmExtrasConfig.creatorArms, v -> {
+              McsmExtrasConfig.creatorArms = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Creator Arm Scale", () -> McsmExtrasConfig.creatorArmScale, v -> {
+              McsmExtrasConfig.creatorArmScale = v;
+              McsmExtrasConfig.save();
+          }, 0.5, 2.0)
           .bool("Reality Glitches + Hallucinations", () -> McsmExtrasConfig.realityGlitches, v -> {
               McsmExtrasConfig.realityGlitches = v;
               McsmExtrasConfig.save();

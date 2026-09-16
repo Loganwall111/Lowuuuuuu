@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.dabicco.witherstormmod.DabyWitherStormMod;
 import net.mcsm.extras.McsmBuiltinPack;
 import net.mcsm.extras.McsmCities;
+import net.mcsm.extras.McsmCreatures;
 import net.mcsm.extras.McsmContent;
 import net.mcsm.extras.McsmUiSounds;
 import net.mcsm.extras.entity.McsmEntities;
@@ -42,5 +43,10 @@ public abstract class McsmBuiltinPackMixin {
         // (DabyWitherStormMod registers McsmWorldgen.tick on it), so this needs
         // no mixin and no new API surface at all.
         McsmCities.register();
+        // Build #416 (D.8, phase 3) -- the bestiary, the boss ladder and the
+        // Creator's manifestation. Same hook as the cities: every creature on it
+        // is a vanilla type re-kitted at spawn time, so this needs no registry
+        // entry and works on worlds saved before it existed.
+        McsmCreatures.register();
     }
 }

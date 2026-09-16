@@ -929,6 +929,74 @@ def main():
     check("the relight normalises against the atlas's own range",
           "low = lums[int(0.02" in stage and "high = lums[int(0.98" in stage)
 
+    # ---- 18. THE BESTIARY, THE BOSS LADDER AND THE CREATOR (D.8, phase 3) ---
+    # "Creatures, monsters, bosses ... the Creator, giant octopus arms through
+    # rips in reality." The phase-3 work: what hunts the player, what is waiting
+    # at the top of the ladder, and how the sky is opened.
+    creatures = read("mcsm-extras/java/net/mcsm/extras/McsmCreatures.java") or ""
+    creatures_code = code_only(creatures)
+    check("the bestiary is armed from the mod's own init and ticks on the level",
+          "McsmCreatures.register()" in
+              (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or "")
+          and "ServerTickEvents.END_LEVEL_TICK.register((EndLevelTick) McsmCreatures::tick)"
+              in creatures_code)
+    check("every creature is a vanilla type re-kitted, so no new registry is needed",
+          "BuiltInRegistries.ENTITY_TYPE" in creatures_code
+          and "EntityType.Builder" not in creatures_code
+          and "Registry.register" not in creatures_code)
+    check("the bestiary grows with the storm's own phase",
+          "BESTIARY_PHASE" in creatures_code and "fromPhase" in creatures_code
+          and "Attributes.SCALE" in creatures_code
+          and "storm.getPhase()" in creatures_code)
+    check("the ladder has five rungs, one per storm band, summoned once per storm",
+          creatures_code.count("new Rung(") == 5
+          and "LADDER" in creatures_code
+          and "EntitySpawnReason.COMMAND" in creatures_code)
+    check("a boss is fought in stages, not just ground down",
+          "fight.stage" in creatures_code and "callAdds" in creatures_code
+          and "skyOpen" in creatures_code
+          and "fraction <= 0.66F" in creatures_code and "fraction <= 0.33F" in creatures_code)
+    check("breaking a rung pays out a weapon from the content pack",
+          "mcsm:creators_judgement" in creatures_code and "mcsm:reality_ripper" in creatures_code
+          and "new ItemEntity(level" in creatures_code)
+    check("the boss bar is resolved reflectively with chat as the fallback",
+          "McsmBossBar" in creatures_code
+          and "Class.forName(EVENT)" in (read("mcsm-extras/java/net/mcsm/extras/McsmBossBar.java") or "")
+          and "ServerBossEvent" in (read("mcsm-extras/java/net/mcsm/extras/McsmBossBar.java") or "")
+          and "sendSystemMessage" in creatures_code)
+    arms = read("mcsm-extras/java/net/mcsm/extras/client/McsmCreatorArms.java") or ""
+    arms_code = code_only(arms)
+    check("the Creator reaches down with seven arms, out of rips in the sky",
+          "ARMS = 7" in arms_code and "emitRift" in arms_code and "RIFT_SLIVERS" in arms_code)
+    check("the arms are world geometry, not a dome or a skybox",
+          "submitCustomGeometry" in arms_code and "dome" not in arms_code.lower()
+          and "Identifier.fromNamespaceAndPath(" in arms_code
+          and "dispX" in arms_code and "dispZ" in arms_code)
+    check("the arms come out of the storm's own live phase, radius and height",
+          "McsmStormPhase.bodyRadius" in arms_code and "McsmStormPhase.bodyHeight" in arms_code
+          and "McsmStormPhase.scaleMultiplier" in arms_code and "ONSET" in arms_code)
+    check("the arms end in the storm's own violet, and fade back with distance",
+          "VIOLET" in arms_code and "MAX_DISTANCE" in arms_code and "distanceFade" in arms_code)
+    check("the arms are submitted by the storm's own render pass",
+          "McsmCreatorArms.submit(ctx)" in
+              (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java") or ""))
+    check("an arm that lands is felt: it tears the air and hurts whoever is under it",
+          "ParticleTypes.REVERSE_PORTAL" in creatures_code
+          and "hurtServer" in creatures_code and "push(" in creatures_code)
+    cfg3 = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    check("the ladder and the arms are switchable and persisted",
+          "public static boolean bossLadder = true;" in cfg3
+          and "public static boolean creatorArms = true;" in cfg3
+          and "boss_ladder" in cfg3 and "creator_arms" in cfg3
+          and "creator_arm_scale" in cfg3)
+    check("the new switches have console rows",
+          "Boss Ladder" in (read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or "")
+          and "Creator Arm Scale" in
+              (read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""))
+    build = read("ci/build.sh") or ""
+    check("the build refuses to ship without the phase-3 behaviour classes",
+          "McsmCreatures" in build and "McsmCreatorArms" in build and "McsmBossBar" in build)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)
