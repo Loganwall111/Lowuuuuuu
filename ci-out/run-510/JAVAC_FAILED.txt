@@ -1,0 +1,30 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:60: error: cannot find symbol
+        float phaseFade = smoothstep(u_StormPhase, 4.45F, 4.68F);
+                          ^
+  symbol:   method smoothstep(float,float,float)
+  location: class McsmAtmosphericMeshComponent
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:88: error: cannot find symbol
+        double radius = bodyRadius(phase);
+                        ^
+  symbol:   method bodyRadius(float)
+  location: class McsmAtmosphericMeshComponent
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:173: error: cannot find symbol
+        float outerFade = 1.0F - smoothstep(radius, 0.68F, 1.0F);
+                                 ^
+  symbol:   method smoothstep(float,float,float)
+  location: class McsmAtmosphericMeshComponent
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:175: error: cannot find symbol
+                ? 0.22F + 0.78F * smoothstep(radius, 0.0F, 0.42F)
+                                  ^
+  symbol:   method smoothstep(float,float,float)
+  location: class McsmAtmosphericMeshComponent
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:177: error: cannot find symbol
+        float bottomSilhouette = 1.0F - smoothstep(vertical, 0.0F, 0.32F);
+                                        ^
+  symbol:   method smoothstep(float,float,float)
+  location: class McsmAtmosphericMeshComponent
+Note: mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: mcsm-extras/java/net/mcsm/extras/McsmNpcs.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+5 errors
