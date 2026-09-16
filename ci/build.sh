@@ -28,7 +28,47 @@ set -x
 # (results-receiver egress blocked), so an ERR trap reports the failing
 # command + line as a GitHub annotation (readable via the Checks API) and
 # saves it to out/FAILURE.txt.
-trap 'rc=$?; mkdir -p out 2>/dev/null; { echo "MCSM build FAILURE (run ${GITHUB_RUN_NUMBER:-local})"; echo "exit: $rc"; echo "line: $LINENO"; echo "cmd:  $BASH_COMMAND"; } > out/FAILURE.txt 2>/dev/null; cat out/FAILURE.txt 2>/dev/null; echo "::error title=MCSM build failed (exit $rc) line $LINENO::$BASH_COMMAND"' ERR
+# ---------------------------------------------------------------------------
+# BUILD #416 (D.8) -- FAILURE DISCLOSURE.
+#
+# A red run used to be a dead end: the runner's log lives on a blob host this
+# machine cannot reach, `gh run view --log` EOFs, the artifact download EOFs,
+# and the only thing that survives is a check-run annotation -- which the script
+# only emits on the paths that remember to. A plain `set -e` abort emitted
+# nothing at all, so the one run that mattered most (the first javac of a new
+# phase) could fail without saying where.
+#
+# So the whole run is tee'd to a log file and two traps use it:
+#   * ERR  -- records the failing line and command, as a line AND an annotation.
+#   * EXIT -- prints the last lines of the run as annotations (titled
+#             last-1..last-N so they parse), copies the whole log to
+#             out/BUILD_LOG.txt, and pushes the evidence even when the build
+#             failed, which is exactly when the javac log is worth having.
+# ---------------------------------------------------------------------------
+RUNLOG=/tmp/mcsm-run.log
+: > "$RUNLOG"
+exec > >(tee -a "$RUNLOG") 2>&1
+EVIDENCE_DONE=0
+
+trap 'rc=$?; mkdir -p out 2>/dev/null; { echo "MCSM build FAILURE (run ${GITHUB_RUN_NUMBER:-local})"; echo "exit: $rc"; echo "line: $LINENO"; echo "cmd:  $BASH_COMMAND"; } >> out/FAILURE.txt 2>/dev/null; { echo; echo "[failure] exit ${rc} at line ${LINENO}: ${BASH_COMMAND}"; } | tee -a "$RUNLOG"; echo "::error::MCSM build failed (exit ${rc}) at line ${LINENO}: ${BASH_COMMAND}"' ERR
+
+disclose_failure() {
+  local rc=$?
+  if [ "$rc" -eq 0 ]; then return 0; fi
+  sleep 1
+  cp -f "$RUNLOG" out/BUILD_LOG.txt 2>/dev/null || true
+  { echo; echo "---- last 25 lines of the run ----"; tail -n 25 "$RUNLOG"; } >> out/FAILURE.txt 2>/dev/null || true
+  echo "::error title=build-failed::exit ${rc} -- full run log in out/BUILD_LOG.txt and ci-out/run-*/ on the branch"
+  local line n=0
+  tail -n 12 "$RUNLOG" 2>/dev/null | while IFS= read -r line; do
+    n=$((n + 1))
+    echo "::error title=last-${n}::${line:0:900}"
+  done
+  if [ "${EVIDENCE_DONE:-0}" != "1" ] && command -v push_evidence_simple >/dev/null 2>&1; then
+    push_evidence_simple 2>/dev/null || true
+  fi
+}
+trap disclose_failure EXIT
 
 VER="${1:-$(cat VERSION | tr -d '[:space:]')}"
 # Keep the artifact and fabric.mod.json identity byte-for-byte equal to VERSION.
@@ -389,9 +429,17 @@ for SL in storylook/assets/minecraft/shaders/core/*; do
     *) continue ;;
   esac
   # inline the vanilla 26.2 moj_import includes before validating
-  python3 ci/expand_storylook.py "$SL" "/tmp/storylook-check.$SLE"
+  # BUILD #416 (D.8): this used to be a bare command under set -e, so a failure
+  # here aborted the run with no annotation and no line - indistinguishable in
+  # the Checks API from any other silent abort. It names itself now.
+  if ! python3 ci/expand_storylook.py "$SL" "/tmp/storylook-check.$SLE"; then
+    echo "::error title=glsl::expand_storylook.py failed for ${SL} -- the expanded shader never reached the validator"
+    echo "[glsl] Story Look expansion FAILED: $SL"
+    exit 1
+  fi
   if ! ./glslcheck/bin/glslang "/tmp/storylook-check.$SLE" > /tmp/storylook-glsl.log 2>&1; then
     cat /tmp/storylook-glsl.log
+    echo "::error title=glsl::Story Look shader FAILED validation: ${SL}"
     echo "[glsl] Story Look shader FAILED validation: $SL"
     exit 1
   fi
@@ -401,6 +449,7 @@ echo "[glsl] story look shaders validate"
 # Mega-phase 5b: the embedded Iris shader pack must validate too - every
 # program, in every [0 1] toggle combination, through the glslcheck shim.
 if ! python3 ci/iris_tu.py shaderpack-v5/shaders; then
+  echo "::error title=glsl::shaderpack-v5 FAILED validation (iris_tu.py) - every toggle combination must compile"
   echo "[glsl] shaderpack-v5 FAILED validation - not shipping a broken pack"
   exit 1
 fi
@@ -617,7 +666,7 @@ else
   exit "$JAVAC_RC"
 fi
 
-echo "[assemble] overlay onto base"
+echo "[assemble] overlay onto base (unzip base jar, overlay shaders + jar-overrides + fresh classes)"
 FX=/tmp/mcsm-fx
 rm -rf "$FX" && mkdir -p "$FX/cls"
 ( cd "$FX/cls" && unzip -o -q "$BASE" )
@@ -641,7 +690,14 @@ else
   echo "::error title=build::position.vsh/.fsh missing from the overlay - the authored position pass is not shipping"
   exit 1
 fi
-cp -r jar-overrides/* "$FX/cls/"
+# BUILD #416 (D.8): the content pack made this the single biggest overlay copy
+# in the build (thousands of small JSONs), so it reports what it moves and names
+# itself if cp refuses a path instead of dying silently under set -e.
+if ! cp -r jar-overrides/* "$FX/cls/"; then
+  echo "::error title=assemble::overlaying jar-overrides failed into $FX/cls"
+  exit 1
+fi
+echo "[assemble] jar-overrides overlaid ($(find jar-overrides -type f | wc -l) files available)"
 # 1.9.206: src/main/resources was never overlaid -- the merged Story Look
 # textures (sun/moon, villager cast skins) and the story_character skins
 # silently missed every jar. Overlay it after jar-overrides.
@@ -1324,8 +1380,8 @@ push_evidence_simple() {
   cp -f out/BUILD_INFO.txt "$DST/" 2>/dev/null || true
   cp -f out/JAVAC_FAILED.txt "$DST/" 2>/dev/null || true
   cp -f out/vanilla-api.txt "$DST/" 2>/dev/null || true
-  cp -f "$JAVAC_LOG" "$DST/javac-full.log"
-  cp -f "$GLSL_LOG" "$DST/glsl-gate.log"
+  cp -f "${JAVAC_LOG:-/dev/null}" "$DST/javac-full.log" 2>/dev/null || true
+  cp -f "${GLSL_LOG:-/dev/null}" "$DST/glsl-gate.log" 2>/dev/null || true
   cp -f out/*.sha256 "$DST/" 2>/dev/null || true
   ( cd /tmp/mcsm-build && find . -name '*.class' | sort ) > "$DST/classes.txt"
   git -C /tmp/mcsm-evidence config user.name "mcsm-ci"
@@ -1335,12 +1391,15 @@ push_evidence_simple() {
     if ! git -C /tmp/mcsm-evidence push -q origin "HEAD:${EVIDENCE_BRANCH}"; then
       echo "[evidence] push rejected (branch moved) — retrying once"
       git -C /tmp/mcsm-evidence fetch -q origin "$EVIDENCE_BRANCH"
-      git -C /tmp/mcsm-evidence rebase -q FETCH_HEAD || { echo "[evidence] rebase failed — skip"; return 0; }
+      git -C /tmp/mcsm-evidence rebase -q FETCH_HEAD || { echo "[evidence] rebase failed — skip"; EVIDENCE_DONE=1; return 0; }
       git -C /tmp/mcsm-evidence push -q origin "HEAD:${EVIDENCE_BRANCH}" || echo "[evidence] retry push failed — skip"
+    else
+      echo "[evidence] pushed run ${GITHUB_RUN_NUMBER:-local} to ${EVIDENCE_BRANCH} (ci-out/)"
     fi
   else
     echo "[evidence] nothing to commit — skip"
   fi
+  EVIDENCE_DONE=1
 }
 push_evidence_simple || echo "[evidence] skipped (non-fatal)"
 rm -rf /tmp/mcsm-evidence
