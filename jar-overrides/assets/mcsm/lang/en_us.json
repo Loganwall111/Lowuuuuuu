@@ -1,5 +1,6 @@
 {
   "block.mcsm.abyss_orb": "Abyss Orb",
+  "block.mcsm.antenna": "Dead Radio Set",
   "block.mcsm.black_hole_core": "Black Hole Core",
   "block.mcsm.city_brick_slab": "City Brick Slab",
   "block.mcsm.city_brick_stairs": "City Brick Stairs",
@@ -30,6 +31,7 @@
   "block.mcsm.glitch_echo": "Glitch Echo",
   "block.mcsm.glitch_lamp": "Glitch Lamp",
   "block.mcsm.glyph_cell": "Glyph Cell",
+  "block.mcsm.guide_book": "Devouring Storms Field Guide",
   "block.mcsm.hallucination_dust": "Hallucination Dust",
   "block.mcsm.hollow_wall": "Hollow Wall",
   "block.mcsm.memory_crystal": "Memory Crystal",
@@ -57,6 +59,7 @@
   "block.mcsm.withered_flesh_block": "Withered Flesh Block",
   "block.mcsm.withered_trapdoor": "Withered Trap Door",
   "item.mcsm.abyss_orb": "Abyss Orb",
+  "item.mcsm.antenna": "Dead Radio Set",
   "item.mcsm.black_hole_core": "Black Hole Core",
   "item.mcsm.city_brick_slab": "City Brick Slab",
   "item.mcsm.city_brick_stairs": "City Brick Stairs",
@@ -87,6 +90,7 @@
   "item.mcsm.glitch_echo": "Glitch Echo",
   "item.mcsm.glitch_lamp": "Glitch Lamp",
   "item.mcsm.glyph_cell": "Glyph Cell",
+  "item.mcsm.guide_book": "Devouring Storms Field Guide",
   "item.mcsm.hallucination_dust": "Hallucination Dust",
   "item.mcsm.hollow_wall": "Hollow Wall",
   "item.mcsm.memory_crystal": "Memory Crystal",
@@ -116,9 +120,5 @@
   "itemGroup.mcsm.content": "Devouring Storms: Decayed Reality",
   "subtitles.mcsm.button_click": "UI chimes",
   "subtitles.mcsm.button_hover": "UI tinks",
-  "subtitles.mcsm.menu_open": "Menu unfolds",
-  "block.mcsm.guide_book": "Field Guide",
-  "block.mcsm.antenna": "Dead Radio Set",
-  "item.mcsm.guide_book": "Devouring Storms Field Guide",
-  "item.mcsm.antenna": "Dead Radio Set"
+  "subtitles.mcsm.menu_open": "Menu unfolds"
 }

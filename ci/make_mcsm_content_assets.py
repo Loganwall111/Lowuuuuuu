@@ -117,6 +117,13 @@ ITEMS = {
 }
 
 NAMES = {
+    # BUILD #416 (D.8, phase 5) -- the two story items. They are registered by
+    # McsmContent as real items (and are terminal items rather than blocks), but
+    # their NAMES live here so this generator stays the single source of the
+    # lang file: the drift gate in ci/build.sh regenerates it and fails if the
+    # committed copy differs, so a name added by hand would have been reverted.
+    "guide_book": "Devouring Storms Field Guide",
+    "antenna": "Dead Radio Set",
     "decayed_stone": "Decayed Stone",
     "decayed_cobblestone": "Decayed Cobblestone",
     "decayed_stone_bricks": "Decayed Stone Bricks",
