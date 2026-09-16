@@ -1,3 +1,82 @@
+# 7000.0.0-M — Build #415: phase-keyed emissive mouth track, 2D purple canvas + cloud-filter LERP, void-black/glint single-sourcing, model bytecode split, version-stamp gate
+
+Built on the crash-free **ds-1.9.390** foundation (commit `17f6000`, the
+stabilised line) merged forward onto the current **7000.0.0-M** baseline, which
+already carries the #403-#412 migration. All four mandate phases were audited
+item by item against the tree; what was already correct is left alone, and the
+gaps are implemented below.
+
+**Phase 1 — version stamp + build gates.**  `VERSION`, `BUILD_VERSION` (file),
+`gradle.properties:mod_version`, `fabric.mod.json:version` and
+`McsmExtrasConfig.BUILD_VERSION` all read **7000.0.0-M**, and `ci/build.sh` now
+has a *version stamp gate* that fails the build if any of the five ever
+disagrees again (the four in-code labels had each drifted at least once, which
+is how a fresh jar reads as an old one in the Mods screen).
+
+**Phase 2 — model + void-black + glint.**
+- `WitherStormP4.createBodyLayer` was ONE method holding 1259 `.addBox(...)`
+  calls and ~224 KB of source — a ~176 KB method against javac's hard 64 KB
+  per-method bytecode limit ("code too large"). It is now split into 16 chunk
+  methods sharing a per-call `P4Parts` context (303 fields, names and types
+  preserved), produced by the new, self-verifying `ci/split_p4_model.py`:
+  every original statement must survive token-identical, string literals
+  (the bone names) byte-identical, and no context field may be read before it
+  is assigned -- otherwise the script refuses to write. `ci/build.sh` gained a
+  model method budget gate so it can never silently regress.
+- Void-black is now single-sourced: `MCSM_VOID_BLACK`/`MCSM_NAVY_BLACK` (the
+  split-atlas key #0A0E14 / #000000) plus `mcsm_void_black()` live in
+  `mcsm_visuals.glsl`, and the body shader's creases, AO bands and structural
+  block gaps collapse onto #000000 with no lift.
+- The animated glint is a real moving sheen now: two drifting streak fields
+  plus a slow cross-roll band (`mcsm_glint()` and its in-shader twin), and the
+  flat plastic gloss pass stays deleted.
+
+**Phase 3 — emissive teeth/eyes + 4.0x bloom + cosmic blue.**
+- The phase palette is now ONE table in four places that must agree:
+  `McsmTeethPhaseTint.PHASE_TRACK` (Java, authoritative),
+  `mcsm_mouth_color()` in `mcsm_visuals.glsl`, the storm-glow shader and the
+  Iris final pass — P4 cyan-white, P5 white, P5.5 cyan-blue, P6 cinematic blue,
+  P7 toxic green, P8 blinding white.
+- `core/entity.fsh` (the program `RenderTypes.eyes()` actually runs) snaps the
+  emissive teeth/eye pixels onto that palette and applies the 4.0x
+  amplification. `final.fsh` (v5) keeps the 4.0x and now keys it per phase,
+  decoding the phase from the mod's own phase-monotonic fog palette because a
+  pack cannot read the mod's FogSkyEnd carrier. `storm_glow.fsh` and
+  `fogless_entity.fsh` use the same six-band table for the additive mouth
+  pools and the pack-less eyes pass. Super Duper's `final.glsl`/`composite6.glsl`
+  keep the plain 4.0x luminance boost on purpose: that pack is third-party code
+  this repo cannot compile-validate offline, and the boost is already
+  phase-correct because the emissive layer it amplifies is phase-tinted by Java.
+- **Fixed:** `McsmTeethPhaseTint.tick()` stamped the beam colours twice and the
+  second block ran last with the TEETH track, so every phase flew
+  `#00A877` sea-green tractor beams. The stale block is gone: the core cones
+  are show purple again (`#8C26FF`), bluish through phase 6 only, and the
+  lower auxiliary spotlight emitters keep their separate cosmic blue
+  `#4D4DFF` in `StormImpactLights`.
+
+**Phase 4 — 2D sky canvas + cloud filters.**
+- The world-space dome/card paths stay deleted; the backdrop is the flat
+  camera-locked sky sticker queue. Added the cinematic **purple sky canvas**
+  and the transparent **phase-5 teal** and **phase-6 salmon-pink cloud
+  filters** as new layers on that queue, cross-fading through the same
+  smoothstep LERP (`ramp()`) as the existing smoke sheets — canvas deepest,
+  then the filters, then the smoke and the additive glare glow.
+- New `ci/make_backdrop_sheets.py` bakes the three sheets (256x128 RGBA8,
+  filter-0 rows, deterministic) from the ds-1.9.390 gradient stop tables into
+  both overlay roots on every build; the jar audit now fails if any of the six
+  sticker sheets is missing from the assembled jar.
+
+**Also in this build.**  The GLSL gate now compiles the *extras* under the same
+define variants as the core shaders (before, the storm-body shader's EMISSIVE
+and void-black branches were never validated — only their define-free fallback),
+and it validates `fogless_entity.fsh`, which was outside the gate entirely.
+
+**Not done, on purpose.**  The four community `.zip` archives named in the
+mandate are not present in this workspace (`zips/` does not exist and the repo
+has no `.zip` binaries), so no archive was extracted: the palette, sheet and
+model data above come from the repository's own traced sources and the pinned
+ds-1.9.390 lineage, regenerated deterministically instead of copied.
+
 # 7000.0.0-M — master version label re-lock + full 403-412 lineage migration
 
 - Master version string re-locked to **7000.0.0-M** in `VERSION`, `McsmExtrasConfig.BUILD_VERSION`, `gradle.properties` and `fabric.mod.json`; every HUD/title/panel surface reads the single constant.

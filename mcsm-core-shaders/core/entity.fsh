@@ -81,6 +81,20 @@ void main() {
 
     float mcsmP = mcsm_phase(FogSkyEnd, FogColor, FogRenderDistanceEnd);
 
+    // BUILD #415 -- NATIVE EMISSIVE FACE TRACK (teeth + eye lenses).
+    // This program is the one 26.2 uses for RenderTypes.eyes(): the emissive
+    // teeth grids and the eye masks arrive here full-bright with the EMISSIVE
+    // define, so this is the shader-side hook that re-keys the mouth colour
+    // every phase (P4 cyan-white, P5 white, P5.5 cyan-blue, P6 blue, P7 toxic
+    // green, P8 white -- see mcsm_mouth_color) and applies the 4.0x emissive
+    // amplification before the post pass sees it. mcsm_mouth_mask() keys on
+    // the emissive luminance floor, so ordinary entity shading is untouched.
+#ifdef EMISSIVE
+    if (mcsm_active(mcsmP)) {
+        color.rgb = mcsm_mouth_emissive(color.rgb, mcsmP);
+    }
+#endif
+
     // Purple specular rim overlay: #6A24D9, tight at block edges with the
     // required pow(rim, 3.5) falloff. Attachments keep their own lattice color.
     if (mcsmAttach == 0 && mcsm_active(mcsmP)) {

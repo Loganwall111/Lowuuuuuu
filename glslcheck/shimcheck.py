@@ -168,12 +168,25 @@ def main():
                 fails += 1
                 print('FAIL %s [%s]\n%s' % (os.path.relpath(path), tag, log[:4000]))
 
+    # BUILD #415 -- the extras used to be compiled with NO defines, which meant
+    # the storm-body shader's real code paths (EMISSIVE eyes/teeth, the
+    # MCSM_VOID_BODY void-black + glint block) were never validated by the CI
+    # gate: only their define-free fallback was. They now go through the same
+    # variant set as the core shaders, so a broken emissive or body-shading
+    # branch fails the build instead of shipping as a silent no-op.
     for path in extras:
+        for tag, defines in combo_sets:
+            total += 1
+            ok, log, tu = check(path, defines, HERE, tmp)
+            if not ok:
+                fails += 1
+                print('FAIL %s [%s]\n%s' % (path, tag, log[:4000]))
+        # the storm body's own define, which no core shader uses
         total += 1
-        ok, log, tu = check(path, {}, HERE, tmp)
+        ok, log, tu = check(path, {'MCSM_VOID_BODY': '1'}, HERE, tmp)
         if not ok:
             fails += 1
-            print('FAIL %s\n%s' % (path, log[:4000]))
+            print('FAIL %s [void_body]\n%s' % (path, log[:4000]))
 
     print('shimcheck: %d/%d pass' % (total - fails, total))
     return 1 if fails else 0

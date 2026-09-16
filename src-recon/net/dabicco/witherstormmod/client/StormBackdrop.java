@@ -34,9 +34,16 @@ import org.joml.Vector3fc;
  * main entity and every world object, exactly like the vanilla sky dome.
  *
  * Sheet bindings (storyboard):
+ *   phase 4.70+      cinematic purple sky canvas backdrop_sheet_purple_canvas.png
+ *   phase 4.70-5.75  transparent teal filter     backdrop_sheet_teal_filter.png
+ *   phase 5.60+      salmon-pink cloud filter    backdrop_sheet_salmon_filter.png
  *   phase 5.00-5.50  organic teal sheet          backdrop_sheet_phase5_teal.png
  *   phase 5.50-5.95  deep violet sheet           backdrop_sheet_phase55_violet.png
  *   phase 5.95+      plum-to-salmon twilight     backdrop_sheet_phase6_plum.png
+ *
+ * The canvas and the two filters are baked by ci/make_backdrop_sheets.py and
+ * cross-fade through the ramp() LERP above; the smoke sheets and the additive
+ * glare glow layers stay exactly as they were underneath them.
  * Outside an active storm the sheets fade to zero alpha and sky.fsh hands the
  * frame back to the untouched vanilla overworld daylight cycle.
  */
@@ -44,6 +51,16 @@ public final class StormBackdrop {
    private static final Identifier SHEET_TEAL = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_phase5_teal.png");
    private static final Identifier SHEET_VIOLET = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_phase55_violet.png");
    private static final Identifier SHEET_PLUM = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_phase6_plum.png");
+   // BUILD #415 -- the cinematic purple sky canvas plus the two transparent
+   // cloud filters, baked by ci/make_backdrop_sheets.py from the ds-1.9.390
+   // gradient-sheet stop tables. They are FLAT 2D background canvas stickers on
+   // the same sky plane (never world-space geometry), and they cross-fade with
+   // the smoothstep LERP in ramp(): the purple canvas is the deep base layer,
+   // the phase-5 teal filter fades over it, then the phase-6 salmon-pink filter
+   // fades over both -- so the sky changes hue by blending, not by popping.
+   private static final Identifier SHEET_PURPLE_CANVAS = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_purple_canvas.png");
+   private static final Identifier SHEET_TEAL_FILTER = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_teal_filter.png");
+   private static final Identifier SHEET_SALMON_FILTER = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/backdrop_sheet_salmon_filter.png");
    // MCSM 7000.0.0-M migration: the bright glare sheets (glow baked into the
    // texture) lost their submitter when the 412 lineage deleted McsmPhaseSky.
    // They ride the same flat sky-plane sticker stack now, additive, so the
@@ -124,12 +141,37 @@ public final class StormBackdrop {
       float wViolet = ramp(phase, 5.42F, 5.58F) * (1.0F - ramp(phase, 5.90F, 6.06F));
       float wPlum = ramp(phase, 5.90F, 6.06F);
 
+      // BUILD #415 -- 2D CANVAS + CLOUD FILTER LERP WEIGHTS.
+      // Every weight is a smoothstep cross-fade (ramp), so the canvas and the
+      // two filters blend into one another instead of popping:
+      //   phase 4.7 - 5.0   purple canvas rises behind everything
+      //   phase 4.7 - 5.6   transparent teal cloud filter rides on top of it
+      //   phase 5.6 - 6.2   salmon-pink filter takes the teal filter's place
+      //   phase 6.2 +       purple canvas + salmon filter hold to the end
+      float wCanvas = ramp(phase, 4.70F, 5.05F);
+      float wTealFilter = ramp(phase, 4.70F, 4.95F) * (1.0F - ramp(phase, 5.35F, 5.75F));
+      float wSalmonFilter = ramp(phase, 5.60F, 6.20F);
+
       PoseStack poseStack = ctx.poseStack();
       SubmitNodeCollector collector = ctx.submitNodeCollector();
 
-      // Back-to-front layering on the sky plane: twilight sheet deepest, then
-      // violet, teal on top; each at its own depth sliver so the submissions
-      // keep a stable order in the background queue.
+      // Back-to-front layering on the sky plane, deepest first: the purple
+      // canvas, then the teal/salmon cloud filters, then the smoke sheets
+      // (twilight -> violet -> teal), then the additive glare glow. Each layer
+      // owns its own depth sliver so the background queue keeps a stable order
+      // and no two stickers can z-fight.
+      if (wCanvas > 0.004F && DabyWSClientConfig.stormBackdropPurple) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(SHEET_PURPLE_CANVAS), cam, view, rightV, upV, SKY_PLANE + 256.0, half * 1.20, master * wCanvas);
+      }
+
+      if (wTealFilter > 0.004F && DabyWSClientConfig.stormBackdropTurquoise) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(SHEET_TEAL_FILTER), cam, view, rightV, upV, SKY_PLANE + 224.0, half * 1.16, master * wTealFilter * breathe);
+      }
+
+      if (wSalmonFilter > 0.004F && DabyWSClientConfig.stormBackdropPink) {
+         sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(SHEET_SALMON_FILTER), cam, view, rightV, upV, SKY_PLANE + 208.0, half * 1.18, master * wSalmonFilter * breathe);
+      }
+
       if (wPlum > 0.004F && DabyWSClientConfig.stormBackdropPink) {
          sticker(poseStack, collector, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(SHEET_PLUM), cam, view, rightV, upV, SKY_PLANE + 192.0, half * 1.12, master * wPlum * breathe);
       }

@@ -738,6 +738,99 @@ vec3 mcsm_sky_body_tint(float p, vec3 body) {
     return body * vec3(1.25, 0.45, 0.25);
 }
 
+// ==========================================================================
+//  BUILD #415 -- VOID-BLACK SHADING, ANIMATED GLINT, PHASE MOUTH PALETTE
+//
+//  Single source of truth for three constants that used to be hand-typed in
+//  several passes (and had already drifted between them):
+//
+//   1. VOID BLACK.  The ingested split atlas key (left block #0A0E14
+//      navy-black, right block #000000 absolute void-black) is the only
+//      accepted dark end for the storm body. mcsm_void_black() forces the
+//      inner creases / ambient-occlusion bands / structural block gaps onto
+//      the #000000 key with NO lift, so block segments read as hard cinematic
+//      cut-outs instead of lit grey flesh, while the mid band is pulled down
+//      toward the navy key so facets stay readable.
+//
+//   2. ANIMATED GLINT.  A moving sheen, not a static gloss: two drifting
+//      sine fields are raised to a high power so only narrow streaks survive,
+//      and the streak position slides with the clock. This replaces the flat
+//      plastic specular coat (which read as a shiny decal on a black body).
+//
+//   3. MOUTH / TEETH PALETTE.  The emissive teeth and eye lenses change hue
+//      per evolution phase.  Java (McsmTeethPhaseTint) is authoritative for
+//      the vertex tint; the shader table below lets the GL passes update the
+//      mouth colour per phase as well instead of hard-coding one hue.
+//      MCSM_MOUTH_GAIN is the 4.0x amplification applied in the post pass.
+// ==========================================================================
+
+const vec3 MCSM_VOID_BLACK = vec3(0.0, 0.0, 0.0);          // split atlas key, right block
+const vec3 MCSM_NAVY_BLACK = vec3(10.0, 14.0, 20.0) / 255.0; // split atlas key, left block #0A0E14
+const float MCSM_MOUTH_GAIN = 4.0;                          // post-pass emissive amplification
+
+// Crease/AO weight from a shaded colour: 1.0 in the crease floor, 0.0 from the
+// mid-tone up. ao (0..1, 1 = fully occluded) folds the ambient-occlusion band
+// into the same key so contact shadows and geometry creases share one falloff.
+float mcsm_void_crease(vec3 c, float ao) {
+    float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    float crease = 1.0 - smoothstep(0.015, 0.20, lum);
+    return clamp(max(crease, (1.0 - clamp(ao, 0.0, 1.0)) * 0.85), 0.0, 1.0);
+}
+
+vec3 mcsm_void_black(vec3 c, float ao) {
+    float crease = mcsm_void_crease(c, ao);
+    vec3 out0 = mix(c, MCSM_VOID_BLACK, crease);
+    float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    // structural block layers: the readable mid band is pushed toward the navy
+    // key (never above it), leaving the gradient above it untouched.
+    float band = smoothstep(0.20, 0.42, lum) * (1.0 - smoothstep(0.42, 0.68, lum));
+    return mix(out0, MCSM_NAVY_BLACK * 0.55, band * 0.70);
+}
+
+// Moving sheen over the dark block segments. uv = the body texture coordinate,
+// clock = seconds (mcsm_clock), p = storm phase, base = shaded colour (used to
+// keep the sheen off the void floor and off the bright highlights).
+vec3 mcsm_glint(vec2 uv, float clock, float p, vec3 base) {
+    float lum = dot(base, vec3(0.2126, 0.7152, 0.0722));
+    float crease = mcsm_void_crease(base, 1.0);
+    float sweep = sin((uv.x * 2.3 + uv.y * 1.1) * 6.2831853 - clock * 0.45)
+                + 0.5 * sin((uv.x * 5.1 - uv.y * 3.7) * 6.2831853 - clock * 0.31);
+    float streak = pow(max(sweep * 0.6666, 0.0), 8.0);
+    // late phases roll a second, faster band so the sheen never freezes
+    float roll = pow(max(sin((uv.y * 3.9 - uv.x * 1.7) * 6.2831853 - clock * 0.63), 0.0), 12.0)
+               * mcsm_ramp(p, 5.5, 8.0);
+    float mask = (1.0 - crease) * (1.0 - smoothstep(0.55, 0.85, lum));
+    // cool sheen, warmed slightly through the story phases
+    vec3 tint = mix(vec3(0.30, 0.38, 0.52), vec3(0.46, 0.36, 0.58), mcsm_ramp(p, 5.4, 6.2));
+    return base + tint * (streak + roll * 0.6) * mask * 0.20;
+}
+
+// The show's teeth/eye hue track, one row per evolution band:
+//   P4 cyan-white / P5 pure white / P5.5 cyan-blue / P6 cinematic blue
+//   P7 toxic green / P8 blinding white
+vec3 mcsm_mouth_color(float p) {
+    if (p >= 8.0) return vec3(1.00, 1.00, 1.00);
+    if (p >= 7.0) return vec3(0.36, 1.00, 0.28);
+    if (p >= 6.0) return vec3(0.22, 0.50, 1.00);
+    if (p >= 5.5) return vec3(0.40, 0.80, 1.00);
+    if (p >= 5.0) return vec3(1.00, 1.00, 1.00);
+    if (p >= 4.0) return vec3(0.72, 0.98, 1.00);
+    return vec3(0.98, 0.98, 0.86);   // phase 3 and below: no glowing teeth
+}
+
+// Emissive gain for a mouth/teeth pixel: the mask keys on the emissive
+// luminance floor so only face-coordinate pixels are amplified.
+float mcsm_mouth_mask(vec3 c) {
+    float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    return smoothstep(0.45, 0.80, lum);
+}
+
+vec3 mcsm_mouth_emissive(vec3 c, float p) {
+    float m = mcsm_mouth_mask(c);
+    // snap the emissive coordinates onto the phase palette, then amplify 4.0x
+    return mix(c, mcsm_mouth_color(p) * max(max(c.r, c.g), c.b), m) * (1.0 + (MCSM_MOUTH_GAIN - 1.0) * m);
+}
+
 // ------------------------------------------------------------- attachments
 vec3 mcsm_attachment_color(float p, float clock, vec3 localPos, vec2 uv,
                            float texAlpha, vec3 base) {

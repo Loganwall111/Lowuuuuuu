@@ -34,7 +34,7 @@ uniform vec3 fogColor;
 
 const vec3 STORM_TINT = vec3(0.42, 0.20, 0.62);
 
-// MCSM 1.9.201 -- NATIVE EMISSIVE FACE BOOST (4.0x).
+// MCSM 1.9.201 / BUILD #415 -- NATIVE EMISSIVE FACE BOOST (4.0x).
 // The purple eyes and the phase-shifting teeth are the frame's emissive layer
 // (full-bright, fog-cutting). Their pixel brightness multiplier is amplified
 // 4.0x inside this post-processing stack so they project a massive radiant
@@ -46,8 +46,48 @@ float mcsmEmissiveMask(vec3 c) {
     return smoothstep(0.50, 0.85, lum);
 }
 
-vec3 mcsmEmissiveBoost(vec3 c) {
-    return c * (1.0 + 3.0 * mcsmEmissiveMask(c));   // -> 4.0x at face coords
+// BUILD #415 -- PER-PHASE MOUTH COLOUR.
+// The mouth colour has to change with the evolution phase, and a shader pack
+// cannot read the mod's own FogSkyEnd phase carrier (the mod writes it on
+// FogRenderer's FogData; the pack only sees the vanilla fogColor uniform).
+// The mod's fog palette IS phase-monotonic though -- green #6E8F73 through
+// slate #6E7873 to purple #7F3AA6 to plum #A0757E -- so the phase proxy below
+// is decoded from exactly that ramp, then the pixel is snapped onto the
+// canonical show palette:
+//   P4 cyan-white / P5 pure white / P5.5 cyan-blue / P6 cinematic blue /
+//   P7 toxic green / P8 blinding white
+vec3 mcsmMouthColor(float p) {
+    if (p >= 8.0) return vec3(1.00, 1.00, 1.00);
+    if (p >= 7.0) return vec3(0.36, 1.00, 0.28);
+    if (p >= 6.0) return vec3(0.22, 0.50, 1.00);
+    if (p >= 5.5) return vec3(0.40, 0.80, 1.00);
+    if (p >= 5.0) return vec3(1.00, 1.00, 1.00);
+    if (p >= 4.0) return vec3(0.72, 0.98, 1.00);
+    return vec3(0.98, 0.98, 0.86);
+}
+
+// 4.45 (green fog) -> 5.0 (slate) -> 5.5 (purple) -> 6.1+ (plum / ember)
+float mcsmPhaseProxy(vec3 fogCol) {
+    float maxc = max(fogCol.r, max(fogCol.g, fogCol.b));
+    if (maxc < 0.06) return 0.0;                        // no storm: leave vanilla alone
+    float greenLead = clamp((fogCol.g - max(fogCol.r, fogCol.b)) * 4.0, 0.0, 1.0);
+    float purpleLead = clamp((min(fogCol.r, fogCol.b) - fogCol.g) * 3.2, 0.0, 1.0);
+    float warmth = clamp((fogCol.r - fogCol.b) * 3.0, 0.0, 1.0);   // plum/ember end
+    float p = 4.45
+            + greenLead * 0.35
+            + purpleLead * 1.05
+            + warmth * 0.60;
+    return clamp(p, 4.0, 8.0);
+}
+
+// Snap the emissive coordinates onto the phase palette, then amplify 4.0x.
+vec3 mcsmEmissiveBoost(vec3 c, vec3 fogCol) {
+    float m = mcsmEmissiveMask(c);
+    if (m <= 0.001) return c;
+    vec3 band = mcsmMouthColor(mcsmPhaseProxy(fogCol));
+    // keep the pixel's own intensity, adopt the phase hue
+    vec3 keyed = band * max(max(c.r, c.g), c.b);
+    return mix(c, mix(keyed, c, 0.35), m) * (1.0 + 3.0 * m);   // -> 4.0x at face coords
 }
 
 vec3 bloomPass(vec2 uv) {
@@ -58,7 +98,7 @@ vec3 bloomPass(vec2 uv) {
         for (int j = -3; j <= 3; j++) {
             if (abs(i) + abs(j) > 4) continue;
             vec2 o = vec2(float(i), float(j)) * px * 2.4;
-            vec3 c = mcsmEmissiveBoost(texture(colortex0, uv + o).rgb);
+            vec3 c = mcsmEmissiveBoost(texture(colortex0, uv + o).rgb, fogColor);
             float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
             float w = smoothstep(0.60, 1.0, lum);
             sum += c * w;
@@ -99,9 +139,10 @@ float mcsmHash(float n) { return fract(sin(n * 91.7) * 4313.7); }
 
 void main() {
     vec3 col = texture(colortex0, texcoord).rgb;
-    // MCSM 1.9.201: 4.0x emissive face boost first, so every downstream stage
-    // (bloom taps, tonemap, vibrance) sees the amplified eyes/teeth energy.
-    col = mcsmEmissiveBoost(col);
+    // MCSM 1.9.201 / BUILD #415: phase-keyed 4.0x emissive face boost first,
+    // so every downstream stage (bloom taps, tonemap, vibrance) sees the
+    // amplified, phase-correct eyes/teeth energy.
+    col = mcsmEmissiveBoost(col, fogColor);
 
     // Screen-space contact shadows & ambient occlusion
     float ao = ssaoPass(texcoord);

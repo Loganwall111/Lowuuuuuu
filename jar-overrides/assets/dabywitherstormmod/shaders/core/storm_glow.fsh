@@ -69,10 +69,40 @@ void main() {
     float lum = max(dot(tint, vec3(0.2126, 0.7152, 0.0722)), 0.12);
     vec3 rgb = tint * clamp(1.0 / max(lum, 0.55), 1.0, 1.7);
 
+    // BUILD #415 -- CANONICAL PHASE MOUTH PALETTE. Java (McsmTeethPhaseTint)
+    // pushes the evolution-track hue through the vertex colour every tick; this
+    // table is the same one the core entity pass uses (mcsm_mouth_color), so
+    // the glow pool can never drift from the model's own emissive layer. The
+    // snap is deliberately partial: it normalises the pool onto the show's
+    // band colour while still honouring a user's custom eye tint.
+    //   P4 cyan-white / P5 pure white / P5.5 cyan-blue / P6 cinematic blue /
+    //   P7 toxic green / P8 blinding white
+    vec3 band;
+    float t = max(tint.r, max(tint.g, tint.b));
+    if (t <= 0.02) {
+        band = vec3(1.0);
+    } else if (tint.g > 0.72 * tint.b && tint.r < 0.55 * tint.b) {
+        // green-dominant: phase 7 toxic green
+        band = vec3(0.36, 1.00, 0.28);
+    } else if (tint.b > 0.90 * tint.r && tint.g > 0.55 * tint.r) {
+        // cyan family: cyan-white (4) -> cyan-blue (5.5) -> blue (6)
+        band = tint.g > 0.93 * tint.b ? vec3(0.72, 0.98, 1.00)
+             : (tint.g > 0.72 * tint.b ? vec3(0.40, 0.80, 1.00) : vec3(0.22, 0.50, 1.00));
+    } else {
+        band = vec3(1.00);   // white family: phase 5 and phase 8
+    }
+    rgb = mix(rgb, band * max(t, 0.35), 0.75);
+
+    // 4.0x emissive amplification, matching the post pass (final.fsh) so the
+    // additive pool and the framebuffer agree on how hot the mouth is. The gain
+    // rides the COLOUR (not the alpha envelope), so the pool still has its soft
+    // radial falloff and the 4x reads as thrown light, never as a flat square.
+    const float MCSM_MOUTH_GAIN = 4.0;
+    rgb = min(rgb * MCSM_MOUTH_GAIN, vec3(4.0));
     // The brightest part washes toward white so the centre reads as over-exposed
     // light: phase 5 = pure white teeth with a white aura, other phases keep
     // their colour everywhere except the hot heart.
-    rgb = mix(rgb, vec3(1.0), core * 0.25);
+    rgb = mix(rgb, vec3(1.0) * MCSM_MOUTH_GAIN, core * 0.25);
 
     // Slight floor so even a dim Java-side alpha still reads as a glow, never black.
     float a = clamp(vertexColor.a * 1.15 + 0.07, 0.0, 1.0);

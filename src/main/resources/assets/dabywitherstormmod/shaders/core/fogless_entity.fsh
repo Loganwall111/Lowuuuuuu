@@ -88,14 +88,62 @@ void main() {
     float mcsmBand = smoothstep(0.20, 0.42, mcsmLum) * (1.0 - smoothstep(0.42, 0.68, mcsmLum));
     color.rgb = mix(color.rgb, MCSM_NAVY_BLACK * 0.55, mcsmBand * 0.70);
     // Animated glint overlay: a subtle living sheen that rolls across the
-    // dark block segments (Telltale reference presentation). Replaces the
-    // old flat shiny plastic gloss coat -- this is a moving highlight, not
-    // a static specular layer.
+    // dark block segments (Telltale reference presentation). Two drifting
+    // sine fields, each raised to a high power so only narrow streaks survive,
+    // plus a slow cross-roll band -- the sheen therefore travels along the
+    // block faces instead of sitting on them. Replaces the old flat shiny
+    // plastic gloss coat entirely: there is no static specular term left.
+    // (The shared twin of this function is mcsm_glint() in mcsm_visuals.glsl,
+    //  used by the core passes; this program cannot import it -- see the
+    //  EMISSIVE block below for the bind-group reason.)
     float mcsmSec = GameTime * 1200.0;
     float mcsmSweep = sin((texCoord0.x * 2.3 + texCoord0.y * 1.1) * 6.2831853 - mcsmSec * 0.45)
                     + 0.5 * sin((texCoord0.x * 5.1 - texCoord0.y * 3.7) * 6.2831853 - mcsmSec * 0.31);
-    float mcsmGlint = pow(max(mcsmSweep * 0.6666, 0.0), 8.0) * (1.0 - mcsmCrease) * (1.0 - smoothstep(0.55, 0.85, mcsmLum));
+    float mcsmGlint = pow(max(mcsmSweep * 0.6666, 0.0), 8.0);
+    float mcsmRoll = pow(max(sin((texCoord0.y * 3.9 - texCoord0.x * 1.7) * 6.2831853 - mcsmSec * 0.63), 0.0), 12.0);
+    mcsmGlint = (mcsmGlint + mcsmRoll * 0.6)
+              * (1.0 - mcsmCrease) * (1.0 - smoothstep(0.55, 0.85, mcsmLum));
     color.rgb += vec3(0.30, 0.38, 0.52) * mcsmGlint * 0.20;
+#endif
+
+#ifdef EMISSIVE
+    // ------------------------------------------------------------------
+    // BUILD #415 -- NATIVE EMISSIVE TEETH / EYE TRACK (this program is also
+    // the fallback eyes pipeline used when no shader pack is installed).
+    //
+    // The canonical per-phase mouth palette lives in mcsm_visuals.glsl
+    // (mcsm_mouth_color) for the core entity/terrain passes. THIS program may
+    // not import it: it runs on the storm's own bind group, and declaring a
+    // uniform the group does not bind is a hard Vulkan crash (see the
+    // storm_glow.fsh header). So the same six-band table is repeated here,
+    // keyed off the phase hue Java pushes through the vertex colour every tick
+    // (McsmTeethPhaseTint -> eyeColorR/G/B):
+    //   P4 cyan-white / P5 pure white / P5.5 cyan-blue / P6 cinematic blue /
+    //   P7 toxic green / P8 blinding white
+    //
+    // Only pixels on the emissive luminance floor are touched, so body-block
+    // pixels routed through this program keep their void-black shading.
+    vec3 tint = faceVertexColor.rgb;
+    float tmax = max(tint.r, max(tint.g, tint.b));
+    vec3 band;
+    if (tmax <= 0.02) {
+        band = vec3(1.0);
+    } else if (tint.g > 0.72 * tint.b && tint.r < 0.55 * tint.b) {
+        band = vec3(0.36, 1.00, 0.28);                                   // phase 7
+    } else if (tint.b > 0.90 * tint.r && tint.g > 0.55 * tint.r) {
+        band = tint.g > 0.93 * tint.b ? vec3(0.72, 0.98, 1.00)           // phase 4
+             : (tint.g > 0.72 * tint.b ? vec3(0.40, 0.80, 1.00)          // phase 5.5
+                                       : vec3(0.22, 0.50, 1.00));        // phase 6
+    } else {
+        band = vec3(1.00, 1.00, 1.00);                                   // phase 5 / 8
+    }
+    float emLum = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float emMask = smoothstep(0.45, 0.80, emLum);
+    color.rgb = mix(color.rgb, band * max(color.rgb, vec3(0.0)), emMask);
+    // 4.0x emissive amplification: the mouth throws a radiant neon field into
+    // the dark air even with no post-processing pack loaded.
+    const float MCSM_MOUTH_GAIN = 4.0;
+    color.rgb *= 1.0 + (MCSM_MOUTH_GAIN - 1.0) * emMask;
 #endif
 
     fragColor = mix(color, apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor), FOG_MIX);

@@ -277,6 +277,7 @@ GLSL_LOG=/tmp/mcsm-glsl.log
 if python3 glslcheck/shimcheck.py mcsm-core-shaders \
      jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh \
      jar-overrides/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh \
+     src/main/resources/assets/dabywitherstormmod/shaders/core/fogless_entity.fsh \
      > "$GLSL_LOG" 2>&1; then
   tail -2 "$GLSL_LOG"
 else
@@ -311,6 +312,35 @@ fi
 echo "[glsl] shaderpack-v5 validates"
 
 # ---------------------------------------------------------------------------
+# BUILD #415 -- MODEL METHOD BUDGET GATE.
+#
+# The recovered Bedrock models are machine-translated into Java, and a single
+# translated method can hold a thousand-plus .addBox(...) calls. javac caps a
+# method at 65535 bytes of bytecode and fails the WHOLE file with
+# "code too large" when one crosses it -- invisible until someone compiles the
+# source tree. WitherStormP4.createBodyLayer was exactly that method (224 KB of
+# source, ~176 KB of estimated bytecode) and is now split into 16 chunk methods
+# by ci/split_p4_model.py. This gate keeps it split: it re-estimates every
+# method in every recovered model and refuses the build if one is over budget.
+# ---------------------------------------------------------------------------
+MODEL_FAIL=0
+MODEL_FILES="$(find src-recon/net/dabicco/witherstormmod/entity/model -name 'WitherStormP*.java' 2>/dev/null | sort | tr '\n' ' ')"
+if [ -n "${MODEL_FILES// /}" ]; then
+  if ! python3 ci/split_p4_model.py --check $MODEL_FILES > /tmp/mcsm-model.log 2>&1; then
+    echo "::error title=model budget::a recovered model method is over the 64 KB bytecode limit"
+    cat /tmp/mcsm-model.log
+    MODEL_FAIL=1
+  else
+    tail -1 /tmp/mcsm-model.log
+  fi
+fi
+if [ "$MODEL_FAIL" -ne 0 ]; then
+  echo "[model] method budget FAILED -- run ci/split_p4_model.py to split the offender"
+  exit 1
+fi
+echo "[model] method budget OK (no recovered model method is near the 64 KB bytecode limit)"
+
+# ---------------------------------------------------------------------------
 # MCSM 1.9.109 -- VERSION SINGLE-SOURCE + DRIFT GATE.
 #
 # Why this exists: the jar's fabric.mod.json was stamped from ./VERSION, but
@@ -329,6 +359,41 @@ CFG=mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
 sed -i "s/BUILD_VERSION = \"[0-9][0-9.]*\"/BUILD_VERSION = \"${VER}\"/" "$CFG"
 echo "[version] BUILD_VERSION synced to ${VER}"
 
+# ---------------------------------------------------------------------------
+# BUILD #415 -- VERSION STAMP GATE (files, not just code).
+#
+# "$VER" above comes from ./VERSION, but four OTHER artefacts also carry the
+# label and each has silently drifted at least once: BUILD_VERSION (a file the
+# handoff treats as the second source of truth), gradle.properties
+# (mod_version), fabric.mod.json (what the mods screen prints) and
+# McsmExtrasConfig (the in-game banner + the config file's config_version).
+# A build whose labels disagree reads as "the update did not install", so the
+# gate is now: every one of them must equal ./VERSION or the build stops.
+#
+# BUILD_VERSION is a mirror, so it is written from VERSION here; the other two
+# are authored files and are only checked, never rewritten.
+# ---------------------------------------------------------------------------
+printf '%s' "$VER" > BUILD_VERSION
+echo "[version] BUILD_VERSION file stamped to ${VER}"
+
+VP_GRADLE="$(grep -E '^mod_version=' gradle.properties | head -1 | cut -d= -f2- | tr -d '[:space:]')"
+VP_FABRIC="$(python3 -c 'import json,sys; print(json.load(open("src/main/resources/fabric.mod.json"))["version"].strip())' 2>/dev/null || true)"
+VP_CONFIG="$(grep -oE 'BUILD_VERSION = "[^"]*"' "$CFG" | head -1 | sed -E 's/.*"(.*)"/\1/')"
+VSTAMP_FAIL=0
+for pair in "BUILD_VERSION file:$VER" "gradle.properties:${VP_GRADLE}" \
+            "fabric.mod.json:${VP_FABRIC}" "McsmExtrasConfig:${VP_CONFIG}"; do
+  name="${pair%%:*}"; got="${pair#*:}"
+  if [ "$got" != "$VER" ]; then
+    echo "::error title=version stamp::${name} says '${got}' but VERSION says '${VER}'"
+    VSTAMP_FAIL=1
+  fi
+done
+if [ "$VSTAMP_FAIL" -ne 0 ]; then
+  echo "[version] FAILED -- the in-game build label would lie about which jar is loaded"
+  exit 1
+fi
+echo "[version] stamp gate OK (VERSION, BUILD_VERSION, gradle.properties, fabric.mod.json, McsmExtrasConfig = ${VER})"
+
 DRIFT="$(grep -rn '"[^"]*1\.9\.[0-9]' --include='*.java' mcsm-extras/java \
          | grep -v 'BUILD_VERSION = ' || true)"
 if [ -n "$DRIFT" ]; then
@@ -338,6 +403,24 @@ if [ -n "$DRIFT" ]; then
   exit 1
 fi
 echo "[version] drift gate OK (no hardcoded version literals)"
+
+# ---------------------------------------------------------------------------
+# BUILD #415 -- BACKDROP CANVAS + CLOUD FILTER SHEETS.
+#
+# The 2D background skybox sticker queue (StormBackdrop) binds three baked
+# sheets: the cinematic purple sky canvas plus the transparent phase-5 teal and
+# phase-6 salmon-pink cloud filters. They are regenerated here from the explicit
+# stop tables so a rerun is byte-for-byte deterministic, and they are written
+# into BOTH overlay roots before assembly (jar-overrides wins at assembly time,
+# src/main/resources supplies the dev tree). Replacing them with handmade art
+# needs no code change: the binding is by target path.
+# ---------------------------------------------------------------------------
+if python3 ci/make_backdrop_sheets.py; then
+  echo "[backdrop] sky canvas + cloud filters regenerated"
+else
+  echo "::error title=build::backdrop sheet generation failed"
+  exit 1
+fi
 
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
@@ -849,6 +932,23 @@ if [ -e "$FX/cls/assets/fabricskyboxes" ] \
   AUDIT_FAIL=1
 else
   echo "[audit] legacy texture-pack sky assets removed"
+
+# BUILD #415: the 2D background skybox stickers are the only sky this build
+# paints, so prove all three canvases actually made it into the jar -- a missing
+# sheet is a silent no-op (Minecraft renders the missing-texture checkerboard
+# or nothing at all), which is exactly the failure mode this audit exists for.
+for need in \
+  assets/dabywitherstormmod/textures/misc/backdrop_sheet_purple_canvas.png \
+  assets/dabywitherstormmod/textures/misc/backdrop_sheet_teal_filter.png \
+  assets/dabywitherstormmod/textures/misc/backdrop_sheet_salmon_filter.png \
+  assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase5_teal.png \
+  assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase55_violet.png \
+  assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase6_plum.png; do
+  if [ ! -s "$FX/cls/$need" ]; then
+    echo "::error title=jar audit::2D skybox sticker sheet missing from jar: $need"
+    AUDIT_FAIL=1
+  fi
+done
 fi
 
 if [ ! -f "$FX/cls/resourcepacks/ogs-cem/pack.mcmeta" ] \

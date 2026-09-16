@@ -21,34 +21,62 @@ public final class McsmTeethPhaseTint {
     private McsmTeethPhaseTint() {
     }
 
-    /** Packed full-bright ARGB used by the exact native teeth hook. */
-    public static int teethTintArgb() {
+    /**
+     * BUILD #415 -- THE canonical evolution-track palette, one row per phase
+     * band: {red, green, blue, glowIntensity}. Java, the core shaders
+     * (mcsm_mouth_color in mcsm_visuals.glsl), the storm-glow shader and the
+     * Iris final pass all read these same six bands, so the model's emissive
+     * layer, the additive glow pool and the post-pass bloom can no longer
+     * disagree about what colour the mouth is this phase:
+     *   4.0  cyan-white / 5.0 pure white / 5.5 cyan-blue /
+     *   6.0  cinematic blue / 7.0 toxic green / 8.0 blinding white
+     * Anything below phase 4 is the non-glowing show default.
+     */
+    private static final float[][] PHASE_TRACK = {
+        //  r      g      b      intensity
+        { 0.98F, 0.98F, 0.86F, 0.00F },  // phase 3-  no glowing teeth
+        { 0.72F, 0.98F, 1.00F, 3.60F },  // phase 4   cyan-white
+        { 1.00F, 1.00F, 1.00F, 3.60F },  // phase 5   pure white
+        { 0.40F, 0.80F, 1.00F, 3.90F },  // phase 5.5 cyan-blue
+        { 0.22F, 0.50F, 1.00F, 4.20F },  // phase 6   cinematic blue
+        { 0.36F, 1.00F, 0.28F, 4.20F },  // phase 7   toxic green
+        { 1.00F, 1.00F, 1.00F, 4.30F },  // phase 8   blinding white
+    };
+
+    /** Index into PHASE_TRACK for an evolution phase. */
+    public static int trackIndex(double phase) {
+        if (phase >= 8.0D) return 6;
+        if (phase >= 7.0D) return 5;
+        if (phase >= 6.0D) return 4;
+        if (phase >= 5.5D) return 3;
+        if (phase >= 5.0D) return 2;
+        if (phase >= 4.0D) return 1;
+        return 0;
+    }
+
+    /** {r, g, b, intensity} for the nearest storm's phase. */
+    public static float[] track(double phase) {
+        return PHASE_TRACK[trackIndex(phase)];
+    }
+
+    private static double nearestPhase() {
         // Use the renderer's phase hint as well as the distant-storm tracker;
         // local storms do not always publish a DistantStormData entry.
-        double phase = Math.max(StormSkins.phaseHint(), McsmStormAtmosphere.nearestPhase());
-        if (phase >= 6.0D) {
-            return rgb(0.0F, 0.659F, 0.467F); // #00A877
-        }
-        if (phase >= 4.0D) {
-            return rgb(0.0F, 0.953F, 1.0F);   // #00F3FF
-        }
-        return rgb((float) DabyWSClientConfig.eyeColorR,
-                (float) DabyWSClientConfig.eyeColorG,
-                (float) DabyWSClientConfig.eyeColorB);
+        return Math.max(StormSkins.phaseHint(), McsmStormAtmosphere.nearestPhase());
+    }
+
+    /** Packed full-bright ARGB used by the exact native teeth hook. */
+    public static int teethTintArgb() {
+        float[] t = track(nearestPhase());
+        return rgb(t[0], t[1], t[2]);
     }
 
     /** Packed full-bright ARGB used by the exact native eye hook. */
     public static int eyeTintArgb() {
         // Dedicated eyes stay on RenderType.eyes and use the same phase track
         // as the teeth, without inheriting world light or shadow attenuation.
-        double phase = Math.max(StormSkins.phaseHint(), McsmStormAtmosphere.nearestPhase());
-        return phase >= 6.0D
-                ? rgb(0.0F, 0.659F, 0.467F) // #00A877
-                : phase >= 4.0D
-                    ? rgb(0.0F, 0.953F, 1.0F) // #00F3FF
-                    : rgb((float) DabyWSClientConfig.eyeColorR,
-                          (float) DabyWSClientConfig.eyeColorG,
-                          (float) DabyWSClientConfig.eyeColorB);
+        float[] t = track(nearestPhase());
+        return rgb(t[0], t[1], t[2]);
     }
 
     private static int rgb(float r, float g, float b) {
@@ -75,38 +103,16 @@ public final class McsmTeethPhaseTint {
             if (phase < 0.5F) {
                 return;
             }
-            // MCSM 1.9.201 -- TRUE PHASE-SHIFTING TEETH GLOW TRACK.
-            // The emissive teeth/eye colour keys follow the evolution track
-            // exactly as storyboarded; the shader pass reads the storm state
-            // every tick and re-keys the native emissive layer:
-            //   phase 4   cyan-white glow
-            //   phase 5   pure white glow
-            //   phase 5.5 cyan-blue glow
-            //   phase 6   cinematic blue glow
-            //   phase 7   toxic green glow
-            //   phase 8   blinding white glow
-            float r, g, b, inten;
-            boolean glow;
-            // SHOW-SPEC HUES + BUILD #403 GLOW INTENSITIES (migrated from the
-            // 412 lineage): the teethBoost pass needs ~3.6-4.3 to read as
-            // glowing on this renderer; hues stay on the evolution track:
-            //   4 cyan-white / 5 pure white / 5.5 cyan-blue /
-            //   6 cinematic blue / 7 toxic green / 8 blinding white
-            if (phase >= 8.0F) {
-                r = 1.00F; g = 1.00F; b = 1.00F; inten = 4.30F; glow = true;   // phase 8: blinding white
-            } else if (phase >= 7.0F) {
-                r = 0.36F; g = 1.00F; b = 0.28F; inten = 4.20F; glow = true;   // phase 7: toxic green
-            } else if (phase >= 6.0F) {
-                r = 0.22F; g = 0.50F; b = 1.00F; inten = 4.20F; glow = true;   // phase 6: cinematic blue
-            } else if (phase >= 5.5F) {
-                r = 0.40F; g = 0.80F; b = 1.00F; inten = 3.90F; glow = true;   // phase 5.5: cyan-blue
-            } else if (phase >= 5.0F) {
-                r = 1.00F; g = 1.00F; b = 1.00F; inten = 3.60F; glow = true;   // phase 5: pure white, glowing
-            } else if (phase >= 4.0F) {
-                r = 0.72F; g = 0.98F; b = 1.00F; inten = 3.60F; glow = true;   // phase 4: cyan-white
-            } else {
-                r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;  // phase 3: no glowing teeth
-            }
+            // MCSM 1.9.201 / BUILD #415 -- TRUE PHASE-SHIFTING TEETH GLOW
+            // TRACK, now read straight out of the single canonical palette
+            // above instead of a second hand-typed copy of the same if-chain.
+            // The shader passes re-key the native emissive layer every tick.
+            float[] t = track(phase);
+            float r = t[0];
+            float g = t[1];
+            float b = t[2];
+            float inten = t[3];
+            boolean glow = inten > 0.0F;
             DabyWSClientConfig.eyeColorR = r;
             DabyWSClientConfig.eyeColorG = g;
             DabyWSClientConfig.eyeColorB = b;
@@ -114,6 +120,14 @@ public final class McsmTeethPhaseTint {
             DabyWSClientConfig.turquoiseTeeth = glow;
             // BUILD #405 user override: phase 6 beams read bluish (reference
             // close-up frames); every other phase keeps show purple.
+            // BUILD #415 FIX: there used to be a SECOND beam block below this
+            // one that unconditionally re-stamped the beams with the teeth
+            // track (#00A877 sea-green from phase 6 up). It ran last, so it won
+            // and every phase flew green tractor beams instead of the show's
+            // purple cones. The beams now follow the storyboard: purple core
+            // (#8C26FF) everywhere, bluish through phase 6 only. The lower
+            // auxiliary spotlight emitters are separated out in
+            // StormImpactLights as cosmic blue #4D4DFF.
             if (phase >= 6.0F && phase < 7.0F) {
                 DabyWSClientConfig.beamColorR = 0.30F;
                 DabyWSClientConfig.beamColorG = 0.42F;
@@ -133,16 +147,6 @@ public final class McsmTeethPhaseTint {
                 DabyWSClientConfig.glowStrength = Math.max(DabyWSClientConfig.glowStrength, 2.5); // #404
             }
 
-            // Keep beam and eye materials on the same full-bright phase track.
-            if (phase >= 6.0F) {
-                DabyWSClientConfig.beamColorR = 0.00F;
-                DabyWSClientConfig.beamColorG = 0.659F;
-                DabyWSClientConfig.beamColorB = 0.467F;
-            } else if (phase >= 4.0F) {
-                DabyWSClientConfig.beamColorR = 0.00F;
-                DabyWSClientConfig.beamColorG = 0.953F;
-                DabyWSClientConfig.beamColorB = 1.00F;
-            }
         } catch (Throwable ignored) {
         }
     }
