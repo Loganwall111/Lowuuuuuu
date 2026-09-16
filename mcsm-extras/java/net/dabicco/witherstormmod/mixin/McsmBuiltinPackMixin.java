@@ -60,6 +60,10 @@ public abstract class McsmBuiltinPackMixin {
         // and both own their own cleanup, so neither can leave anything behind.
         McsmBlackHole.register();
         McsmTornadoes.register();
+        // BUILD #433 -- "sky vortexes spawning monsters": the picture that
+        // finally puts something on the ground. Same level-tick hook, same
+        // registry-by-id creature resolution as the rest of the extras.
+        McsmSkyVortexes.register();
         // Build #416 (D.8, phase 5) -- the story terminal: the antenna's
         // restricted console, the radio signals it picks up, the password the
         // world keeps for itself. It owns no packet channel any more (the

@@ -113,6 +113,8 @@ public final class McsmExtrasConfig {
     public static double blackHoleSeconds = 180.0;
     /** Mega-tornadoes that rip across the decayed reality. */
     public static boolean megaTornadoes = true;
+    /** BUILD #433 -- the sky vortexes that open over the player and drop things. */
+    public static boolean skyVortexes = true;
     /** Reality creatures: the new hostile spawns (phase 3). */
     public static boolean realityCreatures = true;
     /** Story Mode quest + lore layer: dialogue, objectives, chapter log. */
@@ -396,6 +398,7 @@ public final class McsmExtrasConfig {
             p.setProperty("black_hole_event", String.valueOf(blackHoleEvent));
             p.setProperty("black_hole_seconds", String.valueOf(blackHoleSeconds));
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
+            p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
             p.setProperty("reality_creatures", String.valueOf(realityCreatures));
             p.setProperty("story_quests", String.valueOf(storyQuests));
             p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
@@ -525,6 +528,7 @@ public final class McsmExtrasConfig {
             blackHoleEvent = bool(p, "black_hole_event", blackHoleEvent);
             blackHoleSeconds = dbl(p, "black_hole_seconds", blackHoleSeconds);
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
+            skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             realityCreatures = bool(p, "reality_creatures", realityCreatures);
             storyQuests = bool(p, "story_quests", storyQuests);
             embeddedShaderPack = bool(p, "embedded_shader_pack", embeddedShaderPack);

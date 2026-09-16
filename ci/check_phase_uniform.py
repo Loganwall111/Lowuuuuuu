@@ -1631,6 +1631,43 @@ def main():
           "secret room of an abandoned hospital" in terminal
           and "IVOR" in terminal and "nearIvor(player)" in terminal)
 
+    # ------------------------------------------------------------------
+    # BUILD #433 -- SKY VORTEXES SPAWNING MONSTERS.
+    #
+    # The artist's list, verbatim: "sky vortexes spawning monsters." The mod has
+    # had sky scenery for years and none of it has ever put anything on the
+    # ground. This is the half that does.
+    # ------------------------------------------------------------------
+    vortex = read("mcsm-extras/java/net/mcsm/extras/McsmSkyVortexes.java") or ""
+
+    check("the storm opens a mouth in the sky and drops things out of it",
+          "public final class McsmSkyVortexes" in vortex
+          and "private static void drop(ServerLevel level, Mouth mouth, double radius)" in vortex
+          and "EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(" in vortex
+          and "level.addFreshEntity(created);" in vortex)
+    check("what falls survives the fall, so a corpse is never the threat",
+          "private static final double HEIGHT = 26.0D;" in vortex
+          and "private static final double DROP_FALL = 12.0D;" in vortex
+          and "created.snapTo(mouth.x + Math.cos(a) * radius * 0.55D, mouth.y - DROP_FALL," in vortex
+          and "Phantoms fly anyway" in vortex)
+    check("it only opens over a storm that is far enough along",
+          "private static final double ONSET_PHASE = 5.0D;" in vortex
+          and "if (!decayed && phaseNear(level, player) < ONSET_PHASE) {" in vortex
+          and "for (WitherStormEntity storm : level.getEntitiesOfClass(WitherStormEntity.class, box))" in vortex)
+    check("it cannot run away: one mouth, a life timer, and a cap on the drops",
+          "private static final int LIFE = 260;" in vortex
+          and "private static final int INTERVAL = 1500;" in vortex
+          and "private static final int MAX_DROPS = 6;" in vortex
+          and "if (mouth.age % DROP == 0 && mouth.dropped < MAX_DROPS) {" in vortex
+          and "LIVE.remove(level.dimension());" in vortex)
+    check("it is switchable, saved, and reachable from the panel",
+          "public static boolean skyVortexes = true;" in cfg
+          and 'p.setProperty("sky_vortexes", String.valueOf(skyVortexes));' in cfg
+          and 'skyVortexes = bool(p, "sky_vortexes", skyVortexes);' in cfg
+          and "Sky Vortexes Drop Monsters" in extras
+          and "McsmSkyVortexes.register();" in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

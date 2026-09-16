@@ -401,6 +401,11 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.megaTornadoes = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #433 -- "sky vortexes spawning monsters".
+          .bool("Sky Vortexes Drop Monsters", () -> McsmExtrasConfig.skyVortexes, v -> {
+              McsmExtrasConfig.skyVortexes = v;
+              McsmExtrasConfig.save();
+          })
           .act("Give the Rift Key + a starter kit", () -> net.mcsm.extras.McsmReality.giveStarterKit());
         categories.add(c9);
 
