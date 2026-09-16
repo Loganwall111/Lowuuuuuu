@@ -229,3 +229,19 @@ black midnight hull, visible where daylight or a flash has lifted the plates.
 build gate. `ci/sky_sheets/` is still not in the repository, so the image trace
 gate still reports a skip rather than a pass — the anchor gate above carries the
 ground truth until the PNGs are checked in.
+
+### The uploaded sheets are the superseded set — checked, not assumed
+
+`ci/sky_sheets/` was empty until the three sky PNGs landed in the repository root
+(URL-encoded names, one commit). Tracing them was worth doing: they are the
+**washed-out sheets these anchors replace**, not the new ones — teal climbs to
+`#8D9687` at the horizon, purple to `#A64CB5`, rose to `#BE929E`, i.e. the exact
+bright trace the brief rejects. So `--apply` against them would have undone the
+ingestion; they were moved to `ci/sky_sheets/superseded/` with their measured
+trace pinned in `SUPERSEDED_TRACE`, alongside a README that says which folder is
+the authority. `ci/sky_sheets/superseded/` is now verified on every build ("the
+superseded set is still the superseded set"), while the shipped tables are still
+proven against the anchors — the gate reports what it checked instead of skipping
+silently. When the real current sheets are added to the top level of
+`ci/sky_sheets/`, `--verify` compares the shipped tables against those images
+directly, which is stricter and will catch an anchor typo.

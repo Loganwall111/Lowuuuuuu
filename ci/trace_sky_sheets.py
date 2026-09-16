@@ -373,6 +373,63 @@ def rewrite_from_hex(apply):
     return rc
 
 
+# ---------------------------------------------------------------------------
+# The superseded set
+# ---------------------------------------------------------------------------
+# BUILD #416 -- ci/sky_sheets/superseded/ holds the three sheets the supplied hex
+# anchors REPLACE. They are the washed-out trace older builds shipped (teal
+# climbing to #9EAC9F at the horizon, purple to #A85CB4, rose to #C89CA6), which
+# is exactly what the brief rejected. They are kept because they are the evidence
+# for what changed, not because they are authoritative -- the anchors are.
+#
+# Their six-stop trace is recorded here so the folder cannot quietly turn into a
+# different set of images: `--verify` re-traces them and fails if they no longer
+# match what they claim to be. Dropping the CURRENT sheets into ci/sky_sheets/
+# (top level) instead makes `--verify` compare the shipped tables against them
+# directly, which is the stronger check and the one that should run once those
+# images exist in the repository.
+SUPERSEDED_DIR = os.path.join(ROOT, "ci", "sky_sheets", "superseded")
+SUPERSEDED_TRACE = {
+    "teal": [(0.1176, 0.1725, 0.1765), (0.2196, 0.2863, 0.2941), (0.3333, 0.4000, 0.3961),
+             (0.4235, 0.4863, 0.4667), (0.4902, 0.5412, 0.5059), (0.5529, 0.5882, 0.5294)],
+    "purple": [(0.2392, 0.0863, 0.2588), (0.3529, 0.1451, 0.3843), (0.4627, 0.2039, 0.5059),
+               (0.5490, 0.2471, 0.6000), (0.6039, 0.2745, 0.6588), (0.6510, 0.2980, 0.7098)],
+    "rose": [(0.3373, 0.2549, 0.3255), (0.4157, 0.3098, 0.3804), (0.4667, 0.3529, 0.4196),
+             (0.5412, 0.4039, 0.4745), (0.6549, 0.4863, 0.5451), (0.7451, 0.5725, 0.6196)],
+}
+
+
+def check_superseded():
+    """Confirm ci/sky_sheets/superseded/ still holds the sheets it claims to."""
+    if not os.path.isdir(SUPERSEDED_DIR):
+        return 0
+    found = {}
+    for role, fragments, _phase in SHEETS:
+        for path in sorted(glob.glob(os.path.join(SUPERSEDED_DIR, "*.png"))):
+            low = os.path.basename(path).lower().replace("_", " ").replace("-", " ")
+            if any(f.lower() in low for f in fragments):
+                found.setdefault(role, path)
+                break
+    if not found:
+        return 0
+    ok = True
+    for role, path in sorted(found.items()):
+        want = SUPERSEDED_TRACE.get(role)
+        got = trace_column(path)
+        worst = max(abs(got[i][k] - want[i][k])
+                    for i in range(min(len(want), len(got))) for k in range(3))
+        if want is None or worst > 0.02:
+            ok = False
+            print("  FAIL superseded %-7s -- %s is not the recorded superseded sheet (%.4f)"
+                  % (role, os.path.basename(path), worst if want else -1.0))
+        else:
+            print("  ok   superseded %-7s %s -> %s (replaced by the supplied anchors, %.4f)"
+                  % (role, pal._hex(got[0]), pal._hex(got[-1]), worst))
+    print("[trace] superseded set intact: %d sheets -- evidence of what the anchors replace, "
+          "NOT the authority" % len(found))
+    return 0 if ok else 1
+
+
 def find_sheets(extra_dir):
     dirs = ([extra_dir] if extra_dir else []) + SEARCH_DIRS
     found = {}
@@ -502,14 +559,20 @@ def main():
         if args.verify:
             # No sheets checked in: nothing to verify against. Say so loudly
             # rather than passing silently.
-            print("::notice title=sky-sheets::reference sheets not in the repo (looked in %s) -- "
-                  "trace verification skipped" % ", ".join(SEARCH_DIRS))
+            print("::notice title=sky-sheets::the CURRENT sky sheets are not in the repo "
+                  "(looked in %s) -- the SUPPLIED HEX ANCHORS are the authority, and the "
+                  "superseded set is verified instead" % ", ".join(SEARCH_DIRS))
         print("[trace] reference sheets NOT found: %s" % ", ".join(missing))
         print("[trace] looked in: %s" % ", ".join(d for d in SEARCH_DIRS))
-        print("[trace] drop the three PNGs into ci/sky_sheets/ (or pass --dir) and rerun.")
+        print("[trace] the CURRENT sheets are not in ci/sky_sheets/ yet; the supplied hex "
+              "anchors are the authority until they are")
         for role, path in found.items():
             print("  found %-7s %s" % (role, path))
-        return 0 if args.verify else 2
+        if args.verify:
+            rc_sup = check_superseded()
+            rc_hex = verify_hex()
+            return rc_sup if rc_hex == 0 else rc_hex
+        return 2
 
     traced = {}
     for role, _frag, phase in SHEETS:
