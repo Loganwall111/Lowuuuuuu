@@ -148,6 +148,13 @@ public final class McsmExtrasConfig {
      *  bottom edge of the sheet far past bedrock level, so there is no bottom
      *  edge left to see; 1 or less leaves the base sticker alone. */
     public static double backdropBottomStretch = 6.0;
+
+    /** BUILD #423 -- weld the phase-5.5 upper back to the body. The huge back's
+     *  own centre is ~11.7 blocks from its model origin, so enlarging it by 1.72x
+     *  about that origin throws it ~34 world blocks up and back off the storm.
+     *  On (the default) the enlargement is taken about the model's own centre
+     *  instead, so the back grows where it already is. */
+    public static boolean hugeBackCentred = true;
     // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
     // Textured cube around the camera; 6 phase skies (lavender day, midnight
     // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
@@ -421,6 +428,7 @@ public final class McsmExtrasConfig {
             p.setProperty("massg_scale", String.valueOf(massgScale));
             p.setProperty("massg_hallucinations", String.valueOf(massgHallucinations));
             p.setProperty("backdrop_bottom_stretch", String.valueOf(backdropBottomStretch));
+            p.setProperty("huge_back_centred", String.valueOf(hugeBackCentred));
             p.setProperty("dust_waves", String.valueOf(dustWaves));
             p.setProperty("reality_tear", String.valueOf(realityTear));
             p.setProperty("force_mcsm_look", String.valueOf(forceMcsmLook));
@@ -540,6 +548,7 @@ public final class McsmExtrasConfig {
             massgScale = dbl(p, "massg_scale", massgScale);
             massgHallucinations = bool(p, "massg_hallucinations", massgHallucinations);
             backdropBottomStretch = dbl(p, "backdrop_bottom_stretch", backdropBottomStretch);
+            hugeBackCentred = bool(p, "huge_back_centred", hugeBackCentred);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);
             transparentHorizonWings = bool(p, "transparent_horizon_wings", transparentHorizonWings);

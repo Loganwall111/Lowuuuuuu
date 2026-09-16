@@ -1296,6 +1296,53 @@ def main():
           "backdrop_bottom_stretch" in cfg
           and "Backdrop Bottom Stretch (1 = base, 6 = past bedrock)" in extras)
 
+    # ------------------------------------------------------------------
+    # BUILD #423 -- THE PHASE-5.5 UPPER BACK, WELDED BACK ON.
+    #
+    # The user's report: "phase 5.5 has an upper back disattached from the main
+    # body". Measured cause (ci/measure_hugeback.py): the huge back's own centre
+    # is ~11.7 blocks from its model origin, and the renderer enlarges it by
+    # scaling 1.72x about that origin -- which throws it ~34 world blocks up and
+    # sideways off the storm. The fix re-scales it about its own centre.
+    # ------------------------------------------------------------------
+    holder = read("mcsm-extras/java/net/mcsm/extras/client/McsmHugeBackCentre.java") or ""
+    attach = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackAttachMixin.java") or ""
+    pose = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackPoseMixin.java") or ""
+    measure = read("ci/measure_hugeback.py") or ""
+
+    check("the huge back's centre is published for the whole of submitGrowth5",
+          "public static void inside(float[] bounds)" in holder
+          and "public static void leave()" in holder
+          and "public static float[] centre()" in holder
+          and "(bounds[2] + bounds[3]) * 0.5F" in holder)
+    check("the renderer measures the huge back the way its own submitScaled does",
+          "@Shadow" in attach and "private HugeAssBackModel hugeAssBackModel;" in attach
+          and "CubeReveal.bounds(this.hugeAssBackModel.root())" in attach
+          and 'method = "submitGrowth5", at = @At("HEAD")' in attach)
+    check("the published centre is taken back down at RETURN",
+          'method = "submitGrowth5", at = @At("RETURN")' in attach
+          and "McsmHugeBackCentre.leave();" in attach)
+    check("the 1.72x enlargement is re-pivoted onto the model's own centre",
+          "MCSM_HUGE_BACK_SCALE = 1.72F" in pose
+          and 'method = "scale", at = @At("RETURN")' in pose
+          and "(1.0D - MCSM_HUGE_BACK_SCALE) / MCSM_HUGE_BACK_SCALE" in pose
+          and "((PoseStack) (Object) this).translate(" in pose)
+    check("the re-pivot is scoped to the huge back and cannot affect another scale",
+          "x != MCSM_HUGE_BACK_SCALE || y != MCSM_HUGE_BACK_SCALE || z != MCSM_HUGE_BACK_SCALE" in pose
+          and "float[] c = McsmHugeBackCentre.centre();" in pose
+          and "if (c == null || c.length < 3)" in pose)
+    check("both halves are require = 0, so a different renderer cannot break launch",
+          attach.count("require = 0") >= 2 and pose.count("require = 0") >= 1
+          and "require = 1" not in pose)
+    check("the correction is a user switch with a saved property",
+          "public static boolean hugeBackCentred = true;" in cfg
+          and "huge_back_centred" in cfg
+          and "Phase 5.5 upper back welded to the body" in extras
+          and "McsmExtrasConfig.hugeBackCentred" in attach)
+    check("the 34-block displacement is measured from the model, not asserted",
+          "EXPECT_CENTRE" in measure and "MIN_WORLD_DISPLACEMENT = 20.0" in measure
+          and "measure_hugeback.py --check" in (read("ci/build.sh") or ""))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

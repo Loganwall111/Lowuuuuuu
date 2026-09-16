@@ -611,6 +611,12 @@ if [ "$MODEL_FAIL" -ne 0 ]; then
   exit 1
 fi
 echo "[model] method budget OK (no recovered model method is near the 64 KB bytecode limit)"
+# BUILD #423 -- the phase-5.5 upper back. The renderer enlarges it by scaling
+# 1.72x about the model origin, and the model's centre is ~11.7 blocks from that
+# origin: the enlargement therefore throws it ~34 world blocks off the body. The
+# number is measured out of the model source here, so the fix and the evidence
+# can never drift apart (McsmHugeBackAttachMixin / McsmHugeBackPoseMixin).
+python3 ci/measure_hugeback.py --check | tail -3
 stage model-ok
 
 # ---------------------------------------------------------------------------

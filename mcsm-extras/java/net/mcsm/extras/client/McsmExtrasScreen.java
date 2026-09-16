@@ -455,6 +455,10 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.backdropBottomStretch = v;
               McsmExtrasConfig.save();
           }, 1.0, 24.0)
+          .bool("Phase 5.5 upper back welded to the body (grows about its own centre)", () -> McsmExtrasConfig.hugeBackCentred, v -> {
+              McsmExtrasConfig.hugeBackCentred = v;
+              McsmExtrasConfig.save();
+          })
           .act("How to release it (sneak-use the antenna: irreversible)", () ->
                   McsmClientChat.say("\u00a75Sneak-use the antenna. The sky starts counting the moment "
                           + "it arrives, and nothing in this build can put it back."))
