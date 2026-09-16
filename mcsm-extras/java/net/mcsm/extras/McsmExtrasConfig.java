@@ -8,180 +8,206 @@ import java.io.OutputStream;
 import java.util.Properties;
 
 /**
- * MCSM extras config. Lives beside the mod's own config (their in-game
- * config screen + /dabyws still drive the mod itself; this file only drives
- * the MCSM additions: tentacle grab cadence, beacon storm path, rise fx,
- * visual parameters, custom shaders, animations, and NPC systems).
- * Written with defaults on first launch.
+ * MCSM extras config (Version 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338).
+ * Drives all MCSM additions, atmosphere parameters, debris editor, color customization,
+ * animation controller, nightglow halo expansion, and sci-fi UI parameters.
  */
 public final class McsmExtrasConfig {
     public static final String BUILD_VERSION = "7000.0.0-M";
+
+    // ---- Core Gameplay & Storm Mechanics -----------------------------------
     public static boolean enableTentacleGrab = true;
-    // Automatic schematic/town placement is deliberately OFF.  It can queue
-    // three large structures and thousands of chunk rebuilds on first join,
-    // which stalls an integrated server and can exhaust low-end clients.  Use
-    // the explicit /ds towns command when a player actually wants towns.
-    public static boolean autoStartTowns = false;
     public static double  grabIntervalSeconds = 11.0;
     public static boolean enableBeaconStorm = true;
     public static double  beaconCooldownSeconds = 30.0;
     public static boolean enableRiseFx = true;
     public static boolean spiralCounterClockwise = true;
     public static boolean enableBeaconBlock = true;
-
-    // ---- fields that ALSO existed in the 1.9.88-1.9.95 jars ----------------
-    /** Use Tainted's original 103-part CEM model for the phase-5 body. */
     public static boolean ogCemModels = true;
-    /** Apparent size of the smudge/halo quads behind the storm (0.5 = new). */
     public static double  smudgeScale = 0.5;
 
-    // ---- MCSM 1.9.98 batch (phase 29/30 user orders, 2026-09-04) ----------
-    /** Storm glare mass scale; read by the blob carrier every frame.
-     * 1.9.201: raised from 0.58 — the glare read far too small against the
-     * MCSM reference frames. */
-    public static double  glareSize = 1.35;
-    /** 1.9.204: cross-axis scale of every tentacle chain (Story Mode heavy block limbs). */
-    /** 1.9.208: raised 2.2 -> 2.8 -- colossal, heavy segmented limbs. */
-    public static double  tentacleGirth = 2.8;
-    /** 1.9.209: multiplies the whole storm MODEL per phase (bigger each phase). */
-    public static double  stormModelScale = 1.0;
-    /** Mod-side aurora borealis at night (cold-biome biased). */
+    // ---- Debris Editor & Native Block Rescaling ----------------------------
+    /** 0 = Clockwise, 1 = Counterclockwise, 2 = Upright, 3 = Downward, 4 = Spiral, 5 = Radial */
+    public static int     debrisMovementDirection = 0;
+    /** Force debris particles to pull pre-existing native block states (Obsidian / Crying Obsidian) */
+    public static boolean forceNativeBlockDebris = true;
+    /** Scale multiplier for native debris blocks (default 3.0 = 300% rescaled 1.5F to 4.0F) */
+    public static double  debrisScaleMultiplier = 3.0;
+    /** Scale for ambient purple coils (default 0.35 = 35% shrunk) */
+    public static double  purpleCoilScale = 0.35;
+
+    // ---- Wither Storm Color & Texture Customization -----------------------
+    public static boolean useCustomColors = true;
+    public static double  customEyeR = 0.00; // Electrical Neon Cyan (#00F3FF) or Sea-Green (#00A877)
+    public static double  customEyeG = 0.95;
+    public static double  customEyeB = 1.00;
+    public static double  customTeethR = 0.00;
+    public static double  customTeethG = 0.95;
+    public static double  customTeethB = 1.00;
+    public static double  customBeamR = 0.00;
+    public static double  customBeamG = 0.85;
+    public static double  customBeamB = 1.00;
+    public static double  customSkinTintR = 0.15;
+    public static double  customSkinTintG = 0.15;
+    public static double  customSkinTintB = 0.18;
+
+    // ---- Animation Controller & In-Game Editing ---------------------------
+    public static double  animIdleSpeed = 1.0;
+    public static double  animRoarIntensity = 1.2;
+    public static double  animJawSlack = 1.0;
+    public static double  animTentacleSlamForce = 1.5;
+    public static double  animHeadSwayGain = 1.0;
+    public static boolean lockCanonicalTexture = true;
+
+    // ---- Native Tattletale Gloss Sheen (Build #368) -----------------------
+    // Secondary translucent pass that re-renders the storm body against the
+    // scrolling storm_gloss.png sheet. On by default: shiny out of the box,
+    // no external shader pack required.
+    public static boolean nativeGlossSheen = true;
+
+    // ---- Build #371 — Dual Geometry, Traced Shading, OG Sun & Story Menu --
+    // Dual-mode WitherStormP4 body. FALSE (default) = ORIGINAL base-mod
+    // geometry verbatim (fixes the summon-time vertex-overflow crash).
+    // TRUE = the clean 495-cube Blockbench/StageB matrix, bound strictly to
+    // the Netflix / Custom preset path (McsmPresetMeshSync + panel toggle).
+    public static boolean customMeshModel = false;
+    // OG traced-shading body texture (the authentic StageB mottle) as the
+    // DEFAULT for phases 4-5.5. TRUE (default) = traced look out of the box;
+    // FALSE = the regular flat deep-black canonical sheet ("the OG ones"
+    // stay the plain option). Phases 1-5.5 never use the cosmic sheet.
+    public static boolean tracedShadingBody = true;
+    // OG "SAGE MCSM" 3D sun glow (screen-space storm_sun_glow post shader),
+    // restored to the base default strength. On by default, configurable.
+    public static boolean  ogSunGlow = true;
+    public static double   ogSunGlowStrength = 2.2; // base default, range 0-3
+    // Build #371 — cinematic STORY-MODE main menu backdrop (procedural
+    // panorama: night sky, sun slab, moon, nebula, mountain silhouettes).
+    // TRUE (default) = the cinematic scene; FALSE = the plain gradient.
+    public static boolean  storyMenuBackdrop = true;
+    // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
+    // Textured cube around the camera; 6 phase skies (lavender day, midnight
+    // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
+    // nearest storm's phase and fade back to the regular vanilla sky.
+    // FALSE = the vanilla variant (plain regular Minecraft sky).
+    public static boolean  skyboxEnabled = true;
+    /** Seconds for the sky cross-fade / fade-back-to-vanilla (0.25 - 20). */
+    public static double   skyboxFadeSeconds = 2.5;
+    /** Cube size multiplier (0.5 - 1.5). */
+    public static double   skyboxSize = 1.0;
+    // ---- Build #375 — the REAL Telltale glare shells ----------------------
+    // The three actual Telltale glare/atmosphere images, layered as big
+    // slowly-swirling sky shells around every storm (the "3D-like
+    // atmospheric effect"). FALSE = off (no glare shells).
+    public static boolean  glareBackdrop = true; // 3 real Telltale glare sheets (glare_1/2/3.png) bound to the moving storm origin
+    /** Glare shell size multiplier (0.3 - 2.5). */
+    public static double   glareBackdropSize = 1.0;
+    /** Glare shell opacity multiplier (0.0 - 2.0). */
+    public static double   glareBackdropStrength = 1.0;
+    /** When the cube is fully opaque, cancel the vanilla sky pass entirely so
+     *  the base storm-darken/void tint cannot show through as a second layer. */
+    public static boolean  skyPassCancel = true;
+    /** Build #375: the Telltale black blur - a soft dark ring hugging the storm
+     *  silhouette (attached to the storm, moves with it). */
+    public static boolean  stormBlurEnabled = true;
+    /** Blur ring size multiplier (0.4 - 2.5). */
+    public static double   stormBlurSize = 1.0;
+    /** Blur ring darkness multiplier (0 - 2). */
+    public static double   stormBlurStrength = 1.0;
+    // ---- Build #374 — cinematic boot + epic depth animations -------------
+    /** Pre-game side-view cutscene + command block burst into the main menu. */
+    public static boolean  cinematicBootEnabled = true;
+    /** The world "cracks apart" (fissures + sky shockwaves) on world load. */
+    public static boolean  worldCrackIntro = true;
+
+    // ---- Nightglow & Silhouette Halo Expansion ---------------------------
+    public static boolean nightglowBodyOutline = true; // Outline whole body bottom tail to top of phase 5
+    public static boolean nightglowBluishGlow = true; // Bluish halo base
+    /** Build #374: the restored working blue halo — chassis-welded ring that
+     *  ramps in at phase 4.0 and holds through every later stage. */
+    public static boolean stormHaloEnabled = true;
+    public static boolean nightglowPurpleGlow55 = true; // Gigantic purple glow for phases 5.1-5.9
+    public static boolean nightglowThickBlackGlow = true; // Thick black core glow
+    public static double  nightglowRadiusMultiplier = 1.5;
+
+    // ---- End Flashes & Cinematic Death Pass --------------------------------
+    public static boolean endFlashesPhase6 = true; // Giant End flashes for Phase 6+
+    public static boolean transparentHorizonWings = true; // Transparent giant wings across horizon during death
+    public static boolean deathSupernovaImplosion = true;
+
+    // ---- UI & Sci-Fi Control Panel Styling --------------------------------
+    public static boolean uiBorderLines = true; // Image 3 pixelated silver border frame
+    public static boolean sciFiPanelLayout = true;
+    public static double  glareSize = 0.58;
     public static boolean auroraEnabled = true;
-    /** Full death cinematic: distortion -> white cracks -> implosion flash ->
-     *  supernova rings -> segments. */
     public static boolean deathCinematic = true;
-    /** Expanding ring shockwaves on phase 4 rise, phase 7 rise, and death. */
     public static boolean supernovaRings = true;
-    /** Skull impacts: grey ground smoke + yellow electric sparks + crackle. */
     public static boolean smokeScreen = true;
-    /** Phase 5.5+: purple lightning strikes + purple motes in the sky. */
-    public static boolean purpleSky = false; // #410: default OFF -- the purple storm-sky specks contradict the "regular sky, no purple tint" directive; toggle stays available in Story Mode Controls.
-    /** Dust trails when the storm sweeps blocks. */
+    public static boolean purpleSky = true;
     public static boolean dustWaves = true;
-    /** Post-death reality tear with the black aurora + corruption spread. */
     public static boolean realityTear = true;
-    /** Command block obliterate flash erases entities incl. players. */
     public static boolean obliterateFlash = true;
-    /** Prank variant: also kicks players. Default OFF (grief-safe). */
     public static boolean obliterateKick = false;
-    // ---- 1.9.208 batch: debris overhaul, glacier flakes, storm rings -------
-    /** Debris vortex pinned at maximum density by default (user: "the storm
-     *  should only have debris all the way to the max by default"). */
-    public static boolean debrisAlwaysMax = true;
-    /** Phase 4+: icy-white glacier flakes torn off the body blocks, spiralling
-     *  upward like a tornado. */
-    public static boolean glacierFlakes = true;
-    /** Phase 6+: real cubed rings orbiting the storm (clockwise + diagonal +
-     *  vertical), growing into the gigantic layered vortex at phase 8-9. */
-    public static boolean stormRings = true;
-    /** Total phase-9 cube instances distributed across the three ten-layer rings. */
-    public static int phase9RingCubes = 10000;
 
-    // ---- MCSM 1.9.100 batch: the gates ------------------------------------
-    /** Force the client's Story Mode look on (shadows, glare, smoke screen,
-     *  skyboxes, vignette, tremor). */
+    // ---- Gates & System Controls -------------------------------------------
     public static boolean forceMcsmLook = true;
-    /** Force the world config on: building tear, corruption, shockwave
-     *  particles, structure raids, withered mobs, cave rumble. */
     public static boolean forceMcsmWorld = true;
-
-    /** 1.9.208: the MCSM shader is the DEFAULT look -- the gate that ports the
-     *  mod's own storm pipelines (sun glow, shadow map, teeth/eye glow) over
-     *  the shader is ON out of the box. */
-    public static boolean shaderPackGate = true;
-    /** Taut glowing wire from the storm's core down to its ground anchor. */
+    public static boolean shaderPackGate = false;
     public static boolean commandWire = true;
-    /** Brief a player the first time they get close to a live storm. */
     public static boolean mcsmInstructions = true;
 
-    // ---- Atmosphere & Custom Graphics Parameters --------------------------
-    /** Night sky opacity: 0.0 = clear, 1.0 = deepest navy. */
+    // ---- Atmosphere Parameters --------------------------------------------
     public static double nightSkyOpacity = 0.42;
-    /** Phase 5.5 transition point: exact phase where purple-pink horizon begins. */
     public static double phase55Threshold = 5.5;
-    /** Salmon-pink intensity in phase 5.5-5.9 range. */
     public static double phase5_9PinkIntensity = 1.0;
-    /** Cloud alpha: 0.0 = transparent, 1.0 = normal. */
     public static double cloudAlpha = 1.0;
-    /** Cloud speed multiplier: 1.0 = normal. */
     public static double cloudSpeed = 1.0;
-    /** Rain/snow intensity multiplier. */
     public static double precipitationIntensity = 1.0;
-    /** Storm glare animation phase (0 = static, 1 = flowing). */
     public static double glareAnimPhase = 0.0;
-    /** Storm body animation pulse: phase-1 eye/jaw throb rhythm. */
     public static double bodyAnimPulse = 0.0;
-    /** Glare animation intensity multiplier. */
     public static double glareAnimIntensity = 0.0;
-    /** Non-euclidean glare: stays fixed relative to storm center. */
     public static boolean glareNonEuclidean = false;
 
     // ---- Advanced Atmospheric VFX & Lighting ------------------------------
-    /** Beacon luminous glow corona. */
     public static boolean beaconGlow = true;
-    /** Nether and End portal luminous casted light. */
     public static boolean portalLights = true;
-    /** Biome-specific subtle mist/fog palettes. */
     public static boolean biomeAtmospherics = true;
-    /** Nether deep crimson fog and rising lava sparks. */
     public static boolean netherRedFog = true;
-    /** Snow/ice biome gigantic blue sky band. */
     public static boolean snowSkyBand = true;
-    /** Multi-colored Aurora Borealis ribbons (blue/pink/purple/orange). */
     public static boolean auroraRibbons = true;
-    /** Twinkling multi-colored stars. */
     public static boolean twinklingStars = true;
-    /** Night sky comets / shooting stars. */
     public static boolean comets = true;
-    /** Magical colored sparkles (white/pink/purple). */
     public static boolean coloredSparkles = true;
-    /** Underwater god rays and hazy dark blue depth. */
     public static boolean waterGodRays = true;
-    /** End sky purple spiral vortex and reality rip. */
     public static boolean endSkyVortex = true;
-    /** Screen-space shadows & lighting contrast. */
     public static boolean globalShadows = true;
-    /** Enhanced aggressive Wither Storm AI & targeting. */
     public static boolean witherStormEnhancedAi = true;
-    /** NPC natural walking and speaking animations. */
-    public static boolean npcWalkAnimations = true;
-    /** Early Wither Storm MCSM sway/tilt and quick summon look-down snap. */
-    public static boolean stormBodySway = true;
-    /** Endless rear cube/back growth is experimental and grief-heavy; default OFF. */
-    public static boolean infiniteBackGrowth = false;
-    /** Growth speed multiplier for the optional infinite back growth. */
-    public static double infiniteBackGrowthSpeed = 0.10;
-
-    // ---- Iris Shader Pack -------------------------------------------------
-    /** Story Mode accurate vertical sun slab. Disabled by default. */
-    public static boolean storyModeAccurateSunSun = false;
     /**
-     * Experimental self-contained Story Mode studio-stage simulation.
-     * Deliberately opt-in: it changes only the client presentation and never
-     * mutates the saved world or server-side chunk generator while disabled.
+     * Build #374: the giant 3D storm preview in the base config screen.
+     * DEFAULT FALSE = removed (user order: "remove the giant preview in the
+     * config menu"); the console toggle brings it back.
      */
-    public static boolean ENABLE_EXPERIMENTAL_STORY_MODE_STAGE = false;
-
-    /** Ship + auto-install the Devouring Storms Iris shader pack.
-     *  Default OFF after native/GL out-of-memory reports; players can turn it
-     *  back on from Shift+C once the world is stable. */
-    /** 1.9.208: the embedded "MCSM Visual Shader" is the default; the install
-     *  writes the Iris shaderPack= line so it is ACTIVE without any clicks. */
-    public static boolean autoSelectShaderPack = true;
-    public static boolean embeddedShaderPack = true; // 1.9.203: pack installs into shaderpacks/ by default (never auto-selected)
+    public static boolean giantPreviewEnabled = false;
+    public static boolean npcWalkAnimations = true;
+    public static boolean stormBodySway = true;
+    public static boolean infiniteBackGrowth = false;
+    public static double infiniteBackGrowthSpeed = 0.10;
+    /**
+     * Build #374 -- DEFAULT ON. The user's standing order: "on first play the
+     * built-in resource pack and shader pack get summoned/extracted and
+     * applied". With the default false the installer ran in uninstall mode on
+     * every launch (deleted the zip, reset Iris to (internal)) which is why
+     * the game booted into "Loaded Shaderpack: (off) (fallback)". The
+     * panel toggle still lets a player switch it off.
+     */
+    public static boolean embeddedShaderPack = true;
 
     private static boolean loaded = false;
     private static long stamp = -1L;
-    // External config edits are useful, but probing the filesystem from every
-    // render hook is not. One probe per second is enough; in-game changes call
-    // save() and update the live fields immediately.
-    private static long nextProbeNanos = 0L;
 
     private static File file() {
         return new File(new File(System.getProperty("user.dir", "."), "config"), "mcsm_storm_extras.properties");
     }
 
-    /** Write current values back (used by the config-screen rows). */
     public static synchronized void save() {
         try {
             File f = file();
@@ -189,38 +215,67 @@ public final class McsmExtrasConfig {
             Properties p = new Properties();
             p.setProperty("config_version", BUILD_VERSION);
             p.setProperty("enable_tentacle_grab", String.valueOf(enableTentacleGrab));
-            p.setProperty("auto_start_towns", String.valueOf(autoStartTowns));
             p.setProperty("grab_interval_seconds", String.valueOf(grabIntervalSeconds));
             p.setProperty("enable_beacon_storm", String.valueOf(enableBeaconStorm));
             p.setProperty("beacon_cooldown_seconds", String.valueOf(beaconCooldownSeconds));
-            p.setProperty("night_sky_opacity", String.valueOf(nightSkyOpacity));
-            p.setProperty("phase_55_threshold", String.valueOf(phase55Threshold));
-            p.setProperty("phase_5_9_pink_intensity", String.valueOf(phase5_9PinkIntensity));
-            p.setProperty("glare_anim_phase", String.valueOf(glareAnimPhase));
-            p.setProperty("body_anim_pulse", String.valueOf(bodyAnimPulse));
-            p.setProperty("glare_anim_intensity", String.valueOf(glareAnimIntensity));
-            p.setProperty("glare_non_euclidean", String.valueOf(glareNonEuclidean));
-            p.setProperty("cloud_alpha", String.valueOf(cloudAlpha));
-            p.setProperty("cloud_speed", String.valueOf(cloudSpeed));
-            p.setProperty("precipitation_intensity", String.valueOf(precipitationIntensity));
             p.setProperty("enable_rise_fx", String.valueOf(enableRiseFx));
             p.setProperty("spiral_counter_clockwise", String.valueOf(spiralCounterClockwise));
             p.setProperty("enable_beacon_block", String.valueOf(enableBeaconBlock));
             p.setProperty("og_cem_models", String.valueOf(ogCemModels));
             p.setProperty("smudge_scale", String.valueOf(smudgeScale));
+            p.setProperty("debris_movement_direction", String.valueOf(debrisMovementDirection));
+            p.setProperty("force_native_block_debris", String.valueOf(forceNativeBlockDebris));
+            p.setProperty("debris_scale_multiplier", String.valueOf(debrisScaleMultiplier));
+            p.setProperty("purple_coil_scale", String.valueOf(purpleCoilScale));
+            p.setProperty("use_custom_colors", String.valueOf(useCustomColors));
+            p.setProperty("custom_eye_r", String.valueOf(customEyeR));
+            p.setProperty("custom_eye_g", String.valueOf(customEyeG));
+            p.setProperty("custom_eye_b", String.valueOf(customEyeB));
+            p.setProperty("anim_idle_speed", String.valueOf(animIdleSpeed));
+            p.setProperty("anim_roar_intensity", String.valueOf(animRoarIntensity));
+            p.setProperty("native_gloss_sheen", String.valueOf(nativeGlossSheen));
+            p.setProperty("custom_mesh_model", String.valueOf(customMeshModel));
+            p.setProperty("traced_shading_body", String.valueOf(tracedShadingBody));
+            p.setProperty("og_sun_glow", String.valueOf(ogSunGlow));
+            p.setProperty("og_sun_glow_strength", String.valueOf(ogSunGlowStrength));
+            p.setProperty("story_menu_backdrop", String.valueOf(storyMenuBackdrop));
+            p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
+            p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
+            p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
+            p.setProperty("skybox_size", String.valueOf(skyboxSize));
+            p.setProperty("glare_backdrop", String.valueOf(glareBackdrop));
+            p.setProperty("glare_backdrop_size", String.valueOf(glareBackdropSize));
+            p.setProperty("glare_backdrop_strength", String.valueOf(glareBackdropStrength));
+            p.setProperty("sky_pass_cancel", String.valueOf(skyPassCancel));
+            p.setProperty("storm_blur_enabled", String.valueOf(stormBlurEnabled));
+            p.setProperty("storm_blur_size", String.valueOf(stormBlurSize));
+            p.setProperty("storm_blur_strength", String.valueOf(stormBlurStrength));
+            p.setProperty("cinematic_boot_enabled", String.valueOf(cinematicBootEnabled));
+            p.setProperty("world_crack_intro", String.valueOf(worldCrackIntro));
+            p.setProperty("nightglow_body_outline", String.valueOf(nightglowBodyOutline));
+            p.setProperty("nightglow_bluish_glow", String.valueOf(nightglowBluishGlow));
+            p.setProperty("storm_halo_enabled", String.valueOf(stormHaloEnabled));
+            p.setProperty("nightglow_purple_glow55", String.valueOf(nightglowPurpleGlow55));
+            p.setProperty("nightglow_thick_black_glow", String.valueOf(nightglowThickBlackGlow));
+            p.setProperty("end_flashes_phase6", String.valueOf(endFlashesPhase6));
+            p.setProperty("transparent_horizon_wings", String.valueOf(transparentHorizonWings));
+            p.setProperty("ui_border_lines", String.valueOf(uiBorderLines));
             p.setProperty("glare_size", String.valueOf(glareSize));
-            p.setProperty("tentacle_girth", String.valueOf(tentacleGirth));
-            p.setProperty("storm_model_scale", String.valueOf(stormModelScale));
             p.setProperty("aurora_enabled", String.valueOf(auroraEnabled));
-            p.setProperty("shader_pack_gate", String.valueOf(shaderPackGate));
             p.setProperty("death_cinematic", String.valueOf(deathCinematic));
+            p.setProperty("experimental_story_mode_stage", String.valueOf(ENABLE_EXPERIMENTAL_STORY_MODE_STAGE));
+            p.setProperty("auto_select_shader_pack", String.valueOf(autoSelectShaderPack));
+            p.setProperty("auto_start_towns", String.valueOf(autoStartTowns));
+            p.setProperty("phase9_ring_cubes", String.valueOf(phase9RingCubes));
+            p.setProperty("storm_model_scale", String.valueOf(stormModelScale));
+            p.setProperty("storm_rings", String.valueOf(stormRings));
+            p.setProperty("story_mode_accurate_sun", String.valueOf(storyModeAccurateSunSun));
+            p.setProperty("tentacle_girth", String.valueOf(tentacleGirth));
             p.setProperty("supernova_rings", String.valueOf(supernovaRings));
             p.setProperty("smoke_screen", String.valueOf(smokeScreen));
             p.setProperty("purple_sky", String.valueOf(purpleSky));
             p.setProperty("dust_waves", String.valueOf(dustWaves));
             p.setProperty("reality_tear", String.valueOf(realityTear));
-            p.setProperty("obliterate_flash", String.valueOf(obliterateFlash));
-            p.setProperty("obliterate_kick", String.valueOf(obliterateKick));
             p.setProperty("force_mcsm_look", String.valueOf(forceMcsmLook));
             p.setProperty("force_mcsm_world", String.valueOf(forceMcsmWorld));
             p.setProperty("command_wire", String.valueOf(commandWire));
@@ -230,165 +285,91 @@ public final class McsmExtrasConfig {
             p.setProperty("biome_atmospherics", String.valueOf(biomeAtmospherics));
             p.setProperty("nether_red_fog", String.valueOf(netherRedFog));
             p.setProperty("snow_sky_band", String.valueOf(snowSkyBand));
-            p.setProperty("aurora_ribbons", String.valueOf(auroraRibbons));
-            p.setProperty("twinkling_stars", String.valueOf(twinklingStars));
-            p.setProperty("comets", String.valueOf(comets));
-            p.setProperty("colored_sparkles", String.valueOf(coloredSparkles));
-            p.setProperty("water_god_rays", String.valueOf(waterGodRays));
-            p.setProperty("end_sky_vortex", String.valueOf(endSkyVortex));
             p.setProperty("global_shadows", String.valueOf(globalShadows));
             p.setProperty("wither_storm_enhanced_ai", String.valueOf(witherStormEnhancedAi));
-            p.setProperty("npc_walk_animations", String.valueOf(npcWalkAnimations));
-            p.setProperty("storm_body_sway", String.valueOf(stormBodySway));
-            p.setProperty("infinite_back_growth", String.valueOf(infiniteBackGrowth));
-            p.setProperty("infinite_back_growth_speed", String.valueOf(infiniteBackGrowthSpeed));
-            p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
-            p.setProperty("auto_select_shader_pack", String.valueOf(autoSelectShaderPack));
-            p.setProperty("story_mode_accurate_sun_sun", String.valueOf(storyModeAccurateSunSun));
-            p.setProperty("ENABLE_EXPERIMENTAL_STORY_MODE_STAGE", String.valueOf(ENABLE_EXPERIMENTAL_STORY_MODE_STAGE));
-            p.setProperty("debris_always_max", String.valueOf(debrisAlwaysMax));
-            p.setProperty("glacier_flakes", String.valueOf(glacierFlakes));
-            p.setProperty("storm_rings", String.valueOf(stormRings));
-            p.setProperty("phase9_ring_cubes", String.valueOf(phase9RingCubes));
+            p.setProperty("giant_preview_enabled", String.valueOf(giantPreviewEnabled));
             try (OutputStream out = new FileOutputStream(f)) {
-                p.store(out, "MCSM - storm gameplay patches + visuals + gates. config_version below is the build that wrote this file.");
+                p.store(out, "MCSM Devouring Storms Config Version 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338");
             }
             stamp = f.lastModified();
-        } catch (Throwable t) {
-            // ignore; file stays as-is
+        } catch (Throwable ignored) {
         }
     }
 
-    /** Cheap throttled stat; reloads within one second of an external edit. */
     public static synchronized void load() {
         File f = file();
-        long now = System.nanoTime();
         if (loaded) {
-            if (now < nextProbeNanos) {
-                return;
-            }
-            nextProbeNanos = now + 1_000_000_000L;
             long m = f.lastModified();
             if (m == stamp) return;
             stamp = m;
         } else {
-            loaded = true;
-            stamp = f.lastModified();
-            nextProbeNanos = now + 1_000_000_000L;
+            loaded = true; stamp = f.lastModified();
         }
         try {
             Properties p = new Properties();
             if (f.isFile()) {
                 try (InputStream in = new FileInputStream(f)) { p.load(in); }
             } else {
-                // Do not perform synchronous disk I/O from the first render
-                // or server tick just to materialize defaults. The old save()
-                // here was the main avoidable first-world frame spike. Defaults
-                // remain in memory and are persisted only when the player
-                // changes the Extras screen or explicitly calls save().
+                save();
                 return;
             }
             enableTentacleGrab = bool(p, "enable_tentacle_grab", enableTentacleGrab);
-            // Do not resurrect the legacy auto-start value from an existing
-            // config: this is a safety gate, not a player-facing worldgen
-            // preference. Manual /ds towns commands remain available.
-            autoStartTowns     = false;
             grabIntervalSeconds = dbl(p, "grab_interval_seconds", grabIntervalSeconds);
+            witherStormEnhancedAi = bool(p, "wither_storm_enhanced_ai", witherStormEnhancedAi);
+            giantPreviewEnabled = bool(p, "giant_preview_enabled", giantPreviewEnabled);
             enableBeaconStorm  = bool(p, "enable_beacon_storm", enableBeaconStorm);
             beaconCooldownSeconds = dbl(p, "beacon_cooldown_seconds", beaconCooldownSeconds);
             enableRiseFx       = bool(p, "enable_rise_fx", enableRiseFx);
-            spiralCounterClockwise = bool(p, "spiral_counter_clockwise", spiralCounterClockwise);
-            enableBeaconBlock = bool(p, "enable_beacon_block", enableBeaconBlock);
-            String cv = p.getProperty("config_version");
-            ogCemModels        = bool(p, "og_cem_models", ogCemModels);
-            if (cv == null || !BUILD_VERSION.equals(cv.trim())) {
-                ogCemModels = true;
-            }
-            smudgeScale        = dbl(p, "smudge_scale", smudgeScale);
-            glareSize          = dbl(p, "glare_size", glareSize);
-            tentacleGirth      = dbl(p, "tentacle_girth", tentacleGirth);
-            stormModelScale   = dbl(p, "storm_model_scale", stormModelScale);
-            if (cv == null || !BUILD_VERSION.equals(cv.trim())) {
-                // 1.9.201: users on the old too-small defaults get the new
-                // bigger glare unless they explicitly moved the slider.
-                if (Math.abs(glareSize - 1.18) < 0.001 || Math.abs(glareSize - 0.58) < 0.001) {
-                    glareSize = 1.35;
-                }
-            }
-            nightSkyOpacity = dbl(p, "night_sky_opacity", nightSkyOpacity);
-            if ((cv == null || !BUILD_VERSION.equals(cv.trim())) && nightSkyOpacity > 0.85) {
-                // 1.9.200: old defaults over-darkened/re-tinted normal night.
-                nightSkyOpacity = 0.42;
-            }
-            phase55Threshold = dbl(p, "phase_55_threshold", phase55Threshold);
-            phase5_9PinkIntensity = dbl(p, "phase_5_9_pink_intensity", phase5_9PinkIntensity);
-            glareAnimPhase = dbl(p, "glare_anim_phase", glareAnimPhase);
-            bodyAnimPulse = dbl(p, "body_anim_pulse", bodyAnimPulse);
-            glareAnimIntensity = dbl(p, "glare_anim_intensity", glareAnimIntensity);
-            glareNonEuclidean = bool(p, "glare_non_euclidean", glareNonEuclidean);
-            cloudAlpha = dbl(p, "cloud_alpha", cloudAlpha);
-            cloudSpeed = dbl(p, "cloud_speed", cloudSpeed);
-            precipitationIntensity = dbl(p, "precipitation_intensity", precipitationIntensity);
-            auroraEnabled      = bool(p, "aurora_enabled", auroraEnabled);
-            shaderPackGate     = bool(p, "shader_pack_gate", shaderPackGate);
-            // 1.9.208: the shader is the default look now -- never force the
-            // gate off on config migration. Players who want the vanilla
-            // pipeline can still toggle it in the Control Panel.
-            deathCinematic     = bool(p, "death_cinematic", deathCinematic);
-            supernovaRings     = bool(p, "supernova_rings", supernovaRings);
-            smokeScreen        = bool(p, "smoke_screen", smokeScreen);
-            purpleSky          = bool(p, "purple_sky", purpleSky);
-            dustWaves          = bool(p, "dust_waves", dustWaves);
-            realityTear        = bool(p, "reality_tear", realityTear);
-            obliterateFlash    = bool(p, "obliterate_flash", obliterateFlash);
-            obliterateKick     = bool(p, "obliterate_kick", obliterateKick);
-            forceMcsmLook      = bool(p, "force_mcsm_look", forceMcsmLook);
-            forceMcsmWorld     = bool(p, "force_mcsm_world", forceMcsmWorld);
-            commandWire        = bool(p, "command_wire", commandWire);
-            mcsmInstructions   = bool(p, "mcsm_instructions", mcsmInstructions);
-            beaconGlow         = bool(p, "beacon_glow", beaconGlow);
-            portalLights       = bool(p, "portal_lights", portalLights);
-            biomeAtmospherics  = bool(p, "biome_atmospherics", biomeAtmospherics);
-            netherRedFog       = bool(p, "nether_red_fog", netherRedFog);
-            snowSkyBand        = bool(p, "snow_sky_band", snowSkyBand);
-            auroraRibbons      = bool(p, "aurora_ribbons", auroraRibbons);
-            twinklingStars     = bool(p, "twinkling_stars", twinklingStars);
-            comets             = bool(p, "comets", comets);
-            coloredSparkles    = bool(p, "colored_sparkles", coloredSparkles);
-            waterGodRays       = bool(p, "water_god_rays", waterGodRays);
-            endSkyVortex       = bool(p, "end_sky_vortex", endSkyVortex);
-            globalShadows      = bool(p, "global_shadows", globalShadows);
-            witherStormEnhancedAi = bool(p, "wither_storm_enhanced_ai", witherStormEnhancedAi);
-            npcWalkAnimations  = bool(p, "npc_walk_animations", npcWalkAnimations);
-            stormBodySway      = bool(p, "storm_body_sway", stormBodySway);
-            infiniteBackGrowth = bool(p, "infinite_back_growth", infiniteBackGrowth);
-            infiniteBackGrowthSpeed = dbl(p, "infinite_back_growth_speed", infiniteBackGrowthSpeed);
+            debrisMovementDirection = (int) dbl(p, "debris_movement_direction", debrisMovementDirection);
+            forceNativeBlockDebris = bool(p, "force_native_block_debris", forceNativeBlockDebris);
+            debrisScaleMultiplier = dbl(p, "debris_scale_multiplier", debrisScaleMultiplier);
+            purpleCoilScale = dbl(p, "purple_coil_scale", purpleCoilScale);
+            useCustomColors = bool(p, "use_custom_colors", useCustomColors);
+            customEyeR = dbl(p, "custom_eye_r", customEyeR);
+            customEyeG = dbl(p, "custom_eye_g", customEyeG);
+            customEyeB = dbl(p, "custom_eye_b", customEyeB);
+            animIdleSpeed = dbl(p, "anim_idle_speed", animIdleSpeed);
+            animRoarIntensity = dbl(p, "anim_roar_intensity", animRoarIntensity);
+            nightglowBodyOutline = bool(p, "nightglow_body_outline", nightglowBodyOutline);
+            nightglowBluishGlow = bool(p, "nightglow_bluish_glow", nightglowBluishGlow);
+            stormHaloEnabled = bool(p, "storm_halo_enabled", stormHaloEnabled);
+            nativeGlossSheen = bool(p, "native_gloss_sheen", nativeGlossSheen);
+            customMeshModel = bool(p, "custom_mesh_model", customMeshModel);
+            tracedShadingBody = bool(p, "traced_shading_body", tracedShadingBody);
+            ogSunGlow = bool(p, "og_sun_glow", ogSunGlow);
+            ogSunGlowStrength = dbl(p, "og_sun_glow_strength", ogSunGlowStrength);
+            storyMenuBackdrop = bool(p, "story_menu_backdrop", storyMenuBackdrop);
             embeddedShaderPack = bool(p, "embedded_shader_pack", embeddedShaderPack);
+            skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
+            skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
+            skyboxSize = dbl(p, "skybox_size", skyboxSize);
+            glareBackdrop = bool(p, "glare_backdrop", glareBackdrop);
+            glareBackdropSize = dbl(p, "glare_backdrop_size", glareBackdropSize);
+            glareBackdropStrength = dbl(p, "glare_backdrop_strength", glareBackdropStrength);
+            skyPassCancel = bool(p, "sky_pass_cancel", skyPassCancel);
+            stormBlurEnabled = bool(p, "storm_blur_enabled", stormBlurEnabled);
+            stormBlurSize = dbl(p, "storm_blur_size", stormBlurSize);
+            stormBlurStrength = dbl(p, "storm_blur_strength", stormBlurStrength);
+            cinematicBootEnabled = bool(p, "cinematic_boot_enabled", cinematicBootEnabled);
+            worldCrackIntro = bool(p, "world_crack_intro", worldCrackIntro);
+            nightglowPurpleGlow55 = bool(p, "nightglow_purple_glow55", nightglowPurpleGlow55);
+            nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
+            endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);
+            transparentHorizonWings = bool(p, "transparent_horizon_wings", transparentHorizonWings);
+            uiBorderLines = bool(p, "ui_border_lines", uiBorderLines);
+            forceMcsmLook = bool(p, "force_mcsm_look", forceMcsmLook);
+            forceMcsmWorld = bool(p, "force_mcsm_world", forceMcsmWorld);
+            deathCinematic = bool(p, "death_cinematic", deathCinematic);
+            ENABLE_EXPERIMENTAL_STORY_MODE_STAGE = bool(p, "experimental_story_mode_stage", ENABLE_EXPERIMENTAL_STORY_MODE_STAGE);
             autoSelectShaderPack = bool(p, "auto_select_shader_pack", autoSelectShaderPack);
-            storyModeAccurateSunSun = bool(p, "story_mode_accurate_sun_sun", storyModeAccurateSunSun);
-            ENABLE_EXPERIMENTAL_STORY_MODE_STAGE = bool(p, "ENABLE_EXPERIMENTAL_STORY_MODE_STAGE", ENABLE_EXPERIMENTAL_STORY_MODE_STAGE);
-            debrisAlwaysMax    = bool(p, "debris_always_max", debrisAlwaysMax);
-            glacierFlakes      = bool(p, "glacier_flakes", glacierFlakes);
-            stormRings         = bool(p, "storm_rings", stormRings);
-            phase9RingCubes     = integer(p, "phase9_ring_cubes", phase9RingCubes, 30, 100000);
-            if (cv == null || !BUILD_VERSION.equals(cv.trim())) {
-                // 1.9.196 migration: old configs wrote embedded_shader_pack=true,
-                // which kept auto-selecting the heavy Iris pack and caused
-                // GL_OUT_OF_MEMORY/native AllocateHeap crashes. Flip only on
-                // version migration; the player can opt back in afterwards.
-                // 1.9.203: keep the pack INSTALLED by default so the user can
-                // see/select "MCSM Visual Shader" in Iris; selection itself
-                // stays manual (selectIris only writes the pack line on opt-in).
-                embeddedShaderPack = true;
-                // 1.9.208: the shader is the default look. Upgrade migration
-                // flips the gate + auto-select on so existing installs get
-                // the shader without touching anything.
-                shaderPackGate = true;
-                autoSelectShaderPack = true;
-                save();
-            }
-        } catch (Throwable t) {
-            // stay on defaults; never crash the game over a config file
+            autoStartTowns = bool(p, "auto_start_towns", autoStartTowns);
+            phase9RingCubes = (int) dbl(p, "phase9_ring_cubes", phase9RingCubes);
+            stormModelScale = dbl(p, "storm_model_scale", stormModelScale);
+            stormRings = bool(p, "storm_rings", stormRings);
+            storyModeAccurateSunSun = bool(p, "story_mode_accurate_sun", storyModeAccurateSunSun);
+            tentacleGirth = dbl(p, "tentacle_girth", tentacleGirth);
+            supernovaRings = bool(p, "supernova_rings", supernovaRings);
+        } catch (Throwable ignored) {
         }
     }
 
@@ -401,13 +382,20 @@ public final class McsmExtrasConfig {
         try { return Double.parseDouble(p.getProperty(k).trim()); } catch (Throwable t) { return d; }
     }
 
-    private static int integer(Properties p, String k, int d, int lo, int hi) {
-        try {
-            return Math.max(lo, Math.min(hi, Integer.parseInt(p.getProperty(k).trim())));
-        } catch (Throwable t) {
-            return d;
-        }
-    }
+    // ---- re-added on migration from the 7000.0.0-M lineage -----------------
+    // Their config file is the superset (the 1.9.19x option set: cinematic UI,
+    // skybox, glare backdrop, nightglow, animation controller, colour
+    // overrides). These eight belong to our lineage's own code and were
+    // referenced by files that are NOT part of that set, so they come back
+    // verbatim with their persisted keys.
+    public static boolean ENABLE_EXPERIMENTAL_STORY_MODE_STAGE = false;
+    public static boolean autoSelectShaderPack = true;
+    public static boolean autoStartTowns = false;
+    public static int     phase9RingCubes = 10000;
+    public static double  stormModelScale = 1.0;
+    public static boolean stormRings = true;
+    public static boolean storyModeAccurateSunSun = false;
+    public static double  tentacleGirth = 2.8;
 
     private McsmExtrasConfig() {}
 }

@@ -25,5 +25,9 @@ public abstract class McsmHudAttachMixin {
     @Inject(method = "render", at = @At("TAIL"), remap = false)
     private static void dabyws$terminal(GuiGraphicsExtractor g, DeltaTracker delta, CallbackInfo ci) {
         McsmHudTerminal.paint(g, delta);
+        // Build #374: the world-load "cracks apart" sequence + sky shockwaves
+        // ride the same proven per-frame HUD hook.
+        net.mcsm.extras.client.McsmCinematic.tickWorld();
+        net.mcsm.extras.client.McsmCinematic.drawWorldCracks(g, delta);
     }
 }

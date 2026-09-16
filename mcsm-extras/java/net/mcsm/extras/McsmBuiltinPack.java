@@ -33,6 +33,20 @@ public final class McsmBuiltinPack {
         registerBuiltIn("ogs-cem", "OGS CEM preset/model pack");
     }
 
+    /**
+     * Re-run the built-in pack pass on demand (Control Panel action).
+     * register() is idempotent by design so it can be called from any entry
+     * point; this variant clears that latch and re-attempts the shader pack
+     * selection plus both built-in registrations, so a client that missed the
+     * first pass (mod-list order, packs disabled by hand, Iris installed
+     * later) recovers without a restart.
+     */
+    public static void resummon() {
+        attempted = false;
+        register();
+        System.out.println("[ds] built-in packs re-summoned (Story Look + OGS CEM)");
+    }
+
     private static void registerBuiltIn(String packId, String label) {
         try {
             Class<?> loaderCls = Class.forName("net.fabricmc.loader.api.FabricLoader");

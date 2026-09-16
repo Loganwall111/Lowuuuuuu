@@ -1,0 +1,14 @@
+{
+  "ds_btn_hover": {
+    "subtitle": "subtitles.mcsm.button_hover",
+    "sounds": [ "mcsm:ds_btn_hover" ]
+  },
+  "ds_btn_click": {
+    "subtitle": "subtitles.mcsm.button_click",
+    "sounds": [ "mcsm:ds_btn_click" ]
+  },
+  "ds_menu_open": {
+    "subtitle": "subtitles.mcsm.menu_open",
+    "sounds": [ "mcsm:ds_menu_open" ]
+  }
+}

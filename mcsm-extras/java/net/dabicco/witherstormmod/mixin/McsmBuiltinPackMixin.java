@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.dabicco.witherstormmod.DabyWitherStormMod;
 import net.mcsm.extras.McsmBuiltinPack;
+import net.mcsm.extras.McsmUiSounds;
 import net.mcsm.extras.entity.McsmEntities;
 
 /**
@@ -23,5 +24,9 @@ public abstract class McsmBuiltinPackMixin {
         McsmBuiltinPack.register();
         // 1.9.205 -- Story Mode character entity type + attributes.
         McsmEntities.register();
+        // Build #416 -- UI sound events, registered here while the built-in
+        // registries are still open (their lazy registration used to throw and
+        // leave every menu silent).
+        McsmUiSounds.initialize();
     }
 }

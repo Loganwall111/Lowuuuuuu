@@ -75,6 +75,33 @@ public final class McsmHudTerminal {
         float storm = net.dabicco.witherstormmod.client.StormSkyDarken.factor();
         boolean active = storm > 0.04F;
 
+        // --- Image 3 Silver Pixel Border Frame for Gameplay ---
+        if (McsmExtrasConfig.uiBorderLines) {
+            int borderCol = 0xFF8A8A9E; // Silver-gray border
+            int innerCol = 0xFF2A2A38;
+            // Border lines around screen
+            g.fill(0, 0, w, 2, borderCol);
+            g.fill(0, h - 2, w, h, borderCol);
+            g.fill(0, 0, 2, h, borderCol);
+            g.fill(w - 2, 0, w, h, borderCol);
+
+            // Inset lines
+            g.fill(4, 4, w - 4, 5, innerCol);
+            g.fill(4, h - 5, w - 4, h - 4, innerCol);
+            g.fill(4, 4, 5, h - 4, innerCol);
+            g.fill(w - 5, 4, w - 4, h - 4, innerCol);
+
+            // Image 3 L-Shape Pixel Corner Accents
+            g.fill(2, 2, 10, 4, borderCol);
+            g.fill(2, 2, 4, 10, borderCol);
+            g.fill(w - 10, 2, w - 2, 4, borderCol);
+            g.fill(w - 4, 2, w - 2, 10, borderCol);
+            g.fill(2, h - 4, 10, h - 2, borderCol);
+            g.fill(2, h - 10, 4, h - 2, borderCol);
+            g.fill(w - 10, h - 4, w - 2, h - 2, borderCol);
+            g.fill(w - 4, h - 10, w - 2, h - 2, borderCol);
+        }
+
         if (active) {
             int bar = Math.max(14, h / 12);
             g.fill(0, 0, w, bar, 0xFF000000);
@@ -189,6 +216,24 @@ public final class McsmHudTerminal {
         // --- mega-phase 6b: portal glow + the warp entry sequence -----------
         paintPortal(mc, player, g, w, h);
         paintWarp(mc, player, g, w, h);
+
+        // --- Build #375: the Story Mode Console is discoverable in-game -----
+        // A quiet persistent chip (bottom-left) pointing at the 300-tab
+        // framework + texture painter: the user asked for these options to
+        // be visible, not buried.
+        try {
+            net.minecraft.client.gui.Font font = mc.font;
+            if (font != null) {
+                String chip = "⚙ Shift+A — Story Mode Console";
+                int cw = font.width(chip) + 10;
+                int cy = h - 16;
+                g.fill(4, cy - 3, 4 + cw, cy + 11, 0x55060409);
+                g.fill(4, cy - 3, 5, cy + 11, 0x883A2A5A);
+                g.text(font, "§7⚙ §8Shift+A — Story Mode Console", 9, cy, 0xB89FB8E8, false);
+            }
+        } catch (Throwable ignored) {
+            // cosmetic only
+        }
     }
 
     // --- mega-phase 6b state -------------------------------------------------
