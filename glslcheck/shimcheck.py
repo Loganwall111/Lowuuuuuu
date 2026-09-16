@@ -172,6 +172,11 @@ def main():
         ('void_body', {'MCSM_VOID_BODY': '1', 'ALPHA_CUTOUT': '0.1F', 'FOG_MIX': '0.5', 'NO_OVERLAY': '1'}),
         ('void_body_lit', {'MCSM_VOID_BODY': '1', 'ALPHA_CUTOUT': '0.1F', 'FOG_MIX': '0.5', 'NO_OVERLAY': '1', 'STORM_SHADING': '1', 'SUN_X': '0.30', 'SUN_Y': '0.80', 'SUN_Z': '0.50'}),
         ('void_body_rev', {'MCSM_VOID_BODY': '1', 'ALPHA_CUTOUT': '0.1F', 'FOG_MIX': '0.5', 'NO_OVERLAY': '1', 'REVERSE_SHADING': '1'}),
+        # BUILD #416: the body-tethered conic light column draws through a second
+        # storm_glow pipeline that pins the pool to white (MCSM_GLOW_WHITE), so the
+        # atmosphere can never pick up the phase colour of the teeth/eye aura. That
+        # branch has to compile too.
+        ('glow_white', {'MCSM_GLOW_WHITE': '1', 'NO_OVERLAY': '1', 'NO_CARDINAL_LIGHTING': '1'}),
     ]
     for path in cores:
         for tag, defines in combo_sets:

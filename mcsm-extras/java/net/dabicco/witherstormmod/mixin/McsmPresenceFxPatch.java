@@ -131,24 +131,25 @@ public abstract class McsmPresenceFxPatch {
                     * (1.0F - smoothstep(phase, 6.90F, 7.10F));
             float w89 = smoothstep(phase, 6.90F, 7.10F);
 
-            layer(poseStack, collector, GLARE4, haloCentre, view,
-                    bodyRadius * 3.35D, bodyRadius * 2.25D,
-                    w4 * distanceFade * 1.0F);
-            layer(poseStack, collector, GLARE5, haloCentre, view,
-                    bodyRadius * 3.55D, bodyRadius * 2.35D,
-                    w5 * distanceFade * 1.0F);
-            layer(poseStack, collector, GLARE54, haloCentre, view,
-                    bodyRadius * 3.70D, bodyRadius * 2.45D,
-                    w54 * distanceFade * 1.0F);
-            layer(poseStack, collector, GLARE55, haloCentre, view,
-                    bodyRadius * 3.85D, bodyRadius * 2.55D,
-                    w55 * distanceFade * 1.0F);
-            layer(poseStack, collector, GLARE6, haloCentre, view,
-                    bodyRadius * 4.05D, bodyRadius * 2.65D,
-                    w6 * distanceFade * 0.95F);
-            layer(poseStack, collector, GLARE89, haloCentre, view,
-                    bodyRadius * 4.05D, bodyRadius * 2.65D,
-                    w89 * distanceFade * 0.95F);
+            // BUILD #416 -- the giant glare circles are now drawn as CLOUD BLOBS.
+            // Same six phase layers, same cross-fades, same textures -- but each one
+            // is emitted as a small cluster of offset, rotated, anisotropically
+            // scaled lobes that drift slowly instead of as one rigid oval card. The
+            // textures themselves were re-baked as organic blobs by
+            // ci/make_cloud_blobs.py (warped radius, no rim, bright core), so the
+            // shape holds up whether the camera is 300 blocks away or 30.
+            blobLayer(poseStack, collector, GLARE4, haloCentre, view,
+                    bodyRadius * 3.35D, bodyRadius * 2.25D, w4 * distanceFade, 0);
+            blobLayer(poseStack, collector, GLARE5, haloCentre, view,
+                    bodyRadius * 3.55D, bodyRadius * 2.35D, w5 * distanceFade, 1);
+            blobLayer(poseStack, collector, GLARE54, haloCentre, view,
+                    bodyRadius * 3.70D, bodyRadius * 2.45D, w54 * distanceFade, 2);
+            blobLayer(poseStack, collector, GLARE55, haloCentre, view,
+                    bodyRadius * 3.85D, bodyRadius * 2.55D, w55 * distanceFade, 3);
+            blobLayer(poseStack, collector, GLARE6, haloCentre, view,
+                    bodyRadius * 4.05D, bodyRadius * 2.65D, w6 * distanceFade * 0.95F, 4);
+            blobLayer(poseStack, collector, GLARE89, haloCentre, view,
+                    bodyRadius * 4.05D, bodyRadius * 2.65D, w89 * distanceFade * 0.95F, 5);
 
             // The purple/pink oval ring is the older Catalyst Halo that was
             // present in the newer builds. Its width is intentionally larger
@@ -179,17 +180,16 @@ public abstract class McsmPresenceFxPatch {
             // #404: ring card retired -- it read as a concentric artifact
             // floating in the sky; the reference halos are pure soft glare.
             ringWidth = 0.0D; ringHeight = 0.0D; ring = 0.0F;
-            if (phase >= 5.82F) {
-                // second ring card retired as well (#404)
-                // This is the retained white under-halo from the newer asset
-                // set. The texture is black outside its luminous shape, so it
-                // is submitted through the additive glow pipeline rather than
-                // as a translucent dark card.
-                Vec3 under = haloCentre.add(0.0D, -bodyRadius * 0.38D, 0.0D);
-                layer(poseStack, collector, HALO_WHITE, under, view,
-                        bodyRadius * 3.25D, bodyRadius * 2.80D,
-                        smoothstep(phase, 5.82F, 6.18F) * distanceFade * 0.45F);
-            }
+            // BUILD #416 -- the retained white under-halo went too. That oval was
+            // the "flat bottom circle": a horizontal disc locked onto the lower
+            // chassis layers, drawn only from 5.82 up, which read as a sticker
+            // under the body and never followed the storm as it grew. The white
+            // atmosphere is now an INDEPENDENT render path --
+            // McsmHaloSkyRenderer's body-tethered conic light column, which is
+            // tethered to the storm's own coordinates and whose radius, height and
+            // spread angle are recomputed from what the body itself is (see the
+            // growth weld in that class). Nothing white is drawn from this pass any
+            // more, so there is exactly one white layer and it cannot double up.
         }
     }
 
@@ -206,6 +206,82 @@ public abstract class McsmPresenceFxPatch {
             return 10.0D + (phase - 4.0D) * 12.0D;
         }
         return 22.0D + Math.min(phase - 5.0F, 1.99F) * 9.0D;
+    }
+
+    /** Lobes per blob. Five offset lobes is enough to lose the oval silhouette. */
+    private static final int BLOB_LOBES = 5;
+
+    /**
+     * BUILD #416 -- one glare layer as a soft, organic cloud blob.
+     *
+     * The oval assets are drawn through the translucent pipeline, so the shape the
+     * player sees is texture x geometry. The textures no longer have a rim (see
+     * ci/make_cloud_blobs.py), and this is the geometry half of that: the layer is
+     * emitted as BLOB_LOBES lobes, each offset from the centre on its own angle,
+     * each scaled differently and squashed anisotropically, all of it rotating
+     * slowly with the world clock. A rigid circular card can no longer be read
+     * anywhere in the result -- what is left is a drifting mass of soft lobes,
+     * which is what a cloud around a storm should look like.
+     *
+     * The lobes are deliberately deterministic (no RNG): the same layer and lobe
+     * always distort the same way, and only the shared slow roll moves, so the
+     * atmosphere never boils or flickers.
+     */
+    private static void blobLayer(PoseStack poseStack, SubmitNodeCollector collector,
+            Identifier texture, Vec3 centre, Vec3 view,
+            double horizontalRadius, double verticalRadius, float alpha, int layerSeed) {
+        if (alpha <= 0.004F) {
+            return;
+        }
+        long ticks = 0L;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null && mc.level != null) {
+            ticks = mc.level.getGameTime();
+        }
+        // one shared slow roll for the whole blob, plus a per-layer phase offset
+        double spin = ticks * 0.0045D + layerSeed * 1.7D;
+        for (int lobe = 0; lobe < BLOB_LOBES; lobe++) {
+            double angle = spin + lobe * (Math.PI * 2.0D / BLOB_LOBES) + layerSeed * 0.9D;
+            // the centre lobe stays put and carries most of the light; the others
+            // orbit it at a fraction of the radius with their own squash
+            double orbit = lobe == 0 ? 0.0D
+                    : 0.30D + 0.10D * (((lobe * 7 + layerSeed) % 5) / 4.0D);
+            double sx = lobe == 0 ? 0.72D
+                    : 0.52D - 0.07D * (((lobe * 3 + layerSeed) % 3));
+            double sy = sx * (0.86D + 0.10D * (((lobe * 5 + layerSeed) % 4) / 3.0D));
+            double breathe = 1.0D + 0.09D * Math.sin(ticks * 0.01D + lobe * 1.3D);
+            float lobeAlpha = alpha * (lobe == 0 ? 0.52F : 0.22F);
+
+            Vec3 upHint = Math.abs(view.y) > 0.98D
+                    ? new Vec3(1.0D, 0.0D, 0.0D)
+                    : new Vec3(0.0D, 1.0D, 0.0D);
+            Vec3 right = view.cross(upHint).normalize();
+            Vec3 up = right.cross(view).normalize();
+            Vec3 offset = right.scale(Math.cos(angle) * orbit * horizontalRadius * 0.55D)
+                    .add(up.scale(Math.sin(angle) * orbit * verticalRadius * 0.55D));
+
+            quad(poseStack, collector, texture, centre.add(offset),
+                    right.scale(horizontalRadius * sx * breathe),
+                    up.scale(verticalRadius * sy * breathe), lobeAlpha);
+        }
+    }
+
+    /** One textured, camera-facing quad with its basis already scaled. */
+    private static void quad(PoseStack poseStack, SubmitNodeCollector collector,
+            Identifier texture, Vec3 centre, Vec3 right, Vec3 up, float alpha) {
+        int a = Mth.clamp((int) (alpha * 255.0F), 0, 255);
+        if (a <= 2) {
+            return;
+        }
+        RenderType type = texture.equals(HALO_WHITE)
+                ? GlowRenderTypes.glow(texture)
+                : GlowRenderTypes.translucent(texture);
+        collector.submitCustomGeometry(poseStack, type, (pose, consumer) -> {
+            vertex(pose, consumer, centre.subtract(right).subtract(up), 0.0F, 0.0F, a);
+            vertex(pose, consumer, centre.add(right).subtract(up), 1.0F, 0.0F, a);
+            vertex(pose, consumer, centre.add(right).add(up), 1.0F, 1.0F, a);
+            vertex(pose, consumer, centre.subtract(right).add(up), 0.0F, 1.0F, a);
+        });
     }
 
     private static void layer(PoseStack poseStack, SubmitNodeCollector collector,

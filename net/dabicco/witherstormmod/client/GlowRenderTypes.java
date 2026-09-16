@@ -23,6 +23,8 @@ public final class GlowRenderTypes {
    private static RenderPipeline markPipeline;
    private static final Map<Identifier, RenderType> MARK_TYPES = new HashMap();
    private static final Map<Identifier, RenderType> BLOOM_TYPES = new HashMap();
+   private static final Map<Identifier, RenderType> WHITE_TYPES = new HashMap();
+   private static RenderPipeline whitePipeline;
    private static RenderPipeline bloomSourcePipeline;
    private static RenderPipeline erasePipeline;
    private static final Map<Identifier, RenderType> ERASE_TYPES = new HashMap();
@@ -39,6 +41,24 @@ public final class GlowRenderTypes {
       }
 
       return pipeline;
+   }
+
+   /**
+    * BUILD #416 -- the WHITE light pipeline. Same shader, same additive blend and
+    * the same per-pixel falloff as {@link #pipeline()}, but built with
+    * MCSM_GLOW_WHITE, which pins the pool to white instead of the phase band
+    * table. This is what the body-tethered conic ambient light column draws
+    * through: the atmosphere around the storm is white, while the aura around the
+    * teeth and eyes keeps carrying the phase colour. Two pipelines, two jobs,
+    * one shader -- and the define is part of the pipeline's cache key, so the two
+    * can never be confused for one another.
+    */
+   private static RenderPipeline whitePipeline() {
+      if (whitePipeline == null) {
+         whitePipeline = RenderPipeline.builder(new RenderPipeline.Snippet[]{RenderPipelinesAccessor.dabyws$entityEmissiveSnippet()}).withLocation(id("pipeline/storm_glow_white")).withVertexShader(id("core/fogless_entity")).withFragmentShader(id("core/storm_glow")).withShaderDefine("MCSM_GLOW_WHITE").withShaderDefine("NO_OVERLAY").withShaderDefine("NO_CARDINAL_LIGHTING").withColorTargetState(new ColorTargetState(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE, BlendFactor.ZERO, BlendFactor.ONE))).withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false)).withCull(false).build();
+      }
+
+      return whitePipeline;
    }
 
    private static RenderPipeline markPipeline() {
@@ -91,6 +111,11 @@ public final class GlowRenderTypes {
 
    public static RenderType glow(Identifier texture) {
       return (RenderType)TYPES.computeIfAbsent(texture, (tex) -> RenderTypeInvoker.dabyws$create("dabywitherstormmod:storm_glow:" + String.valueOf(tex), RenderSetup.builder(pipeline()).withTexture("Sampler0", tex).createRenderSetup()));
+   }
+
+   /** The white conic light column's material: additive, per-pixel falloff, white-locked. */
+   public static RenderType glowWhite(Identifier texture) {
+      return (RenderType)WHITE_TYPES.computeIfAbsent(texture, (tex) -> RenderTypeInvoker.dabyws$create("dabywitherstormmod:storm_glow_white:" + String.valueOf(tex), RenderSetup.builder(whitePipeline()).withTexture("Sampler0", tex).createRenderSetup()));
    }
 
    private static Identifier id(String path) {

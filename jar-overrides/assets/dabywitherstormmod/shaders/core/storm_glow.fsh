@@ -114,7 +114,17 @@ void main() {
     }
     // The pool carries the aura at nearly full strength now that the vertex
     // colour no longer has to encode it (eyeColor is white: the TEETH).
+    // BUILD #416 -- MCSM_GLOW_WHITE pins the pool to white. This is the CONIC
+    // AMBIENT LIGHT COLUMN: the storm's own atmospheric light, which by mandate
+    // is white and independent of the phase-coloured aura around the teeth and
+    // eyes. Same per-pixel falloff, same 4x gain, same additive blend -- only the
+    // hue is fixed, so the column can never pick up the teeth's phase colour.
+    // The aura keeps the band table below; nothing here touches it.
+#ifdef MCSM_GLOW_WHITE
+    rgb = vec3(1.0);
+#else
     rgb = mix(rgb, band * max(t, 0.60), 0.88);
+#endif
 
     // 4.0x emissive amplification, matching the post pass (final.fsh) so the
     // additive pool and the framebuffer agree on how hot the mouth is. The gain

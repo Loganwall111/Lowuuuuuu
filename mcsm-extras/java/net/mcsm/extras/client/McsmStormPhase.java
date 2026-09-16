@@ -3,6 +3,7 @@ package net.mcsm.extras.client;
 import net.dabicco.witherstormmod.client.ClientDistantStormManager;
 import net.dabicco.witherstormmod.client.StormSkins;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 
 /**
  * BUILD #416 -- THE WitherStormPhase FEED.
@@ -84,6 +85,60 @@ public final class McsmStormPhase {
                 | (clamp255(horizonR) << 16)
                 | (clamp255(horizonG) << 8)
                 | clamp255(horizonB);
+    }
+
+    // ------------------------------------------------------------------
+    // BUILD #416 -- the storm's SIZE model, in one place.
+    //
+    // The halo, the atmosphere and the body all have to agree on how big the
+    // storm is at a given moment; three private copies of a body-radius curve is
+    // how a halo ends up hanging off a body that outgrew it. These are the
+    // numbers everything tethering to the storm reads.
+    // ------------------------------------------------------------------
+
+    /** 0.0 at the phase-4.45 onset, 1.0 at phase 8.05: the storm's own growth ramp. */
+    public static float growth(float p) {
+        return Mth.clamp((p - PHASE_MIN) / (PHASE_MAX - PHASE_MIN), 0.0F, 1.0F);
+    }
+
+    /** Half-width of the body cluster in blocks. */
+    public static double bodyRadius(float p) {
+        if (p < 5.0F) {
+            return 12.0D + Math.max(0.0F, p - PHASE_MIN) * 4.0D;
+        }
+        if (p < 6.0F) {
+            return 18.0D + 22.0D * (p - 5.0F);
+        }
+        return Math.min(340.0D, 40.0D + 30.0D * (p - 6.0F));
+    }
+
+    /**
+     * Top of the storm's silhouette in blocks -- past the top tentacle
+     * attachments, which is where the light column has to reach.
+     */
+    public static double bodyHeight(float p) {
+        return bodyRadius(p) * (2.05D + 0.55D * growth(p));
+    }
+
+    /**
+     * The ENTITY's own scale multiplier, on top of the phase ramp. The storm
+     * grows in two independent ways: the scripted phase stages, and the number of
+     * heads it currently has attached (every attached head drags the cluster
+     * wider and taller). Read live, so a severed head visibly pulls the light
+     * column in instead of leaving it inflated around empty air.
+     */
+    public static float scaleMultiplier(float p, int activeHeads) {
+        float heads = Mth.clamp((activeHeads - 2) / 4.0F, 0.0F, 1.0F);
+        return 1.0F + 0.55F * growth(p) + 0.20F * heads;
+    }
+
+    /**
+     * Half-angle of the conic light column, in degrees. It OPENS as the storm
+     * grows: a phase-5 column is a near-cylinder hugging the body, a phase-8
+     * column is a wide cone because the silhouette it has to wrap is wider.
+     */
+    public static double columnHalfAngleDeg(float p) {
+        return 9.0D + 13.0D * growth(p);
     }
 
     /** The phase this build's colour tables are keyed on. */
