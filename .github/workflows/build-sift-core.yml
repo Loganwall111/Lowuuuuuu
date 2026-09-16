@@ -41,8 +41,22 @@ jobs:
         run: python3 sift-core/tools/validate.py
 
       - name: Compile and package Sift-Core
-        working-directory: sift-core
-        run: gradle --no-daemon --stacktrace build
+        run: |
+          set +e
+          gradle --no-daemon --console=plain --stacktrace -p sift-core build 2>&1 \
+            | tee "$GITHUB_WORKSPACE/sift-core/gradle-ci.log"
+          rc=${PIPESTATUS[0]}
+          exit "$rc"
+
+      - name: Expose Gradle diagnostics
+        if: failure()
+        run: |
+          if [ -f sift-core/gradle-ci.log ]; then
+            tail -120 sift-core/gradle-ci.log | while IFS= read -r line; do
+              line=${line:0:900}
+              echo "::error title=Sift-Core Gradle::$line"
+            done
+          fi
 
       - name: Upload standalone jar and reports
         if: always()
@@ -52,4 +66,5 @@ jobs:
           path: |
             sift-core/build/libs/*.jar
             sift-core/build/reports/**
+            sift-core/gradle-ci.log
           if-no-files-found: warn
