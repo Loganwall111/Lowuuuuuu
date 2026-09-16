@@ -11,7 +11,7 @@
 > deep-scan disassembly in ci/api/scan/. Track B (with source): full fork.
 
 
-**As of 1.9.112.** What is actually in the released jar, what only half-exists,
+**As of 7000.0.0-M (#416).** What is actually in the released jar, what only half-exists,
 what was never built, and what belongs to Dabicco's mod (which our overlay
 cannot fix from inside). Evidence column cites the player's own screenshots or
 the chat lines our code prints.
@@ -79,7 +79,7 @@ Legend:
 
 | Feature | Status | Notes |
 |---|---|---|
-| Holographic terminal / sidebar HUD ("hotbar still centred") | **NOT BUILT** | no HUD render code exists; repeatedly requested, still queued |
+| Holographic terminal / sidebar HUD ("hotbar still centred") | **LIVE (built in #416)** | no longer queued: `net.mcsm.extras.client.McsmHudTerminal` (593 lines) is the sidebar console -- chapter-coloured, storm-phase read-out, live head count, distance, siege and bowels state, fed by `ClientDistantStormManager` + `StormSkyDarken`. Attached through `McsmHudAttachMixin` over the base `StormAtmosphereOverlay`. |
 | Pilot-the-storm | **NOT BUILT** | discussed only |
 | Custom tentacle-attack visuals beyond the grab cadence | **NOT BUILT** | we trigger THEIR slam; no new attack animations of our own |
 | Shadows as our own feature | **NOT BUILT** | only the gate forcing their config field (see §1) |
@@ -94,6 +94,26 @@ Legend:
 | Town NPC population slider | **DABICCO-SIDE** | their world config; towns themselves are world-gen, cannot be retro-generated into an existing world by Force MCSM World |
 | Storm phases/growth, spawn animation, tractor beams | **DABICCO-SIDE** | their entity code; we hook around it |
 
+## 5b. The "mystery content" question, answered plainly (Build #416, mandate D.7)
+
+The user asked for several features to be found and restored: a decayed-reality
+dimension, a ghost whale, reality-glitch hallucinations, spreading withered
+blocks, abandoned structures, shockwave/cinematic-smoke particles. Here is what
+an exhaustive search actually found, so nobody looks again:
+
+| Asked for | Verdict | Evidence |
+|---|---|---|
+| Decayed-reality dimension | **NEVER IN THIS MOD** | every `Registries.DIMENSION` key in the tree resolves to `dabywitherstormmod:bowels` (Dabicco's dimension, `data/dabywitherstormmod/dimension/bowels.json`). No second dimension, no `decayed`/`reality` resource, in the working tree, the full local history (`git log --all -S"decayed"`: no hits) or the pre-migration branch. |
+| Ghost whale | **NEVER IN THIS MOD** | no source, asset, model, sound or lang key anywhere (`git log --all -S"whale"`, `git grep`, jar resource list: no hits). Not in the sibling repos either: `Loganwall111/ggggrff` (Blockbench asset dump), `stuff` ("Minecraft Story Mode In Minecraft.zip"), `mcsm` / `use-this-mod-instead` (README-only) and `mass-awakening-` (empty repo) contain no whale content. |
+| Reality-glitch hallucinations | **NOT BUILT (closest existing: our reality tear)** | `McsmFxDriver` implements the post-death reality tear + recovery (`realityTear`, ON by default) and #416 shipped the cool-white death cinematic, but there is no glitch/hallucination pass. |
+| Spreading withered blocks | **DABICCO-SIDE, and it is ON** | `net.dabicco.witherstormmod.entity.withered.WitheredBlockEntity` + `WitheredMobs` are the base mod's; our gate *raises* the corrupter limits (`witheredMobs` >= 1, `witheredMax` >= 32, `witheredMaxCaves` >= 16 in `McsmGate`). If a world still shows no spread, the source is the base mod's own world config, not our overlay. |
+| Abandoned structures | **LIVE** | 33 schematics ship in the jar (`ci/api/scan/jar-schematics.txt`); `/ds towns list/build/start/tp/status` drives Dabicco's builder with coordinates. The "abandoned" feel is the storm-damaged state, not missing code. |
+| Shockwave / cinematic smoke | **LIVE** | `supernovaRings` (phase-4 rise, phase-7 rise, death) and `smokeScreen` (skull-impact grey ground smoke + sparks) are ON by default in `McsmExtrasConfig`. |
+
+Conclusion: the three "missing" mysteries were never code in this mod -- they
+belong to a separate project the user is remembering. They can be BUILT here,
+but they cannot be *restored* from a branch that never had them.
+
 ## 6. Infrastructure (ours)
 
 | Feature | Status | Notes |
@@ -103,6 +123,9 @@ Legend:
 | Forced particle delivery (32-block cull bypass) | **LIVE** | the 1.9.109 root-cause fix |
 | Shader Pack Gate toggle (hand `ShaderPackCompat.active()` back to the mod) | **LIVE** | 1.9.111; panel column 2 row 13 — the A/B lever for presets |
 | Gate value memory (presets survive; explicit re-apply button) | **LIVE (new in 1.9.112)** | unverified in-game until the user tests it |
+| Revamped UI (main menu, loading, pause, logo intro, screen reskins) | **LIVE (new in #416)** | ported from `arena/01a09c3d-lowuuuuuu`: `McsmCinematic` boot cutscene, `McsmTitleOverhaulMixin`, `McsmScreenReskinMixin`, `McsmLoadingPauseReskinMixin`, `McsmLogoIntroMixin`, `McsmStormMenuScene` (draggable 3D storm on the menu). Restored in the same build: the main-menu panorama (#375 deleted it) and the menu's own click/hover/open sounds. |
+| UI audio | **LIVE (new in #416)** | `mcsm:ds_btn_hover|ds_btn_click|ds_menu_open`, Ogg Vorbis, registered at mod init (a WAV + lazy registration meant the menus were silent before), applied to every widget through `McsmButtonSoundHookMixin` + `McsmScreenOpenSoundMixin`. |
+| Console entry point | **LIVE (new in #416)** | one entry, reserved top-right slot in the base console (it used to be a scrollable row that could sit invisibly over the bottom bar and re-open the panel on any click); closing the panel lands in gameplay, never back in the console. |
 
 ---
 
