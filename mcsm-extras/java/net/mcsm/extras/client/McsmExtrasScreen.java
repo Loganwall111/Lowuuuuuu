@@ -411,6 +411,15 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyFloorBand = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #438 -- the body stops being colourless.
+          .bool("Body Wears the Phase Colour", () -> McsmExtrasConfig.phaseTintedBody, v -> {
+              McsmExtrasConfig.phaseTintedBody = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Body Phase Tint (0 = the old grey, 1 = the sky's hue)", () -> McsmExtrasConfig.bodyPhaseTint, v -> {
+              McsmExtrasConfig.bodyPhaseTint = v;
+              McsmExtrasConfig.save();
+          }, 0.0, 1.0)
           .act("Give the Rift Key + a starter kit", () -> net.mcsm.extras.McsmReality.giveStarterKit());
         categories.add(c9);
 

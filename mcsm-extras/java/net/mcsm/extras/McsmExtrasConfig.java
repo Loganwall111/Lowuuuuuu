@@ -122,6 +122,16 @@ public final class McsmExtrasConfig {
      * with no shader pack installed.
      */
     public static boolean skyFloorBand = true;
+    /** BUILD #438 -- the body wears the live phase's own hue, not a fixed grey. */
+    public static boolean phaseTintedBody = true;
+    /**
+     * BUILD #438 -- how far the body's vertex multiplier is eased from #404's
+     * dark neutral (0x948F8A) toward the phase's reference colour. 0 restores
+     * the old colourless charcoal; 1 borrows the sky's hue outright. The
+     * brightness is unchanged either way, so the traced body stays as dark as
+     * the stage sheets.
+     */
+    public static double bodyPhaseTint = 0.45;
     /** Reality creatures: the new hostile spawns (phase 3). */
     public static boolean realityCreatures = true;
     /** Story Mode quest + lore layer: dialogue, objectives, chapter log. */
@@ -407,6 +417,8 @@ public final class McsmExtrasConfig {
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
             p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
+            p.setProperty("phase_tinted_body", String.valueOf(phaseTintedBody));
+            p.setProperty("body_phase_tint", String.valueOf(bodyPhaseTint));
             p.setProperty("reality_creatures", String.valueOf(realityCreatures));
             p.setProperty("story_quests", String.valueOf(storyQuests));
             p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
@@ -538,6 +550,8 @@ public final class McsmExtrasConfig {
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
+            phaseTintedBody = bool(p, "phase_tinted_body", phaseTintedBody);
+            bodyPhaseTint = dbl(p, "body_phase_tint", bodyPhaseTint);
             realityCreatures = bool(p, "reality_creatures", realityCreatures);
             storyQuests = bool(p, "story_quests", storyQuests);
             embeddedShaderPack = bool(p, "embedded_shader_pack", embeddedShaderPack);

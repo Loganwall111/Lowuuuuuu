@@ -1756,6 +1756,34 @@ def main():
                   or ("import net.dabicco.witherstormmod.%s;" % name) in boot
                   for name in sorted(boots)))
 
+    # ------------------------------------------------------------------
+    # BUILD #438 -- THE BODY STOPS BEING COLOURLESS.
+    #
+    # "phase 0 ... it's in black and white" and "the colours haven't really
+    # changed at all". The body's vertex multiplier was a fixed NEUTRAL
+    # (0x948F8A: r, g and b within seven of each other), so the pink of phase 6,
+    # the amethyst of 5.5 and the teal of 5 all arrived on the model as the same
+    # grey. A neutral multiplier cannot carry a hue.
+    # ------------------------------------------------------------------
+    body = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBodyNeutralTintMixin.java") or ""
+
+    check("the body's tint carries the live phase's hue, not a fixed grey",
+          "int tint = NEUTRAL;" in body
+          and "net.mcsm.extras.client.McsmStormPhase.columnFor((float) phase, 1.0F)" in body
+          and "tint = 0xFF000000 | (r << 16) | (g << 8) | b;" in body
+          and "cir.setReturnValue(tint);" in body)
+    check("it keeps #404's brightness, and the neutral stands below the storm's onset",
+          "float gain = 0.580F / max;" in body
+          and "private static final int NEUTRAL = 0x948F8A;" in body
+          and "phase >= net.mcsm.extras.client.McsmStormPhase.PHASE_MIN" in body)
+    check("it is switchable and tunable from the panel",
+          "public static boolean phaseTintedBody = true;" in cfg
+          and "public static double bodyPhaseTint = 0.45;" in cfg
+          and 'p.setProperty("body_phase_tint", String.valueOf(bodyPhaseTint));' in cfg
+          and 'bodyPhaseTint = dbl(p, "body_phase_tint", bodyPhaseTint);' in cfg
+          and "Body Wears the Phase Colour" in extras
+          and "Body Phase Tint (0 = the old grey, 1 = the sky's hue)" in extras)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)
