@@ -78,11 +78,6 @@ public final class McsmNativeSkyRenderer {
             state.shouldRenderDarkDisc = false;
             state.skyColor = decayedSkyArgb(p);
             state.sunriseAndSunsetColor = state.skyColor;
-        // Stars come back as the storm loses its grip on the sky, which is what
-        // a night-time fade should look like.
-        if (reach < 0.999F) {
-            state.starBrightness = Math.min(1.0F, state.starBrightness + (1.0F - reach));
-        }
             state.starBrightness = 0.0F;
             state.rainBrightness = 0.0F;
             return;
@@ -126,6 +121,11 @@ public final class McsmNativeSkyRenderer {
         // the gradient in place it can only draw a band, so it is pinned to the
         // same horizon colour.
         state.sunriseAndSunsetColor = state.skyColor;
+        // BUILD #416 (D.8): stars come back as the storm loses its grip on the
+        // sky, which is what a night-time fade back to vanilla should look like.
+        if (reach < 0.999F) {
+            state.starBrightness = Math.min(1.0F, state.starBrightness + (1.0F - reach));
+        }
     }
 
 

@@ -908,6 +908,14 @@ def main():
           "McsmSkyReach.influence()" in code_only(sky2)
           and "McsmSkyReach.mix(state.skyColor" in code_only(sky2)
           and "ownsSky = false;   // pure vanilla sky" in sky2)
+    # run 495: the decayed-reality branch referenced the storm branch's local
+    # `reach` before it was declared. The decayed block must not mention it.
+    decayed_block = ""
+    if "if (decayed) {" in sky2:
+        decayed_block = sky2[sky2.index("if (decayed) {"):]
+        decayed_block = decayed_block[:decayed_block.index("\n        }")]
+    check("the decayed-reality sky branch does not borrow the storm branch's locals",
+          "reach" not in code_only(decayed_block))
 
     stage = read("ci/apply_stage_palette.py") or ""
     check("the supplied stage sheets are applied as the storm's palette",
