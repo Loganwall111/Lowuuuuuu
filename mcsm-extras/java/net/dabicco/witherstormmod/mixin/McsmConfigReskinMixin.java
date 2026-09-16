@@ -221,16 +221,28 @@ public abstract class McsmConfigReskinMixin {
         if (tagX + font.width(tag) < entryLeft) {
             g.text(font, tag, tagX, 14, 0xFF7F6FA0, false);
         }
-        // accent underline beneath the active tab (active==false marks it)
+        // accent underline beneath the active tab (active==false marks it).
+        // Build #416 -- it breathes: the console had no motion of its own, so a
+        // static rail read as a screenshot next to the animated title screen.
+        // A slow pulse on the underline plus a travelling highlight on the
+        // header rule is enough to make the screen feel alive without moving
+        // any widget (the layout must stay fixed to stay overlap-free).
+        float pulse = (float) (Math.sin(System.currentTimeMillis() * 0.0032D) * 0.5D + 0.5D);
+        int underlineA = 0x99 + (int) (pulse * 0x66);
         for (Object child : self.children()) {
             if (!(child instanceof AbstractButton ab) || ab.getMessage() == null) {
                 continue;
             }
             String s = ab.getMessage().getString();
             if (dabyws$isTab(s) && !ab.active) {
-                g.fill(ab.getX(), 52, ab.getX() + ab.getWidth(), 54, 0xFFB9A6E8);
+                g.fill(ab.getX(), 52, ab.getX() + ab.getWidth(), 54,
+                        (underlineA << 24) | 0xB9A6E8);
             }
         }
+        // travelling highlight along the header rule
+        int sweepW = Math.max(60, w / 6);
+        int sweepX = (int) ((System.currentTimeMillis() / 12L) % (w + sweepW)) - sweepW;
+        g.fill(Math.max(EDGE, sweepX), 57, Math.min(w - EDGE, sweepX + sweepW), 58, 0x6633E1FF);
 
         // Image 3 Silver Pixel Border Frame
         if (McsmExtrasConfig.uiBorderLines) {
