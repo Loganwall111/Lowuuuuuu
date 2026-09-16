@@ -103,7 +103,6 @@ public final class McsmMassg {
     private static final List<UUID> GHOSTS = new ArrayList<>();
     /** Per-player throttle for the voice, the flicker and the hallucinations. */
     private static final Map<UUID, Long> LAST_VOICE = new ConcurrentHashMap<>();
-    private static final Map<UUID, Long> LAST_SKY = new ConcurrentHashMap<>();
 
     /**
      * THE COUNTDOWN'S WIRE. The MASSG's custom name is not decoration: it is the
@@ -377,19 +376,21 @@ public final class McsmMassg {
                 if (distance > REACH * 2.0D) {
                     continue;
                 }
-                // strange music, slow and wrong, for everyone who can see it
+                // strange music, slow and wrong, for everyone who can see it.
+                // BUILD #501 FIX: played through the level, because the sound
+                // constants are registry references on this classpath and
+                // Entity.playSound wants the bare event -- the level overload
+                // takes the reference exactly as declared. (The old
+                // client-packet line below this that pushed the sky count is
+                // gone with the packet channel: the count rides in the
+                // creature's own synced name, which McsmMassgSky reads.)
                 if (time % 240L == 0L) {
-                    player.playSound(SoundEvents.AMBIENT_CAVE, 1.8F, 0.35F);
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            SoundEvents.AMBIENT_CAVE, SoundSource.NEUTRAL, 1.8F, 0.35F);
                 }
                 if (time % 300L == 0L) {
-                    player.playSound(SoundEvents.END_PORTAL_SPAWN, 0.9F, 0.5F);
-                }
-                // colour glitches + screen flicker: the client draws these from
-                // the "sky" packet below, so both sides agree on the same number
-                Long lastSky = LAST_SKY.get(player.getUUID());
-                if (lastSky == null || time - lastSky.longValue() > 40L) {
-                    LAST_SKY.put(player.getUUID(), Long.valueOf(time));
-                    McsmTerminal.sendSky(player, counter(level), skyLine(player, distance));
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 0.9F, 0.5F);
                 }
                 // IT IMITATES YOU: it answers in your own name.
                 Long lastVoice = LAST_VOICE.get(player.getUUID());

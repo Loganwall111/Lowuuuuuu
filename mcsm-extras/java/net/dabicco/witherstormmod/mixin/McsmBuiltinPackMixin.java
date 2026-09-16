@@ -9,6 +9,8 @@ import net.dabicco.witherstormmod.DabyWitherStormMod;
 import net.mcsm.extras.McsmBuiltinPack;
 import net.mcsm.extras.McsmBlackHole;
 import net.mcsm.extras.McsmCities;
+import net.mcsm.extras.McsmMassg;
+import net.mcsm.extras.McsmTerminal;
 import net.mcsm.extras.McsmCreatures;
 import net.mcsm.extras.McsmTornadoes;
 import net.mcsm.extras.McsmContent;
@@ -58,10 +60,9 @@ public abstract class McsmBuiltinPackMixin {
         McsmTornadoes.register();
         // Build #416 (D.8, phase 5) -- the story terminal: the antenna's
         // restricted console, the radio signals it picks up, the password the
-        // world keeps for itself. Both payload types are registered here (this
-        // is the only window in which a payload type may be registered) and the
-        // receiver lives on the server side, so the code can never be read off
-        // the client.
+        // world keeps for itself. It owns no packet channel any more (the
+        // client screen and the world action are wired locally / by name), so
+        // this is a plain server tick registration, not a payload registry.
         McsmTerminal.register();
         // Build #416 (D.8, phase 6) -- THE MASSG. The creature that cannot be
         // killed and cannot be deleted, its hallucinations, and the countdown it

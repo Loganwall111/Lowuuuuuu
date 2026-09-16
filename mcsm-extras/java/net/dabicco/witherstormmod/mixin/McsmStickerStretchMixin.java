@@ -75,16 +75,15 @@ public abstract class McsmStickerStretchMixin {
             Vec3 rx = right.scale(half * 1.15D);
             Vec3 uy = up.scale(half);
             Vec3 low = up.scale(-half * stretch);
-            Vec3 mid = Vec3.ZERO;
             collector.submitCustomGeometry(poseStack, type, (pose, consumer) -> {
                 // the upper half: exactly the sheet's top, unmoved
                 vertex(pose, consumer, at.subtract(rx).add(uy), 0.0F, 0.0F, a);
                 vertex(pose, consumer, at.add(rx).add(uy), 1.0F, 0.0F, a);
-                vertex(pose, consumer, at.add(rx).add(mid), 1.0F, 0.5F, a);
-                vertex(pose, consumer, at.subtract(rx).add(mid), 0.0F, 0.5F, a);
+                vertex(pose, consumer, at.add(rx), 1.0F, 0.5F, a);
+                vertex(pose, consumer, at.subtract(rx), 0.0F, 0.5F, a);
                 // the stretched half: same rows, many times the height
-                vertex(pose, consumer, at.subtract(rx).add(mid), 0.0F, 0.5F, a);
-                vertex(pose, consumer, at.add(rx).add(mid), 1.0F, 0.5F, a);
+                vertex(pose, consumer, at.subtract(rx), 0.0F, 0.5F, a);
+                vertex(pose, consumer, at.add(rx), 1.0F, 0.5F, a);
                 vertex(pose, consumer, at.add(rx).add(low), 1.0F, 1.0F, a);
                 vertex(pose, consumer, at.subtract(rx).add(low), 0.0F, 1.0F, a);
             });
