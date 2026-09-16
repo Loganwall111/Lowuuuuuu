@@ -104,6 +104,60 @@ public final class McsmTeethPhaseTint {
         return c;
     }
 
+    /**
+     * The pupil / emitter cube that floats above each mouth: MAGENTA in every
+     * phase. The reference frames keep it constant while everything else about
+     * the mouth shifts, so it is a fixed colour rather than a track, and it is
+     * single-sourced here so our own emitters and the model agree.
+     */
+    public static final int PUPIL_R = 232;
+    public static final int PUPIL_G = 40;
+    public static final int PUPIL_B = 255;
+
+    /**
+     * THE EYE TRACK -- the glow on the eye lenses and their bloom layers.
+     *
+     * This is the "purple" the reference frames show at the eyes: a magenta
+     * pupil with a violet lens glow under the white crescents. It is a SEPARATE
+     * track from the teeth on purpose -- BUILD #416 fix. The base renderer
+     * derives the eye tint from the beam colour (purple #8C26FF, bluish through
+     * phase 6) and lifts it to full brightness, which is what the show does;
+     * our exact-tint mixin was collapsing it onto the teeth colour instead, so
+     * the eyes had gone white and lost their glow.
+     *
+     * Rows: 4 violet / 5 pale violet / 5.2 magenta / 6 bluish violet /
+     * 7 magenta / 8 blue violet.
+     */
+    private static final float[][] EYE_TRACK = {
+        { 0.55F, 0.80F, 1.00F },  // phase 3-  (no glow; row kept for indexing)
+        { 0.62F, 0.42F, 1.00F },  // phase 4   violet
+        { 0.86F, 0.72F, 1.00F },  // phase 5   pale violet
+        { 0.84F, 0.24F, 1.00F },  // phase 5.2 magenta
+        { 0.48F, 0.42F, 1.00F },  // phase 6   bluish violet (beam is bluish here)
+        { 0.86F, 0.26F, 1.00F },  // phase 7   magenta (the frames keep it magenta)
+        { 0.36F, 0.52F, 1.00F },  // phase 8   blue violet
+    };
+
+    /** The eye glow right now, cross-faded on the aura's own boundaries. */
+    public static float[] eye(double phase) {
+        if (phase < 4.0D) {
+            return new float[]{0.0F, 0.0F, 0.0F};
+        }
+        float[] c = {EYE_TRACK[1][0], EYE_TRACK[1][1], EYE_TRACK[1][2]};   // violet
+        toward(c, EYE_TRACK[2], ramp(phase, 4.92D, 5.00D));                // pale violet
+        toward(c, EYE_TRACK[3], ramp(phase, 5.15D, 5.25D));                // magenta
+        toward(c, EYE_TRACK[4], ramp(phase, 5.85D, 6.00D));                // bluish violet
+        toward(c, EYE_TRACK[5], ramp(phase, 6.90D, 7.05D));                // magenta
+        toward(c, EYE_TRACK[6], ramp(phase, 7.90D, 8.00D));                // blue violet
+        return c;
+    }
+
+    /** The eye glow right now, packed ARGB -- for our own emitters. */
+    public static int eyeArgb() {
+        float[] e = eye(nearestPhase());
+        return rgb(e[0], e[1], e[2]);
+    }
+
     private static void toward(float[] c, float[] target, float w) {
         float t = Math.max(0.0F, Math.min(1.0F, w));
         for (int i = 0; i < 3; i++) {
@@ -142,12 +196,20 @@ public final class McsmTeethPhaseTint {
         return rgb(t[0], t[1], t[2]);
     }
 
-    /** Packed full-bright ARGB used by the exact native eye hook. */
+    /**
+     * Packed full-bright ARGB used by the exact native eye hook.
+     *
+     * BUILD #416 fix: this used to return the TEETH track, so the moment the
+     * teeth went white the eyes went white with them and the show's violet eye
+     * glow disappeared. The eyes use the EYE track, lifted like the base
+     * renderer lifts the beam colour so the lenses still read as emitters.
+     */
     public static int eyeTintArgb() {
-        // Dedicated eyes stay on RenderType.eyes and use the same phase track
-        // as the teeth, without inheriting world light or shadow attenuation.
-        float[] t = track(nearestPhase());
-        return rgb(t[0], t[1], t[2]);
+        float[] e = eye(nearestPhase());
+        float mx = Math.max(0.001F, Math.max(e[0], Math.max(e[1], e[2])));
+        float lift = 0.94F / mx;
+        return rgb(Math.min(1.0F, e[0] * lift), Math.min(1.0F, e[1] * lift),
+                Math.min(1.0F, e[2] * lift));
     }
 
     private static int rgb(float r, float g, float b) {

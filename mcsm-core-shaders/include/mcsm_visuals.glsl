@@ -902,12 +902,25 @@ float mcsm_mouth_mask(vec3 c) {
 // the anti-aliased edge of each tooth) takes the aura colour, which is what
 // reads as "white teeth with a bluish aura" in the reference frames.
 vec3 mcsm_mouth_emissive(vec3 c, float p) {
-    float m = mcsm_mouth_mask(c);
+    float mask = mcsm_mouth_mask(c);
     float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    float mx = max(max(c.r, c.g), c.b);
+    float mn = min(min(c.r, c.g), c.b);
+    // BUILD #416 -- DO NOT BLEACH THE EYES. The eye lenses are already a
+    // saturated violet when they reach this path (white texture x the phase
+    // eye tint), and snapping them onto the teeth band would drain the purple
+    // out of them. An emitter pixel that is saturated AND mid-bright is the
+    // eye, and is left exactly as it is; the teeth are white/grey, so their
+    // saturation is near zero and they are always caught by the snap.
+    float sat = mx > 1.0e-4 ? (mx - mn) / mx : 0.0;
+    float eyeLike = smoothstep(0.35, 0.55, sat) * (1.0 - smoothstep(0.88, 1.0, lum));
+    float m = mask * (1.0 - eyeLike);
     float core = smoothstep(0.72, 0.98, lum);
     vec3 band = mix(mcsm_aura_color(p), mcsm_teeth_color(p), core);
-    // snap the emissive coordinates onto the band, then amplify 4.0x
-    return mix(c, band * max(max(c.r, c.g), c.b), m) * (1.0 + (MCSM_MOUTH_GAIN - 1.0) * m);
+    // snap the emissive coordinates onto the band, then amplify 4.0x. The
+    // amplification still applies to the eye (it is emitted light), only the
+    // hue snap is skipped for it.
+    return mix(c, band * mx, m) * (1.0 + (MCSM_MOUTH_GAIN - 1.0) * mask);
 }
 
 // ------------------------------------------------------------- attachments

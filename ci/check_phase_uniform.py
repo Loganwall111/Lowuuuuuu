@@ -69,6 +69,8 @@ AURA_CONSUMERS = [
 ]
 JAVA_RESOLVER = "mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java"
 JAVA_SKY_HOOK = "mcsm-extras/java/net/mcsm/extras/client/McsmNativeSkyRenderer.java"
+# The teeth/eye/aura tracks live with the tint feed, not with the sky resolver.
+JAVA_TINT = "mcsm-extras/java/net/mcsm/extras/client/McsmTeethPhaseTint.java"
 
 
 def read(rel):
@@ -171,6 +173,32 @@ def main():
         for m in re.finditer(r"mcsm_mouth_color\([^)]*\)\s*\*", text):
             offenders.append("%s: %s" % (os.path.basename(rel), m.group(0)))
     check("teeth are not multiplied by a phase colour", not offenders, "; ".join(offenders))
+
+    # ---- 4c. the eyes keep their violet glow ----------------------------
+    # The teeth are white; the EYES are not. The reference frames show a violet
+    # lens glow with a magenta pupil, and this build once flattened both onto
+    # the white teeth track, which is why the eyes lost their colour.
+    java = read(JAVA_TINT) or ""
+    check("the tint feed is present", java != "", JAVA_TINT)
+    check("an explicit eye track exists (separate from the teeth)",
+          "EYE_TRACK" in java and "public static float[] eye(" in java)
+    check("eyeTintArgb uses the eye track, not the teeth track",
+          "float[] e = eye(nearestPhase());" in java)
+    check("the pupil stays magenta in every phase",
+          "PUPIL_R" in java and "PUPIL_G" in java and "PUPIL_B" in java)
+    check("the eye hood does not snap coloured emitters onto the teeth band",
+          "eyeLike" in visuals and "eyeLike" in fogless_text)
+    # Every symbol the other modules call on the tint feed must exist. This is a
+    # cheap stand-in for the compiler that caught a real missing constant
+    # (McsmStormBlob referenced PUPIL_R/G/B before they were declared).
+    import re as _re
+    hrefs = {m for rel in ["mcsm-extras/java/net/mcsm/extras/client/McsmStormBlob.java",
+                           "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmExactGlowTintMixin.java"]
+             for m in _re.findall(r"McsmTeethPhaseTint\.([A-Za-z_0-9]+)", read(rel) or "")}
+    hdecl = set(_re.findall(r"public static (?:final )?(?:int|float\[\]|float|void|int\[\])\s+([A-Za-z_0-9]+)", java))
+    missing = sorted(hrefs - hdecl)
+    check("every McsmTeethPhaseTint symbol used elsewhere is declared", not missing,
+          "missing: %s" % ", ".join(missing))
 
     # ---- 5. Java publishes the value -----------------------------------
     jr = read(JAVA_RESOLVER)

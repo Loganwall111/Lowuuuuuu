@@ -373,6 +373,10 @@ public final class McsmStormBlob {
             final int toothR = 255;
             final int toothG = 255;
             final int toothB = 255;
+            final int eyeGlowArgb = McsmTeethPhaseTint.eyeArgb();
+            final int eyeR = (eyeGlowArgb >> 16) & 0xFF;
+            final int eyeG = (eyeGlowArgb >> 8) & 0xFF;
+            final int eyeB = eyeGlowArgb & 0xFF;
 
             // 1.9.208: the soft circular billboard glare and every blurry
             // backdrop wash are deleted (they read as fuzzy mist spheres).
@@ -492,11 +496,21 @@ public final class McsmStormBlob {
                         quadAt(poseStack, collector, GlowRenderTypes.glow(WHITE), tp, view,
                                 baseR * 0.036 * mouthBoost, toothR, toothG, toothB, (int) (a * wMouth * 255.0F * mouthAlphaScale));
                     }
-                    // the magenta emitter cube above the mouth
+                    // the magenta pupil / emitter cube above the mouth: magenta
+                    // in every phase (the frames keep it constant), fed from
+                    // McsmTeethPhaseTint so it can never drift from the model's
+                    // own eye pixels, which glow the same violet family.
                     Vec3 cp = billboardOffset(at, view, baseR * MOUTH_X[m],
                             baseR * (MOUTH_Y[m] + 0.17F));
                     quadAt(poseStack, collector, GlowRenderTypes.glow(WHITE), cp, view,
-                            baseR * 0.052 * mouthBoost, 232, 40, 255, (int) (a * wMouth * 255.0F));
+                            baseR * 0.052 * mouthBoost,
+                            McsmTeethPhaseTint.PUPIL_R, McsmTeethPhaseTint.PUPIL_G,
+                            McsmTeethPhaseTint.PUPIL_B, (int) (a * wMouth * 255.0F));
+                    // the violet eye glow of this phase, drawn around the pupil
+                    // (colours resolved once per pass, above the loop)
+                    quadAt(poseStack, collector, GlowRenderTypes.glow(WHITE), cp, view,
+                            baseR * 0.105 * mouthBoost, eyeR, eyeG, eyeB,
+                            (int) (a * wMouth * 90.0F * mouthAlphaScale));
                 }
             }
         }

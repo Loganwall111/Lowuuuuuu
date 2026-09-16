@@ -133,6 +133,8 @@ void main() {
     vec3 tint = faceVertexColor.rgb;
     float tmax = max(tint.r, max(tint.g, tint.b));
     vec3 band;
+    // Set inside the phase branch below; 0.0 means "this pixel is not an eye".
+    float eyeLike = 0.0;
     if (mcsmP > 0.01) {
         // BUILD #416 -- WHITE TEETH, PHASE-COLOURED AURA (user spec, 4 -> 8):
         //   bluish aura at 4, white at 5, bluish 5.2-5.9, pure blue at 6,
@@ -149,6 +151,16 @@ void main() {
         float core = smoothstep(0.72, 0.98,
                 dot(color.rgb, vec3(0.2126, 0.7152, 0.0722)));
         band = mix(aura, vec3(1.0), core);
+        // BUILD #416 -- leave the already-saturated EYE pixels alone: their
+        // violet is the phase eye tint, not a tooth, and the snap below must
+        // not drain it. Grey/white teeth have near-zero saturation and are
+        // always caught.
+        float mxE = max(color.r, max(color.g, color.b));
+        float mnE = min(color.r, min(color.g, color.b));
+        float satE = mxE > 1.0e-4 ? (mxE - mnE) / mxE : 0.0;
+        float lumE = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+        eyeLike = smoothstep(0.35, 0.55, satE)
+                * (1.0 - smoothstep(0.88, 1.0, lumE));
     } else if (tmax <= 0.02) {
         band = vec3(1.0);
     } else if (tint.g > 0.72 * tint.b && tint.r < 0.55 * tint.b) {
@@ -161,7 +173,7 @@ void main() {
         band = vec3(1.00, 1.00, 1.00);                                   // phase 5 / 8
     }
     float emLum = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-    float emMask = smoothstep(0.45, 0.80, emLum);
+    float emMask = smoothstep(0.45, 0.80, emLum) * (1.0 - eyeLike);
     color.rgb = mix(color.rgb, band * max(color.rgb, vec3(0.0)), emMask);
     // 4.0x emissive amplification: the mouth throws a radiant neon field into
     // the dark air even with no post-processing pack loaded.

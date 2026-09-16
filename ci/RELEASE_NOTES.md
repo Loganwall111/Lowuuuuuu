@@ -117,7 +117,35 @@ why the mouths never matched the reference frames. Now:
   mouth square takes the aura, and the magenta emitter cube is untouched.
 - The sky's horizon air is lit by the aura too, so phase 6 / 7 / 8 horizons read
   blue / green / blue.
-- `ci/check_phase_uniform.py` grew twelve checkpoints for this (34/34 now):
+## 4c. THE EYES KEEP THEIR VIOLET
+
+Answering "is there a purple glow on the eyes too": **there is now, and there
+was not before this fix.** `McsmExactGlowTintMixin` overrides
+`WitherStormHeadRenderer.eyeTint()` -- the tint the base mod derives from the
+beam colour, i.e. the show's violet -- and it was pointing at the TEETH track.
+The moment the teeth were corrected to white, the eye lenses and every eye
+bloom layer went white with them and the violet glow disappeared.
+
+- New EYE track in `McsmTeethPhaseTint`, separate from the teeth on purpose:
+  violet `#9E6BFF` at 4, pale violet at 5, magenta `#D63DFF` from 5.2 to 5.9,
+  bluish violet `#7A6BFF` at 6, magenta at 7, blue violet at 8. `eyeTintArgb()`
+  now returns THAT, lifted to full brightness the way the base renderer lifts
+  the beam colour.
+- The magenta pupil / emitter cube is now single-sourced as
+  `PUPIL_R/G/B` instead of being typed twice, and our own emitter draws the
+  phase's eye glow around it.
+- **The emissive snap no longer bleaches eyes.** `mcsm_mouth_emissive()` and
+  `fogless_entity.fsh` now skip the teeth-band snap for emitters that are
+  already saturated and mid-bright (`eyeLike`) -- that is the eye lens, and its
+  violet is the whole point. Teeth are white/grey, so their saturation is
+  ~zero and they are always caught by the snap. The 4.0x gain still applies to
+  the eye: it is emitted light, only the hue snap is skipped.
+
+`ci/check_phase_uniform.py` verifies all of this (40/40 now) -- including a
+symbol check that every `McsmTeethPhaseTint.*` call site resolves to a real
+declaration, which is exactly how it caught a missing `PUPIL_*` constant.
+
+- `ci/check_phase_uniform.py` grew twelve checkpoints for this (the checkpoint count is 40/40 now):
   the aura ramp must exist in the include and in each storm-bound program, and
   **no shader may multiply the teeth by a phase colour** any more.
 
