@@ -87,7 +87,9 @@ public final class McsmScenes {
                 }
                 return;
             }
-            if (!McsmExtrasConfig.cutscenes || mc.screen != null) {
+            // BUILD #449 -- Minecraft has no `screen` field in this API (run 528). The
+            // proven read is the one the terminal already uses: mc.gui.screen().
+            if (!McsmExtrasConfig.cutscenes || McsmTerminalClient.currentScreen(mc) != null) {
                 return;
             }
             // one scene at a time, in catalogue order, each once

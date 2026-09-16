@@ -2218,7 +2218,11 @@ def main():
     check("the scenes are once each, and never while a screen is open",
           "private static final Set<String> PLAYED = ConcurrentHashMap.newKeySet();" in scenes
           and "PLAYED.contains(scene.id())" in scenes
-          and "if (!McsmExtrasConfig.cutscenes || mc.screen != null) {" in scenes)
+          # RUN 528: Minecraft has NO "screen" field in this API. The proven read is
+          # mc.gui.screen(), which the terminal has used since #424 -- this gate holds
+          # both halves of that lesson.
+          and "McsmTerminalClient.currentScreen(mc) != null" in scenes
+          and "mc.screen" not in scenes)
 
     # ------------------------------------------------------------------
     # BUILD #448 -- THE CRASH, THE MENU, AND THE CITIES' OWN AIR.
