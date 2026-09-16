@@ -122,6 +122,10 @@ public final class McsmExtrasConfig {
      * with no shader pack installed.
      */
     public static boolean skyFloorBand = true;
+    /** BUILD #451 -- the void: a dimension that is mostly nothing. */
+    public static boolean voidReality = true;
+    /** BUILD #451 -- walk-in portals, one per dimension. */
+    public static boolean portals = true;
     /** BUILD #448 -- each district carries its own fog and sky. */
     public static boolean cityAtmosphere = true;
     /** BUILD #448 -- the title wordmark ("a giant Devouring Storms watermark"). */
@@ -437,6 +441,8 @@ public final class McsmExtrasConfig {
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
             p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
+            p.setProperty("void_reality", String.valueOf(voidReality));
+            p.setProperty("portals", String.valueOf(portals));
             p.setProperty("city_atmosphere", String.valueOf(cityAtmosphere));
             p.setProperty("title_wordmark", String.valueOf(titleWordmark));
             p.setProperty("menu_lift", String.valueOf(menuLift));
@@ -580,6 +586,8 @@ public final class McsmExtrasConfig {
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
+            voidReality = bool(p, "void_reality", voidReality);
+            portals = bool(p, "portals", portals);
             cityAtmosphere = bool(p, "city_atmosphere", cityAtmosphere);
             titleWordmark = bool(p, "title_wordmark", titleWordmark);
             menuLift = dbl(p, "menu_lift", menuLift);

@@ -12,9 +12,11 @@ import net.mcsm.extras.McsmBlackHole;
 import net.mcsm.extras.McsmCities;
 import net.mcsm.extras.McsmMassg;
 import net.mcsm.extras.McsmMazes;
+import net.mcsm.extras.McsmPortals;
 import net.mcsm.extras.McsmSkyVortexes;
 import net.mcsm.extras.McsmRituals;
 import net.mcsm.extras.McsmServerRooms;
+import net.mcsm.extras.McsmVoid;
 import net.mcsm.extras.McsmSounds;
 import net.mcsm.extras.McsmTentacles;
 import net.mcsm.extras.McsmTerminal;
@@ -75,6 +77,9 @@ public abstract class McsmBuiltinPackMixin {
         // BUILD #444 -- the two underground structures.
         McsmMazes.register();
         McsmServerRooms.register();
+        // BUILD #451 -- the void, and the doorways between the dimensions.
+        McsmVoid.register();
+        McsmPortals.register();
         // Build #416 (D.8, phase 5) -- the story terminal: the antenna's
         // restricted console, the radio signals it picks up, the password the
         // world keeps for itself. It owns no packet channel any more (the

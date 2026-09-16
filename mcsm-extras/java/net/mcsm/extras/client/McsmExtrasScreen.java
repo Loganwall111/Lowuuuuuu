@@ -411,6 +411,17 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyFloorBand = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #451 -- the void, and the doorways.
+          .bool("The Void (a dimension of nothing, with things in it)",
+                  () -> McsmExtrasConfig.voidReality, v -> {
+              McsmExtrasConfig.voidReality = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Portals (walk-in doorways, one per dimension)",
+                  () -> McsmExtrasConfig.portals, v -> {
+              McsmExtrasConfig.portals = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #448 -- the cities' own air, and the bigger districts.
           .bool("Cities carry their own fog and sky (each district is different)",
                   () -> McsmExtrasConfig.cityAtmosphere, v -> {

@@ -128,13 +128,24 @@ public abstract class McsmTownCommandPatch {
             reality.executes(ctx -> ds$realityStatus(ctx.getSource()));
             reality.then(Commands.literal("status").executes(ctx -> ds$realityStatus(ctx.getSource())));
             reality.then(Commands.literal("adams").executes(ctx -> ds$adams(ctx.getSource())));
+            reality.then(Commands.literal("void").executes(ctx -> ds$void(ctx.getSource())));
             reality.then(Commands.literal("decayed").executes(ctx -> ds$decayed(ctx.getSource())));
 
             // BUILD #444 -- the underground structures, findable.
+            // BUILD #451 -- /ds reality void goes to the nothing.
             LiteralArgumentBuilder<CommandSourceStack> maze = Commands.literal("maze");
             maze.executes(ctx -> ds$maze(ctx.getSource()));
             maze.then(Commands.literal("where").executes(ctx -> ds$maze(ctx.getSource())));
             maze.then(Commands.literal("build").executes(ctx -> ds$mazeBuild(ctx.getSource())));
+
+            // BUILD #451 -- the doorways, and the void.
+            LiteralArgumentBuilder<CommandSourceStack> portal = Commands.literal("portal");
+            portal.executes(ctx -> ds$portalList(ctx.getSource()));
+            portal.then(Commands.literal("list").executes(ctx -> ds$portalList(ctx.getSource())));
+            for (String id : new String[]{"decayed", "adams", "void"}) {
+                portal.then(Commands.literal("build").then(Commands.literal(id)
+                        .executes(ctx -> ds$portalBuild(ctx.getSource(), id))));
+            }
 
             // BUILD #450 -- what the nearest district is wearing, so the new sizes
             // and atmospheres can be checked without walking there.
@@ -158,7 +169,7 @@ public abstract class McsmTownCommandPatch {
             server.then(Commands.literal("shell").executes(ctx -> ds$serverShell(ctx.getSource())));
 
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
-                    .then(ritual).then(reality).then(maze).then(server).then(book).then(scene).then(city));
+                    .then(ritual).then(reality).then(maze).then(server).then(book).then(scene).then(city).then(portal));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -369,7 +380,11 @@ public abstract class McsmTownCommandPatch {
                 + " \u00b7 the infinite dimension of adams: "
                 + (net.mcsm.extras.McsmExtrasConfig.adamsReality ? "ON" : "OFF")
                 + " \u00b7 rituals: "
-                + (net.mcsm.extras.McsmExtrasConfig.rituals ? "ON" : "OFF")), false);
+                + (net.mcsm.extras.McsmExtrasConfig.rituals ? "ON" : "OFF")
+                + " \u00b7 the void: "
+                + (net.mcsm.extras.McsmExtrasConfig.voidReality ? "ON" : "OFF")
+                + " \u00b7 doorways: "
+                + (net.mcsm.extras.McsmExtrasConfig.portals ? "ON" : "OFF")), false);
         src.sendSuccess(() -> Component.literal("[ds] adams has written "
                 + net.mcsm.extras.McsmAdams.builtRegions() + " regions, "
                 + net.mcsm.extras.McsmAdams.pendingRegions() + " still queued \u00b7 "
@@ -534,5 +549,50 @@ public abstract class McsmTownCommandPatch {
             src.sendSuccess(() -> Component.literal("[ds] /ds city has to be run by a player"), false);
         }
         return 1;
+    }
+
+    // ---------------------------------------------------------------------
+    // BUILD #451 -- the void, and the doorways
+    // ---------------------------------------------------------------------
+
+    private static int ds$void(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            if (net.mcsm.extras.McsmVoid.enter(player)) {
+                src.sendSuccess(() -> Component.literal("[ds] the nothing opens; there is no floor"), false);
+                return 1;
+            }
+            src.sendSuccess(() -> Component.literal("[ds] the void is switched off in the config"), false);
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds reality void has to be run by a player"), false);
+        }
+        return 0;
+    }
+
+    private static int ds$portalList(CommandSourceStack src) {
+        src.sendSuccess(() -> Component.literal("[ds] one doorway per dimension: "
+                + net.mcsm.extras.McsmPortals.summary()), false);
+        for (net.mcsm.extras.McsmPortals.Door door : net.mcsm.extras.McsmPortals.doors()) {
+            src.sendSuccess(() -> Component.literal("[ds]   " + door.id() + " -- " + door.label()
+                    + " (frame " + door.frameBlock() + ", door " + door.doorBlock() + ")"), false);
+        }
+        src.sendSuccess(() -> Component.literal("[ds] /ds portal build <decayed|adams|void> raises one "
+                + "in front of you; walk into the middle to go through"), false);
+        src.sendSuccess(() -> Component.literal("[ds] the void: "
+                + net.mcsm.extras.McsmVoid.stats()), false);
+        return 1;
+    }
+
+    private static int ds$portalBuild(CommandSourceStack src, String id) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            if (net.mcsm.extras.McsmPortals.build(player, id)) {
+                return 1;
+            }
+            src.sendSuccess(() -> Component.literal("[ds] no doorway called \"" + id + "\""), false);
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds portal build has to be run by a player"), false);
+        }
+        return 0;
     }
 }

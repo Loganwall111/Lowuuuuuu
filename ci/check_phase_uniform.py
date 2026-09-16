@@ -20,7 +20,6 @@ additionally receive the real `witherstorm_Phase` uniform.
 
 Exit 0 when every checkpoint passes, 1 otherwise (the build stops).
 """
-import json
 import glob
 import json
 import os
@@ -2326,6 +2325,108 @@ def main():
           and "public static boolean cityAtmosphere = true;" in cfg
           and "city_atmosphere" in cfg
           and "Cities carry their own fog and sky (each district is different)" in extras)
+
+    # ------------------------------------------------------------------
+    # BUILD #451 -- THE VOID, ITS PURPLE WATER, AND ONE DOORWAY PER DIMENSION.
+    #
+    # "a new dimension called the void ... this dimension is filled with basically
+    # nothing ... you fall infinitely, you don't hit the dimension ... there's houses
+    # and rivers and glitchy walls" plus "a unique portal for each dimensions".
+    #
+    # The gates hold the three things that make the void the void: it is really
+    # empty, the emptiness is survivable, and the doorways are real doors built from
+    # real blocks -- because the block registry answers a missing id with AIR rather
+    # than null, which is how a "portal" becomes a hole in a wall.
+    # ------------------------------------------------------------------
+    void_java = read("mcsm-extras/java/net/mcsm/extras/McsmVoid.java") or ""
+    portals = read("mcsm-extras/java/net/mcsm/extras/McsmPortals.java") or ""
+
+    void_dim = json.loads(read("jar-overrides/data/mcsm/dimension/void_reality.json"))
+    void_type = json.loads(read("jar-overrides/data/mcsm/dimension_type/void_reality.json"))
+    void_biome = json.loads(read("jar-overrides/data/mcsm/worldgen/biome/void_reality.json"))
+    decayed_dim = json.loads(read("jar-overrides/data/mcsm/dimension/decayed_reality.json"))
+    decayed_biome = json.loads(read("jar-overrides/data/mcsm/worldgen/biome/decayed_reality.json"))
+
+    check("the void is really empty: its only generator layer is AIR",
+          void_dim["generator"]["type"] == "minecraft:flat"
+          and len(void_dim["generator"]["settings"]["layers"]) == 1
+          and void_dim["generator"]["settings"]["layers"][0]["block"] == "minecraft:air"
+          and void_dim["generator"]["settings"]["features"] is False
+          and void_dim["generator"]["settings"]["lakes"] is False
+          and void_dim["type"] == "mcsm:void_reality")
+    check("and it is tall enough to fall through, with nothing to hit",
+          void_type["min_y"] == -64 and void_type["height"] == 384
+          and void_type["has_ceiling"] is False
+          and void_type["attributes"]["minecraft:gameplay/water_evaporates"] is False)
+    check("the void has its own purple water and its own violet air",
+          void_dim["generator"]["settings"]["biome"] == "mcsm:void_reality"
+          and void_biome["effects"]["water_color"] == 0x8C24FF
+          and void_biome["effects"]["water_fog_color"] == 0x47079F
+          and void_biome["effects"]["sky_color"] == 0x312A4F
+          and void_biome["effects"]["fog_color"] == 0x1E1642)
+    check("and the decayed reality finally has the purple water it never had",
+          decayed_dim["generator"]["settings"]["biome"] == "mcsm:decayed_reality"
+          and decayed_biome["effects"]["water_color"] == 0x7A2AD6
+          and decayed_biome["effects"]["water_fog_color"] == 0x3E1472)
+    check("falling past everything is survivable: the void catches you",
+          "public static final int CATCH_Y = -24;" in void_java
+          and "public static final int SHELF_Y = 210;" in void_java
+          and "private static void catchFall(ServerLevel level, ServerPlayer player) {" in void_java
+          and "if (player.getY() > CATCH_Y) {" in void_java
+          and "private static BlockPos shelfUnder(ServerLevel level, BlockPos from) {" in void_java
+          and "there is no floor here. that is the dimension, not a bug" in void_java)
+    check("the nothing has things in it: shelves, houses, rivers, glitch walls, vortex ribs",
+          "private static void house(McsmBuildQueue.Planner planner" in void_java
+          and "private static void glitchWall(McsmBuildQueue.Planner planner" in void_java
+          and "private static void vortexRibs(McsmBuildQueue.Planner planner" in void_java
+          and "private static void brokenPillars(McsmBuildQueue.Planner planner" in void_java
+          and "planner.put(cx + x, surface, cz + z, WATER);" in void_java
+          and "SHELVES_PER_REGION = 7" in void_java
+          and "int y = 24 + (int) Math.floorMod(seed3, 220L);" in void_java)
+    check("the void walkers live here, and the void is booted, switched and reachable",
+          "McsmCreatures.release(level, at == null ? player.blockPosition() : at, 1, 6.0D);"
+                  in void_java
+          and "McsmVoid.register();" in boot and "import net.mcsm.extras.McsmVoid;" in boot
+          and "public static boolean voidReality = true;" in cfg
+          and "void_reality" in cfg
+          and "The Void (a dimension of nothing, with things in it)" in extras
+          and '"void").executes(ctx -> ds$void(ctx.getSource())' in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java")
+              or ""))
+    check("one doorway per dimension, and every one of them distinct",
+          portals.count("new Door(") == 3
+          and 'new Door("decayed", "mcsm:decayed_reality", "mcsm:rift_anchor", "mcsm:reality_glass"'
+                  in portals
+          and 'new Door("adams", "mcsm:adams_infinity", "mcsm:memory_crystal", "mcsm:city_tiles"'
+                  in portals
+          and 'new Door("void", "mcsm:void_reality", "mcsm:rift_anchor", "mcsm:black_hole_core"'
+                  in portals)
+    check("a doorway is a shape, checked where the player is standing",
+          "public static void tick(ServerLevel level) {" in portals
+          and "private static boolean isFrame(ServerLevel level, BlockPos feet, BlockState frame) {"
+                  in portals
+          and "if (!is(level, feet.below(), frame) || !is(level, feet.above(2), frame)) {" in portals
+          and "boolean alongX = is(level, feet.east(), frame) && is(level, feet.west(), frame)"
+                  in portals
+          and "boolean alongZ = is(level, feet.north(), frame) && is(level, feet.south(), frame)"
+                  in portals
+          and "private static final long COOLDOWN = 60L;" in portals
+          and "if (!McsmExtrasConfig.portals || level.players().isEmpty()) {" in portals)
+    check("walking in is the whole interaction, and /ds builds the same shape",
+          "case \"decayed\":" in portals and "case \"adams\":" in portals
+          and "case \"void\":" in portals
+          and "moved = McsmVoid.enter(player);" in portals
+          and "public static boolean build(ServerPlayer player, String id) {" in portals
+          and "level.setBlock(base, glassState, 2);" in portals
+          and "public static boolean portals = true;" in cfg and "portals" in cfg
+          and "Portals (walk-in doorways, one per dimension)" in extras
+          and 'Commands.literal("portal")' in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java")
+              or ""))
+    check("a real block or nothing: neither file can accept AIR as a door",
+          "if (block != null && block != Blocks.AIR) {" in void_java
+          and "if (block != null && block != Blocks.AIR) {" in portals
+          and 'McsmContent.DECAYED_BONE' not in void_java)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

@@ -1,7 +1,7 @@
 {
   "generator": {
     "settings": {
-      "biome": "minecraft:plains",
+      "biome": "mcsm:decayed_reality",
       "features": false,
       "lakes": false,
       "layers": [
