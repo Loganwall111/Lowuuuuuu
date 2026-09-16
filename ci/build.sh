@@ -717,7 +717,9 @@ echo "[stage] verify the atlases against the sheets"
 STAGE_CHECK="$(python3 ci/apply_stage_palette.py --check 2>&1)"
 STAGE_RC=$?
 printf '%s\n' "$STAGE_CHECK" | grep -E "^\[stage\]|^  FAIL" | tail -4
-printf '%s\n' "$STAGE_CHECK" >> "$VANILLA_OUT"
+# the evidence dump is created further down (the vanilla API oracle); append to it
+# only if it exists -- run 494 died here on `set -u` for exactly that reason
+printf '%s\n' "$STAGE_CHECK" >> "${VANILLA_OUT:-/dev/null}" 2>/dev/null || true
 if [ "$STAGE_RC" -ne 0 ]; then
   echo "::error title=stage palette::the storm body atlases no longer wear the supplied stage-sheet palette"
   exit 1
