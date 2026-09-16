@@ -1,1 +1,1 @@
-version-ok
+javac-ok
