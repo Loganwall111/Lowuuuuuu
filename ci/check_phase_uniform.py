@@ -733,6 +733,7 @@ def main():
     # here is a guaranteed javac failure.
     check("the pack has its own creative tab on the vanilla builder",
           "CreativeModeTab.builder(" in content_code
+          and "DisplayItemsGenerator" in content_code
           and "Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB" in content_code
           and "catch (Throwable t)" in content_code
           and "FabricCreativeModeTab." not in content_code

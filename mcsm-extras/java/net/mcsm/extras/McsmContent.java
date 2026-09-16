@@ -256,41 +256,96 @@ public final class McsmContent {
      * The first attempt copied the base mod's own idiom and named
      * net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab -- which is
      * not on this overlay's compile classpath at all (CI run 487: "package ...
-     * does not exist"; build.sh now probes the compile path every run and
-     * confirms it). The vanilla API is. The build's own API dump of run 488
-     * proves every call below is public:
+     * does not exist"; build.sh probes the compile path every run now).
      *
-     *   CreativeModeTab.builder(CreativeModeTab.Row, int)
-     *   Builder.title(Component) / icon(Supplier&lt;ItemStack&gt;)
-     *   Builder.displayItems(CreativeModeTab.DisplayItemsGenerator)
-     *   Builder.build()
-     *   Output.accept(ItemLike)
-     *
-     * So 35 blocks, 19 items and every block item are reachable in the creative
-     * inventory, with no Fabric module and no reflection involved. If it still
-     * fails, the catch says so and the content stays craftable / minable in the
-     * decayed reality rather than taking the registry down.
+     * The vanilla API is, but only up to a point, which the compiler said
+     * precisely (run 489): "Output has protected access in CreativeModeTab".
+     * CreativeModeTab.builder(Row, int), Builder.title/icon/build are public --
+     * the classes are even in the run's API dump -- while the generator type and
+     * its Output parameter are protected nested types, so the lambda cannot be
+     * written here. The generator is therefore a Proxy that implements the
+     * interface without naming it, and the output it is handed is filled
+     * reflectively. Same result, no Fabric module, and no compile-time
+     * dependency on a protected type.
      */
     public static void registerTab() {
         try {
-            CreativeModeTab tab = CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
+            CreativeModeTab.Builder builder = CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
                     .title(Component.translatable("itemGroup.mcsm.content"))
-                    .icon(() -> new ItemStack(RIFT_KEY))
-                    .displayItems((params, out) -> {
-                        for (Item it : ALL_BLOCK_ITEMS) {
-                            out.accept(it);
+                    .icon(() -> new ItemStack(RIFT_KEY));
+            Class<?> generatorType = Class.forName(
+                    "net.minecraft.world.item.CreativeModeTab$DisplayItemsGenerator");
+            Object generator = java.lang.reflect.Proxy.newProxyInstance(
+                    McsmContent.class.getClassLoader(),
+                    new Class<?>[]{generatorType},
+                    (proxy, method, args) -> {
+                        switch (method.getName()) {
+                            case "hashCode":
+                                return 0;
+                            case "equals":
+                                return proxy == (args == null ? null : args[0]);
+                            case "toString":
+                                return "mcsm-content-tab-generator";
+                            default:
+                                break;
                         }
-                        for (Item it : ALL_ITEMS) {
-                            out.accept(it);
+                        if (args != null && args.length == 2 && args[1] != null) {
+                            feedTab(args[1]);
                         }
-                    })
-                    .build();
-            Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN_TAB, tab);
+                        return null;
+                    });
+            for (java.lang.reflect.Method m : CreativeModeTab.Builder.class.getMethods()) {
+                if (m.getName().equals("displayItems") && m.getParameterCount() == 1) {
+                    m.invoke(builder, generator);
+                    break;
+                }
+            }
+            Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN_TAB, builder.build());
             System.out.println("[ds] mcsm content tab registered (" + ALL_BLOCKS.size()
                     + " blocks, " + (ALL_ITEMS.size() + ALL_BLOCK_ITEMS.size()) + " items)");
         } catch (Throwable t) {
             System.err.println("[ds] mcsm content tab unavailable (" + t
                     + ") -- every block and item is still craftable / minable in the decayed reality");
+        }
+    }
+
+    /**
+     * Feeds our stacks to the tab's output object. The one-arg accept overload is
+     * chosen by what it takes: entries.accept(ItemStack) for a stack parameter,
+     * accept(ItemLike) for an item parameter (an ItemStack is not an ItemLike).
+     */
+    private static void feedTab(Object output) {
+        try {
+            java.lang.reflect.Method accept = null;
+            boolean wantsItem = false;
+            for (java.lang.reflect.Method m : output.getClass().getMethods()) {
+                if (!m.getName().equals("accept") || m.getParameterCount() != 1) {
+                    continue;
+                }
+                Class<?> p = m.getParameterTypes()[0];
+                if (p.isAssignableFrom(ItemStack.class)) {
+                    accept = m;
+                    wantsItem = false;
+                    break;
+                }
+                if (p.isAssignableFrom(Item.class)) {
+                    accept = m;
+                    wantsItem = true;
+                    break;
+                }
+            }
+            if (accept == null) {
+                return;
+            }
+            accept.setAccessible(true);
+            for (Item item : ALL_BLOCK_ITEMS) {
+                accept.invoke(output, wantsItem ? item : new ItemStack(item));
+            }
+            for (Item item : ALL_ITEMS) {
+                accept.invoke(output, wantsItem ? item : new ItemStack(item));
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] mcsm content tab fill failed: " + t);
         }
     }
 
