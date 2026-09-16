@@ -1169,6 +1169,40 @@ for f in include/mcsm_visuals.glsl; do
   fi
 done
 
+# BUILD #416: the menus are audible only if BOTH halves ship -- the Ogg Vorbis
+# one-shots AND the sounds.json that names them. A missing asset used to be
+# invisible (the menus simply played nothing), so prove it inside the jar, and
+# prove the old undecodable RIFF wavs are gone: Minecraft's sound engine is
+# Vorbis-only, which is exactly why the #383 menus were silent.
+for need in \
+  assets/mcsm/sounds.json \
+  assets/mcsm/lang/en_us.json \
+  assets/mcsm/menu/ds_icon.png \
+  assets/mcsm/sounds/ds_btn_hover.ogg \
+  assets/mcsm/sounds/ds_btn_click.ogg \
+  assets/mcsm/sounds/ds_menu_open.ogg; do
+  if [ ! -s "$FX/cls/$need" ]; then
+    echo "::error title=jar audit::UI sound asset missing from the jar: $need"
+    AUDIT_FAIL=1
+  fi
+done
+for ogg in ds_btn_hover ds_btn_click ds_menu_open; do
+  oggf="$FX/cls/assets/mcsm/sounds/$ogg.ogg"
+  if [ -s "$oggf" ] && ! head -c 4 "$oggf" | grep -q 'OggS'; then
+    echo "::error title=jar audit::$ogg.ogg in the jar is not an Ogg container"
+    AUDIT_FAIL=1
+  fi
+done
+if [ -e "$FX/cls/assets/mcsm/sounds/ds_btn_click.wav" ] \
+   || [ -e "$FX/cls/assets/mcsm/sounds/ds_btn_hover.wav" ] \
+   || [ -e "$FX/cls/assets/mcsm/sounds/ds_menu_open.wav" ]; then
+  echo "::error title=jar audit::undecodable RIFF .wav shipped as a UI sound"
+  AUDIT_FAIL=1
+fi
+if [ "$AUDIT_FAIL" -eq 0 ]; then
+  echo "[audit] UI audio: 3 Ogg Vorbis one-shots + sounds.json + lang in the jar"
+fi
+
 if [ "$AUDIT_FAIL" -ne 0 ]; then
   echo "[audit] FAILED -- refusing to publish a jar whose hooks may never run"
   exit 1
