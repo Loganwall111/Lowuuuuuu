@@ -1546,6 +1546,13 @@ def main():
           and "public static int column(float phase, float t)" in palette
           and "McsmBackdropPalette.column(phase, 1.0F - vertical)" in atmosphere
           and "McsmBackdropPalette.column(phase, 1.0F - vertical)" in stage)
+    check("the wall keeps its own size and easing helpers",
+          # #430 deleted the deck ramps out of this file and took two innocent
+          # methods with them (peak #509: "cannot find symbol: method
+          # smoothstep(float,float,float)"): the wall paints nothing at all
+          # without them, so they are pinned.
+          "private static double bodyRadius(float phase)" in atmosphere
+          and "private static float smoothstep(float value, float low, float high)" in atmosphere)
     check("the atmosphere wall's own hand-typed decks are gone",
           "phase45" not in atmosphere and "phase55" not in atmosphere
           and "verticalGradient" not in atmosphere

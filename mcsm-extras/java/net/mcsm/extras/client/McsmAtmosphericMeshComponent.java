@@ -180,6 +180,25 @@ public final class McsmAtmosphericMeshComponent {
         return (Mth.clamp((int) (alpha * 255.0F), 0, 255) << 24) | (rgb & 0x00FFFFFF);
     }
 
+    /**
+     * The wall's size for a phase: close and attached at 5.5, then deliberately
+     * grown rather than moved away at 6 and 7.
+     */
+    private static double bodyRadius(float phase) {
+        if (phase < 5.0F) {
+            return 25.0D + 20.0D * Math.max(0.0D, phase - 4.45D);
+        }
+        if (phase < 6.0F) {
+            return 36.0D + 26.0D * (phase - 5.0D);
+        }
+        return Math.min(340.0D, 40.0D + 30.0D * (phase - 6.0D));
+    }
+
+    private static float smoothstep(float value, float low, float high) {
+        float t = Mth.clamp((value - low) / (high - low), 0.0F, 1.0F);
+        return t * t * (3.0F - 2.0F * t);
+    }
+
     private static int mix(int a, int b, float amount) {
         float t = Mth.clamp(amount, 0.0F, 1.0F);
         int r = Math.round(((a >> 16) & 0xFF) + (((b >> 16) & 0xFF) - ((a >> 16) & 0xFF)) * t);
