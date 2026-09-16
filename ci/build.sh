@@ -896,10 +896,38 @@ VANILLA_OUT=out/vanilla-api.txt
   for CLS in \
     net.dabicco.witherstormmod.entity.renderer.WitherStormRenderer \
     net.dabicco.witherstormmod.entity.model.HugeAssBackModel \
-    net.dabicco.witherstormmod.client.StormBackdrop ; do
+    net.dabicco.witherstormmod.client.StormBackdrop \
+    net.dabicco.witherstormmod.client.FoglessRenderTypes \
+    net.dabicco.witherstormmod.client.GlowRenderTypes \
+    net.dabicco.witherstormmod.client.StormSkins \
+    net.minecraft.client.renderer.rendertype.RenderTypes \
+    net.minecraft.client.renderer.SkyRenderer ; do
     echo
     echo "===== ${CLS} (base mod)"
     javap -p -classpath "$STRIPPED:$DL/client.jar" "$CLS" 2>&1 | sed -n '1,260p'
+  done
+
+  # --------------------------------------------------------------------------
+  # BUILD #438 -- WHAT THE BASE RENDERERS ACTUALLY CALL.
+  #
+  # Every glow redirect in this build names a call site descriptor
+  # (RenderTypes.eyes, GlowRenderTypes.emitterMark, FoglessRenderTypes.eyes ...)
+  # and every one of them is `require = 0`, so a descriptor that does not match
+  # is a silent no-op -- which is how "the teeth and eyes do not glow" survives
+  # fix after fix. javap -v prints the constant pool of the base renderer, i.e.
+  # every method reference that class makes, filtered here to the render-type
+  # calls. If a name is absent from this list, the redirect naming it can never
+  # fire and the build should say so instead of shipping it.
+  # --------------------------------------------------------------------------
+  for CLS in \
+    net.dabicco.witherstormmod.entity.renderer.WitherStormRenderer \
+    net.dabicco.witherstormmod.entity.renderer.WitherStormHeadRenderer ; do
+    echo
+    echo "===== ${CLS} -- render-type call sites (constant pool)"
+    javap -v -p -classpath "$STRIPPED:$DL/client.jar" "$CLS" 2>&1 \
+      | grep -E "Methodref|InterfaceMethodref" \
+      | grep -Ei "eyes|emitter|bloom|glow|mark|Fogless|RenderType|Skins" \
+      | sed -n '1,200p'
   done
 } > "$VANILLA_OUT" 2>&1 || true
 echo "[api] vanilla dump: $(wc -l < "$VANILLA_OUT" 2>/dev/null || echo 0) lines -> out/vanilla-api.txt"
