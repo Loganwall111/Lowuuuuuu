@@ -777,6 +777,7 @@ CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL
     net.minecraft.world.item.CreativeModeTab \
     'net.minecraft.world.item.CreativeModeTab$Builder' \
     'net.minecraft.world.item.CreativeModeTab$Output' \
+    'net.minecraft.world.item.CreativeModeTab$Row' \
     net.minecraft.world.item.CreativeModeTabs ; do
     echo "--- ${PROBE}"
     javap -classpath "$CP" "$PROBE" 2>&1 | sed -n '1,20p'

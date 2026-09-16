@@ -727,10 +727,15 @@ def main():
     # exist"), so the tab has to be reached by reflection at runtime -- and it
     # must degrade to "items are still craftable / minable" rather than take the
     # registry down with it.
-    check("the pack has its own creative tab (reflection, non-fatal)",
-          "FabricCreativeModeTab" in content_code and "Class.forName" in content_code
+    # The Fabric creative-tab module is not on this overlay's compile classpath
+    # (CI run 487), and the vanilla builder is public (CI run 488's API dump), so
+    # the tab must go through CreativeModeTab.builder -- naming the Fabric type
+    # here is a guaranteed javac failure.
+    check("the pack has its own creative tab on the vanilla builder",
+          "CreativeModeTab.builder(" in content_code
           and "Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB" in content_code
           and "catch (Throwable t)" in content_code
+          and "FabricCreativeModeTab." not in content_code
           and "registerTab()" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
     check("doors and stairs build through exposed subclasses (their vanilla ctors are protected)",
           "extends StairBlock" in content_code and "extends DoorBlock" in content_code

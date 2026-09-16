@@ -52,7 +52,7 @@ tear → face the Creator's arms → seal or eat the hole.*
 | **35 new blocks** — decayed stone / cobble / bricks / dirt / sand / planks / logs / leaves, city bricks + tiles, rusted plate, rebar grate, cracked road, hollow wall, storm rib, tendon, withered flesh, reality glass, glitch lamp, memory crystal, void core, black hole core, rift anchor, slabs, stairs, walls, fences | **LIVE** | `McsmContent` + `jar-overrides/assets/mcsm/` |
 | **Doors and trap doors** (withered + rusted, real `DoorBlock`/`TrapDoorBlock`) | **LIVE** | same |
 | **19 items**: 6 weapons/tools (Reality Ripper, Withered Blade, Storm Spear, Creator's Judgement, Echo Totem, Tentacle Hook), the Rift Key, and the material tiers (Rift Shard, Void Thread, Decayed Steel, Storm Heart Shard, Glitch Echo, Memory Fragment, Glyph Cell, Creator Fragment, Abyss Orb, City Keycard, Hallucination Dust, Decayed Bone) | **LIVE** | same |
-| **Own creative tab** ("Devouring Storms: Decayed Reality") + **16 crafting recipes** | **LIVE** | `McsmContent.registerTab()`, `data/mcsm/recipe/` |
+| **Own creative tab** ("Devouring Storms: Decayed Reality") on the **vanilla** `CreativeModeTab.builder` -- no Fabric module, every block and item reachable in the creative inventory -- + **16 crafting recipes** | **LIVE** | `McsmContent.registerTab()`, `data/mcsm/recipe/` |
 | **A REAL dimension** `mcsm:decayed_reality` — own dimension type (its own sky, fog, ambient light, no skylight, nether-like ceiling rules), own flat terrain **built out of the new blocks**, not a teleport to another corner of the overworld | **LIVE** | `data/mcsm/dimension*`, `McsmReality` |
 | **Rift entry**: hold the **Rift Key** + sneak → the rift opens (and closes) — server-side, singleplayer and multiplayer, no key binding to collide with | **LIVE** | `McsmReality.tickServer` + `McsmRiftMixin` |
 | **Console chapter IX** — enter the rift from the panel, hand out the starter kit, and switch every new layer (cities, quests, creatures, glitches, black hole, tornadoes) | **LIVE** | `McsmExtrasScreen` |
@@ -103,7 +103,32 @@ block. Phase 2 replaces the placeholder set with generated storm textures.
 
 ---
 
-## 4. Honest notes
+## 4. How the build is checked (this is what makes the phases affordable)
+
+Everything here is written on a machine with **no JDK and no route to Mojang**, so
+the GitHub runner is the compiler. Two things were added in phase 1 to make that
+loop usable instead of blind:
+
+* **the evidence channel** -- the build now pushes its own run log, javac log,
+  class list and the vanilla API dump to `ci-out/run-<N>/` on the session branch.
+  The first two D.8 runs went red and said nothing at all (runner logs live on a
+  blob host this machine cannot reach); the third one published
+  `javac-full.log`, which is how the protected-constructor and missing-Fabric-
+  module errors were found and fixed in one pass instead of guessed at.
+* **the vanilla API oracle** -- every run dumps `javap` for the classes the next
+  phase needs (blocks, items, entities, goals, attributes) plus a probe of which
+  Fabric modules are on the compile classpath, into
+  `ci-out/run-<N>/vanilla-api.txt`. That is where `BlockSetType.IRON`, the
+  protected `DoorBlock`/`TrapDoorBlock`/`StairBlock` constructors and the public
+  `CreativeModeTab.builder(Row, int)` were settled -- before writing the code,
+  not after a red run.
+* **135 checkpoints** now gate the build, including nine for this content pack:
+  every registered block must have a blockstate, every item a model and a
+  display name, the dimension datapack ids must match the Java key, the new
+  gameplay switches must persist, and the tab must not name the Fabric type that
+  cannot compile.
+
+## 5. Honest notes
 
 - The "decayed reality", the ghost whale and the glitch hallucinations were
   **never** in this mod before this build (see `FEATURE_INVENTORY.md` §5b) —
@@ -115,6 +140,8 @@ block. Phase 2 replaces the placeholder set with generated storm textures.
   `mcsm-extras` compiles against the frozen released jar. That constraint is
   why phase 3 reuses vanilla entity types instead of shipping new model
   geometry.
-- Each phase is gated: the checkpoint suite (now 134/134) fails the build if a
+- Each phase is gated: the checkpoint suite (now **135/135**) fails the build if a
   registered block has no blockstate, an item has no model, the dimension
   datapack loses its id match, or the new switches stop being persisted.
+- Phase 1 was written blind and repaid in three red runs; the last two are the
+  contract for the rest: **dump the API first, then write the code.**

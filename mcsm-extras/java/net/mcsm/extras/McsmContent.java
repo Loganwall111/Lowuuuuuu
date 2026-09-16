@@ -251,88 +251,46 @@ public final class McsmContent {
     }
 
     /**
-     * Our own creative tab.
+     * Our own creative tab, on the VANILLA builder.
      *
-     * This has to be reflection-only. The base mod builds its tab with
-     * net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab, but that
-     * module is NOT on the compile classpath this overlay is built against
-     * (build.sh fetches fabric-rendering-v1, fabric-api-base,
-     * fabric-object-builder-api-v1 and fabric-lifecycle-events-v1), so naming
-     * the type here cannot compile -- CI run 487 proved it with "package
-     * net.fabricmc.fabric.api.creativetab.v1 does not exist". At RUNTIME the
-     * module is present (the base mod depends on it), so the reflection below
-     * does work there; if it cannot, the content is still reachable through its
-     * crafting recipes, the dimension's own terrain, and the console's starter
-     * kit, and that is logged rather than hidden.
+     * The first attempt copied the base mod's own idiom and named
+     * net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab -- which is
+     * not on this overlay's compile classpath at all (CI run 487: "package ...
+     * does not exist"; build.sh now probes the compile path every run and
+     * confirms it). The vanilla API is. The build's own API dump of run 488
+     * proves every call below is public:
+     *
+     *   CreativeModeTab.builder(CreativeModeTab.Row, int)
+     *   Builder.title(Component) / icon(Supplier&lt;ItemStack&gt;)
+     *   Builder.displayItems(CreativeModeTab.DisplayItemsGenerator)
+     *   Builder.build()
+     *   Output.accept(ItemLike)
+     *
+     * So 35 blocks, 19 items and every block item are reachable in the creative
+     * inventory, with no Fabric module and no reflection involved. If it still
+     * fails, the catch says so and the content stays craftable / minable in the
+     * decayed reality rather than taking the registry down.
      */
     public static void registerTab() {
         try {
-            Class<?> fabricTab = Class.forName("net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab");
-            Object builder = fabricTab.getMethod("builder").invoke(null);
-            builder = builder.getClass().getMethod("title", Component.class)
-                    .invoke(builder, Component.translatable("itemGroup.mcsm.content"));
-            java.util.function.Supplier<ItemStack> icon = () -> new ItemStack(RIFT_KEY);
-            for (java.lang.reflect.Method m : builder.getClass().getMethods()) {
-                if (m.getName().equals("icon") && m.getParameterCount() == 1) {
-                    builder = m.invoke(builder, icon);
-                    break;
-                }
-            }
-            for (java.lang.reflect.Method m : builder.getClass().getMethods()) {
-                if (!m.getName().equals("displayItems") || m.getParameterCount() != 1) {
-                    continue;
-                }
-                Class<?> genType = m.getParameterTypes()[0];
-                if (!genType.isInterface()) {
-                    continue;
-                }
-                Object generator = java.lang.reflect.Proxy.newProxyInstance(
-                        McsmContent.class.getClassLoader(), new Class<?>[]{genType},
-                        (proxy, method, args) -> {
-                            if (args != null && args.length == 2 && args[1] != null) {
-                                fillTab(args[1]);
-                            }
-                            return null;
-                        });
-                builder = m.invoke(builder, generator);
-                break;
-            }
-            Object tab = builder.getClass().getMethod("build").invoke(builder);
-            if (tab instanceof CreativeModeTab vanilla) {
-                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN_TAB, vanilla);
-                System.out.println("[ds] mcsm content tab registered (" + ALL_BLOCKS.size()
-                        + " blocks, " + (ALL_ITEMS.size() + ALL_BLOCK_ITEMS.size()) + " items)");
-            }
+            CreativeModeTab tab = CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
+                    .title(Component.translatable("itemGroup.mcsm.content"))
+                    .icon(() -> new ItemStack(RIFT_KEY))
+                    .displayItems((params, out) -> {
+                        for (Item it : ALL_BLOCK_ITEMS) {
+                            out.accept(it);
+                        }
+                        for (Item it : ALL_ITEMS) {
+                            out.accept(it);
+                        }
+                    })
+                    .build();
+            Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN_TAB, tab);
+            System.out.println("[ds] mcsm content tab registered (" + ALL_BLOCKS.size()
+                    + " blocks, " + (ALL_ITEMS.size() + ALL_BLOCK_ITEMS.size()) + " items)");
         } catch (Throwable t) {
             System.err.println("[ds] mcsm content tab unavailable (" + t
                     + ") -- every block and item is still craftable / minable in the decayed reality");
-        }
-    }
-
-    /** Feeds our stacks to whatever "output" object the tab hands the generator. */
-    private static void fillTab(Object output) {
-        try {
-            java.lang.reflect.Method accept = null;
-            for (java.lang.reflect.Method m : output.getClass().getMethods()) {
-                if (m.getName().equals("accept") && m.getParameterCount() == 1) {
-                    Class<?> p = m.getParameterTypes()[0];
-                    if (p.isAssignableFrom(ItemStack.class) || ItemStack.class.isAssignableFrom(p)) {
-                        accept = m;
-                        break;
-                    }
-                }
-            }
-            if (accept == null) {
-                return;
-            }
-            for (Item item : ALL_BLOCK_ITEMS) {
-                accept.invoke(output, new ItemStack(item));
-            }
-            for (Item item : ALL_ITEMS) {
-                accept.invoke(output, new ItemStack(item));
-            }
-        } catch (Throwable t) {
-            System.err.println("[ds] mcsm content tab fill failed: " + t);
         }
     }
 
