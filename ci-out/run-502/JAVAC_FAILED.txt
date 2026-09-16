@@ -1,0 +1,24 @@
+mcsm-extras/java/net/mcsm/extras/McsmMassg.java:382: error: incompatible types: Reference<SoundEvent> cannot be converted to SoundEvent
+                    player.playSound(SoundEvents.AMBIENT_CAVE, 1.8F, 0.35F);
+                                                ^
+mcsm-extras/java/net/mcsm/extras/McsmMassg.java:392: error: cannot find symbol
+                    McsmTerminal.sendSky(player, counter(level), skyLine(player, distance));
+                                ^
+  symbol:   method sendSky(ServerPlayer,int,String)
+  location: class McsmTerminal
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java:65: error: cannot find symbol
+        McsmTerminal.register();
+        ^
+  symbol:   variable McsmTerminal
+  location: class McsmBuiltinPackMixin
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java:69: error: cannot find symbol
+        McsmMassg.register();
+        ^
+  symbol:   variable McsmMassg
+  location: class McsmBuiltinPackMixin
+Note: mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: mcsm-extras/java/net/mcsm/extras/McsmNpcs.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+4 errors
