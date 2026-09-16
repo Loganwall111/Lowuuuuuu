@@ -245,3 +245,62 @@ proven against the anchors — the gate reports what it checked instead of skipp
 silently. When the real current sheets are added to the top level of
 `ci/sky_sheets/`, `--verify` compares the shipped tables against those images
 directly, which is stricter and will catch an anchor typo.
+
+## 7. The white conic light column, cloud blobs, and the death finale (build #416, 7000.0.0-M)
+
+### The halo is an independent, body-tethered light column
+
+The white halo is now completely separate from the purple backdrop, as required.
+The backdrop sheets stay flat 2D sky accents on the deep skybox layer; the white
+atmosphere is its own render pass, tethered to the storm's own coordinates:
+
+- **The flat bottom circle is gone.** The white under-halo oval (a horizontal disc
+  pinned to the lower chassis layers, drawn only from phase 5.82 up, which read as
+  a sticker and never followed the body) no longer draws, and neither does the old
+  ring: no cap, no disc, no ring geometry remains in the pass.
+- **The column.** `McsmHaloSkyRenderer` now builds a stack of 26 overlapped,
+  camera-facing additive bands through the teeth/eye glow shader, so the falloff is
+  computed per PIXEL and the column has no polygonal edge. It runs from inside the
+  lowest core blocks up past the top tentacle attachments, and its base alpha is
+  zero — the cone is open at the bottom by construction.
+- **White-locked.** A new `MCSM_GLOW_WHITE` branch, `pipeline/storm_glow_white` and
+  `GlowRenderTypes.glowWhite()` pin the pool to white. The aura around the teeth
+  and eyes keeps carrying the phase colour; the atmosphere can never pick it up.
+- **The growth weld.** Radius, height AND the cone's spread angle come from one
+  shared size model (`McsmStormPhase.growth/bodyRadius/bodyHeight/scaleMultiplier/
+  columnHalfAngleDeg`) instead of private per-pass curves. The multiplier reads the
+  live entity state — the phase ramp plus the heads currently attached — so a
+  severed head pulls the column in rather than leaving it inflated around air.
+- **Soft cloud blobs.** `ci/make_cloud_blobs.py` re-bakes the six phase glare
+  assets with a domain-warped silhouette and a long dissolve inside the texture
+  (border alpha is exactly 0, so there is no rim left to see), with the palette
+  ramp reversed so the light comes from the middle instead of the black-cored ring.
+  At draw time each layer is five offset, rotated, anisotropically squashed lobes
+  that roll slowly with the world clock — a rigid circular card cannot be read
+  anywhere in the result.
+
+### The death cinematic had never rendered — and now it does, cool-white
+
+`mcsm_death` and its whole stack (direction warp, white cracks, implosion, supernova
+rings, flash) sat in `mcsm_visuals.glsl` with **no caller**, exactly like the
+void-body block in `fogless_entity.fsh` before it: the Java driver stamped the
+1906..2906 carrier and nothing ever read it, so the finale was invisible in every
+build. `core/sky.fsh` now reads the band, warps its sampling direction, and adds the
+stack — and the palette is the **cool-white** finish: cracks `#E0F0FF`, the implosion
+whitening to `#E6F2FF`, and the six expanding rings walking a cold blue-to-white ramp
+instead of the old rainbow. The finale also holds the late-storm sky while the band
+owns the phase carrier, so it cannot snap to a calm sky mid-flash.
+
+`ci/check_phase_uniform.py` went **40 -> 60 checkpoints**, including the ones that keep
+this honest: the death driver must stamp and release the band, the sky pass must call
+every part of the stack, the finale must be cool-white, the no-dome shell must stay
+inert (no geometry submission, zero strengths) — and a shader-include reachability
+analysis that fails on any NEW unreachable helper.
+
+### The "defs-only" question, answered with a call graph
+
+The block below `mcsm_blob_color` is **not** dead: `core/rendertype_clouds.fsh` calls
+`mcsm_mass_cover`, and the `mcsm_inf_*` helpers are its internals — 43 of the include's
+60 functions are reachable from shipped shaders. The other 17 are dormant by design and
+are now an explicit allowlist: the port's live entry point must stay wired, and a new
+orphan fails the build instead of accumulating quietly.

@@ -71,6 +71,10 @@ JAVA_RESOLVER = "mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java"
 JAVA_SKY_HOOK = "mcsm-extras/java/net/mcsm/extras/client/McsmNativeSkyRenderer.java"
 # The teeth/eye/aura tracks live with the tint feed, not with the sky resolver.
 JAVA_TINT = "mcsm-extras/java/net/mcsm/extras/client/McsmTeethPhaseTint.java"
+# BUILD #416 -- the death cinematic's Java driver and the dome shell.
+JAVA_DEATH = "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBlobCarrierPatch.java"
+JAVA_DOME = "mcsm-extras/java/net/dabicco/witherstormmod/client/StormSkyDome.java"
+SKY_FSH = "mcsm-core-shaders/core/sky.fsh"
 
 
 def read(rel):
@@ -79,6 +83,76 @@ def read(rel):
         return None
     with open(path, encoding="utf-8", errors="replace") as f:
         return f.read()
+
+
+# ---------------------------------------------------------------------------
+# BUILD #416 -- shader include reachability.
+#
+# The "defs-only" question (are the helpers below mcsm_blob_color actually used?)
+# has a concrete answer that a human reading the file cannot get reliably: build
+# the call graph over every shipped shader and see which definitions are
+# reachable from a real entry point. It turned out the port IS live -- the cloud
+# deck's cover mask (core/rendertype_clouds.fsh) calls mcsm_mass_cover, and the
+# inf_* helpers are its internals -- while 17 other helpers are genuinely
+# dormant. Both facts are now enforced: the live entry point must stay wired, and
+# a NEW orphan fails the build unless it is added to the dormant list on purpose.
+# ---------------------------------------------------------------------------
+DORMANT_ALLOWED = {
+    "mcsm_apocalypse_bands",   # storyboard sky variant, not on any shipping path
+    "mcsm_aurora",             # retired aurora layer
+    "mcsm_blob",               # pre-native sky blob (McsmStormBlob replaced it)
+    "mcsm_cinematic_sky",      # storyboard sky variant
+    "mcsm_inf_p6_split",       # dormant half of the infinite-skybox port
+    "mcsm_inf_palette",        # dormant half of the infinite-skybox port
+    "mcsm_k_bot", "mcsm_k_mid", "mcsm_k_top", "mcsm_keys",  # older key tables
+    "mcsm_kill_teal",          # teal-kill grade, superseded by the story grade
+    "mcsm_rd_raw",             # carrier guard for a band that was never used
+    "mcsm_sky_body_tint",      # retired body tint
+    "mcsm_sky_color",          # superseded by mcsm_sky_reference/sky.fsh
+    "mcsm_star_tint",          # retired star tint
+    "mcsm_sun_halo",           # superseded by the authored sun pass
+    "mcsm_void_black",         # superseded by the inline block in fogless_entity
+}
+
+
+def shader_reachability():
+    """(reachable, unreachable) function names defined in the shader include."""
+    text = read(VISUALS)
+    if text is None:
+        return set(), set()
+    starts = [(m.start(), m.group(1)) for m in re.finditer(
+        r"(?m)^(?:vec[234]|float|bool|void|int)\s+(mcsm_[A-Za-z0-9_]+)\s*\(", text)]
+    bodies = {}
+    for i, (pos, name) in enumerate(starts):
+        end = starts[i + 1][0] if i + 1 < len(starts) else len(text)
+        bodies[name] = text[pos:end]
+    defs = set(bodies)
+
+    outside = []
+    for root in ("mcsm-core-shaders", "jar-overrides", "src/main/resources", "shaderpack-v5"):
+        base = os.path.join(ROOT, root)
+        for dirpath, _dirs, files in os.walk(base):
+            for fn in files:
+                if not fn.endswith((".fsh", ".vsh", ".glsl")):
+                    continue
+                if os.path.abspath(os.path.join(dirpath, fn)) == os.path.abspath(os.path.join(ROOT, VISUALS)):
+                    continue
+                blob = read(os.path.relpath(os.path.join(dirpath, fn), ROOT)) or ""
+                outside.append(blob)
+    shipped = "\n".join(outside)
+
+    def calls(t):
+        return set(d for d in defs if re.search(r"\b%s\s*\(" % re.escape(d), t))
+
+    live = set(d for d in defs if re.search(r"\b%s\s*\(" % re.escape(d), shipped))
+    changed = True
+    while changed:
+        changed = False
+        for d in list(live):
+            for c in calls(bodies.get(d, "")) - live:
+                live.add(c)
+                changed = True
+    return live, set(d for d in defs if d not in live)
 
 
 def main():
@@ -221,11 +295,79 @@ def main():
     else:
         check("sky hook present", False, JAVA_SKY_HOOK)
 
+    # ---- 5. THE DEATH CINEMATIC MUST STAY WIRED -------------------------
+    # It is the same defect the void-body block had: the Java driver stamped its
+    # carrier and the whole stack (cracks, implosion, supernova, flash) sat in the
+    # include with NO caller, so none of it had ever rendered. These checkpoints
+    # exist so it cannot go dormant a second time: the band must be stamped by the
+    # driver, READ by the sky pass, and the finale must be the cool-white family
+    # rather than the warm/rainbow palette it used to carry.
+    death_driver = read(JAVA_DEATH)
+    if death_driver:
+        check("death driver stamps the 1906..2906 band", "1906.0F" in death_driver)
+        check("death driver releases the band at the end",
+              "sky band released" in death_driver or "END --" in death_driver)
+        check("death driver keeps the aim alive after the entity is gone",
+              "mcsm$lastYaw" in death_driver and "cloudEnd" in death_driver)
+    else:
+        check("death driver present", False, JAVA_DEATH)
+    sky = read(SKY_FSH)
+    if sky and vis:
+        check("sky pass CALLS the death stack", "mcsm_death(FogSkyEnd)" in sky)
+        for fn in ("mcsm_death_dir(", "mcsm_death_cracks(", "mcsm_death_implosion(",
+                   "mcsm_supernova(", "mcsm_death_flash("):
+            check("sky pass uses %s" % fn, fn in sky)
+        check("death stack is aimable without a camera position",
+              "vec3 mcsm_death_aim()" in vis)
+        check("death finale is COOL white, not warm white",
+              "vec3(0.88, 0.94, 1.00)" in vis)
+        check("death rings are the cool ramp, not the rainbow",
+              "ice blue" in vis and "orange" not in vis.split("RING_COL")[1][:600])
+    else:
+        check("sky pass present", False, SKY_FSH)
+
+    # ---- 6. THE NO-DOME RULE --------------------------------------------
+    # A dome is a world-space cap over the sky. The build retired it and the
+    # shell that is left must stay inert; if anyone ever wires geometry back into
+    # it, the sky becomes "a sky with a top on it" again and this fails first.
+    dome = read(JAVA_DOME)
+    if dome:
+        check("dome shell is present but inert",
+              "returns 0.0F" in dome or "return 0.0F" in dome)
+        check("dome shell submits no geometry",
+              not any(k in dome for k in ("VertexConsumer", "submitCustomGeometry",
+                                          "submitModel", "RenderType", "BufferBuilder")))
+        check("dome shell contributes no colour",
+              "out[0] = 0.0F" in dome and "out[1] = 0.0F" in dome and "out[2] = 0.0F" in dome)
+    else:
+        check("dome shell present", False, JAVA_DOME)
+
+    # ---- 7. SHADER INCLUDE HAS NO ACCIDENTAL DEAD CODE ------------------
+    live, dead = shader_reachability()
+    check("shader include analysed for reachability", bool(live) or bool(dead))
+    if live or dead:
+        check("the infinite-skybox port's live entry point is still wired",
+              "mcsm_mass_cover" in live and "mcsm_mass_cover(" in (
+                  read("mcsm-core-shaders/core/rendertype_clouds.fsh") or ""))
+        check("the death stack is reachable from a shipped shader",
+              "mcsm_death" in live)
+        new_orphans = sorted(dead - DORMANT_ALLOWED)
+        check("no NEW unreachable helper in the shader include",
+              not new_orphans,
+              "%d unreachable not on the dormant list: %s"
+              % (len(new_orphans), ", ".join(new_orphans)))
+        stale = sorted(DORMANT_ALLOWED - dead)
+        check("the dormant list is accurate (entries that came back to life)",
+              not stale, ", ".join(stale))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)
     for f in fails:
         print("  FAIL WitherStormPhase :: %s" % f)
+    if live or dead:
+        print("  note %d shader helpers reachable, %d dormant by design (allowlisted)"
+              % (len(live), len(dead)))
     print("[phase] %d/%d WitherStormPhase checkpoints pass" % (len(checks) - len(fails), len(checks)))
     return 1 if fails else 0
 

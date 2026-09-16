@@ -129,10 +129,37 @@ vec3 mcsm_sky_regular(float t, float clock) {
 
 void main() {
     vec3 ray = normalize(mcsmCamRay);
-    float up = ray.y;
-    float t = 1.0 - up;                    // 0 zenith .. 1 horizon .. >1 below
     float clock = mcsm_clock(GameTime);
     float p = mcsm_witherstorm_phase();
+
+    // ---- death cinematic ---------------------------------------------------
+    // BUILD #416 -- THE JOIN THAT WAS MISSING. The Java driver has stamped the
+    // 1906..2906 band (and kept the aim alive) since the phase-31 work, and the
+    // whole death stack -- cracks, implosion, supernova rings, flash -- has sat in
+    // mcsm_visuals.glsl with NO caller: nothing ever read the band, so the finale
+    // had never once rendered. This is where it renders, and it is the cool-white
+    // finish the brief asks for.
+    //
+    // dt < 0 means the band is not live and the frame is untouched, so the normal
+    // sky (and every other path in this file) is bit-for-bit what it was.
+    float dt = mcsm_death(FogSkyEnd);
+    if (dt >= 0.0) {
+        // Act I: space itself wobbles, applied to the SAMPLING direction so the
+        // wobble is continuous across the whole sky rather than a screen effect.
+        ray = mcsm_death_dir(ray, dt, clock);
+    }
+    // While the death band owns FogSkyEnd, the phase carrier is overwritten by dt,
+    // so the phase falls back to the fog-colour signature -- which can drop to 0
+    // (calm) for a frame in the middle of the white flash, snapping the sky to the
+    // ordinary one mid-finale. The finale holds the LATE-STORM sky instead: the
+    // storm is at its biggest when it dies, so the rose/ember end of the reference
+    // table is where it belongs, and the sequence's own tail (which eases off from
+    // dt ~0.92) is what hands the sky back as the carrier is released.
+    if (dt >= 0.0) {
+        p = max(p, 6.6);
+    }
+    float up = ray.y;
+    float t = 1.0 - up;                    // 0 zenith .. 1 horizon .. >1 below
 
     vec3 col = p > 4.4
         ? mcsm_sky_reference(t, p)
@@ -159,6 +186,19 @@ void main() {
     // teeth colour: blue at 6, toxic green at 7, blue again at 8.
     vec3 glowTint = p > 4.4 ? mcsm_aura_color(p) * 0.06 : vec3(0.04, 0.02, 0.06);
     col += glowTint * glowW;
+
+    // ---- the death stack itself -------------------------------------------
+    // Additive on top of the graded sky: white filaments crawling over the sky,
+    // the implosion contracting toward where the storm died, the expanding cool
+    // rings, and finally the whole-sky white spike. Every term is zero outside its
+    // window, so this costs a few branches and changes nothing when dt < 0.
+    if (dt >= 0.0) {
+        vec3 bossDir = mcsm_death_aim();
+        col += mcsm_death_cracks(ray, dt, clock);
+        col += mcsm_death_implosion(ray, bossDir, dt, clock);
+        col += mcsm_supernova(ray, bossDir, dt, clock);
+        col *= 1.0 + mcsm_death_flash(dt);
+    }
 
     // ---- story grade ------------------------------------------------------
     col = mcsm_story_grade(col);

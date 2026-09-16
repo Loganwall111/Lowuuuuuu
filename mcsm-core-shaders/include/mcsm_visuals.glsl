@@ -1033,7 +1033,11 @@ vec3 mcsm_death_cracks(vec3 worldDir, float dt, float clock) {
               * sin(d.z * 31.0 + clock * 0.28);
     web = pow(abs(web), 24.0);   // thin filaments, mostly dark sky between
     float flicker = 0.70 + 0.30 * sin(clock * 6.0 + d.y * 9.0);
-    return vec3(1.0, 0.97, 0.95) * web * a * flicker * 0.65;
+    // BUILD #416 -- COOL white. The cracks used to be a warm white (1.0, 0.97,
+    // 0.95); the death sequence is specified as a cool-white finish, so the
+    // filaments carry a blue bias (and the flicker rides their brightness, not
+    // their hue, so they never warm up mid-flicker).
+    return vec3(0.88, 0.94, 1.00) * web * a * flicker * 0.65;
 }
 
 // Implosion body: the mass contracts to a white-hot point (dt 0.25..0.55),
@@ -1054,13 +1058,14 @@ vec3 mcsm_death_implosion(vec3 worldDir, vec3 bossDir, float dt, float clock) {
     float shape = 1.0 - smoothstep(0.0, outer, ang);
     float hot   = pow(shape, 2.0);
     // white takes over as the mass whitens
-    vec3 coreCol = mix(vec3(0.55, 0.12, 0.42), vec3(1.0, 0.98, 1.0),
+    // the mass whitens COOL: magenta at the start, blue-white at the collapse
+    vec3 coreCol = mix(vec3(0.55, 0.12, 0.42), vec3(0.90, 0.95, 1.00),
                        mcsm_ramp(dt, 0.30, 0.53));
     // converging motes: bright spokes whose radius slides inward with dt
     float conv = ang - mix(40.0, 3.0, mcsm_ramp(dt, 0.25, 0.55));
     float motes = pow(0.5 + 0.5 * sin(conv * 1.6 - clock * 2.5), 6.0)
                 * smoothstep(0.0, 6.0, ang) * (1.0 - smoothstep(outer, outer + 14.0, ang));
-    vec3 moteCol = mix(vec3(1.0, 0.55, 0.85), vec3(1.0), 0.35);
+    vec3 moteCol = mix(vec3(0.80, 0.88, 1.00), vec3(0.95, 0.98, 1.00), 0.35);
     float burst = mcsm_ramp(dt, 0.45, 0.55);
     return (coreCol * (0.30 + hot * (0.5 + 1.6 * burst)) * a)
          + moteCol * motes * 0.22 * a;
@@ -1071,13 +1076,19 @@ vec3 mcsm_supernova(vec3 worldDir, vec3 bossDir, float dt, float clock) {
     float st = mcsm_ramp(dt, 0.55, 0.60);        // rings ignite at the flash
     if (st <= 0.0) return vec3(0.0);
     float ang = degrees(acos(clamp(dot(normalize(worldDir), normalize(bossDir)), -1.0, 1.0)));
+    // BUILD #416 -- COOL-WHITE RINGS. The six expanding rings used to be a
+    // rainbow (purple/pink/blue/orange/green/yellow off the storyboard); the death
+    // sequence is specified as a cool-white finish, so the same six rings now walk
+    // a cold blue-to-white ramp. Structure and timing are untouched -- only the
+    // hue family moved, so the finale reads as one white detonation rather than a
+    // firework.
     const vec3 RING_COL[6] = vec3[](
-        vec3(0.62, 0.20, 0.95),   // purple
-        vec3(0.98, 0.28, 0.72),   // pink
-        vec3(0.25, 0.50, 1.00),   // blue
-        vec3(1.00, 0.52, 0.12),   // orange
-        vec3(0.25, 0.95, 0.45),   // green
-        vec3(1.00, 0.86, 0.20));  // yellow
+        vec3(0.62, 0.78, 1.00),   // ice blue
+        vec3(0.72, 0.86, 1.00),   // pale blue
+        vec3(0.82, 0.92, 1.00),   // blue-white
+        vec3(0.90, 0.96, 1.00),   // cool white
+        vec3(0.96, 0.99, 1.00),   // white
+        vec3(0.88, 0.95, 1.00));  // back to a blue-white tail
     vec3 acc = vec3(0.0);
     for (int i = 0; i < 6; i++) {
         float fi = float(i);
@@ -1090,6 +1101,38 @@ vec3 mcsm_supernova(vec3 worldDir, vec3 bossDir, float dt, float clock) {
         acc += RING_COL[i] * ring * fade * 0.42;
     }
     return acc * st;
+}
+
+// BUILD #416 -- aim for the death stack. The sky pass has no camera world
+// position, so this reads the yaw/pitch carrier the Java driver keeps alive after
+// the storm entity is gone (McsmBlobCarrierPatch caches the last yaw/pitch and
+// re-stamps them for the rest of the sequence). Same packing as mcsm_boss_dir();
+// no BossPos branch, because a direction built from the world origin would be
+// wrong for a sky that is drawn per-ray. A missing carrier returns +Z rather than
+// a NaN, so the finale plays aimed straight ahead instead of tearing the frame.
+vec3 mcsm_death_aim() {
+    float v = FogCloudsEnd;
+    float yaw, pitch;
+    if (v >= 47000.0 && v <= 1093455.0) {
+        float e  = floor(v / 16.0) - 3000.0;
+        float yi = floor(e / 181.0);
+        float pi = e - yi * 181.0;
+        yaw   = clamp(yi, 0.0, 360.0) - 180.0;
+        pitch = clamp(pi, 0.0, 180.0) - 90.0;
+    } else if (v >= 2999.0 && v <= 68341.0) {
+        float e  = v - 3000.0;
+        float yi = floor(e / 181.0);
+        float pi = e - yi * 181.0;
+        yaw   = clamp(yi, 0.0, 360.0) - 180.0;
+        pitch = clamp(pi, 0.0, 180.0) - 90.0;
+    } else {
+        return vec3(0.0, 0.0, 1.0);
+    }
+    float yr = yaw * (MCSM_PI / 180.0);
+    float pr = pitch * (MCSM_PI / 180.0);
+    // negated exactly like mcsm_boss_dir(): the carrier describes boss->camera
+    vec3 d = vec3(cos(pr) * cos(yr), sin(pr), cos(pr) * sin(yr));
+    return normalize(-d);
 }
 
 // The whole-sky white spike at dt = 0.55 ("completely implodes").
