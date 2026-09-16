@@ -1579,6 +1579,58 @@ def main():
           and "ramp(p, 5.75F, 6.05F)" in (
               read("mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java") or ""))
 
+    # ------------------------------------------------------------------
+    # BUILD #432 -- IVOR'S SECRET ROOM.
+    #
+    # The terminal has told players since #424 that the code is "written down in
+    # the world, in the hands of the one survivor who is still carrying the
+    # paperwork: IVOR. Find him in the secret room of an abandoned hospital."
+    # Nothing in the world wrote it down. Now a hospital has the room, the room
+    # has the five letters inlaid in its floor, and IVOR is standing in it.
+    # ------------------------------------------------------------------
+    import re as _re
+    terminal = read("mcsm-extras/java/net/mcsm/extras/McsmTerminal.java") or ""
+
+    check("a hospital actually builds the secret room",
+          "planSecretRoom(p, x0, z1, ground);" in cities
+          and "private static void planSecretRoom(Plan p, int x0, int z1, int ground)" in cities)
+    check("the room is a basement, three under the ward, with a stairwell both ways",
+          "private static final int SECRET_DEPTH = 3;" in cities
+          and "final int walk = ground - SECRET_DEPTH;" in cities
+          and "for (int s = 0; s < SECRET_DEPTH; s++) {" in cities
+          and "int z = zFront + 1 - s;" in cities
+          and "p.put(x, y + 2, z, AIR);" in cities)
+    check("the code is inlaid in the floor in the storm's purple",
+          "p.put(gx + col, walk - 1, zBack + 1 + row, DESIGN_ACCENT);" in cities
+          and "int gx = x0 + 5;" in cities)
+
+    # The glyph table is the code. Decode it and check the SHAPES, rather than
+    # trusting the comment that says which letters they are.
+    glyphs = _re.search(r"SECRET_GLYPHS = \{(.*?)\};", cities, _re.S)
+    decoded = []
+    if glyphs:
+        for body in _re.findall(r'"([.#]+)"', glyphs.group(1)):
+            decoded.append([body[i:i + 3] for i in range(0, len(body), 3)])
+    want = [
+        ["#.#", "###", "#.#", "#.#", "#.#"],   # M
+        [".#.", "#.#", "###", "#.#", "#.#"],   # A
+        [".##", "#..", ".#.", "..#", "##."],   # S
+        [".##", "#..", ".#.", "..#", "##."],   # S
+        [".##", "#..", "#.#", "#.#", ".##"],   # G
+    ]
+    check("the five inlaid glyphs decode to M A S S G and nothing else",
+          len(decoded) == 5
+          and all(len(row) == 5 and all(len(c) == 3 for c in row) for row in decoded)
+          and decoded == want)
+    check("IVOR is the one standing in the room, and he carries the name",
+          "private static final int IVOR_ENTRY = 1;" in cities
+          and "boolean ivor = at.length > 3 && at[3] == IVOR_ENTRY;" in cities
+          and 'character.setCharacter(ivor ? "ivor"' in cities
+          and 'mob.setCustomName(net.minecraft.network.chat.Component.literal("IVOR"));' in cities)
+    check("the locked screen still sends the player to that room",
+          "secret room of an abandoned hospital" in terminal
+          and "IVOR" in terminal and "nearIvor(player)" in terminal)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

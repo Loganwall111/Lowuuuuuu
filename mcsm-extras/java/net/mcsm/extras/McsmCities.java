@@ -380,6 +380,10 @@ public final class McsmCities {
         while ((at = LIFE.poll()) != null && spawned < 8) {
             try {
                 BlockPos pos = new BlockPos(at[0], at[1], at[2]);
+                // BUILD #432 -- a spot booked as IVOR's is IVOR's: the secret room
+                // of a hospital is where the terminal sends the player, so the one
+                // survivor standing in it has to be the one the hint names.
+                boolean ivor = at.length > 3 && at[3] == IVOR_ENTRY;
                 EntityType<?> type = null;
                 try {
                     type = net.mcsm.extras.entity.McsmEntities.STORY_CHARACTER;
@@ -399,7 +403,15 @@ public final class McsmCities {
                 if (created instanceof net.minecraft.world.entity.Mob mob) {
                     mob.setPersistenceRequired();
                     if (mob instanceof net.mcsm.extras.entity.StoryCharacterEntity character) {
-                        character.setCharacter(CHARACTERS[level.getRandom().nextInt(CHARACTERS.length)]);
+                        character.setCharacter(ivor ? "ivor"
+                                : CHARACTERS[level.getRandom().nextInt(CHARACTERS.length)]);
+                    }
+                    if (ivor) {
+                        // Carry the name even when the cast entity is unavailable
+                        // and this fell back to a villager: the terminal's hint
+                        // looks for a custom name containing "ivor", which is how
+                        // the player gets the five words out of him.
+                        mob.setCustomName(net.minecraft.network.chat.Component.literal("IVOR"));
                     }
                     mob.snapTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D,
                             level.getRandom().nextFloat() * 360.0F, 0.0F);
@@ -884,7 +896,123 @@ public final class McsmCities {
             }
         }
         p.put(cx, ground + h + 1, cz, GLASS);
+        // BUILD #432 -- the room the terminal has been pointing at since #424.
+        planSecretRoom(p, x0, z1, ground);
     }
+
+    // ------------------------------------------------------------------
+    // BUILD #432 -- IVOR'S SECRET ROOM.
+    //
+    // Since #424 the restricted terminal has told the player exactly where the
+    // five letters are: "It is written down in the world, in the hands of the
+    // one survivor who is still carrying the paperwork: IVOR. Find him in the
+    // secret room of an abandoned hospital." Nothing in the world wrote them
+    // down. This does.
+    //
+    // It is a BASEMENT of the hospital, three blocks under the ward, 23 wide and
+    // 6 deep, walled in design-dark with tiles inside. It has no door in any
+    // facade: the only way in is the stairwell punched down through the ward's
+    // back corner, which is why it is a secret. The five letters are inlaid in
+    // the floor in the storm's own purple -- M A S S G, readable from the foot of
+    // the stairs -- and IVOR is standing in the room, named, which is what makes
+    // the terminal's IVOR hint answer with the words the letters come from.
+    //
+    // Everything here is ordinary setBlock placements like the rest of this
+    // generator, so the room is real, breakable, and re-buildable by a player.
+    // ------------------------------------------------------------------
+    private static void planSecretRoom(Plan p, int x0, int z1, int ground) {
+        final int walk = ground - SECRET_DEPTH;      // the room's floor surface
+        final int ax0 = x0 + 2;
+        final int ax1 = ax0 + SECRET_ROOM_WIDTH - 1;
+        final int zBack = z1 - 6;
+        final int zFront = z1 - 1;
+
+        // the shell: floor below, ceiling above, design-dark walls around
+        for (int x = ax0 - 1; x <= ax1 + 1; x++) {
+            for (int z = zBack - 1; z <= zFront + 1; z++) {
+                p.put(x, walk - 1, z, TILES);
+                p.put(x, walk + 3, z, DESIGN_DARK);
+            }
+        }
+        for (int y = walk; y < walk + 3; y++) {
+            for (int x = ax0 - 1; x <= ax1 + 1; x++) {
+                p.put(x, y, zBack - 1, DESIGN_DARK);
+                p.put(x, y, zFront + 1, DESIGN_DARK);
+            }
+            for (int z = zBack - 1; z <= zFront + 1; z++) {
+                p.put(ax0 - 1, y, z, DESIGN_DARK);
+                p.put(ax1 + 1, y, z, DESIGN_DARK);
+            }
+        }
+        // hollow it out
+        for (int y = walk; y < walk + 3; y++) {
+            for (int x = ax0; x <= ax1; x++) {
+                for (int z = zBack; z <= zFront; z++) {
+                    p.put(x, y, z, AIR);
+                }
+            }
+        }
+        // THE WAY IN: a stairwell punched down through the ward's back corner.
+        // Step s is one block lower than the step before it, so it is walkable
+        // both ways -- a secret room nobody can leave is a bug, not a secret.
+        for (int s = 0; s < SECRET_DEPTH; s++) {
+            int y = ground - s;
+            int z = zFront + 1 - s;
+            for (int x = ax0; x <= ax0 + 1; x++) {
+                p.put(x, y, z, TILES);
+                p.put(x, y + 1, z, AIR);
+                p.put(x, y + 2, z, AIR);
+            }
+        }
+        // THE LETTERS: M A S S G inlaid in the floor, in the storm's purple.
+        // Four blocks apart, drawn from the same five-by-three glyph table the
+        // terminal's hint decodes into words.
+        int gx = x0 + 5;
+        for (int letter = 0; letter < SECRET_GLYPHS.length; letter++) {
+            String glyph = SECRET_GLYPHS[letter];
+            for (int row = 0; row < GLYPH_ROWS; row++) {
+                for (int col = 0; col < GLYPH_COLS; col++) {
+                    if (glyph.charAt(row * GLYPH_COLS + col) != '#') {
+                        continue;
+                    }
+                    p.put(gx + col, walk - 1, zBack + 1 + row, DESIGN_ACCENT);
+                }
+            }
+            gx += GLYPH_COLS + 1;
+        }
+        // two lamps so the paperwork can actually be read, and Ivor's spot
+        p.put(ax0, walk + 2, zFront, LAMP);
+        p.put(ax1, walk + 2, zBack, LAMP);
+        p.put(ax1, walk, zBack, SUPPLY);
+        // Ivor's own spot is beside the first letter, not on top of it.
+        LIFE.add(new int[]{x0 + 4, walk, zBack + 3, IVOR_ENTRY});
+    }
+
+    /** How far under the ward the room sits. */
+    private static final int SECRET_DEPTH = 3;
+
+    /** The room's width in blocks: the five glyphs, their gaps, and the stairs. */
+    private static final int SECRET_ROOM_WIDTH = 23;
+
+    private static final int GLYPH_ROWS = 5;
+    private static final int GLYPH_COLS = 3;
+
+    /** Marks a booked survivor as IVOR himself. */
+    private static final int IVOR_ENTRY = 1;
+
+    /**
+     * M A S S G, five rows by three columns each, row-major. These five bitmaps
+     * ARE the code: the terminal's hint decodes them into "Mourning, Ash,
+     * Silence, Sirens, Graves", and the gate reads this table back and checks the
+     * shapes spell the five letters rather than trusting the comment above them.
+     */
+    private static final String[] SECRET_GLYPHS = {
+        "#.#####.##.##.#",   // M
+        ".#.#.#####.##.#",   // A
+        ".###...#...###.",   // S
+        ".###...#...###.",   // S
+        ".###..#.##.#.##",   // G
+    };
 
     /** A radio station with a mast: the tallest thing in the district. */
     private static void planRadio(Plan p, Rng r, int cx, int cz, int ground, int mast) {
