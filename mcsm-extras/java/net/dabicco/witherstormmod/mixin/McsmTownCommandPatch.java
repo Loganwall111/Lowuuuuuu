@@ -136,6 +136,11 @@ public abstract class McsmTownCommandPatch {
             maze.then(Commands.literal("where").executes(ctx -> ds$maze(ctx.getSource())));
             maze.then(Commands.literal("build").executes(ctx -> ds$mazeBuild(ctx.getSource())));
 
+            // BUILD #450 -- what the nearest district is wearing, so the new sizes
+            // and atmospheres can be checked without walking there.
+            LiteralArgumentBuilder<CommandSourceStack> city = Commands.literal("city");
+            city.executes(ctx -> ds$city(ctx.getSource()));
+
             // BUILD #447 -- the cutscenes, listed from the shared table (the server
             // never loads the drawing class).
             LiteralArgumentBuilder<CommandSourceStack> scene = Commands.literal("scene");
@@ -153,7 +158,7 @@ public abstract class McsmTownCommandPatch {
             server.then(Commands.literal("shell").executes(ctx -> ds$serverShell(ctx.getSource())));
 
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
-                    .then(ritual).then(reality).then(maze).then(server).then(book).then(scene));
+                    .then(ritual).then(reality).then(maze).then(server).then(book).then(scene).then(city));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -500,6 +505,34 @@ public abstract class McsmTownCommandPatch {
                 "[ds] they fire themselves in the world, once each, the first time their "
                 + "trigger happens -- or press N in game to play the next one you have not seen"),
                 false);
+        return 1;
+    }
+
+    private static int ds$city(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            int x = (int) player.getX();
+            int z = (int) player.getZ();
+            int[] near = net.mcsm.extras.McsmCities.nearestCity(x, z);
+            if (near == null) {
+                src.sendSuccess(() -> Component.literal(
+                        "[ds] no district within " + (net.mcsm.extras.McsmCities.REGION * 4)
+                        + " blocks -- they raise on a 256-block grid"), false);
+                return 0;
+            }
+            // nearestCity answers {dx, dz, distance}: turn the offset back into the
+            // district's own region, because the size and the air live there.
+            int ox = x + near[0];
+            int oz = z + near[1];
+            int rx = Math.floorDiv(ox, net.mcsm.extras.McsmCities.REGION);
+            int rz = Math.floorDiv(oz, net.mcsm.extras.McsmCities.REGION);
+            src.sendSuccess(() -> Component.literal("[ds] the nearest district is " + near[2]
+                    + " blocks away at " + ox + ", " + oz + " and it is "
+                    + net.mcsm.extras.McsmCities.atmosphereName(rx, rz)), false);
+            src.sendSuccess(() -> Component.literal("[ds] " + net.mcsm.extras.McsmCities.stats()), false);
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds city has to be run by a player"), false);
+        }
         return 1;
     }
 }

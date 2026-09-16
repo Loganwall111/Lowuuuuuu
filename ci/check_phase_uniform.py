@@ -2299,6 +2299,13 @@ def main():
           and "for (int cx = -rings; cx <= rings; cx++) {" in cities
           and "public static final int MAX_PLAN_OPS = 320000;" in cities
           and "public static final int OPS_PER_TICK = 1800;" in cities)
+    check("the district's own size and air can be read off in game",
+          'Commands.literal("city")' in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java")
+              or "")
+          and "net.mcsm.extras.McsmCities.atmosphereName(rx, rz)" in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java")
+              or ""))
     check("and each one wears its own air: six atmospheres, six skylines",
           cities.count("0xFF") >= 12
           and "public static int atmosphereIndex(int rx, int rz) {" in cities
