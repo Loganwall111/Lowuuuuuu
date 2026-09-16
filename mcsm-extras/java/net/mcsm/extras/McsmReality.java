@@ -263,5 +263,11 @@ public final class McsmReality {
         player.sendSystemMessage(Component.literal(leaving
                 ? "\u00a75\u00a7lTHE RIFT OPENS \u00a78\u00b7 the decayed reality answers"
                 : "\u00a75\u00a7lTHE RIFT CLOSES \u00a78\u00b7 you are spat back into the world"));
+        if (leaving) {
+            // phase 2: point the player at the nearest abandoned district
+            player.sendSystemMessage(Component.literal("\u00a78\u00b7 the ruins lie \u00a7f"
+                    + McsmCities.guidance((int) x, (int) z)
+                    + "\u00a78 \u00b7 look for the rift monument"));
+        }
     }
 }

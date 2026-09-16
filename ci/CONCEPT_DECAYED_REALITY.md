@@ -45,7 +45,7 @@ tear → face the Creator's arms → seal or eat the hole.*
 
 ---
 
-## 2. What is LIVE now (phase 1, shipped in this build)
+## 2. What is LIVE now (phases 1 + 2, shipped in this build)
 
 | Piece | Status | Where |
 |---|---|---|
@@ -56,6 +56,12 @@ tear → face the Creator's arms → seal or eat the hole.*
 | **A REAL dimension** `mcsm:decayed_reality` — own dimension type (its own sky, fog, ambient light, no skylight, nether-like ceiling rules), own flat terrain **built out of the new blocks**, not a teleport to another corner of the overworld | **LIVE** | `data/mcsm/dimension*`, `McsmReality` |
 | **Rift entry**: hold the **Rift Key** + sneak → the rift opens (and closes) — server-side, singleplayer and multiplayer, no key binding to collide with | **LIVE** | `McsmReality.tickServer` + `McsmRiftMixin` |
 | **Console chapter IX** — enter the rift from the panel, hand out the starter kit, and switch every new layer (cities, quests, creatures, glitches, black hole, tornadoes) | **LIVE** | `McsmExtrasScreen` |
+| **Abandoned cities that actually generate** — a district every 256 blocks (62% of regions), each one a plaza with a rift monument, nine plots in a 3x3 grid of streets, six building archetypes (tower shell, warehouse, half-collapsed house, hospital, radio mast, crater), street furniture and a ruined highway. Deterministic: the same region always holds the same district | **LIVE** | `McsmCities` |
+| **Built without stalling anything** — a district is planned once and written 1200 blocks per server tick, only when a player is within 352 blocks. A district rises over about a second of play and an unreachable corner of the dimension costs nothing | **LIVE** | `McsmCities.OPS_PER_TICK` |
+| **A district is a place, not an event** — its rift monument is part of the world, so a reloaded server does not rebuild what is standing, and a monument that was mined out is rebuilt rather than lost | **LIVE** | `McsmCities.planCity` |
+| **Crate loot** — `city_crate`, `supply_crate` and `vault_crate` scattered through every archetype, dropping the new weapons, materials and glyph cells through vanilla block loot tables | **LIVE** | `data/mcsm/loot_table/blocks/` |
+| **Directions to the ruins** — arriving in the rift tells you how far the nearest district is and which way, from pure arithmetic on the same hash the generator uses | **LIVE** | `McsmCities.guidance` |
+| **The datapack is validated against the game itself** — vanilla's own recipe / loot table / dimension files are read out of the client jar the runner downloads, and the build fails if our JSON uses a different key shape or names an id that is not registered | **LIVE** | `ci/check_datapack_schema.py` |
 
 Phase 1 deliberately uses **existing textures** (the base mod's own storm
 textures plus vanilla) so no path can be wrong and nothing renders as an error
@@ -65,17 +71,14 @@ block. Phase 2 replaces the placeholder set with generated storm textures.
 
 ## 3. The phases ahead
 
-### Phase 2 — the abandoned cities (generation, for real)
-- Structure generation inside `mcsm:decayed_reality`: ruined city blocks, tower
-  shells, collapsed highways, a cratered plaza, a hospital, a radio station.
-- Driven by our own site table + the base mod's structure builder
-  (`McsmWorldgen.enqueue/layout/tick`), so the worldgen budget that already
-  works for the story towns is reused instead of reinvented.
-- Loot tables per building type (keys, keycards, glyph cells, weapons).
-- Generated **textures** for the new blocks (this is where the placeholder
-  vanilla textures go away).
+### Phase 2 — the abandoned cities (generation, for real) — **DONE**
+- Districts generate inside `mcsm:decayed_reality` as described above, with six
+  building archetypes, street furniture, a highway, and crate loot.
+- Still to do inside this phase: generated textures for the city blocks (they
+  currently reuse the storm/vanilla placeholder set), interiors that read as
+  *rooms* (beds, desks, signage), and a city map entry in the HUD terminal.
 
-### Phase 3 — creatures and the bosses
+### Phase 3 — creatures and the bosses (NEXT)
 - Reality creatures: Withered survivors, Echo husks, Glitch crawlers,
   Rift hounds, the City Warden; spawned and staged by the dimension, not the
   overworld.

@@ -78,6 +78,10 @@ BLOCKS = {
     "rusted_door": ("door", {"top": "minecraft:block/oxidized_copper",
                              "bottom": "minecraft:block/oxidized_copper"}),
     "rusted_trapdoor": ("trapdoor", "minecraft:block/oxidized_copper"),
+    # ---- city crates (phase 2): the loot of the abandoned cities --------
+    "city_crate": ("cube", "dabywitherstormmod:block/withered_planks"),
+    "supply_crate": ("cube", "minecraft:block/barrel_side"),
+    "vault_crate": ("cube", "minecraft:block/netherite_block"),
 }
 
 # item name -> (kind, texture) ; kind = handheld | flat
@@ -158,6 +162,9 @@ NAMES = {
     "storm_spear": "Storm Spear",
     "creators_judgement": "Creator's Judgement",
     "echo_totem": "Echo Totem",
+    "city_crate": "City Crate",
+    "supply_crate": "Supply Crate",
+    "vault_crate": "Vault Crate",
     "tab": "Devouring Storms: Decayed Reality",
 }
 
@@ -399,6 +406,35 @@ def emit_dimension():
     })
 
 
+# Abandoned-city loot (phase 2). Written as vanilla block loot tables at
+# data/mcsm/loot_table/blocks/<name>.json, which is the path Minecraft derives
+# from the block's own id -- so breaking a crate in game rolls these without a
+# line of Java. Item ids are checked against the registered content by
+# ci/check_datapack_schema.py, so a typo cannot ship as a crate that drops
+# nothing.
+LOOT = {
+    "city_crate": [
+        (1, 2, [("mcsm:decayed_bone", 6), ("mcsm:decayed_steel_ingot", 4),
+                ("mcsm:void_thread", 4), ("mcsm:hallucination_dust", 3),
+                ("mcsm:decayed_planks", 3), ("mcsm:city_keycard", 2),
+                ("mcsm:memory_fragment", 2), ("mcsm:rift_shard", 1)]),
+        (1, 1, [("minecraft:bread", 2), ("minecraft:torch", 3),
+                ("minecraft:iron_ingot", 2)]),
+    ],
+    "supply_crate": [
+        (1, 2, [("mcsm:decayed_steel_ingot", 5), ("mcsm:rift_shard", 4),
+                ("mcsm:glitch_echo", 3), ("mcsm:storm_heart_shard", 2),
+                ("mcsm:withered_blade", 1), ("mcsm:storm_spear", 1),
+                ("mcsm:memory_fragment", 2)]),
+    ],
+    "vault_crate": [
+        (1, 2, [("mcsm:rift_shard", 5), ("mcsm:glyph_cell", 4),
+                ("mcsm:abyss_orb", 2), ("mcsm:tentacle_hook", 2),
+                ("mcsm:echo_totem", 1), ("mcsm:creator_fragment", 1),
+                ("mcsm:reality_ripper", 1)]),
+    ],
+}
+
 RECIPES = {
     "decayed_planks_from_log": (["A"], {"A": "mcsm:decayed_log"}, "mcsm:decayed_planks", 4),
     "city_brick_slab": (["AAA"], {"A": "mcsm:city_bricks"}, "mcsm:city_brick_slab", 6),
@@ -451,6 +487,29 @@ def emit_recipes():
             })
 
 
+def emit_loot():
+    """Vanilla-format block loot tables: data/mcsm/loot_table/blocks/*.json."""
+    for name, pools in LOOT.items():
+        written = []
+        for rolls_min, rolls_max, entries in pools:
+            written.append({
+                "rolls": {"type": "minecraft:uniform", "min": rolls_min, "max": rolls_max}
+                if rolls_max > rolls_min else rolls_min,
+                "entries": [
+                    {"type": "minecraft:item", "name": item, "weight": weight,
+                     "functions": [{"function": "minecraft:set_count",
+                                    "count": {"type": "minecraft:uniform", "min": 1, "max": 3}}
+                                   if item.startswith("minecraft:") and weight <= 3 else
+                                   {"function": "minecraft:set_count", "count": 1}]}
+                    for item, weight in entries
+                ],
+                "conditions": [{"condition": "minecraft:survives_explosion"}],
+            })
+        write(os.path.join(DATA, "loot_table", "blocks", name + ".json"),
+              {"type": "minecraft:block", "pools": written})
+    return len(LOOT)
+
+
 def emit_lang():
     path = os.path.join(ASSETS, "lang", "en_us.json")
     existing = {}
@@ -493,6 +552,7 @@ def main() -> int:
         write(os.path.join(ASSETS, "models", "item", name + ".json"), {"parent": parent})
     emit_dimension()
     emit_recipes()
+    n_loot = emit_loot()
     emit_lang()
 
     # validate: every file we just wrote must be parseable JSON
@@ -515,8 +575,9 @@ def main() -> int:
     for base, label in ((ASSETS, "assets"), (DATA, "data")):
         n = sum(len(files) for _r, _d, files in os.walk(base))
         counts[label] = n
-    print("mcsm content pack: %d blocks, %d items, %d asset files, %d data files"
-          % (len(BLOCKS), len(BLOCKS) + len(ITEMS), counts["assets"], counts["data"]))
+    print("mcsm content pack: %d blocks, %d items, %d loot tables, "
+          "%d asset files, %d data files"
+          % (len(BLOCKS), len(BLOCKS) + len(ITEMS), n_loot, counts["assets"], counts["data"]))
     return 0
 
 

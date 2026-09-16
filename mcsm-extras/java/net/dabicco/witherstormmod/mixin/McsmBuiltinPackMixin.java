@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.dabicco.witherstormmod.DabyWitherStormMod;
 import net.mcsm.extras.McsmBuiltinPack;
+import net.mcsm.extras.McsmCities;
 import net.mcsm.extras.McsmContent;
 import net.mcsm.extras.McsmUiSounds;
 import net.mcsm.extras.entity.McsmEntities;
@@ -36,5 +37,10 @@ public abstract class McsmBuiltinPackMixin {
         // own ModBlocks/ModItems pass runs from onInitialize).
         McsmContent.register();
         McsmContent.registerTab();
+        // Build #416 (D.8, phase 2) -- the abandoned cities of the decayed
+        // reality. ServerTickEvents.END_LEVEL_TICK is the base mod's own hook
+        // (DabyWitherStormMod registers McsmWorldgen.tick on it), so this needs
+        // no mixin and no new API surface at all.
+        McsmCities.register();
     }
 }

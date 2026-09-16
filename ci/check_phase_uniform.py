@@ -804,6 +804,44 @@ def main():
     check("the new content is craftable (recipes parse as JSON)",
           len(glob.glob("jar-overrides/data/mcsm/recipe/*.json")) >= 10)
 
+    # ---- 15. THE ABANDONED CITIES (Build #416 mandate D.8, phase 2) -------
+    cities = read("mcsm-extras/java/net/mcsm/extras/McsmCities.java") or ""
+    cities_code = code_only(cities)
+    check("districts are deterministic (a pure hash of the region, not a dice roll)",
+          "splitmix64" in cities or "0x9E3779B97F4A7C15L" in cities_code,
+          "region hash present")
+    check("district building is time-sliced, so it cannot stall a tick",
+          "OPS_PER_TICK" in cities_code and "poll()" in cities_code and "MAX_PLAN_OPS" in cities_code)
+    check("a district is only raised near a player",
+          "ACTIVATE" in cities_code and "players()" in cities_code)
+    check("a standing district is recognised from the world, not a counter",
+          "RIFT_ANCHOR" in cities_code and "getBlockState" in cities_code)
+    check("the tick hook is the base mod's own proven event (no mixin needed)",
+          "ServerTickEvents.END_LEVEL_TICK" in cities_code
+          and "EndLevelTick" in cities_code
+          and "McsmCities.register();" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
+    check("the district palette is built from the NEW blocks",
+          all(tok in cities_code for tok in ("CITY_BRICKS", "RUSTED_PLATE", "CRACKED_ROAD",
+                                             "REALITY_GLASS", "GLITCH_LAMP", "VAULT_CRATE"))
+          and "Blocks.AIR.defaultBlockState()" in cities_code)
+    check("all six archetypes exist (tower, warehouse, house, hospital, radio, crater)",
+          all(("plan" + name + "(") in cities_code for name in
+              ("Tower", "Warehouse", "House", "Hospital", "Radio", "Crater")))
+    check("arrival points the player at the nearest ruins",
+          "McsmCities.guidance(" in (read("mcsm-extras/java/net/mcsm/extras/McsmReality.java") or ""))
+
+    loot = sorted(glob.glob("jar-overrides/data/mcsm/loot_table/blocks/*.json"))
+    check("the cities are worth looting (>= 3 crate loot tables)", len(loot) >= 3)
+    check("every crate has its own loot table", len(loot) >= 3
+          and all(os.path.basename(p)[:-5] in content_code
+                  for p in loot))
+    schema = read("ci/check_datapack_schema.py") or ""
+    check("the datapack JSON is validated against vanilla's own files",
+          "client.jar" in schema and "dimension_type" in schema and "loot_table" in schema)
+    check("the jar audit requires the content pack inside the jar",
+          "CONTENT-PACK JAR AUDIT" in (read("ci/build.sh") or "")
+          and "data/mcsm/dimension/decayed_reality.json" in (read("ci/build.sh") or ""))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

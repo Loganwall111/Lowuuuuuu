@@ -724,6 +724,9 @@ VANILLA_OUT=out/vanilla-api.txt
     net.minecraft.world.level.block.WallBlock \
     net.minecraft.world.level.block.FenceBlock \
     net.minecraft.world.level.block.RotatedPillarBlock \
+    net.minecraft.world.level.block.Blocks \
+    net.minecraft.server.level.ServerLevel \
+    net.minecraft.server.level.ServerPlayer \
     net.minecraft.world.level.block.Block \
     'net.minecraft.world.level.block.state.BlockBehaviour$Properties' \
     net.minecraft.world.item.Item \
@@ -753,6 +756,27 @@ VANILLA_OUT=out/vanilla-api.txt
   done
 } > "$VANILLA_OUT" 2>&1 || true
 echo "[api] vanilla dump: $(wc -l < "$VANILLA_OUT" 2>/dev/null || echo 0) lines -> out/vanilla-api.txt"
+
+# ---------------------------------------------------------------------------
+# BUILD #416 (D.8, phase 2) -- DATAPACK SCHEMA GATE.
+#
+# The dimension, the recipes and the abandoned-city loot tables are JSON, and a
+# wrong key name does not fail anything at build time -- it fails in game, as a
+# recipe that never matches or a crate that drops nothing. This reads vanilla's
+# OWN recipe / loot_table / dimension_type files out of the client jar this mod
+# is compiled against, works out which keys this build of the game uses, and
+# refuses the build if ours disagree or mention an id that is not registered.
+# ---------------------------------------------------------------------------
+echo "[schema] datapack schema gate (checked against vanilla's own JSON)"
+SCHEMA_OUT="$(python3 ci/check_datapack_schema.py --jar "$DL/client.jar" 2>&1)"
+SCHEMA_RC=$?
+printf '%s\n' "$SCHEMA_OUT" >> "$VANILLA_OUT"
+printf '%s\n' "$SCHEMA_OUT" | grep -E "^\[schema\]|^  FAIL|^  note" | tail -8
+if [ "$SCHEMA_RC" -ne 0 ]; then
+  echo "::error title=schema::the mod's datapack files do not match this build's JSON shapes -- see the annotations"
+  exit 1
+fi
+stage schema-ok push
 stage oracle-ok
 
 echo "[javac] mcsm-extras"
@@ -1418,6 +1442,41 @@ else
 fi
 
 SCHEMATIC_COUNT="$(find "$FX/cls/assets/dabywitherstormmod" -path '*/schematics/*' -name '*.schematic' 2>/dev/null | wc -l | tr -d ' ')"
+# BUILD #416 (D.8, phase 2) -- CONTENT-PACK JAR AUDIT (hard gate).
+#
+# "Registered" and "in the jar" are different things: the dimension is a
+# datapack file, the blocks are assets, and the loot tables are JSON. If any of
+# them misses the assembled jar the mod still loads and the console still says
+# everything is enabled -- the dimension simply never shows up. Phase 1 shipped
+# its dimension, its 38 blocks and its recipes through this overlay, so the
+# contents are now required by name.
+CONTENT_MISSING=""
+for want in \
+  data/mcsm/dimension/decayed_reality.json \
+  data/mcsm/dimension_type/decayed_reality.json \
+  assets/mcsm/lang/en_us.json \
+  assets/mcsm/blockstates/city_bricks.json \
+  assets/mcsm/models/item/reality_ripper.json ; do
+  if [ ! -s "$FX/cls/$want" ]; then
+    CONTENT_MISSING="$CONTENT_MISSING $want"
+  fi
+done
+N_STATES="$(find "$FX/cls/assets/mcsm/blockstates" -name '*.json' 2>/dev/null | wc -l)"
+N_ITEM_MODELS="$(find "$FX/cls/assets/mcsm/models/item" -name '*.json' 2>/dev/null | wc -l)"
+N_RECIPES="$(find "$FX/cls/data/mcsm/recipe" -name '*.json' 2>/dev/null | wc -l)"
+N_LOOT="$(find "$FX/cls/data/mcsm/loot_table/blocks" -name '*.json' 2>/dev/null | wc -l)"
+echo "[audit] content pack in jar: ${N_STATES} blockstates, ${N_ITEM_MODELS} item models, ${N_RECIPES} recipes, ${N_LOOT} loot tables"
+if [ -n "$CONTENT_MISSING" ]; then
+  echo "::error title=jar audit::the decayed-reality content pack is missing from the jar:${CONTENT_MISSING}"
+  echo "[audit] content pack MISSING:${CONTENT_MISSING}"
+  exit 1
+fi
+if [ "${N_STATES:-0}" -lt 30 ] || [ "${N_ITEM_MODELS:-0}" -lt 50 ] || [ "${N_RECIPES:-0}" -lt 10 ] || [ "${N_LOOT:-0}" -lt 3 ]; then
+  echo "::error title=jar audit::the content pack is incomplete in the jar (states=${N_STATES} models=${N_ITEM_MODELS} recipes=${N_RECIPES} loot=${N_LOOT})"
+  exit 1
+fi
+echo "[audit] content pack complete (38 blocks + 19 items + doors/stairs + 3 loot tables)"
+
 echo "[audit] legacy schematic fallback assets available: ${SCHEMATIC_COUNT}"
 
 # mega-phase 5b: the embedded Iris pack must actually be in the jar, and its

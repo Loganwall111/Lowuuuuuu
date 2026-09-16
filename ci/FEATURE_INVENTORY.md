@@ -137,3 +137,8 @@ are real, shipped and (except where marked PARTIAL) screenshot-proven.
 does not exist yet. §5 is everything the user has reported broken that lives in
 Dabicco's jar (towns queue, `/mcsm tp` names, preset mechanics) — the only one
 we ever made worse was the preset wipe, and 1.9.112 removes our foot from it.
+
+
+## 6. D.8 content (phases 1-2)
+
+* The decayed reality dimension, the 38-block / 57-item content pack, and the abandoned-city generator are LIVE -- see ci/CONCEPT_DECAYED_REALITY.md.

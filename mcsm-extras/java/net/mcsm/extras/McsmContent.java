@@ -177,6 +177,21 @@ public final class McsmContent {
                     .requiresCorrectToolForDrops().noOcclusion());
 
     // ---------------------------------------------------------------------
+    // City crates (phase 2): what the abandoned cities are worth looting.
+    // Each one drops through a vanilla block loot table
+    // (data/mcsm/loot_table/blocks/<name>.json), so no Java is involved in
+    // making them rewarding -- and ci/check_datapack_schema.py checks those
+    // tables against vanilla's own examples from client.jar before shipping.
+    // ---------------------------------------------------------------------
+    public static final Block CITY_CRATE = block("city_crate",
+            BlockBehaviour.Properties.of().strength(1.6F).sound(SoundType.WOOD));
+    public static final Block SUPPLY_CRATE = block("supply_crate",
+            BlockBehaviour.Properties.of().strength(2.0F, 4.0F).sound(SoundType.WOOD));
+    public static final Block VAULT_CRATE = block("vault_crate",
+            BlockBehaviour.Properties.of().strength(4.0F, 20.0F).sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+
+    // ---------------------------------------------------------------------
     // Items: materials
     // ---------------------------------------------------------------------
     public static final Item RIFT_SHARD = item("rift_shard", item(p -> p.rarity(Rarity.UNCOMMON)));
