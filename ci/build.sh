@@ -861,13 +861,45 @@ VANILLA_OUT=out/vanilla-api.txt
     net.minecraft.world.entity.ai.goal.Goal \
     net.minecraft.world.entity.ai.goal.MeleeAttackGoal \
     net.minecraft.world.entity.ai.attributes.Attributes \
-    net.minecraft.world.entity.player.Player ; do
+    net.minecraft.world.entity.player.Player \
+    com.mojang.blaze3d.vertex.PoseStack \
+    net.minecraft.client.renderer.SubmitNodeCollector \
+    net.minecraft.world.level.Level \
+    net.minecraft.server.level.ServerLevel \
+    net.minecraft.world.level.storage.LevelData ; do
     echo
     # NOTE: nested-class names must stay single-quoted -- an unescaped '$' in
     # this list is a variable expansion, and under `set -u` the build dies on
     # "Properties: unbound variable" (run 486).
     echo "===== ${CLS}"
-    javap -p -classpath "$DL/client.jar" "$CLS" 2>&1 | sed -n '1,110p'
+    # Blocks has hundreds of fields and the concrete/wool labels sit far past a
+    # 110-line cap -- run 508 asked for WHITE_CONCRETE and the dump could not
+    # answer, so the cap is 900 for it and 220 for everything else.
+    if [ "$CLS" = "net.minecraft.world.level.block.Blocks" ]; then
+      javap -p -classpath "$DL/client.jar" "$CLS" 2>&1 | sed -n '1,900p'
+    else
+      javap -p -classpath "$DL/client.jar" "$CLS" 2>&1 | sed -n '1,220p'
+    fi
+  done
+
+  # --------------------------------------------------------------------------
+  # BUILD #436 -- THE BASE MOD'S OWN RENDER PATH, DUMPED THE SAME WAY.
+  #
+  # The phase-5.5 upper back, the huge-back pose and the storm renderer are all
+  # in the FROZEN base jar, and two mixins in this build inject into them with
+  # `require = 0` because their exact method names have never been readable from
+  # here. A silently-missing injection is exactly how "phase 5.5 has an upper
+  # back disattached from the main body" survives a fix. This dumps the real
+  # signatures from the same stripped jar javac uses, so the injections can be
+  # pinned to them instead of guessed.
+  # --------------------------------------------------------------------------
+  for CLS in \
+    net.dabicco.witherstormmod.entity.renderer.WitherStormRenderer \
+    net.dabicco.witherstormmod.entity.model.HugeAssBackModel \
+    net.dabicco.witherstormmod.client.StormBackdrop ; do
+    echo
+    echo "===== ${CLS} (base mod)"
+    javap -p -classpath "$STRIPPED:$DL/client.jar" "$CLS" 2>&1 | sed -n '1,260p'
   done
 } > "$VANILLA_OUT" 2>&1 || true
 echo "[api] vanilla dump: $(wc -l < "$VANILLA_OUT" 2>/dev/null || echo 0) lines -> out/vanilla-api.txt"
