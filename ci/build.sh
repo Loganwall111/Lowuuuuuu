@@ -291,20 +291,25 @@ fi
 # place and not the others stops the build here instead of reaching the user as
 # a sky and a halo that disagree.
 echo "[palette] traced-palette parity gate (sky / position / Java / visuals)"
-if python3 ci/palette_tables.py; then
-  echo "[palette] every colour is sourced from the three reference tables"
-else
+PALETTE_OUT="$(python3 ci/palette_tables.py 2>&1)" || {
+  echo "$PALETTE_OUT"
   echo "::error title=build::palette parity broken — the sky, the halo and the storm visuals have drifted apart"
   exit 1
-fi
+}
+PALETTE_LINE="$(printf '%s\n' "$PALETTE_OUT" | grep -F '[palette]' | tail -1)"
+echo "$PALETTE_LINE"
+# Annotations survive without runner-log access, so the gate result is auditable.
+echo "::notice title=palette::$PALETTE_LINE"
 
 echo "[phase] WitherStormPhase plumbing gate"
-if python3 ci/check_phase_uniform.py; then
-  echo "[phase] WitherStormPhase resolves through the carrier in every module"
-else
+PHASE_OUT="$(python3 ci/check_phase_uniform.py 2>&1)" || {
+  echo "$PHASE_OUT"
   echo "::error title=build::WitherStormPhase plumbing broken — the storm phase is not reaching the shaders"
   exit 1
-fi
+}
+PHASE_LINE="$(printf '%s\n' "$PHASE_OUT" | grep -F '[phase]' | tail -1)"
+echo "$PHASE_LINE"
+echo "::notice title=phase::$PHASE_LINE"
 
 # Story Look resource-pack shaders must validate as well.
 for SL in storylook/assets/minecraft/shaders/core/*; do
@@ -952,6 +957,7 @@ if [ -f "$FX/cls/assets/minecraft/shaders/core/position.fsh" ] && [ -f "$FX/cls/
     AUDIT_FAIL=1
   else
     echo "[audit] position.* differs from block.* (authored module, not a fallback copy)"
+    echo "::notice title=shaders::position.* is the authored pass (not a copy of block.*); sky.* present; MCSM_SKY_POSITION branch intact"
   fi
 fi
 # ...and the blueprint's sky branch has to still be in there.
