@@ -17,6 +17,13 @@
 // NO_CARDINAL_LIGHTING. The shader must never declare a uniform the pipeline's bind
 // group layout lacks -- that crashes on Vulkan even where OpenGL shrugs.
 //
+// MCSM_PHASE_SOURCE: the vertex colour (McsmTeethPhaseTint -> eyeColorR/G/B is pushed
+// by Java every tick and the band table below reads it). This program deliberately does
+// NOT import minecraft:fog.glsl, so the FogSkyEnd carrier is not available here; the
+// header above explains why adding an import to reach it is the riskier trade. The
+// carrier IS read by core/fogless_entity.fsh, which repaints the same mouths on the
+// model, and the post pass reads the carrier too -- so a phase change moves all three.
+//
 // Deliberately UNFOGGED: this is emitted light, so it punches through the murk instead
 // of being washed out by it (same call as the storm's night glow). Fog can't simply be
 // mixed in here anyway -- the blend is ADDITIVE (ONE, ONE), so mixing toward the fog

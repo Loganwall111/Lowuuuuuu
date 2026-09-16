@@ -192,6 +192,24 @@ float mcsm_phase(float fogSkyEnd, vec4 fogColor, float fogRenderDistanceEnd) {
     return 0.0;
 }
 
+// BUILD #416 -- THE WitherStormPhase ACCESSOR.
+//
+// This is the single phase input every pass reads, named after the blueprint's
+// `WitherStormPhase`: the sky column, the body shading, the mouth palette and
+// the deck colours are all keyed off it. It resolves, in order of authority:
+//   1. the Iris/Oculus uniform `witherstorm_Phase`, when a pack binds it (the
+//      real uniform path from the blueprint), then
+//   2. the FogSkyEnd carrier, i.e. FogData.skyEnd = 1000 + phase*100 stamped
+//      by the mod's Java hook (McsmSkyStateMixin / McsmFogCarrierMixin), then
+//   3. the fog-colour signature, for packs and vanilla frames where neither
+//      carrier has been written.
+// A core pipeline cannot take a custom uniform (its bind group is the vanilla
+// layout, and an undeclared-but-bound slot is a hard Vulkan crash), which is
+// exactly why the carrier exists; the value is identical either way.
+float mcsm_witherstorm_phase() {
+    return mcsm_phase(FogSkyEnd, FogColor, FogRenderDistanceEnd);
+}
+
 // Safe cloud-fade end: restores sane vanilla cloud distance-fade while the
 // aim carrier occupies FogCloudsEnd (only this pack's cloud pass reads it).
 float mcsm_clouds_end() {
@@ -478,23 +496,37 @@ vec3 mcsm_blob_color(float p, float clock) {
 //  edges, so no texture sampling is needed at all).
 // ============================================================================
 
-// CORRECTED artist hexes (user 2026-09-11, re-measured from the reference
-// screenshots). x/255 -> display space.
-// PHASE 5 -- GREEN SKYBOX BLOB
-const vec3 P5_CORE  = vec3(10.0, 17.0, 18.0) / 255.0;   // #0A1112
-const vec3 P5_MID   = vec3(29.0, 51.0, 53.0) / 255.0;    // #1D3335
-const vec3 P5_EDGE  = vec3(85.0, 112.0, 97.0) / 255.0;  // #557061
-const vec3 P5_BEAM  = vec3(132.0, 147.0, 255.0) / 255.0; // #8493FF
-// PHASE 5.5-5.9 -- PURPLE & PINK VOID BLOB
-const vec3 P55_CORE = vec3(5.0, 2.0, 8.0) / 255.0;      // #050208
-const vec3 P55_MID  = vec3(42.0, 18.0, 61.0) / 255.0;    // #2A123D
-const vec3 P55_HIGH = vec3(125.0, 75.0, 145.0) / 255.0;  // #7D4B91 ambient bleed
-const vec3 P55_EDGE = vec3(75.0, 30.0, 94.0) / 255.0;    // #4B1E5E
-// PHASE 6 -- THE FOUR-COLOR SUNSET SPLIT BLOB (vertical)
-const vec3 P6_TOP   = vec3(16.0, 10.0, 26.0) / 255.0;   // #100A1A zenith
-const vec3 P6_UMID  = vec3(51.0, 28.0, 61.0) / 255.0;   // #331C3D upper smudge
-const vec3 P6_LMID  = vec3(138.0, 83.0, 97.0) / 255.0;   // #8A5361 lower smudge
-const vec3 P6_BOT   = vec3(196.0, 122.0, 90.0) / 255.0;  // #C47A5A horizon glow
+// BUILD #416 -- THE STORM'S OWN PALETTE, DERIVED FROM THE SKY SHEETS.
+//
+// These were hand-picked hexes. They are now SAMPLED off the same three traced
+// reference columns the sky shader paints, one role per row of the trace:
+//
+//     _CORE  column row 0 (zenith) x 0.22   the void at the heart of the mass
+//     _MID   column at t = 0.30             the body of the mass
+//     _EDGE  column at t = 0.60             its lit flank
+//     _HIGH  column at t = 0.85             the ambient bleed (5.5+)
+//
+// and P6_BOT, the phase-6 mass's horizon glow, is the ORANGE stop out of the
+// sunset/ember trace -- that is the salmon/orange fringe the phase-6 sheet
+// shows. `python3 ci/palette_tables.py` re-derives every one of these numbers
+// from the GLSL columns and fails the build if any of them drifts, so the sky
+// and the storm it hangs in cannot separate again.
+//
+// PHASE 5 -- GREEN/TEAL MASS           (tables: PHASE5_TEAL)
+const vec3 P5_CORE  = vec3(4.4,   8.4,  8.8  ) / 255.0;   // #040809
+const vec3 P5_MID   = vec3(54.8, 73.9, 72.0  ) / 255.0;   // #374A48
+const vec3 P5_EDGE  = vec3(119.8, 135.2, 128.8) / 255.0;  // #788781
+const vec3 P5_BEAM  = vec3(132.0, 147.0, 255.0) / 255.0;  // #8493FF ambient bleed
+// PHASE 5.5-5.9 -- PURPLE & MAGENTA VOID MASS  (tables: PHASE55_PUR)
+const vec3 P55_CORE = vec3(9.3,   3.3,  11.0 ) / 255.0;   // #09030B
+const vec3 P55_MID  = vec3(76.6,  33.8, 85.4 ) / 255.0;   // #4D2255
+const vec3 P55_EDGE = vec3(133.9, 70.1, 142.0) / 255.0;   // #86468E
+const vec3 P55_HIGH = vec3(164.5, 89.0, 177.0) / 255.0;   // #A459B1 ambient bleed
+// PHASE 6 -- THE FOUR-COLOUR SUNSET SPLIT MASS (vertical)  (tables: PHASE6_ROSE)
+const vec3 P6_TOP   = vec3(18.5,  15.8, 18.5 ) / 255.0;   // #121012 zenith (the black smudge)
+const vec3 P6_UMID  = vec3(111.9, 93.3, 104.4) / 255.0;   // #705D68 upper smudge
+const vec3 P6_LMID  = vec3(156.1, 130.1, 135.9) / 255.0;  // #9C8288 lower smudge
+const vec3 P6_BOT   = vec3(199.9, 58.7, 24.0 ) / 255.0;   // #C83B18 horizon glow (ember row 3)
 
 // The blob is intentionally compact around the storm bearing.  The old
 // 1.9.305 ellipse used one analytic radius, which made the sky read as a

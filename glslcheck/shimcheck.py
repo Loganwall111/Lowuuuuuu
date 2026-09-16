@@ -159,6 +159,11 @@ def main():
         ('lit', {'PER_FACE_LIGHTING': '1', 'STORM_SHADING': '1', 'SUN_X': '0.30', 'SUN_Y': '0.80', 'SUN_Z': '0.50'}),
         ('misc', {'DISSOLVE': '1', 'ALPHA_CUTOUT': '0.5F', 'NO_OVERLAY': '1', 'EMISSIVE': '1', 'APPLY_TEXTURE_MATRIX': '1'}),
         ('rev', {'NO_CARDINAL_LIGHTING': '1', 'REVERSE_SHADING': '1'}),
+        # BUILD #416: the sky-on-position path the blueprint supplies is OFF in
+        # the shipped default, so it would otherwise never be compiled by this
+        # gate. Flipping it on here means a broken blueprint branch fails CI
+        # instead of shipping as dead code.
+        ('sky_position', {'MCSM_SKY_POSITION': '1', 'REVERSE_SHADING': '1', 'NO_CARDINAL_LIGHTING': '1'}),
     ]
     for path in cores:
         for tag, defines in combo_sets:

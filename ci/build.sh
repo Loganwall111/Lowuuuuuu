@@ -286,6 +286,26 @@ else
   exit 1
 fi
 
+# BUILD #416 -- the traced palette and the phase feed are source-level gates.
+# Both read the SAME stop tables the shaders ship, so a colour edited in one
+# place and not the others stops the build here instead of reaching the user as
+# a sky and a halo that disagree.
+echo "[palette] traced-palette parity gate (sky / position / Java / visuals)"
+if python3 ci/palette_tables.py; then
+  echo "[palette] every colour is sourced from the three reference tables"
+else
+  echo "::error title=build::palette parity broken — the sky, the halo and the storm visuals have drifted apart"
+  exit 1
+fi
+
+echo "[phase] WitherStormPhase plumbing gate"
+if python3 ci/check_phase_uniform.py; then
+  echo "[phase] WitherStormPhase resolves through the carrier in every module"
+else
+  echo "::error title=build::WitherStormPhase plumbing broken — the storm phase is not reaching the shaders"
+  exit 1
+fi
+
 # Story Look resource-pack shaders must validate as well.
 for SL in storylook/assets/minecraft/shaders/core/*; do
   case "$SL" in
@@ -405,18 +425,21 @@ fi
 echo "[version] drift gate OK (no hardcoded version literals)"
 
 # ---------------------------------------------------------------------------
-# BUILD #415 -- BACKDROP CANVAS + CLOUD FILTER SHEETS.
+# BUILD #416 -- BACKDROP SHEETS, BAKED FROM THE TRACED SKY TABLES.
 #
-# The 2D background skybox sticker queue (StormBackdrop) binds three baked
-# sheets: the cinematic purple sky canvas plus the transparent phase-5 teal and
-# phase-6 salmon-pink cloud filters. They are regenerated here from the explicit
-# stop tables so a rerun is byte-for-byte deterministic, and they are written
-# into BOTH overlay roots before assembly (jar-overrides wins at assembly time,
-# src/main/resources supplies the dev tree). Replacing them with handmade art
-# needs no code change: the binding is by target path.
+# The 2D background sky-plane sticker queue binds six baked sheets: the purple
+# canvas, the transparent teal and salmon cloud filters, and the three phase
+# decks (teal / violet / the phase-6 mass carrying the black smudge). Every
+# colour in them is read out of ci/palette_tables.py, i.e. out of the SAME stop
+# tables the sky and position shaders ship -- so the sheets cannot drift from
+# the sky they hang in. Regenerated here so a rerun is byte-for-byte
+# deterministic, and written into BOTH overlay roots before assembly
+# (jar-overrides wins at assembly time, src/main/resources supplies the dev
+# tree). Replacing them with handmade art needs no code change: the binding is
+# by target path.
 # ---------------------------------------------------------------------------
 if python3 ci/make_backdrop_sheets.py; then
-  echo "[backdrop] sky canvas + cloud filters regenerated"
+  echo "[backdrop] six phase sheets regenerated from the traced palette"
 else
   echo "::error title=build::backdrop sheet generation failed"
   exit 1
@@ -464,14 +487,20 @@ rm -rf "$FX" && mkdir -p "$FX/cls"
 # these resources so the player can actually arrive in Story Mode locations now.
 cp -r mcsm-core-shaders/* "$FX/cls/assets/minecraft/shaders/"
 # 1.9.167: 26.2 loads block rather than terrain for the native block pass.
-# Native SkyRenderer owns sky colour; no custom sky/position alias is shipped.
 CS="$FX/cls/assets/minecraft/shaders/core"
 if [ -f "$CS/terrain.fsh" ]; then cp -f "$CS/terrain.fsh" "$CS/block.fsh"; cp -f "$CS/terrain.vsh" "$CS/block.vsh"; fi
-# The 26.2 fixed-function block path also asks for position; reuse the same
-# vivid-light-safe block program rather than reviving any sky shader alias.
-if [ ! -f "$CS/position.fsh" ] && [ -f "$CS/block.fsh" ]; then cp -f "$CS/block.fsh" "$CS/position.fsh"; fi
-if [ ! -f "$CS/position.vsh" ] && [ -f "$CS/block.vsh" ]; then cp -f "$CS/block.vsh" "$CS/position.vsh"; fi
-echo "[build] 26.2 shader aliases: block<-terrain (when present), position<-block; native SkyRenderer owns sky"
+# BUILD #416 -- position.* is no longer manufactured by copying block.*.
+# The blueprint ships real position.vsh/.fsh modules (block-safe shading plus
+# the MCSM_SKY_POSITION sky branch), and the jar audit below now FAILS the
+# build if the assembled position pair is byte-identical to block -- i.e. if it
+# is a fallback copy rather than the authored program. Native SkyRenderer still
+# owns the sky colour on this platform.
+if [ -f "$CS/position.fsh" ] && [ -f "$CS/position.vsh" ]; then
+  echo "[build] 26.2 shader aliases: block<-terrain (when present); position.* is authored, not copied"
+else
+  echo "::error title=build::position.vsh/.fsh missing from the overlay - the authored position pass is not shipping"
+  exit 1
+fi
 cp -r jar-overrides/* "$FX/cls/"
 # 1.9.206: src/main/resources was never overlaid -- the merged Story Look
 # textures (sun/moon, villager cast skins) and the story_character skins
@@ -912,6 +941,34 @@ python3 ci/make_glare.py "$FX/cls/assets/dabywitherstormmod/textures/misc/storm_
 python3 ci/make_stormface.py "$FX/cls/assets/dabywitherstormmod/textures/misc/storm_face.png" \
   || echo "::warning title=build::storm face overlay texture generation failed"
 
+# BUILD #416 -- the position/block pair must NOT be a copy. `cp block.fsh
+# position.fsh` was the old fallback; it silently shipped a file that ignored
+# every change made to the authored pass. Compare the two programs: identical
+# means the fallback came back.
+if [ -f "$FX/cls/assets/minecraft/shaders/core/position.fsh" ] && [ -f "$FX/cls/assets/minecraft/shaders/core/block.fsh" ]; then
+  if cmp -s "$FX/cls/assets/minecraft/shaders/core/position.fsh" "$FX/cls/assets/minecraft/shaders/core/block.fsh" \
+     || cmp -s "$FX/cls/assets/minecraft/shaders/core/position.vsh" "$FX/cls/assets/minecraft/shaders/core/block.vsh"; then
+    echo "::error title=jar audit::position.* is a byte copy of block.* - the authored position pass did not ship"
+    AUDIT_FAIL=1
+  else
+    echo "[audit] position.* differs from block.* (authored module, not a fallback copy)"
+  fi
+fi
+# ...and the blueprint's sky branch has to still be in there.
+for tok in MCSM_SKY_POSITION mcsm_position_sky; do
+  if ! grep -q "$tok" "$FX/cls/assets/minecraft/shaders/core/position.fsh"; then
+    echo "::error title=jar audit::position.fsh lost its sky branch ($tok missing)"
+    AUDIT_FAIL=1
+  fi
+done
+# The sky pair is the one that actually paints the storm sky; both halves or
+# neither.
+for sky in assets/minecraft/shaders/core/sky.fsh assets/minecraft/shaders/core/sky.vsh; do
+  if [ ! -s "$FX/cls/$sky" ]; then
+    echo "::error title=jar audit::sky program missing from jar: $sky"
+    AUDIT_FAIL=1
+  fi
+done
 if [ ! -f "$FX/cls/assets/minecraft/shaders/core/position.fsh" ] || [ ! -f "$FX/cls/assets/minecraft/shaders/core/block.fsh" ]; then
   echo "::error title=jar audit::26.2 shader aliases missing (position/block) — vivid light would never load"
   AUDIT_FAIL=1

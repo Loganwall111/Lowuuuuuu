@@ -12,6 +12,12 @@
 // want a halo; it is the violet murk a late-phase storm drags over everything that makes a sun
 // look wrong without one, so the whole effect rides the same factor that darkens the sky and
 // vanishes with it.
+//
+// MCSM_PHASE_SOURCE: SunGlowConfig (Java). This is a full-screen post pass on its own
+// pipeline, so it binds no Fog block and cannot decode the FogSkyEnd carrier; the Java
+// driver feeds the phase's murk colour in GlowColor.rgb and the gloom in SunDir.w. The
+// hue re-mix below is the phase-5.5 magenta/pink the reference frames call for, and the
+// whole effect fades to nothing with the gloom rather than popping between phases.
 
 uniform sampler2D DepthSampler;
 

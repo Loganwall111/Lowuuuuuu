@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import net.dabicco.witherstormmod.client.McsmSkyArtifactGuard;
 import net.dabicco.witherstormmod.client.StoryModeSkyTint;
 import net.mcsm.extras.McsmExtrasConfig;
+import net.mcsm.extras.client.McsmStormPhase;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.state.level.SkyRenderState;
@@ -29,16 +30,58 @@ public final class McsmNativeSkyRenderer {
     private McsmNativeSkyRenderer() {
     }
 
-    /** Apply one continuous colour to the native sky while a storm is present. */
+    /**
+     * BUILD #416 -- real fading sky, no domes.
+     *
+     * The storm sky is now painted by the sky PROGRAM (mcsm-core-shaders/core/
+     * sky.fsh) as a continuous function of the view ray, so nothing here draws
+     * geometry, a dome, a card or a sticker: an edge is impossible by
+     * construction. What this hook does is feed that pass and remove the two
+     * native primitives that produced the "sky with a top on it" the user
+     * reported:
+     *
+     *   * `skyColor` is set to the phase's reference horizon colour, so the
+     *     disc base and the shader gradient agree and no flat band shows;
+     *   * `shouldRenderDarkDisc` is cleared -- that dark cap IS the visible
+     *     dome/top edge;
+     *   * stars fade out as the storm matures (the storyboard kills every
+     *     celestial body once phase 5 takes hold), while the sun and moon stay
+     *     available for the regular sky, which is why they are not cancelled.
+     *
+     * It also publishes the phase to {@link McsmStormPhase}, i.e. the
+     * WitherStormPhase feed the blueprint asks for.
+     */
     public static void apply(ClientLevel level, SkyRenderState state) {
-        ownsSky = false;
         McsmSkyArtifactGuard.disableExtraSkyLayers();
-        // #409 user directive: "remove the horizon band, don't use a dome,
-        // use the regular sky". The native tint (even the continuous #404
-        // variant) still fought the shader pack's gradient and left a seam
-        // at the horizon, so the mod no longer touches sky colours at all.
-        // The superduper pack (or plain vanilla with no pack) owns the sky.
-        return;
+        if (level == null || state == null) {
+            ownsSky = false;
+            return;
+        }
+
+        float p = McsmStormPhase.resolve();
+        McsmStormPhase.publish(p);
+        if (p < McsmStormPhase.PHASE_MIN) {
+            // No storm: leave the whole regular sky exactly as vanilla built
+            // it. The shader still fades it (day/night/sunset columns), but
+            // the native state is untouched so nothing can regress.
+            ownsSky = false;
+            return;
+        }
+
+        ownsSky = true;
+        // The dark disc cap is the top-of-sky artefact: kill it every frame.
+        state.shouldRenderDarkDisc = false;
+        // Match the native disc colour to the shader's horizon row.
+        state.skyColor = McsmStormPhase.horizonArgb();
+        // Bodies: gone once the storm is running.
+        if (p >= 5.0F) {
+            state.starBrightness = 0.0F;
+            state.rainBrightness = Math.min(state.rainBrightness, 1.0F);
+        }
+        // The sunrise/sunset fan is a second colour ramp across the sky; with
+        // the gradient in place it can only draw a band, so it is pinned to the
+        // same horizon colour.
+        state.sunriseAndSunsetColor = state.skyColor;
     }
 
 

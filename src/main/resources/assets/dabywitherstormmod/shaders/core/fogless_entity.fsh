@@ -113,20 +113,38 @@ void main() {
     //
     // The canonical per-phase mouth palette lives in mcsm_visuals.glsl
     // (mcsm_mouth_color) for the core entity/terrain passes. THIS program may
-    // not import it: it runs on the storm's own bind group, and declaring a
+    // not import it -- it runs on the storm's own bind group, and declaring a
     // uniform the group does not bind is a hard Vulkan crash (see the
-    // storm_glow.fsh header). So the same six-band table is repeated here,
-    // keyed off the phase hue Java pushes through the vertex colour every tick
-    // (McsmTeethPhaseTint -> eyeColorR/G/B):
+    // storm_glow.fsh header). So the same six-band table is repeated here.
+    //
+    // BUILD #416 -- THE PHASE IS NOW READ, NOT GUESSED. The phase travels in
+    // FogData.skyEnd (1000 + phase*100, stamped by McsmFogCarrierMixin), which
+    // minecraft:fog.glsl already declares and this program already imports --
+    // no new uniform, so no bind-group risk. The vertex-colour hue
+    // (McsmTeethPhaseTint -> eyeColorR/G/B) is kept as the fallback for any
+    // frame where the carrier is absent.
     //   P4 cyan-white / P5 pure white / P5.5 cyan-blue / P6 cinematic blue /
     //   P7 toxic green / P8 blinding white
     //
     // Only pixels on the emissive luminance floor are touched, so body-block
     // pixels routed through this program keep their void-black shading.
+    float mcsmP = (FogSkyEnd - 1000.0) * 0.01;
     vec3 tint = faceVertexColor.rgb;
     float tmax = max(tint.r, max(tint.g, tint.b));
     vec3 band;
-    if (tmax <= 0.02) {
+    if (mcsmP > 0.01) {
+        // Phase-exact: one smooth weight per band, summed as deltas around the
+        // white family so the handover between phases never steps.
+        float w4  = 1.0 - smoothstep(4.90, 5.10, mcsmP);
+        float w55 = smoothstep(5.45, 5.60, mcsmP) * (1.0 - smoothstep(5.90, 6.10, mcsmP));
+        float w6  = smoothstep(5.90, 6.10, mcsmP) * (1.0 - smoothstep(6.90, 7.10, mcsmP));
+        float w7  = smoothstep(6.90, 7.10, mcsmP) * (1.0 - smoothstep(7.90, 8.10, mcsmP));
+        band = vec3(1.0)
+             + (vec3(0.72, 0.98, 1.00) - vec3(1.0)) * w4
+             + (vec3(0.40, 0.80, 1.00) - vec3(1.0)) * w55
+             + (vec3(0.22, 0.50, 1.00) - vec3(1.0)) * w6
+             + (vec3(0.36, 1.00, 0.28) - vec3(1.0)) * w7;
+    } else if (tmax <= 0.02) {
         band = vec3(1.0);
     } else if (tint.g > 0.72 * tint.b && tint.r < 0.55 * tint.b) {
         band = vec3(0.36, 1.00, 0.28);                                   // phase 7
