@@ -23,8 +23,22 @@ public abstract class McsmCelestialExcisionMixin {
     private void mcsm$removeNativeCelestials(PoseStack poseStack, float sunAngle,
             float moonAngle, float starAngle, MoonPhase moonPhase,
             float rainBrightness, float starBrightness, CallbackInfo ci) {
-        // Native celestial geometry is authoritative. The former replacement
-        // slab is inert, so cancelling this call would remove the regular sky
-        // instead of merely removing the unwanted orange band.
+        // Native celestial geometry is authoritative in the OVERWORLD: the
+        // former replacement slab is inert, so cancelling it there would remove
+        // the regular sky instead of the unwanted orange band.
+        //
+        // BUILD #416 (D.8 glitch pass): the decayed reality is a different
+        // matter. It has no sun, no moon and no stars to draw -- its dimension
+        // type ships skybox "none", no skylight and a fixed time -- so leaving
+        // the native bodies on paints a vanilla sunrise/sunset fan and a moon
+        // into a sky that is supposed to be a torn violet void. The pass asks
+        // the same owner that owns the sky colour, so the two can never disagree.
+        try {
+            if (net.mcsm.extras.McsmReality.inside(net.minecraft.client.Minecraft.getInstance().level)) {
+                ci.cancel();
+            }
+        } catch (Throwable ignored) {
+            // never take the frame down for a celestial body
+        }
     }
 }

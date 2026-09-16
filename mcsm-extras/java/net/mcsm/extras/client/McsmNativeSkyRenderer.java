@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import net.dabicco.witherstormmod.client.McsmSkyArtifactGuard;
 import net.dabicco.witherstormmod.client.StoryModeSkyTint;
 import net.mcsm.extras.McsmExtrasConfig;
+import net.mcsm.extras.McsmReality;
 import net.mcsm.extras.client.McsmStormPhase;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -60,6 +61,28 @@ public final class McsmNativeSkyRenderer {
 
         float p = McsmStormPhase.resolve();
         McsmStormPhase.publish(p);
+
+        // BUILD #416 (D.8 glitch pass) -- THE DECAYED REALITY HAS ITS OWN SKY.
+        //
+        // "The skies are still a dome, even the vanilla sky." That is true
+        // outside the storm: the native sky is a dome and this pass only took it
+        // over from phase 4.45 up. The decayed reality is a dimension we own, so
+        // it takes its sky over unconditionally: the horizon colour is the
+        // decayed row, the dark disc cap and the sunrise fan are off, the
+        // celestials are suppressed by McsmCelestialExcisionMixin, and the storm
+        // mass (when one is present) is drawn ON TOP of that sky by the existing
+        // backdrop pass. No second dome, no fake cover, one owned sky.
+        boolean decayed = McsmReality.inside(level);
+        if (decayed) {
+            ownsSky = true;
+            state.shouldRenderDarkDisc = false;
+            state.skyColor = decayedSkyArgb(p);
+            state.sunriseAndSunsetColor = state.skyColor;
+            state.starBrightness = 0.0F;
+            state.rainBrightness = 0.0F;
+            return;
+        }
+
         if (p < McsmStormPhase.PHASE_MIN) {
             // No storm: leave the whole regular sky exactly as vanilla built
             // it. The shader still fades it (day/night/sunset columns), but
@@ -84,6 +107,25 @@ public final class McsmNativeSkyRenderer {
         state.sunriseAndSunsetColor = state.skyColor;
     }
 
+
+    /**
+     * The decayed reality's own sky: a torn violet-black gradient that runs from
+     * the #1B1026 zenith to the #4A2A6E horizon the dimension type ships, and
+     * warms into the storm's phase colour as a storm grows inside it. Kept in
+     * Java (not a texture) so it cannot be mistaken for a dome.
+     */
+    private static int decayedSkyArgb(float phase) {
+        float[] zenith = { 0x1B / 255.0F, 0x10 / 255.0F, 0x26 / 255.0F };
+        float[] horizon = { 0x4A / 255.0F, 0x2A / 255.0F, 0x6E / 255.0F };
+        if (phase >= McsmStormPhase.PHASE_MIN) {
+            horizon = new float[]{ 0x5A / 255.0F, 0x24 / 255.0F, 0x74 / 255.0F };
+        }
+        float t = phase >= McsmStormPhase.PHASE_MIN ? 0.65F : 0.45F;
+        int r = Math.round((zenith[0] + (horizon[0] - zenith[0]) * t) * 255.0F);
+        int g = Math.round((zenith[1] + (horizon[1] - zenith[1]) * t) * 255.0F);
+        int b = Math.round((zenith[2] + (horizon[2] - zenith[2]) * t) * 255.0F);
+        return 0xFF000000 | (r & 0xFF) << 16 | (g & 0xFF) << 8 | (b & 0xFF);
+    }
 
     private static int mcsm$mixArgb(int current, float[] target, float t) {
         if (t <= 0.0F) return current;

@@ -842,6 +842,54 @@ def main():
           "CONTENT-PACK JAR AUDIT" in (read("ci/build.sh") or "")
           and "data/mcsm/dimension/decayed_reality.json" in (read("ci/build.sh") or ""))
 
+    # ---- 16. THE GLITCH PASS (Build #416 mandate D.8, user bug report) -----
+    # Three things the user saw in game, locked so they cannot come back:
+    # the storm's teeth did not glow, a yellow bloom sat in the night sky, and
+    # the sky was still a dome.
+    cfg3 = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    check("the mod owns its own storm glow under a shader pack (teeth + aura)",
+          "public static boolean shaderPackGate = true;" in cfg3
+          and "shader_pack_gate_migrated" in cfg3,
+          "gate default + one-shot migration for configs written when it was false")
+
+    sun = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmSunGlowNightPatch.java") or ""
+    sun_code = code_only(sun)
+    check("no sun glow in the night sky (and none in the decayed reality)",
+          "StormSunGlow" in sun_code and "ci.cancel()" in sun_code
+          and "sunElevation" in sun_code and "McsmReality.inside" in sun_code
+          and "require = 0" in sun)
+
+    sky = read("mcsm-extras/java/net/mcsm/extras/client/McsmNativeSkyRenderer.java") or ""
+    sky_code = code_only(sky)
+    check("the decayed reality owns its sky unconditionally (no vanilla dome there)",
+          "decayedSkyArgb" in sky_code and "McsmReality.inside(level)" in sky_code
+          and "shouldRenderDarkDisc = false" in sky_code)
+    cel = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCelestialExcisionMixin.java") or ""
+    check("no sun / moon / stars painted into the decayed reality",
+          "McsmReality.inside" in code_only(cel) and "ci.cancel()" in code_only(cel))
+
+    glare = read("ci/make_glare_structured.py") or ""
+    check("the glare is a small soft aura, not a huge dish",
+          "BLOB_FILL = 0.62" in glare and "ALPHA_GAIN" in glare
+          and "glareBackdropSize = 0.62" in cfg3.replace(" ", " ")
+          or ("glareBackdropSize = 0.62" in cfg3 and "BLOB_FILL" in glare),
+          "generator knobs + clamped config defaults")
+    vis = read("mcsm-core-shaders/include/mcsm_visuals.glsl") or ""
+    glint = vis[vis.index("vec3 mcsm_glint"):][:1800] if "vec3 mcsm_glint" in vis else ""
+    check("the body glint is the smooth reference sheen (not the striped one)",
+          "smoothstep(0.00, 0.45, fA)" in glint and "pow(max(sweep" not in glint)
+
+    title = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTitleOverhaulMixin.java") or ""
+    title_code = code_only(title)
+    check("the wordmark has its own band and cannot overlap the menu",
+          "titleBandBottom" in title_code and "hoverEase" in title_code
+          and "mcsm$lerpArgb" in title_code,
+          "band guard + eased (smoothstepped) button chrome")
+    plate = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmConfigReskinMixin.java") or ""
+    check("the settings console has its own backdrop, not a black plate",
+          "fillGradient(0, 0, w, h, 0xFF1A1130" in code_only(plate)
+          and "cloud streaks" in plate)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

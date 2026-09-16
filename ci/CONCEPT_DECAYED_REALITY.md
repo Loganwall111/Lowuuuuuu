@@ -131,6 +131,34 @@ loop usable instead of blind:
   gameplay switches must persist, and the tab must not name the Fabric type that
   cannot compile.
 
+## 4b. The glitch pass (D.8, from the user's in-game report)
+
+Three things the user saw, and what was actually wrong:
+
+| Report | Cause | Fix |
+|---|---|---|
+| "the storm's teeth do not glow nor the aura around the teeth" | `shaderPackGate` defaulted to **false**, so under the embedded shader pack the base mod handed the whole look to the pack -- and the pack (ours) draws none of it. The teeth rendered as plain unlit geometry. | The gate defaults to **true** again (the mod draws its own emissive teeth, eye glow and halo), with a one-shot config migration, because a config file written by the older build stores the value that caused it. |
+| "a weird yellow thing renders at nighttime on the sky" | The base mod's sun bloom (`StormSunGlow` -> `post/storm_sun_glow.fsh`) is driven by the storm's **gloom**, not by the clock, so a night-time storm still painted warmth where the sun would have been. | New `McsmSunGlowNightPatch`: the pass is cancelled when the sun is below the horizon and inside the decayed reality (which has no sun at all). |
+| "the skies are still a dome, even the vanilla sky" | The sky takeover only began at phase 4.45, so everywhere else -- including the whole decayed reality -- the native dome was on screen. | The decayed reality now owns its sky **unconditionally** (`McsmNativeSkyRenderer.decayedSkyArgb`), with the dark disc cap and sunrise fan off and the celestials suppressed there by `McsmCelestialExcisionMixin`. |
+| "a smudgy circular object hovering right above the storm, made absolutely huge ... the colours don't match" | The glare sheets filled their whole 256 px texture at alpha 205, so at storm scale the aura read as a giant dish; the config also drew them at storm scale (`glareBackdropSize 1.0`, `glareSize 0.58`). | The generator now leaves a wide transparent margin (`BLOB_FILL 0.62`) at ~64% alpha, and the config defaults are `0.62` / `0.34`. |
+| "the purple glint ... looks really weird, rework it" | `mcsm_glint()` summed two high-frequency sine fields raised to the 8th and 12th power -- hard, fast stripes. | Rebuilt as one wide, softly-edged band rolling slowly up the body plus a faint second, tinted cool -> violet -> blue across the phases, exactly the reference sheen. |
+| "the logo is stamped in front of everything and overlapping"; "a giant black border gets very dark"; "settings needs its own background UI" | The title plate stopped at y=54 while the wordmark starts at y=58, so the logo painted over the base banner; the settings console was a flat near-black plate. | The plate covers the whole title band (and the wordmark hides on narrow windows); the settings console paints the storm's own sky as its ground (violet->plum gradient, horizon glow, drifting cloud streaks, vignette); the menu buttons now ride a smoothstepped hover with a shine sweep instead of snapping. |
+
+### Still open from that report (next focused visual pass)
+- **The embedded shader pack as *the* default look, 1:1 with the reference
+  frames.** The Super Duper / MCSM Visuals pack is embedded and auto-selected by
+  default (`embeddedShaderPack = true`), but making it match the stills
+  one-to-one -- beams, the storm's own shading, cloud scale, tone mapping -- is a
+  shader-by-shader pass, not a config flip.
+- **The two stage sheets** the user described (`wither_storm_stage.png` for
+  phases 4-5.9 and its phase 6-8 counterpart). The `ogs-cem` pack ships
+  `wither_storm_stage_a..d` variants; wiring the *phase-selected* sheet into the
+  storm's skin path, and making the late-phase purple glint read exactly like the
+  stills, needs those sheets confirmed as the intended source.
+- **A real cloud deck** in the owned skies (the artifact guard still retires the
+  base cloud-deck route; the decayed reality currently gets the gradient and the
+  streak pass only).
+
 ## 5. Honest notes
 
 - The "decayed reality", the ghost whale and the glitch hallucinations were

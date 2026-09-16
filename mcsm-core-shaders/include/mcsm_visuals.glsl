@@ -838,19 +838,34 @@ vec3 mcsm_void_black(vec3 c, float ao) {
 // clock = seconds (mcsm_clock), p = storm phase, base = shaded colour (used to
 // keep the sheen off the void floor and off the bright highlights).
 vec3 mcsm_glint(vec2 uv, float clock, float p, vec3 base) {
+    // BUILD #416 (D.8 glitch pass) -- REBUILT against the reference frames.
+    //
+    // The old sheen summed two high-frequency sine fields and raised them to the
+    // 8th and 12th power, which drew hard, fast stripes across the body: the
+    // user's "the glint looks really weird ... do a complete rework". In the
+    // reference stills the body is near-black with ONE wide, slow, soft band of
+    // wet sheen rolling along it, faintly violet in the decay phases and blue
+    // at the end -- the highlight never competes with the teeth, the eyes or the
+    // beams, which are the only bright things in frame.
     float lum = dot(base, vec3(0.2126, 0.7152, 0.0722));
     float crease = mcsm_void_crease(base, 1.0);
-    float sweep = sin((uv.x * 2.3 + uv.y * 1.1) * 6.2831853 - clock * 0.45)
-                + 0.5 * sin((uv.x * 5.1 - uv.y * 3.7) * 6.2831853 - clock * 0.31);
-    float streak = pow(max(sweep * 0.6666, 0.0), 8.0);
-    // late phases roll a second, faster band so the sheen never freezes
-    float roll = pow(max(sin((uv.y * 3.9 - uv.x * 1.7) * 6.2831853 - clock * 0.63), 0.0), 12.0)
-               * mcsm_ramp(p, 5.5, 8.0);
-    float mask = (1.0 - crease) * (1.0 - smoothstep(0.55, 0.85, lum));
-    // cool sheen, warmed slightly through the story phases
-    vec3 tint = mix(vec3(0.30, 0.38, 0.52), vec3(0.46, 0.36, 0.58), mcsm_ramp(p, 5.4, 6.2));
-    return base + tint * (streak + roll * 0.6) * mask * 0.20;
+    // one wide band, softly edged, rolling slowly up the body...
+    float rollA = uv.y * 1.15 + uv.x * 0.25 - clock * 0.055;
+    float fA = fract(rollA);
+    float bandA = smoothstep(0.00, 0.45, fA) * (1.0 - smoothstep(0.55, 1.00, fA));
+    // ...and a second, half a cycle behind it at less than half the strength
+    float rollB = uv.y * 0.85 - uv.x * 0.18 - clock * 0.031 + 0.5;
+    float fB = fract(rollB);
+    float bandB = smoothstep(0.00, 0.50, fB) * (1.0 - smoothstep(0.60, 1.00, fB));
+    // keep the sheen off the crevices and off anything already bright
+    float mask = (1.0 - crease) * (1.0 - smoothstep(0.42, 0.86, lum));
+    // tint: cool wet sheen early, violet through the decay phases, blue late
+    vec3 tint = mix(vec3(0.32, 0.40, 0.56), vec3(0.52, 0.34, 0.78), mcsm_ramp(p, 5.4, 6.4));
+    tint = mix(tint, vec3(0.36, 0.44, 0.92), mcsm_ramp(p, 7.0, 8.0));
+    float amp = 0.10 + 0.06 * mcsm_ramp(p, 5.0, 6.0);
+    return base + tint * (bandA * 0.85 + bandB * 0.45) * mask * amp;
 }
+
 
 // BUILD #416 -- TEETH ARE WHITE; THE AURA CARRIES THE PHASE COLOUR.
 //

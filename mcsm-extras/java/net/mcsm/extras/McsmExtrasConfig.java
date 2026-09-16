@@ -127,7 +127,12 @@ public final class McsmExtrasConfig {
     // atmospheric effect"). FALSE = off (no glare shells).
     public static boolean  glareBackdrop = true; // 3 real Telltale glare sheets (glare_1/2/3.png) bound to the moving storm origin
     /** Glare shell size multiplier (0.3 - 2.5). */
-    public static double   glareBackdropSize = 1.0;
+    // BUILD #416 (D.8 glitch pass): 1.0 drew the glare at storm scale, which is
+    // what made it a "smudgy circular object hovering right above the storm,
+    // made absolutely huge". The reference frames show a tight aura, so the
+    // default is now roughly a third of that; the panel slider still goes to 2.0
+    // for anyone who wants the big dish back.
+    public static double   glareBackdropSize = 0.62;
     /** Glare shell opacity multiplier (0.0 - 2.0). */
     public static double   glareBackdropStrength = 1.0;
     /** When the cube is fully opaque, cancel the vanilla sky pass entirely so
@@ -164,7 +169,8 @@ public final class McsmExtrasConfig {
     // ---- UI & Sci-Fi Control Panel Styling --------------------------------
     public static boolean uiBorderLines = true; // Image 3 pixelated silver border frame
     public static boolean sciFiPanelLayout = true;
-    public static double  glareSize = 0.58;
+    // same pass: 0.58 -> 0.34, see glareBackdropSize above
+    public static double  glareSize = 0.34;
     public static boolean auroraEnabled = true;
     public static boolean deathCinematic = true;
     public static boolean supernovaRings = true;
@@ -178,7 +184,22 @@ public final class McsmExtrasConfig {
     // ---- Gates & System Controls -------------------------------------------
     public static boolean forceMcsmLook = true;
     public static boolean forceMcsmWorld = true;
-    public static boolean shaderPackGate = false;
+    // BUILD #416 (D.8, glitch pass) -- TRUE again, and it is the reason the
+    // storm's teeth and eye glow were invisible.
+    //
+    // Under Iris the base mod hands the whole look to the shader pack: its own
+    // teeth glow, eye glow, halo bloom, sun glow, shadow map and impact lights
+    // are all switched OFF behind ShaderPackCompat.active(). The embedded
+    // Devouring Storms pack does not draw any of them, so with the gate off the
+    // teeth rendered as plain unlit geometry -- the exact report ("the storm's
+    // teeth do not glow nor the aura around the teeth"). Forcing the gate true
+    // makes the mod draw its own emissive teeth/eyes/halo whether a pack is
+    // loaded or not. The panel row still exists for A/B testing, but a config
+    // file written by an older build is migrated to true once, because the
+    // stored false is what caused the invisible teeth.
+    public static boolean shaderPackGate = true;
+    /** Set once the gate has been migrated to true (see the migration in load()). */
+    public static boolean shaderPackGateMigrated = false;
     public static boolean commandWire = true;
     public static boolean mcsmInstructions = true;
 
@@ -276,6 +297,7 @@ public final class McsmExtrasConfig {
             p.setProperty("reality_creatures", String.valueOf(realityCreatures));
             p.setProperty("story_quests", String.valueOf(storyQuests));
             p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
+            p.setProperty("shader_pack_gate_migrated", String.valueOf(shaderPackGateMigrated));
             p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
             p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
             p.setProperty("skybox_size", String.valueOf(skyboxSize));
@@ -385,6 +407,12 @@ public final class McsmExtrasConfig {
             realityCreatures = bool(p, "reality_creatures", realityCreatures);
             storyQuests = bool(p, "story_quests", storyQuests);
             embeddedShaderPack = bool(p, "embedded_shader_pack", embeddedShaderPack);
+            // one-shot migration: any config written before this build carries a
+            // gate value that turns the storm's own glow off under a shader pack
+            if (!bool(p, "shader_pack_gate_migrated", false)) {
+                shaderPackGate = true;
+                shaderPackGateMigrated = true;
+            }
             skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
             skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
             skyboxSize = dbl(p, "skybox_size", skyboxSize);

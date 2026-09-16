@@ -42,6 +42,17 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
     private static final net.minecraft.resources.Identifier DS_ICON =
             net.minecraft.resources.Identifier.fromNamespaceAndPath("mcsm", "menu/ds_icon.png");
 
+    /** Linear ARGB mix, so every eased chrome colour lands between its two ends. */
+    private static int mcsm$lerpArgb(int from, int to, float t) {
+        if (t <= 0.0F) return from;
+        if (t >= 1.0F) return to;
+        int a = (from >>> 24) & 0xFF, r = (from >> 16) & 0xFF, g = (from >> 8) & 0xFF, b = from & 0xFF;
+        int a2 = (to >>> 24) & 0xFF, r2 = (to >> 16) & 0xFF, g2 = (to >> 8) & 0xFF, b2 = to & 0xFF;
+        int aa = Math.round(a + (a2 - a) * t), rr = Math.round(r + (r2 - r) * t);
+        int gg = Math.round(g + (g2 - g) * t), bb = Math.round(b + (b2 - b) * t);
+        return (aa & 0xFF) << 24 | (rr & 0xFF) << 16 | (gg & 0xFF) << 8 | (bb & 0xFF);
+    }
+
     /** Per-button animation state (Build #375 3D button effects). */
     private static final java.util.Map<Object, Boolean> MC$HOVER = new java.util.IdentityHashMap<>();
     private static final java.util.Map<Object, Long> MC$HOVER_MS = new java.util.IdentityHashMap<>();
@@ -279,22 +290,48 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             float ent = Math.min(1.0F, entT / 320.0F);
             int rise = (int) ((1.0F - ent) * 14.0F);
 
-            // 3D lift: the panel rises 2px and gains a drop shadow on hover
-            int lift = (hov ? 2 : 0) + rise;
+            // BUILD #416 (D.8 UI pass) -- EASED hover.
+            //
+            // Everything below used to switch on the raw hover boolean, so the
+            // panel fill, the edge colour and the glow all snapped in one frame.
+            // They now ride a smoothstepped 0..1 factor measured from the same
+            // hover timestamp the sound already uses, which is what makes the
+            // menu feel smooth rather than blinking. Pressing still wins
+            // outright (see hovAnim above).
+            float hoverT = 0.0F;
+            if (hov) {
+                hoverT = Math.min(1.0F, (nowMs - MC$HOVER_MS.getOrDefault(b, nowMs)) / 140.0F);
+            }
+            float hoverEase = hoverT * hoverT * (3.0F - 2.0F * hoverT);
+
+            // 3D lift: the panel rises up to 2px and gains a drop shadow on hover
+            int lift = (int) (2.0F * hoverEase + 0.5F) + rise;
             int px = b.getX() - 10;
             int py = b.getY() - 5 - lift;
             int pw = b.getWidth() + 20;
             int ph = b.getHeight() + 10;
-            if (hov) {
-                g.fill(px + 2, py + ph + 2, px + pw + 2, py + ph + 3, 0x55000000);
+            if (hoverEase > 0.01F) {
+                int shadowA = (int) (0x55 * hoverEase);
+                g.fill(px + 2, py + ph + 2, px + pw + 2, py + ph + 3, (shadowA << 24));
+                // the shine sweep: one soft band rides across the panel as the
+                // pointer settles, then fades -- the same trick the config
+                // console's header rule uses, so the two screens feel related
+                int sweepW = 18;
+                int sweepX = px + (int) ((pw + sweepW) * hoverT) - sweepW;
+                int sweepA = (int) (70.0F * (1.0F - hoverT) * (1.0F - hoverT));
+                if (sweepA > 2) {
+                    g.fill(Math.max(px, sweepX), py, Math.min(px + pw, sweepX + sweepW),
+                            py + ph, (sweepA << 24) | 0x00E8F4FF);
+                }
             }
-            g.fill(px, py, px + pw, py + ph, hov ? 0xF0171B24 : 0xE60A0C11);
-            int edge = hov ? 0xFFD9A441 : 0xFF2A3140;
+            g.fill(px, py, px + pw, py + ph,
+                    mcsm$lerpArgb(0xE60A0C11, 0xF0171B24, hoverEase));
+            int edge = mcsm$lerpArgb(0xFF2A3140, 0xFFD9A441, hoverEase);
             // pulsing glow frame while hovered (the "crazy cool" idle energy)
             if (hovAnim) {
                 long sinceHover = nowMs - (MC$HOVER_MS.getOrDefault(b, nowMs));
                 float pulse = (float) (Math.sin(sinceHover * 0.012D) * 0.5D + 0.5D);
-                int glowA = (int) (40 + pulse * 70);
+                int glowA = (int) ((40 + pulse * 70) * Math.max(0.25F, hoverEase));
                 g.fill(px - 2, py - 2, px + pw + 2, py - 1, (glowA << 24) | 0xFFD9A441);
                 g.fill(px - 2, py + ph + 1, px + pw + 2, py + ph + 2, (glowA << 24) | 0xFFD9A441);
                 g.fill(px - 2, py - 2, px - 1, py + ph + 2, (glowA << 24) | 0xFF9FEFFF);
@@ -560,13 +597,30 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         // vs the base's 1000) and repaints the top strip with the clean
         // storm-space gradient. The bottom band is already covered by the
         // cinematic bar below.
-        g.fillGradient(0, 0, w, 54, 0xFF07050E, 0xFF070510);
+        // BUILD #416 (D.8 UI pass) -- the wordmark's own band.
+        //
+        // The plate used to stop at y=54 while the icon + wordmark start at
+        // y=58 and run 44px tall, so the logo was painted straight over whatever
+        // the base banner had left there (the user's "devouring storms logo
+        // ... stamped in front of all this stuff and it's overlapping"). The
+        // plate now covers the whole title band, 0..118, so the wordmark sits on
+        // its own ground, and it is skipped entirely when the window is too
+        // narrow for it to fit beside the frame.
+        int titleBandBottom = 118;
+        g.fillGradient(0, 0, w, titleBandBottom, 0xFF07050E, 0x00070510);
+        g.fillGradient(0, titleBandBottom - 14, w, titleBandBottom, 0x00070510, 0x00000000);
+        if (w < 420) {
+            titleBandBottom = 0;   // too small for the wordmark: keep the sky clear
+        }
+        if (titleBandBottom > 0) {
 
         // --- Build #375: the DS title --------------------------------------
         // The vanilla logo (with its "Java Edition" line) is not drawn on
         // the title anymore; this is the mod's own identity: the new icon +
         // a crisp two-line wordmark (native font size - measured, centred,
         // never squished).
+        } // end of the title band guard
+        if (titleBandBottom > 0) {
         String word = "§6§lDEVOURING STORMS";
         String sub = "§5The Point of No Return";
         int wordW = font.width(word);
@@ -589,6 +643,7 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         int subCol = 0xFF000000 | 0x9F << 16 | (int) (0x6A + subPulse * 0x40) << 8 | 0xD9;
         g.text(font, word, textX + (Math.max(wordW, subW) - wordW) / 2, ty0 + 6, 0xFFF2E3C2, true);
         g.text(font, sub, textX + (Math.max(wordW, subW) - subW) / 2, ty0 + 27, subCol, false);
+        } // end of the wordmark block
 
         // Image 3 Silver Pixel Border Frame
         if (McsmExtrasConfig.uiBorderLines) {

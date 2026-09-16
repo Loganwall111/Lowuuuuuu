@@ -66,14 +66,37 @@ public abstract class McsmConfigReskinMixin {
         WitherStormConfigScreen self = (WitherStormConfigScreen) (Object) this;
         int w = self.width;
         int h = self.height;
-        g.fillGradient(0, 0, w, h, 0xFF120A1E, 0xFF05030A);
-        g.fillGradient(0, h * 3 / 4, w, h, 0x00000000, 0x443F255A);
+        // BUILD #416 (D.8 UI pass) -- the settings console gets its own backdrop.
+        //
+        // It used to be a flat near-black plate: "a giant black border gets very
+        // dark". The console now paints the storm's own sky as its ground -- a
+        // violet-to-plum gradient, a horizon glow band, slow cloud streaks and a
+        // soft vignette -- so the panel reads as a window onto the storm instead
+        // of a black frame, while the content keeps its contrast (every value
+        // here stays under 0x40 luminance and the text plate below is opaque).
+        g.fillGradient(0, 0, w, h, 0xFF1A1130, 0xFF0B0716);
+        // horizon glow, low and wide: the storm's own band, not a flat wash
+        int glowY = h * 3 / 4;
+        g.fillGradient(0, glowY, w, h, 0x00000000, 0x66462A6E);
+        g.fillGradient(0, glowY - 40, w, glowY, 0x00000000, 0x22361F52);
+        // cloud streaks: four slow bands, offset per streak so they never march
+        long ms = System.currentTimeMillis();
+        for (int i = 0; i < 4; i++) {
+            int bandY = (int) (h * (0.18 + i * 0.09));
+            int drift = (int) (((ms / (90 + i * 40)) % (w + 220)) - 110);
+            int bandH = 10 + i * 4;
+            g.fillGradient(Math.max(0, drift - 120), bandY, Math.min(w, drift + 160), bandY + bandH,
+                    0x00000000, 0x14A98BD8);
+        }
+        // vignette corners, so the eye goes to the panel rather than the frame
+        g.fillGradient(0, 0, w, 26, 0x33000000, 0x00000000);
+        g.fillGradient(0, h - 26, w, h, 0x00000000, 0x44000000);
         // side panels
         g.fillGradient(0, 0, 18, h, 0xAA0A0612, 0x22140622);
         g.fillGradient(w - 18, 0, w, h, 0x22140622, 0xAA0A0612);
         // bottom bar band (widgets draw on top of this later in the frame)
-        g.fillGradient(0, h - 70, w, h, 0x0005030A, 0xCC0A0614);
-        g.fill(0, h - 70, w, h - 69, 0xFF2A2A38);
+        g.fillGradient(0, h - 70, w, h, 0x3305030A, 0xCC0A0614);
+        g.fill(0, h - 70, w, h - 69, 0xFF3A2A55);
     }
 
     /**

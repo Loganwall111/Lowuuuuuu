@@ -22,6 +22,23 @@ from pngutil import write_png
 SIZE = 256
 CY = 0.72  # vertical squash -> horizontal oval
 
+# BUILD #416 (D.8 glitch pass) -- THE GLARE IS SMALL AND SOFT.
+#
+# The user: "a bit of a smudgy circular object hovering right above the storm,
+# made absolutely huge in mine ... the small circle, and the colours don't quite
+# match the reference images". The old oval filled the whole 256 px texture and
+# pushed alpha to 205, so at the storm's scale the aura read as a giant dish
+# sitting on the creature. In the reference frames the aura around the teeth is
+# a tight, low-alpha bloom and the mass itself stays black. So:
+#
+#   BLOB_FILL -- where the aura reaches zero as a fraction of the texture:
+#                0.62 leaves a wide transparent margin, i.e. the drawn aura is
+#                ~38% smaller across than before;
+#   ALPHA_GAIN -- scales every band's alpha (0.64 -> peak ~131 instead of 205),
+#               which is what stops it reading as a solid plate of colour.
+BLOB_FILL = 0.62
+ALPHA_GAIN = 0.64
+
 # per-phase band palettes: (rim, dark, mid, core)
 PAL = {
     'phase4':  ((8, 6, 24),  (30, 26, 90),  (95, 105, 220), (6, 6, 20)),
@@ -34,6 +51,7 @@ PAL = {
 
 def band(q, rim, dark, mid, core):
     """q = 0..1 normalized ellipse radius -> (r,g,b,a)."""
+    q = q / BLOB_FILL          # everything past BLOB_FILL is transparent
     if q > 1.0:
         return (0, 0, 0, 0)
     # outer rim: core->dark, dark->mid, mid->black core; all smoothstepped
@@ -52,7 +70,7 @@ def band(q, rim, dark, mid, core):
     else:
         c = rim
         a = 175.0 * (1.0 - s(0.88, 1.0, q))
-    return (c[0], c[1], c[2], int(min(255, a)))
+    return (c[0], c[1], c[2], int(min(255.0, a * ALPHA_GAIN)))
 
 def mixc(a, b, t):
     return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
