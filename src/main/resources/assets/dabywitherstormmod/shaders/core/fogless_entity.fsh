@@ -108,8 +108,8 @@ void main() {
 
 #ifdef EMISSIVE
     // ------------------------------------------------------------------
-    // BUILD #415 -- NATIVE EMISSIVE TEETH / EYE TRACK (this program is also
-    // the fallback eyes pipeline used when no shader pack is installed).
+    // BUILD #415/#416 -- NATIVE EMISSIVE TEETH / EYE TRACK (this program is
+    // also the fallback eyes pipeline used when no shader pack is installed).
     //
     // The canonical per-phase mouth palette lives in mcsm_visuals.glsl
     // (mcsm_mouth_color) for the core entity/terrain passes. THIS program may
@@ -123,8 +123,9 @@ void main() {
     // no new uniform, so no bind-group risk. The vertex-colour hue
     // (McsmTeethPhaseTint -> eyeColorR/G/B) is kept as the fallback for any
     // frame where the carrier is absent.
-    //   P4 cyan-white / P5 pure white / P5.5 cyan-blue / P6 cinematic blue /
-    //   P7 toxic green / P8 blinding white
+    //   BUILD #416 user spec, phase 4 -> 8: WHITE TEETH with a bluish aura at
+    //   4, white at 5, bluish again from 5.2 to 5.9, pure blue at 6, toxic
+    //   green at 7, blue at 8.
     //
     // Only pixels on the emissive luminance floor are touched, so body-block
     // pixels routed through this program keep their void-black shading.
@@ -133,17 +134,21 @@ void main() {
     float tmax = max(tint.r, max(tint.g, tint.b));
     vec3 band;
     if (mcsmP > 0.01) {
-        // Phase-exact: one smooth weight per band, summed as deltas around the
-        // white family so the handover between phases never steps.
-        float w4  = 1.0 - smoothstep(4.90, 5.10, mcsmP);
-        float w55 = smoothstep(5.45, 5.60, mcsmP) * (1.0 - smoothstep(5.90, 6.10, mcsmP));
-        float w6  = smoothstep(5.90, 6.10, mcsmP) * (1.0 - smoothstep(6.90, 7.10, mcsmP));
-        float w7  = smoothstep(6.90, 7.10, mcsmP) * (1.0 - smoothstep(7.90, 8.10, mcsmP));
-        band = vec3(1.0)
-             + (vec3(0.72, 0.98, 1.00) - vec3(1.0)) * w4
-             + (vec3(0.40, 0.80, 1.00) - vec3(1.0)) * w55
-             + (vec3(0.22, 0.50, 1.00) - vec3(1.0)) * w6
-             + (vec3(0.36, 1.00, 0.28) - vec3(1.0)) * w7;
+        // BUILD #416 -- WHITE TEETH, PHASE-COLOURED AURA (user spec, 4 -> 8):
+        //   bluish aura at 4, white at 5, bluish 5.2-5.9, pure blue at 6,
+        //   toxic green at 7, blue at 8 -- teeth white at every one of them.
+        // Same ramp boundaries as mcsm_aura_color() in mcsm_visuals.glsl, kept
+        // local because this program cannot import it (see above).
+        vec3 aura = vec3(0.55, 0.80, 1.00);
+        aura = mix(aura, vec3(1.00, 1.00, 1.00), smoothstep(4.92, 5.00, mcsmP));
+        aura = mix(aura, vec3(0.50, 0.78, 1.00), smoothstep(5.15, 5.25, mcsmP));
+        aura = mix(aura, vec3(0.22, 0.42, 1.00), smoothstep(5.85, 6.00, mcsmP));
+        aura = mix(aura, vec3(0.36, 1.00, 0.28), smoothstep(6.90, 7.05, mcsmP));
+        aura = mix(aura, vec3(0.35, 0.58, 1.00), smoothstep(7.90, 8.00, mcsmP));
+        // tooth core -> white, the emissive skirt around it -> the aura
+        float core = smoothstep(0.72, 0.98,
+                dot(color.rgb, vec3(0.2126, 0.7152, 0.0722)));
+        band = mix(aura, vec3(1.0), core);
     } else if (tmax <= 0.02) {
         band = vec3(1.0);
     } else if (tint.g > 0.72 * tint.b && tint.r < 0.55 * tint.b) {

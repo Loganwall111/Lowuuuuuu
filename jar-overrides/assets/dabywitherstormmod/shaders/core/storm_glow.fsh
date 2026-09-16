@@ -1,6 +1,7 @@
 #version 330
 
 #moj_import <minecraft:dynamictransforms.glsl>
+#moj_import <minecraft:fog.glsl>
 
 // -----------------------------------------------------------------------------------
 // STORM GLOW -- the light around the Wither Storm's teeth and eyes.
@@ -17,12 +18,11 @@
 // NO_CARDINAL_LIGHTING. The shader must never declare a uniform the pipeline's bind
 // group layout lacks -- that crashes on Vulkan even where OpenGL shrugs.
 //
-// MCSM_PHASE_SOURCE: the vertex colour (McsmTeethPhaseTint -> eyeColorR/G/B is pushed
-// by Java every tick and the band table below reads it). This program deliberately does
-// NOT import minecraft:fog.glsl, so the FogSkyEnd carrier is not available here; the
-// header above explains why adding an import to reach it is the riskier trade. The
-// carrier IS read by core/fogless_entity.fsh, which repaints the same mouths on the
-// model, and the post pass reads the carrier too -- so a phase change moves all three.
+// MCSM_PHASE_SOURCE: the FogSkyEnd carrier (1000 + phase*100), read through
+// minecraft:fog.glsl, with the vertex colour (McsmTeethPhaseTint -> eyeColorR/G/B) as
+// the fallback when no storm is tracked. This pipeline is built from the same
+// entity-emissive snippet as core/fogless_entity, which already binds that block, so
+// the import adds no uniform the bind group lacks -- see the note at the band table.
 //
 // Deliberately UNFOGGED: this is emitted light, so it punches through the murk instead
 // of being washed out by it (same call as the storm's night glow). Fog can't simply be
@@ -76,17 +76,31 @@ void main() {
     float lum = max(dot(tint, vec3(0.2126, 0.7152, 0.0722)), 0.12);
     vec3 rgb = tint * clamp(1.0 / max(lum, 0.55), 1.0, 1.7);
 
-    // BUILD #415 -- CANONICAL PHASE MOUTH PALETTE. Java (McsmTeethPhaseTint)
-    // pushes the evolution-track hue through the vertex colour every tick; this
-    // table is the same one the core entity pass uses (mcsm_mouth_color), so
-    // the glow pool can never drift from the model's own emissive layer. The
-    // snap is deliberately partial: it normalises the pool onto the show's
-    // band colour while still honouring a user's custom eye tint.
-    //   P4 cyan-white / P5 pure white / P5.5 cyan-blue / P6 cinematic blue /
-    //   P7 toxic green / P8 blinding white
+    // BUILD #416 -- THIS POOL IS THE AURA, AND THE AURA IS THE PHASE COLOUR.
+    //
+    // The user's spec, phase 4 -> 8: white teeth with a BLUISH aura at 4, white
+    // at 5, bluish again from 5.2 to 5.9, PURE BLUE at 6, TOXIC GREEN at 7, and
+    // blue at 8. The teeth are white everywhere, so this shader -- which draws
+    // the light AROUND them -- is where that colour has to come from.
+    //
+    // The phase is read from the FogSkyEnd carrier (1000 + phase*100, stamped
+    // by McsmFogCarrierMixin). That is safe HERE specifically because this
+    // pipeline is built from the same entity-emissive snippet as
+    // core/fogless_entity, which already imports minecraft:fog.glsl and binds
+    // that block -- no new uniform, so no bind-group mismatch on Vulkan. When
+    // the carrier is absent (no storm tracked) the vertex colour is used
+    // instead, exactly as before, so a custom tint still works.
+    float mcsmP = (FogSkyEnd - 1000.0) * 0.01;
     vec3 band;
     float t = max(tint.r, max(tint.g, tint.b));
-    if (t <= 0.02) {
+    if (mcsmP > 0.01) {
+        band = vec3(0.55, 0.80, 1.00);                                    // phase 4: bluish
+        band = mix(band, vec3(1.00, 1.00, 1.00), smoothstep(4.92, 5.00, mcsmP)); // 5.0: pure white
+        band = mix(band, vec3(0.50, 0.78, 1.00), smoothstep(5.15, 5.25, mcsmP)); // 5.2: bluish
+        band = mix(band, vec3(0.22, 0.42, 1.00), smoothstep(5.85, 6.00, mcsmP)); // 6: pure blue
+        band = mix(band, vec3(0.36, 1.00, 0.28), smoothstep(6.90, 7.05, mcsmP)); // 7: toxic green
+        band = mix(band, vec3(0.35, 0.58, 1.00), smoothstep(7.90, 8.00, mcsmP)); // 8.0: blue
+    } else if (t <= 0.02) {
         band = vec3(1.0);
     } else if (tint.g > 0.72 * tint.b && tint.r < 0.55 * tint.b) {
         // green-dominant: phase 7 toxic green
@@ -98,7 +112,9 @@ void main() {
     } else {
         band = vec3(1.00);   // white family: phase 5 and phase 8
     }
-    rgb = mix(rgb, band * max(t, 0.35), 0.75);
+    // The pool carries the aura at nearly full strength now that the vertex
+    // colour no longer has to encode it (eyeColor is white: the TEETH).
+    rgb = mix(rgb, band * max(t, 0.60), 0.88);
 
     // 4.0x emissive amplification, matching the post pass (final.fsh) so the
     // additive pool and the framebuffer agree on how hot the mouth is. The gain

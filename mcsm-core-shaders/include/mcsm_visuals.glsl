@@ -852,17 +852,42 @@ vec3 mcsm_glint(vec2 uv, float clock, float p, vec3 base) {
     return base + tint * (streak + roll * 0.6) * mask * 0.20;
 }
 
-// The show's teeth/eye hue track, one row per evolution band:
-//   P4 cyan-white / P5 pure white / P5.5 cyan-blue / P6 cinematic blue
-//   P7 toxic green / P8 blinding white
-vec3 mcsm_mouth_color(float p) {
-    if (p >= 8.0) return vec3(1.00, 1.00, 1.00);
-    if (p >= 7.0) return vec3(0.36, 1.00, 0.28);
-    if (p >= 6.0) return vec3(0.22, 0.50, 1.00);
-    if (p >= 5.5) return vec3(0.40, 0.80, 1.00);
-    if (p >= 5.0) return vec3(1.00, 1.00, 1.00);
-    if (p >= 4.0) return vec3(0.72, 0.98, 1.00);
+// BUILD #416 -- TEETH ARE WHITE; THE AURA CARRIES THE PHASE COLOUR.
+//
+// User spec, in order, phase 4 -> 8:
+//   phase 4         white teeth, BLUISH aura
+//   phase 5         pure white glowing teeth (white aura)
+//   phase 5.2-5.9   glowing white teeth, BLUISH aura around them
+//   phase 6         white teeth, PURE BLUE aura
+//   phase 7         white teeth, TOXIC GREEN aura
+//   phase 8         pure white teeth, BLUE aura
+//
+// The old table painted the teeth themselves cyan/blue/green, which is why the
+// mouths never matched the reference frames. The teeth colour is now white at
+// every storm phase; mcsm_aura_color() is the part that moves.
+vec3 mcsm_teeth_color(float p) {
+    if (p >= 4.0) return vec3(1.00, 1.00, 1.00);
     return vec3(0.98, 0.98, 0.86);   // phase 3 and below: no glowing teeth
+}
+
+// The aura around the teeth: bluish (4) -> white (5.0) -> bluish (5.2-5.9) ->
+// pure blue (6) -> toxic green (7) -> blue (8). Cross-faded on the user's own
+// boundaries so no phase switch steps.
+vec3 mcsm_aura_color(float p) {
+    if (p < 4.0) return vec3(0.0);                       // no glow at all
+    vec3 c = vec3(0.55, 0.80, 1.00);                     // phase 4: bluish
+    c = mix(c, vec3(1.00, 1.00, 1.00), mcsm_ramp(p, 4.92, 5.00));   // phase 5.0: PURE white
+    c = mix(c, vec3(0.50, 0.78, 1.00), mcsm_ramp(p, 5.15, 5.25));   // 5.2: bluish returns
+    c = mix(c, vec3(0.22, 0.42, 1.00), mcsm_ramp(p, 5.85, 6.00));   // phase 6: pure blue
+    c = mix(c, vec3(0.36, 1.00, 0.28), mcsm_ramp(p, 6.90, 7.05));   // phase 7: toxic green
+    c = mix(c, vec3(0.35, 0.58, 1.00), mcsm_ramp(p, 7.90, 8.00));   // phase 8.0: blue
+    return c;
+}
+
+// Kept for every existing caller (sky horizon glow, entity/cutout emissive
+// paths, the Iris pack): same function, teeth semantics.
+vec3 mcsm_mouth_color(float p) {
+    return mcsm_teeth_color(p);
 }
 
 // Emissive gain for a mouth/teeth pixel: the mask keys on the emissive
@@ -872,10 +897,17 @@ float mcsm_mouth_mask(vec3 c) {
     return smoothstep(0.45, 0.80, lum);
 }
 
+// Teeth core -> white, the fringe around it -> the phase aura. A bright pixel
+// is tooth and goes white; the dimmer emissive skirt (the boost layer's halo,
+// the anti-aliased edge of each tooth) takes the aura colour, which is what
+// reads as "white teeth with a bluish aura" in the reference frames.
 vec3 mcsm_mouth_emissive(vec3 c, float p) {
     float m = mcsm_mouth_mask(c);
-    // snap the emissive coordinates onto the phase palette, then amplify 4.0x
-    return mix(c, mcsm_mouth_color(p) * max(max(c.r, c.g), c.b), m) * (1.0 + (MCSM_MOUTH_GAIN - 1.0) * m);
+    float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    float core = smoothstep(0.72, 0.98, lum);
+    vec3 band = mix(mcsm_aura_color(p), mcsm_teeth_color(p), core);
+    // snap the emissive coordinates onto the band, then amplify 4.0x
+    return mix(c, band * max(max(c.r, c.g), c.b), m) * (1.0 + (MCSM_MOUTH_GAIN - 1.0) * m);
 }
 
 // ------------------------------------------------------------- attachments

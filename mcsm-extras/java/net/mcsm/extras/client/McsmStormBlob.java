@@ -360,9 +360,19 @@ public final class McsmStormBlob {
             float wMouth = 0.0F;
             float mouthBoost = phase >= 7.0F ? 1.85F : (phase >= 6.0F ? 1.70F : (phase >= 5.5F ? 1.45F : 0.82F));
             float mouthAlphaScale = phase >= 7.0F ? 1.18F : (phase >= 6.0F ? 1.12F : (phase >= 5.5F ? 1.0F : (phase >= 5.0F ? 0.36F : 0.48F)));
-            int mouthR = phase >= 7.0F ? 132 : (phase >= 6.0F ? 88 : (phase >= 5.5F ? 245 : 225));
-            int mouthG = phase >= 7.0F ? 255 : (phase >= 6.0F ? 210 : 255);
-            int mouthB = phase >= 7.0F ? 224 : (phase >= 6.0F ? 255 : 245);
+            // BUILD #416 -- WHITE TEETH, PHASE-COLOURED AURA (user spec, 4 -> 8).
+            // The dashed teeth are WHITE in every phase; the inner-mouth square
+            // is the light INSIDE the mouth and therefore takes the aura:
+            // bluish at 4, white at 5, bluish 5.2-5.9, pure blue at 6, toxic
+            // green at 7, blue at 8. One feed (McsmTeethPhaseTint) keeps these
+            // squares, the model's emissive layers and the glow shader in step.
+            float[] mcsmAura = McsmTeethPhaseTint.aura(phase);
+            int mouthR = (int) (Mth.clamp(mcsmAura[0], 0.0F, 1.0F) * 255.0F);
+            int mouthG = (int) (Mth.clamp(mcsmAura[1], 0.0F, 1.0F) * 255.0F);
+            int mouthB = (int) (Mth.clamp(mcsmAura[2], 0.0F, 1.0F) * 255.0F);
+            final int toothR = 255;
+            final int toothG = 255;
+            final int toothB = 255;
 
             // 1.9.208: the soft circular billboard glare and every blurry
             // backdrop wash are deleted (they read as fuzzy mist spheres).
@@ -468,10 +478,11 @@ public final class McsmStormBlob {
             if (key == mainKey && wMouth > 0.004F && baseR > 12.0) {
                 for (int m = 0; m < 3; m++) {
                     Vec3 mo = billboardOffset(at, view, baseR * MOUTH_X[m], baseR * MOUTH_Y[m]);
-                    // inner mouth: cyan-white emissive square
+                    // inner mouth: the light inside the mouth == the phase aura
                     quadAt(poseStack, collector, GlowRenderTypes.glow(WHITE), mo, view,
                             baseR * 0.135 * mouthBoost, mouthR, mouthG, mouthB, (int) (a * wMouth * 210.0F * mouthAlphaScale));
-                    // dashed teeth: 7 tiny squares on a downward U-arc
+                    // dashed teeth: 7 tiny squares on a downward U-arc, WHITE
+                    // in every phase (the aura around them is the phase colour)
                     for (int i = 0; i < 7; i++) {
                         float ang = (float) (Math.PI * (1.12 + 0.76 * i / 6.0));
                         float tx = MOUTH_X[m] + (float) Math.cos(ang) * 0.115F;
@@ -479,7 +490,7 @@ public final class McsmStormBlob {
                                 + ((i & 1) == 1 ? 0.014F : 0.0F);
                         Vec3 tp = billboardOffset(at, view, baseR * tx, baseR * ty);
                         quadAt(poseStack, collector, GlowRenderTypes.glow(WHITE), tp, view,
-                                baseR * 0.036 * mouthBoost, mouthR, mouthG, mouthB, (int) (a * wMouth * 255.0F * mouthAlphaScale));
+                                baseR * 0.036 * mouthBoost, toothR, toothG, toothB, (int) (a * wMouth * 255.0F * mouthAlphaScale));
                     }
                     // the magenta emitter cube above the mouth
                     Vec3 cp = billboardOffset(at, view, baseR * MOUTH_X[m],

@@ -51,6 +51,22 @@ EXTRA_CONSUMERS = [
 ]
 CARRIER_DECODE = "(FogSkyEnd - 1000.0)"
 PHASE_SOURCE_TAG = "MCSM_PHASE_SOURCE:"
+
+# BUILD #416 -- the teeth/aura split, the user's own phase 4 -> 8 spec. The teeth
+# are WHITE at every storm phase; the aura is what changes colour. Both are
+# checked here so a later edit cannot quietly re-tint the teeth:
+#   (a) every consumer resolves a phase source (above);
+#   (b) no shader may tint the TEETH with a phase colour -- mcsm_teeth_color()
+#       and the local band tables must resolve to white for p >= 4;
+#   (c) the aura ramp must exist in the shared include and in the one
+#       storm-bound program that has to repeat it.
+AURA_RAMPS = ["4.92", "5.15", "5.85", "6.90", "7.90"]
+AURA_CONSUMERS = [
+    "mcsm-core-shaders/include/mcsm_visuals.glsl",
+    "mcsm-core-shaders/core/sky.fsh",
+    "jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh",
+    "src/main/resources/assets/dabywitherstormmod/shaders/core/fogless_entity.fsh",
+]
 JAVA_RESOLVER = "mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java"
 JAVA_SKY_HOOK = "mcsm-extras/java/net/mcsm/extras/client/McsmNativeSkyRenderer.java"
 
@@ -126,6 +142,35 @@ def main():
         if annotated and not (via_accessor or via_carrier):
             line = [l.strip() for l in text.splitlines() if PHASE_SOURCE_TAG in l][0]
             print("  note %s declares its phase source: %s" % (name, line[:110]))
+
+    # ---- 4b. the teeth/aura split --------------------------------------
+    visuals = read(VISUALS) or ""
+    check("teeth track exists and is white from phase 4",
+          "vec3 mcsm_teeth_color(float p)" in visuals
+          and "if (p >= 4.0) return vec3(1.00, 1.00, 1.00);" in visuals)
+    check("aura track exists in the shared include",
+          "vec3 mcsm_aura_color(float p)" in visuals)
+    glow_text = read("jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh") or ""
+    fogless_text = read("src/main/resources/assets/dabywitherstormmod/shaders/core/fogless_entity.fsh") or ""
+    for tok in AURA_RAMPS:
+        ramp_in_include = ("mcsm_ramp(p, %s" % tok) in visuals
+        ramp_in_glow = ("smoothstep(%s" % tok) in glow_text
+        ramp_in_fogless = ("smoothstep(%s" % tok) in fogless_text
+        present = ramp_in_include or ramp_in_glow or ramp_in_fogless
+        check("aura ramp %s present" % tok, present)
+    for rel in AURA_CONSUMERS:
+        text = read(rel) or ""
+        has = ("mcsm_aura_color(" in text) or ("vec3 aura = vec3(0.55, 0.80, 1.00);" in text) \
+              or ("band = vec3(0.55, 0.80, 1.00);" in text)
+        check("aura reaches %s" % os.path.basename(rel), has,
+              "no aura ramp in this module")
+    # the teeth must not be phase-tinted anywhere any more
+    offenders = []
+    for rel in [VISUALS] + [os.path.join(CORE_DIR, c) for c in CONSUMERS]:
+        text = read(rel) or ""
+        for m in re.finditer(r"mcsm_mouth_color\([^)]*\)\s*\*", text):
+            offenders.append("%s: %s" % (os.path.basename(rel), m.group(0)))
+    check("teeth are not multiplied by a phase colour", not offenders, "; ".join(offenders))
 
     # ---- 5. Java publishes the value -----------------------------------
     jr = read(JAVA_RESOLVER)

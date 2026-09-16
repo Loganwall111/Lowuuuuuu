@@ -152,7 +152,9 @@ void main() {
     // A small additive lift around the horizon so the fade has air in it.
     float horizonGradient = 1.0 - max(up, 0.0);
     float glowW = pow(horizonGradient, 3.5);
-    vec3 glowTint = p > 4.4 ? mcsm_mouth_color(p) * 0.06 : vec3(0.04, 0.02, 0.06);
+    // BUILD #416 -- the horizon air is lit by the storm's AURA, not by the
+    // teeth colour: blue at 6, toxic green at 7, blue again at 8.
+    vec3 glowTint = p > 4.4 ? mcsm_aura_color(p) * 0.06 : vec3(0.04, 0.02, 0.06);
     col += glowTint * glowW;
 
     // ---- story grade ------------------------------------------------------

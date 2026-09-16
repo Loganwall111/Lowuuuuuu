@@ -6,15 +6,27 @@ import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.minecraft.client.Minecraft;
 
 /**
- * Drives model teeth/eye glow colours from the nearest storm phase so the
- * base-mod teethBoost pass matches the MCSM frames without Iris:
- *   phase 3          no teeth glow
- *   phase 4          small cool-white/cyan glow on the three heads
- *   phase 5          flat white teeth, no big glow
- *   phase 5.5        white teeth with glow
- *   phase 4 through 5.5  neon-cyan eye/teeth channels (#00F3FF)
- *   phase 6+              sea-green eye/teeth channels (#00A877)
- *   all phases            dedicated full-bright emissive texture paths
+ * Drives model teeth/eye glow colours from the nearest storm phase.
+ *
+ * BUILD #416 -- THE TEETH AND THE AURA ARE TWO DIFFERENT COLOURS.
+ *
+ * The user's spec, in order, phase 4 -> 8:
+ *   phase 4         white teeth, BLUISH aura
+ *   phase 5         pure white glowing teeth (white aura)
+ *   phase 5.2-5.9   glowing white teeth, BLUISH aura around them
+ *   phase 6         white teeth, PURE BLUE aura
+ *   phase 7         white teeth, TOXIC GREEN aura
+ *   phase 8         pure white teeth, BLUE aura
+ *
+ * So the teeth are WHITE at every phase from 4 up, and the AURA is the part
+ * that changes colour. The old table made the teeth themselves cyan / blue /
+ * green, which is why the mouths never matched the reference frames.
+ *
+ * Two tracks, both fed from here so Java, the core shaders (mcsm_teeth_color /
+ * mcsm_aura_color in mcsm_visuals.glsl), the storm-glow pool and the Iris pack
+ * cannot disagree:
+ *   TEETH -> DabyWSClientConfig.eyeColorR/G/B (the emissive model layers)
+ *   AURA  -> shader side, from the phase; also used by our own glow emitters
  */
 public final class McsmTeethPhaseTint {
 
@@ -22,41 +34,100 @@ public final class McsmTeethPhaseTint {
     }
 
     /**
-     * BUILD #415 -- THE canonical evolution-track palette, one row per phase
-     * band: {red, green, blue, glowIntensity}. Java, the core shaders
-     * (mcsm_mouth_color in mcsm_visuals.glsl), the storm-glow shader and the
-     * Iris final pass all read these same six bands, so the model's emissive
-     * layer, the additive glow pool and the post-pass bloom can no longer
-     * disagree about what colour the mouth is this phase:
-     *   4.0  cyan-white / 5.0 pure white / 5.5 cyan-blue /
-     *   6.0  cinematic blue / 7.0 toxic green / 8.0 blinding white
-     * Anything below phase 4 is the non-glowing show default.
+     * THE TEETH TRACK -- {red, green, blue, glowIntensity}, one row per band.
+     * Index 0 is the non-glowing show default below phase 4. Every other row is
+     * white: the teeth do NOT take the phase colour any more.
      */
     private static final float[][] PHASE_TRACK = {
         //  r      g      b      intensity
         { 0.98F, 0.98F, 0.86F, 0.00F },  // phase 3-  no glowing teeth
-        { 0.72F, 0.98F, 1.00F, 3.60F },  // phase 4   cyan-white
-        { 1.00F, 1.00F, 1.00F, 3.60F },  // phase 5   pure white
-        { 0.40F, 0.80F, 1.00F, 3.90F },  // phase 5.5 cyan-blue
-        { 0.22F, 0.50F, 1.00F, 4.20F },  // phase 6   cinematic blue
-        { 0.36F, 1.00F, 0.28F, 4.20F },  // phase 7   toxic green
-        { 1.00F, 1.00F, 1.00F, 4.30F },  // phase 8   blinding white
+        { 1.00F, 1.00F, 1.00F, 3.60F },  // phase 4   white teeth
+        { 1.00F, 1.00F, 1.00F, 3.70F },  // phase 5   pure white, brightest
+        { 1.00F, 1.00F, 1.00F, 3.90F },  // phase 5.2 glowing white
+        { 1.00F, 1.00F, 1.00F, 4.20F },  // phase 6   white teeth
+        { 1.00F, 1.00F, 1.00F, 4.20F },  // phase 7   white teeth
+        { 1.00F, 1.00F, 1.00F, 4.30F },  // phase 8   pure white
     };
 
-    /** Index into PHASE_TRACK for an evolution phase. */
+    /**
+     * THE AURA TRACK -- the colour AROUND the teeth, same row indexing.
+     *   bluish (4) / white (5.0) / bluish (5.2-5.9) / pure blue (6) /
+     *   toxic green (7) / blue (8)
+     */
+    private static final float[][] AURA_TRACK = {
+        { 0.55F, 0.80F, 1.00F },  // phase 3-  (no glow; row kept for indexing)
+        { 0.55F, 0.80F, 1.00F },  // phase 4   bluish aura
+        { 1.00F, 1.00F, 1.00F },  // phase 5   white aura
+        { 0.50F, 0.78F, 1.00F },  // phase 5.2 bluish aura around white teeth
+        { 0.22F, 0.42F, 1.00F },  // phase 6   pure blue aura
+        { 0.36F, 1.00F, 0.28F },  // phase 7   toxic green aura
+        { 0.35F, 0.58F, 1.00F },  // phase 8   blue aura
+    };
+
+    /**
+     * Index into the tracks for an evolution phase. The 5.2 boundary is the
+     * user's own: the bluish aura comes back at 5.2 and holds to 5.9.
+     */
     public static int trackIndex(double phase) {
         if (phase >= 8.0D) return 6;
         if (phase >= 7.0D) return 5;
         if (phase >= 6.0D) return 4;
-        if (phase >= 5.5D) return 3;
+        if (phase >= 5.2D) return 3;
         if (phase >= 5.0D) return 2;
         if (phase >= 4.0D) return 1;
         return 0;
     }
 
-    /** {r, g, b, intensity} for the nearest storm's phase. */
+    /** {r, g, b, intensity} teeth colour for the nearest storm's phase. */
     public static float[] track(double phase) {
         return PHASE_TRACK[trackIndex(phase)];
+    }
+
+    /**
+     * {r, g, b} aura colour for a phase, CROSS-FADED on exactly the boundaries
+     * mcsm_aura_color() uses in the shaders so the mouth squares, the model's
+     * emissive layers and the glow pool never step at a different moment:
+     *   5.00 pure white is reached exactly at phase 5 and holds to 5.15,
+     *   the bluish aura is back by 5.25, pure blue at 6.0, green at 7.0,
+     *   blue at 8.0.
+     */
+    public static float[] aura(double phase) {
+        if (phase < 4.0D) {
+            return new float[]{0.0F, 0.0F, 0.0F};
+        }
+        float[] c = {AURA_TRACK[1][0], AURA_TRACK[1][1], AURA_TRACK[1][2]};   // bluish
+        toward(c, AURA_TRACK[2], ramp(phase, 4.92D, 5.00D));                  // pure white
+        toward(c, AURA_TRACK[3], ramp(phase, 5.15D, 5.25D));                  // bluish again
+        toward(c, AURA_TRACK[4], ramp(phase, 5.85D, 6.00D));                  // pure blue
+        toward(c, AURA_TRACK[5], ramp(phase, 6.90D, 7.05D));                  // toxic green
+        toward(c, AURA_TRACK[6], ramp(phase, 7.90D, 8.00D));                  // blue
+        return c;
+    }
+
+    private static void toward(float[] c, float[] target, float w) {
+        float t = Math.max(0.0F, Math.min(1.0F, w));
+        for (int i = 0; i < 3; i++) {
+            c[i] = c[i] + (target[i] - c[i]) * t;
+        }
+    }
+
+    private static float ramp(double v, double lo, double hi) {
+        if (hi <= lo) {
+            return v >= hi ? 1.0F : 0.0F;
+        }
+        double t = Math.max(0.0D, Math.min(1.0D, (v - lo) / (hi - lo)));
+        return (float) (t * t * (3.0D - 2.0D * t));
+    }
+
+    /** The aura colour right now, packed ARGB -- for our own glow emitters. */
+    public static int auraArgb() {
+        float[] a = aura(nearestPhase());
+        return rgb(a[0], a[1], a[2]);
+    }
+
+    /** {r, g, b} aura colour right now. */
+    public static float[] auraNow() {
+        return aura(nearestPhase());
     }
 
     private static double nearestPhase() {

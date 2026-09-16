@@ -84,6 +84,43 @@ a cap, a card or a hard-edged oval.
   storm-bound shaders that cannot take that carrier carry an explicit
   `MCSM_PHASE_SOURCE:` annotation naming where their phase comes from.
 
+## 4b. TEETH ARE WHITE; THE AURA CARRIES THE PHASE COLOUR
+
+This is the correction that mattered most, and it is a real behaviour change:
+
+| phase | teeth | aura |
+|-------|-------|------|
+| 4 | white | bluish `#8CCCFF` |
+| 5 | pure white (brightest) | pure white `#FFFFFF` |
+| 5.2 - 5.9 | glowing white | bluish `#80C7FF` |
+| 6 | white | pure blue `#386BFF` |
+| 7 | white | toxic green `#53D977` |
+| 8 | pure white | blue `#5994FF` |
+
+Every previous build painted the teeth THEMSELVES cyan / blue / green, which is
+why the mouths never matched the reference frames. Now:
+
+- `McsmTeethPhaseTint` carries **two** tracks: the TEETH track (white at every
+  storm phase, fed to `eyeColorR/G/B` -> the model's emissive layers) and the
+  AURA track, cross-faded on the user's own boundaries (white is reached exactly
+  at 5.0 and holds to 5.15; the bluish aura is back by 5.25; blue at 6.0; green
+  at 7.0; blue at 8.0).
+- `mcsm_visuals.glsl` gained `mcsm_teeth_color()` / `mcsm_aura_color()`, and
+  `mcsm_mouth_emissive()` splits them **per pixel by luminance**: a bright tooth
+  pixel goes white, the dimmer emissive skirt around it takes the aura -- which
+  is exactly what "white teeth with a bluish aura" looks like in the frames.
+- `storm_glow.fsh` -- the additive pool drawn AROUND the mouths -- now reads the
+  phase from the `FogSkyEnd` carrier (safe there: that pipeline is built from the
+  same entity-emissive snippet as `fogless_entity`, which already binds the fog
+  block, so the import adds no uniform) and paints the aura at 0.88 strength.
+- `McsmStormBlob`'s mouth detail: the dashed teeth are hard white, the inner
+  mouth square takes the aura, and the magenta emitter cube is untouched.
+- The sky's horizon air is lit by the aura too, so phase 6 / 7 / 8 horizons read
+  blue / green / blue.
+- `ci/check_phase_uniform.py` grew twelve checkpoints for this (34/34 now):
+  the aura ramp must exist in the include and in each storm-bound program, and
+  **no shader may multiply the teeth by a phase colour** any more.
+
 ## 5. Wiring, so none of this is inert
 
 - **`core/position.vsh` / `core/position.fsh` are authored files now.** The

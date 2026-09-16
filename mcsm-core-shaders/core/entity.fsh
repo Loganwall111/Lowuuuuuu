@@ -84,10 +84,12 @@ void main() {
     // BUILD #415 -- NATIVE EMISSIVE FACE TRACK (teeth + eye lenses).
     // This program is the one 26.2 uses for RenderTypes.eyes(): the emissive
     // teeth grids and the eye masks arrive here full-bright with the EMISSIVE
-    // define, so this is the shader-side hook that re-keys the mouth colour
-    // every phase (P4 cyan-white, P5 white, P5.5 cyan-blue, P6 blue, P7 toxic
-    // green, P8 white -- see mcsm_mouth_color) and applies the 4.0x emissive
-    // amplification before the post pass sees it. mcsm_mouth_mask() keys on
+    // define, so this is the shader-side hook that re-keys the mouth every
+    // phase. BUILD #416: the TEETH stay white in every phase and the AURA
+    // around them takes the phase colour -- bluish at 4, white at 5, bluish at
+    // 5.2-5.9, pure blue at 6, toxic green at 7, blue at 8
+    // (mcsm_mouth_emissive blends the two by pixel luminance). The 4.0x
+    // emissive amplification still lands before the post pass sees it. mcsm_mouth_mask() keys on
     // the emissive luminance floor, so ordinary entity shading is untouched.
 #ifdef EMISSIVE
     if (mcsm_active(mcsmP)) {

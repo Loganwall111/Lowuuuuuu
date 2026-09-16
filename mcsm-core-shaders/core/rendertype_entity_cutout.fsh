@@ -101,9 +101,11 @@ void main() {
     }
 #else
     if (emissive && mcsm_active(p)) {
-        // Snap onto the canonical band, then amplify 4.0x: the teeth throw a
-        // radiant field instead of reading as flat white blocks.
-        vec3 band = mcsm_mouth_color(p);
+        // Snap onto the canonical band, then amplify 4.0x: the teeth stay
+        // white (mcsm_mouth_color) and the aura around them takes the phase
+        // colour, so the mouth throws a radiant field instead of reading as
+        // flat white blocks.
+        vec3 band = mix(mcsm_aura_color(p), mcsm_mouth_color(p), 0.75);
         float peak = max(max(texColor.r, texColor.g), texColor.b);
         color.rgb = mix(color.rgb, band * peak, 0.75) * MCSM_MOUTH_GAIN;
     } else {
