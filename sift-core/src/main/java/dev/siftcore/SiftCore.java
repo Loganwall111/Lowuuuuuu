@@ -1,0 +1,51 @@
+package dev.siftcore;
+
+import dev.siftcore.command.SiftCommands;
+import dev.siftcore.rift.SiftRiftEntity;
+import dev.siftcore.rift.SiftRiftSpawner;
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnGroup;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.util.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Common entry point for the standalone Sift sandbox.
+ *
+ * <p>The resource namespace is deliberately {@code mcsm}; the mod id remains
+ * {@code sift_core} so this project can be merged into the future Dimensions
+ * Forged workspace without rewriting the dimension data.</p>
+ */
+public final class SiftCore implements ModInitializer {
+    public static final String MOD_ID = "sift_core";
+    public static final String NAMESPACE = "mcsm";
+    public static final String VERSION = "0.1.0-SIFT";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+    public static final EntityType<SiftRiftEntity> SIFT_RIFT = Registry.register(
+            Registries.ENTITY_TYPE,
+            id("sift_rift"),
+            EntityType.Builder.create(SiftRiftEntity::new, SpawnGroup.MISC)
+                    .setDimensions(4.0f, 4.0f)
+                    .maxTrackingRange(128)
+                    .trackingTickInterval(10)
+                    .disableSaving()
+                    .disableSummon()
+                    .build("sift_rift")
+    );
+
+    public static Identifier id(String path) {
+        return new Identifier(NAMESPACE, path);
+    }
+
+    @Override
+    public void onInitialize() {
+        SiftCommands.register();
+        ServerTickEvents.END_WORLD_TICK.register(SiftRiftSpawner::tick);
+        LOGGER.info("Sift-Core {} initialized; The Sift handshake is armed", VERSION);
+    }
+}
