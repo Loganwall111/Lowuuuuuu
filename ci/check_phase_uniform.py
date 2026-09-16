@@ -77,6 +77,10 @@ JAVA_DOME = "mcsm-extras/java/net/dabicco/witherstormmod/client/StormSkyDome.jav
 JAVA_TEETH = "mcsm-extras/java/net/mcsm/extras/client/McsmTeethPhaseTint.java"
 JAVA_HEAD_EYES = "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadEyesRenderTypeMixin.java"
 JAVA_BODY_EYES = "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBodyEyesRenderTypeMixin.java"
+JAVA_HALO = "mcsm-extras/java/net/mcsm/extras/client/McsmHaloSkyRenderer.java"
+JAVA_WHITE_GLOW = "mcsm-extras/java/net/dabicco/witherstormmod/client/McsmWhiteGlow.java"
+JAVA_PRESENCE = "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresenceFxPatch.java"
+STORM_GLOW_FSH = "jar-overrides/assets/dabywitherstormmod/shaders/core/storm_glow.fsh"
 SKY_FSH = "mcsm-core-shaders/core/sky.fsh"
 
 
@@ -176,6 +180,18 @@ def shader_reachability():
 # alone, which keeps this precise and free of false positives.
 # ---------------------------------------------------------------------------
 BASE_API = "ci/api/mod.txt"
+
+
+def code_only(text):
+    """Source with comments removed -- structural checks must not read prose.
+
+    The conic column's own javadoc says what it REPLACED ("no cap, no disc, no
+    ring"), so a naive substring search reports the documentation as the defect.
+    """
+    if not text:
+        return ""
+    text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    return re.sub(r"//[^\n]*", " ", text)
 
 
 def base_api_index():
@@ -525,6 +541,70 @@ def main():
     else:
         check("base-jar API dump present", False,
               "%s missing -- run a build (it is dumped by the runner)" % BASE_API)
+
+    # ---- 10. THE CONIC AURA IS WELDED TO THE BODY, NOT TO A CONSTANT ----
+    # Phase 3's growth weld. The light column must take its radius, height AND
+    # spread angle from the one shared size model, with the entity's own scale
+    # multiplier folded in, so it can never get out of step with a growing body;
+    # and it must be built from the WHITE pipeline, because the atmosphere is
+    # white regardless of what colour the aura around the teeth is that phase.
+    halo = read(JAVA_HALO)
+    if halo:
+        check("the column reads the shared body radius", "McsmStormPhase.bodyRadius(" in halo)
+        check("the column reads the shared height", "McsmStormPhase.bodyHeight(" in halo)
+        check("the column reads the entity scale multiplier",
+              "McsmStormPhase.scaleMultiplier(" in halo)
+        check("the multiplier is fed the LIVE attached-head count",
+              "activeHeads" in halo)
+        check("the cone's spread angle comes from the phase too",
+              "McsmStormPhase.columnHalfAngleDeg(" in halo and "tan(spreadRad)" in halo)
+        check("the column carries NO private body-radius curve",
+              "private static double bodyRadius(" not in halo
+              and "private static double bodyHeight(" not in halo)
+        check("the column is drawn through the white pipeline",
+              "McsmWhiteGlow.glowWhite(" in halo)
+        halo_code = code_only(halo)
+        check("the column has no cap, disc or ring geometry",
+              not any(k in halo_code for k in ("RING_INNER", "RING_OUTER",
+                                               "haloDisc", "discRadius", "capRing")))
+        check("the column's bands overlap (welded into one volume, not beads)",
+              "BANDS" in halo)
+    else:
+        check("conic column renderer present", False, JAVA_HALO)
+
+    white = read(JAVA_WHITE_GLOW)
+    if white:
+        check("the white pipeline is built in a COMPILED tree (mcsm-extras)",
+              True)
+        check("the white pool is pinned by the shader define",
+              'withShaderDefine("MCSM_GLOW_WHITE")' in white)
+        check("the white pool keeps the additive blend",
+              "BlendFactor.ONE, BlendFactor.ONE, BlendFactor.ZERO, BlendFactor.ONE" in white)
+        check("the white pool uses the same shader as the aura pool",
+              'withFragmentShader(id("core/storm_glow"))' in white)
+    else:
+        check("white pipeline present", False, JAVA_WHITE_GLOW)
+
+    glowfsh = read(STORM_GLOW_FSH)
+    if glowfsh:
+        check("the shader really pins the pool white under MCSM_GLOW_WHITE",
+              "#ifdef MCSM_GLOW_WHITE" in glowfsh and "rgb = vec3(1.0);" in glowfsh)
+        check("the aura path is untouched beside it",
+              "rgb = mix(rgb, band * max(t, 0.60), 0.88);" in glowfsh)
+    else:
+        check("storm glow shader present", False, STORM_GLOW_FSH)
+
+    presence = read(JAVA_PRESENCE)
+    if presence:
+        check("the flat white under-halo no longer draws",
+              "HALO_WHITE)" not in presence.replace(
+                  "texture.equals(HALO_WHITE)", ""))
+        check("every glare layer is a blob cluster now",
+              presence.count("blobLayer(") >= 7 and "BLOB_LOBES" in presence)
+        check("the blob cluster drifts on the world clock (not a static card)",
+              "getGameTime" in presence or "ticks" in presence)
+    else:
+        check("presence patch present", False, JAVA_PRESENCE)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

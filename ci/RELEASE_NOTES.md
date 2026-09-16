@@ -333,3 +333,32 @@ Two guards came out of it:
   ourselves are excluded — so it stays precise and cannot false-fail.
 
 Checkpoint count: 40 -> 76.
+
+## 8. Phase 3 locked: the aura is welded, the blobs are organic, and the counters say so
+
+The layer-separated aura engine is finished and, more importantly, *falsifiable* from
+here on. `ci/check_phase_uniform.py` is at **94/94 checkpoints** (it was 40 before this
+build) and the shim parity gate is at **165/165**; both run before javac, so a regression
+stops the build instead of reaching a release.
+
+- **The flat bottom circle is gone and stays gone.** The white under-halo disc that hung on
+  the lower chassis layers no longer draws, and the column is built from overlapping
+  camera-facing bands with a zero-alpha base, so it is open at the bottom by construction.
+  A checkpoint fails the build if ring/disc/cap geometry reappears in the pass.
+- **Radius, height and spread angle all come from one model.** The column reads
+  `McsmStormPhase.bodyRadius / bodyHeight / scaleMultiplier / columnHalfAngleDeg` and feeds
+  the multiplier the LIVE attached-head count, so a severed head pulls the light in rather
+  than leaving it inflated around empty air. A checkpoint fails the build if the renderer
+  grows a private body-radius curve again.
+- **White is structural, not incidental.** The column draws through `McsmWhiteGlow`, a
+  compiled class in `mcsm-extras` that builds the same shader with `MCSM_GLOW_WHITE`. The
+  aura path beside it in `storm_glow.fsh` is verified untouched, so the teeth keep taking
+  the phase colour while the atmosphere never can.
+- **The glare sheets are cloud blobs.** Six phase layers, five drifting lobes each, baked
+  from `ci/make_cloud_blobs.py` with a warped silhouette and a bright core, so no rigid
+  circular card survives anywhere in the effect.
+- **The frozen-base-symbol guard** (new) verifies all 51 base-jar calls mcsm-extras makes
+  against `ci/api/mod.txt`, the javap dump of the base release asset — the class of mistake
+  that cost this build a red run cannot recur.
+- **The death cinematic finally renders**, cool-white, and the no-dome rule plus the
+  shader-include reachability map are enforced checkpoints.
