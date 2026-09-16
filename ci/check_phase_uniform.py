@@ -23,6 +23,7 @@ Exit 0 when every checkpoint passes, 1 otherwise (the build stops).
 import glob
 import json
 import os
+import pathlib
 import re
 import sys
 
@@ -2473,6 +2474,29 @@ def main():
               or "")
           and "if (McsmTerminalClient.currentScreen(mc) != null) {" in floor
           and "mc.player.level().dimension().equals(McsmVoid.DIMENSION)" in floor)
+
+    # ------------------------------------------------------------------
+    # SOURCE HYGIENE -- every literal in the tree has to be a literal.
+    #
+    # Run 532/533 (build #451) died on exactly one character: "key ^ 0x5F0RL".
+    # There is no such hex digit, so javac never got past the parse and nothing
+    # after it was ever compiled. One bad character should be caught here, by a
+    # machine, before it costs a build.
+    # ------------------------------------------------------------------
+    hexpat = re.compile(r"\b0[xX][0-9A-Fa-f]+[A-Za-z0-9_]*")
+    bad_hex = []
+    for f in sorted(list(pathlib.Path("mcsm-extras/java").rglob("*.java"))
+                    + list(pathlib.Path("src").rglob("*.java"))):
+        for i, line in enumerate(f.read_text(errors="replace").splitlines(), 1):
+            if "//" in line:
+                line = line.split("//")[0]
+            for m in hexpat.finditer(line):
+                tok = m.group(0)
+                if tok[2:].lstrip("0123456789abcdefABCDEF") not in ("", "l", "L"):
+                    bad_hex.append(str(f) + ":" + str(i) + " " + tok)
+    check("every numeric literal in the tree is a literal (no 0x5F0RL class of typo)",
+          not bad_hex,
+          "; ".join(bad_hex[:4]) or "clean")
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

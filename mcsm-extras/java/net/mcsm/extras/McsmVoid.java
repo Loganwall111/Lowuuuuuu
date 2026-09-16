@@ -363,7 +363,7 @@ public final class McsmVoid {
                 }
             }
         }
-        return planner.plan(key ^ 0x5F0RL);
+        return planner.plan(key ^ 0x5F0L);
     }
 
     /** A house in the nothing: walls, glass windows, planks, a roof with a hole. */
