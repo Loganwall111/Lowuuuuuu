@@ -640,8 +640,14 @@ def main():
           or "if (McsmExtrasConfig.menuPanorama) {" in title_code)
     check("the background hook only cancels for the explicit opt-out",
           "menuPanorama) {" in title_code and "ci.cancel(); // the panorama is gone" not in title)
-    check("the panorama is graded, not covered (grade drawn in the TAIL hook)",
-          "menuPanorama) {" in title and "0x6607050E" in title)
+    # BUILD #416 (D.8, phase 5) -- the grade is GONE, on the user's own order:
+    # "there's a big tint / vignette around the screen edges which makes the main
+    # menu and the panorama hard to see -- remove it". The panorama now renders
+    # at full strength and the only layer over it is the bottom cinematic band.
+    check("the panorama is NOT covered by a tint any more",
+          "menuPanorama) {" in title and "0x6607050E" not in title
+          and "0x800B0716" not in title
+          and "THE FULL-SCREEN GRADE IS GONE" in title)
     check("button animations are serialised (press owns the hover layer)",
           "hovAnim" in title and "pressing" in title)
     check("the menu assembles with a staggered entrance",
@@ -1055,6 +1061,106 @@ def main():
     check("the build refuses to ship without the phase-4 behaviour classes",
           "McsmBlackHole" in (read("ci/build.sh") or "")
           and "McsmTornadoes" in (read("ci/build.sh") or ""))
+
+    # ------------------------------------------------------------------
+    # BUILD #416 (D.8, phase 5) -- THE STORY TERMINAL.
+    #
+    # The user's list, in their words: "when you use [the antenna] a gigantic
+    # computer screen opens up ... enter admin password to continue this area is
+    # restricted"; the code is only in the lore, held by IVOR, "the code is
+    # MASSG"; the C key opens the config; the outside-game entry lives in the
+    # bottom-right logo button; the purple glint goes OFF by default; the
+    # mid-screen "Devouring Storm" watermark goes; the setting screen must stop
+    # overlapping. This family is that list, as assertions.
+    # ------------------------------------------------------------------
+    terminal = read("mcsm-extras/java/net/mcsm/extras/McsmTerminal.java") or ""
+    term_code = code_only(terminal)
+    item = read("mcsm-extras/java/net/mcsm/extras/McsmTerminalItem.java") or ""
+    screen = read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java") or ""
+    scr_code = code_only(screen)
+    tclient = read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java") or ""
+    cli_code = code_only(tclient)
+    content = read("mcsm-extras/java/net/mcsm/extras/McsmContent.java") or ""
+    pack = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""
+    init = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java") or ""
+    title = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTitleOverhaulMixin.java") or ""
+    hud = read("mcsm-extras/java/net/mcsm/extras/client/McsmHudTerminal.java") or ""
+    extras = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
+    cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+
+    check("the admin code exists exactly once in the whole build",
+          'CODE = "MASSG"' in term_code and 'MASSG' not in code_only(screen))
+    check("the code is only reachable through the lore, not the console's own screen",
+          "ivorPage" in term_code
+          and "M -- the Mourning" in terminal
+          and "secret room" in terminal
+          and 'CODE = "MASSG"' in term_code)
+    check("the antenna and the field guide are real items that open the terminal",
+          "McsmTerminalItem" in code_only(content)
+          and 'new McsmTerminalItem(props.stacksTo(1).rarity(Rarity.UNCOMMON), "guide")' in content
+          and 'new McsmTerminalItem(props.stacksTo(1).rarity(Rarity.RARE), "terminal")' in content
+          and "McsmTerminal.openFor" in code_only(item)
+          and "InteractionResult.SUCCESS" in code_only(item))
+    check("the antenna is handed out on spawn, with the line that explains it",
+          "grantOnFirstSight" in term_code and "antennaOnSpawn" in term_code
+          and "player.getInventory().add(" in term_code)
+    check("the antenna picks up sparse radio signals while it is carried",
+          "antennaSignals" in term_code and "antennaSignalSeconds" in term_code
+          and "STATIONS" in term_code and "signal(" in term_code)
+    check("the locked screen is the user's own: restricted area, admin password",
+          "THIS AREA IS RESTRICTED" in screen
+          and "enter admin password" in screen
+          and '"denied"' in scr_code and '"granted"' in scr_code)
+    check("the console's four screens exist and the text field is a real widget",
+          "LOGIN" in scr_code and "CONSOLE" in scr_code and "GUIDE" in scr_code
+          and "RADIO" in scr_code and "new EditBox(" in scr_code
+          and "setResponder" in screen)
+    check("the payloads are registered and the console is server-authoritative",
+          "McsmTerminal.register()" in pack
+          and "PayloadTypeRegistry.serverboundPlay().register" in term_code
+          and "PayloadTypeRegistry.clientboundPlay().register" in term_code
+          and "registerGlobalReceiver" in term_code)
+    check("the client answers the packet without opening a screen mid-render",
+          "ClientPlayNetworking.registerGlobalReceiver" in cli_code
+          and "END_CLIENT_TICK" not in cli_code
+          and "START_CLIENT_TICK" in cli_code
+          and "drain(" in cli_code and "setScreenAndShow" in scr_code)
+    check("the C key is a real, rebindable binding and does something",
+          "bindKey" in cli_code and "KeyBindingHelper" in cli_code
+          and "registerKeyBinding" in cli_code and "consumeClick" in cli_code
+          and "key.mcsm.terminal" in tclient)
+    check("the client half is started from the mod's client initializer",
+          "McsmTerminalClient.register()" in init)
+    check("the terminal is switchable and every new option is persisted",
+          "story_terminal" in cfg and "antenna_signals" in cfg
+          and "antenna_signal_seconds" in cfg and "antenna_on_spawn" in cfg
+          and "Story Terminal (antenna + C key + field guide)" in extras
+          and 'new Category("X", "THE STORY TERMINAL"' in extras)
+    check("the config is reachable from inside the terminal (the menu path)",
+          "CONFIG" in scr_code and "new McsmExtrasScreen(" in scr_code)
+    check("the menu's config entry is the bottom-right logo button, and nothing else",
+          "mcsm$drawLogoButton" in title and "MC$LOGO_W" in title
+          and 'msg.contains("Storm Config")' in title
+          and "cb.visible = false" in title
+          and "McsmTerminalScreen.show(\"login\"" in title)
+    check("the purple glint is off by default and still an option",
+          "public static boolean nightglowPurpleGlow55 = false;" in cfg
+          and "purple_glint_migrated" in cfg
+          and "Purple Glint, Late Phases (OFF by default)" in extras)
+    check("the screen-wide menu tint and the mid-screen wordmark are gone",
+          "0x6607050E" not in title and "0x800B0716" not in title
+          and "THE POINT OF NO RETURN" not in hud
+          and "BUILD #416 (D.8, phase 5) -- THE MID-SCREEN WORDMARK IS GONE" in hud)
+    check("the settings screen clips its rows instead of drawing over the Done bar",
+          "y < contentTop() || y + ROW_H > contentBottom()" in code_only(extras))
+    check("the build refuses to ship without the phase-5 classes",
+          "McsmTerminalScreen" in (read("ci/build.sh") or "")
+          and "McsmTerminalClient" in (read("ci/build.sh") or "")
+          and "McsmTerminalItem" in (read("ci/build.sh") or ""))
+    check("the terminal's own text methods are player-free, so the menu can draw them",
+          "public static String guideText(String page)" in term_code
+          and "public static String hintText()" in term_code
+          and "public static String localReport()" in term_code)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

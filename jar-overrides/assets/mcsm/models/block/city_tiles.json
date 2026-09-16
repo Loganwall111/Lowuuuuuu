@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "minecraft:block/polished_deepslate",
-    "east": "minecraft:block/polished_deepslate",
-    "north": "minecraft:block/polished_deepslate",
-    "particle": "minecraft:block/polished_deepslate",
-    "south": "minecraft:block/polished_deepslate",
-    "up": "minecraft:block/polished_deepslate",
-    "west": "minecraft:block/polished_deepslate"
+    "down": "mcsm:block/city_tiles",
+    "east": "mcsm:block/city_tiles",
+    "north": "mcsm:block/city_tiles",
+    "particle": "mcsm:block/city_tiles",
+    "south": "mcsm:block/city_tiles",
+    "up": "mcsm:block/city_tiles",
+    "west": "mcsm:block/city_tiles"
   }
 }

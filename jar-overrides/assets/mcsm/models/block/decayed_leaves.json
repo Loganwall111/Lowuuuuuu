@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "minecraft:block/dark_oak_leaves",
-    "east": "minecraft:block/dark_oak_leaves",
-    "north": "minecraft:block/dark_oak_leaves",
-    "particle": "minecraft:block/dark_oak_leaves",
-    "south": "minecraft:block/dark_oak_leaves",
-    "up": "minecraft:block/dark_oak_leaves",
-    "west": "minecraft:block/dark_oak_leaves"
+    "down": "mcsm:block/decayed_leaves",
+    "east": "mcsm:block/decayed_leaves",
+    "north": "mcsm:block/decayed_leaves",
+    "particle": "mcsm:block/decayed_leaves",
+    "south": "mcsm:block/decayed_leaves",
+    "up": "mcsm:block/decayed_leaves",
+    "west": "mcsm:block/decayed_leaves"
   }
 }

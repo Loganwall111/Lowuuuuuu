@@ -245,7 +245,10 @@ public final class McsmExtrasScreen extends Screen {
         c5.bool("Outline Whole Body (Tail to Top)", () -> McsmExtrasConfig.nightglowBodyOutline, v -> McsmExtrasConfig.nightglowBodyOutline = v)
           .bool("Bluish Glow Base", () -> McsmExtrasConfig.nightglowBluishGlow, v -> McsmExtrasConfig.nightglowBluishGlow = v)
           .bool("Blue Storm Halo (Phase 4+, Chassis-Welded)", () -> McsmExtrasConfig.stormHaloEnabled, v -> McsmExtrasConfig.stormHaloEnabled = v)
-          .bool("Purple Glow (Phases 5.1-5.9)", () -> McsmExtrasConfig.nightglowPurpleGlow55, v -> McsmExtrasConfig.nightglowPurpleGlow55 = v)
+          .bool("Purple Glint, Late Phases (OFF by default)", () -> McsmExtrasConfig.nightglowPurpleGlow55, v -> {
+              McsmExtrasConfig.nightglowPurpleGlow55 = v;
+              McsmExtrasConfig.save();
+          })
           .bool("Thick Black Core Glow", () -> McsmExtrasConfig.nightglowThickBlackGlow, v -> McsmExtrasConfig.nightglowThickBlackGlow = v)
           .bool("Death Cinematic", () -> McsmExtrasConfig.deathCinematic, v -> McsmExtrasConfig.deathCinematic = v)
           .bool("Supernova Rings", () -> McsmExtrasConfig.supernovaRings, v -> McsmExtrasConfig.supernovaRings = v)
@@ -400,6 +403,30 @@ public final class McsmExtrasScreen extends Screen {
           })
           .act("Give the Rift Key + a starter kit", () -> net.mcsm.extras.McsmReality.giveStarterKit());
         categories.add(c9);
+
+        Category c10 = new Category("X", "THE STORY TERMINAL",
+                "The antenna, the restricted console, the radio and the field guide -- phase 5 of the D.8 list.");
+        c10.bool("Story Terminal (antenna + C key + field guide)", () -> McsmExtrasConfig.storyTerminal, v -> {
+            McsmExtrasConfig.storyTerminal = v;
+            McsmExtrasConfig.save();
+        })
+          .act("Open the terminal now (code screen)", () ->
+                  net.mcsm.extras.client.McsmTerminalScreen.show("login",
+                          "RESTRICTED AREA\n\nEnter the admin password to continue.\n"
+                          + "It is not on this screen: it is written down in the world."))
+          .bool("Antenna Picks Up Signals", () -> McsmExtrasConfig.antennaSignals, v -> {
+              McsmExtrasConfig.antennaSignals = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Seconds Between Signals", () -> McsmExtrasConfig.antennaSignalSeconds, v -> {
+              McsmExtrasConfig.antennaSignalSeconds = v;
+              McsmExtrasConfig.save();
+          }, 5.0, 600.0)
+          .bool("Antenna On Spawn (every new player gets one)", () -> McsmExtrasConfig.antennaOnSpawn, v -> {
+              McsmExtrasConfig.antennaOnSpawn = v;
+              McsmExtrasConfig.save();
+          });
+        categories.add(c10);
     }
 
     /** Small indirection so the panel never imports the client chat class
@@ -704,10 +731,18 @@ public final class McsmExtrasScreen extends Screen {
         g.fill(cx, TOP_H + 36, cx + cw, TOP_H + 37, CARD_EDGE);
 
         hoverRow = -1;
+        // BUILD #416 (D.8, phase 5) -- CLIPPING, not just skipping.
+        //
+        // The old test drew every row that had ANY pixel inside the content box,
+        // so the row that straddled the footer was painted straight over the
+        // Done bar and the bottom of the list was covered by the row that did not
+        // fit -- the user's "it's overlapping". A row is now drawn only when it
+        // is COMPLETELY inside the box, which leaves a clean edge above the
+        // footer and nothing overlaps anything.
         for (int i = 0; i < cat.rows.size(); i++) {
             Row r = cat.rows.get(i);
             int y = rowY(i);
-            if (y + ROW_H < contentTop() || y > contentBottom()) {
+            if (y < contentTop() || y + ROW_H > contentBottom()) {
                 continue;
             }
             boolean hov = mouseX >= cx && mouseX <= cx + cw && mouseY >= y && mouseY < y + ROW_H;

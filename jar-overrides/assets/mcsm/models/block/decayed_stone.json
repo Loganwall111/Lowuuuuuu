@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "dabywitherstormmod:block/withered_stone",
-    "east": "dabywitherstormmod:block/withered_stone",
-    "north": "dabywitherstormmod:block/withered_stone",
-    "particle": "dabywitherstormmod:block/withered_stone",
-    "south": "dabywitherstormmod:block/withered_stone",
-    "up": "dabywitherstormmod:block/withered_stone",
-    "west": "dabywitherstormmod:block/withered_stone"
+    "down": "mcsm:block/decayed_stone",
+    "east": "mcsm:block/decayed_stone",
+    "north": "mcsm:block/decayed_stone",
+    "particle": "mcsm:block/decayed_stone",
+    "south": "mcsm:block/decayed_stone",
+    "up": "mcsm:block/decayed_stone",
+    "west": "mcsm:block/decayed_stone"
   }
 }

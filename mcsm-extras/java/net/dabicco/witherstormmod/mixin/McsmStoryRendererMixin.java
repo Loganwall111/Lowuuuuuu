@@ -23,6 +23,10 @@ public abstract class McsmStoryRendererMixin {
             if (McsmEntities.STORY_CHARACTER != null) {
                 EntityRendererRegistry.register(McsmEntities.STORY_CHARACTER, StoryCharacterRenderer::new);
             }
+            // BUILD #416 (D.8, phase 5) -- the story terminal's client half: the
+            // packet receiver, the tick queue that opens the screen safely, and
+            // the C key.
+            net.mcsm.extras.client.McsmTerminalClient.register();
         } catch (Throwable ignored) {
         }
     }

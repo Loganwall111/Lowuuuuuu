@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "minecraft:block/dirt",
-    "east": "minecraft:block/dirt",
-    "north": "minecraft:block/dirt",
-    "particle": "minecraft:block/dirt",
-    "south": "minecraft:block/dirt",
-    "up": "minecraft:block/dirt",
-    "west": "minecraft:block/dirt"
+    "down": "mcsm:block/decayed_surface",
+    "east": "mcsm:block/decayed_surface",
+    "north": "mcsm:block/decayed_surface",
+    "particle": "mcsm:block/decayed_surface",
+    "south": "mcsm:block/decayed_surface",
+    "up": "mcsm:block/decayed_surface",
+    "west": "mcsm:block/decayed_surface"
   }
 }

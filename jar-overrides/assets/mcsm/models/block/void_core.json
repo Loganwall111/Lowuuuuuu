@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "dabywitherstormmod:block/tainted_obsidian",
-    "east": "dabywitherstormmod:block/tainted_obsidian",
-    "north": "dabywitherstormmod:block/tainted_obsidian",
-    "particle": "dabywitherstormmod:block/tainted_obsidian",
-    "south": "dabywitherstormmod:block/tainted_obsidian",
-    "up": "dabywitherstormmod:block/tainted_obsidian",
-    "west": "dabywitherstormmod:block/tainted_obsidian"
+    "down": "mcsm:block/void_core",
+    "east": "mcsm:block/void_core",
+    "north": "mcsm:block/void_core",
+    "particle": "mcsm:block/void_core",
+    "south": "mcsm:block/void_core",
+    "up": "mcsm:block/void_core",
+    "west": "mcsm:block/void_core"
   }
 }

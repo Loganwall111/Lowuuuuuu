@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "minecraft:block/barrel_side",
-    "east": "minecraft:block/barrel_side",
-    "north": "minecraft:block/barrel_side",
-    "particle": "minecraft:block/barrel_side",
-    "south": "minecraft:block/barrel_side",
-    "up": "minecraft:block/barrel_side",
-    "west": "minecraft:block/barrel_side"
+    "down": "mcsm:block/supply_crate",
+    "east": "mcsm:block/supply_crate",
+    "north": "mcsm:block/supply_crate",
+    "particle": "mcsm:block/supply_crate",
+    "south": "mcsm:block/supply_crate",
+    "up": "mcsm:block/supply_crate",
+    "west": "mcsm:block/supply_crate"
   }
 }

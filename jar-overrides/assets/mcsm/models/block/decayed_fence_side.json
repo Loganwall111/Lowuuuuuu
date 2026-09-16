@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/fence_side",
   "textures": {
-    "texture": "dabywitherstormmod:block/withered_planks"
+    "texture": "mcsm:block/decayed_planks"
   }
 }

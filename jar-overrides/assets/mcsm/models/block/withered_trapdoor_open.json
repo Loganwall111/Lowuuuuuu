@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/template_trapdoor_open",
   "textures": {
-    "texture": "dabywitherstormmod:block/withered_planks"
+    "texture": "mcsm:block/withered_trapdoor"
   }
 }

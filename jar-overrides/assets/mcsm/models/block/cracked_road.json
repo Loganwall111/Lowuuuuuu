@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "minecraft:block/cobblestone",
-    "east": "minecraft:block/cobblestone",
-    "north": "minecraft:block/cobblestone",
-    "particle": "minecraft:block/cobblestone",
-    "south": "minecraft:block/cobblestone",
-    "up": "minecraft:block/cobblestone",
-    "west": "minecraft:block/cobblestone"
+    "down": "mcsm:block/cracked_road",
+    "east": "mcsm:block/cracked_road",
+    "north": "mcsm:block/cracked_road",
+    "particle": "mcsm:block/cracked_road",
+    "south": "mcsm:block/cracked_road",
+    "up": "mcsm:block/cracked_road",
+    "west": "mcsm:block/cracked_road"
   }
 }

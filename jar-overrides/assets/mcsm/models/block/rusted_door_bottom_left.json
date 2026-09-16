@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/door_bottom_left",
   "textures": {
-    "bottom": "minecraft:block/oxidized_copper",
-    "top": "minecraft:block/oxidized_copper"
+    "bottom": "mcsm:block/rusted_door_bottom",
+    "top": "mcsm:block/rusted_door_top"
   }
 }

@@ -1,9 +1,9 @@
 {
   "parent": "minecraft:block/slab_top",
   "textures": {
-    "bottom": "minecraft:block/deepslate_tiles",
-    "particle": "minecraft:block/deepslate_tiles",
-    "side": "minecraft:block/deepslate_tiles",
-    "top": "minecraft:block/deepslate_tiles"
+    "bottom": "mcsm:block/city_bricks",
+    "particle": "mcsm:block/city_bricks",
+    "side": "mcsm:block/city_bricks",
+    "top": "mcsm:block/city_bricks"
   }
 }

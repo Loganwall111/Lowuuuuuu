@@ -117,6 +117,20 @@ public final class McsmExtrasConfig {
     public static boolean realityCreatures = true;
     /** Story Mode quest + lore layer: dialogue, objectives, chapter log. */
     public static boolean storyQuests = true;
+
+    // ---- Build #416 (D.8, phase 5): the story terminal ---------------------
+    /** The holographic terminal: the antenna's restricted console, the field
+     *  guide and the in-game C key. Off = the items do nothing when used and C
+     *  is a dead key again. */
+    public static boolean storyTerminal = true;
+    /** The antenna picks up radio signals while it is carried. */
+    public static boolean antennaSignals = true;
+    /** Seconds between two signals on the same antenna (5 - 600). */
+    public static double antennaSignalSeconds = 45.0;
+    /** Every player is handed the antenna the first time this build sees them,
+     *  which is the user's "given on spawn": it arrives with a line of lore in
+     *  chat, once, and is never handed out again if they still have one. */
+    public static boolean antennaOnSpawn = true;
     // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
     // Textured cube around the camera; 6 phase skies (lavender day, midnight
     // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
@@ -163,7 +177,16 @@ public final class McsmExtrasConfig {
     /** Build #374: the restored working blue halo — chassis-welded ring that
      *  ramps in at phase 4.0 and holds through every later stage. */
     public static boolean stormHaloEnabled = true;
-    public static boolean nightglowPurpleGlow55 = true; // Gigantic purple glow for phases 5.1-5.9
+    // BUILD #416 (D.8, phase 5) -- OFF by default. The user's second report:
+    // "the purple glint you added around the storm in its later phases ... turn
+    // it off by default, but keep it as an option". This IS that layer, so the
+    // default flips and the panel row stays exactly where it was, which keeps
+    // the option available for anyone who wants the purple dish back. A config
+    // file written by an older build stored `true`, so `purpleGlintMigrated`
+    // flips it off once for existing installs (see load()).
+    public static boolean nightglowPurpleGlow55 = false; // Gigantic purple glow for phases 5.1-5.9 (opt-in)
+    /** Set once the purple glint has been defaulted off for an existing config. */
+    public static boolean purpleGlintMigrated = false;
     public static boolean nightglowThickBlackGlow = true; // Thick black core glow
     public static double  nightglowRadiusMultiplier = 1.5;
 
@@ -353,6 +376,7 @@ public final class McsmExtrasConfig {
             p.setProperty("nightglow_bluish_glow", String.valueOf(nightglowBluishGlow));
             p.setProperty("storm_halo_enabled", String.valueOf(stormHaloEnabled));
             p.setProperty("nightglow_purple_glow55", String.valueOf(nightglowPurpleGlow55));
+            p.setProperty("purple_glint_migrated", String.valueOf(purpleGlintMigrated));
             p.setProperty("nightglow_thick_black_glow", String.valueOf(nightglowThickBlackGlow));
             p.setProperty("end_flashes_phase6", String.valueOf(endFlashesPhase6));
             p.setProperty("transparent_horizon_wings", String.valueOf(transparentHorizonWings));
@@ -371,6 +395,10 @@ public final class McsmExtrasConfig {
             p.setProperty("supernova_rings", String.valueOf(supernovaRings));
             p.setProperty("smoke_screen", String.valueOf(smokeScreen));
             p.setProperty("purple_sky", String.valueOf(purpleSky));
+            p.setProperty("story_terminal", String.valueOf(storyTerminal));
+            p.setProperty("antenna_signals", String.valueOf(antennaSignals));
+            p.setProperty("antenna_signal_seconds", String.valueOf(antennaSignalSeconds));
+            p.setProperty("antenna_on_spawn", String.valueOf(antennaOnSpawn));
             p.setProperty("dust_waves", String.valueOf(dustWaves));
             p.setProperty("reality_tear", String.valueOf(realityTear));
             p.setProperty("force_mcsm_look", String.valueOf(forceMcsmLook));
@@ -470,6 +498,21 @@ public final class McsmExtrasConfig {
             cinematicBootEnabled = bool(p, "cinematic_boot_enabled", cinematicBootEnabled);
             worldCrackIntro = bool(p, "world_crack_intro", worldCrackIntro);
             nightglowPurpleGlow55 = bool(p, "nightglow_purple_glow55", nightglowPurpleGlow55);
+            // BUILD #416 (D.8, phase 5) -- one-time migration, same shape as the
+            // shaderPackGate migration above: the purple glint was ON by default
+            // in every build up to this one, so a stored `true` means "the old
+            // default", not "the player chose it". Flipped off once, then the
+            // player's own choice is respected forever.
+            if (!bool(p, "purple_glint_migrated", false)) {
+                nightglowPurpleGlow55 = false;
+                purpleGlintMigrated = true;
+            } else {
+                purpleGlintMigrated = true;
+            }
+            storyTerminal = bool(p, "story_terminal", storyTerminal);
+            antennaSignals = bool(p, "antenna_signals", antennaSignals);
+            antennaSignalSeconds = dbl(p, "antenna_signal_seconds", antennaSignalSeconds);
+            antennaOnSpawn = bool(p, "antenna_on_spawn", antennaOnSpawn);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);
             transparentHorizonWings = bool(p, "transparent_horizon_wings", transparentHorizonWings);

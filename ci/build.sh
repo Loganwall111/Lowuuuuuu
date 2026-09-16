@@ -726,6 +726,46 @@ if [ "$STAGE_RC" -ne 0 ]; then
 fi
 stage stage-palette-ok
 stage backdrop-ok
+
+# ---------------------------------------------------------------------------
+# BUILD #416 (D.8, phase 5) -- THE CONTENT PACK'S OWN ART (hard gate).
+#
+# What the user saw: "the minecraft items you made are currently in these black
+# and purple looking glitch block[s] ... there's something wrong with the
+# registration". There was: phase 1 registered 38 blocks and 59 items whose
+# models pointed at borrowed base-mod and vanilla textures, and shipped no
+# textures of its own and no ITEM DEFINITIONS at all -- and in this version an
+# item is rendered from assets/<ns>/items/<name>.json, so every one of them was
+# the missing-model cube.
+#
+# This step regenerates the pack's art and its item definitions, then proves all
+# three faults are gone: every model reference resolves, every block and item has
+# an item definition, and every registered block has a blockstate. The
+# generators are deterministic, so a dirty tree here means the committed assets
+# and the generator have drifted apart -- which is also a failure.
+# ---------------------------------------------------------------------------
+echo "[content] generate the pack's own textures + item definitions"
+python3 ci/make_mcsm_textures.py | tail -1
+python3 ci/make_mcsm_content_assets.py | tail -1
+CONTENT_CHECK="$(python3 ci/check_content_textures.py 2>&1)"
+CONTENT_RC=$?
+printf '%s\n' "$CONTENT_CHECK" | tail -4
+printf '%s\n' "$CONTENT_CHECK" >> "${VANILLA_OUT:-/dev/null}" 2>/dev/null || true
+if [ "$CONTENT_RC" -ne 0 ]; then
+  echo "::error title=content pack::the content pack has an unresolved texture, model, blockstate or item definition -- it would appear in game as glitch blocks"
+  exit 1
+fi
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  if ! git diff --quiet -- jar-overrides/assets/mcsm 2>/dev/null; then
+    echo "::error title=content pack::the committed content-pack assets are out of date with ci/make_mcsm_textures.py / ci/make_mcsm_content_assets.py"
+    git status --porcelain -- jar-overrides/assets/mcsm | head -20
+    exit 1
+  fi
+else
+  echo "[content] not a git checkout -- skipping the generated-assets drift check"
+fi
+echo "[content] assets, models, blockstates and item definitions all resolve and are in sync"
+stage content-ok
 else
   echo "::error title=build::backdrop sheet generation failed"
   exit 1
@@ -861,13 +901,13 @@ stage javac-compiled
   # invisible for a dozen builds. So the classes that carry new behaviour are
   # required to exist in the compiled output. find() is used instead of a fixed
   # path so a layout change can never turn this into a false failure.
-  for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmTornadoes; do
+  for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmTornadoes McsmTerminal McsmTerminalItem McsmTerminalScreen McsmTerminalClient McsmTerminalS2C McsmTerminalC2S; do
     if ! find /tmp/mcsm-build -name "${cls}.class" -print -quit | grep -q .; then
       echo "::error title=build::compiled output is missing ${cls}.class -- new behaviour would silently not draw"
       exit 1
     fi
   done
-  echo "[javac] new-behaviour classes present (white column, conic renderer, phase model, presence pass)"
+  echo "[javac] new-behaviour classes present (white column, conic renderer, phase model, presence pass, terminal)"
 stage javac-ok push
 else
   echo "::error::javac FAILED (exit ${JAVAC_RC}) — refusing to publish a shaders-only/old-Java jar. Full log: out/JAVAC_FAILED.txt"
@@ -1487,6 +1527,10 @@ for want in \
   data/mcsm/dimension_type/decayed_reality.json \
   assets/mcsm/lang/en_us.json \
   assets/mcsm/blockstates/city_bricks.json \
+  assets/mcsm/items/city_bricks.json \
+  assets/mcsm/items/reality_ripper.json \
+  assets/mcsm/textures/block/decayed_stone.png \
+  assets/mcsm/textures/item/reality_ripper.png \
   assets/mcsm/models/item/reality_ripper.json ; do
   if [ ! -s "$FX/cls/$want" ]; then
     CONTENT_MISSING="$CONTENT_MISSING $want"
@@ -1494,19 +1538,26 @@ for want in \
 done
 N_STATES="$(find "$FX/cls/assets/mcsm/blockstates" -name '*.json' 2>/dev/null | wc -l)"
 N_ITEM_MODELS="$(find "$FX/cls/assets/mcsm/models/item" -name '*.json' 2>/dev/null | wc -l)"
+N_DEFS="$(find "$FX/cls/assets/mcsm/items" -name '*.json' 2>/dev/null | wc -l)"
+N_TEX="$(find "$FX/cls/assets/mcsm/textures" -name '*.png' 2>/dev/null | wc -l)"
 N_RECIPES="$(find "$FX/cls/data/mcsm/recipe" -name '*.json' 2>/dev/null | wc -l)"
 N_LOOT="$(find "$FX/cls/data/mcsm/loot_table/blocks" -name '*.json' 2>/dev/null | wc -l)"
-echo "[audit] content pack in jar: ${N_STATES} blockstates, ${N_ITEM_MODELS} item models, ${N_RECIPES} recipes, ${N_LOOT} loot tables"
+echo "[audit] content pack in jar: ${N_STATES} blockstates, ${N_ITEM_MODELS} item models, ${N_DEFS} item definitions, ${N_TEX} textures, ${N_RECIPES} recipes, ${N_LOOT} loot tables"
 if [ -n "$CONTENT_MISSING" ]; then
   echo "::error title=jar audit::the decayed-reality content pack is missing from the jar:${CONTENT_MISSING}"
   echo "[audit] content pack MISSING:${CONTENT_MISSING}"
   exit 1
 fi
-if [ "${N_STATES:-0}" -lt 30 ] || [ "${N_ITEM_MODELS:-0}" -lt 50 ] || [ "${N_RECIPES:-0}" -lt 10 ] || [ "${N_LOOT:-0}" -lt 3 ]; then
-  echo "::error title=jar audit::the content pack is incomplete in the jar (states=${N_STATES} models=${N_ITEM_MODELS} recipes=${N_RECIPES} loot=${N_LOOT})"
+if [ "${N_STATES:-0}" -lt 30 ] || [ "${N_ITEM_MODELS:-0}" -lt 50 ] || [ "${N_DEFS:-0}" -lt 50 ] \
+   || [ "${N_TEX:-0}" -lt 50 ] || [ "${N_RECIPES:-0}" -lt 10 ] || [ "${N_LOOT:-0}" -lt 3 ]; then
+  echo "::error title=jar audit::the content pack is incomplete in the jar (states=${N_STATES} models=${N_ITEM_MODELS} definitions=${N_DEFS} textures=${N_TEX} recipes=${N_RECIPES} loot=${N_LOOT})"
   exit 1
 fi
-echo "[audit] content pack complete (38 blocks + 19 items + doors/stairs + 3 loot tables)"
+if [ "${N_DEFS:-0}" -lt "${N_ITEM_MODELS:-0}" ]; then
+  echo "::error title=jar audit::${N_ITEM_MODELS} item models but only ${N_DEFS} item definitions -- the extra items would render as glitch blocks"
+  exit 1
+fi
+echo "[audit] content pack complete (38 blocks + 59 items + doors/stairs + 3 loot tables + own art)"
 
 echo "[audit] legacy schematic fallback assets available: ${SCHEMATIC_COUNT}"
 

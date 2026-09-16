@@ -836,6 +836,53 @@ public final class McsmCreatures {
                 60, 2.0D, 2.0D, 2.0D, 0.15D);
     }
 
+    /**
+     * The storm band nearest a player, for anything that needs to print it (the
+     * story terminal's world report). 0 = no storm in range of 320 blocks.
+     */
+    public static double phaseNearPublic(ServerLevel level, ServerPlayer player) {
+        try {
+            return phaseNear(level, player);
+        } catch (Throwable ignored) {
+            return 0.0D;
+        }
+    }
+
+    /**
+     * The ladder as one console line: how many rungs this storm has already sent
+     * and which one is next. The ladder is per storm (LADDER is keyed by the
+     * storm's UUID), so this resolves the storm near the player first and falls
+     * back to the whole table rather than lying about the state.
+     */
+    public static String ladderLine(ServerPlayer player) {
+        try {
+            ServerLevel level = player.level();
+            WitherStormEntity storm = stormNear(level, player.position(), 320.0D);
+            int highest = 0;
+            if (storm != null && LADDER.containsKey(storm.getUUID())) {
+                highest = LADDER.get(storm.getUUID()).intValue();
+            }
+            StringBuilder out = new StringBuilder();
+            out.append(highest).append(" of ").append(RUNGS.length)
+               .append(" rungs broken on this storm :: ");
+            for (Rung rung : RUNGS) {
+                out.append(rung.tier <= highest ? "[x] " : "[ ] ").append(rung.name);
+                if (rung.tier < RUNGS.length) {
+                    out.append("  ");
+                }
+            }
+            if (highest < RUNGS.length) {
+                out.append("  >> next: ").append(RUNGS[highest].name)
+                   .append(" at phase ").append(RUNGS[highest].minPhase);
+            } else {
+                out.append("  >> all five rungs are behind you; the storm remembers");
+            }
+            return out.toString();
+        } catch (Throwable ignored) {
+            return "ladder unavailable here";
+        }
+    }
+
     public static void say(ServerLevel level, Vec3 at, double range, String line,
             ChatFormatting colour) {
         Component message = Component.literal(line).withStyle(colour);

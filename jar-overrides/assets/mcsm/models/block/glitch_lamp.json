@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "minecraft:block/sea_lantern",
-    "east": "minecraft:block/sea_lantern",
-    "north": "minecraft:block/sea_lantern",
-    "particle": "minecraft:block/sea_lantern",
-    "south": "minecraft:block/sea_lantern",
-    "up": "minecraft:block/sea_lantern",
-    "west": "minecraft:block/sea_lantern"
+    "down": "mcsm:block/glitch_lamp",
+    "east": "mcsm:block/glitch_lamp",
+    "north": "mcsm:block/glitch_lamp",
+    "particle": "mcsm:block/glitch_lamp",
+    "south": "mcsm:block/glitch_lamp",
+    "up": "mcsm:block/glitch_lamp",
+    "west": "mcsm:block/glitch_lamp"
   }
 }

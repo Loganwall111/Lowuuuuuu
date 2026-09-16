@@ -1,9 +1,9 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "bottom": "dabywitherstormmod:block/withered_stone",
-    "particle": "dabywitherstormmod:block/withered_stone",
-    "side": "dabywitherstormmod:block/withered_stone",
-    "top": "dabywitherstormmod:block/withered_stone"
+    "bottom": "mcsm:block/decayed_stone",
+    "particle": "mcsm:block/decayed_stone",
+    "side": "mcsm:block/decayed_stone",
+    "top": "mcsm:block/decayed_stone"
   }
 }

@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "minecraft:block/netherite_block",
-    "east": "minecraft:block/netherite_block",
-    "north": "minecraft:block/netherite_block",
-    "particle": "minecraft:block/netherite_block",
-    "south": "minecraft:block/netherite_block",
-    "up": "minecraft:block/netherite_block",
-    "west": "minecraft:block/netherite_block"
+    "down": "mcsm:block/vault_crate",
+    "east": "mcsm:block/vault_crate",
+    "north": "mcsm:block/vault_crate",
+    "particle": "mcsm:block/vault_crate",
+    "south": "mcsm:block/vault_crate",
+    "up": "mcsm:block/vault_crate",
+    "west": "mcsm:block/vault_crate"
   }
 }

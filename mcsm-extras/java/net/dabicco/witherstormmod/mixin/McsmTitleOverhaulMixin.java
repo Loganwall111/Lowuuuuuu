@@ -202,6 +202,29 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         int w = this.width;
         int h = this.height;
 
+        // --- Build #416 (D.8, phase 5): the corner entry is retired ----------
+        // The base mod puts a purple "\u00a75\u00a7l\u26a1 Storm Config" button in the TOP-RIGHT
+        // CORNER of the menu. The user's rule for this build: "the config entry
+        // has to be at the bottom right, inside the Minecraft logo button, not in
+        // the side/corner". The replacement is drawn by dabyws$mcsMenuChrome and
+        // clicked in dabyws$cinematicClick; this hides the old one so there is
+        // exactly ONE way in from the menu.
+        for (Object child : this.children()) {
+            if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
+                continue;
+            }
+            net.minecraft.client.gui.components.AbstractButton cb =
+                    (net.minecraft.client.gui.components.AbstractButton) child;
+            if (cb.getMessage() == null) {
+                continue;
+            }
+            String msg = cb.getMessage().getString();
+            if (msg.contains("Storm Config") && cb.getY() <= 12) {
+                cb.visible = false;
+                cb.active = false;
+            }
+        }
+
         // --- Build #376: remove the base "3D Storm Preview" button ---------
         // The base StoryModeTitleScreenMixin adds it at (width-142, 27,
         // 136, 18) in init. User order: no "Preview" wording. Hiding it here
@@ -219,13 +242,19 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             }
         }
 
-        // Build #416 -- palette grade for the restored panorama. Drawn FIRST in
-        // this TAIL hook, i.e. on top of the vanilla cube map and below the
-        // storm scene / panels, so the panorama stays legible but the menu
-        // still reads as Devouring Storms rather than vanilla.
+        // BUILD #416 (D.8, phase 5) -- THE FULL-SCREEN GRADE IS GONE.
+        //
+        // It used to lay a violet-to-plum wash (0x66..0x80 alpha) over the whole
+        // panorama, plus a second wash over the bottom third. The user's report:
+        // "there's a big tint / vignette around the screen edges which makes the
+        // main menu and the panorama hard to see -- remove it". That wash was it.
+        // The menu now shows the real panorama at full strength; the Devouring
+        // Storms identity is carried by the wordmark, the chrome and the storm's
+        // own scene instead of by a film over everything.
         if (McsmExtrasConfig.menuPanorama) {
-            g.fillGradient(0, 0, w, h, 0x6607050E, 0x800B0716);
-            g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x3A2A1A4A);
+            // A single soft band at the very bottom, where the cinematic bar
+            // already sits: it grounds the wordmark without dimming the view.
+            g.fillGradient(0, h - 96, w, h, 0x00000000, 0x33000000);
         }
 
         // turntable input: left-drag orbits, wheel zooms (per-frame poll)
@@ -554,6 +583,23 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
                 cir.setReturnValue(true);
                 return;
             }
+            // the bottom-right logo button: menu -> the holographic terminal.
+            // The terminal is opened with the code screen up; from there its own
+            // CONFIG button reaches every switch this build has.
+            if (MC$LOGO_X >= 0 && event.x() >= MC$LOGO_X
+                    && event.x() < MC$LOGO_X + MC$LOGO_W
+                    && event.y() >= MC$LOGO_Y && event.y() < MC$LOGO_Y + MC$LOGO_H) {
+                try {
+                    net.mcsm.extras.client.McsmTerminalScreen.show("login",
+                            "RESTRICTED AREA\n\nEnter the admin password to continue.\n"
+                            + "The code is not on this screen: it is written down in the world.");
+                    net.mcsm.extras.client.McsmButtonSounds.click();
+                } catch (Throwable ignored) {
+                    // if the terminal cannot open, the menu must still work
+                }
+                cir.setReturnValue(true);
+                return;
+            }
             for (Object child : this.children()) {
                 if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
                     continue;
@@ -679,5 +725,56 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         g.centeredText(font,
                 "\u00a78build " + McsmExtrasConfig.BUILD_VERSION + " \u00a77\u00b7 \u00a78MCSM menu",
                 w / 2, h - 16, 0xFF7F8CA8);
+
+        // --- BUILD #416 (D.8, phase 5): THE LOGO BUTTON ---------------------
+        //
+        // The one way into the config from the menu, per the user: bottom-right,
+        // built as a logo button (the same DS icon the wordmark uses, on a
+        // square plate with the caption under it), never a corner row. Clicking
+        // it opens the holographic terminal -- see dabyws$cinematicClick -- and
+        // the terminal's own CONFIG button opens the settings console inside it,
+        // so the trip is menu -> terminal -> config and back.
+        mcsm$drawLogoButton(g, font, w, h, mouseX, mouseY);
+    }
+
+    /** Rect of the bottom-right logo button, for the click handler. */
+    private static int MC$LOGO_X = -1;
+    private static int MC$LOGO_Y = -1;
+    private static final int MC$LOGO_W = 108;
+    private static final int MC$LOGO_H = 84;
+
+    private void mcsm$drawLogoButton(GuiGraphicsExtractor g,
+            net.minecraft.client.gui.Font font, int w, int h, int mouseX, int mouseY) {
+        int bx = w - MC$LOGO_W - 14;
+        int by = h - MC$LOGO_H - 12;
+        if (w < 420 || h < 260) {
+            MC$LOGO_X = -1;
+            MC$LOGO_Y = -1;
+            return;
+        }
+        MC$LOGO_X = bx;
+        MC$LOGO_Y = by;
+        boolean hot = mouseX >= bx && mouseX < bx + MC$LOGO_W
+                && mouseY >= by && mouseY < by + MC$LOGO_H;
+        // plate
+        g.fill(bx, by, bx + MC$LOGO_W, by + MC$LOGO_H, hot ? 0xE6101A2A : 0xC6080C16);
+        g.fill(bx, by, bx + MC$LOGO_W, by + 1, 0xFF39E0FF);
+        g.fill(bx, by + MC$LOGO_H - 1, bx + MC$LOGO_W, by + MC$LOGO_H, 0xFF12455A);
+        g.fill(bx, by, bx + 1, by + MC$LOGO_H, 0xFF12455A);
+        g.fill(bx + MC$LOGO_W - 1, by, bx + MC$LOGO_W, by + MC$LOGO_H, 0xFF39E0FF);
+        // the icon itself: this IS the Minecraft-logo slot on this menu, and the
+        // DS icon is what stands in it, so the button reads as part of the logo
+        int icon = 46;
+        int ix = bx + (MC$LOGO_W - icon) / 2;
+        int iy = by + 8;
+        try {
+            g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, DS_ICON,
+                    ix, iy, 0.0F, 0.0F, icon, icon, 128, 128);
+        } catch (Throwable ignored) {
+            g.fill(ix, iy, ix + icon, iy + icon, 0xFF1A1426);
+        }
+        g.centeredText(font, "\u00a76\u00a7lCONFIG", bx + MC$LOGO_W / 2, by + 58, 0xFFF2E3C2);
+        g.centeredText(font, hot ? "\u00a7fopen the terminal" : "\u00a78story mode console",
+                bx + MC$LOGO_W / 2, by + 68, hot ? 0xFFFFFFFF : 0xFF7F8CA8);
     }
 }

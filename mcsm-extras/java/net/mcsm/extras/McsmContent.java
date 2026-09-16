@@ -225,6 +225,29 @@ public final class McsmContent {
             glinted(item(p -> p.stacksTo(1).rarity(Rarity.EPIC).fireResistant())));
     public static final Item ECHO_TOTEM = item("echo_totem", item(p -> p.stacksTo(1).rarity(Rarity.RARE)));
 
+    // ---------------------------------------------------------------------
+    // Items: the guide book and THE ANTENNA (D.8, phase 5)
+    // ---------------------------------------------------------------------
+    /**
+     * THE FIELD GUIDE. Every world this mod generates is a maze of buildings,
+     * rifts and one-way doors, and the mod said nothing about any of it in game.
+     * This is the book that does: it opens a terminal page with the state of the
+     * world the player is standing in -- the storm's band, the nearest city, the
+     * dimension they are in, the ladder rung they are on -- and it is also where
+     * the antenna's findings are written down.
+     */
+    public static final Item GUIDE_BOOK = item("guide_book",
+            props -> new McsmTerminalItem(props.stacksTo(1).rarity(Rarity.UNCOMMON), "guide"));
+    /**
+     * THE ANTENNA, and the terminal behind it. The user's design: an item that
+     * "you can hear radio signals" while it is held, and that opens a gigantic
+     * restricted console when used -- which asks for the admin password. The
+     * password is in the world, in one place, in the hands of one character (see
+     * McsmTerminal), and the terminal behind it is where the story is told.
+     */
+    public static final Item ANTENNA = item("antenna",
+            props -> new McsmTerminalItem(props.stacksTo(1).rarity(Rarity.RARE), "terminal"));
+
     private McsmContent() {
     }
 

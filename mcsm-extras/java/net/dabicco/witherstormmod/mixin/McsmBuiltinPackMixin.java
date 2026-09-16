@@ -56,5 +56,12 @@ public abstract class McsmBuiltinPackMixin {
         // and both own their own cleanup, so neither can leave anything behind.
         McsmBlackHole.register();
         McsmTornadoes.register();
+        // Build #416 (D.8, phase 5) -- the story terminal: the antenna's
+        // restricted console, the radio signals it picks up, the password the
+        // world keeps for itself. Both payload types are registered here (this
+        // is the only window in which a payload type may be registered) and the
+        // receiver lives on the server side, so the code can never be read off
+        // the client.
+        McsmTerminal.register();
     }
 }

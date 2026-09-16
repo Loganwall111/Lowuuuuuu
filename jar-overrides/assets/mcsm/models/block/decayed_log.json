@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube_column",
   "textures": {
-    "end": "dabywitherstormmod:block/withered_log_top",
-    "side": "dabywitherstormmod:block/withered_log_side"
+    "end": "mcsm:block/decayed_log_top",
+    "side": "mcsm:block/decayed_log"
   }
 }

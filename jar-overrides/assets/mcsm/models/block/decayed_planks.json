@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "dabywitherstormmod:block/withered_planks",
-    "east": "dabywitherstormmod:block/withered_planks",
-    "north": "dabywitherstormmod:block/withered_planks",
-    "particle": "dabywitherstormmod:block/withered_planks",
-    "south": "dabywitherstormmod:block/withered_planks",
-    "up": "dabywitherstormmod:block/withered_planks",
-    "west": "dabywitherstormmod:block/withered_planks"
+    "down": "mcsm:block/decayed_planks",
+    "east": "mcsm:block/decayed_planks",
+    "north": "mcsm:block/decayed_planks",
+    "particle": "mcsm:block/decayed_planks",
+    "south": "mcsm:block/decayed_planks",
+    "up": "mcsm:block/decayed_planks",
+    "west": "mcsm:block/decayed_planks"
   }
 }

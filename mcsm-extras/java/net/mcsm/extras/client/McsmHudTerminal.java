@@ -37,7 +37,10 @@ public final class McsmHudTerminal {
     // --- MCSM episode card state (client-only, no extra mixin needed) --------
     private static ClientLevel lastLevel;
     private static long cardStart = -1L;
-    private static final long CARD_MS = 6500L;
+    // BUILD #416 (D.8, phase 5): 6.5s of a full-screen title card on every
+    // world join read as "a watermark sitting in the middle of the screen". The
+    // card is now a real title card: in, hold, out, and the HUD comes back.
+    private static final long CARD_MS = 3600L;
 
     // --- mega-phase 4: N-flash pulse state (phase 7+) ------------------------
     private static long pulseNextAt = 0L;
@@ -576,10 +579,14 @@ public final class McsmHudTerminal {
         g.centeredText(mc.font, "\u00a79\u00a7lA  N E W  O R D E R", 0, 0, a | 0xBFD3FF);
         pose.popMatrix();
 
-        // saga line
-        g.centeredText(mc.font,
-                "\u00a78DEVOURING STORMS \u00a77\u00b7 \u00a78THE POINT OF NO RETURN",
-                cx, cy + 34, a | 0x8FA3C8);
+        // BUILD #416 (D.8, phase 5) -- THE MID-SCREEN WORDMARK IS GONE.
+        //
+        // "Devouring Storm" written across the middle of the screen is the
+        // watermark the user asked to have removed -- the name is already in the
+        // logo, so a third stamp of it in the centre of the picture is just
+        // something standing on top of the shot. The episode card keeps its two
+        // real title lines and nothing else; the identity line lives in the
+        // main-menu wordmark, where it belongs.
 
         // progress bar + entering text
         float prog = Math.min(1.0F, t / (float) CARD_MS);

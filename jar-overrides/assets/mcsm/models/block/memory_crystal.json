@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "minecraft:block/amethyst_block",
-    "east": "minecraft:block/amethyst_block",
-    "north": "minecraft:block/amethyst_block",
-    "particle": "minecraft:block/amethyst_block",
-    "south": "minecraft:block/amethyst_block",
-    "up": "minecraft:block/amethyst_block",
-    "west": "minecraft:block/amethyst_block"
+    "down": "mcsm:block/memory_crystal",
+    "east": "mcsm:block/memory_crystal",
+    "north": "mcsm:block/memory_crystal",
+    "particle": "mcsm:block/memory_crystal",
+    "south": "mcsm:block/memory_crystal",
+    "up": "mcsm:block/memory_crystal",
+    "west": "mcsm:block/memory_crystal"
   }
 }
