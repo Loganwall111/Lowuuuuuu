@@ -1,0 +1,55 @@
+name: Build Sift-Core standalone mod
+
+# The parent project is compiled by build-mcsm.yml. This workflow is the
+# dedicated compiler for the isolated 1.20.1 sandbox, so Sift-Core can evolve
+# without being assembled into the Devouring Storms jar.
+on:
+  push:
+    branches: ['arena/**', 'main']
+    paths:
+      - 'sift-core/**'
+      - '.github/workflows/build-sift-core.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sift-core-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the sandbox
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.5'
+
+      - name: Validate Sift-Core inputs
+        run: python3 sift-core/tools/validate.py
+
+      - name: Compile and package Sift-Core
+        working-directory: sift-core
+        run: gradle --no-daemon --stacktrace build
+
+      - name: Upload standalone jar and reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sift-core-${{ github.run_number }}
+          path: |
+            sift-core/build/libs/*.jar
+            sift-core/build/reports/**
+          if-no-files-found: warn
