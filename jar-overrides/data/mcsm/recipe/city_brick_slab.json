@@ -1,0 +1,15 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:city_bricks"
+    }
+  },
+  "pattern": [
+    "AAA"
+  ],
+  "result": {
+    "count": 6,
+    "id": "mcsm:city_brick_slab"
+  },
+  "type": "minecraft:crafting_shaped"
+}

@@ -1,0 +1,20 @@
+{
+  "key": {
+    "D": {
+      "item": "mcsm:decayed_steel_ingot"
+    },
+    "S": {
+      "item": "mcsm:storm_heart_shard"
+    }
+  },
+  "pattern": [
+    " D ",
+    " D ",
+    " S "
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:reality_ripper"
+  },
+  "type": "minecraft:crafting_shaped"
+}

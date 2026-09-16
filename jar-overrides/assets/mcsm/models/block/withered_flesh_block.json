@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "dabywitherstormmod:block/withered_flesh_block",
+    "east": "dabywitherstormmod:block/withered_flesh_block",
+    "north": "dabywitherstormmod:block/withered_flesh_block",
+    "particle": "dabywitherstormmod:block/withered_flesh_block",
+    "south": "dabywitherstormmod:block/withered_flesh_block",
+    "up": "dabywitherstormmod:block/withered_flesh_block",
+    "west": "dabywitherstormmod:block/withered_flesh_block"
+  }
+}

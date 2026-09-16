@@ -1,0 +1,20 @@
+{
+  "key": {
+    "R": {
+      "item": "mcsm:glyph_cell"
+    },
+    "S": {
+      "item": "mcsm:rift_shard"
+    }
+  },
+  "pattern": [
+    " S ",
+    "SRS",
+    " S "
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:rift_key"
+  },
+  "type": "minecraft:crafting_shaped"
+}

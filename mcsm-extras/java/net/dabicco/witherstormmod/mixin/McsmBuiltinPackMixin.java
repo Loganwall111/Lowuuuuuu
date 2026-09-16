@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.dabicco.witherstormmod.DabyWitherStormMod;
 import net.mcsm.extras.McsmBuiltinPack;
+import net.mcsm.extras.McsmContent;
 import net.mcsm.extras.McsmUiSounds;
 import net.mcsm.extras.entity.McsmEntities;
 
@@ -28,5 +29,12 @@ public abstract class McsmBuiltinPackMixin {
         // registries are still open (their lazy registration used to throw and
         // leave every menu silent).
         McsmUiSounds.initialize();
+        // Build #416 (D.8) -- the Decayed Reality content pack: 35 blocks, 54
+        // items, doors, trap doors, the new weapons and our own creative tab,
+        // registered here because this is the only window in which the
+        // built-in registries are still open (the same reason the base mod's
+        // own ModBlocks/ModItems pass runs from onInitialize).
+        McsmContent.register();
+        McsmContent.registerTab();
     }
 }

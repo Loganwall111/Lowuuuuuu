@@ -705,6 +705,87 @@ def main():
           "dabyws$layoutRow" in reskin_code and "dabyws$isBottomAction" in reskin_code
           and "ENTRY_W" in reskin_code)
 
+    # ---- 14. THE DECAYED REALITY CONTENT PACK (Build #416 mandate D.8) -----
+    # New content is the easiest thing to ship half-way: a block with no
+    # blockstate renders as a purple error, an item with no model is invisible
+    # in the inventory, a dimension whose datapack id does not match the Java
+    # key silently never loads. These checkpoints are the difference between
+    # "registered" and "actually playable".
+    content = read("mcsm-extras/java/net/mcsm/extras/McsmContent.java") or ""
+    content_code = code_only(content)
+    n_blocks = len(re.findall(r"\bblock\(", content_code))
+    n_items = len(re.findall(r"\bitem\(", content_code))
+    check("the content pack registers a real block set (>= 30)", n_blocks >= 30,
+          "block(...) calls: %d" % n_blocks)
+    check("the content pack registers a real item set (>= 40)", n_items >= 40,
+          "item(...) calls: %d" % n_items)
+    check("doors AND trap doors are part of it (asked for by name)",
+          "new DoorBlock(" in content_code and "new TrapDoorBlock(" in content_code)
+    check("the pack has its own creative tab",
+          "FabricCreativeModeTab.builder()" in content_code
+          and "registerTab()" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
+    check("registration happens at mod init (registries still open)",
+          "McsmContent.register();" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
+
+    realm = read("mcsm-extras/java/net/mcsm/extras/McsmReality.java") or ""
+    check("the decayed reality is a REAL dimension key, not a teleport",
+          'Identifier.fromNamespaceAndPath("mcsm", "decayed_reality")' in realm
+          and "Registries.DIMENSION" in realm)
+    dim_type = read("jar-overrides/data/mcsm/dimension_type/decayed_reality.json")
+    dim = read("jar-overrides/data/mcsm/dimension/decayed_reality.json")
+    check("the dimension datapack ships (type + level stem)", dim_type is not None and dim is not None)
+    if dim and dim_type:
+        try:
+            dim_json = json.loads(dim)
+            type_json = json.loads(dim_type)
+        except Exception:
+            dim_json, type_json = {}, {}
+        check("the level stem points at our own dimension type",
+              dim_json.get("type") == "mcsm:decayed_reality")
+        check("the dimension has its own sky/light identity (not the overworld's)",
+              type_json.get("skybox") == "none" and "minecraft:visual/fog_end_distance" in type_json.get("attributes", {}))
+        layers = dim_json.get("generator", {}).get("settings", {}).get("layers", [])
+        check("its terrain is built out of the NEW mcsm blocks",
+              bool(layers) and all(str(l.get("block", "")).startswith("mcsm:") for l in layers))
+    check("the rift gesture is server-side and fail-soft",
+          "ServerPlayer.class" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmRiftMixin.java") or "")
+          and "require = 0" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmRiftMixin.java") or ""))
+
+    cfg2 = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    wanted = ("decayedReality", "abandonedCities", "realityGlitches", "hallucinationIntensity",
+              "blackHoleEvent", "megaTornadoes", "realityCreatures", "storyQuests")
+    check("the new gameplay layers each have a persisted switch",
+          all(w in cfg2 for w in wanted)
+          and all(("\"%s\"" % re.sub(r"([A-Z])", r"_\1", w).lower().lstrip("_")) in cfg2 for w in wanted))
+    panel2 = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
+    check("the console exposes the new chapter (enter / kit / toggles)",
+          "THE DECAYED REALITY" in panel2 and "enterFromClient" in panel2
+          and "giveStarterKit" in panel2)
+
+    # asset completeness: every registered block/item must have its JSON
+    states = sorted(glob.glob("jar-overrides/assets/mcsm/blockstates/*.json"))
+    models = sorted(glob.glob("jar-overrides/assets/mcsm/models/item/*.json"))
+    registered_blocks = set(re.findall(r'block\("([a-z0-9_]+)"', content_code))
+    registered_items = set(re.findall(r'item\("([a-z0-9_]+)"', content_code))
+    have_state = {os.path.basename(s)[:-5] for s in states}
+    have_model = {os.path.basename(m)[:-5] for m in models}
+    check("every registered block has a blockstate + model",
+          registered_blocks and not (registered_blocks - have_state),
+          "missing: %s" % ", ".join(sorted(registered_blocks - have_state)[:8]))
+    check("every registered item has an item model",
+          registered_items and not (registered_items - have_model),
+          "missing: %s" % ", ".join(sorted(registered_items - have_model)[:8]))
+    lang = read("jar-overrides/assets/mcsm/lang/en_us.json") or "{}"
+    try:
+        lang_json = json.loads(lang)
+    except Exception:
+        lang_json = {}
+    check("every new block/item has a display name",
+          all(("block.mcsm." + n) in lang_json for n in registered_blocks)
+          and all(("item.mcsm." + n) in lang_json for n in registered_items))
+    check("the new content is craftable (recipes parse as JSON)",
+          len(glob.glob("jar-overrides/data/mcsm/recipe/*.json")) >= 10)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

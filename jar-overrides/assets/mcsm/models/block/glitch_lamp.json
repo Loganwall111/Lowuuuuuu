@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "minecraft:block/sea_lantern",
+    "east": "minecraft:block/sea_lantern",
+    "north": "minecraft:block/sea_lantern",
+    "particle": "minecraft:block/sea_lantern",
+    "south": "minecraft:block/sea_lantern",
+    "up": "minecraft:block/sea_lantern",
+    "west": "minecraft:block/sea_lantern"
+  }
+}

@@ -335,6 +335,60 @@ public final class McsmExtrasScreen extends Screen {
             McsmExtrasConfig.save();
         });
         categories.add(c8);
+
+        // Build #416 (D.8) -- the Decayed Reality: a real dimension, not a
+        // teleport to another corner of the overworld, plus the content,
+        // quests, creatures and reality events that live in it.
+        Category c9 = new Category("IX", "THE DECAYED REALITY",
+                "A real dimension torn open by the storm: abandoned cities, the new blocks and weapons, glitches, the black hole and the Creator.");
+        c9.bool("Decayed Reality (the new dimension + gameplay layer)", () -> McsmExtrasConfig.decayedReality, v -> {
+            McsmExtrasConfig.decayedReality = v;
+            McsmExtrasConfig.save();
+        })
+          .act("Open the Rift now (in-game, singleplayer)", () -> {
+              if (!net.mcsm.extras.McsmReality.enterFromClient()) {
+                  ChatLog("Hold the Rift Key and sneak in-game to tear the rift open.");
+              }
+          })
+          .bool("Abandoned City Generation", () -> McsmExtrasConfig.abandonedCities, v -> {
+              McsmExtrasConfig.abandonedCities = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Story Quests + Lore Log", () -> McsmExtrasConfig.storyQuests, v -> {
+              McsmExtrasConfig.storyQuests = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Reality Creatures", () -> McsmExtrasConfig.realityCreatures, v -> {
+              McsmExtrasConfig.realityCreatures = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Reality Glitches + Hallucinations", () -> McsmExtrasConfig.realityGlitches, v -> {
+              McsmExtrasConfig.realityGlitches = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Hallucination Intensity", () -> McsmExtrasConfig.hallucinationIntensity, v -> {
+              McsmExtrasConfig.hallucinationIntensity = v;
+              McsmExtrasConfig.save();
+          }, 0.0, 1.0)
+          .bool("Black Hole Event", () -> McsmExtrasConfig.blackHoleEvent, v -> {
+              McsmExtrasConfig.blackHoleEvent = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Mega-Tornadoes", () -> McsmExtrasConfig.megaTornadoes, v -> {
+              McsmExtrasConfig.megaTornadoes = v;
+              McsmExtrasConfig.save();
+          })
+          .act("Give the Rift Key + a starter kit", () -> net.mcsm.extras.McsmReality.giveStarterKit());
+        categories.add(c9);
+    }
+
+    /** Small indirection so the panel never imports the client chat class
+     *  directly (keeps this screen usable from the console too). */
+    private static void ChatLog(String text) {
+        try {
+            net.mcsm.extras.client.McsmClientChat.say(text);
+        } catch (Throwable ignored) {
+        }
     }
 
     public McsmExtrasScreen(Screen parent) {

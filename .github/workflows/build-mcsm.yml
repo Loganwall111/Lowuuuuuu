@@ -44,6 +44,11 @@ jobs:
         run: echo "value=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Build the jar
+        # BUILD #416 (D.8): the build pushes its own evidence (javac log, class
+        # list, vanilla API dump) to the session branch so a compile result is
+        # readable without Actions log access. That needs the token.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash ci/build.sh
 
       - name: Upload built jar and build logs

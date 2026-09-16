@@ -520,6 +520,57 @@ else
   exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# BUILD #416 (D.8) -- VANILLA API ORACLE (best-effort, never fails the build).
+#
+# mcsm-extras is compiled against the FROZEN base jar, and the machine that
+# writes this mod has no JDK and no route to Mojang: an API call that does not
+# exist is normally only discovered by a red javac run minutes later. This dumps
+# javap for the vanilla classes the expansion phases build on into
+# out/vanilla-api.txt, which the evidence push copies to ci-out/run-<N>/ on the
+# session branch. From then on the exact constructor / constant / method list is
+# readable from the repository instead of guessed -- which is what the door,
+# trap door, creature and structure work needs.
+# ---------------------------------------------------------------------------
+VANILLA_OUT=out/vanilla-api.txt
+{
+  echo "# vanilla API dump -- $(date -u +%FT%TZ) MC ${MC_VER} (javap -p, capped)"
+  for CLS in \
+    net.minecraft.world.level.block.DoorBlock \
+    net.minecraft.world.level.block.TrapDoorBlock \
+    net.minecraft.world.level.block.state.properties.BlockSetType \
+    net.minecraft.world.level.block.SlabBlock \
+    net.minecraft.world.level.block.StairBlock \
+    net.minecraft.world.level.block.WallBlock \
+    net.minecraft.world.level.block.FenceBlock \
+    net.minecraft.world.level.block.RotatedPillarBlock \
+    net.minecraft.world.level.block.Block \
+    net.minecraft.world.level.block.state.BlockBehaviour$Properties \
+    net.minecraft.world.item.Item \
+    net.minecraft.world.item.Item$Properties \
+    net.minecraft.world.item.BlockItem \
+    net.minecraft.world.item.SwordItem \
+    net.minecraft.world.item.Tier \
+    net.minecraft.world.item.Rarity \
+    net.minecraft.world.level.block.SoundType \
+    net.minecraft.world.entity.EntityType \
+    net.minecraft.world.entity.EntityType$Builder \
+    net.minecraft.world.entity.MobCategory \
+    net.minecraft.world.entity.Mob \
+    net.minecraft.world.entity.PathfinderMob \
+    net.minecraft.world.entity.monster.Monster \
+    net.minecraft.world.entity.LivingEntity \
+    net.minecraft.world.entity.ai.goal.Goal \
+    net.minecraft.world.entity.ai.goal.MeleeAttackGoal \
+    net.minecraft.world.entity.ai.attributes.Attributes \
+    net.minecraft.world.entity.player.Player ; do
+    echo
+    echo "===== ${CLS}"
+    javap -p -classpath "$DL/client.jar" "$CLS" 2>&1 | sed -n '1,110p'
+  done
+} > "$VANILLA_OUT" 2>&1 || true
+echo "[api] vanilla dump: $(wc -l < "$VANILLA_OUT" 2>/dev/null || echo 0) lines -> out/vanilla-api.txt"
+
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
@@ -1244,17 +1295,35 @@ cat out/BUILD_INFO.txt
 # (local runs) or the push loses a race with a concurrent push.
 # ---------------------------------------------------------------------------
 push_evidence_simple() {
-  local AUTH
+  local AUTH REMOTE
   AUTH="$(git config --get http.https://github.com/.extraheader 2>/dev/null || true)"
-  [ -n "$AUTH" ] || { echo "[evidence] no credentials — skip"; return 0; }
+  # BUILD #416 (D.8) -- actions/checkout keeps its token out of the key this
+  # used to read, so every evidence push since that change silently skipped and
+  # the branch stayed empty of ci-out/. The workflow now passes GH_TOKEN in and
+  # the runner clones/pushes with it; the old header path stays as a fallback.
+  if [ -n "${GH_TOKEN:-}" ]; then
+    REMOTE="https://x-access-token:${GH_TOKEN}@github.com/Loganwall111/Lowuuuuuu.git"
+    AUTH=""
+    echo "[evidence] using GH_TOKEN for the evidence push"
+  elif [ -n "$AUTH" ]; then
+    REMOTE="$EVIDENCE_REPO"
+  else
+    echo "[evidence] no credentials - skip"; return 0
+  fi
   rm -rf /tmp/mcsm-evidence
-  GIT_LFS_SKIP_SMUDGE=1 git -c "http.https://github.com/.extraheader=${AUTH}" \
-    clone -q --depth 5 --branch "$EVIDENCE_BRANCH" "$EVIDENCE_REPO" /tmp/mcsm-evidence || {
-      echo "[evidence] clone failed — skip"; return 0; }
+  if [ -n "$AUTH" ]; then
+    GIT_LFS_SKIP_SMUDGE=1 git -c "http.https://github.com/.extraheader=${AUTH}" \
+      clone -q --depth 5 --branch "$EVIDENCE_BRANCH" "$REMOTE" /tmp/mcsm-evidence || {
+      echo "[evidence] clone failed - skip"; return 0; }
+  else
+    GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 5 --branch "$EVIDENCE_BRANCH" "$REMOTE" /tmp/mcsm-evidence || {
+      echo "[evidence] clone failed - skip"; return 0; }
+  fi
   local DST="/tmp/mcsm-evidence/ci-out/run-${GITHUB_RUN_NUMBER:-local}"
   rm -rf "$DST"; mkdir -p "$DST"
   cp -f out/BUILD_INFO.txt "$DST/" 2>/dev/null || true
   cp -f out/JAVAC_FAILED.txt "$DST/" 2>/dev/null || true
+  cp -f out/vanilla-api.txt "$DST/" 2>/dev/null || true
   cp -f "$JAVAC_LOG" "$DST/javac-full.log"
   cp -f "$GLSL_LOG" "$DST/glsl-gate.log"
   cp -f out/*.sha256 "$DST/" 2>/dev/null || true

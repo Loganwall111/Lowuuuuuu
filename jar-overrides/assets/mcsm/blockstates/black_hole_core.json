@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mcsm:block/black_hole_core"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "minecraft:block/dark_oak_leaves",
+    "east": "minecraft:block/dark_oak_leaves",
+    "north": "minecraft:block/dark_oak_leaves",
+    "particle": "minecraft:block/dark_oak_leaves",
+    "south": "minecraft:block/dark_oak_leaves",
+    "up": "minecraft:block/dark_oak_leaves",
+    "west": "minecraft:block/dark_oak_leaves"
+  }
+}

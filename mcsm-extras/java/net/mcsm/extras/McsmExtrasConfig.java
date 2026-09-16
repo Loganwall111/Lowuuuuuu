@@ -91,6 +91,26 @@ public final class McsmExtrasConfig {
      *  back by default, graded into the DS palette instead of removed, and
      *  this toggle is the explicit opt-out (flat storm space, #375 look). */
     public static boolean  menuPanorama = true;
+
+    // ---- Build #416 (D.8): the Decayed Reality ---------------
+    /** The new gameplay layer: a real dimension, its content, its creatures,
+     *  its events. Off only if a pack explicitly wants the old scope. */
+    public static boolean decayedReality = true;
+    /** Abandoned-city generation inside the decayed reality (phase 2). */
+    public static boolean abandonedCities = true;
+    /** Reality-glitch hallucination pass: torn frames, duplicating silhouettes,
+     *  false storms, whispering chat (phase 4). */
+    public static boolean realityGlitches = true;
+    /** Hallucination intensity, 0..1 (drives both the visual pass and the audio). */
+    public static double hallucinationIntensity = 0.6;
+    /** The Black Hole event: a collapsing singularity that eats the arena. */
+    public static boolean blackHoleEvent = true;
+    /** Mega-tornadoes that rip across the decayed reality. */
+    public static boolean megaTornadoes = true;
+    /** Reality creatures: the new hostile spawns (phase 3). */
+    public static boolean realityCreatures = true;
+    /** Story Mode quest + lore layer: dialogue, objectives, chapter log. */
+    public static boolean storyQuests = true;
     // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
     // Textured cube around the camera; 6 phase skies (lavender day, midnight
     // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
@@ -247,6 +267,14 @@ public final class McsmExtrasConfig {
             p.setProperty("og_sun_glow_strength", String.valueOf(ogSunGlowStrength));
             p.setProperty("story_menu_backdrop", String.valueOf(storyMenuBackdrop));
             p.setProperty("menu_panorama", String.valueOf(menuPanorama));
+            p.setProperty("decayed_reality", String.valueOf(decayedReality));
+            p.setProperty("abandoned_cities", String.valueOf(abandonedCities));
+            p.setProperty("reality_glitches", String.valueOf(realityGlitches));
+            p.setProperty("hallucination_intensity", String.valueOf(hallucinationIntensity));
+            p.setProperty("black_hole_event", String.valueOf(blackHoleEvent));
+            p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
+            p.setProperty("reality_creatures", String.valueOf(realityCreatures));
+            p.setProperty("story_quests", String.valueOf(storyQuests));
             p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
             p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
             p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
@@ -348,6 +376,14 @@ public final class McsmExtrasConfig {
             ogSunGlowStrength = dbl(p, "og_sun_glow_strength", ogSunGlowStrength);
             storyMenuBackdrop = bool(p, "story_menu_backdrop", storyMenuBackdrop);
             menuPanorama = bool(p, "menu_panorama", menuPanorama);
+            decayedReality = bool(p, "decayed_reality", decayedReality);
+            abandonedCities = bool(p, "abandoned_cities", abandonedCities);
+            realityGlitches = bool(p, "reality_glitches", realityGlitches);
+            hallucinationIntensity = dbl(p, "hallucination_intensity", hallucinationIntensity);
+            blackHoleEvent = bool(p, "black_hole_event", blackHoleEvent);
+            megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
+            realityCreatures = bool(p, "reality_creatures", realityCreatures);
+            storyQuests = bool(p, "story_quests", storyQuests);
             embeddedShaderPack = bool(p, "embedded_shader_pack", embeddedShaderPack);
             skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
             skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);

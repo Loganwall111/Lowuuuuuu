@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/cube",
+  "render_type": "minecraft:translucent",
+  "textures": {
+    "down": "minecraft:block/tinted_glass",
+    "east": "minecraft:block/tinted_glass",
+    "north": "minecraft:block/tinted_glass",
+    "particle": "minecraft:block/tinted_glass",
+    "south": "minecraft:block/tinted_glass",
+    "up": "minecraft:block/tinted_glass",
+    "west": "minecraft:block/tinted_glass"
+  }
+}

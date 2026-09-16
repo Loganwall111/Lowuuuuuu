@@ -1,0 +1,19 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:decayed_planks"
+    },
+    "B": {
+      "item": "minecraft:stick"
+    }
+  },
+  "pattern": [
+    "ABA",
+    "ABA"
+  ],
+  "result": {
+    "count": 3,
+    "id": "mcsm:decayed_fence"
+  },
+  "type": "minecraft:crafting_shaped"
+}
