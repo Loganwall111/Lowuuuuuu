@@ -303,6 +303,139 @@ public final class McsmCinematic {
     }
 
     // ------------------------------------------------------------------
+    // BUILD #427 -- THE ENDING: white scene, ripping cracks, colour shockwaves
+    //
+    // "The epic cinematic storm ending scene -- the white scene was not there,
+    // there were no ripping cracks in it, and there were no shockwaves being
+    // blasted out like colours and stuff."
+    //
+    // The sky shader has a death stack of its own (mcsm_death_cracks /
+    // _implosion / _flash), but it can only paint the SKY, and it needs the
+    // storm's own sky to be the sky in front of the player. This is the ending
+    // as a SCREEN sequence, so it happens wherever the player is standing and
+    // whether or not the storm is in their view:
+    //
+    //   0.00-0.55s  THE WHITE SCENE. The world goes to pure white -- a hard
+    //               spike, then a hold, which is the moment the storm's core
+    //               gives out.
+    //   0.35-1.60s  THE RIP. Nine jagged cracks tear outward from where the
+    //               storm was, white-hot cores over a warm glow, the same
+    //               primitive the world-load intro uses.
+    //   0.45-3.20s  THE COLOUR SHOCKWAVES. Five rings blast outward in the
+    //               storm's own phase palette -- blue, teal, violet, pink,
+    //               ember -- each a little later and a little wider, drawn with
+    //               a two-pass ring so the front reads as a wave and not a line.
+    //   1.60-4.20s  the white recedes and the rifts are left in the sky.
+    //
+    // The trigger is the same one the rest of the death sequence already uses
+    // (McsmFxDriver's arm clock, which is what the fog carrier latches on), plus
+    // a direct look for a dying storm, so it cannot be missed when it matters.
+    // ------------------------------------------------------------------
+
+    private static long endingStartMs = -1L;
+    /** The white scene holds this long, then the reveal runs to {@link #END_MS}. */
+    private static final long WHITE_PEAK_MS = 550L;
+    private static final long END_MS = 4200L;
+    /** The five shockwave colours, in the order they leave the centre. */
+    private static final int[] WAVE_COLOURS = {
+            0x66A8D8FF, 0x6666E8D8, 0x669A6CFF, 0x66FF8AC8, 0x66FFAE6A
+    };
+
+    /** Called from the same per-frame HUD hook as the world cracks. */
+    public static void tickEnding() {
+        try {
+            if (!McsmExtrasConfig.deathCinematic) {
+                endingStartMs = -1L;
+                return;
+            }
+            if (endingStartMs >= 0L) {
+                if (System.currentTimeMillis() - endingStartMs > END_MS) {
+                    endingStartMs = -1L;
+                }
+                return;
+            }
+            boolean armed = System.currentTimeMillis()
+                    - net.mcsm.extras.McsmFxDriver.lastDeathArmMs() < 1500L;
+            if (armed) {
+                endingStartMs = System.currentTimeMillis();
+            }
+        } catch (Throwable ignored) {
+            // a missing clock is not a reason to break a frame
+        }
+    }
+
+    /** True while the ending owns the screen. */
+    public static boolean isEndingActive() {
+        return endingStartMs >= 0L;
+    }
+
+    /** The ending, drawn over everything else. */
+    public static void drawEnding(GuiGraphicsExtractor g) {
+        if (endingStartMs < 0L) {
+            return;
+        }
+        long elapsed = System.currentTimeMillis() - endingStartMs;
+        if (elapsed < 0L || elapsed > END_MS) {
+            return;
+        }
+        int w = g.guiWidth();
+        int h = g.guiHeight();
+        int cx = w / 2;
+        int cy = h / 2;
+        double t = elapsed / (double) END_MS;
+
+        // ---- 2. the colour shockwaves, under everything else --------------
+        for (int i = 0; i < WAVE_COLOURS.length; i++) {
+            double delay = 0.10D * i;
+            double local = (t - 0.10D - delay) / 0.55D;
+            if (local <= 0.0D || local >= 1.0D) {
+                continue;
+            }
+            int reach = (int) (local * Math.max(w, h) * 0.95D);
+            int fade = (int) Math.max(0.0D, 255.0D * (1.0D - local));
+            int colour = (WAVE_COLOURS[i] & 0x00FFFFFF) | (Math.min(fade, WAVE_COLOURS[i] >>> 24) << 24);
+            int core = (0xFFFFFF & 0xFFFFFF) | (Math.min(fade, 90) << 24);
+            drawRing(g, cx, cy, reach, 14, colour);
+            drawRing(g, cx, cy, reach, 4, core);
+        }
+
+        // ---- 3. the ripping cracks ----------------------------------------
+        if (t > 0.08D && t < 0.85D) {
+            double crackT = Math.min(1.0D, (t - 0.08D) / 0.42D);
+            for (int i = 0; i < 9; i++) {
+                double ang = i * (Math.PI * 2.0D / 9.0D) + 0.21D;
+                double reach = Math.max(w, h) * 0.75D * crackT;
+                drawCrack(g, cx, cy, ang, reach, 0x51F00DL + i * 7919L);
+            }
+        }
+
+        // ---- 1. the white scene, over everything --------------------------
+        // a hard spike to full white, a hold, then a long reveal
+        double white;
+        if (elapsed < WHITE_PEAK_MS) {
+            white = elapsed / (double) WHITE_PEAK_MS;
+            white = white * white;                      // the spike is fast
+        } else {
+            double fade = (elapsed - WHITE_PEAK_MS) / (double) (END_MS - WHITE_PEAK_MS);
+            white = Math.max(0.0D, 1.0D - fade * fade);
+        }
+        if (white > 0.004D) {
+            int a = (int) Math.min(255.0D, white * 255.0D);
+            g.fill(0, 0, w, h, (a << 24) | 0xFFFFFF);
+        }
+
+        // the last beat: the rifts are left behind, cooling
+        if (t > 0.85D) {
+            double cool = (t - 0.85D) / 0.15D;
+            int a = (int) Math.max(0.0D, 150.0D * (1.0D - cool));
+            if (a > 2) {
+                int colour = (a << 24) | 0xE8C07A;
+                drawRing(g, cx, cy, (int) (Math.max(w, h) * 0.42D), 6, colour);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
     // menu: pre-game side-view cinematic + command block burst
     // ------------------------------------------------------------------
 

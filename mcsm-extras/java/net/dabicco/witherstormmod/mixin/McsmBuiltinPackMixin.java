@@ -11,6 +11,7 @@ import net.mcsm.extras.McsmBlackHole;
 import net.mcsm.extras.McsmCities;
 import net.mcsm.extras.McsmMassg;
 import net.mcsm.extras.McsmSounds;
+import net.mcsm.extras.McsmTentacles;
 import net.mcsm.extras.McsmTerminal;
 import net.mcsm.extras.McsmCreatures;
 import net.mcsm.extras.McsmTornadoes;
@@ -73,5 +74,9 @@ public abstract class McsmBuiltinPackMixin {
         // sixteen SoundEvents; the Ogg files themselves ship in the overlay at
         // assets/mcsm/sounds/ (see ci/make_mcsm_sounds.py).
         McsmSounds.initialize();
+        // BUILD #426 -- the tentacles take the player. The config switch for it
+        // has existed since the port and nothing read it; this is the half that
+        // turns a decoration into a grab.
+        McsmTentacles.register();
     }
 }

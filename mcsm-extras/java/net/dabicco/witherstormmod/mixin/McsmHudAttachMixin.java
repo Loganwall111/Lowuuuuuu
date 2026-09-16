@@ -29,5 +29,9 @@ public abstract class McsmHudAttachMixin {
         // ride the same proven per-frame HUD hook.
         net.mcsm.extras.client.McsmCinematic.tickWorld();
         net.mcsm.extras.client.McsmCinematic.drawWorldCracks(g, delta);
+        // BUILD #427 -- the ending: the white scene, the ripping cracks and the
+        // colour shockwaves, on the same proven per-frame hook.
+        net.mcsm.extras.client.McsmCinematic.tickEnding();
+        net.mcsm.extras.client.McsmCinematic.drawEnding(g);
     }
 }

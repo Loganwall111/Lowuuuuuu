@@ -174,15 +174,22 @@ public final class McsmStormBlob {
         // Atmospheric W's Cloud is painted by the infinite directional sky
         // paths instead; only the subtle ground pool remains here.
 
-        // faint purple fog pool cast onto the ground under the beams
-        double groundY = best.dispY - bodyR * 1.15D;
-        Vec3 gAt = new Vec3(best.dispX, Math.max(groundY, best.dispY - 260.0D), best.dispZ);
-        double gr = bodyR * 2.2D;
-        collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(WHITE),
-                (pose, consumer) -> {
-                    quadVerts(pose, consumer, gAt, new Vec3(0.0D, 1.0D, 0.0D), gr,
-                            150, 85, 230, (int)(aa * 42.0F));
-                });
+        // faint purple fog pool cast onto the ground under the beams.
+        // BUILD #426 -- "the purple colour still renders on top of the wither
+        // storm." From any distance this pool is a wide camera-facing glow quad
+        // 2.2 body radii across, sitting in the storm's own plane, so it lands on
+        // the body as a purple disc. It is off by default now (config
+        // stormGroundPool); the switch keeps it available.
+        if (McsmExtrasConfig.stormGroundPool) {
+            double groundY = best.dispY - bodyR * 1.15D;
+            Vec3 gAt = new Vec3(best.dispX, Math.max(groundY, best.dispY - 260.0D), best.dispZ);
+            double gr = bodyR * 2.2D;
+            collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(WHITE),
+                    (pose, consumer) -> {
+                        quadVerts(pose, consumer, gAt, new Vec3(0.0D, 1.0D, 0.0D), gr,
+                                150, 85, 230, (int)(aa * 42.0F));
+                    });
+        }
     }
 
     /**

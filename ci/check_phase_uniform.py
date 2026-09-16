@@ -1408,6 +1408,70 @@ def main():
           and "make_mcsm_sounds.py --check" in (read("ci/build.sh") or "")
           and "custom sound missing from the jar" in (read("ci/build.sh") or ""))
 
+    # ------------------------------------------------------------------
+    # BUILD #426/#427/#428 -- THE PURPLE OFF THE BODY, THE TENTACLES, THE
+    # ENDING, AND THE BEASTS.
+    #
+    # "The purple colour still renders on top of the wither storm"; "the
+    # tentacles are meant to snatch the player"; "the epic cinematic storm
+    # ending scene -- the white scene was not there, no ripping cracks, no
+    # shockwaves"; "I would like a mob named Mas. And the Creator, a gigantic
+    # entity. And the whale monster I talked about."
+    # ------------------------------------------------------------------
+    fx = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresenceFxPatch.java") or ""
+    blob = read("mcsm-extras/java/net/mcsm/extras/client/McsmStormBlob.java") or ""
+    tent = read("mcsm-extras/java/net/mcsm/extras/McsmTentacles.java") or ""
+    cine = read("mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java") or ""
+    beast = read("mcsm-extras/java/net/mcsm/extras/entity/McsmBeast.java") or ""
+    ents = read("mcsm-extras/java/net/mcsm/extras/entity/McsmEntities.java") or ""
+
+    check("the phase glare is drawn BEHIND the storm, never over it",
+          "Vec3 glareCentre" in fx and "glareBehindBody" in fx
+          and "haloCentre.subtract(view.scale(bodyRadius * 1.15D))" in fx
+          and fx.count("blobLayer(poseStack, collector, GLARE") == fx.count(", glareCentre, view,"))
+    check("the purple ground pool is off by default and switchable",
+          "if (McsmExtrasConfig.stormGroundPool)" in blob
+          and "public static boolean stormGroundPool = false;" in cfg
+          and "storm_ground_pool" in cfg
+          and "Purple ground pool under the beams" in extras)
+    check("the tentacle grab exists and is wired to the switch that had nothing behind it",
+          "McsmTentacles.register();" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or "")
+          and "McsmExtrasConfig.enableTentacleGrab" in tent
+          and "public static boolean enableTentacleGrab" in cfg)
+    check("the grab snatches, holds, and ends in a throw or an eat",
+          "private static void snatch(" in tent and "private static void hold(" in tent
+          and "private static void throwAway(" in tent and "private static void eat(" in tent
+          and "It eats you." in tent and "It throws you." in tent)
+    check("only survival players are taken, and the pull is physical",
+          "player.isCreative() || player.isSpectator() || player.isPassenger()" in tent
+          and "player.teleportTo(level," in tent and "Set.of(), player.getYRot(), player.getXRot(), false)" in tent
+          and "PULL_START" in tent and "PULL_END" in tent)
+    check("the ending has the white scene, the ripping cracks and the colour waves",
+          "drawEnding(" in cine and "WHITE_PEAK_MS" in cine
+          and "WAVE_COLOURS" in cine and "drawRing(g, cx, cy, reach, 14, colour);" in cine
+          and "drawCrack(g, cx, cy, ang, reach," in cine
+          and "g.fill(0, 0, w, h, (a << 24) | 0xFFFFFF);" in cine)
+    check("the ending rides the same proven per-frame HUD hook",
+          "McsmCinematic.tickEnding();" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java") or "")
+          and "McsmCinematic.drawEnding(g);" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java") or "")
+          and "McsmFxDriver.lastDeathArmMs() < 1500L" in cine)
+    check("Mas, the Creator and the whale are REAL registered entities",
+          'Identifier.fromNamespaceAndPath("mcsm", "mas")' in ents
+          and 'Identifier.fromNamespaceAndPath("mcsm", "creator")' in ents
+          and 'Identifier.fromNamespaceAndPath("mcsm", "whale_monster")' in ents
+          and "FabricDefaultAttributeRegistry.register(registered" in ents)
+    check("Mas cannot be hurt, the other two can",
+          "public boolean hurtServer(" in beast and "if (MAS.equals(kind()))" in beast
+          and "return false;" in beast and "return super.hurtServer(level, source, amount);" in beast)
+    check("the storm's own summon now spawns Mas, and the Creator above it",
+          "net.mcsm.extras.entity.McsmEntities.MAS" in (read("mcsm-extras/java/net/mcsm/extras/McsmMassg.java") or "")
+          and "creator(level, x, y + 240.0D, z);" in (read("mcsm-extras/java/net/mcsm/extras/McsmMassg.java") or "")
+          and "skyWhale(level, player);" in (read("mcsm-extras/java/net/mcsm/extras/McsmMassg.java") or ""))
+    check("the beasts have names in the lang file",
+          '"entity.mcsm.mas": "Mas"' in (read("ci/make_mcsm_content_assets.py") or "")
+          and '"entity.mcsm.creator": "The Creator"' in (read("ci/make_mcsm_content_assets.py") or "")
+          and '"entity.mcsm.whale_monster": "The Whale"' in (read("ci/make_mcsm_content_assets.py") or ""))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

@@ -223,6 +223,11 @@ public final class McsmMassg {
                         .withStyle(ChatFormatting.LIGHT_PURPLE));
                 player.playSound(McsmSounds.MASSG_HEART, 1.4F, 0.9F);
             }
+            // BUILD #428 -- THE CREATOR IS A REAL ENTITY NOW, IN THE SKY ABOVE
+            // THE SUMMON: "the Creator, a gigantic entity". It is a mob, not a
+            // drawing: it can be seen from a long way off, it is 40000 health
+            // worth of patience, and killing it is a thing a player can do.
+            creator(level, x, y + 240.0D, z);
             McsmCreatures.say(level, new Vec3(x, y, z), 200.0D,
                     "IT SEES YOU NOW AND IT WILL NOT STOP SEEING YOU", ChatFormatting.DARK_PURPLE);
             return true;
@@ -234,8 +239,21 @@ public final class McsmMassg {
     /** Build the body. Self-contained: this one must never be culled by anything. */
     private static Mob materialise(ServerLevel level, BlockPos at) {
         try {
-            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE
-                    .getValue(Identifier.fromNamespaceAndPath("minecraft", "warden"));
+            // BUILD #428 -- MAS IS A REAL MOB NOW. "The MASSG was added but it
+            // was just code; I would like a mob named Mas." The body is the
+            // mod's own registered beast (entity.mcsm.mas, shown as "Mas"), which
+            // carries the creature's own sounds, its own scale and a damage gate
+            // that cannot be broken -- so an unkillable Mas is a property of the
+            // mob rather than a flag set after the fact. The old vanilla warden
+            // body remains the fallback if the beast registry did not take.
+            EntityType<?> type = net.mcsm.extras.entity.McsmEntities.MAS;
+            if (type == null) {
+                type = net.mcsm.extras.entity.McsmEntities.MAS_ENTRY;
+            }
+            if (type == null) {
+                type = BuiltInRegistries.ENTITY_TYPE
+                        .getValue(Identifier.fromNamespaceAndPath("minecraft", "warden"));
+            }
             if (type == null) {
                 return null;
             }
@@ -248,6 +266,8 @@ public final class McsmMassg {
             // The name is the channel (see encode). It is NOT shown above the
             // creature: the sky terminal is the display, and the creature reads
             // better as a silhouette than as a mob with a label.
+            // the display name is Mas; the NAME is still the countdown channel
+            // (McsmMassgSky reads it), so both facts live on one body
             mob.setCustomName(Component.literal(encode(COUNT_FROM, "IT IS AWAKE")));
             mob.setCustomNameVisible(false);
             mob.setPersistenceRequired();
@@ -412,6 +432,12 @@ public final class McsmMassg {
                     level.playSound(null, player.getX(), player.getY(), player.getZ(),
                             McsmSounds.MASSG_HEART, SoundSource.HOSTILE, 0.8F, 1.0F);
                 }
+                // BUILD #428 -- one whale, now and then, in the air above the
+                // players who can see the creature. Its counterpart in
+                // flyingThings() makes the rest of them.
+                if (time % 400L == 0L && McsmExtrasConfig.massgHallucinations) {
+                    skyWhale(level, player);
+                }
                 // IT IMITATES YOU: it answers in your own name.
                 Long lastVoice = LAST_VOICE.get(player.getUUID());
                 if (lastVoice == null || time - lastVoice.longValue() > 600L) {
@@ -428,6 +454,75 @@ public final class McsmMassg {
                 flyingThings(level, beast);
             }
         } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * BUILD #428 -- one whale, in the air, above a player. It is a real mob
+     * (entity.mcsm.whale_monster, shown as "The Whale"), so it can be seen from
+     * the ground, followed, and -- unlike Mas -- killed. The user's phrase for
+     * this part of the summon was "gigantic things swimming in the air".
+     */
+    private static void skyWhale(ServerLevel level, ServerPlayer player) {
+        try {
+            EntityType<?> type = net.mcsm.extras.entity.McsmEntities.WHALE_ENTRY;
+            if (type == null) {
+                return;
+            }
+            Entity created = type.create(level, EntitySpawnReason.EVENT);
+            if (!(created instanceof Mob whale)) {
+                return;
+            }
+            double angle = level.getRandom().nextDouble() * Math.PI * 2.0D;
+            double radius = 40.0D + level.getRandom().nextDouble() * 60.0D;
+            double x = player.getX() + Math.cos(angle) * radius;
+            double z = player.getZ() + Math.sin(angle) * radius;
+            double y = player.getY() + 45.0D + level.getRandom().nextDouble() * 40.0D;
+            if (whale instanceof net.mcsm.extras.entity.McsmBeast beast) {
+                beast.setKind(net.mcsm.extras.entity.McsmBeast.WHALE);
+                beast.setLine("SOMETHING SWIMS ABOVE YOU");
+            }
+            whale.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(x, y, z)),
+                    EntitySpawnReason.EVENT, (SpawnGroupData) null);
+            set(whale, Attributes.SCALE, 14.0D);
+            whale.snapTo(x, y, z, level.getRandom().nextFloat() * 360.0F, 0.0F);
+            level.addFreshEntity(whale);
+        } catch (Throwable ignored) {
+            // a hallucination that cannot be built is simply not built
+        }
+    }
+
+    /**
+     * BUILD #428 -- THE CREATOR. One gigantic entity, high above the summon:
+     * the mod's own beast (entity.mcsm.creator, shown as "The Creator"), scaled
+     * past everything else in the game, slow, and mortal. Its heartbeat is the
+     * drone the dimension plays.
+     */
+    private static void creator(ServerLevel level, double x, double y, double z) {
+        try {
+            EntityType<?> type = net.mcsm.extras.entity.McsmEntities.CREATOR_ENTRY;
+            if (type == null) {
+                return;
+            }
+            Entity created = type.create(level, EntitySpawnReason.EVENT);
+            if (!(created instanceof Mob mob)) {
+                return;
+            }
+            if (mob instanceof net.mcsm.extras.entity.McsmBeast beast) {
+                beast.setKind(net.mcsm.extras.entity.McsmBeast.CREATOR);
+                beast.setLine("THE WORLD IS ON MY BACK");
+            }
+            BlockPos at = BlockPos.containing(x, y, z);
+            mob.finalizeSpawn(level, level.getCurrentDifficultyAt(at), EntitySpawnReason.EVENT,
+                    (SpawnGroupData) null);
+            set(mob, Attributes.SCALE, 26.0D);
+            mob.setCustomName(Component.literal("\u00a7dThe Creator"));
+            mob.setCustomNameVisible(true);
+            mob.setPersistenceRequired();
+            mob.snapTo(x, y, z, level.getRandom().nextFloat() * 360.0F, 0.0F);
+            level.addFreshEntity(mob);
+        } catch (Throwable ignored) {
+            // if the Creator cannot be built here, the rest of the summon stands
         }
     }
 
@@ -510,6 +605,30 @@ public final class McsmMassg {
         try {
             if (level.getRandom().nextInt(100) >= 45) {
                 return;
+            }
+            // BUILD #428 -- "gigantic things swimming in the air": whenever one
+            // of these is about to be made, half the time it is the mod's own
+            // whale monster (entity.mcsm.whale_monster, "The Whale") instead of a
+            // scaled phantom -- a real creature with its own drone, its own
+            // swimming motion, and a health bar a player can actually chase.
+            if (level.getRandom().nextBoolean()
+                    && net.mcsm.extras.entity.McsmEntities.WHALE_ENTRY != null) {
+                EntityType<?> whaleType = net.mcsm.extras.entity.McsmEntities.WHALE_ENTRY;
+                Entity whale = whaleType.create(level, EntitySpawnReason.EVENT);
+                if (whale instanceof Mob mob) {
+                    if (mob instanceof net.mcsm.extras.entity.McsmBeast beast) {
+                        beast.setKind(net.mcsm.extras.entity.McsmBeast.WHALE);
+                        beast.setLine("SOMETHING SWIMS ABOVE YOU");
+                    }
+                    mob.setPersistenceRequired();
+                    double wx = beast.getX() + level.getRandom().nextDouble() * 120.0D - 60.0D;
+                    double wz = beast.getZ() + level.getRandom().nextDouble() * 120.0D - 60.0D;
+                    double wy = beast.getY() + 25.0D + level.getRandom().nextDouble() * 40.0D;
+                    mob.snapTo(wx, wy, wz, level.getRandom().nextFloat() * 360.0F, 0.0F);
+                    level.addFreshEntity(mob);
+                    GHOSTS.add(mob.getUUID());
+                    return;
+                }
             }
             EntityType<?> type = BuiltInRegistries.ENTITY_TYPE
                     .getValue(Identifier.fromNamespaceAndPath("minecraft", "phantom"));

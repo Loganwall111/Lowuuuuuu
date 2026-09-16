@@ -155,6 +155,20 @@ public final class McsmExtrasConfig {
      *  On (the default) the enlargement is taken about the model's own centre
      *  instead, so the back grows where it already is. */
     public static boolean hugeBackCentred = true;
+
+    /** BUILD #426 -- "the purple colour still renders on top of the wither
+     *  storm." The phase glare layers are camera-facing cards centred on the
+     *  storm, so their purple was drawn over the body. On (the default) every
+     *  glare card is pushed a body radius and a bit behind the storm, where the
+     *  depth test keeps it off the silhouette while the oversized skin still
+     *  rings it. Off restores the old flat-card look. */
+    public static boolean glareBehindBody = true;
+
+    /** BUILD #426 -- the faint purple pool the blob pass cast on the ground
+     *  under the beams. It is a second purple wash across the storm's base, and
+     *  it was visible from a distance as a disc on top of the body, so it is
+     *  OFF by default now; the switch is here for anyone who wants it back. */
+    public static boolean stormGroundPool = false;
     // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
     // Textured cube around the camera; 6 phase skies (lavender day, midnight
     // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
@@ -429,6 +443,8 @@ public final class McsmExtrasConfig {
             p.setProperty("massg_hallucinations", String.valueOf(massgHallucinations));
             p.setProperty("backdrop_bottom_stretch", String.valueOf(backdropBottomStretch));
             p.setProperty("huge_back_centred", String.valueOf(hugeBackCentred));
+            p.setProperty("glare_behind_body", String.valueOf(glareBehindBody));
+            p.setProperty("storm_ground_pool", String.valueOf(stormGroundPool));
             p.setProperty("dust_waves", String.valueOf(dustWaves));
             p.setProperty("reality_tear", String.valueOf(realityTear));
             p.setProperty("force_mcsm_look", String.valueOf(forceMcsmLook));
@@ -549,6 +565,8 @@ public final class McsmExtrasConfig {
             massgHallucinations = bool(p, "massg_hallucinations", massgHallucinations);
             backdropBottomStretch = dbl(p, "backdrop_bottom_stretch", backdropBottomStretch);
             hugeBackCentred = bool(p, "huge_back_centred", hugeBackCentred);
+            glareBehindBody = bool(p, "glare_behind_body", glareBehindBody);
+            stormGroundPool = bool(p, "storm_ground_pool", stormGroundPool);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);
             transparentHorizonWings = bool(p, "transparent_horizon_wings", transparentHorizonWings);

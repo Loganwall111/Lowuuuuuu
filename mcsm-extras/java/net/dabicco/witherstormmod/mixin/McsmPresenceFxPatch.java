@@ -116,6 +116,19 @@ public abstract class McsmPresenceFxPatch {
             Vec3 haloCentre = centre.add(0.0D, haloLift(phase, bodyRadius), 0.0D);
             Vec3 view = haloCentre.subtract(camera).normalize();
 
+            // BUILD #426 -- "the purple colour still renders on top of the
+            // wither storm." It did, literally: every glare layer below is a
+            // camera-facing card centred exactly ON the storm, so half of each
+            // card is nearer to the player than the body and the purple is
+            // painted over it. Each layer is 3.3 to 4.0 body radii across, so it
+            // does not need to be in the body's plane to be seen: pushed a body
+            // radius and a bit BEHIND the storm along the view direction, the
+            // depth test hides whatever would cover the silhouette and the
+            // oversized skin still rings it exactly as the reference stills do.
+            Vec3 glareCentre = McsmExtrasConfig.glareBehindBody
+                    ? haloCentre.subtract(view.scale(bodyRadius * 1.15D))
+                    : haloCentre;
+
             // BUILD #401: accurate per-phase halo colours from the glare asset
             // set, cross-faded on the approved storm mapping (blue 4, green 5,
             // purple 5.5-5.9, salmon 6, ember 7+). Oval sizes/alphas keep the
@@ -138,17 +151,17 @@ public abstract class McsmPresenceFxPatch {
             // textures themselves were re-baked as organic blobs by
             // ci/make_cloud_blobs.py (warped radius, no rim, bright core), so the
             // shape holds up whether the camera is 300 blocks away or 30.
-            blobLayer(poseStack, collector, GLARE4, haloCentre, view,
+            blobLayer(poseStack, collector, GLARE4, glareCentre, view,
                     bodyRadius * 3.35D, bodyRadius * 2.25D, w4 * distanceFade, 0);
-            blobLayer(poseStack, collector, GLARE5, haloCentre, view,
+            blobLayer(poseStack, collector, GLARE5, glareCentre, view,
                     bodyRadius * 3.55D, bodyRadius * 2.35D, w5 * distanceFade, 1);
-            blobLayer(poseStack, collector, GLARE54, haloCentre, view,
+            blobLayer(poseStack, collector, GLARE54, glareCentre, view,
                     bodyRadius * 3.70D, bodyRadius * 2.45D, w54 * distanceFade, 2);
-            blobLayer(poseStack, collector, GLARE55, haloCentre, view,
+            blobLayer(poseStack, collector, GLARE55, glareCentre, view,
                     bodyRadius * 3.85D, bodyRadius * 2.55D, w55 * distanceFade, 3);
-            blobLayer(poseStack, collector, GLARE6, haloCentre, view,
+            blobLayer(poseStack, collector, GLARE6, glareCentre, view,
                     bodyRadius * 4.05D, bodyRadius * 2.65D, w6 * distanceFade * 0.95F, 4);
-            blobLayer(poseStack, collector, GLARE89, haloCentre, view,
+            blobLayer(poseStack, collector, GLARE89, glareCentre, view,
                     bodyRadius * 4.05D, bodyRadius * 2.65D, w89 * distanceFade * 0.95F, 5);
 
             // The purple/pink oval ring is the older Catalyst Halo that was

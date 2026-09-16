@@ -526,6 +526,15 @@ def emit_loot():
     return len(LOOT)
 
 
+# BUILD #428 -- the beasts. Field names the user used, kept as they said them.
+BEAST_NAMES = {
+    "entity.mcsm.mas": "Mas",
+    "entity.mcsm.creator": "The Creator",
+    "entity.mcsm.whale_monster": "The Whale",
+    "entity.mcsm.beast": "The Beast",
+}
+
+
 def emit_lang():
     path = os.path.join(ASSETS, "lang", "en_us.json")
     existing = {}
@@ -538,6 +547,10 @@ def emit_lang():
         else:
             existing[f"block.mcsm.{name}"] = pretty
             existing[f"item.mcsm.{name}"] = pretty
+    # BUILD #428 -- the beasts' names. Three real entities now exist (Mas, the
+    # Creator, the whale monster); without these keys the game shows their raw
+    # registry ids in the spawn egg, the death message and the /summon feedback.
+    existing.update(BEAST_NAMES)
     write(path, existing)
 
 

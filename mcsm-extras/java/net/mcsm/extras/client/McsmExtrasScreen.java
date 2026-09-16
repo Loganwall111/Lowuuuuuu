@@ -459,6 +459,14 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.hugeBackCentred = v;
               McsmExtrasConfig.save();
           })
+          .bool("Purple glare behind the storm, never over it", () -> McsmExtrasConfig.glareBehindBody, v -> {
+              McsmExtrasConfig.glareBehindBody = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Purple ground pool under the beams (off: it was washing the body)", () -> McsmExtrasConfig.stormGroundPool, v -> {
+              McsmExtrasConfig.stormGroundPool = v;
+              McsmExtrasConfig.save();
+          })
           .act("How to release it (sneak-use the antenna: irreversible)", () ->
                   McsmClientChat.say("\u00a75Sneak-use the antenna. The sky starts counting the moment "
                           + "it arrives, and nothing in this build can put it back."))
