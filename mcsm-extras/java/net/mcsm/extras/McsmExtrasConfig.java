@@ -115,6 +115,13 @@ public final class McsmExtrasConfig {
     public static boolean megaTornadoes = true;
     /** BUILD #433 -- the sky vortexes that open over the player and drop things. */
     public static boolean skyVortexes = true;
+    /**
+     * BUILD #434 -- the sky's bottom layer: the wall that carries the
+     * horizon colour downward under the world, so the sky has a floor as
+     * well as a ceiling. It is drawn geometry, not a shader, so it works
+     * with no shader pack installed.
+     */
+    public static boolean skyFloorBand = true;
     /** Reality creatures: the new hostile spawns (phase 3). */
     public static boolean realityCreatures = true;
     /** Story Mode quest + lore layer: dialogue, objectives, chapter log. */
@@ -399,6 +406,7 @@ public final class McsmExtrasConfig {
             p.setProperty("black_hole_seconds", String.valueOf(blackHoleSeconds));
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
+            p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
             p.setProperty("reality_creatures", String.valueOf(realityCreatures));
             p.setProperty("story_quests", String.valueOf(storyQuests));
             p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
@@ -529,6 +537,7 @@ public final class McsmExtrasConfig {
             blackHoleSeconds = dbl(p, "black_hole_seconds", blackHoleSeconds);
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
+            skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
             realityCreatures = bool(p, "reality_creatures", realityCreatures);
             storyQuests = bool(p, "story_quests", storyQuests);
             embeddedShaderPack = bool(p, "embedded_shader_pack", embeddedShaderPack);

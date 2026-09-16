@@ -55,6 +55,42 @@ SHEET_HEX = {
     # phase 6 backdrop -- muted pink gray horizon sheet
     "rose": ["#1D1519", "#422D37", "#644354"],
 }
+# ===========================================================================
+# BUILD #434 -- THE SPEC TABLES, VERBATIM FROM THE USER'S OWN HAND.
+#
+# The build brief for the model-attached halo quotes the sky's three bands
+# directly, three anchors each:
+#
+#   phase 5 slate-teal      #0C1216 ceiling / #172228 middle / #202E34 horizon
+#   phase 5.5-5.9 amethyst  #160A21 ceiling / #3A184E middle / #5A2474 horizon
+#   phase 6 plum-to-salmon  #1D1519 ceiling / #422D37 middle / #644354 horizon
+#
+# They are checked against SHEET_HEX below rather than trusted: if the traced
+# tables and the brief ever disagree, the build says so instead of quietly
+# shipping one of them.
+# ===========================================================================
+SPEC_HEX = {
+    "teal": ["#0C1216", "#172228", "#202E34"],
+    "purple": ["#160A21", "#3A184E", "#5A2474"],
+    "rose": ["#1D1519", "#422D37", "#644354"],
+}
+
+
+def check_spec(verbose=False):
+    """The brief's own hex tables must BE the traced anchors, channel for channel."""
+    ok = True
+    msgs = []
+    for role, want in SPEC_HEX.items():
+        got = SHEET_HEX.get(role)
+        if got != want:
+            ok = False
+            msgs.append("spec drift %-6s brief %s vs traced %s"
+                        % (role, " ".join(want), " ".join(got or [])))
+        elif verbose:
+            msgs.append("spec ok: %s == %s" % (role, " ".join(want)))
+    return ok, msgs
+
+
 ANCHOR_T = [0.0, 0.5, 1.0]
 STOPS = 6
 

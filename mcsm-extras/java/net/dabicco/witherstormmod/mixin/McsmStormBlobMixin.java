@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.mcsm.extras.client.McsmCreatorArms;
 import net.mcsm.extras.client.McsmEarlyStormBackdrop;
 import net.mcsm.extras.client.McsmExperimentalStoryStage;
+import net.mcsm.extras.client.McsmSkyFloorBand;
 import net.mcsm.extras.client.McsmStormBlob;
 
 /**
@@ -35,6 +36,9 @@ public abstract class McsmStormBlobMixin {
             McsmEarlyStormBackdrop.submit(ctx);
             McsmExperimentalStoryStage.submit(ctx);
             McsmStormBlob.submit(ctx);
+            // BUILD #434 -- the sky's bottom layer. Drawn in the world, not in
+            // the shader, so it exists for players who never install the pack.
+            McsmSkyFloorBand.submit(ctx);
             // Build #416 (D.8, phase 3) -- the Creator's arms, through the rips.
             // Drawn last so the limbs read over the backdrop they hang in front of.
             McsmCreatorArms.submit(ctx);

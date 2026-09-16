@@ -406,6 +406,11 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyVortexes = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #434 -- "the skies are still only the top layer".
+          .bool("Sky Bottom Layer (the wall under the world)", () -> McsmExtrasConfig.skyFloorBand, v -> {
+              McsmExtrasConfig.skyFloorBand = v;
+              McsmExtrasConfig.save();
+          })
           .act("Give the Rift Key + a starter kit", () -> net.mcsm.extras.McsmReality.giveStarterKit());
         categories.add(c9);
 

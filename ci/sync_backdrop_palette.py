@@ -170,6 +170,14 @@ def check(verbose=False, sweep_step=0.05):
     text, _ = current()
     data, routes = parse_java(text)
 
+    # the brief's own hex tables must BE the traced anchors (ci/palette_tables.py)
+    spec_ok, spec_msgs = pal.check_spec(verbose=verbose)
+    if not spec_ok:
+        fails.extend(spec_msgs)
+    elif verbose:
+        for line in spec_msgs:
+            print("  " + line)
+
     want = traced()
     for name, vals in want.items():
         got = data.get(name)

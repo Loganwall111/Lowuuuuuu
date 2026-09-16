@@ -1546,13 +1546,27 @@ def main():
           and "public static int column(float phase, float t)" in palette
           and "McsmBackdropPalette.column(phase, 1.0F - vertical)" in atmosphere
           and "McsmBackdropPalette.column(phase, 1.0F - vertical)" in stage)
-    check("the wall keeps its own size and easing helpers",
-          # #430 deleted the deck ramps out of this file and took two innocent
-          # methods with them (peak #509: "cannot find symbol: method
-          # smoothstep(float,float,float)"): the wall paints nothing at all
-          # without them, so they are pinned.
-          "private static double bodyRadius(float phase)" in atmosphere
-          and "private static float smoothstep(float value, float low, float high)" in atmosphere)
+    # #430 deleted the deck ramps out of this file and took two innocent methods
+    # with them (run 509: "cannot find symbol: method smoothstep(float,float,float)")
+    # -- and #434's edit took them out again, because both times the edit sliced
+    # from one comment to the next method and everything declared between them
+    # went with the slice. The wall paints nothing at all without them, so the
+    # FULL helper set this file calls is pinned by signature.
+    helpers = [
+        "public static void submit(",
+        "private static void emitBackdrop(",
+        "private static Vec3 point(",
+        "private static void putQuad(",
+        "private static void vertex(",
+        "private static int colour(",
+        "private static double bodyRadius(float phase)",
+        "private static float smoothstep(float value, float low, float high)",
+        "private static int mix(int a, int b, float amount)",
+        "private static int rgb(int r, int g, int b)",
+        "private static Vec3 normal(Vec3 value)",
+    ]
+    check("the wall keeps EVERY helper it calls (a range-slice edit took two out twice)",
+          all(h in atmosphere for h in helpers))
     check("the atmosphere wall's own hand-typed decks are gone",
           "phase45" not in atmosphere and "phase55" not in atmosphere
           and "verticalGradient" not in atmosphere
@@ -1667,6 +1681,53 @@ def main():
           and "Sky Vortexes Drop Monsters" in extras
           and "McsmSkyVortexes.register();" in (
               read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
+
+    # ------------------------------------------------------------------
+    # BUILD #434 -- THE MODEL-ATTACHED FIELD AND THE SKY'S BOTTOM LAYER.
+    #
+    # The brief: the halo is an independent, MODEL-ATTACHED 3D atmospheric
+    # backdrop field, its centre is a completely empty, light-impenetrable black
+    # core, it renders only around the outer perimeter so the eyes and the white
+    # teeth are never blocked, and it turns with the entity. And, separately:
+    # "the skies are still only the top layer. you need to add a bottom layer
+    # covering the whole bottom."
+    # ------------------------------------------------------------------
+    field = read("mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java") or ""
+    band = read("mcsm-extras/java/net/mcsm/extras/client/McsmSkyFloorBand.java") or ""
+
+    check("the field wraps the whole body instead of being half a card",
+          "if (y0 >= 0.0D) {" not in field
+          and "BUILD #434 -- THE FIELD WRAPS THE BODY." in field
+          and "float topFade = smoothstep(1.0F - (float) ((y + 1.0D) * 0.5D), 0.0F, 0.22F);" in field)
+    check("its centre is an empty, light-impenetrable black core",
+          "private static final float CORE_RADIUS = 0.54F;" in field
+          and "private static final float CORE_ALPHA = 0.97F;" in field
+          and "float core = 1.0F - smoothstep(radius, CORE_RADIUS, CORE_RADIUS + 0.10F);" in field
+          and "int rgb = mix(aura, McsmBackdropPalette.VOID_BLACK, core);" in field)
+    check("the aura lives only in the annulus, and wears the sheets' own column",
+          "float ring = 1.0F - smoothstep(radius, 0.74F, 1.0F);" in field
+          and "float outer = Math.max(0.0F, ring - core);" in field
+          and "int aura = McsmBackdropPalette.column(phase, 1.0F - vertical);" in field)
+    check("the field still turns with the entity, on both axes",
+          "poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - state.bodyRot));" in field
+          and "poseStack.mulPose(Axis.ZN.rotationDegrees(state.bodyRoll));" in field)
+
+    check("there is a bottom layer of sky at all, drawn in the world",
+          "public final class McsmSkyFloorBand" in band
+          and "private static final double DEPTH = 512.0D;" in band
+          and "collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(WHITE)," in band)
+    check("the wall carries the live horizon colour down and deepens as it falls",
+          "horizon = McsmStormPhase.horizonFor(Math.max(phase, McsmStormPhase.PHASE_MIN));" in band
+          and "horizon = new float[]{0x4A / 255.0F, 0x2A / 255.0F, 0x6E / 255.0F};" in band
+          and "private static final float SEAM_ALPHA = 0.0F;" in band
+          and "private static final float FLOOR_ALPHA = 0.94F;" in band)
+    check("the bottom layer is switchable, saved, panel-reachable and drawn in the backdrop pass",
+          "public static boolean skyFloorBand = true;" in cfg
+          and 'p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));' in cfg
+          and 'skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);' in cfg
+          and "Sky Bottom Layer (the wall under the world)" in extras
+          and "McsmSkyFloorBand.submit(ctx);" in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java") or ""))
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
