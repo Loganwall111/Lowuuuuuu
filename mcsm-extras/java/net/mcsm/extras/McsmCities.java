@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndLevelTick;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.server.level.ServerPlayer;
@@ -423,15 +424,40 @@ public final class McsmCities {
      * found; the ruined city begins outside it.
      */
     private static boolean nearSpawn(ServerLevel level, ServerPlayer player) {
-        try {
-            BlockPos spawn = level.getSharedSpawnPos();
-            double dx = player.getX() - spawn.getX();
-            double dz = player.getZ() - spawn.getZ();
-            return dx * dx + dz * dz < (double) OVERWORLD_MIN_DISTANCE * OVERWORLD_MIN_DISTANCE;
-        } catch (Throwable ignored) {
-            return false;
-        }
+        BlockPos spawn = spawnPos(level);
+        double dx = player.getX() - spawn.getX();
+        double dz = player.getZ() - spawn.getZ();
+        return dx * dx + dz * dz < (double) OVERWORLD_MIN_DISTANCE * OVERWORLD_MIN_DISTANCE;
     }
+
+    /**
+     * Where the world started, read by name rather than called directly.
+     *
+     * Run 508 answered this one the hard way: `ServerLevel.getSharedSpawnPos()`
+     * is NOT in this version's API -- javac: "cannot find symbol: method
+     * getSharedSpawnPos(), location: variable level of type ServerLevel". A
+     * try/catch cannot help there, because the method has to exist at COMPILE
+     * time. So the name is looked up once, the way the story stage already looks
+     * up its own spawn, and the first candidate that answers wins. If none does,
+     * the origin stands in, which is where a fresh world's spawn is.
+     */
+    private static BlockPos spawnPos(ServerLevel level) {
+        for (String name : SPAWN_METHODS) {
+            try {
+                java.lang.reflect.Method method = level.getClass().getMethod(name);
+                Object value = method.invoke(level);
+                if (value instanceof BlockPos pos) {
+                    return pos;
+                }
+            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                // try the next name; the fallback below is always valid
+            }
+        }
+        return BlockPos.ZERO;
+    }
+
+    /** Candidate names for "where is world spawn", newest first. */
+    private static final String[] SPAWN_METHODS = {"getSharedSpawnPos", "getSpawnPos", "getRespawnPosition"};
 
     /**
      * BUILD #429 -- A BUILDING'S INSIDE.
@@ -984,13 +1010,35 @@ public final class McsmCities {
         // the design set: vanilla blocks on purpose, because a banner has to
         // read as a banner -- and because a ruined city built only from the
         // mod's own grey stone reads as a quarry, not as a city people lived in
-        q[DESIGN_LIGHT] = stateOf(Blocks.WHITE_CONCRETE);
-        q[DESIGN_DARK] = stateOf(Blocks.BLACK_CONCRETE);
-        q[DESIGN_ACCENT] = stateOf(Blocks.PURPLE_CONCRETE);
-        q[DESIGN_SOFT] = stateOf(Blocks.LIGHT_GRAY_WOOL);
+        q[DESIGN_LIGHT] = design("white_concrete", Blocks.POLISHED_DEEPSLATE);
+        q[DESIGN_DARK] = design("black_concrete", Blocks.POLISHED_DEEPSLATE);
+        q[DESIGN_ACCENT] = design("purple_concrete", Blocks.POLISHED_DEEPSLATE);
+        q[DESIGN_SOFT] = design("light_gray_wool", Blocks.POLISHED_DEEPSLATE);
         q[DESIGN_TRIM] = stateOf(Blocks.POLISHED_DEEPSLATE);
         palette = q;
         return q;
+    }
+
+    /**
+     * The design set, by registry id.
+     *
+     * Run 508 also proved the field names are gone in this version: javac
+     * "cannot find symbol: variable WHITE_CONCRETE, location: class Blocks" --
+     * and likewise for BLACK_CONCRETE, PURPLE_CONCRETE and LIGHT_GRAY_WOOL. The
+     * ids themselves are the stable, public names of those blocks (`whitelisted`
+     * by every datapack and every resource pack since they were added), and the
+     * block registry is the one place a block cannot go missing from, so the
+     * design set is resolved from BuiltInRegistries.BLOCK instead of named as
+     * fields. A pack that removes one degrades to polished deepslate -- the
+     * city's own stone -- rather than to air.
+     */
+    private static BlockState design(String path, Block fallback) {
+        Block block = BuiltInRegistries.BLOCK.getValue(
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", path));
+        if (block == null || block == Blocks.AIR) {
+            block = fallback;
+        }
+        return stateOf(block);
     }
 
     private static BlockState stateOf(Block block) {

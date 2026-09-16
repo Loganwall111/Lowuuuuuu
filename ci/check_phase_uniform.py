@@ -1490,8 +1490,16 @@ def main():
           and "Raise the ruined cities in the regular world too" in extras)
     check("it never raises a district on top of world spawn",
           "OVERWORLD_MIN_DISTANCE = 384" in cities and "private static boolean nearSpawn(" in cities
-          and "level.getSharedSpawnPos()" in cities
+          and "private static BlockPos spawnPos(ServerLevel level)" in cities
           and "if (overworld && nearSpawn(level, player))" in cities)
+    check("world spawn is read by name, because the field call does not exist in this API",
+          # run 508: javac "cannot find symbol: method getSharedSpawnPos(), location:
+          # variable level of type ServerLevel". A try/catch cannot help -- the
+          # method has to exist at COMPILE time -- so it is looked up reflectively,
+          # the way the story stage already looks up its own spawn.
+          "level.getSharedSpawnPos()" not in cities
+          and "SPAWN_METHODS = {\"getSharedSpawnPos\", \"getSpawnPos\", \"getRespawnPosition\"}" in cities
+          and "method.invoke(level)" in cities)
     check("every plot is furnished inside, not just shelled",
           "private static void planInterior(" in cities
           and "planInterior(plan, rng, bx, bz, ground, kind);" in cities
@@ -1501,10 +1509,18 @@ def main():
           and "planFacadeBanner(plan, rng, bx, bz, ground, kind);" in cities
           and "DESIGN_ACCENT" in cities and "DESIGN_DARK" in cities)
     check("the design set is real placeable blocks in the palette",
-          "q[DESIGN_LIGHT] = stateOf(Blocks.WHITE_CONCRETE);" in cities
-          and "q[DESIGN_DARK] = stateOf(Blocks.BLACK_CONCRETE);" in cities
-          and "q[DESIGN_ACCENT] = stateOf(Blocks.PURPLE_CONCRETE);" in cities
+          "q[DESIGN_LIGHT] = design(\"white_concrete\", Blocks.POLISHED_DEEPSLATE);" in cities
+          and "q[DESIGN_DARK] = design(\"black_concrete\", Blocks.POLISHED_DEEPSLATE);" in cities
+          and "q[DESIGN_ACCENT] = design(\"purple_concrete\", Blocks.POLISHED_DEEPSLATE);" in cities
           and "PALETTE_SIZE = 29" in cities)
+    check("the design blocks are resolved from the block registry, not from field names",
+          # run 508: javac "cannot find symbol: variable WHITE_CONCRETE, location:
+          # class Blocks" -- and the same for the other three. The registry ids are
+          # the stable public names, so they are the ones the city asks for.
+          "private static BlockState design(String path, Block fallback)" in cities
+          and "BuiltInRegistries.BLOCK.getValue(" in cities
+          and "q[DESIGN_LIGHT] = stateOf(Blocks.WHITE_CONCRETE);" not in cities
+          and "if (block == null || block == Blocks.AIR)" in cities)
     check("there are people in the city when the player walks in",
           "private static void spawnLife(" in cities and "markLife(plan, bx, bz, ground);" in cities
           and "STORY_CHARACTER" in cities and "CHARACTERS" in cities

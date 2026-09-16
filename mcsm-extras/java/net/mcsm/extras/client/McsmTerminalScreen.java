@@ -362,7 +362,7 @@ public final class McsmTerminalScreen extends Screen {
                 && mouseY >= enter[1] && mouseY < enter[1] + enter[3];
         switch (mode) {
             case LOGIN:
-                drawLogin(g, px, maxX, y, t, b);
+                drawLogin(g, px, maxX, y, t, b, yo, mouseX, mouseY);
                 break;
             case CONSOLE:
                 drawLines(g, px, y, maxX, b - 48, "LIVE WORLD REPORT");
@@ -403,7 +403,8 @@ public final class McsmTerminalScreen extends Screen {
         return y + 26;
     }
 
-    private void drawLogin(GuiGraphicsExtractor g, int x, int maxX, int y, int t, int b) {
+    private void drawLogin(GuiGraphicsExtractor g, int x, int maxX, int y, int t, int b,
+            int yo, int mouseX, int mouseY) {
         int cx = this.width / 2;
         g.centeredText(this.font, "THIS AREA IS RESTRICTED", cx, y, WARN);
         g.centeredText(this.font, "enter admin password to continue", cx, y + 13, TEXT_DIM);

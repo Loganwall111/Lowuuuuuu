@@ -616,9 +616,11 @@ public final class McsmMassg {
                 EntityType<?> whaleType = net.mcsm.extras.entity.McsmEntities.WHALE_ENTRY;
                 Entity whale = whaleType.create(level, EntitySpawnReason.EVENT);
                 if (whale instanceof Mob mob) {
-                    if (mob instanceof net.mcsm.extras.entity.McsmBeast beast) {
-                        beast.setKind(net.mcsm.extras.entity.McsmBeast.WHALE);
-                        beast.setLine("SOMETHING SWIMS ABOVE YOU");
+                    // the parameter is already called `beast`; this one needs its
+                    // own name (javac run 508: "variable beast is already defined")
+                    if (mob instanceof net.mcsm.extras.entity.McsmBeast whaleBeast) {
+                        whaleBeast.setKind(net.mcsm.extras.entity.McsmBeast.WHALE);
+                        whaleBeast.setLine("SOMETHING SWIMS ABOVE YOU");
                     }
                     mob.setPersistenceRequired();
                     double wx = beast.getX() + level.getRandom().nextDouble() * 120.0D - 60.0D;
