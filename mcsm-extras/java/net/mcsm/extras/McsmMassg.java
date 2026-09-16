@@ -199,9 +199,13 @@ public final class McsmMassg {
 
             // THE SKY OPENS. Everything the user asked to have happen at the
             // moment of the summon, in one sequence.
-            level.playSound(null, x, y, z, SoundEvents.WITHER_SPAWN, SoundSource.HOSTILE, 6.0F, 0.45F);
-            level.playSound(null, x, y, z, SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.HOSTILE, 4.0F, 0.6F);
-            level.playSound(null, x, y, z, SoundEvents.ENDER_DRAGON_GROWL, SoundSource.HOSTILE, 5.0F, 0.4F);
+            // BUILD #425 -- its own summon. The vanilla wither spawn, guardian
+            // curse and dragon growl are gone; the creature arrives with its own
+            // roar, its own breath and the drone of the place it comes from.
+            level.playSound(null, x, y, z, McsmSounds.MASSG_ROAR, SoundSource.HOSTILE, 6.0F, 0.7F);
+            level.playSound(null, x, y, z, McsmSounds.MASSG_BREATH, SoundSource.HOSTILE, 4.0F, 0.6F);
+            level.playSound(null, x, y, z, McsmSounds.OBLIVION_DRONE, SoundSource.HOSTILE, 3.4F, 0.8F);
+            level.playSound(null, x, y, z, McsmSounds.OBLIVION_WARP, SoundSource.HOSTILE, 3.0F, 1.0F);
             level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, y + 8.0D, z, 400, 14.0D, 10.0D, 14.0D, 0.05D);
             level.sendParticles(ParticleTypes.REVERSE_PORTAL, x, y + 12.0D, z, 500, 18.0D, 14.0D, 18.0D, 0.4D);
             level.sendParticles(ParticleTypes.SQUID_INK, x, y + 6.0D, z, 300, 12.0D, 8.0D, 12.0D, 0.1D);
@@ -217,7 +221,7 @@ public final class McsmMassg {
                         "\u00a7dThe sky is counting: \u00a7f" + counter(level)
                         + "\u00a7d down to \u00a7f1 February 2027\u00a7d.")
                         .withStyle(ChatFormatting.LIGHT_PURPLE));
-                player.playSound(SoundEvents.PORTAL_TRAVEL, 1.4F, 0.5F);
+                player.playSound(McsmSounds.MASSG_HEART, 1.4F, 0.9F);
             }
             McsmCreatures.say(level, new Vec3(x, y, z), 200.0D,
                     "IT SEES YOU NOW AND IT WILL NOT STOP SEEING YOU", ChatFormatting.DARK_PURPLE);
@@ -363,7 +367,9 @@ public final class McsmMassg {
                         "\u00a75It is back. It was never gone: \u00a7fit only stopped to watch you kill it.")
                         .withStyle(ChatFormatting.DARK_PURPLE));
             }
-            level.playSound(null, x, y, z, SoundEvents.WITHER_SPAWN, SoundSource.HOSTILE, 4.0F, 0.35F);
+            // BUILD #425 -- its own return, not the wither's.
+            level.playSound(null, x, y, z, McsmSounds.MASSG_ROAR, SoundSource.HOSTILE, 4.0F, 0.55F);
+            level.playSound(null, x, y, z, McsmSounds.OBLIVION_WARP, SoundSource.HOSTILE, 2.0F, 1.0F);
         } catch (Throwable ignored) {
         }
     }
@@ -384,13 +390,27 @@ public final class McsmMassg {
                 // client-packet line below this that pushed the sky count is
                 // gone with the packet channel: the count rides in the
                 // creature's own synced name, which McsmMassgSky reads.)
+                // BUILD #425 -- its own voice. These were AMBIENT_CAVE and
+                // END_PORTAL_SPAWN: vanilla, and identical to a hundred other
+                // mods. The creature now breathes, giggles, whispers and beats
+                // with sounds made for it alone (McsmSounds).
                 if (time % 240L == 0L) {
                     level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                            SoundEvents.AMBIENT_CAVE, SoundSource.NEUTRAL, 1.8F, 0.35F);
+                            McsmSounds.MASSG_BREATH, SoundSource.HOSTILE, 1.6F, 0.85F);
                 }
                 if (time % 300L == 0L) {
                     level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                            SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 0.9F, 0.5F);
+                            McsmSounds.MASSG_WHISPER, SoundSource.HOSTILE, 1.1F, 1.0F);
+                }
+                if (time % 160L == 0L) {
+                    // IT IS AMUSED BY YOU.
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            McsmSounds.MASSG_GIGGLE, SoundSource.HOSTILE, 0.7F,
+                            0.9F + 0.2F * (player.getId() % 3));
+                }
+                if (time % 60L == 0L) {
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            McsmSounds.MASSG_HEART, SoundSource.HOSTILE, 0.8F, 1.0F);
                 }
                 // IT IMITATES YOU: it answers in your own name.
                 Long lastVoice = LAST_VOICE.get(player.getUUID());
@@ -474,7 +494,8 @@ public final class McsmMassg {
                 }
             }
             // and they are not supposed to be fightable: they fade out
-            level.playSound(null, x, y, z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.AMBIENT, 0.4F, 1.6F);
+            // a hallucination dissolving: the mod's own glass-and-static, not an enderman
+            level.playSound(null, x, y, z, McsmSounds.OBLIVION_GLITCH, SoundSource.AMBIENT, 0.45F, 1.7F);
         } catch (Throwable ignored) {
         }
     }

@@ -120,5 +120,21 @@
   "itemGroup.mcsm.content": "Devouring Storms: Decayed Reality",
   "subtitles.mcsm.button_click": "UI chimes",
   "subtitles.mcsm.button_hover": "UI tinks",
-  "subtitles.mcsm.menu_open": "Menu unfolds"
+  "subtitles.mcsm.massg_breath": "It breathes",
+  "subtitles.mcsm.massg_giggle": "It giggles",
+  "subtitles.mcsm.massg_heart": "Something enormous beats",
+  "subtitles.mcsm.massg_roar": "The MASSG arrives",
+  "subtitles.mcsm.massg_whisper": "It whispers your name",
+  "subtitles.mcsm.menu_open": "Menu unfolds",
+  "subtitles.mcsm.oblivion_drone": "The ruined dimension hums",
+  "subtitles.mcsm.oblivion_glitch": "Reality tears",
+  "subtitles.mcsm.oblivion_warp": "The world folds",
+  "subtitles.mcsm.radio_carrier": "A signal resolves",
+  "subtitles.mcsm.radio_distress": "A distress call",
+  "subtitles.mcsm.radio_morse": "An automated beacon",
+  "subtitles.mcsm.radio_static": "Radio hiss",
+  "subtitles.mcsm.radio_voice": "Someone speaks",
+  "subtitles.mcsm.terminal_deny": "Access denied",
+  "subtitles.mcsm.terminal_key": "Terminal key",
+  "subtitles.mcsm.terminal_open": "The terminal wakes"
 }

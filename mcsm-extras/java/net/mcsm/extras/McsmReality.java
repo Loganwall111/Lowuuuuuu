@@ -258,8 +258,13 @@ public final class McsmReality {
         player.teleportTo(target, x, y, z, Set.of(), player.getYRot(), 0.0F, false);
         player.setDeltaMovement(Vec3.ZERO);
         player.resetFallDistance();
-        target.playSound((Entity) null, x, y, z, SoundEvents.PORTAL_TRAVEL,
-                SoundSource.PLAYERS, 1.0F, 0.7F);
+        // BUILD #425 -- custom distortion. This was PORTAL_TRAVEL, i.e. the
+        // Nether's own sound, which is why the reality tears sounded like every
+        // vanilla portal in the game. The torn dimension has its own voice now.
+        target.playSound((Entity) null, x, y, z, McsmSounds.OBLIVION_GLITCH,
+                SoundSource.PLAYERS, 0.9F, 1.0F);
+        target.playSound((Entity) null, x, y, z, McsmSounds.OBLIVION_WARP,
+                SoundSource.PLAYERS, 0.6F, 1.0F);
         player.sendSystemMessage(Component.literal(leaving
                 ? "\u00a75\u00a7lTHE RIFT OPENS \u00a78\u00b7 the decayed reality answers"
                 : "\u00a75\u00a7lTHE RIFT CLOSES \u00a78\u00b7 you are spat back into the world"));

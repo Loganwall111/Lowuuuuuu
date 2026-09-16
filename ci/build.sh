@@ -751,9 +751,19 @@ stage backdrop-ok
 # and the generator have drifted apart -- which is also a failure.
 # ---------------------------------------------------------------------------
 echo "[content] generate the pack's own textures + item definitions"
+python3 ci/make_mcsm_sounds.py | tail -1
 python3 ci/make_emissive_whites.py --two-way | tail -1
 python3 ci/make_mcsm_textures.py | tail -1
 python3 ci/make_mcsm_content_assets.py | tail -1
+set +e
+SOUND_CHECK="$(python3 ci/make_mcsm_sounds.py --check 2>&1)"
+SOUND_RC=$?
+set -e
+printf '%s\n' "$SOUND_CHECK" | tail -3
+if [ $SOUND_RC -ne 0 ]; then
+  echo "::error title=custom sounds::the mod's own Ogg files are missing or empty -- the radio and the creature would fall back to vanilla audio. Run 'python3 ci/make_mcsm_sounds.py'"
+  exit 1
+fi
 set +e
 EMISSIVE_CHECK="$(python3 ci/make_emissive_whites.py --check 2>&1)"
 EMISSIVE_RC=$?
@@ -1616,6 +1626,34 @@ for need in \
     AUDIT_FAIL=1
   fi
 done
+# BUILD #425 -- the mod's own sound set (see ci/make_mcsm_sounds.py). Each one
+# has to be in the jar AND be a real Ogg container, or the radio and the
+# creature fall back to silence.
+for need in \
+  assets/mcsm/sounds/radio/static.ogg \
+  assets/mcsm/sounds/radio/carrier.ogg \
+  assets/mcsm/sounds/radio/voice.ogg \
+  assets/mcsm/sounds/radio/distress.ogg \
+  assets/mcsm/sounds/radio/morse.ogg \
+  assets/mcsm/sounds/massg/breath.ogg \
+  assets/mcsm/sounds/massg/giggle.ogg \
+  assets/mcsm/sounds/massg/whisper.ogg \
+  assets/mcsm/sounds/massg/roar.ogg \
+  assets/mcsm/sounds/massg/heart.ogg \
+  assets/mcsm/sounds/oblivion/drone.ogg \
+  assets/mcsm/sounds/oblivion/glitch.ogg \
+  assets/mcsm/sounds/oblivion/warp.ogg \
+  assets/mcsm/sounds/ui/terminal_open.ogg \
+  assets/mcsm/sounds/ui/terminal_key.ogg \
+  assets/mcsm/sounds/ui/terminal_deny.ogg; do
+  if [ ! -s "$FX/cls/$need" ]; then
+    echo "::error title=jar audit::custom sound missing from the jar: $need"
+    AUDIT_FAIL=1
+  elif ! head -c 4 "$FX/cls/$need" | grep -q 'OggS'; then
+    echo "::error title=jar audit::$need is not an Ogg container"
+    AUDIT_FAIL=1
+  fi
+done
 for ogg in ds_btn_hover ds_btn_click ds_menu_open; do
   oggf="$FX/cls/assets/mcsm/sounds/$ogg.ogg"
   if [ -s "$oggf" ] && ! head -c 4 "$oggf" | grep -q 'OggS'; then
@@ -1630,7 +1668,7 @@ if [ -e "$FX/cls/assets/mcsm/sounds/ds_btn_click.wav" ] \
   AUDIT_FAIL=1
 fi
 if [ "$AUDIT_FAIL" -eq 0 ]; then
-  echo "[audit] UI audio: 3 Ogg Vorbis one-shots + sounds.json + lang in the jar"
+  echo "[audit] UI audio: 3 menu one-shots + 16 custom sounds (radio, MASSG, oblivion, terminal) all present as real Ogg Vorbis containers"
 fi
 
 if [ "$AUDIT_FAIL" -ne 0 ]; then

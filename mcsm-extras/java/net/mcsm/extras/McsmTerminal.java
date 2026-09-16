@@ -201,14 +201,15 @@ public final class McsmTerminal {
             Vec3 at = player.position();
             // The set is off, so the sound arrives from a distance and slightly
             // wrong -- which is what makes it read as a signal, not a jingle.
-            // A signal, not a jingle: a carrier tone that drifts, and the tuning
-            // ping. Both are sounds this build already ships with.
-            level.playSound(null, at.x, at.y, at.z, SoundEvents.ENDERMAN_TELEPORT,
-                    SoundSource.PLAYERS, 0.28F, 0.55F);
-            level.playSound(null, at.x, at.y, at.z, SoundEvents.PORTAL_TRAVEL,
-                    SoundSource.PLAYERS, 0.40F, 0.75F);
-            level.playSound(null, at.x, at.y, at.z, SoundEvents.BEACON_POWER_SELECT,
-                    SoundSource.PLAYERS, 0.35F, 1.4F);
+            // BUILD #425 -- CUSTOM SIGNALS. "The radio wasn't using custom
+            // sounds, it was using sounds that were already in the game." It was:
+            // every line below was vanilla. Each station now plays its own
+            // synthesised Ogg (carrier, static, a voice too far away, morse, a
+            // distress two-tone) and the tuning drag is the static bed under it.
+            level.playSound(null, at.x, at.y, at.z, McsmSounds.station(index),
+                    SoundSource.PLAYERS, 0.55F, 0.95F + 0.1F * (index % 2));
+            level.playSound(null, at.x, at.y, at.z, McsmSounds.RADIO_STATIC,
+                    SoundSource.PLAYERS, 0.22F, 1.05F);
             level.sendParticles(new DustParticleOptions(0x8FE6FF, 0.6F),
                     at.x, at.y + 1.2D, at.z, 6, 0.5D, 0.4D, 0.5D, 0.01D);
             // The station is read out in chat, because chat is the one channel
@@ -245,7 +246,9 @@ public final class McsmTerminal {
         if (typed.equals(CODE)) {
             GRANTED.put(player.getUUID(), Boolean.TRUE);
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-                    SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.4F, 1.2F);
+                    McsmSounds.TERMINAL_OPEN, SoundSource.PLAYERS, 1.1F, 1.0F);
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    McsmSounds.RADIO_CARRIER, SoundSource.PLAYERS, 0.6F, 1.25F);
             player.sendSystemMessage(Component.literal(
                     "OPERATOR ACCESS GRANTED -- welcome back.").withStyle(ChatFormatting.AQUA));
             player.sendSystemMessage(Component.literal(
@@ -254,7 +257,7 @@ public final class McsmTerminal {
             return true;
         }
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 0.8F, 0.5F);
+                McsmSounds.TERMINAL_DENY, SoundSource.PLAYERS, 0.9F, 1.0F);
         player.sendSystemMessage(Component.literal("ACCESS DENIED").withStyle(ChatFormatting.RED));
         player.sendSystemMessage(Component.literal(hint(player)).withStyle(ChatFormatting.GRAY));
         return false;

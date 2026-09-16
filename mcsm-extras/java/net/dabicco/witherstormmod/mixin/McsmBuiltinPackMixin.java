@@ -10,6 +10,7 @@ import net.mcsm.extras.McsmBuiltinPack;
 import net.mcsm.extras.McsmBlackHole;
 import net.mcsm.extras.McsmCities;
 import net.mcsm.extras.McsmMassg;
+import net.mcsm.extras.McsmSounds;
 import net.mcsm.extras.McsmTerminal;
 import net.mcsm.extras.McsmCreatures;
 import net.mcsm.extras.McsmTornadoes;
@@ -68,5 +69,9 @@ public abstract class McsmBuiltinPackMixin {
         // killed and cannot be deleted, its hallucinations, and the countdown it
         // runs in the sky. Registered last on purpose: it is the end of the list.
         McsmMassg.register();
+        // BUILD #425 -- the mod's own sounds. Touching the class registers all
+        // sixteen SoundEvents; the Ogg files themselves ship in the overlay at
+        // assets/mcsm/sounds/ (see ci/make_mcsm_sounds.py).
+        McsmSounds.initialize();
     }
 }

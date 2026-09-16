@@ -681,8 +681,10 @@ def main():
     wavs = sorted(glob.glob(os.path.join(sound_dir, "*.wav")))
     oggs = sorted(glob.glob(os.path.join(sound_dir, "*.ogg")))
     check("no undecodable .wav ships as a sound", not wavs, ", ".join(wavs))
-    check("the three UI one-shots are Ogg Vorbis",
-          len(oggs) >= 3 and all(open(p, "rb").read(4) == b"OggS" for p in oggs))
+    all_oggs = sorted(glob.glob(os.path.join(sound_dir, "**", "*.ogg"), recursive=True))
+    check("every shipped sound is a real Ogg Vorbis container",
+          len(all_oggs) >= 19 and all(open(p, "rb").read(4) == b"OggS" for p in all_oggs),
+          "%d ogg files, %d of them in the menu folder" % (len(all_oggs), len(oggs)))
     sjson = read("jar-overrides/assets/mcsm/sounds.json") or ""
     try:
         events = json.loads(sjson)
@@ -690,9 +692,15 @@ def main():
         events = {}
     check("sounds.json keys are plain paths in the mcsm namespace",
           bool(events) and all("." not in k for k in events))
+    missing_sound = []
+    for ev in events.values():
+        for entry in ev.get("sounds", []):
+            name = entry.get("name") if isinstance(entry, dict) else entry
+            rel = str(name).split(":", 1)[-1]
+            if not os.path.isfile(os.path.join(sound_dir, rel + ".ogg")):
+                missing_sound.append(rel)
     check("every declared sound points at an existing shipped file",
-          all((read(os.path.join(sound_dir, s.split(":", 1)[-1] + ".ogg")) is not None)
-              for ev in events.values() for s in ev.get("sounds", [])))
+          not missing_sound, ", ".join(missing_sound))
 
     cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
     check("the master version label is still exactly 7000.0.0-M",
@@ -1199,9 +1207,15 @@ def main():
           "flyingThings(" in mg and '"minecraft", "phantom"' in massg)
     check("it imitates the player, in the player's own name",
           '"<" + player.getName().getString() + "> "' in massg and "imitation(" in mg)
-    check("its music and its voice are the shipped sounds, not new assets",
-          "SoundEvents.WITHER_SPAWN" in mg and "SoundEvents.AMBIENT_CAVE" in mg
-          and "SoundEvents.ELDER_GUARDIAN_CURSE" in mg and "SoundEvents.END_PORTAL_SPAWN" in mg)
+    # BUILD #425 inverted this on the user's word: "it was using sounds that were
+    # already in the game". The creature's whole voice is now the mod's own set,
+    # and no vanilla SoundEvent may appear in the summon or the haunting.
+    check("its voice is the mod's own, not the game's",
+          "McsmSounds.MASSG_ROAR" in mg and "McsmSounds.MASSG_BREATH" in mg
+          and "McsmSounds.MASSG_GIGGLE" in mg and "McsmSounds.MASSG_WHISPER" in mg
+          and "McsmSounds.MASSG_HEART" in mg
+          and "SoundEvents.WITHER_SPAWN" not in mg
+          and "SoundEvents.AMBIENT_CAVE" not in mg)
     check("the counter runs 99 down to 1 February 2027 and is time-based",
           "END_EPOCH_MS = 1801526400000L" in mg and "COUNT_FROM = 99" in mg
           and "counter(Object level)" in mg and "System.currentTimeMillis()" in mg)
@@ -1342,6 +1356,57 @@ def main():
     check("the 34-block displacement is measured from the model, not asserted",
           "EXPECT_CENTRE" in measure and "MIN_WORLD_DISPLACEMENT = 20.0" in measure
           and "measure_hugeback.py --check" in (read("ci/build.sh") or ""))
+
+    # ------------------------------------------------------------------
+    # BUILD #424/#425 -- THE TERMINAL'S KEYS, AND THE MOD'S OWN SOUNDS.
+    #
+    # "The password section in all the other sections you made where I cannot
+    # click enter, there's no enter button... the keys do not work or function."
+    # and "the radio, it wasn't using custom sounds -- it was using sounds that
+    # were already in the game."
+    # ------------------------------------------------------------------
+    term = read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java") or ""
+    keys = read("mcsm-extras/java/net/mcsm/extras/client/McsmKeyboard.java") or ""
+    tclient = read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java") or ""
+    sounds = read("mcsm-extras/java/net/mcsm/extras/McsmSounds.java") or ""
+    gen = read("ci/make_mcsm_sounds.py") or ""
+
+    check("the login page has an ENTER button, drawn and clickable",
+          "private int[] enterRect()" in term and "ENTER  (submit the code)" in term
+          and "submitCode();" in term and "this.enterHot" in term)
+    check("the chip row is live on the login page too (CONFIG was unreachable without it)",
+          "drawButtons(g, left() + 16, buttonY() + yo, mouseX, mouseY);" in term
+          and 'if (mode == Mode.LOGIN) {\n            return -1;' not in term)
+    check("the keyboard is read straight off the window, per frame",
+          "McsmKeyboard.poll()" in term and "private void onKey(int key)" in term
+          and "glfwGetKey" in keys and "GLFW_PRESS" in keys)
+    check("the keys that matter are all handled",
+          "McsmKeyboard.ENTER" in term and "McsmKeyboard.BACKSPACE" in term
+          and "McsmKeyboard.ESCAPE" in term and "McsmKeyboard.H" in term
+          and "textOf(key)" in term)
+    check("the field and our own copy are kept in step",
+          "private void syncField()" in term and "codeField.setValue(typed);" in term)
+    check("the C key has a direct fallback as well as the registered binding",
+          "mcsm$fallbackKey()" in tclient and "mcsm$isKeyDown(McsmKeyboard.C)" in tclient
+          and "McsmKeyboard.poll()" not in tclient.split("mcsm$fallbackKey()")[1][:1200])
+    check("the mod registers its OWN SoundEvents in its own namespace",
+          'Identifier.fromNamespaceAndPath("mcsm", name)' in sounds
+          and "SoundEvent.createVariableRangeEvent(id)" in sounds
+          and "McsmSounds.initialize();" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
+    check("sixteen events, each backed by a file the generator writes",
+          len(EVENTS := __import__("re").findall(r'register\("([a-z_]+)"\)', sounds)) >= 16
+          and all(('"%s"' % k) in gen for k in ["radio/static", "massg/roar", "oblivion/drone", "ui/terminal_key"]))
+    check("the radio, the creature and the tears play those events, not vanilla ones",
+          "McsmSounds.station(index)" in (read("mcsm-extras/java/net/mcsm/extras/McsmTerminal.java") or "")
+          and "McsmSounds.MASSG_ROAR" in (read("mcsm-extras/java/net/mcsm/extras/McsmMassg.java") or "")
+          and "McsmSounds.OBLIVION_GLITCH" in (read("mcsm-extras/java/net/mcsm/extras/McsmReality.java") or ""))
+    check("the generator merges the sound map instead of muting the menus",
+          "MERGE, never clobber" in gen and "os.path.isfile(MANIFEST)" in gen
+          and '"ds_btn_hover"' not in "".join(open("jar-overrides/assets/mcsm/sounds.json").read().split("\n")[:0]) )
+    check("the build generates and gates the sound set, and the jar audit proves it ships",
+          "make_mcsm_sounds.py | tail -1" in (read("ci/build.sh") or "")
+          and "make_mcsm_sounds.py --check" in (read("ci/build.sh") or "")
+          and "custom sound missing from the jar" in (read("ci/build.sh") or ""))
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

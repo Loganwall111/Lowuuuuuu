@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import net.mcsm.extras.McsmSounds;
 import net.mcsm.extras.McsmTerminal;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -79,6 +80,8 @@ public final class McsmTerminalScreen extends Screen {
     private int boxW;
     private int boxH = 18;
     private String typed = "";
+    /** BUILD #424 -- the login page's ENTER button is hot under the cursor. */
+    private boolean enterHot;
     private final List<String> radioLog = new ArrayList<>();
 
     public McsmTerminalScreen(String startMode, String initialBody) {
@@ -197,6 +200,91 @@ public final class McsmTerminalScreen extends Screen {
         return bottom() - 40;
     }
 
+    /**
+     * BUILD #424 -- THE ENTER BUTTON. The login page's one action, drawn big
+     * enough to be obvious and clickable even when the field has no focus. The
+     * chip row is drawn on the login page too, so GUIDE / RADIO / CONFIG / CLOSE
+     * are reachable before the code is entered (that is the "there's only one
+     * config menu" report: from the login page there was no way to the panel).
+     */
+    private int[] enterRect() {
+        int w = 132;
+        int x = this.width / 2 - w / 2;
+        int y = boxY + boxH + 14;
+        return new int[]{x, y, w, 22};
+    }
+
+    /** One key press, dispatched. */
+    private void onKey(int key) {
+        if (key == McsmKeyboard.ESCAPE) {
+            onClose();
+            return;
+        }
+        if (key == McsmKeyboard.ENTER) {
+            if (mode == Mode.LOGIN) {
+                submitCode();
+            } else if (mode == Mode.GUIDE) {
+                guidePage = (guidePage + 1) % GUIDE_PAGES.length;
+                body = McsmTerminal.guideText(GUIDE_PAGES[guidePage]);
+            } else if (mode == Mode.CONSOLE) {
+                body = worldReport(true);
+            }
+            return;
+        }
+        if (key == McsmKeyboard.BACKSPACE) {
+            if (!typed.isEmpty()) {
+                typed = typed.substring(0, typed.length() - 1);
+                syncField();
+            }
+            return;
+        }
+        if (mode != Mode.LOGIN) {
+            return;      // outside the login page this screen is buttons-only
+        }
+        if (key == McsmKeyboard.H) {
+            status = McsmTerminal.hintText();
+            statusBad = false;
+            return;
+        }
+        char ch = McsmKeyboard.textOf(key);
+        if (ch != 0 && typed.length() < 24) {
+            typed = typed + ch;
+            status = "";
+            statusBad = false;
+            syncField();
+            mcsm$cue(McsmSounds.TERMINAL_KEY, 0.5F, 1.0F);
+        }
+    }
+
+    /**
+     * BUILD #425 -- the terminal's own key ticks, on the CLIENT side, through the
+     * local player (the same call the HUD console already makes for its buttons).
+     * The mod's sounds are registered in its own namespace by McsmSounds, so this
+     * is the mod's voice, not the game's.
+     */
+    private void mcsm$cue(Object sound, float volume, float pitch) {
+        try {
+            net.minecraft.client.player.LocalPlayer player = Minecraft.getInstance().player;
+            if (player != null && sound instanceof net.minecraft.sounds.SoundEvent event) {
+                player.playSound(event, volume, pitch);
+            }
+        } catch (Throwable ignored) {
+            // a silent terminal is better than a crashing one
+        }
+    }
+
+    /** Keep the visible field and our own copy in step, whichever drove it. */
+    private void syncField() {
+        if (codeField != null) {
+            try {
+                codeField.setValue(typed);
+            } catch (Throwable ignored) {
+                // the field is only a display: our copy is authoritative
+            }
+        }
+    }
+
+
     @Override
     protected void init() {
         this.clearWidgets();
@@ -225,6 +313,13 @@ public final class McsmTerminalScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         ticks++;
+        // BUILD #424 -- the keyboard is read here, per frame, straight off the
+        // window (see McsmKeyboard). "The keys do not work or function" was
+        // true: nothing in this screen ever looked at a key, so the only way in
+        // was a button that did not exist on the login page either.
+        for (Integer key : McsmKeyboard.poll()) {
+            onKey(key.intValue());
+        }
         if (shake > 0) {
             shake--;
         }
@@ -262,6 +357,9 @@ public final class McsmTerminalScreen extends Screen {
         int px = l + 16;
         int maxX = r - 16;
         int y = drawHeader(g, px, t + 10);
+        int[] enter = enterRect();
+        this.enterHot = mouseX >= enter[0] && mouseX < enter[0] + enter[2]
+                && mouseY >= enter[1] && mouseY < enter[1] + enter[3];
         switch (mode) {
             case LOGIN:
                 drawLogin(g, px, maxX, y, t, b);
@@ -316,6 +414,18 @@ public final class McsmTerminalScreen extends Screen {
             g.fill(boxX, boxY, boxX + boxW, boxY + boxH, PANEL);
         }
 
+        // THE ENTER BUTTON -- clickable, always drawn, and the reason this page
+        // stopped being a dead end. The keyboard types into the field; this is
+        // the way in for anyone who would rather click.
+        int[] e = enterRect();
+        boolean eHot = this.enterHot;
+        g.fill(e[0] - 1, e[1] - 1, e[0] + e[2] + 1, e[1] + e[3] + 1, EDGE);
+        g.fill(e[0], e[1], e[0] + e[2], e[1] + e[3], eHot ? 0xFF1B6B8C : 0xFF0C2C3E);
+        g.centeredText(this.font, "\u25B8 ENTER  (submit the code)", this.width / 2, e[1] + 7,
+                eHot ? 0xFFFFFFFF : EDGE);
+        // the chip row is live on this page too (GUIDE / RADIO / CONFIG / CLOSE)
+        drawButtons(g, left() + 16, buttonY() + yo, mouseX, mouseY);
+
         int ty = y + 48;
         if (!status.isEmpty()) {
             for (String line : status.split("\n")) {
@@ -329,7 +439,8 @@ public final class McsmTerminalScreen extends Screen {
         ty += 8;
         g.text(this.font, "The code is not on this screen. It is written down in the world,", x, ty, TEXT_DIM, false);
         g.text(this.font, "in IVOR's hands, in the secret room of an abandoned hospital.", x, ty + 11, TEXT_DIM, false);
-        g.text(this.font, "[ENTER] submit     [H] ask the set for his line     [ESC] leave", x, ty + 22, TEXT_DIM, false);
+        g.text(this.font, "type with the keyboard, or click ENTER above. [H] hints. [ESC] leaves.",
+                x, ty + 22, TEXT_DIM, false);
     }
 
     private void drawLines(GuiGraphicsExtractor g, int x, int y, int maxX, int limit, String title) {
@@ -385,9 +496,10 @@ public final class McsmTerminalScreen extends Screen {
     // ---------------------------------------------------------------------
 
     private int buttonAt(double mouseX, double mouseY) {
-        if (mode == Mode.LOGIN) {
-            return -1;
-        }
+        // BUILD #424 -- the chips are live in every mode now, including the login
+        // page. Before this, the only page with a password on it was the only
+        // page with nothing clickable: GUIDE, RADIO, CONFIG (the settings panel)
+        // and CLOSE were all unreachable until the code had been accepted.
         int y = buttonY();
         int bx = left() + 16;
         for (int i = 0; i < BUTTONS.length; i++) {
@@ -401,6 +513,15 @@ public final class McsmTerminalScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
+        // the login page's ENTER button
+        if (mode == Mode.LOGIN && event.button() == 0) {
+            int[] e = enterRect();
+            if (event.x() >= e[0] && event.x() < e[0] + e[2]
+                    && event.y() >= e[1] && event.y() < e[1] + e[3]) {
+                submitCode();
+                return true;
+            }
+        }
         int hit = buttonAt(event.x(), event.y());
         if (hit >= 0 && event.button() == 0) {
             switch (hit) {
@@ -524,8 +645,10 @@ public final class McsmTerminalScreen extends Screen {
      */
     public void submitCode() {
         if (McsmTerminal.CODE.equalsIgnoreCase(typedCode().trim())) {
+            mcsm$cue(McsmSounds.TERMINAL_OPEN, 0.9F, 1.0F);
             accept("granted", "console", worldReport(local));
         } else {
+            mcsm$cue(McsmSounds.TERMINAL_DENY, 0.9F, 1.0F);
             accept("denied", "login", "ACCESS DENIED\n\nThe code is in the world, in IVOR's hands.");
         }
     }

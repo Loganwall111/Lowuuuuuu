@@ -34,6 +34,8 @@ public final class McsmTerminalClient {
 
     private static boolean registered = false;
     private static Object keyMapping;
+    /** BUILD #424 -- the direct C read's edge state. */
+    private static boolean mcsm$cWasDown;
 
     private McsmTerminalClient() {
     }
@@ -80,6 +82,14 @@ public final class McsmTerminalClient {
     }
 
     private static void pollKey() {
+        // BUILD #424 -- THE KEY HAS A FALLBACK. "The keys do not work or
+        // function": the registered binding is the nice path (it shows up in the
+        // controls menu), but when the reflective registration does not take on
+        // a given build there was no key at all. The window is read directly as
+        // well -- the same GLFW read the Shift+C quick panel already uses in this
+        // build -- so C always opens the console in a world, whatever the binding
+        // layer did.
+        mcsm$fallbackKey();
         if (keyMapping == null) {
             return;
         }
@@ -95,6 +105,65 @@ public final class McsmTerminalClient {
         } catch (Throwable t) {
             // a key that cannot be read is not a key: stop asking
             keyMapping = null;
+        }
+    }
+
+    /**
+     * The direct read of the C key. Edge-triggered, and it stays out of the way
+     * whenever any screen is open (so typing a C into the terminal's field, or
+     * into chat, never re-triggers the key).
+     */
+    private static void mcsm$fallbackKey() {
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || mc.player == null) {
+                return;
+            }
+            // Level-read only: McsmKeyboard.poll() belongs to the screen that is
+            // typing into it, and a tick must not eat the screen's key edges.
+            boolean down = mcsm$isKeyDown(McsmKeyboard.C);
+            if (!down) {
+                mcsm$cWasDown = false;
+                return;
+            }
+            if (mcsm$cWasDown) {
+                return;
+            }
+            mcsm$cWasDown = true;
+            if (currentScreen(mc) instanceof McsmTerminalScreen terminal) {
+                terminal.onClose();
+            } else if (currentScreen(mc) == null) {
+                onKeyPressed();
+            }
+        } catch (Throwable ignored) {
+            // never break a tick over a key
+        }
+    }
+
+    /** Raw state of one key, through the same reflection the quick panel uses. */
+    private static boolean mcsm$isKeyDown(int key) {
+        try {
+            Object window = Minecraft.getInstance().getWindow();
+            long handle = 0L;
+            for (java.lang.reflect.Method m : window.getClass().getMethods()) {
+                if (m.getParameterCount() == 0 && m.getName().equals("getWindow")) {
+                    Object v = m.invoke(window);
+                    if (v instanceof Number) {
+                        handle = ((Number) v).longValue();
+                    }
+                    break;
+                }
+            }
+            if (handle == 0L) {
+                return false;
+            }
+            Class<?> glfw = Class.forName("org.lwjgl.glfw.GLFW");
+            int press = ((Number) glfw.getField("GLFW_PRESS").get(null)).intValue();
+            int state = ((Number) glfw.getMethod("glfwGetKey", long.class, int.class)
+                    .invoke(null, handle, key)).intValue();
+            return state == press;
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 
