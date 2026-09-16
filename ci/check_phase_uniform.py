@@ -720,10 +720,22 @@ def main():
     check("the content pack registers a real item set (>= 40)", n_items >= 40,
           "item(...) calls: %d" % n_items)
     check("doors AND trap doors are part of it (asked for by name)",
-          "new DoorBlock(" in content_code and "new TrapDoorBlock(" in content_code)
-    check("the pack has its own creative tab",
-          "FabricCreativeModeTab.builder()" in content_code
+          "ExposedDoor" in content_code and "ExposedTrapDoor" in content_code
+          and "DoorBlock" in content_code and "TrapDoorBlock" in content_code)
+    # The Fabric creative-tab module is NOT on this overlay's compile classpath
+    # (CI run 487: "package net.fabricmc.fabric.api.creativetab.v1 does not
+    # exist"), so the tab has to be reached by reflection at runtime -- and it
+    # must degrade to "items are still craftable / minable" rather than take the
+    # registry down with it.
+    check("the pack has its own creative tab (reflection, non-fatal)",
+          "FabricCreativeModeTab" in content_code and "Class.forName" in content_code
+          and "Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB" in content_code
+          and "catch (Throwable t)" in content_code
           and "registerTab()" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
+    check("doors and stairs build through exposed subclasses (their vanilla ctors are protected)",
+          "extends StairBlock" in content_code and "extends DoorBlock" in content_code
+          and "extends TrapDoorBlock" in content_code
+          and "new StairBlock(" not in content_code and "new DoorBlock(" not in content_code)
     check("registration happens at mod init (registries still open)",
           "McsmContent.register();" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
 

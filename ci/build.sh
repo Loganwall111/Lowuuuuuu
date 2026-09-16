@@ -759,6 +759,32 @@ echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
 CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:${FAPI2_CP}"
+
+# BUILD #416 (D.8) -- which Fabric API modules are actually on the COMPILE
+# classpath? The base mod's own source can name classes that this overlay
+# cannot (its jar is prebuilt), which is how "FabricCreativeModeTab.builder()"
+# got into the new content and died in javac. This probe records the answer in
+# out/vanilla-api.txt so the next content pass picks an API that exists BEFORE
+# spending a run on it.
+{
+  echo
+  echo "===== compile classpath probes (what this overlay may name)"
+  for PROBE in \
+    net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab \
+    net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents \
+    net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings \
+    net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder \
+    net.minecraft.world.item.CreativeModeTab \
+    'net.minecraft.world.item.CreativeModeTab$Builder' \
+    'net.minecraft.world.item.CreativeModeTab$Output' \
+    net.minecraft.world.item.CreativeModeTabs ; do
+    echo "--- ${PROBE}"
+    javap -classpath "$CP" "$PROBE" 2>&1 | sed -n '1,20p'
+  done
+  echo "--- fabric jars on the compile path"
+  printf '%s\n' "$CP" | tr ':' '\n' | grep -i fabric || echo "(none)"
+} >> "$VANILLA_OUT" 2>&1 || true
+stage classpath-probed
 # A javac failure is NOT survivable anymore: publishing a shaders-only jar is
 # exactly how users can receive new-looking UI/shaders with old Java behavior.
 # Stop hard and keep the full log in out/JAVAC_FAILED.txt.

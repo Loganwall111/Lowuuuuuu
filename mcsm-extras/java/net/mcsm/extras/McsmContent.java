@@ -17,6 +17,7 @@ import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -143,7 +144,7 @@ public final class McsmContent {
     public static final Block DECAYED_SLAB = block("decayed_slab",
             props -> new SlabBlock(props), stone(2.0F, 6.0F));
     public static final Block DECAYED_STAIRS = block("decayed_stairs",
-            props -> new StairBlock(DECAYED_STONE.defaultBlockState(), props),
+            props -> new ExposedStair(DECAYED_STONE.defaultBlockState(), props),
             stone(2.0F, 6.0F));
     public static final Block DECAYED_WALL = block("decayed_wall",
             props -> new WallBlock(props), stone(2.0F, 6.0F));
@@ -152,26 +153,26 @@ public final class McsmContent {
     public static final Block CITY_BRICK_SLAB = block("city_brick_slab",
             props -> new SlabBlock(props), stone(3.0F, 8.0F));
     public static final Block CITY_BRICK_STAIRS = block("city_brick_stairs",
-            props -> new StairBlock(CITY_BRICKS.defaultBlockState(), props),
+            props -> new ExposedStair(CITY_BRICKS.defaultBlockState(), props),
             stone(3.0F, 8.0F));
 
     // ---------------------------------------------------------------------
     // Doors and trap doors (the user asked for them by name)
     // ---------------------------------------------------------------------
     public static final Block WITHERED_DOOR = block("withered_door",
-            props -> new DoorBlock(BlockSetType.IRON, props),
+            props -> new ExposedDoor(BlockSetType.IRON, props),
             BlockBehaviour.Properties.of().strength(3.0F, 9.0F).sound(SoundType.METAL)
                     .requiresCorrectToolForDrops().noOcclusion());
     public static final Block WITHERED_TRAPDOOR = block("withered_trapdoor",
-            props -> new TrapDoorBlock(BlockSetType.IRON, props),
+            props -> new ExposedTrapDoor(BlockSetType.IRON, props),
             BlockBehaviour.Properties.of().strength(3.0F, 9.0F).sound(SoundType.METAL)
                     .requiresCorrectToolForDrops().noOcclusion());
     public static final Block RUSTED_DOOR = block("rusted_door",
-            props -> new DoorBlock(BlockSetType.IRON, props),
+            props -> new ExposedDoor(BlockSetType.IRON, props),
             BlockBehaviour.Properties.of().strength(4.0F, 12.0F).sound(SoundType.METAL)
                     .requiresCorrectToolForDrops().noOcclusion());
     public static final Block RUSTED_TRAPDOOR = block("rusted_trapdoor",
-            props -> new TrapDoorBlock(BlockSetType.IRON, props),
+            props -> new ExposedTrapDoor(BlockSetType.IRON, props),
             BlockBehaviour.Properties.of().strength(4.0F, 12.0F).sound(SoundType.METAL)
                     .requiresCorrectToolForDrops().noOcclusion());
 
@@ -213,6 +214,34 @@ public final class McsmContent {
     }
 
     // ---------------------------------------------------------------------
+    // Stairs / doors / trap doors need a subclass
+    // ---------------------------------------------------------------------
+    // The vanilla constructors are PROTECTED in this Minecraft version (proven
+    // by the compiler in CI run 487: "StairBlock(BlockState,Properties) has
+    // protected access", and the same for DoorBlock/TrapDoorBlock with a
+    // BlockSetType). A protected constructor is callable from a subclass in any
+    // package, which is exactly how vanilla itself exposes its own stairs,
+    // doors and trap doors -- so these three thin subclasses are the supported
+    // way in, not a workaround.
+    public static class ExposedStair extends StairBlock {
+        public ExposedStair(BlockState base, BlockBehaviour.Properties props) {
+            super(base, props);
+        }
+    }
+
+    public static class ExposedDoor extends DoorBlock {
+        public ExposedDoor(BlockSetType type, BlockBehaviour.Properties props) {
+            super(type, props);
+        }
+    }
+
+    public static class ExposedTrapDoor extends TrapDoorBlock {
+        public ExposedTrapDoor(BlockSetType type, BlockBehaviour.Properties props) {
+            super(type, props);
+        }
+    }
+
+    // ---------------------------------------------------------------------
     // Registration
     // ---------------------------------------------------------------------
 
@@ -221,26 +250,89 @@ public final class McsmContent {
         // no-op: touching the class initialises it
     }
 
-    /** Our own creative tab so nothing here is unreachable in-game. */
+    /**
+     * Our own creative tab.
+     *
+     * This has to be reflection-only. The base mod builds its tab with
+     * net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab, but that
+     * module is NOT on the compile classpath this overlay is built against
+     * (build.sh fetches fabric-rendering-v1, fabric-api-base,
+     * fabric-object-builder-api-v1 and fabric-lifecycle-events-v1), so naming
+     * the type here cannot compile -- CI run 487 proved it with "package
+     * net.fabricmc.fabric.api.creativetab.v1 does not exist". At RUNTIME the
+     * module is present (the base mod depends on it), so the reflection below
+     * does work there; if it cannot, the content is still reachable through its
+     * crafting recipes, the dimension's own terrain, and the console's starter
+     * kit, and that is logged rather than hidden.
+     */
     public static void registerTab() {
         try {
-            Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN_TAB,
-                    net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab.builder()
-                            .title(Component.translatable("itemGroup.mcsm.content"))
-                            .icon(() -> new ItemStack(RIFT_KEY))
-                            .displayItems((params, out) -> {
-                                for (Item it : ALL_BLOCK_ITEMS) {
-                                    out.accept(it);
-                                }
-                                for (Item it : ALL_ITEMS) {
-                                    out.accept(it);
-                                }
-                            })
-                            .build());
-            System.out.println("[ds] mcsm content tab registered (" + ALL_BLOCKS.size()
-                    + " blocks, " + ALL_ITEMS.size() + " items)");
+            Class<?> fabricTab = Class.forName("net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab");
+            Object builder = fabricTab.getMethod("builder").invoke(null);
+            builder = builder.getClass().getMethod("title", Component.class)
+                    .invoke(builder, Component.translatable("itemGroup.mcsm.content"));
+            java.util.function.Supplier<ItemStack> icon = () -> new ItemStack(RIFT_KEY);
+            for (java.lang.reflect.Method m : builder.getClass().getMethods()) {
+                if (m.getName().equals("icon") && m.getParameterCount() == 1) {
+                    builder = m.invoke(builder, icon);
+                    break;
+                }
+            }
+            for (java.lang.reflect.Method m : builder.getClass().getMethods()) {
+                if (!m.getName().equals("displayItems") || m.getParameterCount() != 1) {
+                    continue;
+                }
+                Class<?> genType = m.getParameterTypes()[0];
+                if (!genType.isInterface()) {
+                    continue;
+                }
+                Object generator = java.lang.reflect.Proxy.newProxyInstance(
+                        McsmContent.class.getClassLoader(), new Class<?>[]{genType},
+                        (proxy, method, args) -> {
+                            if (args != null && args.length == 2 && args[1] != null) {
+                                fillTab(args[1]);
+                            }
+                            return null;
+                        });
+                builder = m.invoke(builder, generator);
+                break;
+            }
+            Object tab = builder.getClass().getMethod("build").invoke(builder);
+            if (tab instanceof CreativeModeTab vanilla) {
+                Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN_TAB, vanilla);
+                System.out.println("[ds] mcsm content tab registered (" + ALL_BLOCKS.size()
+                        + " blocks, " + (ALL_ITEMS.size() + ALL_BLOCK_ITEMS.size()) + " items)");
+            }
         } catch (Throwable t) {
-            System.err.println("[ds] mcsm content tab unavailable: " + t);
+            System.err.println("[ds] mcsm content tab unavailable (" + t
+                    + ") -- every block and item is still craftable / minable in the decayed reality");
+        }
+    }
+
+    /** Feeds our stacks to whatever "output" object the tab hands the generator. */
+    private static void fillTab(Object output) {
+        try {
+            java.lang.reflect.Method accept = null;
+            for (java.lang.reflect.Method m : output.getClass().getMethods()) {
+                if (m.getName().equals("accept") && m.getParameterCount() == 1) {
+                    Class<?> p = m.getParameterTypes()[0];
+                    if (p.isAssignableFrom(ItemStack.class) || ItemStack.class.isAssignableFrom(p)) {
+                        accept = m;
+                        break;
+                    }
+                }
+            }
+            if (accept == null) {
+                return;
+            }
+            for (Item item : ALL_BLOCK_ITEMS) {
+                accept.invoke(output, new ItemStack(item));
+            }
+            for (Item item : ALL_ITEMS) {
+                accept.invoke(output, new ItemStack(item));
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] mcsm content tab fill failed: " + t);
         }
     }
 
