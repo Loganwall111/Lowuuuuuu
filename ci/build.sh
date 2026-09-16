@@ -725,16 +725,16 @@ VANILLA_OUT=out/vanilla-api.txt
     net.minecraft.world.level.block.FenceBlock \
     net.minecraft.world.level.block.RotatedPillarBlock \
     net.minecraft.world.level.block.Block \
-    net.minecraft.world.level.block.state.BlockBehaviour$Properties \
+    'net.minecraft.world.level.block.state.BlockBehaviour$Properties' \
     net.minecraft.world.item.Item \
-    net.minecraft.world.item.Item$Properties \
+    'net.minecraft.world.item.Item$Properties' \
     net.minecraft.world.item.BlockItem \
     net.minecraft.world.item.SwordItem \
     net.minecraft.world.item.Tier \
     net.minecraft.world.item.Rarity \
     net.minecraft.world.level.block.SoundType \
     net.minecraft.world.entity.EntityType \
-    net.minecraft.world.entity.EntityType$Builder \
+    'net.minecraft.world.entity.EntityType$Builder' \
     net.minecraft.world.entity.MobCategory \
     net.minecraft.world.entity.Mob \
     net.minecraft.world.entity.PathfinderMob \
@@ -745,6 +745,9 @@ VANILLA_OUT=out/vanilla-api.txt
     net.minecraft.world.entity.ai.attributes.Attributes \
     net.minecraft.world.entity.player.Player ; do
     echo
+    # NOTE: nested-class names must stay single-quoted -- an unescaped '$' in
+    # this list is a variable expansion, and under `set -u` the build dies on
+    # "Properties: unbound variable" (run 486).
     echo "===== ${CLS}"
     javap -p -classpath "$DL/client.jar" "$CLS" 2>&1 | sed -n '1,110p'
   done
