@@ -16,6 +16,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import net.mcsm.extras.entity.McsmEntities;
+
 /**
  * BUILD #451 -- THE VOID, AND THE WAYS INTO EVERY DIMENSION.
  *
@@ -129,15 +131,62 @@ public final class McsmVoid {
             for (ServerPlayer player : level.players()) {
                 catchFall(level, player);
             }
-            // the void walkers: they live here, in the nothing, between the shelves
+            // BUILD #456 -- the void walkers, as the real thing now. They used to be
+            // re-kitted vanilla bodies rolled out of the shared bestiary; they are
+            // mcsm:voidwalker and mcsm:void_lurker, with their own models and their
+            // own behaviour, and they live here, in the nothing, between the shelves.
             if (level.getGameTime() % 600L == 0L) {
                 for (ServerPlayer player : level.players()) {
                     BlockPos at = shelfUnder(level, player.blockPosition());
-                    McsmCreatures.release(level, at == null ? player.blockPosition() : at, 1, 6.0D);
+                    spawnDwellers(level, at == null ? player.blockPosition() : at, player);
                 }
             }
         } catch (Throwable t) {
             System.err.println("[ds] void tick failed: " + t);
+        }
+    }
+
+    /**
+     * BUILD #456 -- WHO LIVES IN THE NOTHING.
+     *
+     * <p>One to three walkers, placed off to the side and out of arm's reach so
+     * nothing ever appears in a player's face, and -- on one roll in six for the
+     * last of them -- the mini-boss instead. Rare enough that meeting the lurker is
+     * an event; common enough that a player who spends a session down here will.
+     */
+    private static void spawnDwellers(ServerLevel level, BlockPos near, ServerPlayer player) {
+        try {
+            if (McsmEntities.VOIDWALKER == null) {
+                return;
+            }
+            net.minecraft.util.RandomSource rng = level.getRandom();
+            int count = 1 + rng.nextInt(3);
+            double angle = rng.nextDouble() * Math.PI * 2.0D;
+            for (int i = 0; i < count; i++) {
+                double a = angle + i * 1.15D;
+                int x = near.getX() + (int) Math.round(Math.cos(a) * (12.0D + rng.nextInt(12)));
+                int z = near.getZ() + (int) Math.round(Math.sin(a) * (12.0D + rng.nextInt(12)));
+                net.minecraft.world.entity.EntityType<?> type =
+                        (i == count - 1 && rng.nextInt(6) == 0)
+                                ? McsmEntities.VOID_LURKER : McsmEntities.VOIDWALKER;
+                if (type == null) {
+                    continue;
+                }
+                net.minecraft.world.entity.Entity spawned = type.create(level,
+                        net.minecraft.world.entity.EntitySpawnReason.EVENT);
+                if (!(spawned instanceof net.minecraft.world.entity.Mob mob)) {
+                    continue;
+                }
+                mob.finalizeSpawn(level, level.getCurrentDifficultyAt(near),
+                        net.minecraft.world.entity.EntitySpawnReason.EVENT, (net.minecraft.world.entity.SpawnGroupData) null);
+                mob.setCustomName(net.minecraft.network.chat.Component.literal(
+                        spawned.getType() == McsmEntities.VOID_LURKER ? "The Lurker" : "Voidwalker"));
+                mob.setCustomNameVisible(false);
+                mob.snapTo(x + 0.5D, near.getY(), z + 0.5D, rng.nextFloat() * 360.0F, 0.0F);
+                level.addFreshEntity(mob);
+            }
+        } catch (Throwable ignored) {
+            // a dweller that cannot be placed is not an error worth a stack trace
         }
     }
 

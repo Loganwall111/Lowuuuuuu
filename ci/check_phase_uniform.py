@@ -2389,8 +2389,17 @@ def main():
           and "planner.put(cx + x, surface, cz + z, WATER);" in void_java
           and "SHELVES_PER_REGION = 7" in void_java
           and "int y = 24 + (int) Math.floorMod(seed3, 220L);" in void_java)
+    check("the content generator reproduces the dimension the pack ships",
+          # BUILD #456 -- the generator emitted minecraft:plains for the decayed
+          # reality, so running it silently reverted the biome that carries the
+          # purple water and the violet air. The two now have to agree.
+          '"biome": "mcsm:decayed_reality"' in (
+              read("ci/make_mcsm_content_assets.py") or "")
+          and decayed_dim["generator"]["settings"]["biome"] == "mcsm:decayed_reality")
     check("the void walkers live here, and the void is booted, switched and reachable",
-          "McsmCreatures.release(level, at == null ? player.blockPosition() : at, 1, 6.0D);"
+          # BUILD #456 -- the walkers are the mod's own entity now, not a roll from
+          # the shared bestiary: spawnDwellers places mcsm:voidwalker / :void_lurker.
+          "private static void spawnDwellers(ServerLevel level, BlockPos near, ServerPlayer player) {"
                   in void_java
           and "McsmVoid.register();" in boot and "import net.mcsm.extras.McsmVoid;" in boot
           and "public static boolean voidReality = true;" in cfg
@@ -2577,6 +2586,127 @@ def main():
         lit = -1
     check("the head emissive atlas has its eye lenses lit",
           lit > 0, "lit pixels: %d" % lit)
+
+    # ------------------------------------------------------------------
+    # BUILD #456 -- OWN BODIES. THE CUSTOM MOBS, AS REAL ONES.
+    #
+    # "the Massg the black figure warden with red eyes", "voidwalkers
+    # (zombie-like)", "the void mini-boss (avoid) whose tentacles reach / pull /
+    # swallow", "the gigantic the creator". The beasts existed as entities from
+    # #428 and had no renderer at all -- an entity type with nothing registered
+    # for it is not drawn -- so they were in the world, invisible. This family
+    # holds the four things that make a custom mob custom: its own mesh, its own
+    # body class, its own behaviour, and its own skin on disk.
+    # ------------------------------------------------------------------
+    models = read("mcsm-extras/java/net/mcsm/extras/client/McsmMobModels.java") or ""
+    renderers = read("mcsm-extras/java/net/mcsm/extras/client/McsmMobRenderers.java") or ""
+    mobmix = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmMobRendererMixin.java") or ""
+    walker = read("mcsm-extras/java/net/mcsm/extras/entity/McsmVoidwalker.java") or ""
+    lurker = read("mcsm-extras/java/net/mcsm/extras/entity/McsmVoidLurker.java") or ""
+    entities = read("mcsm-extras/java/net/mcsm/extras/entity/McsmEntities.java") or ""
+    cmd = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
+    textures = read("ci/make_mcsm_textures.py") or ""
+
+    check("every monster has its own mesh, and every mesh is built from real cuboids",
+          models.count("public static LayerDefinition createBodyLayer() {") >= 4
+          and "class MassgModel extends HumanoidModel<MobState>" in models
+          and "class VoidwalkerModel extends HumanoidModel<MobState>" in models
+          and "class VoidLurkerModel extends HumanoidModel<MobState>" in models
+          and "class CreatorModel extends HumanoidModel<MobState>" in models
+          and "LayerDefinition.create(mesh," in models
+          and "CubeListBuilder.create()" in models
+          # boxes are built through the two helpers, so count the call sites: every
+          # one of them is a real cuboid on a real part
+          and models.count("box(") >= 16
+          and models.count("many(") >= 4)
+    check("the giants stand on the ground at any scale (the 24-unit shift)",
+          "private static final float GROUND = 24.0F;" in models
+          and "float g = GROUND - (bodyH + legH) * s;" in models)
+    check("each body is animated in its own right",
+          "public static final float S = 6.0F;" in models
+          and "public static final float S = 2.4F;" in models
+          and "public static final float S = 8.0F;" in models
+          and "this.tentacles[i].xRot" in models
+          and "this.halos[i].yRot" in models
+          and "this.jaw.xRot" in models
+          and "this.lenses.xRot" in models)
+    check("a layer and a renderer for every body, registered on the client",
+          renderers.count("EntityRendererRegistry.register(") >= 5
+          and renderers.count("ModelLayerRegistry.registerModelLayer(") >= 4
+          and "McsmMobRenderers.registerLayers();" in mobmix
+          and "McsmMobRenderers.registerRenderers();" in mobmix
+          and 'Identifier.fromNamespaceAndPath("mcsm", "textures/entity/" + name + ".png")' in renderers)
+    check("the void walkers are real entities of their own, not re-kitted vanilla",
+          '"voidwalker"' in entities
+          and '"void_lurker"' in entities
+          and "private static <T extends net.minecraft.world.entity.Mob> EntityType<T> own(" in entities
+          and "McsmVoidwalker.createAttributes()" in entities
+          and "McsmVoidLurker.createAttributes()" in entities
+          and "private static void spawnDwellers(ServerLevel level, BlockPos near, ServerPlayer player) {" in void_java
+          and "McsmCreatures.release(level, at == null ? player.blockPosition() : at, 1, 6.0D);" not in void_java)
+    check("the lurker reaches, pulls and swallows -- the three verbs of the mini-boss",
+          "public static final double REACH = 6.5D;" in lurker
+          and "public static final double SWALLOW_RANGE = 2.6D;" in lurker
+          and "target.push(inward.x * strength, 0.22D, inward.z * strength);" in lurker
+          and "target.hurtServer(server, server.damageSources().generic(), 14.0F);" in lurker
+          and "MobEffects.SLOWNESS" in lurker)
+    check("the walker falls at you across the nothing",
+          "this.setDeltaMovement(to.x * 1.35D, to.y * 0.5D + 0.30D, to.z * 1.35D);" in walker
+          and "ParticleTypes.PORTAL" in walker
+          and "McsmSounds.OBLIVION_WARP" in walker)
+    check("every one of them can be put in front of you by name",
+          'Commands.literal("mob")' in cmd
+          and "ds$mob(ctx.getSource(), id)" in cmd
+          and '"massg", "creator", "whale", "voidwalker", "lurker"' in cmd
+          and "beast.setKind(kind);" in cmd)
+
+    # the skins: on disk, the right size, and carrying their accent
+    skins = {}
+    try:
+        _ci = os.path.dirname(os.path.abspath(__file__))
+        if _ci not in sys.path:
+            sys.path.insert(0, _ci)
+        import pngutil as _png
+        for _name in ("massg", "voidwalker", "void_lurker", "creator", "whale_monster"):
+            _p = os.path.join("jar-overrides/assets/mcsm/textures/entity", _name + ".png")
+            _w, _h, _px = _png.read_png(_p)
+            skins[_name] = (_w, _h, _px)
+    except Exception as _exc:
+        skins = {"error": str(_exc)}
+
+    def skin_has(name, test):
+        try:
+            w, h, px = skins[name]
+        except Exception:
+            return False
+        return any(test(p[0], p[1], p[2]) for p in px if p[3] > 0)
+
+    check("the black warden's skin exists at its own size, with the red lit",
+          skins.get("massg", (0,))[0] == 512 and skins.get("massg", (0, 0))[1] == 512
+          and skin_has("massg", lambda r, g, b: r > 180 and g < 90 and b < 90),
+          "massg: %s" % str(skins.get("massg", ("-",))[:2]))
+    check("the walker's slits and the lurker's lit tips are on their skins",
+          skins.get("voidwalker", (0,))[0] == 64
+          and skin_has("voidwalker", lambda r, g, b: b > 170 and r > 80 and g < 140)
+          and skins.get("void_lurker", (0,))[0] == 256
+          and skin_has("void_lurker", lambda r, g, b: b > 200 and g > 140),
+          "voidwalker/void_lurker skins")
+    check("the colossal wears a starfield, a gold crown and white-hot eyes",
+          skins.get("creator", (0,))[0] == 1024
+          and skin_has("creator", lambda r, g, b: r > 240 and g > 240 and b > 240)
+          and skin_has("creator", lambda r, g, b: r > 200 and g > 180 and b < 150)
+          and skin_has("whale_monster", lambda r, g, b: b > 200 and g > 180),
+          "creator/whale skins")
+    check("the skins and the models are drawn from the same numbers",
+          "MASSG_PARTS = [" in textures
+          and "(0, 384, 21.6, 13.2, 4.8)" in textures
+          and "many(head, \"lenses\", 0, 384, S," in models
+          and "(56, 40, 2.4, 1.6, 0.6)" in textures
+          and "many(head, \"eyes\", 56, 40, S," in models
+          and "(96, 160, 7.2, 9.6, 7.2)" in textures
+          and "box(body, \"tip\" + i, 96, 160, S," in models
+          and "(96, 512, 160.0, 8.0, 80.0)" in textures
+          and "box(head, \"halo\" + i, 96, 512, S," in models)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

@@ -152,6 +152,16 @@ public abstract class McsmTownCommandPatch {
             LiteralArgumentBuilder<CommandSourceStack> city = Commands.literal("city");
             city.executes(ctx -> ds$city(ctx.getSource()));
 
+            // BUILD #456 -- the mod's own mobs, summonable by name. "I can't test"
+            // is a fair complaint about a build whose monsters live at the bottom of
+            // a dimension with no ground in it; this puts one in front of you.
+            LiteralArgumentBuilder<CommandSourceStack> mob = Commands.literal("mob");
+            mob.executes(ctx -> ds$mob(ctx.getSource(), null));
+            for (String id : new String[] { "massg", "creator", "whale", "voidwalker", "lurker" }) {
+                mob.then(Commands.literal(id)
+                        .executes(ctx -> ds$mob(ctx.getSource(), id)));
+            }
+
             // BUILD #447 -- the cutscenes, listed from the shared table (the server
             // never loads the drawing class).
             LiteralArgumentBuilder<CommandSourceStack> scene = Commands.literal("scene");
@@ -169,7 +179,8 @@ public abstract class McsmTownCommandPatch {
             server.then(Commands.literal("shell").executes(ctx -> ds$serverShell(ctx.getSource())));
 
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
-                    .then(ritual).then(reality).then(maze).then(server).then(book).then(scene).then(city).then(portal));
+                    .then(ritual).then(reality).then(maze).then(server).then(book).then(scene)
+                    .then(city).then(portal).then(mob));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -521,6 +532,82 @@ public abstract class McsmTownCommandPatch {
                 + "trigger happens -- or press N in game to play the next one you have not seen"),
                 false);
         return 1;
+    }
+
+    /**
+     * BUILD #456 -- put one of the mod's own bodies in front of the caller.
+     *
+     * <p>Five names, and every one of them is the mod's own entity with the mod's
+     * own model: massg (the black warden), creator (the colossal), whale, voidwalker
+     * and lurker (the mini-boss). The beast kinds are set on the way in, because the
+     * Mas body is the one that cannot be killed and must never be handed out by
+     * accident.
+     */
+    private static int ds$mob(CommandSourceStack src, String which) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            String pick = which == null ? "voidwalker" : which;
+            net.minecraft.server.level.ServerLevel level =
+                    (net.minecraft.server.level.ServerLevel) player.level();
+            net.minecraft.world.entity.EntityType<?> type;
+            String name;
+            String kind = null;
+            switch (pick) {
+                case "massg" -> {
+                    type = net.mcsm.extras.entity.McsmEntities.MAS;
+                    name = "Mas";
+                    kind = net.mcsm.extras.entity.McsmBeast.MAS;
+                }
+                case "creator" -> {
+                    type = net.mcsm.extras.entity.McsmEntities.CREATOR;
+                    name = "The Creator";
+                    kind = net.mcsm.extras.entity.McsmBeast.CREATOR;
+                }
+                case "whale" -> {
+                    type = net.mcsm.extras.entity.McsmEntities.WHALE_MONSTER;
+                    name = "The Whale";
+                    kind = net.mcsm.extras.entity.McsmBeast.WHALE;
+                }
+                case "lurker" -> {
+                    type = net.mcsm.extras.entity.McsmEntities.VOID_LURKER;
+                    name = "The Lurker";
+                }
+                default -> {
+                    type = net.mcsm.extras.entity.McsmEntities.VOIDWALKER;
+                    name = "Voidwalker";
+                }
+            }
+            if (type == null) {
+                src.sendSuccess(() -> Component.literal("[ds] that body is not registered in this jar"), false);
+                return 0;
+            }
+            net.minecraft.world.entity.Entity spawned = type.create(level,
+                    net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+            if (!(spawned instanceof net.minecraft.world.entity.Mob mob)) {
+                src.sendSuccess(() -> Component.literal("[ds] that body could not be created"), false);
+                return 0;
+            }
+            if (kind != null && spawned instanceof net.mcsm.extras.entity.McsmBeast beast) {
+                beast.setKind(kind);
+            }
+            mob.finalizeSpawn(level, level.getCurrentDifficultyAt(player.blockPosition()),
+                    net.minecraft.world.entity.EntitySpawnReason.COMMAND, (net.minecraft.world.entity.SpawnGroupData) null);
+            mob.setCustomName(Component.literal(name));
+            mob.setCustomNameVisible(true);
+            mob.setPersistenceRequired();
+            double dx = player.getLookAngle().x * 6.0D;
+            double dz = player.getLookAngle().z * 6.0D;
+            mob.snapTo(player.getX() + dx, player.getY(), player.getZ() + dz,
+                    player.getYRot() + 180.0F, 0.0F);
+            level.addFreshEntity(mob);
+            String shown = name;
+            src.sendSuccess(() -> Component.literal("[ds] " + shown
+                    + " is in front of you -- /ds mob for the rest"), false);
+            return 1;
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] no mob: " + t), false);
+            return 0;
+        }
     }
 
     private static int ds$city(CommandSourceStack src) {

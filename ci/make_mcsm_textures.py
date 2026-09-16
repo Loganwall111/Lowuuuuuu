@@ -37,6 +37,7 @@ from pngutil import read_png, write_png  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_BLOCK = os.path.join(ROOT, "jar-overrides", "assets", "mcsm", "textures", "block")
 OUT_ITEM = os.path.join(ROOT, "jar-overrides", "assets", "mcsm", "textures", "item")
+OUT_ENTITY = os.path.join(ROOT, "jar-overrides", "assets", "mcsm", "textures", "entity")
 SHEET_A = os.path.join(ROOT, "wither_storm_stage_a.png")
 SHEET_B = os.path.join(ROOT, "wither_storm_stage_b.png")
 
@@ -742,6 +743,162 @@ def block_textures():
     }
 
 
+# ---------------------------------------------------------------------------
+# BUILD #456 -- THE MOB SKINS.
+#
+# "the Massg the black figure warden with red eyes", "voidwalkers (zombie-like)",
+# "the void mini-boss (avoid)", "the gigantic the creator". Five bodies, five
+# skins, painted here against the exact UV table the Java models are built from
+# (mcsm-extras/java/net/mcsm/extras/client/McsmMobModels.java).
+#
+# The rule that keeps this maintainable: a box of w x h x d at texOffs(u, v)
+# occupies a rect of 2*(w+d) by (h+d) pixels, so the rects are DERIVED here from
+# the same numbers the model uses -- and every ACCENT (the red lenses, the violet
+# slits, the lit tentacle tips, the halos, the white-hot eyes) is placed at a UV
+# the model reserves for it, clear of every other part, so nothing bleeds.
+# ---------------------------------------------------------------------------
+
+# name -> (u, v, w, h, d) in SCALED model units, exactly as the Java builds them
+MASSG_PARTS = [
+    ((0, 0, 60.0, 60.0, 60.0), (0x0A, 0x0A, 0x10), (0x19, 0x19, 0x22)),      # head
+    ((16, 16, 96.0, 132.0, 48.0), (0x08, 0x08, 0x0C), (0x17, 0x17, 0x1E)),   # body
+    ((40, 16, 36.0, 132.0, 36.0), (0x07, 0x07, 0x0B), (0x14, 0x14, 0x1B)),   # arms
+    ((0, 16, 48.0, 144.0, 48.0), (0x06, 0x06, 0x0A), (0x12, 0x12, 0x18)),    # legs
+    ((80, 48, 132.0, 72.0, 72.0), (0x03, 0x03, 0x05), (0x0B, 0x0B, 0x10)),   # coat
+    ((64, 0, 18.0, 18.0, 96.0), (0x24, 0x24, 0x2B), (0x3E, 0x3E, 0x49)),     # horns
+]
+MASSG_ACCENTS = [
+    # the red: two lenses, on the part that carries them
+    ((0, 384, 21.6, 13.2, 4.8), (0x7A, 0x0B, 0x06), (0xFF, 0x3A, 0x1E)),
+]
+VOIDWALKER_PARTS = [
+    ((0, 0, 8.0, 8.0, 8.0), (0x0A, 0x06, 0x14), (0x20, 0x14, 0x38)),          # head
+    ((16, 16, 8.0, 14.0, 4.0), (0x08, 0x05, 0x10), (0x1A, 0x10, 0x2E)),       # body
+    ((40, 16, 4.0, 14.0, 4.0), (0x07, 0x04, 0x0E), (0x16, 0x0D, 0x28)),       # arms
+    ((0, 16, 4.0, 14.0, 4.0), (0x06, 0x04, 0x0C), (0x14, 0x0C, 0x24)),        # legs
+    ((32, 0, 6.0, 3.0, 6.0), (0x12, 0x0A, 0x22), (0x2A, 0x18, 0x44)),         # jaw
+    ((32, 16, 3.0, 12.0, 1.0), (0x22, 0x14, 0x34), (0x38, 0x22, 0x52)),       # tatter
+]
+VOIDWALKER_ACCENTS = [
+    # the slits, violet, on the part that carries them
+    ((56, 40, 2.4, 1.6, 0.6), (0x6A, 0x2B, 0xD8), (0xC4, 0x6B, 0xFF)),
+]
+LURKER_PARTS = [
+    ((0, 0, 28.8, 28.8, 28.8), (0x14, 0x0A, 0x22), (0x2E, 0x14, 0x46)),       # head
+    ((16, 16, 38.4, 38.4, 28.8), (0x12, 0x09, 0x20), (0x2A, 0x12, 0x40)),     # body
+    ((40, 16, 12.0, 33.6, 12.0), (0x10, 0x08, 0x1C), (0x24, 0x10, 0x38)),     # arms
+    ((0, 16, 14.4, 28.8, 14.4), (0x0E, 0x07, 0x1A), (0x20, 0x0E, 0x32)),      # legs
+    ((96, 40, 7.2, 72.0, 7.2), (0x1C, 0x0E, 0x30), (0x3A, 0x1A, 0x5C)),       # tentacles
+]
+LURKER_ACCENTS = [
+    # the tips are lit: the light is on the part that reaches
+    ((96, 160, 7.2, 9.6, 7.2), (0x4F, 0xE0, 0xFF), (0xC8, 0x6B, 0xFF)),
+    # the maw
+    ((160, 160, 24.0, 14.4, 19.2), (0x6B, 0x2F, 0xA8), (0xC0, 0x8B, 0xFF)),
+]
+CREATOR_PARTS = [
+    ((0, 0, 96.0, 96.0, 96.0), (0x05, 0x06, 0x14), (0x12, 0x1A, 0x3E)),       # head
+    ((16, 16, 160.0, 208.0, 80.0), (0x04, 0x05, 0x10), (0x0E, 0x14, 0x32)),   # body
+    ((40, 16, 48.0, 240.0, 48.0), (0x03, 0x04, 0x0C), (0x0C, 0x12, 0x2C)),    # arms
+    ((0, 16, 72.0, 224.0, 72.0), (0x03, 0x04, 0x0A), (0x0A, 0x10, 0x28)),     # legs
+    ((600, 96, 24.0, 1600.0, 24.0), (0x06, 0x0A, 0x1C), (0x16, 0x24, 0x46)),  # sky arms
+]
+CREATOR_ACCENTS = [
+    # the halos, pale gold
+    ((96, 512, 160.0, 8.0, 80.0), (0x8A, 0x76, 0x3A), (0xFF, 0xF6, 0xDC)),
+    # the eyes, white-hot
+    ((0, 512, 28.8, 16.0, 4.8), (0xBF, 0xE8, 0xFF), (0xFF, 0xFF, 0xFF)),
+]
+# the whale wears the lurker's mesh with its own colours: deep water, pale belly
+WHALE_PARTS = [
+    ((0, 0, 28.8, 28.8, 28.8), (0x04, 0x07, 0x0F), (0x0E, 0x18, 0x33)),
+    ((16, 16, 38.4, 38.4, 28.8), (0x05, 0x08, 0x12), (0x18, 0x28, 0x46)),
+    ((40, 16, 12.0, 33.6, 12.0), (0x04, 0x06, 0x0E), (0x12, 0x1E, 0x38)),
+    ((0, 16, 14.4, 28.8, 14.4), (0x03, 0x05, 0x0C), (0x0E, 0x18, 0x2E)),
+    ((96, 40, 7.2, 72.0, 7.2), (0x0A, 0x14, 0x26), (0x24, 0x3A, 0x58)),
+]
+WHALE_ACCENTS = [
+    ((96, 160, 7.2, 9.6, 7.2), (0x2A, 0xB8, 0xD8), (0x7F, 0xF0, 0xFF)),
+    ((160, 160, 24.0, 14.4, 19.2), (0x6F, 0xE9, 0xFF), (0xD8, 0xFF, 0xFF)),
+]
+
+
+def entity_skins():
+    """name -> (sheet size, parts, accents, star specks)."""
+    return {
+        "massg": ((512, 512), MASSG_PARTS, MASSG_ACCENTS, 0),
+        "voidwalker": ((64, 64), VOIDWALKER_PARTS, VOIDWALKER_ACCENTS, 0),
+        "void_lurker": ((256, 256), LURKER_PARTS, LURKER_ACCENTS, 0),
+        "creator": ((1024, 1024), CREATOR_PARTS, CREATOR_ACCENTS, 900),
+        "whale_monster": ((256, 256), WHALE_PARTS, WHALE_ACCENTS, 140),
+    }
+
+
+def _lerp(a, b, t):
+    return (int(a[0] + (b[0] - a[0]) * t),
+            int(a[1] + (b[1] - a[1]) * t),
+            int(a[2] + (b[2] - a[2]) * t))
+
+
+def _paint_part(px, w, h, rect, lo, hi, seed, stars=0):
+    """Fill the pixel footprint of one box, with grain -- and stars, if asked."""
+    u, v, bw, bh, bd = rect
+    x0, y0 = int(u), int(v)
+    x1 = min(w, int(u + 2.0 * (bw + bd)))
+    y1 = min(h, int(v + bh + bd))
+    rng = Rand(seed)
+    for y in range(max(0, y0), max(0, y1)):
+        for x in range(max(0, x0), max(0, x1)):
+            t = rng.frac() * 0.85
+            c = _lerp(lo, hi, t)
+            if stars and rng.chance(0.0025):
+                c = (0xCF, 0xE6, 0xFF)
+            px[y * w + x] = (c[0], c[1], c[2], 255)
+
+
+def _paint_accent(px, w, h, rect, lo, hi, seed):
+    """An accent part: bright through the middle, dimmer at the edges."""
+    u, v, bw, bh, bd = rect
+    x0, y0 = int(u), int(v)
+    x1 = min(w, int(u + 2.0 * (bw + bd)))
+    y1 = min(h, int(v + bh + bd))
+    span = max(1, y1 - y0)
+    rng = Rand(seed)
+    for y in range(max(0, y0), max(0, y1)):
+        core = 1.0 - abs(((y - y0) / float(span)) - 0.5) * 2.0
+        for x in range(max(0, x0), max(0, x1)):
+            t = min(1.0, core * 0.75 + rng.frac() * 0.35)
+            c = _lerp(lo, hi, t)
+            px[y * w + x] = (c[0], c[1], c[2], 255)
+
+
+def paint_mob(spec):
+    """A whole skin: base fill, every part, then every accent on top of it."""
+    (w, h), parts, accents, stars = spec
+    px = [(0, 0, 0, 255)] * (w * h)
+    # the base: the darkest thing the sheet can be, so any pixel the model samples
+    # outside a part still reads as this mob
+    base_lo = parts[0][1]
+    base_hi = parts[0][2]
+    rng = Rand(w * 31 + h)
+    for y in range(h):
+        band = y / float(max(1, h - 1))
+        for x in range(w):
+            t = rng.frac() * 0.6 + band * 0.25
+            c = _lerp(base_lo, base_hi, t)
+            if stars and rng.chance(0.0012):
+                c = (0xCF, 0xE6, 0xFF)
+            px[y * w + x] = (c[0], c[1], c[2], 255)
+    seed = 900
+    for rect, lo, hi in parts:
+        _paint_part(px, w, h, rect, lo, hi, seed, stars)
+        seed += 7
+    for rect, lo, hi in accents:
+        _paint_accent(px, w, h, rect, lo, hi, 4000 + seed)
+        seed += 13
+    return px
+
+
 def item_textures():
     return {
         "rift_key": lambda: item_card(blank(0), 201, VIOLET_DIM, VIOLET),
@@ -794,15 +951,27 @@ def emit(check_only=False):
             continue
         write_png(path, 16, 16, maker())
         written += 1
+    os.makedirs(OUT_ENTITY, exist_ok=True)
+    for name, spec in sorted(entity_skins().items()):
+        path = os.path.join(OUT_ENTITY, name + ".png")
+        if check_only:
+            if not os.path.isfile(path):
+                print("missing mob skin:", name)
+                missing += 1
+            continue
+        size, _parts, _accents, _stars = spec
+        write_png(path, size[0], size[1], paint_mob(spec))
+        written += 1
     if check_only:
         if missing:
             print("[textures] %d MISSING" % missing)
             return 1
         print("[textures] all %d content-pack textures present"
-              % (len(block_textures()) + len(item_textures())))
+              % (len(block_textures()) + len(item_textures()) + len(entity_skins())))
         return 0
-    print("[textures] wrote %d block + %d item textures from the supplied stage palette"
-          % (len(block_textures()), len(item_textures())))
+    print("[textures] wrote %d block + %d item + %d mob textures "
+          "from the supplied stage palette and the mob UV tables"
+          % (len(block_textures()), len(item_textures()), len(entity_skins())))
     return 0
 
 

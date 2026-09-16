@@ -1,0 +1,383 @@
+package net.mcsm.extras.client;
+
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.model.geom.PartPose;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.util.Mth;
+
+/**
+ * BUILD #456 -- OWN BODIES. The mod's monsters stop wearing borrowed skin.
+ *
+ * <p>THE REPORT, over and over: "the Massg the black figure warden with red eyes",
+ * "voidwalkers (zombie-like)", "the void mini-boss (avoid) whose tentacles reach,
+ * pull, swallow", "the gigantic the creator". Every one of those mobs existed as
+ * an ENTITY and rendered as a re-kitted vanilla body -- a zombie with a black
+ * skin -- which is the one thing a custom mob must never be.
+ *
+ * <p>This is the geometry for four of them, four meshes, four skeletons, each
+ * animated in its own right:
+ *
+ * <pre>
+ *   MassgModel       the black warden: hunched, two long horns swept back, a
+ *                    heavy brow, and red eye lenses on their OWN part so the eyes
+ *                    stay bright while the body stays black
+ *   VoidwalkerModel  the thin walker: a hollow torso, a jaw that hangs, one arm
+ *                    held up, two violet slits
+ *   VoidLurkerModel  the one to avoid: a bulbous body, a maw, and SIX tentacles,
+ *                    each with a lit tip that whips a beat behind it
+ *   CreatorModel     the colossal: a crowned head, three spinning halos, and two
+ *                    thin arms 100 blocks long coming down out of the sky
+ * </pre>
+ *
+ * <p>HOW THE SIZE WORKS. A living model is positioned by the vanilla renderer at
+ * 24 units (1.5 blocks) below the entity's own position, so a model's feet have to
+ * land on y=24 or the mob sinks. Every skeleton here is written in player units
+ * and then scaled by its own S -- and the root parts are shifted by exactly
+ * {@code 24 - (bodyH + legH) * S}, so a 6x warden and an 8x Creator both stand on
+ * the ground with their feet on it while their heads are 20 and 32 blocks up.
+ *
+ * <p>Every call is one the base mod's own HugeAssBackModel already compiles --
+ * MeshDefinition, addOrReplaceChild, CubeListBuilder.texOffs().addBox(),
+ * LayerDefinition.create() -- and every animation writes only xRot / yRot / zRot,
+ * the three fields StoryCharacterRenderer already turns. Nothing is an API guess.
+ */
+public final class McsmMobModels {
+
+    private McsmMobModels() {
+    }
+
+    /** The render state every one of them shares. */
+    public static final class MobState extends HumanoidRenderState {
+        public String kind = "mas";
+        public float age;
+    }
+
+    /** The vanilla offset that puts a living model's feet on the ground, in units. */
+    private static final float GROUND = 24.0F;
+
+    // ------------------------------------------------------------------
+    // Geometry helpers
+    // ------------------------------------------------------------------
+
+    /** One part holding one box, at one UV, scaled, pivoted relative to its parent. */
+    static PartDefinition box(PartDefinition parent, String name, int u, int v, float s,
+            float px, float py, float pz, float x, float y, float z, float w, float h, float d) {
+        return parent.addOrReplaceChild(name,
+                CubeListBuilder.create()
+                        .texOffs(u, v)
+                        .addBox(x * s, y * s, z * s, w * s, h * s, d * s, new CubeDeformation(0.0F)),
+                PartPose.offset(px * s, py * s, pz * s));
+    }
+
+    /** One part holding several boxes: the eyes, the halos, anything drawn twice. */
+    static PartDefinition many(PartDefinition parent, String name, int u, int v, float s,
+            float px, float py, float pz, float[]... boxes) {
+        CubeListBuilder builder = CubeListBuilder.create();
+        for (float[] b : boxes) {
+            builder.texOffs(u, v).addBox(b[0] * s, b[1] * s, b[2] * s, b[3] * s, b[4] * s, b[5] * s,
+                    new CubeDeformation(0.0F));
+        }
+        return parent.addOrReplaceChild(name, builder, PartPose.offset(px * s, py * s, pz * s));
+    }
+
+    /** An empty part, for the slots the humanoid skeleton expects to find. */
+    static PartDefinition empty(PartDefinition parent, String name, float s,
+            float px, float py, float pz) {
+        return parent.addOrReplaceChild(name, CubeListBuilder.create(),
+                PartPose.offset(px * s, py * s, pz * s));
+    }
+
+    /**
+     * The seven parts a HumanoidModel looks for, in player proportions scaled by
+     * {@code s}, with the whole skeleton shifted so its feet land on the ground.
+     *
+     * <p>Layout, unscaled, +y downward: head from {@code -headH} to 0, body from 0
+     * to {@code bodyH}, legs from {@code bodyH} to {@code bodyH + legH}. The shift
+     * is {@code 24 - (bodyH + legH) * s}, so the feet always sit at 24.
+     */
+    static PartDefinition humanoid(MeshDefinition mesh, float s,
+            float headW, float headH, float headD,
+            float bodyW, float bodyH, float bodyD,
+            float armW, float armH, float armD,
+            float legW, float legH, float legD) {
+        PartDefinition root = mesh.getRoot();
+        float g = GROUND - (bodyH + legH) * s;
+        float hw = headW / 2.0F;
+        box(root, "head", 0, 0, s, 0.0F, g, 0.0F,
+                -hw, -headH, -headD / 2.0F, headW, headH, headD);
+        empty(root, "hat", s, 0.0F, g, 0.0F);
+        float bw = bodyW / 2.0F;
+        box(root, "body", 16, 16, s, 0.0F, g, 0.0F,
+                -bw, 0.0F, -bodyD / 2.0F, bodyW, bodyH, bodyD);
+        float aw = armW / 2.0F;
+        box(root, "right_arm", 40, 16, s, -5.0F, g + 2.0F, 0.0F,
+                -aw - 1.0F, -2.0F, -armD / 2.0F, armW, armH, armD);
+        box(root, "left_arm", 40, 16, s, 5.0F, g + 2.0F, 0.0F,
+                1.0F - aw, -2.0F, -armD / 2.0F, armW, armH, armD);
+        float lw = legW / 2.0F;
+        box(root, "right_leg", 0, 16, s, -1.9F, g + bodyH, 0.0F,
+                -lw, 0.0F, -legD / 2.0F, legW, legH, legD);
+        box(root, "left_leg", 0, 16, s, 1.9F, g + bodyH, 0.0F,
+                lw - legW, 0.0F, -legD / 2.0F, legW, legH, legD);
+        return root;
+    }
+
+    // ==================================================================
+    // MAS -- THE BLACK WARDEN. Six times a player: a long coat, two horns
+    // swept back over the shoulders, a heavy brow, two red lenses.
+    // ==================================================================
+    public static final class MassgModel extends HumanoidModel<MobState> {
+
+        public static final float S = 6.0F;
+
+        private final ModelPart hornL;
+        private final ModelPart hornR;
+        private final ModelPart coat;
+        private final ModelPart lenses;
+
+        public MassgModel(ModelPart root) {
+            super(root);
+            ModelPart head = root.getChild("head");
+            ModelPart body = root.getChild("body");
+            this.hornL = head.getChild("horn_l");
+            this.hornR = head.getChild("horn_r");
+            this.lenses = head.getChild("lenses");
+            this.coat = body.getChild("coat");
+        }
+
+        public static LayerDefinition createBodyLayer() {
+            MeshDefinition mesh = new MeshDefinition();
+            PartDefinition root = humanoid(mesh, S, 10.0F, 10.0F, 10.0F, 16.0F, 22.0F, 8.0F,
+                    6.0F, 22.0F, 6.0F, 8.0F, 24.0F, 8.0F);
+            PartDefinition head = root.getChild("head");
+            PartDefinition body = root.getChild("body");
+            // two horns, swept back and out over the shoulders
+            box(head, "horn_l", 64, 0, S, 2.0F, -7.0F, 2.0F, 0.0F, -4.0F, -1.0F, 3.0F, 3.0F, 16.0F);
+            box(head, "horn_r", 64, 24, S, -5.0F, -7.0F, 2.0F, 0.0F, -4.0F, -1.0F, 3.0F, 3.0F, 16.0F);
+            // the red: two lenses on their own part, so the body can stay black
+            many(head, "lenses", 0, 384, S, 0.0F, -4.0F, -5.2F,
+                    new float[] { -4.4F, -1.2F, 0.0F, 3.6F, 2.2F, 0.8F },
+                    new float[] { 0.8F, -1.2F, 0.0F, 3.6F, 2.2F, 0.8F });
+            // the coat: a wide skirt that reaches the ground and sways as it walks
+            box(body, "coat", 80, 48, S, 0.0F, 18.0F, 0.0F, -11.0F, 0.0F, -6.0F, 22.0F, 12.0F, 12.0F);
+            return LayerDefinition.create(mesh, 128, 128);
+        }
+
+        @Override
+        public void setupAnim(MobState s) {
+            super.setupAnim(s);
+            float t = s.age;
+            // it hunches: the head is always forward, the shoulders roll inward
+            this.head.xRot += 0.16F + Mth.sin(t * 0.11F) * 0.05F;
+            this.body.xRot += 0.10F + Mth.sin(t * 0.09F) * 0.03F;
+            this.rightArm.xRot = this.rightArm.xRot * 0.7F + 0.30F;
+            this.leftArm.xRot = this.leftArm.xRot * 0.7F + 0.30F;
+            this.rightArm.zRot -= 0.14F;
+            this.leftArm.zRot += 0.14F;
+            // the horns follow the head, the coat follows the walk
+            this.hornL.xRot = this.head.xRot * 0.4F + 0.22F;
+            this.hornR.xRot = this.head.xRot * 0.4F + 0.22F;
+            this.coat.zRot = Mth.sin(t * 0.07F) * 0.05F;
+            this.coat.xRot = -this.body.xRot * 0.5F + Mth.sin(t * 0.13F) * 0.02F;
+            // the lenses are set in the skull, so they only take a little of it
+            this.lenses.xRot = this.head.xRot * 0.2F;
+        }
+    }
+
+    // ==================================================================
+    // THE VOIDWALKER. Player-scale, person-shaped, wrong.
+    // ==================================================================
+    public static final class VoidwalkerModel extends HumanoidModel<MobState> {
+
+        public static final float S = 1.0F;
+
+        private final ModelPart jaw;
+        private final ModelPart tatter;
+        private final ModelPart eyes;
+
+        public VoidwalkerModel(ModelPart root) {
+            super(root);
+            this.jaw = root.getChild("head").getChild("jaw");
+            this.eyes = root.getChild("head").getChild("eyes");
+            this.tatter = root.getChild("body").getChild("tatter");
+        }
+
+        public static LayerDefinition createBodyLayer() {
+            MeshDefinition mesh = new MeshDefinition();
+            PartDefinition root = humanoid(mesh, S, 8.0F, 8.0F, 8.0F, 8.0F, 14.0F, 4.0F,
+                    4.0F, 14.0F, 4.0F, 4.0F, 14.0F, 4.0F);
+            PartDefinition head = root.getChild("head");
+            PartDefinition body = root.getChild("body");
+            // the jaw hangs open, a little under the skull
+            box(head, "jaw", 32, 0, S, 0.0F, 7.0F, 1.0F, -3.0F, 0.0F, -3.0F, 6.0F, 3.0F, 6.0F);
+            many(head, "eyes", 56, 40, S, 0.0F, -5.0F, -4.4F,
+                    new float[] { -3.2F, -0.8F, 0.0F, 2.4F, 1.6F, 0.6F },
+                    new float[] { 0.8F, -0.8F, 0.0F, 2.4F, 1.6F, 0.6F });
+            // a strip of whatever it used to be wearing, still hanging off the hip
+            box(body, "tatter", 32, 16, S, -3.0F, 4.0F, 0.0F, 0.0F, 0.0F, -2.6F, 3.0F, 12.0F, 1.0F);
+            return LayerDefinition.create(mesh, 64, 64);
+        }
+
+        @Override
+        public void setupAnim(MobState s) {
+            super.setupAnim(s);
+            float t = s.age;
+            // one arm is up, one arm hangs: the walk that is not quite a walk
+            this.rightArm.xRot = -1.9F + Mth.sin(t * 0.08F) * 0.10F;
+            this.leftArm.xRot = this.leftArm.xRot * 0.4F + 0.55F;
+            this.head.xRot += 0.28F;
+            this.head.yRot += Mth.sin(t * 0.045F) * 0.10F;
+            this.body.xRot += 0.10F;
+            // the jaw works on its own clock, and the eyes never move with the head
+            this.jaw.xRot = this.head.xRot * 0.5F + 0.22F + Math.abs(Mth.sin(t * 0.05F)) * 0.30F;
+            this.tatter.xRot = -this.body.xRot * 0.6F + Mth.sin(t * 0.06F) * 0.08F;
+            this.eyes.xRot = this.head.xRot * 0.3F;
+        }
+    }
+
+    // ==================================================================
+    // THE VOID LURKER. The one to avoid: a maw, and six tentacles that
+    // reach -- each tip lit, each whipping one beat behind its arm.
+    // ==================================================================
+    public static final class VoidLurkerModel extends HumanoidModel<MobState> {
+
+        public static final float S = 2.4F;
+        public static final int TENTACLES = 6;
+
+        private final ModelPart[] tentacles = new ModelPart[TENTACLES];
+        private final ModelPart[] tips = new ModelPart[TENTACLES];
+        private final ModelPart maw;
+
+        public VoidLurkerModel(ModelPart root) {
+            super(root);
+            ModelPart body = root.getChild("body");
+            for (int i = 0; i < TENTACLES; i++) {
+                this.tentacles[i] = body.getChild("tentacle" + i);
+                this.tips[i] = body.getChild("tip" + i);
+            }
+            this.maw = root.getChild("head").getChild("maw");
+        }
+
+        public static LayerDefinition createBodyLayer() {
+            MeshDefinition mesh = new MeshDefinition();
+            PartDefinition root = humanoid(mesh, S, 12.0F, 12.0F, 12.0F, 16.0F, 16.0F, 12.0F,
+                    5.0F, 14.0F, 5.0F, 6.0F, 12.0F, 6.0F);
+            PartDefinition head = root.getChild("head");
+            PartDefinition body = root.getChild("body");
+            // the maw: a jaw that opens downward, under the face
+            box(head, "maw", 160, 160, S, 0.0F, 8.0F, 1.0F, -5.0F, 0.0F, -5.0F, 10.0F, 6.0F, 8.0F);
+            // six tentacles, three a side, each hanging from the body's underside
+            // with a lit tip at the end of it
+            for (int i = 0; i < TENTACLES; i++) {
+                float side = (i % 2 == 0) ? -1.0F : 1.0F;
+                float lane = (i / 2) - 1.0F;
+                float px = side * 6.0F;
+                float pz = lane * 5.0F;
+                box(body, "tentacle" + i, 96, 40, S, px, 15.0F, pz,
+                        -1.5F, 0.0F, -1.5F, 3.0F, 30.0F, 3.0F);
+                box(body, "tip" + i, 96, 160, S, px, 15.0F, pz,
+                        -1.5F, 30.0F, -1.5F, 3.0F, 4.0F, 3.0F);
+            }
+            return LayerDefinition.create(mesh, 256, 256);
+        }
+
+        @Override
+        public void setupAnim(MobState s) {
+            super.setupAnim(s);
+            float t = s.age;
+            this.head.xRot += 0.12F;
+            this.body.xRot += 0.08F + Mth.sin(t * 0.07F) * 0.04F;
+            // the arms are short and forward: the mouth does the work
+            this.rightArm.xRot = -1.15F + Mth.sin(t * 0.09F) * 0.12F;
+            this.leftArm.xRot = -1.15F - Mth.sin(t * 0.09F) * 0.12F;
+            this.rightArm.zRot = -0.25F;
+            this.leftArm.zRot = 0.25F;
+            this.maw.xRot = 0.30F + Math.abs(Mth.sin(t * 0.05F)) * 0.45F;
+            for (int i = 0; i < TENTACLES; i++) {
+                float phase = t * 0.06F + i * 1.05F;
+                float reach = Mth.sin(phase) * 0.55F;
+                this.tentacles[i].xRot = -this.body.xRot + reach;
+                this.tentacles[i].zRot = Mth.cos(phase * 0.8F) * 0.30F;
+                this.tips[i].xRot = reach * 0.8F + Mth.sin(phase - 0.6F) * 0.35F;
+                this.tips[i].zRot = Mth.cos(phase * 0.8F - 0.5F) * 0.35F;
+            }
+        }
+    }
+
+    // ==================================================================
+    // THE CREATOR. Eight times a player: crowned, haloed, and standing on
+    // the world with two arms that come down out of the sky.
+    // ==================================================================
+    public static final class CreatorModel extends HumanoidModel<MobState> {
+
+        public static final float S = 8.0F;
+        public static final int HALOS = 3;
+
+        private final ModelPart[] halos = new ModelPart[HALOS];
+        private final ModelPart skyL;
+        private final ModelPart skyR;
+        private final ModelPart eyes;
+
+        public CreatorModel(ModelPart root) {
+            super(root);
+            ModelPart head = root.getChild("head");
+            for (int i = 0; i < HALOS; i++) {
+                this.halos[i] = head.getChild("halo" + i);
+            }
+            this.eyes = head.getChild("eyes");
+            this.skyL = root.getChild("left_arm").getChild("sky_arm_l");
+            this.skyR = root.getChild("right_arm").getChild("sky_arm_r");
+        }
+
+        public static LayerDefinition createBodyLayer() {
+            MeshDefinition mesh = new MeshDefinition();
+            PartDefinition root = humanoid(mesh, S, 12.0F, 12.0F, 12.0F, 20.0F, 26.0F, 10.0F,
+                    6.0F, 30.0F, 6.0F, 9.0F, 28.0F, 9.0F);
+            PartDefinition head = root.getChild("head");
+            // the crown: flat rings, each wider than the last, each turning
+            for (int i = 0; i < HALOS; i++) {
+                float w = 10.0F + i * 4.0F;
+                box(head, "halo" + i, 96, 512, S, 0.0F, -12.0F - i * 3.0F, 0.0F,
+                        -w, 0.0F, -w / 2.0F, w * 2.0F, 1.0F, w);
+            }
+            // the eyes: white-hot, on their own part
+            many(head, "eyes", 0, 512, S, 0.0F, -6.0F, -6.6F,
+                    new float[] { -4.6F, -1.0F, 0.0F, 3.6F, 2.0F, 0.6F },
+                    new float[] { 1.0F, -1.0F, 0.0F, 3.6F, 2.0F, 0.6F });
+            // the arms that come out of the sky: thin, and two hundred units long
+            box(root.getChild("left_arm"), "sky_arm_l", 600, 96, S, 3.0F, -2.0F, 0.0F,
+                    -1.5F, -200.0F, -1.5F, 3.0F, 200.0F, 3.0F);
+            box(root.getChild("right_arm"), "sky_arm_r", 600, 96, S, -3.0F, -2.0F, 0.0F,
+                    -1.5F, -200.0F, -1.5F, 3.0F, 200.0F, 3.0F);
+            return LayerDefinition.create(mesh, 512, 512);
+        }
+
+        @Override
+        public void setupAnim(MobState s) {
+            super.setupAnim(s);
+            float t = s.age;
+            // it barely moves, and that is the point: the halos do the moving
+            this.head.xRot += 0.10F + Mth.sin(t * 0.03F) * 0.03F;
+            this.body.xRot += 0.04F;
+            this.rightArm.xRot = 0.25F + Mth.sin(t * 0.025F) * 0.08F;
+            this.leftArm.xRot = 0.25F - Mth.sin(t * 0.025F) * 0.08F;
+            for (int i = 0; i < HALOS; i++) {
+                this.halos[i].yRot = t * (0.010F + i * 0.004F);
+                this.halos[i].xRot = Mth.sin(t * 0.02F + i) * 0.10F;
+            }
+            // the sky arms sway the way something enormous sways: slowly, and a
+            // little out of step with each other
+            this.skyL.zRot = Mth.sin(t * 0.018F) * 0.18F + 0.06F;
+            this.skyR.zRot = -Mth.sin(t * 0.018F + 0.7F) * 0.18F - 0.06F;
+            this.skyL.xRot = this.head.xRot * 0.3F;
+            this.skyR.xRot = this.head.xRot * 0.3F;
+            this.eyes.xRot = this.head.xRot * 0.25F;
+        }
+    }
+}

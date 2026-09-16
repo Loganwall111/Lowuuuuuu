@@ -413,7 +413,11 @@ def emit_dimension():
                     {"block": "mcsm:decayed_surface", "height": 2},
                     {"block": "mcsm:decayed_planks", "height": 3},
                 ],
-                "biome": "minecraft:plains",
+                # the dimension's own biome: it carries the purple water, the
+                # violet air and the fog the decayed reality is supposed to have.
+                # This was "minecraft:plains" until BUILD #456 noticed that running
+                # the generator undid the fix.
+                "biome": "mcsm:decayed_reality",
                 "lakes": False,
                 "features": False,
                 "structure_overrides": [],
@@ -532,6 +536,9 @@ BEAST_NAMES = {
     "entity.mcsm.creator": "The Creator",
     "entity.mcsm.whale_monster": "The Whale",
     "entity.mcsm.beast": "The Beast",
+    # BUILD #456 -- and the two that live in the nothing.
+    "entity.mcsm.voidwalker": "Voidwalker",
+    "entity.mcsm.void_lurker": "The Lurker",
 }
 
 

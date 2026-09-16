@@ -21,6 +21,17 @@ public final class McsmEntities {
     public static EntityType<StoryCharacterEntity> STORY_CHARACTER;
 
     // ------------------------------------------------------------------
+    // BUILD #456 -- THE TWO THAT LIVE IN THE NOTHING, as entities of their own
+    // with their own ids, their own bodies and their own behaviour. The void
+    // used to be populated with re-kitted zombies; these are the real ones.
+    // ------------------------------------------------------------------
+    public static final Identifier VOIDWALKER_ID = Identifier.fromNamespaceAndPath("mcsm", "voidwalker");
+    public static final Identifier VOID_LURKER_ID = Identifier.fromNamespaceAndPath("mcsm", "void_lurker");
+
+    public static EntityType<McsmVoidwalker> VOIDWALKER;
+    public static EntityType<McsmVoidLurker> VOID_LURKER;
+
+    // ------------------------------------------------------------------
     // BUILD #428 -- THE BEASTS. "The MASSG was added but it was just code. I
     // would like a mob named Mas. And the Creator, a gigantic entity. And the
     // whale monster I talked about." Three real, spawnable, named mobs, all of
@@ -74,9 +85,40 @@ public final class McsmEntities {
             MAS_ENTRY = MAS;
             CREATOR_ENTRY = CREATOR;
             WHALE_ENTRY = WHALE_MONSTER;
+
+            // BUILD #456 -- the void's own two. Both are 2-blocks-and-change of
+            // hitbox, tracked further than a vanilla mob needs to be, because a
+            // player meets them across a dimension with no ground in it.
+            VOIDWALKER = own(VOIDWALKER_ID, McsmVoidwalker::new, 0.7F, 2.1F, 12);
+            if (VOIDWALKER != null) {
+                FabricDefaultAttributeRegistry.register(VOIDWALKER, McsmVoidwalker.createAttributes());
+            }
+            VOID_LURKER = own(VOID_LURKER_ID, McsmVoidLurker::new, 2.4F, 3.4F, 16);
+            if (VOID_LURKER != null) {
+                FabricDefaultAttributeRegistry.register(VOID_LURKER, McsmVoidLurker.createAttributes());
+            }
         } catch (Throwable t) {
             // never take the mod down over the cast; McsmNpcs falls back to villagers
             STORY_CHARACTER = null;
+        }
+    }
+
+    /** One entity type of the extras' own, with the base mod's own builder calls. */
+    private static <T extends net.minecraft.world.entity.Mob> EntityType<T> own(Identifier id,
+            EntityType.EntityFactory<T> factory, float width, float height, int tracking) {
+        try {
+            ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, id);
+            EntityType<T> type = EntityType.Builder
+                    .of(factory, MobCategory.MONSTER)
+                    .sized(width, height)
+                    .eyeHeight(height * 0.7F)
+                    .clientTrackingRange(tracking)
+                    .updateInterval(3)
+                    .build(key);
+            return Registry.register(BuiltInRegistries.ENTITY_TYPE, key, type);
+        } catch (Throwable t) {
+            System.err.println("[ds] the mob " + id + " could not be registered: " + t);
+            return null;
         }
     }
 
