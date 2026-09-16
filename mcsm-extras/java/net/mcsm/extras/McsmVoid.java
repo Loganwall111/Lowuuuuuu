@@ -29,9 +29,10 @@ import net.minecraft.world.level.block.state.BlockState;
  * rivers and weird stuff happens, glitchy walls ... it's a strange place". So:
  *
  * <ul>
- *   <li><b>It is genuinely empty.</b> The dimension's only generator layer is AIR.
- *       There is no floor, no ceiling and no terrain: you fall, and you keep
- *       falling, and that is the dimension working as asked rather than a bug.</li>
+ *   <li><b>It is genuinely empty.</b> The dimension's terrain layers are one layer of
+ *       BARRIER at the bottom: nothing you can see, everything you can stand on. Above
+ *       that there is no floor, no ceiling and no terrain, so you fall the whole way
+ *       down and land on nothing at all.</li>
  *   <li><b>The fall does not kill you, it keeps you.</b> Past {@link #CATCH_Y} the
  *       void catches you and sets you down on the next shelf of itself. Falling for
  *       ever would be a death sentence, not a dimension.</li>
@@ -64,9 +65,19 @@ public final class McsmVoid {
     public static final int ACTIVATE = 320;
     /** Blocks written per level tick. */
     public static final int OPS_PER_TICK = 1500;
-    /** Where the void catches somebody who has fallen past everything. */
-    public static final int CATCH_Y = -24;
-    /** Where it sets them down. */
+    /**
+     * BUILD #452 -- THE INVISIBLE FLOOR.
+     *
+     * <p>"could you make it an invisible floor at the very bottom". It is the
+     * dimension's own flat layer now: one layer of {@code minecraft:barrier} at
+     * {@code min_y}, which is solid, invisible, everywhere at once, and costs
+     * nothing to run. You land on it, you stand on it, and there is nothing to see
+     * holding you up -- which is the point.
+     */
+    public static final int FLOOR_Y = -64;
+    /** The safety net is BELOW the floor: only a hole in the world can reach it. */
+    public static final int CATCH_Y = -70;
+    /** Where it sets them down when even that fails. */
     public static final int SHELF_Y = 210;
     /** The void's own door frame, and what stands in it. */
     public static final String FRAME_BLOCK = "mcsm:void_core";
@@ -143,11 +154,12 @@ public final class McsmVoid {
     /**
      * THE VOID KEEPS YOU.
      *
-     * <p>"You fall infinitely, you don't hit the dimension." Falling past
-     * {@link #CATCH_Y} is the dimension working; falling onto the void damage that
-     * lives under every world is not. Past the catch line the player is set down on
-     * the next shelf above them, with a line that says so -- and a cooldown so the
-     * catch cannot become a trampoline.
+     * <p>The floor catches everybody: {@link #FLOOR_Y} is a solid barrier layer, so
+     * an ordinary fall ends standing on nothing. {@link #CATCH_Y} is below it and
+     * exists only for the impossible case -- a hole in the world, somebody mining the
+     * barrier -- and sets them back on the floor rather than letting the void damage
+     * under every world finish the job. A cooldown keeps it from becoming a
+     * trampoline.
      */
     private static void catchFall(ServerLevel level, ServerPlayer player) {
         if (player.getY() > CATCH_Y) {

@@ -36,5 +36,8 @@ public abstract class McsmHudAttachMixin {
         // BUILD #447 -- the in-world cutscenes, drawn over the world on the same
         // proven per-frame hook (bars, title card, typed lines).
         net.mcsm.extras.client.McsmScenes.draw(g, delta);
+        // BUILD #452 -- and the bottom of the void, which is a place with a show
+        // in it: RGB shafts out of the invisible floor and white rings for ever.
+        net.mcsm.extras.client.McsmVoidFloor.draw(g);
     }
 }

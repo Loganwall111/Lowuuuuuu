@@ -6,7 +6,7 @@
       "lakes": false,
       "layers": [
         {
-          "block": "minecraft:air",
+          "block": "minecraft:barrier",
           "height": 1
         }
       ],

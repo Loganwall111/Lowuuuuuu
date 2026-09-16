@@ -411,6 +411,12 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyFloorBand = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #452 -- what the bottom of the void looks like.
+          .bool("Void floor light (RGB rays and infinite white rings)",
+                  () -> McsmExtrasConfig.voidLight, v -> {
+              McsmExtrasConfig.voidLight = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #451 -- the void, and the doorways.
           .bool("The Void (a dimension of nothing, with things in it)",
                   () -> McsmExtrasConfig.voidReality, v -> {

@@ -122,6 +122,8 @@ public final class McsmExtrasConfig {
      * with no shader pack installed.
      */
     public static boolean skyFloorBand = true;
+    /** BUILD #452 -- the bottom of the void: RGB rays and infinite white rings. */
+    public static boolean voidLight = true;
     /** BUILD #451 -- the void: a dimension that is mostly nothing. */
     public static boolean voidReality = true;
     /** BUILD #451 -- walk-in portals, one per dimension. */
@@ -443,6 +445,7 @@ public final class McsmExtrasConfig {
             p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
             p.setProperty("void_reality", String.valueOf(voidReality));
             p.setProperty("portals", String.valueOf(portals));
+            p.setProperty("void_light", String.valueOf(voidLight));
             p.setProperty("city_atmosphere", String.valueOf(cityAtmosphere));
             p.setProperty("title_wordmark", String.valueOf(titleWordmark));
             p.setProperty("menu_lift", String.valueOf(menuLift));
@@ -588,6 +591,7 @@ public final class McsmExtrasConfig {
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
             voidReality = bool(p, "void_reality", voidReality);
             portals = bool(p, "portals", portals);
+            voidLight = bool(p, "void_light", voidLight);
             cityAtmosphere = bool(p, "city_atmosphere", cityAtmosphere);
             titleWordmark = bool(p, "title_wordmark", titleWordmark);
             menuLift = dbl(p, "menu_lift", menuLift);

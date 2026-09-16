@@ -2347,10 +2347,12 @@ def main():
     decayed_dim = json.loads(read("jar-overrides/data/mcsm/dimension/decayed_reality.json"))
     decayed_biome = json.loads(read("jar-overrides/data/mcsm/worldgen/biome/decayed_reality.json"))
 
-    check("the void is really empty: its only generator layer is AIR",
+    check("the void is really empty: one layer, and it is an INVISIBLE floor",
+          # BUILD #452 -- the layer was AIR; it is a barrier now, which is the same
+          # nothing to look at and something to stand on at the very bottom.
           void_dim["generator"]["type"] == "minecraft:flat"
           and len(void_dim["generator"]["settings"]["layers"]) == 1
-          and void_dim["generator"]["settings"]["layers"][0]["block"] == "minecraft:air"
+          and void_dim["generator"]["settings"]["layers"][0]["block"] == "minecraft:barrier"
           and void_dim["generator"]["settings"]["features"] is False
           and void_dim["generator"]["settings"]["lakes"] is False
           and void_dim["type"] == "mcsm:void_reality")
@@ -2369,7 +2371,10 @@ def main():
           and decayed_biome["effects"]["water_color"] == 0x7A2AD6
           and decayed_biome["effects"]["water_fog_color"] == 0x3E1472)
     check("falling past everything is survivable: the void catches you",
-          "public static final int CATCH_Y = -24;" in void_java
+          # BUILD #452 moved the catch line BELOW the invisible floor (see the next
+          # family): the floor is what catches an ordinary fall now, and the catch is
+          # only for a hole in the world.
+          "public static final int CATCH_Y = -70;" in void_java
           and "public static final int SHELF_Y = 210;" in void_java
           and "private static void catchFall(ServerLevel level, ServerPlayer player) {" in void_java
           and "if (player.getY() > CATCH_Y) {" in void_java
@@ -2427,6 +2432,47 @@ def main():
           "if (block != null && block != Blocks.AIR) {" in void_java
           and "if (block != null && block != Blocks.AIR) {" in portals
           and 'McsmContent.DECAYED_BONE' not in void_java)
+
+    # ------------------------------------------------------------------
+    # BUILD #452 -- THE BOTTOM OF THE VOID.
+    #
+    # "could you make it an invisible floor at the very bottom ... it's very dark
+    # when you fall to the very bottom ... add light rays, colour RGB light ... the
+    # bottom as a rainbow casting infinite white rings".
+    # ------------------------------------------------------------------
+    floor = read("mcsm-extras/java/net/mcsm/extras/client/McsmVoidFloor.java") or ""
+
+    check("the bottom is an invisible floor you can stand on",
+          void_dim["generator"]["settings"]["layers"][0]["block"] == "minecraft:barrier"
+          and "public static final int FLOOR_Y = -64;" in void_java
+          # the catch line has to be BELOW the floor now, or it would grab the player
+          # out of the floor they were meant to land on
+          and "public static final int CATCH_Y = -70;" in void_java
+          and "public static final int SHELF_Y = 210;" in void_java)
+    spectrum = re.findall(r"0xFF[0-9A-F]{6},", floor)
+    check("the bottom is RGB rays: a full spectrum, rotating, brightest at the floor",
+          len(spectrum) == 12
+          and len(set(spectrum)) == 12
+          and "private static final int RAYS = 12;" in floor
+          and "double spin = (now % 24000L) / 24000.0D * Math.PI * 2.0D;" in floor
+          and "g.fill(x - size / 2, y - size / 2, x + size / 2, y + size / 2," in floor
+          and "private static float strength(float y) {" in floor
+          and "public static final float RAY_Y = 56.0F;" in floor)
+    check("and infinite white rings: three alive, born for ever",
+          "private static final int RING_LIVE = 3;" in floor
+          and "private static final long RING_MS = 2600L;" in floor
+          and "long age = (now + ring * (RING_MS / RING_LIVE)) % RING_MS;" in floor
+          and "int colour = (alpha << 24) | 0xFFFFFF;" in floor
+          and "the invisible floor holds" in floor)
+    check("it is switchable, it rides the proven hook, and it never covers a screen",
+          "public static boolean voidLight = true;" in cfg
+          and "void_light" in cfg
+          and "Void floor light (RGB rays and infinite white rings)" in extras
+          and "net.mcsm.extras.client.McsmVoidFloor.draw(g);" in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java")
+              or "")
+          and "if (McsmTerminalClient.currentScreen(mc) != null) {" in floor
+          and "mc.player.level().dimension().equals(McsmVoid.DIMENSION)" in floor)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
