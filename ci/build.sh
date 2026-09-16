@@ -751,6 +751,10 @@ stage backdrop-ok
 # and the generator have drifted apart -- which is also a failure.
 # ---------------------------------------------------------------------------
 echo "[content] generate the pack's own textures + item definitions"
+# BUILD #425 NOTE: the sound files are COMMITTED (a build image has no Vorbis
+# encoder), so this only regenerates them where one exists -- run 505 died here
+# because the runner has neither numpy nor libsndfile. The --check gate below is
+# the half that has to pass everywhere.
 python3 ci/make_mcsm_sounds.py | tail -1
 python3 ci/make_emissive_whites.py --two-way | tail -1
 python3 ci/make_mcsm_textures.py | tail -1

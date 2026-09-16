@@ -451,9 +451,13 @@ def merge_lang():
 
 
 def write_all():
+    # A build image has no Vorbis encoder; the files are committed instead. So a
+    # missing encoder is a NOTICE, never a failure -- and never a silent pass:
+    # the bytes that ship are the ones --check verifies below.
     if sf is None:
-        print("[sounds] soundfile/numpy are not available -- cannot write the Ogg files")
-        return 1
+        print("[sounds] no Ogg encoder here (numpy/soundfile missing) -- keeping the "
+              "committed files; run this on a machine with soundfile to regenerate them")
+        return 0
     os.makedirs(OUT, exist_ok=True)
     made = []
     for name, fn in SOUNDS.items():
