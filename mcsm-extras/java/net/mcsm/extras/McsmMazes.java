@@ -145,7 +145,7 @@ public final class McsmMazes {
                 }
                 QUEUED.add(key);
                 try {
-                    QUEUE.add(plan(key, ox, oz));
+                    QUEUE.add(plan(level, key, ox, oz));
                 } catch (Throwable t) {
                     System.err.println("[ds] storage maze plan failed at " + ox + "," + oz + ": " + t);
                 }
@@ -218,7 +218,9 @@ public final class McsmMazes {
     private static final int BARREL = 10;
     private static final int TILES = 11;
 
-    private static McsmBuildQueue.Plan plan(long key, int ox, int oz) {
+    // The level comes in because the shaft is capped at the terrain's own
+    // surface: the heightmap is read, never assumed.
+    private static McsmBuildQueue.Plan plan(ServerLevel level, long key, int ox, int oz) {
         long seed = mix(key ^ 0x1D1DL);
         int side = GRID * CELL + 1;
         McsmBuildQueue.Planner planner = new McsmBuildQueue.Planner(side * side * 6);

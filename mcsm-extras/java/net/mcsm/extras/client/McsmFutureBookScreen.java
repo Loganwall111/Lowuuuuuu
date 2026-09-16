@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
 
 /**
  * BUILD #445 -- THE FUTURE-BOOK, ON SCREEN.
@@ -58,6 +59,10 @@ public final class McsmFutureBookScreen extends Screen {
     private int statusTicks;
 
     public McsmFutureBookScreen() {
+        // The same constructor the terminal uses: this API's Screen does not
+        // offer a no-argument one, and a missing super() here would be a javac
+        // error rather than a screen.
+        super(Component.literal("The Infinite Future-Book"));
         this.selected = McsmFutureBook.currentPage(McsmFutureBook.daysLeft());
     }
 

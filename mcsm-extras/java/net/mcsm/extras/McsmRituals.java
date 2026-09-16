@@ -145,7 +145,8 @@ public final class McsmRituals {
     private static final Set<Long> SPENT = ConcurrentHashMap.newKeySet();
     private static final Map<UUID, Long> LAST = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> CURSOR = new ConcurrentHashMap<>();
-    private static final Map<UUID, Long> COOLDOWN = new ConcurrentHashMap<>();
+    // Keyed by "<uuid>:<rite or note>": one player, many independent cooldowns.
+    private static final Map<String, Long> COOLDOWN = new ConcurrentHashMap<>();
 
     public static void register() {
         try {

@@ -2088,6 +2088,41 @@ def main():
               read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java")
               or ""))
 
+    # ------------------------------------------------------------------
+    # RUN 525: THE THREE ERRORS, AND THE GATE THEY EARNED.
+    #
+    # There is no JDK on the machine this build is written on, so the first time
+    # new Java is compiled is on the runner -- which is expensive. Run 525 came
+    # back with exactly three errors, and all three were of a kind that a text
+    # gate can hold down:
+    #
+    #   * a map declared over UUIDs but written with string keys (McsmRituals),
+    #   * a helper that read the heightmap without being handed the level
+    #     (McsmMazes.plan), and
+    #   * a Screen whose constructor never called super (this API's Screen has no
+    #     no-argument constructor, which the terminal had already proved).
+    #
+    # Each one is pinned below, so the same three cannot come back unnoticed.
+    # ------------------------------------------------------------------
+    rituals = read("mcsm-extras/java/net/mcsm/extras/McsmRituals.java") or ""
+    mazes = read("mcsm-extras/java/net/mcsm/extras/McsmMazes.java") or ""
+    rooms = read("mcsm-extras/java/net/mcsm/extras/McsmServerRooms.java") or ""
+
+    check("the ritual cooldown map is keyed by the strings it is written with",
+          "private static final Map<String, Long> COOLDOWN = new ConcurrentHashMap<>();" in rituals
+          and "Map<UUID, Long> COOLDOWN" not in rituals
+          and 'COOLDOWN.put(player.getUUID() + ":"' in rituals)
+    check("every helper that reads the heightmap is handed the level",
+          "private static McsmBuildQueue.Plan plan(ServerLevel level, long key, int ox, int oz) {"
+                  in mazes
+          and "QUEUE.add(plan(level, key, ox, oz));" in mazes
+          and "private static McsmBuildQueue.Plan plan(ServerLevel level, long key, int ox, int oz) {"
+                  in rooms
+          and "QUEUE.add(plan(level, key, ox, oz));" in rooms)
+    check("the book screen's constructor passes its title to Screen",
+          "super(Component.literal(\"The Infinite Future-Book\"));" in bookui
+          and "import net.minecraft.network.chat.Component;" in bookui)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)
