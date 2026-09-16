@@ -467,6 +467,10 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.stormGroundPool = v;
               McsmExtrasConfig.save();
           })
+          .bool("Raise the ruined cities in the regular world too (384 blocks clear of spawn)", () -> McsmExtrasConfig.citiesInOverworld, v -> {
+              McsmExtrasConfig.citiesInOverworld = v;
+              McsmExtrasConfig.save();
+          })
           .act("How to release it (sneak-use the antenna: irreversible)", () ->
                   McsmClientChat.say("\u00a75Sneak-use the antenna. The sky starts counting the moment "
                           + "it arrives, and nothing in this build can put it back."))

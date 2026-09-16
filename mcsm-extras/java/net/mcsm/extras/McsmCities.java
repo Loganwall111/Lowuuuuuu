@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndLevelTick;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -107,7 +108,15 @@ public final class McsmCities {
     private static final int VAULT = 21;
     private static final int SAND = 22;
     private static final int LEAVES = 23;
-    private static final int PALETTE_SIZE = 24;
+    // BUILD #429 -- the interior/decor set. "Full of designs, banners from
+    // blocks and stuff": real, placeable blocks, in the mod's own palette, that
+    // the furnishing and the facade banners are drawn with.
+    private static final int DESIGN_LIGHT = 24;
+    private static final int DESIGN_DARK = 25;
+    private static final int DESIGN_ACCENT = 26;
+    private static final int DESIGN_SOFT = 27;
+    private static final int DESIGN_TRIM = 28;
+    private static final int PALETTE_SIZE = 29;
 
     private static volatile BlockState[] palette;
 
@@ -138,7 +147,19 @@ public final class McsmCities {
             if (!McsmExtrasConfig.decayedReality || !McsmExtrasConfig.abandonedCities) {
                 return;
             }
-            if (!level.dimension().equals(McsmReality.DECAYED_REALITY)) {
+            // BUILD #429 -- "I would like it that they summon in the regular
+            // [world]." The generator used to be reachable ONLY from the decayed
+            // reality. Now the overworld grows them too, on the same deterministic
+            // region grid (a district always holds the same place), with two
+            // guards so a player's own base is never bulldozed: the overworld
+            // doesn't start until OVERWORLD_MIN_DISTANCE from world spawn, and it
+            // obeys its own switch.
+            boolean overworld = level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD);
+            boolean decayed = level.dimension().equals(McsmReality.DECAYED_REALITY);
+            if (overworld && !McsmExtrasConfig.citiesInOverworld) {
+                return;
+            }
+            if (!overworld && !decayed) {
                 return;
             }
             List<ServerPlayer> players = level.players();
@@ -147,6 +168,9 @@ public final class McsmCities {
             }
             if (OPS.isEmpty()) {
                 for (ServerPlayer player : players) {
+                    if (overworld && nearSpawn(level, player)) {
+                        continue;   // never raise a district on top of world spawn
+                    }
                     enqueueNear(level, player);
                 }
                 if (OPS.isEmpty()) {
@@ -166,6 +190,11 @@ public final class McsmCities {
                 }
                 level.setBlock(new BlockPos((int) op[0], (int) op[1], (int) op[2]), state, 2);
                 placed++;
+            }
+            // BUILD #429 -- once a district's placements are all down, the people
+            // who live in it arrive.
+            if (OPS.isEmpty()) {
+                spawnLife(level);
             }
         } catch (Throwable t) {
             System.err.println("[ds] district tick failed: " + t);
@@ -323,6 +352,13 @@ public final class McsmCities {
                     planCrater(plan, rng, bx, bz, ground);
                 }
                 planStreet(plan, rng, bx, bz, ground);
+                // BUILD #429 -- "the real [cities] have actual interiors full of
+                // life, full of people, full of designs, banners from blocks and
+                // stuff". Every plot gets its inside furnished and somebody left
+                // inside it, and the facade gets a made-of-blocks banner.
+                planInterior(plan, rng, bx, bz, ground, kind);
+                planFacadeBanner(plan, rng, bx, bz, ground, kind);
+                markLife(plan, bx, bz, ground);
             }
         }
 
@@ -331,6 +367,188 @@ public final class McsmCities {
         System.out.println("[ds] raising a district at " + ox + "," + oz + " ("
                 + plan.ops.size() + " placements)");
     }
+
+    /**
+     * BUILD #429 -- one survivor per booked spot, through the mod's own NPC
+     * path, so the city has people in it when the player walks in. Fallback: a
+     * villager, because an empty city is the thing this is fixing.
+     */
+    private static void spawnLife(ServerLevel level) {
+        int[] at;
+        int spawned = 0;
+        while ((at = LIFE.poll()) != null && spawned < 8) {
+            try {
+                BlockPos pos = new BlockPos(at[0], at[1], at[2]);
+                EntityType<?> type = null;
+                try {
+                    type = net.mcsm.extras.entity.McsmEntities.STORY_CHARACTER;
+                } catch (Throwable ignored) {
+                    type = null;
+                }
+                if (type == null) {
+                    type = BuiltInRegistries.ENTITY_TYPE
+                            .getValue(net.minecraft.resources.Identifier
+                                    .fromNamespaceAndPath("minecraft", "villager"));
+                }
+                if (type == null) {
+                    continue;
+                }
+                net.minecraft.world.entity.Entity created =
+                        type.create(level, net.minecraft.world.entity.EntitySpawnReason.EVENT);
+                if (created instanceof net.minecraft.world.entity.Mob mob) {
+                    mob.setPersistenceRequired();
+                    if (mob instanceof net.mcsm.extras.entity.StoryCharacterEntity character) {
+                        character.setCharacter(CHARACTERS[level.getRandom().nextInt(CHARACTERS.length)]);
+                    }
+                    mob.snapTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D,
+                            level.getRandom().nextFloat() * 360.0F, 0.0F);
+                    level.addFreshEntity(mob);
+                    spawned++;
+                }
+            } catch (Throwable ignored) {
+                // a district without its cast is still a district
+            }
+        }
+    }
+
+    /** The cast the abandoned city is populated from. */
+    private static final String[] CHARACTERS = {"jesse", "petra", "lukas", "axel", "olivia", "ivor"};
+
+    /** How far from world spawn the overworld's districts may start. */
+    public static final int OVERWORLD_MIN_DISTANCE = 384;
+
+    /**
+     * BUILD #429 -- keep the overworld's own house standing. World spawn and
+     * everything within OVERWORLD_MIN_DISTANCE of it is left exactly as it was
+     * found; the ruined city begins outside it.
+     */
+    private static boolean nearSpawn(ServerLevel level, ServerPlayer player) {
+        try {
+            BlockPos spawn = level.getSharedSpawnPos();
+            double dx = player.getX() - spawn.getX();
+            double dz = player.getZ() - spawn.getZ();
+            return dx * dx + dz * dz < (double) OVERWORLD_MIN_DISTANCE * OVERWORLD_MIN_DISTANCE;
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    /**
+     * BUILD #429 -- A BUILDING'S INSIDE.
+     *
+     * "The real [cities] have actual interiors full of life, full of people,
+     * full of designs." Each plot's ground floor is furnished: a floor, a rug,
+     * a counter, seating, lamps, shelving against the back wall, a bed in the
+     * houses, and the good crates in the rooms that would have had them. It is
+     * all drawn with setBlock placements like everything else in this generator,
+     * so it is real, breakable, buildable-with world state.
+     */
+    private static void planInterior(Plan p, Rng r, int bx, int bz, int ground, int kind) {
+        int w = 16 + r.range(6);
+        int d = 14 + r.range(6);
+        int floor = ground + 1;
+        // the floor itself, worn planks with the odd missing board
+        for (int x = -w; x <= w; x++) {
+            for (int z = -d; z <= d; z++) {
+                if (r.chance(12)) {
+                    continue;                 // a hole in the floor: it is a ruin
+                }
+                p.put(bx + x, floor, bz + z, PLANKS);
+            }
+        }
+        // a rug down the middle, a different colour per building
+        for (int x = -w + 6; x <= w - 6; x++) {
+            p.put(bx + x, floor + 1, bz, DESIGN_SOFT);
+        }
+        // counters and seating: two runs of blocks, one against each side wall
+        for (int z = -d + 4; z <= d - 4; z += 3) {
+            p.put(bx - w + 3, floor + 1, bz + z, DESIGN_TRIM);
+            p.put(bx - w + 3, floor + 2, bz + z, LAMP);
+            p.put(bx + w - 3, floor + 1, bz + z, PLANKS);
+        }
+        // shelving on the back wall, and the crates people left behind
+        for (int x = -w + 5; x <= w - 5; x += 4) {
+            p.put(bx + x, floor + 1, bz - d + 2, LOG);
+            p.put(bx + x, floor + 2, bz - d + 2, CRATE);
+            if (r.chance(30)) {
+                p.put(bx + x, floor + 3, bz - d + 2, SUPPLY);
+            }
+        }
+        // houses get a bed and a table; the hospitals get a row of them
+        if (kind >= 46 && kind < 66) {
+            p.put(bx + w - 6, floor + 1, bz + d - 4, DESIGN_SOFT);
+            p.put(bx + w - 6, floor + 1, bz + d - 5, DESIGN_SOFT);
+            p.put(bx + w - 4, floor + 1, bz + d - 4, DESIGN_TRIM);
+            p.put(bx + w - 4, floor + 2, bz + d - 4, LAMP);
+        } else if (kind >= 66 && kind < 80) {
+            for (int x = -w + 6; x <= w - 6; x += 6) {
+                p.put(bx + x, floor + 1, bz + d - 5, DESIGN_SOFT);
+                p.put(bx + x, floor + 1, bz + d - 4, DESIGN_LIGHT);
+                p.put(bx + x, floor + 1, bz + d - 3, DESIGN_SOFT);
+            }
+        }
+        // a lamp in each corner so the inside is not a black box
+        p.put(bx - w + 2, floor + 2, bz - d + 2, LAMP);
+        p.put(bx + w - 2, floor + 2, bz + d - 2, LAMP);
+    }
+
+    /**
+     * BUILD #429 -- A BANNER MADE OF BLOCKS.
+     *
+     * The user asked for "designs, banners from blocks": a two-tone wall
+     * design in the mod's own colours, hung on the facade above the entrance of
+     * everything except the craters. It is a pattern, not a texture, so it
+     * survives being broken, rebuilt and photographed.
+     */
+    private static void planFacadeBanner(Plan p, Rng r, int bx, int bz, int ground, int kind) {
+        if (kind >= 90) {
+            return;                    // a crater has no facade to hang one on
+        }
+        int y = ground + 6 + r.range(8);
+        int half = 5 + r.range(3);
+        // the field
+        for (int x = -half; x <= half; x++) {
+            for (int dy = 0; dy < 5; dy++) {
+                p.put(bx + x, y + dy, bz - HALF_PLOT, DESIGN_DARK);
+            }
+        }
+        // the device: a diamond, or a band, or a stair -- one of three designs
+        int design = r.range(3);
+        for (int x = -half; x <= half; x++) {
+            int dy = design == 0
+                    ? 2 - Math.abs(x) / 2
+                    : design == 1
+                        ? (x % 2 == 0 ? 1 : 2)
+                        : Math.abs(x) % 3;
+            p.put(bx + x, y + Math.max(0, Math.min(4, dy)), bz - HALF_PLOT, DESIGN_ACCENT);
+            if (design == 0 && dy > 0) {
+                p.put(bx + x, y + Math.min(4, dy + 2), bz - HALF_PLOT, DESIGN_LIGHT);
+            }
+        }
+        // a trim line under it, and two lamps so it reads at night
+        for (int x = -half - 1; x <= half + 1; x++) {
+            p.put(bx + x, y - 1, bz - HALF_PLOT, DESIGN_TRIM);
+        }
+        p.put(bx - half - 1, y + 5, bz - HALF_PLOT, LAMP);
+        p.put(bx + half + 1, y + 5, bz - HALF_PLOT, LAMP);
+    }
+
+    /**
+     * BUILD #429 -- SOMEBODY IS STILL HERE.
+     *
+     * "Full of people." A district books a handful of survivors: the mod's own
+     * Story Mode cast (McsmNpcs' own spawn path, which falls back to villagers if
+     * the cast entity is unavailable). Recorded as coordinates and spawned by the
+     * tick that finishes the district, so a half-built building never contains a
+     * person standing in the air.
+     */
+    private static void markLife(Plan plan, int bx, int bz, int ground) {
+        LIFE.add(new int[]{bx, ground + 2, bz});
+    }
+
+    /** Where the survivors of the districts already raised are waiting. */
+    private static final java.util.concurrent.ConcurrentLinkedQueue<int[]> LIFE =
+            new java.util.concurrent.ConcurrentLinkedQueue<>();
 
     /** Highest solid block in a column, so a district always sits on the ground. */
     private static int groundAt(ServerLevel level, int x, int z) {
@@ -763,6 +981,14 @@ public final class McsmCities {
         q[VAULT] = stateOf(McsmContent.VAULT_CRATE);
         q[SAND] = stateOf(McsmContent.DECAYED_SAND);
         q[LEAVES] = stateOf(McsmContent.DECAYED_LEAVES);
+        // the design set: vanilla blocks on purpose, because a banner has to
+        // read as a banner -- and because a ruined city built only from the
+        // mod's own grey stone reads as a quarry, not as a city people lived in
+        q[DESIGN_LIGHT] = stateOf(Blocks.WHITE_CONCRETE);
+        q[DESIGN_DARK] = stateOf(Blocks.BLACK_CONCRETE);
+        q[DESIGN_ACCENT] = stateOf(Blocks.PURPLE_CONCRETE);
+        q[DESIGN_SOFT] = stateOf(Blocks.LIGHT_GRAY_WOOL);
+        q[DESIGN_TRIM] = stateOf(Blocks.POLISHED_DEEPSLATE);
         palette = q;
         return q;
     }

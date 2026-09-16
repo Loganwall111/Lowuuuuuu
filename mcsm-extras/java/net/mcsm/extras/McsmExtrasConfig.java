@@ -169,6 +169,12 @@ public final class McsmExtrasConfig {
      *  it was visible from a distance as a disc on top of the body, so it is
      *  OFF by default now; the switch is here for anyone who wants it back. */
     public static boolean stormGroundPool = false;
+
+    /** BUILD #429 -- "I would like it that they summon in the regular [world]."
+     *  The abandoned-city generator was reachable only from the decayed reality;
+     *  with this on it also raises districts in the overworld, never within 384
+     *  blocks of world spawn. */
+    public static boolean citiesInOverworld = true;
     // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
     // Textured cube around the camera; 6 phase skies (lavender day, midnight
     // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
@@ -445,6 +451,7 @@ public final class McsmExtrasConfig {
             p.setProperty("huge_back_centred", String.valueOf(hugeBackCentred));
             p.setProperty("glare_behind_body", String.valueOf(glareBehindBody));
             p.setProperty("storm_ground_pool", String.valueOf(stormGroundPool));
+            p.setProperty("cities_in_overworld", String.valueOf(citiesInOverworld));
             p.setProperty("dust_waves", String.valueOf(dustWaves));
             p.setProperty("reality_tear", String.valueOf(realityTear));
             p.setProperty("force_mcsm_look", String.valueOf(forceMcsmLook));
@@ -567,6 +574,7 @@ public final class McsmExtrasConfig {
             hugeBackCentred = bool(p, "huge_back_centred", hugeBackCentred);
             glareBehindBody = bool(p, "glare_behind_body", glareBehindBody);
             stormGroundPool = bool(p, "storm_ground_pool", stormGroundPool);
+            citiesInOverworld = bool(p, "cities_in_overworld", citiesInOverworld);
             nightglowThickBlackGlow = bool(p, "nightglow_thick_black_glow", nightglowThickBlackGlow);
             endFlashesPhase6 = bool(p, "end_flashes_phase6", endFlashesPhase6);
             transparentHorizonWings = bool(p, "transparent_horizon_wings", transparentHorizonWings);

@@ -1472,6 +1472,44 @@ def main():
           and '"entity.mcsm.creator": "The Creator"' in (read("ci/make_mcsm_content_assets.py") or "")
           and '"entity.mcsm.whale_monster": "The Whale"' in (read("ci/make_mcsm_content_assets.py") or ""))
 
+    # ------------------------------------------------------------------
+    # BUILD #429 -- THE CITIES ARRIVE IN THE REGULAR WORLD, AND THEY HAVE
+    # INSIDES.
+    #
+    # "In the real world, vanilla, the cities -- the real [ones] have actual
+    # interiors full of life, full of people, full of designs, banners from
+    # blocks and stuff" and "I would like it that they summon in the regular
+    # [world]".
+    # ------------------------------------------------------------------
+    cities = read("mcsm-extras/java/net/mcsm/extras/McsmCities.java") or ""
+
+    check("the city generator runs in the overworld, not only in the decayed reality",
+          "net.minecraft.world.level.Level.OVERWORLD" in cities
+          and "public static boolean citiesInOverworld = true;" in cfg
+          and "cities_in_overworld" in cfg
+          and "Raise the ruined cities in the regular world too" in extras)
+    check("it never raises a district on top of world spawn",
+          "OVERWORLD_MIN_DISTANCE = 384" in cities and "private static boolean nearSpawn(" in cities
+          and "level.getSharedSpawnPos()" in cities
+          and "if (overworld && nearSpawn(level, player))" in cities)
+    check("every plot is furnished inside, not just shelled",
+          "private static void planInterior(" in cities
+          and "planInterior(plan, rng, bx, bz, ground, kind);" in cities
+          and "hole in the floor" in cities and "a rug down the middle" in cities)
+    check("buildings wear a banner made of blocks",
+          "private static void planFacadeBanner(" in cities
+          and "planFacadeBanner(plan, rng, bx, bz, ground, kind);" in cities
+          and "DESIGN_ACCENT" in cities and "DESIGN_DARK" in cities)
+    check("the design set is real placeable blocks in the palette",
+          "q[DESIGN_LIGHT] = stateOf(Blocks.WHITE_CONCRETE);" in cities
+          and "q[DESIGN_DARK] = stateOf(Blocks.BLACK_CONCRETE);" in cities
+          and "q[DESIGN_ACCENT] = stateOf(Blocks.PURPLE_CONCRETE);" in cities
+          and "PALETTE_SIZE = 29" in cities)
+    check("there are people in the city when the player walks in",
+          "private static void spawnLife(" in cities and "markLife(plan, bx, bz, ground);" in cities
+          and "STORY_CHARACTER" in cities and "CHARACTERS" in cities
+          and "if (OPS.isEmpty()) {\n                spawnLife(level);" in cities)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)
