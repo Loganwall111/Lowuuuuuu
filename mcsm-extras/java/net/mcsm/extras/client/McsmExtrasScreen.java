@@ -411,6 +411,22 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyFloorBand = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #455 -- the storm's own glow, at every phase.
+          .bool("Teeth/eye/aura glow (world-space lights on the storm)",
+                  () -> McsmExtrasConfig.eyeGlow, v -> {
+              McsmExtrasConfig.eyeGlow = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Glow strength", () -> McsmExtrasConfig.eyeGlowStrength,
+                  v -> {
+              McsmExtrasConfig.eyeGlowStrength = v;
+              McsmExtrasConfig.save();
+          }, 0.0D, 2.5D)
+          .bool("Vanilla-material glow half (works with no shader pack)",
+                  () -> McsmExtrasConfig.vanillaGlow, v -> {
+              McsmExtrasConfig.vanillaGlow = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #452 -- what the bottom of the void looks like.
           .bool("Void floor light (RGB rays and infinite white rings)",
                   () -> McsmExtrasConfig.voidLight, v -> {

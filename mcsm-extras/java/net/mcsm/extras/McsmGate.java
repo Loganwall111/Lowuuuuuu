@@ -157,6 +157,11 @@ public final class McsmGate {
         // reference frames show is back without the intersection artifact.
         net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.COLLECT_SUBMITS
             .register(net.mcsm.extras.client.McsmHaloSkyRenderer::submit);
+        // BUILD #455 -- and the glow that does not depend on any native pass: the
+        // storm's eyes, its teeth and the haze around its head band, at every
+        // phase, on the storm's own tracked coordinates.
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.COLLECT_SUBMITS
+            .register(net.mcsm.extras.client.McsmEyeGlow::submit);
         McsmExtrasConfig.load();
         clientDone = true;
         // 1.9.208: the vanilla look is permanently disabled -- there is no

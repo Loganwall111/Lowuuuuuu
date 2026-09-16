@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -66,7 +67,20 @@ public final class McsmHaloSkyRenderer {
     /** Bands in the stack. Overlapped 1.30x, so the column reads as continuous. */
     private static final int BANDS = 26;
     private static final double BAND_OVERLAP = 1.30D;
-    private static final double MAX_DISTANCE = 2800.0D;
+    private static final double MAX_DISTANCE = 3200.0D;
+    /**
+     * BUILD #455 -- THE VANILLA HALF.
+     *
+     * "The aura I don't see." The column above is drawn through the mod's own
+     * additive pipeline, which is a custom core shader; if that shader cannot
+     * build on the player's driver the column is simply absent, silently. So the
+     * same bands are submitted a second time on vanilla's unlit eyes material,
+     * which ships with the game: full-bright, no pack, no custom shader. The
+     * custom pass is the look; this one is the guarantee.
+     */
+    private static final Identifier VANILLA_HALO = Identifier.fromNamespaceAndPath(
+            "dabywitherstormmod", "textures/misc/teeth_glow_white.png");
+    private static final float VANILLA_SCALE = 0.40F;
     /** Peak alpha of ONE band. The stack sums to the final column. */
     private static final float BAND_ALPHA = 0.30F;
     /** Widest the column may ever get in blocks, so a close pass cannot flood the screen. */
@@ -96,12 +110,13 @@ public final class McsmHaloSkyRenderer {
                 return;
             }
 
-            // Phase 4.45 is the onset: the column fades in with the atmosphere so
-            // there is never a hard band switch.
+            // BUILD #455 -- the column used to wait for phase 4.45, which is four
+            // whole phases of a summonable, visible storm with no aura around it.
+            // "The aura I don't see" is exactly that: the light was gated off.
             float phase = storm.phase;
-            float phaseFade = Mth.clamp((phase - 4.45F) / 0.22F, 0.0F, 1.0F);
+            float phaseFade = Mth.clamp((phase - 3.0F) / 0.35F, 0.0F, 1.0F);
             float distanceFade = 1.0F - Mth.clamp(
-                    (float) ((distance - 1500.0D) / 1300.0D), 0.0F, 1.0F);
+                    (float) ((distance - 1900.0D) / 1300.0D), 0.0F, 1.0F);
             float visibility = phaseFade * distanceFade;
             if (visibility <= 0.004F) {
                 return;
@@ -149,6 +164,11 @@ public final class McsmHaloSkyRenderer {
             collector.submitCustomGeometry(poseStack, material,
                     (pose, consumer) -> emitColumn(pose, consumer, base, r, u,
                             columnHeight, r0, r1, alpha));
+            if (McsmExtrasConfig.vanillaGlow) {
+                collector.submitCustomGeometry(poseStack, RenderTypes.eyes(VANILLA_HALO),
+                        (pose, consumer) -> emitColumn(pose, consumer, base, r, u,
+                                columnHeight, r0, r1, alpha * VANILLA_SCALE));
+            }
         } catch (Throwable ignored) {
             // A visual pass must disappear rather than crash the render thread.
         }

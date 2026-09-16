@@ -96,16 +96,21 @@ public abstract class McsmPresenceFxPatch {
         SubmitNodeCollector collector = ctx.submitNodeCollector();
         for (ClientDistantStormManager.StormData storm : ClientDistantStormManager.all()) {
             float phase = storm.phase;
-            if (phase < 4.45F) {
+            // BUILD #455 -- the eye/teeth glow starts as soon as there is a storm
+            // to look at; only the big glare blobs still wait for the atmosphere
+            // (they get their own fade below, so "below phase 4 nothing glows" is
+            // no longer the reason a summoned storm has dark eyes).
+            if (phase < 0.5F) {
                 continue;
             }
+            float auraFade = smoothstep(phase, 3.0F, 4.45F);
             Vec3 centre = new Vec3(storm.dispX, storm.dispY, storm.dispZ);
             Vec3 toStorm = centre.subtract(camera);
             double distance = toStorm.length();
             if (distance < 1.0D || distance > 2700.0D) {
                 continue;
             }
-            float distanceFade = 1.0F - smoothstep((float) distance, 1700.0F, 2700.0F);
+            float distanceFade = 1.0F - smoothstep((float) distance, 2000.0F, 3200.0F);
             if (distanceFade <= 0.004F) {
                 continue;
             }
@@ -153,17 +158,23 @@ public abstract class McsmPresenceFxPatch {
             // ci/make_cloud_blobs.py (warped radius, no rim, bright core), so the
             // shape holds up whether the camera is 300 blocks away or 30.
             blobLayer(poseStack, collector, GLARE4, glareCentre, view,
-                    bodyRadius * 3.35D, bodyRadius * 2.25D, w4 * distanceFade, 0);
+                    bodyRadius * 3.35D, bodyRadius * 2.25D,
+                    w4 * distanceFade * auraFade, 0);
             blobLayer(poseStack, collector, GLARE5, glareCentre, view,
-                    bodyRadius * 3.55D, bodyRadius * 2.35D, w5 * distanceFade, 1);
+                    bodyRadius * 3.55D, bodyRadius * 2.35D,
+                    w5 * distanceFade * auraFade, 1);
             blobLayer(poseStack, collector, GLARE54, glareCentre, view,
-                    bodyRadius * 3.70D, bodyRadius * 2.45D, w54 * distanceFade, 2);
+                    bodyRadius * 3.70D, bodyRadius * 2.45D,
+                    w54 * distanceFade * auraFade, 2);
             blobLayer(poseStack, collector, GLARE55, glareCentre, view,
-                    bodyRadius * 3.85D, bodyRadius * 2.55D, w55 * distanceFade, 3);
+                    bodyRadius * 3.85D, bodyRadius * 2.55D,
+                    w55 * distanceFade * auraFade, 3);
             blobLayer(poseStack, collector, GLARE6, glareCentre, view,
-                    bodyRadius * 4.05D, bodyRadius * 2.65D, w6 * distanceFade * 0.95F, 4);
+                    bodyRadius * 4.05D, bodyRadius * 2.65D,
+                    w6 * distanceFade * 0.95F * auraFade, 4);
             blobLayer(poseStack, collector, GLARE89, glareCentre, view,
-                    bodyRadius * 4.05D, bodyRadius * 2.65D, w89 * distanceFade * 0.95F, 5);
+                    bodyRadius * 4.05D, bodyRadius * 2.65D,
+                    w89 * distanceFade * 0.95F * auraFade, 5);
 
             // The purple/pink oval ring is the older Catalyst Halo that was
             // present in the newer builds. Its width is intentionally larger
@@ -178,12 +189,17 @@ public abstract class McsmPresenceFxPatch {
             double ringHeight = bodyRadius * (2.82D + 2.45D * phase55Circle);
             // #405: shader-less mouth glow (fake bloom via additive sprites)
             Vec3 mouth = haloCentre.add(0.0D, -bodyRadius * 0.95D, 0.0D);
+            // BUILD #455 -- the mouth cluster is the TEETH, and the brief is white
+            // teeth with the phase colour only in the hand-off bands. It is drawn
+            // from phase 0.5 up now (weight 1 below the first cross-fade), with the
+            // colour bands taking over as they arrive.
+            float whiteW = 1.0F - smoothstep(phase, 4.95F, 5.15F);
             layer(poseStack, collector, GLOW_WHITE, mouth, view,
                     bodyRadius * 1.00D, bodyRadius * 0.75D,
-                    w4 * distanceFade * 0.45F);
+                    whiteW * distanceFade * 0.60F);
             layer(poseStack, collector, GLOW_WHITE, mouth, view,
                     bodyRadius * 1.15D, bodyRadius * 0.85D,
-                    w5 * distanceFade * 0.55F);
+                    (whiteW + w5) * distanceFade * 0.55F);
             layer(poseStack, collector, GLOW_CYAN, mouth, view,
                     bodyRadius * 1.15D, bodyRadius * 0.85D,
                     (w55 + w54 * 0.5F) * distanceFade * 0.55F);

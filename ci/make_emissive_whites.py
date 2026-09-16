@@ -57,6 +57,41 @@ DERIVED = {
     "wither_storm_og_e.png": "wither_storm_og.png",
 }
 
+# ---------------------------------------------------------------------------
+# BUILD #455 -- AND THE ONE THAT WAS QUIETLY EMPTY.
+#
+# The report came back a third time ("the storm's teeth and eyes are still not
+# glowing"), and this time the atlas itself was the answer:
+#
+#     phase_4_assets_e.png   512x512   30 opaque pixels   30  of them pure white
+#
+# The 512x512 head/body sheet the base's head passes now sample has two tiny lit
+# UV islands in its bottom-left corner -- the eye lenses -- and nothing else. The
+# gate below passed it, correctly and uselessly: "every opaque pixel is pure
+# white" is vacuously true of a sheet with almost no opaque pixels. An atlas that
+# is 0.011% lit lights 0.011% of a 40-block head, which is what "the eyes are not
+# glowing" looks like from the ground.
+#
+# Two things change here:
+#
+#   1. the eye islands are UNIONED IN from the whole phase-4 family (every sheet
+#      in the family, both trees) so the lenses are lit in the one atlas the head
+#      passes read, whatever phase the storm is in;
+#   2. no `_e.png` atlas may be ENTIRELY transparent any more. That is a real,
+#      checkable floor -- the empty-file hole -- as opposed to a coverage
+#      percentage, which would have to be tuned per atlas and would fight the
+#      legitimate two-island sheets.
+# ---------------------------------------------------------------------------
+UNION_DERIVED = {
+    "phase_4_assets_e.png": [
+        "phase_4_assets.png", "phase_4_assets_og.png",
+        "phase_4_assets_p55.png", "phase_4_assets_p6.png",
+        "phase_4_assets_og_p55.png", "phase_4_assets_og_p6.png",
+    ],
+}
+# Luminance a body pixel must clear to count as one of the lenses.
+UNION_FLOOR = 100.0
+
 # Brightness a body-atlas pixel must clear before it counts as a face we light.
 DERIVE_FLOOR = 150.0
 
@@ -134,6 +169,43 @@ def derive(path, body_path):
     return len([p for p in out if p[3] > 0])
 
 
+def union_mask(path, names):
+    """Union of the lit pixels of a whole atlas family into one mask.
+
+    Both trees are read, so the overlay sheet and the mod's own sheet agree, and
+    the existing contents of the mask are always kept: this adds light, it never
+    takes any away.
+    """
+    w, h, px = read_png(path)
+    best = [0.0] * (w * h)
+    for tree in TREES + ["jar-overrides/assets/dabywitherstormmod/textures/entity"]:
+        for name in names:
+            candidate = os.path.join(tree, name)
+            if not os.path.exists(candidate):
+                continue
+            bw, bh, body = read_png(candidate)
+            if (bw, bh) != (w, h):
+                continue
+            for i, (r, g, b, a) in enumerate(body):
+                if a <= 0:
+                    continue
+                value = lum((r, g, b))
+                if value > best[i]:
+                    best[i] = value
+    out = []
+    added = 0
+    for i, (r, g, b, a) in enumerate(px):
+        if a > 0:
+            out.append((WHITE[0], WHITE[1], WHITE[2], a))
+        elif best[i] > UNION_FLOOR:
+            out.append((WHITE[0], WHITE[1], WHITE[2], 255))
+            added += 1
+        else:
+            out.append((0, 0, 0, 0))
+    write_png(path, w, h, out)
+    return len([p for p in out if p[3] > 0]), added
+
+
 def main(argv):
     check = "--check" in argv
     problems = []
@@ -153,6 +225,24 @@ def main(argv):
                     problems.append("%s is supposed to be empty but has %d opaque pixels"
                                     % (path, len(opaque)))
                 report.append("%-34s intentionally empty (phase < 4)" % name)
+                continue
+
+            if name in UNION_DERIVED:
+                if check:
+                    # held to the union: every pixel the family lights must be lit
+                    w2, h2, want = read_png(path)
+                    lit = sum(1 for p in want if p[3] > 0)
+                    if lit == 0:
+                        problems.append("%s is entirely transparent -- the eye lenses "
+                                        "cannot glow out of an empty atlas, run "
+                                        "ci/make_emissive_whites.py" % path)
+                    else:
+                        report.append("%-34s union mask, %d lit lens pixels"
+                                      % (name, lit))
+                    continue
+                total, added = union_mask(path, UNION_DERIVED[name])
+                report.append("%-34s union mask, %d lit pixels (%d added from the "
+                              "phase-4 family)" % (name, total, added))
                 continue
 
             if name in DERIVED:
@@ -197,7 +287,14 @@ def main(argv):
                                       % (name, made, os.path.relpath(body_path)))
                     continue
 
-            # every other atlas: pure white, alpha kept
+            # every other atlas: pure white, alpha kept -- and not empty
+            if not opaque:
+                problems.append("%s is entirely transparent: an emissive atlas with no "
+                                "pixels lights nothing, and 'every opaque pixel is pure "
+                                "white' is vacuously true of it. Run "
+                                "ci/make_emissive_whites.py, or delete it so the base "
+                                "jar's own atlas is used." % path)
+                continue
             non_white = [p for p in opaque if (p[0], p[1], p[2]) != WHITE]
             if check:
                 if non_white:

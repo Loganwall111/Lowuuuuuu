@@ -122,6 +122,19 @@ public final class McsmExtrasConfig {
      * with no shader pack installed.
      */
     public static boolean skyFloorBand = true;
+    // ------------------------------------------------------------------
+    // BUILD #455 -- THE GLOW THE PLAYER CAN SEE.
+    //
+    // "the storm's teeth and eyes are still not glowing. The aura I don't see."
+    // eyeGlow turns McsmEyeGlow's world-space eye/teeth/aura lights on (phases
+    // 0.2 and up, on the storm's own tracked coordinates); eyeGlowStrength scales
+    // them; vanillaGlow draws the vanilla-material half of every glow layer, which
+    // is the half that cannot be lost to a shader pack, a driver or a pipeline.
+    // ------------------------------------------------------------------
+    public static boolean eyeGlow = true;
+    public static double eyeGlowStrength = 1.0D;
+    public static boolean vanillaGlow = true;
+
     /** BUILD #452 -- the bottom of the void: RGB rays and infinite white rings. */
     public static boolean voidLight = true;
     /** BUILD #451 -- the void: a dimension that is mostly nothing. */
@@ -446,6 +459,9 @@ public final class McsmExtrasConfig {
             p.setProperty("void_reality", String.valueOf(voidReality));
             p.setProperty("portals", String.valueOf(portals));
             p.setProperty("void_light", String.valueOf(voidLight));
+            p.setProperty("eye_glow", String.valueOf(eyeGlow));
+            p.setProperty("eye_glow_strength", String.valueOf(eyeGlowStrength));
+            p.setProperty("vanilla_glow", String.valueOf(vanillaGlow));
             p.setProperty("city_atmosphere", String.valueOf(cityAtmosphere));
             p.setProperty("title_wordmark", String.valueOf(titleWordmark));
             p.setProperty("menu_lift", String.valueOf(menuLift));
@@ -592,6 +608,9 @@ public final class McsmExtrasConfig {
             voidReality = bool(p, "void_reality", voidReality);
             portals = bool(p, "portals", portals);
             voidLight = bool(p, "void_light", voidLight);
+            eyeGlow = bool(p, "eye_glow", eyeGlow);
+            eyeGlowStrength = dbl(p, "eye_glow_strength", eyeGlowStrength);
+            vanillaGlow = bool(p, "vanilla_glow", vanillaGlow);
             cityAtmosphere = bool(p, "city_atmosphere", cityAtmosphere);
             titleWordmark = bool(p, "title_wordmark", titleWordmark);
             menuLift = dbl(p, "menu_lift", menuLift);
@@ -672,6 +691,11 @@ public final class McsmExtrasConfig {
             supernovaRings = bool(p, "supernova_rings", supernovaRings);
         } catch (Throwable ignored) {
         }
+    }
+
+    /** BUILD #455 -- the glow's loudness, clamped so a config file cannot kill it. */
+    public static float eyeGlowStrength() {
+        return (float) Math.max(0.0D, Math.min(2.5D, eyeGlowStrength));
     }
 
     private static boolean bool(Properties p, String k, boolean d) {

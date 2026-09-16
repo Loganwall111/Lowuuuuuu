@@ -2508,6 +2508,76 @@ def main():
           not bad_hex,
           "; ".join(bad_hex[:4]) or "clean")
 
+    # ------------------------------------------------------------------
+    # BUILD #455 -- THE GLOW, DRAWN BY US.
+    #
+    # "I know it a bug the storm's teeth and eyes are still not glowing. The aura
+    # I don't see." Three builds aimed at the native passes; this one stops
+    # depending on them, and closes the gate hole that let an empty emissive atlas
+    # ship ("every opaque pixel is pure white" is vacuously true of a blank sheet).
+    # ------------------------------------------------------------------
+    eye = read("mcsm-extras/java/net/mcsm/extras/client/McsmEyeGlow.java") or ""
+    gate = read("mcsm-extras/java/net/mcsm/extras/McsmGate.java") or ""
+    halo = read("mcsm-extras/java/net/mcsm/extras/client/McsmHaloSkyRenderer.java") or ""
+    fx = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresenceFxPatch.java") or ""
+    emissive = read("ci/make_emissive_whites.py") or ""
+
+    check("the glow is drawn by us: eyes, teeth and a haze on the storm's own coordinates",
+          "private static final float ONSET = 0.2F;" in eye
+          and "Collector.submitCustomGeometry" not in eye
+          and "collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(texture)," in eye
+          and "collector.submitCustomGeometry(poseStack, eyes(texture)," in eye
+          and "private static RenderType eyes(Identifier texture) {" in eye
+          and "return RenderTypes.eyes(texture);" in eye
+          and "storm.dispYaw" in eye
+          and "McsmStormPhase.bodyRadius(phase)" in eye
+          and "McsmExtrasConfig.eyeGlow" in eye
+          and "McsmExtrasConfig.eyeGlowStrength()" in eye
+          and "McsmExtrasConfig.vanillaGlow" in eye)
+    check("the glow pass is registered, switchable and says so when it cannot place itself",
+          "net.mcsm.extras.client.McsmEyeGlow::submit" in gate
+          and "public static boolean eyeGlow = true;" in cfg
+          and "public static double eyeGlowStrength = 1.0D;" in cfg
+          and "public static boolean vanillaGlow = true;" in cfg
+          and "eye_glow" in cfg and "vanilla_glow" in cfg
+          and "public static float eyeGlowStrength() {" in cfg
+          and "Teeth/eye/aura glow (world-space lights on the storm)" in extras
+          and "Vanilla-material glow half (works with no shader pack)" in extras
+          # the one case where the pass is blind is said out loud, once
+          and "McsmDiag.say" in eye
+          and "noteFeedEmpty();" in eye)
+    check("the aura no longer waits for phase 4.45, and has a vanilla half",
+          "float phaseFade = Mth.clamp((phase - 3.0F) / 0.35F, 0.0F, 1.0F);" in halo
+          and "private static final double MAX_DISTANCE = 3200.0D;" in halo
+          and "collector.submitCustomGeometry(poseStack, RenderTypes.eyes(VANILLA_HALO)," in halo
+          and "private static final float VANILLA_SCALE = 0.40F;" in halo
+          and "import net.minecraft.client.renderer.rendertype.RenderTypes;" in halo)
+    check("the presence pass lights the teeth from phase 0.5 and fades the big aura in",
+          "if (phase < 0.5F) {" in fx
+          and "float auraFade = smoothstep(phase, 3.0F, 4.45F);" in fx
+          and "float whiteW = 1.0F - smoothstep(phase, 4.95F, 5.15F);" in fx
+          and "whiteW * distanceFade * 0.60F" in fx
+          and "w4 * distanceFade * auraFade" in fx)
+    check("no emissive atlas may be entirely transparent (the hole #455 closed)",
+          "entirely transparent" in emissive
+          and "UNION_DERIVED" in emissive
+          and "phase_4_assets_e.png" in emissive
+          and "_eye_lit()" not in emissive)
+    # the atlas the head passes read is tiny by design, but it is not empty
+    try:
+        _ci = os.path.dirname(os.path.abspath(__file__))
+        if _ci not in sys.path:
+            sys.path.insert(0, _ci)
+        import pngutil as _png
+        png = os.path.join("src/main/resources/assets/dabywitherstormmod/textures/entity",
+                           "phase_4_assets_e.png")
+        _w, _h, _px = _png.read_png(png)
+        lit = sum(1 for p in _px if p[3] > 0)
+    except Exception:
+        lit = -1
+    check("the head emissive atlas has its eye lenses lit",
+          lit > 0, "lit pixels: %d" % lit)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)
