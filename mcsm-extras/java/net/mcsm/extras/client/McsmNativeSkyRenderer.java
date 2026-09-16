@@ -78,6 +78,11 @@ public final class McsmNativeSkyRenderer {
             state.shouldRenderDarkDisc = false;
             state.skyColor = decayedSkyArgb(p);
             state.sunriseAndSunsetColor = state.skyColor;
+        // Stars come back as the storm loses its grip on the sky, which is what
+        // a night-time fade should look like.
+        if (reach < 0.999F) {
+            state.starBrightness = Math.min(1.0F, state.starBrightness + (1.0F - reach));
+        }
             state.starBrightness = 0.0F;
             state.rainBrightness = 0.0F;
             return;
@@ -91,11 +96,27 @@ public final class McsmNativeSkyRenderer {
             return;
         }
 
+        // BUILD #416 (D.8) -- THE FADE-BACK THE USER ASKED FOR.
+        //
+        // The phase used to be the only input, and McsmStormPhase.resolve()
+        // takes the furthest-along storm anywhere on the client -- so a storm
+        // thousands of blocks away still repainted the sky. Now the distance
+        // decides: inside half the configured reach the storm owns the sky
+        // outright, from there to 1.8x the sky is blended back toward whatever
+        // vanilla computed for this time of day, and past that the storm
+        // contributes nothing at all.
+        float reach = McsmSkyReach.influence();
+        if (reach <= McsmSkyReach.CUTOFF) {
+            ownsSky = false;   // pure vanilla sky: day, dusk or midnight
+            return;
+        }
+
         ownsSky = true;
         // The dark disc cap is the top-of-sky artefact: kill it every frame.
         state.shouldRenderDarkDisc = false;
-        // Match the native disc colour to the shader's horizon row.
-        state.skyColor = McsmStormPhase.horizonArgb();
+        // Match the native disc colour to the shader's horizon row, blended
+        // toward the vanilla sky by how far away the storm is.
+        state.skyColor = McsmSkyReach.mix(state.skyColor, McsmStormPhase.horizonArgb(), reach);
         // Bodies: gone once the storm is running.
         if (p >= 5.0F) {
             state.starBrightness = 0.0F;

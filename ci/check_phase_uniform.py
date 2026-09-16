@@ -890,6 +890,37 @@ def main():
           "fillGradient(0, 0, w, h, 0xFF1A1130" in code_only(plate)
           and "cloud streaks" in plate)
 
+    # ---- 17. THE SKY REACH + THE SUPPLIED STAGE PALETTE (D.8) --------------
+    # The user's question, answered in code and then locked: is every sky still a
+    # dome, and does the storm's sky fade back to normal with distance?
+    reach = read("mcsm-extras/java/net/mcsm/extras/client/McsmSkyReach.java") or ""
+    reach_code = code_only(reach)
+    check("the storm's sky has a distance term (it used to have none)",
+          "influence()" in reach_code and "FULL = 0.5D" in reach_code
+          and "END = 1.8D" in reach_code and "t * t * (3.0F - 2.0F * t)" in reach_code)
+    check("the fade distance is the 500 blocks the user asked for, and configurable",
+          "skyFadeDistance" in (read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or "")
+          and "public static double skyFadeDistance = 500.0;" in
+              (read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or "")
+          and "Storm Sky Reach" in (read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""))
+    sky2 = read("mcsm-extras/java/net/mcsm/extras/client/McsmNativeSkyRenderer.java") or ""
+    check("far from a storm the native sky is handed back to vanilla",
+          "McsmSkyReach.influence()" in code_only(sky2)
+          and "McsmSkyReach.mix(state.skyColor" in code_only(sky2)
+          and "ownsSky = false;   // pure vanilla sky" in sky2)
+
+    stage = read("ci/apply_stage_palette.py") or ""
+    check("the supplied stage sheets are applied as the storm's palette",
+          "wither_storm_stage_a.png" in stage and "wither_storm_stage_b.png" in stage
+          and "def sheet_ramp" in stage and "--check" in stage)
+    check("emissive atlases are never relit (they are the glow)",
+          '_e.png' in stage and "NEVER relight an emissive mask" in stage)
+    check("the stage palette is verified, not just applied",
+          "worst_channel_distance" in stage
+          and "ci/apply_stage_palette.py --check" in (read("ci/build.sh") or ""))
+    check("the relight normalises against the atlas's own range",
+          "low = lums[int(0.02" in stage and "high = lums[int(0.98" in stage)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

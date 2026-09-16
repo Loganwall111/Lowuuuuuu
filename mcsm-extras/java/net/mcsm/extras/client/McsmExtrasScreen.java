@@ -374,6 +374,10 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.blackHoleEvent = v;
               McsmExtrasConfig.save();
           })
+          .val("Storm Sky Reach (fade back to vanilla at, blocks)", () -> McsmExtrasConfig.skyFadeDistance, v -> {
+              McsmExtrasConfig.skyFadeDistance = v;
+              McsmExtrasConfig.save();
+          }, 200.0, 1500.0)
           .bool("Mega-Tornadoes", () -> McsmExtrasConfig.megaTornadoes, v -> {
               McsmExtrasConfig.megaTornadoes = v;
               McsmExtrasConfig.save();

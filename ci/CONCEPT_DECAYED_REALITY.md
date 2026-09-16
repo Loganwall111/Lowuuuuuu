@@ -144,6 +144,39 @@ Three things the user saw, and what was actually wrong:
 | "the purple glint ... looks really weird, rework it" | `mcsm_glint()` summed two high-frequency sine fields raised to the 8th and 12th power -- hard, fast stripes. | Rebuilt as one wide, softly-edged band rolling slowly up the body plus a faint second, tinted cool -> violet -> blue across the phases, exactly the reference sheen. |
 | "the logo is stamped in front of everything and overlapping"; "a giant black border gets very dark"; "settings needs its own background UI" | The title plate stopped at y=54 while the wordmark starts at y=58, so the logo painted over the base banner; the settings console was a flat near-black plate. | The plate covers the whole title band (and the wordmark hides on narrow windows); the settings console paints the storm's own sky as its ground (violet->plum gradient, horizon glow, drifting cloud streaks, vignette); the menu buttons now ride a smoothstepped hover with a shine sweep instead of snapping. |
 
+### The sky question, answered (D.8)
+
+The user asked whether the regular game's day/dusk/midnight skies and the three
+storm-phase skies are still domes, and asked for the sky to fade back to normal
+out around 500 blocks. The answer, now true in code:
+
+| Where | What the sky is |
+|---|---|
+| Overworld, no storm nearby (any hour) | **Minecraft's own sky**, untouched. We never draw a dome over it. |
+| Overworld, storm in range | The native sky **re-authored per phase** (colour, disc cap off, celestials in hand). Not a dome: it is the game's own sky state, and now it hands itself back with distance. |
+| Overworld, leaving a storm | New: `McsmSkyReach` blends the phase sky **back toward the vanilla colour** between half and 1.8x the configured reach, and stops contributing entirely past that. Default reach **500 blocks** (fade begins at 250, fully vanilla by 900) with a console slider, 200-1500. Before this the phase was the only input and `McsmStormPhase.resolve()` takes the furthest-along storm anywhere, so a storm thousands of blocks away still repainted the sky. Stars come back as the storm loses its grip. |
+| Inside the decayed reality | **Ours, unconditionally** -- the dimension's own violet-black gradient, dark disc cap off, no sun/moon/stars. |
+
+### The supplied stage sheets are now the storm's material (D.8)
+
+The user supplied the real stage texture sheets (one for phases 4-5.9, one for
+6-8) and they are now applied as a **palette**, not as a replacement texture:
+
+* measured: 160x160, 28 distinct colours, mean `#02040A` (near-black with a navy
+  cast); our shipped atlases were 512x512 traced shading in pure greyscale
+  (`#000000`/`#101010`/`#202020`/`#303030`);
+* `ci/apply_stage_palette.py` relights each body atlas through the sheet's own
+  distinct colours, **normalising against the atlas's own luminance range first**
+  -- a straight mapping would drive every pixel to black, because more than 45%
+  of the sheet is pure black;
+* the eight body atlases now carry `#000000` .. `#060B18`, i.e. the sheet's exact
+  material with all the traced detail intact;
+* `--check` runs in the build and refuses any atlas carrying a colour the sheet
+  does not contain (worst channel distance today: 1), which is what would catch a
+  regenerated, hand-edited or swapped atlas;
+* emissive `_e` atlases are explicitly excluded -- they *are* the glow, and
+  mapping them through a dark palette is exactly the "teeth do not glow" bug.
+
 ### Still open from that report (next focused visual pass)
 - **The embedded shader pack as *the* default look, 1:1 with the reference
   frames.** The Super Duper / MCSM Visuals pack is embedded and auto-selected by

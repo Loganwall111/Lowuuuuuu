@@ -694,6 +694,35 @@ stage version-ok push
 # ---------------------------------------------------------------------------
 if python3 ci/make_backdrop_sheets.py; then
   echo "[backdrop] six phase sheets regenerated from the traced palette"
+
+# ---------------------------------------------------------------------------
+# BUILD #416 (D.8) -- THE SUPPLIED STAGE SHEETS ARE THE STORM'S MATERIAL.
+#
+# The user supplied the real stage texture sheets and described what they
+# cover: one for phase 4 through 5.9, one for phase 6 through 8. They are the
+# ground truth for the storm's colours, but they are 160x160 and almost
+# entirely pure black (measured mean #02 04 0A), while the shipped body atlases
+# are 512x512 traced shading. So the sheets are applied as a PALETTE: every
+# atlas is relit through the sheet's own distinct colours, which keeps the
+# traced crevices and AO and adopts the sheet's exact material. --check then
+# proves it, by refusing any atlas that carries a colour the sheet does not
+# contain -- which is what would catch a regenerated or hand-edited atlas.
+#
+# Emissive (_e) atlases are deliberately excluded: they ARE the glow.
+# ---------------------------------------------------------------------------
+echo "[stage] supplied stage-sheet palettes (the storm's material)"
+STAGE_OUT="$(python3 ci/apply_stage_palette.py 2>&1)"
+printf '%s\n' "$STAGE_OUT" | tail -3
+echo "[stage] verify the atlases against the sheets"
+STAGE_CHECK="$(python3 ci/apply_stage_palette.py --check 2>&1)"
+STAGE_RC=$?
+printf '%s\n' "$STAGE_CHECK" | grep -E "^\[stage\]|^  FAIL" | tail -4
+printf '%s\n' "$STAGE_CHECK" >> "$VANILLA_OUT"
+if [ "$STAGE_RC" -ne 0 ]; then
+  echo "::error title=stage palette::the storm body atlases no longer wear the supplied stage-sheet palette"
+  exit 1
+fi
+stage stage-palette-ok
 stage backdrop-ok
 else
   echo "::error title=build::backdrop sheet generation failed"

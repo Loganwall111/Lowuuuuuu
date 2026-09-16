@@ -200,6 +200,16 @@ public final class McsmExtrasConfig {
     public static boolean shaderPackGate = true;
     /** Set once the gate has been migrated to true (see the migration in load()). */
     public static boolean shaderPackGateMigrated = false;
+
+    // BUILD #416 (D.8) -- how far the storm's sky reaches.
+    //
+    // The user: "as you get far away from hundreds of blocks, 500 blocks, it
+    // starts to fade back to normal". This is that distance: the storm owns the
+    // sky completely inside half of it, hands it back smoothly between half and
+    // 1.8x, and beyond that the sky is pure vanilla again. Before this the
+    // decision had no distance in it at all, so a storm on the far side of the
+    // world still repainted the sky over the player's head.
+    public static double skyFadeDistance = 500.0;
     public static boolean commandWire = true;
     public static boolean mcsmInstructions = true;
 
@@ -298,6 +308,7 @@ public final class McsmExtrasConfig {
             p.setProperty("story_quests", String.valueOf(storyQuests));
             p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
             p.setProperty("shader_pack_gate_migrated", String.valueOf(shaderPackGateMigrated));
+            p.setProperty("sky_fade_distance", String.valueOf(skyFadeDistance));
             p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
             p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
             p.setProperty("skybox_size", String.valueOf(skyboxSize));
@@ -413,6 +424,7 @@ public final class McsmExtrasConfig {
                 shaderPackGate = true;
                 shaderPackGateMigrated = true;
             }
+            skyFadeDistance = dbl(p, "sky_fade_distance", skyFadeDistance);
             skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
             skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
             skyboxSize = dbl(p, "skybox_size", skyboxSize);
