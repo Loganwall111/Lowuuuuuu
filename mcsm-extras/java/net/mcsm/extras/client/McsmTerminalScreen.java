@@ -70,6 +70,8 @@ public final class McsmTerminalScreen extends Screen {
     private boolean statusBad;
     private int ticks;
     private int shake;
+    /** BUILD #448 -- a widget rebuild the input path asked for, done next frame. */
+    private transient boolean pendingInit;
     private int openAnim;
     private int station;
     private int guidePage;
@@ -277,6 +279,23 @@ public final class McsmTerminalScreen extends Screen {
         }
     }
 
+    /**
+     * BUILD #448 -- SHOW WHAT THREW.
+     *
+     * A crash the player cannot describe is a bug nobody can fix, and this build
+     * cannot be run on the machine it is written on. So: nothing in this screen's
+     * input path is allowed to end the game, and whatever would have done it is put
+     * on the screen and in the log instead, in one line, with its class and message.
+     */
+    private void report(Throwable t, String where) {
+        String line = where + ": " + t.getClass().getName()
+                + (t.getMessage() == null ? "" : " -- " + t.getMessage());
+        status = "\u00a7call right, that was a bug: " + line;
+        statusBad = true;
+        System.err.println("[ds] the terminal survived " + line);
+        t.printStackTrace();
+    }
+
     /** Keep the visible field and our own copy in step, whichever drove it. */
     private void syncField() {
         if (codeField != null) {
@@ -291,6 +310,19 @@ public final class McsmTerminalScreen extends Screen {
 
     @Override
     protected void init() {
+        rebuild();
+    }
+
+    /** init()'s body, on its own so the deferred path can call it too. */
+    private void rebuild() {
+        try {
+            rebuildGuarded();
+        } catch (Throwable t) {
+            report(t, "rebuild");
+        }
+    }
+
+    private void rebuildGuarded() {
         this.clearWidgets();
         this.codeField = null;
         if (mode == Mode.LOGIN) {
@@ -321,6 +353,27 @@ public final class McsmTerminalScreen extends Screen {
         // window (see McsmKeyboard). "The keys do not work or function" was
         // true: nothing in this screen ever looked at a key, so the only way in
         // was a button that did not exist on the login page either.
+        // BUILD #448 -- THE CLICK THAT CRASHED THE GAME.
+        //
+        // The report: "when I try to click on the the enter password thing it just
+        // crashes my game". This screen's input path is the render thread's, so
+        // anything that throws in it takes the whole game down rather than printing
+        // a line. Two things were wrong and both are fixed here:
+        //
+        //   * the loop below called straight into submitCode() -> accept() -> init(),
+        //     and init() CLEARS AND REBUILDS THE WIDGET LIST in the middle of a frame
+        //     the screen is being drawn in. That is a widget list mutated while it is
+        //     being iterated, which is the classic way to crash a screen. The rebuild
+        //     is DEFERRED now (pendingInit) and happens at the top of the next frame.
+        //   * nothing caught a throwable, so any of the calls in the chain -- the
+        //     sound cue, the report, the field sync -- could end the game. Every one
+        //     of them is caught, and the throwable is SHOWN on the screen as well as
+        //     logged, because a crash nobody can reproduce is a crash nobody can fix:
+        //     the next report can be the line itself.
+        if (pendingInit) {
+            pendingInit = false;
+            rebuild();
+        }
         for (Integer key : McsmKeyboard.poll()) {
             onKey(key.intValue());
         }
@@ -518,6 +571,15 @@ public final class McsmTerminalScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
+        try {
+            return mouseClickedGuarded(event, doubled);
+        } catch (Throwable t) {
+            report(t, "mouseClicked");
+            return true;
+        }
+    }
+
+    private boolean mouseClickedGuarded(MouseButtonEvent event, boolean doubled) {
         // the login page's ENTER button
         if (mode == Mode.LOGIN && event.button() == 0) {
             int[] e = enterRect();
@@ -590,6 +652,14 @@ public final class McsmTerminalScreen extends Screen {
     // ---------------------------------------------------------------------
 
     public void accept(String action, String a, String b) {
+        try {
+            acceptGuarded(action, a, b);
+        } catch (Throwable t) {
+            report(t, "accept");
+        }
+    }
+
+    private void acceptGuarded(String action, String a, String b) {
         switch (action) {
             case "granted":
                 mode = Mode.CONSOLE;
@@ -597,7 +667,9 @@ public final class McsmTerminalScreen extends Screen {
                 if (b != null && !b.isEmpty()) {
                     body = b;
                 }
-                this.init();
+                // DEFERRED, not immediate: see the note on the input loop. Calling
+                // init() here rebuilt the widget list mid-frame.
+                pendingInit = true;
                 break;
             case "denied":
                 status = b == null ? "ACCESS DENIED" : b;
@@ -617,7 +689,9 @@ public final class McsmTerminalScreen extends Screen {
                 if (b != null && !b.isEmpty()) {
                     body = b;
                 }
-                this.init();
+                // deferred, for the same reason as "granted": a mode change that
+                // rebuilds the widgets mid-frame is the crash this build just fixed
+                pendingInit = true;
                 break;
             case "radio":
                 if (a != null) {
@@ -648,7 +722,16 @@ public final class McsmTerminalScreen extends Screen {
      * THAT is granted by the server ({@code McsmTerminal.verify}) when the player
      * has actually entered the code where it counts: the set in their hand.
      */
+    /** The public submit, called by the ENTER button, the chip row and the keyboard. */
     public void submitCode() {
+        try {
+            submitCodeGuarded();
+        } catch (Throwable t) {
+            report(t, "submitCode");
+        }
+    }
+
+    private void submitCodeGuarded() {
         if (McsmTerminal.CODE.equalsIgnoreCase(typedCode().trim())) {
             mcsm$cue(McsmSounds.TERMINAL_OPEN, 0.9F, 1.0F);
             accept("granted", "console", worldReport(local));

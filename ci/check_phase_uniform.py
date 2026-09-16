@@ -2220,6 +2220,102 @@ def main():
           and "PLAYED.contains(scene.id())" in scenes
           and "if (!McsmExtrasConfig.cutscenes || mc.screen != null) {" in scenes)
 
+    # ------------------------------------------------------------------
+    # BUILD #448 -- THE CRASH, THE MENU, AND THE CITIES' OWN AIR.
+    #
+    # Three things the player reported in one message, and each one earns a gate:
+    #
+    #   * "when I try to click on the the enter password thing it just crashes my
+    #     game" -- the terminal's input path ran into init(), which rebuilds the
+    #     widget list in the middle of the frame it is being drawn in, and nothing
+    #     in the chain caught a throwable. Both are fixed; the gate holds the fix
+    #     and holds that a throwable is SHOWN rather than fatal, because the next
+    #     report can then be the line itself.
+    #   * "a giant Devouring Storms watermark blocking it. It's very black." -- the
+    #     wordmark is off by default and switchable, the band is half the height and
+    #     no longer opaque, and there is a brightness lift.
+    #   * "can you make the cities each one bigger with its own unique fog in sky" --
+    #     rings + scale per district, six atmospheres, and a client that wears them.
+    # ------------------------------------------------------------------
+    term = read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java") or ""
+    title = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTitleOverhaulMixin.java")         or ""
+    cities = read("mcsm-extras/java/net/mcsm/extras/McsmCities.java") or ""
+    sky = read("mcsm-extras/java/net/mcsm/extras/client/McsmNativeSkyRenderer.java") or ""
+
+    check("no click and no key can end the game any more: every door is guarded",
+          "private boolean mouseClickedGuarded(MouseButtonEvent event, boolean doubled) {" in term
+          and "private void submitCodeGuarded() {" in term
+          and "private void acceptGuarded(String action, String a, String b) {" in term
+          and "private void rebuildGuarded() {" in term
+          and "report(t, \"mouseClicked\");" in term
+          and "report(t, \"submitCode\");" in term
+          and "report(t, \"accept\");" in term
+          and "report(t, \"rebuild\");" in term)
+    check("the widget rebuild is DEFERRED out of the frame that asked for it",
+          "private transient boolean pendingInit;" in term
+          and "pendingInit = true;" in term
+          # the granted case must not call init() any more: that is the mid-frame
+          # widget mutation that was the crash
+          and "case \"granted\":" in term
+          and "pendingInit = true;\n                break;" in term.replace("\r", "")
+          and "this.init();" not in term)
+    check("and the rebuild happens at the top of the next frame, before any input",
+          term.index("if (pendingInit) {") < term.index("for (Integer key : McsmKeyboard.poll()) {")
+          and "pendingInit = false;" in term)
+    check("the throwable is SHOWN, not swallowed silently",
+          "private void report(Throwable t, String where) {" in term
+          and "status = \"\\u00a7call right, that was a bug: \" + line;" in term
+          and "System.err.println(\"[ds] the terminal survived \" + line);" in term
+          and "t.printStackTrace();" in term)
+    check("the menu watermark is off by default, and switchable back on",
+          "public static boolean titleWordmark = false;" in cfg
+          and "title_wordmark" in cfg
+          and "Title wordmark (DEVOURING STORMS over the menu)" in extras
+          and "McsmExtrasConfig.titleWordmark ? 96 : 0" in title)
+    check("the menu is not a black bar any more",
+          "public static double menuLift = 0.09D;" in cfg
+          and "menu_lift" in cfg
+          and "Main menu brightness lift (0 = untouched)" in extras
+          and "double lift = Math.max(0.0D, Math.min(0.35D, McsmExtrasConfig.menuLift));" in title
+          and "g.fillGradient(0, 0, w, titleBandBottom, 0xB007050E, 0x00070510);" in title
+          and "g.fillGradient(0, 0, w, titleBandBottom, 0xFF07050E, 0x00070510);" not in title
+          and "g.fill(0, 0, w, h, 0xC8010103);" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java") or "")
+          and "g.fill(0, 0, w, h, 0xFF010103);" not in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java") or ""))
+    check("the cities are BIGGER, per district, from the district's own key",
+          "public static final int BIG_PERCENT = 45;" in cities
+          and "public static final double SCALE_MIN = 1.00D;" in cities
+          and "public static final double SCALE_MAX = 1.45D;" in cities
+          and "public static int rings(int rx, int rz) {" in cities
+          and "public static double scaleOf(int rx, int rz) {" in cities
+          and "int rings = rings(rx, rz);" in cities
+          and "double scale = scaleOf(rx, rz);" in cities
+          and "int cell = (int) Math.round(CELL * scale);" in cities
+          and "for (int cx = -rings; cx <= rings; cx++) {" in cities
+          and "public static final int MAX_PLAN_OPS = 320000;" in cities
+          and "public static final int OPS_PER_TICK = 1800;" in cities)
+    check("and each one wears its own air: six atmospheres, six skylines",
+          cities.count("0xFF") >= 12
+          and "public static int atmosphereIndex(int rx, int rz) {" in cities
+          and "public static int fogArgb(int rx, int rz) {" in cities
+          and "public static int skyArgb(int rx, int rz) {" in cities
+          and "public static double radiusOf(int rx, int rz) {" in cities
+          and "public static int[] atmosphereAt(int x, int z) {" in cities
+          and "public static String atmosphereName(int rx, int rz) {" in cities)
+    check("the client wears the district's air on the proven sky and fog hooks",
+          "int[] air = net.mcsm.extras.McsmCities.atmosphereAt(" in sky
+          and "state.skyColor = citySky(state.skyColor);" in sky
+          # the city tint must come BEFORE the storm's reach test, or a district
+          # would only have its own sky while the storm was not looking
+          and sky.index("state.skyColor = citySky(state.skyColor);")
+                  < sky.index("float reach = McsmSkyReach.influence();")
+          and "return influence;" in sky
+          and "out[0] = ((air[0] >> 16) & 0xFF) / 255.0F;" in sky
+          and "public static boolean cityAtmosphere = true;" in cfg
+          and "city_atmosphere" in cfg
+          and "Cities carry their own fog and sky (each district is different)" in extras)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

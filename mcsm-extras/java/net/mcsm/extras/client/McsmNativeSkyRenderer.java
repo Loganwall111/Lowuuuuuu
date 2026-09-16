@@ -100,6 +100,9 @@ public final class McsmNativeSkyRenderer {
         // outright, from there to 1.8x the sky is blended back toward whatever
         // vanilla computed for this time of day, and past that the storm
         // contributes nothing at all.
+        // BUILD #448 -- the district's air, before the storm's own reach test.
+        state.skyColor = citySky(state.skyColor);
+
         float reach = McsmSkyReach.influence();
         if (reach <= McsmSkyReach.CUTOFF) {
             ownsSky = false;   // pure vanilla sky: day, dusk or midnight
@@ -162,7 +165,69 @@ public final class McsmNativeSkyRenderer {
     public static float fogColor(ClientLevel level, float[] out) {
         // #409 user directive: regular sky, no horizon band. The storm no
         // longer tints world fog; the shader pack (or vanilla) owns it.
-        return 0.0F;
+        //
+        // BUILD #448 -- BUT A DISTRICT DOES. "can you make the cities each one
+        // bigger with its own unique fog in sky": each district's air is read from
+        // its own region key (McsmCities.atmosphereAt), it fades in as the district
+        // is approached and out as it is left, and it gives way to the storm when
+        // the storm is the stronger atmosphere -- the storm is the bigger story.
+        if (!McsmExtrasConfig.cityAtmosphere || out == null || out.length < 3) {
+            return 0.0F;
+        }
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || mc.player == null) {
+                return 0.0F;
+            }
+            int[] air = net.mcsm.extras.McsmCities.atmosphereAt(
+                    (int) Math.floor(mc.player.getX()), (int) Math.floor(mc.player.getZ()));
+            if (air == null || air[2] <= 0) {
+                return 0.0F;
+            }
+            float influence = (air[2] / 100.0F) * net.mcsm.extras.McsmCities.CITY_FOG_MAX;
+            influence *= Math.max(0.0F, 1.0F - McsmSkyReach.influence());
+            if (influence <= 0.005F) {
+                return 0.0F;
+            }
+            out[0] = ((air[0] >> 16) & 0xFF) / 255.0F;
+            out[1] = ((air[0] >> 8) & 0xFF) / 255.0F;
+            out[2] = (air[0] & 0xFF) / 255.0F;
+            return influence;
+        } catch (Throwable t) {
+            return 0.0F;
+        }
+    }
+
+    /**
+     * BUILD #448 -- the district's own sky colour, blended into whatever the sky
+     * pass has already decided (vanilla, the decayed reality, or the storm).
+     *
+     * <p>Applied BEFORE the storm's reach test, on purpose: a city's sky is not the
+     * storm's sky. It is the same when the storm owns the sky and when vanilla does.
+     */
+    private static int citySky(int current) {
+        if (!McsmExtrasConfig.cityAtmosphere) {
+            return current;
+        }
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || mc.player == null) {
+                return current;
+            }
+            int[] air = net.mcsm.extras.McsmCities.atmosphereAt(
+                    (int) Math.floor(mc.player.getX()), (int) Math.floor(mc.player.getZ()));
+            if (air == null || air[2] <= 0) {
+                return current;
+            }
+            float influence = (air[2] / 100.0F) * 0.55F;
+            influence *= Math.max(0.0F, 1.0F - McsmSkyReach.influence() * 0.85F);
+            int sky = air[1];
+            float[] target = {((sky >> 16) & 0xFF) / 255.0F, ((sky >> 8) & 0xFF) / 255.0F,
+                              (sky & 0xFF) / 255.0F};
+            return mcsm$mixArgb(current, target, influence);
+        } catch (Throwable t) {
+            return current;
+        }
     }
 
     private static void phaseFogColor(float phase, float[] out) {

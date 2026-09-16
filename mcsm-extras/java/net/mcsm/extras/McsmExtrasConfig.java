@@ -122,6 +122,12 @@ public final class McsmExtrasConfig {
      * with no shader pack installed.
      */
     public static boolean skyFloorBand = true;
+    /** BUILD #448 -- each district carries its own fog and sky. */
+    public static boolean cityAtmosphere = true;
+    /** BUILD #448 -- the title wordmark ("a giant Devouring Storms watermark"). */
+    public static boolean titleWordmark = false;
+    /** BUILD #448 -- how much light to lift the main menu's backdrop by, 0..0.35. */
+    public static double menuLift = 0.09D;
     /** BUILD #447 -- cutscenes beyond the boot sequence (eight, in the world). */
     public static boolean cutscenes = true;
     /** BUILD #445 -- the reader's own page in the future-book (kept between sessions). */
@@ -431,6 +437,9 @@ public final class McsmExtrasConfig {
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
             p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
+            p.setProperty("city_atmosphere", String.valueOf(cityAtmosphere));
+            p.setProperty("title_wordmark", String.valueOf(titleWordmark));
+            p.setProperty("menu_lift", String.valueOf(menuLift));
             p.setProperty("cutscenes", String.valueOf(cutscenes));
             p.setProperty("future_book_note", futureBookNote);
             p.setProperty("future_book_note_day", String.valueOf(futureBookNoteDay));
@@ -571,6 +580,9 @@ public final class McsmExtrasConfig {
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
+            cityAtmosphere = bool(p, "city_atmosphere", cityAtmosphere);
+            titleWordmark = bool(p, "title_wordmark", titleWordmark);
+            menuLift = dbl(p, "menu_lift", menuLift);
             cutscenes = bool(p, "cutscenes", cutscenes);
             futureBookNote = str(p, "future_book_note", futureBookNote);
             futureBookNoteDay = (int) dbl(p, "future_book_note_day", futureBookNoteDay);

@@ -411,6 +411,21 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyFloorBand = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #448 -- the cities' own air, and the bigger districts.
+          .bool("Cities carry their own fog and sky (each district is different)",
+                  () -> McsmExtrasConfig.cityAtmosphere, v -> {
+              McsmExtrasConfig.cityAtmosphere = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #448 -- the main menu: no watermark by default, and a lift.
+          .bool("Title wordmark (DEVOURING STORMS over the menu)", () -> McsmExtrasConfig.titleWordmark, v -> {
+              McsmExtrasConfig.titleWordmark = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Main menu brightness lift (0 = untouched)", () -> McsmExtrasConfig.menuLift, v -> {
+              McsmExtrasConfig.menuLift = v;
+              McsmExtrasConfig.save();
+          }, 0.0D, 0.35D)
           // BUILD #447 -- the cutscenes that happen in the world.
           .bool("Cutscenes (eight, in world: cities, mazes, racks, rift, adams)", () -> McsmExtrasConfig.cutscenes, v -> {
               McsmExtrasConfig.cutscenes = v;

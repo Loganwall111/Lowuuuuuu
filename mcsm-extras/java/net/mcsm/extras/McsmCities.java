@@ -70,9 +70,29 @@ public final class McsmCities {
     /** Player distance that starts a district's construction. */
     public static final int ACTIVATE = 352;
     /** Block placements written per server tick while a district is going up. */
-    public static final int OPS_PER_TICK = 1200;
+    // BUILD #448 -- BIGGER CITIES. A district is a 3x3 plot grid at 1.0x; a big
+    // district is a 5x5 grid at up to 1.45x, with every footprint and every height
+    // multiplied by its own scale. The scale, the ring count and the atmosphere
+    // below are all read from the SAME region key as the layout, so the client can
+    // wear a district's sky without asking a server about it.
+    public static final int BIG_PERCENT = 45;
+    public static final double SCALE_MIN = 1.00D;
+    public static final double SCALE_MAX = 1.45D;
+    /** How hard a district's own fog can press, at the middle of it. */
+    public static final float CITY_FOG_MAX = 0.42F;
+
+    /** Six atmospheres: {fog, sky} per district, in ARGB. */
+    public static final int[] CITY_FOG_ARG = {
+        0xFF8A5CFF, 0xFF39E0FF, 0xFFFF9A5C, 0xFF7CFFB0, 0xFFD86BFF, 0xFFFFE3A0,
+    };
+    public static final int[] CITY_SKY_ARG = {
+        0xFF2A1B3E, 0xFF122A38, 0xFF3A2418, 0xFF16301F, 0xFF2E1533, 0xFF33290F,
+    };
+
+    public static final int OPS_PER_TICK = 1800;
     /** Hard cap on one district's plan, so a pathological seed cannot run away. */
-    public static final int MAX_PLAN_OPS = 90000;
+    // a 5x5 district at 1.45x needs the room
+    public static final int MAX_PLAN_OPS = 320000;
 
     private static final int CELL = 64;          // plot spacing inside a region
     private static final int HALF_PLOT = 25;     // plot half-width
@@ -259,6 +279,82 @@ public final class McsmCities {
      * none is loaded. Pure arithmetic -- the client can call it for the HUD and
      * the server for the arrival message without touching world state.
      */
+    /** 1 for a district, 2 for a big one. Same key as the layout. */
+    public static int rings(int rx, int rz) {
+        return Math.floorMod(mix(regionKey(rx, rz) * 0x2545F4914F6CDD1DL ^ 7L), 100L) < BIG_PERCENT
+                ? 2 : 1;
+    }
+
+    /** This district's own scale, 1.00 .. 1.45, in 0.05 steps. */
+    public static double scaleOf(int rx, int rz) {
+        long h = Math.floorMod(mix(regionKey(rx, rz) * 0x51ED270B7F4A7C15L ^ 0x5ADL), 1000L);
+        double raw = SCALE_MIN + (h / 1000.0D) * (SCALE_MAX - SCALE_MIN);
+        return Math.round(raw * 20.0D) / 20.0D;
+    }
+
+    /** Which of the six atmospheres this district wears. */
+    public static int atmosphereIndex(int rx, int rz) {
+        return (int) Math.floorMod(mix(regionKey(rx, rz) * 0x9E3779B97F4A7C15L + 13L),
+                CITY_FOG_ARG.length);
+    }
+
+    public static int fogArgb(int rx, int rz) {
+        return CITY_FOG_ARG[atmosphereIndex(rx, rz)];
+    }
+
+    public static int skyArgb(int rx, int rz) {
+        return CITY_SKY_ARG[atmosphereIndex(rx, rz)];
+    }
+
+    /** How far a district's own air reaches from its centre. */
+    public static double radiusOf(int rx, int rz) {
+        return rings(rx, rz) * CELL * scaleOf(rx, rz) + 48.0D;
+    }
+
+    /**
+     * THE DISTRICT'S AIR AT A POINT, or null when there is none.
+     *
+     * <p>Returns {fogArgb, skyArgb, influencePercent}. The influence is full at
+     * the centre, fades to nothing at the district's own edge, and is computed
+     * from the same hash the layout uses -- so the client wears a district's sky
+     * on approach with no server involved, and two players standing in the same
+     * city see the same colour.
+     */
+    public static int[] atmosphereAt(int x, int z) {
+        int prx = Math.floorDiv(x, REGION);
+        int prz = Math.floorDiv(z, REGION);
+        int[] best = null;
+        double bestInfluence = 0.0D;
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                int rx = prx + dx;
+                int rz = prz + dz;
+                if (!hasCity(rx, rz)) {
+                    continue;
+                }
+                double ox = rx * REGION + REGION / 2.0D;
+                double oz = rz * REGION + REGION / 2.0D;
+                double dist = Math.hypot(x - ox, z - oz);
+                double radius = radiusOf(rx, rz);
+                double influence = 1.0D - dist / radius;
+                if (influence > bestInfluence) {
+                    bestInfluence = influence;
+                    best = new int[]{fogArgb(rx, rz), skyArgb(rx, rz),
+                            (int) Math.round(influence * 100.0D)};
+                }
+            }
+        }
+        return best;
+    }
+
+    /** "big, 1.25x, amethyst air" -- for the console and the gate. */
+    public static String atmosphereName(int rx, int rz) {
+        String[] names = {"amethyst", "carrier", "ember", "verdigris", "orchid", "pale"};
+        return (rings(rx, rz) == 2 ? "big" : "small") + ", "
+                + String.format(java.util.Locale.ROOT, "%.2fx", Double.valueOf(scaleOf(rx, rz)))
+                + ", " + names[atmosphereIndex(rx, rz)] + " air";
+    }
+
     public static int[] nearestCity(int x, int z) {
         int prx = Math.floorDiv(x, REGION);
         int prz = Math.floorDiv(z, REGION);
@@ -326,29 +422,39 @@ public final class McsmCities {
         Rng rng = new Rng(mix(key * 0x9E3779B97F4A7C15L));
         Plan plan = new Plan();
 
+        // BUILD #448 -- the size of this particular district.
+        int rings = rings(rx, rz);
+        double scale = scaleOf(rx, rz);
+        int cell = (int) Math.round(CELL * scale);
+        int s18 = (int) Math.round(18 * scale);
+        int s22 = (int) Math.round(22 * scale);
+        int s24 = (int) Math.round(24 * scale);
+        int s30 = (int) Math.round(30 * scale);
+        int s32 = (int) Math.round(32 * scale);
+
         planPlaza(plan, rng, ox, oz, ground);
         planHighway(plan, rng, ox, oz, ground);
 
-        for (int cx = -1; cx <= 1; cx++) {
-            for (int cz = -1; cz <= 1; cz++) {
+        for (int cx = -rings; cx <= rings; cx++) {
+            for (int cz = -rings; cz <= rings; cz++) {
                 if (cx == 0 && cz == 0) {
                     continue; // the plaza owns the centre
                 }
-                int bx = ox + cx * CELL;
-                int bz = oz + cz * CELL;
+                int bx = ox + cx * cell;
+                int bz = oz + cz * cell;
                 int kind = rng.range(100);
                 if (kind < 26) {
-                    planTower(plan, rng, bx, bz, ground, 18 + rng.range(6), 18 + rng.range(6),
-                            22 + rng.range(30));
+                    planTower(plan, rng, bx, bz, ground, s18 + rng.range(6), s18 + rng.range(6),
+                            s22 + rng.range(s30));
                 } else if (kind < 46) {
-                    planWarehouse(plan, rng, bx, bz, ground, 32 + rng.range(6), 22 + rng.range(6),
-                            8 + rng.range(5));
+                    planWarehouse(plan, rng, bx, bz, ground, s32 + rng.range(6), s22 + rng.range(6),
+                            (int) Math.round((8 + rng.range(5)) * scale));
                 } else if (kind < 66) {
                     planHouse(plan, rng, bx, bz, ground);
                 } else if (kind < 80) {
-                    planHospital(plan, rng, bx, bz, ground, 24 + rng.range(4), 18 + rng.range(8));
+                    planHospital(plan, rng, bx, bz, ground, s24 + rng.range(4), s18 + rng.range(8));
                 } else if (kind < 90) {
-                    planRadio(plan, rng, bx, bz, ground, 30 + rng.range(16));
+                    planRadio(plan, rng, bx, bz, ground, s30 + rng.range(16));
                 } else {
                     planCrater(plan, rng, bx, bz, ground);
                 }
@@ -366,7 +472,7 @@ public final class McsmCities {
         OPS.addAll(plan.ops);
         districts++;
         System.out.println("[ds] raising a district at " + ox + "," + oz + " ("
-                + plan.ops.size() + " placements)");
+                + plan.ops.size() + " placements, " + atmosphereName(rx, rz) + ")");
     }
 
     /**

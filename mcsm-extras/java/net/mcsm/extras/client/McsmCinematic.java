@@ -448,8 +448,11 @@ public final class McsmCinematic {
     private static void drawPreGame(GuiGraphicsExtractor g, int w, int h, double t) {
         net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
 
-        // black frame -> faint deep blue at the horizon
-        g.fill(0, 0, w, h, 0xFF010103);
+        // BUILD #448 -- near-black, but NOT opaque: on the boot scene there is
+        // nothing behind this, and on the fallback path (when the logo hook never
+        // ran) the title screen is. "It's very black" was, in part, this plate
+        // covering a menu that was already drawn underneath it.
+        g.fill(0, 0, w, h, 0xC8010103);
         int horizon = (int) (h * 0.78D);
         g.fillGradient(0, horizon - h / 8, w, horizon, 0x000A0A1E, 0x8814122E);
         // ground

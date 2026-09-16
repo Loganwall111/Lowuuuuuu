@@ -652,9 +652,30 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         // plate now covers the whole title band, 0..118, so the wordmark sits on
         // its own ground, and it is skipped entirely when the window is too
         // narrow for it to fit beside the frame.
-        int titleBandBottom = 118;
-        g.fillGradient(0, 0, w, titleBandBottom, 0xFF07050E, 0x00070510);
-        g.fillGradient(0, titleBandBottom - 14, w, titleBandBottom, 0x00070510, 0x00000000);
+        //
+        // BUILD #448 -- "this is currently a giant Devouring Storms watermark
+        // blocking it. It's very black."
+        //
+        // Two things were doing that, and both are answered here:
+        //
+        //   * THE BAND WAS AN OPAQUE BLACK BAR 118 PIXELS TALL. It is a LIFT and a
+        //     soft shadow now: a brightness wash over the whole backdrop (so the
+        //     panorama the player picked is actually visible), and a band half the
+        //     height that fades out instead of stopping.
+        //   * THE WORDMARK. The mark is a switch now, and it is OFF by default --
+        //     the title screen is the panorama and the menu, and a brand block over
+        //     it is a watermark, not a title. Turn it back on in the panel if you
+        //     want it ("Title wordmark (DEVOURING STORMS)").
+        double lift = Math.max(0.0D, Math.min(0.35D, McsmExtrasConfig.menuLift));
+        if (lift > 0.001D) {
+            int a = (int) Math.round(lift * 255.0D);
+            g.fill(0, 0, w, h, (a << 24) | 0xE8E2FF);
+        }
+        int titleBandBottom = McsmExtrasConfig.titleWordmark ? 96 : 0;
+        if (titleBandBottom > 0) {
+            g.fillGradient(0, 0, w, titleBandBottom, 0xB007050E, 0x00070510);
+            g.fillGradient(0, titleBandBottom - 14, w, titleBandBottom, 0x00070510, 0x00000000);
+        }
         if (w < 420) {
             titleBandBottom = 0;   // too small for the wordmark: keep the sky clear
         }
