@@ -35,6 +35,27 @@ a cap, a card or a hard-edged oval.
   of the ember trace. `ci/palette_tables.py` re-derives all eleven and fails the
   build if any hex stops matching its source.
 
+## 2b. The trace is a tool, and the clouds come out of it too
+
+- **`ci/trace_sky_sheets.py`** is the "extract it with a tool" half of the brief.
+  Give it the three delivered sheets (drop them in `ci/sky_sheets/`, `uploads/`,
+  or `/home/user/uploads/`, or pass `--dir`) and it samples each one down its
+  centre band into the six-stop column the shaders use, rewrites **every**
+  consumer in place -- `sky.fsh`, `position.fsh`, `McsmStormPhase.java`, and the
+  derived constants in `mcsm_visuals.glsl` -- then re-runs the parity gate. It
+  decodes PNGs itself (all five filter types, no Pillow) and `--self-test`
+  round-trips a synthetic sheet through the whole path, so the trace maths is
+  verified before it ever touches a real sheet. `--verify` re-traces and FAILS
+  if the shipped tables disagree with checked-in sheets (it reports a skip, not
+  a pass, when the sheets are absent).
+- **The cloud deck is now part of the palette.** The deck used to be tinted with
+  hand-picked hexes, which is why it never matched the sky. It is now four
+  constants derived the same way as everything else -- the traced column's mid
+  row lifted toward white by a per-phase amount -- so the pale puffs under the
+  turquoise sky, the dark violet banks under the purple sky and the warm mauve
+  under the rose sky all come off the same sheets the sky does, and cross-fade
+  on exactly the same phase ramps.
+
 ## 3. Backdrops re-baked to those palettes
 
 - The six sky-plane sheets are regenerated from the traced tables -- purple

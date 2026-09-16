@@ -301,6 +301,17 @@ echo "$PALETTE_LINE"
 # Annotations survive without runner-log access, so the gate result is auditable.
 echo "::notice title=palette::$PALETTE_LINE"
 
+# BUILD #416 -- if the source sheets are checked in (ci/sky_sheets/), the traced
+# tables must still BE those sheets. Without the sheets the check reports that it
+# skipped rather than passing quietly; it never invents a pass.
+echo "[trace] reference-sheet trace gate"
+TRACE_OUT="$(python3 ci/trace_sky_sheets.py --verify 2>&1)" || {
+  echo "$TRACE_OUT"
+  echo "::error title=build::the shipped sky tables no longer match the reference sheets — run 'python3 ci/trace_sky_sheets.py --apply'"
+  exit 1
+}
+printf '%s\n' "$TRACE_OUT" | grep -E '^\[trace\]|^  (ok|FAIL)|sky-sheets::' | tail -6
+
 echo "[phase] WitherStormPhase plumbing gate"
 PHASE_OUT="$(python3 ci/check_phase_uniform.py 2>&1)" || {
   echo "$PHASE_OUT"

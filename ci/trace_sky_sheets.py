@@ -1,0 +1,403 @@
+#!/usr/bin/env python3
+"""trace_sky_sheets.py -- BUILD #416: trace the three reference sky sheets EXACTLY.
+
+The brief's rule: extract the colours per phase with a tool, never by eye. This
+is that tool. It reads the three delivered sheets
+
+    "phase 5 turquoise sky.png"      -> phase 5.0 - 5.1   (teal)
+    "phase5sky0purple sky.png"       -> phase 5.5 - 5.9   (purple)
+    "phase6sky 6 witherstorm.png"    -> phase 6.0 - 7.0   (rose)
+
+samples each one down its centre band into the six-stop column the shaders use,
+and REWRITES every consumer of that column in place:
+
+    mcsm-core-shaders/core/sky.fsh                  PHASE5_TEAL / PHASE55_PUR / PHASE6_ROSE
+    mcsm-core-shaders/core/position.fsh             SKY_REF_TEAL / SKY_REF_PURPLE / SKY_REF_ROSE
+    mcsm-extras/.../client/McsmStormPhase.java      SKY_TEAL / SKY_PURPLE / SKY_ROSE
+    mcsm-core-shaders/include/mcsm_visuals.glsl     the derived constants (P5_*, P55_*, P6_*,
+                                                    MCSM_CLOUD_*) via ci/palette_tables.DERIVED
+
+then re-runs the parity gate so the result is proven consistent before anything
+is committed.
+
+    python3 ci/trace_sky_sheets.py --check          # report what it would change
+    python3 ci/trace_sky_sheets.py --apply          # write it
+    python3 ci/trace_sky_sheets.py --dir PATH       # where the sheets live
+    python3 ci/trace_sky_sheets.py --self-test      # round-trip test, no sheets needed
+
+Where to put the sheets: any of
+    ci/sky_sheets/<name>.png        (committed, if you want the trace reproducible)
+    uploads/<name>.png              (repo root)
+    /home/user/uploads/<name>.png   (the workspace upload directory)
+or pass --dir explicitly. Spaces in the names are fine, and the file names are
+matched loosely (case, underscores, "phase 5"/"phase5").
+"""
+import argparse
+import glob
+import os
+import re
+import shutil
+import struct
+import subprocess
+import sys
+import zlib
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+import palette_tables as pal  # noqa: E402
+
+# role -> (loose filename fragments, phase the sheet owns)
+SHEETS = [
+    ("teal", ["turquoise"], 5.05),
+    ("purple", ["purple", "5sky0"], 5.65),
+    ("rose", ["witherstorm", "phase6", "6wither"], 6.20),
+]
+SEARCH_DIRS = [
+    os.path.join(ROOT, "ci", "sky_sheets"),
+    os.path.join(ROOT, "uploads"),
+    "/home/user/uploads",
+    os.path.join(ROOT, "reference"),
+]
+# Every file that carries a copy of a column, as (path, regex, token per role).
+GLSL_CONSUMERS = [
+    (
+        "mcsm-core-shaders/core/sky.fsh",
+        r"(const\s+vec3\s+%s\s*\[\s*\d+\s*\]\s*=\s*vec3\[\]\s*\()(.*?)(\)\s*;)",
+        {"teal": "PHASE5_TEAL", "purple": "PHASE55_PUR", "rose": "PHASE6_ROSE"},
+    ),
+    (
+        "mcsm-core-shaders/core/position.fsh",
+        r"(const\s+vec3\s+%s\s*\[\s*\d+\s*\]\s*=\s*vec3\[\]\s*\()(.*?)(\)\s*;)",
+        {"teal": "SKY_REF_TEAL", "purple": "SKY_REF_PURPLE", "rose": "SKY_REF_ROSE"},
+    ),
+]
+JAVA_CONSUMER = (
+    "mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java",
+    r"(float\[\]\[\]\s+%s\s*=\s*\{)(.*?)(\}\s*;)",
+    {"teal": "SKY_TEAL", "purple": "SKY_PURPLE", "rose": "SKY_ROSE"},
+)
+STOPS = 6
+
+
+# ---------------------------------------------------------------------------
+# PNG decoding (no Pillow in CI, and the sheets can use any filter type)
+# ---------------------------------------------------------------------------
+def _paeth(a, b, c):
+    p = a + b - c
+    pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+    if pa <= pb and pa <= pc:
+        return a
+    return b if pb <= pc else c
+
+
+def read_png(path):
+    """-> (width, height, [(r,g,b,a), ...]) with every filter type applied."""
+    with open(path, "rb") as f:
+        data = f.read()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError("%s: not a PNG" % path)
+    i = 8
+    idat = b""
+    w = h = depth = color = None
+    while i < len(data):
+        (ln,) = struct.unpack(">I", data[i:i + 4])
+        typ = data[i + 4:i + 8]
+        chunk = data[i + 8:i + 8 + ln]
+        i += 12 + ln
+        if typ == b"IHDR":
+            w, h, depth, color = struct.unpack(">IIBB", chunk[:10])
+        elif typ == b"IDAT":
+            idat += chunk
+        elif typ == b"IEND":
+            break
+    if depth != 8:
+        raise ValueError("%s: only 8-bit PNGs are supported (got depth %d)" % (path, depth))
+    channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(color)
+    if channels is None:
+        raise ValueError("%s: unsupported PNG colour type %d" % (path, color))
+    raw = zlib.decompress(idat)
+    stride = w * channels
+    out = []
+    prev = bytearray(stride)
+    pos = 0
+    for _y in range(h):
+        ftype = raw[pos]
+        pos += 1
+        line = bytearray(raw[pos:pos + stride])
+        pos += stride
+        if ftype == 1:
+            for x in range(channels, stride):
+                line[x] = (line[x] + line[x - channels]) & 0xFF
+        elif ftype == 2:
+            for x in range(stride):
+                line[x] = (line[x] + prev[x]) & 0xFF
+        elif ftype == 3:
+            for x in range(stride):
+                a = line[x - channels] if x >= channels else 0
+                line[x] = (line[x] + ((a + prev[x]) >> 1)) & 0xFF
+        elif ftype == 4:
+            for x in range(stride):
+                a = line[x - channels] if x >= channels else 0
+                c = prev[x - channels] if x >= channels else 0
+                line[x] = (line[x] + _paeth(a, prev[x], c)) & 0xFF
+        elif ftype != 0:
+            raise ValueError("%s: bad PNG filter %d" % (path, ftype))
+        out.append(line)
+        prev = line
+    px = []
+    for line in out:
+        for x in range(w):
+            v = line[x * channels:(x + 1) * channels]
+            if channels == 4:
+                px.append((v[0], v[1], v[2], v[3]))
+            elif channels == 3:
+                px.append((v[0], v[1], v[2], 255))
+            elif channels == 2:
+                px.append((v[0], v[0], v[0], v[1]))
+            else:
+                px.append((v[0], v[0], v[0], 255))
+    return w, h, px
+
+
+def trace_column(path):
+    """Six stops (0 = top of the sheet, 1 = bottom) from the sheet's centre band.
+
+    Averaging a band rather than a single pixel column is what makes the trace
+    robust against PNG noise and any thin highlight line in the source art; the
+    answer is still exactly what the sheet shows, to 1/255.
+    """
+    w, h, px = read_png(path)
+    x0 = int(w * 0.40)
+    x1 = max(x0 + 1, int(w * 0.60))
+    stops = []
+    for i in range(STOPS):
+        t = i / float(STOPS - 1)
+        y = min(h - 1, int(round(t * (h - 1))))
+        acc = [0.0, 0.0, 0.0]
+        n = 0
+        for x in range(x0, x1):
+            r, g, b, _a = px[y * w + x]
+            acc[0] += r
+            acc[1] += g
+            acc[2] += b
+            n += 1
+        stops.append([acc[k] / (255.0 * n) for k in range(3)])
+    return stops
+
+
+# ---------------------------------------------------------------------------
+# writing the trace back into the sources
+# ---------------------------------------------------------------------------
+def glsl_rows(stops):
+    rows = ["    " + ", ".join("vec3(%.3f, %.3f, %.3f)" % tuple(s) for s in stops[i:i + 3])
+            + ("," if i + 3 < len(stops) else ");")
+            for i in range(0, len(stops), 3)]
+    return "\n".join(rows)
+
+
+def java_rows(stops):
+    rows = ["        " + ", ".join("{%.3fF, %.3fF, %.3fF}" % tuple(s) for s in stops[i:i + 3])
+            + ("," if i + 3 < len(stops) else ",")
+            for i in range(0, len(stops), 3)]
+    return "\n".join(rows)
+
+
+def patch(path, regex_tpl, token, body):
+    full = os.path.join(ROOT, path)
+    with open(full, encoding="utf-8") as f:
+        text = f.read()
+    rx = re.compile(regex_tpl % re.escape(token), re.S)
+    if not rx.search(text):
+        raise SystemExit("[trace] %s: could not find %s to rewrite" % (path, token))
+    new = rx.sub(lambda m: m.group(1) + "\n" + body + "\n" + m.group(3).lstrip(), text, count=1)
+    if new == text:
+        return False
+    with open(full, "w", encoding="utf-8") as f:
+        f.write(new)
+    return True
+
+
+def rewrite_derived(apply):
+    """Regenerate the derived constants in mcsm_visuals.glsl from the tables."""
+    path = os.path.join(ROOT, pal.VISUALS)
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    changed = 0
+    for spec in pal.DERIVED:
+        name, role, mode, value, scale = spec
+        if mode == "row":
+            base = list(pal.rows(role)[int(value)])
+        elif mode == "mixw":
+            t, w = value
+            base = [v * (1.0 - w) + w for v in pal.sample_column(pal.rows(role), t)]
+        else:
+            base = list(pal.sample_column(pal.rows(role), value))
+        c = [v * scale for v in base]
+        body = "const vec3 %s = vec3(%.1f, %.1f, %.1f) / 255.0;" % (
+            name, c[0] * 255.0, c[1] * 255.0, c[2] * 255.0)
+        rx = re.compile(r"const\s+vec3\s+%s\s*=\s*vec3\([^;]*?\)\s*/\s*255\.0;" % re.escape(name))
+        if not rx.search(text):
+            print("  ! %s not found in %s" % (name, pal.VISUALS))
+            continue
+        newtext = rx.sub(body.replace("\\", "\\\\"), text, count=1)
+        if newtext != text:
+            changed += 1
+            if apply:
+                text = newtext
+    if apply and changed:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+    return changed
+
+
+def find_sheets(extra_dir):
+    dirs = ([extra_dir] if extra_dir else []) + SEARCH_DIRS
+    found = {}
+    for role, fragments, _phase in SHEETS:
+        for d in dirs:
+            if not d or not os.path.isdir(d):
+                continue
+            for path in sorted(glob.glob(os.path.join(d, "*.png"))):
+                low = os.path.basename(path).lower().replace("_", " ").replace("-", " ")
+                if any(f.lower() in low for f in fragments):
+                    found.setdefault(role, path)
+                    break
+            if role in found:
+                break
+    return found
+
+
+def self_test():
+    """Round-trip: bake a sheet from the shipped tables, trace it back, compare."""
+    import tempfile
+    ok = True
+    for role, phase in (("teal", 5.05), ("purple", 5.65), ("rose", 6.20)):
+        col = pal.rows(role)
+        w, h = 64, 256
+        rows = []
+        for y in range(h):
+            t = y / (h - 1)
+            c = pal.sample_column(col, t)
+            px = bytes(max(0, min(255, int(round(v * 255)))) for v in c)
+            rows.append(b"\x00" + px * w)
+
+        def chunk(typ, d):
+            return (struct.pack(">I", len(d)) + typ + d
+                    + struct.pack(">I", zlib.crc32(typ + d) & 0xFFFFFFFF))
+
+        blob = (b"\x89PNG\r\n\x1a\n"
+                + chunk(b"IHDR", struct.pack(">IIBB", w, h, 8, 2) + b"\x00\x00\x00")
+                + chunk(b"IDAT", zlib.compress(b"".join(rows), 6))
+                + chunk(b"IEND", b""))
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            tmp.write(blob)
+            tmp_path = tmp.name
+        got = trace_column(tmp_path)
+        os.unlink(tmp_path)
+        worst = 0.0
+        for i, s in enumerate(got):
+            want = pal.sample_column(col, i / (STOPS - 1.0))
+            worst = max(worst, max(abs(s[k] - want[k]) for k in range(3)))
+        status = "ok " if worst <= 1.5 / 255.0 else "FAIL"
+        if worst > 1.5 / 255.0:
+            ok = False
+        print("  %s round-trip %-7s max channel error %.5f" % (status, role, worst))
+    print("[trace] self-test %s" % ("PASSED" if ok else "FAILED"))
+    return 0 if ok else 1
+
+
+def verify(traced):
+    """Compare a fresh trace against the tables the shaders ship right now."""
+    ok = True
+    for role, _frag, phase in SHEETS:
+        shipped = pal.rows(role)
+        worst = 0.0
+        where = ""
+        for i in range(STOPS):
+            want = pal.sample_column(shipped, i / (STOPS - 1.0))
+            got = traced[role][i]
+            d = max(abs(want[k] - got[k]) for k in range(3))
+            if d > worst:
+                worst = d
+                where = "stop %d: shipped %s vs sheet %s" % (i, pal._hex(want), pal._hex(got))
+        if worst > 2.0 / 255.0:
+            ok = False
+            print("  FAIL %-7s drift %.4f -- %s" % (role, worst, where))
+        else:
+            print("  ok   %-7s matches the sheet (max channel error %.4f)" % (role, worst))
+    print("[trace] %s" % ("the shipped tables ARE the sheets" if ok
+                          else "DRIFT: shipped tables are not what the sheets say -- run --apply"))
+    return 0 if ok else 1
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--apply", action="store_true", help="write the traced values")
+    ap.add_argument("--check", action="store_true", help="report only (default)")
+    ap.add_argument("--verify", action="store_true",
+                    help="trace and FAIL if the shipped tables disagree with the sheets")
+    ap.add_argument("--dir", help="directory holding the three sheets")
+    ap.add_argument("--self-test", action="store_true")
+    args = ap.parse_args()
+
+    if args.self_test:
+        return self_test()
+
+    found = find_sheets(args.dir)
+    missing = [role for role, _f, _p in SHEETS if role not in found]
+    if missing:
+        if args.verify:
+            # No sheets checked in: nothing to verify against. Say so loudly
+            # rather than passing silently.
+            print("::notice title=sky-sheets::reference sheets not in the repo (looked in %s) -- "
+                  "trace verification skipped" % ", ".join(SEARCH_DIRS))
+        print("[trace] reference sheets NOT found: %s" % ", ".join(missing))
+        print("[trace] looked in: %s" % ", ".join(d for d in SEARCH_DIRS))
+        print("[trace] drop the three PNGs into ci/sky_sheets/ (or pass --dir) and rerun.")
+        for role, path in found.items():
+            print("  found %-7s %s" % (role, path))
+        return 0 if args.verify else 2
+
+    traced = {}
+    for role, _frag, phase in SHEETS:
+        traced[role] = trace_column(found[role])
+        lo = pal._hex(traced[role][0])
+        hi = pal._hex(traced[role][-1])
+        print("[trace] %-7s phase %.2f  %s -> %s  (zenith -> horizon)  %s"
+              % (role, phase, lo, hi, os.path.basename(found[role])))
+
+    if args.verify:
+        return verify(traced)
+
+    writes = []
+    for path, tpl, tokens in GLSL_CONSUMERS:
+        for role, token in tokens.items():
+            writes.append((path, tpl, token, glsl_rows(traced[role])))
+    path, tpl, tokens = JAVA_CONSUMER
+    for role, token in tokens.items():
+        writes.append((path, tpl, token, java_rows(traced[role])))
+
+    if not args.apply:
+        print("[trace] --check: %d table sites would be rewritten (%d files) + derived constants"
+              % (len(writes), len({w[0] for w in writes}) + 1))
+        print("[trace] rerun with --apply to write them, then 'python3 ci/palette_tables.py'")
+        return 0
+
+    changed = 0
+    for path, tpl, token, body in writes:
+        if patch(path, tpl, token, body):
+            changed += 1
+            print("  wrote %s :: %s" % (path, token))
+    changed += rewrite_derived(True)
+
+    rc = subprocess.call([sys.executable, os.path.join(HERE, "palette_tables.py"), "--quiet"])
+    print("[trace] %d sites rewritten; parity gate %s" % (changed, "OK" if rc == 0 else "FAILED"))
+    if rc != 0:
+        print("[trace] NOTE: rerun 'python3 ci/make_backdrop_sheets.py' to re-bake the sheets,")
+        print("[trace]       then 'python3 glslcheck/shimcheck.py mcsm-core-shaders'.")
+    return rc
+
+
+if __name__ == "__main__":
+    sys.exit(main())

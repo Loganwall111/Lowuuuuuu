@@ -224,6 +224,12 @@ DERIVED = [
     ("P6_UMID", "rose", "t", 0.30, 1.00),
     ("P6_LMID", "rose", "t", 0.60, 1.00),
     ("P6_BOT", "ember", "row", 3, 1.00),   # the orange stop of the ember column
+    # The cloud deck: the traced column's mid row lifted toward white by a
+    # per-phase amount. mode "mixw" = mix(column, white, w).
+    ("MCSM_CLOUD_TEAL", "teal", "mixw", (0.30, 0.55), 1.00),
+    ("MCSM_CLOUD_PURPLE", "purple", "mixw", (0.30, 0.10), 1.00),
+    ("MCSM_CLOUD_ROSE", "rose", "mixw", (0.30, 0.35), 1.00),
+    ("MCSM_CLOUD_EMBER", "ember", "mixw", (0.50, 0.12), 1.00),
 ]
 # P5_BEAM is the cosmic ambient bleed, not a sky colour: deliberately excluded.
 
@@ -252,8 +258,13 @@ def check_derived(verbose=False):
             ok = False
             msgs.append("visuals: %s not found in %s" % (name, VISUALS))
             continue
-        base = (list(rows(role)[int(value)]) if mode == "row"
-                else list(sample_column(rows(role), value)))
+        if mode == "row":
+            base = list(rows(role)[int(value)])
+        elif mode == "mixw":
+            t, w = value
+            base = [v * (1.0 - w) + w for v in sample_column(rows(role), t)]
+        else:
+            base = list(sample_column(rows(role), value))
         want = [v * scale for v in base]
         got = shipped[name]
         drift = max(abs(want[k] - got[k]) for k in range(3))
@@ -262,7 +273,8 @@ def check_derived(verbose=False):
             msgs.append("visuals drift: %s = %s, traced %s (%.4f)"
                         % (name, _hex(got), _hex(want), drift))
         elif verbose:
-            where = ("row %d" % value) if mode == "row" else ("t=%.2f" % value)
+            where = ("row %d" % value if mode == "row"
+                     else ("t=%.2f mixw %.2f" % value if mode == "mixw" else "t=%.2f" % value))
             msgs.append("visuals ok: %s == %s %s x%.2f" % (name, role, where, scale))
     return ok, msgs
 

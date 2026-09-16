@@ -744,15 +744,30 @@ float mcsm_fog_density(float p) {
          + 0.18 * mcsm_ramp(p, 5.4, 6.0) * (1.0 - mcsm_ramp(p, 7.0, 8.06));
 }
 
+// BUILD #416 -- THE CLOUD DECK, DERIVED FROM THE SAME TRACE.
+//
+// The reference frames show the deck as a plain vanilla cloud layer coloured by
+// the storm, not as a separate effect: pale cream-green puffs under the
+// turquoise sky, dark violet banks under the purple sky, warm pale mauve under
+// the rose sky. These four constants are the traced columns' mid row lifted
+// toward white by a per-phase amount (0.55 / 0.10 / 0.35 / 0.12), and
+// ci/palette_tables.py re-derives every one of them.
+const vec3 MCSM_CLOUD_TEAL   = vec3(164.9, 173.5, 172.7) / 255.0;   // #A5AEAD pale puffs
+const vec3 MCSM_CLOUD_PURPLE = vec3( 94.5,  55.9, 102.4) / 255.0;   // #5E3866 dark violet banks
+const vec3 MCSM_CLOUD_ROSE   = vec3(162.0, 149.9, 157.1) / 255.0;   // #A2969D warm mauve
+const vec3 MCSM_CLOUD_EMBER  = vec3(160.0,  71.0,  61.3) / 255.0;   // #A0473D ember-lit
+
 vec3 mcsm_cloud_tint(float p) {
-    if (p < 5.05) return vec3(0.98, 1.00, 0.98);
-    if (p < 5.19) return mix(vec3(0.98, 1.00, 0.98), vec3(0.58, 1.00, 0.94), mcsm_ramp(p, 4.95, 5.10));
-    if (p < 5.40) return mix(vec3(0.58, 1.00, 0.94), vec3(0.78, 0.42, 0.92), mcsm_ramp(p, 5.19, 5.30));
-    if (p < 5.95) return vec3(0.92, 0.52, 0.80);
-    if (p < 6.06) return mix(vec3(0.92, 0.52, 0.80), vec3(0.80, 0.78, 0.82), mcsm_ramp(p, 5.95, 6.04));
-    if (p < 6.90) return vec3(0.98, 0.72, 0.60);                       // orange-lit at 6.1
-    if (p < 8.06) return mix(vec3(0.98, 0.58, 0.42), vec3(0.72, 0.30, 0.20), mcsm_ramp(p, 6.9, 8.0));
-    return vec3(1.0);
+    // Below the storm the deck is the world's own cloud colour.
+    if (!mcsm_fog_active(p)) {
+        return vec3(1.0);
+    }
+    // SAME routing as the sky program: teal -> purple -> rose -> ember, so the
+    // clouds cross-fade on exactly the phases the sky does.
+    vec3 c = mix(MCSM_CLOUD_TEAL, MCSM_CLOUD_PURPLE, mcsm_ramp(p, 5.10, 5.50));
+    c = mix(c, MCSM_CLOUD_ROSE, mcsm_ramp(p, 5.75, 6.05));
+    c = mix(c, MCSM_CLOUD_EMBER, mcsm_ramp(p, 7.00, 8.05));
+    return c;
 }
 
 vec3 mcsm_star_tint(float p) {
