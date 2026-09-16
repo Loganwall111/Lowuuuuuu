@@ -1,5 +1,8 @@
 package net.dabicco.witherstormmod.mixin;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,22 +16,35 @@ import net.minecraft.client.gui.components.EditBox;
 import net.mcsm.extras.McsmExtrasConfig;
 
 /**
- * Devouring Storms: WitherStormConfigScreen - the full Story-Mode console
- * revamp (Build #383, user order: "this whole place completely revamped,
- * a completely new look", buttons sideways like Story Mode, nothing
- * scrambled or covering anything, no preview button in the middle).
+ * Devouring Storms: WitherStormConfigScreen - the Story-Mode console revamp.
  *
- * Layout:
- *  - episodic header band: wordmark left, console tag right, hairline rule;
- *  - the three tabs become a centred rail of wide horizontal buttons;
- *  - one clean bottom bar: [Save to Server] [Reset Defaults] [Done] and the
- *    search field right-aligned - every widget on a single row, no overlap;
- *  - the base's hardcoded tab underline (drawn at the old tab position) is
- *    painted out and replaced by an accent underline under the active tab;
- *  - the giant 3D preview stays removed by default (McsmPreviewRemoveMixin);
- *    if the console toggle re-enables it, its controls keep their row.
+ * Build #416 relayout. The #383 pass moved chrome by matching four labels and
+ * left everything it did not recognise exactly where the base screen put it,
+ * i.e. in the same 20-pixel band: the tabs it renamed onto a rail at y=26
+ * collided with the base's tab underline at y=50, and the buttons it did not
+ * name ("Cancel", "Apply Preset", "Discard Changes", "Save & Quit", the phase
+ * and sub-phase pickers) stayed at the base's y=h-52 / y=h-27 rows and
+ * overlapped the new single bottom bar. On any window narrower than ~900 px
+ * its centred arithmetic also pushed "Save to Server" off the left edge. Since
+ * the extras entry is added to this same widget list, an overlapping chrome
+ * row is exactly how "click any button and it reopens the panel" happened.
  *
- * The old Build #371 silver pixel border frame is retained.
+ * The layout is now table-driven and total: every widget this screen owns is
+ * classified by label into a tab slot, the primary bottom row (Done plus the
+ * preview controls), the secondary bottom row (save/reset/cancel/apply/discard)
+ * or the right-aligned search field. Each row is laid out left-to-right with
+ * cumulative x and a proportional shrink when the row does not fit, so no two
+ * widgets can share pixels at any GUI scale, and no widget can be placed
+ * off-screen at any width.
+ *
+ * The top-right corner is RESERVED for the Devouring Storms entry
+ * (McsmGuiExtrasRows, 214x20 inset 26/8); the "EPISODE CONSOLE" tag is
+ * right-aligned to the left of that slot.
+ *
+ * Chrome drawn here: episodic header band (wordmark + tag + hairline rule),
+ * the painted-out base tab underline, a per-tab accent underline, the silver
+ * pixel border frame, and the bottom bar band. The giant 3D preview stays
+ * removed by default (McsmPreviewRemoveMixin).
  */
 @Mixin(WitherStormConfigScreen.class)
 public abstract class McsmConfigReskinMixin {
@@ -37,7 +53,12 @@ public abstract class McsmConfigReskinMixin {
     private static final int TAB_H = 24;
     private static final int TAB_GAP = 12;
     private static final int TAB_Y = 26;
-    private static final int BAR_H = 26;
+    private static final int BAR_H = 22;
+    /** Reserved top-right slot for the extras entry -- keep in sync with McsmGuiExtrasRows. */
+    private static final int ENTRY_W = 214;
+    private static final int ENTRY_INSET_X = 26;
+    private static final int ENTRY_Y = 8;
+    private static final int EDGE = 24;
 
     @Inject(method = "extractRenderState", at = @At("HEAD"), remap = false)
     private void dabyws$mcsPlate(GuiGraphicsExtractor g, int mouseX, int mouseY,
@@ -51,16 +72,15 @@ public abstract class McsmConfigReskinMixin {
         g.fillGradient(0, 0, 18, h, 0xAA0A0612, 0x22140622);
         g.fillGradient(w - 18, 0, w, h, 0x22140622, 0xAA0A0612);
         // bottom bar band (widgets draw on top of this later in the frame)
-        g.fillGradient(0, h - 44, w, h, 0x0005030A, 0xCC0A0614);
-        g.fill(0, h - 44, w, h - 43, 0xFF2A2A38);
+        g.fillGradient(0, h - 70, w, h, 0x0005030A, 0xCC0A0614);
+        g.fill(0, h - 70, w, h - 69, 0xFF2A2A38);
     }
 
     /**
-     * Build #383: reposition the chrome into the Story-Mode console layout.
-     * Runs at init TAIL so every rebuild() (tab switch, picker close, search
-     * edit) re-applies it. Picker overlays add none of these labels, so they
-     * are untouched. Label matching uses the public AbstractWidget message
-     * API (verified in ci/api/client.txt).
+     * Build #416: the whole chrome layout in one deterministic pass. Runs at
+     * init TAIL so every rebuild() (tab switch, picker close, search edit)
+     * re-applies it, and the extras entry re-asserts its own reserved slot
+     * every frame regardless of the order the two mixins run in.
      */
     @Inject(method = "init", at = @At("TAIL"), remap = false)
     private void dabyws$storyLayout(CallbackInfo ci) {
@@ -68,56 +88,115 @@ public abstract class McsmConfigReskinMixin {
             WitherStormConfigScreen self = (WitherStormConfigScreen) (Object) this;
             int w = self.width;
             int h = self.height;
-            int total = TAB_W * 3 + TAB_GAP * 2;
-            int tx = (w - total) / 2;
-            int by = h - 36;
-            int doneW = 220;
-            int doneX = (w - doneW) / 2;
+
+            // ---- tab rail --------------------------------------------------
+            int tabW = Math.min(TAB_W, Math.max(72, (w - 2 * EDGE - TAB_GAP * 2) / 3));
+            int tabsTotal = tabW * 3 + TAB_GAP * 2;
+            int tx = Math.max(EDGE, (w - tabsTotal) / 2);
+
+            List<AbstractWidget> primary = new ArrayList<>();
+            List<AbstractWidget> secondary = new ArrayList<>();
+            EditBox search = null;
+
             for (Object child : self.children()) {
                 if (!(child instanceof AbstractWidget aw)) {
                     continue;
                 }
-                String s = "";
-                if (child instanceof AbstractButton ab && ab.getMessage() != null) {
-                    s = ab.getMessage().getString();
+                if (child instanceof EditBox box) {
+                    search = box;
+                    continue;
                 }
-                if (s.equals("Server") || s.equals("Client") || s.equals("Experimental")) {
+                String s = dabyws$label(aw);
+                if (dabyws$isTab(s)) {
                     int i = s.equals("Server") ? 0 : s.equals("Client") ? 1 : 2;
-                    aw.setX(tx + i * (TAB_W + TAB_GAP));
+                    aw.setX(tx + i * (tabW + TAB_GAP));
                     aw.setY(TAB_Y);
-                    aw.setWidth(TAB_W);
+                    aw.setWidth(tabW);
                     aw.setHeight(TAB_H);
-                } else if (s.equals("Done")) {
-                    aw.setX(doneX);
-                    aw.setY(by);
-                    aw.setWidth(doneW);
-                    aw.setHeight(BAR_H);
-                } else if (s.equals("Reset Defaults")) {
-                    aw.setX(doneX - 10 - 170);
-                    aw.setY(by);
-                    aw.setWidth(170);
-                    aw.setHeight(BAR_H);
-                } else if (s.equals("Save to Server")) {
-                    aw.setX(doneX - 20 - 340);
-                    aw.setY(by);
-                    aw.setWidth(170);
-                    aw.setHeight(BAR_H);
-                } else if (s.startsWith("Model") || s.startsWith("Gigantic")) {
-                    int i = s.startsWith("Model") ? 0 : 1;
-                    aw.setX(doneX + doneW + 10 + i * 120);
-                    aw.setY(by);
-                    aw.setWidth(110);
-                    aw.setHeight(BAR_H);
-                } else if (child instanceof EditBox eb) {
-                    eb.setX(w - 28 - 260);
-                    eb.setY(by + 1);
-                    eb.setWidth(260);
-                    eb.setHeight(24);
+                    continue;
+                }
+                if (s.equals("Done") || dabyws$isPreviewControl(s)) {
+                    primary.add(aw);
+                    continue;
+                }
+                if (dabyws$isBottomAction(s)) {
+                    secondary.add(aw);
+                    continue;
+                }
+                // Unknown widget parked in the old bottom bands by the base
+                // screen: give it a real slot instead of leaving it to overlap.
+                if (aw.getY() + aw.getHeight() >= h - 70) {
+                    secondary.add(aw);
                 }
             }
+
+            // The search field owns the right end of the secondary row.
+            int searchW = Math.min(240, Math.max(140, w / 4));
+            int rowRight = w - EDGE;
+            if (search != null) {
+                search.setX(Math.max(EDGE, w - EDGE - searchW));
+                search.setY(h - 56 + 1);
+                search.setWidth(searchW);
+                search.setHeight(20);
+                rowRight = Math.max(EDGE + 80, search.getX() - 12);
+            }
+            dabyws$layoutRow(secondary, EDGE, rowRight, h - 56, 20, 8);
+            dabyws$layoutRow(primary, EDGE, w - EDGE, h - 30, BAR_H, 10);
         } catch (Throwable ignored) {
             // layout is cosmetic; never break the screen
         }
+    }
+
+    /** Left-to-right row with a proportional shrink when it does not fit. */
+    private static void dabyws$layoutRow(List<AbstractWidget> row, int left, int right,
+                                         int y, int height, int gap) {
+        if (row == null || row.isEmpty()) {
+            return;
+        }
+        int avail = Math.max(80, right - left);
+        int wanted = gap * (row.size() - 1);
+        for (AbstractWidget aw : row) {
+            wanted += aw.getWidth();
+        }
+        double scale = wanted > avail ? (double) avail / wanted : 1.0;
+        int used = 0;
+        for (AbstractWidget aw : row) {
+            used += Math.max(40, (int) Math.round(aw.getWidth() * scale));
+        }
+        used += (int) Math.round(gap * (row.size() - 1) * scale);
+        int x = left + Math.max(0, (avail - used) / 2);
+        int step = Math.max(2, (int) Math.round(gap * scale));
+        for (AbstractWidget aw : row) {
+            int wd = Math.max(40, (int) Math.round(aw.getWidth() * scale));
+            aw.setX(x);
+            aw.setY(y);
+            aw.setWidth(wd);
+            aw.setHeight(height);
+            x += wd + step;
+        }
+    }
+
+    private static String dabyws$label(AbstractWidget aw) {
+        if (aw instanceof AbstractButton ab && ab.getMessage() != null) {
+            return ab.getMessage().getString();
+        }
+        return "";
+    }
+
+    private static boolean dabyws$isTab(String s) {
+        return s.equals("Server") || s.equals("Client") || s.equals("Experimental");
+    }
+
+    /** Done plus the giant-preview controls (hidden by default, see the preview mixin). */
+    private static boolean dabyws$isPreviewControl(String s) {
+        return s.startsWith("Model") || s.startsWith("Gigantic")
+                || s.startsWith("Sub:") || s.equals("Phase") || s.startsWith("Phase ");
+    }
+
+    private static boolean dabyws$isBottomAction(String s) {
+        return s.equals("Save to Server") || s.equals("Reset Defaults")
+                || s.equals("Save & Quit") || s.equals("Discard Changes")
+                || s.equals("Apply Preset") || s.equals("Cancel");
     }
 
     @Inject(method = "extractRenderState", at = @At("TAIL"), remap = false)
@@ -130,20 +209,25 @@ public abstract class McsmConfigReskinMixin {
         // paint out the base's hardcoded tab underline (old tab position)
         g.fill(0, 50, w, 57, 0xFF11091C);
         // header rule
-        g.fill(24, 57, w - 24, 58, 0xFF3A2A55);
-        g.fill(24, 58, w - 24, 59, 0xFF14101F);
-        // wordmark + console tag
+        g.fill(EDGE, 57, w - EDGE, 58, 0xFF3A2A55);
+        g.fill(EDGE, 58, w - EDGE, 59, 0xFF14101F);
+        // wordmark + console tag (the tag stops short of the reserved entry slot)
         net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
         g.text(font, "\u00a7lSTORM CONFIGURATION", 28, 12, 0xFFEDE7F8, false);
         String tag = "EPISODE CONSOLE";
-        g.text(font, tag, w - 28 - font.width(tag), 14, 0xFF7F6FA0, false);
+        int entryLeft = w - ENTRY_INSET_X - ENTRY_W;
+        int tagX = Math.max(28 + font.width("\u00a7lSTORM CONFIGURATION") + 16,
+                entryLeft - 12 - font.width(tag));
+        if (tagX + font.width(tag) < entryLeft) {
+            g.text(font, tag, tagX, 14, 0xFF7F6FA0, false);
+        }
         // accent underline beneath the active tab (active==false marks it)
         for (Object child : self.children()) {
             if (!(child instanceof AbstractButton ab) || ab.getMessage() == null) {
                 continue;
             }
             String s = ab.getMessage().getString();
-            if ((s.equals("Server") || s.equals("Client") || s.equals("Experimental")) && !ab.active) {
+            if (dabyws$isTab(s) && !ab.active) {
                 g.fill(ab.getX(), 52, ab.getX() + ab.getWidth(), 54, 0xFFB9A6E8);
             }
         }

@@ -477,5 +477,66 @@ public final class McsmGate {
         worldDone = false;
     }
 
+    // ---------------------------------------------------------------------
+    // Build #416 -- per-field pass-throughs used by the ported control panel.
+    //
+    // The 1.9.19x panel no longer calls reset() on every toggle: re-arming the
+    // whole force-look pass on each click was the mechanism silently wiping
+    // base-screen changes and look presets ("it goes back to normal").
+    // Controls that map to a base DabyWSClientConfig field now apply that ONE
+    // field directly. These are explicit user actions, so the value is
+    // recorded in LAST_SET: a normal gate pass respects it afterwards, and
+    // only the explicit "Re-apply MCSM Look now" button (clearMemory+reset)
+    // forces the baseline again.
+    // ---------------------------------------------------------------------
+
+    /** Read a base client boolean (default if the field is gone/renamed). */
+    public static boolean clientBoolGet(String name, boolean dflt) {
+        try {
+            return DabyWSClientConfig.class.getField(name).getBoolean(null);
+        } catch (Throwable t) {
+            return dflt;
+        }
+    }
+
+    /** Read a base client number (default if the field is gone/renamed). */
+    public static double clientNumGet(String name, double dflt) {
+        try {
+            Field f = DabyWSClientConfig.class.getField(name);
+            Class<?> t = f.getType();
+            if (t == int.class) {
+                return f.getInt(null);
+            }
+            if (t == long.class) {
+                return f.getLong(null);
+            }
+            if (t == float.class) {
+                return f.getFloat(null);
+            }
+            return f.getDouble(null);
+        } catch (Throwable t) {
+            return dflt;
+        }
+    }
+
+    /** Write ONE base client boolean directly (explicit user action). */
+    public static void clientBool(String name, boolean value) {
+        try {
+            DabyWSClientConfig.class.getField(name).setBoolean(null, value);
+            LAST_SET.put(memKey(DabyWSClientConfig.class, null, name), value);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** Write ONE base client number directly (explicit user action). */
+    public static void clientNum(String name, double value) {
+        try {
+            Field f = DabyWSClientConfig.class.getField(name);
+            double nv = writeNum(f, null, value);
+            LAST_SET.put(memKey(DabyWSClientConfig.class, null, name), nv);
+        } catch (Throwable ignored) {
+        }
+    }
+
     private McsmGate() {}
 }

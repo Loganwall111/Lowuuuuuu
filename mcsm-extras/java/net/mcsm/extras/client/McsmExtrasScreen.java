@@ -338,7 +338,18 @@ public final class McsmExtrasScreen extends Screen {
 
     public McsmExtrasScreen(Screen parent) {
         super(Component.literal("Devouring Storms Story Mode Console"));
-        this.parent = parent;
+        // Build #416 -- MERGE, NEVER PING-PONG.
+        // The base config console is the thing that can open this panel, and it
+        // was also this panel's parent, so the two screens bounced off each
+        // other: closing the panel returned to the console, and the console's
+        // entry (plus its own bottom-bar overlap) reopened the panel. The user
+        // read that as "the new settings pop up but it opens the old config
+        // menu, and clicking any button there just reopens the new one".
+        // Closing the panel now always lands in gameplay; the console stays
+        // reachable through its own hotkey/command, never as a bounce target.
+        this.parent = parent instanceof net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen
+                ? null
+                : parent;
     }
 
     // ---- layout constants -------------------------------------------------

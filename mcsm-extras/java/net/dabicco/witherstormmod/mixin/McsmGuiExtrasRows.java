@@ -1,145 +1,152 @@
 package net.dabicco.witherstormmod.mixin;
 
-import net.mcsm.extras.McsmExtrasConfig;
+import java.lang.reflect.Method;
 
-import net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.lang.reflect.Method;
-import net.minecraft.network.chat.Component;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.Minecraft;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.Unique;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.Screen;
+import net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen;
+import net.mcsm.extras.McsmExtrasConfig;
 import net.mcsm.extras.client.McsmExtrasScreen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
- * MCSM - extras entry inside the mod's own config screen.
+ * MCSM - the Devouring Storms entry inside the mod's own config console.
  *
- * MCSM 1.9.98 -- ROOT-CAUSED FIX for "clicking [+]/- shows no options"
- * (user screenshot 2026-09-04 145751). Their screen folds content by section
- * (collapsed set) and keys rows to tabs; rows we appended at init() TAIL were
- * laid out by repositionRows() BEFORE we added them, so the "MCSM extras"
- * header got a [-] state but its rows never received bounds -> empty section.
- * Two attempted generations of direct row injection (toggles/sliders inline)
- * hit exactly this.
+ * Build #416 restructure. The #383 generation is the reason the user reported
+ * "the new settings pop up ... I click any button on there and it just reopens
+ * the new config menu": it injected a {@code WitherStormConfigScreen$Row} whose
+ * button lives in the SCROLLABLE rows list. Rows are laid out by
+ * {@code repositionRows()} inside the content view, and the console's own
+ * chrome (tabs at y=32, the Save/Reset/Model/Done bar at the bottom) is placed
+ * by hardcoded coordinates in {@code init()}. Whenever the row list grew past
+ * the view -- which the extras row itself did, being appended last -- that
+ * button stayed live and clickable outside the view, i.e. invisible, sitting
+ * on top of the bottom bar. Every click near the bottom of the console hit the
+ * invisible extras button and reopened the panel. No layout pass can be sure
+ * of a row.
  *
- * New contract, deliberately tiny: ONE header row + ONE button row. The button
- * opens our own full panel (net.mcsm.extras.client.McsmExtrasScreen), which we
- * control end to end -- no dependence on their fold internals at all. Then we
- * call their repositionRows() by exact name so the two rows get laid out
- * (verified from the shipped jar's method table: rebuild() regenerates and
- * would drop us -- never call it).
+ * The entry is now a CHROME widget in a RESERVED slot: the top-right corner,
+ * which the console reskin (McsmConfigReskinMixin) deliberately keeps clear
+ * (it right-aligns its "EPISODE CONSOLE" tag to the left of this slot, and
+ * nothing else is ever placed there). It is added through the console's own
+ * {@code addChrome}/{@code addWidget} so it renders and receives clicks in the
+ * normal widget pass, and re-asserted once per frame so a resize or a tab
+ * rebuild cannot drift it.
  *
- * MCSM 1.9.104: also adds a direct fixed-position button via Screen.addWidget
- * reflection. The row API can visually mis-layout at the bottom of this screen
- * on some GUI scales (black off-screen rectangle / no clickable panel). The
- * fixed button does not depend on their tab/row/fold machinery at all.
- * MCSM 1.9.105: render/click are injected directly too, so even if their
- * custom screen never draws normal child widgets the bottom-left button is
- * visible and opens from our own mouse handler.
+ * Anti-stacking: clicking it while a panel is already open does nothing, and
+ * the panel itself never returns to this screen (see McsmExtrasScreen's
+ * constructor). One console, one entry, no ping-pong.
  *
- * Fully silent on any failure: a future refactor of their GUI costs us the
- * injected controls, never a crash.
+ * Fully silent on failure: a future refactor of their GUI costs us the entry
+ * point (the Shift+C hotkey still opens the panel), never a crash.
  */
 @Mixin(WitherStormConfigScreen.class)
 public abstract class McsmGuiExtrasRows {
 
-    @Unique private int mcsm$lastMouseX = 0;
-    @Unique private int mcsm$lastMouseY = 0;
-
-    @Unique
-    private static int mcsm$buttonX() { return 8; }
-
-    @Unique
-    private static int mcsm$buttonY(Screen sc) { return Math.max(8, sc.height - 58); }
-
-    @Unique
-    private static int mcsm$buttonW() { return 206; }
-
-    @Unique
-    private static int mcsm$buttonH() { return 20; }
-
-    private static void mcsm$openPanel(Object self) {
-        try {
-            Screen panel = new McsmExtrasScreen((Screen) self);
-            Minecraft.getInstance().setScreenAndShow(panel);
-            System.err.println("[MCSM] extras panel opened via setScreenAndShow");
-        } catch (Throwable t) {
-            try {
-                Minecraft.getInstance().gui.setScreen(new McsmExtrasScreen((Screen) self));
-                System.err.println("[MCSM] extras panel opened via gui.setScreen fallback");
-            } catch (Throwable t2) {
-                System.err.println("[MCSM] extras panel open FAILED: " + t + " / " + t2);
-            }
-        }
-    }
-
-    private static void mcsm$addDirectButton(Object self) {
-        // 1.9.183: no fixed overlay button. It covered the base screen's
-        // own bottom controls at several GUI scales. Access is through the
-        // single row button below or Shift+C.
-    }
+    /** Recognised by the reskin layout by this prefix -- keep the two in sync. */
+    private static final String MCSM$ENTRY_PREFIX = "Devouring Storms Control Panel";
+    /** Reserved top-right slot: width 214, height 20, inset 26/8 (see reskin). */
+    private static final int MCSM$ENTRY_W = 214;
+    private static final int MCSM$ENTRY_H = 20;
+    private static final int MCSM$ENTRY_INSET_X = 26;
+    private static final int MCSM$ENTRY_Y = 8;
 
     @Inject(method = {"init"}, at = @At("TAIL"))
-    private void mcsm$extrasRows(CallbackInfo ci) {
+    private void mcsm$extrasEntry(CallbackInfo ci) {
         try {
             McsmExtrasConfig.load();
-            final Object self = this;
-            mcsm$addDirectButton(self);
-            Class<?> screen = WitherStormConfigScreen.class;
-            Class<?> rowCls = Class.forName("net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen$Row");
-            Method mButton = rowCls.getDeclaredMethod("button", String.class, String.class, Runnable.class);
-            Method mAdd = screen.getDeclaredMethod("addRowWidget", rowCls);
-            for (Method m : new Method[]{mButton, mAdd}) m.setAccessible(true);
-
-            // 1.9.183: one clean entry only. The previous header + button
-            // looked like duplicate Devouring Storms rows and made the base
-            // config screen feel broken.
-            mAdd.invoke(self, mButton.invoke(null,
-                    "Open Devouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338",
-                    "Full Story Mode control panel: atmosphere, shaders, NPCs, storm VFX, world/story toggles.",
-                    (Runnable) () -> mcsm$openPanel(self)));
-
-            // exact-name relayout (see class doc for why repositionRows, not rebuild)
-            try {
-                Method mReposition = screen.getDeclaredMethod("repositionRows");
-                mReposition.setAccessible(true);
-                mReposition.invoke(self);
-                System.err.println("[MCSM] extras rows: relayout OK (repositionRows)");
-            } catch (Throwable t2) {
-                System.err.println("[MCSM] extras rows relayout skipped: " + t2);
+            final Screen self = (Screen) (Object) this;
+            if (mcsm$findEntry(self) != null) {
+                return;
             }
+            Button entry = Button.builder(
+                    Component.literal(MCSM$ENTRY_PREFIX + " \u00a7d" + McsmExtrasConfig.BUILD_VERSION),
+                    b -> mcsm$openPanel(self))
+                    .bounds(0, 0, MCSM$ENTRY_W, MCSM$ENTRY_H).build();
+            entry.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(
+                    "Full Story Mode control panel: atmosphere, shaders, NPCs, storm VFX, world/story toggles.")));
+            mcsm$addChrome(self, entry);
+            mcsm$placeEntry(self, entry);
         } catch (Throwable t) {
-            System.err.println("[MCSM] extras GUI rows skipped: " + t);
+            System.err.println("[MCSM] extras entry skipped: " + t);
         }
     }
 
-
+    /**
+     * Keep the entry in its reserved slot. Runs before the widget pass draws,
+     * so a resize or a tab rebuild can never leave it mid-layout.
+     */
     @Inject(
         method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V",
-        at = @At("TAIL")
+        at = @At("HEAD")
     )
-    private void mcsm$renderDirectButton(GuiGraphicsExtractor g, int mouseX, int mouseY,
-                                         float partialTick, CallbackInfo ci) {
-        // Fixed overlay button removed in 1.9.183; keep the mixin method as a
-        // harmless no-op so older configs do not get an overlapping button.
+    private void mcsm$keepEntryPlaced(GuiGraphicsExtractor g, int mouseX, int mouseY,
+                                      float partialTick, CallbackInfo ci) {
+        try {
+            Screen self = (Screen) (Object) this;
+            AbstractWidget entry = mcsm$findEntry(self);
+            if (entry != null) {
+                mcsm$placeEntry(self, entry);
+            }
+        } catch (Throwable ignored) {
+            // cosmetic only
+        }
     }
 
-    @Inject(
-        method = "mouseClicked(Lnet/minecraft/client/input/MouseButtonEvent;Z)Z",
-        at = @At("HEAD"),
-        cancellable = true
-    )
-    private void mcsm$clickDirectButton(MouseButtonEvent event, boolean doubleClick,
-                                        CallbackInfoReturnable<Boolean> cir) {
-        // Fixed overlay button removed in 1.9.183.
+    private static void mcsm$placeEntry(Screen self, AbstractWidget entry) {
+        entry.setX(Math.max(8, self.width - MCSM$ENTRY_INSET_X - MCSM$ENTRY_W));
+        entry.setY(MCSM$ENTRY_Y);
+        entry.setWidth(MCSM$ENTRY_W);
+        entry.setHeight(MCSM$ENTRY_H);
     }
 
+    private static AbstractWidget mcsm$findEntry(Screen self) {
+        for (Object child : self.children()) {
+            if (child instanceof AbstractWidget aw && mcsm$isEntry(aw)) {
+                return aw;
+            }
+        }
+        return null;
+    }
+
+    private static boolean mcsm$isEntry(AbstractWidget aw) {
+        if (!(aw instanceof Button)) {
+            return false;
+        }
+        Component msg = ((Button) aw).getMessage();
+        return msg != null && msg.getString().startsWith(MCSM$ENTRY_PREFIX);
+    }
+
+    /** The console's own addChrome(AbstractWidget) -- widget list + children. */
+    private static void mcsm$addChrome(Screen self, AbstractWidget widget) throws Exception {
+        Method addChrome = WitherStormConfigScreen.class
+                .getDeclaredMethod("addChrome", AbstractWidget.class);
+        addChrome.setAccessible(true);
+        addChrome.invoke(self, widget);
+    }
+
+    private static void mcsm$openPanel(Screen self) {
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null) {
+                return;
+            }
+            // Never stack a second panel, and never re-open from inside one.
+            if (mc.gui != null && mc.gui.screen() instanceof McsmExtrasScreen) {
+                return;
+            }
+            mc.setScreenAndShow(new McsmExtrasScreen(self));
+            System.err.println("[MCSM] extras panel opened from the config console");
+        } catch (Throwable t) {
+            System.err.println("[MCSM] extras panel open failed: " + t);
+        }
+    }
 }
