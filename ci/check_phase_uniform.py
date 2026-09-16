@@ -1736,6 +1736,26 @@ def main():
           and "McsmSkyFloorBand.submit(ctx);" in (
               read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java") or ""))
 
+    # ------------------------------------------------------------------
+    # BUILD #436 -- THE IMPORT RULE.
+    #
+    # Run 515/516: "cannot find symbol: variable McsmSkyVortexes, location: class
+    # McsmBuiltinPackMixin". The class compiled fine (its .class was in the jar's
+    # compiled list) -- the mixin simply called `McsmSkyVortexes.register()` with
+    # no import for it. A registration line is one line; the import is the other,
+    # and this checks they travel together for EVERY class that mixin boots.
+    # ------------------------------------------------------------------
+    boot = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""
+    boots = set()
+    for m in _re.finditer(r"\b(Mcsm[A-Za-z0-9_]+)\.register\(\)", boot):
+        boots.add(m.group(1))
+    check("every class the bootstrap boots is imported where it boots it",
+          bool(boots)
+          and all(("import net.mcsm.extras.%s;" % name) in boot
+                  or ("import net.mcsm.extras.entity.%s;" % name) in boot
+                  or ("import net.dabicco.witherstormmod.%s;" % name) in boot
+                  for name in sorted(boots)))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

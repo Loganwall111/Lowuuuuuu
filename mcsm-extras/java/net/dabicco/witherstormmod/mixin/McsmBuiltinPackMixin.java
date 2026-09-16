@@ -10,6 +10,7 @@ import net.mcsm.extras.McsmBuiltinPack;
 import net.mcsm.extras.McsmBlackHole;
 import net.mcsm.extras.McsmCities;
 import net.mcsm.extras.McsmMassg;
+import net.mcsm.extras.McsmSkyVortexes;
 import net.mcsm.extras.McsmSounds;
 import net.mcsm.extras.McsmTentacles;
 import net.mcsm.extras.McsmTerminal;
