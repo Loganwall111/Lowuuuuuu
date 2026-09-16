@@ -386,6 +386,10 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.blackHoleEvent = v;
               McsmExtrasConfig.save();
           })
+          .val("Black Hole Lifetime (seconds)", () -> McsmExtrasConfig.blackHoleSeconds, v -> {
+              McsmExtrasConfig.blackHoleSeconds = v;
+              McsmExtrasConfig.save();
+          }, 30.0, 600.0)
           .val("Storm Sky Reach (fade back to vanilla at, blocks)", () -> McsmExtrasConfig.skyFadeDistance, v -> {
               McsmExtrasConfig.skyFadeDistance = v;
               McsmExtrasConfig.save();

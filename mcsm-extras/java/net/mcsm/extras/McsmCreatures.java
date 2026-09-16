@@ -836,7 +836,7 @@ public final class McsmCreatures {
                 60, 2.0D, 2.0D, 2.0D, 0.15D);
     }
 
-    private static void say(ServerLevel level, Vec3 at, double range, String line,
+    public static void say(ServerLevel level, Vec3 at, double range, String line,
             ChatFormatting colour) {
         Component message = Component.literal(line).withStyle(colour);
         for (ServerPlayer player : playersWithin(level, at, range)) {

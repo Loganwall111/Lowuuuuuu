@@ -861,7 +861,7 @@ stage javac-compiled
   # invisible for a dozen builds. So the classes that carry new behaviour are
   # required to exist in the compiled output. find() is used instead of a fixed
   # path so a layout change can never turn this into a false failure.
-  for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar; do
+  for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmTornadoes; do
     if ! find /tmp/mcsm-build -name "${cls}.class" -print -quit | grep -q .; then
       echo "::error title=build::compiled output is missing ${cls}.class -- new behaviour would silently not draw"
       exit 1

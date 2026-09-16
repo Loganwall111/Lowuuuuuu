@@ -159,3 +159,17 @@ octopus arms through rips in reality." What shipped:
 There is no dome, no skybox, no JSON model and no new entity anywhere in phase
 3: the arms are geometry, the creatures are vanilla mobs with the storm's own
 stats, and the ladder is driven by the storm's own phase.
+
+### Phase 4 -- the world breaks: black holes and gigantic tornadoes
+
+Two switches have been in this repository since the mandate list with nothing
+behind them. Both have something behind them now.
+
+| Piece | Where | What it does |
+|---|---|---|
+| The black hole event | `net/mcsm/extras/McsmBlackHole.java` | The base mod's own `BlackHoleEntity` (its mass model, its carving, its renderer) is opened as an EVENT: at storm phase 7+, or anywhere in the decayed reality, at most one at a time per level, never within 480 blocks of another, only in front of a player, and always on a timer. A column of rift light stands on it so it is visible from the horizon, it is announced in chat, and the same code that opens it COLLAPSES it when the timer runs out (`blackHoleSeconds`, default 180, slider 30-600). |
+| Gigantic tornadoes | `net/mcsm/extras/McsmTornadoes.java` | A real funnel: one per level, touching down at storm phase 5.5+ (or in the decayed reality), announced, and then alive for 45 seconds. It is drawn as a helix of overlapping dust and cloud that grows from a 4-block-wide rope to a 22-block-wide, 78-block-tall wall; it walks across the terrain and turns to follow the nearest player; it throws everything alive within 48 blocks of its axis, hurts what it catches inside 4.5; it scours a track into the surface it passes over (only under open sky, one to two blocks deep, with the content pack's own `mcsm:decayed_surface`); and it comes apart on its own timer with a full dissipation burst. |
+
+Both are fail-soft, both are switchable (`blackHoleEvent`, `megaTornadoes` --
+the switches that already existed), and the build refuses to ship without their
+classes in the compiled output.

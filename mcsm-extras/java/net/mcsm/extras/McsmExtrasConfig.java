@@ -105,6 +105,12 @@ public final class McsmExtrasConfig {
     public static double hallucinationIntensity = 0.6;
     /** The Black Hole event: a collapsing singularity that eats the arena. */
     public static boolean blackHoleEvent = true;
+    /**
+     * How long a black hole this build opens stays open, in seconds. The hole is
+     * collapsed by the same code that opened it, so an event can never become a
+     * permanent hole in someone's world.
+     */
+    public static double blackHoleSeconds = 180.0;
     /** Mega-tornadoes that rip across the decayed reality. */
     public static boolean megaTornadoes = true;
     /** Reality creatures: the new hostile spawns (phase 3). */
@@ -321,6 +327,7 @@ public final class McsmExtrasConfig {
             p.setProperty("reality_glitches", String.valueOf(realityGlitches));
             p.setProperty("hallucination_intensity", String.valueOf(hallucinationIntensity));
             p.setProperty("black_hole_event", String.valueOf(blackHoleEvent));
+            p.setProperty("black_hole_seconds", String.valueOf(blackHoleSeconds));
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("reality_creatures", String.valueOf(realityCreatures));
             p.setProperty("story_quests", String.valueOf(storyQuests));
@@ -435,6 +442,7 @@ public final class McsmExtrasConfig {
             realityGlitches = bool(p, "reality_glitches", realityGlitches);
             hallucinationIntensity = dbl(p, "hallucination_intensity", hallucinationIntensity);
             blackHoleEvent = bool(p, "black_hole_event", blackHoleEvent);
+            blackHoleSeconds = dbl(p, "black_hole_seconds", blackHoleSeconds);
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             realityCreatures = bool(p, "reality_creatures", realityCreatures);
             storyQuests = bool(p, "story_quests", storyQuests);

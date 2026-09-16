@@ -997,6 +997,65 @@ def main():
     check("the build refuses to ship without the phase-3 behaviour classes",
           "McsmCreatures" in build and "McsmCreatorArms" in build and "McsmBossBar" in build)
 
+    # ---- 19. THE BLACK HOLE EVENT AND THE MEGA-TORNADOES (D.8, phase 4) -----
+    # "Black holes ... gigantic tornadoes." Both switches have existed in this
+    # repository since the mandate list with nothing behind them; this is what is
+    # behind them.
+    hole = read("mcsm-extras/java/net/mcsm/extras/McsmBlackHole.java") or ""
+    hole_code = code_only(hole)
+    check("the black hole event uses the base mod's own black hole, not a new one",
+          "ModEntityTypes.BLACK_HOLE.create" in hole_code
+          and "addFreshEntity" in hole_code and "setPos" in hole_code)
+    check("the event only opens where the world is already broken",
+          "EVENT_PHASE" in hole_code and "McsmReality.inside(level)" in hole_code)
+    check("every hole this build opens is closed by this build",
+          "OURS" in hole_code and "closeExpired" in hole_code and "discard()" in hole_code
+          and "blackHoleSeconds" in hole_code)
+    check("the black hole is announced and visible from a distance",
+          "REVERSE_PORTAL" in hole_code and "say(" in hole_code
+          and "SoundEvents.ENDER_DRAGON_GROWL" in hole_code)
+    _dbg_cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    _dbg_scr = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
+    print("DBG", "public static double blackHoleSeconds = 180.0;" in _dbg_cfg,
+          "black_hole_seconds" in _dbg_cfg, "Black Hole Lifetime" in _dbg_scr, len(_dbg_cfg), len(_dbg_scr))
+    _cfg3 = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    _scr3 = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
+    _hole_lifetime = "public static double blackHoleSeconds = 180.0;" in _cfg3
+    _hole_persist = "black_hole_seconds" in _cfg3
+    _hole_row = "Black Hole Lifetime" in _scr3
+    check("the black hole lifetime is configurable and persisted",
+          _hole_lifetime and _hole_persist and _hole_row,
+          "field=%s persisted=%s row=%s" % (_hole_lifetime, _hole_persist, _hole_row))
+
+    tor = read("mcsm-extras/java/net/mcsm/extras/McsmTornadoes.java") or ""
+    tor_code = code_only(tor)
+    check("a tornado is a real funnel in the world, one per level, on a timer",
+          "LIVE" in tor_code and "LIFE" in tor_code and "touchDown" in tor_code
+          and "dissipate" in tor_code)
+    check("the funnel is a helix of dust that grows to a gigantic radius",
+          "MAX_RADIUS" in tor_code and "MAX_HEIGHT" in tor_code
+          and "ParticleTypes.ASH" in tor_code and "ParticleTypes.CLOUD" in tor_code
+          and "mature" in tor_code)
+    check("it throws what it catches and hurts what it touches",
+          "push(" in tor_code and "hurtServer" in tor_code and "PULL_RANGE" in tor_code
+          and "CONTACT" in tor_code)
+    check("it scours a track, only under open sky, with the content pack's own blocks",
+          "scour(" in tor_code and "canSeeSky" in tor_code
+          and "McsmContent.DECAYED_SURFACE.defaultBlockState()" in tor_code
+          and "level.setBlock(" in tor_code)
+    check("it walks, and it chases the nearest player",
+          "driftX" in tor_code and "nearestPlayer" in tor_code)
+    check("both phase-4 systems are switchable and persisted",
+          "mega_tornadoes" in (read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or "")
+          and "black_hole_event" in (read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or "")
+          and "McsmBlackHole.register()" in
+              (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or "")
+          and "McsmTornadoes.register()" in
+              (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
+    check("the build refuses to ship without the phase-4 behaviour classes",
+          "McsmBlackHole" in (read("ci/build.sh") or "")
+          and "McsmTornadoes" in (read("ci/build.sh") or ""))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)
