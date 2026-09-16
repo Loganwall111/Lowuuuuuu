@@ -1,0 +1,17 @@
+mcsm-extras/java/net/mcsm/extras/McsmRituals.java:304: error: incompatible types: String cannot be converted to UUID
+        COOLDOWN.put(player.getUUID() + ":note", now);
+                                      ^
+mcsm-extras/java/net/mcsm/extras/McsmRituals.java:323: error: incompatible types: String cannot be converted to UUID
+            COOLDOWN.put(player.getUUID() + ":" + RITUALS.indexOf(ritual), level.getGameTime());
+                                                ^
+mcsm-extras/java/net/mcsm/extras/McsmMazes.java:368: error: cannot find symbol
+            surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sx, sz);
+                      ^
+  symbol:   variable level
+  location: class McsmMazes
+Note: mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: mcsm-extras/java/net/mcsm/extras/McsmNpcs.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+3 errors
