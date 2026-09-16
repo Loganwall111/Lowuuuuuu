@@ -20,6 +20,9 @@ additionally receive the real `witherstorm_Phase` uniform.
 
 Exit 0 when every checkpoint passes, 1 otherwise (the build stops).
 """
+import json
+import glob
+import json
 import os
 import re
 import sys
@@ -605,6 +608,102 @@ def main():
               "getGameTime" in presence or "ticks" in presence)
     else:
         check("presence patch present", False, JAVA_PRESENCE)
+
+    # ---- 13. THE REVAMPED UI, THE AUDIO AND THE MERGED CONFIG CONSOLE ------
+    # The (D) port is behaviour that can silently rot the same way the death
+    # cinematic did: a missing file, a re-added lazy registration, a screen that
+    # hands control back to the console it was opened from. These lock the
+    # invariants that were expensive to find.
+    ui_files = {
+        "title overhaul": "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTitleOverhaulMixin.java",
+        "config reskin": "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmConfigReskinMixin.java",
+        "screen reskin": "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmScreenReskinMixin.java",
+        "loading+pause reskin": "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmLoadingPauseReskinMixin.java",
+        "logo intro": "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmLogoIntroMixin.java",
+        "cinematic engine": "mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java",
+        "menu scene": "mcsm-extras/java/net/mcsm/extras/client/McsmStormMenuScene.java",
+        "texture painter": "mcsm-extras/java/net/mcsm/extras/client/McsmTexturePainterScreen.java",
+        "extras panel": "mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java",
+        "hud terminal": "mcsm-extras/java/net/mcsm/extras/client/McsmHudTerminal.java",
+    }
+    missing_ui = [k for k, v in ui_files.items() if read(v) is None]
+    check("every ported UI file is present", not missing_ui,
+          "missing: %s" % ", ".join(missing_ui))
+    check("the ported UI is substantial (not a stub)",
+          all(len((read(v) or "").splitlines()) > 40 for v in ui_files.values()))
+
+    title = read(ui_files["title overhaul"]) or ""
+    title_code = code_only(title)
+    check("the main-menu panorama is NOT deleted any more",
+          "McsmExtrasConfig.menuPanorama" in title_code
+          and title_code.count("ci.cancel();") == 0
+          or "if (McsmExtrasConfig.menuPanorama) {" in title_code)
+    check("the background hook only cancels for the explicit opt-out",
+          "menuPanorama) {" in title_code and "ci.cancel(); // the panorama is gone" not in title)
+    check("the panorama is graded, not covered (grade drawn in the TAIL hook)",
+          "menuPanorama) {" in title and "0x6607050E" in title)
+    check("button animations are serialised (press owns the hover layer)",
+          "hovAnim" in title and "pressing" in title)
+    check("the menu assembles with a staggered entrance",
+          "MC$ENTER_SLOT" in title and "MC$ENTER_MS" in title)
+
+    ui_sounds = read("mcsm-extras/java/net/mcsm/extras/McsmUiSounds.java") or ""
+    check("UI sound events are declared in a COMMON class",
+          all('register("%s")' % s in ui_sounds
+              for s in ("ds_btn_hover", "ds_btn_click", "ds_menu_open")))
+    check("the UI sounds are registered at mod init, not on first click",
+          "McsmUiSounds.initialize();" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""))
+    play = read("mcsm-extras/java/net/mcsm/extras/client/McsmButtonSounds.java") or ""
+    check("the playback helper no longer registers the events itself",
+          "BuiltInRegistries" not in play and "SimpleSoundInstance" in play)
+    check("button audio covers every widget, not just the title screen",
+          "playDownSound" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmButtonSoundHookMixin.java") or "")
+          and "playButtonClickSound" in (read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmButtonSoundHookMixin.java") or ""))
+    check("a menu-open whoosh covers every screen",
+          read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmScreenOpenSoundMixin.java") is not None)
+    sound_dir = "jar-overrides/assets/mcsm/sounds"
+    wavs = sorted(glob.glob(os.path.join(sound_dir, "*.wav")))
+    oggs = sorted(glob.glob(os.path.join(sound_dir, "*.ogg")))
+    check("no undecodable .wav ships as a sound", not wavs, ", ".join(wavs))
+    check("the three UI one-shots are Ogg Vorbis",
+          len(oggs) >= 3 and all(open(p, "rb").read(4) == b"OggS" for p in oggs))
+    sjson = read("jar-overrides/assets/mcsm/sounds.json") or ""
+    try:
+        events = json.loads(sjson)
+    except Exception:
+        events = {}
+    check("sounds.json keys are plain paths in the mcsm namespace",
+          bool(events) and all("." not in k for k in events))
+    check("every declared sound points at an existing shipped file",
+          all((read(os.path.join(sound_dir, s.split(":", 1)[-1] + ".ogg")) is not None)
+              for ev in events.values() for s in ev.get("sounds", [])))
+
+    cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    check("the master version label is still exactly 7000.0.0-M",
+          'BUILD_VERSION = "7000.0.0-M";' in cfg)
+    check("the ported panel's options exist in the config",
+          all(k in cfg for k in ("cinematicBootEnabled", "sciFiPanelLayout", "menuPanorama",
+                                 "stormHaloEnabled", "glareBackdrop", "nightglowPurpleGlow55",
+                                 "useCustomColors", "debrisScaleMultiplier")))
+    gate_src = read("mcsm-extras/java/net/mcsm/extras/McsmGate.java") or ""
+    check("the per-field pass-throughs the panel drives exist",
+          all(k in gate_src for k in ("clientBoolGet(", "clientNumGet(", "clientBool(", "clientNum(")))
+
+    panel = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
+    check("the panel cannot bounce back into the base console",
+          "setScreenAndShow(this.parent)" in panel
+          and "parent instanceof net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen" in panel)
+    rows = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGuiExtrasRows.java") or ""
+    rows_code = code_only(rows)
+    check("the console entry is chrome in a reserved slot, not a scrollable row",
+          "addChrome" in rows_code and "addRowWidget" not in rows_code
+          and "repositionRows" not in rows_code)
+    check("the console entry refuses to stack a second panel",
+          "McsmExtrasScreen)" in rows and "setScreenAndShow" in rows)
+    reskin_code = code_only(read(ui_files["config reskin"]) or "")
+    check("the console layout is table-driven and cannot overlap",
+          "dabyws$layoutRow" in reskin_code and "dabyws$isBottomAction" in reskin_code
+          and "ENTRY_W" in reskin_code)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

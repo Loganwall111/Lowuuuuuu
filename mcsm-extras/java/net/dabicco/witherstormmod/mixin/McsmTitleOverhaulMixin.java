@@ -46,6 +46,13 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
     private static final java.util.Map<Object, Boolean> MC$HOVER = new java.util.IdentityHashMap<>();
     private static final java.util.Map<Object, Long> MC$HOVER_MS = new java.util.IdentityHashMap<>();
     private static final java.util.Map<Object, Long> MC$PRESS_MS = new java.util.IdentityHashMap<>();
+    /** Build #416 -- entrance clock. The panels used to appear as one block the
+     *  instant the screen built; they now rise in sequence (45 ms apart) so the
+     *  menu assembles instead of popping, and no two button animations start on
+     *  the same frame. */
+    private static long MC$ENTER_MS = 0L;
+    /** Stagger between consecutive panels on the entrance animation. */
+    private static final long MC$ENTER_SLOT = 45L;
 
     /** Storm turntable input state (GLFW poll, Build #375). */
     private static double MC$CUR_X = -1.0D;
@@ -64,6 +71,7 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             // to overlap the menu buttons after boot).
             net.mcsm.extras.client.McsmCinematic.markBootDone();
             net.mcsm.extras.client.McsmButtonSounds.menuOpen();
+            MC$ENTER_MS = System.currentTimeMillis();
         } catch (Throwable ignored) {
             // sound only
         }
@@ -147,16 +155,24 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
     }
 
     /**
-     * Build #375 -- THE PANORAMA IS DELETED. The standing "OG panorama"
-     * order is reversed: the main menu's backdrop is now the LITERAL 3D
-     * Wither Storm (McsmStormMenuScene) - a genuine blocky three-headed
-     * model on a turntable you can drag to spin and scroll to zoom - over a
-     * deep storm-space field. The base cube panorama never draws at all.
+     * Build #416 -- THE PANORAMA IS RESTORED.
+     *
+     * #375 deleted it outright ("the panorama is gone, on or off") and put a
+     * flat storm-space gradient in its place; the menu then read as a static
+     * card. The vanilla cube panorama draws again by default -- what the
+     * screen renders is the real, slowly rotating world cube -- and this hook
+     * only steps in for the explicit opt-out. The grade that palette-matches
+     * it to Devouring Storms is applied afterwards, in
+     * {@link #dabyws$storyModeFraming}, so it layers ON the panorama instead
+     * of hiding underneath it.
      */
     @Inject(method = "extractBackground", at = @At("HEAD"), cancellable = true)
     private void dabyws$stormBackdrop(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
-        ci.cancel(); // the panorama is gone, on or off
+        if (McsmExtrasConfig.menuPanorama) {
+            return; // vanilla panorama + vanilla background: untouched
+        }
+        ci.cancel(); // explicit opt-out: the #375 flat storm space
         int w = this.width;
         int h = this.height;
         g.fillGradient(0, 0, w, h, 0xFF07050E, 0xFF0B0716);
@@ -192,6 +208,15 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             }
         }
 
+        // Build #416 -- palette grade for the restored panorama. Drawn FIRST in
+        // this TAIL hook, i.e. on top of the vanilla cube map and below the
+        // storm scene / panels, so the panorama stays legible but the menu
+        // still reads as Devouring Storms rather than vanilla.
+        if (McsmExtrasConfig.menuPanorama) {
+            g.fillGradient(0, 0, w, h, 0x6607050E, 0x800B0716);
+            g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x3A2A1A4A);
+        }
+
         // turntable input: left-drag orbits, wheel zooms (per-frame poll)
         mcsm$pollStormInput();
 
@@ -216,6 +241,7 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
 
         // episodic panels behind every menu button
         long nowMs = System.currentTimeMillis();
+        int entranceIdx = 0;
         for (Object child : this.children()) {
             if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
                 continue;
@@ -238,8 +264,23 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
                 MC$HOVER_MS.remove(b);
             }
 
+            // Build #416 -- ONE animation at a time per button. The press wash,
+            // the hover glow/sparkles and the shatter used to run together, so a
+            // click read as the hover animation flickering under the flash.
+            // A press wins outright for its 160 ms; the hover layer is simply
+            // not drawn for that button while the wash is on screen.
+            Long press0 = MC$PRESS_MS.get(b);
+            long pressT = press0 == null ? -1L : (nowMs - press0);
+            boolean pressing = pressT >= 0L && pressT < 160L;
+            boolean hovAnim = hov && !pressing;
+
+            // entrance: staggered rise (see MC$ENTER_MS)
+            long entT = Math.max(0L, nowMs - MC$ENTER_MS - MC$ENTER_SLOT * (entranceIdx++));
+            float ent = Math.min(1.0F, entT / 320.0F);
+            int rise = (int) ((1.0F - ent) * 14.0F);
+
             // 3D lift: the panel rises 2px and gains a drop shadow on hover
-            int lift = hov ? 2 : 0;
+            int lift = (hov ? 2 : 0) + rise;
             int px = b.getX() - 10;
             int py = b.getY() - 5 - lift;
             int pw = b.getWidth() + 20;
@@ -250,7 +291,7 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             g.fill(px, py, px + pw, py + ph, hov ? 0xF0171B24 : 0xE60A0C11);
             int edge = hov ? 0xFFD9A441 : 0xFF2A3140;
             // pulsing glow frame while hovered (the "crazy cool" idle energy)
-            if (hov) {
+            if (hovAnim) {
                 long sinceHover = nowMs - (MC$HOVER_MS.getOrDefault(b, nowMs));
                 float pulse = (float) (Math.sin(sinceHover * 0.012D) * 0.5D + 0.5D);
                 int glowA = (int) (40 + pulse * 70);
@@ -263,7 +304,7 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
             g.fill(px, py + ph - 1, px + pw, py + ph, edge);
             g.fill(px, py, px + 1, py + ph, edge);
             g.fill(px + pw - 1, py, px + pw, py + ph, edge);
-            if (hov) {
+            if (hovAnim) {
                 // gold corner ticks — the Telltale hover signature
                 g.fill(px, py, px + 7, py + 2, 0xFFD9A441);
                 g.fill(px, py, px + 2, py + 7, 0xFFD9A441);
@@ -280,11 +321,9 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
                 }
             }
             // press flash: a bright gold wash for 160ms after the click
-            Long press = MC$PRESS_MS.get(b);
-            if (press != null) {
-                long pt = nowMs - press;
-                if (pt >= 0L && pt < 160L) {
-                    float fade = 1.0F - (float) (pt / 160.0D);
+            if (press0 != null) {
+                if (pressing) {
+                    float fade = 1.0F - (float) (pressT / 160.0D);
                     int a = (int) (fade * 120.0F);
                     g.fill(px, py, px + pw, py + ph, (a << 24) | 0xFFFFF0CE);
                 } else {

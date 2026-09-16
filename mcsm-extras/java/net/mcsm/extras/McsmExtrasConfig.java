@@ -84,6 +84,13 @@ public final class McsmExtrasConfig {
     // panorama: night sky, sun slab, moon, nebula, mountain silhouettes).
     // TRUE (default) = the cinematic scene; FALSE = the plain gradient.
     public static boolean  storyMenuBackdrop = true;
+    /** Build #416 -- restore the vanilla cube panorama behind the main menu.
+     *  #375 deleted it ("the panorama is gone, on or off") and replaced the
+     *  whole backdrop with a flat storm-space gradient; the revamp's own
+     *  release notes then read as if the panorama had never existed. It is
+     *  back by default, graded into the DS palette instead of removed, and
+     *  this toggle is the explicit opt-out (flat storm space, #375 look). */
+    public static boolean  menuPanorama = true;
     // ---- Build #374 — REAL Story Mode skybox (cube, not dome) -------------
     // Textured cube around the camera; 6 phase skies (lavender day, midnight
     // blue, sunset, turquoise, purple, witherstorm brown-purple) follow the
@@ -239,6 +246,7 @@ public final class McsmExtrasConfig {
             p.setProperty("og_sun_glow", String.valueOf(ogSunGlow));
             p.setProperty("og_sun_glow_strength", String.valueOf(ogSunGlowStrength));
             p.setProperty("story_menu_backdrop", String.valueOf(storyMenuBackdrop));
+            p.setProperty("menu_panorama", String.valueOf(menuPanorama));
             p.setProperty("embedded_shader_pack", String.valueOf(embeddedShaderPack));
             p.setProperty("skybox_enabled", String.valueOf(skyboxEnabled));
             p.setProperty("skybox_fade_seconds", String.valueOf(skyboxFadeSeconds));
@@ -339,6 +347,7 @@ public final class McsmExtrasConfig {
             ogSunGlow = bool(p, "og_sun_glow", ogSunGlow);
             ogSunGlowStrength = dbl(p, "og_sun_glow_strength", ogSunGlowStrength);
             storyMenuBackdrop = bool(p, "story_menu_backdrop", storyMenuBackdrop);
+            menuPanorama = bool(p, "menu_panorama", menuPanorama);
             embeddedShaderPack = bool(p, "embedded_shader_pack", embeddedShaderPack);
             skyboxEnabled = bool(p, "skybox_enabled", skyboxEnabled);
             skyboxFadeSeconds = dbl(p, "skybox_fade_seconds", skyboxFadeSeconds);
