@@ -38,6 +38,9 @@ public final class McsmKeyboard {
     public static final int MINUS = 45;
     public static final int H = 72;
     public static final int C = 67;
+    public static final int B = 66;
+    public static final int W = 87;
+    public static final int S = 83;
 
     private McsmKeyboard() {
     }

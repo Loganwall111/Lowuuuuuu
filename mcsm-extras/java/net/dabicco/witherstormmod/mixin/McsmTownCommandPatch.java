@@ -136,13 +136,18 @@ public abstract class McsmTownCommandPatch {
             maze.then(Commands.literal("where").executes(ctx -> ds$maze(ctx.getSource())));
             maze.then(Commands.literal("build").executes(ctx -> ds$mazeBuild(ctx.getSource())));
 
+            // BUILD #445 -- the future-book, for anyone who wants the countdown in chat
+            // rather than on a page.
+            LiteralArgumentBuilder<CommandSourceStack> book = Commands.literal("book");
+            book.executes(ctx -> ds$book(ctx.getSource()));
+
             LiteralArgumentBuilder<CommandSourceStack> server = Commands.literal("server");
             server.executes(ctx -> ds$server(ctx.getSource()));
             server.then(Commands.literal("where").executes(ctx -> ds$server(ctx.getSource())));
             server.then(Commands.literal("shell").executes(ctx -> ds$serverShell(ctx.getSource())));
 
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
-                    .then(ritual).then(reality).then(maze).then(server));
+                    .then(ritual).then(reality).then(maze).then(server).then(book));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -461,6 +466,19 @@ public abstract class McsmTownCommandPatch {
         } catch (Throwable t) {
             src.sendSuccess(() -> Component.literal("[ds] /ds server shell has to be run by a player"), false);
         }
+        return 1;
+    }
+
+    private static int ds$book(CommandSourceStack src) {
+        src.sendSuccess(() -> Component.literal("[ds] the future-book is open at D-"
+                + net.mcsm.extras.McsmFutureBook.daysLeft() + ", counting to "
+                + net.mcsm.extras.McsmFutureBook.endDate()), false);
+        src.sendSuccess(() -> Component.literal("[ds] " + net.mcsm.extras.McsmFutureBook.forecast()), false);
+        src.sendSuccess(() -> Component.literal(
+                "[ds] page " + (net.mcsm.extras.McsmFutureBook.currentPage(
+                        net.mcsm.extras.McsmFutureBook.daysLeft()) + 1) + " of "
+                        + net.mcsm.extras.McsmFutureBook.count()
+                        + " -- press B in game to read it, the last page is blank"), false);
         return 1;
     }
 }

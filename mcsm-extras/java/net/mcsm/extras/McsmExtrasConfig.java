@@ -122,6 +122,10 @@ public final class McsmExtrasConfig {
      * with no shader pack installed.
      */
     public static boolean skyFloorBand = true;
+    /** BUILD #445 -- the reader's own page in the future-book (kept between sessions). */
+    public static String futureBookNote = "";
+    /** The countdown day the reader's page was written on. */
+    public static int futureBookNoteDay = -1;
     /** BUILD #444 -- storage mazes: carved warehouses under the world. */
     public static boolean storageMazes = true;
     /** BUILD #444 -- server rooms: sealed halls of blinking racks. */
@@ -425,6 +429,8 @@ public final class McsmExtrasConfig {
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
             p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
+            p.setProperty("future_book_note", futureBookNote);
+            p.setProperty("future_book_note_day", String.valueOf(futureBookNoteDay));
             p.setProperty("storage_mazes", String.valueOf(storageMazes));
             p.setProperty("server_rooms", String.valueOf(serverRooms));
             p.setProperty("rituals", String.valueOf(rituals));
@@ -562,6 +568,8 @@ public final class McsmExtrasConfig {
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
+            futureBookNote = str(p, "future_book_note", futureBookNote);
+            futureBookNoteDay = (int) dbl(p, "future_book_note_day", futureBookNoteDay);
             storageMazes = bool(p, "storage_mazes", storageMazes);
             serverRooms = bool(p, "server_rooms", serverRooms);
             rituals = bool(p, "rituals", rituals);
@@ -641,6 +649,11 @@ public final class McsmExtrasConfig {
     private static boolean bool(Properties p, String k, boolean d) {
         String v = p.getProperty(k);
         return v == null ? d : Boolean.parseBoolean(v.trim());
+    }
+
+    private static String str(Properties p, String k, String d) {
+        String v = p.getProperty(k);
+        return v == null ? d : v;
     }
 
     private static double dbl(Properties p, String k, double d) {

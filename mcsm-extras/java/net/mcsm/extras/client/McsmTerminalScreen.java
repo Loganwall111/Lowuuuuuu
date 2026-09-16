@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import net.mcsm.extras.McsmFutureBook;
 import net.mcsm.extras.McsmSounds;
 import net.mcsm.extras.McsmTerminal;
 import net.minecraft.client.Minecraft;
@@ -58,7 +59,8 @@ public final class McsmTerminalScreen extends Screen {
     private enum Mode { LOGIN, CONSOLE, GUIDE, RADIO }
 
     private static final String[] GUIDE_PAGES = {
-        "cover", "rift", "cities", "bestiary", "ladder", "creator", "blackhole", "tornado", "antenna"
+        "cover", "book", "rift", "cities", "bestiary", "ladder", "creator", "blackhole",
+        "tornado", "antenna"
     };
     private static final String[] BUTTONS = {"GUIDE", "RADIO", "REPORT", "NEXT", "CONFIG", "CLOSE"};
 
@@ -167,6 +169,8 @@ public final class McsmTerminalScreen extends Screen {
         out.append("              blackhole, tornado, antenna\n");
         out.append("Radio       : ").append(McsmTerminal.stationNames().size())
            .append(" stations on this set.\n");
+        out.append(McsmFutureBook.forecast()).append("\n");
+        out.append("Future-book  : B opens it. Its last page is blank, and it is yours.\n");
         out.append("The MASSG    : released by the operator -- sneak-use the antenna.\n");
         out.append("               It cannot be killed, and it cannot be undone.\n");
         return out.toString();

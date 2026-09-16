@@ -2008,6 +2008,86 @@ def main():
           "grow.put(crateX, ground + 1, crateZ, BARREL);" in adams
           and 'next[BARREL] = state("minecraft:barrel", null);' in adams)
 
+    # ------------------------------------------------------------------
+    # BUILD #445 -- THE INFINITE FUTURE-BOOK.
+    #
+    # "The infinite future-book" off the wishlist. A book of the future is only
+    # worth anything if its dates are real, so: one end date in the whole build
+    # (the sky terminal's own epoch), pages that are dated from the clock, a book
+    # that opens on the page that has come due, and a last page that is the
+    # reader's. A gate holds each of those, and holds that the screen draws no
+    # edge tint (that is a standing instruction, and screens drift).
+    # ------------------------------------------------------------------
+    book = read("mcsm-extras/java/net/mcsm/extras/McsmFutureBook.java") or ""
+    bookui = read("mcsm-extras/java/net/mcsm/extras/client/McsmFutureBookScreen.java") or ""
+    massg = read("mcsm-extras/java/net/mcsm/extras/McsmMassg.java") or ""
+
+    check("the book counts to the terminal's own end date, not to a second one",
+          "public static final long END_EPOCH_MS = 1801526400000L; // 2027-02-01T00:00:00Z"
+                  in massg
+          and "java.time.Instant.ofEpochMilli(McsmMassg.END_EPOCH_MS)" in book
+          and "END_YEAR = 2027" in book and "END_MONTH = 2" in book and "END_DAY = 1" in book
+          and "ChronoUnit.DAYS.between(LocalDate.now(), end)" in book)
+    check("the pages are dated from the clock, and they move when it does",
+          "out.add(new Page(template.chapter(), template.title(), left - offset" in book
+          and "offset += template.span();" in book
+          and "public boolean due(int daysLeft)" in book
+          and "return day <= daysLeft;" in book
+          and "public static int currentPage(int daysLeft)" in book)
+    check("the book opens on the page that has come due, and the reader's is last",
+          "this.selected = McsmFutureBook.currentPage(McsmFutureBook.daysLeft());" in bookui
+          and "int last = pages.size();            // the reader's own page is one past the book"
+                  in bookui
+          and "return TEMPLATE.size() + 1;" in book)
+    check("it is a book: chapters, titles, dated pages, spans, and omens",
+          book.count("        p(\"") >= 20
+          and 'p("I", "THE BOOK OPENS", 4' in book
+          and 'p("XX", "THE LAST PAGES", 4' in book
+          and "\\u2500\\u2500 CHAPTER " in bookui
+          and "page.omen()" in bookui
+          and "McsmFutureBook.Page page = pages.get(selected);" in bookui)
+    check("the last page is the reader's, and their ink is kept",
+          "public static String futureBookNote" in cfg
+          and "future_book_note" in cfg and "future_book_note_day" in cfg
+          and "McsmExtrasConfig.futureBookNote = clean;" in bookui
+          and "McsmExtrasConfig.futureBookNoteDay = McsmFutureBook.daysLeft();" in bookui
+          and "McsmExtrasConfig.save();" in bookui)
+    check("the book's keys are POLLED, like the terminal's, not hooked",
+          "for (Integer key : McsmKeyboard.poll()) {" in bookui
+          and "McsmKeyboard.textOf(k)" in bookui
+          and "public static final int B = 66;" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmKeyboard.java") or "")
+          and "public static final int W = 87;" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmKeyboard.java") or "")
+          and "McsmKeyboard.BACKSPACE" in bookui and "McsmKeyboard.SPACE" in bookui)
+    check("B opens it, and typing a B into the last page does not shut it",
+          "mcsm$fallbackBookKey();" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java") or "")
+          and "if (!book.writing()) {" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java") or "")
+          and "McsmFutureBookScreen.show();" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java") or "")
+          and "public boolean writing() {" in bookui
+          and "if (writing) {" in bookui)
+    check("the book draws no edge tint (the standing rule) and wraps with the real font",
+          "g.fill(0, 0, this.width, this.height, BACKDROP);" in bookui
+          and "vignette" not in bookui.lower()
+          and "this.font.width(candidate) <= maxWidth" in bookui
+          and "public static void show() {" in bookui)
+    check("the terminal and the commands both know about it",
+          'case "book":' in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmTerminal.java") or "")
+          and '"cover", "book", "rift"' in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java") or "")
+          and "McsmFutureBook.forecast()" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java") or "")
+          and 'Commands.literal("book")' in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java")
+              or "")
+          and "ds$book" in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java")
+              or ""))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

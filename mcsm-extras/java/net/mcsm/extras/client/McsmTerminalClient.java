@@ -36,6 +36,7 @@ public final class McsmTerminalClient {
     private static Object keyMapping;
     /** BUILD #424 -- the direct C read's edge state. */
     private static boolean mcsm$cWasDown;
+    private static boolean mcsm$bWasDown;
 
     private McsmTerminalClient() {
     }
@@ -90,6 +91,8 @@ public final class McsmTerminalClient {
         // build -- so C always opens the console in a world, whatever the binding
         // layer did.
         mcsm$fallbackKey();
+        // BUILD #445 -- and the book, on its own key.
+        mcsm$fallbackBookKey();
         if (keyMapping == null) {
             return;
         }
@@ -134,6 +137,42 @@ public final class McsmTerminalClient {
                 terminal.onClose();
             } else if (currentScreen(mc) == null) {
                 onKeyPressed();
+            }
+        } catch (Throwable ignored) {
+            // never break a tick over a key
+        }
+    }
+
+    /**
+     * BUILD #445 -- THE B KEY, which is the future-book.
+     *
+     * Edge-triggered and read the same way the C key is, with one rule learned
+     * from the terminal's own wart: while the book is being WRITTEN IN, the letter
+     * B belongs to the page and not to the toggle, so a reader typing "book" into
+     * the last page does not shut it on themselves mid-word.
+     */
+    private static void mcsm$fallbackBookKey() {
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || mc.player == null) {
+                return;
+            }
+            boolean down = mcsm$isKeyDown(McsmKeyboard.B);
+            if (!down) {
+                mcsm$bWasDown = false;
+                return;
+            }
+            if (mcsm$bWasDown) {
+                return;
+            }
+            mcsm$bWasDown = true;
+            Screen current = currentScreen(mc);
+            if (current instanceof McsmFutureBookScreen book) {
+                if (!book.writing()) {
+                    book.onClose();
+                }
+            } else if (current == null) {
+                McsmFutureBookScreen.show();
             }
         } catch (Throwable ignored) {
             // never break a tick over a key

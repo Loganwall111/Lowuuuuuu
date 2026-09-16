@@ -438,6 +438,13 @@ public final class McsmTerminal {
     public static String guideText(String page) {
         String which = page == null ? "" : page;
         switch (which) {
+            case "book":
+                return "PAGE :: THE INFINITE FUTURE-BOOK\n\n"
+                        + "There is a book of what has not happened yet, and it is\n"
+                        + "dated. It counts to the same day this terminal counts to,\n"
+                        + "so its pages move with the clock.\n\n"
+                        + "Press B to open it. Turn pages with SPACE, W or S. The last\n"
+                        + "page of it is blank, and it is yours.";
             case "rift":
                 return "PAGE :: THE RIFT\n\n"
                         + "Hold the RIFT KEY and SNEAK to tear a way into the Decayed\n"
