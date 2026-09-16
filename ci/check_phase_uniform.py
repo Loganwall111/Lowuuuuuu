@@ -1784,6 +1784,47 @@ def main():
           and "Body Wears the Phase Colour" in extras
           and "Body Phase Tint (0 = the old grey, 1 = the sky's hue)" in extras)
 
+    # ------------------------------------------------------------------
+    # BUILD #440 -- THE UPPER BACK, PROVEN AGAINST THE JAR RATHER THAN GUESSED AT.
+    #
+    # Run 519's API oracle answered the question this build had been guessing at
+    # since #423: the frozen base jar really does declare
+    #
+    #   private void WitherStormRenderer.submitGrowth5(WitherStormRenderState,
+    #           PoseStack, SubmitNodeCollector)
+    #   private final HugeAssBackModel WitherStormRenderer.hugeAssBackModel
+    #   private boolean WitherStormRenderer.previewShadowPass
+    #   public void PoseStack.scale(float, float, float)
+    #
+    # so both welds target real members. The two welds stay `require = 0` on
+    # purpose (a different renderer must not be able to break launch), which
+    # means the proof has to live somehere else: ci/API_ORACLE.md records the
+    # quoted signatures and the run they came from, and this checks that the
+    # document still names the members the mixins inject into.
+    # ------------------------------------------------------------------
+    attach = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackAttachMixin.java") or ""
+    pose = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackPoseMixin.java") or ""
+    oracle = read("ci/API_ORACLE.md") or ""
+
+    check("the upper-back weld names the method the jar declares",
+          attach.count('@Inject(method = "submitGrowth5"') == 2
+          and "require = 0" in attach
+          and "write 5(S(2" not in attach)
+    check("the huge-back pose names the method the jar declares",
+          '@Inject(method = "scale", at = @At("RETURN"), remap = false' in pose
+          and "require = 0" in pose)
+    check("the API oracle records the signatures those two welds depend on",
+          "submitGrowth5(WitherStormRenderState, PoseStack, SubmitNodeCollector)" in oracle
+          and "HugeAssBackModel hugeAssBackModel;" in oracle
+          and "public void scale(float, float, float);" in oracle
+          and "private boolean previewShadowPass;" in oracle)
+    check("the oracle cannot be cut short by one unreadable class",
+          # run 519: the dump stopped dead at StormBackdrop because javap could not
+          # read the next class and `set -e` + pipefail took the whole group with it
+          "javap could not read" in (read("ci/build.sh") or "")
+          and "{ grep -Ei \"eyes|emitter|bloom|glow|mark|Fogless|RenderType|Skins\" || true; }" in (
+              read("ci/build.sh") or ""))
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

@@ -875,10 +875,14 @@ VANILLA_OUT=out/vanilla-api.txt
     # Blocks has hundreds of fields and the concrete/wool labels sit far past a
     # 110-line cap -- run 508 asked for WHITE_CONCRETE and the dump could not
     # answer, so the cap is 900 for it and 220 for everything else.
+    # NOTE: with `set -e` and `pipefail`, a javap that cannot read a class would
+    # abort the whole dump (run 519: everything after StormBackdrop is missing
+    # because FoglessRenderTypes could not be read). Every probe below is
+    # therefore allowed to fail, and says so in the dump instead of stopping it.
     if [ "$CLS" = "net.minecraft.world.level.block.Blocks" ]; then
-      javap -p -classpath "$DL/client.jar" "$CLS" 2>&1 | sed -n '1,900p'
+      { javap -p -classpath "$DL/client.jar" "$CLS" 2>&1 || echo "(javap could not read ${CLS})"; } | sed -n '1,900p'
     else
-      javap -p -classpath "$DL/client.jar" "$CLS" 2>&1 | sed -n '1,220p'
+      { javap -p -classpath "$DL/client.jar" "$CLS" 2>&1 || echo "(javap could not read ${CLS})"; } | sed -n '1,220p'
     fi
   done
 
@@ -904,7 +908,9 @@ VANILLA_OUT=out/vanilla-api.txt
     net.minecraft.client.renderer.SkyRenderer ; do
     echo
     echo "===== ${CLS} (base mod)"
-    javap -p -classpath "$STRIPPED:$DL/client.jar" "$CLS" 2>&1 | sed -n '1,260p'
+    { javap -p -classpath "$STRIPPED:$DL/client.jar" "$CLS" 2>&1 \
+      || echo "(javap could not read ${CLS} -- it may not be in the compile jars)"; } \
+      | sed -n '1,260p'
   done
 
   # --------------------------------------------------------------------------
@@ -924,9 +930,10 @@ VANILLA_OUT=out/vanilla-api.txt
     net.dabicco.witherstormmod.entity.renderer.WitherStormHeadRenderer ; do
     echo
     echo "===== ${CLS} -- render-type call sites (constant pool)"
-    javap -v -p -classpath "$STRIPPED:$DL/client.jar" "$CLS" 2>&1 \
-      | grep -E "Methodref|InterfaceMethodref" \
-      | grep -Ei "eyes|emitter|bloom|glow|mark|Fogless|RenderType|Skins" \
+    { javap -v -p -classpath "$STRIPPED:$DL/client.jar" "$CLS" 2>&1 \
+      || echo "(javap could not read ${CLS} -- it may not be in the compile jars)"; } \
+      | { grep -E "Methodref|InterfaceMethodref" || true; } \
+      | { grep -Ei "eyes|emitter|bloom|glow|mark|Fogless|RenderType|Skins" || true; } \
       | sed -n '1,200p'
   done
 } > "$VANILLA_OUT" 2>&1 || true
