@@ -58,7 +58,8 @@ disclose_failure() {
   sleep 1
   cp -f "$RUNLOG" out/BUILD_LOG.txt 2>/dev/null || true
   { echo; echo "---- last 25 lines of the run ----"; tail -n 25 "$RUNLOG"; } >> out/FAILURE.txt 2>/dev/null || true
-  echo "::error title=build-failed::exit ${rc} -- full run log in out/BUILD_LOG.txt and ci-out/run-*/ on the branch"
+  echo "::error title=build-failed::exit ${rc} after stage '$(cat "$RUN_STAGE" 2>/dev/null)' -- full run log in out/BUILD_LOG.txt and ci-out/run-*/ on the branch"
+  echo "[failure] exit ${rc} after stage '$(cat "$RUN_STAGE" 2>/dev/null)'"
   local line n=0
   tail -n 12 "$RUNLOG" 2>/dev/null | while IFS= read -r line; do
     n=$((n + 1))
@@ -69,6 +70,128 @@ disclose_failure() {
   fi
 }
 trap disclose_failure EXIT
+
+# BUILD #416 (D.8) -- the evidence channel, defined EARLY.
+#
+# It used to live at the very bottom of this script, which meant a failure
+# anywhere above it left nothing behind: no log, no marker, and (because the
+# runner's own logs live on a blob host this machine cannot reach) no way to
+# tell which gate died. Now the channel is defined up here next to the traps and
+# is used twice:
+#   * stage <name>  -- records the last gate that completed, in the log and in
+#                      ci-out/run-<N>/stage.txt on the session branch, so a red
+#                      run says WHERE it died even when it dies silently;
+#   * push_evidence_simple -- the full upload (javac log, run log, class list,
+#                      vanilla API dump), also reachable from the EXIT trap.
+# Every helper is non-fatal by construction: it restores `set -e` on the way out
+# and never returns non-zero to the build.
+EVIDENCE_DONE=0
+EVIDENCE_DIR=""
+RUN_STAGE="/tmp/mcsm-stage.txt"
+: > "$RUN_STAGE"
+
+evidence_clone() {
+  [ -n "$EVIDENCE_DIR" ] && return 0
+  local AUTH REMOTE
+  AUTH="$(git config --get http.https://github.com/.extraheader 2>/dev/null || true)"
+  if [ -n "${GH_TOKEN:-}" ]; then
+    REMOTE="https://x-access-token:${GH_TOKEN}@github.com/Loganwall111/Lowuuuuuu.git"
+    AUTH=""
+  elif [ -n "$AUTH" ]; then
+    REMOTE="$EVIDENCE_REPO"
+  else
+    echo "[evidence] no credentials - channel unavailable"
+    return 1
+  fi
+  rm -rf /tmp/mcsm-evidence
+  if [ -n "$AUTH" ]; then
+    GIT_LFS_SKIP_SMUDGE=1 git -c "http.https://github.com/.extraheader=${AUTH}" \
+      clone -q --depth 5 --branch "$EVIDENCE_BRANCH" "$REMOTE" /tmp/mcsm-evidence || return 1
+  else
+    # clone anonymously, then point origin at the token URL with tracing off, so
+    # the token never reaches the run log
+    GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 5 --branch "$EVIDENCE_BRANCH" \
+      "$EVIDENCE_REPO" /tmp/mcsm-evidence || return 1
+    local had_x=0
+    case "$-" in *x*) had_x=1 ;; esac
+    set +x
+    git -C /tmp/mcsm-evidence remote set-url origin "$REMOTE"
+    [ "$had_x" = "1" ] && set -x
+  fi
+  git -C /tmp/mcsm-evidence config user.name "mcsm-ci"
+  git -C /tmp/mcsm-evidence config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  EVIDENCE_DIR=/tmp/mcsm-evidence
+  echo "[evidence] channel open on ${EVIDENCE_BRANCH}"
+  return 0
+}
+
+# evidence_put <local file> <name> -- non-fatal, restores set -e
+evidence_put() {
+  local had_e=0
+  case "$-" in *e*) had_e=1 ;; esac
+  set +e
+  if evidence_clone; then
+    local DST="$EVIDENCE_DIR/ci-out/run-${GITHUB_RUN_NUMBER:-local}"
+    mkdir -p "$DST"
+    if cp -f "$1" "$DST/$2" 2>/dev/null; then
+      git -C "$EVIDENCE_DIR" add ci-out >/dev/null 2>&1
+      git -C "$EVIDENCE_DIR" commit -qm "ci evidence: run ${GITHUB_RUN_NUMBER:-local} $2" >/dev/null 2>&1
+      git -C "$EVIDENCE_DIR" push -q origin "HEAD:${EVIDENCE_BRANCH}" >/dev/null 2>&1 \
+        || echo "[evidence] push rejected for $2 (non-fatal)"
+    fi
+  fi
+  [ "$had_e" = "1" ] && set -e
+  return 0
+}
+
+# stage <name> [push] -- the last gate that COMPLETED
+stage() {
+  local had_e=0
+  case "$-" in *e*) had_e=1 ;; esac
+  set +e
+  echo "[stage] $1"
+  printf '%s\n' "$1" > "$RUN_STAGE"
+  if [ "${2:-}" = "push" ]; then
+    evidence_put "$RUN_STAGE" stage.txt
+    evidence_put "$RUNLOG" run.log
+  fi
+  [ "$had_e" = "1" ] && set -e
+  return 0
+}
+
+push_evidence_simple() {
+  local had_e=0
+  case "$-" in *e*) had_e=1 ;; esac
+  set +e
+  if evidence_clone; then
+    local DST="$EVIDENCE_DIR/ci-out/run-${GITHUB_RUN_NUMBER:-local}"
+    rm -rf "$DST"; mkdir -p "$DST"
+    cp -f out/BUILD_INFO.txt "$DST/" 2>/dev/null
+    cp -f out/JAVAC_FAILED.txt "$DST/" 2>/dev/null
+    cp -f out/vanilla-api.txt "$DST/" 2>/dev/null
+    cp -f out/BUILD_LOG.txt "$DST/" 2>/dev/null
+    cp -f "${JAVAC_LOG:-/dev/null}" "$DST/javac-full.log" 2>/dev/null
+    cp -f "${GLSL_LOG:-/dev/null}" "$DST/glsl-gate.log" 2>/dev/null
+    cp -f out/*.sha256 "$DST/" 2>/dev/null
+    cp -f "$RUNLOG" "$DST/run.log" 2>/dev/null
+    cp -f "$RUN_STAGE" "$DST/stage.txt" 2>/dev/null
+    ( cd /tmp/mcsm-build 2>/dev/null && find . -name '*.class' | sort ) > "$DST/classes.txt" 2>/dev/null
+    git -C "$EVIDENCE_DIR" add ci-out >/dev/null 2>&1
+    if git -C "$EVIDENCE_DIR" commit -qm "ci evidence: run ${GITHUB_RUN_NUMBER:-local} -- javac exit ${JAVAC_RC:-?}, ${N_CLASSES:-?} classes"; then
+      if git -C "$EVIDENCE_DIR" push -q origin "HEAD:${EVIDENCE_BRANCH}"; then
+        echo "[evidence] pushed run ${GITHUB_RUN_NUMBER:-local} to ${EVIDENCE_BRANCH} (last stage: $(cat "$RUN_STAGE" 2>/dev/null))"
+      else
+        echo "[evidence] push rejected (branch moved) - non-fatal"
+      fi
+    else
+      echo "[evidence] nothing to commit - skip"
+    fi
+  fi
+  EVIDENCE_DONE=1
+  [ "$had_e" = "1" ] && set -e
+  return 0
+}
+
 
 VER="${1:-$(cat VERSION | tr -d '[:space:]')}"
 # Keep the artifact and fabric.mod.json identity byte-for-byte equal to VERSION.
@@ -373,6 +496,7 @@ PALETTE_LINE="$(printf '%s\n' "$PALETTE_OUT" | grep -F '[palette]' | tail -1)"
 echo "$PALETTE_LINE"
 # Annotations survive without runner-log access, so the gate result is auditable.
 echo "::notice title=palette::$PALETTE_LINE"
+stage palette-ok push
 
 # BUILD #416 -- the nine SUPPLIED hex anchors are ground truth for the sky, so
 # the shipped tables must equal their expansion to the byte. --from-hex --check
@@ -388,6 +512,7 @@ HEX_OUT="$(python3 ci/trace_sky_sheets.py --from-hex --check 2>&1)" || {
 HEX_LINE="$(printf '%s\n' "$HEX_OUT" | grep -F '[hex] --check:' | tail -1)"
 echo "$HEX_LINE"
 echo "::notice title=hex::$HEX_LINE"
+stage hex-ok
 
 # BUILD #416 -- and the report picture of that sky must not go stale again. It
 # did once: it still showed the superseded bright trace after the anchors were
@@ -410,6 +535,7 @@ TRACE_OUT="$(python3 ci/trace_sky_sheets.py --verify 2>&1)" || {
   exit 1
 }
 printf '%s\n' "$TRACE_OUT" | grep -E '^\[trace\]|^  (ok|FAIL)|sky-sheets::' | tail -6
+stage trace-ok
 
 echo "[phase] WitherStormPhase plumbing gate"
 PHASE_OUT="$(python3 ci/check_phase_uniform.py 2>&1)" || {
@@ -420,6 +546,7 @@ PHASE_OUT="$(python3 ci/check_phase_uniform.py 2>&1)" || {
 PHASE_LINE="$(printf '%s\n' "$PHASE_OUT" | grep -F '[phase]' | tail -1)"
 echo "$PHASE_LINE"
 echo "::notice title=phase::$PHASE_LINE"
+stage phase-ok push
 
 # Story Look resource-pack shaders must validate as well.
 for SL in storylook/assets/minecraft/shaders/core/*; do
@@ -454,6 +581,7 @@ if ! python3 ci/iris_tu.py shaderpack-v5/shaders; then
   exit 1
 fi
 echo "[glsl] shaderpack-v5 validates"
+stage glsl-ok
 
 # ---------------------------------------------------------------------------
 # BUILD #415 -- MODEL METHOD BUDGET GATE.
@@ -483,6 +611,7 @@ if [ "$MODEL_FAIL" -ne 0 ]; then
   exit 1
 fi
 echo "[model] method budget OK (no recovered model method is near the 64 KB bytecode limit)"
+stage model-ok
 
 # ---------------------------------------------------------------------------
 # MCSM 1.9.109 -- VERSION SINGLE-SOURCE + DRIFT GATE.
@@ -547,6 +676,7 @@ if [ -n "$DRIFT" ]; then
   exit 1
 fi
 echo "[version] drift gate OK (no hardcoded version literals)"
+stage version-ok push
 
 # ---------------------------------------------------------------------------
 # BUILD #416 -- BACKDROP SHEETS, BAKED FROM THE TRACED SKY TABLES.
@@ -564,6 +694,7 @@ echo "[version] drift gate OK (no hardcoded version literals)"
 # ---------------------------------------------------------------------------
 if python3 ci/make_backdrop_sheets.py; then
   echo "[backdrop] six phase sheets regenerated from the traced palette"
+stage backdrop-ok
 else
   echo "::error title=build::backdrop sheet generation failed"
   exit 1
@@ -619,6 +750,7 @@ VANILLA_OUT=out/vanilla-api.txt
   done
 } > "$VANILLA_OUT" 2>&1 || true
 echo "[api] vanilla dump: $(wc -l < "$VANILLA_OUT" 2>/dev/null || echo 0) lines -> out/vanilla-api.txt"
+stage oracle-ok
 
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
@@ -635,6 +767,7 @@ javac -nowarn -implicit:none -sourcepath /tmp/mcsm-emptysrc --release 25 -proc:n
 N_CLASSES="$(find /tmp/mcsm-build -name '*.class' | wc -l)"
 if [ "$JAVAC_RC" -eq 0 ]; then
   echo "[javac] OK: ${N_CLASSES} classes"
+stage javac-compiled
   rm -f out/JAVAC_FAILED.txt
   # BUILD #416 -- a clean javac exit is not the same as "the new pass is in the
   # jar". Some of this build's classes only ADD behaviour: if one of them silently
@@ -650,6 +783,7 @@ if [ "$JAVAC_RC" -eq 0 ]; then
     fi
   done
   echo "[javac] new-behaviour classes present (white column, conic renderer, phase model, presence pass)"
+stage javac-ok push
 else
   echo "::error::javac FAILED (exit ${JAVAC_RC}) — refusing to publish a shaders-only/old-Java jar. Full log: out/JAVAC_FAILED.txt"
   cp -f "$JAVAC_LOG" out/JAVAC_FAILED.txt
@@ -667,6 +801,7 @@ else
 fi
 
 echo "[assemble] overlay onto base (unzip base jar, overlay shaders + jar-overrides + fresh classes)"
+stage assemble-start
 FX=/tmp/mcsm-fx
 rm -rf "$FX" && mkdir -p "$FX/cls"
 ( cd "$FX/cls" && unzip -o -q "$BASE" )
@@ -777,6 +912,7 @@ with open(p, "w") as f:
     f.write("\n")
 PYNAME
 echo "[build] fabric.mod.json name: $(python3 -c "import json;print(json.load(open('$FX/cls/fabric.mod.json'))['name'])")"
+stage manifest-ok push
 
 # Devouring Storms 1.9.180 -- the base config screen still contains a stale
 # hardcoded section title such as "MCSM extras 1.9.95". Patch UTF8 constants in
@@ -1316,6 +1452,7 @@ if [ "$AUDIT_FAIL" -ne 0 ]; then
 fi
 echo "::notice title=jar audit::all mixins registered, fresh classes present, shaders current"
 echo "[audit] PASS"
+stage audit-ok
 
 
 OUT="out/devouringstorms-${JAR_ID}.jar"
@@ -1350,57 +1487,6 @@ cat out/BUILD_INFO.txt
 # NEVER fails the build. Skipped automatically when no credentials exist
 # (local runs) or the push loses a race with a concurrent push.
 # ---------------------------------------------------------------------------
-push_evidence_simple() {
-  local AUTH REMOTE
-  AUTH="$(git config --get http.https://github.com/.extraheader 2>/dev/null || true)"
-  # BUILD #416 (D.8) -- actions/checkout keeps its token out of the key this
-  # used to read, so every evidence push since that change silently skipped and
-  # the branch stayed empty of ci-out/. The workflow now passes GH_TOKEN in and
-  # the runner clones/pushes with it; the old header path stays as a fallback.
-  if [ -n "${GH_TOKEN:-}" ]; then
-    REMOTE="https://x-access-token:${GH_TOKEN}@github.com/Loganwall111/Lowuuuuuu.git"
-    AUTH=""
-    echo "[evidence] using GH_TOKEN for the evidence push"
-  elif [ -n "$AUTH" ]; then
-    REMOTE="$EVIDENCE_REPO"
-  else
-    echo "[evidence] no credentials - skip"; return 0
-  fi
-  rm -rf /tmp/mcsm-evidence
-  if [ -n "$AUTH" ]; then
-    GIT_LFS_SKIP_SMUDGE=1 git -c "http.https://github.com/.extraheader=${AUTH}" \
-      clone -q --depth 5 --branch "$EVIDENCE_BRANCH" "$REMOTE" /tmp/mcsm-evidence || {
-      echo "[evidence] clone failed - skip"; return 0; }
-  else
-    GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 5 --branch "$EVIDENCE_BRANCH" "$REMOTE" /tmp/mcsm-evidence || {
-      echo "[evidence] clone failed - skip"; return 0; }
-  fi
-  local DST="/tmp/mcsm-evidence/ci-out/run-${GITHUB_RUN_NUMBER:-local}"
-  rm -rf "$DST"; mkdir -p "$DST"
-  cp -f out/BUILD_INFO.txt "$DST/" 2>/dev/null || true
-  cp -f out/JAVAC_FAILED.txt "$DST/" 2>/dev/null || true
-  cp -f out/vanilla-api.txt "$DST/" 2>/dev/null || true
-  cp -f "${JAVAC_LOG:-/dev/null}" "$DST/javac-full.log" 2>/dev/null || true
-  cp -f "${GLSL_LOG:-/dev/null}" "$DST/glsl-gate.log" 2>/dev/null || true
-  cp -f out/*.sha256 "$DST/" 2>/dev/null || true
-  ( cd /tmp/mcsm-build && find . -name '*.class' | sort ) > "$DST/classes.txt"
-  git -C /tmp/mcsm-evidence config user.name "mcsm-ci"
-  git -C /tmp/mcsm-evidence config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-  if git -C /tmp/mcsm-evidence add ci-out && \
-     git -C /tmp/mcsm-evidence commit -qm "ci evidence: run ${GITHUB_RUN_NUMBER:-local} — javac exit ${JAVAC_RC}, ${N_CLASSES} classes"; then
-    if ! git -C /tmp/mcsm-evidence push -q origin "HEAD:${EVIDENCE_BRANCH}"; then
-      echo "[evidence] push rejected (branch moved) — retrying once"
-      git -C /tmp/mcsm-evidence fetch -q origin "$EVIDENCE_BRANCH"
-      git -C /tmp/mcsm-evidence rebase -q FETCH_HEAD || { echo "[evidence] rebase failed — skip"; EVIDENCE_DONE=1; return 0; }
-      git -C /tmp/mcsm-evidence push -q origin "HEAD:${EVIDENCE_BRANCH}" || echo "[evidence] retry push failed — skip"
-    else
-      echo "[evidence] pushed run ${GITHUB_RUN_NUMBER:-local} to ${EVIDENCE_BRANCH} (ci-out/)"
-    fi
-  else
-    echo "[evidence] nothing to commit — skip"
-  fi
-  EVIDENCE_DONE=1
-}
 push_evidence_simple || echo "[evidence] skipped (non-fatal)"
 rm -rf /tmp/mcsm-evidence
 
