@@ -1496,7 +1496,10 @@ def main():
           and "Raise the ruined cities in the regular world too" in extras)
     check("it never raises a district on top of world spawn",
           "OVERWORLD_MIN_DISTANCE = 384" in cities and "private static boolean nearSpawn(" in cities
-          and "private static BlockPos spawnPos(ServerLevel level)" in cities
+          # #444 made spawnPos public: the maze and server-room generators now ask
+          # the same question, and a second reflective name-search would be a
+          # second thing to keep in step with the API.
+          and "public static BlockPos spawnPos(ServerLevel level)" in cities
           and "if (overworld && nearSpawn(level, player))" in cities)
     check("world spawn is read by name, because the field call does not exist in this API",
           # run 508: javac "cannot find symbol: method getSharedSpawnPos(), location:
@@ -1936,6 +1939,74 @@ def main():
               read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or "")
           and 'Commands.literal("adams")' in (
               read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""))
+
+    # ------------------------------------------------------------------
+    # BUILD #444 -- STORAGE MAZES AND SERVER ROOMS.
+    #
+    # "Storage mazes" and "server rooms" off the wishlist. A maze has to be a real
+    # maze (carved, connected, with dead ends worth reaching), a server room has to
+    # be a machine (rack lights that blink, and a power failure), and both have to
+    # stand on the ground rather than in the air.
+    # ------------------------------------------------------------------
+    mazes = read("mcsm-extras/java/net/mcsm/extras/McsmMazes.java") or ""
+    rooms = read("mcsm-extras/java/net/mcsm/extras/McsmServerRooms.java") or ""
+    queue = read("mcsm-extras/java/net/mcsm/extras/McsmBuildQueue.java") or ""
+
+    check("the maze is CARVED by a depth-first walk, not painted as corridors",
+          "boolean[] visited = new boolean[GRID * GRID];" in mazes
+          and "int[] stackX = new int[GRID * GRID];" in mazes
+          and "int pick = choices[rng.nextInt(n)];" in mazes
+          and "rng = new java.util.Random(seed)" in mazes)
+    check("the maze is sealed, ceilinged and lamped like a warehouse",
+          "planner.box(ox - 1, FLOOR_Y - 1, oz - 1, ox + side, FLOOR_Y + 5, oz + side, BRICK)" in mazes
+          and "FLOOR_Y = 18" in mazes
+          and "planner.box(x, FLOOR_Y + 4, z, x + 2, FLOOR_Y + 4, z + 2, TILES)" in mazes)
+    check("the dead ends are the treasure, and the salvage is reachable",
+          # a container API call, not a decorative crate: the crate blocks in the
+          # content pack drop loot when broken, they do not hold any.
+          "if (ways == 1)" in mazes
+          and "planner.put(x, FLOOR_Y + 1, z, BARREL);" in mazes
+          and "planner.container(x, FLOOR_Y + 1, z, vault ? TAG_VAULT : TAG_AISLE);" in mazes
+          and "be instanceof Container container" in mazes
+          and "container.setItem(" in mazes)
+    check("the shaft to the hatch stops at the terrain, never through a base",
+          "surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sx, sz)" in mazes
+          and "for (int y = FLOOR_Y + 5; y <= surface; y++)" in mazes
+          and "McsmCities.spawnPos(level)" in mazes)
+    check("the server room is a machine: rack lights it remembers",
+          "private static final Map<Object, List<int[]>> LAMPS" in rooms
+          and "planner.spot(rackHall + ax, FLOOR_Y + 1, z0 + az, TAG_RACK);" in rooms
+          and "if (tag == TAG_RACK)" in rooms)
+    check("the racks blink, and the room has a power failure",
+          "CHATTER_PERIOD = 20L" in rooms and "CHATTER = 5" in rooms
+          and "FAILURE_PERIOD = 3600L" in rooms and "FAILURE_TICKS = 90L" in rooms
+          and "boolean failing = cycle < FAILURE_TICKS;" in rooms
+          and "level.setBlock(new BlockPos(at[0], at[1], at[2]), dark, 2);" in rooms)
+    check("the mainframe is its own tag, and it answers with the keycard in hand",
+          "TAG_MAINFRAME = 3" in rooms
+          and "planner.spot(vx, FLOOR_Y + 1, vz, TAG_MAINFRAME);" in rooms
+          and "player.getInventory().add(new ItemStack(keycard))" in rooms
+          and "item(\"mcsm:city_keycard\")" in rooms)
+    check("both structures are booted, imported, switchable and findable",
+          "McsmMazes.register();" in boot and "McsmServerRooms.register();" in boot
+          and "import net.mcsm.extras.McsmMazes;" in boot
+          and "import net.mcsm.extras.McsmServerRooms;" in boot
+          and "public static boolean storageMazes = true;" in cfg
+          and "public static boolean serverRooms = true;" in cfg
+          and "Storage Mazes (carved warehouses, hatches)" in extras
+          and "Server Rooms (blinking racks, a live mainframe)" in extras
+          and 'Commands.literal("maze")' in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or "")
+          and 'Commands.literal("server")' in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""))
+    check("both are written through the shared queue at a fixed budget per tick",
+          "public void pump(ServerLevel level, int budget, BlockState[] palette," in queue
+          and "OPS_PER_TICK = 1500" in mazes and "OPS_PER_TICK = 1400" in rooms
+          and "QUEUE.pump(level, OPS_PER_TICK, palette(), plan -> finish(level, plan));" in mazes
+          and "QUEUE.pump(level, OPS_PER_TICK, palette(), plan -> finish(level, plan));" in rooms)
+    check("adams hands its salvage over in a container too (the crate blocks are not)",
+          "grow.put(crateX, ground + 1, crateZ, BARREL);" in adams
+          and 'next[BARREL] = state("minecraft:barrel", null);' in adams)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

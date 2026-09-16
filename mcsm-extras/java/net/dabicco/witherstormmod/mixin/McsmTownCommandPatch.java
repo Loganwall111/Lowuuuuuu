@@ -130,8 +130,19 @@ public abstract class McsmTownCommandPatch {
             reality.then(Commands.literal("adams").executes(ctx -> ds$adams(ctx.getSource())));
             reality.then(Commands.literal("decayed").executes(ctx -> ds$decayed(ctx.getSource())));
 
+            // BUILD #444 -- the underground structures, findable.
+            LiteralArgumentBuilder<CommandSourceStack> maze = Commands.literal("maze");
+            maze.executes(ctx -> ds$maze(ctx.getSource()));
+            maze.then(Commands.literal("where").executes(ctx -> ds$maze(ctx.getSource())));
+            maze.then(Commands.literal("build").executes(ctx -> ds$mazeBuild(ctx.getSource())));
+
+            LiteralArgumentBuilder<CommandSourceStack> server = Commands.literal("server");
+            server.executes(ctx -> ds$server(ctx.getSource()));
+            server.then(Commands.literal("where").executes(ctx -> ds$server(ctx.getSource())));
+            server.then(Commands.literal("shell").executes(ctx -> ds$serverShell(ctx.getSource())));
+
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
-                    .then(ritual).then(reality));
+                    .then(ritual).then(reality).then(maze).then(server));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -375,5 +386,81 @@ public abstract class McsmTownCommandPatch {
                     + "player"), false);
             return 0;
         }
+    }
+
+
+    // ---------------------------------------------------------------------
+    // BUILD #444 -- the underground structures
+    // ---------------------------------------------------------------------
+
+    private static int ds$maze(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            src.sendSuccess(() -> Component.literal("[ds] "
+                    + net.mcsm.extras.McsmMazes.guidance((int) player.getX(), (int) player.getZ())), false);
+            for (String line : net.mcsm.extras.McsmMazes.report()) {
+                src.sendSuccess(() -> Component.literal("[ds] " + line), false);
+            }
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds maze where has to be run by a player"), false);
+        }
+        return 1;
+    }
+
+    private static int ds$mazeBuild(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            int[] near = net.mcsm.extras.McsmMazes.nearestMaze((int) player.getX(), (int) player.getZ());
+            if (near == null) {
+                src.sendSuccess(() -> Component.literal("[ds] no maze region within reach"), false);
+                return 0;
+            }
+            player.teleportTo(src.getLevel(), near[0] + 0.5D,
+                    net.mcsm.extras.McsmMazes.HATCH_Y + 2.0D, near[1] + 0.5D,
+                    java.util.Set.of(), player.getYRot(), 0.0F, false);
+            src.sendSuccess(() -> Component.literal("[ds] standing on the hatch at "
+                    + near[0] + ", " + near[1] + " -- the warehouse is at y="
+                    + net.mcsm.extras.McsmMazes.surfaceY() + " (walk in, it builds as you come)"), false);
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds maze build has to be run by a player"), false);
+        }
+        return 1;
+    }
+
+    private static int ds$server(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            src.sendSuccess(() -> Component.literal("[ds] "
+                    + net.mcsm.extras.McsmServerRooms.guidance((int) player.getX(), (int) player.getZ())), false);
+            src.sendSuccess(() -> Component.literal("[ds] this level is running "
+                    + net.mcsm.extras.McsmServerRooms.lamps(src.getLevel()) + " rack lights, "
+                    + net.mcsm.extras.McsmServerRooms.built() + " rooms built this session"), false);
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds server where has to be run by a player"), false);
+        }
+        return 1;
+    }
+
+    private static int ds$serverShell(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            int[] near = net.mcsm.extras.McsmServerRooms.nearestRoom((int) player.getX(),
+                    (int) player.getZ());
+            if (near == null) {
+                src.sendSuccess(() -> Component.literal("[ds] no server room within reach"), false);
+                return 0;
+            }
+            double y = src.getLevel().getHeight(
+                    net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                    near[0], near[1]) + 2.0D;
+            player.teleportTo(src.getLevel(), near[0] + 0.5D, y, near[1] + 0.5D,
+                    java.util.Set.of(), player.getYRot(), 0.0F, false);
+            src.sendSuccess(() -> Component.literal("[ds] standing on the server room hatch at "
+                    + near[0] + ", " + near[1] + " -- the racks are at y="
+                    + net.mcsm.extras.McsmServerRooms.FLOOR_Y), false);
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] /ds server shell has to be run by a player"), false);
+        }
+        return 1;
     }
 }

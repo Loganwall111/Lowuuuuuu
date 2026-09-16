@@ -309,6 +309,7 @@ public final class McsmAdams {
     private static final int CRYSTAL = 7;
     private static final int FLESH = 8;
     private static final int CRATE = 9;
+    private static final int BARREL = 10;
 
     private static Region planRegion(ServerLevel level, int rx, int rz, long key) {
         long seed = mix(key);
@@ -396,7 +397,12 @@ public final class McsmAdams {
         }
         int crateX = cx + w - 3;
         int crateZ = cz + 2;
-        grow.put(crateX, ground + 1, crateZ, CRATE);
+        // BUILD #444 (found while building the mazes): the crate BLOCKS in the
+        // content pack are not containers -- they drop loot when broken. Salvage
+        // is supposed to be takeable, so the container is a barrel and the crate
+        // stands beside it as the packing it came in.
+        grow.put(crateX, ground + 1, crateZ, BARREL);
+        grow.put(crateX, ground + 1, crateZ + 1, CRATE);
         grow.crate(crateX, ground + 1, crateZ, (int) mix(seed ^ 0x5ADL));
         if (Math.floorMod(seed >> 30, 3L) != 0) {
             grow.waiting(cx + 3, ground + 1, cz + w - 3, (int) (seed >> 40));
@@ -536,7 +542,7 @@ public final class McsmAdams {
         if (local != null) {
             return local;
         }
-        BlockState[] next = new BlockState[10];
+        BlockState[] next = new BlockState[11];
         next[AIR] = Blocks.AIR.defaultBlockState();
         next[STONE] = state("mcsm:decayed_stone", McsmContent.DECAYED_STONE);
         next[BRICKS] = state("mcsm:decayed_stone_bricks", McsmContent.DECAYED_STONE_BRICKS);
@@ -547,6 +553,7 @@ public final class McsmAdams {
         next[CRYSTAL] = state("mcsm:memory_crystal", McsmContent.MEMORY_CRYSTAL);
         next[FLESH] = state("mcsm:withered_flesh_block", McsmContent.WITHERED_FLESH_BLOCK);
         next[CRATE] = state("mcsm:supply_crate", McsmContent.SUPPLY_CRATE);
+        next[BARREL] = state("minecraft:barrel", null);
         palette = next;
         return next;
     }

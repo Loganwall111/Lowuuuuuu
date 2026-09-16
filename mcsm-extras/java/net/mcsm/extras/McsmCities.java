@@ -453,7 +453,13 @@ public final class McsmCities {
      * up its own spawn, and the first candidate that answers wins. If none does,
      * the origin stands in, which is where a fresh world's spawn is.
      */
-    private static BlockPos spawnPos(ServerLevel level) {
+    /**
+     * BUILD #444 -- public, because a second generator needs it. The reflective
+     * name search is deliberate: the exact method name has never been readable
+     * from this machine, and a wrong guess must degrade to BlockPos.ZERO rather
+     * than fail to compile.
+     */
+    public static BlockPos spawnPos(ServerLevel level) {
         for (String name : SPAWN_METHODS) {
             try {
                 java.lang.reflect.Method method = level.getClass().getMethod(name);

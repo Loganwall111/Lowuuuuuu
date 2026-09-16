@@ -122,6 +122,10 @@ public final class McsmExtrasConfig {
      * with no shader pack installed.
      */
     public static boolean skyFloorBand = true;
+    /** BUILD #444 -- storage mazes: carved warehouses under the world. */
+    public static boolean storageMazes = true;
+    /** BUILD #444 -- server rooms: sealed halls of blinking racks. */
+    public static boolean serverRooms = true;
     /** BUILD #443 -- rituals: ring + offering + condition -> the world answers. */
     public static boolean rituals = true;
     /** BUILD #443 -- the infinite dimension of adams, and its endless generator. */
@@ -421,6 +425,8 @@ public final class McsmExtrasConfig {
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
             p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
+            p.setProperty("storage_mazes", String.valueOf(storageMazes));
+            p.setProperty("server_rooms", String.valueOf(serverRooms));
             p.setProperty("rituals", String.valueOf(rituals));
             p.setProperty("adams_reality", String.valueOf(adamsReality));
             p.setProperty("phase_tinted_body", String.valueOf(phaseTintedBody));
@@ -556,6 +562,8 @@ public final class McsmExtrasConfig {
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
+            storageMazes = bool(p, "storage_mazes", storageMazes);
+            serverRooms = bool(p, "server_rooms", serverRooms);
             rituals = bool(p, "rituals", rituals);
             adamsReality = bool(p, "adams_reality", adamsReality);
             phaseTintedBody = bool(p, "phase_tinted_body", phaseTintedBody);

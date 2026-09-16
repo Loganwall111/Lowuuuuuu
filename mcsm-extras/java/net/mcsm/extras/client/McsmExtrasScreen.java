@@ -411,6 +411,15 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.skyFloorBand = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #444 -- the two underground structures.
+          .bool("Storage Mazes (carved warehouses, hatches)", () -> McsmExtrasConfig.storageMazes, v -> {
+              McsmExtrasConfig.storageMazes = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Server Rooms (blinking racks, a live mainframe)", () -> McsmExtrasConfig.serverRooms, v -> {
+              McsmExtrasConfig.serverRooms = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #443 -- rituals, and the dimension one of them opens.
           .bool("Rituals (ring + offering -> the world answers)", () -> McsmExtrasConfig.rituals, v -> {
               McsmExtrasConfig.rituals = v;
