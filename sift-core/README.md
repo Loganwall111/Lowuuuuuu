@@ -33,9 +33,9 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 
 ### Phase 4 — build and validation
 
-- This directory is a standalone Gradle/Loom project targeting Java 17, Minecraft 1.20.1, and Fabric API.
+- This directory is a standalone Gradle/Loom project targeting Java 17, Minecraft 1.20.1, and Fabric API. It includes its own Gradle 8.7 wrapper (`./gradlew`) so it can be built without relying on the parent project.
 - Run the lightweight offline checks from the repository root with `python3 sift-core/tools/validate.py`.
-- On a machine with Java 17 and network access, run `gradle build` from this directory. The sandbox image used by the coding agent does not include a JDK or Gradle, so the validation script is run here instead of claiming a compiled jar that was not produced.
+- On a machine with Java 17 and network access, run `./gradlew build` from this directory. The sandbox image used by the coding agent does not include a JDK or Gradle, so the validation script is run here; GitHub Actions is the authoritative compiled build for this checkout.
 
 ## Test commands
 

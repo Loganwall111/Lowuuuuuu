@@ -11,8 +11,6 @@ import net.minecraft.util.math.Vec3d;
  * player's tumble instead of becoming a colliding water volume.
  */
 public final class SiftCurrentPhysics {
-    private static final double LAYER_SPACING = 48.0D;
-    private static final double CURRENT_BAND = 7.0D;
     private static final double MAX_HORIZONTAL_SPEED = 0.42D;
 
     private SiftCurrentPhysics() {
@@ -25,13 +23,10 @@ public final class SiftCurrentPhysics {
 
         long time = world.getTime();
         for (ServerPlayerEntity player : world.getPlayers()) {
-            double fluidY = Math.rint((player.getY() - 16.0D) / LAYER_SPACING) * LAYER_SPACING + 16.0D;
-            double distance = Math.abs(player.getY() - fluidY);
-            if (distance > CURRENT_BAND) {
+            double falloff = SiftFluidField.currentFalloff(player.getY());
+            if (falloff <= 0.0D) {
                 continue;
             }
-
-            double falloff = 1.0D - distance / CURRENT_BAND;
             double phase = time * 0.035D + player.getX() * 0.012D + player.getZ() * 0.009D;
             double strength = 0.0028D * falloff;
             Vec3d velocity = player.getVelocity();

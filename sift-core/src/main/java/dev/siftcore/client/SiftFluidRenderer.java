@@ -2,6 +2,7 @@ package dev.siftcore.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.siftcore.SiftDimensions;
+import dev.siftcore.physics.SiftFluidField;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -16,7 +17,7 @@ import net.minecraft.util.math.Vec3d;
 /** Visual-only fluid sheets; there is deliberately no fluid or block collision. */
 @Environment(EnvType.CLIENT)
 public final class SiftFluidRenderer {
-    private static final double LAYER_SPACING = 48.0D;
+    private static final int VISIBLE_LAYERS = 2;
     private static final float SHEET_RADIUS = 112.0F;
 
     private SiftFluidRenderer() {
@@ -30,7 +31,7 @@ public final class SiftFluidRenderer {
         MinecraftClient client = MinecraftClient.getInstance();
         ClientWorld world = context.world();
         Vec3d camera = context.camera().getPos();
-        double anchor = Math.floor(camera.y / LAYER_SPACING) * LAYER_SPACING;
+        int centerLayer = SiftFluidField.nearestLayerIndex(camera.y);
         double playerY = client.player == null ? camera.y : client.player.getY();
 
         RenderSystem.enableBlend();
@@ -40,9 +41,9 @@ public final class SiftFluidRenderer {
         RenderSystem.setShader(() -> SiftShaders.FINAL);
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-        for (int layer = -2; layer <= 2; layer++) {
-            double fluidY = anchor + layer * LAYER_SPACING + 16.0D;
-            double delta = Math.abs(playerY - fluidY) / LAYER_SPACING;
+        for (int layer = -VISIBLE_LAYERS; layer <= VISIBLE_LAYERS; layer++) {
+            double fluidY = SiftFluidField.layerHeight(centerLayer + layer);
+            double delta = Math.abs(playerY - fluidY) / SiftFluidField.LAYER_SPACING;
 
             SiftShaders.set(SiftShaders.FINAL, "GameTime", (world.getTime() + context.tickDelta()) / 20.0f);
             SiftShaders.set(SiftShaders.FINAL, "Layer", (float) layer);

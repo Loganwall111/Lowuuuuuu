@@ -25,6 +25,7 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Collision-free visual fluid sheets.
 - [x] Animated teal, amethyst, magenta, cyan, and amber color ramps.
 - [x] Refraction-like displacement and intersection foam approximation.
+- [x] Horizontal current band aligned to the same mathematical sheet heights, without changing vertical velocity.
 - [ ] Add authored pool silhouettes and current/velocity volumes.
 - [ ] Integrate depth and normal textures for physically correct intersection foam.
 
@@ -33,6 +34,6 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Resource namespace and dimension key are stable (`mcsm`).
 - [x] Icon copied into the standalone mod resource tree.
 - [x] Offline JSON, shader, and project-layout validation script.
-- [ ] Compile against the pinned toolchain on a Java 17 machine.
+- [x] Compile against the pinned toolchain on Java 17 in GitHub Actions (run `35166210842`).
 - [ ] Test multiplayer respawn ordering and reconnect behavior.
 - [ ] Move the sandbox into the main dimensions project after a visual and gameplay review.

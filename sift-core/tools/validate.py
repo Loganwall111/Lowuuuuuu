@@ -89,6 +89,10 @@ def main() -> int:
         "build.gradle",
         "settings.gradle",
         "gradle.properties",
+        "gradlew",
+        "gradlew.bat",
+        "gradle/wrapper/gradle-wrapper.jar",
+        "gradle/wrapper/gradle-wrapper.properties",
         "src/main/resources/fabric.mod.json",
         "src/main/resources/mcsm.mixins.json",
         "src/main/resources/mcsm.client.mixins.json",
@@ -100,6 +104,10 @@ def main() -> int:
         "src/main/java/dev/siftcore/rift/SiftRiftRenderer.java",
     ):
         check_file(relative)
+
+    wrapper_props = (ROOT / "gradle/wrapper/gradle-wrapper.properties").read_text(encoding="utf-8")
+    if "gradle-8.7-bin.zip" not in wrapper_props:
+        error("Gradle wrapper must use the CI-compatible Gradle 8.7 distribution")
 
     props = (ROOT / "gradle.properties").read_text(encoding="utf-8")
     for key, expected in (
