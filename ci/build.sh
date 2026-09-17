@@ -525,7 +525,11 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
     net.minecraft.core.registries.BuiltInRegistries net.minecraft.core.Registry net.minecraft.core.registries.Registries \
     net.minecraft.resources.ResourceKey net.minecraft.resources.Identifier"
   javap -public -classpath "$CP2:$FAPI2_CP" $ENTITY_CLASSES > ci/api/entity.txt 2>&1 || true
-  unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/(world/level|server/level|core/particles|client/particles|network/chat)/' \
+  # BUILD #465 -- and the item surface: "more blocks and items, even some
+  # weapons" needs to know what THIS version calls its item and attribute
+  # classes. SwordItem and Tier do not exist here (javap: "class not found"), so
+  # the weapon has to be built out of whatever the index turns out to list.
+  unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -E '^net/minecraft/(world/level|world/item|world/entity|world/damagesource|server/level|core/particles|client/particles|network/chat)/' \
     | sort > ci/api/api-classes-index.txt || true
   unzip -Z1 "$DL/client.jar" 2>/dev/null | grep -iE 'message' > ci/api/message-locations.txt || true
   # A class index so we can discover what this version renamed things to.
@@ -1082,9 +1086,47 @@ CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL
     net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry \
     net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking \
     net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking \
-    io.netty.buffer.ByteBuf ; do
+    io.netty.buffer.ByteBuf \
+    net.minecraft.world.item.Item\\$Properties \
+    net.minecraft.world.item.ItemStack \
+    net.minecraft.world.item.SwordItem \
+    net.minecraft.world.item.AxeItem \
+    net.minecraft.world.item.ToolMaterial \
+    net.minecraft.world.item.component.ItemAttributeModifiers \
+    net.minecraft.world.entity.ai.attributes.Attributes \
+    net.minecraft.world.entity.ai.attributes.AttributeModifier \
+    net.minecraft.world.entity.EquipmentSlot \
+    net.minecraft.world.level.block.RotatedPillarBlock \
+    net.minecraft.world.level.block.FenceGateBlock ; do
     echo "--- ${PROBE}"
     javap -classpath "$CP" "$PROBE" 2>&1 | sed -n '1,12p'
+  done
+  # BUILD #465 -- the item / weapon / block-shape API, UNCAPPED: the capped
+  # probes above answer "does this class exist", which is how SwordItem and Tier
+  # were found missing (javap: "class not found") after the plan for real weapons
+  # had already been written. This answers "what does it have" for every class a
+  # weapon, a tool or a new block shape could be made of, so the next build can be
+  # written against the real surface instead of a remembered one.
+  echo "--- the item / weapon / block-shape API (full, uncapped)"
+  for CLS in \
+    'net.minecraft.world.item.Item$Properties' \
+    'net.minecraft.world.item.ItemStack' \
+    'net.minecraft.world.item.Item$TooltipContext' \
+    'net.minecraft.world.item.SwordItem' \
+    'net.minecraft.world.item.AxeItem' \
+    'net.minecraft.world.item.PickaxeItem' \
+    'net.minecraft.world.item.ShovelItem' \
+    'net.minecraft.world.item.HoeItem' \
+    'net.minecraft.world.item.ToolMaterial' \
+    'net.minecraft.world.item.Tier' \
+    'net.minecraft.world.item.component.ItemAttributeModifiers' \
+    'net.minecraft.world.entity.ai.attributes.Attributes' \
+    'net.minecraft.world.entity.ai.attributes.AttributeModifier' \
+    'net.minecraft.world.entity.EquipmentSlot' \
+    'net.minecraft.world.level.block.RotatedPillarBlock' \
+    'net.minecraft.world.level.block.FenceGateBlock' ; do
+    echo "===== ${CLS}"
+    javap -public -classpath "$CP" "$CLS" 2>&1
   done
   echo "--- fabric jars on the compile path"
   printf '%s\n' "$CP" | tr ':' '\n' | grep -i fabric || echo "(none)"
@@ -1741,7 +1783,13 @@ for want in \
   assets/mcsm/items/reality_ripper.json \
   assets/mcsm/textures/block/decayed_stone.png \
   assets/mcsm/textures/item/reality_ripper.png \
-  assets/mcsm/models/item/reality_ripper.json ; do
+  assets/mcsm/models/item/reality_ripper.json \
+  assets/mcsm/blockstates/void_slab.json \
+  assets/mcsm/blockstates/creator_trapdoor.json \
+  assets/mcsm/blockstates/adams_tile_wall.json \
+  assets/mcsm/items/void_cord.json \
+  assets/mcsm/textures/block/decayed_bricks.png \
+  assets/mcsm/textures/item/storm_marrow.png ; do
   if [ ! -s "$FX/cls/$want" ]; then
     CONTENT_MISSING="$CONTENT_MISSING $want"
   fi
@@ -1758,8 +1806,11 @@ if [ -n "$CONTENT_MISSING" ]; then
   echo "[audit] content pack MISSING:${CONTENT_MISSING}"
   exit 1
 fi
-if [ "${N_STATES:-0}" -lt 30 ] || [ "${N_ITEM_MODELS:-0}" -lt 50 ] || [ "${N_DEFS:-0}" -lt 50 ] \
-   || [ "${N_TEX:-0}" -lt 50 ] || [ "${N_RECIPES:-0}" -lt 10 ] || [ "${N_LOOT:-0}" -lt 3 ]; then
+# BUILD #465 raised these floors: the pack is 92 blocks and 124 items now, so a
+# build that loses half of it (a generator that did not run, a directory that did
+# not copy) cannot pass as "complete" on a 30/50 floor any more.
+if [ "${N_STATES:-0}" -lt 90 ] || [ "${N_ITEM_MODELS:-0}" -lt 120 ] || [ "${N_DEFS:-0}" -lt 120 ] \
+   || [ "${N_TEX:-0}" -lt 125 ] || [ "${N_RECIPES:-0}" -lt 45 ] || [ "${N_LOOT:-0}" -lt 90 ]; then
   echo "::error title=jar audit::the content pack is incomplete in the jar (states=${N_STATES} models=${N_ITEM_MODELS} definitions=${N_DEFS} textures=${N_TEX} recipes=${N_RECIPES} loot=${N_LOOT})"
   exit 1
 fi
@@ -1767,7 +1818,7 @@ if [ "${N_DEFS:-0}" -lt "${N_ITEM_MODELS:-0}" ]; then
   echo "::error title=jar audit::${N_ITEM_MODELS} item models but only ${N_DEFS} item definitions -- the extra items would render as glitch blocks"
   exit 1
 fi
-echo "[audit] content pack complete (70 blocks + 96 items + doors/stairs + 70 loot tables + own art)"
+echo "[audit] content pack complete (92 blocks + 124 items + doors/stairs/trap doors + 92 loot tables + own art)"
 
 echo "[audit] legacy schematic fallback assets available: ${SCHEMATIC_COUNT}"
 

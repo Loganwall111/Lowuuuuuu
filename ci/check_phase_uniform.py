@@ -3426,6 +3426,9 @@ def main():
     book = read("mcsm-extras/java/net/mcsm/extras/client/McsmFutureBookScreen.java") or ""
     term = read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java") or ""
     cfgreskin = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmConfigReskinMixin.java") or ""
+    gen = read("ci/make_mcsm_content_assets.py") or ""
+    texgen = read("ci/make_mcsm_textures.py") or ""
+    buildsh = read("ci/build.sh") or ""
     towns = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
     boot = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""
     sink = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGradientTickPatch.java") or ""
@@ -3604,6 +3607,76 @@ def main():
           and ".then(aging).then(menu));" in towns
           and "edit config/mcsm_storm_extras.properties" in towns
           and "Vivid panorama backdrop (off: the storm's own sky)" in extras)
+
+    # ------------------------------------------------------------------
+    # BUILD #465 -- MORE BLOCKS AND ITEMS. The standing ask, and the phase after
+    # the Creator's reach in the user's own order. Every world gets the building
+    # set cut from ITS material (a void room is built out of the void), the shapes
+    # ship their own art file, and the whole set is craftable.
+    #
+    # Two things this family exists to stop: a shape borrowing another world's
+    # material (the identity rule), and a block whose art is dead -- a texture
+    # emitted but never named by the model, which is a missing-texture cube in
+    # game with a file sitting right next to it.
+    # ------------------------------------------------------------------
+    gen_blocks = {}
+    seg = gen[gen.index("BLOCKS = {"):gen.index("# item name -> (kind, texture)")]
+    for m in re.finditer(r'^    "([a-z_]+)": \("([a-z]+)", (.+?)\),$', seg, re.M):
+        spec = m.group(3)
+        names = re.findall(r'mcsm:block/([a-z_]+)', spec)
+        gen_blocks[m.group(1)] = (m.group(2), names)
+    new_blocks = ["decayed_bricks", "decayed_brick_slab", "decayed_brick_stairs",
+                  "decayed_brick_wall", "city_window", "city_railing", "city_brick_wall",
+                  "void_slab", "void_stairs", "void_wall", "void_fence", "void_trapdoor",
+                  "adams_slab", "adams_stairs", "adams_tile_wall", "adams_fence",
+                  "adams_trapdoor", "creator_slab", "creator_stairs", "creator_wall",
+                  "creator_fence", "creator_trapdoor"]
+
+    check("the shape set landed, world by world, and every one of them is crafted",
+          all(n in gen_blocks for n in new_blocks)
+          and all(n in content for n in new_blocks)
+          and all('"%s": (' % n in gen[gen.index("RECIPES = {"):gen.index("def emit_recipes")]
+                  for n in new_blocks)
+          # wall, slab, stair, fence and trap door are the shapes this phase is for
+          and {"slab", "stairs", "wall", "fence", "trapdoor"} <= {gen_blocks[n][0] for n in new_blocks},
+          "missing: %s" % [n for n in new_blocks if n not in gen_blocks or n not in content])
+
+    check("no world's shape set is built out of another world's material",
+          all(all(t.startswith(n.split("_")[0] + "_") or t == n
+                  for t in gen_blocks[n][1]) for n in new_blocks),
+          # a void slab named adams_stone would be the identity rule broken by a
+          # shape rather than by a generator, which is a new way to break it
+          "borrowed: %s" % [(n, [t for t in gen_blocks[n][1]
+                                 if not (t.startswith(n.split("_")[0] + "_") or t == n)])
+                            for n in new_blocks])
+
+    check("every one of those shapes ships art under its own name",
+          # the shapes inherit their family's pixels but each names its OWN file,
+          # so the texture a pack author overrides is the one the model reads
+          all(os.path.exists("jar-overrides/assets/mcsm/textures/block/%s.png" % n)
+              for n in new_blocks)
+          and "SHAPE_TEXTURE_FROM" in texgen
+          and all(gen_blocks[n][1] == [n] for n in
+                  [x for x in new_blocks if gen_blocks[x][0] != "translucent"]),
+          "dead art: %s" % [n for n in new_blocks
+                            if gen_blocks[n][1] != [n] and gen_blocks[n][0] != "translucent"])
+
+    materials = ("city_gear", "void_cord", "adams_glass_shard", "creator_dust",
+                 "decayed_ash_clump", "storm_marrow")
+    names_seg = gen[gen.index("NAMES = {"):gen.index("FACES = (")]
+    check("and the expansion's materials are items with names and art",
+          all('item("%s"' % n in content for n in materials)
+          and all(('"%s": "' % n) in names_seg for n in materials)
+          and all('"%s": ("flat", "mcsm:item/%s")' % (n, n) in gen for n in materials)
+          and all(os.path.exists("jar-overrides/assets/mcsm/textures/item/%s.png" % n)
+                  for n in materials)
+          and all(os.path.exists("jar-overrides/assets/mcsm/items/%s.json" % n)
+                  for n in materials)
+          # the weapons that are still owed need this version's real item surface,
+          # which the runner dumps every build now: SwordItem and Tier do NOT exist
+          # in 26.2, so the recon is what the next phase is written against.
+          and "the item / weapon / block-shape API (full, uncapped)" in buildsh
+          and "net.minecraft.world.item.SwordItem" in buildsh)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

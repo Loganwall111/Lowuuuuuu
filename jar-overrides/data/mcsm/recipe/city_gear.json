@@ -1,0 +1,20 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:rusted_plate"
+    },
+    "B": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    " A ",
+    "ABA",
+    " A "
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:city_gear"
+  },
+  "type": "minecraft:crafting_shaped"
+}

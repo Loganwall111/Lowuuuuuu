@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "mcsm:block/creator_slab",
+    "particle": "mcsm:block/creator_slab",
+    "side": "mcsm:block/creator_slab",
+    "top": "mcsm:block/creator_slab"
+  }
+}

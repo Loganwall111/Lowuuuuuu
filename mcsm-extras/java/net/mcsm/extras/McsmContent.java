@@ -248,6 +248,78 @@ public final class McsmContent {
             BlockBehaviour.Properties.of().strength(1.8F, 6.0F).sound(SoundType.WOOD));
 
     // ---------------------------------------------------------------------
+    // MORE BLOCKS: the shape set, world by world (BUILD #465)
+    // ---------------------------------------------------------------------
+    // The standing ask -- "there's only like five or 15 blocks ... more blocks
+    // and items" -- answered the way the identity pass demands: every world gets
+    // the building set cut from ITS OWN material. A void room is built out of the
+    // void and a reach room out of the reach; none of these names a parent it
+    // does not own. Slabs, stairs, walls and fences are the same classes the
+    // pack already compiles against (SlabBlock, ExposedStair, WallBlock,
+    // FenceBlock, ExposedTrapDoor), so nothing here is a new API bet.
+    public static final Block DECAYED_BRICKS = block("decayed_bricks",
+            stone(2.6F, 8.0F));
+    public static final Block DECAYED_BRICK_SLAB = block("decayed_brick_slab",
+            props -> new SlabBlock(props), stone(2.6F, 8.0F));
+    public static final Block DECAYED_BRICK_STAIRS = block("decayed_brick_stairs",
+            props -> new ExposedStair(DECAYED_BRICKS.defaultBlockState(), props),
+            stone(2.6F, 8.0F));
+    public static final Block DECAYED_BRICK_WALL = block("decayed_brick_wall",
+            props -> new WallBlock(props), stone(2.6F, 8.0F));
+    public static final Block CITY_WINDOW = block("city_window",
+            BlockBehaviour.Properties.of().strength(0.6F).sound(SoundType.GLASS)
+                    .noOcclusion().lightLevel(s -> 3));
+    public static final Block CITY_RAILING = block("city_railing",
+            props -> new FenceBlock(props),
+            BlockBehaviour.Properties.of().strength(2.4F, 7.0F).sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+    public static final Block CITY_BRICK_WALL = block("city_brick_wall",
+            props -> new WallBlock(props), stone(3.0F, 8.0F));
+    public static final Block VOID_SLAB = block("void_slab",
+            props -> new SlabBlock(props), stone(2.4F, 7.0F));
+    public static final Block VOID_STAIRS = block("void_stairs",
+            props -> new ExposedStair(VOID_STONE.defaultBlockState(), props),
+            stone(2.4F, 7.0F));
+    public static final Block VOID_WALL = block("void_wall",
+            props -> new WallBlock(props), stone(2.4F, 7.0F));
+    public static final Block VOID_FENCE = block("void_fence",
+            props -> new FenceBlock(props), wood(2.4F, 4.0F));
+    public static final Block VOID_TRAPDOOR = block("void_trapdoor",
+            props -> new ExposedTrapDoor(BlockSetType.IRON, props),
+            BlockBehaviour.Properties.of().strength(2.4F, 7.0F).sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops().noOcclusion());
+    public static final Block ADAMS_SLAB = block("adams_slab",
+            props -> new SlabBlock(props), stone(2.0F, 6.0F));
+    public static final Block ADAMS_STAIRS = block("adams_stairs",
+            props -> new ExposedStair(ADAMS_STONE.defaultBlockState(), props),
+            stone(2.0F, 6.0F));
+    // (adams_wall itself is the infinite dimension's hollow-wall CUBE, registered
+    // in BUILD #458 -- this one is the wall SHAPE, cut from adams tile, so the two
+    // do not share an id or a Java field. Found by the duplicate-key check when the
+    // dict silently overwrote the cube.)
+    public static final Block ADAMS_TILE_WALL = block("adams_tile_wall",
+            props -> new WallBlock(props), stone(2.0F, 6.0F));
+    public static final Block ADAMS_FENCE = block("adams_fence",
+            props -> new FenceBlock(props), stone(2.0F, 6.0F));
+    public static final Block ADAMS_TRAPDOOR = block("adams_trapdoor",
+            props -> new ExposedTrapDoor(BlockSetType.IRON, props),
+            BlockBehaviour.Properties.of().strength(2.0F, 6.0F).sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops().noOcclusion());
+    public static final Block CREATOR_SLAB = block("creator_slab",
+            props -> new SlabBlock(props), stone(3.0F, 9.0F));
+    public static final Block CREATOR_STAIRS = block("creator_stairs",
+            props -> new ExposedStair(CREATOR_MARBLE.defaultBlockState(), props),
+            stone(3.0F, 9.0F));
+    public static final Block CREATOR_WALL = block("creator_wall",
+            props -> new WallBlock(props), stone(3.2F, 9.0F));
+    public static final Block CREATOR_FENCE = block("creator_fence",
+            props -> new FenceBlock(props), stone(3.2F, 9.0F));
+    public static final Block CREATOR_TRAPDOOR = block("creator_trapdoor",
+            props -> new ExposedTrapDoor(BlockSetType.IRON, props),
+            BlockBehaviour.Properties.of().strength(3.0F, 9.0F).sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops().noOcclusion());
+
+    // ---------------------------------------------------------------------
     // THE LOCKS (BUILD #459) -- one per world, and only that world's key fits
     // ---------------------------------------------------------------------
     // The identity list asked for "own ... locks". This is that: a seal block per
@@ -352,6 +424,20 @@ public final class McsmContent {
     public static final Item ADAMS_SIGIL = item("adams_sigil", glinted(item(p -> p.rarity(Rarity.RARE))));
     /** BUILD #462 -- the reach's key. Found only in the reach (its reliquary). */
     public static final Item CREATOR_SIGIL = item("creator_sigil", glinted(item(p -> p.rarity(Rarity.RARE))));
+
+    // ---------------------------------------------------------------------
+    // Items: the expansion's materials (BUILD #465)
+    // ---------------------------------------------------------------------
+    // One per world plus the storm's own, each named for what it is made of, so a
+    // player who finds a city gear knows which world they are standing in.
+    public static final Item CITY_GEAR = item("city_gear", item(p -> p.rarity(Rarity.UNCOMMON)));
+    public static final Item VOID_CORD = item("void_cord", item(p -> p.rarity(Rarity.UNCOMMON)));
+    public static final Item ADAMS_GLASS_SHARD = item("adams_glass_shard",
+            item(p -> p.rarity(Rarity.UNCOMMON)));
+    public static final Item CREATOR_DUST = item("creator_dust",
+            glinted(item(p -> p.rarity(Rarity.RARE))));
+    public static final Item DECAYED_ASH_CLUMP = item("decayed_ash_clump", item(p -> p));
+    public static final Item STORM_MARROW = item("storm_marrow", item(p -> p.rarity(Rarity.UNCOMMON)));
 
     // ---------------------------------------------------------------------
     // Items: the tools and weapons the storyline hands out

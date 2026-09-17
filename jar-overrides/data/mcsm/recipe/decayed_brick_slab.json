@@ -1,0 +1,15 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:decayed_bricks"
+    }
+  },
+  "pattern": [
+    "AAA"
+  ],
+  "result": {
+    "count": 6,
+    "id": "mcsm:decayed_brick_slab"
+  },
+  "type": "minecraft:crafting_shaped"
+}

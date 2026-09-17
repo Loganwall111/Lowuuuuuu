@@ -1,0 +1,19 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:creator_tiles"
+    },
+    "B": {
+      "item": "minecraft:stick"
+    }
+  },
+  "pattern": [
+    "ABA",
+    "ABA"
+  ],
+  "result": {
+    "count": 3,
+    "id": "mcsm:creator_fence"
+  },
+  "type": "minecraft:crafting_shaped"
+}

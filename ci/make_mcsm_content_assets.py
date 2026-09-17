@@ -133,6 +133,35 @@ BLOCKS = {
     "adams_lock": ("cube", "mcsm:block/adams_lock"),
     "void_lock": ("cube", "mcsm:block/void_lock"),
     "void_cache": ("cube", "mcsm:block/void_cache"),
+    # ---- BUILD #465: the shapes, world by world ---------------------------
+    # The standing ask ("more blocks and items") answered the way the identity
+    # pass demands: every world gets the building set cut from ITS OWN material,
+    # so a void room is built out of the void and a reach room out of the reach.
+    # Slabs, stairs, walls and fences reuse the family texture they are cut from
+    # (they are the same stone); only the trap doors and the genuinely new
+    # surfaces have textures of their own.
+    "decayed_bricks": ("cube", "mcsm:block/decayed_bricks"),
+    "decayed_brick_slab": ("slab", "mcsm:block/decayed_brick_slab"),
+    "decayed_brick_stairs": ("stairs", "mcsm:block/decayed_brick_stairs"),
+    "decayed_brick_wall": ("wall", "mcsm:block/decayed_brick_wall"),
+    "city_window": ("translucent", "mcsm:block/city_window"),
+    "city_railing": ("fence", "mcsm:block/city_railing"),
+    "city_brick_wall": ("wall", "mcsm:block/city_brick_wall"),
+    "void_slab": ("slab", "mcsm:block/void_slab"),
+    "void_stairs": ("stairs", "mcsm:block/void_stairs"),
+    "void_wall": ("wall", "mcsm:block/void_wall"),
+    "void_fence": ("fence", "mcsm:block/void_fence"),
+    "void_trapdoor": ("trapdoor", "mcsm:block/void_trapdoor"),
+    "adams_slab": ("slab", "mcsm:block/adams_slab"),
+    "adams_stairs": ("stairs", "mcsm:block/adams_stairs"),
+    "adams_tile_wall": ("wall", "mcsm:block/adams_tile_wall"),
+    "adams_fence": ("fence", "mcsm:block/adams_fence"),
+    "adams_trapdoor": ("trapdoor", "mcsm:block/adams_trapdoor"),
+    "creator_slab": ("slab", "mcsm:block/creator_slab"),
+    "creator_stairs": ("stairs", "mcsm:block/creator_stairs"),
+    "creator_wall": ("wall", "mcsm:block/creator_wall"),
+    "creator_fence": ("fence", "mcsm:block/creator_fence"),
+    "creator_trapdoor": ("trapdoor", "mcsm:block/creator_trapdoor"),
 }
 
 # item name -> (kind, texture) ; kind = handheld | flat
@@ -166,6 +195,13 @@ ITEMS = {
     "adams_amber": ("flat", "mcsm:item/adams_amber"),
     "void_sigil": ("flat", "mcsm:item/void_sigil"),
     "adams_sigil": ("flat", "mcsm:item/adams_sigil"),
+    # BUILD #465 -- the expansion's own materials, one per world plus the storm's.
+    "city_gear": ("flat", "mcsm:item/city_gear"),
+    "void_cord": ("flat", "mcsm:item/void_cord"),
+    "adams_glass_shard": ("flat", "mcsm:item/adams_glass_shard"),
+    "creator_dust": ("flat", "mcsm:item/creator_dust"),
+    "decayed_ash_clump": ("flat", "mcsm:item/decayed_ash_clump"),
+    "storm_marrow": ("flat", "mcsm:item/storm_marrow"),
 }
 
 NAMES = {
@@ -273,6 +309,35 @@ NAMES = {
     "adams_amber": "Adams Amber",
     "void_sigil": "Void Sigil",
     "adams_sigil": "Adams Sigil",
+    # BUILD #465 -- the shape set and the materials.
+    "decayed_bricks": "Decayed Bricks",
+    "decayed_brick_slab": "Decayed Brick Slab",
+    "decayed_brick_stairs": "Decayed Brick Stairs",
+    "decayed_brick_wall": "Decayed Brick Wall",
+    "city_window": "City Window",
+    "city_railing": "City Railing",
+    "city_brick_wall": "City Brick Wall",
+    "void_slab": "Void Slab",
+    "void_stairs": "Void Stairs",
+    "void_wall": "Void Wall",
+    "void_fence": "Void Fence",
+    "void_trapdoor": "Void Trap Door",
+    "adams_slab": "Adams Slab",
+    "adams_stairs": "Adams Stairs",
+    "adams_tile_wall": "Adams Tile Wall",
+    "adams_fence": "Adams Fence",
+    "adams_trapdoor": "Adams Trap Door",
+    "creator_slab": "Creator Slab",
+    "creator_stairs": "Creator Stairs",
+    "creator_wall": "Creator Wall",
+    "creator_fence": "Creator Fence",
+    "creator_trapdoor": "Creator Trap Door",
+    "city_gear": "City Gear",
+    "void_cord": "Void Cord",
+    "adams_glass_shard": "Adams Glass Shard",
+    "creator_dust": "Creator Dust",
+    "decayed_ash_clump": "Decayed Ash Clump",
+    "storm_marrow": "Storm Marrow",
     "tab": "Devouring Storms: Decayed Reality",
 }
 
@@ -630,6 +695,50 @@ RECIPES = {
     "echo_totem": (["GFG", "FTF", "GFG"], {"G": "mcsm:glyph_cell", "F": "mcsm:memory_fragment",
                                            "T": "minecraft:totem_of_undying"},
                    "mcsm:echo_totem", 1),
+    # BUILD #465 -- every new shape is craftable from the material it is cut
+    # from, so the expansion is a building set rather than a museum. Cut stone
+    # into bricks, bricks into slabs and stairs, the same way vanilla does.
+    "decayed_bricks": (["AA", "AA"], {"A": "mcsm:decayed_stone"}, "mcsm:decayed_bricks", 4),
+    "decayed_brick_slab": (["AAA"], {"A": "mcsm:decayed_bricks"}, "mcsm:decayed_brick_slab", 6),
+    "decayed_brick_stairs": (["A  ", "AA ", "AAA"], {"A": "mcsm:decayed_bricks"},
+                             "mcsm:decayed_brick_stairs", 4),
+    "decayed_brick_wall": (["AAA", "AAA"], {"A": "mcsm:decayed_bricks"},
+                           "mcsm:decayed_brick_wall", 6),
+    "city_brick_wall": (["AAA", "AAA"], {"A": "mcsm:city_bricks"}, "mcsm:city_brick_wall", 6),
+    "city_railing": (["ABA", "ABA"], {"A": "mcsm:rusted_plate", "B": "minecraft:stick"},
+                     "mcsm:city_railing", 3),
+    "city_window": (["AAA", "ABA", "AAA"], {"A": "mcsm:city_bricks",
+                                            "B": "minecraft:glass"},
+                    "mcsm:city_window", 4),
+    "void_slab": (["AAA"], {"A": "mcsm:void_stone"}, "mcsm:void_slab", 6),
+    "void_stairs": (["A  ", "AA ", "AAA"], {"A": "mcsm:void_stone"}, "mcsm:void_stairs", 4),
+    "void_wall": (["AAA", "AAA"], {"A": "mcsm:void_stone"}, "mcsm:void_wall", 6),
+    "void_fence": (["ABA", "ABA"], {"A": "mcsm:void_planks", "B": "minecraft:stick"},
+                   "mcsm:void_fence", 3),
+    "void_trapdoor": (["AAA", "AAA"], {"A": "mcsm:void_planks"}, "mcsm:void_trapdoor", 2),
+    "adams_slab": (["AAA"], {"A": "mcsm:adams_stone"}, "mcsm:adams_slab", 6),
+    "adams_stairs": (["A  ", "AA ", "AAA"], {"A": "mcsm:adams_stone"}, "mcsm:adams_stairs", 4),
+    "adams_tile_wall": (["AAA", "AAA"], {"A": "mcsm:adams_tiles"},
+                        "mcsm:adams_tile_wall", 6),
+    "adams_fence": (["ABA", "ABA"], {"A": "mcsm:adams_tiles", "B": "minecraft:stick"},
+                    "mcsm:adams_fence", 3),
+    "adams_trapdoor": (["AAA", "AAA"], {"A": "mcsm:adams_tiles"}, "mcsm:adams_trapdoor", 2),
+    "creator_slab": (["AAA"], {"A": "mcsm:creator_marble"}, "mcsm:creator_slab", 6),
+    "creator_stairs": (["A  ", "AA ", "AAA"], {"A": "mcsm:creator_marble"},
+                       "mcsm:creator_stairs", 4),
+    "creator_wall": (["AAA", "AAA"], {"A": "mcsm:creator_tiles"}, "mcsm:creator_wall", 6),
+    "creator_fence": (["ABA", "ABA"], {"A": "mcsm:creator_tiles", "B": "minecraft:stick"},
+                      "mcsm:creator_fence", 3),
+    "creator_trapdoor": (["AAA", "AAA"], {"A": "mcsm:creator_marble"},
+                         "mcsm:creator_trapdoor", 2),
+    # the materials: each comes out of the thing it is named for
+    "city_gear": ([" A ", "ABA", " A "], {"A": "mcsm:rusted_plate", "B": "minecraft:iron_ingot"},
+                  "mcsm:city_gear", 1),
+    "void_cord": (["V", "V"], {"V": "mcsm:void_thread"}, "mcsm:void_cord", 2),
+    "adams_glass_shard": (["G"], {"G": "mcsm:adams_crystal"}, "mcsm:adams_glass_shard", 4),
+    "creator_dust": ([" G "], {"G": "mcsm:creator_glyph"}, "mcsm:creator_dust", 4),
+    "decayed_ash_clump": (["D"], {"D": "mcsm:decayed_surface"}, "mcsm:decayed_ash_clump", 4),
+    "storm_marrow": (["B"], {"B": "mcsm:storm_rib"}, "mcsm:storm_marrow", 4),
 }
 
 

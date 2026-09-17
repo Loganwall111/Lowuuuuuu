@@ -791,8 +791,35 @@ def item_totem(px, seed, body, core):
 # The catalogue
 # ---------------------------------------------------------------------------
 
+# BUILD #465 -- which material each new SHAPE is cut from. A slab, a stair, a
+# wall and a fence are the same stone as the block they came out of, so they are
+# painted with the very same painter call -- identical pixels, not merely a
+# similar palette: a void wall has to meet a void floor without a seam. They get
+# their own file all the same, because the pack's rule is that every block ships
+# art under its own name, and because a resource pack should be able to override
+# one shape without touching the material underneath it.
+SHAPE_TEXTURE_FROM = {
+    "decayed_brick_slab": "decayed_bricks",
+    "decayed_brick_stairs": "decayed_bricks",
+    "decayed_brick_wall": "decayed_bricks",
+    "city_brick_wall": "city_bricks",
+    "void_slab": "void_stone",
+    "void_stairs": "void_stone",
+    "void_wall": "void_stone",
+    "void_fence": "void_planks",
+    "adams_slab": "adams_stone",
+    "adams_stairs": "adams_stone",
+    "adams_tile_wall": "adams_tiles",
+    "adams_fence": "adams_tiles",
+    "creator_slab": "creator_marble",
+    "creator_stairs": "creator_marble",
+    "creator_wall": "creator_tiles",
+    "creator_fence": "creator_tiles",
+}
+
+
 def block_textures():
-    return {
+    table = {
         "decayed_stone": on_ash(lambda: stone(blank(), 101, (0.12, 0.46))),
         "decayed_cobblestone": on_ash(lambda: cobble(blank(), 102)),
         "decayed_stone_bricks": on_ash(lambda: bricks(blank(), 103, rows=8, cols=4, tone=(0.12, 0.38))),
@@ -864,6 +891,19 @@ def block_textures():
                                                  tint=(1.35, 1.02, 0.72))),
         "adams_rubble": on_adams(lambda: cobble(blank(), 219)),
         "adams_crate": on_adams(lambda: crate(blank(), 220, tint=AMBER, band=RUST_LIT)),
+        # ---- BUILD #465: MORE BLOCKS (the standing ask) ----------------------
+        # "more blocks and items, even some weapons" -- this is the block half,
+        # per world, laid in each world's own palette. Slabs, stairs, walls and
+        # fences reuse the family material they are cut from (they are the SAME
+        # stone), so the only new surfaces here are what is genuinely new: the
+        # decayed reality's cut brick, the city's window glass and railing, and
+        # the three worlds' trap doors.
+        "decayed_bricks": on_ash(lambda: bricks(blank(), 141, rows=4, cols=2, tone=(0.10, 0.34))),
+        "city_window": lambda: glass(blank(), 142, alpha=140, accent=RUST_LIT),
+        "city_railing": on_ash(lambda: metal(blank(), 143, tint=RUST, tone=(0.20, 0.46))),
+        "void_trapdoor": on_void(lambda: metal(blank(), 261, tint=VOID_GREEN, tone=(0.06, 0.30))),
+        "adams_trapdoor": on_adams(lambda: metal(blank(), 262, tint=AMBER, tone=(0.14, 0.44))),
+        "creator_trapdoor": on_creator(lambda: metal(blank(), 263, tint=CREATOR_GOLD, tone=(0.46, 0.82))),
         # ---- BUILD #459: the locks, and the void's own cache ---------------
         # One seal per world, each lit in that world's own accent -- the violet of
         # the rift, the amber of the city glow, the void's cold green. The key a
@@ -896,6 +936,11 @@ def block_textures():
         "void_lock": on_void(lambda: lock(blank(), 233, accent=VOID_GREEN)),
         "void_cache": on_void(lambda: crate(blank(), 234, tint=VOID_GREEN, band=VIOLET_DIM)),
     }
+    # the shapes inherit their family's pixels, under their own name
+    for _shape, _parent in SHAPE_TEXTURE_FROM.items():
+        if _parent in table and _shape not in table:
+            table[_shape] = table[_parent]
+    return table
 
 
 # ---------------------------------------------------------------------------
@@ -1008,20 +1053,20 @@ KEEPER_ACCENTS = [
 def entity_skins():
     """name -> (sheet size, parts, accents, star specks)."""
     return {
-        "massg": ((512, 512), MASSG_PARTS, MASSG_ACCENTS, 0),
-        "voidwalker": ((64, 64), VOIDWALKER_PARTS, VOIDWALKER_ACCENTS, 0),
-        "void_lurker": ((256, 256), LURKER_PARTS, LURKER_ACCENTS, 0),
-        "creator": ((1024, 1024), CREATOR_PARTS, CREATOR_ACCENTS, 900),
-        "whale_monster": ((256, 256), WHALE_PARTS, WHALE_ACCENTS, 140),
-        "drifter": ((128, 128), DRIFTER_PARTS, DRIFTER_ACCENTS, 0),
-        "keeper": ((256, 256), KEEPER_PARTS, KEEPER_ACCENTS, 0),
+            "massg": ((512, 512), MASSG_PARTS, MASSG_ACCENTS, 0),
+            "voidwalker": ((64, 64), VOIDWALKER_PARTS, VOIDWALKER_ACCENTS, 0),
+            "void_lurker": ((256, 256), LURKER_PARTS, LURKER_ACCENTS, 0),
+            "creator": ((1024, 1024), CREATOR_PARTS, CREATOR_ACCENTS, 900),
+            "whale_monster": ((256, 256), WHALE_PARTS, WHALE_ACCENTS, 140),
+            "drifter": ((128, 128), DRIFTER_PARTS, DRIFTER_ACCENTS, 0),
+            "keeper": ((256, 256), KEEPER_PARTS, KEEPER_ACCENTS, 0),
     }
 
 
 def _lerp(a, b, t):
     return (int(a[0] + (b[0] - a[0]) * t),
-            int(a[1] + (b[1] - a[1]) * t),
-            int(a[2] + (b[2] - a[2]) * t))
+                int(a[1] + (b[1] - a[1]) * t),
+                int(a[2] + (b[2] - a[2]) * t))
 
 
 def _paint_part(px, w, h, rect, lo, hi, seed, stars=0):
@@ -1032,12 +1077,12 @@ def _paint_part(px, w, h, rect, lo, hi, seed, stars=0):
     y1 = min(h, int(v + bh + bd))
     rng = Rand(seed)
     for y in range(max(0, y0), max(0, y1)):
-        for x in range(max(0, x0), max(0, x1)):
-            t = rng.frac() * 0.85
-            c = _lerp(lo, hi, t)
-            if stars and rng.chance(0.0025):
-                c = (0xCF, 0xE6, 0xFF)
-            px[y * w + x] = (c[0], c[1], c[2], 255)
+            for x in range(max(0, x0), max(0, x1)):
+                t = rng.frac() * 0.85
+                c = _lerp(lo, hi, t)
+                if stars and rng.chance(0.0025):
+                    c = (0xCF, 0xE6, 0xFF)
+                px[y * w + x] = (c[0], c[1], c[2], 255)
 
 
 def _paint_accent(px, w, h, rect, lo, hi, seed):
@@ -1049,11 +1094,11 @@ def _paint_accent(px, w, h, rect, lo, hi, seed):
     span = max(1, y1 - y0)
     rng = Rand(seed)
     for y in range(max(0, y0), max(0, y1)):
-        core = 1.0 - abs(((y - y0) / float(span)) - 0.5) * 2.0
-        for x in range(max(0, x0), max(0, x1)):
-            t = min(1.0, core * 0.75 + rng.frac() * 0.35)
-            c = _lerp(lo, hi, t)
-            px[y * w + x] = (c[0], c[1], c[2], 255)
+            core = 1.0 - abs(((y - y0) / float(span)) - 0.5) * 2.0
+            for x in range(max(0, x0), max(0, x1)):
+                t = min(1.0, core * 0.75 + rng.frac() * 0.35)
+                c = _lerp(lo, hi, t)
+                px[y * w + x] = (c[0], c[1], c[2], 255)
 
 
 def paint_mob(spec):
@@ -1066,20 +1111,20 @@ def paint_mob(spec):
     base_hi = parts[0][2]
     rng = Rand(w * 31 + h)
     for y in range(h):
-        band = y / float(max(1, h - 1))
-        for x in range(w):
-            t = rng.frac() * 0.6 + band * 0.25
-            c = _lerp(base_lo, base_hi, t)
-            if stars and rng.chance(0.0012):
-                c = (0xCF, 0xE6, 0xFF)
-            px[y * w + x] = (c[0], c[1], c[2], 255)
+            band = y / float(max(1, h - 1))
+            for x in range(w):
+                t = rng.frac() * 0.6 + band * 0.25
+                c = _lerp(base_lo, base_hi, t)
+                if stars and rng.chance(0.0012):
+                    c = (0xCF, 0xE6, 0xFF)
+                px[y * w + x] = (c[0], c[1], c[2], 255)
     seed = 900
     for rect, lo, hi in parts:
-        _paint_part(px, w, h, rect, lo, hi, seed, stars)
-        seed += 7
+            _paint_part(px, w, h, rect, lo, hi, seed, stars)
+            seed += 7
     for rect, lo, hi in accents:
-        _paint_accent(px, w, h, rect, lo, hi, 4000 + seed)
-        seed += 13
+            _paint_accent(px, w, h, rect, lo, hi, 4000 + seed)
+            seed += 13
     return px
 
 
@@ -1119,6 +1164,21 @@ def item_textures():
                                          AMBER),
         "creator_sigil": lambda: item_card(blank(0), 252, shade(0.34, tint=(1.35, 1.22, 0.78)),
                                            CREATOR_GOLD),
+        # BUILD #465 -- the expansion's materials. Each one is the shape of the
+        # thing it came out of, in that world's own colour: a cord of the void's
+        # thread, a shard of Adams glass, dust off the Creator's reach, a gear off
+        # a dead city machine, a clump of the decayed reality's ash, and marrow out
+        # of the storm's own bones.
+        "void_cord": lambda: item_flat(blank(0), shade(0.20, tint=(0.8, 0.8, 1.4)),
+                                       VOID_GREEN, dust=False, seed=271),
+        "adams_glass_shard": lambda: item_shard(blank(0), 272,
+                                                shade(0.36, tint=(1.35, 1.05, 0.72)), AMBER),
+        "creator_dust": lambda: item_dust(blank(0), 273, shade(0.70, tint=(1.3, 1.2, 0.8)),
+                                         CREATOR_GOLD),
+        "city_gear": lambda: item_flat(blank(0), shade(0.34, tint=(1.3, 0.9, 0.6)),
+                                       RUST_LIT, dust=False, seed=274),
+        "decayed_ash_clump": lambda: item_dust(blank(0), 275, shade(0.20), VIOLET_DIM),
+        "storm_marrow": lambda: item_ingot(blank(0), 276, shade(0.42, tint=(1.3, 0.8, 0.9))),
     }
 
 

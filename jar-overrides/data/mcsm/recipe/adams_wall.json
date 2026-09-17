@@ -1,0 +1,16 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:adams_tiles"
+    }
+  },
+  "pattern": [
+    "AAA",
+    "AAA"
+  ],
+  "result": {
+    "count": 6,
+    "id": "mcsm:adams_wall"
+  },
+  "type": "minecraft:crafting_shaped"
+}
