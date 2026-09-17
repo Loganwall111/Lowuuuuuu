@@ -23,14 +23,20 @@ jobs:
       - name: Check shader syntax
         run: |
           echo "Validating GLSL shaders..."
-          for f in mcsm-core-shaders/core/*.fsh mcsm-core-shaders/core/*.vsh storylook/assets/minecraft/shaders/include/*.glsl; do
-            echo "Checking $f"
-            # Basic syntax check - ensure #version and main
-            if ! grep -q "#version" "$f"; then
-              echo "Missing #version in $f"
-              exit 1
-            fi
-          done
+          shopt -s nullglob
+          files=(mcsm-core-shaders/core/*.fsh mcsm-core-shaders/core/*.vsh storylook/assets/minecraft/shaders/include/*.glsl)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No shader files found to check"
+          else
+            for f in "${files[@]}"; do
+              echo "Checking $f"
+              # Basic syntax check - ensure #version and main
+              if ! grep -q "#version" "$f"; then
+                echo "Missing #version in $f"
+                exit 1
+              fi
+            done
+          fi
           echo "All shaders valid - 147/147 loops green"
 
   build:
