@@ -48,6 +48,13 @@ public final class SiftFluidRenderer {
             SiftShaders.set(SiftShaders.FINAL, "GameTime", (world.getTime() + context.tickDelta()) / 20.0f);
             SiftShaders.set(SiftShaders.FINAL, "Layer", (float) layer);
             SiftShaders.set(SiftShaders.FINAL, "PlayerDelta", (float) delta);
+            double flowTime = world.getTime() + context.tickDelta();
+            SiftShaders.set(
+                    SiftShaders.FINAL,
+                    "FlowDirection",
+                    (float) SiftFluidField.currentX(flowTime, camera.x, camera.z),
+                    (float) SiftFluidField.currentZ(flowTime, camera.x, camera.z)
+            );
             SiftShaders.setScreenSize(SiftShaders.FINAL);
 
             context.matrixStack().push();

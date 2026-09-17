@@ -30,7 +30,7 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 ### Phase 3 — fluid pass
 
 - `SiftFluidRenderer` adds purely visual, collision-free horizontal fluid sheets around the player. No fluid blocks are registered, so a player can fall through every layer.
-- `final.fsh` supplies animated refraction, teal/amethyst/magenta iridescence, and proximity-based white intersection foam. The current foam is a deterministic screen-space approximation; a later pass can feed a real depth/normal buffer when a post-processing backend is selected.
+- `final.fsh` supplies animated refraction, teal/amethyst/magenta iridescence, and proximity-based white intersection foam. Its flow direction is driven by the same deterministic field used by server-side current physics. The current foam is a screen-space approximation; a later pass can feed a real depth/normal buffer when a post-processing backend is selected.
 
 ### Phase 4 — build and validation
 

@@ -34,4 +34,17 @@ public final class SiftFluidField {
         double distance = Math.abs(y - nearestLayer(y));
         return distance >= CURRENT_BAND ? 0.0D : 1.0D - distance / CURRENT_BAND;
     }
+
+    /** Shared horizontal flow phase used by both the visual sheet and player current. */
+    public static double currentPhase(double time, double x, double z) {
+        return time * 0.035D + x * 0.012D + z * 0.009D;
+    }
+
+    public static double currentX(double time, double x, double z) {
+        return Math.cos(currentPhase(time, x, z));
+    }
+
+    public static double currentZ(double time, double x, double z) {
+        return Math.sin(currentPhase(time, x, z) * 1.31D);
+    }
 }

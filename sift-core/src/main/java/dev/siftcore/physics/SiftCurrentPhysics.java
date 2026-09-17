@@ -27,11 +27,12 @@ public final class SiftCurrentPhysics {
             if (falloff <= 0.0D) {
                 continue;
             }
-            double phase = time * 0.035D + player.getX() * 0.012D + player.getZ() * 0.009D;
+            double xPosition = player.getX();
+            double zPosition = player.getZ();
             double strength = 0.0028D * falloff;
             Vec3d velocity = player.getVelocity();
-            double x = velocity.x + Math.cos(phase) * strength;
-            double z = velocity.z + Math.sin(phase * 1.31D) * strength;
+            double x = velocity.x + SiftFluidField.currentX(time, xPosition, zPosition) * strength;
+            double z = velocity.z + SiftFluidField.currentZ(time, xPosition, zPosition) * strength;
             double horizontal = Math.sqrt(x * x + z * z);
             if (horizontal > MAX_HORIZONTAL_SPEED) {
                 double scale = MAX_HORIZONTAL_SPEED / horizontal;

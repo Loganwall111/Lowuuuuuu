@@ -27,6 +27,7 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Collision-free visual fluid sheets.
 - [x] Animated teal, amethyst, magenta, cyan, and amber color ramps.
 - [x] Refraction-like displacement and intersection foam approximation.
+- [x] Visual flow direction shares the deterministic field used by server-side current physics.
 - [x] Horizontal current band aligned to the same mathematical sheet heights, without changing vertical velocity.
 - [ ] Add authored pool silhouettes and current/velocity volumes.
 - [ ] Integrate depth and normal textures for physically correct intersection foam.

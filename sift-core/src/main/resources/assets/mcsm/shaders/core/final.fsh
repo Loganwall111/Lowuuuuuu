@@ -3,6 +3,7 @@
 uniform float GameTime;
 uniform float Layer;
 uniform float PlayerDelta;
+uniform vec2 FlowDirection;
 uniform vec2 ScreenSize;
 
 in vec4 vertexColor;
@@ -26,7 +27,9 @@ void main() {
 
     float waveA = sin(centered.x * 17.0 + time * 1.8 + sin(centered.y * 8.0) * 1.7);
     float waveB = cos(centered.y * 21.0 - time * 1.35 + sin(centered.x * 6.0) * 2.1);
+    vec2 flow = normalize(FlowDirection + vec2(0.0001));
     vec2 displaced = centered + vec2(waveB, waveA) * 0.045;
+    displaced += flow * sin(time * 0.92 + Layer * 1.7 + dot(centered, flow) * 4.0) * 0.028;
     float radial = length(displaced);
     float poolMask = 1.0 - smoothstep(0.73, 1.02, radial);
 
