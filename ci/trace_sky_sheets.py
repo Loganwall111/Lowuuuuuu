@@ -64,7 +64,8 @@ GLSL_CONSUMERS = [
     (
         "mcsm-core-shaders/core/sky.fsh",
         r"(const\s+vec3\s+%s\s*\[\s*\d+\s*\]\s*=\s*vec3\[\]\s*\()(.*?)(\)\s*;)",
-        {"teal": "PHASE5_TEAL", "purple": "PHASE55_PUR", "rose": "PHASE6_ROSE"},
+        {"teal": "PHASE5_TEAL", "purple": "PHASE55_PUR", "rose": "PHASE6_ROSE",
+         "ember": "EMBER_END"},
     ),
     (
         "mcsm-core-shaders/core/position.fsh",
@@ -75,9 +76,13 @@ GLSL_CONSUMERS = [
 JAVA_CONSUMER = (
     "mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java",
     r"(float\[\]\[\]\s+%s\s*=\s*\{)(.*?)(\}\s*;)",
-    {"teal": "SKY_TEAL", "purple": "SKY_PURPLE", "rose": "SKY_ROSE"},
+    {"teal": "SKY_TEAL", "purple": "SKY_PURPLE", "rose": "SKY_ROSE",
+     "ember": "SKY_EMBER"},
 )
-STOPS = 6
+# BUILD #476 -- the column resolution IS the still: see palette_tables.STOPS. The
+# trace samples one row per stop straight out of the sheet, so this is the number of
+# rows of the sheet that reach the shader. 6 was an approximation; 32 is the image.
+STOPS = pal.STOPS
 
 
 # ---------------------------------------------------------------------------
@@ -320,10 +325,15 @@ def rewrite_from_hex(apply):
     McsmStormPhase.java and the derived constants in mcsm_visuals.glsl. No image
     decoding is involved, which is the point: the numbers are injected, not read.
     """
-    traced = {role: pal.hex_column(role) for role in pal.SHEET_HEX}
-    print("[hex] supplied anchors (ceiling / middle / horizon):")
-    for role, anchors in pal.SHEET_HEX.items():
-        print("  %-7s %s   -> %s ... %s" % (role, "  ".join(anchors),
+    # BUILD #476 -- every column the sky interpolates, at pal.STOPS rows: the three
+    # supplied sheets AND the authored ember fall (a six-row column in a 32-row sky
+    # is the one place the shader would have had to stretch its source).
+    roles = list(pal.SHEET_HEX.keys()) + list(pal.AUTHORED.keys())
+    traced = {role: pal.hex_column(role) for role in roles}
+    print("[hex] the sky's source tables (ceiling / middle / horizon, or authored):")
+    for role in roles:
+        anchors = pal.SHEET_HEX.get(role, ["authored"])
+        print("  %-7s %-24s -> %s ... %s" % (role, "  ".join(anchors),
                                             pal._hex(traced[role][0]),
                                             pal._hex(traced[role][-1])))
     writes = []

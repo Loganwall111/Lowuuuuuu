@@ -50,25 +50,62 @@ out vec4 fragColor;
 
 // ---- reference gradients: index 0 = zenith (t=0), index 5 = horizon (t=1) --
 // Traced from the three attached artist sheets; values are 0..1.
-const vec3 PHASE5_TEAL[6] = vec3[](
-    vec3(0.047, 0.071, 0.086), vec3(0.064, 0.096, 0.115), vec3(0.082, 0.121, 0.143),
-    vec3(0.097, 0.143, 0.166), vec3(0.111, 0.162, 0.185), vec3(0.125, 0.180, 0.204)
+const vec3 PHASE5_TEAL[32] = vec3[](
+    vec3(0.047, 0.071, 0.086), vec3(0.050, 0.075, 0.091), vec3(0.053, 0.079, 0.095),
+    vec3(0.055, 0.083, 0.100), vec3(0.058, 0.087, 0.104), vec3(0.061, 0.091, 0.109),
+    vec3(0.064, 0.095, 0.114), vec3(0.067, 0.099, 0.118), vec3(0.069, 0.103, 0.123),
+    vec3(0.072, 0.107, 0.127), vec3(0.075, 0.111, 0.132), vec3(0.078, 0.115, 0.136),
+    vec3(0.080, 0.119, 0.141), vec3(0.083, 0.123, 0.145), vec3(0.086, 0.127, 0.150),
+    vec3(0.089, 0.131, 0.155), vec3(0.091, 0.135, 0.158), vec3(0.094, 0.138, 0.161),
+    vec3(0.096, 0.141, 0.164), vec3(0.098, 0.144, 0.167), vec3(0.100, 0.147, 0.171),
+    vec3(0.103, 0.150, 0.174), vec3(0.105, 0.153, 0.177), vec3(0.107, 0.156, 0.180),
+    vec3(0.110, 0.159, 0.183), vec3(0.112, 0.162, 0.186), vec3(0.114, 0.165, 0.189),
+    vec3(0.116, 0.168, 0.192), vec3(0.119, 0.171, 0.195), vec3(0.121, 0.174, 0.198),
+    vec3(0.123, 0.177, 0.201), vec3(0.125, 0.180, 0.204)
 );
-const vec3 PHASE55_PUR[6] = vec3[](
-    vec3(0.086, 0.039, 0.129), vec3(0.143, 0.061, 0.200), vec3(0.199, 0.083, 0.271),
-    vec3(0.253, 0.104, 0.336), vec3(0.303, 0.122, 0.395), vec3(0.353, 0.141, 0.455)
+const vec3 PHASE55_PUR[32] = vec3[](
+    vec3(0.086, 0.039, 0.129), vec3(0.095, 0.043, 0.141), vec3(0.104, 0.046, 0.152),
+    vec3(0.114, 0.050, 0.164), vec3(0.123, 0.053, 0.175), vec3(0.132, 0.057, 0.186),
+    vec3(0.141, 0.060, 0.198), vec3(0.150, 0.064, 0.209), vec3(0.159, 0.068, 0.220),
+    vec3(0.168, 0.071, 0.232), vec3(0.177, 0.075, 0.243), vec3(0.186, 0.078, 0.255),
+    vec3(0.196, 0.082, 0.266), vec3(0.205, 0.085, 0.277), vec3(0.214, 0.089, 0.289),
+    vec3(0.223, 0.092, 0.300), vec3(0.231, 0.096, 0.311), vec3(0.240, 0.099, 0.320),
+    vec3(0.248, 0.102, 0.330), vec3(0.256, 0.105, 0.340), vec3(0.264, 0.108, 0.349),
+    vec3(0.272, 0.111, 0.359), vec3(0.280, 0.114, 0.368), vec3(0.288, 0.117, 0.378),
+    vec3(0.296, 0.120, 0.388), vec3(0.304, 0.123, 0.397), vec3(0.312, 0.126, 0.407),
+    vec3(0.321, 0.129, 0.416), vec3(0.329, 0.132, 0.426), vec3(0.337, 0.135, 0.436),
+    vec3(0.345, 0.138, 0.445), vec3(0.353, 0.141, 0.455)
 );
-const vec3 PHASE6_ROSE[6] = vec3[](
-    vec3(0.114, 0.082, 0.098), vec3(0.172, 0.120, 0.145), vec3(0.230, 0.158, 0.192),
-    vec3(0.285, 0.194, 0.238), vec3(0.339, 0.228, 0.284), vec3(0.392, 0.263, 0.329)
+const vec3 PHASE6_ROSE[32] = vec3[](
+    vec3(0.114, 0.082, 0.098), vec3(0.123, 0.088, 0.106), vec3(0.132, 0.094, 0.113),
+    vec3(0.142, 0.101, 0.121), vec3(0.151, 0.107, 0.128), vec3(0.161, 0.113, 0.136),
+    vec3(0.170, 0.119, 0.144), vec3(0.179, 0.125, 0.151), vec3(0.189, 0.131, 0.159),
+    vec3(0.198, 0.137, 0.166), vec3(0.207, 0.143, 0.174), vec3(0.217, 0.149, 0.182),
+    vec3(0.226, 0.155, 0.189), vec3(0.235, 0.161, 0.197), vec3(0.245, 0.167, 0.204),
+    vec3(0.254, 0.173, 0.212), vec3(0.263, 0.179, 0.219), vec3(0.272, 0.185, 0.227),
+    vec3(0.280, 0.190, 0.234), vec3(0.289, 0.196, 0.241), vec3(0.298, 0.202, 0.249),
+    vec3(0.306, 0.207, 0.256), vec3(0.315, 0.213, 0.263), vec3(0.323, 0.218, 0.271),
+    vec3(0.332, 0.224, 0.278), vec3(0.341, 0.229, 0.285), vec3(0.349, 0.235, 0.293),
+    vec3(0.358, 0.240, 0.300), vec3(0.366, 0.246, 0.307), vec3(0.375, 0.252, 0.315),
+    vec3(0.384, 0.257, 0.322), vec3(0.392, 0.263, 0.329)
 );
 
 // continuation past the supplied sheets: phase 7-8 keeps falling toward the
 // ember/black end of the storyboard (sampled from the sunset trace plus the
 // established phase-8 dark red), so the fade never stops mid-air.
-const vec3 EMBER_END[6] = vec3[](
-    vec3(0.118, 0.329, 0.369), vec3(0.230, 0.150, 0.220), vec3(0.369, 0.130, 0.180),
-    vec3(0.784, 0.230, 0.094), vec3(0.900, 0.290, 0.070), vec3(0.550, 0.160, 0.030));
+const vec3 EMBER_END[32] = vec3[](
+    vec3(0.118, 0.329, 0.369), vec3(0.136, 0.300, 0.345), vec3(0.154, 0.271, 0.321),
+    vec3(0.172, 0.242, 0.297), vec3(0.190, 0.214, 0.273), vec3(0.208, 0.185, 0.249),
+    vec3(0.226, 0.156, 0.225), vec3(0.248, 0.147, 0.215), vec3(0.270, 0.144, 0.208),
+    vec3(0.293, 0.141, 0.202), vec3(0.315, 0.138, 0.195), vec3(0.338, 0.135, 0.189),
+    vec3(0.360, 0.131, 0.183), vec3(0.409, 0.140, 0.172), vec3(0.476, 0.156, 0.158),
+    vec3(0.543, 0.172, 0.144), vec3(0.610, 0.188, 0.130), vec3(0.677, 0.204, 0.116),
+    vec3(0.744, 0.220, 0.102), vec3(0.791, 0.234, 0.092), vec3(0.810, 0.244, 0.089),
+    vec3(0.829, 0.253, 0.085), vec3(0.848, 0.263, 0.081), vec3(0.866, 0.273, 0.077),
+    vec3(0.885, 0.282, 0.073), vec3(0.889, 0.286, 0.069), vec3(0.832, 0.265, 0.062),
+    vec3(0.776, 0.244, 0.056), vec3(0.719, 0.223, 0.049), vec3(0.663, 0.202, 0.043),
+    vec3(0.606, 0.181, 0.036), vec3(0.550, 0.160, 0.030)
+);
 
 // ---- regular cycle (no storm): traced day / midnight / sunset -------------
 const vec3 SKY_DAY[6] = vec3[](
@@ -84,6 +121,26 @@ const vec3 SKY_SUNSET[6] = vec3[](
 // Six-stop column sample: t = 1 - up, so t = 0 looks straight up and t = 1
 // sits on the horizon. Below the horizon the ray keeps the horizon row (the
 // fade continues into the fog instead of stopping at a line).
+// BUILD #476 -- "real skies, 1:1 with the stills."
+//
+// The three sheet columns are 32 rows now (palette_tables.STOPS): one stop per
+// sampled row of the sheet, written by ci/trace_sky_sheets.py --from-hex (or,
+// when the sheets are present, traced straight out of them). Six stops could only
+// ever be the artist's three anchors and a straight line between them; 32 keeps
+// the column the sheet actually shows. This is the sampler for them.
+vec3 mcsm_sky_column32(const vec3[32] col, float t) {
+    float u = clamp(t, 0.0, 1.0) * 31.0;
+    int i = int(floor(u));
+    float f = u - floor(u);
+    if (i >= 31) {
+        return col[31];
+    }
+    if (i < 0) {
+        return col[0];
+    }
+    return mix(col[i], col[i + 1], f);
+}
+
 vec3 mcsm_sky_column(const vec3[6] col, float t) {
     float u = clamp(t, 0.0, 1.0) * 5.0;
     int i = int(floor(u));
@@ -123,10 +180,10 @@ vec3 mcsm_sky_floor(vec3 horizonCol, float t) {
 
 // The three supplied sheets, in the order the storyboard gives them.
 vec3 mcsm_sky_reference(float t, float p) {
-    vec3 teal = mcsm_sky_column(PHASE5_TEAL, t);
-    vec3 pur = mcsm_sky_column(PHASE55_PUR, t);
-    vec3 rose = mcsm_sky_column(PHASE6_ROSE, t);
-    vec3 ember = mcsm_sky_column(EMBER_END, t);
+    vec3 teal = mcsm_sky_column32(PHASE5_TEAL, t);
+    vec3 pur = mcsm_sky_column32(PHASE55_PUR, t);
+    vec3 rose = mcsm_sky_column32(PHASE6_ROSE, t);
+    vec3 ember = mcsm_sky_column32(EMBER_END, t);
 
     // BUILD #430 -- ONE nested easing, the same three ramps the pack's position
     // program, McsmStormPhase.java and McsmBackdropPalette.java use, all of them

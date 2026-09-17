@@ -197,9 +197,12 @@ def check(verbose=False, sweep_step=0.05):
         elif verbose:
             print("  routing ok: %s = %.2f-%.2f" % (name, lo, hi))
 
+    # BUILD #476 -- `worst` must exist even when there ARE failures: the caller
+    # reports it, and an UnboundLocalError here hides the drift it was called to
+    # find (that is exactly what happened when the traced columns went to 32 rows).
+    worst = 0.0
+    where = ""
     if not fails:
-        worst = 0.0
-        where = ""
         phase = 4.40
         while phase <= 8.1001:
             for ti in range(11):
@@ -243,7 +246,7 @@ def main():
                 print("  - %s" % f)
             return 1
         print("[backdrop] OK -- both backdrops wear the supplied sheets' traced columns "
-              "(4 columns x 6 stops, routing 3 pairs, sweep worst channel %d)" % worst)
+              "(4 columns x %d stops, routing 3 pairs, sweep worst channel %%d)" % pal.STOPS % worst)
         return 0
 
     if found == want:

@@ -35,6 +35,28 @@ write would re-introduce exactly the bright trace the anchors replace. Their
 recorded trace is pinned in `SUPERSEDED_TRACE` (in `ci/trace_sky_sheets.py`) so
 `--verify` still fails if the folder is ever swapped for different images.
 
+## The resolution of the trace (BUILD #476): 32 rows, not six
+
+The columns the sky interpolates are read at `palette_tables.STOPS` rows -- **32**,
+one stop per sampled row of the sheet -- and not the original six. Six stops could
+only ever be the artist's three anchors and a straight line between them, which is
+an approximation of a sheet; 32 is the sheet's own column at every stop, written
+into `sky.fsh`, `position.fsh`, `McsmStormPhase.java` and `McsmBackdropPalette.java`
+from the one table, and interpolated by row count so no consumer can stretch a
+short column across the sky.
+
+The same column is also shipped **as an image**: `ci/make_still_strips.py` writes a
+one-pixel-wide, 32-row strip per band -- top row = zenith, bottom row = horizon --
+to both
+
+    jar-overrides/assets/mcsm/textures/sky/stills_<band>.png
+    storylook/assets/minecraft/textures/environment/mcsm_stills_<band>.png
+
+and `ci/build.sh` compares every pixel of those strips against the shipped tables
+before the jar is packed. That is what makes "1:1 with the stills" checkable: if the
+table, the shader and the strip ever disagree, the build fails rather than shipping
+a sky that is only approximately the art.
+
 ## Dropping the CURRENT sheets in
 
 If the actual current sheets are added to the repository, put them at the top

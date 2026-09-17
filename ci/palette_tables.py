@@ -56,6 +56,25 @@ SHEET_HEX = {
     "rose": ["#1D1519", "#422D37", "#644354"],
 }
 # ===========================================================================
+# BUILD #476 -- THE AUTHORED FALL: the phase 7.0-8.05 ember column.
+#
+# The three delivered sheets stop at phase 6; the storyboard's ember/black end is
+# AUTHORED (it is the same six stops sky.fsh has carried since #434). It lives here
+# now because every column the sky interpolates is read at palette_tables.STOPS rows
+# -- one row per stop -- and a six-row column in a 32-row sky would be the one place
+# the shader had to stretch its source. Expanded linearly, the authored curve is
+# exactly what it always was, at the resolution everything else uses.
+# ===========================================================================
+EMBER_AUTHORED = [
+    [0.118, 0.329, 0.369],
+    [0.230, 0.150, 0.220],
+    [0.369, 0.130, 0.180],
+    [0.784, 0.230, 0.094],
+    [0.900, 0.290, 0.070],
+    [0.550, 0.160, 0.030],
+]
+
+# ===========================================================================
 # BUILD #434 -- THE SPEC TABLES, VERBATIM FROM THE USER'S OWN HAND.
 #
 # The build brief for the model-attached halo quotes the sky's three bands
@@ -92,7 +111,15 @@ def check_spec(verbose=False):
 
 
 ANCHOR_T = [0.0, 0.5, 1.0]
-STOPS = 6
+# BUILD #476 -- "real skies, 1:1 with the stills."
+#
+# This was 6: the three supplied anchors (ceiling / middle / horizon) expanded to a
+# six-stop column. Six stops is an APPROXIMATION of a sheet -- it reproduces the
+# anchors and interpolates everything between them, so the sky can only ever be the
+# artist's three colours and a straight line. The sheets themselves are full images;
+# the column is now read at STOPS rows, so what ships IS the sheet's own column at
+# every stop, and the anchors stay authoritative for the stops they define.
+STOPS = 32
 
 
 def hex_to_rgb(h):
@@ -101,7 +128,14 @@ def hex_to_rgb(h):
 
 
 def hex_column(role):
-    """The six-stop column expanded from SHEET_HEX[role]'s three anchors."""
+    """The STOPS-row column for a role, from its own source of truth.
+
+    teal / purple / rose come from the supplied hex anchors (ceiling / middle /
+    horizon); ember is an authored curve (EMBER_AUTHORED). Both are expanded to
+    palette_tables.STOPS rows, which is the resolution the shaders read.
+    """
+    if role not in SHEET_HEX:
+        return expand_column(AUTHORED[role], STOPS)
     anchors = [hex_to_rgb(h) for h in SHEET_HEX[role]]
     out = []
     for i in range(STOPS):
@@ -122,12 +156,33 @@ def hex_column(role):
     return out
 
 
+AUTHORED = {"ember": EMBER_AUTHORED}
+
+
+def expand_column(stops, n):
+    """Linear expansion of a stop list to exactly n rows (endpoints kept)."""
+    if len(stops) == 1:
+        return [list(stops[0]) for _ in range(n)]
+    out = []
+    for i in range(n):
+        t = i / float(n - 1)
+        u = t * (len(stops) - 1)
+        j = int(u // 1)
+        f = u - j
+        if j > len(stops) - 2:
+            j, f = len(stops) - 2, 1.0
+        a, b = stops[j], stops[j + 1]
+        out.append([a[k] + (b[k] - a[k]) * f for k in range(3)])
+    return out
+
+
 def check_hex(verbose=False):
     """The shipped GLSL columns must BE the supplied hex anchors."""
     ok = True
     msgs = []
     tables = load()
-    for role, anchors in SHEET_HEX.items():
+    for role in list(SHEET_HEX.keys()) + list(AUTHORED.keys()):
+        anchors = SHEET_HEX.get(role) or ["authored"]
         want = hex_column(role)
         got = tables.get(role)
         if not got:
@@ -307,7 +362,8 @@ def smudge_deck():
     ember = rows("ember")[-1]                       # the ember horizon stop
     pur_h = purple[-1]                       # 0.660, 0.361, 0.706  (magenta)
     rose_h = rose[-1]                        # 0.784, 0.612, 0.651  (pink)
-    rose_m = rose[2]                         # 0.478, 0.392, 0.439  (muted mid)
+    rose_m = sample_column(rose, 0.40)       # the muted mid stop, by elevation
+                                             # (row 2 of six == t 0.40 == row 13 of 32)
     orange = tuple(ember[k] * 1.62 if k != 1 else ember[k] * 2.30 for k in range(3))
     salmon = tuple((rose_h[k] + orange[k]) * 0.5 for k in range(3))
     return {
@@ -341,7 +397,10 @@ DERIVED = [
     ("P6_TOP", "rose", "t", 0.00, 0.22),
     ("P6_UMID", "rose", "t", 0.30, 1.00),
     ("P6_LMID", "rose", "t", 0.60, 1.00),
-    ("P6_BOT", "ember", "row", 3, 1.00),   # the orange stop of the ember column
+    # BUILD #476 -- the orange stop of the ember column, addressed by ELEVATION
+    # (t = 0.60), not by row index: row 3 of six and row 19 of thirty-two are the
+    # same colour, and this constant must not change when the resolution does.
+    ("P6_BOT", "ember", "t", 0.60, 1.00),
     # The cloud deck: the traced column's mid row lifted toward white by a
     # per-phase amount. mode "mixw" = mix(column, white, w).
     ("MCSM_CLOUD_TEAL", "teal", "mixw", (0.30, 0.55), 1.00),

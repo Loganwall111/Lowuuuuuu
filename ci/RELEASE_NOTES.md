@@ -1,3 +1,41 @@
+# 7000.0.0-M — the sky is the still, the storm owns it, and the switches work
+
+**Build #476 — real skies, 1:1 with the stills.** The sky's four columns (the three
+supplied sheets -- teal, purple, rose -- and the authored ember fall) are read at
+**32 stops** now, not six. Six could only ever be the artist's three anchors and a
+straight line between them; 32 is one stop per sampled row of the sheet, written from
+one table into `sky.fsh`, `position.fsh`, `McsmStormPhase.java` (halo, horizon band,
+canopy, hallucinations) and `McsmBackdropPalette.java`, and interpolated by row count
+so nothing stretches a short column across the sky. The column also ships **as an
+image** -- `stills_<band>.png`, one pixel wide, one row per stop -- in the jar and in
+the built-in Story Look pack, beside the sun and moon it already carries, and the
+build compares every pixel of those strips against the tables before packing. Drop the
+real sheets into `ci/sky_sheets/` and `--apply` re-traces them at the same resolution:
+the shipped sky then IS the still, row for row.
+
+**Build #474 — the ceiling.** `McsmStormCanopy`: the storm's own sky, all 24 segments
+of the bearing circle, horizon to a real cap at the zenith, drawn in the world (so it
+works with no shader pack), colouring every vertex from the phase's own reference
+tables. Nothing below phase 4.60, full by 5.10, released at 7.90-8.05, densest over the
+mass (0.62) and thinner away (0.24) -- coverage, not a lid and not a fog.
+
+**Build #475 — the hallucinations.** `Reality Glitches + Hallucinations` and
+`Hallucination Intensity` had been switches on the settings screen with nothing behind
+them since D.8. They now drive torn bands with chroma-split edges, a too-tall figure at
+the edge of vision with violet lenses (painted, never spawned), a false sky that never
+strikes, and the whispers -- only when MASSG is up, the player's void aging has moved,
+or a storm is past its rose phase, and never in creative.
+
+**Build #471-473 — the black frame.** The jar's replaced core shaders are now weighed
+against the game's own copies every build; a program whose interface does not match is
+disabled rather than shipped (that audit found the `core/position` pair sampling
+unbound samplers, which renders black with no error). `/ds menu` reports who is painting
+the menu: the mod's render guard, FancyMenu's layout and assets (Git LFS pointers read
+as pointers, not content), and the pack, size and mean luminance of
+`textures/gui/menu_background.png` and the title panorama.
+
+---
+
 # 7000.0.0-M — Build #416: the dome is gone, the sky actually fades, one traced palette everywhere
 
 This build deletes the "sky with a top on it" and replaces it with a sky that is

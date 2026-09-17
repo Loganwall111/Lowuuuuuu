@@ -3463,6 +3463,111 @@ def main():
           and "McsmHallucinations.state()" in cmds)
 
     # ------------------------------------------------------------------
+    # BUILD #476 -- REAL SKIES, 1:1 WITH THE STILLS.
+    #
+    # The user's answer to "what should the real skies be" was the first option:
+    # 1:1 with the stills -- the sky reproduces the painted concept frames exactly,
+    # stop for stop, with no approximation. The thing that stood in the way of that
+    # was the RESOLUTION of the trace: the columns were SIX stops, i.e. the artist's
+    # three anchors (ceiling / middle / horizon) and a straight line between them.
+    # Six stops cannot be a still; it can only be three of its colours.
+    #
+    # So the columns are read at palette_tables.STOPS rows -- one stop per sampled
+    # row of the sheet -- everywhere the sky is drawn: sky.fsh (the live sky),
+    # position.fsh (the blueprint's sky pass), McsmStormPhase.java (the halo, the
+    # horizon band, the canopy, the hallucinations) and McsmBackdropPalette (the
+    # atmosphere wall). One table, four consumers, no stretching: a column written
+    # at 32 rows and read at 32 rows IS the sheet's own column.
+    #
+    # And the column is SHIPPED AS AN IMAGE as well: a one-pixel-wide strip, one row
+    # per stop, in the jar and in the built-in Story Look pack beside the sun and
+    # moon it already carries 1:1. "The sky is the still" is a sentence; a strip whose
+    # every pixel is compared against the shipped table every build is a fact.
+    # ------------------------------------------------------------------
+    stills = read("ci/make_still_strips.py") or ""
+    sky_ref = read("mcsm-core-shaders/core/sky.fsh") or ""
+    pos_ref = read("mcsm-core-shaders/core/position.fsh") or ""
+    phase_java = read("mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java") or ""
+    backdrop_java = read("mcsm-extras/java/net/mcsm/extras/client/McsmBackdropPalette.java") or ""
+
+    try:
+        # family-local imports: the gate reads its own files into family-local names,
+        # and this family needs the traced tables themselves, plus a PNG reader
+        import pngutil as _png
+        import palette_tables as _pal
+        _teal = _pal.rows("teal")
+        _ember = _pal.rows("ember")
+        _stops = _pal.STOPS
+        _strips = {}
+        for _role in ("teal", "purple", "rose"):
+            _w, _h, _px = _png.read_png(os.path.join(
+                "jar-overrides/assets/mcsm/textures/sky", "stills_%s.png" % _role))
+            _strips[_role] = (_w, _h, _px)
+    except Exception as _exc:
+        print("  note  stills self-test could not run: %s" % _exc)
+        _teal = _ember = []
+        _stops = 0
+        _strips = {}
+
+    def strip_ok(role):
+        """A strip is one row per stop, and every pixel IS the traced stop."""
+        try:
+            w, h, px = _strips[role]
+            want = _pal.rows(role)
+        except Exception:
+            return False
+        if w != 1 or h != _stops or h != len(want):
+            return False
+        for i, row in enumerate(want):
+            got = px[i]
+            for k in range(3):
+                if abs(got[k] - int(round(row[k] * 255.0))) > 1:
+                    return False
+        return True
+
+    check("and the sky's columns are the stills' own rows, not six-stop approximations",
+          _stops == 32
+          and "STOPS = 32" in (read("ci/palette_tables.py") or "")
+          and "STOPS = pal.STOPS" in (read("ci/trace_sky_sheets.py") or "")
+          and len(_teal) == 32 and len(_ember) == 32
+          # every shipped consumer reads them at that resolution
+          and "const vec3 PHASE5_TEAL[32] = vec3[](" in sky_ref
+          and "const vec3 PHASE55_PUR[32] = vec3[](" in sky_ref
+          and "const vec3 PHASE6_ROSE[32] = vec3[](" in sky_ref
+          and "const vec3 EMBER_END[32] = vec3[](" in sky_ref
+          and "const vec3 SKY_REF_TEAL[32] = vec3[](" in pos_ref
+          and "const vec3 SKY_REF_PURPLE[32] = vec3[](" in pos_ref
+          and "const vec3 SKY_REF_ROSE[32] = vec3[](" in pos_ref
+          # and the samplers are the ones that can read a 32-row column, used by
+          # the sheet columns (day / night / sunset stay six-stop authored tables)
+          and "vec3 mcsm_sky_column32(const vec3[32] col, float t) {" in sky_ref
+          and sky_ref.count("mcsm_sky_column32(") >= 5
+          and "vec3 mcsm_position_column32(const vec3[32] col, float t) {" in pos_ref
+          and pos_ref.count("mcsm_position_column32(") >= 4
+          and "vec3 mcsm_sky_column(const vec3[6] col, float t) {" in sky_ref
+          # the Java feed interpolates by row COUNT, so no column can be stretched
+          and "int last = col.length - 1;" in phase_java
+          and "float u = Math.max(0.0F, Math.min(1.0F, t)) * last;" in phase_java
+          # and the backdrop palette wears the same 32 stops
+          and backdrop_java.count("0x") > 32
+          and "public static final int[] EMBER = {" in backdrop_java)
+
+    check("and that column ships as an image, so the claim is checkable",
+          "public final class" not in stills and "def column_pixels(role):" in stills
+          and "pngutil.write_png" in stills
+          and '("jar-overrides/assets/mcsm/textures/sky", "stills_%s.png")' in stills
+          and '("storylook/assets/minecraft/textures/environment", "mcsm_stills_%s.png")' in stills
+          and all(strip_ok(r) for r in ("teal", "purple", "rose"))
+          # both copies, because the pack is the thing a player installs and the jar
+          # is the thing the mod always carries
+          and os.path.isfile("jar-overrides/assets/mcsm/textures/sky/stills_teal.png")
+          and os.path.isfile("storylook/assets/minecraft/textures/environment/mcsm_stills_teal.png")
+          and os.path.isfile("storylook/assets/minecraft/textures/environment/mcsm_stills_rose.png")
+          # and the build refuses to ship a jar whose strips stopped matching
+          and "ci/make_still_strips.py --check" in bsh
+          and "the shipped sky strips no longer match the traced columns" in bsh)
+
+    # ------------------------------------------------------------------
     # BUILD #471 -- AN OVERRIDE MAY CHANGE THE BODY, NEVER THE INTERFACE.
     #
     # This jar REPLACES the game's own core shaders (mcsm-core-shaders/* is overlaid onto

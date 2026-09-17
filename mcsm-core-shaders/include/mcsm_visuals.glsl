@@ -514,19 +514,19 @@ vec3 mcsm_blob_color(float p, float clock) {
 //
 // PHASE 5 -- GREEN/TEAL MASS           (tables: PHASE5_TEAL)
 const vec3 P5_CORE = vec3(2.6, 4.0, 4.8) / 255.0;   // #030405
-const vec3 P5_MID = vec3(18.6, 27.7, 32.9) / 255.0;   // #131C21
-const vec3 P5_EDGE = vec3(24.7, 36.5, 42.3) / 255.0;   // #19242A
+const vec3 P5_MID = vec3(18.6, 27.6, 32.8) / 255.0;   // #131C21
+const vec3 P5_EDGE = vec3(24.8, 36.4, 42.3) / 255.0;   // #19242A
 const vec3 P5_BEAM  = vec3(132.0, 147.0, 255.0) / 255.0;  // #8493FF ambient bleed
 // PHASE 5.5-5.9 -- PURPLE & MAGENTA VOID MASS  (tables: PHASE55_PUR)
 const vec3 P55_CORE = vec3(4.8, 2.2, 7.2) / 255.0;   // #050207
-const vec3 P55_MID = vec3(43.6, 18.4, 60.1) / 255.0;   // #2C123C
-const vec3 P55_EDGE = vec3(64.5, 26.5, 85.7) / 255.0;   // #411B56
-const vec3 P55_HIGH = vec3(80.5, 32.3, 104.6) / 255.0;   // #502069
+const vec3 P55_MID = vec3(43.5, 18.4, 60.0) / 255.0;   // #2C123C
+const vec3 P55_EDGE = vec3(64.5, 26.5, 85.7) / 255.0;   // #401A56
+const vec3 P55_HIGH = vec3(80.4, 32.4, 104.6) / 255.0;   // #502069
 // PHASE 6 -- THE FOUR-COLOUR SUNSET SPLIT MASS (vertical)  (tables: PHASE6_ROSE)
 const vec3 P6_TOP = vec3(6.4, 4.6, 5.5) / 255.0;   // #060505
-const vec3 P6_UMID = vec3(51.3, 35.4, 43.0) / 255.0;   // #33232B
-const vec3 P6_LMID = vec3(72.7, 49.5, 60.7) / 255.0;   // #49313D
-const vec3 P6_BOT = vec3(199.9, 58.7, 24.0) / 255.0;   // #C83B18
+const vec3 P6_UMID = vec3(51.2, 35.4, 42.9) / 255.0;   // #33232B
+const vec3 P6_LMID = vec3(72.8, 49.4, 60.7) / 255.0;   // #49313D
+const vec3 P6_BOT = vec3(196.9, 58.2, 24.5) / 255.0;   // #C53A18
 
 // The blob is intentionally compact around the storm bearing.  The old
 // 1.9.305 ellipse used one analytic radius, which made the sky read as a
@@ -752,9 +752,9 @@ float mcsm_fog_density(float p) {
 // the rose sky. These four constants are the traced columns' mid row lifted
 // toward white by a per-phase amount (0.55 / 0.10 / 0.35 / 0.12), and
 // ci/palette_tables.py re-derives every one of them.
-const vec3 MCSM_CLOUD_TEAL = vec3(148.6, 152.7, 155.1) / 255.0;   // #95999B
-const vec3 MCSM_CLOUD_PURPLE = vec3(64.7, 42.0, 79.5) / 255.0;   // #412A50
-const vec3 MCSM_CLOUD_ROSE = vec3(122.6, 112.3, 117.2) / 255.0;   // #7B7075
+const vec3 MCSM_CLOUD_TEAL = vec3(148.6, 152.7, 155.0) / 255.0;   // #95999B
+const vec3 MCSM_CLOUD_PURPLE = vec3(64.7, 42.1, 79.5) / 255.0;   // #412A50
+const vec3 MCSM_CLOUD_ROSE = vec3(122.5, 112.3, 117.2) / 255.0;   // #7B7075
 const vec3 MCSM_CLOUD_EMBER = vec3(160.0, 71.0, 61.3) / 255.0;   // #A0473D
 
 vec3 mcsm_cloud_tint(float p) {

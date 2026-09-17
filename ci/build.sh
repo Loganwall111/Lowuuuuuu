@@ -595,6 +595,34 @@ echo "$HEX_LINE"
 echo "::notice title=hex::$HEX_LINE"
 stage hex-ok
 
+# ---------------------------------------------------------------------------
+# BUILD #476 -- "REAL SKIES, 1:1 WITH THE STILLS": THE COLUMN IS THE IMAGE.
+#
+# The sky's four columns (the three supplied sheets and the authored ember fall)
+# are read at ci/palette_tables.STOPS rows now, not six: one stop per sampled row
+# of the reference image, written into sky.fsh / position.fsh / McsmStormPhase.java
+# and the backdrop palette from the SAME tables by the gate above. That column is
+# also SHIPPED AS AN IMAGE -- a one-pixel-wide strip, one row per stop, top row =
+# zenith -- both in the jar and in the built-in Story Look pack, beside the sun and
+# moon it already carries 1:1 with the stills.
+#
+# This is the check that makes "1:1" a fact rather than a claim: every pixel of
+# those strips is compared against the shipped tables, every build. If a sheet is
+# ever dropped into ci/sky_sheets/ then --apply re-traces these tables straight out
+# of the image at the same resolution, so the strips follow the sheet, not a
+# hand-typed approximation of it.
+# ---------------------------------------------------------------------------
+echo "[stills] the sky's columns as shipped images (1 pixel wide, 1 row per stop)"
+STILLS_OUT="$(python3 ci/make_still_strips.py --check 2>&1)" || {
+  echo "$STILLS_OUT"
+  echo "::error title=stills::the shipped sky strips no longer match the traced columns — run 'python3 ci/make_still_strips.py'"
+  exit 1
+}
+printf '%s\n' "$STILLS_OUT" | grep -E "stops:|the shipped strips" | tail -4
+printf '%s\n' "$STILLS_OUT" >> "${VANILLA_OUT:-/dev/null}" 2>/dev/null || true
+echo "::notice title=stills::$(printf '%s\n' "$STILLS_OUT" | tail -1)"
+stage stills-ok
+
 # BUILD #416 -- and the report picture of that sky must not go stale again. It
 # did once: it still showed the superseded bright trace after the anchors were
 # ingested, and nothing compared it to the tables.
