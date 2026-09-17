@@ -931,7 +931,30 @@ else
   echo "[content] not a git checkout -- skipping the generated-assets drift check"
 fi
 echo "[content] assets, models, blockstates and item definitions all resolve and are in sync"
-stage content-ok
+
+# ---------------------------------------------------------------------------
+# BUILD #477 -- our files in the GAME'S OWN namespace, weighed against the game's.
+#
+# The wrapper jar overrides assets/minecraft/** (the Story Look shaders, the repaired
+# 1.9-era blockstates and models), and an override is applied last, so a wrong name in
+# there is not a warning: it is a block that does not exist in the world. The player's
+# log is why this runs:
+#
+#   Exception loading blockstate definition: 'minecraft:crafting_table/...'
+#       for variant 'axis=y': Unknown blockstate property: 'axis'
+#   Unresolved texture references in minecraft:block/furnace: #up-> #top
+#   Missing texture references in model minecraft:block/jack_o_lantern: #missing
+#
+# Every one of those is now a build failure, measured against the game's own copies of
+# the same files straight out of the client jar.
+VANILLA_CHECK="$(python3 ci/check_vanilla_overrides.py --jar "$DL/client.jar" 2>&1)"
+VANILLA_RC=$?
+printf '%s\n' "$VANILLA_CHECK" | tail -6
+if [ $VANILLA_RC -ne 0 ]; then
+  echo "::error title=vanilla overrides::a file we ship over the game's own namespace names something that does not exist -- in game that is a missing block or a purple-and-black model"
+  exit 1
+fi
+stage vanilla-ok
 else
   echo "::error title=build::backdrop sheet generation failed"
   exit 1

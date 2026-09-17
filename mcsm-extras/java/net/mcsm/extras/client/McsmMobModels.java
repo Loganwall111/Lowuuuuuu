@@ -1,6 +1,8 @@
 package net.mcsm.extras.client;
 
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelLayerLocation;
+import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
@@ -8,6 +10,7 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.util.Mth;
 
@@ -94,6 +97,119 @@ public final class McsmMobModels {
     }
 
     /**
+     * BUILD #477 -- THE "hat" PART, WHICH IS THE ONE PART THAT MAY NOT VANISH.
+     *
+     * <p>{@code HumanoidModel}'s constructor reads {@code root.getChild("hat")} before a
+     * single vertex is drawn, and {@code ModelPart.getChild} THROWS when it is missing
+     * (26.2: {@code NoSuchElementException: Can't find part hat}). It used to be created
+     * through {@link #empty} -- a part with an empty cube list -- and a part with no
+     * cubes is exactly the kind of thing a baker is free to drop.
+     *
+     * <p>What that cost, from a player's own log:
+     *
+     * <pre>
+     *   java.lang.IllegalArgumentException: Failed to create model for mcsm:whale_monster
+     *   Caused by: java.util.NoSuchElementException: Can't find part hat
+     *     at net.minecraft.client.model.HumanoidModel.&lt;init&gt;
+     *     at net.mcsm.extras.client.McsmMobModels$VoidLurkerModel.&lt;init&gt;
+     *     at ... EntityRenderers.createEntityRenderers
+     *   [Render thread/INFO]: Caught error loading resourcepacks, removing all selected resourcepacks
+     * </pre>
+     *
+     * <p>That is not one mob failing to draw. {@code createEntityRenderers} runs inside
+     * the resource reload, so a throw there aborts the whole reload -- the game drops
+     * every pack and comes up with no models, no fonts and a black frame. A missing hat
+     * became "my game just crashes or completely goes black".
+     *
+     * <p>So the part carries a real (0.01-unit, sub-pixel, never visible) cube instead.
+     * A part with geometry cannot be dropped by anything.
+     */
+    static PartDefinition hatPart(PartDefinition root, float s, float py) {
+        return root.addOrReplaceChild("hat", CubeListBuilder.create()
+                        .texOffs(0, 0)
+                        .addBox(0.0F, 0.0F, 0.0F, 0.01F, 0.01F, 0.01F,
+                                new CubeDeformation(0.0F)),
+                PartPose.offset(0.0F, py * s, 0.0F));
+    }
+
+    /**
+     * A child part, or the parent when it is not there.
+     *
+     * <p>Every part this mod adds is read this way now. {@code getChild} throws on a
+     * missing name, and a model constructor that throws takes the resource reload -- and
+     * therefore the frame -- down with it (see {@link #hatPart}). A part that is not
+     * there animates as its parent, which looks wrong for a frame and can never blacken
+     * a screen.
+     */
+    static ModelPart part(ModelPart parent, String name) {
+        if (parent == null) {
+            return null;
+        }
+        try {
+            return parent.getChild(name);
+        } catch (Throwable ignored) {
+            return parent;
+        }
+    }
+
+    /** Is this root the seven parts {@code HumanoidModel} reads? */
+    static boolean has(ModelPart root, String name) {
+        if (root == null) {
+            return false;
+        }
+        try {
+            root.getChild(name);
+            return true;
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    static boolean complete(ModelPart root) {
+        for (String name : new String[] {"head", "hat", "body", "left_arm", "right_arm",
+                "left_leg", "right_leg"}) {
+            if (!has(root, name)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * BUILD #477 -- THE ROOT IS NOT ALLOWED TO BE THE REASON A RELOAD DIES.
+     *
+     * <p>Order: this mod's own layer, then the same layer baked straight from its own
+     * definition, then VANILLA'S PLAYER SKELETON. The last one is the guarantee -- it is
+     * the mesh every vanilla humanoid in the game is built on, so it cannot be missing
+     * the parts {@code HumanoidModel} requires. A mob with the player's skeleton for one
+     * session is a wrong-looking mob; a throw here is a black screen for everyone.
+     */
+    public static ModelPart humanoidRoot(EntityRendererProvider.Context ctx,
+            ModelLayerLocation layer, String tag) {
+        ModelPart root = null;
+        try {
+            root = ctx.bakeLayer(layer);
+            if (!complete(root)) {
+                System.err.println("[ds] the " + tag + " model baked without the parts a "
+                        + "humanoid body needs -- using vanilla's own skeleton instead");
+                root = null;
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] the " + tag + " model layer could not be baked: " + t);
+            root = null;
+        }
+        if (root == null) {
+            try {
+                root = ctx.bakeLayer(ModelLayers.PLAYER);
+            } catch (Throwable t) {
+                // nothing left to fall back to: the game's own model set is the problem
+                System.err.println("[ds] not even the player model could be baked: " + t);
+            }
+        }
+        return root;
+    }
+
+    /**
      * The seven parts a HumanoidModel looks for, in player proportions scaled by
      * {@code s}, with the whole skeleton shifted so its feet land on the ground.
      *
@@ -111,7 +227,7 @@ public final class McsmMobModels {
         float hw = headW / 2.0F;
         box(root, "head", 0, 0, s, 0.0F, g, 0.0F,
                 -hw, -headH, -headD / 2.0F, headW, headH, headD);
-        empty(root, "hat", s, 0.0F, g, 0.0F);
+        hatPart(root, s, g);
         float bw = bodyW / 2.0F;
         box(root, "body", 16, 16, s, 0.0F, g, 0.0F,
                 -bw, 0.0F, -bodyD / 2.0F, bodyW, bodyH, bodyD);
@@ -126,6 +242,84 @@ public final class McsmMobModels {
         box(root, "left_leg", 0, 16, s, 1.9F, g + bodyH, 0.0F,
                 lw - legW, 0.0F, -legD / 2.0F, legW, legH, legD);
         return root;
+    }
+
+    // ------------------------------------------------------------------
+    // BUILD #477 -- THE GUARDED FACTORIES.
+    //
+    // Each one is the only way a renderer builds its body now: bake this mod's layer
+    // through humanoidRoot() (which cannot hand back a skeleton without the parts
+    // HumanoidModel reads), then construct the model, and if the CONSTRUCTION still
+    // fails for any reason at all, report it and hand back the same model on vanilla's
+    // player skeleton rather than letting the throw escape into the resource reload.
+    // ------------------------------------------------------------------
+
+    private static <M> M guarded(String tag, ModelPart root, ModelStage<M> stage, ModelPart spare) {
+        if (root != null) {
+            try {
+                return stage.build(root);
+            } catch (Throwable t) {
+                System.err.println("[ds] the " + tag + " body could not be built on this "
+                        + "mod's own skeleton (" + t + ") -- using vanilla's");
+            }
+        }
+        if (spare != null) {
+            try {
+                return stage.build(spare);
+            } catch (Throwable t) {
+                System.err.println("[ds] the " + tag + " body could not be built at all: " + t);
+            }
+        }
+        return null;
+    }
+
+    /** One model constructor, as a value. */
+    public interface ModelStage<M> {
+        M build(ModelPart root);
+    }
+
+    public static MassgModel massg(EntityRendererProvider.Context ctx) {
+        return guarded("Massg", humanoidRoot(ctx, McsmMobRenderers.MASSG_LAYER, "Massg"),
+                MassgModel::new, spareRoot(ctx));
+    }
+
+    public static CreatorModel creator(EntityRendererProvider.Context ctx) {
+        return guarded("Creator", humanoidRoot(ctx, McsmMobRenderers.CREATOR_LAYER, "Creator"),
+                CreatorModel::new, spareRoot(ctx));
+    }
+
+    public static VoidwalkerModel voidwalker(EntityRendererProvider.Context ctx) {
+        return guarded("voidwalker",
+                humanoidRoot(ctx, McsmMobRenderers.VOIDWALKER_LAYER, "voidwalker"),
+                VoidwalkerModel::new, spareRoot(ctx));
+    }
+
+    public static VoidLurkerModel lurker(EntityRendererProvider.Context ctx) {
+        return guarded("lurker",
+                humanoidRoot(ctx, McsmMobRenderers.VOID_LURKER_LAYER, "lurker"),
+                VoidLurkerModel::new, spareRoot(ctx));
+    }
+
+    public static DrifterModel drifter(EntityRendererProvider.Context ctx) {
+        return guarded("drifter",
+                humanoidRoot(ctx, McsmMobRenderers.DRIFTER_LAYER, "drifter"),
+                DrifterModel::new, spareRoot(ctx));
+    }
+
+    public static KeeperModel keeper(EntityRendererProvider.Context ctx) {
+        return guarded("keeper",
+                humanoidRoot(ctx, McsmMobRenderers.KEEPER_LAYER, "keeper"),
+                KeeperModel::new, spareRoot(ctx));
+    }
+
+    /** Vanilla's own humanoid skeleton: the last body any of them can fall back to. */
+    private static ModelPart spareRoot(EntityRendererProvider.Context ctx) {
+        try {
+            return ctx.bakeLayer(ModelLayers.PLAYER);
+        } catch (Throwable t) {
+            System.err.println("[ds] no spare skeleton available: " + t);
+            return null;
+        }
     }
 
     // ==================================================================
@@ -143,12 +337,12 @@ public final class McsmMobModels {
 
         public MassgModel(ModelPart root) {
             super(root);
-            ModelPart head = root.getChild("head");
-            ModelPart body = root.getChild("body");
-            this.hornL = head.getChild("horn_l");
-            this.hornR = head.getChild("horn_r");
-            this.lenses = head.getChild("lenses");
-            this.coat = body.getChild("coat");
+            ModelPart head = part(root, "head");
+            ModelPart body = part(root, "body");
+            this.hornL = part(head, "horn_l");
+            this.hornR = part(head, "horn_r");
+            this.lenses = part(head, "lenses");
+            this.coat = part(body, "coat");
         }
 
         public static LayerDefinition createBodyLayer() {
@@ -203,9 +397,9 @@ public final class McsmMobModels {
 
         public VoidwalkerModel(ModelPart root) {
             super(root);
-            this.jaw = root.getChild("head").getChild("jaw");
-            this.eyes = root.getChild("head").getChild("eyes");
-            this.tatter = root.getChild("body").getChild("tatter");
+            this.jaw = part(part(root, "head"), "jaw");
+            this.eyes = part(part(root, "head"), "eyes");
+            this.tatter = part(part(root, "body"), "tatter");
         }
 
         public static LayerDefinition createBodyLayer() {
@@ -256,12 +450,12 @@ public final class McsmMobModels {
 
         public VoidLurkerModel(ModelPart root) {
             super(root);
-            ModelPart body = root.getChild("body");
+            ModelPart body = part(root, "body");
             for (int i = 0; i < TENTACLES; i++) {
-                this.tentacles[i] = body.getChild("tentacle" + i);
-                this.tips[i] = body.getChild("tip" + i);
+                this.tentacles[i] = part(body, "tentacle" + i);
+                this.tips[i] = part(body, "tip" + i);
             }
-            this.maw = root.getChild("head").getChild("maw");
+            this.maw = part(part(root, "head"), "maw");
         }
 
         public static LayerDefinition createBodyLayer() {
@@ -326,13 +520,13 @@ public final class McsmMobModels {
 
         public CreatorModel(ModelPart root) {
             super(root);
-            ModelPart head = root.getChild("head");
+            ModelPart head = part(root, "head");
             for (int i = 0; i < HALOS; i++) {
-                this.halos[i] = head.getChild("halo" + i);
+                this.halos[i] = part(head, "halo" + i);
             }
-            this.eyes = head.getChild("eyes");
-            this.skyL = root.getChild("left_arm").getChild("sky_arm_l");
-            this.skyR = root.getChild("right_arm").getChild("sky_arm_r");
+            this.eyes = part(head, "eyes");
+            this.skyL = part(part(root, "left_arm"), "sky_arm_l");
+            this.skyR = part(part(root, "right_arm"), "sky_arm_r");
         }
 
         public static LayerDefinition createBodyLayer() {
@@ -396,12 +590,12 @@ public final class McsmMobModels {
 
         public DrifterModel(ModelPart root) {
             super(root);
-            ModelPart head = root.getChild("head");
-            ModelPart body = root.getChild("body");
-            this.hood = head.getChild("hood");
-            this.eyes = head.getChild("eyes");
-            this.tatterL = body.getChild("tatter_l");
-            this.tatterR = body.getChild("tatter_r");
+            ModelPart head = part(root, "head");
+            ModelPart body = part(root, "body");
+            this.hood = part(head, "hood");
+            this.eyes = part(head, "eyes");
+            this.tatterL = part(body, "tatter_l");
+            this.tatterR = part(body, "tatter_r");
         }
 
         public static LayerDefinition createBodyLayer() {
@@ -456,11 +650,11 @@ public final class McsmMobModels {
 
         public KeeperModel(ModelPart root) {
             super(root);
-            ModelPart head = root.getChild("head");
-            this.brim = head.getChild("brim");
-            this.eyes = head.getChild("eyes");
-            this.lantern = root.getChild("right_arm").getChild("lantern");
-            this.lamp = root.getChild("right_arm").getChild("lamp");
+            ModelPart head = part(root, "head");
+            this.brim = part(head, "brim");
+            this.eyes = part(head, "eyes");
+            this.lantern = part(part(root, "right_arm"), "lantern");
+            this.lamp = part(part(root, "right_arm"), "lamp");
         }
 
         public static LayerDefinition createBodyLayer() {

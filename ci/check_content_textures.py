@@ -53,6 +53,98 @@ def own_textures():
     return found
 
 
+# ---------------------------------------------------------------------------
+# BUILD #477 -- THE TWO WAYS A BLOCK GOES MISSING, BOTH SEEN IN A PLAYER'S LOG.
+#
+#   Missing block model: mcsm:block/rusted_door_lower_left        (x8)
+#   Missing texture references in model mcsm:block/<x>_slab_double:
+#       #down #east #north #south #up #west
+#
+# The first is a blockstate naming a model nobody writes; the second is a model
+# whose parent asks for texture keys the file does not define. Neither is a build
+# error anywhere -- both are purple-and-black missing geometry in the world.
+# ---------------------------------------------------------------------------
+
+# What each vanilla template we build on asks the model to provide.
+PARENT_KEYS = {
+    "minecraft:block/cube": ("down", "up", "north", "south", "east", "west"),
+    "minecraft:block/cube_all": ("all",),
+    "minecraft:block/cube_bottom_top": ("bottom", "top", "side"),
+    "minecraft:block/cube_column": ("end", "side"),
+    "minecraft:block/orientable": ("top", "front", "side"),
+    "minecraft:block/orientable_with_bottom": ("bottom", "top", "front", "side"),
+    "minecraft:block/slab": ("bottom", "top", "side"),
+    "minecraft:block/slab_top": ("bottom", "top", "side"),
+    "minecraft:block/stairs": ("bottom", "top", "side"),
+    "minecraft:block/inner_stairs": ("bottom", "top", "side"),
+    "minecraft:block/outer_stairs": ("bottom", "top", "side"),
+    "minecraft:block/door_bottom_left": ("bottom",),
+    "minecraft:block/door_bottom_right": ("bottom",),
+    "minecraft:block/door_top_left": ("top",),
+    "minecraft:block/door_top_right": ("top",),
+    "minecraft:block/template_trapdoor_bottom": ("texture",),
+    "minecraft:block/template_trapdoor_top": ("texture",),
+    "minecraft:block/template_trapdoor_open": ("texture",),
+    "minecraft:block/fence_post": ("texture",),
+    "minecraft:block/fence_side": ("texture",),
+    "minecraft:block/wall_post": ("wall",),
+    "minecraft:block/wall_side": ("wall",),
+    "minecraft:block/wall_side_tall": ("wall",),
+}
+
+VANILLA_ASSETS = os.path.join(ROOT, "jar-overrides", "assets", "minecraft")
+
+
+def model_files():
+    """Every model of ours and every vanilla-namespace override, as {id: path}."""
+    out = {}
+    for base, root in ((ASSETS, "mcsm"), (VANILLA_ASSETS, "minecraft")):
+        for path in glob.glob(os.path.join(base, "models", "**", "*.json"), recursive=True):
+            rel = os.path.relpath(path, base).replace(os.sep, "/")[:-5]
+            # the id a blockstate names is `mcsm:block/<name>`, not the file path
+            if rel.startswith("models/"):
+                rel = rel[len("models/"):]
+            out["%s:%s" % (root, rel)] = path
+    return out
+
+
+def _entries(variants):
+    """The model ids a variants/apply value names, however it is shaped."""
+    ids = []
+    def take(v):
+        if isinstance(v, dict) and "model" in v:
+            ids.append(v["model"])
+        elif isinstance(v, list):
+            for one in v:
+                take(one)
+    take(variants)
+    return ids
+
+
+def blockstate_model_refs():
+    """(blockstate path, model id) for every model a blockstate points at."""
+    out = []
+    for base in (ASSETS, VANILLA_ASSETS):
+        for path in glob.glob(os.path.join(base, "blockstates", "*.json")):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    obj = json.load(f)
+            except Exception:
+                continue
+            for section in ("variants", "multipart"):
+                body = obj.get(section)
+                if isinstance(body, dict):
+                    for v in body.values():
+                        for m in _entries(v):
+                            out.append((path, m))
+                elif isinstance(body, list):
+                    for part in body:
+                        if isinstance(part, dict):
+                            for m in _entries(part.get("apply")):
+                                out.append((path, m))
+    return out
+
+
 def model_texture_refs():
     """name -> set of texture identifiers, for every model in the pack."""
     refs = {}
@@ -128,6 +220,42 @@ def main():
                 json.load(f)
         except Exception as exc:
             problems.append("blockstate %s is not valid JSON: %s" % (name, exc))
+
+    # ---- 7. every model a blockstate names must exist ------------------------
+    models = model_files()
+    dangling = []
+    for bpath, mid in blockstate_model_refs():
+        if ":" in mid and mid.split(":")[0] not in ("mcsm", "minecraft"):
+            continue
+        if mid.startswith("minecraft:") and mid not in models:
+            # vanilla-namespace models live in the game jar: only ours are checkable
+            continue
+        if mid not in models:
+            dangling.append("%s -> %s" % (os.path.relpath(bpath, ROOT), mid))
+    if dangling:
+        problems.append("blockstates name models that do not exist: %s"
+                        % ", ".join(sorted(set(dangling))[:8]))
+
+    # ---- 8. and every model must define what its parent asks for ------------
+    unresolved = []
+    for mid, path in models.items():
+        try:
+            with open(path, encoding="utf-8") as f:
+                obj = json.load(f)
+        except Exception:
+            continue
+        textures = obj.get("textures") or {}
+        parent = obj.get("parent")
+        if parent in PARENT_KEYS:
+            for key in PARENT_KEYS[parent]:
+                if key not in textures:
+                    unresolved.append("%s: #%s (parent %s)" % (mid, key, parent))
+        for key, value in textures.items():
+            if isinstance(value, str) and value.startswith("#") and value[1:] not in textures:
+                unresolved.append("%s: #%s -> %s" % (mid, key, value))
+    if unresolved:
+        problems.append("models do not resolve their own textures: %s"
+                        % ", ".join(sorted(set(unresolved))[:8]))
 
     print("[content] %d textures, %d models, %d blockstates, %d item definitions"
           % (len(own), len(refs), len(blocks), len(definitions)))

@@ -3575,6 +3575,117 @@ def main():
           and "the shipped sky strips no longer match the traced columns" in bsh)
 
     # ------------------------------------------------------------------
+    # BUILD #477 -- "MY GAME JUST CRASHES OR COMPLETELY GOES BLACK".
+    #
+    # The user's own log, at last, and the two reports are ONE bug:
+    #
+    #   java.lang.IllegalArgumentException: Failed to create model for mcsm:whale_monster
+    #   Caused by: java.util.NoSuchElementException: Can't find part hat
+    #     at net.minecraft.client.model.HumanoidModel.<init>
+    #     at net.mcsm.extras.client.McsmMobModels$VoidLurkerModel.<init>
+    #     at ... EntityRenderers.createEntityRenderers
+    #   [Render thread/INFO]: Caught error loading resourcepacks, removing all selected resourcepacks
+    #
+    # EntityRenderers.createEntityRenderers runs INSIDE the resource reload, so a mob
+    # model that throws does not cost that mob: it fails the reload, the game drops
+    # every pack, and the client comes up with no models, no font and a black frame.
+    # HumanoidModel reads root.getChild("hat") in its constructor, ModelPart.getChild
+    # THROWS when the part is missing, and our "hat" was an EMPTY part -- a part with
+    # an empty cube list, which a baker is free to drop.
+    #
+    # The rules that come out of that, all checked here:
+    #   * the hat carries real geometry, so it cannot be dropped;
+    #   * our own part lookups go through a lookup that never throws;
+    #   * a root is only used if it HAS the seven parts HumanoidModel reads, and the
+    #     fallback is vanilla's own player skeleton -- so a body can never be the
+    #     reason a reload dies;
+    #   * every renderer registration and every layer registration stands alone, so
+    #     one bad body cannot take the rest (or the frame) with it;
+    #   * the two asset bugs in the same log (doors naming models that do not exist,
+    #     double slabs whose faces do not resolve) are now build failures.
+    # ------------------------------------------------------------------
+    mobmodels = read("mcsm-extras/java/net/mcsm/extras/client/McsmMobModels.java") or ""
+    mobrend = read("mcsm-extras/java/net/mcsm/extras/client/McsmMobRenderers.java") or ""
+    content = read("ci/check_content_textures.py") or ""
+
+    check("and a mob body can never be the reason a resource reload dies",
+          # the hat carries a real cube now, so no baker may drop it
+          "static PartDefinition hatPart(PartDefinition root, float s, float py) {" in mobmodels
+          and "hatPart(root, s, g);" in mobmodels
+          and 'empty(root, "hat"' not in mobmodels
+          and ".addBox(0.0F, 0.0F, 0.0F, 0.01F, 0.01F, 0.01F," in mobmodels
+          # our own lookups never throw: a missing part animates as its parent
+          and "static ModelPart part(ModelPart parent, String name) {" in mobmodels
+          and "return parent.getChild(name);" in mobmodels
+          and mobmodels.count("part(") >= 20
+          # the root must BE the seven parts HumanoidModel reads, or vanilla's own
+          and "static boolean complete(ModelPart root) {" in mobmodels
+          and "\"head\", \"hat\", \"body\", \"left_arm\", \"right_arm\"," in mobmodels
+          and "public static ModelPart humanoidRoot(EntityRendererProvider.Context ctx," in mobmodels
+          and "root = ctx.bakeLayer(ModelLayers.PLAYER);" in mobmodels
+          and "model baked without the parts a " in mobmodels
+          # and construction itself is guarded, model by model
+          and "private static <M> M guarded(String tag, ModelPart root, ModelStage<M> stage, ModelPart spare) {" in mobmodels
+          and "public interface ModelStage<M> {" in mobmodels)
+
+    check("and every one of the mob bodies is built through the guarded factory",
+          all(f"McsmMobModels.{name}(ctx)" in mobrend for name in
+              ("massg", "creator", "voidwalker", "lurker", "drifter", "keeper"))
+          and "ctx.bakeLayer(" not in mobrend
+          and "new McsmMobModels.MassgModel(" not in mobrend
+          and "new McsmMobModels.CreatorModel(" not in mobrend
+          and "new McsmMobModels.VoidLurkerModel(" not in mobrend
+          and "new McsmMobModels.VoidwalkerModel(" not in mobrend
+          and "new McsmMobModels.DrifterModel(" not in mobrend
+          and "new McsmMobModels.KeeperModel(" not in mobrend
+          # and one registration cannot take another with it
+          and mobrend.count("EntityRendererRegistry.register(") == 7
+          and mobrend.count("} catch (Throwable t) {") >= 14
+          and "the whale renderer could not be registered" in mobrend
+          and "the lurker renderer could not be registered" in mobrend
+          and mobrend.count("ModelLayerRegistry.registerModelLayer(") == 7
+          and "the lurker body could not be registered" in mobrend
+          # and the failures say so in the log the player can paste
+          and mobrend.count("System.err.println(\"[ds] ") >= 14)
+
+    check("and the two asset bugs in that same log are build failures now",
+          # the blockstate -> model rule, which is the door bug
+          "def blockstate_model_refs():" in content
+          and "blockstates name models that do not exist" in content
+          # the parent -> texture-key rule, which is the double-slab bug
+          and "def model_files():" in content
+          and "PARENT_KEYS" in content
+          and '"minecraft:block/cube_all": ("all",),' in content
+          and "models do not resolve their own textures" in content
+          # and the vocabulary that caused it cannot come back: the blockstate builds
+          # its model name from the SAME suffix the models are written with
+          and 'for half, part in (("lower", "bottom"), ("upper", "top")):' in (
+              read("ci/make_mcsm_content_assets.py") or "")
+          and 'entry = {"model": f"mcsm:block/{name}_{part}_{hinge}"}' in (
+              read("ci/make_mcsm_content_assets.py") or "")
+          and '"minecraft:block/cube_all")):' in (read("ci/make_mcsm_content_assets.py") or "")
+          # and the base jar's broken 1.9 vanilla assets are repaired in our own
+          and os.path.isfile("jar-overrides/assets/minecraft/blockstates/crafting_table.json")
+          and os.path.isfile("jar-overrides/assets/minecraft/models/block/furnace.json")
+          and os.path.isfile("jar-overrides/assets/minecraft/models/block/furnace_on.json")
+          and os.path.isfile("jar-overrides/assets/minecraft/models/block/jack_o_lantern.json"))
+
+    check("and our files in the game's own namespace are weighed against the game's",
+          # the tool exists, reads the game's own copies, and fails closed
+          os.path.isfile("ci/check_vanilla_overrides.py")
+          and "the game's own assets/minecraft: %d files read" in (
+              read("ci/check_vanilla_overrides.py") or "")
+          and "uses blockstate properties the game's own file does " in (
+              read("ci/check_vanilla_overrides.py") or "")
+          and "so nothing is checked and nothing is claimed" in (
+              read("ci/check_vanilla_overrides.py") or "")
+          # and the build runs it against the client jar, as a gate
+          and "ci/check_vanilla_overrides.py --jar \"$DL/client.jar\"" in (
+              read("ci/build.sh") or "")
+          and "stage vanilla-ok" in (read("ci/build.sh") or "")
+          and "title=vanilla overrides" in (read("ci/build.sh") or ""))
+
+    # ------------------------------------------------------------------
     # BUILD #471 -- AN OVERRIDE MAY CHANGE THE BODY, NEVER THE INTERFACE.
     #
     # This jar REPLACES the game's own core shaders (mcsm-core-shaders/* is overlaid onto

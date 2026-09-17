@@ -1,9 +1,7 @@
 {
-  "parent": "minecraft:block/cube",
+  "parent": "minecraft:block/cube_all",
   "textures": {
-    "bottom": "mcsm:block/city_bricks",
-    "particle": "mcsm:block/city_bricks",
-    "side": "mcsm:block/city_bricks",
-    "top": "mcsm:block/city_bricks"
+    "all": "mcsm:block/city_bricks",
+    "particle": "mcsm:block/city_bricks"
   }
 }

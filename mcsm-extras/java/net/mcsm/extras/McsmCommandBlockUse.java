@@ -44,13 +44,56 @@ public final class McsmCommandBlockUse {
                 return onUse(args);
             };
             Object listener = Proxy.newProxyInstance(cb.getClassLoader(), new Class<?>[] { cb }, handler);
+            // BUILD #477 -- REGISTER THROUGH THE PUBLIC INTERFACE, NOT THE IMPLEMENTATION.
+            //
+            // A player's log had, on every startup:
+            //   [ds] command block interaction unavailable: java.lang.IllegalAccessException:
+            //   class net.mcsm.extras.McsmCommandBlockUse cannot access a member of class
+            //   net.fabricmc.fabric.impl.base.event.ArrayBackedEvent with modifiers "public"
+            // -- because `event.getClass().getMethods()` hands back the method DECLARED by
+            // Fabric's own implementation class, which is not accessible from here, so the
+            // reflective call is refused even though the event itself is public API. The
+            // same call through the INTERFACE the event is published as (`Event.register`)
+            // is allowed, and that is what this tries first now.
+            Exception last = null;
+            for (Class<?> iface : event.getClass().getInterfaces()) {
+                if (!iface.getName().startsWith("net.fabricmc.fabric.api.event")) {
+                    continue;
+                }
+                for (Method m : iface.getMethods()) {
+                    if (!"register".equals(m.getName()) || m.getParameterCount() != 1) {
+                        continue;
+                    }
+                    try {
+                        m.invoke(event, listener);
+                        System.out.println("[ds] command block config/snap interaction registered ("
+                                + iface.getSimpleName() + ")");
+                        return;
+                    } catch (Exception e) {
+                        last = e;
+                    }
+                }
+            }
+            // and if that finds nothing, the original shape -- now opened up first
             for (Method m : event.getClass().getMethods()) {
                 if ("register".equals(m.getName()) && m.getParameterCount() == 1
                         && m.getParameterTypes()[0].isInstance(listener)) {
-                    m.invoke(event, listener);
-                    System.out.println("[ds] command block config/snap interaction registered");
-                    return;
+                    try {
+                        m.setAccessible(true);
+                    } catch (Throwable ignored) {
+                        // not ours to open: the interface path above is the supported one
+                    }
+                    try {
+                        m.invoke(event, listener);
+                        System.out.println("[ds] command block config/snap interaction registered");
+                        return;
+                    } catch (Exception e) {
+                        last = e;
+                    }
                 }
+            }
+            if (last != null) {
+                throw last;
             }
         } catch (Throwable t) {
             System.err.println("[ds] command block interaction unavailable: " + t);

@@ -1,9 +1,7 @@
 {
-  "parent": "minecraft:block/cube",
+  "parent": "minecraft:block/cube_all",
   "textures": {
-    "bottom": "mcsm:block/adams_slab",
-    "particle": "mcsm:block/adams_slab",
-    "side": "mcsm:block/adams_slab",
-    "top": "mcsm:block/adams_slab"
+    "all": "mcsm:block/adams_slab",
+    "particle": "mcsm:block/adams_slab"
   }
 }

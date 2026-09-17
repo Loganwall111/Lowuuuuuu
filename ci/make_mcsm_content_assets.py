@@ -412,11 +412,19 @@ def emit_slab(name, spec):
     tex = texture_map(spec)
     for suffix, parent in (("", "minecraft:block/slab"),
                            ("_top", "minecraft:block/slab_top"),
-                           ("_double", "minecraft:block/cube")):
+                           ("_double", "minecraft:block/cube_all")):
+        # BUILD #477 -- the double slab was a `block/cube` with textures named
+        # bottom/top/side, and `block/cube` asks for down/up/north/south/east/west:
+        # the player's log had one "Missing texture references in model
+        # mcsm:block/<x>_slab_double: #down #east #north #south #up #west" per slab,
+        # i.e. six unresolved faces on every double slab in the world. `block/cube_all`
+        # takes exactly one texture (`#all`), which is what a cube of one stone is.
+        textures = ({"all": tex["north"], "particle": tex["north"]}
+                    if suffix == "_double"
+                    else {"bottom": tex["down"], "top": tex["up"],
+                          "side": tex["north"], "particle": tex["north"]})
         write(os.path.join(ASSETS, "models", "block", f"{name}{suffix}.json"),
-              {"parent": parent,
-               "textures": {"bottom": tex["down"], "top": tex["up"],
-                            "side": tex["north"], "particle": tex["north"]}})
+              {"parent": parent, "textures": textures})
     write(os.path.join(ASSETS, "blockstates", name + ".json"),
           {"variants": {
               "type=bottom": {"model": f"mcsm:block/{name}"},
@@ -513,8 +521,15 @@ def emit_door(name, spec):
     for facing, rot in (("east", 0), ("south", 90), ("west", 180), ("north", 270)):
         for hinge in ("left", "right"):
             for open_state in ("false", "true"):
-                for half in ("lower", "upper"):
-                    entry = {"model": f"mcsm:block/{name}_{half}_{hinge}"}
+                for half, part in (("lower", "bottom"), ("upper", "top")):
+                    # BUILD #477 -- THE NAME IN THE BLOCKSTATE HAS TO BE THE NAME ON
+                    # DISK. This wrote `{name}_{half}_{hinge}` ("..._lower_left") while
+                    # the models above are written as "{name}_bottom_left" / "_top_left",
+                    # so EVERY door's blockstate pointed at a model that did not exist:
+                    # eight "Missing block model: mcsm:block/..._lower_left" warnings in
+                    # the player's log, and every door in the world rendering as the
+                    # missing model. One vocabulary, the vanilla one (bottom / top).
+                    entry = {"model": f"mcsm:block/{name}_{part}_{hinge}"}
                     if rot:
                         entry["y"] = rot
                     variants[f"facing={facing},half={half},hinge={hinge},open={open_state}"] = entry
