@@ -179,10 +179,9 @@ public final class McsmBlackHoleBackdrop {
                         }
                     });
 
-            // Event horizon glow - interactive
-            Camera camera = ctx.levelState().cameraRenderState.camera;
+            // Event horizon glow - interactive (player look check, no Camera dep)
             Vec3 toBH = bhPos.subtract(cam).normalize();
-            if (isPlayerLookingAtBlackHole(camera, toBH)) {
+            if (isPlayerLookingAtBlackHole(toBH)) {
                 collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(WHITE),
                         (pose, consumer) -> {
                             float pulse = Mth.sin(t * 3f) * 0.2f + 0.8f;
@@ -269,6 +268,15 @@ public final class McsmBlackHoleBackdrop {
         vertex(pose, consumer, pos.subtract(rx).add(uy), 0, 0, r, g, b, a, 0, 1, 0);
     }
 
+    private static void vertex(Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int r, int g, int b, int a, float nx, float ny, float nz) {
+        consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z)
+                .setColor(r, g, b, a)
+                .setUv(u, v)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(15728810)
+                .setNormal(pose, nx, ny, nz);
+    }
+
     private static float[] colorForDimension(String dimId, float time) {
         float pulse = 0.85f + 0.15f * Mth.sin(time * 0.5f);
         if (dimId.contains("end") || dimId.contains("the_end")) {
@@ -318,27 +326,23 @@ public final class McsmBlackHoleBackdrop {
         }
     }
 
-    private static boolean isPlayerLookingAtBlackHole(Camera camera, Vec3 toBlackHole) {
+    private static boolean isPlayerLookingAtBlackHole(Vec3 toBlackHole) {
         try {
-            org.joml.Vector3fc fwd = camera.forwardVector();
-            Vec3 look = new Vec3(fwd.x(), fwd.y(), fwd.z());
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player == null) return false;
+            // Use player's yaw/pitch to compute look vector (stable API)
+            float yRot = mc.player.getYRot();
+            float xRot = mc.player.getXRot();
+            double pitch = Math.toRadians(xRot);
+            double yaw = Math.toRadians(yRot);
+            double x = -Math.sin(yaw) * Math.cos(pitch);
+            double y = -Math.sin(pitch);
+            double z = Math.cos(yaw) * Math.cos(pitch);
+            Vec3 look = new Vec3(x, y, z).normalize();
             double dot = look.dot(toBlackHole);
             return dot > 0.93;
         } catch (Throwable t) {
-            try {
-                // fallback via xRot/yRot methods
-                float xR = camera.xRot();
-                float yR = camera.yRot();
-                double pitch = Math.toRadians(xR);
-                double yaw = Math.toRadians(yR);
-                double x = -Math.sin(yaw) * Math.cos(pitch);
-                double y = -Math.sin(pitch);
-                double z = Math.cos(yaw) * Math.cos(pitch);
-                Vec3 look = new Vec3(x, y, z);
-                return look.dot(toBlackHole) > 0.93;
-            } catch (Throwable t2) {
-                return false;
-            }
+            return false;
         }
     }
 
@@ -346,7 +350,7 @@ public final class McsmBlackHoleBackdrop {
         try {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null) {
-                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§5§lEntering singularity... Reality folds §8[§dSHIFT§8]"), false);
+                mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§5§lEntering singularity... Reality folds §8[§dSHIFT§8]"));
             }
         } catch (Throwable ignored) {}
     }
