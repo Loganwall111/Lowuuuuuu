@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/abyssal_crystal",
+    "east": "mcsm:block/abyssal_crystal",
+    "north": "mcsm:block/abyssal_crystal",
+    "particle": "mcsm:block/abyssal_crystal",
+    "south": "mcsm:block/abyssal_crystal",
+    "up": "mcsm:block/abyssal_crystal",
+    "west": "mcsm:block/abyssal_crystal"
+  }
+}

@@ -46,6 +46,12 @@ public abstract class McsmStormBlobMixin {
             // everything below the world. A sky with no clouds in it was the standing
             // "the sky is not fully the sky yet".
             net.mcsm.extras.client.McsmCloudDeck.submit(ctx);
+            // V2 EPIC - Volumetric 3D cloud meshes / fog volumes - real 3D, not 2D bands
+            net.mcsm.extras.client.McsmVolumetricCloudMesh.submit(ctx);
+            // V2 - Wither storm particles emitting off the ground
+            net.mcsm.extras.client.McsmGroundParticles.submit(ctx);
+            // V2 - Black hole 3D backdrop interactive for End and other dims
+            net.mcsm.extras.client.McsmBlackHoleBackdrop.submitWorld(ctx);
             // BUILD #474 -- and the ceiling those clouds sit under: the STORM'S own sky,
             // all 360 degrees of it, from the horizon to the zenith. The cube and the deck
             // are the dimensions' skies; the Overworld -- where the story, the cities and

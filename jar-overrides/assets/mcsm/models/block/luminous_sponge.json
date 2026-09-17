@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/luminous_sponge",
+    "east": "mcsm:block/luminous_sponge",
+    "north": "mcsm:block/luminous_sponge",
+    "particle": "mcsm:block/luminous_sponge",
+    "south": "mcsm:block/luminous_sponge",
+    "up": "mcsm:block/luminous_sponge",
+    "west": "mcsm:block/luminous_sponge"
+  }
+}

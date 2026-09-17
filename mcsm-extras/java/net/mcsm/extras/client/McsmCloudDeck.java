@@ -46,28 +46,28 @@ import net.mcsm.extras.McsmVoid;
 public final class McsmCloudDeck {
 
     /**
-     * The three decks, as a distance above the eye. The lowest is the weather a
-     * player is standing in, the middle is the deck proper, the top is the wisps.
+     * V2 EPIC - The decks, as a distance above the eye. 6 layers now for volumetric depth.
+     * Lowest is weather player standing in, middle decks, top wisps + storm veil.
      */
-    private static final double[] HEIGHT = {26.0D, 38.0D, 52.0D};
+    private static final double[] HEIGHT = {18.0D, 28.0D, 38.0D, 52.0D, 72.0D, 96.0D};
 
     /** How far each deck reaches (half-width) -- inside the cube's own 256. */
-    private static final double SPAN = 236.0D;
+    private static final double SPAN = 320.0D;
 
-    /** Quads per side of each deck. A deck, not a plane: this is its surface. */
-    private static final int GRID = 4;
+    /** Quads per side of each deck. 8x8 now = 64 quads per layer for epic surface. */
+    private static final int GRID = 8;
 
     /** Blocks per tile of the painting, so a cloud is a cloud's size, not a pixel's. */
-    private static final double TILE = 64.0D;
+    private static final double TILE = 48.0D;
 
-    /** How far each layer's painting travels per tick. */
-    private static final double[] DRIFT = {0.0022D, 0.0035D, 0.0048D};
+    /** How far each layer's painting travels per tick - more varied. */
+    private static final double[] DRIFT = {0.0018D, 0.0028D, 0.0035D, 0.0048D, 0.0062D, 0.0080D};
 
     /** How much of each painting's own alpha each layer keeps. */
-    private static final int[] ALPHA = {168, 132, 96};
+    private static final int[] ALPHA = {200, 180, 150, 120, 85, 50};
 
     /** How hard each layer ripples (in blocks), so the deck is not a flat plane. */
-    private static final double[] WAVE = {2.6D, 1.8D, 1.1D};
+    private static final double[] WAVE = {4.2D, 3.4D, 2.6D, 1.8D, 1.2D, 0.8D};
 
     private McsmCloudDeck() {
     }
@@ -138,8 +138,6 @@ public final class McsmCloudDeck {
             if (glow == null) {
                 glow = new float[]{0.55F, 0.36F, 1.0F};
             }
-            // the cloud is mostly its own white: the world's light is what it catches,
-            // not what it is made of
             final int cr = clamp255(glow[0] * 255.0F * 0.45F + 255.0F * 0.55F);
             final int cg = clamp255(glow[1] * 255.0F * 0.45F + 255.0F * 0.55F);
             final int cb = clamp255(glow[2] * 255.0F * 0.45F + 255.0F * 0.55F);
@@ -165,15 +163,10 @@ public final class McsmCloudDeck {
                                     double x1 = x0 + step;
                                     double z0 = cam.z - SPAN + gz * step;
                                     double z1 = z0 + step;
-                                    // the surface: each corner rides its own ripple, so
-                                    // the deck has relief instead of being a card
                                     double y00 = y + ripple(x0, z0, clock, wave, li);
                                     double y10 = y + ripple(x1, z0, clock, wave, li);
                                     double y11 = y + ripple(x1, z1, clock, wave, li);
                                     double y01 = y + ripple(x0, z1, clock, wave, li);
-                                    // UV from the WORLD position, so the painting stays
-                                    // where it is while the player walks under it, and the
-                                    // drift moves the weather instead of the deck
                                     float uu0 = (float) (x0 / TILE + u0);
                                     float uu1 = (float) (x1 / TILE + u0);
                                     float vv0 = (float) (z0 / TILE + v0);
@@ -184,12 +177,99 @@ public final class McsmCloudDeck {
                                             x1, y11, z1, uu1, vv1,
                                             x0, y01, z1, uu0, vv1,
                                             cr, cg, cb, alpha, 0.0F, 1.0F, 0.0F);
+                                    // V2 VOLUMETRIC: add vertical sides for thickness - makes cloud a volume not a sheet
+                                    if (li < HEIGHT.length - 1) {
+                                        double nextY = cam.y + HEIGHT[li + 1];
+                                        double y00n = nextY + ripple(x0, z0, clock, WAVE[li + 1], li + 1);
+                                        double y10n = nextY + ripple(x1, z0, clock, WAVE[li + 1], li + 1);
+                                        // side walls for volumetric thickness
+                                        int sideAlpha = alpha / 3;
+                                        // east wall
+                                        quad(pose, consumer,
+                                                x1, y10, z0, uu1, vv0,
+                                                x1, y10n, z0, uu1, vv0,
+                                                x1, y11, z1, uu1, vv1,
+                                                x1, y11 - (y11 - y10), z1, uu1, vv1,
+                                                cr, cg, cb, sideAlpha, 1.0F, 0.0F, 0.0F);
+                                        // north wall
+                                        quad(pose, consumer,
+                                                x0, y00, z0, uu0, vv0,
+                                                x0, y00 + (y00n - y00), z0, uu0, vv0,
+                                                x1, y10n, z0, uu1, vv0,
+                                                x1, y10, z0, uu1, vv0,
+                                                cr, cg, cb, sideAlpha, 0.0F, 0.0F, -1.0F);
+                                    }
                                 }
+                            }
+                            // V2 - 3D DROPS: hanging fog tendrils dropping from clouds
+                            for (int d = 0; d < 12; d++) {
+                                double dx = cam.x + Math.sin(clock * 0.001 + d * 1.7) * SPAN * 0.7;
+                                double dz = cam.z + Math.cos(clock * 0.0013 + d * 2.3) * SPAN * 0.7;
+                                double dropTop = y + Math.sin(clock * 0.002 + d) * 2.0;
+                                double dropBottom = dropTop - 18.0 - Math.abs(Math.sin(clock * 0.001 + d * 0.5)) * 12.0;
+                                double r = 4.0 + (d % 3) * 2.0;
+                                float u = (float)(dx / TILE + u0);
+                                float v = (float)(dz / TILE + v0);
+                                // billboard drop as vertical quad
+                                quad(pose, consumer,
+                                        dx - r, dropTop, dz, u, v,
+                                        dx + r, dropTop, dz, u + 0.1F, v,
+                                        dx + r, dropBottom, dz, u + 0.1F, v + 0.3F,
+                                        dx - r, dropBottom, dz, u, v + 0.3F,
+                                        cr, cg, cb, alpha / 4, 0.0F, 0.0F, 1.0F);
                             }
                         });
             }
+            // V2 - Volumetric fog volumes epic - separate pass for fog
+            submitFogVolumes(poseStack, collector, cam, clock, sheet, cr, cg, cb);
         } catch (Throwable ignored) {
-            // a cloud deck that throws is worse than a sky with no deck
+        }
+    }
+
+    private static void submitFogVolumes(PoseStack poseStack, SubmitNodeCollector collector, Vec3 cam, double clock, Identifier sheet, int cr, int cg, int cb) {
+        // Epic fog volumes - 8 large volumetric boxes around player
+        for (int f = 0; f < 8; f++) {
+            final int fi = f;
+            collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(sheet),
+                    (pose, consumer) -> {
+                        double angle = clock * 0.0005 + fi * Math.PI * 0.25;
+                        double dist = 80.0 + fi * 20.0;
+                        double cx = cam.x + Math.cos(angle) * dist;
+                        double cz = cam.z + Math.sin(angle) * dist;
+                        double cy = cam.y + 30.0 + Math.sin(clock * 0.001 + fi) * 10.0;
+                        double size = 40.0 + fi * 8.0;
+                        double height = 50.0 + Math.sin(clock * 0.002 + fi * 0.7) * 10.0;
+                        int alpha = 18 + (fi % 3) * 8;
+                        float u0 = (float)(clock * 0.0008 + fi * 0.2);
+                        // 6 faces of fog volume cube
+                        // top
+                        quad(pose, consumer,
+                                cx - size, cy + height, cz - size, u0, u0,
+                                cx + size, cy + height, cz - size, u0 + 1, u0,
+                                cx + size, cy + height, cz + size, u0 + 1, u0 + 1,
+                                cx - size, cy + height, cz + size, u0, u0 + 1,
+                                cr, cg, cb, alpha, 0, 1, 0);
+                        // bottom
+                        quad(pose, consumer,
+                                cx - size, cy, cz - size, u0, u0,
+                                cx - size, cy, cz + size, u0, u0 + 1,
+                                cx + size, cy, cz + size, u0 + 1, u0 + 1,
+                                cx + size, cy, cz - size, u0 + 1, u0,
+                                cr, cg, cb, alpha / 2, 0, -1, 0);
+                        // sides
+                        quad(pose, consumer,
+                                cx - size, cy, cz - size, u0, u0,
+                                cx + size, cy, cz - size, u0 + 1, u0,
+                                cx + size, cy + height, cz - size, u0 + 1, u0 + 1,
+                                cx - size, cy + height, cz - size, u0, u0 + 1,
+                                cr, cg, cb, alpha, 0, 0, -1);
+                        quad(pose, consumer,
+                                cx - size, cy, cz + size, u0, u0,
+                                cx - size, cy + height, cz + size, u0, u0 + 1,
+                                cx + size, cy + height, cz + size, u0 + 1, u0 + 1,
+                                cx + size, cy, cz + size, u0 + 1, u0,
+                                cr, cg, cb, alpha, 0, 0, 1);
+                    });
         }
     }
 

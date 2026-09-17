@@ -11,6 +11,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.mcsm.extras.McsmAdams;
 import net.mcsm.extras.McsmCreatorRealm;
@@ -139,9 +140,36 @@ public final class McsmPaintedSky {
             final double top = cam.y + r * LID;
             final double bottom = cam.y - SKIRT;
             final float spin = (level.getGameTime() % 240000L) * sky.spin();
-            final int cr = clamp255(sky.r() * 255.0F);
-            final int cg = clamp255(sky.g() * 255.0F);
-            final int cb = clamp255(sky.b() * 255.0F);
+            // V2 - dynamic changing colours - time based hue shift for epic gradient
+            float time = (level.getGameTime() % 240000L) * 0.0005F;
+            float hueShift = (float)Math.sin(time * 0.3F) * 0.15F;
+            float pulse = 0.85F + 0.15F * (float)Math.sin(time * 0.7F);
+            float crF = Mth.clamp(sky.r() * pulse + hueShift, 0.1F, 1.0F);
+            float cgF = Mth.clamp(sky.g() * pulse + hueShift * 0.5F, 0.1F, 1.0F);
+            float cbF = Mth.clamp(sky.b() * pulse - hueShift * 0.2F, 0.1F, 1.0F);
+            // Add dimension-specific gradient shifts
+            try {
+                String dim = level.dimension().identifier().toString();
+                if (dim.contains("void")) {
+                    // void - purple/pink shifting to blue
+                    crF = 0.5F + 0.2F * (float)Math.sin(time * 0.4F);
+                    cgF = 0.25F + 0.15F * (float)Math.cos(time * 0.3F);
+                    cbF = 0.85F + 0.15F * (float)Math.sin(time * 0.5F);
+                } else if (dim.contains("sift")) {
+                    // sift - cyan/blue/pink
+                    crF = 0.4F + 0.2F * (float)Math.sin(time * 0.35F);
+                    cgF = 0.7F + 0.2F * (float)Math.cos(time * 0.45F);
+                    cbF = 0.95F;
+                } else if (dim.contains("adams")) {
+                    // adams - warm amber/purple
+                    crF = 0.9F + 0.1F * (float)Math.sin(time * 0.2F);
+                    cgF = 0.65F + 0.15F * (float)Math.cos(time * 0.25F);
+                    cbF = 0.45F + 0.2F * (float)Math.sin(time * 0.3F);
+                }
+            } catch (Throwable ignored) {}
+            final int cr = clamp255(crF * 255.0F);
+            final int cg = clamp255(cgF * 255.0F);
+            final int cb = clamp255(cbF * 255.0F);
 
             PoseStack poseStack = ctx.poseStack();
             SubmitNodeCollector collector = ctx.submitNodeCollector();

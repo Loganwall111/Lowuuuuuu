@@ -189,6 +189,70 @@ public final class McsmContent {
                     .requiresCorrectToolForDrops());
 
     // ---------------------------------------------------------------------
+    // V2 - 30 NEW VOID ECOSYSTEM BLOCKS (user request)
+    // ---------------------------------------------------------------------
+    public static final Block VOID_SPIRE = block("void_spire",
+            BlockBehaviour.Properties.of().strength(3.5F, 9.0F).sound(SoundType.STONE).lightLevel(s -> 5).requiresCorrectToolForDrops());
+    public static final Block VOID_SPIRE_CRYSTAL = block("void_spire_crystal",
+            BlockBehaviour.Properties.of().strength(2.0F).sound(SoundType.GLASS).lightLevel(s -> 12).noOcclusion());
+    public static final Block VOID_GEL = block("void_gel",
+            BlockBehaviour.Properties.of().strength(0.6F).sound(SoundType.SLIME_BLOCK).lightLevel(s -> 3).friction(0.8F));
+    public static final Block VOID_GEL_BLOOM = block("void_gel_bloom",
+            BlockBehaviour.Properties.of().strength(0.3F).sound(SoundType.GRASS).lightLevel(s -> 8).noOcclusion());
+    public static final Block RIFT_GLASS_VOID = block("rift_glass_void",
+            BlockBehaviour.Properties.of().strength(0.5F).sound(SoundType.GLASS).lightLevel(s -> 10).noOcclusion());
+    public static final Block FRACTURE_STONE = block("fracture_stone",
+            BlockBehaviour.Properties.of().strength(2.8F, 8.0F).sound(SoundType.STONE).requiresCorrectToolForDrops());
+    public static final Block FRACTURE_CRYSTAL = block("fracture_crystal",
+            BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.AMETHYST).lightLevel(s -> 11));
+    public static final Block ABYSSAL_SAND = block("abyssal_sand",
+            BlockBehaviour.Properties.of().strength(0.5F).sound(SoundType.SAND));
+    public static final Block LUMINOUS_FUNGUS = block("luminous_fungus",
+            BlockBehaviour.Properties.of().strength(0f).sound(SoundType.GRASS).lightLevel(s -> 12).noOcclusion());
+    public static final Block VOID_VINES = block("void_vines",
+            BlockBehaviour.Properties.of().strength(0.2F).sound(SoundType.VINE).lightLevel(s -> 2).noOcclusion());
+    public static final Block GEL_HORIZON_GRASS = block("gel_horizon_grass",
+            BlockBehaviour.Properties.of().strength(0.6F).sound(SoundType.GRASS).lightLevel(s -> 2));
+    public static final Block VOID_BLOSSOM_VOID = block("void_blossom_void",
+            BlockBehaviour.Properties.of().strength(0f).sound(SoundType.GRASS).lightLevel(s -> 10).noOcclusion());
+    public static final Block SPONGE_HEART = block("sponge_heart",
+            BlockBehaviour.Properties.of().strength(1.0F).sound(SoundType.SLIME_BLOCK).lightLevel(s -> 9));
+    public static final Block RIFT_BLOOM_VOID = block("rift_bloom_void",
+            BlockBehaviour.Properties.of().strength(0f).sound(SoundType.GRASS).lightLevel(s -> 13).noOcclusion());
+    public static final Block PRISMATIC_VOID_STONE = block("prismatic_void_stone",
+            BlockBehaviour.Properties.of().strength(2.0F, 9.0F).sound(SoundType.STONE).lightLevel(s -> 6).requiresCorrectToolForDrops());
+    public static final Block VOID_LANTERN = block("void_lantern",
+            BlockBehaviour.Properties.of().strength(1.0F).sound(SoundType.LANTERN).lightLevel(s -> 15));
+    public static final Block ECHO_GRASS = block("echo_grass",
+            BlockBehaviour.Properties.of().strength(0.6F).sound(SoundType.GRASS).lightLevel(s -> 3));
+    public static final Block VOID_ROOTS = block("void_roots",
+            BlockBehaviour.Properties.of().strength(0.3F).sound(SoundType.ROOTS).lightLevel(s -> 2).noOcclusion());
+    public static final Block ABYSSAL_CRYSTAL = block("abyssal_crystal",
+            BlockBehaviour.Properties.of().strength(1.2F).sound(SoundType.AMETHYST).lightLevel(s -> 14));
+    public static final Block GEL_CRYSTAL_VOID = block("gel_crystal_void",
+            BlockBehaviour.Properties.of().strength(0.9F).sound(SoundType.GLASS).lightLevel(s -> 13));
+    public static final Block VOID_MOSS = block("void_moss",
+            BlockBehaviour.Properties.of().strength(0.2F).sound(SoundType.MOSS).lightLevel(s -> 4).noOcclusion());
+    public static final Block RIFT_SOIL = block("rift_soil",
+            BlockBehaviour.Properties.of().strength(0.7F).sound(SoundType.SOUL_SOIL).lightLevel(s -> 2));
+    public static final Block FRACTURE_VINE = block("fracture_vine",
+            BlockBehaviour.Properties.of().strength(0.1F).sound(SoundType.VINE).lightLevel(s -> 5).noOcclusion());
+    public static final Block VOID_BERRY = block("void_berry_bush_void",
+            BlockBehaviour.Properties.of().strength(0.4F).sound(SoundType.SWEET_BERRY_BUSH).lightLevel(s -> 3));
+    public static final Block LUMINOUS_SPONGE = block("luminous_sponge",
+            BlockBehaviour.Properties.of().strength(0.8F).sound(SoundType.SLIME_BLOCK).lightLevel(s -> 8));
+    public static final Block VOID_CRYSTAL_BLOCK = block("void_crystal_block",
+            BlockBehaviour.Properties.of().strength(1.5F).sound(SoundType.AMETHYST).lightLevel(s -> 15).requiresCorrectToolForDrops());
+    public static final Block GEL_LANTERN_VOID = block("gel_lantern_void",
+            BlockBehaviour.Properties.of().strength(0.9F).sound(SoundType.LANTERN).lightLevel(s -> 15));
+    public static final Block RIFT_CRYSTAL = block("rift_crystal_void",
+            BlockBehaviour.Properties.of().strength(1.0F).sound(SoundType.AMETHYST).lightLevel(s -> 12));
+    public static final Block PRISMATIC_VOID_VINE = block("prismatic_void_vine",
+            BlockBehaviour.Properties.of().strength(0.1F).sound(SoundType.VINE).lightLevel(s -> 7).noOcclusion());
+    public static final Block VOID_SHROOM = block("void_shroom",
+            BlockBehaviour.Properties.of().strength(0f).sound(SoundType.FUNGUS).lightLevel(s -> 6).noOcclusion());
+
+    // ---------------------------------------------------------------------
     // Building set: THE INFINITE DIMENSION'S OWN MATERIAL (BUILD #458)
     // ---------------------------------------------------------------------
     // Same report, other side of it: adams was decayed stone bricks with city

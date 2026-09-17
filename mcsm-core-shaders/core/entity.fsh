@@ -94,6 +94,25 @@ void main() {
 #ifdef EMISSIVE
     if (mcsm_active(mcsmP)) {
         color.rgb = mcsm_mouth_emissive(color.rgb, mcsmP);
+        // V2 BLOOM - pink/blue bloom effect over wither storm per user
+        // Amplify emissive for bloom pass - makes teeth glow bluish purple pink and purple, eyes pink
+        float bloomBoost = 1.8 + 0.7 * sin(mcsm_clock(GameTime) * 0.5);
+        color.rgb *= bloomBoost;
+        // Add blue aura bloom - sides blue not purple per user
+        if (mcsmP >= 4.0) {
+            vec3 blueBloom = vec3(0.25, 0.45, 1.0) * 0.35;
+            vec3 pinkBloom = vec3(1.0, 0.35, 0.75) * 0.25;
+            color.rgb += blueBloom * (0.5 + 0.5 * sin(mcsm_clock(GameTime) * 0.8));
+            // teeth pink/purple glow
+            if (mcsmP >= 4.0 && mcsmP < 8.0) {
+                color.rgb += pinkBloom * 0.4;
+            }
+        }
+    } else {
+        // V2 extra bloom even when not mcsm_active for eye glow pink
+        if (color.r > 0.8 || color.b > 0.6) {
+            color.rgb *= 1.5; // eye pink bloom
+        }
     }
 #endif
 

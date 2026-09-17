@@ -35,33 +35,34 @@ public final class McsmTeethPhaseTint {
 
     /**
      * THE TEETH TRACK -- {red, green, blue, glowIntensity}, one row per band.
-     * Index 0 is the non-glowing show default below phase 4. Every other row is
-     * white: the teeth do NOT take the phase colour any more.
+     * V2 revamp per user: teeth should be pink/purple, bluish-purple, not white.
+     * User: "teeth should look pink and purple, bluish purple"
      */
     private static final float[][] PHASE_TRACK = {
         //  r      g      b      intensity
-        { 0.98F, 0.98F, 0.86F, 0.00F },  // phase 3-  no glowing teeth
-        { 1.00F, 1.00F, 1.00F, 3.60F },  // phase 4   white teeth
-        { 1.00F, 1.00F, 1.00F, 3.70F },  // phase 5   pure white, brightest
-        { 1.00F, 1.00F, 1.00F, 3.90F },  // phase 5.2 glowing white
-        { 1.00F, 1.00F, 1.00F, 4.20F },  // phase 6   white teeth
-        { 1.00F, 1.00F, 1.00F, 4.20F },  // phase 7   white teeth
-        { 1.00F, 1.00F, 1.00F, 4.30F },  // phase 8   pure white
+        { 0.98F, 0.82F, 0.96F, 0.00F },  // phase 3-  no glowing teeth - soft pink
+        { 1.00F, 0.45F, 0.85F, 4.20F },  // phase 4   pink teeth - bluish purple aura
+        { 1.00F, 0.35F, 0.90F, 4.50F },  // phase 5   hot pink teeth - brightest
+        { 0.85F, 0.40F, 1.00F, 4.80F },  // phase 5.2 purple-pink glowing
+        { 0.70F, 0.35F, 1.00F, 5.00F },  // phase 6   bluish-purple teeth
+        { 0.90F, 0.30F, 0.95F, 5.20F },  // phase 7   magenta-pink teeth
+        { 0.80F, 0.40F, 1.00F, 5.50F },  // phase 8   pink-purple final - epic
     };
 
     /**
      * THE AURA TRACK -- the colour AROUND the teeth, same row indexing.
-     *   bluish (4) / white (5.0) / bluish (5.2-5.9) / pure blue (6) /
-     *   toxic green (7) / blue (8)
+     * V2 revamp: sides should be BLUE not purple per user.
+     * User: "sides of it to have BL is currently a tint on it but it's purple I would like you to change it to blue"
+     * So aura = blue for all phases
      */
     private static final float[][] AURA_TRACK = {
-        { 0.55F, 0.80F, 1.00F },  // phase 3-  (no glow; row kept for indexing)
-        { 0.55F, 0.80F, 1.00F },  // phase 4   bluish aura
-        { 1.00F, 1.00F, 1.00F },  // phase 5   white aura
-        { 0.50F, 0.78F, 1.00F },  // phase 5.2 bluish aura around white teeth
-        { 0.22F, 0.42F, 1.00F },  // phase 6   pure blue aura
-        { 0.36F, 1.00F, 0.28F },  // phase 7   toxic green aura
-        { 0.35F, 0.58F, 1.00F },  // phase 8   blue aura
+        { 0.20F, 0.45F, 1.00F },  // phase 3-  blue
+        { 0.25F, 0.50F, 1.00F },  // phase 4   blue aura
+        { 0.30F, 0.55F, 1.00F },  // phase 5   bright blue
+        { 0.22F, 0.48F, 1.00F },  // phase 5.2 blue
+        { 0.18F, 0.42F, 1.00F },  // phase 6   pure blue
+        { 0.20F, 0.50F, 1.00F },  // phase 7   blue (was toxic green)
+        { 0.25F, 0.55F, 1.00F },  // phase 8   blue
     };
 
     /**
@@ -115,27 +116,17 @@ public final class McsmTeethPhaseTint {
     public static final int PUPIL_B = 255;
 
     /**
-     * THE EYE TRACK -- the glow on the eye lenses and their bloom layers.
-     *
-     * This is the "purple" the reference frames show at the eyes: a magenta
-     * pupil with a violet lens glow under the white crescents. It is a SEPARATE
-     * track from the teeth on purpose -- BUILD #416 fix. The base renderer
-     * derives the eye tint from the beam colour (purple #8C26FF, bluish through
-     * phase 6) and lifts it to full brightness, which is what the show does;
-     * our exact-tint mixin was collapsing it onto the teeth colour instead, so
-     * the eyes had gone white and lost their glow.
-     *
-     * Rows: 4 violet / 5 pale violet / 5.2 magenta / 6 bluish violet /
-     * 7 magenta / 8 blue violet.
+     * THE EYE TRACK -- V2 revamp: eyes should be PINK per user.
+     * User: "eyes should be pink" + bloom effect
      */
     private static final float[][] EYE_TRACK = {
-        { 0.55F, 0.80F, 1.00F },  // phase 3-  (no glow; row kept for indexing)
-        { 0.62F, 0.42F, 1.00F },  // phase 4   violet
-        { 0.86F, 0.72F, 1.00F },  // phase 5   pale violet
-        { 0.84F, 0.24F, 1.00F },  // phase 5.2 magenta
-        { 0.48F, 0.42F, 1.00F },  // phase 6   bluish violet (beam is bluish here)
-        { 0.86F, 0.26F, 1.00F },  // phase 7   magenta (the frames keep it magenta)
-        { 0.36F, 0.52F, 1.00F },  // phase 8   blue violet
+        { 1.00F, 0.40F, 0.70F },  // phase 3-  pink
+        { 1.00F, 0.35F, 0.75F },  // phase 4   pink
+        { 1.00F, 0.30F, 0.80F },  // phase 5   hot pink
+        { 1.00F, 0.25F, 0.85F },  // phase 5.2 magenta-pink
+        { 1.00F, 0.35F, 0.78F },  // phase 6   pink-purple
+        { 1.00F, 0.30F, 0.82F },  // phase 7   pink
+        { 1.00F, 0.40F, 0.75F },  // phase 8   soft pink final
     };
 
     /** The eye glow right now, cross-faded on the aura's own boundaries. */
@@ -295,23 +286,16 @@ public final class McsmTeethPhaseTint {
             // (#8C26FF) everywhere, bluish through phase 6 only. The lower
             // auxiliary spotlight emitters are separated out in
             // StormImpactLights as cosmic blue #4D4DFF.
-            if (phase >= 6.0F && phase < 7.0F) {
-                DabyWSClientConfig.beamColorR = 0.30F;
-                DabyWSClientConfig.beamColorG = 0.42F;
-                DabyWSClientConfig.beamColorB = 1.00F;
-            } else {
-                DabyWSClientConfig.beamColorR = 0.55F;
-                DabyWSClientConfig.beamColorG = 0.15F;
+            // V2 revamp: sides blue per user, not purple
+            if (true) {
+                DabyWSClientConfig.beamColorR = 0.20F;
+                DabyWSClientConfig.beamColorG = 0.45F;
                 DabyWSClientConfig.beamColorB = 1.00F;
             }
-            if (phase >= 5.0F) {
-                // The native head renderer owns both eye lenses and the teeth
-                // overlay. Keep both emissive submissions alive for the
-                // phase-5 model even when a migrated config carried an old
-                // zero glow setting; the render type is full-bright and bloom
-                // remains fail-soft in the base renderer.
+            if (phase >= 4.0F) {
+                // V2 bloom effect over wither storm per user
                 DabyWSClientConfig.headEyeGlow = true;
-                DabyWSClientConfig.glowStrength = Math.max(DabyWSClientConfig.glowStrength, 2.5); // #404
+                DabyWSClientConfig.glowStrength = Math.max(DabyWSClientConfig.glowStrength, 4.5F); // bloom epic
             }
 
         } catch (Throwable ignored) {

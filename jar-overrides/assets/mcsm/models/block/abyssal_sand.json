@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/abyssal_sand",
+    "east": "mcsm:block/abyssal_sand",
+    "north": "mcsm:block/abyssal_sand",
+    "particle": "mcsm:block/abyssal_sand",
+    "south": "mcsm:block/abyssal_sand",
+    "up": "mcsm:block/abyssal_sand",
+    "west": "mcsm:block/abyssal_sand"
+  }
+}

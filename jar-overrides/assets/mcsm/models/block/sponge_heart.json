@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/sponge_heart",
+    "east": "mcsm:block/sponge_heart",
+    "north": "mcsm:block/sponge_heart",
+    "particle": "mcsm:block/sponge_heart",
+    "south": "mcsm:block/sponge_heart",
+    "up": "mcsm:block/sponge_heart",
+    "west": "mcsm:block/sponge_heart"
+  }
+}
