@@ -2881,6 +2881,21 @@ def main():
     check("the giants stand on the ground at any scale (the 24-unit shift)",
           "private static final float GROUND = 24.0F;" in models
           and "float g = GROUND - (bodyH + legH) * s;" in models)
+    check("the humanoid hat slot carries a cube, so 26.2 does not drop it and black-screen the menu",
+          # the user's 7000.0.0-M log, word for word:
+          #   Caught error loading resourcepacks, removing all selected resourcepacks
+          #   Failed to create model for mcsm:whale_monster
+          #   NoSuchElementException: Can't find part hat
+          #   at McsmMobModels$VoidLurkerModel.<init>
+          #   at McsmMobRenderers$WhaleRenderer.<init>
+          # Vanilla catches that, dumps the reload, and leaves the title screen
+          # with live buttons on a black framebuffer. The hat slot used to be
+          # CubeListBuilder.create() with no cubes; 26.2's bake drops those parts.
+          'box(root, "hat"' in models
+          and 'empty(root, "hat"' not in models
+          and "CubeListBuilder.create()," not in models.split("static PartDefinition empty")[1].split("static PartDefinition humanoid")[0]
+          and "getChild(\"hat\")" in models
+          and "Can't find part" in models)
     check("each body is animated in its own right",
           "public static final float S = 6.0F;" in models
           and "public static final float S = 2.4F;" in models

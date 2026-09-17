@@ -1,3 +1,29 @@
+# 7000.0.0-M (build #477) — the black screen was the whale: `Can't find part hat`
+
+The player's own log named it. After the Mojang logo, while "loading a resource pack":
+
+    Caught error loading resourcepacks, removing all selected resourcepacks
+    Failed to create model for mcsm:whale_monster
+    java.util.NoSuchElementException: Can't find part hat
+        at HumanoidModel.<init>
+        at McsmMobModels$VoidLurkerModel.<init> (McsmMobModels.java:258)
+        at McsmMobRenderers$WhaleRenderer.<init> (McsmMobRenderers.java:178)
+
+Vanilla catches that, dumps the entire resource reload, and leaves the title screen
+half-built: the buttons are live (clicks and sounds still work) and the framebuffer
+is black. That is the screenshot.
+
+Cause: every custom humanoid mesh (`humanoid()`) reserved the `hat` slot with
+`CubeListBuilder.create()` and no cubes. 26.2's ModelPart bake drops cube-less
+parts, then `HumanoidModel` unconditionally `getChild("hat")`. The whale reuses
+the lurker mesh, so it was the first body to explode, and one exploding body is
+enough -- `EntityRenderers.createEntityRenderers` is all-or-nothing.
+
+Fix: the hat slot is a 1x1 cube fully inside the head (invisible, bake-surviving).
+`empty()` -- the helper that produced the footgun -- now does the same, so a
+future required slot cannot go cube-less again. Gate: the hat is a `box(...)`,
+never `empty(root, "hat"`.
+
 # 7000.0.0-M (build #476) — the black screen actually ends: the "disable" that lied is fixed
 
 The standing report ("the Mojang logo loads ... and then just completely black", and the whole

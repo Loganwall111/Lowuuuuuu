@@ -86,11 +86,14 @@ public final class McsmMobModels {
         return parent.addOrReplaceChild(name, builder, PartPose.offset(px * s, py * s, pz * s));
     }
 
-    /** An empty part, for the slots the humanoid skeleton expects to find. */
+    /**
+     * A required humanoid slot that should not be visible. 26.2's ModelPart bake
+     * DROPS parts that own no cubes, and {@code HumanoidModel} then dies on
+     * {@code getChild("hat")} -- so this is a 1x1 cube, never an empty list.
+     */
     static PartDefinition empty(PartDefinition parent, String name, float s,
             float px, float py, float pz) {
-        return parent.addOrReplaceChild(name, CubeListBuilder.create(),
-                PartPose.offset(px * s, py * s, pz * s));
+        return box(parent, name, 0, 0, s, px, py, pz, -0.5F, -0.5F, -0.5F, 1.0F, 1.0F, 1.0F);
     }
 
     /**
@@ -111,7 +114,17 @@ public final class McsmMobModels {
         float hw = headW / 2.0F;
         box(root, "head", 0, 0, s, 0.0F, g, 0.0F,
                 -hw, -headH, -headD / 2.0F, headW, headH, headD);
-        empty(root, "hat", s, 0.0F, g, 0.0F);
+        // THE HAT SLOT MUST CARRY A CUBE. 26.2's ModelPart bake drops parts that
+        // own no cubes, while HumanoidModel's constructor unconditionally does
+        // root.getChild("hat") -- so an EMPTY slot is `Can't find part hat` at
+        // the very first resource reload (`Failed to create model for
+        // mcsm:whale_monster`), which kills the whole reload (`Caught error
+        // loading resourcepacks, removing all selected resourcepacks`) and leaves
+        // the client on a black screen whose buttons are still live underneath.
+        // A 1x1 cube kept fully inside the head (>= 2.5 units of margin at the
+        // smallest head, 8x8x8) on the head's own UV survives the bake and
+        // renders as nothing.
+        box(root, "hat", 0, 0, s, 0.0F, g, 0.0F, -0.5F, -1.5F, -0.5F, 1.0F, 1.0F, 1.0F);
         float bw = bodyW / 2.0F;
         box(root, "body", 16, 16, s, 0.0F, g, 0.0F,
                 -bw, 0.0F, -bodyD / 2.0F, bodyW, bodyH, bodyD);
