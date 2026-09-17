@@ -1,3 +1,32 @@
+# 7000.0.0-M (build #476) — the black screen actually ends: the "disable" that lied is fixed
+
+The standing report ("the Mojang logo loads ... and then just completely black", and the whole
+screen going black when playing a world) had a root cause the interface check could see but
+could not act on honestly:
+
+- **The disable was a rename, and the rename exposed the base jar's own program.** Every core
+  shader the build disabled for an interface mismatch was only renamed
+  (`position.fsh` -> `position.fsh.disabled`). The assembled tree is the **base mod jar**,
+  and the base jar carries its own stale generation of these same overrides — so the rename
+  surfaced the base jar's `position.fsh/vsh` (the terrain-shaped program that samples a
+  `Sampler0` the game never binds and reads a `vertexColor` the vertex format never supplies:
+  unbound sampler reads black, unsupplied attribute reads zero, no error anywhere) and the
+  zip shipped THAT, while the log claimed "the game's own position.fsh is used instead".
+  Every build since #472 (including #473/#474/#475) shipped that stale program. The
+  `position` program underlies the 26.2 GUI/menu rendering and a host of world passes —
+  which is why the frame is black while the logo and world are still "loading".
+- **`ci/check_shader_overrides.py --strip` now REPLACES the offending file with the game's
+  own bytes, read from the client jar (byte for byte).** It never renames. A shipped
+  program is either the game's own or interface-matching — there is no third option left.
+- **New final gate before the zip: the tree that ships is re-checked WITHOUT `--strip`.**
+  The build fails if the client jar's own core programs could not be read (a check against
+  an empty reference proves nothing and must never be claimed as clean) or if any HARD
+  interface mismatch remains in the shipped tree, from whatever source it came — overlay,
+  base jar, or pack. The verdict is published as `ci-out/run-*/SHADER_VERIFY.txt`.
+- Gate: 495/495 checkpoints (was 487), including a synthetic test that proves the strip pass
+  writes the game's own bytes (and leaves no `.disabled` corpse) and a checkpoint that the
+  verification pass exists, is unblind, and runs before the jar is written.
+
 # 7000.0.0-M — Build #416: the dome is gone, the sky actually fades, one traced palette everywhere
 
 This build deletes the "sky with a top on it" and replaces it with a sky that is

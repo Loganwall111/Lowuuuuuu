@@ -62,8 +62,15 @@ Modes
                                program in --assembled (the interface to author against)
     --assembled DIR [--strip]  check a BUILT tree (assets/minecraft/shaders/core, or a
                                pack's copy of it); with --strip a mismatching file is
-                               renamed to `<name>.disabled` so the game's own shader is
-                               used instead. This is the mode ci/build.sh runs, which is
+                               REPLACED with the game's own copy read from the client
+                               jar (byte for byte). It is never merely renamed: the tree
+                               this runs on is the base MOD jar, and the base jar
+                               carries its own stale generation of these same overrides
+                               -- a rename exposes whatever the base ships underneath
+                               and then ships THAT (builds #472-#475 shipped the base
+                               jar's terrain-shaped position program this way, with the
+                               log still claiming "the game's own position.fsh is used
+                               instead"). This is the mode ci/build.sh runs, which is
                                why a black-shader jar cannot leave this repo again.
 
 Anything this tool cannot parse is reported as "unverifiable" and KEPT: it strips on
@@ -331,9 +338,21 @@ def check_dir(core_dir, theirs, strip, label, log):
             log.append("[shader]     %s" % line)
         if strip:
             try:
-                os.replace(path, path + ".disabled")
-                log.append("[shader]     DISABLED: the game's own %s is used instead "
-                           "(a normal-looking game, not a black one)" % name)
+                # REPLACE, never rename. This runs on the base mod jar's tree, and
+                # the base jar carries its own stale generation of these same
+                # overrides: renaming our file to <name>.disabled exposes whatever
+                # the base ships underneath, and THAT is what the zip would carry
+                # (run 589's own evidence: a terrain-shaped position program
+                # sampling a sampler the game never binds and reading an attribute
+                # the vertex format never supplies -- black, no error). The game's
+                # own bytes are already in memory from the client jar, so write
+                # them down: the shipped program is byte-for-byte the game's own.
+                with open(path, "w", encoding="utf-8") as fh:
+                    fh.write(game)
+                log.append("[shader]     DISABLED: replaced with the game's own %s "
+                           "read from the client jar (renaming alone would have "
+                           "shipped the stale program the base jar carries beneath)"
+                           % name)
             except OSError as exc:
                 log.append("[shader]     could not disable it: %s" % exc)
     return checked, hard_count, soft_count, unknown

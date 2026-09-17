@@ -2011,8 +2011,62 @@ printf '%s\n' "$SHADER_CHECK" >> "$VANILLA_OUT" 2>/dev/null || true
 evidence_put "$SHADER_REPORT" SHADER_CHECK.txt
 evidence_put "$SHADER_IFACE" SHADER_INTERFACE.txt
 if printf '%s\n' "$SHADER_CHECK" | grep -q "MISMATCH"; then
-  echo "::warning title=shaders::a replaced core shader did not match this build's own interface and was DISABLED in the jar -- the game's shader is used instead (see ci-out/run-*/SHADER_CHECK.txt)"
+  echo "::warning title=shaders::a replaced core shader did not match this build's own interface and was DISABLED in the jar -- the game's own copy from the client jar is in its place instead (see ci-out/run-*/SHADER_CHECK.txt)"
 fi
+
+# ---------------------------------------------------------------------------
+# BUILD #476 -- THE SHIPPED TREE IS THE GATE, NOT THE FIRST PASS.
+#
+# The strip pass above is only as good as its write-back. It was not, in
+# builds #472-#475: it renamed the mismatching file, which exposed whatever
+# the base mod jar shipped underneath (its own stale terrain-shaped position
+# program) and the zip carried THAT -- while the log claimed "the game's own
+# position.fsh is used instead". A first pass cannot prove what survives it:
+# the file a rename exposes is never re-checked in the same run.
+#
+# So the tree that is about to be zipped is checked a second time, without
+# --strip, and the build dies if
+#   * the client jar's own core programs could not be read (a check against
+#     an empty reference proves nothing and must never be claimed as clean),
+#     or
+#   * ANY hard interface mismatch remains in the shipped tree, from whatever
+#     source it came -- the overlay, the base jar, or a pack.
+# A jar that ships an interface-broken core program is the black screen:
+# unbound samplers read black, unsupplied attributes read zero, and there is
+# no error line to explain why the whole frame is gone.
+# ---------------------------------------------------------------------------
+echo "[shader] verification pass: the tree that gets zipped, re-checked without --strip"
+SHADER_VERIFY="$(python3 ci/check_shader_overrides.py --jar "$DL/client.jar" \
+  --assembled "$FX/cls/assets/minecraft/shaders/core" 2>&1)" || VERIFY_RC=$?
+VERIFY_RC="${VERIFY_RC:-0}"
+printf '%s\n' "$SHADER_VERIFY" | sed -n '1,40p'
+{
+  echo "Devouring Storms ${JAR_ID} -- shipped core tree re-checked WITHOUT --strip (the gate)"
+  echo "jar:    $DL/client.jar"
+  echo "tree:   $FX/cls/assets/minecraft/shaders/core"
+  echo
+  printf '%s\n' "$SHADER_VERIFY"
+} > /tmp/mcsm-shader-verify.txt
+evidence_put /tmp/mcsm-shader-verify.txt SHADER_VERIFY.txt
+if printf '%s\n' "$SHADER_VERIFY" | grep -q "no client jar"; then
+  echo "::error title=shaders::the client jar's own core programs could not be read -- the interface check is blind and a black-shader jar could ship"
+  exit 1
+fi
+N_GAME_PROGRAMS="$(printf '%s\n' "$SHADER_VERIFY" | grep -oE 'core programs: [0-9]+ read' | grep -oE '[0-9]+' | head -1)"
+if [ "${N_GAME_PROGRAMS:-0}" -lt 1 ]; then
+  echo "::error title=shaders::no core programs read from the client jar -- the verification pass is blind and cannot claim the tree is clean"
+  exit 1
+fi
+if [ "$VERIFY_RC" -ne 0 ] || printf '%s\n' "$SHADER_VERIFY" | grep -q "MISMATCH"; then
+  echo "::error title=shaders::a HARD interface mismatch SURVIVED in the tree that gets zipped (stale base-jar program or broken overlay) -- this is the black screen, refusing to publish"
+  printf '%s\n' "$SHADER_VERIFY" | grep -E "MISMATCH|sampler|block " | head -20
+  exit 1
+fi
+echo "::notice title=shaders::shipped core tree verified against the client jar (${N_GAME_PROGRAMS} own programs): every core program in the jar is the game's own or interface-matching -- no black-screen program can ship"
+# dead weight from any stale disable path (a .disabled corpse of a program the
+# jar replaced): the game ignores it, but a 68 MB jar should not carry it
+find "$FX/cls/assets/minecraft/shaders" -name '*.disabled' -delete 2>/dev/null || true
+stage shader-verify-ok
 
 OUT="out/devouringstorms-${JAR_ID}.jar"
 rm -f "$OUT"

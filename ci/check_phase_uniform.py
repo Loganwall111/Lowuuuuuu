@@ -3530,11 +3530,37 @@ def main():
         extra_float_ok = (not _hard(_base + "\nuniform float MCSM_GLOW_WHITE;")
                           and bool(_soft(_base + "\nuniform float MCSM_GLOW_WHITE;")))
         missing_input_ok = not _hard(_base.replace("layout(location = 2) in vec2 UV0;\n", ""))
+
+        # BUILD #476 -- the strip pass must REPLACE a mismatching file with the
+        # game's own bytes (already read from the client jar), never rename it.
+        # This runs on the base MOD jar's tree, and the base jar carries its own
+        # stale generation of these same overrides: a rename exposes whatever the
+        # base ships underneath, and the zip carries THAT -- builds #472-#475
+        # shipped the base jar's terrain-shaped position program exactly this
+        # way (unbound sampler reads black, no error) while the log claimed the
+        # game's own file was in its place. Exercise check_dir on a synthetic
+        # tree and require byte-for-byte replacement, no .disabled corpse.
+        import shutil as _shutil
+        import tempfile as _tempfile
+        _tmpd = _tempfile.mkdtemp(prefix="mcsm-strip-")
+        try:
+            with open(os.path.join(_tmpd, "position.fsh"), "w") as _f:
+                _f.write("#version 330\nuniform sampler2D Sampler0;\nvoid main() {}\n")
+            _c, _h, _s, _u = _sh.check_dir(_tmpd,
+                                           {"position.fsh": "GAME_OWN_BYTES\n"},
+                                           True, "synthetic", [])
+            with open(os.path.join(_tmpd, "position.fsh")) as _f:
+                _after = _f.read()
+            strip_replaces = (_h == 1 and _after == "GAME_OWN_BYTES\n"
+                              and not os.path.exists(os.path.join(_tmpd, "position.fsh.disabled")))
+        finally:
+            _shutil.rmtree(_tmpd, ignore_errors=True)
     except Exception as _exc:
         body_free = parse_ok = False
         reorder_caught = member_caught = invented_block = retyped_uniform = False
         unbound_sampler = shifted_location = ghost_attribute = False
         extra_out_ok = extra_float_ok = missing_input_ok = dump_ok = False
+        strip_replaces = False
         print("  note  shader tool self-test could not run: %s" % _exc)
 
     check("and a replaced core shader may change the body, never the interface",
@@ -3557,8 +3583,15 @@ def main():
           and "the interface dump could not be written" in shader_tool
           and "comparison below is unaffected" in shader_tool)
 
+    check("and disabling one means the game's own bytes ship, never a rename that exposes the base jar's stale program",
+          strip_replaces
+          and "REPLACE, never rename" in shader_tool
+          and "fh.write(game)" in shader_tool
+          and "os.replace(path, path + \".disabled\")" not in shader_tool
+          and "stale program the base jar carries beneath" in shader_tool)
+
     check("and the build weighs every replaced core shader against the game's own copy",
-          bsh.count("ci/check_shader_overrides.py --jar") == 2
+          bsh.count("ci/check_shader_overrides.py --jar") == 3
           and 'resourcepacks/storylook/assets/minecraft/shaders/core" --strip' in bsh
           and '"$FX/cls/assets/minecraft/shaders/core" --strip' in bsh
           # the verdict is evidence, and a disabled shader is announced, not silent
@@ -3569,6 +3602,22 @@ def main():
           and '--dump-out "$SHADER_IFACE"' in bsh
           # and the jar's own pass runs BEFORE the jar is written, so nothing can undo it
           and bsh.index('"$FX/cls/assets/minecraft/shaders/core" --strip')
+          < bsh.index('OUT="out/devouringstorms-${JAR_ID}.jar"'))
+
+    check("and the tree that ships is checked a second time, without --strip, and the build dies if a black-screen program survives it",
+          # the verification pass re-runs the checker on the assembled core dir
+          # WITHOUT --strip, on the tree that is about to be zipped
+          'SHADER_VERIFY="$(python3 ci/check_shader_overrides.py --jar "$DL/client.jar" \\' in bsh
+          and '--assembled "$FX/cls/assets/minecraft/shaders/core" 2>&1)" || VERIFY_RC=$?' in bsh
+          # a blind check proves nothing: no client jar read, or zero programs
+          # read, is a hard stop, not a clean bill of health
+          and "the client jar's own core programs could not be read" in bsh
+          and "the verification pass is blind and cannot claim the tree is clean" in bsh
+          # a HARD mismatch in the shipped tree is the black screen itself
+          and "a HARD interface mismatch SURVIVED in the tree that gets zipped" in bsh
+          # and the gate is evidence too, and runs before the jar is written
+          and "evidence_put /tmp/mcsm-shader-verify.txt SHADER_VERIFY.txt" in bsh
+          and bsh.index("SHADER_VERIFY=\"$(python3")
           < bsh.index('OUT="out/devouringstorms-${JAR_ID}.jar"'))
 
     # ------------------------------------------------------------------
