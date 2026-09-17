@@ -13,7 +13,7 @@ import java.util.Properties;
  * animation controller, nightglow halo expansion, and sci-fi UI parameters.
  */
 public final class McsmExtrasConfig {
-    public static final String BUILD_VERSION = "7000.0.1-M";
+    public static final String BUILD_VERSION = "7000.0.2-M";
 
     // ---- Core Gameplay & Storm Mechanics -----------------------------------
     public static boolean enableTentacleGrab = true;
@@ -849,7 +849,7 @@ public final class McsmExtrasConfig {
         try { return Double.parseDouble(p.getProperty(k).trim()); } catch (Throwable t) { return d; }
     }
 
-    // ---- re-added on migration from the 7000.0.1-M lineage -----------------
+    // ---- re-added on migration from the 7000.0.2-M lineage -----------------
     // Their config file is the superset (the 1.9.19x option set: cinematic UI,
     // skybox, glare backdrop, nightglow, animation controller, colour
     // overrides). These eight belong to our lineage's own code and were
