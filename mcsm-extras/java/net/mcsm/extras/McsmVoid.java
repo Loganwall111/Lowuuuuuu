@@ -245,7 +245,9 @@ public final class McsmVoid {
             if (rng.nextInt(3) != 0) {
                 return;
             }
-            AABB box = player.getBoundingBox().inflate(220.0D);
+            // BUILD #483b -- run 609's one error: this file imports what it needs one
+            // name at a time, so the type has to be spelled out in full here.
+            net.minecraft.world.phys.AABB box = player.getBoundingBox().inflate(220.0D);
             if (level.getEntitiesOfClass(net.mcsm.extras.entity.McsmBeast.class, box).size() >= 2) {
                 return;
             }
