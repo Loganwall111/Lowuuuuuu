@@ -15,13 +15,15 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 
 ## Phase 2 — the empty abyss (implemented as a prototype)
 
-- [x] Air-only dimension generator with no terrain layers or features.
+- [x] Sparse custom-block floor generator using Siftstone and Sift Moss with vanilla features disabled.
+- [x] Deterministic floating terrain shelves using the Sift block palette.
 - [x] Registered visual rift entity with no collision, damage, or fluid push.
 - [x] Procedural camera-facing rift renderer.
 - [x] Wavy interior displacement, particle stars, and colored emissive rim.
 - [x] Add an atmospheric pressure haze and animated filament veil around each rift.
-- [x] Add a distant visual abyss floor without introducing blocks or collision.
+- [x] Add a distant visual abyss floor above the generated custom-block floor.
 - [x] Add the first free-flying ambient Sift Drifter mob with procedural rendering.
+- [x] Register the first custom terrain palette: Siftstone, Sift Moss, and Rift Crystal.
 - [x] Replace random proximity placement with a deterministic twelve-slot rift formation prototype.
 - [ ] Add authored encounter choreography around the formation.
 - [ ] Add a real screen-space capture/refraction target if the final rendering backend requires it.

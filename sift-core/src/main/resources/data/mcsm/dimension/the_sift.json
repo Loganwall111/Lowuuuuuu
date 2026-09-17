@@ -3,7 +3,10 @@
   "generator": {
     "type": "minecraft:flat",
     "settings": {
-      "layers": [],
+      "layers": [
+        { "height": 4, "block": "mcsm:siftstone" },
+        { "height": 1, "block": "mcsm:sift_moss" }
+      ],
       "biome": "minecraft:the_void",
       "lakes": false,
       "features": false,

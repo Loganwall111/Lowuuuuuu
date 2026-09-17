@@ -1,10 +1,12 @@
 package dev.siftcore;
 
+import dev.siftcore.block.SiftBlocks;
 import dev.siftcore.command.SiftCommands;
 import dev.siftcore.mob.SiftDrifterEntity;
 import dev.siftcore.mob.SiftDrifterSpawner;
 import dev.siftcore.physics.SiftCurrentPhysics;
 import dev.siftcore.rift.SiftRiftEntity;
+import dev.siftcore.terrain.SiftTerrainSpawner;
 import dev.siftcore.rift.SiftRiftSpawner;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -59,10 +61,12 @@ public final class SiftCore implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        SiftBlocks.register();
         FabricDefaultAttributeRegistry.register(SIFT_DRIFTER, SiftDrifterEntity.createAttributes());
         SiftCommands.register();
         ServerTickEvents.END_WORLD_TICK.register(SiftRiftSpawner::tick);
         ServerTickEvents.END_WORLD_TICK.register(SiftDrifterSpawner::tick);
+        ServerTickEvents.END_WORLD_TICK.register(SiftTerrainSpawner::tick);
         ServerTickEvents.END_WORLD_TICK.register(SiftCurrentPhysics::tick);
         LOGGER.info("Sift-Core {} initialized; The Sift handshake is armed", VERSION);
     }

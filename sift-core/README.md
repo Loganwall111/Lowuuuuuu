@@ -23,7 +23,8 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 
 ### Phase 2 — rifts and cosmic window
 
-- The dimension is an air-only flat generator: `layers: []`, `features: false`, and the `minecraft:the_void` biome.
+- The dimension uses a sparse flat generator with custom `mcsm:siftstone` and `mcsm:sift_moss` floor layers, `features: false`, and the `minecraft:the_void` biome.
+- `SiftTerrainSpawner` adds deterministic floating shelves made from Siftstone, Sift Moss, and Rift Crystal as the player falls. The open routes between shelves preserve the original free-fall character.
 - `SiftRiftEntity` is a non-collidable, non-attackable visual entity. A small server spawner keeps an authored, deterministic twelve-slot formation around players; the pattern changes only after the formation cycle ages out.
 - `SiftRiftRenderer` draws a camera-facing procedural portal using `rift.fsh`. The fragment pass contains layered wave displacement, a cosmic interior, star points, an emissive broken rim, and two atmospheric envelope passes: a low-pressure haze plus animated colored filaments that bleed beyond the aperture.
 - `/sift status` reports dimension, position, velocity, and all preserved rotations so the fall handshake can be verified without guessing from the camera.
@@ -31,7 +32,7 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 
 ### Phase 3 — fluid pass
 
-- `SiftGroundRenderer` adds a distant procedural abyss floor at the configured bottom of The Sift. It is visual shader geometry only; the dimension remains blockless and players can fall through it.
+- `SiftGroundRenderer` adds a distant procedural abyss floor above the generated custom-block floor. It is visual shader geometry only, while the actual terrain remains sparse enough for players to fall through the open route.
 - `SiftFluidRenderer` adds purely visual, collision-free horizontal fluid sheets around the player. No fluid blocks are registered, so a player can fall through every layer.
 - `final.fsh` supplies animated refraction, teal/amethyst/magenta iridescence, flowing caustic bands, liquid glints, and proximity-based white intersection foam. Its flow direction is driven by the same deterministic field used by server-side current physics. The current foam is a screen-space approximation; a later pass can feed a real depth/normal buffer when a post-processing backend is selected.
 

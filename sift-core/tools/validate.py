@@ -69,7 +69,7 @@ def compile_shader(path: Path, stage: str) -> None:
         error(f"GLSL {stage} failed for {path.relative_to(ROOT)}:\n{result.stdout.rstrip()}")
 
 
-def check_png(relative: str) -> None:
+def check_png(relative: str, minimum_size: int = 1) -> None:
     path = ROOT / relative
     check_file(relative)
     if not path.is_file():
@@ -80,8 +80,8 @@ def check_png(relative: str) -> None:
         return
     width = int.from_bytes(header[16:20], "big")
     height = int.from_bytes(header[20:24], "big")
-    if width < 64 or height < 64:
-        error(f"icon is too small ({width}x{height}): {relative}")
+    if width < minimum_size or height < minimum_size:
+        error(f"PNG is too small ({width}x{height}): {relative}")
 
 
 def main() -> int:
@@ -99,6 +99,7 @@ def main() -> int:
         "src/main/resources/data/mcsm/dimension/the_sift.json",
         "src/main/resources/data/mcsm/dimension_type/the_sift.json",
         "src/main/java/dev/siftcore/SiftCore.java",
+        "src/main/java/dev/siftcore/block/SiftBlocks.java",
         "src/main/java/dev/siftcore/transfer/SiftTransfer.java",
         "src/main/java/dev/siftcore/mixin/EntityMixin.java",
         "src/main/java/dev/siftcore/physics/SiftFluidField.java",
@@ -109,6 +110,7 @@ def main() -> int:
         "src/main/java/dev/siftcore/mob/SiftDrifterSpawner.java",
         "src/main/java/dev/siftcore/mob/SiftDrifterRenderer.java",
         "src/main/java/dev/siftcore/client/SiftGroundRenderer.java",
+        "src/main/java/dev/siftcore/terrain/SiftTerrainSpawner.java",
     ):
         check_file(relative)
 
@@ -146,10 +148,15 @@ def main() -> int:
         settings = generator.get("settings", {})
         if generator.get("type") != "minecraft:flat":
             error("The Sift must use the vanilla flat generator for deterministic air chunks")
-        if settings.get("layers") != []:
-            error("The Sift generator must have an empty layers list")
+        layers = settings.get("layers", [])
+        if not layers:
+            error("The Sift generator must provide a custom Sift floor layer")
+        layer_blocks = {layer.get("block") for layer in layers if isinstance(layer, dict)}
+        for block in ("mcsm:siftstone", "mcsm:sift_moss"):
+            if block not in layer_blocks:
+                error(f"The Sift generator must include the custom block {block}")
         if settings.get("features") is not False:
-            error("The Sift generator must disable features")
+            error("The Sift generator must disable unplanned vanilla features")
 
     dimension_type = load_json("src/main/resources/data/mcsm/dimension_type/the_sift.json")
     if dimension_type:
@@ -169,7 +176,12 @@ def main() -> int:
             for class_name in config.get("mixins", []) + config.get("client", []):
                 check_file("src/main/java/" + package.replace(".", "/") + "/" + class_name + ".java")
 
-    check_png("src/main/resources/assets/mcsm/icon.png")
+    check_png("src/main/resources/assets/mcsm/icon.png", minimum_size=64)
+    for block_name in ("siftstone", "sift_moss", "rift_crystal"):
+        check_file(f"src/main/resources/assets/mcsm/blockstates/{block_name}.json")
+        check_file(f"src/main/resources/assets/mcsm/models/block/{block_name}.json")
+        check_file(f"src/main/resources/assets/mcsm/models/item/{block_name}.json")
+        check_png(f"src/main/resources/assets/mcsm/textures/block/{block_name}.png", minimum_size=16)
     for stem in ("sky", "rift", "final", "ground", "drifter"):
         program = load_json(f"src/main/resources/assets/mcsm/shaders/core/{stem}.json")
         if program:

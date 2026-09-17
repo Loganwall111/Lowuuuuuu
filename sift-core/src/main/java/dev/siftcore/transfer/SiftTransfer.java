@@ -3,6 +3,7 @@ package dev.siftcore.transfer;
 import dev.siftcore.SiftDimensions;
 import dev.siftcore.mob.SiftDrifterSpawner;
 import dev.siftcore.rift.SiftRiftSpawner;
+import dev.siftcore.terrain.SiftTerrainSpawner;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -120,6 +121,7 @@ public final class SiftTransfer {
         // participate in the handshake or add a collision surface.
         SiftRiftSpawner.spawnWelcomeRifts(target);
         SiftDrifterSpawner.spawnWelcomeDrifters(target);
+        SiftTerrainSpawner.generateWelcomeShelf(target);
         return true;
     }
 

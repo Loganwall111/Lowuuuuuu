@@ -1,5 +1,11 @@
 {
   "dimension.mcsm.the_sift": "The Sift",
   "entity.mcsm.sift_rift": "Sift Rift",
-  "entity.mcsm.sift_drifter": "Sift Drifter"
+  "entity.mcsm.sift_drifter": "Sift Drifter",
+  "block.mcsm.siftstone": "Siftstone",
+  "block.mcsm.sift_moss": "Sift Moss",
+  "block.mcsm.rift_crystal": "Rift Crystal",
+  "item.mcsm.siftstone": "Siftstone",
+  "item.mcsm.sift_moss": "Sift Moss",
+  "item.mcsm.rift_crystal": "Rift Crystal"
 }

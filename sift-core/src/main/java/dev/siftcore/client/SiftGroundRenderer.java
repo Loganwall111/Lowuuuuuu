@@ -16,12 +16,12 @@ import net.minecraft.util.math.Vec3d;
 
 /**
  * A visual abyss floor at the bottom of the configured dimension. It is drawn
- * as shader geometry only: the dimension remains blockless and the player can
- * fall through this shelf without collision or a landing transition.
+ * as shader geometry over the generated floor: the moving shelf remains a
+ * visual cue, while the player can still fall through its open air route.
  */
 @Environment(EnvType.CLIENT)
 public final class SiftGroundRenderer {
-    private static final double GROUND_Y = -896.0D;
+    private static final double GROUND_Y = -1019.0D;
     private static final float GROUND_RADIUS = 512.0F;
 
     private SiftGroundRenderer() {

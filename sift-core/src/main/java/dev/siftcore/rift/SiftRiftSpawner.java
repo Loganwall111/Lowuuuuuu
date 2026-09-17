@@ -6,7 +6,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.MathHelper;
 
-/** Keeps a sparse, deterministic field of rifts around players in the empty dimension. */
+/** Keeps a sparse, deterministic field of rifts around players in the open Sift. */
 public final class SiftRiftSpawner {
     private static final int MAX_NEARBY_RIFTS = 12;
     private static final double RIFT_RANGE = 128.0D;

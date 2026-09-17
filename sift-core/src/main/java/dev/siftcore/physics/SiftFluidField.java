@@ -5,7 +5,7 @@ package dev.siftcore.physics;
  *
  * <p>The sheets are not blocks or fluids. They are mathematical layers so the
  * client and server can agree on where a current is felt without introducing a
- * collision shape into the air-only dimension.</p>
+ * collision shape into the visual fluid layers.</p>
  */
 public final class SiftFluidField {
     public static final double LAYER_SPACING = 48.0D;
