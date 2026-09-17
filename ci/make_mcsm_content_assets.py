@@ -664,6 +664,8 @@ BEAST_NAMES = {
     "entity.mcsm.whale_monster": "The Whale",
     "entity.mcsm.beast": "The Beast",
     # BUILD #456 -- and the two that live in the nothing.
+    "entity.mcsm.drifter": "Drifter",
+    "entity.mcsm.keeper": "Keeper",
     "entity.mcsm.voidwalker": "Voidwalker",
     "entity.mcsm.void_lurker": "The Lurker",
 }

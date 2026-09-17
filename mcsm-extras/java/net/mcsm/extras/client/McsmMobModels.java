@@ -380,4 +380,123 @@ public final class McsmMobModels {
             this.eyes.xRot = this.head.xRot * 0.25F;
         }
     }
+
+    // ==================================================================
+    // BUILD #460 -- THE DRIFTER. The decayed reality's own: hooded, rags
+    // to the knee, ash coming off it, ash where its face should be.
+    // ==================================================================
+    public static final class DrifterModel extends HumanoidModel<MobState> {
+
+        public static final float S = 1.0F;
+
+        private final ModelPart hood;
+        private final ModelPart eyes;
+        private final ModelPart tatterL;
+        private final ModelPart tatterR;
+
+        public DrifterModel(ModelPart root) {
+            super(root);
+            ModelPart head = root.getChild("head");
+            ModelPart body = root.getChild("body");
+            this.hood = head.getChild("hood");
+            this.eyes = head.getChild("eyes");
+            this.tatterL = body.getChild("tatter_l");
+            this.tatterR = body.getChild("tatter_r");
+        }
+
+        public static LayerDefinition createBodyLayer() {
+            MeshDefinition mesh = new MeshDefinition();
+            PartDefinition root = humanoid(mesh, S, 8.0F, 8.0F, 8.0F, 8.0F, 14.0F, 4.0F,
+                    4.0F, 14.0F, 4.0F, 4.0F, 14.0F, 4.0F);
+            PartDefinition head = root.getChild("head");
+            PartDefinition body = root.getChild("body");
+            // the hood: one flat slab over the skull, and it falls with the head
+            box(head, "hood", 32, 0, S, 0.0F, -8.0F, 0.0F, -5.0F, -3.0F, -5.0F, 10.0F, 3.0F, 10.0F);
+            // where the face is: two slits, the only violet on it, on their own part
+            many(head, "eyes", 72, 0, S, 0.0F, -4.0F, -4.2F,
+                    new float[] { -2.6F, -0.8F, 0.0F, 2.0F, 1.6F, 0.6F },
+                    new float[] { 0.6F, -0.8F, 0.0F, 2.0F, 1.6F, 0.6F });
+            // two strips of what it used to wear, hanging off the body
+            box(body, "tatter_l", 56, 16, S, -2.4F, 13.0F, 0.0F, 0.0F, 0.0F, -2.4F, 3.0F, 12.0F, 1.0F);
+            box(body, "tatter_r", 64, 16, S, 2.4F, 13.0F, 0.0F, -3.0F, 0.0F, -2.4F, 3.0F, 12.0F, 1.0F);
+            return LayerDefinition.create(mesh, 128, 128);
+        }
+
+        @Override
+        public void setupAnim(MobState s) {
+            super.setupAnim(s);
+            float t = s.age;
+            // it lopes: low, head down, and the rags keep going after it stops
+            this.head.xRot += 0.20F;
+            this.body.xRot += 0.13F + Mth.sin(t * 0.10F) * 0.04F;
+            this.rightArm.xRot = this.rightArm.xRot * 0.6F + 0.35F;
+            this.leftArm.xRot = this.leftArm.xRot * 0.6F + 0.35F;
+            this.rightArm.zRot -= 0.18F;
+            this.leftArm.zRot += 0.18F;
+            // and every so often the whole thing is somewhere else for a frame
+            this.hood.xRot = this.head.xRot * 0.3F;
+            this.tatterL.xRot = -this.body.xRot * 0.7F + Mth.sin(t * 0.22F) * 0.16F;
+            this.tatterR.xRot = -this.body.xRot * 0.7F + Mth.sin(t * 0.22F + 1.3F) * 0.16F;
+            this.eyes.xRot = this.head.xRot * 0.4F;
+        }
+    }
+
+    // ==================================================================
+    // BUILD #460 -- THE KEEPER. The infinite dimension's own: tall, brimmed,
+    // a lantern in one hand, and it walks like it has all the time there is.
+    // ==================================================================
+    public static final class KeeperModel extends HumanoidModel<MobState> {
+
+        public static final float S = 1.0F;
+
+        private final ModelPart brim;
+        private final ModelPart eyes;
+        private final ModelPart lantern;
+        private final ModelPart lamp;
+
+        public KeeperModel(ModelPart root) {
+            super(root);
+            ModelPart head = root.getChild("head");
+            this.brim = head.getChild("brim");
+            this.eyes = head.getChild("eyes");
+            this.lantern = root.getChild("right_arm").getChild("lantern");
+            this.lamp = root.getChild("right_arm").getChild("lamp");
+        }
+
+        public static LayerDefinition createBodyLayer() {
+            MeshDefinition mesh = new MeshDefinition();
+            PartDefinition root = humanoid(mesh, S, 8.0F, 8.0F, 8.0F, 8.0F, 20.0F, 4.0F,
+                    4.0F, 20.0F, 4.0F, 4.0F, 14.0F, 4.0F);
+            PartDefinition head = root.getChild("head");
+            PartDefinition arm = root.getChild("right_arm");
+            // the brim: a flat ring around the skull, wider than the shoulders
+            box(head, "brim", 32, 0, S, 0.0F, -7.0F, 0.0F, -7.0F, 0.0F, -7.0F, 14.0F, 1.0F, 14.0F);
+            // its eyes are the same colour as everything it keeps
+            many(head, "eyes", 128, 0, S, 0.0F, -4.0F, -4.2F,
+                    new float[] { -2.6F, -0.8F, 0.0F, 2.0F, 1.6F, 0.6F },
+                    new float[] { 0.6F, -0.8F, 0.0F, 2.0F, 1.6F, 0.6F });
+            // the lantern: a box in the hand, and the light inside it on its own part
+            box(arm, "lantern", 96, 0, S, 0.0F, 18.0F, 2.6F, -2.0F, 0.0F, -2.0F, 4.0F, 6.0F, 4.0F);
+            many(arm, "lamp", 112, 0, S, 0.0F, 18.0F, 2.6F,
+                    new float[] { -1.5F, 1.0F, -1.5F, 3.0F, 3.0F, 3.0F });
+            return LayerDefinition.create(mesh, 256, 256);
+        }
+
+        @Override
+        public void setupAnim(MobState s) {
+            super.setupAnim(s);
+            float t = s.age;
+            // no hurry anywhere in it: the walk is slow, the lantern swings
+            this.head.xRot += 0.06F;
+            this.rightArm.xRot = this.rightArm.xRot * 0.5F + 0.75F + Mth.sin(t * 0.03F) * 0.06F;
+            this.leftArm.xRot = this.leftArm.xRot * 0.7F + 0.10F;
+            this.brim.yRot = Mth.sin(t * 0.012F) * 0.22F;
+            this.brim.xRot = this.head.xRot * 0.5F;
+            this.eyes.xRot = this.head.xRot * 0.3F;
+            // the lantern hangs from the hand: it takes the arm's swing a beat late
+            this.lantern.xRot = -this.rightArm.xRot + Mth.sin(t * 0.03F - 0.5F) * 0.10F;
+            this.lamp.xRot = this.lantern.xRot;
+            this.lamp.zRot = Mth.sin(t * 0.05F) * 0.05F;
+        }
+    }
 }

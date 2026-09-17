@@ -32,6 +32,17 @@ public final class McsmEntities {
     public static EntityType<McsmVoidLurker> VOID_LURKER;
 
     // ------------------------------------------------------------------
+    // BUILD #460 -- AND THE TWO THAT LIVE IN THE WORLDS THE PLAYER BUILT.
+    // The decayed reality's own creature and the infinite dimension's own
+    // creature, so neither of them has to send a storm beast at the player.
+    // ------------------------------------------------------------------
+    public static final Identifier DRIFTER_ID = Identifier.fromNamespaceAndPath("mcsm", "drifter");
+    public static final Identifier KEEPER_ID = Identifier.fromNamespaceAndPath("mcsm", "keeper");
+
+    public static EntityType<McsmDenizen.McsmDrifter> DRIFTER;
+    public static EntityType<McsmDenizen.McsmKeeper> KEEPER;
+
+    // ------------------------------------------------------------------
     // BUILD #428 -- THE BEASTS. "The MASSG was added but it was just code. I
     // would like a mob named Mas. And the Creator, a gigantic entity. And the
     // whale monster I talked about." Three real, spawnable, named mobs, all of
@@ -96,6 +107,18 @@ public final class McsmEntities {
             VOID_LURKER = own(VOID_LURKER_ID, McsmVoidLurker::new, 2.4F, 3.4F, 16);
             if (VOID_LURKER != null) {
                 FabricDefaultAttributeRegistry.register(VOID_LURKER, McsmVoidLurker.createAttributes());
+            }
+
+            // BUILD #460 -- the decayed reality's creature and the infinite
+            // dimension's creature. Each is registered with its own attributes
+            // in the same call shape the two above use.
+            DRIFTER = own(DRIFTER_ID, McsmDenizen.McsmDrifter::new, 0.7F, 2.0F, 12);
+            if (DRIFTER != null) {
+                FabricDefaultAttributeRegistry.register(DRIFTER, McsmDenizen.drifterAttributes());
+            }
+            KEEPER = own(KEEPER_ID, McsmDenizen.McsmKeeper::new, 1.0F, 2.4F, 16);
+            if (KEEPER != null) {
+                FabricDefaultAttributeRegistry.register(KEEPER, McsmDenizen.keeperAttributes());
             }
         } catch (Throwable t) {
             // never take the mod down over the cast; McsmNpcs falls back to villagers

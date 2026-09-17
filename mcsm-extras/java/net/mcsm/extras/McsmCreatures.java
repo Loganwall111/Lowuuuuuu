@@ -322,6 +322,18 @@ public final class McsmCreatures {
         if (rng.nextInt(100) >= chance) {
             return;
         }
+        // BUILD #460 -- the decayed reality has its own bestiary now, and it is
+        // not the storm's. The drifter belongs to that world and to nowhere else,
+        // so a player standing in it meets that dimension's creature instead of a
+        // storm beast that followed them in.
+        if (decayed) {
+            BlockPos decayedAt = spot(level, player, rng);
+            if (decayedAt != null && net.mcsm.extras.entity.McsmDenizen.spawn(level,
+                    net.mcsm.extras.entity.McsmEntities.DRIFTER, decayedAt,
+                    1 + rng.nextInt(2), "Drifter") > 0) {
+                return;
+            }
+        }
         int group = 1 + rng.nextInt(phase >= 5.0D ? 3 : 2);
         for (int i = 0; i < group; i++) {
             Kind kind = roll(rng, phase, decayed);

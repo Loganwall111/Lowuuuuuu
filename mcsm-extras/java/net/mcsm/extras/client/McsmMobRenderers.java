@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry;
 import net.mcsm.extras.entity.McsmBeast;
 import net.mcsm.extras.entity.McsmEntities;
 import net.mcsm.extras.entity.McsmVoidLurker;
+import net.mcsm.extras.entity.McsmDenizen;
 import net.mcsm.extras.entity.McsmVoidwalker;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -46,6 +47,10 @@ public final class McsmMobRenderers {
             layer("voidwalker");
     public static final ModelLayerLocation VOID_LURKER_LAYER =
             layer("void_lurker");
+    public static final ModelLayerLocation DRIFTER_LAYER =
+            layer("drifter");
+    public static final ModelLayerLocation KEEPER_LAYER =
+            layer("keeper");
 
     private static ModelLayerLocation layer(String name) {
         return new ModelLayerLocation(Identifier.fromNamespaceAndPath("mcsm", name), "main");
@@ -62,6 +67,8 @@ public final class McsmMobRenderers {
             ModelLayerRegistry.registerModelLayer(CREATOR_LAYER, McsmMobModels.CreatorModel::createBodyLayer);
             ModelLayerRegistry.registerModelLayer(VOIDWALKER_LAYER, McsmMobModels.VoidwalkerModel::createBodyLayer);
             ModelLayerRegistry.registerModelLayer(VOID_LURKER_LAYER, McsmMobModels.VoidLurkerModel::createBodyLayer);
+            ModelLayerRegistry.registerModelLayer(DRIFTER_LAYER, McsmMobModels.DrifterModel::createBodyLayer);
+            ModelLayerRegistry.registerModelLayer(KEEPER_LAYER, McsmMobModels.KeeperModel::createBodyLayer);
         } catch (Throwable t) {
             System.err.println("[ds] the mob model layers could not be registered: " + t);
         }
@@ -86,6 +93,12 @@ public final class McsmMobRenderers {
             }
             if (McsmEntities.VOID_LURKER != null) {
                 EntityRendererRegistry.register(McsmEntities.VOID_LURKER, VoidLurkerRenderer::new);
+            }
+            if (McsmEntities.DRIFTER != null) {
+                EntityRendererRegistry.register(McsmEntities.DRIFTER, DrifterRenderer::new);
+            }
+            if (McsmEntities.KEEPER != null) {
+                EntityRendererRegistry.register(McsmEntities.KEEPER, KeeperRenderer::new);
             }
         } catch (Throwable t) {
             System.err.println("[ds] the mob renderers could not be registered: " + t);
@@ -229,6 +242,59 @@ public final class McsmMobRenderers {
         @Override
         public Identifier getTextureLocation(McsmMobModels.MobState s) {
             return skin("void_lurker");
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // BUILD #460 -- THE DRIFTER AND THE KEEPER
+    // ------------------------------------------------------------------
+    public static final class DrifterRenderer extends HumanoidMobRenderer<McsmDenizen.McsmDrifter,
+            McsmMobModels.MobState, McsmMobModels.DrifterModel> {
+
+        public DrifterRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, new McsmMobModels.DrifterModel(ctx.bakeLayer(DRIFTER_LAYER)), 0.5F);
+        }
+
+        @Override
+        public McsmMobModels.MobState createRenderState() {
+            return new McsmMobModels.MobState();
+        }
+
+        @Override
+        public void extractRenderState(McsmDenizen.McsmDrifter e, McsmMobModels.MobState s, float partialTick) {
+            super.extractRenderState(e, s, partialTick);
+            s.kind = "drifter";
+            s.age = e.tickCount + partialTick;
+        }
+
+        @Override
+        public Identifier getTextureLocation(McsmMobModels.MobState s) {
+            return skin("drifter");
+        }
+    }
+
+    public static final class KeeperRenderer extends HumanoidMobRenderer<McsmDenizen.McsmKeeper,
+            McsmMobModels.MobState, McsmMobModels.KeeperModel> {
+
+        public KeeperRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, new McsmMobModels.KeeperModel(ctx.bakeLayer(KEEPER_LAYER)), 0.7F);
+        }
+
+        @Override
+        public McsmMobModels.MobState createRenderState() {
+            return new McsmMobModels.MobState();
+        }
+
+        @Override
+        public void extractRenderState(McsmDenizen.McsmKeeper e, McsmMobModels.MobState s, float partialTick) {
+            super.extractRenderState(e, s, partialTick);
+            s.kind = "keeper";
+            s.age = e.tickCount + partialTick;
+        }
+
+        @Override
+        public Identifier getTextureLocation(McsmMobModels.MobState s) {
+            return skin("keeper");
         }
     }
 }

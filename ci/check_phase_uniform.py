@@ -1928,7 +1928,11 @@ def main():
           and "hasCity" not in adams)
     check("a chamber always holds salvage and sometimes holds something else",
           "container.setItem(Math.floorMod((int) (h >> 41), slots)" in adams
-          and "McsmCreatures.release(level, new BlockPos(x, y, z)," in adams
+          # BUILD #460 -- what a chamber was keeping is this world's own creature
+          # (the keeper); the storm's bestiary is only the fallback if the
+          # keeper's entity type never registered.
+          and "net.mcsm.extras.entity.McsmEntities.KEEPER" in adams
+          and "McsmCreatures.release(level, at, count, 6.0D);" in adams
           and "private static void finish(ServerLevel level, Region region)" in adams)
     check("both systems are booted, and booted with their imports",
           "McsmRituals.register();" in boot and "McsmAdams.register();" in boot
@@ -2667,7 +2671,7 @@ def main():
     check("every one of them can be put in front of you by name",
           'Commands.literal("mob")' in cmd
           and "ds$mob(ctx.getSource(), id)" in cmd
-          and '"massg", "creator", "whale", "voidwalker", "lurker"' in cmd
+          and '"massg", "creator", "whale", "voidwalker", "lurker", "drifter", "keeper"' in cmd
           and "beast.setKind(kind);" in cmd)
 
     # the skins: on disk, the right size, and carrying their accent
@@ -2677,7 +2681,8 @@ def main():
         if _ci not in sys.path:
             sys.path.insert(0, _ci)
         import pngutil as _png
-        for _name in ("massg", "voidwalker", "void_lurker", "creator", "whale_monster"):
+        for _name in ("massg", "voidwalker", "void_lurker", "creator", "whale_monster",
+                      "drifter", "keeper"):
             _p = os.path.join("jar-overrides/assets/mcsm/textures/entity", _name + ".png")
             _w, _h, _px = _png.read_png(_p)
             skins[_name] = (_w, _h, _px)
@@ -2717,6 +2722,74 @@ def main():
           and "box(body, \"tip\" + i, 96, 160, S," in models
           and "(96, 512, 160.0, 8.0, 80.0)" in textures
           and "box(head, \"halo\" + i, 96, 512, S," in models)
+
+    # ------------------------------------------------------------------
+    # BUILD #460 -- AND EVERY WORLD HAS ITS OWN PEOPLE. The decayed reality
+    # and the infinite dimension stopped sending the STORM's bestiary at the
+    # player: "own blocks, items, mobs, locks, VFX; no re-use". Each of them
+    # has a creature of its own -- its own body, its own mesh, its own skin,
+    # its own verbs -- and neither of them is the other one.
+    # ------------------------------------------------------------------
+    denizen = read("mcsm-extras/java/net/mcsm/extras/entity/McsmDenizen.java") or ""
+
+    check("the decayed reality and the infinite dimension have creatures of their own",
+          "abstract class McsmDenizen extends Monster" in denizen
+          and 'public static final String DECAYED = "decayed";' in denizen
+          and 'public static final String ADAMS = "adams";' in denizen
+          and "public static class McsmDrifter extends McsmDenizen" in denizen
+          and "public static class McsmKeeper extends McsmDenizen" in denizen
+          and "McsmDenizen.McsmDrifter::new" in entities
+          and "McsmDenizen.McsmKeeper::new" in entities
+          and "McsmDenizen.drifterAttributes()" in entities
+          and "McsmDenizen.keeperAttributes()" in entities)
+    check("each of them fights like its own world, and not like the other one",
+          "MAX_HEALTH, 26.0D" in denizen
+          and "MAX_HEALTH, 90.0D" in denizen
+          and "ATTACK_DAMAGE, 5.0D" in denizen
+          and "ATTACK_DAMAGE, 11.0D" in denizen
+          and "KNOCKBACK_RESISTANCE, 0.8D" in denizen
+          and "public boolean fireImmune() {" in denizen)
+    check("the drifter drifts and the keeper keeps -- each with its own verbs",
+          "ParticleTypes.ASH" in denizen
+          and "ParticleTypes.DUST_PLUME" in denizen
+          and "McsmSounds.OBLIVION_GLITCH" in denizen
+          and "McsmSounds.MASSG_WHISPER" in denizen
+          and "McsmSounds.MASSG_HEART" in denizen
+          and "this.setDeltaMovement(to.x * 1.15D, 0.22D, to.z * 1.15D);" in denizen
+          and "public static int spawn(net.minecraft.server.level.ServerLevel level," in denizen)
+    check("and both of them have a body, a layer and a renderer of their own",
+          "class DrifterModel extends HumanoidModel<MobState>" in models
+          and "class KeeperModel extends HumanoidModel<MobState>" in models
+          and "LayerDefinition.create(mesh, 128, 128);" in models
+          and "this.tatterL.xRot" in models
+          and "this.lantern.xRot" in models
+          and "this.brim.yRot" in models
+          and "DRIFTER_LAYER" in renderers
+          and "KEEPER_LAYER" in renderers
+          and 'skin("drifter")' in renderers
+          and 'skin("keeper")' in renderers
+          and renderers.count("EntityRendererRegistry.register(") >= 7
+          and renderers.count("ModelLayerRegistry.registerModelLayer(") >= 6)
+    check("the two new creatures stand in the worlds they belong to, and nowhere else",
+          "net.mcsm.extras.entity.McsmEntities.KEEPER" in adams
+          and "net.mcsm.extras.entity.McsmDenizen.spawn(level," in adams
+          and "McsmCreatures.release(level, at, count, 6.0D);" in adams
+          and "net.mcsm.extras.entity.McsmEntities.DRIFTER" in creatures
+          and "if (decayed) {" in creatures)
+    check("both of them can be put in front of you by name",
+          'case "drifter" -> {' in cmd
+          and 'case "keeper" -> {' in cmd
+          and "McsmEntities.DRIFTER" in cmd
+          and "McsmEntities.KEEPER" in cmd
+          and "entity.mcsm.drifter" in lang
+          and "entity.mcsm.keeper" in lang)
+
+    check("the two new skins exist at their own sizes, with their own light on them",
+          skins.get("drifter", (0,))[0] == 128
+          and skin_has("drifter", lambda r, g, b: b > 150 and r > 60 and g < 120)
+          and skins.get("keeper", (0,))[0] == 256
+          and skin_has("keeper", lambda r, g, b: r > 230 and g > 180 and b < 190),
+          "drifter/keeper skins")
 
     # ------------------------------------------------------------------
     # BUILD #457 -- THE PAINTED SKY. Every dimension wears its own cube.

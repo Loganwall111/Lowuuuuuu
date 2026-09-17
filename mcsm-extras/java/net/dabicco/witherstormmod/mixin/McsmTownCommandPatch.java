@@ -157,7 +157,7 @@ public abstract class McsmTownCommandPatch {
             // a dimension with no ground in it; this puts one in front of you.
             LiteralArgumentBuilder<CommandSourceStack> mob = Commands.literal("mob");
             mob.executes(ctx -> ds$mob(ctx.getSource(), null));
-            for (String id : new String[] { "massg", "creator", "whale", "voidwalker", "lurker" }) {
+            for (String id : new String[] { "massg", "creator", "whale", "voidwalker", "lurker", "drifter", "keeper" }) {
                 mob.then(Commands.literal(id)
                         .executes(ctx -> ds$mob(ctx.getSource(), id)));
             }
@@ -546,11 +546,12 @@ public abstract class McsmTownCommandPatch {
     /**
      * BUILD #456 -- put one of the mod's own bodies in front of the caller.
      *
-     * <p>Five names, and every one of them is the mod's own entity with the mod's
+     * <p>Seven names, and every one of them is the mod's own entity with the mod's
      * own model: massg (the black warden), creator (the colossal), whale, voidwalker
-     * and lurker (the mini-boss). The beast kinds are set on the way in, because the
-     * Mas body is the one that cannot be killed and must never be handed out by
-     * accident.
+     * and lurker (the mini-boss, all from the storm and the nothing), plus drifter
+     * (the decayed reality's) and keeper (the infinite dimension's). The beast kinds
+     * are set on the way in, because the Mas body is the one that cannot be killed
+     * and must never be handed out by accident.
      */
     private static int ds$mob(CommandSourceStack src, String which) {
         try {
@@ -580,6 +581,14 @@ public abstract class McsmTownCommandPatch {
                 case "lurker" -> {
                     type = net.mcsm.extras.entity.McsmEntities.VOID_LURKER;
                     name = "The Lurker";
+                }
+                case "drifter" -> {
+                    type = net.mcsm.extras.entity.McsmEntities.DRIFTER;
+                    name = "Drifter";
+                }
+                case "keeper" -> {
+                    type = net.mcsm.extras.entity.McsmEntities.KEEPER;
+                    name = "Keeper";
                 }
                 default -> {
                     type = net.mcsm.extras.entity.McsmEntities.VOIDWALKER;

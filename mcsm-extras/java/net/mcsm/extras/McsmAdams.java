@@ -515,11 +515,23 @@ public final class McsmAdams {
         }
     }
 
-    /** Releases what a chamber was keeping. */
+    /**
+     * Releases what a chamber was keeping.
+     *
+     * <p>BUILD #460 -- and what it was keeping is this world's own: the keeper,
+     * the body the infinite dimension keeps its rooms with. Until now a chamber
+     * opened onto a roll of the STORM's bestiary, which is the same creature
+     * whatever world a player is standing in. The bestiary is the fallback only if
+     * the keeper's entity type never registered.
+     */
     private static void release(ServerLevel level, int x, int y, int z, int seed) {
         try {
-            McsmCreatures.release(level, new BlockPos(x, y, z),
-                    2 + Math.floorMod(seed, 2), 6.0D);
+            BlockPos at = new BlockPos(x, y, z);
+            int count = 2 + Math.floorMod(seed, 2);
+            if (net.mcsm.extras.entity.McsmDenizen.spawn(level,
+                    net.mcsm.extras.entity.McsmEntities.KEEPER, at, count, "Keeper") == 0) {
+                McsmCreatures.release(level, at, count, 6.0D);
+            }
         } catch (Throwable ignored) {
         }
     }

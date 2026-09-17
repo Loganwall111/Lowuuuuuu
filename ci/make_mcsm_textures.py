@@ -943,6 +943,33 @@ WHALE_ACCENTS = [
 ]
 
 
+DRIFTER_PARTS = [
+    ((0, 0, 8.0, 8.0, 8.0), (0x18, 0x15, 0x1C), (0x34, 0x2E, 0x3A)),          # head
+    ((16, 16, 8.0, 14.0, 4.0), (0x14, 0x11, 0x18), (0x2C, 0x27, 0x32)),       # body
+    ((40, 16, 4.0, 14.0, 4.0), (0x11, 0x0F, 0x16), (0x26, 0x21, 0x2C)),       # arms
+    ((0, 16, 4.0, 14.0, 4.0), (0x0F, 0x0D, 0x14), (0x22, 0x1E, 0x28)),        # legs
+    ((32, 0, 10.0, 3.0, 10.0), (0x10, 0x0D, 0x16), (0x24, 0x1F, 0x2E)),       # hood
+    ((56, 16, 3.0, 12.0, 1.0), (0x1E, 0x1A, 0x22), (0x36, 0x30, 0x3C)),       # tatter l
+    ((64, 16, 3.0, 12.0, 1.0), (0x1C, 0x18, 0x20), (0x32, 0x2C, 0x38)),       # tatter r
+]
+DRIFTER_ACCENTS = [
+    # the two slits under the hood: the only light it has left
+    ((72, 0, 2.0, 1.6, 0.6), (0x4A, 0x22, 0x8C), (0xA6, 0x5C, 0xFF)),
+]
+KEEPER_PARTS = [
+    ((0, 0, 8.0, 8.0, 8.0), (0x2C, 0x26, 0x30), (0x50, 0x46, 0x54)),          # head
+    ((16, 16, 8.0, 20.0, 4.0), (0x27, 0x22, 0x2C), (0x48, 0x3E, 0x4C)),       # body
+    ((40, 16, 4.0, 20.0, 4.0), (0x22, 0x1D, 0x27), (0x42, 0x38, 0x46)),       # arms
+    ((0, 16, 4.0, 14.0, 4.0), (0x1E, 0x1A, 0x24), (0x3C, 0x33, 0x42)),        # legs
+    ((32, 0, 14.0, 1.0, 14.0), (0x1A, 0x16, 0x20), (0x3A, 0x32, 0x42)),       # brim
+    ((96, 0, 4.0, 6.0, 4.0), (0x1C, 0x18, 0x22), (0x40, 0x38, 0x48)),         # lantern
+]
+KEEPER_ACCENTS = [
+    # the light it carries, and the eyes that match it
+    ((112, 0, 3.0, 3.0, 3.0), (0xC0, 0x7A, 0x28), (0xFF, 0xE0, 0xA0)),
+    ((128, 0, 2.0, 1.6, 0.6), (0xD8, 0x92, 0x3A), (0xFF, 0xF0, 0xC8)),
+]
+
 def entity_skins():
     """name -> (sheet size, parts, accents, star specks)."""
     return {
@@ -951,6 +978,8 @@ def entity_skins():
         "void_lurker": ((256, 256), LURKER_PARTS, LURKER_ACCENTS, 0),
         "creator": ((1024, 1024), CREATOR_PARTS, CREATOR_ACCENTS, 900),
         "whale_monster": ((256, 256), WHALE_PARTS, WHALE_ACCENTS, 140),
+        "drifter": ((128, 128), DRIFTER_PARTS, DRIFTER_ACCENTS, 0),
+        "keeper": ((256, 256), KEEPER_PARTS, KEEPER_ACCENTS, 0),
     }
 
 
