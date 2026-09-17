@@ -76,9 +76,16 @@ public final class McsmVoid {
      * nothing to run. You land on it, you stand on it, and there is nothing to see
      * holding you up -- which is the point.
      */
-    public static final int FLOOR_Y = -64;
+    public static final int FLOOR_Y = McsmVoidTiers.FLOOR_Y;
+    /**
+     * BUILD #481 -- AND THE FLOOR MOVED. The void's dimension is now 4064 blocks
+     * tall (min_y -2032, the engine's own maximum), so the flat layer that IS the
+     * floor sits at -2032 and the five tiers of {@link McsmVoidTiers} hang between
+     * the gel's surface and it. Everything that used to be "the deep" is tier 0 of
+     * something much bigger; the floor is still invisible and still everywhere.
+     */
     /** The safety net is BELOW the floor: only a hole in the world can reach it. */
-    public static final int CATCH_Y = -70;
+    public static final int CATCH_Y = McsmVoidTiers.FLOOR_Y - 6;
     /** Where it sets them down when even that fails. */
     public static final int SHELF_Y = 210;
     /**

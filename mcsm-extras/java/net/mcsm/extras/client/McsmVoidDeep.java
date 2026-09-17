@@ -4,6 +4,7 @@ import net.mcsm.extras.McsmExtrasConfig;
 import net.mcsm.extras.McsmSounds;
 import net.mcsm.extras.McsmVoid;
 import net.mcsm.extras.McsmVoidDescent;
+import net.mcsm.extras.McsmVoidTiers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -74,6 +75,9 @@ public final class McsmVoidDeep {
     private static final long CROSSING_MS = 5000L;
 
     private static long crossingAt;
+    /** BUILD #481 -- the tier last drawn, and when it was entered. */
+    private static int shownTier = -1;
+    private static long shownAt;
     private static boolean flyingGranted;
     private static int clock;
 
@@ -100,14 +104,29 @@ public final class McsmVoidDeep {
         }
     }
 
-    /** The same, from a Y: 0 at the gel's surface, 1 on the invisible floor. */
+    /**
+     * The same, from a Y: 0 at the gel's surface, 1 on the invisible floor.
+     *
+     * <p>BUILD #481 -- and the floor is 2032 down now, not 64. The depth is the
+     * fall's own depth through the five tiers of {@link McsmVoidTiers}: the gel's
+     * surface is 0, the barrier the world stands on is 1, and the tiers between
+     * them are the bands the art and the fog are read from.
+     */
     public static float depthAt(double y) {
-        float span = McsmVoidDescent.SURFACE_Y - McsmVoid.FLOOR_Y;
-        if (span <= 0.0F) {
-            return 0.0F;
+        return McsmVoidTiers.depthAt(y);
+    }
+
+    /** Which tier of the multi-layer void a Y is in. */
+    public static int tier() {
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || mc.player == null) {
+                return McsmVoidTiers.TIER_BASELINE;
+            }
+            return McsmVoidTiers.tierAt(mc.player.getY());
+        } catch (Throwable ignored) {
+            return McsmVoidTiers.TIER_BASELINE;
         }
-        float t = (float) ((McsmVoidDescent.SURFACE_Y - y) / span);
-        return Math.max(0.0F, Math.min(1.0F, t));
     }
 
     /** True while the deep should be drawn: in the gel, no screen open, switched on. */
@@ -280,10 +299,33 @@ public final class McsmVoidDeep {
             }
             // the gel is thicker than it is bright: the fog goes UP with depth, and
             // its colour climbs out of the pink into the violet the bedrock wears
-            rgb[0] = mix(0.62F, 0.16F, t);
-            rgb[1] = mix(0.28F, 0.07F, t);
-            rgb[2] = mix(0.52F, 0.22F, t);
-            return 0.35F + 0.50F * t;
+            float r = mix(0.62F, 0.16F, t);
+            float gg = mix(0.28F, 0.07F, t);
+            float b = mix(0.52F, 0.22F, t);
+
+            // BUILD #481 -- and then the tier takes it over. Each layer of the void
+            // has the colour the plan gives it (the luminous cavern's plum, the
+            // abyss's total black, the gel's greenish-brown), and it wins more and
+            // more of the fog the deeper the fall is in that layer.
+            int tier = McsmVoidTiers.tierAt(mc.player.getY());
+            if (tier > McsmVoidTiers.TIER_BASELINE) {
+                float[] amb = new float[3];
+                McsmVoidTiers.ambient(tier, amb);
+                float k = 0.80F;
+                r = mix(r, amb[0], k);
+                gg = mix(gg, amb[1], k);
+                b = mix(b, amb[2], k);
+            }
+            rgb[0] = r;
+            rgb[1] = gg;
+            rgb[2] = b;
+            float opacity = 0.35F + 0.50F * t;
+            if (tier == McsmVoidTiers.TIER_ABYSS) {
+                opacity = Math.min(0.96F, opacity + 0.26F);   // absolute suppression
+            } else if (tier == McsmVoidTiers.TIER_GEL) {
+                opacity = Math.min(0.94F, opacity + 0.12F);
+            }
+            return opacity;
         } catch (Throwable ignored) {
             return 0.0F;
         }
@@ -323,10 +365,31 @@ public final class McsmVoidDeep {
             // ---- bioluminescence: the specks that mean the place is alive
             specks(g, w, h, t, now);
 
-            if (t > 0.62F) {
-                g.centeredText(mc.font, "THE DEEP", w / 2, 14, 0x99E8A24C);
-                g.centeredText(mc.font, "y=" + (int) mc.player.getY() + " \u00b7 "
-                        + "the bedrock is the fog", w / 2, 26, 0x88D8C0F0);
+            // ---- BUILD #481: and the tier the fall is in, drawn as itself -----
+            int tier = McsmVoidTiers.tierAt(mc.player.getY());
+            switch (tier) {
+                case McsmVoidTiers.TIER_LUMINOUS -> spires(g, w, h, t, now);
+                case McsmVoidTiers.TIER_SPONGE -> sponge(g, w, h, t, now);
+                case McsmVoidTiers.TIER_ABYSS -> ruins(g, w, h, t, now);
+                case McsmVoidTiers.TIER_FRACTURE -> waves(g, w, h, t, now);
+                case McsmVoidTiers.TIER_GEL -> horizon(g, w, h, t, now);
+                default -> { }
+            }
+            if (tier != shownTier) {
+                shownTier = tier;
+                shownAt = now;
+            }
+            if (now - shownAt < 3600L) {
+                int alpha = (int) (230 * (1.0F - (now - shownAt) / 3600.0F));
+                g.centeredText(mc.font, McsmVoidTiers.PLAN_NAME[tier].toUpperCase(),
+                        w / 2, 14, (Math.max(alpha, 24) << 24) | 0xE8A24C);
+                g.centeredText(mc.font, "tier " + tier + " of " + (McsmVoidTiers.TIERS - 1)
+                        + " \u00b7 y=" + (int) mc.player.getY(), w / 2, 26,
+                        (Math.max(alpha / 2, 16) << 24) | 0xD8C0F0);
+            }
+            if (t > 0.86F) {
+                g.centeredText(mc.font, "THE GEL HORIZON", w / 2, h - 30, 0x99BFFFC8);
+                g.centeredText(mc.font, "the bedrock is the fog", w / 2, h - 18, 0x88D8C0F0);
             }
         } catch (Throwable t) {
             // never break a frame over the gel
@@ -427,6 +490,92 @@ public final class McsmVoidDeep {
             }
             int colour = MOTE[i % MOTE.length];
             g.fill(x, y, x + 2, y + 2, (alpha << 24) | (colour & 0xFFFFFF));
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // BUILD #481 -- the five tiers, drawn: each layer is its own picture
+    // ------------------------------------------------------------------
+
+    /** Tier 1, the luminous cavern: thin spires of cyan, emerald and amber standing in plum air. */
+    private static void spires(GuiGraphicsExtractor g, int w, int h, float t, long now) {
+        int[] wall = { 0x38F0E0, 0x38F0A0, 0xFFA23A };
+        for (int i = 0; i < McsmVoidTiers.LIGHTS[McsmVoidTiers.TIER_LUMINOUS]; i++) {
+            long seed = i * 92821L;
+            int x = (int) (((seed * 37 % 991) / 991.0D) * w + Math.sin(now / 9000.0D + i) * 26.0D);
+            int width = 2 + (i % 3);
+            int top = (int) (h * (0.08D + 0.22D * ((i * 3 % 5) / 5.0D)));
+            int bottom = (int) (h * (0.58D + 0.30D * ((i * 7 % 4) / 4.0D)));
+            int colour = wall[i % wall.length];
+            int span = Math.max(1, bottom - top);
+            for (int y = top; y < bottom; y += 2) {
+                int fade = (int) (66 * t * (1.0F - (y - top) / (float) span));
+                g.fill(x, y, x + width, y + 2, (Math.max(fade, 3) << 24) | colour);
+            }
+        }
+    }
+
+    /** Tier 2, the sponge: the orange-to-pink wash, and the pores it is full of. */
+    private static void sponge(GuiGraphicsExtractor g, int w, int h, float t, long now) {
+        g.fillGradient(0, 0, w, h, (int) (54 * t) << 24 | 0xFF6A28,
+                (int) (86 * t) << 24 | 0xFF3FA8);
+        for (int i = 0; i < 46; i++) {
+            long seed = i * 6151L;
+            int x = (int) (((seed * 41 % 977) / 977.0D) * w + Math.sin(now / 5200.0D + i * 0.7D) * 20.0D);
+            int y = (int) (((seed * 67 % 971) / 971.0D) * h + Math.cos(now / 6100.0D + i) * 16.0D);
+            int r = 3 + (i % 4);
+            int alpha = (int) (72 * t);
+            g.fill(x, y, x + r, y + r, (alpha << 24) | 0x2A0A12);
+            g.fill(x - 1, y - 1, x + r + 1, y, (Math.max(alpha - 30, 2) << 24) | 0xFFC07A);
+        }
+    }
+
+    /** Tier 3, the abyss: the light is gone; only the ruins down here still glow. */
+    private static void ruins(GuiGraphicsExtractor g, int w, int h, float t, long now) {
+        g.fill(0, 0, w, h, (int) (150 * t) << 24 | 0x000000);
+        for (int i = 0; i < McsmVoidTiers.LIGHTS[McsmVoidTiers.TIER_ABYSS]; i++) {
+            long seed = i * 40009L;
+            int x = (int) (((seed * 31 % 983) / 983.0D) * w);
+            int y = (int) (h * (0.55D + 0.35D * ((seed * 17 % 89) / 89.0D)));
+            int twinkle = (int) (150 + 90 * Math.sin(now / 1300.0D + i * 2.1D));
+            int alpha = (int) (twinkle * t * 0.9F);
+            for (int k = 0; k < 6; k++) {
+                g.fill(x, y - k * 3, x + 2, y - k * 3 + 2, (alpha << 24) | 0x00FFB0);
+            }
+            g.fill(x - 3, y, x + 5, y + 1, (alpha << 24) | 0x00FFB0);
+        }
+    }
+
+    /** Tier 4, the fracture: the view is rippling, and the ripples have scanlines in them. */
+    private static void waves(GuiGraphicsExtractor g, int w, int h, float t, long now) {
+        for (int i = 0; i < 9; i++) {
+            double phase = now / 1400.0D + i * 0.8D;
+            int y = (int) (h * (0.08D + 0.11D * i) + Math.sin(phase) * 22.0D);
+            int alpha = (int) (44 * t * (0.6D + 0.4D * Math.sin(phase * 1.7D)));
+            g.fill(0, y, w, y + 3, (Math.max(alpha, 2) << 24) | 0xE070FF);
+        }
+        for (int i = 0; i < 22; i++) {
+            int y = (int) ((i / 22.0D) * h);
+            int alpha = (int) (26 * t);
+            g.fill(0, y, w, y + 1, (alpha << 24) | 0x8A2BE2);
+        }
+    }
+
+    /** Tier 5, the gel horizon: the greenish-brown fluid field, turning over. */
+    private static void horizon(GuiGraphicsExtractor g, int w, int h, float t, long now) {
+        int band = (int) (h * 0.42D);
+        for (int i = 0; i < 24; i++) {
+            float f = i / 24.0F;
+            int y = (int) (h - band * f - Math.sin(now / 2600.0D + i * 0.5D) * 6.0D);
+            int alpha = (int) (60 * t * (1.0F - f));
+            g.fill(0, y, w, y + band / 24 + 2, (Math.max(alpha, 3) << 24) | 0x1C1F16);
+        }
+        for (int i = 0; i < 14; i++) {
+            long seed = i * 7717L;
+            int x = (int) (((seed * 53 % 991) / 991.0D) * w);
+            int y = (int) (h - band * ((seed * 29 % 97) / 97.0D) + Math.sin(now / 1900.0D + i) * 10.0D);
+            int alpha = (int) (86 * t);
+            g.fill(x, y, x + 2, y + 2, (alpha << 24) | 0xBFFFC8);
         }
     }
 

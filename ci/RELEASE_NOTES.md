@@ -1,5 +1,33 @@
 # 7000.0.0-M — the sky is the still, the storm owns it, and the switches work
 
+**Build #481 — the multi-layer void.** The void is no longer one place. The dimension
+it lives in was already the tallest thing the mod owns; it is now the tallest thing
+this engine can express at all — **min_y -2032, height 4064**, a 4064-block world —
+and the fall under the gel's surface runs through **five tiers**, each with its own
+colour, its own light, its own speed and its own thing to look at:
+
+| tier | band (y) | what it is |
+|---|---|---|
+| 0 | 56 .. -250 | **the baseline**: empty space under the bedrock line, no filter at all |
+| 1 | -251 .. -1100 | **the luminous cavern**: plum `#2E0B36` air and thin spires of cyan, emerald and amber light, with the bedrock ceiling overhead |
+| 2 | -1101 .. -1250 | **the sponge**: an orange-to-pink wash of fractal pores, none of it straight |
+| 3 | -1251 .. -1550 | **the abyss**: absolute light suppression, `#000000`, and rare ruins that still glow green because nothing here is lit for you |
+| 4 | -1551 .. -1800 | **the fracture**: the view ripples — displacement bands and scanlines across the whole frame |
+| 5 | -1801 .. -2032 | **the gel horizon**: the void's own fluid, greenish-brown `#1C1F16`, turning over as you sink into it |
+
+Every boundary a fall crosses is named once, in chat, in the plan's own words. The
+fog, the depth and the art all read the same table, so the world and the picture
+cannot drift apart, and the **`Void Rudder`** (`mcsm:void_rudder`, neon-purple fin,
+crafted from void shards, cord and a sigil, in the mod's own tab) is the tool that
+steers it: it bites only in the void's air, multiplying the tier's own current by
+1.6, or by 2.6 when engaged, with sneak as the brake and a glowing trail behind it.
+Nothing in it touches damage — the fall is fast, never fatal.
+
+The plan's own numbers (-64 .. -6001, a floor at -10000) are not expressible: this
+engine will not place a dimension's `min_y` below -2032. The tiers are scaled into
+the depth that exists, the plan's numbers are kept in the code as the record of what
+was asked, and the mapping is a function rather than a comment.
+
 **Build #480 — the cast, alive.** "custom NPCs that are able to move around, speak,
 make noises and talk". The models shipped in #468 and the walking was always the game's
 own goals; what was missing was the middle — a player could stand in the middle of

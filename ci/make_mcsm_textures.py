@@ -812,6 +812,39 @@ def item_hook(px, seed, metal_c, rope):
 
 
 @_auto
+def item_rudder(px, seed, metal_c, glow):
+    """BUILD #481 -- the Void Rudder: a fin you steer a fall with.
+
+    A 16x16 tool read at the diagonal like the other hand-helds: a shaft with a
+    grip, and at the head a broad fin -- the part that does the work in the gel --
+    whose inner edge is the tool's own light. The glow colour is the mod's void
+    purple, so the item read is "this is the thing the deep is made of", and the
+    fin's trailing edge is shaded rather than drawn, which is what makes it read
+    as a fin and not a sword."""
+    # the shaft: down the anti-diagonal, like every other tool here
+    for i in range(2, 11):
+        put(px, 2 + i, 13 - i, metal_c)
+        put(px, 3 + i, 13 - i, shade(0.52))
+    # the grip: three bands at the butt, so the hand has a place to be
+    for i in range(3):
+        put(px, 2 + i, 14 - i, shade(0.34))
+    put(px, 2, 13, shade(0.28))
+    put(px, 1, 14, shade(0.28))
+    # the fin: wide at the top, tapering down the shaft
+    fin = [(11, 2), (12, 2), (13, 2), (10, 3), (11, 3), (12, 3), (13, 3),
+           (9, 4), (10, 4), (11, 4), (12, 4), (8, 5), (9, 5), (10, 5), (11, 5),
+           (7, 6), (8, 6), (9, 6), (10, 6), (7, 7), (8, 7), (9, 7)]
+    for (x, y) in fin:
+        put(px, x, y, metal_c)
+    # the glowing inner edge -- the part the gel answers to
+    for (x, y) in ((10, 2), (9, 3), (8, 4), (7, 5), (6, 6), (6, 7), (11, 6), (12, 5)):
+        put(px, x, y, glow)
+    # and the leading edge, darker, so the fin has a direction
+    for (x, y) in ((13, 4), (12, 6), (11, 7), (10, 8)):
+        put(px, x, y, shade(0.30))
+
+
+@_auto
 def item_totem(px, seed, body, core):
     for y in range(16):
         for x in range(16):
@@ -1237,6 +1270,11 @@ def item_textures():
         "creator_edict": lambda: item_sword(blank(0), 287, CREATOR_GOLD, WHITE, shade(0.34)),
         "creator_hammer": lambda: item_pick(blank(0), 288, CREATOR_GOLD,
                                             shade(0.30, tint=(1.35, 1.22, 0.78))),
+        # BUILD #481 -- the multi-layer void's own tool. Neon purple, because the
+        # deep is: the fin's edge is the same violet the gel glows in.
+        "void_rudder": lambda: item_rudder(blank(0), 289,
+                                           shade(0.30, tint=(0.85, 0.80, 1.45)),
+                                           (0xC8, 0x6C, 0xFF)),
     }
 
 

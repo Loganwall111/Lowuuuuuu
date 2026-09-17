@@ -85,6 +85,7 @@ public final class McsmVoidDescent {
     /** How far into the fall one player is, and what has already been said about it. */
     private static final class Dive {
         int stop = 0;          // 0 = rate, 1 = dark, 2 = gel, 3 = deep
+        int tier = -1;         // BUILD #481 -- the last tier of the void announced
         int said = -1;         // the last line index announced for this stop
         double lastY = Double.MAX_VALUE;
         int stalled;
@@ -215,6 +216,18 @@ public final class McsmVoidDescent {
             dive.stop = stop;
             dive.said = -1;
         }
+
+        // BUILD #481 -- FIVE TIERS UNDER THE GEL. The four stops above are the
+        // hand-over, the plunge, the dark and the gel; from the gel's surface down
+        // the fall is in the multi-layer void ({@link McsmVoidTiers}), and every
+        // boundary it crosses is named exactly once, in the plan's own words.
+        int tier = y > SURFACE_Y ? McsmVoidTiers.TIER_BASELINE : McsmVoidTiers.tierAt(y);
+        if (tier != dive.tier) {
+            dive.tier = tier;
+            if (tier > McsmVoidTiers.TIER_BASELINE) {
+                player.sendSystemMessage(Component.literal(McsmVoidTiers.entry(tier)));
+            }
+        }
         if (stop == 3) {
             dive.gelTicks++;
         }
@@ -271,7 +284,10 @@ public final class McsmVoidDescent {
     /** The highest solid block under a column, or null when the column is nothing. */
     private static BlockPos surfaceUnder(ServerLevel level, BlockPos from) {
         try {
-            for (int y = from.getY(); y > level.getMinY(); y--) {
+            // BUILD #481 -- the world below is 2032 deep now, so the scan is
+            // bounded to what the catch can actually use: a shelf more than a few
+            // blocks below is not a catch, it is just the fall continuing.
+            for (int y = from.getY(); y > level.getMinY() && y > from.getY() - 24; y--) {
                 BlockPos at = new BlockPos(from.getX(), y, from.getZ());
                 BlockState state = level.getBlockState(at);
                 if (!state.isAir()) {
@@ -337,6 +353,12 @@ public final class McsmVoidDescent {
 
     /** The `/ds` line: who is falling, and how far in. */
     public static String state() {
-        return DIVING.size() + " player(s) on the descent right now";
+        // BUILD #481 -- the fall's own state, plus what the void is under it and
+        // what the rudder is doing: one line, everything a report needs.
+        return DIVING.size() + " player(s) on the descent right now \u00b7 "
+                + McsmVoidRudderItem.state() + " \u00b7 world "
+                + McsmVoidTiers.DIM_MIN_Y + ".." + McsmVoidTiers.DIM_MAX_Y
+                + " \u00b7 tier speeds " + McsmVoidTiers.SPEED[0] + ".."
+                + McsmVoidTiers.SPEED[McsmVoidTiers.TIERS - 1] + " b/s";
     }
 }

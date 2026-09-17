@@ -25,6 +25,9 @@ public abstract class McsmVoidDeepClientMixin {
             ClientTickEvents.END_CLIENT_TICK.register(client -> {
                 try {
                     McsmVoidDeep.tick();
+                    // BUILD #481 -- and the rudder: the tier's own current, the
+                    // tool's multiplier, and the dive's trail.
+                    net.mcsm.extras.client.McsmVoidRudder.tick();
                 } catch (Throwable ignored) {
                     // a frame is never lost to the gel
                 }

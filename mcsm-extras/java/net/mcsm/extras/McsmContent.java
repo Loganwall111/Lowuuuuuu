@@ -504,6 +504,15 @@ public final class McsmContent {
             glinted(props -> new Item(props.rarity(Rarity.EPIC).fireResistant()
                     .pickaxe(ToolMaterial.NETHERITE, 3.5F, -2.9F))));
     public static final Item ECHO_TOTEM = item("echo_totem", item(p -> p.stacksTo(1).rarity(Rarity.RARE)));
+    /**
+     * THE VOID RUDDER -- BUILD #481. A tool, not a weapon: it bites only in the
+     * void's air, where it multiplies the tier's own current ({@link McsmVoidTiers})
+     * so a fall can be steered instead of endured. The physics are the player's own
+     * (see the client's rudder); what is registered here is the thing you hold.
+     */
+    public static final Item VOID_RUDDER = item("void_rudder",
+            glinted(props -> new McsmVoidRudderItem(props.stacksTo(1).rarity(Rarity.EPIC)
+                    .fireResistant())));
 
     // ---------------------------------------------------------------------
     // Items: the guide book and THE ANTENNA (D.8, phase 5)

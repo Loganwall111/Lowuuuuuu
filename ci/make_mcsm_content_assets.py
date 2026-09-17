@@ -216,6 +216,9 @@ ITEMS = {
     "adams_mirror_axe": ("handheld", "mcsm:item/adams_mirror_axe"),
     "creator_edict": ("handheld", "mcsm:item/creator_edict"),
     "creator_hammer": ("handheld", "mcsm:item/creator_hammer"),
+    # BUILD #481 -- the void's own tool: hand-held, so it reads as something you
+    # steer with rather than something you carry.
+    "void_rudder": ("handheld", "mcsm:item/void_rudder"),
 }
 
 NAMES = {
@@ -361,6 +364,7 @@ NAMES = {
     "adams_mirror_axe": "Adams Mirror Axe",
     "creator_edict": "Creator's Edict",
     "creator_hammer": "Creator's Hammer",
+    "void_rudder": "Void Rudder",
     "tab": "Devouring Storms: Decayed Reality",
 }
 
@@ -804,6 +808,13 @@ RECIPES = {
     "creator_hammer": (["DDD", " F ", " F "], {"D": "mcsm:creator_dust",
                                                "F": "mcsm:creator_fragment"},
                        "mcsm:creator_hammer", 1),
+    # BUILD #481 -- the rudder is made of the void's own materials, in the
+    # void's own shape: a shaft of cord, a fin of shards, and the sigil at
+    # the grip that is how this world says "this tool belongs to me".
+    "void_rudder": ([" S ", "SVS", " C "], {"S": "mcsm:void_shard",
+                                            "V": "mcsm:void_sigil",
+                                            "C": "mcsm:void_cord"},
+                    "mcsm:void_rudder", 1),
 }
 
 

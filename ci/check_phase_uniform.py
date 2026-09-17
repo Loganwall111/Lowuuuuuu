@@ -2608,7 +2608,15 @@ def main():
           and void_dim["generator"]["settings"]["lakes"] is False
           and void_dim["type"] == "mcsm:void_reality")
     check("and it is tall enough to fall through, with nothing to hit",
-          void_type["min_y"] == -64 and void_type["height"] == 384
+          # BUILD #481 -- THE MULTI-LAYER VOID. The dimension was -64..320 (384
+          # tall); it is now the tallest world this engine can express at all --
+          # min_y -2032, height 4064 -- because the five tiers need the depth. The
+          # plan's own numbers (-64 .. -6001, and a floor at -10000) are not
+          # expressible: vanilla will not place a dimension's min_y below -2032,
+          # so the tiers are scaled into 1968 blocks of real depth with the whole
+          # mapping written down in McsmVoidTiers.
+          void_type["min_y"] == -2032 and void_type["height"] == 4064
+          and void_type["logical_height"] == 4064
           and void_type["has_ceiling"] is False
           and void_type["attributes"]["minecraft:gameplay/water_evaporates"] is False)
     check("the void has its own purple water and its own violet air",
@@ -2627,7 +2635,7 @@ def main():
           # BUILD #452 moved the catch line BELOW the invisible floor (see the next
           # family): the floor is what catches an ordinary fall now, and the catch is
           # only for a hole in the world.
-          "public static final int CATCH_Y = -70;" in void_java
+          "public static final int CATCH_Y = McsmVoidTiers.FLOOR_Y - 6;" in void_java
           and "public static final int SHELF_Y = 210;" in void_java
           and "private static void catchFall(ServerLevel level, ServerPlayer player) {" in void_java
           and "if (player.getY() > CATCH_Y) {" in void_java
@@ -2713,11 +2721,136 @@ def main():
 
     check("the bottom is an invisible floor you can stand on",
           void_dim["generator"]["settings"]["layers"][0]["block"] == "minecraft:barrier"
-          and "public static final int FLOOR_Y = -64;" in void_java
+          # BUILD #481 -- the floor is the world's own min_y now: the flat layer sits
+          # at -2032 and the five tiers hang between the gel's surface and it.
+          and "public static final int FLOOR_Y = McsmVoidTiers.FLOOR_Y;" in void_java
           # the catch line has to be BELOW the floor now, or it would grab the player
           # out of the floor they were meant to land on
-          and "public static final int CATCH_Y = -70;" in void_java
+          and "public static final int CATCH_Y = McsmVoidTiers.FLOOR_Y - 6;" in void_java
           and "public static final int SHELF_Y = 210;" in void_java)
+    # ------------------------------------------------------------------
+    # BUILD #481 -- THE MULTI-LAYER VOID, AND THE RUDDER THAT STEERS IT.
+    #
+    # Five tiers under the bedrock line, the world extended to the deepest the
+    # engine allows, and the tool the plan asks for: an item that bites only in
+    # the void's air and multiplies the tier's own current. What is checked here
+    # is the shape of it: that the tiers exist and are ordered, that the world is
+    # as deep as it claims, that the item is registered, textured, named and
+    # craftable from the void's own materials, and that the fall through the
+    # tiers is still the fall the descent owns (no damage, no screen).
+    # ------------------------------------------------------------------
+    tiers = read("mcsm-extras/java/net/mcsm/extras/McsmVoidTiers.java") or ""
+    rudder = read("mcsm-extras/java/net/mcsm/extras/McsmVoidRudderItem.java") or ""
+    rudder_client = read("mcsm-extras/java/net/mcsm/extras/client/McsmVoidRudder.java") or ""
+    deep = read("mcsm-extras/java/net/mcsm/extras/client/McsmVoidDeep.java") or ""
+    content = read("mcsm-extras/java/net/mcsm/extras/McsmContent.java") or ""
+    assets_script = read("ci/make_mcsm_content_assets.py") or ""
+    textures_script = read("ci/make_mcsm_textures.py") or ""
+
+    check("and the void has five tiers under the gel, in order, all the way down",
+          "public static final int DIM_MIN_Y = -2032;" in tiers
+          and "public static final int DIM_HEIGHT = 4064;" in tiers
+          # the bands, top to bottom, each below the one above it
+          and "public static final int BASELINE_FLOOR = -250;" in tiers
+          and "public static final int LUMINOUS_FLOOR = -1100;" in tiers
+          and "public static final int SPONGE_FLOOR = -1250;" in tiers
+          and "public static final int ABYSS_FLOOR = -1550;" in tiers
+          and "public static final int FRACTURE_FLOOR = -1800;" in tiers
+          and "public static final int GEL_FLOOR = DIM_MIN_Y;" in tiers
+          and "public static final int TIERS = 6;" in tiers
+          # the plan's own numbers are kept as the record of what was asked, and the
+          # scaling from them to this world is a function, not a comment
+          and "public static final int SPEC_TOP = -64;" in tiers
+          and "public static final int SPEC_FLOOR = -6001;" in tiers
+          and "public static double scale() {" in tiers
+          # every tier has its colour, its light, its own terminal fall speed and its
+          # own line in chat
+          and "public static final int[] FOG = {" in tiers
+          and "0x2E0B36," in tiers and "0x1C1F16 };" in tiers and "0xFF5A1E," in tiers
+          and "public static final double[] SPEED = { 3.6D, 7.0D, 11.0D, 16.0D, 22.0D, 30.0D };" in tiers
+          and "public static final String[] ENTRY = {" in tiers
+          and "public static String entry(int tier) {" in tiers
+          and "public static int tierAt(double y) {" in tiers
+          and "public static double current(double y) {" in tiers
+          and "public static float depthAt(double y) {" in tiers)
+
+    check("and the fall names each tier it crosses, once, in the plan's words",
+          "int tier = -1;" in (read("mcsm-extras/java/net/mcsm/extras/McsmVoidDescent.java") or "")
+          and "McsmVoidTiers.tierAt(y)" in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmVoidDescent.java") or "")
+          and "player.sendSystemMessage(Component.literal(McsmVoidTiers.entry(tier)));" in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmVoidDescent.java") or "")
+          # and the deep's own scan is bounded: a shelf 2000 blocks down is not a
+          # catch, it is the fall continuing, and scanning to min_y every tick was
+          # 2000 block reads per tick per falling player
+          and "y > from.getY() - 24" in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmVoidDescent.java") or ""))
+
+    check("and every tier is drawn as itself, and the fog reports it",
+          # the deep reads the tiers for its depth, its fog and its art
+          "return McsmVoidTiers.depthAt(y);" in deep
+          and "int tier = McsmVoidTiers.tierAt(mc.player.getY());" in deep
+          and "McsmVoidTiers.ambient(tier, amb);" in deep
+          and "McsmVoidTiers.PLAN_NAME[tier].toUpperCase()" in deep
+          # one drawing per tier: spires, the sponge wash, the ruins, the waves, the
+          # gel horizon -- all five exist, and each is reached from the switch
+          and "private static void spires(GuiGraphicsExtractor g" in deep
+          and "private static void sponge(GuiGraphicsExtractor g" in deep
+          and "private static void ruins(GuiGraphicsExtractor g" in deep
+          and "private static void waves(GuiGraphicsExtractor g" in deep
+          and "private static void horizon(GuiGraphicsExtractor g" in deep
+          and "case McsmVoidTiers.TIER_LUMINOUS -> spires(g, w, h, t, now);" in deep
+          and "case McsmVoidTiers.TIER_GEL -> horizon(g, w, h, t, now);" in deep
+          # the abyss suppresses light for real, and it does it by hand
+          and "0x000000" in deep
+          and "opacity = Math.min(0.96F, opacity + 0.26F);" in deep)
+
+    check("the Void Rudder is a real, registered, craftable, textured tool",
+          # the class, and its behaviour: it bites only in the void's air, and its
+          # multipliers are constants rather than literals in two places
+          "public class McsmVoidRudderItem extends Item {" in rudder
+          and "public static final double HELD = 1.6D;" in rudder
+          and "public static final double ENGAGED = 2.6D;" in rudder
+          and "public static final double BRAKE = 0.35D;" in rudder
+          and "public static boolean voidAir(Level level, Player player) {" in rudder
+          and "player.getY() < level.getMinY() - McsmVoidDescent.DIVE_MARGIN" in rudder
+          and "public InteractionResult use(Level level, Player player, InteractionHand hand) {" in rudder
+          and "\\u00a7d\\u00a7lTHE RUDDER \\u00a78\\u00b7 engaged" in rudder
+          # registered in the mod's own registry, and therefore in its own tab
+          and 'item("void_rudder"' in content
+          and "new McsmVoidRudderItem(props.stacksTo(1).rarity(Rarity.EPIC)" in content
+          # modelled, defined, named, and made from the void's own materials
+          and '"void_rudder": ("handheld", "mcsm:item/void_rudder")' in assets_script
+          and '"void_rudder": "Void Rudder"' in assets_script
+          and '"void_rudder": ([" S ", "SVS", " C "], {"S": "mcsm:void_shard",' in assets_script
+          and '"V": "mcsm:void_sigil",' in assets_script
+          and '"void_rudder": lambda: item_rudder(blank(0), 289,' in textures_script
+          and "def item_rudder(px, seed, metal_c, glow):" in textures_script
+          # and the texture/model/definition files themselves are in the tree
+          and os.path.isfile(os.path.join(
+              "jar-overrides/assets/mcsm/textures/item/void_rudder.png"))
+          and os.path.isfile(os.path.join("jar-overrides/assets/mcsm/models/item/void_rudder.json"))
+          and os.path.isfile(os.path.join("jar-overrides/assets/mcsm/items/void_rudder.json"))
+          and os.path.isfile(os.path.join("jar-overrides/data/mcsm/recipe/void_rudder.json")))
+
+    check("and holding it in the void actually multiplies the fall -- and cannot kill",
+          # the physics, on the side of the fence that owns a player's motion
+          "public static void tick() {" in rudder_client
+          and "double current = McsmVoidTiers.current(y);" in rudder_client
+          and "double speed = current * McsmVoidRudderItem.factor(player);" in rudder_client
+          and "speed *= McsmVoidRudderItem.BRAKE;" in rudder_client
+          and "player.setDeltaMovement(dm.x, Math.max(dm.y - PULL, -speed), dm.z);" in rudder_client
+          # the trail is the rudder's own, and only while it works
+          and "ParticleTypes.GLOW" in rudder_client
+          and "ParticleTypes.SOUL" in rudder_client
+          and "McsmSounds.OBLIVION_WARP" in rudder_client
+          # it runs on the client tick the deep already owns
+          and "net.mcsm.extras.client.McsmVoidRudder.tick();" in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepClientMixin.java") or "")
+          # and nothing in either file touches damage: the descent still owns that
+          and "hurt" not in rudder and "DamageSource" not in rudder
+          and "hurt" not in rudder_client and "DamageSource" not in rudder_client)
+
     spectrum = re.findall(r"0xFF[0-9A-F]{6},", floor)
     check("one shelf builder: regions and landings both carve through shelfInto",
           # run 534 -- the region pass called the plan-returning shelf() and handed a
