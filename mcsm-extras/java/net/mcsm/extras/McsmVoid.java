@@ -107,6 +107,9 @@ public final class McsmVoid {
     private static final int ANCHOR = 7;
     private static final int PLANK = 8;
     private static final int BONE = 9;
+    /** BUILD #459 -- the void's own seal (on the way into a house) and its cache. */
+    private static final int LOCK = 10;
+    private static final int CACHE = 11;
 
     private McsmVoid() {
     }
@@ -455,8 +458,12 @@ public final class McsmVoid {
         // a hole in the roof, because nothing here is finished
         planner.box(cx, y + h, cz, cx + 1, y + h, cz + 1, AIR);
         planner.put(cx, y + 1, cz, LAMP);
-        // and a way in
-        planner.box(cx, y + 1, cz + w, cx, y + 2, cz + w, AIR);
+        // BUILD #459 -- and a way in that is SHUT. The doorway carries the void's
+        // own lock (the key is in the void's own cache, a few steps away), so a
+        // house in the nothing is a room you have to open rather than walk into.
+        planner.put(cx, y + 1, cz + w, LOCK);
+        planner.put(cx, y + 2, cz + w, AIR);
+        planner.put(cx - 1, y + 1, cz + w - 1, CACHE);
     }
 
     /** A wall of glitch that stands in the air on its own. */
@@ -514,7 +521,7 @@ public final class McsmVoid {
         if (local != null) {
             return local;
         }
-        BlockState[] next = new BlockState[10];
+        BlockState[] next = new BlockState[12];
         next[AIR] = Blocks.AIR.defaultBlockState();
         // BUILD #458 -- THE VOID'S OWN MATERIAL. These four were decayed_stone,
         // city_tiles, decayed_planks and decayed_stone_bricks: the decayed
@@ -536,6 +543,8 @@ public final class McsmVoid {
         // null). Broken pillars are capped with the void's own bone, which is a
         // block and reads as the material it is named for.
         next[BONE] = state("mcsm:void_bone", McsmContent.VOID_BONE);
+        next[LOCK] = state("mcsm:void_lock", McsmContent.VOID_LOCK);
+        next[CACHE] = state("mcsm:void_cache", McsmContent.VOID_CACHE);
         palette = next;
         return next;
     }

@@ -310,6 +310,8 @@ public final class McsmAdams {
     private static final int FLESH = 8;
     private static final int CRATE = 9;
     private static final int BARREL = 10;
+    /** BUILD #459 -- the chamber's seal: this dimension's own lock, on its door. */
+    private static final int LOCK = 11;
 
     private static Region planRegion(ServerLevel level, int rx, int rz, long key) {
         long seed = mix(key);
@@ -404,6 +406,10 @@ public final class McsmAdams {
         grow.put(crateX, ground + 1, crateZ, BARREL);
         grow.put(crateX, ground + 1, crateZ + 1, CRATE);
         grow.crate(crateX, ground + 1, crateZ, (int) mix(seed ^ 0x5ADL));
+        // BUILD #459 -- THE CHAMBER IS SEALED. Its doorway is a real door now: an
+        // Adams lock stands in the bottom two blocks of it and only this
+        // dimension's own sigil opens it, so the salvage inside is earned.
+        grow.put(cx + 7, ground + 1, cz - 1, LOCK);
         if (Math.floorMod(seed >> 30, 3L) != 0) {
             grow.waiting(cx + 3, ground + 1, cz + w - 3, (int) (seed >> 40));
         }
@@ -542,7 +548,7 @@ public final class McsmAdams {
         if (local != null) {
             return local;
         }
-        BlockState[] next = new BlockState[11];
+        BlockState[] next = new BlockState[12];
         next[AIR] = Blocks.AIR.defaultBlockState();
         // BUILD #458 -- THE INFINITE DIMENSION'S OWN MATERIAL. Every line here used
         // to name a decayed-reality or storm-set block (decayed stone, decayed
@@ -559,6 +565,7 @@ public final class McsmAdams {
         next[FLESH] = state("mcsm:adams_rubble", McsmContent.ADAMS_RUBBLE);
         next[CRATE] = state("mcsm:adams_crate", McsmContent.ADAMS_CRATE);
         next[BARREL] = state("minecraft:barrel", null);
+        next[LOCK] = state("mcsm:adams_lock", McsmContent.ADAMS_LOCK);
         palette = next;
         return next;
     }

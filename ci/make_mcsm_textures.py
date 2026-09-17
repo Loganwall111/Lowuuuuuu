@@ -560,6 +560,37 @@ def anchor(px, seed, accent=None):
 
 
 @_auto
+def lock(px, seed, accent=None):
+    """BUILD #459 -- A LOCK. A metal plate, a shackle of the world's own colour, a
+    keyhole that is dark because nothing is in it yet. Accent default is the
+    storm's violet, i.e. the same drawing for every lock unless a world says
+    otherwise -- and the three worlds each say otherwise (see the catalogue)."""
+    accent = VIOLET if accent is None else accent
+    rng = Rand(seed)
+    for y in range(16):
+        for x in range(16):
+            edge = x in (0, 15) or y in (0, 15)
+            c = shade(rng.between(0.30, 0.52)) if edge else shade(rng.between(0.16, 0.30))
+            put(px, x, y, c)
+    # the shackle: an arc over the top third, in the world's colour
+    for x in range(4, 12):
+        put(px, x, 3, accent)
+        put(px, x, 4, shade(0.34))
+    for y in range(3, 7):
+        put(px, 4, y, accent)
+        put(px, 11, y, accent)
+    # the plate the key goes in, and the keyhole
+    for y in range(7, 13):
+        for x in range(3, 13):
+            put(px, x, y, shade(0.42) if (x + y) % 4 else shade(0.52))
+    put(px, 7, 9, (0x05, 0x04, 0x08))
+    put(px, 8, 9, (0x05, 0x04, 0x08))
+    put(px, 7, 10, (0x05, 0x04, 0x08))
+    put(px, 8, 10, (0x05, 0x04, 0x08))
+    put(px, 8, 11, accent)
+
+
+@_auto
 def crate(px, seed, tint=None, band=None):
     rng = Rand(seed)
     for y in range(16):
@@ -820,6 +851,15 @@ def block_textures():
                                                  tint=(1.35, 1.02, 0.72))),
         "adams_rubble": on_adams(lambda: cobble(blank(), 219)),
         "adams_crate": on_adams(lambda: crate(blank(), 220, tint=AMBER, band=RUST_LIT)),
+        # ---- BUILD #459: the locks, and the void's own cache ---------------
+        # One seal per world, each lit in that world's own accent -- the violet of
+        # the rift, the amber of the city glow, the void's cold green. The key a
+        # lock takes is the world's own item (McsmLocks), and the cache is the
+        # only place a void sigil is ever found.
+        "decayed_lock": on_cold(lambda: lock(blank(), 231, accent=VIOLET)),
+        "adams_lock": on_adams(lambda: lock(blank(), 232, accent=AMBER)),
+        "void_lock": on_void(lambda: lock(blank(), 233, accent=VOID_GREEN)),
+        "void_cache": on_void(lambda: crate(blank(), 234, tint=VOID_GREEN, band=VIOLET_DIM)),
     }
 
 
@@ -1002,6 +1042,17 @@ def item_textures():
         "echo_totem": lambda: item_totem(blank(0), 219, shade(0.26), VIOLET),
         "guide_book": lambda: item_card(blank(0), 220, shade(0.34), WHITE),
         "antenna": lambda: item_hook(blank(0), 221, GLITCH, shade(0.30)),
+        # BUILD #459 -- the two worlds' own materials, and the two keys their
+        # locks take. A sigil is a card-shaped tag because that is what a seal
+        # accepts; the materials are the shape of the thing they are (a shard of
+        # the void, a lump of the city's amber).
+        "void_shard": lambda: item_shard(blank(0), 241, shade(0.24, tint=(0.9, 0.8, 1.5)),
+                                         VOID_GREEN),
+        "adams_amber": lambda: item_ingot(blank(0), 242, AMBER),
+        "void_sigil": lambda: item_card(blank(0), 243, shade(0.22, tint=(0.8, 0.7, 1.4)),
+                                        VOID_GREEN),
+        "adams_sigil": lambda: item_card(blank(0), 244, shade(0.30, tint=(1.4, 1.05, 0.7)),
+                                         AMBER),
     }
 
 

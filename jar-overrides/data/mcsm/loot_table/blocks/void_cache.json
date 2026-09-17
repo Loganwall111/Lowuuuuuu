@@ -14,29 +14,7 @@
               "function": "minecraft:set_count"
             }
           ],
-          "name": "mcsm:memory_fragment",
-          "type": "minecraft:item",
-          "weight": 4
-        },
-        {
-          "functions": [
-            {
-              "count": 1,
-              "function": "minecraft:set_count"
-            }
-          ],
-          "name": "mcsm:glyph_cell",
-          "type": "minecraft:item",
-          "weight": 3
-        },
-        {
-          "functions": [
-            {
-              "count": 1,
-              "function": "minecraft:set_count"
-            }
-          ],
-          "name": "mcsm:adams_amber",
+          "name": "mcsm:void_shard",
           "type": "minecraft:item",
           "weight": 5
         },
@@ -47,7 +25,29 @@
               "function": "minecraft:set_count"
             }
           ],
-          "name": "mcsm:adams_sigil",
+          "name": "mcsm:void_thread",
+          "type": "minecraft:item",
+          "weight": 4
+        },
+        {
+          "functions": [
+            {
+              "count": 1,
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "mcsm:glitch_echo",
+          "type": "minecraft:item",
+          "weight": 3
+        },
+        {
+          "functions": [
+            {
+              "count": 1,
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "mcsm:void_sigil",
           "type": "minecraft:item",
           "weight": 2
         },
@@ -58,18 +58,7 @@
               "function": "minecraft:set_count"
             }
           ],
-          "name": "mcsm:rift_shard",
-          "type": "minecraft:item",
-          "weight": 2
-        },
-        {
-          "functions": [
-            {
-              "count": 1,
-              "function": "minecraft:set_count"
-            }
-          ],
-          "name": "mcsm:echo_totem",
+          "name": "mcsm:abyss_orb",
           "type": "minecraft:item",
           "weight": 1
         }
@@ -90,13 +79,17 @@
         {
           "functions": [
             {
-              "count": 1,
+              "count": {
+                "max": 3,
+                "min": 1,
+                "type": "minecraft:uniform"
+              },
               "function": "minecraft:set_count"
             }
           ],
           "name": "minecraft:torch",
           "type": "minecraft:item",
-          "weight": 4
+          "weight": 3
         },
         {
           "functions": [
@@ -110,21 +103,6 @@
             }
           ],
           "name": "minecraft:bread",
-          "type": "minecraft:item",
-          "weight": 2
-        },
-        {
-          "functions": [
-            {
-              "count": {
-                "max": 3,
-                "min": 1,
-                "type": "minecraft:uniform"
-              },
-              "function": "minecraft:set_count"
-            }
-          ],
-          "name": "minecraft:iron_ingot",
           "type": "minecraft:item",
           "weight": 2
         }

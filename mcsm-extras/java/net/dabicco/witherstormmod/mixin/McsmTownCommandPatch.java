@@ -162,6 +162,15 @@ public abstract class McsmTownCommandPatch {
                         .executes(ctx -> ds$mob(ctx.getSource(), id)));
             }
 
+            // BUILD #459 -- the locks. "own blocks, items, mobs, LOCKS": every
+            // world seals its doors with its own lock, and this raises one two
+            // blocks in front of you so the mechanic is testable without walking
+            // to a city, a chamber or a house in the nothing.
+            LiteralArgumentBuilder<CommandSourceStack> lock = Commands.literal("lock");
+            lock.executes(ctx -> ds$lock(ctx.getSource(), null));
+            for (String id : new String[] { "decayed", "adams", "void" }) {
+                lock.then(Commands.literal(id).executes(ctx -> ds$lock(ctx.getSource(), id)));
+            }
             // BUILD #447 -- the cutscenes, listed from the shared table (the server
             // never loads the drawing class).
             LiteralArgumentBuilder<CommandSourceStack> scene = Commands.literal("scene");
@@ -180,7 +189,7 @@ public abstract class McsmTownCommandPatch {
 
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
                     .then(ritual).then(reality).then(maze).then(server).then(book).then(scene)
-                    .then(city).then(portal).then(mob));
+                    .then(city).then(portal).then(mob).then(lock));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -606,6 +615,46 @@ public abstract class McsmTownCommandPatch {
             return 1;
         } catch (Throwable t) {
             src.sendSuccess(() -> Component.literal("[ds] no mob: " + t), false);
+            return 0;
+        }
+    }
+
+    /**
+     * BUILD #459 -- /ds lock &lt;decayed|adams|void&gt;: puts that world's seal in
+     * front of you, facing you, so the key it takes can be checked in game. The
+     * lock is a real block from {@link net.mcsm.extras.McsmContent} and the
+     * mechanic is {@link net.mcsm.extras.McsmLocks}; nothing here invents anything.
+     */
+    private static int ds$lock(CommandSourceStack src, String which) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            String dim = which == null ? net.mcsm.extras.McsmIdentity.DECAYED : which;
+            String id = net.mcsm.extras.McsmLocks.blockIdFor(dim);
+            if (id == null) {
+                src.sendSuccess(() -> Component.literal(
+                        "[ds] no lock for that world -- decayed, adams or void"), false);
+                return 0;
+            }
+            net.minecraft.server.level.ServerLevel level =
+                    (net.minecraft.server.level.ServerLevel) player.level();
+            net.minecraft.core.BlockPos at = player.blockPosition().relative(
+                    player.getDirection(), 2);
+            net.minecraft.world.level.block.Block block =
+                    net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(
+                            net.minecraft.resources.Identifier.fromNamespaceAndPath(
+                                    "mcsm", id.substring("mcsm:".length())));
+            if (block == null || block == net.minecraft.world.level.block.Blocks.AIR) {
+                src.sendSuccess(() -> Component.literal(
+                        "[ds] that lock is not registered in this jar"), false);
+                return 0;
+            }
+            level.setBlock(at, block.defaultBlockState(), 3);
+            String key = net.mcsm.extras.McsmLocks.keyNameFor(dim);
+            src.sendSuccess(() -> Component.literal("[ds] a " + dim + " lock is in front of "
+                    + "you -- " + key + " opens it, and nothing else does"), false);
+            return 1;
+        } catch (Throwable t) {
+            src.sendSuccess(() -> Component.literal("[ds] no lock: " + t), false);
             return 0;
         }
     }

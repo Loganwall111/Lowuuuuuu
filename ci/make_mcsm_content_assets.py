@@ -112,6 +112,13 @@ BLOCKS = {
     "adams_crystal": ("cube", "mcsm:block/adams_crystal"),
     "adams_rubble": ("cube", "mcsm:block/adams_rubble"),
     "adams_crate": ("cube", "mcsm:block/adams_crate"),
+    # ---- BUILD #459: the locks, and the void's own cache ---------------
+    # One seal per world. Each is a real block with a real interaction (see
+    # McsmLocks): it opens to that world's own key and to nothing else.
+    "decayed_lock": ("cube", "mcsm:block/decayed_lock"),
+    "adams_lock": ("cube", "mcsm:block/adams_lock"),
+    "void_lock": ("cube", "mcsm:block/void_lock"),
+    "void_cache": ("cube", "mcsm:block/void_cache"),
 }
 
 # item name -> (kind, texture) ; kind = handheld | flat
@@ -137,6 +144,13 @@ ITEMS = {
     "echo_totem": ("flat", "mcsm:item/echo_totem"),
     "guide_book": ("flat", "mcsm:item/guide_book"),
     "antenna": ("flat", "mcsm:item/antenna"),
+    # BUILD #459 -- the two worlds' own materials and the two keys their locks
+    # take. Never handed out by the terminal: both are found in that world's own
+    # salvage, so the key to a place is inside the place.
+    "void_shard": ("flat", "mcsm:item/void_shard"),
+    "adams_amber": ("flat", "mcsm:item/adams_amber"),
+    "void_sigil": ("flat", "mcsm:item/void_sigil"),
+    "adams_sigil": ("flat", "mcsm:item/adams_sigil"),
 }
 
 NAMES = {
@@ -223,6 +237,15 @@ NAMES = {
     "adams_crystal": "Adams Crystal",
     "adams_rubble": "Adams Rubble",
     "adams_crate": "Adams Crate",
+    # BUILD #459 -- the locks and the two worlds' own items.
+    "decayed_lock": "Decayed Lock",
+    "adams_lock": "Adams Lock",
+    "void_lock": "Void Lock",
+    "void_cache": "Void Cache",
+    "void_shard": "Void Shard",
+    "adams_amber": "Adams Amber",
+    "void_sigil": "Void Sigil",
+    "adams_sigil": "Adams Sigil",
     "tab": "Devouring Storms: Decayed Reality",
 }
 
@@ -493,10 +516,19 @@ LOOT = {
     # looting, kept apart from the city crates it used to reuse.
     "adams_crate": [
         (1, 2, [("mcsm:memory_fragment", 4), ("mcsm:glyph_cell", 3),
-                ("mcsm:decayed_steel_ingot", 3), ("mcsm:rift_shard", 2),
-                ("mcsm:echo_totem", 1)]),
+                ("mcsm:adams_amber", 5), ("mcsm:adams_sigil", 2),
+                ("mcsm:rift_shard", 2), ("mcsm:echo_totem", 1)]),
         (1, 1, [("minecraft:torch", 4), ("minecraft:bread", 2),
                 ("minecraft:iron_ingot", 2)]),
+    ],
+    # BUILD #459 -- the void's own salvage. It is the ONLY place a void sigil
+    # drops, which is what makes the void's locks (on the houses in the nothing)
+    # something a player has to go and find rather than something they are given.
+    "void_cache": [
+        (1, 2, [("mcsm:void_shard", 5), ("mcsm:void_thread", 4),
+                ("mcsm:glitch_echo", 3), ("mcsm:void_sigil", 2),
+                ("mcsm:abyss_orb", 1)]),
+        (1, 1, [("minecraft:torch", 3), ("minecraft:bread", 2)]),
     ],
     "vault_crate": [
         (1, 2, [("mcsm:rift_shard", 5), ("mcsm:glyph_cell", 4),
@@ -516,6 +548,22 @@ RECIPES = {
                        "mcsm:decayed_stairs", 4),
     "rift_key": ([" S ", "SRS", " S "], {"S": "mcsm:rift_shard", "R": "mcsm:glyph_cell"},
                  "mcsm:rift_key", 1),
+    # BUILD #459 -- a lock is plated in its own world's material, and a sigil is
+    # that world's material folded into a tag its locks accept. There is no recipe
+    # that converts one world's key into another's: they are not interchangeable,
+    # which is the whole point of the locks.
+    "decayed_lock": ([" D ", "DID", " D "], {"D": "mcsm:decayed_steel_ingot",
+                                             "I": "minecraft:iron_ingot"},
+                     "mcsm:decayed_lock", 1),
+    "adams_lock": ([" A ", "AIA", " A "], {"A": "mcsm:adams_amber",
+                                           "I": "minecraft:iron_ingot"},
+                   "mcsm:adams_lock", 1),
+    "void_lock": ([" V ", "VIV", " V "], {"V": "mcsm:void_shard",
+                                          "I": "minecraft:iron_ingot"},
+                  "mcsm:void_lock", 1),
+    "adams_sigil": (["AA", "AA"], {"A": "mcsm:adams_amber"}, "mcsm:adams_sigil", 1),
+    "void_sigil": (["SS", "SS"], {"S": "mcsm:void_shard"}, "mcsm:void_sigil", 1),
+    "adams_amber": (["RR", "RR"], {"R": "mcsm:adams_rubble"}, "mcsm:adams_amber", 1),
     "reality_ripper": ([" D ", " D ", " S "], {"D": "mcsm:decayed_steel_ingot",
                                                "S": "mcsm:storm_heart_shard"},
                        "mcsm:reality_ripper", 1),

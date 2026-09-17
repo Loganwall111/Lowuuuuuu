@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -26,8 +30,10 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.WallBlock;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
+import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * Devouring Storms: the Decayed Reality content pack (mandate D.8, phase 1).
@@ -199,6 +205,27 @@ public final class McsmContent {
     /** The dimension's own salvage, with its own loot table (ci/make_mcsm_content_assets.py). */
     public static final Block ADAMS_CRATE = block("adams_crate",
             BlockBehaviour.Properties.of().strength(1.8F, 6.0F).sound(SoundType.WOOD));
+    /** The void's own salvage: the only place a void sigil is ever found. */
+    public static final Block VOID_CACHE = block("void_cache",
+            BlockBehaviour.Properties.of().strength(1.8F, 6.0F).sound(SoundType.WOOD));
+
+    // ---------------------------------------------------------------------
+    // THE LOCKS (BUILD #459) -- one per world, and only that world's key fits
+    // ---------------------------------------------------------------------
+    // The identity list asked for "own ... locks". This is that: a seal block per
+    // dimension that a player meets in the world, refuses to move without that
+    // dimension's own key, and is spent once it opens (see McsmLocks). The key is
+    // never named in a menu -- it is found in that world's own crates, which is
+    // how a place teaches you what it wants.
+    public static final Block DECAYED_LOCK = block("decayed_lock",
+            props -> new DimensionLock(McsmIdentity.DECAYED, props),
+            lock(3.0F, 9.0F));
+    public static final Block ADAMS_LOCK = block("adams_lock",
+            props -> new DimensionLock(McsmIdentity.ADAMS, props),
+            lock(3.0F, 9.0F));
+    public static final Block VOID_LOCK = block("void_lock",
+            props -> new DimensionLock(McsmIdentity.VOID, props),
+            lock(3.0F, 9.0F));
 
     // ---------------------------------------------------------------------
     // Shapes (slab / stairs / wall / fence share the decayed palette)
@@ -272,6 +299,16 @@ public final class McsmContent {
             glinted(item(p -> p.rarity(Rarity.EPIC))));
     public static final Item ABYSS_ORB = item("abyss_orb", glinted(item(p -> p.rarity(Rarity.EPIC))));
     public static final Item TENTACLE_HOOK = item("tentacle_hook", item(p -> p.rarity(Rarity.UNCOMMON)));
+    /**
+     * BUILD #459 -- the two worlds' own materials and keys. "own blocks, items,
+     * mobs, locks, VFX": the void shard and Adams amber are what those worlds are
+     * made of in the inventory, and the sigils are what their locks take. Found
+     * only in that world's own salvage, never handed out by the terminal.
+     */
+    public static final Item VOID_SHARD = item("void_shard", glinted(item(p -> p.rarity(Rarity.UNCOMMON))));
+    public static final Item ADAMS_AMBER = item("adams_amber", item(p -> p.rarity(Rarity.UNCOMMON)));
+    public static final Item VOID_SIGIL = item("void_sigil", glinted(item(p -> p.rarity(Rarity.RARE))));
+    public static final Item ADAMS_SIGIL = item("adams_sigil", glinted(item(p -> p.rarity(Rarity.RARE))));
 
     // ---------------------------------------------------------------------
     // Items: the tools and weapons the storyline hands out
@@ -338,6 +375,35 @@ public final class McsmContent {
     public static class ExposedTrapDoor extends TrapDoorBlock {
         public ExposedTrapDoor(BlockSetType type, BlockBehaviour.Properties props) {
             super(type, props);
+        }
+    }
+
+    /**
+     * BUILD #459 -- A DIMENSION'S LOCK. The block itself is dumb on purpose: it
+     * knows which world it belongs to and hands the interaction straight to
+     * {@link McsmLocks}, which owns the key table and the refusal line. The hook is
+     * {@code useItemOn}, the same override the mod's own storm beacon block has
+     * compiled with since it was written, and the protected constructor problem
+     * does not arise here -- the constructor is this class's own.
+     */
+    public static class DimensionLock extends Block {
+        private final String dimension;
+
+        public DimensionLock(String dimension, BlockBehaviour.Properties props) {
+            super(props);
+            this.dimension = dimension;
+        }
+
+        /** The world this seal belongs to ({@link McsmIdentity}). */
+        public String dimension() {
+            return this.dimension;
+        }
+
+        @Override
+        protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
+                                              BlockPos pos, Player player, InteractionHand hand,
+                                              BlockHitResult hit) {
+            return McsmLocks.use(this.dimension, level, pos, player);
         }
     }
 
@@ -517,6 +583,17 @@ public final class McsmContent {
     private static BlockBehaviour.Properties stone(float hardness, float resistance) {
         return BlockBehaviour.Properties.of().strength(hardness, resistance)
                 .sound(SoundType.STONE).requiresCorrectToolForDrops();
+    }
+
+    /**
+     * A lock's properties: metal, hard enough to be a door rather than scenery, and
+     * lit -- in the world's own accent colour, because the block's texture is
+     * painted from the same identity hexes (ci/make_mcsm_textures.py).
+     */
+    private static BlockBehaviour.Properties lock(float hardness, float resistance) {
+        return BlockBehaviour.Properties.of().strength(hardness, resistance)
+                .sound(SoundType.METAL).lightLevel(s -> 6)
+                .emissiveRendering(s -> true).requiresCorrectToolForDrops();
     }
 
     private static BlockBehaviour.Properties wood(float hardness, float resistance) {

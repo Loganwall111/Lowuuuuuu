@@ -83,6 +83,7 @@ public abstract class McsmBuiltinPackMixin {
         // BUILD #458 -- say out loud which world is made of what, so a build's
         // per-dimension identity is checkable from the game log alone.
         System.out.println(net.mcsm.extras.McsmIdentity.summary());
+        System.out.println(net.mcsm.extras.McsmLocks.summary());
         // Build #416 (D.8, phase 5) -- the story terminal: the antenna's
         // restricted console, the radio signals it picks up, the password the
         // world keeps for itself. It owns no packet channel any more (the

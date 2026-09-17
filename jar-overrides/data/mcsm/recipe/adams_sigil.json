@@ -1,0 +1,16 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:adams_amber"
+    }
+  },
+  "pattern": [
+    "AA",
+    "AA"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:adams_sigil"
+  },
+  "type": "minecraft:crafting_shaped"
+}

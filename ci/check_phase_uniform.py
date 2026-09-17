@@ -2977,6 +2977,82 @@ def main():
     check("every one of them ships art, a state, an item and a drop",
           not _missing, "missing %s" % _missing[:4])
 
+    # ---- BUILD #459: THE LOCKS, AND EACH WORLD'S OWN KEY. -----------------
+    # "own blocks, items, mobs, LOCKS, VFX". A lock is a block per world: it opens
+    # to that world's own key and to nothing else, and the key is found inside the
+    # world it opens rather than handed out by the terminal.
+    locks = read("mcsm-extras/java/net/mcsm/extras/McsmLocks.java") or ""
+    towns = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
+    cities = read("mcsm-extras/java/net/mcsm/extras/McsmCities.java") or ""
+    assets_py = read("ci/make_mcsm_content_assets.py") or ""
+
+    lock_rows = re.findall(r'new DimensionLock\((McsmIdentity\.\w+), props\)', content)
+
+    def keys_returned():
+        return re.findall(r'return McsmContent\.(\w+);', locks)
+
+    check("each world's lock belongs to that world, and no two keys are the same",
+          lock_rows == ["McsmIdentity.DECAYED", "McsmIdentity.ADAMS", "McsmIdentity.VOID"]
+          and "McsmContent.CITY_KEYCARD" in locks
+          and "McsmContent.ADAMS_SIGIL" in locks
+          and "McsmContent.VOID_SIGIL" in locks
+          and len(set(keys_returned())) == 3,
+          "locks=%s keys=%s" % (lock_rows, keys_returned()))
+    check("the lock is a real block with a real hook, and it refuses without the key",
+          "protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level,"
+                  in content
+          and "return McsmLocks.use(this.dimension, level, pos, player);" in content
+          and "public static InteractionResult use(String dimId, Level level, BlockPos pos,"
+                  in locks
+          and "THE SEAL OPENS" in locks and "sealed" in locks
+          and "level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);" in locks)
+    check("the seals stand in the worlds, not only in the creative tab",
+          'next[LOCK] = state("mcsm:adams_lock", McsmContent.ADAMS_LOCK);' in adams_java
+          and "grow.put(cx + 7, ground + 1, cz - 1, LOCK);" in adams_java
+          and 'next[LOCK] = state("mcsm:void_lock", McsmContent.VOID_LOCK);' in void_java
+          and "planner.put(cx, y + 1, cz + w, LOCK);" in void_java
+          and "q[LOCK] = stateOf(McsmContent.DECAYED_LOCK);" in cities
+          and "p.put(ox, ground + 1, oz + 2, LOCK);" in cities)
+    check("each world's key is found inside that world and nowhere else",
+          # exactly one loot pool drops a void sigil (the void's own cache) and one
+          # drops an Adams sigil (that dimension's own crate)
+          assets_py.count('("mcsm:void_sigil"') == 1
+          and assets_py.count('("mcsm:adams_sigil"') == 1
+          and '"void_cache": [' in assets_py and '"adams_crate": [' in assets_py
+          and 'next[CACHE] = state("mcsm:void_cache", McsmContent.VOID_CACHE);' in void_java)
+    check("and /ds lock raises any of the three in front of you",
+          'Commands.literal("lock")' in towns
+          and "ds$lock(ctx.getSource(), null)" in towns
+          and ".then(mob).then(lock)" in towns
+          and "private static int ds$lock(CommandSourceStack src, String which) {" in towns
+          and "level.setBlock(at, block.defaultBlockState(), 3);" in towns)
+
+    # no recipe converts one world's key into another's: the keys are not
+    # interchangeable, which is the entire point of a lock being a block.
+    rec_block = assets_py.split("RECIPES = {", 1)[-1].split("\n}\n", 1)[0]
+    rec_entries = {}
+    for m in re.finditer(r'\n    "([a-z_]+)": \(', rec_block):
+        rest = rec_block[m.end():]
+        end = re.search(r'"mcsm:[a-z_]+", \d+\),', rest)
+        if end:
+            rec_entries[m.group(1)] = rest[:end.end()]
+    check("no recipe turns one world's key into another's -- they are not interchangeable",
+          {"adams_sigil", "void_sigil", "decayed_lock", "adams_lock",
+           "void_lock"} <= set(rec_entries)
+          and "mcsm:void_" not in rec_entries["adams_sigil"]
+          and "mcsm:adams_" not in rec_entries["void_sigil"]
+          and "mcsm:adams_" not in rec_entries["decayed_lock"]
+          and "mcsm:void_" not in rec_entries["decayed_lock"]
+          and "mcsm:void_" not in rec_entries["adams_lock"]
+          and "mcsm:decayed_" not in rec_entries["void_lock"],
+          "recipes read: %d" % len(rec_entries))
+    check("the two worlds' own materials and keys are real items with their own art",
+          all(os.path.exists("jar-overrides/assets/mcsm/textures/item/%s.png" % n)
+              for n in ("void_shard", "adams_amber", "void_sigil", "adams_sigil"))
+          and all(os.path.exists("jar-overrides/assets/mcsm/items/%s.json" % n)
+                  for n in ("void_shard", "adams_amber", "void_sigil", "adams_sigil"))
+          and "(\"flat\", \"mcsm:item/void_shard\")" in assets_py)
+
     # and every block in the pack drops itself when it is broken. Found while
     # building #458: only the three crates had loot tables, so mining anything
     # else in the decayed reality paid out nothing at all.

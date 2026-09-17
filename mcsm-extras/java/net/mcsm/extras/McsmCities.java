@@ -138,6 +138,9 @@ public final class McsmCities {
     private static final int DESIGN_SOFT = 27;
     private static final int DESIGN_TRIM = 28;
     private static final int PALETTE_SIZE = 29;
+    /** BUILD #459 -- the abandoned cities' own seal: the decayed lock, keyed to
+     *  the city keycard the server rooms already hand out. */
+    private static final int LOCK = 29;
 
     private static volatile BlockState[] palette;
 
@@ -753,6 +756,10 @@ public final class McsmCities {
             }
         }
         p.put(ox, ground + 4, oz, ANCHOR);            // <- the marker
+        // BUILD #459 -- the monument has a door, and the door is the city's own
+        // lock: the keycard the server rooms hand out is what opens a district's
+        // centre. /ds city points at one; the key is found underground.
+        p.put(ox, ground + 1, oz + 2, LOCK);
         p.put(ox + 3, ground + 1, oz + 3, VAULT);
         p.put(ox - 3, ground + 1, oz - 2, SUPPLY);
         p.put(ox - 3, ground + 1, oz + 2, CRATE);
@@ -1222,7 +1229,7 @@ public final class McsmCities {
         if (p != null) {
             return p;
         }
-        BlockState[] q = new BlockState[PALETTE_SIZE];
+        BlockState[] q = new BlockState[PALETTE_SIZE + 1];
         q[AIR] = Blocks.AIR.defaultBlockState();
         q[STONE] = stateOf(McsmContent.DECAYED_STONE);
         q[COBBLE] = stateOf(McsmContent.DECAYED_COBBLESTONE);
@@ -1245,6 +1252,7 @@ public final class McsmCities {
         q[CRATE] = stateOf(McsmContent.CITY_CRATE);
         q[SUPPLY] = stateOf(McsmContent.SUPPLY_CRATE);
         q[VAULT] = stateOf(McsmContent.VAULT_CRATE);
+        q[LOCK] = stateOf(McsmContent.DECAYED_LOCK);
         q[SAND] = stateOf(McsmContent.DECAYED_SAND);
         q[LEAVES] = stateOf(McsmContent.DECAYED_LEAVES);
         // the design set: vanilla blocks on purpose, because a banner has to
