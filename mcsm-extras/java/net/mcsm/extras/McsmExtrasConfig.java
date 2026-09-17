@@ -218,6 +218,12 @@ public final class McsmExtrasConfig {
      * but nothing is built in it.
      */
     public static boolean voidSponge = true;
+    /**
+     * BUILD #483 -- the seam: falling into the void's floor carries the player back
+     * to the top of Tier 1 with their velocity and rotation untouched, and the next
+     * pass is not the same place. Off = the fall ends on the floor, as it did.
+     */
+    public static boolean voidLoop = true;
     /** BUILD #451 -- walk-in portals, one per dimension. */
     public static boolean portals = true;
     /** BUILD #448 -- each district carries its own fog and sky. */
@@ -556,6 +562,7 @@ public final class McsmExtrasConfig {
             p.setProperty("menu_panorama", String.valueOf(menuPanorama));
             p.setProperty("void_descent", String.valueOf(voidDescent));
             p.setProperty("void_sponge", String.valueOf(voidSponge));
+            p.setProperty("void_loop", String.valueOf(voidLoop));
             p.setProperty("npc_dialogue", String.valueOf(npcDialogue));
             p.setProperty("decayed_reality", String.valueOf(decayedReality));
             p.setProperty("abandoned_cities", String.valueOf(abandonedCities));
@@ -729,6 +736,7 @@ public final class McsmExtrasConfig {
             voidReality = bool(p, "void_reality", voidReality);
             voidDescent = bool(p, "void_descent", voidDescent);
             voidSponge = bool(p, "void_sponge", voidSponge);
+            voidLoop = bool(p, "void_loop", voidLoop);
             npcDialogue = bool(p, "npc_dialogue", npcDialogue);
             portals = bool(p, "portals", portals);
             voidLight = bool(p, "void_light", voidLight);

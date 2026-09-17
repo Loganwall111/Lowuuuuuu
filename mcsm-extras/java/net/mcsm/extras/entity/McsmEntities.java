@@ -27,8 +27,15 @@ public final class McsmEntities {
     // ------------------------------------------------------------------
     public static final Identifier VOIDWALKER_ID = Identifier.fromNamespaceAndPath("mcsm", "voidwalker");
     public static final Identifier VOID_LURKER_ID = Identifier.fromNamespaceAndPath("mcsm", "void_lurker");
+    /**
+     * BUILD #483 -- the dweller: the thing in the gel that talks. Its own type, so a
+     * player can summon one by name, and its own attributes, because it is not a
+     * monster and does not fight.
+     */
+    public static final Identifier VOID_DWELLER_ID = Identifier.fromNamespaceAndPath("mcsm", "void_dweller");
 
     public static EntityType<McsmVoidwalker> VOIDWALKER;
+    public static EntityType<VoidDwellerEntity> VOID_DWELLER;
     public static EntityType<McsmVoidLurker> VOID_LURKER;
 
     // ------------------------------------------------------------------
@@ -112,6 +119,13 @@ public final class McsmEntities {
             // BUILD #460 -- the decayed reality's creature and the infinite
             // dimension's creature. Each is registered with its own attributes
             // in the same call shape the two above use.
+            // BUILD #483 -- and the one that talks. Same registration shape as the
+            // two above: its own type, its own attributes, and it never fights.
+            VOID_DWELLER = own(VOID_DWELLER_ID, VoidDwellerEntity::new, 0.9F, 2.0F, 16);
+            if (VOID_DWELLER != null) {
+                FabricDefaultAttributeRegistry.register(VOID_DWELLER, VoidDwellerEntity.createAttributes());
+            }
+
             DRIFTER = own(DRIFTER_ID, McsmDenizen.McsmDrifter::new, 0.7F, 2.0F, 12);
             if (DRIFTER != null) {
                 FabricDefaultAttributeRegistry.register(DRIFTER, McsmDenizen.drifterAttributes());

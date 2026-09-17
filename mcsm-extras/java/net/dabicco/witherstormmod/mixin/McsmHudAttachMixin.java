@@ -65,6 +65,9 @@ public abstract class McsmHudAttachMixin {
             // silhouettes and the life. Drawn after the floor's light show so the deep
             // owns the frame the way the concept image does.
             net.mcsm.extras.client.McsmVoidDeep.draw(g);
+            // BUILD #483 -- and the dweller that is talking: its line, set down in
+            // the frame letter by letter, out of its own synced data.
+            net.mcsm.extras.client.McsmVoidDwellerTalk.draw(g);
         } catch (Throwable t) {
             net.mcsm.extras.client.McsmMenuGuard.fault("hud-void-floor", t);
         }

@@ -351,6 +351,25 @@ public final class McsmVoidDescent {
         };
     }
 
+    /**
+     * BUILD #483 -- a wrap moved the player UP, and this tracker reads "Y went up"
+     * as "the player has stopped falling". Called by {@link McsmVoidLoop} at the
+     * seam: the dive continues, it did not end, and the fall's own clock is reset
+     * rather than left to fire a stall that never happened.
+     */
+    public static void noteWrap(ServerPlayer player) {
+        try {
+            Dive dive = DIVING.get(player.getUUID());
+            if (dive != null) {
+                dive.lastY = Double.MAX_VALUE;
+                dive.stalled = 0;
+                dive.landed = false;
+            }
+        } catch (Throwable ignored) {
+            // the fall continues either way
+        }
+    }
+
     /** The `/ds` line: who is falling, and how far in. */
     public static String state() {
         // BUILD #481 -- the fall's own state, plus what the void is under it and

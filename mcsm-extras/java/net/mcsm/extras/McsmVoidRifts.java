@@ -52,7 +52,9 @@ public final class McsmVoidRifts {
 
     /** Where in its cell a rift sits, or null when the cell has none. */
     public static double[] centre(int cx, int cz, int tier) {
-        long h = mix(cx * 0x9E3779B97F4A7C15L ^ cz * 0xC2B2AE3D27D4EB4FL);
+        // BUILD #483 -- the same salt, so a wrap rearranges the rifts too
+        long h = mix(cx * 0x9E3779B97F4A7C15L ^ cz * 0xC2B2AE3D27D4EB4FL
+                ^ McsmVoidLoop.salt() * 0x2545F4914F6CDD1DL);
         if (Math.floorMod(h, 100L) >= DENSITY) {
             return null;
         }

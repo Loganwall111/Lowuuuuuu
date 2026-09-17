@@ -206,7 +206,9 @@ public final class McsmVoidSponge {
         int px = (int) Math.floor(player.getX());
         int py = (int) Math.floor(player.getY());
         int pz = (int) Math.floor(player.getZ());
-        int twist = Math.floorDiv(py, TWIST);
+        // BUILD #483 -- the loop's salt: after a wrap the maze is not the maze it
+        // was, because the infinite fall must not be the same fall twice
+        int twist = Math.floorDiv(py, TWIST) + McsmVoidLoop.salt();
         long roll = mix(twist * 0x9E3779B97F4A7C15L);
         // the twist is a rotation of the lattice's own coordinates, which is what
         // makes the fall wind: the same fractal, sampled from a different angle

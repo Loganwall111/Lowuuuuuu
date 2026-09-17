@@ -2944,6 +2944,92 @@ def main():
           and "spawn(level, ParticleTypes.BUBBLE, x, y, z, 34.0D, 30.0D, 0.0D, 0.14D);" in deep
           and "spawn(level, ParticleTypes.GLOW, x, y, z, 30.0D, 26.0D, 0.02D, 0.01D);" in deep)
 
+    # ------------------------------------------------------------------
+    # BUILD #483 -- THE INFINITE FALL, THE DWELLER, AND THE GHOST WHALES.
+    #
+    # The plan's wrap-around engine (past the floor, back to the top of Tier 1,
+    # with velocity and rotation untouched), its talking void NPC with a
+    # typewriter overlay, and its colossal passive fauna. What is checked: that the
+    # seam keeps the fall (velocity, rotation, fall distance, momentum flag), that
+    # the generators are salted by it so the second pass is not the first, that the
+    # dweller's line travels on its own synced data (so the overlay needs no packet
+    # at all), and that the whale is the mod's own creature set loose in the tier
+    # with the room for it.
+    # ------------------------------------------------------------------
+    loop = read("mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java") or ""
+    dweller = read("mcsm-extras/java/net/mcsm/extras/entity/VoidDwellerEntity.java") or ""
+    talk = read("mcsm-extras/java/net/mcsm/extras/client/McsmVoidDwellerTalk.java") or ""
+    entities = read("mcsm-extras/java/net/mcsm/extras/entity/McsmEntities.java") or ""
+    renderers = read("mcsm-extras/java/net/mcsm/extras/client/McsmMobRenderers.java") or ""
+
+    check("and the bottom of the void is a door, and the fall keeps everything it had",
+          # the seam sits in the pocket above the solid floor, and only for a fall
+          "public static final int TRIGGER_Y = McsmVoidTiers.FLOOR_Y + 3;" in loop
+          and "public static final int WRAP_TOP = McsmVoidTiers.BASELINE_FLOOR - 1;" in loop
+          and "if (player.getY() > TRIGGER_Y || motion.y >= 0.0D) {" in loop
+          # everything it had: same vector, same yaw and pitch through the move,
+          # no fall debt carried across, and the client told to believe the server
+          and "float yRot = player.getYRot();" in loop
+          and "float xRot = player.getXRot();" in loop
+          and "player.teleportTo(level, player.getX(), WRAP_TOP, player.getZ()," in loop
+          and "player.setDeltaMovement(motion);" in loop
+          and "player.resetFallDistance();" in loop
+          and "player.hurtMarked = true;" in loop
+          # and the fall tracker is told, or a wrap reads as a stall and ends the dive
+          and "McsmVoidDescent.noteWrap(player);" in loop
+          and "public static void noteWrap(ServerPlayer player) {" in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmVoidDescent.java") or "")
+          # the seed shuffle: the salt the generators read, bumped once per wrap
+          and "public static int salt() {" in loop
+          and "McsmVoidLoop.salt()" in sponge
+          and "McsmVoidLoop.salt()" in rifts
+          # and it runs, with a switch
+          and "McsmVoidLoop.tick(level, player);" in void_java
+          and "public static boolean voidLoop = true;" in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""))
+
+    check("and the thing in the gel talks, out of its own synced data",
+          "public class VoidDwellerEntity extends PathfinderMob {" in dweller
+          and 'private static final EntityDataAccessor<String> SAY =' in dweller
+          and "public void speak(String line, int ticks) {" in dweller
+          and "public String saying() {" in dweller
+          and "public int sayTicks() {" in dweller
+          and "public int sayTotal() {" in dweller
+          # its voice is the mod's own Ogg set, pitched: keys, whisper, and the drone
+          and "McsmSounds.RADIO_MORSE" in dweller
+          and "McsmSounds.MASSG_WHISPER" in dweller
+          and "McsmSounds.OBLIVION_DRONE" in dweller
+          # and it drifts rather than walks: no walking goals, and its own damping
+          and "new LookAtPlayerGoal(this, Player.class, 14.0F, 0.8F)" in dweller
+          and "this.setDeltaMovement(motion.x * 0.97D, motion.y * 0.97D - 0.0016D," in dweller
+          # registered as its own type, with attributes and a renderer of its own
+          and '"mcsm", "void_dweller"' in entities
+          and "VOID_DWELLER = own(VOID_DWELLER_ID, VoidDwellerEntity::new, 0.9F, 2.0F, 16);" in entities
+          and "EntityRendererRegistry.register(McsmEntities.VOID_DWELLER, DwellerRenderer::new);"
+              in renderers
+          and "public static final class DwellerRenderer extends HumanoidMobRenderer<" in renderers)
+
+    check("and its line is set down in the frame letter by letter, in amethyst",
+          "public static void draw(GuiGraphicsExtractor g) {" in talk
+          and "float done = 1.0F - Math.max(0, left) / (float) total;" in talk
+          and "int revealed = Math.max(1, (int) (line.length()" in talk
+          and 'g.centeredText(mc.font, "VOID DWELLER", w / 2, y0 + 7, (a << 24) | 0xB07BFF);' in talk
+          and "g.centeredText(mc.font, shown, w / 2, y0 + 22, (a << 24) | 0xE0C8FF);" in talk
+          # drawn on the proven HUD hook, after the deep
+          and "net.mcsm.extras.client.McsmVoidDwellerTalk.draw(g);" in (
+              read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java") or ""))
+
+    check("and there are whales in the cavern, weightless and singing",
+          "private static void spawnVoidWhale(ServerLevel level, ServerPlayer player) {" in void_java
+          and "whale.setKind(net.mcsm.extras.entity.McsmBeast.WHALE);" in void_java
+          and 'Component.literal("Void Whale")' in void_java
+          and "spawnVoidWhale(level, player);" in void_java
+          # only in the tier with the room for them, and only a couple
+          and "y > McsmVoidTiers.BASELINE_FLOOR || y < McsmVoidTiers.LUMINOUS_FLOOR" in void_java
+          and "size() >= 2" in void_java
+          # and one time in four, a dweller is what the void sends
+          and "type = McsmEntities.VOID_DWELLER;" in void_java)
+
     spectrum = re.findall(r"0xFF[0-9A-F]{6},", floor)
     check("one shelf builder: regions and landings both carve through shelfInto",
           # run 534 -- the region pass called the plan-returning shelf() and handed a
@@ -3867,8 +3953,11 @@ def main():
           and "new McsmMobModels.VoidwalkerModel(" not in mobrend
           and "new McsmMobModels.DrifterModel(" not in mobrend
           and "new McsmMobModels.KeeperModel(" not in mobrend
-          # and one registration cannot take another with it
-          and mobrend.count("EntityRendererRegistry.register(") == 7
+          # and one registration cannot take another with it. BUILD #483 added the
+          # eighth: the void dweller, which is a real entity type and therefore a
+          # renderer -- a type with no renderer is a mob that is in the world and
+          # invisible, which is the outcome this file exists to prevent.
+          and mobrend.count("EntityRendererRegistry.register(") == 8
           and mobrend.count("} catch (Throwable t) {") >= 14
           and "the whale renderer could not be registered" in mobrend
           and "the lurker renderer could not be registered" in mobrend

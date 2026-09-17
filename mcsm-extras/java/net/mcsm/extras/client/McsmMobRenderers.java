@@ -197,6 +197,16 @@ public final class McsmMobRenderers {
         } catch (Throwable t) {
             System.err.println("[ds] the keeper renderer could not be registered: " + t);
         }
+        try {
+            // BUILD #483 -- the talker. A type with no renderer is a mob that is in
+            // the world and invisible, which is the one outcome this file exists to
+            // prevent.
+            if (McsmEntities.VOID_DWELLER != null) {
+                EntityRendererRegistry.register(McsmEntities.VOID_DWELLER, DwellerRenderer::new);
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] the dweller renderer could not be registered: " + t);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -344,6 +354,42 @@ public final class McsmMobRenderers {
     // ------------------------------------------------------------------
     // BUILD #460 -- THE DRIFTER AND THE KEEPER
     // ------------------------------------------------------------------
+    // ------------------------------------------------------------------
+    // THE VOID DWELLER (BUILD #483)
+    // ------------------------------------------------------------------
+    /**
+     * The talker of the deep. It wears the lurker's own mesh -- a bulbous body and
+     * six trailing limbs reads as something that lives in fluid -- in the void's
+     * own colours, and its line is carried on the entity's synced data, so the
+     * frame's typewriter needs nothing but the entity itself.
+     */
+    public static final class DwellerRenderer extends HumanoidMobRenderer<
+            net.mcsm.extras.entity.VoidDwellerEntity,
+            McsmMobModels.MobState, McsmMobModels.VoidLurkerModel> {
+
+        public DwellerRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, McsmMobModels.lurker(ctx), 0.8F);
+        }
+
+        @Override
+        public McsmMobModels.MobState createRenderState() {
+            return new McsmMobModels.MobState();
+        }
+
+        @Override
+        public void extractRenderState(net.mcsm.extras.entity.VoidDwellerEntity e,
+                McsmMobModels.MobState s, float partialTick) {
+            super.extractRenderState(e, s, partialTick);
+            s.kind = "whale";
+            s.age = e.tickCount + partialTick;
+        }
+
+        @Override
+        public Identifier getTextureLocation(McsmMobModels.MobState s) {
+            return skin("voidwalker");
+        }
+    }
+
     public static final class DrifterRenderer extends HumanoidMobRenderer<McsmDenizen.McsmDrifter,
             McsmMobModels.MobState, McsmMobModels.DrifterModel> {
 

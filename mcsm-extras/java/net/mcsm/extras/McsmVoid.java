@@ -144,6 +144,9 @@ public final class McsmVoid {
             QUEUE.pump(level, OPS_PER_TICK, palette(), plan -> markBuilt(plan.key));
             for (ServerPlayer player : level.players()) {
                 catchFall(level, player);
+                // BUILD #483 -- the seam: the bottom of the world is a door, and the
+                // fall continues 1781 blocks higher with its velocity intact.
+                McsmVoidLoop.tick(level, player);
                 // BUILD #482 -- and the sponge, grown around the fall as it passes
                 // through the second tier: the maze is where the player is, and it
                 // stays behind them.
@@ -157,6 +160,17 @@ public final class McsmVoid {
                 for (ServerPlayer player : level.players()) {
                     BlockPos at = shelfUnder(level, player.blockPosition());
                     spawnDwellers(level, at == null ? player.blockPosition() : at, player);
+                }
+            }
+            // BUILD #483 -- THE GHOST WHALES. The plan's colossal passive fauna,
+            // drifting through the luminous cavern with no gravity of their own: they
+            // are the mod's own whale beasts (mcsm:whale_monster, the class whose
+            // whale already swims rather than walks), kinded, named, and set loose in
+            // the tier that has the room for them -- and their voice is already their
+            // own, the vast drone the beast plays when it is a whale.
+            if (level.getGameTime() % 1200L == 0L) {
+                for (ServerPlayer player : level.players()) {
+                    spawnVoidWhale(level, player);
                 }
             }
         } catch (Throwable t) {
@@ -187,6 +201,10 @@ public final class McsmVoid {
                 net.minecraft.world.entity.EntityType<?> type =
                         (i == count - 1 && rng.nextInt(6) == 0)
                                 ? McsmEntities.VOID_LURKER : McsmEntities.VOIDWALKER;
+                // BUILD #483 -- and, one time in four, the one that talks instead.
+                if (McsmEntities.VOID_DWELLER != null && rng.nextInt(4) == 0) {
+                    type = McsmEntities.VOID_DWELLER;
+                }
                 if (type == null) {
                     continue;
                 }
@@ -198,13 +216,60 @@ public final class McsmVoid {
                 mob.finalizeSpawn(level, level.getCurrentDifficultyAt(near),
                         net.minecraft.world.entity.EntitySpawnReason.EVENT, (net.minecraft.world.entity.SpawnGroupData) null);
                 mob.setCustomName(net.minecraft.network.chat.Component.literal(
-                        spawned.getType() == McsmEntities.VOID_LURKER ? "The Lurker" : "Voidwalker"));
+                        spawned.getType() == McsmEntities.VOID_LURKER ? "The Lurker"
+                                : spawned.getType() == McsmEntities.VOID_DWELLER
+                                        ? "Void Dweller" : "Voidwalker"));
                 mob.setCustomNameVisible(false);
                 mob.snapTo(x + 0.5D, near.getY(), z + 0.5D, rng.nextFloat() * 360.0F, 0.0F);
                 level.addFreshEntity(mob);
             }
         } catch (Throwable ignored) {
             // a dweller that cannot be placed is not an error worth a stack trace
+        }
+    }
+
+    /**
+     * One ghost whale, above a player in the cavern -- and only in the cavern, and
+     * only ever a couple of them, because a whale is not scenery.
+     */
+    private static void spawnVoidWhale(ServerLevel level, ServerPlayer player) {
+        try {
+            if (McsmEntities.WHALE_MONSTER == null) {
+                return;
+            }
+            double y = player.getY();
+            if (y > McsmVoidTiers.BASELINE_FLOOR || y < McsmVoidTiers.LUMINOUS_FLOOR) {
+                return;
+            }
+            net.minecraft.util.RandomSource rng = level.getRandom();
+            if (rng.nextInt(3) != 0) {
+                return;
+            }
+            AABB box = player.getBoundingBox().inflate(220.0D);
+            if (level.getEntitiesOfClass(net.mcsm.extras.entity.McsmBeast.class, box).size() >= 2) {
+                return;
+            }
+            net.minecraft.world.entity.Entity spawned = McsmEntities.WHALE_MONSTER.create(level,
+                    net.minecraft.world.entity.EntitySpawnReason.EVENT);
+            if (!(spawned instanceof net.mcsm.extras.entity.McsmBeast whale)) {
+                return;
+            }
+            whale.setKind(net.mcsm.extras.entity.McsmBeast.WHALE);
+            whale.finalizeSpawn(level, level.getCurrentDifficultyAt(player.blockPosition()),
+                    net.minecraft.world.entity.EntitySpawnReason.EVENT,
+                    (net.minecraft.world.entity.SpawnGroupData) null);
+            whale.setCustomName(net.minecraft.network.chat.Component.literal("Void Whale"));
+            whale.setCustomNameVisible(false);
+            double a = rng.nextDouble() * Math.PI * 2.0D;
+            whale.snapTo(player.getX() + Math.cos(a) * (70.0D + rng.nextInt(90)),
+                    Math.min(y + 24.0D + rng.nextInt(40), McsmVoidTiers.BASELINE_FLOOR - 8),
+                    player.getZ() + Math.sin(a) * (70.0D + rng.nextInt(90)),
+                    rng.nextFloat() * 360.0F, 0.0F);
+            level.addFreshEntity(whale);
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    "\u00a78something enormous just went by above you \u00b7 it is not hunting"));
+        } catch (Throwable ignored) {
+            // a whale that cannot be placed is not worth a stack trace
         }
     }
 
@@ -594,7 +659,7 @@ public final class McsmVoid {
     public static String stats() {
         return BUILT.size() + " shelves built this session, "
                 + (QUEUED.size() - BUILT.size()) + " queued, catch line y=" + CATCH_Y
-                + " \u00b7 " + McsmVoidSponge.state();
+                + " \u00b7 " + McsmVoidSponge.state() + " \u00b7 " + McsmVoidLoop.state();
     }
 
     /** Called by the queue when a plan lands. */

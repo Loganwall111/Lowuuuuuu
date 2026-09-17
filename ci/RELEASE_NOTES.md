@@ -1,5 +1,29 @@
 # 7000.0.0-M — the sky is the still, the storm owns it, and the switches work
 
+**Build #483 — the infinite fall, the dweller, and the ghost whales.** The void has
+no floor, it has a door. A fall that reaches the pocket above the barrier
+(`y = -2029`) is carried back to **y = -251** — the top of Tier 1, the plan's own
+number — with **its velocity, yaw, pitch, fall distance and momentum flag exactly as
+they were**: no screen, no reload, no rubber-band. Every wrap bumps a **salt** the
+void's generators read, so the second pass is not the first: the sponge's twist is
+re-rolled and the rifts move. `void_loop` switches it. The fall tracker is told about
+the seam, or a teleport *up* would read as a stop and end the dive.
+
+**The dwellers talk.** `mcsm:void_dweller` — its own entity type, its own attributes,
+its own renderer (the lurker's bulbous, tentacled mesh in the void's colours), no
+walking goals at all: it glides, weightless, and it notices you. Get close and it says
+one line of the deep's own lore; the line rides its synced data the way the cast's
+talk gesture always has, so the HUD's overlay needs no packet of its own — it finds
+the talking dweller, reads the line and sets it down **letter by letter** in an
+amethyst-purple panel that fades in with the first letters and out with the last.
+Its voice is the mod's own Ogg set, pitched: the beacon's keys for its clicks, the
+whisper for its breath, the vast drone for the song underneath.
+
+**And there are whales in the cavern.** The plan's colossal passive fauna are the
+mod's own whale beasts — the class whose whale already swims rather than walks —
+kinded, named, and set loose in the luminous tier where there is room for them, two
+at most, drifting weightless with the drone that is already their voice.
+
 **Build #482 — the sponge, the rifts and the gel's own fluid.** The void's second
 tier is now a **real fractal you fall through**: `McsmVoidSponge` evaluates the Menger
 sponge's own membership test per block (three levels, 3-block pores, the classic "two
