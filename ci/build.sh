@@ -1138,8 +1138,23 @@ stage classpath-probed
 JAVAC_LOG=/tmp/mcsm-javac.log
 JAVAC_RC=0
 mkdir -p /tmp/mcsm-emptysrc
-javac -nowarn -implicit:none -sourcepath /tmp/mcsm-emptysrc --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
-     $(find mcsm-extras/java -name '*.java') > "$JAVAC_LOG" 2>&1 || JAVAC_RC=$?
+SOURCES="$(find mcsm-extras/java -name '*.java')"
+N_SOURCES="$(printf '%s\n' "$SOURCES" | grep -c . || true)"
+# BUILD #465 -- run 579 died here with NO diagnostic: the step went from the
+# classpath line to "Process completed with exit code 1" and the evidence log
+# ended mid-output, which is what a process killed by the runner looks like (a
+# javac error would have printed, and the || JAVAC_RC=$? above means a FAILING
+# javac is survivable). So: say what the machine looked like before the compile,
+# bound javac's heap so a cgroup limit produces a real OutOfMemoryError with a
+# stack instead of a silent SIGKILL, and keep the last lines of javac's own log
+# in the captured evidence.
+echo "[javac] ${N_SOURCES} sources, ${FAPI2_COUNT} fabric modules"
+echo "[javac] memory before: $(free -m 2>/dev/null | awk '/^Mem:/ {print $3" used / "$2" MB"}')"
+echo "[javac] /tmp free: $(df -h /tmp 2>/dev/null | awk 'NR==2 {print $4}')"
+javac -J-Xmx1500m -nowarn -implicit:none -sourcepath /tmp/mcsm-emptysrc --release 25 -proc:none -cp "$CP" -d /tmp/mcsm-build \
+     $SOURCES > "$JAVAC_LOG" 2>&1 || JAVAC_RC=$?
+echo "[javac] exit ${JAVAC_RC}; log tail:"
+tail -12 "$JAVAC_LOG" 2>/dev/null || true
 N_CLASSES="$(find /tmp/mcsm-build -name '*.class' | wc -l)"
 if [ "$JAVAC_RC" -eq 0 ]; then
   echo "[javac] OK: ${N_CLASSES} classes"
