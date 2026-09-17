@@ -181,7 +181,8 @@ public final class McsmVoidDeep {
                 return;
             }
             player.getAbilities().mayfly = true;
-            player.getAbilities().flySpeed = Math.max(player.getAbilities().flySpeed, 0.05F);
+            // (26.2's Abilities carries no flySpeed field any more: the dive's own
+            // speed is the game's, and the gel only decides whether you may fly at all)
             player.onUpdateAbilities();
             flyingGranted = true;
         } catch (Throwable ignored) {
@@ -314,7 +315,7 @@ public final class McsmVoidDeep {
             // ---- the glow over your head: what the concept image is mostly about
             glow(g, w, h, t, now);
             // ---- and under you: the gel's own weight, going down into the bedrock
-            below(g, w, h, t);
+            below(g, w, h, t, now);
             // ---- gigantic shadows: silhouettes crossing the light above
             shadows(g, w, h, t, now);
             // ---- bubbles, rising, all the way up the frame
