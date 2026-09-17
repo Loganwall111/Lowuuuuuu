@@ -92,7 +92,9 @@ public final class McsmCreatorRealm {
         done = true;
         try {
             ServerTickEvents.END_LEVEL_TICK.register((EndLevelTick) McsmCreatorRealm::tick);
-            System.out.println("[ds] the Creator's reach is at " + DIMENSION.location()
+            // the id is written out rather than read off the ResourceKey: this
+            // version's ResourceKey has no location() (proven by the compiler)
+            System.out.println("[ds] the Creator's reach is at mcsm:creators_realm"
                     + " (region " + REGION + ", built world, no end state)");
             System.out.println("[ds] " + McsmIdentity.summary());
         } catch (Throwable t) {
