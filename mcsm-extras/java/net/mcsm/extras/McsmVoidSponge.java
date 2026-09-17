@@ -164,24 +164,31 @@ public final class McsmVoidSponge {
         return pink ? pal[0] : pal[1];
     }
 
+    /** The mod's own block if it registered, and a proven vanilla one if it did not. */
+    private static BlockState safe(net.minecraft.world.level.block.Block block,
+            net.minecraft.world.level.block.Block fallback) {
+        if (block != null) {
+            return block.defaultBlockState();
+        }
+        return fallback.defaultBlockState();
+    }
+
     private static BlockState[] palette() {
         BlockState[] local = palette;
         if (local != null) {
             return local;
         }
         BlockState[] next = new BlockState[4];
-        BlockState pink = McsmContent.VOID_SPONGE_PINK == null
-                ? Blocks.PINK_CONCRETE.defaultBlockState()
-                : McsmContent.VOID_SPONGE_PINK.defaultBlockState();
-        BlockState orange = McsmContent.VOID_SPONGE_ORANGE == null
-                ? Blocks.ORANGE_CONCRETE.defaultBlockState()
-                : McsmContent.VOID_SPONGE_ORANGE.defaultBlockState();
-        next[0] = pink;
-        next[1] = orange;
-        next[2] = McsmContent.VOID_GLASS == null
-                ? Blocks.GLASS.defaultBlockState() : McsmContent.VOID_GLASS.defaultBlockState();
-        next[3] = McsmContent.VOID_LAMP == null
-                ? Blocks.SEA_LANTERN.defaultBlockState() : McsmContent.VOID_LAMP.defaultBlockState();
+        // The fallbacks are vanilla's STONE and GLASS, and only because they are the
+        // two blocks this mod has proven against this engine's own dump. (Run 607
+        // was the first compile of this file and it is the reason: the coloured
+        // concrete fields -- Blocks.PINK_CONCRETE, Blocks.ORANGE_CONCRETE -- do not
+        // exist in this version at all. A fallback is a path that never runs; it
+        // must still be a path that compiles.)
+        next[0] = safe(McsmContent.VOID_SPONGE_PINK, Blocks.STONE);
+        next[1] = safe(McsmContent.VOID_SPONGE_ORANGE, Blocks.STONE);
+        next[2] = safe(McsmContent.VOID_GLASS, Blocks.GLASS);
+        next[3] = safe(McsmContent.VOID_LAMP, Blocks.GLASS);
         palette = next;
         return next;
     }
