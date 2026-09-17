@@ -52,10 +52,19 @@ jobs:
         if: failure()
         run: |
           if [ -f sift-core/gradle-ci.log ]; then
-            tail -120 sift-core/gradle-ci.log | while IFS= read -r line; do
-              line=${line:0:900}
-              echo "::error title=Sift-Core Gradle::$line"
-            done
+            {
+              echo '### Sift-Core Gradle diagnostics'
+              echo '```text'
+              grep -n -E 'FAILURE:|What went wrong:|Could not |Execution failed|Caused by:|error:' sift-core/gradle-ci.log || true
+              echo '--- tail ---'
+              tail -80 sift-core/gradle-ci.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            grep -n -E 'FAILURE:|What went wrong:|Could not |Execution failed|Caused by:|error:' sift-core/gradle-ci.log \
+              | head -40 | while IFS= read -r line; do
+                line=${line:0:900}
+                echo "::error title=Sift-Core Gradle::$line"
+              done
           fi
 
       - name: Upload standalone jar and reports
