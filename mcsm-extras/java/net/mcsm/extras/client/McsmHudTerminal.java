@@ -499,14 +499,13 @@ public final class McsmHudTerminal {
         if (fade <= 0.0F) {
             return;
         }
-        int a = (int) (fade * 240.0F) << 24;
-
-        // dark plate + heavy letterbox bars
-        g.fill(0, 0, w, h, a | 0x050308);
-        int bar = Math.max(24, h / 5);
-        int barA = (int) (fade * 255.0F) << 24;
-        g.fill(0, 0, w, bar, barA | 0x000000);
-        g.fill(0, h - bar, w, h, barA | 0x000000);
+        // Keep the world visible: a dim grade, not a black loading plate.
+        int a = (int) (fade * 110.0F) << 24;
+        g.fill(0, 0, w, h, a | 0x2A1C4E);
+        int bar = Math.max(18, h / 8);
+        int barA = (int) (fade * 200.0F) << 24;
+        g.fill(0, 0, w, bar, barA | 0x100818);
+        g.fill(0, h - bar, w, h, barA | 0x100818);
         g.fillGradient(0, bar, w, bar + 2, a | 0x3F255A, a | 0x6A8FF7);
         g.fillGradient(0, h - bar - 2, w, h - bar, a | 0x6A8FF7, a | 0x3F255A);
 

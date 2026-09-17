@@ -35,11 +35,14 @@ public abstract class McsmConfigReskinMixin {
         WitherStormConfigScreen self = (WitherStormConfigScreen) (Object) this;
         int w = self.width;
         int h = self.height;
-        g.fillGradient(0, 0, w, h, 0xFF120A1E, 0xFF05030A);
-        g.fillGradient(0, h * 3 / 4, w, h, 0x00000000, 0x443F255A);
-        // subtle side panels like the Telltale UI frame
-        g.fillGradient(0, 0, 18, h, 0xAA0A0612, 0x22140622);
-        g.fillGradient(w - 18, 0, w, h, 0x22140622, 0xAA0A0612);
+        try {
+            net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 0.9F);
+            g.fillGradient(0, h * 3 / 4, w, h, 0x00000000, 0x443F255A);
+            g.fillGradient(0, 0, 18, h, 0x660A1440, 0x22140622);
+            g.fillGradient(w - 18, 0, w, h, 0x22140622, 0x660A1440);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("config-plate", t);
+        }
     }
 
     @Inject(method = "extractRenderState", at = @At("TAIL"), remap = false)
