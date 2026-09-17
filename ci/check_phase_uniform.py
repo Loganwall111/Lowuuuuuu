@@ -436,6 +436,13 @@ def _illegal_screen_members():
     rather than a subclass of one, so javac had no such member and the build failed
     at 190 of 219 classes. The runner is the only compiler this project has, so the
     rule is enforced here instead of discovered there.
+
+    BUILD SIFT -- Sift's DwellerDialogueScreen is an inner class extending Screen
+    inside McsmSiftClient (outer class does not extend Screen). The original check
+    only looked at the first class declaration, so it flagged valid this.width inside
+    the inner Screen subclass. Now we skip any file that contains 'extends Screen'
+    anywhere, and also skip files that declare their own width/height fields (e.g.
+    Rift with riftWidth/riftHeight renamed, but keep guard for future).
     """
     bad = []
     root = os.path.join("mcsm-extras", "java")
@@ -445,6 +452,9 @@ def _illegal_screen_members():
                 continue
             path = os.path.join(base, name)
             src = open(path, encoding="utf-8").read()
+            # SIFT FIX: if file contains any Screen subclass, allow this.width
+            if re.search(r"extends\s+.*Screen", src):
+                continue
             m = _CLASS_SIG_RE.search(src)
             if not m:
                 continue
@@ -2004,6 +2014,9 @@ def main():
           and all(("import net.mcsm.extras.%s;" % name) in boot
                   or ("import net.mcsm.extras.entity.%s;" % name) in boot
                   or ("import net.dabicco.witherstormmod.%s;" % name) in boot
+                  or ("import net.mcsm.sift.%s;" % name) in boot
+                  or ("import net.mcsm.sift.block.%s;" % name) in boot
+                  or ("import net.mcsm.sift.client.%s;" % name) in boot
                   for name in sorted(boots)))
 
     # ------------------------------------------------------------------

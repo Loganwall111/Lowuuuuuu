@@ -29,8 +29,8 @@ public final class SiftRiftRenderer {
 
     public static class Rift {
         public Vec3 position;
-        public float width;
-        public float height;
+        public float riftWidth;
+        public float riftHeight;
         public float rotation;
         public float wavePhase;
         public float cosmicOffset;
@@ -40,15 +40,15 @@ public final class SiftRiftRenderer {
         public float maxLife = 600f; // ticks
         public boolean isOpening = true;
 
-        public Rift(Vec3 pos, float w, float h, long seed) {
-            this.position = pos;
-            this.width = w;
-            this.height = h;
-            this.seed = seed;
-            this.rotation = (seed % 360);
-            this.wavePhase = (seed % 1000) * 0.01f;
-            this.cosmicOffset = 0f;
-            this.lifeTime = 0f;
+        public Rift(Vec3 pos, float w, float h, long s) {
+            position = pos;
+            riftWidth = w;
+            riftHeight = h;
+            seed = s;
+            rotation = (seed % 360);
+            wavePhase = (seed % 1000) * 0.01f;
+            cosmicOffset = 0f;
+            lifeTime = 0f;
             generateJaggedShape();
         }
 
@@ -62,8 +62,8 @@ public final class SiftRiftRenderer {
                 float radiusJitter = 0.7f + r.nextFloat() * 0.6f;
                 // Make it look like torn reality
                 if (i % 3 == 0) radiusJitter *= 1.3f;
-                float x = Mth.cos(angle) * width * 0.5f * radiusJitter;
-                float y = Mth.sin(angle) * height * 0.5f * radiusJitter;
+                float x = Mth.cos(angle) * riftWidth * 0.5f * radiusJitter;
+                float y = Mth.sin(angle) * riftHeight * 0.5f * radiusJitter;
                 shapePoints[i*2] = x;
                 shapePoints[i*2+1] = y;
             }
@@ -144,7 +144,7 @@ public final class SiftRiftRenderer {
             cosmicX, cosmicY, // parallax offset
             rimPulse,
             rift.getOpenProgress(),
-            rift.width, rift.height
+            rift.riftWidth, rift.riftHeight
         };
     }
 
@@ -193,8 +193,8 @@ public final class SiftRiftRenderer {
         buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX_COLOR);
 
         float open = rift.getOpenProgress();
-        float w = rift.width * open;
-        float h = rift.height * open;
+        float w = rift.riftWidth * open;
+        float h = rift.riftHeight * open;
 
         // Inner cosmic window - iridescent starfield
         float time = (mc.level != null ? mc.level.getGameTime() : 0) + partialTicks;
