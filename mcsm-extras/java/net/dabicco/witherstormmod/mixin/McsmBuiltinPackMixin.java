@@ -28,8 +28,6 @@ import net.mcsm.extras.McsmTornadoes;
 import net.mcsm.extras.McsmContent;
 import net.mcsm.extras.McsmUiSounds;
 import net.mcsm.extras.entity.McsmEntities;
-import net.mcsm.sift.McsmSiftMod;
-import net.mcsm.sift.block.McsmSiftContent;
 
 /**
  * Registers the built-in Story Look resource pack during the mod's own
@@ -57,13 +55,13 @@ public abstract class McsmBuiltinPackMixin {
         McsmContent.register();
         McsmContent.registerTab();
         // V2 - Sift Cosmos infinite dimension + 30 new blocks + black hole backdrop
+        // Sift is excluded from mcsm-extras jar compile (ships as zip), load via reflection if present
         try {
-            McsmSiftMod.register();
-            McsmSiftContent.register();
+            Class.forName("net.mcsm.sift.McsmSiftMod").getMethod("register").invoke(null);
+            Class.forName("net.mcsm.sift.block.McsmSiftContent").getMethod("register").invoke(null);
             System.out.println("[ds] Sift Cosmos V2 registered - infinite fall, black hole lensing, animated skyboxes, 30 new blocks");
         } catch (Throwable t) {
-            System.err.println("[ds] Sift V2 registration failed: " + t);
-            t.printStackTrace();
+            System.out.println("[ds] Sift V2 not in jar (ships as overlay zip) - skipping: " + t.getMessage());
         }
         // Build #416 (D.8, phase 2) -- the abandoned cities of the decayed
         // reality. ServerTickEvents.END_LEVEL_TICK is the base mod's own hook

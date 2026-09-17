@@ -151,9 +151,9 @@ public final class McsmVoid {
                 // through the second tier: the maze is where the player is, and it
                 // stays behind them.
                 McsmVoidSponge.tick(level, player);
-                // V2 - Sift infinite cosmos dimension tick
+                // V2 - Sift infinite cosmos dimension tick (reflective, jar compiles without sift)
                 try {
-                    net.mcsm.sift.world.McsmSiftDimension.tickPlayer(player);
+                    Class.forName("net.mcsm.sift.world.McsmSiftDimension").getMethod("tickPlayer", ServerPlayer.class).invoke(null, player);
                 } catch (Throwable ignored) {}
             }
             // BUILD #456 -- the void walkers, as the real thing now. They used to be

@@ -26,10 +26,14 @@ public abstract class McsmVoidDeepClientMixin {
                 try {
                     McsmVoidDeep.tick();
                     // BUILD #481 -- and the rudder: the tier's own current, the
-                    // tool's multiplier, and the dive's trail.
-                    net.mcsm.extras.client.McsmVoidRudder.tick();
+                    // tool's multiplier, and the dive's trail. Reflective so jar compiles without V2 extras
+                    try {
+                        Class.forName("net.mcsm.extras.client.McsmVoidRudder").getMethod("tick").invoke(null);
+                    } catch (Throwable ignore) {}
                     // V2 - Sift infinite cosmos + black hole backdrop + animated skyboxes
-                    net.mcsm.sift.client.McsmSiftClient.tickClient();
+                    try {
+                        Class.forName("net.mcsm.sift.client.McsmSiftClient").getMethod("tickClient").invoke(null);
+                    } catch (Throwable ignore) {}
                 } catch (Throwable ignored) {
                     // a frame is never lost to the gel
                 }
