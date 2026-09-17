@@ -1,0 +1,47 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingPayload.java:3: error: package net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking does not exist
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.Context;
+                                                                        ^
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingPayload.java:36: error: cannot find symbol
+    public static void handleClient(McsmVoidAgingPayload payload, Context context) {
+                                                                  ^
+  symbol:   class Context
+  location: class McsmVoidAgingPayload
+mcsm-extras/java/net/mcsm/extras/McsmVoidAging.java:9: error: package net.fabricmc.fabric.api.networking.v1 does not exist
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+                                            ^
+mcsm-extras/java/net/mcsm/extras/McsmVoidAging.java:10: error: package net.fabricmc.fabric.api.networking.v1 does not exist
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+                                            ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingClientMixin.java:4: error: package net.fabricmc.fabric.api.client.networking.v1 does not exist
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+                                                   ^
+/tmp/mcsm-dl/client.jar(/net/minecraft/network/FriendlyByteBuf.class): error: Cannot attach type annotations @org.jspecify.annotations.Nullable to FriendlyByteBuf.readNullable:
+  class file for io.netty.buffer.ByteBuf not found
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingPayload.java:30: error: cannot access ByteBuf
+            }, buf -> new McsmVoidAgingPayload(buf.readVarInt(), buf.readFloat()));
+                                                                    ^
+  class file for io.netty.buffer.ByteBuf not found
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingPayload.java:30: error: cannot access ByteBuf
+            }, buf -> new McsmVoidAgingPayload(buf.readVarInt(), buf.readFloat()));
+                                                  ^
+  class file for io.netty.buffer.ByteBuf not found
+mcsm-extras/java/net/mcsm/extras/McsmVoidAging.java:122: error: cannot find symbol
+            PayloadTypeRegistry.clientboundPlay().register(McsmVoidAgingPayload.TYPE,
+            ^
+  symbol:   variable PayloadTypeRegistry
+  location: class McsmVoidAging
+mcsm-extras/java/net/mcsm/extras/McsmVoidAging.java:326: error: cannot find symbol
+            ServerPlayNetworking.send(player, new McsmVoidAgingPayload(player.getId(),
+            ^
+  symbol:   variable ServerPlayNetworking
+  location: class McsmVoidAging
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingClientMixin.java:26: error: cannot find symbol
+            ClientPlayNetworking.registerGlobalReceiver(McsmVoidAgingPayload.TYPE,
+            ^
+  symbol:   variable ClientPlayNetworking
+  location: class McsmVoidAgingClientMixin
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+11 errors
