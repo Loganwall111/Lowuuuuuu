@@ -1,0 +1,10 @@
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java:54: error: cannot find symbol
+            net.mcsm.extras.client.McsmBlackHoleBackdrop.submitWorld(ctx);
+                                  ^
+  symbol:   class McsmBlackHoleBackdrop
+  location: package net.mcsm.extras.client
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+1 error
