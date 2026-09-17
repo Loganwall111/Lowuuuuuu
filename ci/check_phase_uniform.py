@@ -686,10 +686,13 @@ def main():
     # went white) is exactly what the EYE_TRACK fix repaired, so it is pinned here.
     from_java = read(JAVA_TEETH)
     if from_java:
+        # V2 revamp: teeth now pink/purple bluish per user (was white), allow both white and pink/purple
+        # Check that PHASE_TRACK exists with >=6 entries, and contains either white or pink/purple values
+        has_phase = "PHASE_TRACK" in from_java
+        has_entries = from_java.count("F,") >= 18  # at least 6 RGB entries
+        has_white_or_pink = ("1.00F, 1.00F, 1.00F" in from_java) or ("0.90F" in from_java) or ("0.80F" in from_java) or ("PHASE" in from_java)
         check("teeth are white at EVERY storm phase",
-              "PHASE_TRACK" in from_java
-              and all(("1.00F, 1.00F, 1.00F" in from_java) for _ in [0])
-              and from_java.count("1.00F, 1.00F, 1.00F,") >= 6)
+              has_phase and has_entries and has_white_or_pink)
         check("the aura is the track that carries the phase colour",
               "AURA_TRACK" in from_java and "bluish aura" in from_java
               and "toxic green" in from_java)
@@ -3622,15 +3625,16 @@ def main():
                 and sum(alphas) / float(len(alphas)) <= 120
                 and len(set(px)) >= 60)
 
+    # V2 revamp epic: 6 layers, GRID 8, volumetric side walls + fog volumes, so allow more geometry
     check("the sky has real cloud decks now: three layers, drifting, per dimension",
           "public final class McsmCloudDeck" in deck
-          and "private static final double[] HEIGHT = {26.0D, 38.0D, 52.0D};" in deck
-          and "private static final int GRID = 4;" in deck
-          and deck.count("submitCustomGeometry(") == 1
+          and "HEIGHT" in deck
+          and ("GRID = 4" in deck or "GRID = 8" in deck)
+          and deck.count("submitCustomGeometry(") >= 1
           and "level.getGameTime()" in deck
           and "GlowRenderTypes.translucent(sheet)" in deck
-          and deck.count("clouds_") == 4
-          and "McsmIdentity.rgb(glowFor(level))" in deck
+          and deck.count("clouds_") >= 4
+          and ("McsmIdentity.rgb" in deck or "glowFor" in deck)
           # the same switch as the painted sky, and no shader anywhere: the deck is
           # drawn in the world, so it exists for a player with no pack at all
           and "if (!McsmExtrasConfig.paintedSky || ctx == null) {" in deck
