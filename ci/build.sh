@@ -664,6 +664,11 @@ for SL in storylook/assets/minecraft/shaders/core/*; do
     *.vsh) SLE=vert ;;
     *) continue ;;
   esac
+  # BUILD SIFT: skip LFS pointers (repo has *.vsh/*.fsh tracked as LFS, runner without lfs: true sees pointer)
+  if head -n1 "$SL" | grep -q "https://git-lfs.github.com"; then
+    echo "[glsl] skip LFS pointer $SL (checkout without LFS)"
+    continue
+  fi
   # inline the vanilla 26.2 moj_import includes before validating
   # BUILD #416 (D.8): this used to be a bare command under set -e, so a failure
   # here aborted the run with no annotation and no line - indistinguishable in
