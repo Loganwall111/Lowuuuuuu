@@ -1,5 +1,30 @@
 # 7000.0.0-M — the sky is the still, the storm owns it, and the switches work
 
+**Build #479 — the descent, and the deep.** The void is no longer somewhere you are
+sent: it is what happens when somebody keeps going down. There is no item, no portal
+and no command — the trigger is the world's own floor. Fall past it and the fall is
+handed over to the void's air, where the whole drop is real physics, steerable, with
+the four stops read off Y as the fall passes through them: **the rate** (the plunge
+starts, 3-5 s), **the dark** (the light above goes out, the air stops being air, 10-15 s),
+**the gel** (you cross into it, 3-5 s), **the deep** (20-30 s of sinking until the gel
+sets you down on something it grew). Those seconds are the player's own, written
+against blocks at Minecraft's terminal velocity, so the timings cannot drift.
+
+**No loading screen.** The one frame the game insists on spending getting between
+worlds is painted as the deep by the mod itself — no grey plate, no progress bar, no
+"Building terrain". And the fall never kills you: the hand-over happens 56 blocks
+above the world's own damage line, so the void's damage never sees you, and the deep
+catches you seven blocks above the first surface instead of letting you hit it.
+
+**The gel.** Everything the concept image asks for, drawn by the mod in its own HUD
+hook — so it works with no shader pack, which is the standing rule for every visual
+here: bubbles rising past the camera, bioluminescent specks in three colours, the
+bright dark-pink bloom over your head, the violet weight of the gel underneath, and
+gigantic soft silhouettes crossing the light above. The deeper you are, the more of
+the frame the gel owns and the more of it is awake. And it holds you: **flight inside
+the gel**, given back the moment you leave. The bedrock below reads as fog, graded by
+depth from the surface's pink down to its own near-black violet.
+
 **Build #477-478 — the black frame, found in a player's own log.** The log showed the
 two reports were one bug: the client was not failing to *draw* the menu, it was failing
 to *load* it. `EntityRenderers.createEntityRenderers` runs inside the resource reload,

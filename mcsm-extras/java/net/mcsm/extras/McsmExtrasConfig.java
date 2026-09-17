@@ -205,6 +205,13 @@ public final class McsmExtrasConfig {
     public static boolean dimensionFx = true;
     /** BUILD #451 -- the void: a dimension that is mostly nothing. */
     public static boolean voidReality = true;
+    /**
+     * BUILD #479 -- the descent and the deep: diving into the regular Minecraft void
+     * takes you down instead of killing you, and the bottom of the void is the gel
+     * (bubbles, bioluminescence, flight, the pink glow above, no loading screen).
+     * Off = the void is only reachable through its own doorway again.
+     */
+    public static boolean voidDescent = true;
     /** BUILD #451 -- walk-in portals, one per dimension. */
     public static boolean portals = true;
     /** BUILD #448 -- each district carries its own fog and sky. */
@@ -535,6 +542,7 @@ public final class McsmExtrasConfig {
             p.setProperty("og_sun_glow_strength", String.valueOf(ogSunGlowStrength));
             p.setProperty("story_menu_backdrop", String.valueOf(storyMenuBackdrop));
             p.setProperty("menu_panorama", String.valueOf(menuPanorama));
+            p.setProperty("void_descent", String.valueOf(voidDescent));
             p.setProperty("decayed_reality", String.valueOf(decayedReality));
             p.setProperty("abandoned_cities", String.valueOf(abandonedCities));
             p.setProperty("reality_glitches", String.valueOf(realityGlitches));
@@ -705,6 +713,7 @@ public final class McsmExtrasConfig {
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
             voidReality = bool(p, "void_reality", voidReality);
+            voidDescent = bool(p, "void_descent", voidDescent);
             portals = bool(p, "portals", portals);
             voidLight = bool(p, "void_light", voidLight);
             paintedSky = bool(p, "painted_sky", paintedSky);

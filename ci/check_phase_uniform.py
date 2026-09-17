@@ -3740,6 +3740,100 @@ def main():
           and "catch (Throwable ignored) {" not in story)
 
     # ------------------------------------------------------------------
+    # BUILD #479 -- THE DESCENT AND THE DEEP.
+    #
+    # "we made that void dimension a while ago, however it's not really attached to the
+    # regular minecraft void ... the world is simply digging down in the overworld and
+    # falling directly into the void downwards ... there's no loading screen, you just
+    # fall into it ... instead of dying what will end up happening is you fall and fall
+    # and keep falling ... 3 to 5 ... 10 to 15 seconds ... another 20 to 30 seconds ...
+    # the black point above starts to brighten dark pink ... the bedrock layer is
+    # visible as the fog ... every monster has bioluminescent looks and glow ...
+    # basically in a gel, but you're not floating or drowning, but you are trying to fly
+    # inside ... this place is the holder to the ... creatures."
+    #
+    # The rules that come out of that, all checked here:
+    #   * the way in is the world's own floor (below minY), never an item or a portal;
+    #   * the fall is physics, not a cutscene: the stops are Y LINES in the void's air,
+    #     which is why the player's own seconds can be written next to them honestly;
+    #   * the world-loading screen draws nothing of its own while a dive is in flight --
+    #     the deep paints the gel into that frame instead;
+    #   * the deep is drawn by the mod, from the mod's palette, in the HUD hook the
+    #     void floor and the scenes already use: no shader pack is required for any of
+    #     it, which is the standing rule for every visual in this mod;
+    #   * flight is granted inside the gel and given back on the way out.
+    # ------------------------------------------------------------------
+    descent = read("mcsm-extras/java/net/mcsm/extras/McsmVoidDescent.java") or ""
+    deep = read("mcsm-extras/java/net/mcsm/extras/client/McsmVoidDeep.java") or ""
+    deep_tick = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepClientMixin.java") or ""
+    deep_fog = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepFogMixin.java") or ""
+    deep_load = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepLoadingMixin.java") or ""
+    cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    init = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""
+    hud = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java") or ""
+
+    check("and the way into the void is the world's own floor",
+          # the trigger is the floor, not an item, a command or a portal frame
+          "y > level.getMinY() - DIVE_MARGIN" in descent
+          and "public static final int DIVE_MARGIN = 8;" in descent
+          and "player.teleportTo(voidLevel, x, ARRIVAL_Y, z," in descent
+          and "getLevel(McsmVoid.DIMENSION)" in descent
+          and "ServerTickEvents.END_LEVEL_TICK.register" in descent
+          # the four stops are Y lines, with the player's own seconds beside them
+          and "public static final int ARRIVAL_Y = 130;" in descent
+          and "public static final int DARK_Y = 118;" in descent
+          and "public static final int GEL_Y = 78;" in descent
+          and "public static final int SURFACE_Y = 56;" in descent
+          and all(second in descent for second in ("3-5 s", "10-15 s", "20-30 s"))
+          # the fall keeps its own size: never a timer doing the falling
+          and "case 0 -> 0.10F;" in descent
+          # it is a real system: switched, registered, and reported in the log
+          and "public static boolean voidDescent = true;" in cfg
+          and 'p.setProperty("void_descent", String.valueOf(voidDescent));' in cfg
+          and 'voidDescent = bool(p, "void_descent", voidDescent);' in cfg
+          and "McsmVoidDescent.register();" in init
+          and "the descent is armed" in descent
+          and "public static String state()" in descent)
+
+    check("and the deep is drawn by the mod itself, with no shader pack in the way",
+          # the gel's life: bubbles up, bioluminescence, the enormous thing above
+          "ParticleTypes.BUBBLE" in deep
+          and "ParticleTypes.GLOW" in deep
+          and "ParticleTypes.REVERSE_PORTAL" in deep
+          # the concept image, in the frame: the glow above and the violet below
+          and "private static final int GLOW_HI" in deep
+          and "private static void glow(GuiGraphicsExtractor g" in deep
+          and "private static void below(GuiGraphicsExtractor g" in deep
+          and "private static void shadows(GuiGraphicsExtractor g" in deep
+          and "private static void bubbles(GuiGraphicsExtractor g" in deep
+          and "private static void specks(GuiGraphicsExtractor g" in deep
+          # the gel holds you: flight in, flight taken back on the way out
+          and "player.getAbilities().mayfly = true;" in deep
+          and "player.onUpdateAbilities();" in deep
+          and "private static void releaseFlight(LocalPlayer player)" in deep
+          # the fog is the bedrock's own, graded by depth
+          and "public static float fogBlend(ClientLevel level, float[] rgb)" in deep
+          and "color.x = color.x * (1.0F - opacity) + rgb[0] * opacity;" in deep_fog
+          # and every entry point is wired to a hook this codebase already proves
+          and "ClientTickEvents.END_CLIENT_TICK.register" in deep_tick
+          and "McsmVoidDeep.tick();" in deep_tick
+          and "net.mcsm.extras.client.McsmVoidDeep.draw(g);" in hud
+          and "public static void draw(GuiGraphicsExtractor g) {" in deep)
+
+    check("and no loading screen is left on the way into the fall",
+          # the world-loading screen stands down while a dive is in flight
+          "public static boolean suppressLoadingScreen()" in deep
+          and "public static void paintEntryFrame(GuiGraphicsExtractor g)" in deep
+          and "@Mixin(LevelLoadingScreen.class)" in deep_load
+          and "at = @At(\"HEAD\"), cancellable = true, require = 0" in deep_load
+          and "McsmVoidDeep.suppressLoadingScreen()" in deep_load
+          and "McsmVoidDeep.paintEntryFrame(g);" in deep_load
+          and "ci.cancel();" in deep_load
+          # and it is narrow: only while the dive itself is mid-flight
+          and "return System.currentTimeMillis() - crossingAt < CROSSING_MS;" in deep
+          and "McsmVoidDescent.diving(player)" in deep)
+
+    # ------------------------------------------------------------------
     # BUILD #471 -- AN OVERRIDE MAY CHANGE THE BODY, NEVER THE INTERFACE.
     #
     # This jar REPLACES the game's own core shaders (mcsm-core-shaders/* is overlaid onto

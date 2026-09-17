@@ -61,6 +61,10 @@ public abstract class McsmHudAttachMixin {
         // in it: RGB shafts out of the invisible floor and white rings for ever.
         try {
             net.mcsm.extras.client.McsmVoidFloor.draw(g);
+            // BUILD #479 -- and the gel over it: the glow above, the violet below, the
+            // silhouettes and the life. Drawn after the floor's light show so the deep
+            // owns the frame the way the concept image does.
+            net.mcsm.extras.client.McsmVoidDeep.draw(g);
         } catch (Throwable t) {
             net.mcsm.extras.client.McsmMenuGuard.fault("hud-void-floor", t);
         }

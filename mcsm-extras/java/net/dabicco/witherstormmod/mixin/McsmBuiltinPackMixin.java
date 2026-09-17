@@ -15,6 +15,7 @@ import net.mcsm.extras.McsmCities;
 import net.mcsm.extras.McsmMassg;
 import net.mcsm.extras.McsmMazes;
 import net.mcsm.extras.McsmPortals;
+import net.mcsm.extras.McsmVoidDescent;
 import net.mcsm.extras.McsmSkyVortexes;
 import net.mcsm.extras.McsmRituals;
 import net.mcsm.extras.McsmServerRooms;
@@ -87,6 +88,10 @@ public abstract class McsmBuiltinPackMixin {
         // BUILD #451 -- the void, and the doorways between the dimensions.
         McsmVoid.register();
         McsmPortals.register();
+        // BUILD #479 -- and the way in that needs no doorway at all: the world's own
+        // floor. Dive into the regular Minecraft void and the fall keeps going, down
+        // through the four stops and into the gel. No screen, no damage, no command.
+        McsmVoidDescent.register();
         // BUILD #458 -- say out loud which world is made of what, so a build's
         // per-dimension identity is checkable from the game log alone.
         System.out.println(net.mcsm.extras.McsmIdentity.summary());
