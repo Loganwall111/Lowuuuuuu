@@ -30,7 +30,7 @@ import java.util.List;
  * Colossal Octopus - rainbow colored water with sparkles, colossal octopus
  * Huge octopus entity for Sift - rainbow tentacles, floats in iridescent gel
  */
-public class ColossalOctopusEntity extends FlyingMob {
+public class ColossalOctopusEntity extends PathfinderMob {
 
     private static final EntityDataAccessor<Float> TENTACLE_ANIM = SynchedEntityData.defineId(ColossalOctopusEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> COLOR_VARIANT = SynchedEntityData.defineId(ColossalOctopusEntity.class, EntityDataSerializers.INT);
@@ -53,7 +53,7 @@ public class ColossalOctopusEntity extends FlyingMob {
         }
     }
 
-    public ColossalOctopusEntity(EntityType<? extends FlyingMob> type, Level level) {
+    public ColossalOctopusEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
         this.moveControl = new FlyingMoveControl(this, 15, true);
         this.setNoGravity(true);

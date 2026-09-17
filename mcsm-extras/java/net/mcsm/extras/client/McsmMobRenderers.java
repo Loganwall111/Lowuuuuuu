@@ -51,6 +51,12 @@ public final class McsmMobRenderers {
             layer("drifter");
     public static final ModelLayerLocation KEEPER_LAYER =
             layer("keeper");
+    public static final ModelLayerLocation OCTOPUS_LAYER =
+            layer("colossal_octopus");
+    public static final ModelLayerLocation JOKEST_LAYER =
+            layer("jokest_creature");
+    public static final ModelLayerLocation VOID_WHALE_LAYER =
+            layer("void_whale_colossal");
 
     private static ModelLayerLocation layer(String name) {
         return new ModelLayerLocation(Identifier.fromNamespaceAndPath("mcsm", name), "main");
@@ -72,6 +78,9 @@ public final class McsmMobRenderers {
         layerLurker();
         layerDrifter();
         layerKeeper();
+        layerOctopus();
+        layerJokest();
+        layerVoidWhale();
         // BUILD #466 -- and the CAST's own body. The renderer for the Story Mode
         // characters used to bake ModelLayers.PLAYER: Minecraft's own player mesh with
         // a Story Mode skin on it. This is the layer that replaces it, and it has to be
@@ -133,6 +142,30 @@ public final class McsmMobRenderers {
             ModelLayerRegistry.registerModelLayer(KEEPER_LAYER, McsmMobModels.KeeperModel::createBodyLayer);
         } catch (Throwable t) {
             System.err.println("[ds] the keeper body could not be registered: " + t);
+        }
+    }
+
+    private static void layerOctopus() {
+        try {
+            ModelLayerRegistry.registerModelLayer(OCTOPUS_LAYER, McsmMobModels.ColossalOctopusModel::createBodyLayer);
+        } catch (Throwable t) {
+            System.err.println("[ds] the octopus body could not be registered: " + t);
+        }
+    }
+
+    private static void layerJokest() {
+        try {
+            ModelLayerRegistry.registerModelLayer(JOKEST_LAYER, McsmMobModels.JokestCreatureModel::createBodyLayer);
+        } catch (Throwable t) {
+            System.err.println("[ds] the jokest body could not be registered: " + t);
+        }
+    }
+
+    private static void layerVoidWhale() {
+        try {
+            ModelLayerRegistry.registerModelLayer(VOID_WHALE_LAYER, McsmMobModels.VoidWhaleColossalModel::createBodyLayer);
+        } catch (Throwable t) {
+            System.err.println("[ds] the void whale colossal body could not be registered: " + t);
         }
     }
 
@@ -215,6 +248,43 @@ public final class McsmMobRenderers {
             }
         } catch (Throwable t) {
             System.err.println("[ds] the dweller renderer could not be registered: " + t);
+        }
+        try {
+            if (McsmEntities.COLOSSAL_OCTOPUS != null) {
+                EntityRendererRegistry.register(McsmEntities.COLOSSAL_OCTOPUS, OctopusRenderer::new);
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] the octopus renderer could not be registered: " + t);
+        }
+        try {
+            if (McsmEntities.JOKEST_CREATURE != null) {
+                EntityRendererRegistry.register(McsmEntities.JOKEST_CREATURE, JokestRenderer::new);
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] the jokest renderer could not be registered: " + t);
+        }
+        try {
+            if (McsmEntities.SIFT_OCTOPUS != null) {
+                EntityRendererRegistry.register(McsmEntities.SIFT_OCTOPUS, OctopusRenderer::new);
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] the sift octopus renderer could not be registered: " + t);
+        }
+        try {
+            if (McsmEntities.SIFT_JOKEST != null) {
+                EntityRendererRegistry.register(McsmEntities.SIFT_JOKEST, JokestRenderer::new);
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] the sift jokest renderer could not be registered: " + t);
+        }
+        try {
+            // V2 -- void whale colossal uses its own 12-segment model
+            if (McsmEntities.VOID_WHALE != null) {
+                // re-register with colossal model if available, otherwise keep old
+                EntityRendererRegistry.register(McsmEntities.VOID_WHALE, VoidWhaleColossalRenderer::new);
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] the void whale colossal renderer could not be registered: " + t);
         }
     }
 
@@ -446,6 +516,82 @@ public final class McsmMobRenderers {
         @Override
         public Identifier getTextureLocation(McsmMobModels.MobState s) {
             return skin("keeper");
+        }
+    }
+
+    public static final class OctopusRenderer extends HumanoidMobRenderer<McsmBeast,
+            McsmMobModels.MobState, McsmMobModels.ColossalOctopusModel> {
+
+        public OctopusRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, McsmMobModels.octopus(ctx), 2.2F);
+        }
+
+        @Override
+        public McsmMobModels.MobState createRenderState() {
+            return new McsmMobModels.MobState();
+        }
+
+        @Override
+        public void extractRenderState(McsmBeast e, McsmMobModels.MobState s, float partialTick) {
+            super.extractRenderState(e, s, partialTick);
+            s.kind = "colossal_octopus";
+            s.age = e.tickCount + partialTick;
+        }
+
+        @Override
+        public Identifier getTextureLocation(McsmMobModels.MobState s) {
+            // sift texture exists as mcsm_sift:colossal_octopus, fallback to mcsm: texture
+            return Identifier.fromNamespaceAndPath("mcsm_sift", "textures/entity/colossal_octopus.png");
+        }
+    }
+
+    public static final class JokestRenderer extends HumanoidMobRenderer<McsmBeast,
+            McsmMobModels.MobState, McsmMobModels.JokestCreatureModel> {
+
+        public JokestRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, McsmMobModels.jokest(ctx), 0.6F);
+        }
+
+        @Override
+        public McsmMobModels.MobState createRenderState() {
+            return new McsmMobModels.MobState();
+        }
+
+        @Override
+        public void extractRenderState(McsmBeast e, McsmMobModels.MobState s, float partialTick) {
+            super.extractRenderState(e, s, partialTick);
+            s.kind = "jokest_creature";
+            s.age = e.tickCount + partialTick;
+        }
+
+        @Override
+        public Identifier getTextureLocation(McsmMobModels.MobState s) {
+            return Identifier.fromNamespaceAndPath("mcsm_sift", "textures/entity/jokest_creature.png");
+        }
+    }
+
+    public static final class VoidWhaleColossalRenderer extends HumanoidMobRenderer<McsmBeast,
+            McsmMobModels.MobState, McsmMobModels.VoidWhaleColossalModel> {
+
+        public VoidWhaleColossalRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, McsmMobModels.voidWhaleColossal(ctx), 3.5F);
+        }
+
+        @Override
+        public McsmMobModels.MobState createRenderState() {
+            return new McsmMobModels.MobState();
+        }
+
+        @Override
+        public void extractRenderState(McsmBeast e, McsmMobModels.MobState s, float partialTick) {
+            super.extractRenderState(e, s, partialTick);
+            s.kind = "void_whale";
+            s.age = e.tickCount + partialTick;
+        }
+
+        @Override
+        public Identifier getTextureLocation(McsmMobModels.MobState s) {
+            return Identifier.fromNamespaceAndPath("mcsm", "textures/entity/void_whale.png");
         }
     }
 }

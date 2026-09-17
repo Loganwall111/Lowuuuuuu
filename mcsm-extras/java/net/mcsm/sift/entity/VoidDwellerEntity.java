@@ -34,7 +34,7 @@ import java.util.List;
  * Right-clicking opens overlay screen with show-inspired lore texts and glowing amethyst-purple chat logs
  * Using animated fade-in typewriting effect
  */
-public class VoidDwellerEntity extends FlyingMob {
+public class VoidDwellerEntity extends PathfinderMob {
 
     private static final EntityDataAccessor<Integer> DWELLER_TYPE = SynchedEntityData.defineId(VoidDwellerEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_TALKING = SynchedEntityData.defineId(VoidDwellerEntity.class, EntityDataSerializers.BOOLEAN);
@@ -75,7 +75,7 @@ public class VoidDwellerEntity extends FlyingMob {
         "Hear that echo? That's not your voice. That's the Sift learning your name."
     );
 
-    public VoidDwellerEntity(EntityType<? extends FlyingMob> type, Level level) {
+    public VoidDwellerEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
         this.moveControl = new FlyingMoveControl(this, 15, true);
         this.setNoGravity(true);

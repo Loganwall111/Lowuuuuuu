@@ -33,10 +33,20 @@ public final class McsmEntities {
      * monster and does not fight.
      */
     public static final Identifier VOID_DWELLER_ID = Identifier.fromNamespaceAndPath("mcsm", "void_dweller");
+    // V2 -- sift creatures merged into main jar
+    public static final Identifier COLOSSAL_OCTOPUS_ID = Identifier.fromNamespaceAndPath("mcsm", "colossal_octopus");
+    public static final Identifier JOKEST_CREATURE_ID = Identifier.fromNamespaceAndPath("mcsm", "jokest_creature");
+    // also the sift namespace ids, so datapack spawns find them
+    public static final Identifier SIFT_OCTOPUS_ID = Identifier.fromNamespaceAndPath("mcsm_sift", "colossal_octopus");
+    public static final Identifier SIFT_JOKEST_ID = Identifier.fromNamespaceAndPath("mcsm_sift", "jokest_creature");
 
     public static EntityType<McsmVoidwalker> VOIDWALKER;
     public static EntityType<VoidDwellerEntity> VOID_DWELLER;
     public static EntityType<McsmVoidLurker> VOID_LURKER;
+    public static EntityType<McsmBeast> COLOSSAL_OCTOPUS;
+    public static EntityType<McsmBeast> JOKEST_CREATURE;
+    public static EntityType<McsmBeast> SIFT_OCTOPUS;
+    public static EntityType<McsmBeast> SIFT_JOKEST;
 
     // ------------------------------------------------------------------
     // BUILD #460 -- AND THE TWO THAT LIVE IN THE WORLDS THE PLAYER BUILT.
@@ -145,6 +155,12 @@ public final class McsmEntities {
             if (KEEPER != null) {
                 FabricDefaultAttributeRegistry.register(KEEPER, McsmDenizen.keeperAttributes());
             }
+
+            // V2 -- colossal octopus and jokest creature, both in mcsm: and mcsm_sift:
+            COLOSSAL_OCTOPUS = beast(COLOSSAL_OCTOPUS_ID, 8.0F, 6.0F, 16, McsmBeast::whaleAttributes);
+            JOKEST_CREATURE = beast(JOKEST_CREATURE_ID, 1.2F, 2.2F, 12, McsmBeast::masAttributes);
+            SIFT_OCTOPUS = beast(SIFT_OCTOPUS_ID, 8.0F, 6.0F, 16, McsmBeast::whaleAttributes);
+            SIFT_JOKEST = beast(SIFT_JOKEST_ID, 1.2F, 2.2F, 12, McsmBeast::masAttributes);
         } catch (Throwable t) {
             // never take the mod down over the cast; McsmNpcs falls back to villagers
             STORY_CHARACTER = null;

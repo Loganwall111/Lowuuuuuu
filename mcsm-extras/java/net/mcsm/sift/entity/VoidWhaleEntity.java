@@ -33,7 +33,7 @@ import java.util.List;
  * Drifts weightlessly through Tier 1 coordinates completely unaffected by gravity
  * Whale-Song Audio Integration - deep echoing mechanical whale clicks and songs
  */
-public class VoidWhaleEntity extends FlyingMob {
+public class VoidWhaleEntity extends PathfinderMob {
 
     private static final EntityDataAccessor<Integer> SEGMENT_COUNT = SynchedEntityData.defineId(VoidWhaleEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> GLOW_INTENSITY = SynchedEntityData.defineId(VoidWhaleEntity.class, EntityDataSerializers.FLOAT);
@@ -61,7 +61,7 @@ public class VoidWhaleEntity extends FlyingMob {
         }
     }
 
-    public VoidWhaleEntity(EntityType<? extends FlyingMob> type, Level level) {
+    public VoidWhaleEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
         this.moveControl = new FlyingMoveControl(this, 20, true);
         this.setNoGravity(true);

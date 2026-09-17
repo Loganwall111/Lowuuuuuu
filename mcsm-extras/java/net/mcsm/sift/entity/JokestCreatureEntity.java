@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
  * Couple jokest creatures and fish-like creatures during skybox panorama
  * Small, playful, bounce around blue and pink grass blocks
  */
-public class JokestCreatureEntity extends FlyingMob {
+public class JokestCreatureEntity extends PathfinderMob {
 
     private static final EntityDataAccessor<Integer> JOKEST_TYPE = SynchedEntityData.defineId(JokestCreatureEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_BOUNCING = SynchedEntityData.defineId(JokestCreatureEntity.class, EntityDataSerializers.BOOLEAN);
@@ -55,7 +55,7 @@ public class JokestCreatureEntity extends FlyingMob {
         }
     }
 
-    public JokestCreatureEntity(EntityType<? extends FlyingMob> type, Level level) {
+    public JokestCreatureEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
         this.moveControl = new FlyingMoveControl(this, 20, true);
         this.setNoGravity(true);

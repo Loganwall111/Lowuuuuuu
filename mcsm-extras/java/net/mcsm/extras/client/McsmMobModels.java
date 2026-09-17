@@ -320,6 +320,24 @@ public final class McsmMobModels {
                 KeeperModel::new, spareRoot(ctx));
     }
 
+    public static ColossalOctopusModel octopus(EntityRendererProvider.Context ctx) {
+        return guarded("colossal_octopus",
+                humanoidRoot(ctx, McsmMobRenderers.OCTOPUS_LAYER, "colossal_octopus"),
+                ColossalOctopusModel::new, spareRoot(ctx));
+    }
+
+    public static JokestCreatureModel jokest(EntityRendererProvider.Context ctx) {
+        return guarded("jokest",
+                humanoidRoot(ctx, McsmMobRenderers.JOKEST_LAYER, "jokest"),
+                JokestCreatureModel::new, spareRoot(ctx));
+    }
+
+    public static VoidWhaleColossalModel voidWhaleColossal(EntityRendererProvider.Context ctx) {
+        return guarded("void_whale_colossal",
+                humanoidRoot(ctx, McsmMobRenderers.VOID_WHALE_LAYER, "void_whale_colossal"),
+                VoidWhaleColossalModel::new, spareRoot(ctx));
+    }
+
     /** Vanilla's own humanoid skeleton: the last body any of them can fall back to. */
     static ModelPart spareRoot(EntityRendererProvider.Context ctx) {
         try {
@@ -699,6 +717,201 @@ public final class McsmMobModels {
             this.lantern.xRot = -this.rightArm.xRot + Mth.sin(t * 0.03F - 0.5F) * 0.10F;
             this.lamp.xRot = this.lantern.xRot;
             this.lamp.zRot = Mth.sin(t * 0.05F) * 0.05F;
+        }
+    }
+
+    // ==================================================================
+    // V2 -- THE COLOSSAL OCTOPUS. Eight tentacles, rainbow chromatophores,
+    // ink that hangs in the void like fog.
+    // ==================================================================
+    public static final class ColossalOctopusModel extends HumanoidModel<MobState> {
+
+        public static final float S = 3.5F;
+        public static final int TENTACLES = 8;
+
+        private final ModelPart[] tentacles = new ModelPart[TENTACLES];
+        private final ModelPart[] tips = new ModelPart[TENTACLES];
+        private final ModelPart beak;
+        private final ModelPart mantle;
+
+        public ColossalOctopusModel(ModelPart root) {
+            super(root);
+            ModelPart body = part(root, "body");
+            ModelPart head = part(root, "head");
+            for (int i = 0; i < TENTACLES; i++) {
+                this.tentacles[i] = part(body, "tentacle" + i);
+                this.tips[i] = part(body, "tip" + i);
+            }
+            this.beak = part(head, "beak");
+            this.mantle = part(body, "mantle");
+        }
+
+        public static LayerDefinition createBodyLayer() {
+            MeshDefinition mesh = new MeshDefinition();
+            PartDefinition root = humanoid(mesh, S, 14.0F, 14.0F, 14.0F, 18.0F, 18.0F, 14.0F,
+                    4.0F, 12.0F, 4.0F, 6.0F, 12.0F, 6.0F);
+            PartDefinition head = root.getChild("head");
+            PartDefinition body = root.getChild("body");
+            box(head, "beak", 96, 0, S, 0.0F, 4.0F, -1.0F, -2.5F, 0.0F, -4.0F, 5.0F, 4.0F, 5.0F);
+            box(body, "mantle", 0, 64, S, 0.0F, -6.0F, 2.0F, -9.0F, -12.0F, -7.0F, 18.0F, 20.0F, 16.0F);
+            for (int i = 0; i < TENTACLES; i++) {
+                float angle = (float) i / TENTACLES * (float) (Math.PI * 2);
+                float px = Mth.cos(angle) * 7.0F;
+                float pz = Mth.sin(angle) * 7.0F;
+                box(body, "tentacle" + i, 64, 32, S, px, 16.0F, pz,
+                        -1.5F, 0.0F, -1.5F, 3.0F, 32.0F, 3.0F);
+                box(body, "tip" + i, 64, 96, S, px, 16.0F, pz,
+                        -1.5F, 32.0F, -1.5F, 3.0F, 6.0F, 3.0F);
+            }
+            return LayerDefinition.create(mesh, 256, 256);
+        }
+
+        @Override
+        public void setupAnim(MobState s) {
+            super.setupAnim(s);
+            float t = s.age;
+            this.head.xRot += 0.08F;
+            this.body.xRot += Mth.sin(t * 0.05F) * 0.06F;
+            this.beak.xRot = 0.2F + Math.abs(Mth.sin(t * 0.07F)) * 0.3F;
+            this.mantle.xRot = Mth.sin(t * 0.04F) * 0.08F;
+            this.mantle.zRot = Mth.cos(t * 0.03F) * 0.06F;
+            for (int i = 0; i < TENTACLES; i++) {
+                float phase = t * 0.07F + i * 0.785F;
+                float reach = Mth.sin(phase) * 0.6F;
+                this.tentacles[i].xRot = reach + Mth.cos(phase * 0.5F) * 0.2F;
+                this.tentacles[i].zRot = Mth.sin(phase * 0.6F) * 0.5F;
+                this.tentacles[i].yRot = (float) i / TENTACLES * (float) (Math.PI * 2) + Mth.sin(phase * 0.3F) * 0.15F;
+                this.tips[i].xRot = reach * 0.9F + Mth.sin(phase - 0.5F) * 0.4F;
+                this.tips[i].zRot = Mth.cos(phase * 0.6F - 0.4F) * 0.45F;
+            }
+            this.rightArm.xRot = -0.8F + Mth.sin(t * 0.06F) * 0.2F;
+            this.leftArm.xRot = -0.8F - Mth.sin(t * 0.06F) * 0.2F;
+        }
+    }
+
+    // ==================================================================
+    // V2 -- THE JOKEST CREATURE. A bouncing, grinning, grass-loving trickster
+    // that leaves a trail of joke particles and bounces off the sift.
+    // ==================================================================
+    public static final class JokestCreatureModel extends HumanoidModel<MobState> {
+
+        public static final float S = 1.2F;
+
+        private final ModelPart grin;
+        private final ModelPart ears;
+        private final ModelPart belly;
+
+        public JokestCreatureModel(ModelPart root) {
+            super(root);
+            ModelPart head = part(root, "head");
+            ModelPart body = part(root, "body");
+            this.grin = part(head, "grin");
+            this.ears = part(head, "ears");
+            this.belly = part(body, "belly");
+        }
+
+        public static LayerDefinition createBodyLayer() {
+            MeshDefinition mesh = new MeshDefinition();
+            PartDefinition root = humanoid(mesh, S, 10.0F, 10.0F, 10.0F, 12.0F, 14.0F, 8.0F,
+                    5.0F, 14.0F, 5.0F, 5.0F, 14.0F, 5.0F);
+            PartDefinition head = root.getChild("head");
+            PartDefinition body = root.getChild("body");
+            box(head, "grin", 32, 0, S, 0.0F, 4.0F, -1.0F, -4.0F, 0.0F, -5.0F, 8.0F, 3.0F, 5.0F);
+            many(head, "ears", 0, 32, S, 0.0F, -6.0F, 0.0F,
+                    new float[]{-6.0F, -2.0F, -1.0F, 2.0F, 4.0F, 2.0F},
+                    new float[]{4.0F, -2.0F, -1.0F, 2.0F, 4.0F, 2.0F});
+            box(body, "belly", 32, 16, S, 0.0F, 4.0F, 0.5F, -5.0F, 0.0F, -3.0F, 10.0F, 8.0F, 6.0F);
+            return LayerDefinition.create(mesh, 128, 128);
+        }
+
+        @Override
+        public void setupAnim(MobState s) {
+            super.setupAnim(s);
+            float t = s.age;
+            float bounce = Math.abs(Mth.sin(t * 0.18F)) * 0.35F;
+            this.head.y = -bounce * 4.0F;
+            this.body.y = -bounce * 2.0F;
+            this.head.xRot += 0.15F + Mth.sin(t * 0.09F) * 0.1F;
+            this.head.yRot += Mth.sin(t * 0.07F) * 0.25F;
+            this.grin.xRot = Mth.sin(t * 0.12F) * 0.15F;
+            this.grin.zRot = Mth.sin(t * 0.08F) * 0.1F;
+            this.ears.yRot = Mth.sin(t * 0.11F) * 0.3F;
+            this.ears.xRot = Mth.cos(t * 0.09F) * 0.15F;
+            this.belly.xRot = -bounce * 0.5F;
+            this.rightArm.xRot = -0.4F + Mth.sin(t * 0.14F) * 0.3F;
+            this.leftArm.xRot = -0.4F - Mth.sin(t * 0.14F) * 0.3F;
+            this.rightLeg.xRot = Mth.sin(t * 0.18F) * 0.4F - bounce;
+            this.leftLeg.xRot = -Mth.sin(t * 0.18F) * 0.4F - bounce;
+        }
+    }
+
+    // ==================================================================
+    // V2 -- THE VOID WHALE COLOSSAL. 12 segments, each with fins, tail that
+    // sweeps, head that sings. Epic version of the sift placeholder.
+    // ==================================================================
+    public static final class VoidWhaleColossalModel extends HumanoidModel<MobState> {
+
+        public static final float S = 4.0F;
+        public static final int SEGMENTS = 12;
+
+        private final ModelPart[] segments = new ModelPart[SEGMENTS];
+        private final ModelPart tail;
+        private final ModelPart finL;
+        private final ModelPart finR;
+        private final ModelPart glow;
+
+        public VoidWhaleColossalModel(ModelPart root) {
+            super(root);
+            ModelPart body = part(root, "body");
+            ModelPart head = part(root, "head");
+            for (int i = 0; i < SEGMENTS; i++) {
+                this.segments[i] = part(body, "segment" + i);
+            }
+            this.tail = part(body, "tail");
+            this.finL = part(body, "fin_l");
+            this.finR = part(body, "fin_r");
+            this.glow = part(head, "glow");
+        }
+
+        public static LayerDefinition createBodyLayer() {
+            MeshDefinition mesh = new MeshDefinition();
+            PartDefinition root = humanoid(mesh, S, 16.0F, 16.0F, 24.0F, 24.0F, 28.0F, 18.0F,
+                    6.0F, 16.0F, 6.0F, 8.0F, 14.0F, 8.0F);
+            PartDefinition head = root.getChild("head");
+            PartDefinition body = root.getChild("body");
+            box(head, "glow", 0, 128, S, 0.0F, -4.0F, -8.0F, -6.0F, -3.0F, -4.0F, 12.0F, 6.0F, 8.0F);
+            for (int i = 0; i < SEGMENTS; i++) {
+                float size = 12.0F - (float) i * 0.7F;
+                float z = (float) i * 6.0F;
+                box(body, "segment" + i, 64, 64, S, 0.0F, 0.0F, z,
+                        -size / 2, -size / 2, -2.0F, size, size, 8.0F);
+            }
+            box(body, "tail", 0, 96, S, 0.0F, 0.0F, SEGMENTS * 6.0F,
+                    -10.0F, -2.0F, 0.0F, 20.0F, 4.0F, 16.0F);
+            box(body, "fin_l", 96, 0, S, 10.0F, 2.0F, 4.0F, 0.0F, -2.0F, -3.0F, 12.0F, 2.0F, 10.0F);
+            box(body, "fin_r", 96, 0, S, -10.0F, 2.0F, 4.0F, -12.0F, -2.0F, -3.0F, 12.0F, 2.0F, 10.0F);
+            return LayerDefinition.create(mesh, 256, 256);
+        }
+
+        @Override
+        public void setupAnim(MobState s) {
+            super.setupAnim(s);
+            float t = s.age;
+            this.head.xRot += 0.06F;
+            this.head.yRot += Mth.sin(t * 0.03F) * 0.15F;
+            this.body.xRot += Mth.sin(t * 0.04F) * 0.05F;
+            for (int i = 0; i < SEGMENTS; i++) {
+                float phase = t * 0.08F + i * 0.5F;
+                this.segments[i].yRot = Mth.sin(phase) * 0.22F;
+                this.segments[i].xRot = Mth.sin(phase * 0.7F) * 0.12F;
+                this.segments[i].zRot = Mth.cos(phase * 0.6F) * 0.08F;
+            }
+            this.tail.yRot = Mth.sin(t * 0.08F + SEGMENTS * 0.5F) * 0.35F;
+            this.tail.xRot = Mth.sin(t * 0.06F + SEGMENTS * 0.3F) * 0.15F;
+            this.finL.zRot = Mth.sin(t * 0.09F) * 0.3F + 0.2F;
+            this.finR.zRot = -Mth.sin(t * 0.09F) * 0.3F - 0.2F;
+            this.glow.xRot = this.head.xRot * 0.3F;
+            this.glow.yRot = this.head.yRot * 0.3F;
         }
     }
 }

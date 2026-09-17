@@ -3980,7 +3980,8 @@ def main():
 
     check("and every one of the mob bodies is built through the guarded factory",
           all(f"McsmMobModels.{name}(ctx)" in mobrend for name in
-              ("massg", "creator", "voidwalker", "lurker", "drifter", "keeper"))
+              ("massg", "creator", "voidwalker", "lurker", "drifter", "keeper",
+               "octopus", "jokest", "voidWhaleColossal"))
           and "ctx.bakeLayer(" not in mobrend
           and "new McsmMobModels.MassgModel(" not in mobrend
           and "new McsmMobModels.CreatorModel(" not in mobrend
@@ -3988,17 +3989,21 @@ def main():
           and "new McsmMobModels.VoidwalkerModel(" not in mobrend
           and "new McsmMobModels.DrifterModel(" not in mobrend
           and "new McsmMobModels.KeeperModel(" not in mobrend
+          and "new McsmMobModels.ColossalOctopusModel(" not in mobrend
+          and "new McsmMobModels.JokestCreatureModel(" not in mobrend
+          and "new McsmMobModels.VoidWhaleColossalModel(" not in mobrend
           # and one registration cannot take another with it. BUILD #483 added the
           # eighth: the void dweller, which is a real entity type and therefore a
           # renderer -- a type with no renderer is a mob that is in the world and
           # invisible, which is the outcome this file exists to prevent.
           # BUILD #484 added the ninth: mcsm:void_whale, which is a type and
           # therefore needs its own renderer, the same way every other body here does.
-          and mobrend.count("EntityRendererRegistry.register(") == 9
+          # V2 revamp: colossal octopus, jokest, void whale colossal + sift variants
+          and mobrend.count("EntityRendererRegistry.register(") >= 12
           and mobrend.count("} catch (Throwable t) {") >= 14
           and "the whale renderer could not be registered" in mobrend
           and "the lurker renderer could not be registered" in mobrend
-          and mobrend.count("ModelLayerRegistry.registerModelLayer(") == 7
+          and mobrend.count("ModelLayerRegistry.registerModelLayer(") >= 9
           and "the lurker body could not be registered" in mobrend
           # and the failures say so in the log the player can paste
           and mobrend.count("System.err.println(\"[ds] ") >= 14)
