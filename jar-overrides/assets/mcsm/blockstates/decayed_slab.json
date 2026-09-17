@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "mcsm:block/decayed_slab"
+    },
+    "type=double": {
+      "model": "mcsm:block/decayed_slab_double"
+    },
+    "type=top": {
+      "model": "mcsm:block/decayed_slab_top"
+    }
+  }
+}

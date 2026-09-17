@@ -1,0 +1,15 @@
+{
+  "key": {
+    "D": {
+      "item": "mcsm:decayed_surface"
+    }
+  },
+  "pattern": [
+    "D"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:decayed_ash_clump"
+  },
+  "type": "minecraft:crafting_shaped"
+}

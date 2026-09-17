@@ -1,0 +1,284 @@
+#!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# Devouring Storms -- WHOLE-MOD SOURCE COMPILE (Track B step 2).
+#
+# Compiles the ENTIRE mod from source for the first time:
+#   src-recon/   = current-generation source recovered from the 1.9.100 jar
+#   mcsm-extras/ = the Devouring Storms overlay
+# with NO base jar on the classpath -- the source replaces it. When this
+# reaches parity with the jar's class count, the published mod contains zero
+# of the original author's compiled bytes and the namespace rename becomes
+# ours to make (Devouring Storms 2.0.0).
+#
+# Known exclusions (documented in src-recon/RECON_SUMMARY.txt):
+#   Six model classes whose createBodyLayer() builders OOM'd Vineflower
+#   (multi-thousand-call chains, 300+ locals): WitherStormDevourer,
+#   WitherStormP4, HugeAssBackModel, HunchbackGrowth, SeveredWitherStorm,
+#   WitherStormTentacles5. Until a high-heap single-class recovery pass
+#   lands, those SIX classes keep coming from the base jar at assembly time
+#   (compile-time fallback below).
+#
+# This script only reports (annotations + out/source-build-report.txt); it
+# never publishes. The shipping pipeline (build.sh) is untouched.
+# ---------------------------------------------------------------------------
+set -uo pipefail
+
+DL=/tmp/ds-src-dl
+mkdir -p "$DL" out
+
+fetch() {
+  local url="$1" out="$DL/$2"
+  [ -s "$out" ] || curl -fsSL --retry 3 --retry-delay 3 -o "$out" "$url" || {
+    echo "::error title=source-build::download failed: $url"; return 1; }
+  echo "[deps] $2 $(stat -c%s "$out") B"
+}
+
+# --- vanilla client (official mojmap names, same as the shipping build) ---
+MANIFEST="$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v2.json || true)"
+VURL="$(printf '%s' "$MANIFEST" | python3 -c 'import json,sys; m=json.load(sys.stdin); v=[x for x in m["versions"] if x["id"]=="26.2"]; print(v[0]["url"] if v else "")' || true)"
+curl -fsSL "$VURL" -o "$DL/version.json" || { echo "::error title=source-build::could not fetch MC version json"; exit 1; }
+CLIENT_URL="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["downloads"]["client"]["url"])' "$DL/version.json" || true)"
+fetch "$CLIENT_URL" client.jar || exit 1
+# javac hard-fails on JSpecify type annotations in the raw vanilla class files
+# (FriendlyByteBuf.readNullable); strip those attributes into a compile-only copy.
+python3 ci/strip_typeann.py "$DL/client.jar" "$DL/client-stripped.jar" || {
+  echo "::error title=source-build::client jar type-annotation stripping failed"; exit 1; }
+fetch "https://repo1.maven.org/maven2/net/fabricmc/sponge-mixin/0.15.4+mixin.0.8.7/sponge-mixin-0.15.4+mixin.0.8.7.jar" mixin.jar || exit 1
+
+# Every vanilla runtime library (netty, guava, log4j, authlib, ...) straight
+# from the version manifest -- kills the whole "missing transitive lib" class
+# of compile errors in one move.
+mkdir -p "$DL/libs"
+python3 - "$DL/version.json" "$DL/lib-list.txt" <<'LIBPY'
+import json, os, sys
+v = json.load(open(sys.argv[1]))
+out = []
+for lib in v.get("libraries", []):
+    art = (lib.get("downloads") or {}).get("artifact") or {}
+    url = art.get("url")
+    if not url:
+        continue
+    name = art.get("path") or os.path.basename(url)
+    if name.startswith("net/minecraft/client"):
+        continue
+    out.append(url + "\t" + os.path.basename(name))
+open(sys.argv[2], "w").write("\n".join(out))
+print(f"[deps] vanilla libraries in manifest: {len(out)}")
+LIBPY
+while IFS=$'\t' read -r url name; do
+  [ -s "$DL/libs/$name" ] || curl -fsSL --retry 2 --retry-delay 2 -o "$DL/libs/$name" "$url" \
+    || echo "::warning title=source-build::library download failed: $name"
+done < "$DL/lib-list.txt"
+LIBS_CP="$(find "$DL/libs" -name '*.jar' | tr '\n' ':')"
+fetch "https://libraries.minecraft.net/it/unimi/dsi/fastutil/8.5.18/fastutil-8.5.18.jar" fastutil.jar || exit 1
+fetch "https://libraries.minecraft.net/com/mojang/datafixerupper/10.0.21/datafixerupper-10.0.21.jar" dfu.jar || exit 1
+fetch "https://libraries.minecraft.net/org/joml/joml/1.10.8/joml-1.10.8.jar" joml.jar || exit 1
+fetch "https://libraries.minecraft.net/com/mojang/brigadier/1.3.10/brigadier-1.3.10.jar" brigadier.jar || exit 1
+fetch "https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.19.3/fabric-loader-0.19.3.jar" fabric-loader.jar || exit 1
+fetch "https://libraries.minecraft.net/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar" gson.jar || exit 1
+fetch "https://libraries.minecraft.net/org/slf4j/slf4j-api/2.0.7/slf4j-api-2.0.7.jar" slf4j.jar || exit 1
+
+# modmenu: newest release from the TerraformersMC maven (API surface is stable)
+MODMENU_META="$(curl -fsSL https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml)"
+MODMENU_CANDIDATES="$(printf '%s' "$MODMENU_META" | grep -oE '<release>[^<]*</release>' | sed 's/<[^>]*>//g')
+$(printf '%s' "$MODMENU_META" | grep -oE '<version>[^<]*</version>' | sed 's/<[^>]*>//g' | sort -Vr | head -4)"
+MODMENU_OK=""
+for MODMENU_VER in $MODMENU_CANDIDATES; do
+  echo "[deps] trying modmenu $MODMENU_VER"
+  if curl -fsSL --retry 2 -o "$DL/modmenu.jar" \
+      "https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/${MODMENU_VER}/modmenu-${MODMENU_VER}.jar" \
+     && unzip -l "$DL/modmenu.jar" | grep -q "com/terraformersmc/modmenu/api/ModMenuApi.class"; then
+    MODMENU_OK="$MODMENU_VER"
+    break
+  fi
+  echo "::warning title=source-build::modmenu $MODMENU_VER unusable (download or missing api package)"
+done
+if [ -z "$MODMENU_OK" ]; then
+  echo "::error title=source-build::no usable modmenu jar found; ModMenuIntegration will not compile"
+fi
+echo "::notice title=source-build::modmenu in use: ${MODMENU_OK:-NONE}"
+
+# fabric-api: pick the newest build for MC 26.2 from Fabric's maven metadata
+FAPI_VER="$(curl -fsSL https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml \
+  | grep -oE '<version>[^<]*\+26\.2[^<]*</version>' | sed 's/<[^>]*>//g' | tail -1 || true)"
+if [ -z "$FAPI_VER" ]; then
+  echo "::error title=source-build::no fabric-api version for 26.2 found in maven metadata"
+  exit 1
+fi
+echo "[deps] fabric-api resolved: $FAPI_VER"
+fetch "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FAPI_VER}/fabric-api-${FAPI_VER}.jar" fabric-api.jar || exit 1
+
+# The aggregate fabric-api jar is thin; the real classes live in per-module
+# jars whose exact versions are listed in the aggregate POM. Pull them all.
+curl -fsSL --retry 3 "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FAPI_VER}/fabric-api-${FAPI_VER}.pom" -o "$DL/fabric-api.pom" || {
+  echo "::error title=source-build::could not fetch fabric-api POM"; exit 1; }
+mkdir -p "$DL/fapi"
+python3 - "$DL/fabric-api.pom" "$DL/fapi-list.txt" <<'PYEOF'
+import re, sys
+pom = open(sys.argv[1]).read()
+out = []
+for m in re.finditer(r'<dependency>\s*<groupId>([^<]+)</groupId>\s*<artifactId>([^<]+)</artifactId>\s*<version>([^<]+)</version>', pom):
+    g, a, v = m.groups()
+    if g != "net.fabricmc.fabric-api":
+        continue
+    out.append(f"https://maven.fabricmc.net/{g.replace('.', '/')}/{a}/{v}/{a}-{v}.jar\t{a}.jar")
+open(sys.argv[2], "w").write("\n".join(out))
+print(f"[deps] fabric-api modules in POM: {len(out)}")
+PYEOF
+while IFS=$'\t' read -r url name; do
+  [ -s "$DL/fapi/$name" ] || curl -fsSL --retry 3 --retry-delay 2 -o "$DL/fapi/$name" "$url" \
+    || echo "::warning title=source-build::module download failed: $name"
+done < "$DL/fapi-list.txt"
+FAPI_CP="$(find "$DL/fapi" -name '*.jar' | tr '\n' ':')"
+
+# One-shot API probe: show the fabric potion-brewing surface javac sees
+# (annotations are our only window into the runner).
+FAPI_HOLDER=""
+for j in "$DL"/fapi/*.jar; do
+  if unzip -l "$j" 2>/dev/null | grep -q "FabricPotionBrewingBuilder"; then FAPI_HOLDER="$j"; break; fi
+done
+if [ -n "$FAPI_HOLDER" ]; then
+  echo "[probe] FabricPotionBrewingBuilder lives in $(basename "$FAPI_HOLDER")"
+  javap -cp "$FAPI_HOLDER" net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder 2>/dev/null | head -12 | while IFS= read -r line; do
+    echo "::notice title=probe-fpbb::${line:0:280}"
+  done
+  javap -cp "$FAPI_HOLDER" 'net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder$BuildCallback' 2>/dev/null | head -8 | while IFS= read -r line; do
+    echo "::notice title=probe-callback::${line:0:280}"
+  done
+else
+  echo "::warning title=source-build::FabricPotionBrewingBuilder not found in any fabric-api module jar"
+fi
+
+CP="$DL/client-stripped.jar:$LIBS_CP$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/fabric-loader.jar:$DL/fabric-api.jar:$DL/gson.jar:$DL/slf4j.jar:$DL/modmenu.jar:$FAPI_CP"
+
+# Compile-time fallback, LAST on the classpath: the single class Vineflower
+# could not recover (WitherStormDevourer.createBodyLayer -- OOM on a
+# multi-thousand-call model builder). Every other symbol must resolve from
+# the explicit source set, which javac prefers over classpath jars. When a
+# CFR pass or a hand-rebuild recovers that method, drop this fallback.
+fetch "https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-1.9.100/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar" base-fallback.jar || exit 1
+CP="$CP:$DL/base-fallback.jar"
+
+# --- source set: recovered mod + our overlay, minus the broken decompile ---
+rm -f /tmp/ds-src.args
+find src-recon -name '*.java' ! -name 'WitherStormDevourer.java' > /tmp/ds-src.args
+find mcsm-extras/java -name '*.java' >> /tmp/ds-src.args
+find ci/stubs -name '*.java' >> /tmp/ds-src.args
+N_SRC=$(wc -l < /tmp/ds-src.args)
+echo "[source] $N_SRC java files in the compile set"
+
+rm -rf /tmp/ds-src-build && mkdir -p /tmp/ds-src-build
+JAVAC_LOG=/tmp/ds-javac.log
+# -J-Xss: the model builders are thousands-deep method-call chains that
+# overflow javac's default attribution recursion stack.
+# Self-widening loop: vanilla members the published mod bytecode calls
+# directly (private/protected per the raw jar) are widened in a COMPILE-ONLY
+# copy of the client jar, round by round, until javac converges.
+WIDEN="$DL/widen.txt"; : > "$WIDEN"
+CP_TAIL="${CP#*:}"
+ROUND=0
+RC=1
+while [ "$ROUND" -lt 8 ]; do
+  ROUND=$((ROUND + 1))
+  python3 ci/widen_members.py "$DL/client-stripped.jar" "$DL/client-w.jar" "$WIDEN" > "$DL/widen-out.txt" 2>&1 || exit 1
+  while IFS= read -r line; do
+    echo "::notice title=widen-r$ROUND::${line:0:280}"
+  done < <(head -10 "$DL/widen-out.txt")
+  while IFS= read -r line; do
+    echo "::notice title=widen-entry::${line:0:200}"
+  done < "$WIDEN"
+  rm -rf /tmp/ds-src-build && mkdir -p /tmp/ds-src-build
+  javac -J-Xss512m -J-Xmx8g -nowarn --release 25 -proc:none -cp "$DL/client-w.jar:$CP_TAIL" -d /tmp/ds-src-build @/tmp/ds-src.args > "$JAVAC_LOG" 2>&1
+  RC=$?
+  [ "$RC" -eq 0 ] && break
+  python3 - "$JAVAC_LOG" "$DL/acc-new.txt" <<'ACCPY'
+import re, sys
+log = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+pairs = set()
+for m in re.finditer(r'([A-Za-z_$][\w$]*)\s+has\s+(?:private|protected)\s+access\s+in\s+([\w.$]+)', log):
+    pairs.add((m.group(2), m.group(1)))
+for m in re.finditer(r'(?:<[^>]*>)?([A-Za-z_$][\w$]*)\([^)]*\)\s+has\s+(?:private|protected)\s+access\s+in\s+([\w.$]+)', log):
+    pairs.add((m.group(2), m.group(1)))
+for m in re.finditer(r'([A-Za-z_$][\w$]*)\s+is\s+not\s+public\s+in\s+([\w.$]+)', log):
+    pairs.add((m.group(2), m.group(1)))
+open(sys.argv[2], "w").write("\n".join(f"{o}#{n}" for o, n in sorted(pairs)))
+ACCPY
+  BEFORE=$(wc -l < "$WIDEN")
+  cat "$DL/acc-new.txt" >> "$WIDEN" 2>/dev/null || true
+  sort -u "$WIDEN" -o "$WIDEN"
+  AFTER=$(sort -u "$WIDEN" | grep -c . || true)
+  echo "[widen] round $ROUND: javac rc=$RC, widen list $BEFORE -> $AFTER"
+  [ "$AFTER" -le "$BEFORE" ] && break
+done
+echo "::notice title=source-build::compile rounds: $ROUND; widened vanilla members: $(grep -c . "$WIDEN" || true)"
+N_CLS=$(find /tmp/ds-src-build -name '*.class' | wc -l)
+{
+  echo "source build report"
+  echo "java files in:   $N_SRC"
+  echo "classes out:     $N_CLS"
+  # --- GUI surface probe: exact 26.2 names for the next GUI/lighting round ---
+{
+  echo "gui surface probe (26.2 client jar, run-generated)"
+  echo "== hotbar / render-state class inventory"
+  ( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -iE "hotbar|guirenderstate|guigraphicsextractor|/hud" | head -30 )
+  echo "== renderer classes matching level/light (26.2 renamed them)"
+  ( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -E "^net/minecraft/client/renderer/" | grep -iE "level|light|section" | head -25 )
+  echo "== light-ish methods across renderer candidates"
+  for f in $( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -E "^net/minecraft/client/renderer/[A-Za-z0-9$]+\.class$" | grep -iE "level|light" ); do
+    C="${f%.class}"; C="${C//\//.}"
+    echo "== $C"
+    javap -p -cp "$DL/client-stripped.jar" "$C" 2>/dev/null | grep -iE "light|brightness" | head -12
+  done
+  echo "== light block classes"
+  ( cd "$DL" && jar tf client-stripped.jar 2>/dev/null | grep -iE "light.*block|block.*light" | grep -v textures | head -10 )
+  echo "== net.minecraft.world.level.Level (setBlock/light)"
+  javap -cp "$DL/client-stripped.jar" net.minecraft.world.level.Level 2>/dev/null | grep -iE "setblock|light" | head -12
+  echo "== EntityRenderDispatcher (light coords)"
+  javap -p -cp "$DL/client-stripped.jar" net.minecraft.client.renderer.entity.EntityRenderDispatcher 2>/dev/null | grep -iE "light" | head -8
+  echo "== LightBlock (real light source block for phase 2b)"
+  javap -p -cp "$DL/client-stripped.jar" net.minecraft.world.level.block.LightBlock 2>/dev/null | head -25
+  echo "== Blocks field scan for LIGHT"
+  javap -cp "$DL/client-stripped.jar" net.minecraft.world.level.block.Blocks 2>/dev/null | grep -iE " LIGHT|LightBlock" | head -5
+  echo "== Entity removal surface (cleanup hooks)"
+  javap -p -cp "$DL/client-stripped.jar" net.minecraft.world.entity.Entity 2>/dev/null | grep -iE "setremoved|discard|isremoved|removalreason|isalive" | head -10
+  echo "== BlockState/Block light helpers"
+  javap -cp "$DL/client-stripped.jar" net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase 2>/dev/null | grep -iE "light|getvalue|setvalue" | head -10
+} > ci/reports/gui-surface-latest.txt 2>/dev/null || true
+
+echo "javac exit:      $RC"
+  echo "jar reference:   385 mod classes (+ our overlay) in the 1.9.100 base"
+  echo "--- widen list ---"
+  cat "$WIDEN" 2>/dev/null || true
+  echo "--- first 25 errors with detail ---"
+  grep -A4 -E "error:" "$JAVAC_LOG" | head -120 || true
+  echo "--- javac log head ---"
+  head -5 "$JAVAC_LOG" || true
+  echo "--- javac log tail ---"
+  tail -20 "$JAVAC_LOG" || true
+} > out/source-build-report.txt
+
+if [ "$RC" -eq 0 ]; then
+  echo "::notice title=source-build::WHOLE MOD COMPILES FROM SOURCE: $N_CLS classes from $N_SRC files"
+else
+  N_ERR=$(grep -cE "error:" "$JAVAC_LOG" || true)
+  echo "::error title=source-build::javac reported $N_ERR errors across $N_SRC files; first lines in annotations and out/source-build-report.txt"
+  K=$(grep -E "error:" "$JAVAC_LOG" | sed -E 's/.*error: //; s/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -10 | paste -sd '|' | sed 's/|/%0A/g')
+  echo "::error title=error-kinds::$K"
+  F=$(grep -E "error:" "$JAVAC_LOG" | head -8 | paste -sd '|' | sed 's/|/%0A/g')
+  D=$(grep -A4 -E "error:" "$JAVAC_LOG" | grep -E "symbol:|location:|required:|found:" | sort -u | head -8 | paste -sd '|' | sed 's/|/%0A/g')
+  echo "::error title=javac-first::$F%0A--details--%0A$D"
+  W=$(grep -oE '^[a-zA-Z0-9_./-]+\.java' "$JAVAC_LOG" | sort | uniq -c | sort -rn | head -8 | paste -sd '|' | sed 's/|/%0A/g')
+  echo "::error title=errors-in::$W"
+  if [ "$N_ERR" -eq 0 ]; then
+    echo "::error title=javac-nonzero-exit::javac exited $RC with no 'error:' lines; log tail follows"
+    tail -12 "$JAVAC_LOG" | while IFS= read -r line; do
+      echo "::error title=javac-tail::${line:0:400}"
+    done
+  fi
+fi
+# Publish the report INTO the repo so the sandbox (which cannot reach
+# GitHub log/artifact blobs) can always read the full verdict via git.
+mkdir -p ci/reports
+cp out/source-build-report.txt ci/reports/source-build-latest.txt
+echo "[report] copied to ci/reports/source-build-latest.txt"
+exit 0   # report-only pipeline: never fail the workflow itself

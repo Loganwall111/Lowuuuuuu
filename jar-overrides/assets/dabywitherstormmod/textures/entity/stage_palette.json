@@ -1,0 +1,392 @@
+{
+  "wither_storm_stage_a.png": {
+    "path": "ogs-cem/assets/minecraft/textures/entity/cem/wither_storm_stage_a.png",
+    "measured": {
+      "size": [
+        160,
+        160
+      ],
+      "distinct": 28,
+      "top": [
+        "#000000 x11840",
+        "#060A16 x1945",
+        "#050915 x1775",
+        "#060A15 x1415",
+        "#050812 x1155",
+        "#060A17 x1075"
+      ],
+      "mean_blue": 10.7,
+      "mean_green": 4.8,
+      "mean_red": 2.8
+    },
+    "ramp": [
+      "#000000",
+      "#03040A",
+      "#03050C",
+      "#03060D",
+      "#03060E",
+      "#04060E",
+      "#04070E",
+      "#04070F",
+      "#040710",
+      "#040711",
+      "#040810",
+      "#040811",
+      "#050811",
+      "#050812",
+      "#050814",
+      "#050912",
+      "#050913",
+      "#050914",
+      "#050A15",
+      "#050A16",
+      "#060A15",
+      "#060A16",
+      "#060A17",
+      "#060B18"
+    ],
+    "targets": {
+      "phase_4_assets.png": {
+        "before": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 5,
+          "top": [
+            "#333333 x103337",
+            "#161616 x75164",
+            "#030303 x36734",
+            "#232323 x32651",
+            "#070707 x14258"
+          ],
+          "mean_blue": 31.6,
+          "mean_green": 31.6,
+          "mean_red": 31.6
+        },
+        "after": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 5,
+          "top": [
+            "#060B18 x103337",
+            "#040711 x75164",
+            "#000000 x36734",
+            "#050912 x32651",
+            "#03050C x14258"
+          ],
+          "mean_blue": 17.2,
+          "mean_green": 7.7,
+          "mean_red": 4.3
+        },
+        "wrote": "jar-overrides/assets/dabywitherstormmod/textures/entity/phase_4_assets.png"
+      },
+      "phase_4_assets_og.png": {
+        "before": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 5,
+          "top": [
+            "#333333 x102418",
+            "#161616 x84301",
+            "#030303 x42758",
+            "#232323 x24060",
+            "#070707 x8607"
+          ],
+          "mean_blue": 30.9,
+          "mean_green": 30.9,
+          "mean_red": 30.9
+        },
+        "after": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 5,
+          "top": [
+            "#060B18 x102418",
+            "#040711 x84301",
+            "#000000 x42758",
+            "#050912 x24060",
+            "#03050C x8607"
+          ],
+          "mean_blue": 16.9,
+          "mean_green": 7.5,
+          "mean_red": 4.2
+        },
+        "wrote": "jar-overrides/assets/dabywitherstormmod/textures/entity/phase_4_assets_og.png"
+      },
+      "phase_4_assets_p55.png": {
+        "before": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 5,
+          "top": [
+            "#232323 x88267",
+            "#070707 x59011",
+            "#161616 x45416",
+            "#030303 x38224",
+            "#333333 x31226"
+          ],
+          "mean_blue": 23.7,
+          "mean_green": 23.7,
+          "mean_red": 23.7
+        },
+        "after": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 5,
+          "top": [
+            "#050912 x88267",
+            "#03050C x59011",
+            "#040711 x45416",
+            "#000000 x38224",
+            "#060B18 x31226"
+          ],
+          "mean_blue": 14.6,
+          "mean_green": 6.7,
+          "mean_red": 3.8
+        },
+        "wrote": "jar-overrides/assets/dabywitherstormmod/textures/entity/phase_4_assets_p55.png"
+      },
+      "phase_4_assets_og_p55.png": {
+        "before": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 5,
+          "top": [
+            "#232323 x88267",
+            "#070707 x59011",
+            "#161616 x45416",
+            "#030303 x38224",
+            "#333333 x31226"
+          ],
+          "mean_blue": 23.7,
+          "mean_green": 23.7,
+          "mean_red": 23.7
+        },
+        "after": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 5,
+          "top": [
+            "#050912 x88267",
+            "#03050C x59011",
+            "#040711 x45416",
+            "#000000 x38224",
+            "#060B18 x31226"
+          ],
+          "mean_blue": 14.6,
+          "mean_green": 6.7,
+          "mean_red": 3.8
+        },
+        "wrote": "jar-overrides/assets/dabywitherstormmod/textures/entity/phase_4_assets_og_p55.png"
+      }
+    }
+  },
+  "wither_storm_stage_b.png": {
+    "path": "wither_storm_stage_b.png",
+    "measured": {
+      "size": [
+        160,
+        160
+      ],
+      "distinct": 28,
+      "top": [
+        "#000000 x11840",
+        "#060A16 x1945",
+        "#050915 x1775",
+        "#060A15 x1415",
+        "#050812 x1155",
+        "#060A17 x1075"
+      ],
+      "mean_blue": 10.7,
+      "mean_green": 4.8,
+      "mean_red": 2.8
+    },
+    "ramp": [
+      "#000000",
+      "#03040A",
+      "#03050C",
+      "#03060D",
+      "#03060E",
+      "#04060E",
+      "#04070E",
+      "#04070F",
+      "#040710",
+      "#040711",
+      "#040810",
+      "#040811",
+      "#050811",
+      "#050812",
+      "#050814",
+      "#050912",
+      "#050913",
+      "#050914",
+      "#050A15",
+      "#050A16",
+      "#060A15",
+      "#060A16",
+      "#060A17",
+      "#060B18"
+    ],
+    "targets": {
+      "phase_4_assets_p6.png": {
+        "before": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 8,
+          "top": [
+            "#060606 x80333",
+            "#070707 x69712",
+            "#000000 x62516",
+            "#0C0C0C x49563",
+            "#373737 x8",
+            "#363636 x8"
+          ],
+          "mean_blue": 6.0,
+          "mean_green": 6.0,
+          "mean_red": 6.0
+        },
+        "after": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 4,
+          "top": [
+            "#050811 x80333",
+            "#050813 x69712",
+            "#000000 x62516",
+            "#060B18 x49583"
+          ],
+          "mean_blue": 14.8,
+          "mean_green": 6.7,
+          "mean_red": 4.0
+        },
+        "wrote": "jar-overrides/assets/dabywitherstormmod/textures/entity/phase_4_assets_p6.png"
+      },
+      "phase_4_assets_og_p6.png": {
+        "before": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 8,
+          "top": [
+            "#060606 x80333",
+            "#070707 x69712",
+            "#000000 x62516",
+            "#0C0C0C x49563",
+            "#373737 x8",
+            "#363636 x8"
+          ],
+          "mean_blue": 6.0,
+          "mean_green": 6.0,
+          "mean_red": 6.0
+        },
+        "after": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 4,
+          "top": [
+            "#050811 x80333",
+            "#050813 x69712",
+            "#000000 x62516",
+            "#060B18 x49583"
+          ],
+          "mean_blue": 14.8,
+          "mean_green": 6.7,
+          "mean_red": 4.0
+        },
+        "wrote": "jar-overrides/assets/dabywitherstormmod/textures/entity/phase_4_assets_og_p6.png"
+      },
+      "phase_4_assets_p7.png": {
+        "before": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 4,
+          "top": [
+            "#060606 x83615",
+            "#0C0C0C x60555",
+            "#000000 x59210",
+            "#070707 x58764"
+          ],
+          "mean_blue": 6.3,
+          "mean_green": 6.3,
+          "mean_red": 6.3
+        },
+        "after": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 4,
+          "top": [
+            "#050811 x83615",
+            "#060B18 x60555",
+            "#000000 x59210",
+            "#050813 x58764"
+          ],
+          "mean_blue": 15.2,
+          "mean_green": 6.9,
+          "mean_red": 4.1
+        },
+        "wrote": "jar-overrides/assets/dabywitherstormmod/textures/entity/phase_4_assets_p7.png"
+      },
+      "phase_4_assets_og_p7.png": {
+        "before": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 4,
+          "top": [
+            "#060606 x83615",
+            "#0C0C0C x60555",
+            "#000000 x59210",
+            "#070707 x58764"
+          ],
+          "mean_blue": 6.3,
+          "mean_green": 6.3,
+          "mean_red": 6.3
+        },
+        "after": {
+          "size": [
+            512,
+            512
+          ],
+          "distinct": 4,
+          "top": [
+            "#050811 x83615",
+            "#060B18 x60555",
+            "#000000 x59210",
+            "#050813 x58764"
+          ],
+          "mean_blue": 15.2,
+          "mean_green": 6.9,
+          "mean_red": 4.1
+        },
+        "wrote": "jar-overrides/assets/dabywitherstormmod/textures/entity/phase_4_assets_og_p7.png"
+      }
+    }
+  }
+}

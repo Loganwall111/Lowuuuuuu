@@ -1,0 +1,17 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:decayed_bricks"
+    }
+  },
+  "pattern": [
+    "A  ",
+    "AA ",
+    "AAA"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:decayed_brick_stairs"
+  },
+  "type": "minecraft:crafting_shaped"
+}

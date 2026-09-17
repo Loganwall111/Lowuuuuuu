@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "lit=false": { "model": "dabywitherstormmod:block/furnace_filter" },
+    "lit=true":  { "model": "dabywitherstormmod:block/furnace_filter_on" }
+  }
+}

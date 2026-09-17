@@ -1,0 +1,164 @@
+{
+  "ds_btn_click": {
+    "sounds": [
+      "mcsm:ds_btn_click"
+    ],
+    "subtitle": "subtitles.mcsm.button_click"
+  },
+  "ds_btn_hover": {
+    "sounds": [
+      "mcsm:ds_btn_hover"
+    ],
+    "subtitle": "subtitles.mcsm.button_hover"
+  },
+  "ds_menu_open": {
+    "sounds": [
+      "mcsm:ds_menu_open"
+    ],
+    "subtitle": "subtitles.mcsm.menu_open"
+  },
+  "massg_breath": {
+    "sounds": [
+      {
+        "name": "mcsm:massg/breath",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.massg_breath"
+  },
+  "massg_giggle": {
+    "sounds": [
+      {
+        "name": "mcsm:massg/giggle",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.massg_giggle"
+  },
+  "massg_heart": {
+    "sounds": [
+      {
+        "name": "mcsm:massg/heart",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.massg_heart"
+  },
+  "massg_roar": {
+    "sounds": [
+      {
+        "name": "mcsm:massg/roar",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.massg_roar"
+  },
+  "massg_whisper": {
+    "sounds": [
+      {
+        "name": "mcsm:massg/whisper",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.massg_whisper"
+  },
+  "oblivion_drone": {
+    "sounds": [
+      {
+        "name": "mcsm:oblivion/drone",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.oblivion_drone"
+  },
+  "oblivion_glitch": {
+    "sounds": [
+      {
+        "name": "mcsm:oblivion/glitch",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.oblivion_glitch"
+  },
+  "oblivion_warp": {
+    "sounds": [
+      {
+        "name": "mcsm:oblivion/warp",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.oblivion_warp"
+  },
+  "radio_carrier": {
+    "sounds": [
+      {
+        "name": "mcsm:radio/carrier",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.radio_carrier"
+  },
+  "radio_distress": {
+    "sounds": [
+      {
+        "name": "mcsm:radio/distress",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.radio_distress"
+  },
+  "radio_morse": {
+    "sounds": [
+      {
+        "name": "mcsm:radio/morse",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.radio_morse"
+  },
+  "radio_static": {
+    "sounds": [
+      {
+        "name": "mcsm:radio/static",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.radio_static"
+  },
+  "radio_voice": {
+    "sounds": [
+      {
+        "name": "mcsm:radio/voice",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.radio_voice"
+  },
+  "terminal_deny": {
+    "sounds": [
+      {
+        "name": "mcsm:ui/terminal_deny",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.terminal_deny"
+  },
+  "terminal_key": {
+    "sounds": [
+      {
+        "name": "mcsm:ui/terminal_key",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.terminal_key"
+  },
+  "terminal_open": {
+    "sounds": [
+      {
+        "name": "mcsm:ui/terminal_open",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.terminal_open"
+  }
+}

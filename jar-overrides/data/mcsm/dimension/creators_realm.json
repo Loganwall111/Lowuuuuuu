@@ -1,0 +1,34 @@
+{
+  "generator": {
+    "settings": {
+      "biome": "mcsm:creators_realm",
+      "features": false,
+      "lakes": false,
+      "layers": [
+        {
+          "block": "mcsm:creator_marble",
+          "height": 1
+        },
+        {
+          "block": "mcsm:creator_marble",
+          "height": 60
+        },
+        {
+          "block": "mcsm:creator_tiles",
+          "height": 40
+        },
+        {
+          "block": "mcsm:creator_gold",
+          "height": 26
+        },
+        {
+          "block": "mcsm:creator_floor",
+          "height": 1
+        }
+      ],
+      "structure_overrides": []
+    },
+    "type": "minecraft:flat"
+  },
+  "type": "mcsm:creators_realm"
+}

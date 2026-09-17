@@ -1,0 +1,13 @@
+{
+  "type": "dabywitherstormmod:bowels",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [],
+      "biome": "dabywitherstormmod:bowels",
+      "lakes": false,
+      "features": false,
+      "structure_overrides": []
+    }
+  }
+}

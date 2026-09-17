@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "mcsm:block/decayed_stone",
+    "particle": "mcsm:block/decayed_stone"
+  }
+}

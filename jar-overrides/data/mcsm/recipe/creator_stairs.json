@@ -1,0 +1,17 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:creator_marble"
+    }
+  },
+  "pattern": [
+    "A  ",
+    "AA ",
+    "AAA"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:creator_stairs"
+  },
+  "type": "minecraft:crafting_shaped"
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/adams_crate",
+    "east": "mcsm:block/adams_crate",
+    "north": "mcsm:block/adams_crate",
+    "particle": "mcsm:block/adams_crate",
+    "south": "mcsm:block/adams_crate",
+    "up": "mcsm:block/adams_crate",
+    "west": "mcsm:block/adams_crate"
+  }
+}

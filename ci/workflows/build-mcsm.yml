@@ -1,0 +1,95 @@
+name: Build Devouring Storms jar
+
+# ----------------------------------------------------------------------------
+# The "GitHub compiler": the sandbox has no JDK and no route to Mojang/Maven,
+# so every push to either arena branch builds the full jar on a runner that
+# has both. Artifacts appear on the run page; when the VERSION file bumps to a
+# version with no release yet, a release with the jar is created automatically
+# -- but only when the build ran on the main dev branch
+# (arena/01a06df7-lowuuuuuu), so test builds on other arena branches do not
+# publish alongside it.
+#
+# NOTE: this file lives in .github/workflows/ so GitHub actually runs it.
+# ci/workflows/build-mcsm.yml is kept as a mirror/template of the same recipe.
+# ----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: ['arena/**', 'main']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # allow the job to publish the release with the built jar
+
+concurrency:
+  group: mcsm-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Read build identity
+        id: build_identity
+        shell: bash
+        run: echo "value=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Build the jar
+        run: bash ci/build.sh
+
+      - name: Upload built jar and build logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mcsm-jar-${{ steps.build_identity.outputs.value }}
+          path: |
+            out/*.jar
+            out/*.sha256
+            out/*.txt
+
+      - name: Publish release when VERSION is new
+        # Releases are intentionally disabled for Arena development builds.
+        if: false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="ds-${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists — leaving it alone"
+          else
+            gh release create "$TAG" \
+              --repo Loganwall111/Lowuuuuuu \
+              --target "${GITHUB_REF#refs/heads/}" \
+              --title "Devouring Storms: The Point of No Return ${VER}-26.2-beta" \
+              --notes-file ci/RELEASE_NOTES.md \
+              out/*.jar out/*.sha256
+          fi
+
+      - name: Attach the Devouring Storms shader pack to the release
+        # Releases are intentionally disabled for Arena development builds.
+        if: false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="ds-${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            ( cd shaderpack-v5 && zip -q -r "/tmp/devouringstorms-shaderpack-v5-${VER}.zip" shaders )
+            gh release upload "$TAG" "/tmp/devouringstorms-shaderpack-v5-${VER}.zip" --clobber \
+              || echo "::warning::shader pack upload failed"
+            ( cd shaderpack-superduper && zip -q -r "/tmp/devouringstorms-superduper-default-${VER}.zip" shaders DEVOURING_STORMS_MERGE.md )
+            gh release upload "$TAG" "/tmp/devouringstorms-superduper-default-${VER}.zip" --clobber \
+              || echo "::warning::super duper default shader pack upload failed"
+          else
+            echo "no release $TAG yet - skipping shader pack attach"
+          fi

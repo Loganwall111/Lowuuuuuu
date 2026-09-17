@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "mcsm:block/city_bricks",
+    "side": "mcsm:block/city_bricks",
+    "top": "mcsm:block/city_bricks"
+  }
+}

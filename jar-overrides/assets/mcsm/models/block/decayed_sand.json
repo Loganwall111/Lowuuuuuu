@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/decayed_sand",
+    "east": "mcsm:block/decayed_sand",
+    "north": "mcsm:block/decayed_sand",
+    "particle": "mcsm:block/decayed_sand",
+    "south": "mcsm:block/decayed_sand",
+    "up": "mcsm:block/decayed_sand",
+    "west": "mcsm:block/decayed_sand"
+  }
+}

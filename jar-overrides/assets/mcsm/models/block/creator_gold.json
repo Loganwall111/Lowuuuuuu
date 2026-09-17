@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/creator_gold",
+    "east": "mcsm:block/creator_gold",
+    "north": "mcsm:block/creator_gold",
+    "particle": "mcsm:block/creator_gold",
+    "south": "mcsm:block/creator_gold",
+    "up": "mcsm:block/creator_gold",
+    "west": "mcsm:block/creator_gold"
+  }
+}

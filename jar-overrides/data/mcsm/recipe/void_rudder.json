@@ -1,0 +1,23 @@
+{
+  "key": {
+    "C": {
+      "item": "mcsm:void_cord"
+    },
+    "S": {
+      "item": "mcsm:void_shard"
+    },
+    "V": {
+      "item": "mcsm:void_sigil"
+    }
+  },
+  "pattern": [
+    " S ",
+    "SVS",
+    " C "
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:void_rudder"
+  },
+  "type": "minecraft:crafting_shaped"
+}

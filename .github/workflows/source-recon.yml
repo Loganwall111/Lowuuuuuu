@@ -1,0 +1,60 @@
+name: Source recon (decompile the base jar)
+
+# ---------------------------------------------------------------------------
+# Devouring Storms -- recovers CURRENT-generation source for every class in
+# the hash-pinned 1.9.100 base jar (the author's clean source in net/ is
+# 1.9.60 and missing 40 versions of features, including the whole town
+# system). Runs ci/source-recon.sh on a runner (JDK + network) and commits
+# the recovered tree back to this branch under src-recon/.
+#
+# Dispatch is also wired, but note the GitHub API only lists workflows that
+# exist on the default branch -- the push trigger below is the reliable one.
+# ---------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/01a07250-lowuuuuuu]
+    paths: [ci/source-recon.sh, .github/workflows/source-recon.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: source-recon
+  cancel-in-progress: true
+
+jobs:
+  recon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Recover source from the base jar
+        run: bash ci/source-recon.sh
+
+      - name: Commit recovered source back to this branch
+        run: |
+          set -euo pipefail
+          git config user.name "devouring-ci"
+          git config user.email "devouring-ci@users.noreply.github.com"
+          git add src-recon
+          if git diff --cached --quiet; then
+            echo "no recon changes to commit"
+          else
+            git commit -m "Source recon: 1.9.100 base jar decompiled to src-recon/ (Vineflower)"
+            git push origin "HEAD:${GITHUB_REF#refs/heads/}"
+          fi
+
+      - name: Upload recovered source
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: source-recon-${{ github.run_number }}
+          path: src-recon/

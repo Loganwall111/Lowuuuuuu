@@ -1,0 +1,28 @@
+package net.dabicco.witherstormmod.config;
+
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type;
+import net.minecraft.resources.Identifier;
+
+public record ClientConfigCommandPayload(int mode, String key, double value) implements CustomPacketPayload {
+   public static final int MODE_GET = 0;
+   public static final int MODE_SET = 1;
+   public static final int MODE_LIST = 2;
+   public static final int MODE_OPEN_GUI = 3;
+   public static final Type<net.dabicco.witherstormmod.config.ClientConfigCommandPayload> TYPE = new Type(
+      Identifier.fromNamespaceAndPath("witherstormmod", "client_config_command")
+   );
+   public static final StreamCodec<RegistryFriendlyByteBuf, net.dabicco.witherstormmod.config.ClientConfigCommandPayload> CODEC = StreamCodec.of(
+      (buf, payload) -> {
+         buf.writeVarInt(payload.mode());
+         buf.writeUtf(payload.key());
+         buf.writeDouble(payload.value());
+      }, buf -> new net.dabicco.witherstormmod.config.ClientConfigCommandPayload(buf.readVarInt(), buf.readUtf(), buf.readDouble())
+   );
+
+   public Type<? extends CustomPacketPayload> type() {
+      return TYPE;
+   }
+}

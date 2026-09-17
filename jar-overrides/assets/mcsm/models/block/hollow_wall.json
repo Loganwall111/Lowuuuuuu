@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/hollow_wall",
+    "east": "mcsm:block/hollow_wall",
+    "north": "mcsm:block/hollow_wall",
+    "particle": "mcsm:block/hollow_wall",
+    "south": "mcsm:block/hollow_wall",
+    "up": "mcsm:block/hollow_wall",
+    "west": "mcsm:block/hollow_wall"
+  }
+}

@@ -1,0 +1,81 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:60: error: cannot find symbol
+        float phaseFade = smoothstep(u_StormPhase, 4.45F, 4.68F);
+                          ^
+  symbol:   method smoothstep(float,float,float)
+  location: class McsmAtmosphericMeshComponent
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:88: error: cannot find symbol
+        double radius = bodyRadius(phase);
+                        ^
+  symbol:   method bodyRadius(float)
+  location: class McsmAtmosphericMeshComponent
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:173: error: cannot find symbol
+        float outerFade = 1.0F - smoothstep(radius, 0.68F, 1.0F);
+                                 ^
+  symbol:   method smoothstep(float,float,float)
+  location: class McsmAtmosphericMeshComponent
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:175: error: cannot find symbol
+                ? 0.22F + 0.78F * smoothstep(radius, 0.0F, 0.42F)
+                                  ^
+  symbol:   method smoothstep(float,float,float)
+  location: class McsmAtmosphericMeshComponent
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java:177: error: cannot find symbol
+        float bottomSilhouette = 1.0F - smoothstep(vertical, 0.0F, 0.32F);
+                                        ^
+  symbol:   method smoothstep(float,float,float)
+  location: class McsmAtmosphericMeshComponent
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:427: error: cannot find symbol
+        drawButtons(g, left() + 16, buttonY() + yo, mouseX, mouseY);
+                                                ^
+  symbol:   variable yo
+  location: class McsmTerminalScreen
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:427: error: cannot find symbol
+        drawButtons(g, left() + 16, buttonY() + yo, mouseX, mouseY);
+                                                    ^
+  symbol:   variable mouseX
+  location: class McsmTerminalScreen
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:427: error: cannot find symbol
+        drawButtons(g, left() + 16, buttonY() + yo, mouseX, mouseY);
+                                                            ^
+  symbol:   variable mouseY
+  location: class McsmTerminalScreen
+mcsm-extras/java/net/mcsm/extras/McsmCities.java:389: error: package BuiltInRegistries does not exist
+                    type = BuiltInRegistries.ENTITY_TYPE
+                                            ^
+mcsm-extras/java/net/mcsm/extras/McsmCities.java:427: error: cannot find symbol
+            BlockPos spawn = level.getSharedSpawnPos();
+                                  ^
+  symbol:   method getSharedSpawnPos()
+  location: variable level of type ServerLevel
+mcsm-extras/java/net/mcsm/extras/McsmCities.java:987: error: cannot find symbol
+        q[DESIGN_LIGHT] = stateOf(Blocks.WHITE_CONCRETE);
+                                        ^
+  symbol:   variable WHITE_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmCities.java:988: error: cannot find symbol
+        q[DESIGN_DARK] = stateOf(Blocks.BLACK_CONCRETE);
+                                       ^
+  symbol:   variable BLACK_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmCities.java:989: error: cannot find symbol
+        q[DESIGN_ACCENT] = stateOf(Blocks.PURPLE_CONCRETE);
+                                         ^
+  symbol:   variable PURPLE_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmCities.java:990: error: cannot find symbol
+        q[DESIGN_SOFT] = stateOf(Blocks.LIGHT_GRAY_WOOL);
+                                       ^
+  symbol:   variable LIGHT_GRAY_WOOL
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmMassg.java:619: error: variable beast is already defined in method flyingThings(ServerLevel,Entity)
+                    if (mob instanceof net.mcsm.extras.entity.McsmBeast beast) {
+                                                                        ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresenceFxPatch.java:128: error: cannot find symbol
+            Vec3 glareCentre = McsmExtrasConfig.glareBehindBody
+                               ^
+  symbol:   variable McsmExtrasConfig
+  location: class McsmPresenceFxPatch
+Note: mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: mcsm-extras/java/net/mcsm/extras/McsmNpcs.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+16 errors

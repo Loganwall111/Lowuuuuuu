@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/storm_rib",
+    "east": "mcsm:block/storm_rib",
+    "north": "mcsm:block/storm_rib",
+    "particle": "mcsm:block/storm_rib",
+    "south": "mcsm:block/storm_rib",
+    "up": "mcsm:block/storm_rib",
+    "west": "mcsm:block/storm_rib"
+  }
+}

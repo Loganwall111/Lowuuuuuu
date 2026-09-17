@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/rift_anchor",
+    "east": "mcsm:block/rift_anchor",
+    "north": "mcsm:block/rift_anchor",
+    "particle": "mcsm:block/rift_anchor",
+    "south": "mcsm:block/rift_anchor",
+    "up": "mcsm:block/rift_anchor",
+    "west": "mcsm:block/rift_anchor"
+  }
+}

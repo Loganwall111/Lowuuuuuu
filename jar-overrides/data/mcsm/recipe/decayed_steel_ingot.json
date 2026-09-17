@@ -1,0 +1,16 @@
+{
+  "key": {
+    "B": {
+      "item": "mcsm:decayed_bone"
+    }
+  },
+  "pattern": [
+    "BB",
+    "BB"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:decayed_steel_ingot"
+  },
+  "type": "minecraft:crafting_shaped"
+}

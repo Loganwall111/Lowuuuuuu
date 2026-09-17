@@ -1,0 +1,8 @@
+{
+  "_comment": "Two identical frames on purpose. An animated sprite is what makes the item's render state count as animated, and only an animated state is re-extracted every frame -- without it the GUI caches the panel and the indicator lights freeze on whatever colour they were first drawn with.",
+  "animation": {
+    "interpolate": false,
+    "frametime": 20,
+    "frames": [0, 1]
+  }
+}

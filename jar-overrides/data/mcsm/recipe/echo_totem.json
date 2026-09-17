@@ -1,0 +1,23 @@
+{
+  "key": {
+    "F": {
+      "item": "mcsm:memory_fragment"
+    },
+    "G": {
+      "item": "mcsm:glyph_cell"
+    },
+    "T": {
+      "item": "minecraft:totem_of_undying"
+    }
+  },
+  "pattern": [
+    "GFG",
+    "FTF",
+    "GFG"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:echo_totem"
+  },
+  "type": "minecraft:crafting_shaped"
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/memory_crystal",
+    "east": "mcsm:block/memory_crystal",
+    "north": "mcsm:block/memory_crystal",
+    "particle": "mcsm:block/memory_crystal",
+    "south": "mcsm:block/memory_crystal",
+    "up": "mcsm:block/memory_crystal",
+    "west": "mcsm:block/memory_crystal"
+  }
+}

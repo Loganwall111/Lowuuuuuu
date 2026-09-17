@@ -156,12 +156,107 @@ void main() {
         }
     }
     
+    // ========================================================================
+    // V2 - BLACK HOLE BACKDROP DYNAMIC LENSING - real distortion lensing
+    // Centered middle growing bigger perspective interactive enterable
+    // ========================================================================
+    {
+        vec2 uv = texCoord;
+        vec2 center = vec2(0.5, 0.5); // centered middle
+        vec2 toCenter = uv - center;
+        float dist = length(toCenter);
+        
+        // Growing bigger perspective - size increases with GameTime
+        float bhTime = GameTime * 0.0005;
+        float bhSize = 0.15 + fract(bhTime) * 0.25 + sin(GameTime * 0.001) * 0.02; // 0.15 to 0.4 growing
+        float bhInner = bhSize * 0.35;
+        float bhPhoton = bhSize * 0.42;
+        float bhDisk = bhSize * 0.9;
+        float bhLensing = bhSize * 1.6;
+
+        // Only in void/sift dimensions (IsInSift) or always subtle
+        float bhFactor = IsInSift > 0.5 ? 1.0 : 0.25;
+
+        if (dist < bhLensing && bhFactor > 0.1) {
+            // Real distortion lensing - gravitational lensing bends background
+            float lensStrength = 0.12 / (0.08 + dist * 3.0);
+            // Einstein ring distortion
+            vec2 lensedUV = uv + normalize(toCenter) * lensStrength * 0.03 * sin(dist * 30.0 - GameTime * 0.02) * bhFactor;
+            // Sample lensed background
+            vec3 lensedColor = texture(DiffuseSampler, lensedUV).rgb;
+            float lensBlend = smoothstep(bhDisk, bhDisk * 0.6, dist) * 0.5;
+            finalColor = mix(finalColor, lensedColor * 1.15, lensBlend * bhFactor);
+
+            // Event horizon - pitch black, interactive enterable
+            if (dist < bhInner) {
+                float horizonFade = smoothstep(bhInner, bhInner * 0.7, dist);
+                vec3 black = vec3(0.01, 0.005, 0.02);
+                // Enterable glow pulse
+                float enterPulse = pow(1.0 - dist / bhInner, 3.0) * (0.8 + sin(GameTime * 0.01) * 0.2);
+                black += vec3(0.5, 0.15, 0.9) * enterPulse * 0.4;
+                finalColor = mix(finalColor, black, (1.0 - horizonFade * 0.2) * bhFactor);
+            }
+            // Photon ring - bright
+            else if (dist < bhPhoton) {
+                float ring = smoothstep(bhInner, bhPhoton, dist) * (1.0 - smoothstep(bhPhoton, bhPhoton * 1.08, dist));
+                vec3 photon = vec3(1.0, 0.92, 0.7) * ring * 3.0;
+                // Rainbow shifting
+                float hue = fract(GameTime * 0.0005 + dist * 2.0);
+                vec3 rainbow = hsv2rgb_f(vec3(hue, 0.9, 1.0)) * ring * 1.8;
+                photon = mix(photon, rainbow, 0.6);
+                finalColor += photon * bhFactor;
+            }
+            // Accretion disk - rainbow rotating
+            else if (dist < bhDisk) {
+                float diskT = (dist - bhPhoton) / (bhDisk - bhPhoton);
+                float angle = atan(toCenter.y, toCenter.x) + GameTime * 0.002 * (1.5 - diskT);
+                float pattern = sin(angle * 4.0 + diskT * 12.0) * 0.5 + 0.5;
+                pattern *= sin(angle * 9.0 - GameTime * 0.005) * 0.3 + 0.7;
+                float hue = fract(angle / 6.2831 + GameTime * 0.0003 + diskT * 0.2);
+                vec3 diskCol = hsv2rgb_f(vec3(hue, 0.85, 1.0)) * (1.0 - diskT * 0.4) * (0.7 + pattern * 0.5);
+                float diskAlpha = (1.0 - diskT) * 0.7 * smoothstep(bhPhoton, bhPhoton * 1.15, dist);
+                finalColor = mix(finalColor, finalColor + diskCol * 1.3, diskAlpha * bhFactor);
+            }
+
+            // Chromatic aberration from lensing - majestic VFX
+            if (dist < bhLensing * 0.9 && dist > bhInner) {
+                float chroma = (bhLensing - dist) / bhLensing * 0.015 * bhFactor;
+                float r = texture(DiffuseSampler, uv + vec2(chroma, 0)).r;
+                float b = texture(DiffuseSampler, uv - vec2(chroma, 0)).b;
+                finalColor.r = mix(finalColor.r, r, 0.3 * bhFactor);
+                finalColor.b = mix(finalColor.b, b, 0.3 * bhFactor);
+            }
+        }
+
+        // Second black hole at bottom for Sift - bottom fabric skybox similar
+        vec2 bottomCenter = vec2(0.5, 0.15);
+        vec2 toBottom = uv - bottomCenter;
+        float bottomDist = length(toBottom);
+        float bottomSize = bhSize * 0.6;
+        if (bottomDist < bottomSize * 1.3 && IsInSift > 0.5) {
+            float bottomFade = 1.0 - smoothstep(bottomSize * 0.4, bottomSize * 1.3, bottomDist);
+            vec3 bottomCol = vec3(0.12, 0.04, 0.22) * bottomFade;
+            bottomCol += vec3(0.7, 0.25, 0.55) * bottomFade * 0.3 * (sin(GameTime * 0.005 + bottomDist * 15.0) * 0.5 + 0.5);
+            finalColor = mix(finalColor, finalColor + bottomCol, bottomFade * 0.5);
+        }
+    }
+
+    // Animated skyboxes - majestic insane VFX - hue shift over time
+    {
+        float animTime = GameTime * 0.0008;
+        float hueShift = sin(animTime) * 0.03;
+        finalColor.r += hueShift * 0.08;
+        finalColor.b -= hueShift * 0.04;
+        // Iridescent shimmer for full sky not bands
+        vec2 uv = texCoord;
+        float shimmer = sin(uv.x * 12.0 + animTime * 3.0) * cos(uv.y * 10.0 + animTime * 2.5) * 0.02;
+        finalColor += vec3(shimmer * 0.5, shimmer * 0.8, shimmer) * TierFactor;
+    }
+
     // Global Pixar-VFX triple-A grading - make it look extremely cool, not generic minecraft
-    // Slight bloom and color grading
-    finalColor = pow(finalColor, vec3(0.95)); // soft lift
-    finalColor += FogColor * 0.05 * TierFactor; // fog tint
+    finalColor = pow(finalColor, vec3(0.95));
+    finalColor += FogColor * 0.05 * TierFactor;
     
-    // Vignette for cinematic feel
     vec2 vigUV = texCoord * 2.0 - 1.0;
     float vignette = 1.0 - dot(vigUV, vigUV) * 0.15;
     finalColor *= vignette;

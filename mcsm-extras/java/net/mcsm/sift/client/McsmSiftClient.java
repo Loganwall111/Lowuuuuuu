@@ -136,5 +136,10 @@ public final class McsmSiftClient {
     public static void tickClient() {
         McsmSiftSkyRenderer.INSTANCE.tick();
         SiftRiftRenderer.INSTANCE.tick();
+        // V2 - black hole backdrop growing bigger perspective
+        try {
+            net.mcsm.extras.client.McsmBlackHoleBackdrop.tick();
+            net.mcsm.extras.client.McsmAnimatedSkybox.tick();
+        } catch (Throwable ignored) {}
     }
 }

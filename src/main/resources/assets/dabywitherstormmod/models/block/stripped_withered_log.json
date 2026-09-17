@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "dabywitherstormmod:block/stripped_withered_log_top",
+    "side": "dabywitherstormmod:block/stripped_withered_log_side"
+  }
+}

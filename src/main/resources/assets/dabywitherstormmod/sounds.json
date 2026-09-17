@@ -1,0 +1,485 @@
+{
+  "ambience_loop": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:ambience-loop",
+        "stream": true
+      }
+    ]
+  },
+  "infected_mob": {
+    "subtitle": "subtitles.dabywitherstormmod.infected_mob",
+    "sounds": [
+      {
+        "name": "entity.wither.spawn",
+        "type": "event"
+      }
+    ]
+  },
+  "head_activate_beam": {
+    "sounds": [
+      "dabywitherstormmod:head/activate-beam-1",
+      "dabywitherstormmod:head/activate-beam-2",
+      "dabywitherstormmod:head/activate-beam-3",
+      "dabywitherstormmod:head/activate-beam-4",
+      "dabywitherstormmod:head/activate-beam-5",
+      "dabywitherstormmod:head/activate-beam-6"
+    ]
+  },
+  "head_beam_snap": {
+    "sounds": [
+      "dabywitherstormmod:head/beam-snap_1",
+      "dabywitherstormmod:head/beam-snap_2",
+      "dabywitherstormmod:head/beam-snap_3"
+    ]
+  },
+  "head_beam_deactivate": {
+    "sounds": [
+      "dabywitherstormmod:head/beam_deactivate"
+    ]
+  },
+  "head_beam_loop": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:head/beam_loop",
+        "stream": true
+      }
+    ]
+  },
+  "head_growl": {
+    "sounds": [
+      "dabywitherstormmod:head/growl_1",
+      "dabywitherstormmod:head/growl_2",
+      "dabywitherstormmod:head/growl_3",
+      "dabywitherstormmod:head/growl_4",
+      "dabywitherstormmod:head/growl_5",
+      "dabywitherstormmod:head/growl_6",
+      "dabywitherstormmod:head/growl_7",
+      "dabywitherstormmod:head/growl_8",
+      "dabywitherstormmod:head/growl_9",
+      "dabywitherstormmod:head/growl_10",
+      "dabywitherstormmod:head/growl_11"
+    ]
+  },
+  "head_short_growl": {
+    "sounds": [
+      "dabywitherstormmod:head/short-growl_1",
+      "dabywitherstormmod:head/short-growl_2",
+      "dabywitherstormmod:head/short-growl_3",
+      "dabywitherstormmod:head/short-growl_4"
+    ]
+  },
+  "head_snarl": {
+    "sounds": [
+      "dabywitherstormmod:head/snarl_1",
+      "dabywitherstormmod:head/snarl_2",
+      "dabywitherstormmod:head/snarl_3",
+      "dabywitherstormmod:head/snarl_4",
+      "dabywitherstormmod:head/snarl_5",
+      "dabywitherstormmod:head/snarl_6",
+      "dabywitherstormmod:head/snarl_7"
+    ]
+  },
+  "head_roar": {
+    "sounds": [
+      "dabywitherstormmod:head/roar_1",
+      "dabywitherstormmod:head/roar_2",
+      "dabywitherstormmod:head/roar_3",
+      "dabywitherstormmod:head/roar_4"
+    ]
+  },
+  "head_hurt": {
+    "sounds": [
+      "dabywitherstormmod:head/hurt_1",
+      "dabywitherstormmod:head/hurt_2"
+    ]
+  },
+  "head_stab_eye": {
+    "sounds": [
+      "dabywitherstormmod:head/stab-eye_1",
+      "dabywitherstormmod:head/stab-eye_2",
+      "dabywitherstormmod:head/stab-eye_3"
+    ]
+  },
+  "head_shoot": {
+    "sounds": [
+      "dabywitherstormmod:head/shoot_1",
+      "dabywitherstormmod:head/shoot_2",
+      "dabywitherstormmod:head/shoot_3",
+      "dabywitherstormmod:head/shoot_4",
+      "dabywitherstormmod:head/shoot_5",
+      "dabywitherstormmod:head/shoot_6"
+    ]
+  },
+  "head_powerful_roar": {
+    "sounds": [
+      "dabywitherstormmod:head/powerful_roar1",
+      "dabywitherstormmod:head/powerful_roar2",
+      "dabywitherstormmod:head/powerful_roar3"
+    ]
+  },
+  "tractor_beam_ground_loop": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:tractor-beam/tractor-loop1",
+        "stream": true
+      },
+      {
+        "name": "dabywitherstormmod:tractor-beam/tractor-loop2",
+        "stream": true
+      },
+      {
+        "name": "dabywitherstormmod:tractor-beam/tractor-loop3",
+        "stream": true
+      },
+      {
+        "name": "dabywitherstormmod:tractor-beam/tractor-loop4",
+        "stream": true
+      },
+      {
+        "name": "dabywitherstormmod:tractor-beam/tractor-loop5",
+        "stream": true
+      },
+      {
+        "name": "dabywitherstormmod:tractor-beam/tractor-loop6",
+        "stream": true
+      }
+    ]
+  },
+  "tractor_beam_ground_disable": {
+    "sounds": [
+      "dabywitherstormmod:tractor-beam/tractor-disable1",
+      "dabywitherstormmod:tractor-beam/tractor-disable2"
+    ]
+  },
+  "storm_grow": {
+    "sounds": [
+      "dabywitherstormmod:witherstorm/grow_1",
+      "dabywitherstormmod:witherstorm/grow_2",
+      "dabywitherstormmod:witherstorm/grow_3",
+      "dabywitherstormmod:witherstorm/grow_4"
+    ]
+  },
+  "storm_tornado_loop": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:witherstorm/tornado-loop",
+        "stream": true
+      }
+    ]
+  },
+  "formidibomb_creation": {
+    "sounds": [
+      "dabywitherstormmod:formidibomb/creation"
+    ]
+  },
+  "formidibomb_explosion": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:formidibomb/explosion",
+        "stream": true
+      }
+    ]
+  },
+  "formidibomb_distant_explosion": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:formidibomb/distant_explosion",
+        "stream": true
+      }
+    ]
+  },
+  "withered_sonic_charge": {
+    "subtitle": "subtitles.dabywitherstormmod.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.warden.sonic_charge",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_sonic_boom": {
+    "subtitle": "subtitles.dabywitherstormmod.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.warden.sonic_boom",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_ability": {
+    "subtitle": "subtitles.dabywitherstormmod.withered_ability",
+    "sounds": [
+      {
+        "name": "block.beacon.activate",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_chime": {
+    "subtitle": "subtitles.dabywitherstormmod.withered_ability",
+    "sounds": [
+      {
+        "name": "block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_stone_break": {
+    "subtitle": "subtitles.dabywitherstormmod.withered_ability",
+    "sounds": [
+      {
+        "name": "block.stone.break",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_arrow_shoot": {
+    "subtitle": "subtitles.dabywitherstormmod.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.arrow.shoot",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_ambient": {
+    "subtitle": "subtitles.dabywitherstormmod.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.wither.ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "withered_shoot": {
+    "subtitle": "subtitles.dabywitherstormmod.withered_ability",
+    "sounds": [
+      {
+        "name": "entity.wither.shoot",
+        "type": "event"
+      }
+    ]
+  },
+  "music_mini_a": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-mini-a",
+        "stream": true
+      }
+    ]
+  },
+  "music_mini_b": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-mini-b",
+        "stream": true
+      }
+    ]
+  },
+  "music_mini_c": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-mini-c",
+        "stream": true
+      }
+    ]
+  },
+  "music_main_a": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-main-a",
+        "stream": true
+      }
+    ]
+  },
+  "music_main_b": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-main-b",
+        "stream": true
+      }
+    ]
+  },
+  "music_main_c": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-main-c",
+        "stream": true
+      }
+    ]
+  },
+  "music_aftr_a": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-aftr-a",
+        "stream": true
+      }
+    ]
+  },
+  "music_aftr_b": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-aftr-b",
+        "stream": true
+      }
+    ]
+  },
+  "music_aftr_c": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-aftr-c",
+        "stream": true
+      }
+    ]
+  },
+  "music_distant_a": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-distant-a",
+        "stream": true
+      }
+    ]
+  },
+  "music_distant_b": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/wither-distant-b",
+        "stream": true
+      }
+    ]
+  },
+  "music_ivor": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/ivor",
+        "stream": true
+      }
+    ]
+  },
+  "music_bowels": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/bowels-loop",
+        "stream": true
+      }
+    ]
+  },
+  "music_final": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/finaltheme",
+        "stream": true
+      }
+    ]
+  },
+  "music_bowels_overlay": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/bowels-loop-overlay",
+        "stream": true
+      }
+    ]
+  },
+  "music_withergloop": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:music/withergloop",
+        "stream": true
+      }
+    ]
+  },
+  "cluster_fx": {
+    "sounds": [
+      "dabywitherstormmod:cluster/cluster-fx-a",
+      "dabywitherstormmod:cluster/cluster-fx-b",
+      "dabywitherstormmod:cluster/cluster-fx-c",
+      "dabywitherstormmod:cluster/cluster-fx-d",
+      "dabywitherstormmod:cluster/cluster-fx-e",
+      "dabywitherstormmod:cluster/cluster-fx-f"
+    ]
+  },
+  "head_chomp": {
+    "sounds": [
+      "dabywitherstormmod:head/chomp1",
+      "dabywitherstormmod:head/chomp2",
+      "dabywitherstormmod:head/chomp3"
+    ]
+  },
+  "storm_thump": {
+    "sounds": [
+      "dabywitherstormmod:witherstorm/thump-a",
+      "dabywitherstormmod:witherstorm/thump-b",
+      "dabywitherstormmod:witherstorm/thump-c"
+    ]
+  },
+  "storm_thump_large": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:witherstorm/large-thump"
+      }
+    ]
+  },
+  "cb_damage": {
+    "sounds": [
+      "dabywitherstormmod:commandblock/cb-damage-a",
+      "dabywitherstormmod:commandblock/cb-damage-b"
+    ]
+  },
+  "cb_damage_final": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:commandblock/cb-damage-final"
+      }
+    ]
+  },
+  "cb_destruct": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:commandblock/cb-destruct"
+      }
+    ]
+  },
+  "cb_hit": {
+    "sounds": [
+      "dabywitherstormmod:commandblock/cb-hit-a",
+      "dabywitherstormmod:commandblock/cb-hit-b"
+    ]
+  },
+  "cb_power": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:commandblock/cb-power"
+      }
+    ]
+  },
+  "cb_unpower": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:commandblock/cb-unpower"
+      }
+    ]
+  },
+  "cb_powerup_fx": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:commandblock/cb-powerup-fx"
+      }
+    ]
+  },
+  "cb_pulse_loop": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:commandblock/cb-pulse-loop",
+        "stream": true
+      }
+    ]
+  },
+  "cb_reactivate": {
+    "sounds": [
+      {
+        "name": "dabywitherstormmod:commandblock/cb-reactivate"
+      }
+    ]
+  }
+}

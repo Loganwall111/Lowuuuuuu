@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "CHC",
+    "IFI",
+    "CHC"
+  ],
+  "key": {
+    "C": "minecraft:coal",
+    "H": "minecraft:hopper",
+    "I": "minecraft:copper_ingot",
+    "F": "minecraft:furnace"
+  },
+  "result": {
+    "id": "dabywitherstormmod:furnace_filter",
+    "count": 1
+  }
+}

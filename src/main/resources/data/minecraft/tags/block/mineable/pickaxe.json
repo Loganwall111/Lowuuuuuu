@@ -1,0 +1,18 @@
+{
+  "replace": false,
+  "values": [
+    "dabywitherstormmod:furnace_filter",
+    "dabywitherstormmod:withered_cobblestone",
+    "dabywitherstormmod:withered_netherbrick",
+    "dabywitherstormmod:withered_cobblestone_stairs",
+    "dabywitherstormmod:withered_cobblestone_slab",
+    "dabywitherstormmod:withered_cobblestone_wall",
+    "dabywitherstormmod:withered_netherbrick_stairs",
+    "dabywitherstormmod:withered_netherbrick_slab",
+    "dabywitherstormmod:withered_netherbrick_wall",
+    "dabywitherstormmod:withered_netherbrick_fence",
+    "dabywitherstormmod:withered_stone",
+    "dabywitherstormmod:withered_stone_stairs",
+    "dabywitherstormmod:withered_stone_slab"
+  ]
+}

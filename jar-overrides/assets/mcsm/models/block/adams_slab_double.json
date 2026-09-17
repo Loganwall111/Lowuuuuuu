@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "mcsm:block/adams_slab",
+    "particle": "mcsm:block/adams_slab"
+  }
+}

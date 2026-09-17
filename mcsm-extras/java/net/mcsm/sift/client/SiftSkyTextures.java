@@ -1,30 +1,33 @@
 package net.mcsm.sift.client;
 
 import net.mcsm.sift.McsmVoidTiers;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Sift inspired sky texture for each area - sky panorama
- * Rainbow colored water with sparkles and sky panorama and sift inspired sky texture for each area
- * During skybox panorama is a couple jokest creatures and fish-like creatures and blue and pink grass blocks etc
  */
 public final class SiftSkyTextures {
 
-    public static final ResourceLocation FABRIC_SKY = new ResourceLocation("mcsm_sift", "textures/sky/fabric_sky.png");
-    public static final ResourceLocation EMPTINESS_SKY = new ResourceLocation("mcsm_sift", "textures/sky/emptiness_sky.png");
-    public static final ResourceLocation GEL_HORIZON_SKY = new ResourceLocation("mcsm_sift", "textures/sky/gel_horizon_sky.png");
-    public static final ResourceLocation MENGER_MAZE_SKY = new ResourceLocation("mcsm_sift", "textures/sky/menger_maze_sky.png");
-    public static final ResourceLocation RIFT_FIELD_SKY = new ResourceLocation("mcsm_sift", "textures/sky/rift_field_sky.png");
-    public static final ResourceLocation DISPLACEMENT_SKY = new ResourceLocation("mcsm_sift", "textures/sky/displacement_sky.png");
-    public static final ResourceLocation IRIDESCENT_GEL_SKY = new ResourceLocation("mcsm_sift", "textures/sky/iridescent_gel_sky.png");
-    public static final ResourceLocation BOTTOM_FABRIC_SKY = new ResourceLocation("mcsm_sift", "textures/sky/bottom_fabric_sky.png");
-    public static final ResourceLocation UNKNOWN_SKY = new ResourceLocation("mcsm_sift", "textures/sky/unknown_sky.png");
+    public static final Identifier FABRIC_SKY = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/sky/fabric_sky.png");
+    public static final Identifier EMPTINESS_SKY = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/sky/emptiness_sky.png");
+    public static final Identifier GEL_HORIZON_SKY = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/sky/gel_horizon_sky.png");
+    public static final Identifier MENGER_MAZE_SKY = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/sky/menger_maze_sky.png");
+    public static final Identifier RIFT_FIELD_SKY = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/sky/rift_field_sky.png");
+    public static final Identifier DISPLACEMENT_SKY = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/sky/displacement_sky.png");
+    public static final Identifier IRIDESCENT_GEL_SKY = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/sky/iridescent_gel_sky.png");
+    public static final Identifier BOTTOM_FABRIC_SKY = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/sky/bottom_fabric_sky.png");
+    public static final Identifier UNKNOWN_SKY = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/sky/unknown_sky.png");
 
-    public static final ResourceLocation RAINBOW_WATER = new ResourceLocation("mcsm_sift", "textures/block/rainbow_water.png");
+    public static final Identifier RAINBOW_WATER = Identifier.fromNamespaceAndPath("mcsm_sift", "textures/block/rainbow_water.png");
+
+    // V2 new skyboxes - animated insane VFX
+    public static final Identifier BLACK_HOLE_SKY = Identifier.fromNamespaceAndPath("mcsm", "textures/sky/black_hole_sky.png");
+    public static final Identifier VOID_NEBULA_SKY = Identifier.fromNamespaceAndPath("mcsm", "textures/sky/void_nebula_sky.png");
+    public static final Identifier PRISMATIC_VOID_SKY = Identifier.fromNamespaceAndPath("mcsm", "textures/sky/prismatic_void_sky.png");
 
     private SiftSkyTextures() {}
 
-    public static ResourceLocation getSkyForTier(McsmVoidTiers.Tier tier) {
+    public static Identifier getSkyForTier(McsmVoidTiers.Tier tier) {
         return switch (tier) {
             case FABRIC_OF_REALITY -> FABRIC_SKY;
             case EMPTINESS -> EMPTINESS_SKY;

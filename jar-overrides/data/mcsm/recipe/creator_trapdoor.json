@@ -1,0 +1,16 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:creator_marble"
+    }
+  },
+  "pattern": [
+    "AAA",
+    "AAA"
+  ],
+  "result": {
+    "count": 2,
+    "id": "mcsm:creator_trapdoor"
+  },
+  "type": "minecraft:crafting_shaped"
+}

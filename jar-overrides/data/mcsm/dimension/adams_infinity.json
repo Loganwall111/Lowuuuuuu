@@ -1,0 +1,34 @@
+{
+  "generator": {
+    "settings": {
+      "biome": "mcsm:adams_infinity",
+      "features": false,
+      "lakes": false,
+      "layers": [
+        {
+          "block": "mcsm:adams_rubble",
+          "height": 1
+        },
+        {
+          "block": "mcsm:adams_stone",
+          "height": 60
+        },
+        {
+          "block": "mcsm:adams_tiles",
+          "height": 40
+        },
+        {
+          "block": "mcsm:adams_bricks",
+          "height": 26
+        },
+        {
+          "block": "mcsm:adams_surface",
+          "height": 1
+        }
+      ],
+      "structure_overrides": []
+    },
+    "type": "minecraft:flat"
+  },
+  "type": "mcsm:adams_infinity"
+}

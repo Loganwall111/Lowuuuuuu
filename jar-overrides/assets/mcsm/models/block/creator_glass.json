@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/cube",
+  "render_type": "minecraft:translucent",
+  "textures": {
+    "down": "mcsm:block/creator_glass",
+    "east": "mcsm:block/creator_glass",
+    "north": "mcsm:block/creator_glass",
+    "particle": "mcsm:block/creator_glass",
+    "south": "mcsm:block/creator_glass",
+    "up": "mcsm:block/creator_glass",
+    "west": "mcsm:block/creator_glass"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "key": {
+    "C": {
+      "item": "mcsm:void_cord"
+    },
+    "V": {
+      "item": "mcsm:void_shard"
+    }
+  },
+  "pattern": [
+    "VVV",
+    " C ",
+    " C "
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:void_ripper"
+  },
+  "type": "minecraft:crafting_shaped"
+}

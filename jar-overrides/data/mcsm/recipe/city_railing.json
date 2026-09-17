@@ -1,0 +1,19 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:rusted_plate"
+    },
+    "B": {
+      "item": "minecraft:stick"
+    }
+  },
+  "pattern": [
+    "ABA",
+    "ABA"
+  ],
+  "result": {
+    "count": 3,
+    "id": "mcsm:city_railing"
+  },
+  "type": "minecraft:crafting_shaped"
+}

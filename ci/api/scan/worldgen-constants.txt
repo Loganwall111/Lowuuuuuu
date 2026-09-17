@@ -1,0 +1,18 @@
+Compiled from "McsmWorldgen.java"
+public final class net.dabicco.witherstormmod.structures.McsmWorldgen {
+  public static final int ANCHOR_X = -640;
+  public static final int ANCHOR_Z = 256;
+  private static final java.util.Deque<net.dabicco.witherstormmod.structures.McsmWorldgen$Job> QUEUE;
+  private static int budget;
+  private net.dabicco.witherstormmod.structures.McsmWorldgen();
+  public static java.util.List<net.dabicco.witherstormmod.structures.McsmWorldgen$Site> layout();
+  private static void add(java.util.List<net.dabicco.witherstormmod.structures.McsmWorldgen$Site>, java.lang.String, int, int, int, java.lang.String, boolean);
+  public static void setBudget(int);
+  public static int pending();
+  public static void clear();
+  public static void enqueue(net.dabicco.witherstormmod.structures.McsmSchematic, net.minecraft.core.BlockPos, java.lang.String);
+  public static int tick(net.minecraft.server.level.ServerLevel);
+  private static int step(net.minecraft.server.level.ServerLevel, net.dabicco.witherstormmod.structures.McsmWorldgen$Job, int);
+  private static net.minecraft.world.level.block.state.BlockState state(int, int);
+  static {};
+}

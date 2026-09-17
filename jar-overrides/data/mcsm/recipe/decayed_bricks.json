@@ -1,0 +1,16 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:decayed_stone"
+    }
+  },
+  "pattern": [
+    "AA",
+    "AA"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:decayed_bricks"
+  },
+  "type": "minecraft:crafting_shaped"
+}

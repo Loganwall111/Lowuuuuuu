@@ -1,0 +1,20 @@
+{
+  "key": {
+    "D": {
+      "item": "mcsm:creator_dust"
+    },
+    "F": {
+      "item": "mcsm:creator_fragment"
+    }
+  },
+  "pattern": [
+    " D ",
+    " D ",
+    " F "
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:creator_edict"
+  },
+  "type": "minecraft:crafting_shaped"
+}

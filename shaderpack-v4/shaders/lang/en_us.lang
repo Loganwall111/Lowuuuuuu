@@ -1,0 +1,33 @@
+# MCSShaders v4 - the mod owns the sky, clouds, shadows, sun glow and tone.
+# This pack only adds the Aurora Borealis and colourful lighting.
+
+screen.Aurora=Aurora Borealis
+screen.Lighting=Colourful Lighting
+screen.Extra=Extra Grading (off by default)
+
+option.AURORA=Aurora Borealis
+option.AURORA.comment=Animated aurora curtains after dark. ON by default - this is the pack's headline effect.
+option.AURORA_STRENGTH=Aurora Strength
+option.AURORA_SPEED=Aurora Speed
+option.AURORA_HEIGHT=Aurora Height
+option.AURORA_COVERAGE=Aurora Coverage
+option.AURORA_R=Aurora Core Red
+option.AURORA_G=Aurora Core Green
+option.AURORA_B=Aurora Core Blue
+option.AURORA_TIP_R=Aurora Tip Red
+option.AURORA_TIP_G=Aurora Tip Green
+option.AURORA_TIP_B=Aurora Tip Blue
+
+option.COLORED_LIGHT=Colourful Lighting
+option.COLORED_LIGHT.comment=Warm amber key by day, blue-violet by night. ON at half strength so it layers over the mod's own lighting instead of replacing it.
+option.COLORED_LIGHT_AMT=Colourful Lighting Strength
+
+option.BLOOM=Bloom
+option.BLOOM.comment=OFF by default. The mod already renders its own sun glow and glare.
+option.BLOOM_STRENGTH=Bloom Strength
+option.VIBRANCE=Vibrance
+option.VIBRANCE.comment=Left at 1.00. The mod applies the vivid Story Mode grade itself - raising this double-grades the frame.
+option.EXPOSURE=Exposure
+option.CONTRAST=Contrast
+option.TONEMAP=ACES Tonemap
+option.TONEMAP.comment=OFF by default. Would fight the mod's Story Mode tone curve.

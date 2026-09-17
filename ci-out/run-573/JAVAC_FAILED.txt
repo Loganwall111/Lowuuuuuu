@@ -1,0 +1,15 @@
+mcsm-extras/java/net/mcsm/extras/McsmCreatorRealm.java:95: error: cannot find symbol
+            System.out.println("[ds] the Creator's reach is at " + DIMENSION.location()
+                                                                            ^
+  symbol:   method location()
+  location: variable DIMENSION of type ResourceKey<Level>
+mcsm-extras/java/net/mcsm/extras/client/McsmPaintedSky.java:105: error: cannot find symbol
+            if (level.dimension().equals(McsmCreatorRealm.DIMENSION)) {
+                                         ^
+  symbol:   variable McsmCreatorRealm
+  location: class McsmPaintedSky
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: mcsm-extras/java/net/mcsm/extras/McsmNpcs.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+2 errors

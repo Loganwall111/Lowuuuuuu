@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/rebar_grate",
+    "east": "mcsm:block/rebar_grate",
+    "north": "mcsm:block/rebar_grate",
+    "particle": "mcsm:block/rebar_grate",
+    "south": "mcsm:block/rebar_grate",
+    "up": "mcsm:block/rebar_grate",
+    "west": "mcsm:block/rebar_grate"
+  }
+}

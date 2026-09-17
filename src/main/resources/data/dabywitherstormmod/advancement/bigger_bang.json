@@ -1,0 +1,35 @@
+{
+  "display": {
+    "icon": {
+      "id": "dabywitherstormmod:super_tnt"
+    },
+    "title": {
+      "translate": "advancements.dabywitherstormmod.bigger_bang.title"
+    },
+    "description": {
+      "translate": "advancements.dabywitherstormmod.bigger_bang.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "dabywitherstormmod:super_tnt"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has"
+    ]
+  ],
+  "parent": "dabywitherstormmod:withering_heights"
+}

@@ -1,0 +1,28 @@
+{
+  "parent": "dabywitherstormmod:boomtown",
+  "display": {
+    "icon": {
+      "id": "dabywitherstormmod:wither_fragment"
+    },
+    "title": {
+      "translate": "advancements.dabywitherstormmod.reeled_it_in.title"
+    },
+    "description": {
+      "translate": "advancements.dabywitherstormmod.reeled_it_in.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "code": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "code"
+    ]
+  ]
+}

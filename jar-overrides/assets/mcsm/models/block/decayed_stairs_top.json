@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "mcsm:block/decayed_stone",
+    "side": "mcsm:block/decayed_stone",
+    "top": "mcsm:block/decayed_stone"
+  }
+}

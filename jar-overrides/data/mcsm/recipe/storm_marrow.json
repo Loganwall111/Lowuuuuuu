@@ -1,0 +1,15 @@
+{
+  "key": {
+    "B": {
+      "item": "mcsm:storm_rib"
+    }
+  },
+  "pattern": [
+    "B"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:storm_marrow"
+  },
+  "type": "minecraft:crafting_shaped"
+}

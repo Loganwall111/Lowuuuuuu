@@ -1,0 +1,28 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:lead"
+    },
+    "title": {
+      "translate": "advancements.dabywitherstormmod.tractor_pull.title"
+    },
+    "description": {
+      "translate": "advancements.dabywitherstormmod.tractor_pull.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "code": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "code"
+    ]
+  ],
+  "parent": "dabywitherstormmod:nothing_built"
+}
