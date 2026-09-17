@@ -133,6 +133,13 @@ public abstract class McsmTownCommandPatch {
             // BUILD #462 -- and the reach: the fourth dimension, by name.
             reality.then(Commands.literal("creator").executes(ctx -> ds$creator(ctx.getSource())));
 
+            // BUILD #464 -- what the MENU is wearing. The report was "the main
+            // menu is black"; this says out loud which backdrop, which lift and
+            // which boot sequence are in force, and where the file that sets them
+            // lives, so a black screen can be answered instead of guessed at.
+            LiteralArgumentBuilder<CommandSourceStack> menu = Commands.literal("menu");
+            menu.executes(ctx -> ds$menu(ctx.getSource()));
+
             // BUILD #463 -- what the void is doing to you, and what to do about it.
             LiteralArgumentBuilder<CommandSourceStack> aging = Commands.literal("aging");
             aging.executes(ctx -> ds$aging(ctx.getSource(), null));
@@ -199,7 +206,7 @@ public abstract class McsmTownCommandPatch {
 
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
                     .then(ritual).then(reality).then(maze).then(server).then(book).then(scene)
-                    .then(city).then(portal).then(mob).then(lock).then(aging));
+                    .then(city).then(portal).then(mob).then(lock).then(aging).then(menu));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -418,12 +425,37 @@ public abstract class McsmTownCommandPatch {
                 + " \u00b7 the reach: "
                 + (net.mcsm.extras.McsmExtrasConfig.creatorRealm ? "ON" : "OFF")
                 + " \u00b7 void aging: "
-                + (net.mcsm.extras.McsmExtrasConfig.voidAging ? "ON" : "OFF")), false);
+                + (net.mcsm.extras.McsmExtrasConfig.voidAging ? "ON" : "OFF")
+                + " \u00b7 menu backdrop: "
+                + (net.mcsm.extras.McsmExtrasConfig.menuPanorama ? "panorama" : "storm sky")),
+                false);
         src.sendSuccess(() -> Component.literal("[ds] adams has written "
                 + net.mcsm.extras.McsmAdams.builtRegions() + " regions, "
                 + net.mcsm.extras.McsmAdams.pendingRegions() + " still queued \u00b7 "
                 + "/ds reality adams goes in, /ds reality decayed goes through the rift"), false);
         return 1;
+    }
+
+    private static int ds$menu(CommandSourceStack src) {
+        try {
+            net.mcsm.extras.McsmExtrasConfig.load();
+            boolean panorama = net.mcsm.extras.McsmExtrasConfig.menuPanorama;
+            src.sendSuccess(() -> Component.literal("[ds] menu backdrop: "
+                    + (panorama ? "the vanilla panorama cube" : "the storm's own sky")
+                    + " \u00b7 lift " + net.mcsm.extras.McsmExtrasConfig.menuLift
+                    + " \u00b7 wordmark "
+                    + (net.mcsm.extras.McsmExtrasConfig.titleWordmark ? "ON" : "OFF")
+                    + " \u00b7 boot cinematic "
+                    + (net.mcsm.extras.McsmExtrasConfig.cinematicBootEnabled ? "ON" : "OFF")), false);
+            src.sendSuccess(() -> Component.literal("[ds] menu state: "
+                    + net.mcsm.extras.McsmExtrasConfig.menuState()
+                    + " \u00b7 edit config/mcsm_storm_extras.properties to force any of it"),
+                    false);
+            return 1;
+        } catch (Throwable t) {
+            src.sendFailure(Component.literal("[ds] " + t));
+            return 0;
+        }
     }
 
     private static int ds$aging(CommandSourceStack src, String action) {

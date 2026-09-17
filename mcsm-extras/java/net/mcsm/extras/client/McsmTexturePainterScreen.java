@@ -72,8 +72,11 @@ public final class McsmTexturePainterScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         int w = this.width, h = this.height;
-        // room
-        g.fill(0, 0, w, h, 0xF807080C);
+        // room -- BUILD #464: the painter's "room" was a near-black plate too, and
+        // //ds menu-style black screens are exactly what the report is about. It is
+        // the storm's own sky now, held dark (0.55) so the canvas still reads as the
+        // brightest thing on the screen.
+        net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 0.55F);
         g.fillGradient(0, 0, w, 80, 0x660D1016, 0x000D1016);
 
         Font font = Minecraft.getInstance().font;

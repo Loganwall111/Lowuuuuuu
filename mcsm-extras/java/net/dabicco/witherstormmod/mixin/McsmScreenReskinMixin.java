@@ -47,8 +47,11 @@ public abstract class McsmScreenReskinMixin {
         if (w <= 0 || h <= 0) {
             return;
         }
-        // dark DS gradient - the Telltale dark-translucent base
-        g.fillGradient(0, 0, w, h, 0xF008060D, 0xF00C0714);
+        // BUILD #464 -- and it is the mod's own sky rather than a dark plate:
+        // "fix the main menu be black" applies to every screen this reskin owns
+        // (world select, create world, resource packs, and anything else the mod
+        // has not reworked by hand). 0.88 keeps the widgets readable on top.
+        net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 0.88F);
         g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x662A1A4A);
         // faint drifting motes so the backdrop is alive, not flat
         long t = System.currentTimeMillis();

@@ -183,11 +183,18 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         if (McsmExtrasConfig.menuPanorama) {
             return; // vanilla panorama + vanilla background: untouched
         }
-        ci.cancel(); // explicit opt-out: the #375 flat storm space
+        ci.cancel(); // explicit opt-out: the mod's OWN sky, never a black plate
         int w = this.width;
         int h = this.height;
-        g.fillGradient(0, 0, w, h, 0xFF07050E, 0xFF0B0716);
-        g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x552A1A4A);
+        // BUILD #464 -- "fix the main menu be black".
+        //
+        // This path used to paint an opaque #07050E..#0B0716 plate over the whole
+        // screen, so the switch that reads "Vivid Panorama Backdrop" meant "or a
+        // black screen" the moment it was turned off. It is the decayed reality's
+        // own sky now -- the same hexes its dimension, its biome, its fog and its
+        // painted cube use, through the one painter every screen of ours shares
+        // (McsmMenuSky), so the menu is a place rather than a hole.
+        net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 1.0F);
     }
 
     /**

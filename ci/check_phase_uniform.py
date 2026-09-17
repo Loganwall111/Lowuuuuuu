@@ -261,6 +261,40 @@ def base_api_calls():
     return out
 
 
+def _mcsm_java_sources():
+    """Every Java source of the mod, for the full-screen-plate scan."""
+    root = os.path.join("mcsm-extras", "java")
+    out = []
+    for base, _dirs, files in os.walk(root):
+        for name in files:
+            if name.endswith(".java"):
+                try:
+                    out.append(open(os.path.join(base, name), encoding="utf-8").read())
+                except OSError:
+                    pass
+    return out
+
+
+def _menu_black_plates(*sources):
+    """Every literal full-screen fill on the menu path, checked for opaqueness.
+
+    A "black menu" is a DRAW, so this reads the actual literals: any
+    fill(0, 0, w, h, 0xAARRGGBB) or fillGradient(0, 0, w, h, 0xAARRGGBB, ...) whose
+    alpha is 0xE0 or more AND whose colour is (near) black is a plate that can hide
+    everything behind it. Computed colours ((a << 24) | 0x...) are not literals and
+    are skipped here; the ones that matter on this path are all literals.
+    """
+    bad = []
+    for src in sources:
+        for m in re.finditer(r"fill(?:Gradient)?\(0, 0, w, h,\s*(0x[0-9A-Fa-f]{8})", src):
+            argb = int(m.group(1), 16)
+            alpha = (argb >> 24) & 0xFF
+            rgb = argb & 0xFFFFFF
+            if alpha >= 0xE0 and (rgb >> 16 & 0xFF) + (rgb >> 8 & 0xFF) + (rgb & 0xFF) < 0x40:
+                bad.append(m.group(0))
+    return bad
+
+
 def main():
     checks = []
     fails = []
@@ -2285,13 +2319,18 @@ def main():
           and "Title wordmark (DEVOURING STORMS over the menu)" in extras
           and "McsmExtrasConfig.titleWordmark ? 96 : 0" in title)
     check("the menu is not a black bar any more",
-          "public static double menuLift = 0.09D;" in cfg
+          "public static double menuLift = 0.15D;" in cfg
           and "menu_lift" in cfg
           and "Main menu brightness lift (0 = untouched)" in extras
           and "double lift = Math.max(0.0D, Math.min(0.35D, McsmExtrasConfig.menuLift));" in title
           and "g.fillGradient(0, 0, w, titleBandBottom, 0xB007050E, 0x00070510);" in title
           and "g.fillGradient(0, 0, w, titleBandBottom, 0xFF07050E, 0x00070510);" not in title
-          and "g.fill(0, 0, w, h, 0xC8010103);" in (
+          # BUILD #464 -- and stronger than it was: the plate itself is a violet
+          # dusk at 0x7A now, and the fully opaque ground band is gone (see the
+          # #464 family below, which also scans for opaque plates).
+          and "g.fill(0, 0, w, h, 0x7A0A0716);" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java") or "")
+          and "g.fill(0, 0, w, h, 0xC8010103);" not in (
               read("mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java") or "")
           and "g.fill(0, 0, w, h, 0xFF010103);" not in (
               read("mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java") or ""))
@@ -3460,8 +3499,75 @@ def main():
           and "ds$aging(ctx.getSource(), null)" in towns
           and "ds$aging(ctx.getSource(), \"clear\")" in towns
           and "ds$aging(ctx.getSource(), \"advance\")" in towns
-          and ".then(city).then(portal).then(mob).then(lock).then(aging));" in towns
+          and ".then(city).then(portal).then(mob).then(lock).then(aging).then(menu));" in towns
           and "private static int ds$aging(CommandSourceStack src, String action) {" in towns)
+
+    # ------------------------------------------------------------------
+    # BUILD #464 -- "FIX THE MAIN MENU BE BLACK. Like when I loaded it to the game
+    # and it just goes completely black." The report is a report about a DRAW: two
+    # of this mod's own screens were painting the whole frame an opaque near-black
+    # (the title screen's opted-out backdrop, and the reskin every other screen
+    # wears), and the boot sequence opened with a near-black plate plus a FULLY
+    # OPAQUE ground band over the bottom fifth, at every launch. This family holds
+    # the fix: one shared sky, read from the identity table, and no plate anywhere.
+    # ------------------------------------------------------------------
+    titles = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTitleOverhaulMixin.java") or ""
+    reskin = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmScreenReskinMixin.java") or ""
+    loadpause = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmLoadingPauseReskinMixin.java") or ""
+    menusky = read("mcsm-extras/java/net/mcsm/extras/client/McsmMenuSky.java") or ""
+    cine = read("mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java") or ""
+    cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    extras = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
+    towns = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
+
+    check("the shared sky is the decayed reality's own, taken from the identity table",
+          "public static void paint(GuiGraphicsExtractor g, int w, int h, float dim) {" in menusky
+          and "McsmIdentity.skin(McsmIdentity.DECAYED)" in menusky
+          and "skin.sky()" in menusky and "skin.fog()" in menusky
+          and "skin.horizon()" in menusky and "skin.glow()" in menusky
+          and "McsmIdentity.rgb(hex)" in menusky
+          and "g.fillGradient(0, 0, w, h," in menusky)
+
+    check("every screen that used to be a black plate now wears that sky",
+          'net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 1.0F);' in titles
+          and "McsmMenuSky.paint(g, w, h, 0.88F);" in reskin
+          and "McsmMenuSky.paint(g, w, h, 0.95F);" in loadpause
+          # and the plates themselves are gone, not merely commented out
+          and "0xFF07050E" not in titles
+          and "0xF008060D" not in reskin
+          and "0xFF08060D" not in loadpause)
+
+    check("the boot sequence is short, translucent, and can never hold the frame",
+          "public static final long PRE_GAME_MS = 2200L;" in cine
+          and "public static final long BURST_MS = 1600L;" in cine
+          and "g.fill(0, 0, w, h, 0x7A0A0716);" in cine
+          and "0xFF050509" not in cine                       # the opaque ground band
+          and "0x99060912" in cine
+          # the time box: a stuck flag can no longer mean a permanently black menu
+          and "private static final long MENU_STUCK_MS = PRE_GAME_MS + BURST_MS + 4000L;" in cine
+          and "private static boolean outOfTime(long now) {" in cine
+          and "outOfTime(System.currentTimeMillis());" in cine
+          and cine.count("|| outOfTime(now)") == 2)
+
+    check("no screen of the mod's paints the whole frame an opaque near-black",
+          not _menu_black_plates(titles, reskin, loadpause, menusky, cine),
+          "plates: %s" % _menu_black_plates(titles, reskin, loadpause, menusky, cine))
+
+    # the same rule, over EVERY java source of the mod, so a new screen cannot
+    # introduce a black plate later without failing the gate
+    check("and no other source in mcsm-extras can paint one either",
+          not _menu_black_plates(*_mcsm_java_sources()),
+          "plates: %s" % _menu_black_plates(*_mcsm_java_sources()))
+
+    check("and a player can ask what the menu is wearing",
+          "public static String state() {" in cine
+          and "public static String menuState() {" in cfg
+          and "net.mcsm.extras.client.McsmCinematic.state()" in cfg
+          and 'Commands.literal("menu")' in towns
+          and "private static int ds$menu(CommandSourceStack src) {" in towns
+          and ".then(aging).then(menu));" in towns
+          and "edit config/mcsm_storm_extras.properties" in towns
+          and "Vivid panorama backdrop (off: the storm's own sky)" in extras)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

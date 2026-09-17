@@ -32,8 +32,13 @@ import net.mcsm.extras.McsmExtrasConfig;
  */
 public final class McsmCinematic {
 
-    public static final long PRE_GAME_MS = 4200L;
-    public static final long BURST_MS = 2600L;
+    // BUILD #464 -- "fix the main menu be black". This sequence is the first
+    // thing a player sees, and it used to be 4.2 s of near-black plate followed by
+    // 2.6 s of burst, with the "ground" painted at full opacity on top: the menu
+    // read as a black screen at every launch. It is half as long now, every plate
+    // is translucent, and the black ground band is gone.
+    public static final long PRE_GAME_MS = 2200L;
+    public static final long BURST_MS = 1600L;
     public static final long CRACK_MS = 2200L;
     public static final long SHATTER_MS = 340L;
 
@@ -96,7 +101,7 @@ public final class McsmCinematic {
                 preGameStartMs = now;
             }
             long t = now - preGameStartMs;
-            if (t >= PRE_GAME_MS || anyKeyPressed()) {
+            if (t >= PRE_GAME_MS || anyKeyPressed() || outOfTime(now)) {
                 preGameDone = true;
                 burstStartMs = now;
             }
@@ -143,7 +148,7 @@ public final class McsmCinematic {
                 preGameStartMs = now;
             }
             long t = now - preGameStartMs;
-            if (t >= PRE_GAME_MS || anyKeyPressed()) {
+            if (t >= PRE_GAME_MS || anyKeyPressed() || outOfTime(now)) {
                 preGameDone = true;
                 burstStartMs = now;
             }
@@ -173,8 +178,45 @@ public final class McsmCinematic {
         }
     }
 
+    /**
+     * BUILD #464 -- THE TIME BOX. Whatever happens to the clock, the hooks or the
+     * screen, the boot sequence may not own the frame for longer than its own
+     * length plus a margin: past that the menu takes itself back. The old code had
+     * one flag that every other menu system stands down for, and a flag that can
+     * stick is a black menu.
+     */
+    private static final long MENU_STUCK_MS = PRE_GAME_MS + BURST_MS + 4000L;
+
+    /** True when the boot sequence has overstayed; forces it finished. */
+    private static boolean outOfTime(long now) {
+        if (preGameDone || preGameStartMs < 0L) {
+            return false;
+        }
+        if (now - preGameStartMs <= MENU_STUCK_MS) {
+            return false;
+        }
+        preGameDone = true;
+        burstStartMs = -1L;
+        return true;
+    }
+
+    /** BUILD #464 -- what the boot sequence is doing, for /ds menu. */
+    public static String state() {
+        long now = System.currentTimeMillis();
+        if (!preGameDone) {
+            long t = preGameStartMs < 0L ? 0L : now - preGameStartMs;
+            return "boot sequence: playing (" + (t / 1000L) + "s of " + (PRE_GAME_MS / 1000L)
+                    + "s)";
+        }
+        if (burstStartMs > 0L && now - burstStartMs < BURST_MS) {
+            return "boot sequence: burst";
+        }
+        return "boot sequence: done";
+    }
+
     /** State query (no side effects): is a boot sequence currently playing? */
     public static boolean isSequenceActive() {
+        outOfTime(System.currentTimeMillis());
         if (!preGameDone) {
             return true;
         }
@@ -452,11 +494,17 @@ public final class McsmCinematic {
         // nothing behind this, and on the fallback path (when the logo hook never
         // ran) the title screen is. "It's very black" was, in part, this plate
         // covering a menu that was already drawn underneath it.
-        g.fill(0, 0, w, h, 0xC8010103);
+        //
+        // BUILD #464 -- and it is a violet dusk now rather than a black plate: at
+        // 0x7A the menu behind it is readable the whole way through, which is what
+        // "fix the main menu be black" asks for. The ground band was the worst of
+        // it (0xFF, i.e. fully opaque, over the bottom fifth of the screen) and it
+        // is a wash at 0x99.
+        g.fill(0, 0, w, h, 0x7A0A0716);
         int horizon = (int) (h * 0.78D);
-        g.fillGradient(0, horizon - h / 8, w, horizon, 0x000A0A1E, 0x8814122E);
+        g.fillGradient(0, horizon - h / 8, w, horizon, 0x000A0A1E, 0x6614122E);
         // ground
-        g.fill(0, horizon, w, h, 0xFF050509);
+        g.fillGradient(0, horizon, w, h, 0x99060912, 0x66060912);
         // moon
         disc(g, (int) (w * 0.18D), (int) (h * 0.2D), 16, 0x33DCE6FF);
         disc(g, (int) (w * 0.18D), (int) (h * 0.2D), 10, 0xAAE8F0FF);

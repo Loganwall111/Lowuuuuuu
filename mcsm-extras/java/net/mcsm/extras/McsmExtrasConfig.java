@@ -91,6 +91,24 @@ public final class McsmExtrasConfig {
      *  back by default, graded into the DS palette instead of removed, and
      *  this toggle is the explicit opt-out (flat storm space, #375 look). */
     public static boolean  menuPanorama = true;
+    /**
+     * BUILD #464 -- one line about the menu, for /ds menu. "it goes completely
+     * black" is a report about a DRAW, so the diagnostic says which draw is in
+     * force: the panorama cube, the mod's own sky, the lift, and whether the boot
+     * sequence is still holding the frame.
+     */
+    public static String menuState() {
+        String cinematic;
+        try {
+            cinematic = net.mcsm.extras.client.McsmCinematic.state();
+        } catch (Throwable t) {
+            cinematic = "boot sequence: unknown";
+        }
+        return (menuPanorama ? "backdrop: panorama cube" : "backdrop: the storm's sky")
+                + " \u00b7 lift " + menuLift
+                + " \u00b7 cinematic " + (cinematicBootEnabled ? "on" : "off")
+                + " \u00b7 " + cinematic;
+    }
 
     // ---- Build #416 (D.8): the Decayed Reality ---------------
     /** The new gameplay layer: a real dimension, its content, its creatures,
@@ -160,7 +178,11 @@ public final class McsmExtrasConfig {
     /** BUILD #448 -- the title wordmark ("a giant Devouring Storms watermark"). */
     public static boolean titleWordmark = false;
     /** BUILD #448 -- how much light to lift the main menu's backdrop by, 0..0.35. */
-    public static double menuLift = 0.09D;
+    // BUILD #464 -- "fix the main menu be black": the supplied panorama plates are
+    // dark dusk shots (mean luminance in the low teens on the darkest faces), and a
+    // 0.09 lift left them reading as a black screen on a dim display. The wash is
+    // stronger now; 0 restores "untouched" for anyone who wants the raw panorama.
+    public static double menuLift = 0.15D;
     /** BUILD #447 -- cutscenes beyond the boot sequence (eight, in the world). */
     public static boolean cutscenes = true;
     /** BUILD #445 -- the reader's own page in the future-book (kept between sessions). */

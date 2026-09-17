@@ -221,6 +221,22 @@ fetch() { # url -> file
   echo "[deps] $(basename "$out") $(stat -c%s "$out") B"
 }
 
+fetch_any() { # name url1 [url2 ...] -- non-fatal, first URL that answers wins
+  local name="$1"; shift
+  local out="$DL/$name"
+  if [ -s "$out" ]; then echo "[deps] $name $(stat -c%s "$out") B"; return 0; fi
+  local url
+  for url in "$@"; do
+    [ -n "$url" ] || continue
+    if curl -fsSL --retry 3 --retry-delay 3 -o "$out" "$url" 2>/dev/null; then
+      echo "[deps] $name $(stat -c%s "$out") B (from $url)"
+      return 0
+    fi
+  done
+  echo "::warning title=deps::$name could not be downloaded from any mirror"
+  return 1
+}
+
 # MCSM 1.9.101 -- the base is the REAL CI-compiled 1.9.100 (release asset,
 # sha 6adcf07e...), pinned by hash. If delivery/ holds a jar that matches,
 # use it; otherwise the runner fetches the release asset and verifies the
@@ -273,10 +289,58 @@ MANIFEST="$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v
 if [ -n "$MANIFEST" ]; then
   VURL="$(printf '%s' "$MANIFEST" | python3 -c 'import json,sys; m=json.load(sys.stdin); v=[x for x in m["versions"] if x["id"]==__import__("os").environ.get("MC_VER","26.2")]; print(v[0]["url"] if v else "")' || true)"
   if [ -n "$VURL" ]; then
-    RESOLVED="$(curl -fsSL "$VURL" | python3 -c 'import json,sys; print(json.load(sys.stdin)["downloads"]["client"]["url"])' || true)"
+    VJSON="$(curl -fsSL "$VURL" || true)"
+    RESOLVED="$(printf '%s' "$VJSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["downloads"]["client"]["url"])' || true)"
     if [ -n "$RESOLVED" ]; then CLIENT_URL="$RESOLVED"; fi
+    # BUILD #463 -- netty, at the exact version this Minecraft runs. The vanilla
+    # client.jar does NOT bundle its libraries (same reason brigadier is fetched
+    # below), and any source that CALLS a FriendlyByteBuf method needs
+    # io.netty.buffer.ByteBuf on the compile classpath; without it javac says
+    # "cannot access ByteBuf / class file for io.netty.buffer.ByteBuf not found".
+    NETTY_VER="$(printf '%s' "$VJSON" | python3 -c '
+import json, sys
+try:
+    libs = json.load(sys.stdin)["libraries"]
+except Exception:
+    sys.exit(0)
+for lib in libs:
+    if lib.get("name", "").startswith("io.netty:netty-buffer:"):
+        print(lib["name"].split(":")[2])
+        break
+' || true)"
+    NETTY_URL="$(printf '%s' "$VJSON" | python3 -c '
+import json, sys
+try:
+    libs = json.load(sys.stdin)["libraries"]
+except Exception:
+    sys.exit(0)
+want = {"io.netty:netty-buffer", "io.netty:netty-common"}
+for lib in libs:
+    name = lib.get("name", "")
+    if name.rsplit(":", 1)[0] in want:
+        url = lib.get("downloads", {}).get("artifact", {}).get("url", "")
+        if url:
+            print(name.rsplit(":", 1)[0].replace(":", "/").replace(".", "/") + "\t" + url)
+' || true)"
   fi
 fi
+if [ -n "${NETTY_URL:-}" ]; then
+  while IFS=$'\t' read -r coord url; do
+    [ -n "$url" ] || continue
+    case "$coord" in
+      */netty-buffer) fetch_any netty-buffer.jar "$url" || true ;;
+      */netty-common) fetch_any netty-common.jar "$url" || true ;;
+    esac
+  done <<< "$NETTY_URL"
+fi
+# and a pinned Maven Central fallback, so the classpath never depends on the
+# manifest answering (4.1.97.Final is the netty Minecraft 1.20.2+ ships).
+NETTY_FALLBACK="4.1.97.Final"
+[ -s "$DL/netty-buffer.jar" ] || fetch_any netty-buffer.jar \
+  "https://repo1.maven.org/maven2/io/netty/netty-buffer/${NETTY_FALLBACK}/netty-buffer-${NETTY_FALLBACK}.jar" || true
+[ -s "$DL/netty-common.jar" ] || fetch_any netty-common.jar \
+  "https://repo1.maven.org/maven2/io/netty/netty-common/${NETTY_FALLBACK}/netty-common-${NETTY_FALLBACK}.jar" || true
+echo "[deps] netty version resolved: ${NETTY_VER:-unknown}"
 echo "[deps] minecraft $MC_VER -> $CLIENT_URL"
 fetch "$CLIENT_URL" client.jar
 if [ "$(stat -c%s "$DL/client.jar")" -lt 10000000 ]; then
@@ -319,14 +383,27 @@ try:
 except OSError:
     open(sys.argv[2], "w").write("")
     sys.exit(0)
-want = {"fabric-rendering-v1", "fabric-api-base", "fabric-object-builder-api-v1", "fabric-lifecycle-events-v1"}
+# BUILD #463 -- fabric-networking-api-v1 joins the set: void aging sends one
+# small clientbound payload (the value the player's own model is tinted by), and
+# this module is the only way to name PayloadTypeRegistry / ServerPlayNetworking /
+# ClientPlayNetworking. It is already present at RUNTIME (the base mod ships its
+# own payloads through it); this is about the compile classpath.
+found = set()
+want = {"fabric-rendering-v1", "fabric-api-base", "fabric-object-builder-api-v1", "fabric-lifecycle-events-v1",
+        "fabric-networking-api-v1"}
 out = []
 for m in re.finditer(r'<dependency>\s*<groupId>([^<]+)</groupId>\s*<artifactId>([^<]+)</artifactId>\s*<version>([^<]+)</version>', pom):
     g, a, v = m.groups()
     if g == "net.fabricmc.fabric-api" and a in want:
         out.append(f"https://maven.fabricmc.net/{g.replace('.', '/')}/{a}/{v}/{a}-{v}.jar" + chr(9) + f"{a}.jar")
+        found.add(a)
+# BUILD #463 -- say WHICH module is missing, not just how many: a wrong or renamed
+# artifactId must not read as "the maven fetch flaked".
+missing = sorted(want - found)
+if missing:
+    print(f"[deps] NOT in the fabric-api pom (check the artifactId): {', '.join(missing)}")
 open(sys.argv[2], "w").write(chr(10).join(out) + (chr(10) if out else ""))
-print(f"[deps] rendering modules wanted: {len(out)}")
+print(f"[deps] fabric modules wanted: {len(out)} of {len(want)}")
 PYMOD
   while IFS=$'\t' read -r url name; do
     [ -n "$url" ] || continue
@@ -336,9 +413,9 @@ PYMOD
 fi
 FAPI2_CP="$(find "$DL/fapi2" -name '*.jar' 2>/dev/null | tr '\n' ':')"
 FAPI2_COUNT="$(find "$DL/fapi2" -name '*.jar' 2>/dev/null | wc -l)"
-echo "[deps] fabric rendering modules on classpath: $FAPI2_COUNT"
-if [ "$FAPI2_COUNT" -lt 4 ]; then
-  echo "::error::fabric-api rendering modules missing from the compile classpath ($FAPI2_COUNT/4) -- the maven metadata fetch flaked; re-run the build"
+echo "[deps] fabric modules on classpath: $FAPI2_COUNT"
+if [ "$FAPI2_COUNT" -lt 5 ]; then
+  echo "::error::fabric-api modules missing from the compile classpath ($FAPI2_COUNT/5) -- the maven metadata fetch flaked; re-run the build"
   exit 1
 fi
 
@@ -356,7 +433,7 @@ fi
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
   echo "[apidump] javap the real client + mod API"
   mkdir -p ci/api
-  CP2="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar"
+  CP2="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/netty-buffer.jar:$DL/netty-common.jar"
   CLIENT_CLASSES="net.minecraft.client.Minecraft net.minecraft.client.gui.Gui \
     net.minecraft.client.gui.GuiGraphics net.minecraft.client.gui.screens.Screen \
     net.minecraft.client.gui.screens.inventory.AbstractContainerScreen \
@@ -977,7 +1054,7 @@ stage oracle-ok
 echo "[javac] mcsm-extras"
 rm -rf /tmp/mcsm-build
 mkdir -p /tmp/mcsm-build
-CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:${FAPI2_CP}"
+CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL/dfu.jar:$DL/joml.jar:$DL/brigadier.jar:$DL/netty-buffer.jar:$DL/netty-common.jar:${FAPI2_CP}"
 
 # BUILD #416 (D.8) -- which Fabric API modules are actually on the COMPILE
 # classpath? The base mod's own source can name classes that this overlay
@@ -1000,6 +1077,14 @@ CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL
     net.minecraft.world.item.CreativeModeTabs ; do
     echo "--- ${PROBE}"
     javap -classpath "$CP" "$PROBE" 2>&1 | sed -n '1,20p'
+  done
+  for PROBE in \
+    net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry \
+    net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking \
+    net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking \
+    io.netty.buffer.ByteBuf ; do
+    echo "--- ${PROBE}"
+    javap -classpath "$CP" "$PROBE" 2>&1 | sed -n '1,12p'
   done
   echo "--- fabric jars on the compile path"
   printf '%s\n' "$CP" | tr ':' '\n' | grep -i fabric || echo "(none)"

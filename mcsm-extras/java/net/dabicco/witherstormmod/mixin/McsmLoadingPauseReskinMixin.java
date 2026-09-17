@@ -40,8 +40,10 @@ public abstract class McsmLoadingPauseReskinMixin {
         if (w <= 0 || h <= 0) {
             return;
         }
-        // the DS dark gradient
-        g.fillGradient(0, 0, w, h, 0xFF08060D, 0xFF0C0714);
+        // BUILD #464 -- the loading screen and the pause screen wear the mod's
+        // own sky too. They were a fully opaque #08060D..#0C0714, i.e. a black
+        // screen with a progress bar on it; now the storm's air is behind it.
+        net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 0.95F);
         g.fillGradient(0, h * 2 / 3, w, h, 0x00000000, 0x662A1A4A);
 
         // a slow-drifting debris field - the loading screen feels like the

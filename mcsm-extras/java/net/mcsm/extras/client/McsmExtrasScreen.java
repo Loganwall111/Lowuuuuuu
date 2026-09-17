@@ -171,7 +171,8 @@ public final class McsmExtrasScreen extends Screen {
               if (McsmExtrasConfig.ogSunGlow) McsmGate.clientNum("sunGlowStrength", v);
           }, 0.0, 3.0)
           .bool("Cinematic Story-Mode Menu", () -> McsmExtrasConfig.storyMenuBackdrop, v -> McsmExtrasConfig.storyMenuBackdrop = v)
-          .bool("Vivid Panorama Backdrop (vanilla cube)", () -> McsmExtrasConfig.menuPanorama, v -> McsmExtrasConfig.menuPanorama = v)
+          .bool("Vivid panorama backdrop (off: the storm's own sky)",
+                  () -> McsmExtrasConfig.menuPanorama, v -> McsmExtrasConfig.menuPanorama = v)
           .bool("Multi-Layer Sky Blending", () -> McsmGate.clientBoolGet("cloudDeckLayer", true), v -> McsmGate.clientBool("cloudDeckLayer", v))
           .val("Phase 5.5 Threshold", () -> McsmExtrasConfig.phase55Threshold, v -> McsmExtrasConfig.phase55Threshold = v, 5.0, 6.0)
           .val("Phase 5.9 Pink Intensity", () -> McsmExtrasConfig.phase5_9PinkIntensity, v -> McsmExtrasConfig.phase5_9PinkIntensity = v, 0.2, 3.0)
