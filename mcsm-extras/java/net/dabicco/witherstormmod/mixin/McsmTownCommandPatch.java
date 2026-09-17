@@ -498,7 +498,7 @@ public abstract class McsmTownCommandPatch {
     private static int ds$rift(CommandSourceStack src, String action) {
         try {
             net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
-            net.minecraft.server.level.ServerLevel level = player.serverLevel();
+            net.minecraft.server.level.ServerLevel level = src.getLevel();
             if ("seal".equals(action)) {
                 int sealed = net.mcsm.extras.McsmRifts.sealAll(level);
                 src.sendSuccess(() -> Component.literal("[ds] sealed " + sealed + " tear"
