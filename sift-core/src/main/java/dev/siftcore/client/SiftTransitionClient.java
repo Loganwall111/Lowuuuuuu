@@ -24,6 +24,11 @@ public final class SiftTransitionClient {
         }
     }
 
+    /** Clears a pending packet guard when the client leaves a world. */
+    public static void clear() {
+        skipTerrainScreenTicks = 0;
+    }
+
     public static boolean consumeLoadingScreen(Screen screen) {
         if (skipTerrainScreenTicks > 0 && screen instanceof DownloadingTerrainScreen) {
             skipTerrainScreenTicks = 0;

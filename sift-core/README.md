@@ -23,8 +23,9 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 ### Phase 2 — rifts and cosmic window
 
 - The dimension is an air-only flat generator: `layers: []`, `features: false`, and the `minecraft:the_void` biome.
-- `SiftRiftEntity` is a non-collidable, non-attackable visual entity. A small server spawner keeps a moving field of rifts around players.
+- `SiftRiftEntity` is a non-collidable, non-attackable visual entity. A small server spawner keeps an authored, deterministic twelve-slot formation around players; the pattern changes only after the formation cycle ages out.
 - `SiftRiftRenderer` draws a camera-facing procedural portal using `rift.fsh`. The fragment pass contains layered wave displacement, a cosmic interior, star points, and an emissive broken rim.
+- `/sift status` reports dimension, position, velocity, and all preserved rotations so the fall handshake can be verified without guessing from the camera.
 
 ### Phase 3 — fluid pass
 
@@ -46,6 +47,7 @@ After launching a dev client/server with the dimension data loaded:
 /sift enter        Enter The Sift at a safe viewing height
 /sift fall         Place the player at Y -63 with downward velocity; the next server tick exercises the handshake
 /sift return       Return to the Overworld at Y 96
+/sift status       Print dimension, position, velocity, and rotation state
 ```
 
 The dimension key is intentionally `mcsm:the_sift` so the sandbox can be merged into the future Minecraft Dimensions Forged namespace without changing datapack references.

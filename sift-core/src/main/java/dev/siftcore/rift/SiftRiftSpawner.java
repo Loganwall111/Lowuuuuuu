@@ -25,7 +25,7 @@ public final class SiftRiftSpawner {
                     rift -> rift.squaredDistanceTo(player) < RIFT_RANGE * RIFT_RANGE
             ).size();
             if (nearby < MAX_NEARBY_RIFTS) {
-                spawnAround(world, player, MAX_NEARBY_RIFTS - nearby);
+                spawnAround(world, player, MAX_NEARBY_RIFTS - nearby, nearby);
             }
         }
     }
@@ -36,31 +36,30 @@ public final class SiftRiftSpawner {
         }
 
         ServerWorld world = player.getServerWorld();
-        spawnAround(world, player, 7);
+        spawnAround(world, player, 7, 0);
     }
 
-    private static void spawnAround(ServerWorld world, ServerPlayerEntity player, int amount) {
+    private static void spawnAround(ServerWorld world, ServerPlayerEntity player, int amount, int slotOffset) {
         for (int index = 0; index < amount; index++) {
             SiftRiftEntity rift = SiftCore.SIFT_RIFT.create(world);
             if (rift == null) {
                 continue;
             }
 
-            double angle = world.getRandom().nextDouble() * Math.PI * 2.0D;
-            double radius = 14.0D + world.getRandom().nextDouble() * 72.0D;
-            double x = player.getX() + Math.cos(angle) * radius;
-            double z = player.getZ() + Math.sin(angle) * radius;
-            double y = player.getY() + (world.getRandom().nextDouble() - 0.35D) * 180.0D;
-
+            SiftRiftFormation.Placement placement = SiftRiftFormation.placement(
+                    world,
+                    player,
+                    (slotOffset + index) % SiftRiftFormation.SLOTS
+            );
             rift.refreshPositionAndAngles(
-                    x,
-                    MathHelper.clamp(y, world.getBottomY() + 4.0D, world.getTopY() - 4.0D),
-                    z,
-                    world.getRandom().nextFloat() * 360.0F,
+                    placement.x(),
+                    MathHelper.clamp(placement.y(), world.getBottomY() + 4.0D, world.getTopY() - 4.0D),
+                    placement.z(),
+                    (float) (placement.seed() * 0.37D),
                     0.0F
             );
-            rift.setRiftScale(1.5F + world.getRandom().nextFloat() * 3.5F);
-            rift.setRiftSeed(world.getRandom().nextFloat() * 1000.0F);
+            rift.setRiftScale(placement.scale());
+            rift.setRiftSeed(placement.seed());
             world.spawnEntity(rift);
         }
     }

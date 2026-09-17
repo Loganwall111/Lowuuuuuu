@@ -9,6 +9,7 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Preserve position, rotation, head/body yaw, fall distance, gravity state, and velocity through `moveToWorld`.
 - [x] Suppress only the terrain loading screen associated with the Sift respawn packet.
 - [x] Add `/sift fall` reproducible test command.
+- [x] Add `/sift status` diagnostics for position, velocity, and rotation preservation.
 - [x] Add a depth-aware procedural sky pass.
 
 ## Phase 2 — the empty abyss (implemented as a prototype)
@@ -17,7 +18,8 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Registered visual rift entity with no collision, damage, or fluid push.
 - [x] Procedural camera-facing rift renderer.
 - [x] Wavy interior displacement, particle stars, and colored emissive rim.
-- [ ] Replace proximity spawner with authored rift formations and encounter choreography.
+- [x] Replace random proximity placement with a deterministic twelve-slot rift formation prototype.
+- [ ] Add authored encounter choreography around the formation.
 - [ ] Add a real screen-space capture/refraction target if the final rendering backend requires it.
 
 ## Phase 3 — sift fluids (implemented as a prototype)

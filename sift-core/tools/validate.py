@@ -103,6 +103,7 @@ def main() -> int:
         "src/main/java/dev/siftcore/mixin/EntityMixin.java",
         "src/main/java/dev/siftcore/physics/SiftFluidField.java",
         "src/main/java/dev/siftcore/physics/SiftCurrentPhysics.java",
+        "src/main/java/dev/siftcore/rift/SiftRiftFormation.java",
         "src/main/java/dev/siftcore/rift/SiftRiftRenderer.java",
     ):
         check_file(relative)

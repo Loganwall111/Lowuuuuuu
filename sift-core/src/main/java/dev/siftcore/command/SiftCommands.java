@@ -5,11 +5,13 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.siftcore.SiftDimensions;
 import dev.siftcore.transfer.SiftTransfer;
+import java.util.Locale;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.Vec3d;
 
 /** Small operator-only test surface for the standalone dimension slice. */
 public final class SiftCommands {
@@ -26,7 +28,8 @@ public final class SiftCommands {
                 .executes(SiftCommands::toggle)
                 .then(CommandManager.literal("enter").executes(SiftCommands::enter))
                 .then(CommandManager.literal("fall").executes(SiftCommands::fall))
-                .then(CommandManager.literal("return").executes(SiftCommands::returnToOverworld)));
+                .then(CommandManager.literal("return").executes(SiftCommands::returnToOverworld))
+                .then(CommandManager.literal("status").executes(SiftCommands::status)));
     }
 
     private static int toggle(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -57,6 +60,29 @@ public final class SiftCommands {
         player.velocityModified = true;
         player.setOnGround(false);
         player.sendMessage(Text.literal("Sift-Core: falling test armed at Y -63"), false);
+        return 1;
+    }
+
+    private static int status(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+        Vec3d position = player.getPos();
+        Vec3d velocity = player.getVelocity();
+        String message = String.format(
+                Locale.ROOT,
+                "Sift-Core: dimension=%s pos=(%.3f, %.3f, %.3f) velocity=(%.3f, %.3f, %.3f) yaw=%.2f pitch=%.2f head=%.2f body=%.2f",
+                player.getWorld().getRegistryKey().getValue(),
+                position.x,
+                position.y,
+                position.z,
+                velocity.x,
+                velocity.y,
+                velocity.z,
+                player.getYaw(),
+                player.getPitch(),
+                player.getHeadYaw(),
+                player.getBodyYaw()
+        );
+        player.sendMessage(Text.literal(message), false);
         return 1;
     }
 

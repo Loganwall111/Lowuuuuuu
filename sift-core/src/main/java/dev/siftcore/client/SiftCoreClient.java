@@ -25,6 +25,12 @@ public final class SiftCoreClient implements ClientModInitializer {
                 new SiftSkyRenderer()
         );
         WorldRenderEvents.AFTER_ENTITIES.register(SiftFluidRenderer::render);
-        ClientTickEvents.END_CLIENT_TICK.register(client -> SiftTransitionClient.tick());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.world == null) {
+                SiftTransitionClient.clear();
+            } else {
+                SiftTransitionClient.tick();
+            }
+        });
     }
 }
