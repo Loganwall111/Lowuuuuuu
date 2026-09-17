@@ -47,45 +47,45 @@ public final class McsmSiftMod {
     // Blocks - Fabric of Reality
     public static final Block FABRIC_OF_REALITY = block("fabric_of_reality",
         FabricOfRealityBlock::new,
-        BlockBehaviour.Properties.ofFullCopy(Blocks.BEDROCK)
+        BlockBehaviour.Properties.of()
             .strength(-1f, 3600000f)
             .lightLevel(s -> 8)
     );
     public static final Block BROKEN_FABRIC = block("broken_fabric_of_reality",
         BrokenFabricOfRealityBlock::new,
-        BlockBehaviour.Properties.ofFullCopy(Blocks.BARRIER)
+        BlockBehaviour.Properties.of()
             .strength(-1f, 3600000f)
             .lightLevel(s -> 10)
             .noCollission()
     );
     public static final Block BOTTOM_FABRIC = block("bottom_fabric_of_reality",
         FabricOfRealityBlock::new,
-        BlockBehaviour.Properties.ofFullCopy(Blocks.BEDROCK)
+        BlockBehaviour.Properties.of()
             .strength(-1f, 3600000f)
             .lightLevel(s -> 12)
     );
     public static final Block UNKNOWN_GROUND = block("unknown_ground",
         FabricOfRealityBlock::new,
-        BlockBehaviour.Properties.ofFullCopy(Blocks.BEDROCK)
+        BlockBehaviour.Properties.of()
             .strength(2f, 10f)
             .lightLevel(s -> 5)
     );
     public static final Block MENGER_SPONGE = block("menger_sponge",
         FabricOfRealityBlock::new,
-        BlockBehaviour.Properties.ofFullCopy(Blocks.SPONGE)
+        BlockBehaviour.Properties.of()
             .strength(1f, 6f)
             .lightLevel(s -> 10)
     );
     public static final Block IRIDESCENT_GEL = block("iridescent_gel",
         Block::new,
-        BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+        BlockBehaviour.Properties.of()
             .strength(0.5f, 2f)
             .lightLevel(s -> 12)
             .noOcclusion()
     );
     public static final Block RIFT_COSMIC = block("rift_cosmic",
         Block::new,
-        BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+        BlockBehaviour.Properties.of()
             .strength(-1f, 3600000f)
             .lightLevel(s -> 15)
             .noOcclusion()

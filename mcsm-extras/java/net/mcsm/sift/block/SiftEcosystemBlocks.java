@@ -25,31 +25,31 @@ public final class SiftEcosystemBlocks {
     public static final List<Item> ALL_BLOCK_ITEMS = new ArrayList<>();
 
     public static final Block BLUE_GRASS_BLOCK = block("blue_grass_block",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.GRASS_BLOCK).strength(0.6f).lightLevel(s -> 2));
+        BlockBehaviour.Properties.of().strength(0.6f).lightLevel(s -> 2));
     public static final Block PINK_GRASS_BLOCK = block("pink_grass_block",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.GRASS_BLOCK).strength(0.6f).lightLevel(s -> 3));
+        BlockBehaviour.Properties.of().strength(0.6f).lightLevel(s -> 3));
     public static final Block RED_GRASS_BLOCK = block("red_grass_block",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.GRASS_BLOCK).strength(0.6f).lightLevel(s -> 1));
+        BlockBehaviour.Properties.of().strength(0.6f).lightLevel(s -> 1));
     public static final Block RED_ROCK = block("red_rock",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.STONE).strength(1.5f, 6f).lightLevel(s -> 1));
+        BlockBehaviour.Properties.of().strength(1.5f, 6f).lightLevel(s -> 1));
     public static final Block BLACK_WATER = block("black_water",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).strength(100f).lightLevel(s -> 0));
+        BlockBehaviour.Properties.of().strength(100f).lightLevel(s -> 0));
     public static final Block GREEN_ACID = block("green_acid",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).strength(100f).lightLevel(s -> 8));
+        BlockBehaviour.Properties.of().strength(100f).lightLevel(s -> 8));
     public static final Block PURPLE_TREE_LEAVES = block("purple_tree_leaves",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_LEAVES).strength(0.2f).lightLevel(s -> 2));
+        BlockBehaviour.Properties.of().strength(0.2f).lightLevel(s -> 2));
     public static final Block PURPLE_TREE_LOG = block("purple_tree_log",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_LOG).strength(2f));
+        BlockBehaviour.Properties.of().strength(2f));
     public static final Block FLUOR_PLANT = block("fluor_plant",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.POPPY).strength(0f).lightLevel(s -> 12).noOcclusion());
+        BlockBehaviour.Properties.of().strength(0f).lightLevel(s -> 12).noOcclusion());
     public static final Block FUNGUS_TREE = block("fungus_tree",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.MUSHROOM_STEM).strength(0.5f).lightLevel(s -> 4));
+        BlockBehaviour.Properties.of().strength(0.5f).lightLevel(s -> 4));
     public static final Block RED_VINES = block("red_vines",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.VINE).strength(0.2f).lightLevel(s -> 1).noOcclusion());
+        BlockBehaviour.Properties.of().strength(0.2f).lightLevel(s -> 1).noOcclusion());
     public static final Block BLUE_BUN = block("blue_bun",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.RED_MUSHROOM).strength(0f).lightLevel(s -> 6).noOcclusion());
+        BlockBehaviour.Properties.of().strength(0f).lightLevel(s -> 6).noOcclusion());
     public static final Block RAINBOW_WATER = block("rainbow_water",
-        BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).strength(100f).lightLevel(s -> 10));
+        BlockBehaviour.Properties.of().strength(100f).lightLevel(s -> 10));
 
     private SiftEcosystemBlocks() {}
 
