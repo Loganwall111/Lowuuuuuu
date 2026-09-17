@@ -2631,8 +2631,13 @@ def main():
           # expressible: vanilla will not place a dimension's min_y below -2032,
           # so the tiers are scaled into 1968 blocks of real depth with the whole
           # mapping written down in McsmVoidTiers.
-          void_type["min_y"] == -2032 and void_type["height"] == 4064
-          and void_type["logical_height"] == 4064
+          # BUILD #483 EMERGENCY -- height 4064 caused safe-mode lock + corrupt save
+          # on some clients (Did fail to load ordinary). Accept both tall (-2032/4064)
+          # and safe (-64/384) as valid, both within engine limits and 16-aligned.
+          ((void_type["min_y"] == -2032 and void_type["height"] == 4064
+            and void_type["logical_height"] == 4064)
+           or (void_type["min_y"] == -64 and void_type["height"] == 384
+               and void_type["logical_height"] == 384))
           and void_type["has_ceiling"] is False
           and void_type["attributes"]["minecraft:gameplay/water_evaporates"] is False)
     check("the void has its own purple water and its own violet air",

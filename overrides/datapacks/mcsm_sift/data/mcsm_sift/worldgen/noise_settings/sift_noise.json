@@ -11,8 +11,8 @@
     "Name": "minecraft:air"
   },
   "noise": {
-    "min_y": -2032,
-    "height": 2352,
+    "min_y": -64,
+    "height": 384,
     "size_horizontal": 1,
     "size_vertical": 1
   },
