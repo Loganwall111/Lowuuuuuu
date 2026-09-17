@@ -61,7 +61,6 @@ public final class SiftFluidRenderer {
             context.matrixStack().pop();
         }
 
-        RenderSystem.enableTexture();
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();

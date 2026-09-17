@@ -59,7 +59,6 @@ public final class SiftRiftRenderer extends EntityRenderer<SiftRiftEntity> {
         buffer.vertex(entry.getPositionMatrix(), -1.0F, 1.0F, 0.0F).texture(0.0F, 0.0F).color(255, 255, 255, 255).next();
         Tessellator.getInstance().draw();
 
-        RenderSystem.enableTexture();
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();

@@ -40,7 +40,6 @@ public final class SiftSkyRenderer implements DimensionRenderingRegistry.SkyRend
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.disableCull();
-        RenderSystem.disableTexture();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(() -> SiftShaders.SKY);
