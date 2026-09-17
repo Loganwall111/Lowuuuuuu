@@ -74,7 +74,9 @@ public abstract class McsmConfigReskinMixin {
         // soft vignette -- so the panel reads as a window onto the storm instead
         // of a black frame, while the content keeps its contrast (every value
         // here stays under 0x40 luminance and the text plate below is opaque).
-        g.fillGradient(0, 0, w, h, 0xFF1A1130, 0xFF0B0716);
+        // BUILD #464 -- and the lower half is no longer near-black: the storm sky
+        // runs violet to plum (0B0716 was the black half of "a giant black border").
+        g.fillGradient(0, 0, w, h, 0xFF1A1130, 0xFF1C1236);
         // horizon glow, low and wide: the storm's own band, not a flat wash
         int glowY = h * 3 / 4;
         g.fillGradient(0, glowY, w, h, 0x00000000, 0x66462A6E);
@@ -88,9 +90,8 @@ public abstract class McsmConfigReskinMixin {
             g.fillGradient(Math.max(0, drift - 120), bandY, Math.min(w, drift + 160), bandY + bandH,
                     0x00000000, 0x14A98BD8);
         }
-        // vignette corners, so the eye goes to the panel rather than the frame
-        g.fillGradient(0, 0, w, 26, 0x33000000, 0x00000000);
-        g.fillGradient(0, h - 26, w, h, 0x00000000, 0x44000000);
+        // (no vignette corners: "no edge tint, no vignette" -- the horizon glow
+        // below the panel already holds the eye.)
         // side panels
         g.fillGradient(0, 0, 18, h, 0xAA0A0612, 0x22140622);
         g.fillGradient(w - 18, 0, w, h, 0x22140622, 0xAA0A0612);

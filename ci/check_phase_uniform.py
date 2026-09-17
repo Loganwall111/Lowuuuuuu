@@ -275,23 +275,38 @@ def _mcsm_java_sources():
     return out
 
 
-def _menu_black_plates(*sources):
-    """Every literal full-screen fill on the menu path, checked for opaqueness.
+_FILL_CONST_RE = re.compile(r"static\s+final\s+int\s+([A-Za-z_$][\w$]*)\s*=\s*(0x[0-9A-Fa-f]{1,8})\s*;")
+_FILL_FULLSCREEN_RE = re.compile(
+    r"fill(?:Gradient)?\(\s*0,\s*0,\s*(?:w|width|this\.width)\s*,\s*(?:h|height|this\.height)\s*,\s*([^;]+?)\)")
 
-    A "black menu" is a DRAW, so this reads the actual literals: any
-    fill(0, 0, w, h, 0xAARRGGBB) or fillGradient(0, 0, w, h, 0xAARRGGBB, ...) whose
-    alpha is 0xE0 or more AND whose colour is (near) black is a plate that can hide
-    everything behind it. Computed colours ((a << 24) | 0x...) are not literals and
-    are skipped here; the ones that matter on this path are all literals.
+
+def _menu_black_plates(*sources):
+    """Every full-screen fill on the mod's screen path, checked for opaqueness.
+
+    A "black menu" is a DRAW, so this reads the actual values -- and it resolves
+    same-file constants, because the worst one of these was not a literal at all:
+    the story-mode console filled the whole frame with BG_TOP/BG_BOTTOM, an opaque
+    #0D1016..#07080C, and a literal-only scan walked straight past it. Any
+    fill(0, 0, w, h, ...) whose resolved alpha is 0xE0 or more AND whose colour is
+    (near) black is a plate that can hide everything behind it.
     """
     bad = []
     for src in sources:
-        for m in re.finditer(r"fill(?:Gradient)?\(0, 0, w, h,\s*(0x[0-9A-Fa-f]{8})", src):
-            argb = int(m.group(1), 16)
-            alpha = (argb >> 24) & 0xFF
-            rgb = argb & 0xFFFFFF
-            if alpha >= 0xE0 and (rgb >> 16 & 0xFF) + (rgb >> 8 & 0xFF) + (rgb & 0xFF) < 0x40:
-                bad.append(m.group(0))
+        consts = {m.group(1): int(m.group(2), 16) for m in _FILL_CONST_RE.finditer(src)}
+        for m in _FILL_FULLSCREEN_RE.finditer(src):
+            for token in m.group(1).split(","):
+                token = token.strip()
+                value = None
+                lit = re.fullmatch(r"0x([0-9A-Fa-f]{1,8})", token)
+                if lit:
+                    value = int(lit.group(1), 16)
+                elif token in consts:
+                    value = consts[token]
+                if value is None:
+                    continue  # computed at runtime (a fade, a wash) -- not a plate
+                if ((value >> 24) & 0xFF) >= 0xE0 \
+                        and ((value >> 16 & 0xFF) + (value >> 8 & 0xFF) + (value & 0xFF)) < 0x40:
+                    bad.append(m.group(0)[:80])
     return bad
 
 
@@ -2112,7 +2127,7 @@ def main():
           and "public boolean writing() {" in bookui
           and "if (writing) {" in bookui)
     check("the book draws no edge tint (the standing rule) and wraps with the real font",
-          "g.fill(0, 0, this.width, this.height, BACKDROP);" in bookui
+          "McsmMenuSky.paint(g, this.width, this.height, 0.5F);" in bookui
           and "vignette" not in bookui.lower()
           and "this.font.width(candidate) <= maxWidth" in bookui
           and "public static void show() {" in bookui)
@@ -3408,6 +3423,9 @@ def main():
         "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingClientMixin.java") or ""
     cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
     extras = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
+    book = read("mcsm-extras/java/net/mcsm/extras/client/McsmFutureBookScreen.java") or ""
+    term = read("mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java") or ""
+    cfgreskin = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmConfigReskinMixin.java") or ""
     towns = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
     boot = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""
     sink = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGradientTickPatch.java") or ""
@@ -3552,6 +3570,24 @@ def main():
     check("no screen of the mod's paints the whole frame an opaque near-black",
           not _menu_black_plates(titles, reskin, loadpause, menusky, cine),
           "plates: %s" % _menu_black_plates(titles, reskin, loadpause, menusky, cine))
+
+    check("the console the DS button opens is not a black room",
+          # McsmExtrasScreen filled the WHOLE frame with BG_TOP/BG_BOTTOM
+          # (0xFF0D1016..0xFF07080C), put two 0x88 black vignette bands on top of it,
+          # and the reskin mixin stands down for it -- so nothing covered it.
+          "McsmMenuSky.paint(g, w, h, 0.62F);" in extras
+          # (the constants themselves are gone; the comment that names them stays)
+          and "int BG_TOP" not in extras and "int BG_BOTTOM" not in extras
+          and "0x88000000" not in extras
+          and "g.fill(0, 0, w, TOP_H, 0xE0140F28);" in extras)
+
+    check("and the future-book, the terminal and the settings console are not black",
+          "McsmMenuSky.paint(g, this.width, this.height, 0.5F);" in book
+          and "BACKDROP" not in book
+          and "McsmMenuSky.paint(g, width, height, 0.45F);" in term
+          and "0xC0040610" not in term
+          and "g.fillGradient(0, 0, w, h, 0xFF1A1130, 0xFF1C1236);" in cfgreskin
+          and "0x33000000" not in cfgreskin and "0x44000000" not in cfgreskin)
 
     # the same rule, over EVERY java source of the mod, so a new screen cannot
     # introduce a black plate later without failing the gate

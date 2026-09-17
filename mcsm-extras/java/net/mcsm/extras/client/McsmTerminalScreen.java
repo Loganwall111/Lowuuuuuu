@@ -385,8 +385,12 @@ public final class McsmTerminalScreen extends Screen {
         }
         double ease = 1.0D - Math.pow(1.0D - openAnim / 24.0D, 3.0D);
 
-        // the world behind the terminal goes dark and cold
-        g.fill(0, 0, width, height, 0xC0040610);
+        // BUILD #464 -- the world behind the terminal goes dark and cold, but the
+        // screen itself is not black: the storm's sky at 0.45, then a 0x99 cold wash
+        // (was 0xC0, i.e. three-quarters black -- "goes completely black" as a
+        // permanent state, which is what the report was about).
+        McsmMenuSky.paint(g, width, height, 0.45F);
+        g.fill(0, 0, width, height, 0x99040610);
 
         int wobble = shake > 0 ? (shake % 4) - 2 : 0;
         int yo = (int) Math.round((1.0D - ease) * 26.0D);

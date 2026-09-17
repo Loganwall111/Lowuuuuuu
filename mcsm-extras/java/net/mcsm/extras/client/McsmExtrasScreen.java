@@ -56,8 +56,8 @@ import java.util.function.DoubleSupplier;
 public final class McsmExtrasScreen extends Screen {
 
     // ---- palette (Telltale: warm amber accent on deep charcoal) ----------
-    private static final int BG_TOP      = 0xFF0D1016;
-    private static final int BG_BOTTOM   = 0xFF07080C;
+    // BUILD #464 -- the room's near-black was BG_TOP/BG_BOTTOM; the ground is the
+    // storm's own sky now (McsmMenuSky), so the pair is gone and cannot come back.
     private static final int CARD        = 0xD812151C;
     private static final int CARD_HOVER  = 0xE0171B24;
     private static final int CARD_EDGE   = 0xFF232833;
@@ -832,13 +832,20 @@ public final class McsmExtrasScreen extends Screen {
         int w = this.width;
         int h = this.height;
 
-        // deep charcoal room
-        g.fillGradient(0, 0, w, h, BG_TOP, BG_BOTTOM);
+        // BUILD #464 -- "fix the main menu be black".
+        //
+        // THIS screen is the one that opens from the DS button, and it painted an
+        // OPAQUE #0D1016..#07080C over the entire frame: the console read as a black
+        // screen with panels floating on it. Nothing else covered it, either -- the
+        // reskin mixin deliberately stands down for our own screens ("they bring
+        // their own"), and what this brought was black. It brings the storm's own
+        // sky now, through the shared painter the menus use, held at 0.62 so every
+        // card, chip and sidebar entry still reads on top of it.
+        McsmMenuSky.paint(g, w, h, 0.62F);
         // faint warm glow behind the top bar
         g.fillGradient(0, 0, w, 90, ACCENT_SOFT, 0x00D9A441);
-        // vignette
-        g.fillGradient(0, 0, w, 40, 0x88000000, 0x00000000);
-        g.fillGradient(0, h - 40, w, h, 0x00000000, 0x88000000);
+        // (the 0x88 black vignette bands over the top and bottom 40px are gone by
+        // decision: "no edge tint, no vignette".)
 
         drawTopBar(g, w);
         drawSidebar(g, mouseX, mouseY);
@@ -847,7 +854,8 @@ public final class McsmExtrasScreen extends Screen {
     }
 
     private void drawTopBar(GuiGraphicsExtractor g, int w) {
-        g.fill(0, 0, w, TOP_H, 0xF2080A0E);
+        // BUILD #464 -- the top bar is glass over the sky, not another black plate.
+        g.fill(0, 0, w, TOP_H, 0xE0140F28);
         g.fill(0, TOP_H, w, TOP_H + 1, ACCENT);
         g.text(this.font, "§6§lDEVOURING STORMS §f— §eSTORY MODE CONSOLE", 14, 10, TEXT_HI, true);
         g.text(this.font, "§7Open Devouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338",

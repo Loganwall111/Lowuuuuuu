@@ -36,7 +36,6 @@ import net.minecraft.network.chat.Component;
  */
 public final class McsmFutureBookScreen extends Screen {
 
-    private static final int BACKDROP = 0xF20A0812;
     private static final int PLATE = 0xFF0D0A16;
     private static final int PLATE_EDGE = 0xFF2A1F45;
     private static final int SPINE = 0xFF6D3FD4;
@@ -164,8 +163,10 @@ public final class McsmFutureBookScreen extends Screen {
         int top = y0 + 26;
         int bottom = y1 - 26;
 
-        // flat backdrop, then the plate: this is the whole frame
-        g.fill(0, 0, this.width, this.height, BACKDROP);
+        // BUILD #464 -- flat backdrop, then the plate: this is the whole frame. The
+        // backdrop was 0xF20A0812 (a black room around the book); it is the storm's
+        // sky now, at half, so the book reads as the lit thing it is.
+        McsmMenuSky.paint(g, this.width, this.height, 0.5F);
         g.fill(x0, y0, x1, y1, PLATE);
         g.fill(x0, y0, x1, y0 + 1, PLATE_EDGE);
         g.fill(x0, y1 - 1, x1, y1, PLATE_EDGE);
