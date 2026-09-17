@@ -1,0 +1,10 @@
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java:248: error: cannot find symbol
+            AABB box = player.getBoundingBox().inflate(220.0D);
+            ^
+  symbol:   class AABB
+  location: class McsmVoid
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+1 error
