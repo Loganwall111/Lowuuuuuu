@@ -319,9 +319,27 @@ public final class McsmBlackHoleBackdrop {
     }
 
     private static boolean isPlayerLookingAtBlackHole(Camera camera, Vec3 toBlackHole) {
-        Vec3 look = Vec3.directionFromRotation(camera.getXRot(), camera.getYRot());
-        double dot = look.dot(toBlackHole);
-        return dot > 0.93;
+        try {
+            org.joml.Vector3fc fwd = camera.forwardVector();
+            Vec3 look = new Vec3(fwd.x(), fwd.y(), fwd.z());
+            double dot = look.dot(toBlackHole);
+            return dot > 0.93;
+        } catch (Throwable t) {
+            try {
+                // fallback via xRot/yRot methods
+                float xR = camera.xRot();
+                float yR = camera.yRot();
+                double pitch = Math.toRadians(xR);
+                double yaw = Math.toRadians(yR);
+                double x = -Math.sin(yaw) * Math.cos(pitch);
+                double y = -Math.sin(pitch);
+                double z = Math.cos(yaw) * Math.cos(pitch);
+                Vec3 look = new Vec3(x, y, z);
+                return look.dot(toBlackHole) > 0.93;
+            } catch (Throwable t2) {
+                return false;
+            }
+        }
     }
 
     private static void triggerBlackHoleEnter() {

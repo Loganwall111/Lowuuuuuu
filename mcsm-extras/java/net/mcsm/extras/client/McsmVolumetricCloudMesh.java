@@ -41,7 +41,7 @@ public final class McsmVolumetricCloudMesh {
             if (McsmReality.inside(level)) return DECAYED;
             if (level.dimension().equals(McsmAdams.ADAMS)) return ADAMS;
             if (level.dimension().equals(McsmCreatorRealm.DIMENSION)) return CREATOR;
-            if (level.dimension().location().toString().contains("sift")) return SIFT;
+            if (level.dimension().identifier().toString().contains("sift")) return SIFT;
             if (level.dimension().equals(McsmVoid.DIMENSION)) return VOID;
         } catch (Throwable ignored) {}
         return VOID;
@@ -52,7 +52,7 @@ public final class McsmVolumetricCloudMesh {
             if (McsmReality.inside(level)) return new float[]{0.6f, 0.7f, 0.85f};
             if (level.dimension().equals(McsmAdams.ADAMS)) return new float[]{0.9f, 0.75f, 0.55f};
             if (level.dimension().equals(McsmCreatorRealm.DIMENSION)) return new float[]{1.0f, 0.95f, 0.85f};
-            if (level.dimension().location().toString().contains("sift")) return new float[]{0.45f, 0.85f, 1.0f};
+            if (level.dimension().identifier().toString().contains("sift")) return new float[]{0.45f, 0.85f, 1.0f};
             return new float[]{0.5f, 0.3f, 0.9f}; // void purple
         } catch (Throwable t) {
             return new float[]{0.5f, 0.3f, 0.9f};
