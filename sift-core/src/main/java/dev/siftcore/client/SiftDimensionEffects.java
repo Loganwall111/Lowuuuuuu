@@ -10,7 +10,7 @@ public final class SiftDimensionEffects extends DimensionEffects {
     private static final float[] FOG_RGBA = {0.108f, 0.120f, 0.086f, 1.0f};
 
     public SiftDimensionEffects() {
-        super(192.0f, false, SkyType.NONE, true, false);
+        super(192.0f, false, SkyType.NORMAL, true, false);
     }
 
     @Override

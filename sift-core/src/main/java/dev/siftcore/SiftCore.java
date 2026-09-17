@@ -46,6 +46,7 @@ public final class SiftCore implements ModInitializer {
     public void onInitialize() {
         SiftCommands.register();
         ServerTickEvents.END_WORLD_TICK.register(SiftRiftSpawner::tick);
+        ServerTickEvents.END_WORLD_TICK.register(SiftCurrentPhysics::tick);
         LOGGER.info("Sift-Core {} initialized; The Sift handshake is armed", VERSION);
     }
 }

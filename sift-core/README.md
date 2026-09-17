@@ -4,6 +4,12 @@ A standalone Fabric 1.20.1 sandbox for building an original, near one-to-one **T
 
 The visual language is based on the public reference trailer supplied for this project: an empty abyss, green-black fog, colorful liquid layers, animated spacetime rifts, and fast falling motion. This workspace uses new procedural code and shaders rather than extracting game assets or footage.
 
+## Important version note
+
+The current sandbox and CI artifact target **Minecraft 1.20.1**, not 1.20.2. The manifest is intentionally pinned to `1.20.1` so an incompatible launcher profile fails clearly instead of producing a misleading blank render. Use a Fabric 1.20.1 instance with the matching Fabric API when testing `sift-core`.
+
+If the game window is completely black, first remove the Sift-Core jar from the 1.20.2 instance and launch the 1.20.1 profile. The Sift renderer is only active inside `mcsm:the_sift`; a black title/menu screen is not normal behavior.
+
 ## Current vertical slice
 
 ### Phase 1 — seamless fall handshake
