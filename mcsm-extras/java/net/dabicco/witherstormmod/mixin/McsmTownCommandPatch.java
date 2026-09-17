@@ -477,6 +477,14 @@ public abstract class McsmTownCommandPatch {
             src.sendSuccess(() -> Component.literal("[ds] "
                     + net.mcsm.extras.client.McsmMenuGuard.state()
                     + " \u00b7 /ds menu reset clears it"), false);
+            // BUILD #473 -- and WHO is painting it, which no amount of work in this jar
+            // can answer: the picture the game's own menu backdrop is made of (which pack
+            // it came from, how big it is, how bright its pixels are) and whether
+            // FancyMenu, which owns the title screen whenever it is installed, has a
+            // layout to draw or a 130-byte Git LFS pointer instead.
+            for (String line : net.mcsm.extras.client.McsmMenuDiag.report()) {
+                src.sendSuccess(() -> Component.literal("[ds] " + line), false);
+            }
             return 1;
         } catch (Throwable t) {
             src.sendFailure(Component.literal("[ds] " + t));

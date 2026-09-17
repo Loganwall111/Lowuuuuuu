@@ -4133,6 +4133,39 @@ def main():
           not _unguarded_screen_handlers(),
           "unwrapped: %s" % _unguarded_screen_handlers())
 
+    # BUILD #473 -- AND WHO IS PAINTING IT. The frame is built by
+    # Screen.extractRenderStateWithTooltipAndSubtitles -> extractBackground ->
+    # extractRenderState (read out of the 26.2 client's own bytecode in this build's api
+    # dump), and extractBackground draws its backdrop from a TEXTURE:
+    # extractMenuBackground -> extractMenuBackgroundTexture(MENU_BACKGROUND)
+    # = minecraft:textures/gui/menu_background.png. A resource pack that replaces that one
+    # texture with a dark or broken image blackens the menu while the logo and buttons
+    # still draw -- and mod resources sit BELOW the player's packs, so no shader, mixin or
+    # paint order in this jar can override it. FancyMenu is the other owner: it draws the
+    # title from config/fancymenu/customization/title_screen_layout.txt + its images, and
+    # THOSE FILES ARE GIT LFS POINTERS IN THIS REPOSITORY (130-byte text stubs). An
+    # instance set up without `git lfs pull` has no layout and no images at all, which is
+    # the report's "failed thing ... very dark failed button on the side ... completely
+    # black" exactly. So the mod's job here is to SAY WHERE THE PICTURE CAME FROM, and
+    # this checkpoint is that it says it, fault-isolated, from /ds menu.
+    diag = read("mcsm-extras/java/net/mcsm/extras/client/McsmMenuDiag.java")
+
+    check("and a player can ask the game who is painting the black menu",
+          "public final class McsmMenuDiag" in diag
+          and "public static List<String> report()" in diag
+          # the LFS pointer is the finding: a 130-byte stub reads as content otherwise
+          and "git-lfs.github.com/spec" in diag
+          and "A GIT LFS POINTER, not a layout" in diag
+          and "THIS IS A GIT LFS POINTER" in diag
+          # the texture's own pack and its brightness, which is what "black" means
+          and '"sourcePackId"' in diag
+          and "MEAN LUMINANCE" in diag
+          and "textures/gui/menu_background.png" in diag
+          and "textures/gui/title/background/panorama_0.png" in diag
+          # and it can never take a screen down with it
+          and diag.count("catch (Throwable") >= 6
+          and "McsmMenuDiag" in towns
+          and "McsmMenuDiag.report()" in towns)
     check("and a player can read the render guard, and clear it, from the console entry",
           "McsmMenuGuard.state()" in towns
           and "private static int ds$menuReset(CommandSourceStack src) {" in towns
