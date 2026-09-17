@@ -96,7 +96,7 @@ public final class SiftTransfer {
         float fallDistance = player.fallDistance;
         boolean noGravity = player.hasNoGravity();
 
-        // The Sift is deliberately empty, so synchronously warm the small
+        // The Sift is sparse and deterministic, so synchronously warm the small
         // destination window before the respawn packet is sent. This removes
         // the avoidable terrain-generation pause without creating a portal or
         // changing the player's coordinates.

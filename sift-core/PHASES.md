@@ -44,6 +44,6 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Resource namespace and dimension key are stable (`mcsm`).
 - [x] Icon copied into the standalone mod resource tree.
 - [x] Offline JSON, shader, and project-layout validation script.
-- [x] Compile against the pinned toolchain on Java 17 in GitHub Actions (run `35166210842`).
+- [x] Compile against the pinned toolchain on Java 17 in GitHub Actions (run `35169909305`).
 - [ ] Test multiplayer respawn ordering and reconnect behavior.
 - [ ] Move the sandbox into the main dimensions project after a visual and gameplay review.
