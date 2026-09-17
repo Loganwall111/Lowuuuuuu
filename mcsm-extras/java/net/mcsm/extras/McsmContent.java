@@ -170,6 +170,19 @@ public final class McsmContent {
     public static final Block VOID_LAMP = block("void_lamp",
             BlockBehaviour.Properties.of().strength(1.2F).sound(SoundType.GLASS)
                     .lightLevel(s -> 14).emissiveRendering(s -> true));
+    /**
+     * BUILD #482 -- THE SPONGE'S OWN TWO BLOCKS. The plan asks the maze's walls to
+     * wear an orange-to-pink gradient; a gradient needs two ends, and these are
+     * them, painted raw rather than through the void's own skin tint. They light
+     * nothing (a sponge is not a lamp) and they are as hard as the void's stone, so
+     * the maze is something you steer through rather than something you mine.
+     */
+    public static final Block VOID_SPONGE_ORANGE = block("void_sponge_orange",
+            BlockBehaviour.Properties.of().strength(2.2F, 6.0F).sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+    public static final Block VOID_SPONGE_PINK = block("void_sponge_pink",
+            BlockBehaviour.Properties.of().strength(2.2F, 6.0F).sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
     public static final Block VOID_ANCHOR = block("void_anchor",
             BlockBehaviour.Properties.of().strength(4.5F, 30.0F).sound(SoundType.METAL)
                     .lightLevel(s -> 12).emissiveRendering(s -> true)

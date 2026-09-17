@@ -5,6 +5,7 @@ import net.mcsm.extras.McsmSounds;
 import net.mcsm.extras.McsmVoid;
 import net.mcsm.extras.McsmVoidDescent;
 import net.mcsm.extras.McsmVoidTiers;
+import net.mcsm.extras.McsmVoidRifts;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -246,6 +247,16 @@ public final class McsmVoidDeep {
         if (heart % 90 == 0) {
             spawn(level, ParticleTypes.REVERSE_PORTAL, x, y, z, 16.0D, 22.0D, 0.0D, 0.0D);
         }
+        // BUILD #482 -- the emitters the plan asks for around a rift's boundary:
+        // bubble strings rising, and star-fracture dust, and only at the rift
+        if (McsmVoidRifts.inside(x, y, z)) {
+            if (heart % 2 == 0) {
+                spawn(level, ParticleTypes.BUBBLE, x, y, z, 34.0D, 30.0D, 0.0D, 0.14D);
+            }
+            if (heart % 3 == 0) {
+                spawn(level, ParticleTypes.GLOW, x, y, z, 30.0D, 26.0D, 0.02D, 0.01D);
+            }
+        }
     }
 
     /** One small burst of a particle type around the player, on the gel's own terms. */
@@ -374,6 +385,18 @@ public final class McsmVoidDeep {
                 case McsmVoidTiers.TIER_FRACTURE -> waves(g, w, h, t, now);
                 case McsmVoidTiers.TIER_GEL -> horizon(g, w, h, t, now);
                 default -> { }
+            }
+            // ---- BUILD #482: inside a rift's window, the frame becomes it ----
+            double px = mc.player.getX();
+            double py = mc.player.getY();
+            double pz = mc.player.getZ();
+            if (McsmVoidRifts.inside(px, py, pz)) {
+                rift(g, w, h, t, now, McsmVoidRifts.depth(px, py, pz),
+                        McsmVoidRifts.phase(px, py, pz));
+            }
+            // ---- and the gel's own pools, in the gel's own tier --------------
+            if (tier == McsmVoidTiers.TIER_GEL) {
+                pools(g, w, h, t, now, px, py, pz);
             }
             if (tier != shownTier) {
                 shownTier = tier;
@@ -577,6 +600,119 @@ public final class McsmVoidDeep {
             int alpha = (int) (86 * t);
             g.fill(x, y, x + 2, y + 2, (alpha << 24) | 0xBFFFC8);
         }
+    }
+
+    // ------------------------------------------------------------------
+    // BUILD #482 -- the rifts, and the gel's iridescent pools
+    // ------------------------------------------------------------------
+
+    /**
+     * Tier 3 and 4, the rifts: a window into somewhere else.
+     *
+     * <p>The plan asks for a refraction pass on the inner face of a rift, ripples
+     * across it, and a parallax layer behind that -- cosmic particles, star arrays,
+     * shifting silhouettes -- plus emitters throwing bubble strings and star dust
+     * around the rim. This is that, drawn in the frame: the displacement bands are
+     * the ripples, the drifting stars and the soft silhouettes are the window, the
+     * rim highlight is where the two meet, and every part of it fades in with
+     * {@code into} so the window opens as a fall crosses the boundary rather than
+     * switching on. The particles are the real ones, spawned in the client tick.
+     */
+    private static void rift(GuiGraphicsExtractor g, int w, int h, float t, long now,
+            float into, double phase) {
+        int k = (int) (255 * Math.max(0.12F, into));
+        int cx = w / 2;
+        int cy = h / 2;
+        // the ripples: displacement bands running across the window
+        for (int i = 0; i < 26; i++) {
+            double ph = now / 620.0D + i * 0.55D + phase * 6.0D;
+            int y = (int) (h * (i / 26.0D) + Math.sin(ph) * 20.0D * (1.0D - into * 0.4D));
+            int alpha = (int) (58 * into * (0.55D + 0.45D * Math.sin(ph * 1.3D)));
+            g.fill(0, y, w, y + h / 26 + 2, (Math.max(alpha, 2) << 24) | 0x6A2BE2);
+        }
+        // the window itself: a slow parallax swirl of stars
+        for (int i = 0; i < 74; i++) {
+            long seed = i * 224737L;
+            double a = (seed % 360) / 57.2958D + now / 9000.0D + phase * 3.0D;
+            double r = 0.10D + 0.42D * ((seed * 29 % 97) / 97.0D);
+            int x = (int) (cx + Math.cos(a) * r * w);
+            int y = (int) (cy + Math.sin(a) * r * h * 0.7D);
+            int twinkle = (int) (150 + 90 * Math.sin(now / 700.0D + i));
+            int alpha = (int) (twinkle * into * 0.9F);
+            if (alpha <= 4) {
+                continue;
+            }
+            int colour = (i % 3 == 0) ? 0xBFFFC8 : (i % 3 == 1) ? 0xE0C8FF : 0xFFE9B0;
+            g.fill(x, y, x + 2, y + 2, (alpha << 24) | colour);
+        }
+        // and the silhouettes: something enormous, on the far side, going past
+        for (int i = 0; i < 4; i++) {
+            long seed = i * 91871L;
+            double a = now / 21000.0D + i * 1.9D + phase;
+            int x = (int) (cx + Math.cos(a) * w * 0.22D);
+            int y = (int) (cy + Math.sin(a * 0.7D) * h * 0.16D);
+            int rx = (int) (w * (0.10D + 0.05D * ((seed * 13 % 71) / 71.0D)));
+            int ry = (int) (rx * 0.34D);
+            for (int ring = 4; ring >= 1; ring--) {
+                float f = ring / 4.0F;
+                int alpha = (int) (34 * into * (1.0F - f) + 3);
+                g.fill(x - (int) (rx * f), y - (int) (ry * f), x + (int) (rx * f),
+                        y + (int) (ry * f), (alpha << 24) | 0x120A24);
+            }
+        }
+        // the rim: where the void and the window disagree
+        int rim = (int) (46 * into);
+        g.fill(0, 0, w, 3, (rim << 24) | 0xE070FF);
+        g.fill(0, h - 3, w, h, (rim << 24) | 0xE070FF);
+        g.fill(0, 0, 3, h, ((rim / 2) << 24) | 0x8A2BE2);
+        g.fill(w - 3, 0, w, h, ((rim / 2) << 24) | 0x8A2BE2);
+    }
+
+    /**
+     * Tier 5, the gel's pools: iridescent fluid, no collision, no drowning.
+     *
+     * <p>The plan: "water surfaces render as an iridescent, glowing fluid matrix
+     * that shifts colour dynamically between shimmering neon teals, deep amethysts,
+     * and toxic magentas ... bright, full-bright white intersection foam lines ...
+     * This water must have zero solid collision." Nothing in the deep places a
+     * block, so there is nothing to collide with and nothing to drown in by
+     * construction; what is drawn is the colour shifting with the fall, the wave
+     * rows above each surface, and the foam line where a body would meet it.
+     */
+    private static void pools(GuiGraphicsExtractor g, int w, int h, float t, long now,
+            double px, double py, double pz) {
+        for (int i = 0; i < 3; i++) {
+            double surface = h * (0.42D + 0.20D * i) + Math.sin(now / 2400.0D + i * 2.0D) * 8.0D;
+            int hue = (int) (now / 24.0D + i * 90.0D) % 360;
+            int colour = iridescent(hue);
+            // the wave rows above the surface: the refraction, drawn as its own ribs
+            for (int r = 1; r <= 8; r++) {
+                int y = (int) (surface - r * 7 + Math.sin(now / 900.0D + r * 0.8D + i) * 3.0D);
+                int alpha = (int) (30 * t * (1.0F - r / 9.0F));
+                g.fill(0, y, w, y + 2, (Math.max(alpha, 2) << 24) | (colour & 0xFFFFFF));
+            }
+            // the body of the pool
+            int body = (int) (92 * t);
+            g.fill(0, (int) surface, w, h, (body << 24) | (colour & 0xFFFFFF));
+            // and the foam: full-bright, wobbling, where an entity would cross it
+            int foam = (int) (200 * t);
+            for (int x = 0; x < w; x += 2) {
+                int y = (int) (surface + Math.sin(x * 0.06D + now / 420.0D + i) * 2.5D);
+                g.fill(x, y, x + 2, y + 1, (foam << 24) | 0xFFFFFF);
+            }
+        }
+    }
+
+    /** The plan's three water colours, cycled: neon teal, deep amethyst, toxic magenta. */
+    private static int iridescent(int hue) {
+        int h = Math.floorMod(hue, 360);
+        if (h < 120) {
+            return 0x2AE8D8;
+        }
+        if (h < 240) {
+            return 0x8A2BE2;
+        }
+        return 0xFF3FA8;
     }
 
     // ------------------------------------------------------------------

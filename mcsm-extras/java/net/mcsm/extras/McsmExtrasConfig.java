@@ -212,6 +212,12 @@ public final class McsmExtrasConfig {
      * Off = the void is only reachable through its own doorway again.
      */
     public static boolean voidDescent = true;
+    /**
+     * BUILD #482 -- the sponge: the fractal tube maze of the void's second tier,
+     * grown around a fall as it passes through the band. Off = the band is drawn
+     * but nothing is built in it.
+     */
+    public static boolean voidSponge = true;
     /** BUILD #451 -- walk-in portals, one per dimension. */
     public static boolean portals = true;
     /** BUILD #448 -- each district carries its own fog and sky. */
@@ -549,6 +555,7 @@ public final class McsmExtrasConfig {
             p.setProperty("story_menu_backdrop", String.valueOf(storyMenuBackdrop));
             p.setProperty("menu_panorama", String.valueOf(menuPanorama));
             p.setProperty("void_descent", String.valueOf(voidDescent));
+            p.setProperty("void_sponge", String.valueOf(voidSponge));
             p.setProperty("npc_dialogue", String.valueOf(npcDialogue));
             p.setProperty("decayed_reality", String.valueOf(decayedReality));
             p.setProperty("abandoned_cities", String.valueOf(abandonedCities));
@@ -721,6 +728,7 @@ public final class McsmExtrasConfig {
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
             voidReality = bool(p, "void_reality", voidReality);
             voidDescent = bool(p, "void_descent", voidDescent);
+            voidSponge = bool(p, "void_sponge", voidSponge);
             npcDialogue = bool(p, "npc_dialogue", npcDialogue);
             portals = bool(p, "portals", portals);
             voidLight = bool(p, "void_light", voidLight);

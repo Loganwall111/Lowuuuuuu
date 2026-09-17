@@ -93,6 +93,10 @@ BLOCKS = {
     # "each dimension and infinite subdimension completely unique: own blocks".
     # These seven are what the void is built from now -- McsmVoid's palette names
     # no other world's block anywhere.
+    # BUILD #482 -- the sponge's own wall set: the two ends of the maze's own
+    # orange-to-pink gradient (McsmVoidSponge picks between them, block by block).
+    "void_sponge_orange": ("cube", "mcsm:block/void_sponge_orange"),
+    "void_sponge_pink": ("cube", "mcsm:block/void_sponge_pink"),
     "void_stone": ("cube", "mcsm:block/void_stone"),
     "void_tiles": ("cube", "mcsm:block/void_tiles"),
     "void_planks": ("cube", "mcsm:block/void_planks"),
@@ -290,6 +294,8 @@ NAMES = {
     # BUILD #458 -- the two new material families, named for the world each of
     # them belongs to and to nothing else.
     "void_stone": "Void Stone",
+    "void_sponge_orange": "Orange Void Sponge",
+    "void_sponge_pink": "Pink Void Sponge",
     "void_tiles": "Void Tiles",
     "void_planks": "Void Planks",
     "void_bone": "Void Bone",

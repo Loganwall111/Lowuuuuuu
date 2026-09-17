@@ -845,6 +845,33 @@ def item_rudder(px, seed, metal_c, glow):
 
 
 @_auto
+def sponge_wall(px, seed, base):
+    """BUILD #482 -- the sponge's own wall: a matte fractal body, and open pores.
+
+    Two blocks, one painter: the maze's walls are the plan's orange at the floor of
+    the band and its pink at the top, and the only difference between the two
+    textures is which end of that the colour is. The pores are drawn as dark rounds
+    with a bright rim, because in the void the light comes through the holes."""
+    rng = Rand(seed)
+    for y in range(16):
+        for x in range(16):
+            k = 0.70 + 0.34 * rng.frac()
+            put(px, x, y, (int(base[0] * k), int(base[1] * k), int(base[2] * k)))
+    for _ in range(3):
+        cx, cy = rng.int(2, 13), rng.int(2, 13)
+        r = 2 + rng.int(0, 1)
+        rim = (min(255, int(base[0] * 1.30)), min(255, int(base[1] * 1.30)),
+               min(255, int(base[2] * 1.30)))
+        for y in range(cy - r - 1, cy + r + 2):
+            for x in range(cx - r - 1, cx + r + 2):
+                d2 = (x - cx) ** 2 + (y - cy) ** 2
+                if d2 <= r * r:
+                    put(px, x % 16, y % 16, (0x16, 0x08, 0x10))
+                elif d2 <= (r + 1) ** 2:
+                    put(px, x % 16, y % 16, rim)
+
+
+@_auto
 def item_totem(px, seed, body, core):
     for y in range(16):
         for x in range(16):
@@ -934,6 +961,10 @@ def block_textures():
         # now has a family of its own: near-black violet, lit by the cold green
         # its horizon glow is painted with. Nothing on these lines is shared with
         # any other world (see McsmIdentity.VOID).
+        # BUILD #482 -- the sponge's two walls: the plan's own orange and pink, raw
+        # rather than tinted through a skin, because they are the maze's gradient.
+        "void_sponge_orange": lambda: sponge_wall(blank(), 301, (0xFF, 0x7A, 0x2E)),
+        "void_sponge_pink": lambda: sponge_wall(blank(), 302, (0xFF, 0x3F, 0xA8)),
         "void_stone": on_void(lambda: stone(blank(), 201, (0.03, 0.24))),
         "void_tiles": on_void(lambda: bricks(blank(), 202, rows=16, cols=16,
                                             tone=(0.03, 0.20), mortar=0.6)),

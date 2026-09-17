@@ -144,6 +144,10 @@ public final class McsmVoid {
             QUEUE.pump(level, OPS_PER_TICK, palette(), plan -> markBuilt(plan.key));
             for (ServerPlayer player : level.players()) {
                 catchFall(level, player);
+                // BUILD #482 -- and the sponge, grown around the fall as it passes
+                // through the second tier: the maze is where the player is, and it
+                // stays behind them.
+                McsmVoidSponge.tick(level, player);
             }
             // BUILD #456 -- the void walkers, as the real thing now. They used to be
             // re-kitted vanilla bodies rolled out of the shared bestiary; they are
@@ -589,7 +593,8 @@ public final class McsmVoid {
     /** For /ds reality and /ds portal. */
     public static String stats() {
         return BUILT.size() + " shelves built this session, "
-                + (QUEUED.size() - BUILT.size()) + " queued, catch line y=" + CATCH_Y;
+                + (QUEUED.size() - BUILT.size()) + " queued, catch line y=" + CATCH_Y
+                + " \u00b7 " + McsmVoidSponge.state();
     }
 
     /** Called by the queue when a plan lands. */

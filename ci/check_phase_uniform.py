@@ -2851,6 +2851,99 @@ def main():
           and "hurt" not in rudder and "DamageSource" not in rudder
           and "hurt" not in rudder_client and "DamageSource" not in rudder_client)
 
+    # ------------------------------------------------------------------
+    # BUILD #482 -- THE SPONGE, THE RIFTS AND THE GEL'S OWN POOLS.
+    #
+    # The plan's Layer 0.5 (a fractal tube maze between two Y lines), its Layer 3
+    # and 4 rifts (a window with ripples, a parallax starfield and silhouettes
+    # behind it, emitters around the rim) and its Layer 4 iridescent fluid. What is
+    # checked is that each is real: the sponge is a Menger sponge's own membership
+    # test evaluated per block and built through the void's own queue as a fall
+    # passes; the rifts are a FUNCTION of position (so both sides agree without a
+    # packet, and nothing can be late); the pools place nothing, so the plan's
+    # "zero solid collision" is true by construction.
+    # ------------------------------------------------------------------
+    sponge = read("mcsm-extras/java/net/mcsm/extras/McsmVoidSponge.java") or ""
+    rifts = read("mcsm-extras/java/net/mcsm/extras/McsmVoidRifts.java") or ""
+
+    check("and the sponge is a real fractal, built where the fall is",
+          # the Menger sponge's own test: two 1s in base 3 is a removal
+          "public static boolean solid(int x, int y, int z) {" in sponge
+          and "for (int i = 0; i < MENGER_LEVELS; i++) {" in sponge
+          and "if (ones >= 2) {" in sponge
+          and "a = Math.floorDiv(a, 3);" in sponge
+          # and it is a sponge, not a lattice: some of the solid is eaten away
+          and "organic pores: the fractal is the shape" in sponge
+          # the band is the tier table's, not a literal: the plan's -3000..-3500
+          # cannot exist in a world whose floor is -2032
+          and "McsmVoidTiers.LUMINOUS_FLOOR + RISE + 8" in sponge
+          and "McsmVoidTiers.SPONGE_FLOOR - DROP - 8" in sponge
+          # the window, the budget, and the queue that writes it
+          and "public static final int REACH = 24;" in sponge
+          and "public static final int DROP = 24;" in sponge
+          and "public static final int BUDGET = 1400;" in sponge
+          and "private static void fill(ServerLevel level, ServerPlayer player) {" in sponge
+          and "private static void pump(ServerLevel level) {" in sponge
+          and "level.setBlock(pos, state(at[0], at[1], at[2]), 2);" in sponge
+          # the walls are the plan's own gradient, and its two blocks
+          and "public static final int ORANGE = 0xFF7A2E;" in sponge
+          and "public static final int PINK = 0xFF3FA8;" in sponge
+          and "boolean pink = t < 0.5F;" in sponge
+          # and it is grown by the void's own tick, with a switch
+          and "McsmVoidSponge.tick(level, player);" in void_java
+          and "public static boolean voidSponge = true;" in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""))
+
+    check("and the sponge's own two blocks exist, named, painted and defined",
+          '"void_sponge_orange": ("cube", "mcsm:block/void_sponge_orange")' in assets_script
+          and '"void_sponge_pink": ("cube", "mcsm:block/void_sponge_pink")' in assets_script
+          and '"void_sponge_orange": "Orange Void Sponge"' in assets_script
+          and '"void_sponge_pink": "Pink Void Sponge"' in assets_script
+          and '"void_sponge_orange": lambda: sponge_wall(blank(), 301, (0xFF, 0x7A, 0x2E))'
+              in textures_script
+          and '"void_sponge_pink": lambda: sponge_wall(blank(), 302, (0xFF, 0x3F, 0xA8))'
+              in textures_script
+          and "def sponge_wall(px, seed, base):" in textures_script
+          and 'VOID_SPONGE_ORANGE = block("void_sponge_orange",' in content
+          and 'VOID_SPONGE_PINK = block("void_sponge_pink",' in content
+          and os.path.isfile(os.path.join(
+              "jar-overrides/assets/mcsm/textures/block/void_sponge_pink.png"))
+          and os.path.isfile(os.path.join(
+              "jar-overrides/assets/mcsm/blockstates/void_sponge_orange.json"))
+          and os.path.isfile(os.path.join(
+              "jar-overrides/data/mcsm/loot_table/blocks/void_sponge_orange.json")))
+
+    check("and the rifts are a function of position -- no packet, nothing late",
+          "public static final int SPACING = 160;" in rifts
+          and "public static final double REACH = 34.0D;" in rifts
+          and "public static boolean torn(double y) {" in rifts
+          and "return McsmVoidTiers.tierAt(y) >= McsmVoidTiers.TIER_FRACTURE;" in rifts
+          and "public static double[] centre(int cx, int cz, int tier) {" in rifts
+          and "public static double[] at(double x, double y, double z) {" in rifts
+          and "public static boolean inside(double x, double y, double z) {" in rifts
+          and "public static float depth(double x, double y, double z) {" in rifts
+          and "private static long mix(long v) {" in rifts
+          # both the two tearing tiers, and the same function on both sides
+          and "McsmVoidTiers.TIER_GEL" in rifts)
+
+    check("and falling through one turns the frame into its window, with the pools below",
+          # the window: ripples, a parallax starfield, silhouettes, a rim
+          "private static void rift(GuiGraphicsExtractor g, int w, int h, float t, long now,"
+              in deep
+          # the gel's own iridescent fluid, and the foam line where a body meets it
+          and "private static void pools(GuiGraphicsExtractor g, int w, int h, float t, long now,"
+              in deep
+          and "private static int iridescent(int hue) {" in deep
+          and "return 0x2AE8D8;" in deep and "return 0x8A2BE2;" in deep and "return 0xFF3FA8;" in deep
+          and "(foam << 24) | 0xFFFFFF" in deep
+          # reached from the draw, and cued by the rift field rather than a flag
+          and "if (McsmVoidRifts.inside(px, py, pz)) {" in deep
+          and "tier == McsmVoidTiers.TIER_GEL" in deep
+          # and the emitters: bubble strings and star dust, at the rift only
+          and "if (McsmVoidRifts.inside(x, y, z)) {" in deep
+          and "spawn(level, ParticleTypes.BUBBLE, x, y, z, 34.0D, 30.0D, 0.0D, 0.14D);" in deep
+          and "spawn(level, ParticleTypes.GLOW, x, y, z, 30.0D, 26.0D, 0.02D, 0.01D);" in deep)
+
     spectrum = re.findall(r"0xFF[0-9A-F]{6},", floor)
     check("one shelf builder: regions and landings both carve through shelfInto",
           # run 534 -- the region pass called the plan-returning shelf() and handed a

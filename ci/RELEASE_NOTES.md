@@ -1,5 +1,30 @@
 # 7000.0.0-M — the sky is the still, the storm owns it, and the switches work
 
+**Build #482 — the sponge, the rifts and the gel's own fluid.** The void's second
+tier is now a **real fractal you fall through**: `McsmVoidSponge` evaluates the Menger
+sponge's own membership test per block (three levels, 3-block pores, the classic "two
+1s in base 3 and the cell is gone"), eats a little of the solid away so it reads as
+sponge, winds it with a twist re-rolled every 64 blocks of fall, and grows a moving
+window of it — 24 blocks out, 24 down — around a player as they descend through the
+band, on the void's own queue and budget. Behind them it stays: the way down is a
+place, not an effect. Its walls are the plan's own gradient, in two new blocks painted
+raw for it — **Orange Void Sponge** at the floor of the band, **Pink Void Sponge** at
+its top — with the void's lamp set into the pores, and it is switched by `void_sponge`.
+
+**The rifts** (`McsmVoidRifts`) are the plan's Layer 3–4 windows, and they are a
+*function of position* rather than an entity: the same 160-block lattice and the same
+hash on both sides, so nothing has to be synchronised and nothing can be late. Fall
+into one and the frame becomes it — displacement ripples across the window, a parallax
+swirl of star arrays, enormous silhouettes going past on the far side, a rim where the
+void and the window disagree — while real bubble strings and star-fracture dust are
+emitted around the boundary.
+
+**And the gel's pools** are drawn as the plan asks: iridescent bands cycling between
+neon teal, deep amethyst and toxic magenta, wave ribs above each surface, and a
+full-bright white foam line where a body would cross it. Nothing in the deep places a
+block, so the plan's "zero solid collision" is true by construction — and so is the
+absence of drowning.
+
 **Build #481 — the multi-layer void.** The void is no longer one place. The dimension
 it lives in was already the tallest thing the mod owns; it is now the tallest thing
 this engine can express at all — **min_y -2032, height 4064**, a 4064-block world —
