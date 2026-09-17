@@ -247,7 +247,7 @@ public abstract class McsmConfigReskinMixin {
     private void dabyws$mcsChromeBody(GuiGraphicsExtractor g) {
         WitherStormConfigScreen self = (WitherStormConfigScreen) (Object) this;
         int w = self.width;
-        int h = this.height;
+        int h = self.height;
 
         // paint out the base's hardcoded tab underline (old tab position)
         g.fill(0, 50, w, 57, 0xFF11091C);

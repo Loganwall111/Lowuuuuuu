@@ -423,6 +423,40 @@ def _unguarded_screen_handlers():
     return bad
 
 
+_CLASS_SIG_RE = re.compile(
+    r"^(?:public\s+|abstract\s+|final\s+)*class\s+(\w+)(?:\s+extends\s+([\w.$]+))?", re.M)
+
+
+def _illegal_screen_members():
+    """`this.width` / `this.height` / `this.children()` / `this.font` in a class
+    that does not extend Screen (whose own fields and methods those are).
+
+    BUILD #469b -- run 586 died on exactly this: the fault-isolation bodies added
+    to the config mixin read `this.height`, and that mixin is a mixin ON a screen
+    rather than a subclass of one, so javac had no such member and the build failed
+    at 190 of 219 classes. The runner is the only compiler this project has, so the
+    rule is enforced here instead of discovered there.
+    """
+    bad = []
+    root = os.path.join("mcsm-extras", "java")
+    for base, _dirs, files in os.walk(root):
+        for name in files:
+            if not name.endswith(".java"):
+                continue
+            path = os.path.join(base, name)
+            src = open(path, encoding="utf-8").read()
+            m = _CLASS_SIG_RE.search(src)
+            if not m:
+                continue
+            sup = m.group(2) or ""
+            if "Screen" in sup or "Hud" in sup:
+                continue
+            for mm in re.finditer(r"\bthis\.(width|height|children\(\)|font)\b", src):
+                line = src[:mm.start()].count("\n") + 1
+                bad.append("%s:%d this.%s" % (name, line, mm.group(1)))
+    return bad
+
+
 def main():
     checks = []
     fails = []
@@ -3894,6 +3928,12 @@ def main():
           < titles.index("ci.cancel(); // only ever after a frame the mod itself painted")
           and "dabyws$framingBody(" in titles
           and "dabyws$chromeBody(" in titles)
+
+    check("and no class reads a screen member it does not have",
+          # run 586 failed javac on `this.height` inside the config mixin: the runner
+          # is the only compiler this project has, so the rule is checked here.
+          not _illegal_screen_members(),
+          "illegal: %s" % _illegal_screen_members())
 
     check("and every other screen and HUD hook of this build is wrapped too",
           not _unguarded_screen_handlers(),
