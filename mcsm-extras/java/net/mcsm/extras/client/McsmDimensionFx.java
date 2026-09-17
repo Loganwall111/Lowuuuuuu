@@ -82,7 +82,16 @@ public final class McsmDimensionFx {
             40.0D, 0.008D, 0.012D,
             McsmSounds.OBLIVION_GLITCH, 1100);
 
-    private static final Air[] AIRS = { DECAYED, ADAMS, VOID };
+    // BUILD #462 -- the reach: white-gold flame lifting, and now and then a
+    // shimmer of PORTAL light in the air. The one world whose air is warm.
+    private static final Air CREATOR = new Air(
+            McsmIdentity.CREATOR,
+            ParticleTypes.SOUL_FIRE_FLAME, 0.55D,
+            ParticleTypes.PORTAL, 0.06D,
+            26.0D, 0.016D, -0.002D,
+            McsmSounds.MASSG_GIGGLE, 1900);
+
+    private static final Air[] AIRS = { DECAYED, ADAMS, VOID, CREATOR };
 
     /** The air of a world, or null for a world that is not one of ours. */
     public static Air airFor(McsmIdentity.Skin skin) {

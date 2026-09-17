@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mcsm:block/creator_floor"
+    }
+  }
+}

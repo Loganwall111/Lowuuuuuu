@@ -446,6 +446,12 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.dimensionFx = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #462 -- the fourth dimension: the Creator's own reach.
+          .bool("The Creator's reach (the fourth dimension, built not left)",
+                  () -> McsmExtrasConfig.creatorRealm, v -> {
+              McsmExtrasConfig.creatorRealm = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #451 -- the void, and the doorways.
           .bool("The Void (a dimension of nothing, with things in it)",
                   () -> McsmExtrasConfig.voidReality, v -> {

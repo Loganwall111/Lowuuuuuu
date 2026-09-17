@@ -55,6 +55,8 @@ public final class McsmIdentity {
     public static final String DECAYED = "decayed";
     public static final String ADAMS = "adams";
     public static final String VOID = "void";
+    /** BUILD #462 -- the Creator's own dimension, the fourth of ours. */
+    public static final String CREATOR = "creator";
 
     /**
      * One dimension's identity. Immutable, and every field is something a player
@@ -88,6 +90,13 @@ public final class McsmIdentity {
         new Skin(VOID, "The Void", "void",
                 "1E1642", "4A2E8A", "4A2E8A", "1E1642", "7CFFB0", "8C24FF",
                 0.96F, 0.92F, 1.08F, 0.0040F),
+        // BUILD #462 -- and the one world that is not broken: white marble over
+        // gold, pale blue air, warm gold light, and a horizon that is already
+        // bright. The tint lifts red and green and holds blue back, because the
+        // light in this place is gold.
+        new Skin(CREATOR, "The Creator's Reach", "creator",
+                "D8D4E6", "8FA8E8", "FFE9B0", "FFF0C0", "FFF3C4", "8FD8E8",
+                1.10F, 1.06F, 0.96F, 0.0012F),
     };
 
     private McsmIdentity() {
@@ -143,6 +152,9 @@ public final class McsmIdentity {
             }
             if (key.equals(McsmVoid.DIMENSION)) {
                 return skin(VOID);
+            }
+            if (key.equals(McsmCreatorRealm.DIMENSION)) {
+                return skin(CREATOR);
             }
         } catch (Throwable ignored) {
             // a dimension we cannot name is a dimension we do not own

@@ -66,6 +66,10 @@ public final class McsmLocks {
         if (McsmIdentity.VOID.equals(dimId)) {
             return McsmContent.VOID_SIGIL;
         }
+        // BUILD #462 -- the reach's own key, found only in the reach.
+        if (McsmIdentity.CREATOR.equals(dimId)) {
+            return McsmContent.CREATOR_SIGIL;
+        }
         return null;
     }
 
@@ -79,6 +83,9 @@ public final class McsmLocks {
         }
         if (McsmIdentity.VOID.equals(dimId)) {
             return "a void sigil";
+        }
+        if (McsmIdentity.CREATOR.equals(dimId)) {
+            return "a creator sigil";
         }
         return "a key this world does not make";
     }

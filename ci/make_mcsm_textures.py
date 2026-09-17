@@ -172,6 +172,11 @@ def on_adams(fn):
     return lambda: _on_axis(ADAMS_RAMP, fn)
 
 
+def on_creator(fn):
+    """The Creator's reach (BUILD #462) -- laid white marble and gold."""
+    return lambda: _on_axis(CREATOR_RAMP, fn)
+
+
 # accents: the storm's lens violet, rust, phase-7 toxic green, glitch cyan
 VIOLET = (0x6A, 0x3C, 0xFF)
 VIOLET_DIM = (0x2A, 0x18, 0x76)
@@ -186,6 +191,8 @@ WHITE = (0xE8, 0xF2, 0xFF)
 # the infinite dimension's amber (#FFC26E, the city glow it is lit by).
 VOID_GREEN = (0x7C, 0xFF, 0xB0)
 AMBER = (0xFF, 0xC2, 0x6E)
+CREATOR_GOLD = (0xFF, 0xE9, 0xB0)
+CREATOR_DIM = (0xB8, 0x9A, 0x5C)
 
 
 # BUILD #458 -- THE PER-DIMENSION MATERIAL RAMPS.
@@ -201,6 +208,12 @@ VOID_RAMP = [(min(255, int(r * 0.72)), min(255, int(g * 0.62)), min(255, int(b *
              for (r, g, b) in COLD_RAMP]
 ADAMS_RAMP = [(min(255, int(r * 1.30)), min(255, int(g * 1.02)), min(255, int(b * 0.66)))
               for (r, g, b) in COLD_RAMP]
+
+# BUILD #462 -- the Creator's reach. The one world that is not broken: the ramp is
+# lifted hard and pulled warm, so its marble reads as lit stone rather than ash.
+CREATOR_RAMP = [(min(255, int(r * 1.55 + 40)), min(255, int(g * 1.48 + 34)),
+                 min(255, int(b * 1.16 + 22)))
+                for (r, g, b) in COLD_RAMP]
 
 
 class Rand:
@@ -857,6 +870,28 @@ def block_textures():
         # lock takes is the world's own item (McsmLocks), and the cache is the
         # only place a void sigil is ever found.
         "decayed_lock": on_cold(lambda: lock(blank(), 231, accent=VIOLET)),
+        # ---- the Creator's reach's own material (BUILD #462) ----------------
+        # The fourth world, and the only one that was built rather than left:
+        # marble under gold, glyph tiles that hold a little of the light.
+        "creator_marble": on_creator(lambda: stone(blank(), 241, (0.62, 0.94))),
+        "creator_floor": on_creator(lambda: stone(blank(), 242, (0.70, 1.0), veins=False)),
+        "creator_tiles": on_creator(lambda: bricks(blank(), 243, rows=16, cols=16,
+                                                  tone=(0.58, 0.90), mortar=0.6)),
+        "creator_gold": on_creator(lambda: bricks(blank(), 244, rows=4, cols=2,
+                                                 tone=(0.52, 0.86))),
+        "creator_pillar": on_creator(lambda: metal(blank(), 245, tint=CREATOR_GOLD,
+                                                   tone=(0.50, 0.86))),
+        "creator_glyph": on_creator(lambda: lamp(blank(), 246, accent=CREATOR_GOLD,
+                                                 glow=AMBER, core=WHITE)),
+        "creator_glass": on_creator(lambda: glass(blank(), 247, alpha=150,
+                                                  accent=CREATOR_GOLD)),
+        "creator_lamp": on_creator(lambda: lamp(blank(), 248, accent=CREATOR_GOLD,
+                                                glow=WHITE, core=WHITE)),
+        "creator_plinth": on_creator(lambda: crystal(blank(), 249, accent=CREATOR_GOLD,
+                                                     tint=(1.20, 1.14, 0.92))),
+        "creator_reliquary": on_creator(lambda: crate(blank(), 250, tint=CREATOR_GOLD,
+                                                      band=AMBER)),
+        "creator_lock": on_creator(lambda: lock(blank(), 251, accent=CREATOR_GOLD)),
         "adams_lock": on_adams(lambda: lock(blank(), 232, accent=AMBER)),
         "void_lock": on_void(lambda: lock(blank(), 233, accent=VOID_GREEN)),
         "void_cache": on_void(lambda: crate(blank(), 234, tint=VOID_GREEN, band=VIOLET_DIM)),
@@ -1082,6 +1117,8 @@ def item_textures():
                                         VOID_GREEN),
         "adams_sigil": lambda: item_card(blank(0), 244, shade(0.30, tint=(1.4, 1.05, 0.7)),
                                          AMBER),
+        "creator_sigil": lambda: item_card(blank(0), 252, shade(0.34, tint=(1.35, 1.22, 0.78)),
+                                           CREATOR_GOLD),
     }
 
 

@@ -2423,12 +2423,15 @@ def main():
           # BEHIND IT. Adams was memory crystal around city tile and the void was a
           # shared rift anchor around a black-hole core: two arches made of other
           # places. They are their own families now (see the identity pass below).
-          portals.count("new Door(") == 3
+          # BUILD #462 -- and there are FOUR of them: the reach has its own.
+          portals.count("new Door(") == 4
           and 'new Door("decayed", "mcsm:decayed_reality", "mcsm:rift_anchor", "mcsm:reality_glass"'
                   in portals
           and 'new Door("adams", "mcsm:adams_infinity", "mcsm:adams_crystal", "mcsm:adams_bricks"'
                   in portals
           and 'new Door("void", "mcsm:void_reality", "mcsm:void_anchor", "mcsm:void_glass"'
+                  in portals
+          and 'new Door("creator", "mcsm:creators_realm", "mcsm:creator_gold", "mcsm:creator_glass"'
                   in portals)
     check("a doorway is a shape, checked where the player is standing",
           "public static void tick(ServerLevel level) {" in portals
@@ -2810,10 +2813,10 @@ def main():
     _particles = air_particles(fx)
     _sounds = air_sounds(fx)
     check("every world breathes something of its own, and no two breathe the same",
-          fx.count("new Air(") == 3
-          and "AIRS = { DECAYED, ADAMS, VOID };" in fx
-          and len(_particles) == 6 and len(set(_particles)) == 6
-          and len(_sounds) == 3 and len(set(_sounds)) == 3,
+          fx.count("new Air(") == 4
+          and "AIRS = { DECAYED, ADAMS, VOID, CREATOR };" in fx
+          and len(_particles) == 8 and len(set(_particles)) == 8
+          and len(_sounds) == 4 and len(set(_sounds)) == 4,
           "particles=%s sounds=%s" % (",".join(_particles), ",".join(_sounds)))
     check("the air is only for the mod's own worlds, and the Overworld is left alone",
           "airFor(McsmIdentity.forLevel(level))" in fx
@@ -2854,18 +2857,19 @@ def main():
           and "private static final double RADIUS = 256.0D;" in sky
           and "no dome anywhere" in sky
           and "private static final double SKIRT = 8.0D;" in sky)
-    check("three dimensions, three different skies, and the Overworld keeps the vanilla one",
-          sky.count("new Sky(") == 3
+    check("every dimension has a different sky, and the Overworld keeps the vanilla one",
+          sky.count("new Sky(") == 4
           # BUILD #458 -- and the grade and the turn come from the identity table,
           # so a dimension's sky, fog and horizon cannot drift apart.
-          and sky.count("s.tintR()") == 3 and sky.count("s.spin()") == 3
+          and sky.count("s.tintR()") == 4 and sky.count("s.spin()") == 4
           and "McsmReality.inside(level)" in sky
           and "level.dimension().equals(McsmAdams.ADAMS)" in sky
           and "level.dimension().equals(McsmVoid.DIMENSION)" in sky
+          and "level.dimension().equals(McsmCreatorRealm.DIMENSION)" in sky
           and "return null;" in sky
-          and skygen.count("seed=") == 3
-          and skygen.count("horizon=") == 3
-          and len(set([skygen.split("seed=")[i + 1].split(",")[0] for i in range(3)])) == 3)
+          and skygen.count("seed=") == 4
+          and skygen.count("horizon=") == 4
+          and len(set([skygen.split("seed=")[i + 1].split(",")[0] for i in range(4)])) == 4)
     check("the painted sky is submitted, switched, generated and gated",
           "net.mcsm.extras.client.McsmPaintedSky.submit(ctx);" in boots
           and "public static boolean paintedSky = true;" in cfg
@@ -2882,7 +2886,7 @@ def main():
         if _ci not in sys.path:
             sys.path.insert(0, _ci)
         import pngutil as _png
-        for _dim in ("decayed", "adams", "void"):
+        for _dim in ("decayed", "adams", "void", "creator"):
             for _face, _size in (("sides", (512, 128)), ("top", (256, 256))):
                 _w, _h, _px = _png.read_png(
                     os.path.join("jar-overrides/assets/mcsm/textures/sky",
@@ -2919,10 +2923,12 @@ def main():
         return lit >= 40
 
     check("every painted wall exists at its size, with its haze at the horizon",
-          all(sides_ok(k) for k in ("decayed_sides", "adams_sides", "void_sides")),
+          all(sides_ok(k) for k in ("decayed_sides", "adams_sides", "void_sides",
+                                    "creator_sides")),
           "walls: %d read" % (0 if "error" in skies else len(skies)))
     check("and every lid is painted with a starfield over its zenith",
-          all(top_ok(k) for k in ("decayed_top", "adams_top", "void_top")),
+          all(top_ok(k) for k in ("decayed_top", "adams_top", "void_top",
+                                  "creator_top")),
           "lids: %d read" % (0 if "error" in skies else len(skies)))
 
     # ------------------------------------------------------------------
@@ -2948,13 +2954,13 @@ def main():
             found[m.group(1)] = m.group(2)
         return found.get(dim_id)
 
-    p_decayed, p_adams, p_void = (prefix_of("DECAYED"), prefix_of("ADAMS"),
-                                  prefix_of("VOID"))
+    p_decayed, p_adams, p_void, p_creator = (prefix_of("DECAYED"), prefix_of("ADAMS"),
+                                             prefix_of("VOID"), prefix_of("CREATOR"))
     check("there is ONE identity per dimension, and the Overworld is deliberately not one",
           "public record Skin(" in ident
-          and ident.count("new Skin(") == 3
-          and p_decayed and p_adams and p_void
-          and len({p_decayed, p_adams, p_void}) == 3
+          and ident.count("new Skin(") == 4
+          and p_decayed and p_adams and p_void and p_creator
+          and len({p_decayed, p_adams, p_void, p_creator}) == 4
           and "return null;" in ident
           and "public static Skin forLevel(Level level)" in ident)
 
@@ -2963,18 +2969,26 @@ def main():
         return sorted(set(re.findall(r'block\("%s_([a-z_]+)"' % prefix, content)))
 
     fams = {"decayed": family_blocks(p_decayed), "adams": family_blocks(p_adams),
-            "void": family_blocks(p_void)}
+            "void": family_blocks(p_void), "creator": family_blocks(p_creator)}
     def full_ids(prefix):
         return set("%s_%s" % (prefix, suffix) for suffix in fams[prefix])
 
     check("every dimension has a material family of its own, and no two share a block",
           len(fams[p_void]) >= 7 and len(fams[p_adams]) >= 10
+          and len(fams[p_creator]) >= 11
           and not (full_ids(p_void) & full_ids(p_adams))
+          and not (full_ids(p_void) & full_ids(p_creator))
+          and not (full_ids(p_adams) & full_ids(p_creator))
           and "%s_stone" % p_void in full_ids(p_void)
           and "%s_lamp" % p_void in full_ids(p_void)
           and "%s_stone" % p_adams in full_ids(p_adams)
-          and "%s_crate" % p_adams in full_ids(p_adams),
-          "void=%d adams=%d" % (len(fams[p_void]), len(fams[p_adams])))
+          and "%s_crate" % p_adams in full_ids(p_adams)
+          # the fourth world is the one that was built rather than left: marble
+          # under gold, and a plinth for the Creator to stand on.
+          and "%s_marble" % p_creator in full_ids(p_creator)
+          and "%s_plinth" % p_creator in full_ids(p_creator),
+          "void=%d adams=%d creator=%d" % (len(fams[p_void]), len(fams[p_adams]),
+                                           len(fams[p_creator])))
 
     # the worlds: no palette may name another dimension's material. The decayed
     # reality keeps the set it is named for -- that IS its identity -- and the
@@ -2992,18 +3006,29 @@ def main():
     check("no world is built out of another world's blocks",
           not void_borrowed and not adams_borrowed,
           "void borrowed %s / adams borrowed %s" % (void_borrowed, adams_borrowed))
+    creator_dim_text = read("jar-overrides/data/mcsm/dimension/creators_realm.json") or ""
     check("and the ground under each of them is its own too",
           # five layers, five of the dimension's own blocks, and the biome the
           # dimension type is dressed in -- no decayed stone, no city tile.
           adams_dim_text.count('"block": "mcsm:%s_' % p_adams) == 5
           and '"biome": "mcsm:%s_infinity"' % p_adams in adams_dim_text
           and "mcsm:decayed" not in adams_dim_text
-          and "mcsm:city_" not in adams_dim_text)
+          and "mcsm:city_" not in adams_dim_text
+          # BUILD #462 -- and the same for the reach, whose ground is laid marble
+          # over gold rather than anything that grew or rotted.
+          and creator_dim_text.count('"block": "mcsm:%s_' % p_creator) == 5
+          # the world is named for its owner, so the DATA ids are creators_realm
+          # while the material family is creator_* -- the needle says what the
+          # file says, and the biome it names is the one on disk below.
+          and '"biome": "mcsm:creators_realm"' in creator_dim_text
+          and "mcsm:decayed" not in creator_dim_text
+          and "mcsm:adams_" not in creator_dim_text)
 
     # every doorway is the material of the world it opens onto
     doors_ok = True
     for dim_id, prefix, kinds in (("adams", p_adams, ("crystal", "bricks")),
-                                  ("void", p_void, ("anchor", "glass"))):
+                                  ("void", p_void, ("anchor", "glass")),
+                                  ("creator", p_creator, ("gold", "glass"))):
         want = 'new Door("%s", "mcsm:' % dim_id
         row = [ln for ln in portals.splitlines() if want in ln]
         if not row or not all(('mcsm:%s_%s' % (prefix, k)) in row[0] for k in kinds):
@@ -3032,16 +3057,25 @@ def main():
         rows[m.group(1)] = dict(prefix=m.group(3), fog=hexes[0], sky=hexes[1],
                                 sky_light=hexes[2], horizon=hexes[3],
                                 glow=hexes[4], water=hexes[5])
-    check("the identity table holds a full set of hexes for each of the three",
-          len(rows) == 3
+    check("the identity table holds a full set of hexes for each of the worlds",
+          len(rows) == 4
           and all(all(r[k] for k in ("fog", "sky", "sky_light", "horizon", "glow", "water"))
                   for r in rows.values()))
 
     def packed(hexstr):
         return int(hexstr, 16)
 
+    creator_biome = json.loads(read(
+        "jar-overrides/data/mcsm/worldgen/biome/creators_realm.json"))
+    creator_type = json.loads(read(
+        "jar-overrides/data/mcsm/dimension_type/creators_realm.json"))
     check("the biomes, the dimension types and the identities are the same numbers",
-          len(rows) == 3
+          len(rows) == 4
+          and packed(rows["CREATOR"]["fog"]) == creator_biome["effects"]["fog_color"]
+          and packed(rows["CREATOR"]["sky"]) == creator_biome["effects"]["sky_color"]
+          and packed(rows["CREATOR"]["water"]) == creator_biome["effects"]["water_color"]
+          and packed(rows["CREATOR"]["sky_light"]) == packed(
+              creator_type["attributes"]["minecraft:visual/sky_light_color"].lstrip("#"))
           and packed(rows["DECAYED"]["fog"]) == decayed_biome["effects"]["fog_color"]
           and packed(rows["DECAYED"]["sky"]) == decayed_biome["effects"]["sky_color"]
           and packed(rows["DECAYED"]["water"]) == decayed_biome["effects"]["water_color"]
@@ -3072,17 +3106,17 @@ def main():
         painter_horizons[m.group(1)] = "%02X%02X%02X" % (
             int(m.group(2), 16), int(m.group(3), 16), int(m.group(4), 16))
     check("the horizon the band paints is the horizon the sky was painted with",
-          len(painter_horizons) == 3 and len(rows) == 3
+          len(painter_horizons) == 4 and len(rows) == 4
           and all(painter_horizons[d.lower()] == rows[D]["horizon"]
                   for d, D in (("decayed", "DECAYED"), ("adams", "ADAMS"),
-                               ("void", "VOID"))),
+                               ("void", "VOID"), ("creator", "CREATOR"))),
           "painter=%s table=%s" % (painter_horizons,
                                    {k: v["horizon"] for k, v in rows.items()}))
 
     # the families are real: a blockstate, an item definition, a texture and a
     # loot table for every one of them
     _missing = []
-    for _prefix in (p_void, p_adams):
+    for _prefix in (p_void, p_adams, p_creator):
         for _suffix in fams[_prefix]:
             _name = "%s_%s" % (_prefix, _suffix)
             for _rel in ("jar-overrides/assets/mcsm/blockstates/%s.json" % _name,
@@ -3109,11 +3143,13 @@ def main():
         return re.findall(r'return McsmContent\.(\w+);', locks)
 
     check("each world's lock belongs to that world, and no two keys are the same",
-          lock_rows == ["McsmIdentity.DECAYED", "McsmIdentity.ADAMS", "McsmIdentity.VOID"]
+          lock_rows == ["McsmIdentity.DECAYED", "McsmIdentity.ADAMS",
+                        "McsmIdentity.VOID", "McsmIdentity.CREATOR"]
           and "McsmContent.CITY_KEYCARD" in locks
           and "McsmContent.ADAMS_SIGIL" in locks
           and "McsmContent.VOID_SIGIL" in locks
-          and len(set(keys_returned())) == 3,
+          and "McsmContent.CREATOR_SIGIL" in locks
+          and len(set(keys_returned())) == 4,
           "locks=%s keys=%s" % (lock_rows, keys_returned()))
     check("the lock is a real block with a real hook, and it refuses without the key",
           "protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level,"
@@ -3135,7 +3171,9 @@ def main():
           # drops an Adams sigil (that dimension's own crate)
           assets_py.count('("mcsm:void_sigil"') == 1
           and assets_py.count('("mcsm:adams_sigil"') == 1
+          and assets_py.count('("mcsm:creator_sigil"') == 1
           and '"void_cache": [' in assets_py and '"adams_crate": [' in assets_py
+          and '"creator_reliquary": [' in assets_py
           and 'next[CACHE] = state("mcsm:void_cache", McsmContent.VOID_CACHE);' in void_java)
     check("and /ds lock raises any of the three in front of you",
           'Commands.literal("lock")' in towns
@@ -3165,9 +3203,11 @@ def main():
           "recipes read: %d" % len(rec_entries))
     check("the two worlds' own materials and keys are real items with their own art",
           all(os.path.exists("jar-overrides/assets/mcsm/textures/item/%s.png" % n)
-              for n in ("void_shard", "adams_amber", "void_sigil", "adams_sigil"))
+              for n in ("void_shard", "adams_amber", "void_sigil", "adams_sigil",
+                    "creator_sigil"))
           and all(os.path.exists("jar-overrides/assets/mcsm/items/%s.json" % n)
-                  for n in ("void_shard", "adams_amber", "void_sigil", "adams_sigil"))
+                  for n in ("void_shard", "adams_amber", "void_sigil", "adams_sigil",
+                            "creator_sigil"))
           and "(\"flat\", \"mcsm:item/void_shard\")" in assets_py)
 
     # and every block in the pack drops itself when it is broken. Found while
@@ -3178,6 +3218,135 @@ def main():
                 if not os.path.exists("jar-overrides/data/mcsm/loot_table/blocks/%s.json" % _n)]
     check("a block you mine is a block you get", not _no_drop,
           "no loot table for %s" % _no_drop[:5])
+
+    # ------------------------------------------------------------------
+    # BUILD #462 -- THE CREATOR'S DIMENSION. nextOrder (c), and the fourth world:
+    # "the Creator's dimension". The Creator has been a real entity since #428 and
+    # had nowhere to be. The reach is that place -- and it follows every rule the
+    # other three worlds already follow: its own ground, biome, light, horizon,
+    # sky, air, lock, key and doorway, and none of another world's anything.
+    # ------------------------------------------------------------------
+    realm = read("mcsm-extras/java/net/mcsm/extras/McsmCreatorRealm.java") or ""
+    realm_biome = json.loads(read("jar-overrides/data/mcsm/worldgen/biome/creators_realm.json"))
+    realm_type = json.loads(read(
+        "jar-overrides/data/mcsm/dimension_type/creators_realm.json"))
+    realm_dim = json.loads(read("jar-overrides/data/mcsm/dimension/creators_realm.json"))
+    boot = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""
+    extras = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
+    cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    towns = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
+
+    check("the fourth world exists, it has its own keys, and it is booted with the others",
+          'Identifier.fromNamespaceAndPath("mcsm", "creators_realm")' in realm
+          and "public static final ResourceKey<Level> DIMENSION" in realm
+          and "public static final ResourceKey<net.minecraft.world.level.dimension.DimensionType> TYPE"
+                  in realm
+          and "McsmCreatorRealm.register();" in boot
+          and "import net.mcsm.extras.McsmCreatorRealm;" in boot
+          and "if (key.equals(McsmCreatorRealm.DIMENSION)) {" in ident
+          and "return skin(CREATOR);" in ident)
+
+    # what the world is BUILT out of, and what its reliquary hands out, are two
+    # different rules: every block the reach places is the reach's own, while its
+    # salvage is deliberately survival stock (steel, a memory crystal) the same way
+    # every other world's crates are.
+    _realm_states = sorted(set(re.findall(r'state\("(mcsm:[a-z_]+)"', realm)))
+    _realm_ids = sorted(set(re.findall(r'"(mcsm:[a-z_]+)"', realm)))
+    _realm_foreign = [i for i in _realm_ids if not i.startswith("mcsm:creator")
+                      and i not in ("mcsm:decayed_steel_ingot", "mcsm:memory_crystal")]
+    check("and the reach is built out of nothing but the reach's own material",
+          len(_realm_states) >= 8
+          and all(i.startswith("mcsm:creator") for i in _realm_states)
+          and not _realm_foreign,
+          "built of %s / other ids %s" % (_realm_states, _realm_foreign))
+
+    check("its ground, its biome and its light are its own, and it shares none with the three",
+          realm_dim["type"] == "mcsm:creators_realm"
+          and realm_dim["generator"]["type"] == "minecraft:flat"
+          and realm_dim["generator"]["settings"]["biome"] == "mcsm:creators_realm"
+          and realm_type["skybox"] == "overworld" and realm_type["has_skylight"] is True
+          and realm_type["has_fixed_time"] is True
+          and realm_type["min_y"] == -64 and realm_type["height"] == 384
+          # the lighting owner is this world's own: no other dimension's ambient or
+          # sky-light colour may appear in its dimension type
+          and realm_type["attributes"]["minecraft:visual/ambient_light_color"]
+                  == "#" + rows["CREATOR"]["fog"]
+          and realm_type["attributes"]["minecraft:visual/sky_light_color"]
+                  == "#" + rows["CREATOR"]["sky_light"]
+          and len({rows["CREATOR"]["fog"], rows["DECAYED"]["fog"], rows["ADAMS"]["fog"],
+                   rows["VOID"]["fog"]}) == 4
+          # precipitation is a TOP-LEVEL biome field in this format, not part of
+          # effects -- the shape every other biome in the pack already has
+          and realm_biome["has_precipitation"] is False
+          and realm_biome["spawners"] == {} and realm_biome["features"] == []
+          and realm_biome["carvers"] == []
+          and sorted(realm_biome) == sorted(
+              json.loads(read("jar-overrides/data/mcsm/worldgen/biome/adams_infinity.json"))))
+
+    check("walking in is walk-in: the doorway, the switch, the flag and the panel row",
+          'case "creator":' in portals
+          and "moved = McsmCreatorRealm.enter(player);" in portals
+          and '"creator").executes(ctx -> ds$creator(ctx.getSource())' in towns
+          and '"decayed", "adams", "void", "creator"' in towns
+          and "The Creator's reach (the fourth dimension, built not left)" in extras
+          and "public static boolean creatorRealm = true;" in cfg
+          and 'p.setProperty("creator_realm"' in cfg
+          and 'creatorRealm = bool(p, "creator_realm", creatorRealm);' in cfg
+          and "McsmExtrasConfig.creatorRealm" in realm
+          and "ServerTickEvents.END_LEVEL_TICK.register((EndLevelTick) McsmCreatorRealm::tick)"
+                  in realm)
+
+    check("the arrival is a place: a plaza, the plinth, the reliquary -- and a floor",
+          "private static void plaza(ServerLevel level, int cx, int cz) {" in realm
+          and "state(\"mcsm:creator_plinth\")" in realm
+          and "state(\"mcsm:creator_reliquary\")" in realm
+          and "level.setBlock(new BlockPos(cx, y + 1, cz), plinth, 2);" in realm
+          and "plaza(target, (int) x, (int) z);" in realm
+          # and it is a floor rather than a fall: standing under the world puts the
+          # player back on top of it instead of dropping them out of it
+          and "FLOOR_GUARD" in realm and "player.getY() < FLOOR_GUARD" in realm
+          # BUILD #462 -- and the world's owner is IN it: one Creator per arrival
+          # cell, standing over the plaza, persistent, scaled like every other
+          # manifestation of it. The entity has existed since #428; this is the
+          # first time it is somewhere rather than summoned.
+          and "private static void presence(ServerLevel level, int cx, int y, int cz) {" in realm
+          and "presence(level, cx, y, cz);" in realm
+          and "PRESENCE_HEIGHT" in realm
+          and "net.mcsm.extras.entity.McsmEntities.CREATOR_ENTRY" in realm
+          and "net.mcsm.extras.entity.McsmBeast.CREATOR" in realm
+          and "set(mob, Attributes.SCALE, 26.0D);" in realm
+          and "mob.setPersistenceRequired();" in realm
+          and "look up" in realm)
+
+    check("the reach's key is in the reach, and the reliquary is where a player sees it",
+          # one datapack table drops it, it is this world's own, and the arrival site's
+          # own reliquary carries it in code as well
+          assets_py.count('("mcsm:creator_sigil"') == 1
+          and '"creator_reliquary"' in assets_py
+          and '"mcsm:creator_sigil"' in realm
+          and os.path.exists("jar-overrides/data/mcsm/loot_table/blocks/creator_reliquary.json")
+          and "mcsm:creator_sigil" in read(
+              "jar-overrides/data/mcsm/loot_table/blocks/creator_reliquary.json"))
+
+    check("its lock and its key are real blocks and items, and its recipes use only its own",
+          os.path.exists("jar-overrides/data/mcsm/recipe/creator_lock.json")
+          and os.path.exists("jar-overrides/data/mcsm/recipe/creator_sigil.json")
+          and "mcsm:creator_" in read("jar-overrides/data/mcsm/recipe/creator_lock.json")
+          and "mcsm:creator_" in read("jar-overrides/data/mcsm/recipe/creator_sigil.json")
+          and not any(other in read("jar-overrides/data/mcsm/recipe/creator_lock.json")
+                      for other in ("mcsm:decayed_", "mcsm:adams_", "mcsm:void_"))
+          and not any(other in read("jar-overrides/data/mcsm/recipe/creator_sigil.json")
+                      for other in ("mcsm:decayed_", "mcsm:adams_", "mcsm:void_")))
+
+    check("and the fourth sky and the fourth air are the fourth of each, not a copy",
+          sky.count("new Sky(") == 4
+          and "private static final Identifier CREATOR_SIDES = tex(\"creator_sides\");" in sky
+          and "new Sky(CREATOR_SIDES, CREATOR_TOP," in sky
+          and fx.count("new Air(") == 4
+          and "private static final Air CREATOR = new Air(" in fx
+          and "McsmIdentity.CREATOR," in fx
+          and "AIRS = { DECAYED, ADAMS, VOID, CREATOR };" in fx)
+
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

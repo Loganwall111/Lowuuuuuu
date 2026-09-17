@@ -210,6 +210,44 @@ public final class McsmContent {
             BlockBehaviour.Properties.of().strength(1.8F, 6.0F).sound(SoundType.WOOD));
 
     // ---------------------------------------------------------------------
+    // Building set: THE CREATOR'S REACH'S OWN MATERIAL (BUILD #462)
+    // ---------------------------------------------------------------------
+    // The fourth world, and the only one that is not broken: nothing here grew
+    // and nothing here rotted -- every block of it was laid. White marble, gold
+    // banding, engraved glyph tiles that hold a little of the light, and the
+    // plinth the Creator stands on. Its own family, from top to bottom, so that
+    // "own blocks ... no re-use" holds for it the way it holds for the other
+    // three (see McsmIdentity.CREATOR).
+    public static final Block CREATOR_MARBLE = block("creator_marble",
+            stone(3.0F, 9.0F));
+    public static final Block CREATOR_FLOOR = block("creator_floor",
+            stone(3.4F, 10.0F));
+    public static final Block CREATOR_TILES = block("creator_tiles",
+            stone(3.2F, 9.0F));
+    public static final Block CREATOR_GOLD = block("creator_gold",
+            BlockBehaviour.Properties.of().strength(3.0F, 12.0F).sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops());
+    public static final Block CREATOR_PILLAR = block("creator_pillar",
+            stone(3.6F, 12.0F));
+    public static final Block CREATOR_GLYPH = block("creator_glyph",
+            BlockBehaviour.Properties.of().strength(3.0F, 9.0F).sound(SoundType.STONE)
+                    .lightLevel(s -> 9).emissiveRendering(s -> true)
+                    .requiresCorrectToolForDrops());
+    public static final Block CREATOR_GLASS = block("creator_glass",
+            BlockBehaviour.Properties.of().strength(0.6F).sound(SoundType.GLASS)
+                    .noOcclusion().lightLevel(s -> 5).emissiveRendering(s -> true));
+    public static final Block CREATOR_LAMP = block("creator_lamp",
+            BlockBehaviour.Properties.of().strength(1.2F).sound(SoundType.GLASS)
+                    .lightLevel(s -> 15).emissiveRendering(s -> true));
+    public static final Block CREATOR_PLINTH = block("creator_plinth",
+            BlockBehaviour.Properties.of().strength(4.0F, 18.0F).sound(SoundType.STONE)
+                    .lightLevel(s -> 10).emissiveRendering(s -> true)
+                    .requiresCorrectToolForDrops());
+    /** The reach's own salvage: the only place a creator sigil is ever found. */
+    public static final Block CREATOR_RELIQUARY = block("creator_reliquary",
+            BlockBehaviour.Properties.of().strength(1.8F, 6.0F).sound(SoundType.WOOD));
+
+    // ---------------------------------------------------------------------
     // THE LOCKS (BUILD #459) -- one per world, and only that world's key fits
     // ---------------------------------------------------------------------
     // The identity list asked for "own ... locks". This is that: a seal block per
@@ -225,6 +263,9 @@ public final class McsmContent {
             lock(3.0F, 9.0F));
     public static final Block VOID_LOCK = block("void_lock",
             props -> new DimensionLock(McsmIdentity.VOID, props),
+            lock(3.0F, 9.0F));
+    public static final Block CREATOR_LOCK = block("creator_lock",
+            props -> new DimensionLock(McsmIdentity.CREATOR, props),
             lock(3.0F, 9.0F));
 
     // ---------------------------------------------------------------------
@@ -309,6 +350,8 @@ public final class McsmContent {
     public static final Item ADAMS_AMBER = item("adams_amber", item(p -> p.rarity(Rarity.UNCOMMON)));
     public static final Item VOID_SIGIL = item("void_sigil", glinted(item(p -> p.rarity(Rarity.RARE))));
     public static final Item ADAMS_SIGIL = item("adams_sigil", glinted(item(p -> p.rarity(Rarity.RARE))));
+    /** BUILD #462 -- the reach's key. Found only in the reach (its reliquary). */
+    public static final Item CREATOR_SIGIL = item("creator_sigil", glinted(item(p -> p.rarity(Rarity.RARE))));
 
     // ---------------------------------------------------------------------
     // Items: the tools and weapons the storyline hands out

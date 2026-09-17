@@ -73,6 +73,9 @@ public final class McsmPaintedSky {
     private static final Identifier ADAMS_TOP = tex("adams_top");
     private static final Identifier VOID_SIDES = tex("void_sides");
     private static final Identifier VOID_TOP = tex("void_top");
+    // BUILD #462 -- the Creator's reach, the fourth sky and the only daylit one.
+    private static final Identifier CREATOR_SIDES = tex("creator_sides");
+    private static final Identifier CREATOR_TOP = tex("creator_top");
 
     /** One sky: its two paintings, its tint, and how fast the panorama turns. */
     private record Sky(Identifier sides, Identifier lid, float r, float g, float b, float spin) {
@@ -98,6 +101,12 @@ public final class McsmPaintedSky {
             if (level.dimension().equals(McsmAdams.ADAMS)) {
                 McsmIdentity.Skin s = McsmIdentity.skin(McsmIdentity.ADAMS);
                 return new Sky(ADAMS_SIDES, ADAMS_TOP, s.tintR(), s.tintG(), s.tintB(), s.spin());
+            }
+            if (level.dimension().equals(McsmCreatorRealm.DIMENSION)) {
+                // the reach: bright, still, and barely turning. Nothing is hidden
+                // in this sky, which is what makes it the odd one out.
+                McsmIdentity.Skin s = McsmIdentity.skin(McsmIdentity.CREATOR);
+                return new Sky(CREATOR_SIDES, CREATOR_TOP, s.tintR(), s.tintG(), s.tintB(), s.spin());
             }
             if (level.dimension().equals(McsmVoid.DIMENSION)) {
                 // the void is the only one that turns: a slow revolution over the

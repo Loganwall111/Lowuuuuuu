@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
  *   the rift (decayed reality)  rift anchors   around  reality glass
  *   adams (the infinite)        memory crystal around  city tile
  *   the void                    void core      around  an abyss orb
+ *   the Creator's reach         gilded marble  around  the reach's own glass
  * </pre>
  *
  * <p>WALK IN AND YOU GO. No item, no command, no menu, no activation step: the door
@@ -56,6 +57,11 @@ public final class McsmPortals {
                 "THE INFINITE DIMENSION"),
         new Door("void", "mcsm:void_reality", "mcsm:void_anchor", "mcsm:void_glass",
                 "THE VOID"),
+        // BUILD #462 -- and the fourth: the Creator's reach. Gilded marble for the
+        // frame and the dimension's own glass for the opening, so the one doorway
+        // that was built rather than torn reads that way from across a room.
+        new Door("creator", "mcsm:creators_realm", "mcsm:creator_gold", "mcsm:creator_glass",
+                "THE CREATOR'S REACH"),
     };
 
     /** Ticks a player must wait between doorways. */
@@ -68,8 +74,16 @@ public final class McsmPortals {
     public static void register() {
         try {
             ServerTickEvents.END_LEVEL_TICK.register((EndLevelTick) McsmPortals::tick);
-            System.out.println("[ds] " + DOORS.length + " doorways armed ("
-                    + DOORS[0].id() + ", " + DOORS[1].id() + ", " + DOORS[2].id() + ")");
+            // BUILD #462 -- the list prints itself now: a fourth dimension must not
+            // need this line edited to be announced.
+            StringBuilder ids = new StringBuilder();
+            for (Door door : DOORS) {
+                if (ids.length() > 0) {
+                    ids.append(", ");
+                }
+                ids.append(door.id());
+            }
+            System.out.println("[ds] " + DOORS.length + " doorways armed (" + ids + ")");
         } catch (Throwable t) {
             System.err.println("[ds] the doorways could not hook the level tick: " + t);
         }
@@ -170,6 +184,9 @@ public final class McsmPortals {
                 break;
             case "void":
                 moved = McsmVoid.enter(player);
+                break;
+            case "creator":
+                moved = McsmCreatorRealm.enter(player);
                 break;
             default:
                 moved = false;

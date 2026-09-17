@@ -1,0 +1,16 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:creator_gold"
+    }
+  },
+  "pattern": [
+    "AA",
+    "AA"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:creator_sigil"
+  },
+  "type": "minecraft:crafting_shaped"
+}

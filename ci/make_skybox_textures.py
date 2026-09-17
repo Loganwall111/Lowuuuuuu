@@ -63,6 +63,17 @@ DIMENSIONS = {
         glow=(0x7C, 0xFF, 0xB0),      # the cold green haze at the bottom
         cloud=0.10, stars=260, rift=0xFF3CE6, rift_p=0.0016,
     ),
+    # BUILD #462 -- the Creator's reach: the one sky in the mod that is already
+    # day. Gold at the horizon, pale blue above it, and almost no stars, because
+    # nothing is hidden in this place.
+    "creator": dict(
+        seed=51,
+        horizon=(0xFF, 0xF0, 0xC0),   # the gold band the reach ends on
+        mid=(0x74, 0x84, 0xC0),       # and blue air above it, dimmer than the band
+        zenith=(0x44, 0x52, 0x9A),    # deepening all the way up
+        glow=(0xFF, 0xF3, 0xC4),
+        cloud=0.44, stars=24, rift=0xFFE9B0, rift_p=0.0006,
+    ),
 }
 
 
@@ -176,6 +187,8 @@ def sky_files():
         "adams_top": (TOP_W, TOP_H, lambda: paint_top(DIMENSIONS["adams"])),
         "void_sides": (SIDE_W, SIDE_H, lambda: paint_sides(DIMENSIONS["void"])),
         "void_top": (TOP_W, TOP_H, lambda: paint_top(DIMENSIONS["void"])),
+        "creator_sides": (SIDE_W, SIDE_H, lambda: paint_sides(DIMENSIONS["creator"])),
+        "creator_top": (TOP_W, TOP_H, lambda: paint_top(DIMENSIONS["creator"])),
     }
 
 
@@ -196,8 +209,8 @@ def emit(check_only=False):
         if missing:
             print("[sky] %d MISSING" % missing)
             return 1
-        print("[sky] all %d painted sky faces present (3 dimensions x sides + zenith)"
-              % len(sky_files()))
+        print("[sky] all %d painted sky faces present (%d dimensions, sides + zenith)"
+              % (len(sky_files()), len(DIMENSIONS)))
         return 0
     print("[sky] wrote %d painted sky faces for %d dimensions (%dx%d sides, %dx%d zenith)"
           % (written, len(DIMENSIONS), SIDE_W, SIDE_H, TOP_W, TOP_H))

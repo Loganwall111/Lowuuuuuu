@@ -175,6 +175,12 @@ public final class McsmExtrasConfig {
     public static boolean rituals = true;
     /** BUILD #443 -- the infinite dimension of adams, and its endless generator. */
     public static boolean adamsReality = true;
+    /**
+     * BUILD #462 -- the Creator's reach: the fourth dimension, and the only one
+     * that was built rather than left. Off means the doorway refuses to open onto
+     * it and nothing in it generates.
+     */
+    public static boolean creatorRealm = true;
     /** BUILD #438 -- the body wears the live phase's own hue, not a fixed grey. */
     public static boolean phaseTintedBody = true;
     /**
@@ -488,6 +494,7 @@ public final class McsmExtrasConfig {
             p.setProperty("server_rooms", String.valueOf(serverRooms));
             p.setProperty("rituals", String.valueOf(rituals));
             p.setProperty("adams_reality", String.valueOf(adamsReality));
+            p.setProperty("creator_realm", String.valueOf(creatorRealm));
             p.setProperty("phase_tinted_body", String.valueOf(phaseTintedBody));
             p.setProperty("body_phase_tint", String.valueOf(bodyPhaseTint));
             p.setProperty("reality_creatures", String.valueOf(realityCreatures));
@@ -639,6 +646,7 @@ public final class McsmExtrasConfig {
             serverRooms = bool(p, "server_rooms", serverRooms);
             rituals = bool(p, "rituals", rituals);
             adamsReality = bool(p, "adams_reality", adamsReality);
+            creatorRealm = bool(p, "creator_realm", creatorRealm);
             phaseTintedBody = bool(p, "phase_tinted_body", phaseTintedBody);
             bodyPhaseTint = dbl(p, "body_phase_tint", bodyPhaseTint);
             realityCreatures = bool(p, "reality_creatures", realityCreatures);

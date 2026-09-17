@@ -1682,7 +1682,7 @@ if [ "${N_DEFS:-0}" -lt "${N_ITEM_MODELS:-0}" ]; then
   echo "::error title=jar audit::${N_ITEM_MODELS} item models but only ${N_DEFS} item definitions -- the extra items would render as glitch blocks"
   exit 1
 fi
-echo "[audit] content pack complete (59 blocks + 84 items + doors/stairs + 59 loot tables + own art)"
+echo "[audit] content pack complete (70 blocks + 96 items + doors/stairs + 70 loot tables + own art)"
 
 echo "[audit] legacy schematic fallback assets available: ${SCHEMATIC_COUNT}"
 

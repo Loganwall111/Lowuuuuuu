@@ -130,6 +130,8 @@ public abstract class McsmTownCommandPatch {
             reality.then(Commands.literal("adams").executes(ctx -> ds$adams(ctx.getSource())));
             reality.then(Commands.literal("void").executes(ctx -> ds$void(ctx.getSource())));
             reality.then(Commands.literal("decayed").executes(ctx -> ds$decayed(ctx.getSource())));
+            // BUILD #462 -- and the reach: the fourth dimension, by name.
+            reality.then(Commands.literal("creator").executes(ctx -> ds$creator(ctx.getSource())));
 
             // BUILD #444 -- the underground structures, findable.
             // BUILD #451 -- /ds reality void goes to the nothing.
@@ -142,7 +144,8 @@ public abstract class McsmTownCommandPatch {
             LiteralArgumentBuilder<CommandSourceStack> portal = Commands.literal("portal");
             portal.executes(ctx -> ds$portalList(ctx.getSource()));
             portal.then(Commands.literal("list").executes(ctx -> ds$portalList(ctx.getSource())));
-            for (String id : new String[]{"decayed", "adams", "void"}) {
+            // BUILD #462 -- the list is the doors' own: the reach is the fourth.
+            for (String id : new String[]{"decayed", "adams", "void", "creator"}) {
                 portal.then(Commands.literal("build").then(Commands.literal(id)
                         .executes(ctx -> ds$portalBuild(ctx.getSource(), id))));
             }
@@ -404,12 +407,29 @@ public abstract class McsmTownCommandPatch {
                 + " \u00b7 the void: "
                 + (net.mcsm.extras.McsmExtrasConfig.voidReality ? "ON" : "OFF")
                 + " \u00b7 doorways: "
-                + (net.mcsm.extras.McsmExtrasConfig.portals ? "ON" : "OFF")), false);
+                + (net.mcsm.extras.McsmExtrasConfig.portals ? "ON" : "OFF")
+                + " \u00b7 the reach: "
+                + (net.mcsm.extras.McsmExtrasConfig.creatorRealm ? "ON" : "OFF")), false);
         src.sendSuccess(() -> Component.literal("[ds] adams has written "
                 + net.mcsm.extras.McsmAdams.builtRegions() + " regions, "
                 + net.mcsm.extras.McsmAdams.pendingRegions() + " still queued \u00b7 "
                 + "/ds reality adams goes in, /ds reality decayed goes through the rift"), false);
         return 1;
+    }
+
+    private static int ds$creator(CommandSourceStack src) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            if (net.mcsm.extras.McsmCreatorRealm.enter(player)) {
+                src.sendSuccess(() -> Component.literal("[ds] the reach opens"), false);
+                return 1;
+            }
+            src.sendFailure(Component.literal("[ds] the reach is switched off in the config"));
+            return 0;
+        } catch (Throwable t) {
+            src.sendFailure(Component.literal("[ds] " + t));
+            return 0;
+        }
     }
 
     private static int ds$adams(CommandSourceStack src) {

@@ -116,6 +116,20 @@ BLOCKS = {
     # One seal per world. Each is a real block with a real interaction (see
     # McsmLocks): it opens to that world's own key and to nothing else.
     "decayed_lock": ("cube", "mcsm:block/decayed_lock"),
+    # ---- BUILD #462: the Creator's reach's own material ------------------
+    # The fourth world's family, laid rather than grown: marble, gold, glyph
+    # tiles that hold light, and the plinth the Creator stands on.
+    "creator_marble": ("cube", "mcsm:block/creator_marble"),
+    "creator_floor": ("cube", "mcsm:block/creator_floor"),
+    "creator_tiles": ("cube", "mcsm:block/creator_tiles"),
+    "creator_gold": ("cube", "mcsm:block/creator_gold"),
+    "creator_pillar": ("cube", "mcsm:block/creator_pillar"),
+    "creator_glyph": ("cube", "mcsm:block/creator_glyph"),
+    "creator_glass": ("translucent", "mcsm:block/creator_glass"),
+    "creator_lamp": ("cube", "mcsm:block/creator_lamp"),
+    "creator_plinth": ("cube", "mcsm:block/creator_plinth"),
+    "creator_reliquary": ("cube", "mcsm:block/creator_reliquary"),
+    "creator_lock": ("cube", "mcsm:block/creator_lock"),
     "adams_lock": ("cube", "mcsm:block/adams_lock"),
     "void_lock": ("cube", "mcsm:block/void_lock"),
     "void_cache": ("cube", "mcsm:block/void_cache"),
@@ -135,6 +149,7 @@ ITEMS = {
     "city_keycard": ("flat", "mcsm:item/city_keycard"),
     "glyph_cell": ("flat", "mcsm:item/glyph_cell"),
     "creator_fragment": ("flat", "mcsm:item/creator_fragment"),
+    "creator_sigil": ("flat", "mcsm:item/creator_sigil"),
     "abyss_orb": ("flat", "mcsm:item/abyss_orb"),
     "tentacle_hook": ("handheld", "mcsm:item/tentacle_hook"),
     "reality_ripper": ("handheld", "mcsm:item/reality_ripper"),
@@ -208,6 +223,7 @@ NAMES = {
     "city_keycard": "City Keycard",
     "glyph_cell": "Glyph Cell",
     "creator_fragment": "Creator Fragment",
+    "creator_sigil": "Creator Sigil",
     "abyss_orb": "Abyss Orb",
     "tentacle_hook": "Tentacle Hook",
     "reality_ripper": "Reality Ripper",
@@ -239,6 +255,17 @@ NAMES = {
     "adams_crate": "Adams Crate",
     # BUILD #459 -- the locks and the two worlds' own items.
     "decayed_lock": "Decayed Lock",
+    "creator_marble": "Creator Marble",
+    "creator_floor": "Creator Floor",
+    "creator_tiles": "Creator Tiles",
+    "creator_gold": "Creator Gold",
+    "creator_pillar": "Creator Pillar",
+    "creator_glyph": "Creator Glyph",
+    "creator_glass": "Creator Glass",
+    "creator_lamp": "Creator Lamp",
+    "creator_plinth": "Creator Plinth",
+    "creator_reliquary": "Creator Reliquary",
+    "creator_lock": "Creator Lock",
     "adams_lock": "Adams Lock",
     "void_lock": "Void Lock",
     "void_cache": "Void Cache",
@@ -521,6 +548,16 @@ LOOT = {
         (1, 1, [("minecraft:torch", 4), ("minecraft:bread", 2),
                 ("minecraft:iron_ingot", 2)]),
     ],
+    # BUILD #462 -- the reach's own salvage, and the ONLY place a creator sigil
+    # drops: what opens the reach is found inside the reach, the same rule the
+    # other three worlds follow.
+    "creator_reliquary": [
+        (1, 2, [("mcsm:creator_fragment", 4), ("mcsm:creator_sigil", 2),
+                ("mcsm:memory_crystal", 3), ("mcsm:decayed_steel_ingot", 2),
+                ("mcsm:storm_heart_shard", 1)]),
+        (1, 1, [("minecraft:torch", 4), ("minecraft:bread", 2),
+                ("minecraft:iron_ingot", 2)]),
+    ],
     # BUILD #459 -- the void's own salvage. It is the ONLY place a void sigil
     # drops, which is what makes the void's locks (on the houses in the nothing)
     # something a player has to go and find rather than something they are given.
@@ -558,6 +595,14 @@ RECIPES = {
     "adams_lock": ([" A ", "AIA", " A "], {"A": "mcsm:adams_amber",
                                            "I": "minecraft:iron_ingot"},
                    "mcsm:adams_lock", 1),
+    # BUILD #462 -- the reach's own: gilded marble for the seal, four bars of the
+    # reach's gold for the key, and no recipe anywhere that turns one world's key
+    # into another's.
+    "creator_lock": ([" A ", "AIA", " A "], {"A": "mcsm:creator_gold",
+                                             "I": "minecraft:iron_ingot"},
+                     "mcsm:creator_lock", 1),
+    "creator_sigil": (["AA", "AA"], {"A": "mcsm:creator_gold"},
+                      "mcsm:creator_sigil", 1),
     "void_lock": ([" V ", "VIV", " V "], {"V": "mcsm:void_shard",
                                           "I": "minecraft:iron_ingot"},
                   "mcsm:void_lock", 1),
@@ -683,6 +728,15 @@ def emit_lang():
         else:
             existing[f"block.mcsm.{name}"] = pretty
             existing[f"item.mcsm.{name}"] = pretty
+    # BUILD #462 -- and the file is PRUNED as well as merged: a key whose name is
+    # no longer a block (or no longer an item) is dropped. Without this, a run of
+    # this generator while a name table was mid-edit leaves "block.mcsm.x" lines
+    # behind for things that are not blocks at all, and nothing ever removes them.
+    for key in [k for k in existing
+                if (k.startswith("block.mcsm.") and k[len("block.mcsm."):] not in BLOCKS)
+                or (k.startswith("item.mcsm.") and k[len("item.mcsm."):] not in ITEMS
+                    and k[len("item.mcsm."):] not in BLOCKS)]:
+        del existing[key]
     # BUILD #428 -- the beasts' names. Three real entities now exist (Mas, the
     # Creator, the whale monster); without these keys the game shows their raw
     # registry ids in the spawn egg, the death message and the /summon feedback.

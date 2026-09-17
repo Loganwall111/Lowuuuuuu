@@ -1,0 +1,6 @@
+{
+  "model": {
+    "model": "mcsm:item/creator_lock",
+    "type": "minecraft:model"
+  }
+}
