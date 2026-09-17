@@ -17,7 +17,8 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 - `EntityMixin` watches server-side players in the Overworld below `Y < -64`.
 - `SiftTransfer` captures position, yaw, pitch, head/body rotation, fall distance, gravity state, and the complete velocity vector before moving the player to `mcsm:the_sift`.
 - The captured state is restored after `moveToWorld`, including `velocityModified`, so the player keeps tumbling instead of being placed at a dimension spawn point.
-- The client mixin suppresses the vanilla `DownloadingTerrainScreen` only for a Sift respawn packet. The required network respawn packet is still sent; this removes the cutscene/loading interruption without pretending a protocol hop does not occur.
+- The server synchronously warms a 3x3 destination chunk window before sending the respawn packet; The Sift uses an empty flat generator, so this is a small deterministic preparation rather than a terrain-generation wait.
+- The client mixin suppresses the vanilla `DownloadingTerrainScreen` only for a Sift respawn packet and explicitly clears any already-visible copy. The required network respawn packet is still sent; this removes the cutscene/loading interruption without pretending a protocol hop does not occur.
 - `sky.fsh` receives `Depth`, `FallSpeed`, and `GameTime` uniforms. Depth is driven by the player's falling Y position and is clamped so the void-to-fog curve stays stable.
 
 ### Phase 2 — rifts and cosmic window

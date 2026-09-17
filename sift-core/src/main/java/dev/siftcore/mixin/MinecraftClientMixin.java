@@ -14,6 +14,10 @@ public abstract class MinecraftClientMixin {
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void sift$skipDimensionLoadingScreen(@Nullable Screen screen, CallbackInfo callbackInfo) {
         if (SiftTransitionClient.consumeLoadingScreen(screen)) {
+            // Cancelling the outer call alone can leave an already-visible
+            // DownloadingTerrainScreen in place. Clear it through the normal
+            // client path, then cancel the new screen before it can render.
+            ((MinecraftClient) (Object) this).setScreen(null);
             callbackInfo.cancel();
         }
     }

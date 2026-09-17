@@ -94,6 +94,12 @@ public final class SiftTransfer {
         float fallDistance = player.fallDistance;
         boolean noGravity = player.hasNoGravity();
 
+        // The Sift is deliberately empty, so synchronously warm the small
+        // destination window before the respawn packet is sent. This removes
+        // the avoidable terrain-generation pause without creating a portal or
+        // changing the player's coordinates.
+        warmDestinationChunks(destination, position);
+
         Entity moved = player.moveToWorld(destination);
         if (!(moved instanceof ServerPlayerEntity target)) {
             return false;
@@ -112,5 +118,15 @@ public final class SiftTransfer {
         // The rifts are visual entities; they do not participate in the handshake.
         SiftRiftSpawner.spawnWelcomeRifts(target);
         return true;
+    }
+
+    private static void warmDestinationChunks(ServerWorld destination, Vec3d position) {
+        int centerChunkX = (int) Math.floor(position.x / 16.0D);
+        int centerChunkZ = (int) Math.floor(position.z / 16.0D);
+        for (int offsetX = -1; offsetX <= 1; offsetX++) {
+            for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+                destination.getChunk(centerChunkX + offsetX, centerChunkZ + offsetZ);
+            }
+        }
     }
 }

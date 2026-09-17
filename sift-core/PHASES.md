@@ -7,7 +7,8 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Fabric 1.20.1 project scaffold and `0.1.0-SIFT` version.
 - [x] `EntityMixin` server-side void hook at `Y < -64`.
 - [x] Preserve position, rotation, head/body yaw, fall distance, gravity state, and velocity through `moveToWorld`.
-- [x] Suppress only the terrain loading screen associated with the Sift respawn packet.
+- [x] Prewarm the empty destination chunk window before the respawn packet.
+- [x] Suppress only the terrain loading screen associated with the Sift respawn packet, including stale-screen clearing.
 - [x] Add `/sift fall` reproducible test command.
 - [x] Add `/sift status` diagnostics for position, velocity, and rotation preservation.
 - [x] Add a depth-aware procedural sky pass.
