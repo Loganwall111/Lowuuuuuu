@@ -1,0 +1,15 @@
+mcsm-extras/java/net/mcsm/extras/McsmVoidSponge.java:174: error: cannot find symbol
+                ? Blocks.PINK_CONCRETE.defaultBlockState()
+                        ^
+  symbol:   variable PINK_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmVoidSponge.java:177: error: cannot find symbol
+                ? Blocks.ORANGE_CONCRETE.defaultBlockState()
+                        ^
+  symbol:   variable ORANGE_CONCRETE
+  location: class Blocks
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+2 errors
