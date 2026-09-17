@@ -25,7 +25,7 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Add the first free-flying ambient Sift Drifter mob with procedural rendering.
 - [x] Register the first custom terrain palette: Siftstone, Sift Moss, and Rift Crystal.
 - [x] Replace random proximity placement with a deterministic twelve-slot rift formation prototype.
-- [ ] Add authored encounter choreography around the formation.
+- [x] Add authored swell, snap, and settle choreography around the formation without adding collisions.
 - [ ] Add a real screen-space capture/refraction target if the final rendering backend requires it.
 
 ## Phase 3 — sift fluids (implemented as a prototype)

@@ -100,6 +100,7 @@ def main() -> int:
         "src/main/resources/data/mcsm/dimension_type/the_sift.json",
         "src/main/java/dev/siftcore/SiftCore.java",
         "src/main/java/dev/siftcore/block/SiftBlocks.java",
+        "src/main/java/dev/siftcore/encounter/SiftEncounterController.java",
         "src/main/java/dev/siftcore/transfer/SiftTransfer.java",
         "src/main/java/dev/siftcore/mixin/EntityMixin.java",
         "src/main/java/dev/siftcore/physics/SiftFluidField.java",

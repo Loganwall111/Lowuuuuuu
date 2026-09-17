@@ -26,6 +26,7 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 - The dimension uses a sparse flat generator with custom `mcsm:siftstone` and `mcsm:sift_moss` floor layers, `features: false`, and the `minecraft:the_void` biome.
 - `SiftTerrainSpawner` adds deterministic floating shelves made from Siftstone, Sift Moss, and Rift Crystal as the player falls. The open routes between shelves preserve the original free-fall character.
 - `SiftRiftEntity` is a non-collidable, non-attackable visual entity. A small server spawner keeps an authored, deterministic twelve-slot formation around players; the pattern changes only after the formation cycle ages out.
+- `SiftEncounterController` drives a synchronized swell, snap, and settle beat across each formation on the same 800-tick cadence. It only updates visual rift intensity, so the choreography never creates a collision surface or interrupts the fall.
 - `SiftRiftRenderer` draws a camera-facing procedural portal using `rift.fsh`. The fragment pass contains layered wave displacement, a cosmic interior, star points, an emissive broken rim, and two atmospheric envelope passes: a low-pressure haze plus animated colored filaments that bleed beyond the aperture.
 - `/sift status` reports dimension, position, velocity, and all preserved rotations so the fall handshake can be verified without guessing from the camera.
 - A procedural `Sift Drifter` is the first ambient mob: it is a real living entity with health and a server-authoritative free-flight impulse, but no collision or hostile AI yet.

@@ -20,6 +20,10 @@ public final class SiftRiftEntity extends Entity {
             SiftRiftEntity.class,
             TrackedDataHandlerRegistry.FLOAT
     );
+    private static final TrackedData<Float> CHOREOGRAPHY = DataTracker.registerData(
+            SiftRiftEntity.class,
+            TrackedDataHandlerRegistry.FLOAT
+    );
 
     public SiftRiftEntity(EntityType<? extends SiftRiftEntity> type, World world) {
         super(type, world);
@@ -31,6 +35,7 @@ public final class SiftRiftEntity extends Entity {
     protected void initDataTracker() {
         this.dataTracker.startTracking(SCALE, 3.0f);
         this.dataTracker.startTracking(SEED, 0.0f);
+        this.dataTracker.startTracking(CHOREOGRAPHY, 0.0f);
     }
 
     @Override
@@ -82,6 +87,14 @@ public final class SiftRiftEntity extends Entity {
         this.dataTracker.set(SEED, seed);
     }
 
+    public float getChoreography() {
+        return this.dataTracker.get(CHOREOGRAPHY);
+    }
+
+    public void setChoreography(float choreography) {
+        this.dataTracker.set(CHOREOGRAPHY, MathHelper.clamp(choreography, 0.0F, 1.0F));
+    }
+
     public float getPulse(float tickDelta) {
         return (float) (0.78D + 0.22D * Math.sin((this.age + tickDelta) * 0.12D + this.getRiftSeed()));
     }
@@ -90,11 +103,13 @@ public final class SiftRiftEntity extends Entity {
     protected void readCustomDataFromNbt(NbtCompound nbt) {
         this.setRiftScale(nbt.getFloat("Scale"));
         this.setRiftSeed(nbt.getFloat("Seed"));
+        this.setChoreography(nbt.getFloat("Choreography"));
     }
 
     @Override
     protected void writeCustomDataToNbt(NbtCompound nbt) {
         nbt.putFloat("Scale", this.getRiftScale());
         nbt.putFloat("Seed", this.getRiftSeed());
+        nbt.putFloat("Choreography", this.getChoreography());
     }
 }

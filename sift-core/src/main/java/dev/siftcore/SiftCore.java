@@ -2,6 +2,7 @@ package dev.siftcore;
 
 import dev.siftcore.block.SiftBlocks;
 import dev.siftcore.command.SiftCommands;
+import dev.siftcore.encounter.SiftEncounterController;
 import dev.siftcore.mob.SiftDrifterEntity;
 import dev.siftcore.mob.SiftDrifterSpawner;
 import dev.siftcore.physics.SiftCurrentPhysics;
@@ -67,6 +68,7 @@ public final class SiftCore implements ModInitializer {
         ServerTickEvents.END_WORLD_TICK.register(SiftRiftSpawner::tick);
         ServerTickEvents.END_WORLD_TICK.register(SiftDrifterSpawner::tick);
         ServerTickEvents.END_WORLD_TICK.register(SiftTerrainSpawner::tick);
+        ServerTickEvents.END_WORLD_TICK.register(SiftEncounterController::tick);
         ServerTickEvents.END_WORLD_TICK.register(SiftCurrentPhysics::tick);
         LOGGER.info("Sift-Core {} initialized; The Sift handshake is armed", VERSION);
     }

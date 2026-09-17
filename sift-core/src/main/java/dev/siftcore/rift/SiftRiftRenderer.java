@@ -38,6 +38,7 @@ public final class SiftRiftRenderer extends EntityRenderer<SiftRiftEntity> {
         SiftShaders.set(SiftShaders.RIFT, "GameTime", (entity.getWorld().getTime() + tickDelta) / 20.0F);
         SiftShaders.set(SiftShaders.RIFT, "Pulse", entity.getPulse(tickDelta));
         SiftShaders.set(SiftShaders.RIFT, "Seed", entity.getRiftSeed());
+        SiftShaders.set(SiftShaders.RIFT, "Choreography", entity.getChoreography());
         SiftShaders.setScreenSize(SiftShaders.RIFT);
 
         RenderSystem.enableBlend();
