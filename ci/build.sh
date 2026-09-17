@@ -1227,7 +1227,8 @@ mkdir -p /tmp/mcsm-emptysrc
 # BUILD SIFT: sift module contains newer MC APIs (FlyingMob, etc.) that don't compile against 26.2 client jar
 # Exclude it from mcsm-extras jar build - Sift Cosmos ships as resourcepack zip via sift-cosmos workflow
 # Also exclude new V2 extras that use MultiBufferSource/GuiGraphics moved in 26.2
-SOURCES="$(find mcsm-extras/java -name '*.java' ! -path '*/net/mcsm/sift/*' ! -name 'McsmBlackHoleBackdrop.java' ! -name 'McsmNpcRenderer.java' ! -name 'McsmAnimatedSkybox.java' ! -name 'McsmVoidRudder.java')"
+# V2 revamp: McsmBlackHoleBackdrop now Sodium-safe (SubmitNodeCollector) and compiles against 26.2 - include it
+SOURCES="$(find mcsm-extras/java -name '*.java' ! -path '*/net/mcsm/sift/*' ! -name 'McsmNpcRenderer.java' ! -name 'McsmAnimatedSkybox.java' ! -name 'McsmVoidRudder.java')"
 N_SOURCES="$(printf '%s\n' "$SOURCES" | grep -c . || true)"
 # BUILD #465 -- run 579 died here with NO diagnostic: the step went from the
 # classpath line to "Process completed with exit code 1" and the evidence log
