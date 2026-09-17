@@ -122,7 +122,7 @@ def main() -> int:
     props = (ROOT / "gradle.properties").read_text(encoding="utf-8")
     for key, expected in (
         ("minecraft_version", "1.20.1"),
-        ("mod_version", "0.1.0-SIFT"),
+        ("mod_version", "0.4.0-SIFT"),
     ):
         match = re.search(rf"^{re.escape(key)}=(.+)$", props, re.MULTILINE)
         if not match or match.group(1).strip() != expected:

@@ -4,7 +4,7 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 
 ## Phase 1 — fall handshake (implemented)
 
-- [x] Fabric 1.20.1 project scaffold and `0.1.0-SIFT` version.
+- [x] Fabric 1.20.1 project scaffold and `0.4.0-SIFT` version stamp.
 - [x] `EntityMixin` server-side void hook at `Y < -64`.
 - [x] Preserve position, rotation, head/body yaw, fall distance, gravity state, and velocity through `moveToWorld`.
 - [x] Prewarm the empty destination chunk window before the respawn packet.

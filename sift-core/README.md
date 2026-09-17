@@ -52,7 +52,7 @@ After launching a dev client/server with the dimension data loaded:
 /sift enter        Enter The Sift at a safe viewing height
 /sift fall         Place the player at Y -63 with downward velocity; the next server tick exercises the handshake
 /sift return       Return to the Overworld at Y 96
-/sift status       Print dimension, position, velocity, and rotation state
+/sift status        Print mod version, dimension, position, velocity, and rotation state
 ```
 
 The dimension key is intentionally `mcsm:the_sift` so the sandbox can be merged into the future Minecraft Dimensions Forged namespace without changing datapack references.

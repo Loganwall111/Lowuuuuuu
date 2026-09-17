@@ -3,6 +3,7 @@ package dev.siftcore.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import dev.siftcore.SiftCore;
 import dev.siftcore.SiftDimensions;
 import dev.siftcore.transfer.SiftTransfer;
 import java.util.Locale;
@@ -69,7 +70,8 @@ public final class SiftCommands {
         Vec3d velocity = player.getVelocity();
         String message = String.format(
                 Locale.ROOT,
-                "Sift-Core: dimension=%s pos=(%.3f, %.3f, %.3f) velocity=(%.3f, %.3f, %.3f) yaw=%.2f pitch=%.2f head=%.2f body=%.2f",
+                "Sift-Core %s: dimension=%s pos=(%.3f, %.3f, %.3f) velocity=(%.3f, %.3f, %.3f) yaw=%.2f pitch=%.2f head=%.2f body=%.2f",
+                SiftCore.VERSION,
                 player.getWorld().getRegistryKey().getValue(),
                 position.x,
                 position.y,
