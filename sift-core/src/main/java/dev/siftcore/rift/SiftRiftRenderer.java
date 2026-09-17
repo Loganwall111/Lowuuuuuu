@@ -34,11 +34,7 @@ public final class SiftRiftRenderer extends EntityRenderer<SiftRiftEntity> {
             return;
         }
 
-        matrices.push();
-        matrices.multiply(this.dispatcher.getRotation());
         float scale = entity.getRiftScale();
-        matrices.scale(scale, scale, scale);
-
         SiftShaders.set(SiftShaders.RIFT, "GameTime", (entity.getWorld().getTime() + tickDelta) / 20.0F);
         SiftShaders.set(SiftShaders.RIFT, "Pulse", entity.getPulse(tickDelta));
         SiftShaders.set(SiftShaders.RIFT, "Seed", entity.getRiftSeed());
@@ -50,18 +46,34 @@ public final class SiftRiftRenderer extends EntityRenderer<SiftRiftEntity> {
         RenderSystem.disableCull();
         RenderSystem.setShader(() -> SiftShaders.RIFT);
 
-        MatrixStack.Entry entry = matrices.peek();
-        BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-        buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-        buffer.vertex(entry.getPositionMatrix(), -1.0F, -1.0F, 0.0F).texture(0.0F, 1.0F).color(255, 255, 255, 255).next();
-        buffer.vertex(entry.getPositionMatrix(), 1.0F, -1.0F, 0.0F).texture(1.0F, 1.0F).color(255, 255, 255, 255).next();
-        buffer.vertex(entry.getPositionMatrix(), 1.0F, 1.0F, 0.0F).texture(1.0F, 0.0F).color(255, 255, 255, 255).next();
-        buffer.vertex(entry.getPositionMatrix(), -1.0F, 1.0F, 0.0F).texture(0.0F, 0.0F).color(255, 255, 255, 255).next();
-        Tessellator.getInstance().draw();
+        // Draw the pressure haze first, then the brighter filament veil, then
+        // the projected cosmic aperture. Each layer is camera-facing but uses
+        // a different shader pass so the atmosphere extends beyond the rim.
+        SiftShaders.set(SiftShaders.RIFT, "Pass", 1.0F);
+        drawQuad(matrices, scale * 1.55F, 76);
+        SiftShaders.set(SiftShaders.RIFT, "Pass", 2.0F);
+        drawQuad(matrices, scale * 1.30F, 124);
+        SiftShaders.set(SiftShaders.RIFT, "Pass", 0.0F);
+        drawQuad(matrices, scale, 255);
 
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();
+    }
+
+    private void drawQuad(MatrixStack matrices, float scale, int alpha) {
+        matrices.push();
+        matrices.multiply(this.dispatcher.getRotation());
+        matrices.scale(scale, scale, scale);
+
+        MatrixStack.Entry entry = matrices.peek();
+        BufferBuilder buffer = Tessellator.getInstance().getBuffer();
+        buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+        buffer.vertex(entry.getPositionMatrix(), -1.0F, -1.0F, 0.0F).texture(0.0F, 1.0F).color(255, 255, 255, alpha).next();
+        buffer.vertex(entry.getPositionMatrix(), 1.0F, -1.0F, 0.0F).texture(1.0F, 1.0F).color(255, 255, 255, alpha).next();
+        buffer.vertex(entry.getPositionMatrix(), 1.0F, 1.0F, 0.0F).texture(1.0F, 0.0F).color(255, 255, 255, alpha).next();
+        buffer.vertex(entry.getPositionMatrix(), -1.0F, 1.0F, 0.0F).texture(0.0F, 0.0F).color(255, 255, 255, alpha).next();
+        Tessellator.getInstance().draw();
         matrices.pop();
     }
 

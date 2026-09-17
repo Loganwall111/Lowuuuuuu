@@ -19,6 +19,7 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Registered visual rift entity with no collision, damage, or fluid push.
 - [x] Procedural camera-facing rift renderer.
 - [x] Wavy interior displacement, particle stars, and colored emissive rim.
+- [x] Add an atmospheric pressure haze and animated filament veil around each rift.
 - [x] Replace random proximity placement with a deterministic twelve-slot rift formation prototype.
 - [ ] Add authored encounter choreography around the formation.
 - [ ] Add a real screen-space capture/refraction target if the final rendering backend requires it.

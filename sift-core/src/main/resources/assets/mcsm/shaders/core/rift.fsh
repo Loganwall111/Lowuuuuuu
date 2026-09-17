@@ -3,6 +3,7 @@
 uniform float GameTime;
 uniform float Pulse;
 uniform float Seed;
+uniform float Pass;
 uniform vec2 ScreenSize;
 
 in vec4 vertexColor;
@@ -29,6 +30,26 @@ void main() {
     float time = GameTime * 1.8 + Seed * 0.013;
     float angle = atan(uv.y, uv.x);
     float radius = length(uv);
+
+    // Passes one and two are the rift's atmospheric envelope. They are drawn
+    // behind the core so wisps and pressure halos bleed into the surrounding fog.
+    if (Pass > 0.5) {
+        float shell = smoothstep(0.24, 0.82, radius) * (1.0 - smoothstep(0.92, 1.18, radius));
+        float smoke = 0.5 + 0.5 * sin(radius * 13.0 - time * 1.15 + sin(angle * 3.0 + time) * 2.4);
+        float curl = 0.5 + 0.5 * sin(angle * 5.0 + radius * 8.0 - time * 1.35 + Seed);
+        float filament = 1.0 - smoothstep(0.02, 0.19, abs(sin(angle * 6.0 + radius * 10.0 + time * 0.8 + Seed)));
+        float envelope = 1.0 - smoothstep(0.34, 1.16, radius);
+        float passStrength = Pass > 1.5 ? 1.0 : 0.58;
+        vec3 atmosphere = energyPalette(fract(angle * 0.13 + time * 0.025 + Seed * 0.002));
+        atmosphere *= 0.34 + smoke * 0.40 + curl * 0.24;
+        float alpha = (envelope * (0.10 + smoke * 0.10) + shell * filament * 0.22)
+                * vertexColor.a * passStrength * (0.72 + Pulse * 0.42);
+        if (alpha < 0.006) {
+            discard;
+        }
+        fragColor = vec4(atmosphere, clamp(alpha, 0.0, 0.48));
+        return;
+    }
 
     // A moving displacement wave stands in for the future captured screen texture.
     float ripple = sin(radius * 22.0 - time * 2.2 + sin(angle * 5.0 + time) * 1.8) * 0.035;

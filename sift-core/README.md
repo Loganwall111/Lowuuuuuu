@@ -25,7 +25,7 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 
 - The dimension is an air-only flat generator: `layers: []`, `features: false`, and the `minecraft:the_void` biome.
 - `SiftRiftEntity` is a non-collidable, non-attackable visual entity. A small server spawner keeps an authored, deterministic twelve-slot formation around players; the pattern changes only after the formation cycle ages out.
-- `SiftRiftRenderer` draws a camera-facing procedural portal using `rift.fsh`. The fragment pass contains layered wave displacement, a cosmic interior, star points, and an emissive broken rim.
+- `SiftRiftRenderer` draws a camera-facing procedural portal using `rift.fsh`. The fragment pass contains layered wave displacement, a cosmic interior, star points, an emissive broken rim, and two atmospheric envelope passes: a low-pressure haze plus animated colored filaments that bleed beyond the aperture.
 - `/sift status` reports dimension, position, velocity, and all preserved rotations so the fall handshake can be verified without guessing from the camera.
 
 ### Phase 3 — fluid pass
