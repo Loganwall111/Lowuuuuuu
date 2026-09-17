@@ -215,7 +215,10 @@ mkdir -p "$DL"
 fetch() { # url -> file
   local out="$DL/$(basename "$2")"
   if [ ! -s "$out" ]; then
-    curl -fsSL --retry 3 --retry-delay 3 -o "$out" "$1" || {
+    # Maven Central rate-limits shared runners with 429; a fast fixed 3 s retry
+    # (run 596 died on the sponge-mixin fetch this way) loses the race, so back
+    # off longer and try more. curl treats 429 as transient and honours these.
+    curl -fsSL --retry 6 --retry-delay 15 --retry-max-time 240 -o "$out" "$1" || {
       echo "[deps] FAILED to download $1"; return 1; }
   fi
   echo "[deps] $(basename "$out") $(stat -c%s "$out") B"
