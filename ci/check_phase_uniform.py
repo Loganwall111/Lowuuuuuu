@@ -3554,6 +3554,13 @@ def main():
 
     check("and that column ships as an image, so the claim is checkable",
           "public final class" not in stills and "def column_pixels(role):" in stills
+          # and every comparison against it is resolution-independent: run 599 failed
+          # its trace gate because the recorded (six-stop) superseded trace was compared
+          # index-by-index against a fresh thirty-two-row trace -- stop 0 of six versus
+          # row 0 of thirty-two, i.e. the zenith against the first thirty-secondth of the
+          # sheet. Both sides are sampled at the same t positions now.
+          and "pal.sample_column(got, i / float(n - 1))" in (
+              read("ci/trace_sky_sheets.py") or "")
           and "pngutil.write_png" in stills
           and '("jar-overrides/assets/mcsm/textures/sky", "stills_%s.png")' in stills
           and '("storylook/assets/minecraft/textures/environment", "mcsm_stills_%s.png")' in stills

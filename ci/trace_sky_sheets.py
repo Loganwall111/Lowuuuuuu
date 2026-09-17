@@ -425,10 +425,24 @@ def check_superseded():
     ok = True
     for role, path in sorted(found.items()):
         want = SUPERSEDED_TRACE.get(role)
+        if want is None:
+            ok = False
+            print("  FAIL superseded %-7s -- no recorded trace to compare against" % role)
+            continue
         got = trace_column(path)
-        worst = max(abs(got[i][k] - want[i][k])
-                    for i in range(min(len(want), len(got))) for k in range(3))
-        if want is None or worst > 0.02:
+        # BUILD #476 -- LIKE FOR LIKE. The recorded trace is six stops and the fresh
+        # trace is palette_tables.STOPS rows now, so comparing them index by index
+        # compared stop 0 of six against row 0 of thirty-two -- i.e. the zenith of the
+        # sheet against the first thirty-secondth of it -- and reported a 0.35 drift
+        # for sheets that had not changed at all. Both are sampled at the RECORDED
+        # trace's own t positions instead, which is resolution-independent.
+        n = len(want)
+        worst = 0.0
+        for i in range(n):
+            g = pal.sample_column(got, i / float(n - 1))
+            for k in range(3):
+                worst = max(worst, abs(g[k] - want[i][k]))
+        if worst > 0.02:
             ok = False
             print("  FAIL superseded %-7s -- %s is not the recorded superseded sheet (%.4f)"
                   % (role, os.path.basename(path), worst if want else -1.0))
