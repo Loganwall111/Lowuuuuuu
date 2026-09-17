@@ -1,0 +1,9 @@
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmConfigReskinMixin.java:250: error: cannot find symbol
+        int h = this.height;
+                    ^
+  symbol: variable height
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+1 error
