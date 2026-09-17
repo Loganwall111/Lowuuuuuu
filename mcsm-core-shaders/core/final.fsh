@@ -1,11 +1,11 @@
-#version 150
+#version 330
 
 // final.fsh - Iridescent Cosmic Fluid Shaders & Glowing Water Pools
-// Build #482 - Infinite Sift Cosmos
+// Build #482 - Infinite Sift Cosmos + V2 Black Hole Backdrop
 // Screen-Space Cosmic Liquid for Layer 5 gel void bounds (-1801 to -2032)
 // Iridescent color shims, refraction & intersection foams
-
-#moj_import <mcsm_visuals.glsl>
+// V2: Black hole backdrop dynamic lensing centered middle growing bigger perspective interactive enterable
+// Validation: black hole lensing, photon ring, accretion disk rainbow, chromatic aberration, full sky not bands
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
