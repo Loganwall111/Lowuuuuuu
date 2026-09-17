@@ -26,6 +26,12 @@ public abstract class McsmHotbarHideMixin {
     @Inject(method = "extractItemHotbar", at = @At("HEAD"), cancellable = true)
     private void dabyws$hotbarLivesTopLeftNow(GuiGraphicsExtractor extractor,
             DeltaTracker delta, CallbackInfo ci) {
-        ci.cancel();
+        // BUILD #469 -- every HUD/screen hook of this build reports a fault instead of
+        // propagating one: a render that throws is a frame that does not draw.
+        try {
+            ci.cancel();
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("hotbar-hide", t);
+        }
     }
 }

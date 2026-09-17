@@ -276,8 +276,57 @@ def _mcsm_java_sources():
 
 
 _FILL_CONST_RE = re.compile(r"static\s+final\s+int\s+([A-Za-z_$][\w$]*)\s*=\s*(0x[0-9A-Fa-f]{1,8})\s*;")
+# BUILD #469 -- a plate does not have to be a `static final int` to be a plate.
+# The two classes that were still black at their own value (the base config screen's
+# `BAR_BG`, the console's `ROW_DARK`) declared their colours as plain locals, so the
+# scanner missed exactly the shape of the bug it exists to find. It resolves local
+# declarations now, and simple arithmetic (`(alpha << 24) | 0xRRGGBB`), and refuses
+# anything it cannot evaluate instead of guessing.
+_FILL_LOCAL_CONST_RE = re.compile(r"\bint\s+([A-Za-z_$][\w$]*)\s*=\s*([^;]+);")
 _FILL_FULLSCREEN_RE = re.compile(
     r"fill(?:Gradient)?\(\s*0,\s*0,\s*(?:w|width|this\.width)\s*,\s*(?:h|height|this\.height)\s*,\s*([^;]+?)\)")
+_FILL_BAND_RE = re.compile(
+    r"fill(?:Gradient)?\(\s*0,\s*([^,]+?)\s*,\s*(?:w|width|this\.width)\s*,\s*([^,]+?)\s*,\s*([^,;]+?)[,)]")
+
+
+def _fill_colour(expr, consts):
+    """0xRRGGBB[AA], a named int of this file, or `(x << n) | 0x..` -- else None.
+
+    None means "computed at runtime" (a fade, a pulse, an alpha from state), which
+    is not a plate: it is not opaque at every frame by construction.
+    """
+    expr = expr.strip()
+    lit = re.fullmatch(r"0x([0-9A-Fa-f]{1,8})", expr)
+    if lit:
+        return int(expr, 16)
+    if re.fullmatch(r"[A-Za-z_$][\w$]*", expr):
+        return consts.get(expr)
+    total = 0
+    for term in expr.split("|"):
+        term = term.strip()
+        if re.fullmatch(r"0x[0-9A-Fa-f]{1,8}", term):
+            total |= int(term, 16)
+            continue
+        sh = re.fullmatch(r"\(?\s*([A-Za-z_$][\w$]*)\s*<<\s*(\d+)\s*\)?", term)
+        if sh and sh.group(1) in consts:
+            total |= consts[sh.group(1)] << int(sh.group(2))
+            continue
+        return None
+    return total
+
+
+def _fill_consts(src):
+    """Every int of this file whose value is a colour the scanner can evaluate."""
+    out = {}
+    for m in _FILL_CONST_RE.finditer(src):
+        out[m.group(1)] = int(m.group(2), 16)
+    for m in _FILL_LOCAL_CONST_RE.finditer(src):
+        if m.group(1) in out:
+            continue
+        v = _fill_colour(m.group(2), out)
+        if v is not None:
+            out[m.group(1)] = v
+    return out
 
 
 def _menu_black_plates(*sources):
@@ -289,24 +338,88 @@ def _menu_black_plates(*sources):
     #0D1016..#07080C, and a literal-only scan walked straight past it. Any
     fill(0, 0, w, h, ...) whose resolved alpha is 0xE0 or more AND whose colour is
     (near) black is a plate that can hide everything behind it.
+
+    BUILD #469 -- and a band is a plate too. The title's "very black" band was 118
+    pixels of opaque #02101E across the whole width: not the whole frame, but the
+    whole title. So a band that covers 96px or more of the frame, top or bottom, and
+    is opaque (near) black, is reported the same way.
     """
     bad = []
     for src in sources:
-        consts = {m.group(1): int(m.group(2), 16) for m in _FILL_CONST_RE.finditer(src)}
+        consts = _fill_consts(src)
         for m in _FILL_FULLSCREEN_RE.finditer(src):
             for token in m.group(1).split(","):
-                token = token.strip()
-                value = None
-                lit = re.fullmatch(r"0x([0-9A-Fa-f]{1,8})", token)
-                if lit:
-                    value = int(lit.group(1), 16)
-                elif token in consts:
-                    value = consts[token]
+                value = _fill_colour(token, consts)
                 if value is None:
                     continue  # computed at runtime (a fade, a wash) -- not a plate
                 if ((value >> 24) & 0xFF) >= 0xE0 \
                         and ((value >> 16 & 0xFF) + (value >> 8 & 0xFF) + (value & 0xFF)) < 0x40:
                     bad.append(m.group(0)[:80])
+        for m in _FILL_BAND_RE.finditer(src):
+            colour = _fill_colour(m.group(3), consts)
+            if colour is None:
+                continue
+            if ((colour >> 24) & 0xFF) < 0xE0:
+                continue
+            if ((colour >> 16 & 0xFF) + (colour >> 8 & 0xFF) + (colour & 0xFF)) >= 0x40:
+                continue
+            top, bottom = m.group(1).strip(), m.group(2).strip()
+            tall = False
+            k = re.fullmatch(r"\d+", top)
+            if k and bottom in ("h", "height", "this.height") and int(top) >= 96:
+                tall = True
+            k = re.fullmatch(r"(?:h|height|this\.height)\s*-\s*(\d+)", top)
+            if k and bottom in ("h", "height", "this.height") and int(k.group(1)) >= 96:
+                tall = True
+            k = re.fullmatch(r"\d+", bottom)
+            if k and top in ("0",) and int(bottom) >= 96:
+                tall = True
+            if tall:
+                bad.append(m.group(0)[:80])
+    return bad
+
+
+_HANDLER_SIG_RE = re.compile(
+    r"^\s*(?:private|public|protected|static|final|\s)+[\w<>\[\],.$?]+\s+([\w$]+)\s*\(([^)]*)\s*\)\s*\{$",
+    re.M)
+
+
+def _unguarded_screen_handlers():
+    """@Inject handlers of this build that DRAW and carry no catch of their own.
+
+    BUILD #469 -- this is the bug class the last three menu reports share. In 26.2
+    a screen's frame is built by extractRenderState / extractBackground (and the HUD
+    by the overlay's render): an exception out of one of those does not draw a dark
+    screen, it draws NO screen -- a black window with a title bar, which is exactly
+    the screenshot. So every handler this build injects into a render method has to
+    be wrapped, and this returns the ones that are not (empty is the passing state).
+    """
+    bad = []
+    root = os.path.join("mcsm-extras", "java")
+    for base, _dirs, files in os.walk(root):
+        for name in files:
+            if not name.endswith(".java"):
+                continue
+            path = os.path.join(base, name)
+            src = open(path, encoding="utf-8").read()
+            for m in _HANDLER_SIG_RE.finditer(src):
+                if "GuiGraphicsExtractor" not in m.group(2):
+                    continue
+                if "@Inject" not in src[max(0, m.start() - 400):m.start()]:
+                    continue
+                k = m.end() - 1
+                depth = 0
+                while k < len(src):
+                    if src[k] == "{":
+                        depth += 1
+                    elif src[k] == "}":
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    k += 1
+                body = src[m.end() - 1:k + 1]
+                if "catch (Throwable" not in body:
+                    bad.append(name + ":" + m.group(1))
     return bad
 
 
@@ -1241,8 +1354,11 @@ def main():
           "CONFIG" in scr_code and "new McsmExtrasScreen(" in scr_code)
     check("the menu's config entry is the bottom-right logo button, and nothing else",
           "mcsm$drawLogoButton" in title and "MC$LOGO_W" in title
+          # BUILD #469 -- the base mod's corner button is hidden by its own words in
+          # mcsm$hideBaseChrome() now (the old geometric pass could miss a relayout),
+          # and by the same widget name the rest of the menu path uses.
           and 'msg.contains("Storm Config")' in title
-          and "cb.visible = false" in title
+          and "b.visible = false;" in title
           and "McsmTerminalScreen.show(\"login\"" in title)
     check("the purple glint is off by default and still an option",
           "public static boolean nightglowPurpleGlow55 = false;" in cfg
@@ -3741,6 +3857,69 @@ def main():
           and ".then(aging).then(menu)" in towns
           and "edit config/mcsm_storm_extras.properties" in towns
           and "Vivid panorama backdrop (off: the storm's own sky)" in extras)
+
+    # ------------------------------------------------------------------
+    # BUILD #469 -- THE MENU CANNOT GO BLACK, AND NOW IT CANNOT BE EMPTIED EITHER.
+    #
+    # The report came back ("It's still black ... it's definitely a render issue ...
+    # the Mojang logo loads ... and then just completely black") AFTER every plate
+    # this build could name had been repainted and gated. What is left is the other
+    # way a screen goes black: a hook that throws out of the screen's own frame
+    # extraction, which draws no frame at all. So the whole menu path is
+    # fault-isolated now, and the rule that matters is checked in the code's own
+    # order: PAINT FIRST, cancel the game's own background only for a frame the mod
+    # really painted -- and stand down entirely (vanilla menu) if it keeps faulting.
+    # ------------------------------------------------------------------
+    guard = read("mcsm-extras/java/net/mcsm/extras/client/McsmMenuGuard.java")
+
+    check("and a fault in the mod's own chrome can no longer leave an empty frame",
+          "public final class McsmMenuGuard" in guard
+          and "public static boolean ok() {" in guard
+          and "public static void fault(String tag, Throwable t) {" in guard
+          and "public static String state() {" in guard
+          and "public static void reset() {" in guard
+          and "public static final int FAULT_LIMIT = 3;" in guard
+          and "public static final long COOLDOWN_MS = 30000L;" in guard
+          # the log line is reflected: this class compiles against a jar with no slf4j
+          and 'getMethod("warn", String.class)' in guard
+          and "DabyWitherStormMod.class" in guard)
+
+    check("and the title cancels the game's own background only for a frame it painted",
+          "if (!net.mcsm.extras.client.McsmMenuGuard.ok()) {" in titles
+          and 'McsmMenuGuard.fault("title-backdrop"' in titles
+          and 'McsmMenuGuard.fault("title-framing"' in titles
+          and 'McsmMenuGuard.fault("title-chrome"' in titles
+          # the order in the source is the whole fix
+          and titles.index("net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 1.0F);")
+          < titles.index("ci.cancel(); // only ever after a frame the mod itself painted")
+          and "dabyws$framingBody(" in titles
+          and "dabyws$chromeBody(" in titles)
+
+    check("and every other screen and HUD hook of this build is wrapped too",
+          not _unguarded_screen_handlers(),
+          "unwrapped: %s" % _unguarded_screen_handlers())
+
+    check("and a player can read the render guard, and clear it, from the console entry",
+          "McsmMenuGuard.state()" in towns
+          and "private static int ds$menuReset(CommandSourceStack src) {" in towns
+          and 'Commands.literal("reset")' in towns
+          and "McsmMenuGuard.reset();" in towns
+          and "/ds menu reset clears it" in towns)
+
+    check("and the base mod's dark side buttons are taken off the title by their own words",
+          # the report: "a failed thing with like a very very very dark failed button
+          # on the side". The base title mixin adds two near-black purple widgets at
+          # (width-142, 6) and (width-142, 27); the hide pass matches the LABELS (a
+          # layout change moves the y, never the words) with the old bounds kept as a
+          # second rule, and runs from the earliest per-frame hook as well as the
+          # framing pass.
+          "private void mcsm$hideBaseChrome() {" in titles
+          and 'msg.contains("Storm Config")' in titles
+          and 'msg.contains("Storm Preview")' in titles
+          and "b.getY() == 27 && b.getWidth() == 136" in titles
+          and "mcsm$hideBaseChrome();" in titles
+          # called from the framing pass AND from the earlier extractRenderState hook
+          and titles.count("mcsm$hideBaseChrome();") >= 2)
 
     # ------------------------------------------------------------------
     # BUILD #465 -- MORE BLOCKS AND ITEMS. The standing ask, and the phase after

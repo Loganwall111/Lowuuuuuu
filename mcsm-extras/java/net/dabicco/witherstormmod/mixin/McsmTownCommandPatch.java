@@ -139,6 +139,18 @@ public abstract class McsmTownCommandPatch {
             // lives, so a black screen can be answered instead of guessed at.
             LiteralArgumentBuilder<CommandSourceStack> menu = Commands.literal("menu");
             menu.executes(ctx -> ds$menu(ctx.getSource()));
+            // BUILD #469 -- and what the RENDER is doing: the guard that keeps a fault
+            // in the mod's own menu chrome from leaving an empty (black) frame. The
+            // standing report is "it's still black", so this is how a player reads the
+            // reason without a debugger, and how they clear the record after a fix.
+            menu.then(Commands.literal("reset").executes(ctx -> ds$menuReset(ctx.getSource())));
+            // BUILD #469 -- and the one lever that answers "it's still black" from
+            // inside the game: which backdrop the title wears. /ds menu sky forces
+            // the mod's own painted sky (which is floored, so it cannot be black),
+            // /ds menu panorama goes back to the game's own panorama cube. Saved, so
+            // it survives the next launch.
+            menu.then(Commands.literal("sky").executes(ctx -> ds$menuBackdrop(ctx.getSource(), false)));
+            menu.then(Commands.literal("panorama").executes(ctx -> ds$menuBackdrop(ctx.getSource(), true)));
 
             // BUILD #463 -- what the void is doing to you, and what to do about it.
             LiteralArgumentBuilder<CommandSourceStack> aging = Commands.literal("aging");
@@ -460,6 +472,50 @@ public abstract class McsmTownCommandPatch {
                     + net.mcsm.extras.McsmExtrasConfig.menuState()
                     + " \u00b7 edit config/mcsm_storm_extras.properties to force any of it"),
                     false);
+            // BUILD #469 -- the render side, which is what "it's still black" is about:
+            // whether the mod's menu chrome is painting, and if not, WHAT through.
+            src.sendSuccess(() -> Component.literal("[ds] "
+                    + net.mcsm.extras.client.McsmMenuGuard.state()
+                    + " \u00b7 /ds menu reset clears it"), false);
+            return 1;
+        } catch (Throwable t) {
+            src.sendFailure(Component.literal("[ds] " + t));
+            return 0;
+        }
+    }
+
+    /**
+     * BUILD #469 -- clear the menu render record and let the mod's chrome paint
+     * again at once. The guard stands itself down for 30 s after three faults, so
+     * a player who has just changed something (a pack, a config, a driver) can ask
+     * for the mod's menu back without restarting the game.
+     */
+    /**
+     * BUILD #469 -- switch the title's backdrop from in-game and save it. The report
+     * "it's still black" is answered by this in one line: the mod's own sky (the
+     * floored one, the one that cannot be black) or the game's panorama cube.
+     */
+    private static int ds$menuBackdrop(CommandSourceStack src, boolean panorama) {
+        try {
+            net.mcsm.extras.McsmExtrasConfig.load();
+            net.mcsm.extras.McsmExtrasConfig.menuPanorama = panorama;
+            net.mcsm.extras.McsmExtrasConfig.save();
+            src.sendSuccess(() -> Component.literal("[ds] title backdrop: "
+                    + (panorama ? "the game's own panorama cube"
+                            : "the mod's own sky (guaranteed non-black)")
+                    + " \u00b7 saved to config/mcsm_storm_extras.properties"), false);
+            return 1;
+        } catch (Throwable t) {
+            src.sendFailure(Component.literal("[ds] " + t));
+            return 0;
+        }
+    }
+
+    private static int ds$menuReset(CommandSourceStack src) {
+        try {
+            net.mcsm.extras.client.McsmMenuGuard.reset();
+            src.sendSuccess(() -> Component.literal("[ds] "
+                    + net.mcsm.extras.client.McsmMenuGuard.state()), false);
             return 1;
         } catch (Throwable t) {
             src.sendFailure(Component.literal("[ds] " + t));

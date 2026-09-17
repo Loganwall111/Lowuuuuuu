@@ -39,8 +39,13 @@ public abstract class McsmPreviewRemoveMixin {
     @Inject(method = "drawPreview(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V",
             at = @At("HEAD"), cancellable = true, remap = false)
     private void dabyws$skipPreviewDraw(GuiGraphicsExtractor g, CallbackInfo ci) {
-        if (Minecraft.getInstance() != null && !McsmExtrasConfig.giantPreviewEnabled) {
-            ci.cancel();
+        // BUILD #469 -- guarded like every other render handler of this build.
+        try {
+            if (Minecraft.getInstance() != null && !McsmExtrasConfig.giantPreviewEnabled) {
+                ci.cancel();
+            }
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("config-preview-draw", t);
         }
     }
 
@@ -53,6 +58,17 @@ public abstract class McsmPreviewRemoveMixin {
     @Inject(method = "extractRenderState", at = @At("HEAD"), remap = false)
     private void dabyws$hidePreviewToggles(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
+        // BUILD #469 -- fault-isolated. A screen whose extraction throws gets no
+        // frame at all, so every pass this build adds to one is wrapped: the config
+        // screen keeps drawing itself even if the widget walk faults.
+        try {
+            dabyws$hidePreviewTogglesBody();
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("config-toggle-hide", t);
+        }
+    }
+
+    private void dabyws$hidePreviewTogglesBody() {
         if (Minecraft.getInstance() == null || McsmExtrasConfig.giantPreviewEnabled) {
             return;
         }

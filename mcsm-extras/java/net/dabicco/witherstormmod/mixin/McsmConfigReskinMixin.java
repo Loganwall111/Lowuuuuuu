@@ -63,6 +63,16 @@ public abstract class McsmConfigReskinMixin {
     @Inject(method = "extractRenderState", at = @At("HEAD"), remap = false)
     private void dabyws$mcsPlate(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
+        // BUILD #469 -- fault-isolated: the plate is the first thing this screen
+        // draws, and a throw here would take the whole console's frame with it.
+        try {
+            dabyws$mcsPlateBody(g);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("config-plate", t);
+        }
+    }
+
+    private void dabyws$mcsPlateBody(GuiGraphicsExtractor g) {
         WitherStormConfigScreen self = (WitherStormConfigScreen) (Object) this;
         int w = self.width;
         int h = self.height;
@@ -226,9 +236,18 @@ public abstract class McsmConfigReskinMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"), remap = false)
     private void dabyws$mcsChrome(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
+        // BUILD #469 -- fault-isolated, same rule as the plate above.
+        try {
+            dabyws$mcsChromeBody(g);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("config-chrome", t);
+        }
+    }
+
+    private void dabyws$mcsChromeBody(GuiGraphicsExtractor g) {
         WitherStormConfigScreen self = (WitherStormConfigScreen) (Object) this;
         int w = self.width;
-        int h = self.height;
+        int h = this.height;
 
         // paint out the base's hardcoded tab underline (old tab position)
         g.fill(0, 50, w, 57, 0xFF11091C);

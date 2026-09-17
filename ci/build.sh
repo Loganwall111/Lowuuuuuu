@@ -1040,6 +1040,44 @@ VANILLA_OUT=out/vanilla-api.txt
       | { grep -Ei "eyes|emitter|bloom|glow|mark|Fogless|RenderType|Skins" || true; } \
       | sed -n '1,200p'
   done
+
+  # --------------------------------------------------------------------------
+  # BUILD #469 -- WHAT THE TITLE SCREEN'S OWN FRAME IS MADE OF.
+  #
+  # The report that will not go away is "the main menu is black" -- Mojang logo,
+  # then a dark shape, then a black frame with the title bar still up. Every plate
+  # this mod could name has been repainted and gated, so the questions left are
+  # questions about the GAME's own path, and until now every one of them has been
+  # answered by guessing:
+  #
+  #   * does TitleScreen.extractRenderState even CALL extractBackground - the
+  #     method two of this mod's injections hang on? If it does not, the mod's sky
+  #     is never asked to paint and the backdrop is whatever the game drew.
+  #   * what does the game's own backdrop draw on this version (panorama cube? the
+  #     blurred menu_background texture? a cleared-to-black attachment?) - i.e.
+  #     what exactly is the frame the user sees, and which call would a fault in it
+  #     take down.
+  #   * which field does McsmLogoIntroMixin's reflection walk find first? It picks
+  #     "the first declared Minecraft field assignable to Screen" to tell the logo
+  #     scene from the title screen; javap -p prints the declared fields in order,
+  #     so this dump SETTLES whether that pick is `screen` or something else.
+  #
+  # Bytecode, not just signatures: the call graph is the answer here.
+  # --------------------------------------------------------------------------
+  for CLS in \
+    net.minecraft.client.gui.screens.TitleScreen \
+    net.minecraft.client.gui.screens.Screen \
+    net.minecraft.client.gui.components.LogoRenderer \
+    net.minecraft.client.gui.Gui ; do
+    echo
+    echo "===== ${CLS} (bytecode)"
+    { javap -p -c -classpath "$DL/client.jar" "$CLS" 2>&1 \
+      || echo "(javap could not read ${CLS})"; } | sed -n '1,700p'
+  done
+  echo
+  echo "===== net.minecraft.client.Minecraft (declared fields, in order)"
+  { javap -p -classpath "$DL/client.jar" net.minecraft.client.Minecraft 2>&1 \
+    || echo "(javap could not read net.minecraft.client.Minecraft)"; } | sed -n '1,400p'
 } > "$VANILLA_OUT" 2>&1 || true
 echo "[api] vanilla dump: $(wc -l < "$VANILLA_OUT" 2>/dev/null || echo 0) lines -> out/vanilla-api.txt"
 

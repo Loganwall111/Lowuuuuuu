@@ -23,9 +23,14 @@ public abstract class McsmCinematicScreenMixin {
     private void dabyws$shatterSpray(GuiGraphicsExtractor g, int mouseX, int mouseY,
                                      float partialTick, CallbackInfo ci) {
         try {
-            McsmCinematic.drawShatter(g, (Screen) (Object) this);
-        } catch (Throwable ignored) {
-            // cosmetic only
+            // BUILD #469 -- stood down with the rest of the chrome when the guard
+            // has tripped: a spray over a frame that is not there is nothing.
+            if (net.mcsm.extras.client.McsmMenuGuard.ok()) {
+                McsmCinematic.drawShatter(g, (Screen) (Object) this);
+            }
+        } catch (Throwable t) {
+            // cosmetic only -- but recorded, like every other menu-path fault
+            net.mcsm.extras.client.McsmMenuGuard.fault("button-shatter", t);
         }
     }
 }

@@ -88,6 +88,17 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         }
     }
 
+    /**
+     * BUILD #469 -- and on the frame the screen is BUILT, too: the base mod adds
+     * its two dark buttons in {@code init} (mixin priority 1000, this one is 1500,
+     * so this runs last), and taking them off here means they are never in a frame
+     * at all rather than hidden on the first render pass.
+     */
+    @Inject(method = "init", at = @At("TAIL"))
+    private void dabyws$hideBaseChromeOnInit(CallbackInfo ci) {
+        mcsm$hideBaseChrome();
+    }
+
     @Inject(method = "removed", at = @At("TAIL"))
     private void dabyws$resetTurntableInput(CallbackInfo ci) {
         MC$CUR_X = -1.0D;
@@ -183,9 +194,29 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         if (McsmExtrasConfig.menuPanorama) {
             return; // vanilla panorama + vanilla background: untouched
         }
-        ci.cancel(); // explicit opt-out: the mod's OWN sky, never a black plate
+        // BUILD #469 -- FAIL OPEN, and cancel only what was actually painted.
+        //
+        // The report came back a third time ("It's still black ... it's definitely a
+        // render issue ... the Mojang logo loads ... and then just completely black").
+        // A cancelled vanilla background plus ANY fault in this hook is an EMPTY
+        // frame: the cancel removed what the game would have drawn for itself, and
+        // the mod's own sky never arrived. So the order is inverted here -- paint
+        // first, inside the guard, and cancel the vanilla background only for a frame
+        // the mod really did paint. When the guard has stood the chrome down, or the
+        // paint faulted, this method returns WITHOUT cancelling and the vanilla
+        // backdrop draws: a plain vanilla menu instead of a black one.
         int w = this.width;
         int h = this.height;
+        if (!net.mcsm.extras.client.McsmMenuGuard.ok()) {
+            return; // stood down: let the game paint its own background
+        }
+        try {
+            net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 1.0F);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("title-backdrop", t);
+            return; // and the vanilla backdrop stays cancelled=NO: never an empty frame
+        }
+        ci.cancel(); // only ever after a frame the mod itself painted
         // BUILD #464 -- "fix the main menu be black".
         //
         // This path used to paint an opaque #07050E..#0B0716 plate over the whole
@@ -206,6 +237,80 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
     @Inject(method = "extractBackground", at = @At("TAIL"))
     private void dabyws$storyModeFraming(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
+        // BUILD #469 -- the base mod's two dark side buttons come off FIRST, every
+        // frame, before anything else in this hook can touch the frame. The report
+        // ("... a failed thing with like a very very very dark failed button on the
+        // side ... and then just completely black") is those two: they are drawn by
+        // the base mixin in a near-black purple, so if the mod's own hide pass misses
+        // one the player sees a dark unreadable button on the title.
+        mcsm$hideBaseChrome();
+        // ... and then the framing is fault-isolated. It used to be one unguarded
+        // body: a fault in the episodic panels (animation state, a null font, a
+        // button list changing size mid-frame) threw straight out of
+        // extractBackground, and a screen whose extraction throws gets NO frame --
+        // the black window with a title bar. Now it reports and gets out of the way.
+        if (!net.mcsm.extras.client.McsmMenuGuard.ok()) {
+            return;
+        }
+        try {
+            dabyws$framingBody(g, mouseX, mouseY, partialTick);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("title-framing", t);
+        }
+    }
+
+    /**
+     * BUILD #469 -- THE BASE MOD'S DARK SIDE BUTTONS, OFF EVERY FRAME.
+     *
+     * <p>The base mod adds two widgets to the title in {@code init}: a near-black
+     * purple {@code "\u00a75\u00a7l\u26a1 Storm Config"} button at (width-142, 6) and its
+     * {@code "\u00a7d\u00a7l\ud83d\udc41 3D Storm Preview"} twin at (width-142, 27). Both are
+     * dark plates on this build's title -- the report calls one of them "a failed
+     * thing ... a very very very dark failed button on the side" -- and the standing
+     * rule is that the one way in from the menu is the bottom-right Minecraft logo
+     * button, so neither belongs on the menu at all.
+     *
+     * <p>Matched by MESSAGE first (the exact words, wherever a layout change moves
+     * them) and by geometry second (136x18 in the top strip), and run from the
+     * framing hook AND from the earlier extractRenderState hook, so a base button
+     * cannot survive a single frame.
+     */
+    private void mcsm$hideBaseChrome() {
+        try {
+            for (Object child : this.children()) {
+                if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
+                    continue;
+                }
+                net.minecraft.client.gui.components.AbstractButton b =
+                        (net.minecraft.client.gui.components.AbstractButton) child;
+                boolean hide = false;
+                try {
+                    if (b.getMessage() != null) {
+                        String msg = b.getMessage().getString();
+                        if (msg.contains("Storm Config") || msg.contains("Storm Preview")
+                                || msg.contains("Preview")) {
+                            hide = true;
+                        }
+                    }
+                    if (!hide && b.getY() == 27 && b.getWidth() == 136 && b.getHeight() == 18) {
+                        hide = true; // the base preview button's own bounds
+                    }
+                } catch (Throwable ignored) {
+                    // a widget that cannot be asked: leave it as it is
+                }
+                if (hide) {
+                    b.visible = false;
+                    b.active = false;
+                }
+            }
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("title-base-chrome", t);
+        }
+    }
+
+    /** The framing pass itself; only ever called from the guarded hook above. */
+    private void dabyws$framingBody(GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick) {
         int w = this.width;
         int h = this.height;
 
@@ -214,40 +319,9 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         // CORNER of the menu. The user's rule for this build: "the config entry
         // has to be at the bottom right, inside the Minecraft logo button, not in
         // the side/corner". The replacement is drawn by dabyws$mcsMenuChrome and
-        // clicked in dabyws$cinematicClick; this hides the old one so there is
-        // exactly ONE way in from the menu.
-        for (Object child : this.children()) {
-            if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
-                continue;
-            }
-            net.minecraft.client.gui.components.AbstractButton cb =
-                    (net.minecraft.client.gui.components.AbstractButton) child;
-            if (cb.getMessage() == null) {
-                continue;
-            }
-            String msg = cb.getMessage().getString();
-            if (msg.contains("Storm Config") && cb.getY() <= 12) {
-                cb.visible = false;
-                cb.active = false;
-            }
-        }
-
-        // --- Build #376: remove the base "3D Storm Preview" button ---------
-        // The base StoryModeTitleScreenMixin adds it at (width-142, 27,
-        // 136, 18) in init. User order: no "Preview" wording. Hiding it here
-        // (before the widgets render) takes it off the screen; the "Storm
-        // Config" button directly above it (y=6) is untouched.
-        for (Object child : this.children()) {
-            if (!(child instanceof net.minecraft.client.gui.components.AbstractButton)) {
-                continue;
-            }
-            net.minecraft.client.gui.components.AbstractButton pb =
-                    (net.minecraft.client.gui.components.AbstractButton) child;
-            if (pb.getY() == 27 && pb.getWidth() == 136 && pb.getHeight() == 18) {
-                pb.visible = false;
-                pb.active = false;
-            }
-        }
+        // clicked in dabyws$cinematicClick; the hide pass that takes the base
+        // button (and its "3D Storm Preview" twin) off the screen is
+        // mcsm$hideBaseChrome(), called at the top of the hook every frame.
 
         // BUILD #416 (D.8, phase 5) -- THE FULL-SCREEN GRADE IS GONE.
         //
@@ -565,12 +639,20 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
     @Inject(method = "extractRenderState", at = @At("HEAD"))
     private void dabyws$cinematicBoot(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
+        // BUILD #469 -- the earliest per-frame pass we own, and the place the base
+        // mod's dark side buttons are taken off the title before the widgets render.
+        mcsm$hideBaseChrome();
+        if (!net.mcsm.extras.client.McsmMenuGuard.ok()) {
+            return; // stood down: the vanilla menu, with no cinematic over it either
+        }
         try {
             if (net.mcsm.extras.client.McsmCinematic.tickMenu()) {
                 net.mcsm.extras.client.McsmCinematic.drawMenuSequence(g, this);
             }
-        } catch (Throwable ignored) {
-            // the cinematic must never break a frame
+        } catch (Throwable t) {
+            // the cinematic must never break a frame -- and a fault in it is exactly
+            // the kind of thing that used to leave the frame empty: record it.
+            net.mcsm.extras.client.McsmMenuGuard.fault("menu-cinematic", t);
         }
     }
 
@@ -638,6 +720,26 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         if (net.mcsm.extras.client.McsmCinematic.isSequenceActive()) {
             return;
         }
+        // BUILD #469 -- fault-isolated. This pass walks the widget list, the font and
+        // the per-button animation state EVERY frame of the menu; anything it throws
+        // used to throw straight out of the title's extractRenderState, and a screen
+        // whose extraction throws draws no frame at all -- the black window with a
+        // title bar in the report. It reports to the guard instead, and if it keeps
+        // happening the guard stands the mod's chrome down so the plain vanilla menu
+        // is what the player gets.
+        if (!net.mcsm.extras.client.McsmMenuGuard.ok()) {
+            return;
+        }
+        try {
+            dabyws$chromeBody(g, mouseX, mouseY, partialTick);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("title-chrome", t);
+        }
+    }
+
+    /** The chrome pass itself; only ever called from the guarded hook above. */
+    private void dabyws$chromeBody(GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick) {
         int w = this.width;
         int h = this.height;
         Font font = Minecraft.getInstance().font;

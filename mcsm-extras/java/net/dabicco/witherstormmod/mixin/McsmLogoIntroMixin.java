@@ -34,27 +34,49 @@ public abstract class McsmLogoIntroMixin {
     @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IF)V",
             at = @At("TAIL"), require = 0)
     private void mcsm$introOnLogoScene(GuiGraphicsExtractor g, int x, float partialTick, CallbackInfo ci) {
-        mcsm$playIntro(g);
+        // BUILD #469 -- fault-isolated: this runs on the boot/logo scene, the very
+        // frame the report describes ("the Mojang logo loads ... and then just
+        // completely black"). A throw here used to propagate out of the logo
+        // renderer's extraction.
+        try {
+            mcsm$playIntro(g);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("logo-intro", t);
+        }
     }
 
     @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IFII)V",
             at = @At("TAIL"), require = 0)
     private void mcsm$introOnLogoScene4(GuiGraphicsExtractor g, int x, float partialTick,
                                         int a, int b, CallbackInfo ci) {
-        mcsm$playIntro(g);
+        try {
+            mcsm$playIntro(g);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("logo-intro", t);
+        }
     }
 
     @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IF)V",
             at = @At("HEAD"), cancellable = true, require = 0)
     private void mcsm$noLogoOnTitle(GuiGraphicsExtractor g, int x, float partialTick, CallbackInfo ci) {
-        hideVanillaLogo(ci);
+        // BUILD #469 -- guarded here too, so the gate rule is uniform: every handler
+        // this build injects into a render method carries its own catch.
+        try {
+            hideVanillaLogo(ci);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("logo-hide", t);
+        }
     }
 
     @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IFII)V",
             at = @At("HEAD"), cancellable = true, require = 0)
     private void mcsm$noLogoOnTitle4(GuiGraphicsExtractor g, int x, float partialTick,
                                      int a, int b, CallbackInfo ci) {
-        hideVanillaLogo(ci);
+        try {
+            hideVanillaLogo(ci);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("logo-hide", t);
+        }
     }
 
     private static void hideVanillaLogo(CallbackInfo ci) {

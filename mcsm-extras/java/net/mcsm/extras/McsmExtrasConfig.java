@@ -113,11 +113,21 @@ public final class McsmExtrasConfig {
         } catch (Throwable t) {
             sky = "sky: unknown";
         }
+        // BUILD #469 -- and the RENDER side of the same question, because the report
+        // is a render report: whether the mod's menu chrome is painting at all, and
+        // if not, what threw. The guard answers, and /ds menu reset clears it.
+        String render;
+        try {
+            render = net.mcsm.extras.client.McsmMenuGuard.state();
+        } catch (Throwable t) {
+            render = "render: unknown";
+        }
         return (menuPanorama ? "backdrop: panorama cube" : "backdrop: the storm's sky")
                 + " \u00b7 lift " + menuLift
                 + " \u00b7 cinematic " + (cinematicBootEnabled ? "on" : "off")
                 + " \u00b7 " + cinematic
-                + " \u00b7 " + sky;
+                + " \u00b7 " + sky
+                + " \u00b7 " + render;
     }
 
     // ---- Build #416 (D.8): the Decayed Reality ---------------

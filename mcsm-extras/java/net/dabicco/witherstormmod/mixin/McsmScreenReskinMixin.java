@@ -29,6 +29,23 @@ public abstract class McsmScreenReskinMixin {
             at = @At("HEAD"))
     private void dabyws$dsReskinBackdrop(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
+        // BUILD #469 -- fault-isolated. This is a HEAD injection on the BASE Screen
+        // class, i.e. on every screen in the game that does not override
+        // extractRenderState: a throw here is not one dark screen, it is every
+        // un-reworked screen failing to draw a frame at all.
+        try {
+            dabyws$dsReskinBackdropBody(g);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("screen-reskin", t);
+        }
+    }
+
+    private void dabyws$dsReskinBackdropBody(GuiGraphicsExtractor g) {
+        // BUILD #469 -- and while the guard is stood down, this stands down too:
+        // the vanilla screen keeps its own background.
+        if (!net.mcsm.extras.client.McsmMenuGuard.ok()) {
+            return;
+        }
         Screen self = (Screen) (Object) this;
         // our own screens (console / texture painter / ...) bring their own
         if (self instanceof net.mcsm.extras.client.McsmExtrasScreen

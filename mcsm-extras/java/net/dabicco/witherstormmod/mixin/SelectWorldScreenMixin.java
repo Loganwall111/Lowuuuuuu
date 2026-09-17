@@ -29,6 +29,19 @@ public abstract class SelectWorldScreenMixin extends Screen {
    @Inject(method = "extractRenderState", at = @At("TAIL"))
    private void dabyws$worldSelectionBorder(GuiGraphicsExtractor g, int mouseX, int mouseY,
          float partialTick, CallbackInfo ci) {
+      // BUILD #469 -- fault-isolated, and stood down with the rest of the chrome:
+      // an exception out of a screen's extraction leaves the frame EMPTY.
+      if (!net.mcsm.extras.client.McsmMenuGuard.ok()) {
+         return;
+      }
+      try {
+         dabyws$worldSelectionBorderBody(g);
+      } catch (Throwable t) {
+         net.mcsm.extras.client.McsmMenuGuard.fault("world-select-chrome", t);
+      }
+   }
+
+   private void dabyws$worldSelectionBorderBody(GuiGraphicsExtractor g) {
       int w = this.width;
       int h = this.height;
 

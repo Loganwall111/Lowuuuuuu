@@ -30,8 +30,22 @@ public abstract class McsmLoadingPauseReskinMixin {
             at = @At("HEAD"))
     private void dabyws$dsLoadingBackdrop(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick, CallbackInfo ci) {
+        // BUILD #469 -- fault-isolated: the loading screen and the pause screen are
+        // the two frames a player sees the most of, and a throw in this hook took
+        // the whole frame with it.
+        try {
+            dabyws$dsLoadingBackdropBody(g);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("load-pause-reskin", t);
+        }
+    }
+
+    private void dabyws$dsLoadingBackdropBody(GuiGraphicsExtractor g) {
         if (net.mcsm.extras.client.McsmCinematic.isSequenceActive()) {
             return;
+        }
+        if (!net.mcsm.extras.client.McsmMenuGuard.ok()) {
+            return; // stood down: the screen keeps the game's own background
         }
         net.minecraft.client.gui.screens.Screen self =
                 (net.minecraft.client.gui.screens.Screen) (Object) this;
