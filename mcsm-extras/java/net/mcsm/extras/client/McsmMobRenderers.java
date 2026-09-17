@@ -69,6 +69,13 @@ public final class McsmMobRenderers {
             ModelLayerRegistry.registerModelLayer(VOID_LURKER_LAYER, McsmMobModels.VoidLurkerModel::createBodyLayer);
             ModelLayerRegistry.registerModelLayer(DRIFTER_LAYER, McsmMobModels.DrifterModel::createBodyLayer);
             ModelLayerRegistry.registerModelLayer(KEEPER_LAYER, McsmMobModels.KeeperModel::createBodyLayer);
+            // BUILD #466 -- and the CAST's own body. The renderer for the Story Mode
+            // characters used to bake ModelLayers.PLAYER: Minecraft's own player mesh
+            // with a Story Mode skin on it. This is the layer that replaces it, and
+            // it has to be registered before any renderer bakes it or the cast is a
+            // missing model rather than a wrong one.
+            ModelLayerRegistry.registerModelLayer(StoryCharacterRenderer.LAYER,
+                    StoryCharacterRenderer::createBodyLayer);
         } catch (Throwable t) {
             System.err.println("[ds] the mob model layers could not be registered: " + t);
         }

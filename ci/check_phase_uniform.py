@@ -2745,6 +2745,68 @@ def main():
           and "McsmMobRenderers.registerLayers();" in mobmix
           and "McsmMobRenderers.registerRenderers();" in mobmix
           and 'Identifier.fromNamespaceAndPath("mcsm", "textures/entity/" + name + ".png")' in renderers)
+    # ------------------------------------------------------------------
+    # BUILD #466 -- THE CAST GET THEIR OWN BODIES. The standing ask, word for word:
+    # "custom NPC models", "custom NPCs + dialogue, corrupted NPCs", and the note
+    # that the NPCs are "re-kitted vanilla mobs". They were: the Story Mode renderer
+    # baked ModelLayers.PLAYER -- Minecraft's own player mesh -- and put a Story Mode
+    # skin on it.
+    #
+    # The body is ours now, and the whole point of it is WHERE THE PIXELS COME FROM:
+    # the seven base parts keep the player sheet's own rectangles, so the twenty
+    # skins this mod already carries still map pixel for pixel and no existing art
+    # is repainted, while the hood, collar, coat, sleeves, leg wraps and badge are
+    # cut from the SECOND LAYER of each character's own skin -- the layer a player
+    # skin uses for exactly those things.
+    # ------------------------------------------------------------------
+    story = read("mcsm-extras/java/net/mcsm/extras/client/StoryCharacterRenderer.java") or ""
+    story_code = code_only(story)
+    _bsh2 = read("ci/build.sh") or ""   # this family sits before buildsh is read
+    check("the cast has a body of its own instead of Minecraft's player mesh",
+          "public static LayerDefinition createBodyLayer()" in story_code
+          and "ModelLayers.PLAYER" not in story_code
+          and "public static final ModelLayerLocation LAYER = new ModelLayerLocation(" in story_code
+          and "super(ctx, new Model(ctx.bakeLayer(LAYER)), 0.5F);" in story_code
+          and "ModelLayerRegistry.registerModelLayer(StoryCharacterRenderer.LAYER,"
+              "\n                    StoryCharacterRenderer::createBodyLayer);" in renderers
+          and "StoryCharacterRenderer" in _bsh2)
+
+    check("and every pixel of the new geometry is the character's own second layer",
+          # the base body keeps the player sheet's rects, unmodified: that is what
+          # keeps twenty existing skins correct
+          all(r in story_code for r in ("texOffs(0, 0)", "texOffs(16, 16)", "texOffs(40, 16)",
+                                        "texOffs(32, 48)", "texOffs(0, 16)", "texOffs(16, 48)"))
+          # and the clothes are the overlay rects the sheet reserves for them
+          and all(r in story_code for r in ("texOffs(32, 0)", "texOffs(16, 32)",
+                                            "texOffs(40, 32)", "texOffs(48, 32)",
+                                            "texOffs(0, 32)", "texOffs(0, 48)"))
+          and '"hood_back"' in story_code
+          and all(p in story_code for p in ('"collar"', '"coat"', '"badge"',
+                                            '"sleeve_r"', '"sleeve_l"', '"wrap_r"', '"wrap_l"'))
+          and "LayerDefinition.create(mesh, 64, 64);" in story_code)
+
+    check("and the storm corrupts them in the model, once it is far enough along",
+          "private static final float CORRUPT_FROM = 5.5F;" in story_code
+          and "s.corruption = Mth.clamp(" in story_code
+          and "phase = McsmStormPhase.phase();" in story_code
+          and "if (s.corruption > 0.01F) {" in story_code
+          and "this.head.zRot += Mth.sin(t * 0.9F) * 0.24F * k;" in story_code)
+
+    cast = re.findall(r'"([A-Z][a-z]+)"', read(
+        "mcsm-extras/java/net/mcsm/extras/McsmNpcs.java")[
+        read("mcsm-extras/java/net/mcsm/extras/McsmNpcs.java").index("SPAWN_EGG_CAST = {"):
+        read("mcsm-extras/java/net/mcsm/extras/McsmNpcs.java").index("private static final int TOWN_RADIUS")])
+    story_skins = os.path.join("src", "main", "resources", "assets", "dabywitherstormmod",
+                               "textures", "entity", "story")
+    over_skins = os.path.join("jar-overrides", "assets", "dabywitherstormmod",
+                              "textures", "entity", "story")
+    missing_skins = [c for c in cast
+                     if not (os.path.exists(os.path.join(story_skins, c.lower() + ".png"))
+                             or os.path.exists(os.path.join(over_skins, c.lower() + ".png")))]
+    check("and every cast member has a skin to wear, or is wearing jesse's",
+          len(cast) >= 20 and not missing_skins,
+          "cast=%d missing=%s" % (len(cast), missing_skins))
+
     check("the void walkers are real entities of their own, not re-kitted vanilla",
           '"voidwalker"' in entities
           and '"void_lurker"' in entities
