@@ -485,6 +485,11 @@ public abstract class McsmTownCommandPatch {
             for (String line : net.mcsm.extras.client.McsmMenuDiag.report()) {
                 src.sendSuccess(() -> Component.literal("[ds] " + line), false);
             }
+            // BUILD #475 -- and what the world is doing to the player right now: the
+            // hallucination pass reads MASSG, the void's aging and the storm's rose
+            // phase, so this line is how a player sees which of them is driving it.
+            src.sendSuccess(() -> Component.literal("[ds] "
+                    + net.mcsm.extras.client.McsmHallucinations.state()), false);
             return 1;
         } catch (Throwable t) {
             src.sendFailure(Component.literal("[ds] " + t));

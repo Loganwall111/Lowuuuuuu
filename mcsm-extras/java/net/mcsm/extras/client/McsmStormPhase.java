@@ -31,6 +31,14 @@ public final class McsmStormPhase {
     public static final float PHASE_MAX = 8.05F;
 
     /**
+     * BUILD #475 -- the phase from which the sky itself stops behaving: the rose
+     * stop the references put at 6.0, read by the hallucinations as "the world is
+     * wrong now" and nothing else. Named here rather than typed as a literal in a
+     * second place, so the feed and the effect cannot drift apart.
+     */
+    public static final float SHELL_ROSE = 5.90F;
+
+    /**
      * The three reference sheets, traced stop for stop (t = 0 zenith -> t = 1
      * horizon). These are the SAME numbers mcsm-core-shaders/core/sky.fsh
      * samples, kept here so the Java geometry (the halo) cannot drift away from

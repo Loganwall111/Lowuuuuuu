@@ -64,5 +64,15 @@ public abstract class McsmHudAttachMixin {
         } catch (Throwable t) {
             net.mcsm.extras.client.McsmMenuGuard.fault("hud-void-floor", t);
         }
+        // BUILD #475 -- THE HALLUCINATIONS. The owed half of the two switches that
+        // have been on the settings screen since D.8 and read by nothing: torn
+        // bands, a figure at the edge of vision, a false sky and the whispering.
+        // Drawn LAST, over everything the world and the mod have already put up,
+        // because a hallucination is the topmost thing a broken reality does.
+        try {
+            net.mcsm.extras.client.McsmHallucinations.paint(g, delta);
+        } catch (Throwable t) {
+            net.mcsm.extras.client.McsmMenuGuard.fault("hud-hallucinations", t);
+        }
     }
 }

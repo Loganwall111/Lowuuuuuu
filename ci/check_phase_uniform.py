@@ -3381,6 +3381,88 @@ def main():
           < boots.index("McsmSkyFloorBand.submit(ctx);"))
 
     # ------------------------------------------------------------------
+    # BUILD #475 -- THE HALLUCINATIONS.
+    #
+    # "reality warping, hallucinations, corruption, screen glitches" is the user's own
+    # description of what MASSG does, and D.8 promised it as phase 4: torn frames,
+    # duplicating silhouettes, false storms, whispering chat. Two switches have been on
+    # the settings screen since then -- "Reality Glitches + Hallucinations" and
+    # "Hallucination Intensity" -- and were read by NOTHING. This family makes them mean
+    # something, and keeps them honest:
+    #
+    #   * it fires only when the world is actually wrong: MASSG up, the player's own void
+    #     aging past its thresholds, or a storm past its rose phase -- the same feeds the
+    #     rest of the mod follows, never a timer that runs in a peaceful world;
+    #   * it is SURVIVAL ONLY (the world doing something to the player, not a spectator
+    #     effect), and it stops dead when reality glitches are switched off or the
+    #     intensity setting is zero;
+    #   * it paints and never mutates: no entity is spawned, no block is set, nothing
+    #     exists in the world that a player could walk into or fight -- a hallucination
+    #     that the game can interact with is not a hallucination, it is a lie;
+    #   * its violet is the decayed identity's glow (#8A5CFF), the same hex the palette
+    #     tables and the gate's own hex anchors carry.
+    # ------------------------------------------------------------------
+    halluc = read("mcsm-extras/java/net/mcsm/extras/client/McsmHallucinations.java") or ""
+    # family-local: `hud` above is the terminal's own class, not the attach mixin
+    attach = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java") or ""
+    # family-local too: `towns` is read further down, for the console families
+    cmds = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
+
+    check("and the two hallucination switches finally do something",
+          "public final class McsmHallucinations" in halluc
+          and "public static void paint(GuiGraphicsExtractor g, DeltaTracker delta)" in halluc
+          and "public static float intensity()" in halluc
+          and "public static String state()" in halluc
+          # the switches that existed as text until now
+          and "McsmExtrasConfig.realityGlitches" in halluc
+          and "McsmExtrasConfig.hallucinationIntensity" in halluc
+          and "if (!McsmExtrasConfig.realityGlitches)" in halluc
+          # the four promised kinds, all reachable
+          and "private static final int TEAR = 0;" in halluc
+          and "private static final int FIGURE = 1;" in halluc
+          and "private static final int FALSE_SKY = 2;" in halluc
+          and "private static final int WHISPER = 3;" in halluc
+          and "case TEAR:" in halluc and "case FIGURE:" in halluc
+          and "case FALSE_SKY:" in halluc and "whisper(g, mc, w, h, it, t, now);" in halluc
+          and "g.text(mc.font, line, x, y," in halluc)
+
+    check("and it fires only when the world is wrong, and never in creative",
+          "McsmMassgSky.active()" in halluc
+          and "McsmVoidAgingClient.ageOf(mc.player.getId())" in halluc
+          and "McsmVoidAging.stageOf(age)" in halluc
+          and "McsmStormPhase.SHELL_ROSE" in halluc
+          and "public static final float SHELL_ROSE = 5.90F;" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java") or "")
+          # survival only: this is the world doing something to the player
+          and "if (mc.player.isCreative() || mc.player.isSpectator()) {" in halluc
+          # and it is quiet when it should be: nothing on the clean path at all
+          and "if (it <= FLOOR) {" in halluc
+          and "return; // nothing on screen between episodes, by design" in halluc)
+
+    check("and it paints, and never puts anything into the world",
+          # a hallucination the game can interact with is not a hallucination
+          # (the API names, not the word "spawn" -- the class comment says "painted,
+          #  never spawned", which is the promise this check exists to keep)
+          "spawn(" not in halluc
+          and "EntityType" not in halluc
+          and "addFreshEntity" not in halluc
+          and "setBlock" not in halluc
+          and "ServerLevel" not in halluc
+          and "new McsmBeast" not in halluc
+          # its violet is the decayed identity's own glow
+          and "0xFF8A5CFF" in halluc
+          and "VIOLET & 0x00FFFFFF" in halluc
+          # drawn last on the proven per-frame HUD hook, and fault-isolated there
+          and "net.mcsm.extras.client.McsmHallucinations.paint(g, delta);" in attach
+          and 'McsmMenuGuard.fault("hud-hallucinations", t);' in attach
+          and attach.index("McsmHallucinations.paint(g, delta);")
+          > attach.index("McsmVoidFloor.draw(g);")
+          and " } catch (Throwable ignored) {" in halluc
+          and "a hallucination may never cost a frame" in halluc
+          # and a player can see which feed is driving it
+          and "McsmHallucinations.state()" in cmds)
+
+    # ------------------------------------------------------------------
     # BUILD #471 -- AN OVERRIDE MAY CHANGE THE BODY, NEVER THE INTERFACE.
     #
     # This jar REPLACES the game's own core shaders (mcsm-core-shaders/* is overlaid onto
