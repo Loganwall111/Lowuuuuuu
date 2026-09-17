@@ -929,7 +929,7 @@ fi
 if git rev-parse --git-dir >/dev/null 2>&1; then
   if ! git diff --quiet -- jar-overrides/assets/mcsm 2>/dev/null; then
     echo "::error title=content pack::the committed content-pack assets are out of date with ci/make_mcsm_textures.py / ci/make_mcsm_content_assets.py"
-    git status --porcelain -- jar-overrides/assets/mcsm | head -20
+    git status --porcelain -- jar-overrides/assets/mcsm | head -20 || true
     exit 1
   fi
 else
