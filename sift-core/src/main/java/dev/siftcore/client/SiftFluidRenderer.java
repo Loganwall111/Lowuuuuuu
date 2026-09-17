@@ -37,7 +37,6 @@ public final class SiftFluidRenderer {
         RenderSystem.defaultBlendFunc();
         RenderSystem.depthMask(false);
         RenderSystem.disableCull();
-        RenderSystem.disableTexture();
         RenderSystem.setShader(() -> SiftShaders.FINAL);
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();

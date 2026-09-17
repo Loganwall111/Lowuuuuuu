@@ -48,7 +48,6 @@ public final class SiftRiftRenderer extends EntityRenderer<SiftRiftEntity> {
         RenderSystem.defaultBlendFunc();
         RenderSystem.depthMask(false);
         RenderSystem.disableCull();
-        RenderSystem.disableTexture();
         RenderSystem.setShader(() -> SiftShaders.RIFT);
 
         MatrixStack.Entry entry = matrices.peek();

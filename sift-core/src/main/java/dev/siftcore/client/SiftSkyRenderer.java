@@ -53,7 +53,6 @@ public final class SiftSkyRenderer implements DimensionRenderingRegistry.SkyRend
         buffer.vertex(-1.0D, 1.0D, 0.0D).next();
         Tessellator.getInstance().draw();
 
-        RenderSystem.enableTexture();
         RenderSystem.disableBlend();
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);
