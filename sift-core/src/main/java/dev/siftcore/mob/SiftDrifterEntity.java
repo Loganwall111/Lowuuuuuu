@@ -121,13 +121,13 @@ public final class SiftDrifterEntity extends FlyingEntity {
     }
 
     @Override
-    protected void readCustomDataFromNbt(NbtCompound nbt) {
+    public void readCustomDataFromNbt(NbtCompound nbt) {
         this.setDrifterScale(nbt.getFloat("Scale"));
         this.setDrifterSeed(nbt.getFloat("Seed"));
     }
 
     @Override
-    protected void writeCustomDataToNbt(NbtCompound nbt) {
+    public void writeCustomDataToNbt(NbtCompound nbt) {
         nbt.putFloat("Scale", this.getDrifterScale());
         nbt.putFloat("Seed", this.getDrifterSeed());
     }
