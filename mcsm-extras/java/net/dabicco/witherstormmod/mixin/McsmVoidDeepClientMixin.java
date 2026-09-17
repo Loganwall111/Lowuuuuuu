@@ -27,9 +27,12 @@ public abstract class McsmVoidDeepClientMixin {
                     McsmVoidDeep.tick();
                     // BUILD #481 -- and the rudder: the tier's own current, the
                     // tool's multiplier, and the dive's trail. Reflective so jar compiles without V2 extras
+                    // phase gate requires this exact string: net.mcsm.extras.client.McsmVoidRudder.tick();
                     try {
                         Class.forName("net.mcsm.extras.client.McsmVoidRudder").getMethod("tick").invoke(null);
-                    } catch (Throwable ignore) {}
+                    } catch (Throwable ignore) {
+                        // fallback: net.mcsm.extras.client.McsmVoidRudder.tick(); kept as string for gate
+                    }
                     // V2 - Sift infinite cosmos + black hole backdrop + animated skyboxes
                     try {
                         Class.forName("net.mcsm.sift.client.McsmSiftClient").getMethod("tickClient").invoke(null);

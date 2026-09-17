@@ -58,7 +58,7 @@ jobs:
           zip -r dist/Sift_Cosmos_Build482.zip mcsm-extras/ mcsm-core-shaders/ storylook/ overrides/ tools/ SIFT_COSMOS_README.md
           echo "Packaged dist/Sift_Cosmos_Build482.zip"
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Sift_Cosmos_Build482
           path: dist/
