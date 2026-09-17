@@ -1,11 +1,13 @@
 package dev.siftcore.block;
 
 import dev.siftcore.SiftCore;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroups;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
@@ -35,6 +37,11 @@ public final class SiftBlocks {
     }
 
     public static void register() {
-        SiftCore.LOGGER.info("Registered Sift terrain blocks");
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.BUILDING_BLOCKS).register(entries -> {
+            entries.add(SIFTSTONE);
+            entries.add(SIFT_MOSS);
+            entries.add(RIFT_CRYSTAL);
+        });
+        SiftCore.LOGGER.info("Registered Sift terrain blocks and creative inventory entries");
     }
 }

@@ -141,6 +141,13 @@ def main() -> int:
         if "dev.siftcore.client.SiftCoreClient" not in manifest.get("entrypoints", {}).get("client", []):
             error("client entrypoint is not registered")
 
+    blocks_source = (ROOT / "src/main/java/dev/siftcore/block/SiftBlocks.java").read_text(encoding="utf-8")
+    if "ItemGroupEvents.modifyEntriesEvent(ItemGroups.BUILDING_BLOCKS)" not in blocks_source:
+        error("custom Sift blocks must be exposed in the creative building-blocks inventory")
+    for block_name in ("SIFTSTONE", "SIFT_MOSS", "RIFT_CRYSTAL"):
+        if block_name not in blocks_source:
+            error(f"Sift block registration is missing {block_name}")
+
     dimension = load_json("src/main/resources/data/mcsm/dimension/the_sift.json")
     if dimension:
         if dimension.get("type") != "mcsm:the_sift":

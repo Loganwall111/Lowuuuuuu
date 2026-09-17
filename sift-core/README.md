@@ -55,4 +55,6 @@ After launching a dev client/server with the dimension data loaded:
 /sift status        Print mod version, dimension, position, velocity, and rotation state
 ```
 
+The custom Sift blocks are exposed in the Creative inventory under Building Blocks. If they are absent after installing a new artifact, remove older `sift-core` jars from the instance's `mods` folder, restart the 1.20.1 profile, and run `/sift status` to confirm the loaded version.
+
 The dimension key is intentionally `mcsm:the_sift` so the sandbox can be merged into the future Minecraft Dimensions Forged namespace without changing datapack references.
