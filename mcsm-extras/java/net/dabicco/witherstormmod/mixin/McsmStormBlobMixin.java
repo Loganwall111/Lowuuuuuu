@@ -40,6 +40,12 @@ public abstract class McsmStormBlobMixin {
             // per dimension, drawn before the floor band so the band owns the
             // under-world and the cube owns everything above it.
             net.mcsm.extras.client.McsmPaintedSky.submit(ctx);
+            // BUILD #470 -- and the weather in that air: three drifting cloud decks,
+            // each painted with its dimension's own cloud sheet, drawn after the cube
+            // (so the deck reads over the walls) and before the floor band, which owns
+            // everything below the world. A sky with no clouds in it was the standing
+            // "the sky is not fully the sky yet".
+            net.mcsm.extras.client.McsmCloudDeck.submit(ctx);
             // BUILD #434 -- the sky's bottom layer. Drawn in the world, not in
             // the shader, so it exists for players who never install the pack.
             McsmSkyFloorBand.submit(ctx);

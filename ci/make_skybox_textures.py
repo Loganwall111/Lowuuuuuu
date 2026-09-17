@@ -37,6 +37,12 @@ OUT_SKY = os.path.join(ROOT, "jar-overrides", "assets", "mcsm", "textures", "sky
 
 SIDE_W, SIDE_H = 512, 128
 TOP_W, TOP_H = 256, 256
+# BUILD #470 -- THE REAL CLOUD DECK. The cube is the air; this is the weather in
+# it. One tileable sheet per dimension, drawn as three stacked, drifting layers in
+# the world (McsmCloudDeck), because "the sky is not fully the sky yet" is mostly
+# about the clouds: a full sky paints them, and the vanilla plane is one flat
+# sheet of one colour, the same in every world.
+CLOUD_W, CLOUD_H = 128, 128
 
 DIMENSIONS = {
     "decayed": dict(
@@ -179,6 +185,71 @@ def paint_top(spec, w=TOP_W, h=TOP_H):
     return px
 
 
+def _cloud_field(seed, cells, w, h):
+    """Tileable value noise: a coarse grid, smoothed, wrapping at the edges.
+
+    Wrapping is the whole point -- the deck scrolls its UVs, so a seam is a line
+    of hard edge crawling across the sky.
+    """
+    rng = Rand(seed)
+    grid = [[rng.frac() for _ in range(cells)] for _ in range(cells)]
+    out = []
+    for y in range(h):
+        fy = y * cells / float(h)
+        y0 = int(fy) % cells
+        y1 = (y0 + 1) % cells
+        ty = fy - int(fy)
+        sy = ty * ty * (3.0 - 2.0 * ty)
+        row = []
+        for x in range(w):
+            fx = x * cells / float(w)
+            x0 = int(fx) % cells
+            x1 = (x0 + 1) % cells
+            tx = fx - int(fx)
+            sx = tx * tx * (3.0 - 2.0 * tx)
+            a = grid[y0][x0] * (1.0 - sx) + grid[y0][x1] * sx
+            b = grid[y1][x0] * (1.0 - sx) + grid[y1][x1] * sx
+            row.append(a * (1.0 - sy) + b * sy)
+        out.append(row)
+    return out
+
+
+def paint_clouds(spec, w=CLOUD_W, h=CLOUD_H):
+    """One dimension's cloud sheet: dense where `cloud` is high, thin where it is not.
+
+    RGB is the world's own light caught in the cloud (its glow pulled most of the
+    way to white); ALPHA is the cloud itself, so the same sheet reads as a solid
+    overcast in the decayed reality and as torn wisps in the void. Tileable in both
+    axes, and never opaque: a deck is weather, not a lid.
+    """
+    coarse = _cloud_field(spec["seed"] * 7 + 1, 8, w, h)
+    fine = _cloud_field(spec["seed"] * 13 + 5, 24, w, h)
+    density = float(spec["cloud"])          # 0.10 .. 0.62
+    glow = spec["glow"]
+    # clouds catch the world's light: the glow, pulled toward white
+    cr = int(glow[0] + (255 - glow[0]) * 0.6)
+    cg = int(glow[1] + (255 - glow[1]) * 0.6)
+    cb = int(glow[2] + (255 - glow[2]) * 0.6)
+    cut = 0.62 - density * 0.45             # the denser the world's cloud, the lower the cut
+    px = []
+    for y in range(h):
+        for x in range(w):
+            f = coarse[y][x] * 0.68 + fine[y][x] * 0.32
+            d = (f - cut) / max(0.08, 1.0 - cut)
+            if d <= 0.0:
+                px.append((cr, cg, cb, 0))
+                continue
+            if d > 1.0:
+                d = 1.0
+            alpha = int(40 + d * 175)       # 40..215: present, still air, never a lid
+            # the thick cores go whiter, the edges keep the world's colour
+            t = min(1.0, d * 1.35)
+            px.append((int(cr + (255 - cr) * t),
+                       int(cg + (255 - cg) * t),
+                       int(cb + (255 - cb) * t),
+                       alpha))
+    return px
+
 def sky_files():
     return {
         "decayed_sides": (SIDE_W, SIDE_H, lambda: paint_sides(DIMENSIONS["decayed"])),
@@ -189,6 +260,12 @@ def sky_files():
         "void_top": (TOP_W, TOP_H, lambda: paint_top(DIMENSIONS["void"])),
         "creator_sides": (SIDE_W, SIDE_H, lambda: paint_sides(DIMENSIONS["creator"])),
         "creator_top": (TOP_W, TOP_H, lambda: paint_top(DIMENSIONS["creator"])),
+        # BUILD #470 -- and the weather in that air: the cloud deck, one sheet per
+        # dimension (the same seeds as its cube, so its sky is one place).
+        "clouds_decayed": (CLOUD_W, CLOUD_H, lambda: paint_clouds(DIMENSIONS["decayed"])),
+        "clouds_adams": (CLOUD_W, CLOUD_H, lambda: paint_clouds(DIMENSIONS["adams"])),
+        "clouds_void": (CLOUD_W, CLOUD_H, lambda: paint_clouds(DIMENSIONS["void"])),
+        "clouds_creator": (CLOUD_W, CLOUD_H, lambda: paint_clouds(DIMENSIONS["creator"])),
     }
 
 
@@ -209,11 +286,12 @@ def emit(check_only=False):
         if missing:
             print("[sky] %d MISSING" % missing)
             return 1
-        print("[sky] all %d painted sky faces present (%d dimensions, sides + zenith)"
-              % (len(sky_files()), len(DIMENSIONS)))
+        print("[sky] all %d painted sky faces present (%d dimensions: sides + zenith "
+              "+ cloud deck)" % (len(sky_files()), len(DIMENSIONS)))
         return 0
-    print("[sky] wrote %d painted sky faces for %d dimensions (%dx%d sides, %dx%d zenith)"
-          % (written, len(DIMENSIONS), SIDE_W, SIDE_H, TOP_W, TOP_H))
+    print("[sky] wrote %d painted sky faces for %d dimensions (%dx%d sides, %dx%d zenith, "
+          "%dx%d cloud deck)" % (written, len(DIMENSIONS), SIDE_W, SIDE_H, TOP_W, TOP_H,
+                                 CLOUD_W, CLOUD_H))
     return 0
 
 

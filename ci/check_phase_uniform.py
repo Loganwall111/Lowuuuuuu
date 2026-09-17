@@ -3236,6 +3236,77 @@ def main():
           "lids: %d read" % (0 if "error" in skies else len(skies)))
 
     # ------------------------------------------------------------------
+    # BUILD #470 -- THE REAL CLOUD DECK. The cube is the air; this is the weather.
+    #
+    # "custom skyboxes" and "the sky is not fully the sky yet" are half answered by a
+    # cube: what a player actually looks at when they look up is the vanilla cloud
+    # plane -- one flat sheet, one colour, one height, identical in every world. Three
+    # drifting, rippling decks per dimension, painted from that world's own sheet and
+    # lit by its own glow, is the other half.
+    #
+    # The sheets are checked here as well, because a sky file is a frame a player
+    # stands under: a deck is a cloud (something solid in it, gaps you can see
+    # through, never opaque) or it is the black-plate class of bug wearing weather.
+    # ------------------------------------------------------------------
+    deck = read("mcsm-extras/java/net/mcsm/extras/client/McsmCloudDeck.java") or ""
+
+    clouds = {}
+    try:
+        import pngutil as _png2
+        for _dim in ("decayed", "adams", "void", "creator"):
+            _cp = os.path.join("jar-overrides/assets/mcsm/textures/sky",
+                               "clouds_%s.png" % _dim)
+            with open(_cp, "rb") as _fh:
+                clouds[_dim] = (_png2.read_png(_cp), _fh.read())
+    except Exception as _exc:
+        clouds = {"error": str(_exc)}
+
+    def cloud_ok(dim):
+        """A deck: right size, something solid in it, gaps to see through, not a lid."""
+        try:
+            (w, h, px), _raw = clouds[dim]
+        except Exception:
+            return False
+        if (w, h) != (128, 128) or not px:
+            return False
+        alphas = [p[3] for p in px]
+        clear = sum(1 for a in alphas if a == 0) / float(len(alphas))
+        return (max(alphas) >= 120
+                and clear >= 0.05
+                and sum(alphas) / float(len(alphas)) <= 120
+                and len(set(px)) >= 60)
+
+    check("the sky has real cloud decks now: three layers, drifting, per dimension",
+          "public final class McsmCloudDeck" in deck
+          and "private static final double[] HEIGHT = {26.0D, 38.0D, 52.0D};" in deck
+          and "private static final int GRID = 4;" in deck
+          and deck.count("submitCustomGeometry(") == 1
+          and "level.getGameTime()" in deck
+          and "GlowRenderTypes.translucent(sheet)" in deck
+          and deck.count("clouds_") == 4
+          and "McsmIdentity.rgb(glowFor(level))" in deck
+          # the same switch as the painted sky, and no shader anywhere: the deck is
+          # drawn in the world, so it exists for a player with no pack at all
+          and "if (!McsmExtrasConfig.paintedSky || ctx == null) {" in deck
+          and "private static double ripple(" in deck
+          and "net.mcsm.extras.client.McsmCloudDeck.submit(ctx);" in boots
+          and boots.index("net.mcsm.extras.client.McsmPaintedSky.submit(ctx);")
+          < boots.index("net.mcsm.extras.client.McsmCloudDeck.submit(ctx);")
+          < boots.index("McsmSkyFloorBand.submit(ctx);"))
+
+    check("and every dimension's cloud deck is a cloud, not a lid",
+          all(cloud_ok(d) for d in ("decayed", "adams", "void", "creator")),
+          "clouds: %s" % ("error: " + clouds["error"] if "error" in clouds
+                          else {d: ("ok" if cloud_ok(d) else "bad")
+                                for d in ("decayed", "adams", "void", "creator")}))
+
+    check("and the four decks are four different paintings",
+          "error" not in clouds
+          and len(set(clouds[d][1] for d in ("decayed", "adams", "void", "creator"))) == 4
+          and skygen.count("paint_clouds(") == 5
+          and skygen.count('"clouds_') == 4)
+
+    # ------------------------------------------------------------------
     # BUILD #458 -- THE PER-DIMENSION IDENTITY PASS. "each dimension and infinite
     # subdimension completely unique: own blocks, items, mobs, locks, VFX, biomes,
     # fog, sky, horizon; no re-use, not the decay set in flat worlds."
