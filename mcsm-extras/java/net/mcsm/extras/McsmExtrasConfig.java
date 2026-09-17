@@ -181,6 +181,18 @@ public final class McsmExtrasConfig {
      * it and nothing in it generates.
      */
     public static boolean creatorRealm = true;
+    /**
+     * BUILD #463 -- void aging: staying in the void changes the player, visibly,
+     * in five stages, with the lines turning from kind to corrupted as it goes.
+     * Off is a real off: no growth, no lines, no tint.
+     */
+    public static boolean voidAging = true;
+    /**
+     * BUILD #463 -- the ageing ledger: "uuid=ticks;uuid=ticks", so a player who
+     * logs out mid-transformation does not start the next session untouched.
+     * Written by {@code McsmVoidAging}, read once at boot.
+     */
+    public static String voidAgingLedger = "";
     /** BUILD #438 -- the body wears the live phase's own hue, not a fixed grey. */
     public static boolean phaseTintedBody = true;
     /**
@@ -495,6 +507,8 @@ public final class McsmExtrasConfig {
             p.setProperty("rituals", String.valueOf(rituals));
             p.setProperty("adams_reality", String.valueOf(adamsReality));
             p.setProperty("creator_realm", String.valueOf(creatorRealm));
+            p.setProperty("void_aging", String.valueOf(voidAging));
+            p.setProperty("void_aging_ledger", voidAgingLedger == null ? "" : voidAgingLedger);
             p.setProperty("phase_tinted_body", String.valueOf(phaseTintedBody));
             p.setProperty("body_phase_tint", String.valueOf(bodyPhaseTint));
             p.setProperty("reality_creatures", String.valueOf(realityCreatures));
@@ -647,6 +661,8 @@ public final class McsmExtrasConfig {
             rituals = bool(p, "rituals", rituals);
             adamsReality = bool(p, "adams_reality", adamsReality);
             creatorRealm = bool(p, "creator_realm", creatorRealm);
+            voidAging = bool(p, "void_aging", voidAging);
+            voidAgingLedger = str(p, "void_aging_ledger", voidAgingLedger);
             phaseTintedBody = bool(p, "phase_tinted_body", phaseTintedBody);
             bodyPhaseTint = dbl(p, "body_phase_tint", bodyPhaseTint);
             realityCreatures = bool(p, "reality_creatures", realityCreatures);

@@ -446,6 +446,12 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.dimensionFx = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #463 -- and what the void does to whoever keeps going back.
+          .bool("Void aging (the void changes the body, in five stages)",
+                  () -> McsmExtrasConfig.voidAging, v -> {
+              McsmExtrasConfig.voidAging = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #462 -- the fourth dimension: the Creator's own reach.
           .bool("The Creator's reach (the fourth dimension, built not left)",
                   () -> McsmExtrasConfig.creatorRealm, v -> {

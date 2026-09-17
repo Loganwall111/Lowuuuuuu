@@ -3348,6 +3348,121 @@ def main():
           and "AIRS = { DECAYED, ADAMS, VOID, CREATOR };" in fx)
 
 
+    # ------------------------------------------------------------------
+    # BUILD #463 -- VOID AGING. nextOrder (d), and the fourth list's own words:
+    # "the void effect = aging", "the player model slowly becomes the corrupted
+    # void", "happy-then-corrupted lore". Five stages, a value that grows in the
+    # void and comes back outside it, a ledger so logging out is not an escape,
+    # lines that start kind and stop being kind, and the body itself graded toward
+    # the void on every client -- through the same render-state hook the base
+    # mod's own wither-sickness layer uses.
+    # ------------------------------------------------------------------
+    ageing = read("mcsm-extras/java/net/mcsm/extras/McsmVoidAging.java") or ""
+    age_payload = read("mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingPayload.java") or ""
+    age_client = read("mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingClient.java") or ""
+    age_state = read("mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingState.java") or ""
+    age_state_mixin = read(
+        "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingStateMixin.java") or ""
+    age_render_mixin = read(
+        "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingRendererMixin.java") or ""
+    age_client_mixin = read(
+        "mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingClientMixin.java") or ""
+    cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
+    extras = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
+    towns = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
+    boot = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java") or ""
+    sink = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGradientTickPatch.java") or ""
+
+    check("the void ages a player in five stages, and the clock is the mod's own",
+          "public static final String[] STAGES = {\"clean\", \"touched\", \"marked\", "
+                  "\"claimed\", \"taken\"};" in ageing
+          and "public static final long[] THRESHOLDS = {0L, 3600L, 9600L, 18000L, 30000L};" in ageing
+          and "public static final long MAX = THRESHOLDS[THRESHOLDS.length - 1];" in ageing
+          and "public static int stageOf(long ticks)" in ageing
+          and "public static float fractionOf(ServerPlayer player)" in ageing)
+
+    check("it grows in the void, less in the decay, and comes back outside them",
+          "if (!McsmExtrasConfig.voidAging || level.players().isEmpty()) {" in ageing
+          and "boolean inVoid = level.dimension().equals(McsmVoid.DIMENSION);" in ageing
+          and "boolean inDecayed = level.dimension().equals(McsmReality.DECAYED_REALITY);" in ageing
+          and "now % 4L == 0L" in ageing and "now % 8L == 0L" in ageing
+          and "now % 2L == 0L && age > 0L" in ageing
+          and "ServerTickEvents.END_LEVEL_TICK.register((EndLevelTick) McsmVoidAging::tick);"
+                  in ageing
+          and "McsmVoidAging.register();" in boot
+          and "import net.mcsm.extras.McsmVoidAging;" in boot)
+
+    check("the lines start kind, then stop being kind -- the whole point of ageing",
+          # five rows (the clean stage says nothing), at least three lines each, and
+          # the colour of the voice darkens as the stage climbs
+          ageing.count("            {\n") >= 4
+          and "the air in here is warm" in ageing
+          and "you could rest. nobody would know" in ageing
+          and "stay a little longer. it does not mind" in ageing
+          and "it has noticed you. it keeps a count" in ageing
+          and "you are staying" in ageing
+          and "you have always been here" in ageing
+          and "there was never a way back. there was a way in" in ageing
+          and "ChatFormatting.GREEN" in ageing and "ChatFormatting.DARK_PURPLE" in ageing)
+
+    check("the body changes: the state carries the value and the renderer grades the tint",
+          # the same two hooks the base mod's wither-sickness tint uses, by descriptor
+          "public interface McsmVoidAgingState {" in age_state
+          and "float mcsm$voidAge();" in age_state
+          and "@Mixin({LivingEntityRenderState.class})" in age_state_mixin
+          and "@Unique\n    private float mcsm$voidAgingValue;" in age_state_mixin
+          and "public float mcsm$voidAge() {" in age_state_mixin
+          and "@Mixin({LivingEntityRenderer.class})" in age_render_mixin
+          and "extractRenderState(Lnet/minecraft/world/entity/LivingEntity;"
+                  in age_render_mixin
+          and "getModelTint(Lnet/minecraft/client/renderer/entity/state/"
+                  in age_render_mixin
+          and "cancellable = true" in age_render_mixin
+          and "cir.setReturnValue(" in age_render_mixin
+          # age 0 is a no-op: an untouched player is exactly the player they were
+          and "if (age <= 0.0F) {" in age_render_mixin
+          and "require = 0" in age_render_mixin)
+
+    check("the client is told, over the payload arrangement the base mod already runs",
+          'Identifier.fromNamespaceAndPath("mcsm", "void_aging")' in age_payload
+          and "public static final StreamCodec<RegistryFriendlyByteBuf, McsmVoidAgingPayload> CODEC"
+                  in age_payload
+          and "public static void handleClient(McsmVoidAgingPayload payload, Context context)"
+                  in age_payload
+          and "PayloadTypeRegistry.clientboundPlay().register(McsmVoidAgingPayload.TYPE,"
+                  in ageing
+          and "ServerPlayNetworking.send(player, new McsmVoidAgingPayload(player.getId(),"
+                  in ageing
+          and "ClientPlayNetworking.registerGlobalReceiver(McsmVoidAgingPayload.TYPE,"
+                  in age_client_mixin
+          and "McsmVoidAgingPayload::handleClient" in age_client_mixin
+          # the store drops stale rows, so nobody stays discoloured after a logout
+          and "private static final long STALE_MILLIS = 8000L;" in age_client
+          and "public static float ageOf(int entityId)" in age_client
+          and "net.mcsm.extras.client.McsmVoidAgingClient.tick();" in sink
+          and "playLocalSound(" in age_client)
+
+    check("and logging out is not an escape: the ledger is saved and read back",
+          "public static String voidAgingLedger = \"\";" in cfg
+          and 'p.setProperty("void_aging_ledger"' in cfg
+          and 'voidAgingLedger = str(p, "void_aging_ledger", voidAgingLedger);' in cfg
+          and "private static void loadLedger() {" in ageing
+          and "private static void flush() {" in ageing
+          and "if (ledgerDirty && now % 600L == 0L) {" in ageing
+          and "public static void setAge(ServerPlayer player, long ticks)" in ageing)
+
+    check("it is switchable, listed, and testable without waiting 25 minutes",
+          "public static boolean voidAging = true;" in cfg
+          and 'p.setProperty("void_aging", String.valueOf(voidAging));' in cfg
+          and 'voidAging = bool(p, "void_aging", voidAging);' in cfg
+          and "Void aging (the void changes the body, in five stages)" in extras
+          and 'Commands.literal("aging")' in towns
+          and "ds$aging(ctx.getSource(), null)" in towns
+          and "ds$aging(ctx.getSource(), \"clear\")" in towns
+          and "ds$aging(ctx.getSource(), \"advance\")" in towns
+          and ".then(city).then(portal).then(mob).then(lock).then(aging));" in towns
+          and "private static int ds$aging(CommandSourceStack src, String action) {" in towns)
+
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:
             print("  ok   WitherStormPhase :: %s" % c)

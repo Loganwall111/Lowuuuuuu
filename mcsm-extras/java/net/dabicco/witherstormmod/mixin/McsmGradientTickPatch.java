@@ -121,6 +121,8 @@ public abstract class McsmGradientTickPatch {
             // once-per-tick internally, and a no-op in the Overworld, where the
             // storm's own weather belongs.
             McsmDimensionFx.tick();
+            // BUILD #463 -- and the player's own end of void aging: the heartbeat.
+            net.mcsm.extras.client.McsmVoidAgingClient.tick();
             // The generated particle/ring debris vortex is intentionally
             // retired. Native StormDebris remains the single debris source;
             // its authored outer entries expand in the phase-9 window.

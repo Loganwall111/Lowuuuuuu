@@ -133,6 +133,13 @@ public abstract class McsmTownCommandPatch {
             // BUILD #462 -- and the reach: the fourth dimension, by name.
             reality.then(Commands.literal("creator").executes(ctx -> ds$creator(ctx.getSource())));
 
+            // BUILD #463 -- what the void is doing to you, and what to do about it.
+            LiteralArgumentBuilder<CommandSourceStack> aging = Commands.literal("aging");
+            aging.executes(ctx -> ds$aging(ctx.getSource(), null));
+            aging.then(Commands.literal("clear").executes(ctx -> ds$aging(ctx.getSource(), "clear")));
+            aging.then(Commands.literal("advance").executes(ctx -> ds$aging(ctx.getSource(), "advance")));
+            aging.then(Commands.literal("full").executes(ctx -> ds$aging(ctx.getSource(), "full")));
+
             // BUILD #444 -- the underground structures, findable.
             // BUILD #451 -- /ds reality void goes to the nothing.
             LiteralArgumentBuilder<CommandSourceStack> maze = Commands.literal("maze");
@@ -192,7 +199,7 @@ public abstract class McsmTownCommandPatch {
 
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
                     .then(ritual).then(reality).then(maze).then(server).then(book).then(scene)
-                    .then(city).then(portal).then(mob).then(lock));
+                    .then(city).then(portal).then(mob).then(lock).then(aging));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -409,12 +416,42 @@ public abstract class McsmTownCommandPatch {
                 + " \u00b7 doorways: "
                 + (net.mcsm.extras.McsmExtrasConfig.portals ? "ON" : "OFF")
                 + " \u00b7 the reach: "
-                + (net.mcsm.extras.McsmExtrasConfig.creatorRealm ? "ON" : "OFF")), false);
+                + (net.mcsm.extras.McsmExtrasConfig.creatorRealm ? "ON" : "OFF")
+                + " \u00b7 void aging: "
+                + (net.mcsm.extras.McsmExtrasConfig.voidAging ? "ON" : "OFF")), false);
         src.sendSuccess(() -> Component.literal("[ds] adams has written "
                 + net.mcsm.extras.McsmAdams.builtRegions() + " regions, "
                 + net.mcsm.extras.McsmAdams.pendingRegions() + " still queued \u00b7 "
                 + "/ds reality adams goes in, /ds reality decayed goes through the rift"), false);
         return 1;
+    }
+
+    private static int ds$aging(CommandSourceStack src, String action) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            if ("clear".equals(action)) {
+                net.mcsm.extras.McsmVoidAging.clear(player);
+                src.sendSuccess(() -> Component.literal("[ds] the void lets go: clean again"), false);
+                return 1;
+            }
+            if ("advance".equals(action)) {
+                net.mcsm.extras.McsmVoidAging.setAge(player,
+                        net.mcsm.extras.McsmVoidAging.ageOf(player) + 2400L);
+            } else if ("full".equals(action)) {
+                net.mcsm.extras.McsmVoidAging.setAge(player, net.mcsm.extras.McsmVoidAging.MAX);
+            }
+            long age = net.mcsm.extras.McsmVoidAging.ageOf(player);
+            int stage = net.mcsm.extras.McsmVoidAging.stageOf(age);
+            src.sendSuccess(() -> Component.literal("[ds] void aging: "
+                    + net.mcsm.extras.McsmVoidAging.stageName(stage) + " (" + age + "/"
+                    + net.mcsm.extras.McsmVoidAging.MAX + " ticks in the void, "
+                    + Math.round(net.mcsm.extras.McsmVoidAging.fractionOf(player) * 100.0F)
+                    + "%)"), false);
+            return 1;
+        } catch (Throwable t) {
+            src.sendFailure(Component.literal("[ds] " + t));
+            return 0;
+        }
     }
 
     private static int ds$creator(CommandSourceStack src) {

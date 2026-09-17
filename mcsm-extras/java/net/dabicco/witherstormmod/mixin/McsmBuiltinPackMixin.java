@@ -9,6 +9,7 @@ import net.dabicco.witherstormmod.DabyWitherStormMod;
 import net.mcsm.extras.McsmBuiltinPack;
 import net.mcsm.extras.McsmAdams;
 import net.mcsm.extras.McsmCreatorRealm;
+import net.mcsm.extras.McsmVoidAging;
 import net.mcsm.extras.McsmBlackHole;
 import net.mcsm.extras.McsmCities;
 import net.mcsm.extras.McsmMassg;
@@ -78,6 +79,8 @@ public abstract class McsmBuiltinPackMixin {
         // BUILD #462 -- and the Creator's own dimension: the fourth world, and
         // the only one that was built rather than left.
         McsmCreatorRealm.register();
+        // BUILD #463 -- and what the void does to whoever keeps going back.
+        McsmVoidAging.register();
         // BUILD #444 -- the two underground structures.
         McsmMazes.register();
         McsmServerRooms.register();
