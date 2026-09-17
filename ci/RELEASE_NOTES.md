@@ -1,5 +1,20 @@
 # 7000.0.0-M — the sky is the still, the storm owns it, and the switches work
 
+**Build #480 — the cast, alive.** "custom NPCs that are able to move around, speak,
+make noises and talk". The models shipped in #468 and the walking was always the game's
+own goals; what was missing was the middle — a player could stand in the middle of
+Beacon Town and the cast would keep staring at the horizon. A cast member now notices
+a player within seventeen blocks and **walks over** (on its own navigation, so doors,
+stairs and fences work), stops inside nine, **turns to them**, says a line in chat
+under their own name from their own dialogue tree, and **speaks it out loud**: the
+mouth runs for as long as the line takes and a voice lands syllable by syllable under
+it — glass keys for the machine, whisper and giggle fragments for the ones who are not
+people, and formant blips pitched to the character for everybody else. All of it from
+this mod's own sound set; no vanilla cue is used for a voice. Idle chatter between
+cast members is audible now too, and each character leaves a player alone for about
+thirteen seconds after a line, so a town is a place with people in it rather than a
+wall of text. Switched: `npc_dialogue`.
+
 **Build #479 — the descent, and the deep.** The void is no longer somewhere you are
 sent: it is what happens when somebody keeps going down. There is no item, no portal
 and no command — the trigger is the world's own floor. Fall past it and the fall is

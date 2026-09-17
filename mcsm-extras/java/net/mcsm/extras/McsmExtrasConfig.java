@@ -270,6 +270,12 @@ public final class McsmExtrasConfig {
     public static boolean realityCreatures = true;
     /** Story Mode quest + lore layer: dialogue, objectives, chapter log. */
     public static boolean storyQuests = true;
+    /**
+     * BUILD #480 -- the cast, alive: they notice a player, walk over, turn to them and
+     * speak -- mouth, voice and chat line, each in their own voice. Off = they still
+     * wander and still chatter to each other, and never approach anybody.
+     */
+    public static boolean npcDialogue = true;
 
     // ---- Build #416 (D.8, phase 5): the story terminal ---------------------
     /** The holographic terminal: the antenna's restricted console, the field
@@ -543,6 +549,7 @@ public final class McsmExtrasConfig {
             p.setProperty("story_menu_backdrop", String.valueOf(storyMenuBackdrop));
             p.setProperty("menu_panorama", String.valueOf(menuPanorama));
             p.setProperty("void_descent", String.valueOf(voidDescent));
+            p.setProperty("npc_dialogue", String.valueOf(npcDialogue));
             p.setProperty("decayed_reality", String.valueOf(decayedReality));
             p.setProperty("abandoned_cities", String.valueOf(abandonedCities));
             p.setProperty("reality_glitches", String.valueOf(realityGlitches));
@@ -714,6 +721,7 @@ public final class McsmExtrasConfig {
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);
             voidReality = bool(p, "void_reality", voidReality);
             voidDescent = bool(p, "void_descent", voidDescent);
+            npcDialogue = bool(p, "npc_dialogue", npcDialogue);
             portals = bool(p, "portals", portals);
             voidLight = bool(p, "void_light", voidLight);
             paintedSky = bool(p, "painted_sky", paintedSky);

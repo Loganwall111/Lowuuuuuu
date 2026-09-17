@@ -31,6 +31,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.phys.AABB;
+import net.mcsm.extras.entity.StoryCharacterEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -209,6 +210,16 @@ public final class McsmNpcs {
     /** Generic townsfolk lines for cast members without their own tree. */
     private static String[] linesFor(String name) {
         String[] own = LINES.get(name);
+        if (own == null) {
+            // the entity stores a lowercased id ("pama_terminal"); the trees are keyed
+            // by the name people use ("PAMA Terminal"), so match without case
+            for (Map.Entry<String, String[]> entry : LINES.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(name)) {
+                    own = entry.getValue();
+                    break;
+                }
+            }
+        }
         if (own != null) {
             return own;
         }
@@ -217,6 +228,100 @@ public final class McsmNpcs {
                 "We keep the lamps burning. It helps. A little.",
                 "Half the town packed up. The other half won't leave.",
                 "If it comes here, run. Don't be brave about it." };
+    }
+
+    /* ---- BUILD #480: the cast talks ------------------------------------------ */
+
+    /** entity id -> the last time it said something, and whether it is walking over. */
+    private static final Map<Integer, Long> SPOKEN = new HashMap<>();
+    private static final Set<Integer> APPROACHING = new HashSet<>();
+
+    /** How far a cast member will notice a player, come over, and speak. */
+    private static final double VOICE_NEAR = 9.0D;
+    private static final double VOICE_CALL = 17.0D;
+    /** Ticks between two lines from the same character. */
+    private static final long VOICE_COOLDOWN = 260L;
+
+    /**
+     * THE CAST, ALIVE.
+     *
+     * <p>The report behind this whole system was "custom NPCs that are able to move
+     * around, speak, make noises and talk". They could already wander -- that part
+     * was Minecraft's own goals -- and they could already gesture. What they could
+     * not do was notice a person: a player could stand in the middle of Beacon Town
+     * and the cast would keep staring at the horizon.
+     *
+     * <p>Now: notice, walk over, turn, and speak. A character who sees a player
+     * between {@link #VOICE_CALL} and {@link #VOICE_NEAR} blocks walks to them once
+     * (a real path, so doors and stairs and fences work, because the entity's own
+     * AI does the walking); within {@link #VOICE_NEAR} they stop, face the player,
+     * say a line in chat under their own name, and their mouth and voice run for as
+     * long as that line takes. Then they leave each other alone for
+     * {@link #VOICE_COOLDOWN} ticks, so a town is a place with people in it rather
+     * than a wall of text.
+     */
+    private static void chat(ServerLevel level) {
+        try {
+            if (!McsmExtrasConfig.npcDialogue) {
+                return;
+            }
+            long now = level.getGameTime();
+            for (Player player : level.players()) {
+                AABB scan = player.getBoundingBox().inflate(VOICE_CALL);
+                for (StoryCharacterEntity npc : level.getEntitiesOfClass(
+                        StoryCharacterEntity.class, scan)) {
+                    if (!isManagedCast(npc) || npc.isTalking()) {
+                        continue;
+                    }
+                    long last = SPOKEN.getOrDefault(npc.getId(), Long.MIN_VALUE / 2);
+                    if (now - last < VOICE_COOLDOWN) {
+                        continue;
+                    }
+                    double d = npc.distanceTo(player);
+                    // 1. too far to talk, close enough to come over: walk to them
+                    if (d > VOICE_NEAR && APPROACHING.add(npc.getId())) {
+                        npc.getLookControl().setLookAt(player, 30.0F, 30.0F);
+                        npc.getNavigation().moveTo(player, 0.62D);
+                        continue;
+                    }
+                    // 2. close: stop, turn, speak
+                    if (d > VOICE_NEAR) {
+                        continue;
+                    }
+                    APPROACHING.remove(npc.getId());
+                    npc.getNavigation().stop();
+                    npc.getLookControl().setLookAt(player, 30.0F, 30.0F);
+                    String who = npc.getCharacter();
+                    String[] lines = linesFor(displayName(who));
+                    int index = (int) Math.floorMod(now / 37L + npc.getId(), lines.length);
+                    String line = lines[index];
+                    npc.speak(Math.min(120, 24 + line.length() * 2));
+                    SPOKEN.put(npc.getId(), now);
+                    player.sendSystemMessage(Component.literal(
+                            "\u00a7d\u00a7l" + displayName(who) + "\u00a7r\u00a77: \u00a7e" + line));
+                }
+            }
+        } catch (Throwable ignored) {
+            // a quiet town beats a crashed tick
+        }
+    }
+
+    /** "pama_terminal" -> "PAMA Terminal", the same name the chat attribution uses. */
+    private static String displayName(String who) {
+        if (who == null || who.isEmpty()) {
+            return "Someone";
+        }
+        StringBuilder out = new StringBuilder();
+        for (String part : who.split("_")) {
+            if (part.isEmpty()) {
+                continue;
+            }
+            if (out.length() > 0) {
+                out.append(' ');
+            }
+            out.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return out.toString();
     }
 
     /* ---- population ------------------------------------------------------ */
@@ -239,6 +344,12 @@ public final class McsmNpcs {
             }
             pruneLegacyOverpopulation(level);
             announcePhaseLines(level);
+            // BUILD #480 -- and the cast itself: they come over, they turn to you,
+            // and they say something with a voice. Every ten ticks, which is far
+            // more often than any of them is allowed to speak.
+            if (level.getGameTime() % 10L == 0L) {
+                chat(level);
+            }
             for (McsmWorldgen.Site s : McsmWorldgen.layout()) {
                 if (s.floating() || POPULATED.contains(s.label()) || !STORY_TOWNS.contains(s.label())) {
                     continue;

@@ -3820,6 +3820,55 @@ def main():
           and "net.mcsm.extras.client.McsmVoidDeep.draw(g);" in hud
           and "public static void draw(GuiGraphicsExtractor g) {" in deep)
 
+    # ------------------------------------------------------------------
+    # BUILD #480 -- THE CAST, ALIVE.
+    #
+    # "I would like you to add the custom NPCs that are able to move around, speak,
+    # make noises and talk". The models shipped in #468 and the walking is the game's
+    # own goals; what was missing is the middle: they never noticed a player. A cast
+    # member now notices one, walks over (on its own navigation, so doors and stairs
+    # and fences work), stops, turns, says a line in chat under their own name, and
+    # runs a voice under it -- keys for the machine, whisper/laugh fragments for the
+    # ones who are not people, formant blips pitched to the character for everyone
+    # else. All of it from the mod's own sound set: nothing here is a vanilla cue.
+    # ------------------------------------------------------------------
+    npcs = read("mcsm-extras/java/net/mcsm/extras/McsmNpcs.java") or ""
+    cast = read("mcsm-extras/java/net/mcsm/extras/entity/StoryCharacterEntity.java") or ""
+
+    check("and the cast notices a player, walks over, and talks",
+          # the character speaks: gesture AND voice under one call
+          "public void speak(int ticks) {" in cast
+          and "this.talk(ticks);" in cast
+          and "this.voiceTicks = Math.max(this.voiceTicks, ticks);" in cast
+          # the voice is per character, from the mod's own set, never a vanilla cue
+          and "McsmSounds.TERMINAL_KEY" in cast
+          and "McsmSounds.MASSG_WHISPER" in cast
+          and "McsmSounds.RADIO_VOICE" in cast
+          and "who.contains(\"pama\")" in cast
+          and "who.contains(\"nurm\") || who.contains(\"keeper\")" in cast
+          # ... and the voice() body itself uses no vanilla cue at all (the slice
+          # stops at that method's own closing brace, four-space indent)
+          and "SoundEvents." not in cast.split("private void voice() {")[1].split("\n    }\n")[0]
+          and "McsmSounds." in cast.split("private void voice() {")[1].split("\n    }\n")[0]
+          # idle chatter between cast members is audible now too
+          and "this.speak(line);" in cast
+          and "other.speak(30);" in cast
+          # the pass: notice -> approach -> stop -> turn -> speak -> cooldown
+          and "private static void chat(ServerLevel level) {" in npcs
+          and "npc.getNavigation().moveTo(player, 0.62D);" in npcs
+          and "npc.getNavigation().stop();" in npcs
+          and "npc.speak(Math.min(120, 24 + line.length() * 2));" in npcs
+          and "private static final long VOICE_COOLDOWN = 260L;" in npcs
+          and "private static String displayName(String who) {" in npcs
+          # and it is switched, throttled, and driven from the tick that owns the towns
+          and "if (level.getGameTime() % 10L == 0L) {" in npcs
+          and "public static boolean npcDialogue = true;" in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or "")
+          and 'p.setProperty("npc_dialogue", String.valueOf(npcDialogue));' in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or "")
+          and 'npcDialogue = bool(p, "npc_dialogue", npcDialogue);' in (
+              read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""))
+
     check("and no loading screen is left on the way into the fall",
           # the world-loading screen stands down while a dive is in flight
           "public static boolean suppressLoadingScreen()" in deep

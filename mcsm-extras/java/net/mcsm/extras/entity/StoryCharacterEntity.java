@@ -43,6 +43,9 @@ public class StoryCharacterEntity extends PathfinderMob {
             SynchedEntityData.defineId(StoryCharacterEntity.class, EntityDataSerializers.INT);
 
     private int idleChatter = 200 + (int) (Math.random() * 400);
+    /** BUILD #480 -- ticks of voice left, and the gap between syllables. */
+    private int voiceTicks;
+    private int voiceGap;
 
     public StoryCharacterEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
@@ -93,6 +96,54 @@ public class StoryCharacterEntity extends PathfinderMob {
         this.entityData.set(TALK, Math.max(this.entityData.get(TALK), ticks));
     }
 
+    /**
+     * BUILD #480 -- SPEAK: the gesture AND the voice.
+     *
+     * <p>Until now the cast could move their mouths and nothing came out of them:
+     * {@code talk()} drove the head and the gesturing arm, and the only audio a cast
+     * member ever made was a vanilla villager laugh. That is the "they don't talk,
+     * they just stand there" half of the report. A line now plays as a mouth that
+     * moves and a voice that lands syllable by syllable for as long as the line runs.
+     */
+    public void speak(int ticks) {
+        this.talk(ticks);
+        this.voiceTicks = Math.max(this.voiceTicks, ticks);
+    }
+
+    /** Every line a cast member says gets the voice that fits who they are. */
+    private void voice() {
+        if (this.voiceTicks <= 0) {
+            return;
+        }
+        this.voiceTicks--;
+        if (--this.voiceGap > 0) {
+            return;
+        }
+        this.voiceGap = 7 + this.random.nextInt(6);
+        String who = getCharacter();
+        net.minecraft.sounds.SoundEvent cue;
+        float pitch;
+        if (who.contains("pama")) {
+            // machines: keys, not vowels
+            cue = net.mcsm.extras.McsmSounds.TERMINAL_KEY;
+            pitch = 1.35F + this.random.nextFloat() * 0.2F;
+        } else if (who.contains("nurm") || who.contains("keeper")
+                || who.contains("tracker") || who.contains("pumpkin")) {
+            // the ones who are not people: whispers and little laughs
+            cue = this.random.nextInt(3) == 0
+                    ? net.mcsm.extras.McsmSounds.MASSG_GIGGLE
+                    : net.mcsm.extras.McsmSounds.MASSG_WHISPER;
+            pitch = 1.25F + this.random.nextFloat() * 0.5F;
+        } else {
+            // a person: formant blips, pitched to the character rather than at random
+            cue = net.mcsm.extras.McsmSounds.RADIO_VOICE;
+            pitch = 0.85F + (Math.abs(who.hashCode()) % 45) / 100.0F
+                    + this.random.nextFloat() * 0.12F;
+        }
+        this.level().playSound(null, this.getX(), this.getY() + 1.6D, this.getZ(), cue,
+                SoundSource.NEUTRAL, 0.55F, pitch);
+    }
+
     /** Play the laugh for {@code ticks}. */
     public void laugh(int ticks) {
         this.entityData.set(LAUGH, Math.max(this.entityData.get(LAUGH), ticks));
@@ -123,6 +174,8 @@ public class StoryCharacterEntity extends PathfinderMob {
             if (l > 0) {
                 this.entityData.set(LAUGH, l - 1);
             }
+            // BUILD #480 -- and the voice, on its own clock, all the way through the line
+            this.voice();
             // idle chatter between cast members: a short talk, sometimes a laugh
             if (--idleChatter <= 0) {
                 idleChatter = 300 + this.random.nextInt(600);
@@ -136,11 +189,12 @@ public class StoryCharacterEntity extends PathfinderMob {
                 }
                 if (other != null) {
                     this.getLookControl().setLookAt(other, 30.0F, 30.0F);
-                    this.talk(40 + this.random.nextInt(40));
+                    int line = 40 + this.random.nextInt(40);
+                    this.speak(line);
                     if (this.random.nextInt(3) == 0) {
                         other.laugh(30);
                     } else {
-                        other.talk(30);
+                        other.speak(30);
                     }
                 }
             }
