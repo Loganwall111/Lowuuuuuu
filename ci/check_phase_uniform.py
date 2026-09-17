@@ -1102,6 +1102,48 @@ def main():
           _hole_lifetime and _hole_persist and _hole_row,
           "field=%s persisted=%s row=%s" % (_hole_lifetime, _hole_persist, _hole_row))
 
+    # ------------------------------------------------------------------
+    # BUILD #466 -- THE RIFTS, AND THE HOLE IN THE SKY. The mandate sentence is
+    # "black holes with the rifts that collapse (black hole in the sky)": the hole
+    # existed and collapsed on a timer, but nothing around it was ever torn, and it
+    # opened standing in the landscape rather than hanging in the sky it is supposed
+    # to be a hole in. These four checkpoints are that sentence, one clause each --
+    # and the last one is the guarantee that matters: the same code that opens a
+    # tear closes it, including when the hole that tore it collapses first.
+    # ------------------------------------------------------------------
+    rifty = code_only(read("mcsm-extras/java/net/mcsm/extras/McsmRifts.java") or "")
+    # read here rather than reusing the later locals: this family sits before them
+    _bsh = read("ci/build.sh") or ""
+    _towns = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
+    check("reality tears open: a rift grows, pulls, and seals itself on its own timer",
+          "ALIVE" in rifty and "MAX_ALIVE" in rifty and "seal(level, rift, false)" in rifty
+          and "riftSeconds" in rifty and "GROW_TICKS" in rifty and "SEAL_TICKS" in rifty
+          and "ParticleTypes.REVERSE_PORTAL" in rifty and "push(" in rifty
+          and "hurtServer" in rifty
+          # and it can be seen from far enough away to matter
+          and "private static final int SEAM_HEIGHT = 38;" in rifty
+          and "McsmRifts" in _bsh)
+
+    check("and only where the world is already broken, next to the hole that tore it",
+          "EVENT_PHASE" in rifty and "McsmReality.inside(level)" in rifty
+          and "phaseNear" in rifty and "nearestHole" in rifty
+          and "McsmBlackHole.openHoles(level)" in rifty)
+
+    check("when the hole collapses it takes its tears with it",
+          "McsmRifts.register();" in hole_code
+          and "public static java.util.List<Vec3> openHoles(ServerLevel level)" in hole_code
+          and "McsmRifts.sealAround(level, x, y, z, 360.0D);" in hole_code
+          and "public static void sealAround(ServerLevel level" in rifty)
+
+    check("the hole hangs in the sky, and both are switchable, persisted and reachable",
+          "blackHoleInSky" in hole_code
+          and "public static boolean blackHoleInSky = true;" in _cfg3
+          and "black_hole_in_sky" in _cfg3 and "rift_events" in _cfg3 and "rift_seconds" in _cfg3
+          and "Black Hole Opens In The Sky" in _scr3 and "Reality Rifts" in _scr3
+          and 'Commands.literal("rift")' in _towns
+          and 'ds$rift(ctx.getSource(), "seal")' in _towns
+          and ".then(rift));" in _towns)
+
     tor = read("mcsm-extras/java/net/mcsm/extras/McsmTornadoes.java") or ""
     tor_code = code_only(tor)
     check("a tornado is a real funnel in the world, one per level, on a timer",
@@ -3516,7 +3558,7 @@ def main():
           and "ds$aging(ctx.getSource(), null)" in towns
           and "ds$aging(ctx.getSource(), \"clear\")" in towns
           and "ds$aging(ctx.getSource(), \"advance\")" in towns
-          and ".then(city).then(portal).then(mob).then(lock).then(aging).then(menu));" in towns
+          and ".then(city).then(portal).then(mob).then(lock).then(aging).then(menu)" in towns
           and "private static int ds$aging(CommandSourceStack src, String action) {" in towns)
 
     # ------------------------------------------------------------------
@@ -3634,7 +3676,7 @@ def main():
           and "net.mcsm.extras.client.McsmCinematic.state()" in cfg
           and 'Commands.literal("menu")' in towns
           and "private static int ds$menu(CommandSourceStack src) {" in towns
-          and ".then(aging).then(menu));" in towns
+          and ".then(aging).then(menu)" in towns
           and "edit config/mcsm_storm_extras.properties" in towns
           and "Vivid panorama backdrop (off: the storm's own sky)" in extras)
 

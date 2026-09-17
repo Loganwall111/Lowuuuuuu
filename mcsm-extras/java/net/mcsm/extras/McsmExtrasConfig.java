@@ -139,6 +139,20 @@ public final class McsmExtrasConfig {
      * permanent hole in someone's world.
      */
     public static double blackHoleSeconds = 180.0;
+    /**
+     * BUILD #466 -- "black hole in the sky". On: the hole hangs high over the world
+     * with its rift light running down to the ground, so it is the thing on the
+     * horizon. Off: it stands in the landscape the way it did before.
+     */
+    public static boolean blackHoleInSky = true;
+    /**
+     * BUILD #466 -- the rifts in reality: tears that grow out of the air in a broken
+     * world, pull at whatever stands near them, and snap shut again on their own
+     * timer. Off means the storms stay whole.
+     */
+    public static boolean riftEvents = true;
+    /** How long a rift stays torn open, in seconds. Sealed by the code that opened it. */
+    public static double riftSeconds = 75.0;
     /** Mega-tornadoes that rip across the decayed reality. */
     public static boolean megaTornadoes = true;
     /** BUILD #433 -- the sky vortexes that open over the player and drop things. */
@@ -517,6 +531,9 @@ public final class McsmExtrasConfig {
             p.setProperty("hallucination_intensity", String.valueOf(hallucinationIntensity));
             p.setProperty("black_hole_event", String.valueOf(blackHoleEvent));
             p.setProperty("black_hole_seconds", String.valueOf(blackHoleSeconds));
+            p.setProperty("black_hole_in_sky", String.valueOf(blackHoleInSky));
+            p.setProperty("rift_events", String.valueOf(riftEvents));
+            p.setProperty("rift_seconds", String.valueOf(riftSeconds));
             p.setProperty("mega_tornadoes", String.valueOf(megaTornadoes));
             p.setProperty("sky_vortexes", String.valueOf(skyVortexes));
             p.setProperty("sky_floor_band", String.valueOf(skyFloorBand));
@@ -671,6 +688,9 @@ public final class McsmExtrasConfig {
             hallucinationIntensity = dbl(p, "hallucination_intensity", hallucinationIntensity);
             blackHoleEvent = bool(p, "black_hole_event", blackHoleEvent);
             blackHoleSeconds = dbl(p, "black_hole_seconds", blackHoleSeconds);
+            blackHoleInSky = bool(p, "black_hole_in_sky", blackHoleInSky);
+            riftEvents = bool(p, "rift_events", riftEvents);
+            riftSeconds = dbl(p, "rift_seconds", riftSeconds);
             megaTornadoes = bool(p, "mega_tornadoes", megaTornadoes);
             skyVortexes = bool(p, "sky_vortexes", skyVortexes);
             skyFloorBand = bool(p, "sky_floor_band", skyFloorBand);

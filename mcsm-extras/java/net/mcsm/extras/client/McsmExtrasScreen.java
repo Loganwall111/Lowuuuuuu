@@ -394,6 +394,19 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.blackHoleSeconds = v;
               McsmExtrasConfig.save();
           }, 30.0, 600.0)
+          // BUILD #466 -- the hole in the sky, and the tears it leaves in the air.
+          .bool("Black Hole Opens In The Sky", () -> McsmExtrasConfig.blackHoleInSky, v -> {
+              McsmExtrasConfig.blackHoleInSky = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Reality Rifts", () -> McsmExtrasConfig.riftEvents, v -> {
+              McsmExtrasConfig.riftEvents = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Rift Lifetime (seconds)", () -> McsmExtrasConfig.riftSeconds, v -> {
+              McsmExtrasConfig.riftSeconds = v;
+              McsmExtrasConfig.save();
+          }, 10.0, 300.0)
           .val("Storm Sky Reach (fade back to vanilla at, blocks)", () -> McsmExtrasConfig.skyFadeDistance, v -> {
               McsmExtrasConfig.skyFadeDistance = v;
               McsmExtrasConfig.save();

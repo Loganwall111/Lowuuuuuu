@@ -72,6 +72,9 @@ public final class McsmBlackHole {
     public static void register() {
         try {
             ServerTickEvents.END_LEVEL_TICK.register((EndLevelTick) McsmBlackHole::tick);
+            // BUILD #466 -- the rifts are the hole's own phenomenon: it tears the
+            // air around it open, and when it goes, they go with it (see collapse).
+            McsmRifts.register();
             System.out.println("[ds] the black hole event is armed (phase " + EVENT_PHASE
                     + "+, one at a time, closes itself)");
         } catch (Throwable t) {
@@ -147,10 +150,16 @@ public final class McsmBlackHole {
             double z = player.getZ() + Math.sin(angle) * distance;
             int ground = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES,
                     (int) Math.floor(x), (int) Math.floor(z));
-            double y = (double) ground + 3.0D;
             if (ground <= level.getMinY() + 2) {
                 return false;
             }
+            // BUILD #466 -- "black hole in the sky": the hole hangs over the world
+            // instead of standing in it, high enough to be the thing on the horizon
+            // rather than a prop between two hills, with its rift light running down
+            // to the ground below it. The lower placement stays one property away.
+            boolean inSky = McsmExtrasConfig.blackHoleInSky;
+            double y = inSky ? (double) ground + 84.0D + rng.nextDouble() * 56.0D
+                             : (double) ground + 3.0D;
 
             Entity hole = ModEntityTypes.BLACK_HOLE.create(level, EntitySpawnReason.COMMAND);
             if (hole == null) {
@@ -163,10 +172,21 @@ public final class McsmBlackHole {
             OURS.put(hole.getUUID(), Long.valueOf(level.getGameTime() + (long) (seconds * 20.0D)));
 
             // The sky answers: a column of rift light standing on the hole, so it
-            // is visible from anywhere the player can see the horizon.
-            for (double t = 0.0D; t <= 1.0D; t += 0.04D) {
-                level.sendParticles(ParticleTypes.REVERSE_PORTAL, x, y + t * 46.0D, z, 3,
-                        0.5D, 0.5D, 0.5D, 0.01D);
+            // is visible from anywhere the player can see the horizon. When the hole
+            // is up in the sky the column runs DOWN from it to the ground, and the
+            // air under it is drawn up into it.
+            if (inSky) {
+                for (double t = 0.0D; t <= 1.0D; t += 0.02D) {
+                    level.sendParticles(ParticleTypes.REVERSE_PORTAL, x, y - t * (y - ground), z,
+                            2, 0.6D, 0.6D, 0.6D, 0.01D);
+                }
+                level.sendParticles(ParticleTypes.ASH, x, (double) ground + 1.0D, z, 90,
+                        8.0D, 1.0D, 8.0D, 0.06D);
+            } else {
+                for (double t = 0.0D; t <= 1.0D; t += 0.04D) {
+                    level.sendParticles(ParticleTypes.REVERSE_PORTAL, x, y + t * 46.0D, z, 3,
+                            0.5D, 0.5D, 0.5D, 0.01D);
+                }
             }
             level.sendParticles(ParticleTypes.PORTAL, x, y, z, 80, 1.4D, 1.4D, 1.4D, 0.30D);
             level.playSound(null, x, y, z, SoundEvents.ENDER_DRAGON_GROWL,
@@ -174,7 +194,9 @@ public final class McsmBlackHole {
             level.playSound(null, x, y, z, SoundEvents.LIGHTNING_BOLT_THUNDER,
                     SoundSource.WEATHER, 2.6F, 0.7F);
             McsmCreatures.say(level, new Vec3(x, y, z), 220.0D,
-                    "Reality is folding in on itself -- a black hole has opened nearby. "
+                    (inSky
+                            ? "A black hole has opened in the sky. Reality is folding in on itself -- "
+                            : "Reality is folding in on itself -- a black hole has opened nearby. ")
                             + (int) seconds + " seconds.",
                     ChatFormatting.DARK_PURPLE);
             return true;
@@ -210,6 +232,10 @@ public final class McsmBlackHole {
             McsmCreatures.say(level, new Vec3(x, y, z), 220.0D,
                     "The singularity has collapsed. The world is still here.",
                     ChatFormatting.LIGHT_PURPLE);
+            // BUILD #466 -- and it takes its tears with it: every rift the hole tore
+            // open around itself is sealed in this same tick, so nothing is left
+            // hanging over a hole that is not there any more.
+            McsmRifts.sealAround(level, x, y, z, 360.0D);
             hole.discard();
         } catch (Throwable ignored) {
         }
@@ -218,6 +244,25 @@ public final class McsmBlackHole {
     // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------
+
+    /**
+     * BUILD #466 -- where our own holes are, alive, right now. The rift system opens
+     * its tears around one of these when there is one near the player, which is what
+     * "black holes with the rifts that collapse" means in practice.
+     */
+    public static java.util.List<Vec3> openHoles(ServerLevel level) {
+        java.util.List<Vec3> found = new ArrayList<>();
+        try {
+            for (UUID id : new ArrayList<>(OURS.keySet())) {
+                Entity hole = level.getEntity(id);
+                if (hole != null && hole.isAlive()) {
+                    found.add(hole.position());
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return found;
+    }
 
     private static boolean holeNear(ServerLevel level, Vec3 at, double range) {
         try {

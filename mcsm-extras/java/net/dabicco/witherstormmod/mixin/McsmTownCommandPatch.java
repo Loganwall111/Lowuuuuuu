@@ -147,6 +147,14 @@ public abstract class McsmTownCommandPatch {
             aging.then(Commands.literal("advance").executes(ctx -> ds$aging(ctx.getSource(), "advance")));
             aging.then(Commands.literal("full").executes(ctx -> ds$aging(ctx.getSource(), "full")));
 
+            // BUILD #466 -- the rifts: open one by hand, or seal the ones that are
+            // open. The tears seal themselves on their own timer either way; this is
+            // how a player sees one on purpose, and how they get rid of one.
+            LiteralArgumentBuilder<CommandSourceStack> rift = Commands.literal("rift");
+            rift.executes(ctx -> ds$rift(ctx.getSource(), "open"));
+            rift.then(Commands.literal("open").executes(ctx -> ds$rift(ctx.getSource(), "open")));
+            rift.then(Commands.literal("seal").executes(ctx -> ds$rift(ctx.getSource(), "seal")));
+
             // BUILD #444 -- the underground structures, findable.
             // BUILD #451 -- /ds reality void goes to the nothing.
             LiteralArgumentBuilder<CommandSourceStack> maze = Commands.literal("maze");
@@ -206,7 +214,8 @@ public abstract class McsmTownCommandPatch {
 
             dispatcher.register(Commands.literal("ds").then(towns).then(storm)
                     .then(ritual).then(reality).then(maze).then(server).then(book).then(scene)
-                    .then(city).then(portal).then(mob).then(lock).then(aging).then(menu));
+                    .then(city).then(portal).then(mob).then(lock).then(aging).then(menu)
+                    .then(rift));
         } catch (Throwable ignored) {
             // our extension failing must never take down their /mcsm command
         }
@@ -480,6 +489,29 @@ public abstract class McsmTownCommandPatch {
                     + Math.round(net.mcsm.extras.McsmVoidAging.fractionOf(player) * 100.0F)
                     + "%)"), false);
             return 1;
+        } catch (Throwable t) {
+            src.sendFailure(Component.literal("[ds] " + t));
+            return 0;
+        }
+    }
+
+    private static int ds$rift(CommandSourceStack src, String action) {
+        try {
+            net.minecraft.server.level.ServerPlayer player = src.getPlayerOrException();
+            net.minecraft.server.level.ServerLevel level = player.serverLevel();
+            if ("seal".equals(action)) {
+                int sealed = net.mcsm.extras.McsmRifts.sealAll(level);
+                src.sendSuccess(() -> Component.literal("[ds] sealed " + sealed + " tear"
+                        + (sealed == 1 ? "" : "s")), false);
+                return 1;
+            }
+            boolean opened = net.mcsm.extras.McsmRifts.openNow(level, player);
+            src.sendSuccess(() -> Component.literal(opened
+                    ? "[ds] reality tears open -- " + (int) net.mcsm.extras.McsmExtrasConfig.riftSeconds
+                            + " seconds, then it seals itself"
+                    : "[ds] no tear opened: rifts are off, or there are already "
+                            + net.mcsm.extras.McsmRifts.alive(level) + " open here"), false);
+            return opened ? 1 : 0;
         } catch (Throwable t) {
             src.sendFailure(Component.literal("[ds] " + t));
             return 0;
