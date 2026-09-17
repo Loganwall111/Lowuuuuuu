@@ -144,6 +144,13 @@ public final class McsmExtrasConfig {
      * No dome is involved anywhere, and the Overworld keeps the vanilla sky.
      */
     public static boolean paintedSky = true;
+
+    /**
+     * BUILD #461 -- every dimension's own air: its own particles, its own rate
+     * and its own ambience. Client-side only, and off is a real off: with this
+     * false not one particle is spawned by {@code McsmDimensionFx}.
+     */
+    public static boolean dimensionFx = true;
     /** BUILD #451 -- the void: a dimension that is mostly nothing. */
     public static boolean voidReality = true;
     /** BUILD #451 -- walk-in portals, one per dimension. */
@@ -467,6 +474,7 @@ public final class McsmExtrasConfig {
             p.setProperty("portals", String.valueOf(portals));
             p.setProperty("void_light", String.valueOf(voidLight));
             p.setProperty("painted_sky", String.valueOf(paintedSky));
+            p.setProperty("dimension_fx", String.valueOf(dimensionFx));
             p.setProperty("eye_glow", String.valueOf(eyeGlow));
             p.setProperty("eye_glow_strength", String.valueOf(eyeGlowStrength));
             p.setProperty("vanilla_glow", String.valueOf(vanillaGlow));
@@ -617,6 +625,7 @@ public final class McsmExtrasConfig {
             portals = bool(p, "portals", portals);
             voidLight = bool(p, "void_light", voidLight);
             paintedSky = bool(p, "painted_sky", paintedSky);
+            dimensionFx = bool(p, "dimension_fx", dimensionFx);
             eyeGlow = bool(p, "eye_glow", eyeGlow);
             eyeGlowStrength = dbl(p, "eye_glow_strength", eyeGlowStrength);
             vanillaGlow = bool(p, "vanilla_glow", vanillaGlow);

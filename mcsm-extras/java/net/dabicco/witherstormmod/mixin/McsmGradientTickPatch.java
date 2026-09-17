@@ -9,6 +9,7 @@ import net.dabicco.witherstormmod.config.DabyWSClientConfig;
 import net.mcsm.extras.McsmDiag;
 import net.mcsm.extras.McsmGate;
 import net.mcsm.extras.client.McsmClientBlasts;
+import net.mcsm.extras.client.McsmDimensionFx;
 import net.mcsm.extras.client.McsmClientChat;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -116,6 +117,10 @@ public abstract class McsmGradientTickPatch {
             // has been removed, and this hook runs for as long as the world is
             // being rendered. It steps at most once per game tick internally.
             McsmClientBlasts.tick();
+            // BUILD #461 -- and the air of the dimension the camera is in. Also
+            // once-per-tick internally, and a no-op in the Overworld, where the
+            // storm's own weather belongs.
+            McsmDimensionFx.tick();
             // The generated particle/ring debris vortex is intentionally
             // retired. Native StormDebris remains the single debris source;
             // its authored outer entries expand in the phase-9 window.

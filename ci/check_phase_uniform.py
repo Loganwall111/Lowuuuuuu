@@ -2792,6 +2792,50 @@ def main():
           "drifter/keeper skins")
 
     # ------------------------------------------------------------------
+    # BUILD #461 -- AND EVERY WORLD'S OWN AIR. The last line of the identity
+    # list: "own blocks, items, mobs, locks, VFX; no re-use". This is the VFX
+    # a player feels while standing still -- each dimension's own particles,
+    # its own rate and its own ambience, and the Overworld left alone.
+    # ------------------------------------------------------------------
+    fx = read("mcsm-extras/java/net/mcsm/extras/client/McsmDimensionFx.java") or ""
+    grad = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGradientTickPatch.java") or ""
+
+    def air_particles(text):
+        """The particle types each Air row names, in order of appearance."""
+        return re.findall(r"ParticleTypes\.([A-Z_]+)", text)
+
+    def air_sounds(text):
+        return re.findall(r"McsmSounds\.([A-Z_]+)", text)
+
+    _particles = air_particles(fx)
+    _sounds = air_sounds(fx)
+    check("every world breathes something of its own, and no two breathe the same",
+          fx.count("new Air(") == 3
+          and "AIRS = { DECAYED, ADAMS, VOID };" in fx
+          and len(_particles) == 6 and len(set(_particles)) == 6
+          and len(_sounds) == 3 and len(set(_sounds)) == 3,
+          "particles=%s sounds=%s" % (",".join(_particles), ",".join(_sounds)))
+    check("the air is only for the mod's own worlds, and the Overworld is left alone",
+          "airFor(McsmIdentity.forLevel(level))" in fx
+          and "if (skin == null) {" in fx
+          and "air.id().equals(skin.id())" in fx
+          and "return null;" in fx
+          and "if (air == null) {" in fx)
+    check("the air steps once a game tick, never once a frame",
+          "if (now == lastTick) {" in fx
+          and "lastTick = now;" in fx
+          and "private static long lastTick = Long.MIN_VALUE;" in fx)
+    check("and it is a real switch, on the panel and in the config file",
+          "public static boolean dimensionFx = true;" in cfg
+          and '"dimension_fx"' in cfg
+          and "if (!McsmExtrasConfig.dimensionFx) {" in fx
+          and "Dimension air (own particles and ambience per world)" in extras)
+    check("the hook that drives it is the hook the blasts already use",
+          "McsmDimensionFx.tick();" in grad
+          and "import net.mcsm.extras.client.McsmDimensionFx;" in grad
+          and grad.index("McsmClientBlasts.tick();") < grad.index("McsmDimensionFx.tick();"))
+
+    # ------------------------------------------------------------------
     # BUILD #457 -- THE PAINTED SKY. Every dimension wears its own cube.
     #
     # "custom skyboxes", "the sky is not fully the sky yet". Shader-side answers

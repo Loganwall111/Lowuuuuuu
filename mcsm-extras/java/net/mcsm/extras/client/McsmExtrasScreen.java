@@ -439,6 +439,13 @@ public final class McsmExtrasScreen extends Screen {
               McsmExtrasConfig.paintedSky = v;
               McsmExtrasConfig.save();
           })
+          // BUILD #461 -- and the air of every dimension: its own particles,
+          // its own rate, its own ambience.
+          .bool("Dimension air (own particles and ambience per world)",
+                  () -> McsmExtrasConfig.dimensionFx, v -> {
+              McsmExtrasConfig.dimensionFx = v;
+              McsmExtrasConfig.save();
+          })
           // BUILD #451 -- the void, and the doorways.
           .bool("The Void (a dimension of nothing, with things in it)",
                   () -> McsmExtrasConfig.voidReality, v -> {
