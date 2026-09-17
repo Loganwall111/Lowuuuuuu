@@ -1633,6 +1633,24 @@ mkdir -p "$FX/cls/resourcepacks/storylook"
 cp -r storylook/pack.mcmeta storylook/pack.png "$FX/cls/resourcepacks/storylook/"
 cp -r storylook/assets "$FX/cls/resourcepacks/storylook/"
 echo "[build] built-in story look pack embedded at resourcepacks/storylook"
+# BUILD #471 -- AN OVERRIDE MAY CHANGE THE BODY, NEVER THE INTERFACE.
+#
+# This pack replaces the game's own core shaders (block, lightmap, sky, entity,
+# rendertype_entity_cutout, rendertype_clouds), and mod assets sit above vanilla in the
+# pack stack: they are ALWAYS on, with no pack to enable. A core shader whose interface
+# does not match this build of the game is not a wrong colour, it is a BLACK SCREEN WITH
+# NO ERROR -- GLSL reads declared values by position, so one extra, missing, renamed or
+# reordered member of a std140 block shifts every value after it and the lighting comes
+# back as garbage while the logo and the buttons (plain GUI shaders) still draw. That is
+# exactly the frame the standing report describes.
+#
+# So every replaced core shader is compared against the game's OWN copy out of the client
+# jar before it is shipped, and one that does not match is disabled here -- in this copy,
+# before the zip, so the committed sources are untouched and the packed jar cannot carry
+# it. The verdict lands in out/vanilla-api.txt with the rest of the API evidence.
+python3 ci/check_shader_overrides.py --jar "$DL/client.jar" \
+  --assembled "$FX/cls/resourcepacks/storylook/assets/minecraft/shaders/core" --strip \
+  >> "$VANILLA_OUT" 2>&1 || true
 mkdir -p "$FX/cls/assets/dabywitherstormmod/resourcepacks"
 rm -f "$FX/cls/assets/dabywitherstormmod/resourcepacks/storylook.zip"
 ( cd "$FX/cls/resourcepacks/storylook" && zip -q -r -X "$FX/cls/assets/dabywitherstormmod/resourcepacks/storylook.zip" pack.mcmeta pack.png assets )
@@ -1954,6 +1972,25 @@ echo "::notice title=jar audit::all mixins registered, fresh classes present, sh
 echo "[audit] PASS"
 stage audit-ok
 
+
+# ---------------------------------------------------------------------------
+# BUILD #471 -- AND THE SAME CHECK ON THE JAR'S OWN CORE SHADERS.
+#
+# mcsm-core-shaders/* was overlaid onto assets/minecraft/shaders/ at the top of this
+# build, so the jar carries replacements for the game's own block / lightmap / sky /
+# entity / cloud programs, active for every player with no pack to install. This is the
+# last checkpoint before packaging, so nothing here can be undone by it: a replaced
+# program whose interface does not match the game's own file is disabled (the game's
+# shader is used instead) and the verdict is written into the evidence.
+# ---------------------------------------------------------------------------
+echo "[shader] replaced core shaders: interface check against the client jar"
+SHADER_CHECK="$(python3 ci/check_shader_overrides.py --jar "$DL/client.jar" \
+  --assembled "$FX/cls/assets/minecraft/shaders/core" --strip 2>&1 || true)"
+printf '%s\n' "$SHADER_CHECK" | sed -n '1,40p'
+printf '%s\n' "$SHADER_CHECK" >> "$VANILLA_OUT" 2>/dev/null || true
+if printf '%s\n' "$SHADER_CHECK" | grep -q "MISMATCH"; then
+  echo "::warning title=shaders::a replaced core shader did not match this build's own interface and was DISABLED in the jar -- the game's shader is used instead (see out/vanilla-api.txt)"
+fi
 
 OUT="out/devouringstorms-${JAR_ID}.jar"
 rm -f "$OUT"

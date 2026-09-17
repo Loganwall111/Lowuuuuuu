@@ -3307,6 +3307,73 @@ def main():
           and skygen.count('"clouds_') == 4)
 
     # ------------------------------------------------------------------
+    # BUILD #471 -- AN OVERRIDE MAY CHANGE THE BODY, NEVER THE INTERFACE.
+    #
+    # This jar REPLACES the game's own core shaders (mcsm-core-shaders/* is overlaid onto
+    # assets/minecraft/shaders/), and mod assets sit above vanilla in the pack stack, so
+    # they are always on: no resource pack to enable, no shader pack to install. A core
+    # shader whose BODY is wrong is a wrong colour. A core shader whose INTERFACE is
+    # wrong is a BLACK SCREEN WITH NO ERROR, because GLSL reads a std140 block by
+    # position -- one extra, missing, renamed or reordered member shifts every value
+    # after it, the world lighting comes back as garbage, and the logo and the buttons
+    # (plain GUI shaders) still draw perfectly. That is the standing report's frame.
+    #
+    # So the rule is enforced in two places, and both are checked here: the tool's own
+    # logic (exercised on synthetic shaders below -- body free, layout positional), and
+    # the build that runs it against the game's OWN copies before anything is packaged.
+    # ------------------------------------------------------------------
+    shader_tool = read("ci/check_shader_overrides.py") or ""
+
+    try:
+        import check_shader_overrides as _sh
+        _same_body = (
+            "#version 330\nlayout(std140) uniform L { float A; vec3 B; } l;\n"
+            "in vec2 t;\nout vec4 c;\nvoid main() { c = vec4(0.5); }")
+        _other_body = _same_body.replace("vec4(0.5)", "vec4(0.0)").replace(
+            "c = ", "c = vec4(1.0) * ")
+        body_free = not _sh.diff(_sh.interface_of(_same_body),
+                                 _sh.interface_of(_other_body))
+        # a one-line block and a multi-line block are the same block
+        one_line = _sh.interface_of("layout(std140) uniform L { vec3 A; float B; } l;")
+        multi = _sh.interface_of("layout(std140) uniform L {\n  vec3 A;\n  float B;\n} l;")
+        parse_ok = one_line["blocks"] == multi["blocks"] == {"L": [("vec3", "A"), ("float", "B")]}
+        reorder_caught = bool(_sh.diff(
+            _sh.interface_of("layout(std140) uniform L { vec3 A; float B; } l;"),
+            _sh.interface_of("layout(std140) uniform L { float B; vec3 A; } l;")))
+        missing_caught = bool(_sh.diff(
+            _sh.interface_of("layout(std140) uniform L { float A; float B; } l;"),
+            _sh.interface_of("layout(std140) uniform L { float A; } l;")))
+        invented_caught = bool(_sh.diff(
+            _sh.interface_of("uniform sampler2D Sampler3;"),
+            _sh.interface_of("uniform sampler2D Sampler0;")))
+        renamed_in_caught = bool(_sh.diff(
+            _sh.interface_of("in vec2 texCoord0;"), _sh.interface_of("in vec2 texCoord;")))
+    except Exception as _exc:
+        body_free = parse_ok = reorder_caught = False
+        missing_caught = invented_caught = renamed_in_caught = False
+        print("  note  shader tool self-test could not run: %s" % _exc)
+
+    check("and a replaced core shader may change the body, never the interface",
+          body_free and parse_ok and reorder_caught and missing_caught
+          and invented_caught and renamed_in_caught
+          and "layout(std140) uniform NAME { ... }" in shader_tool
+          and "a subset is as wrong as a superset" in shader_tool
+          # and it never strips on a guess
+          and "nothing is disabled and nothing is claimed" in shader_tool)
+
+    check("and the build weighs every replaced core shader against the game's own copy",
+          bsh.count("ci/check_shader_overrides.py --jar") == 2
+          and "have\")" not in bsh
+          and 'resourcepacks/storylook/assets/minecraft/shaders/core" --strip' in bsh
+          and '"$FX/cls/assets/minecraft/shaders/core" --strip' in bsh
+          # the verdict is evidence, and a disabled shader is announced, not silent
+          and ">> \"$VANILLA_OUT\" 2>&1 || true" in bsh
+          and "a replaced core shader did not match this build's own interface and was DISABLED" in bsh
+          # and the jar's own pass runs BEFORE the jar is written, so nothing can undo it
+          and bsh.index('"$FX/cls/assets/minecraft/shaders/core" --strip')
+          < bsh.index('OUT="out/devouringstorms-${JAR_ID}.jar"'))
+
+    # ------------------------------------------------------------------
     # BUILD #458 -- THE PER-DIMENSION IDENTITY PASS. "each dimension and infinite
     # subdimension completely unique: own blocks, items, mobs, locks, VFX, biomes,
     # fog, sky, horizon; no re-use, not the decay set in flat worlds."
