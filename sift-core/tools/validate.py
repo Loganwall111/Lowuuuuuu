@@ -105,6 +105,10 @@ def main() -> int:
         "src/main/java/dev/siftcore/physics/SiftCurrentPhysics.java",
         "src/main/java/dev/siftcore/rift/SiftRiftFormation.java",
         "src/main/java/dev/siftcore/rift/SiftRiftRenderer.java",
+        "src/main/java/dev/siftcore/mob/SiftDrifterEntity.java",
+        "src/main/java/dev/siftcore/mob/SiftDrifterSpawner.java",
+        "src/main/java/dev/siftcore/mob/SiftDrifterRenderer.java",
+        "src/main/java/dev/siftcore/client/SiftGroundRenderer.java",
     ):
         check_file(relative)
 
@@ -166,7 +170,7 @@ def main() -> int:
                 check_file("src/main/java/" + package.replace(".", "/") + "/" + class_name + ".java")
 
     check_png("src/main/resources/assets/mcsm/icon.png")
-    for stem in ("sky", "rift", "final"):
+    for stem in ("sky", "rift", "final", "ground", "drifter"):
         program = load_json(f"src/main/resources/assets/mcsm/shaders/core/{stem}.json")
         if program:
             for key in ("vertex", "fragment"):

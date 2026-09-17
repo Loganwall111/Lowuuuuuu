@@ -20,6 +20,8 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Procedural camera-facing rift renderer.
 - [x] Wavy interior displacement, particle stars, and colored emissive rim.
 - [x] Add an atmospheric pressure haze and animated filament veil around each rift.
+- [x] Add a distant visual abyss floor without introducing blocks or collision.
+- [x] Add the first free-flying ambient Sift Drifter mob with procedural rendering.
 - [x] Replace random proximity placement with a deterministic twelve-slot rift formation prototype.
 - [ ] Add authored encounter choreography around the formation.
 - [ ] Add a real screen-space capture/refraction target if the final rendering backend requires it.

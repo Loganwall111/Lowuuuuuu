@@ -27,9 +27,11 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 - `SiftRiftEntity` is a non-collidable, non-attackable visual entity. A small server spawner keeps an authored, deterministic twelve-slot formation around players; the pattern changes only after the formation cycle ages out.
 - `SiftRiftRenderer` draws a camera-facing procedural portal using `rift.fsh`. The fragment pass contains layered wave displacement, a cosmic interior, star points, an emissive broken rim, and two atmospheric envelope passes: a low-pressure haze plus animated colored filaments that bleed beyond the aperture.
 - `/sift status` reports dimension, position, velocity, and all preserved rotations so the fall handshake can be verified without guessing from the camera.
+- A procedural `Sift Drifter` is the first ambient mob: it is a real living entity with health and a server-authoritative free-flight impulse, but no collision or hostile AI yet.
 
 ### Phase 3 — fluid pass
 
+- `SiftGroundRenderer` adds a distant procedural abyss floor at the configured bottom of The Sift. It is visual shader geometry only; the dimension remains blockless and players can fall through it.
 - `SiftFluidRenderer` adds purely visual, collision-free horizontal fluid sheets around the player. No fluid blocks are registered, so a player can fall through every layer.
 - `final.fsh` supplies animated refraction, teal/amethyst/magenta iridescence, flowing caustic bands, liquid glints, and proximity-based white intersection foam. Its flow direction is driven by the same deterministic field used by server-side current physics. The current foam is a screen-space approximation; a later pass can feed a real depth/normal buffer when a post-processing backend is selected.
 

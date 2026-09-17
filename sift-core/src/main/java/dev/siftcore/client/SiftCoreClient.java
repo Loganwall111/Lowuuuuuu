@@ -2,6 +2,7 @@ package dev.siftcore.client;
 
 import dev.siftcore.SiftCore;
 import dev.siftcore.SiftDimensions;
+import dev.siftcore.mob.SiftDrifterRenderer;
 import dev.siftcore.rift.SiftRiftRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -15,6 +16,7 @@ public final class SiftCoreClient implements ClientModInitializer {
     public void onInitializeClient() {
         CoreShaderRegistrationCallback.EVENT.register(SiftShaders::register);
         EntityRendererRegistry.register(SiftCore.SIFT_RIFT, SiftRiftRenderer::new);
+        EntityRendererRegistry.register(SiftCore.SIFT_DRIFTER, SiftDrifterRenderer::new);
 
         DimensionRenderingRegistry.registerDimensionEffects(
                 SiftDimensions.EFFECTS,
@@ -24,6 +26,7 @@ public final class SiftCoreClient implements ClientModInitializer {
                 SiftDimensions.THE_SIFT,
                 new SiftSkyRenderer()
         );
+        WorldRenderEvents.AFTER_ENTITIES.register(SiftGroundRenderer::render);
         WorldRenderEvents.AFTER_ENTITIES.register(SiftFluidRenderer::render);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null) {

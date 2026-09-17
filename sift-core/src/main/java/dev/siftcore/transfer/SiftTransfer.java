@@ -1,6 +1,7 @@
 package dev.siftcore.transfer;
 
 import dev.siftcore.SiftDimensions;
+import dev.siftcore.mob.SiftDrifterSpawner;
 import dev.siftcore.rift.SiftRiftSpawner;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
@@ -115,8 +116,10 @@ public final class SiftTransfer {
         target.setPortalCooldown(0);
         target.fallDistance = fallDistance;
 
-        // The rifts are visual entities; they do not participate in the handshake.
+        // The rifts and drifters are visual/ambient entities; they do not
+        // participate in the handshake or add a collision surface.
         SiftRiftSpawner.spawnWelcomeRifts(target);
+        SiftDrifterSpawner.spawnWelcomeDrifters(target);
         return true;
     }
 

@@ -10,11 +10,13 @@ import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.util.Identifier;
 
-/** Handles the three small procedural programs used by the first visual slice. */
+/** Handles the small procedural programs used by the first visual slice. */
 public final class SiftShaders {
     public static ShaderProgram SKY;
     public static ShaderProgram RIFT;
     public static ShaderProgram FINAL;
+    public static ShaderProgram GROUND;
+    public static ShaderProgram DRIFTER;
 
     private SiftShaders() {
     }
@@ -28,6 +30,8 @@ public final class SiftShaders {
         registerOne(context, SiftCore.id("sky"), VertexFormats.POSITION, shader -> SKY = shader);
         registerOne(context, SiftCore.id("rift"), VertexFormats.POSITION_TEXTURE_COLOR, shader -> RIFT = shader);
         registerOne(context, SiftCore.id("final"), VertexFormats.POSITION_TEXTURE_COLOR, shader -> FINAL = shader);
+        registerOne(context, SiftCore.id("ground"), VertexFormats.POSITION_TEXTURE_COLOR, shader -> GROUND = shader);
+        registerOne(context, SiftCore.id("drifter"), VertexFormats.POSITION_TEXTURE_COLOR, shader -> DRIFTER = shader);
     }
 
     private static void registerOne(

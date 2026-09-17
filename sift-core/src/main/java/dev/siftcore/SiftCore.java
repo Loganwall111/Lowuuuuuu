@@ -1,11 +1,14 @@
 package dev.siftcore;
 
 import dev.siftcore.command.SiftCommands;
+import dev.siftcore.mob.SiftDrifterEntity;
+import dev.siftcore.mob.SiftDrifterSpawner;
 import dev.siftcore.physics.SiftCurrentPhysics;
 import dev.siftcore.rift.SiftRiftEntity;
 import dev.siftcore.rift.SiftRiftSpawner;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.registry.Registries;
@@ -39,14 +42,27 @@ public final class SiftCore implements ModInitializer {
                     .build("sift_rift")
     );
 
+    public static final EntityType<SiftDrifterEntity> SIFT_DRIFTER = Registry.register(
+            Registries.ENTITY_TYPE,
+            id("sift_drifter"),
+            EntityType.Builder.create(SiftDrifterEntity::new, SpawnGroup.AMBIENT)
+                    .setDimensions(1.2f, 1.2f)
+                    .maxTrackingRange(112)
+                    .trackingTickInterval(3)
+                    .disableSaving()
+                    .build("sift_drifter")
+    );
+
     public static Identifier id(String path) {
         return new Identifier(NAMESPACE, path);
     }
 
     @Override
     public void onInitialize() {
+        FabricDefaultAttributeRegistry.register(SIFT_DRIFTER, SiftDrifterEntity.createAttributes());
         SiftCommands.register();
         ServerTickEvents.END_WORLD_TICK.register(SiftRiftSpawner::tick);
+        ServerTickEvents.END_WORLD_TICK.register(SiftDrifterSpawner::tick);
         ServerTickEvents.END_WORLD_TICK.register(SiftCurrentPhysics::tick);
         LOGGER.info("Sift-Core {} initialized; The Sift handshake is armed", VERSION);
     }
