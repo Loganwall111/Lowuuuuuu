@@ -1,1 +1,1 @@
-manifest-ok
+shader-verify-ok
