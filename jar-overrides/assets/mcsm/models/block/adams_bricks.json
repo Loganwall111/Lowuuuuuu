@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/adams_bricks",
+    "east": "mcsm:block/adams_bricks",
+    "north": "mcsm:block/adams_bricks",
+    "particle": "mcsm:block/adams_bricks",
+    "south": "mcsm:block/adams_bricks",
+    "up": "mcsm:block/adams_bricks",
+    "west": "mcsm:block/adams_bricks"
+  }
+}

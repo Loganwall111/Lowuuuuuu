@@ -1733,8 +1733,12 @@ def main():
           and "private static final double DEPTH = 512.0D;" in band
           and "collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(WHITE)," in band)
     check("the wall carries the live horizon colour down and deepens as it falls",
+          # BUILD #458 -- the hardcoded violet is gone: the band asks the
+          # dimension's identity for its own horizon, and only the Overworld
+          # (which the mod does not own) wears the storm's band.
           "horizon = McsmStormPhase.horizonFor(Math.max(phase, McsmStormPhase.PHASE_MIN));" in band
-          and "horizon = new float[]{0x4A / 255.0F, 0x2A / 255.0F, 0x6E / 255.0F};" in band
+          and "float[] horizon = McsmIdentity.horizon(skin);" in band
+          and "McsmIdentity.Skin skin = McsmIdentity.forLevel(level);" in band
           and "private static final float SEAM_ALPHA = 0.0F;" in band
           and "private static final float FLOOR_ALPHA = 0.94F;" in band)
     check("the bottom layer is switchable, saved, panel-reachable and drawn in the backdrop pass",
@@ -2365,7 +2369,9 @@ def main():
           void_dim["generator"]["settings"]["biome"] == "mcsm:void_reality"
           and void_biome["effects"]["water_color"] == 0x8C24FF
           and void_biome["effects"]["water_fog_color"] == 0x47079F
-          and void_biome["effects"]["sky_color"] == 0x312A4F
+          # BUILD #458: the biome's sky is the dimension type's own sky_light_color
+          # (#4A2E8A) now, so the two cannot describe the same sky differently.
+          and void_biome["effects"]["sky_color"] == 0x4A2E8A
           and void_biome["effects"]["fog_color"] == 0x1E1642)
     check("and the decayed reality finally has the purple water it never had",
           decayed_dim["generator"]["settings"]["biome"] == "mcsm:decayed_reality"
@@ -2409,12 +2415,16 @@ def main():
               read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java")
               or ""))
     check("one doorway per dimension, and every one of them distinct",
+          # BUILD #458 -- and every doorway is built from the MATERIAL OF THE WORLD
+          # BEHIND IT. Adams was memory crystal around city tile and the void was a
+          # shared rift anchor around a black-hole core: two arches made of other
+          # places. They are their own families now (see the identity pass below).
           portals.count("new Door(") == 3
           and 'new Door("decayed", "mcsm:decayed_reality", "mcsm:rift_anchor", "mcsm:reality_glass"'
                   in portals
-          and 'new Door("adams", "mcsm:adams_infinity", "mcsm:memory_crystal", "mcsm:city_tiles"'
+          and 'new Door("adams", "mcsm:adams_infinity", "mcsm:adams_crystal", "mcsm:adams_bricks"'
                   in portals
-          and 'new Door("void", "mcsm:void_reality", "mcsm:rift_anchor", "mcsm:black_hole_core"'
+          and 'new Door("void", "mcsm:void_reality", "mcsm:void_anchor", "mcsm:void_glass"'
                   in portals)
     check("a doorway is a shape, checked where the player is standing",
           "public static void tick(ServerLevel level) {" in portals
@@ -2729,6 +2739,9 @@ def main():
           and "private static final double SKIRT = 8.0D;" in sky)
     check("three dimensions, three different skies, and the Overworld keeps the vanilla one",
           sky.count("new Sky(") == 3
+          # BUILD #458 -- and the grade and the turn come from the identity table,
+          # so a dimension's sky, fog and horizon cannot drift apart.
+          and sky.count("s.tintR()") == 3 and sky.count("s.spin()") == 3
           and "McsmReality.inside(level)" in sky
           and "level.dimension().equals(McsmAdams.ADAMS)" in sky
           and "level.dimension().equals(McsmVoid.DIMENSION)" in sky
@@ -2794,6 +2807,184 @@ def main():
     check("and every lid is painted with a starfield over its zenith",
           all(top_ok(k) for k in ("decayed_top", "adams_top", "void_top")),
           "lids: %d read" % (0 if "error" in skies else len(skies)))
+
+    # ------------------------------------------------------------------
+    # BUILD #458 -- THE PER-DIMENSION IDENTITY PASS. "each dimension and infinite
+    # subdimension completely unique: own blocks, items, mobs, locks, VFX, biomes,
+    # fog, sky, horizon; no re-use, not the decay set in flat worlds."
+    #
+    # The report was exact: the void floated decayed stone and city tile, the
+    # infinite dimension built decayed bricks with glitch lamps, every arch was
+    # shared, and one hardcoded violet was the horizon of every world. This family
+    # holds the fix: one identity table, three material families, and a check that
+    # NOTHING borrows anything.
+    # ------------------------------------------------------------------
+    ident = read("mcsm-extras/java/net/mcsm/extras/McsmIdentity.java") or ""
+    content = read("mcsm-extras/java/net/mcsm/extras/McsmContent.java") or ""
+    adams_java = read("mcsm-extras/java/net/mcsm/extras/McsmAdams.java") or ""
+    adams_dim_text = read("jar-overrides/data/mcsm/dimension/adams_infinity.json") or ""
+
+    def prefix_of(dim_id):
+        """The material family the identity table gives a dimension."""
+        found = {}
+        for m in re.finditer(r'new Skin\((\w+),\s*"[^"]*",\s*"([a-z_]+)"', ident):
+            found[m.group(1)] = m.group(2)
+        return found.get(dim_id)
+
+    p_decayed, p_adams, p_void = (prefix_of("DECAYED"), prefix_of("ADAMS"),
+                                  prefix_of("VOID"))
+    check("there is ONE identity per dimension, and the Overworld is deliberately not one",
+          "public record Skin(" in ident
+          and ident.count("new Skin(") == 3
+          and p_decayed and p_adams and p_void
+          and len({p_decayed, p_adams, p_void}) == 3
+          and "return null;" in ident
+          and "public static Skin forLevel(Level level)" in ident)
+
+    def family_blocks(prefix):
+        """Every block the content pack registers under one dimension's prefix."""
+        return sorted(set(re.findall(r'block\("%s_([a-z_]+)"' % prefix, content)))
+
+    fams = {"decayed": family_blocks(p_decayed), "adams": family_blocks(p_adams),
+            "void": family_blocks(p_void)}
+    def full_ids(prefix):
+        return set("%s_%s" % (prefix, suffix) for suffix in fams[prefix])
+
+    check("every dimension has a material family of its own, and no two share a block",
+          len(fams[p_void]) >= 7 and len(fams[p_adams]) >= 10
+          and not (full_ids(p_void) & full_ids(p_adams))
+          and "%s_stone" % p_void in full_ids(p_void)
+          and "%s_lamp" % p_void in full_ids(p_void)
+          and "%s_stone" % p_adams in full_ids(p_adams)
+          and "%s_crate" % p_adams in full_ids(p_adams),
+          "void=%d adams=%d" % (len(fams[p_void]), len(fams[p_adams])))
+
+    # the worlds: no palette may name another dimension's material. The decayed
+    # reality keeps the set it is named for -- that IS its identity -- and the
+    # neutral ids (air, water, a vanilla barrel) are nobody's material.
+    def borrowed(java, own_prefix):
+        hits = []
+        for m in re.finditer(r'state\("(mcsm:[a-z_]+)"', java):
+            rid = m.group(1)
+            if not rid.startswith("mcsm:" + own_prefix + "_"):
+                hits.append(rid)
+        return hits
+
+    void_borrowed = borrowed(void_java, p_void)
+    adams_borrowed = borrowed(adams_java, p_adams)
+    check("no world is built out of another world's blocks",
+          not void_borrowed and not adams_borrowed,
+          "void borrowed %s / adams borrowed %s" % (void_borrowed, adams_borrowed))
+    check("and the ground under each of them is its own too",
+          # five layers, five of the dimension's own blocks, and the biome the
+          # dimension type is dressed in -- no decayed stone, no city tile.
+          adams_dim_text.count('"block": "mcsm:%s_' % p_adams) == 5
+          and '"biome": "mcsm:%s_infinity"' % p_adams in adams_dim_text
+          and "mcsm:decayed" not in adams_dim_text
+          and "mcsm:city_" not in adams_dim_text)
+
+    # every doorway is the material of the world it opens onto
+    doors_ok = True
+    for dim_id, prefix, kinds in (("adams", p_adams, ("crystal", "bricks")),
+                                  ("void", p_void, ("anchor", "glass"))):
+        want = 'new Door("%s", "mcsm:' % dim_id
+        row = [ln for ln in portals.splitlines() if want in ln]
+        if not row or not all(('mcsm:%s_%s' % (prefix, k)) in row[0] for k in kinds):
+            doors_ok = False
+    check("and every doorway is built from the material of the world behind it",
+          doors_ok
+          # ...and the void's own frame/door constants are NAMED through the table
+          # rather than typed out, so an arch cannot be another world's block.
+          and 'public static final String FRAME_BLOCK = McsmIdentity.material(' \
+                  'McsmIdentity.VOID, "anchor");' in void_java
+          and 'public static final String DOOR_BLOCK = McsmIdentity.material(' \
+                  'McsmIdentity.VOID, "glass");' in void_java)
+
+    # the horizon, the fog, the sky and the water: the JSONs must carry exactly
+    # what the identity table says, and the sky painter must paint the same hex
+    adams_biome = json.loads(read(
+        "jar-overrides/data/mcsm/worldgen/biome/adams_infinity.json"))
+    # the identity rows are two lines per dimension (the record call wraps); read
+    # the table out of the Java as a table rather than trusting a doc comment
+    rows = {}
+    for m in re.finditer(r'new Skin\((\w+), "([^"]*)", "([a-z_]+)",(.*?)\)', ident,
+                         re.S):
+        hexes = re.findall(r'"([0-9A-F]{6})"', m.group(4))
+        if len(hexes) < 6:
+            continue
+        rows[m.group(1)] = dict(prefix=m.group(3), fog=hexes[0], sky=hexes[1],
+                                sky_light=hexes[2], horizon=hexes[3],
+                                glow=hexes[4], water=hexes[5])
+    check("the identity table holds a full set of hexes for each of the three",
+          len(rows) == 3
+          and all(all(r[k] for k in ("fog", "sky", "sky_light", "horizon", "glow", "water"))
+                  for r in rows.values()))
+
+    def packed(hexstr):
+        return int(hexstr, 16)
+
+    check("the biomes, the dimension types and the identities are the same numbers",
+          len(rows) == 3
+          and packed(rows["DECAYED"]["fog"]) == decayed_biome["effects"]["fog_color"]
+          and packed(rows["DECAYED"]["sky"]) == decayed_biome["effects"]["sky_color"]
+          and packed(rows["DECAYED"]["water"]) == decayed_biome["effects"]["water_color"]
+          and packed(rows["VOID"]["fog"]) == void_biome["effects"]["fog_color"]
+          and packed(rows["VOID"]["water"]) == void_biome["effects"]["water_color"]
+          and packed(rows["ADAMS"]["fog"]) == adams_biome["effects"]["fog_color"]
+          and packed(rows["ADAMS"]["sky"]) == adams_biome["effects"]["sky_color"]
+          and packed(rows["ADAMS"]["water"]) == adams_biome["effects"]["water_color"]
+          and packed(rows["ADAMS"]["sky_light"]) == packed(
+              json.loads(read("jar-overrides/data/mcsm/dimension_type/"
+                              "adams_infinity.json"))["attributes"][
+                  "minecraft:visual/sky_light_color"].lstrip("#"))
+          and packed(rows["VOID"]["sky_light"]) == packed(
+              json.loads(read("jar-overrides/data/mcsm/dimension_type/"
+                              "void_reality.json"))["attributes"][
+                  "minecraft:visual/sky_light_color"].lstrip("#"))
+          and packed(rows["VOID"]["sky"]) == void_biome["effects"]["sky_color"]
+          and packed(rows["DECAYED"]["sky_light"]) == packed(
+              json.loads(read("jar-overrides/data/mcsm/dimension_type/"
+                              "decayed_reality.json"))["attributes"][
+                  "minecraft:visual/sky_light_color"].lstrip("#")))
+
+    # the sky painter's own horizon tuples, turned back into "RRGGBB"
+    painter_horizons = {}
+    for m in re.finditer(
+            r'"(\w+)": dict\(\s*\n\s*seed=\d+,\s*\n\s*horizon=\((0x[0-9A-F]{2}), '
+            r'(0x[0-9A-F]{2}), (0x[0-9A-F]{2})\)', skygen):
+        painter_horizons[m.group(1)] = "%02X%02X%02X" % (
+            int(m.group(2), 16), int(m.group(3), 16), int(m.group(4), 16))
+    check("the horizon the band paints is the horizon the sky was painted with",
+          len(painter_horizons) == 3 and len(rows) == 3
+          and all(painter_horizons[d.lower()] == rows[D]["horizon"]
+                  for d, D in (("decayed", "DECAYED"), ("adams", "ADAMS"),
+                               ("void", "VOID"))),
+          "painter=%s table=%s" % (painter_horizons,
+                                   {k: v["horizon"] for k, v in rows.items()}))
+
+    # the families are real: a blockstate, an item definition, a texture and a
+    # loot table for every one of them
+    _missing = []
+    for _prefix in (p_void, p_adams):
+        for _suffix in fams[_prefix]:
+            _name = "%s_%s" % (_prefix, _suffix)
+            for _rel in ("jar-overrides/assets/mcsm/blockstates/%s.json" % _name,
+                         "jar-overrides/assets/mcsm/items/%s.json" % _name,
+                         "jar-overrides/assets/mcsm/textures/block/%s.png" % _name,
+                         "jar-overrides/data/mcsm/loot_table/blocks/%s.json" % _name):
+                if not os.path.exists(_rel):
+                    _missing.append(_rel)
+    check("every one of them ships art, a state, an item and a drop",
+          not _missing, "missing %s" % _missing[:4])
+
+    # and every block in the pack drops itself when it is broken. Found while
+    # building #458: only the three crates had loot tables, so mining anything
+    # else in the decayed reality paid out nothing at all.
+    _all_blocks = sorted(set(re.findall(r'block\("([a-z_]+)"', content)))
+    _no_drop = [_n for _n in _all_blocks
+                if not os.path.exists("jar-overrides/data/mcsm/loot_table/blocks/%s.json" % _n)]
+    check("a block you mine is a block you get", not _no_drop,
+          "no loot table for %s" % _no_drop[:5])
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

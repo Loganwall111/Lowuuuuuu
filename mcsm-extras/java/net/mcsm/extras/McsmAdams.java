@@ -544,15 +544,20 @@ public final class McsmAdams {
         }
         BlockState[] next = new BlockState[11];
         next[AIR] = Blocks.AIR.defaultBlockState();
-        next[STONE] = state("mcsm:decayed_stone", McsmContent.DECAYED_STONE);
-        next[BRICKS] = state("mcsm:decayed_stone_bricks", McsmContent.DECAYED_STONE_BRICKS);
-        next[TILES] = state("mcsm:city_tiles", McsmContent.CITY_TILES);
-        next[WALL] = state("mcsm:hollow_wall", McsmContent.HOLLOW_WALL);
-        next[GRATE] = state("mcsm:rebar_grate", McsmContent.REBAR_GRATE);
-        next[LAMP] = state("mcsm:glitch_lamp", McsmContent.GLITCH_LAMP);
-        next[CRYSTAL] = state("mcsm:memory_crystal", McsmContent.MEMORY_CRYSTAL);
-        next[FLESH] = state("mcsm:withered_flesh_block", McsmContent.WITHERED_FLESH_BLOCK);
-        next[CRATE] = state("mcsm:supply_crate", McsmContent.SUPPLY_CRATE);
+        // BUILD #458 -- THE INFINITE DIMENSION'S OWN MATERIAL. Every line here used
+        // to name a decayed-reality or storm-set block (decayed stone, decayed
+        // stone bricks, city tile, hollow wall, rebar grate, glitch lamp, memory
+        // crystal, withered flesh). The dimension the generator builds forever is
+        // made of its own ground now, and nothing here is borrowed (McsmIdentity.ADAMS).
+        next[STONE] = state("mcsm:adams_stone", McsmContent.ADAMS_STONE);
+        next[BRICKS] = state("mcsm:adams_bricks", McsmContent.ADAMS_BRICKS);
+        next[TILES] = state("mcsm:adams_tiles", McsmContent.ADAMS_TILES);
+        next[WALL] = state("mcsm:adams_wall", McsmContent.ADAMS_WALL);
+        next[GRATE] = state("mcsm:adams_grate", McsmContent.ADAMS_GRATE);
+        next[LAMP] = state("mcsm:adams_lamp", McsmContent.ADAMS_LAMP);
+        next[CRYSTAL] = state("mcsm:adams_crystal", McsmContent.ADAMS_CRYSTAL);
+        next[FLESH] = state("mcsm:adams_rubble", McsmContent.ADAMS_RUBBLE);
+        next[CRATE] = state("mcsm:adams_crate", McsmContent.ADAMS_CRATE);
         next[BARREL] = state("minecraft:barrel", null);
         palette = next;
         return next;

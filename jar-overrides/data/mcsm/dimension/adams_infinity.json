@@ -1,28 +1,28 @@
 {
   "generator": {
     "settings": {
-      "biome": "minecraft:plains",
+      "biome": "mcsm:adams_infinity",
       "features": false,
       "lakes": false,
       "layers": [
         {
-          "block": "mcsm:void_core",
+          "block": "mcsm:adams_rubble",
           "height": 1
         },
         {
-          "block": "mcsm:decayed_stone",
+          "block": "mcsm:adams_stone",
           "height": 60
         },
         {
-          "block": "mcsm:cracked_road",
+          "block": "mcsm:adams_tiles",
           "height": 40
         },
         {
-          "block": "mcsm:city_tiles",
+          "block": "mcsm:adams_bricks",
           "height": 26
         },
         {
-          "block": "mcsm:decayed_surface",
+          "block": "mcsm:adams_surface",
           "height": 1
         }
       ],

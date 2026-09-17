@@ -162,6 +162,16 @@ def on_cold(fn):
     return lambda: _on_axis(COLD_RAMP, fn)
 
 
+def on_void(fn):
+    """The void's own family (BUILD #458) -- cold violet, nothing else's palette."""
+    return lambda: _on_axis(VOID_RAMP, fn)
+
+
+def on_adams(fn):
+    """The infinite dimension's family (BUILD #458) -- warm built amber."""
+    return lambda: _on_axis(ADAMS_RAMP, fn)
+
+
 # accents: the storm's lens violet, rust, phase-7 toxic green, glitch cyan
 VIOLET = (0x6A, 0x3C, 0xFF)
 VIOLET_DIM = (0x2A, 0x18, 0x76)
@@ -171,6 +181,26 @@ TOXIC = (0x4C, 0xC8, 0x3A)
 GLITCH = (0x3C, 0xE6, 0xFF)
 BLOOD = (0x5A, 0x10, 0x18)
 WHITE = (0xE8, 0xF2, 0xFF)
+# BUILD #458 -- the accents that belong to ONE dimension each, taken from
+# McsmIdentity: the void's cold green (#7CFFB0, what hangs over its horizon) and
+# the infinite dimension's amber (#FFC26E, the city glow it is lit by).
+VOID_GREEN = (0x7C, 0xFF, 0xB0)
+AMBER = (0xFF, 0xC2, 0x6E)
+
+
+# BUILD #458 -- THE PER-DIMENSION MATERIAL RAMPS.
+#
+# The report: "each dimension ... completely unique: own blocks ... no re-use,
+# not the decay set in flat worlds." Every world the mod builds was drawing from
+# the same two ramps (the ash axis and the cold one), so the void's shelves and
+# the infinite dimension's pillars were the decayed reality's stone in all but
+# name. These two ramps are the same construction with each dimension's own
+# colour direction -- near-black violet for the void, warm built amber for the
+# infinite dimension -- and they are what on_void()/on_adams() swap in.
+VOID_RAMP = [(min(255, int(r * 0.72)), min(255, int(g * 0.62)), min(255, int(b * 1.30)))
+             for (r, g, b) in COLD_RAMP]
+ADAMS_RAMP = [(min(255, int(r * 1.30)), min(255, int(g * 1.02)), min(255, int(b * 0.66)))
+              for (r, g, b) in COLD_RAMP]
 
 
 class Rand:
@@ -430,7 +460,12 @@ def flesh(px, seed):
 
 
 @_auto
-def glass(px, seed, alpha=150):
+def glass(px, seed, alpha=150, accent=None):
+    # BUILD #458: `accent` lets a dimension's glass sparkle in its own colour
+    # (the void's green, the infinite dimension's amber). The default is the
+    # storm's violet, i.e. exactly what this drew before, so every existing
+    # texture is unchanged byte for byte.
+    spark = VIOLET if accent is None else accent
     rng = Rand(seed)
     for y in range(16):
         for x in range(16):
@@ -439,11 +474,17 @@ def glass(px, seed, alpha=150):
             a = 235 if edge else alpha
             put(px, x, y, c, a)
             if not edge and rng.chance(0.05):
-                put(px, x, y, VIOLET, 210)
+                put(px, x, y, spark, 210)
 
 
 @_auto
-def lamp(px, seed):
+def lamp(px, seed, accent=None, glow=None, core=None):
+    # BUILD #458: a lamp is the loudest thing a dimension owns, so it must be that
+    # dimension's colour and not the storm's violet everywhere. The defaults are
+    # the old constants, so the existing lamps are unchanged.
+    accent = VIOLET if accent is None else accent
+    glow = GLITCH if glow is None else glow
+    core = WHITE if core is None else core
     rng = Rand(seed)
     for y in range(16):
         for x in range(16):
@@ -451,23 +492,28 @@ def lamp(px, seed):
             if d > 6.5:
                 put(px, x, y, shade(0.10))
             elif d > 4.5:
-                put(px, x, y, GLITCH if rng.chance(0.4) else VIOLET)
+                put(px, x, y, glow if rng.chance(0.4) else accent)
             elif d > 2.5:
-                put(px, x, y, VIOLET)
+                put(px, x, y, accent)
             else:
-                put(px, x, y, WHITE)
+                put(px, x, y, core)
 
 
 @_auto
-def crystal(px, seed):
+def crystal(px, seed, accent=None, tint=None):
+    # BUILD #458: the facet tint and the accent are the dimension's own, so a
+    # crystal in the infinite dimension is amber and one in the storm's world is
+    # violet. Defaults reproduce the original drawing exactly.
+    accent = VIOLET if accent is None else accent
+    tint = (1.1, 0.95, 1.5) if tint is None else tint
     rng = Rand(seed)
     for y in range(16):
         for x in range(16):
             facet = ((x * 3 + y * 5) // 4) % 3
             base = 0.20 + 0.12 * facet
-            c = shade(base, tint=(1.1, 0.95, 1.5))
+            c = shade(base, tint=tint)
             if rng.chance(0.05):
-                c = VIOLET
+                c = accent
             put(px, x, y, c)
     for x in range(16):
         put(px, x, (x * 2) % 16, WHITE if x % 4 == 0 else shade(0.55))
@@ -504,11 +550,13 @@ def black_hole(px, seed):
 
 
 @_auto
-def anchor(px, seed):
-    metal(px, seed, tint=VIOLET, tone=(0.16, 0.34))
+def anchor(px, seed, accent=None):
+    # BUILD #458: the void's own anchor lights up in the void's green.
+    accent = VIOLET if accent is None else accent
+    metal(px, seed, tint=accent, tone=(0.16, 0.34))
     for y in range(4, 12):
         for x in range(4, 12):
-            put(px, x, y, VIOLET if (x + y) % 3 else WHITE)
+            put(px, x, y, accent if (x + y) % 3 else WHITE)
 
 
 @_auto
@@ -740,6 +788,38 @@ def block_textures():
         "rusted_trapdoor": on_ash(lambda: metal(blank(), 136, tint=RUST_LIT, tone=(0.22, 0.48))),
         "decayed_fence_inventory": on_ash(lambda: planks(blank(), 137)),
         "decayed_wall_inventory": on_ash(lambda: cobble(blank(), 138)),
+        # ---- the void's own material (BUILD #458) ---------------------------
+        # The dimension that was floating decayed stone and city tile in the dark
+        # now has a family of its own: near-black violet, lit by the cold green
+        # its horizon glow is painted with. Nothing on these lines is shared with
+        # any other world (see McsmIdentity.VOID).
+        "void_stone": on_void(lambda: stone(blank(), 201, (0.03, 0.24))),
+        "void_tiles": on_void(lambda: bricks(blank(), 202, rows=16, cols=16,
+                                            tone=(0.03, 0.20), mortar=0.6)),
+        "void_planks": on_void(lambda: planks(blank(), 203, tone=(0.05, 0.30))),
+        "void_bone": on_void(lambda: bone(blank(), 204)),
+        "void_glass": on_void(lambda: glass(blank(), 205, alpha=150, accent=VOID_GREEN)),
+        "void_lamp": on_void(lambda: lamp(blank(), 206, accent=VIOLET_DIM,
+                                         glow=VOID_GREEN, core=WHITE)),
+        "void_anchor": on_void(lambda: anchor(blank(), 207, accent=VOID_GREEN)),
+        # ---- the infinite dimension's own material (BUILD #458) -------------
+        # Same fix, other world: the place that builds forever out of its own
+        # ground, warm and lit amber by the city glow on its horizon.
+        "adams_stone": on_adams(lambda: stone(blank(), 211, (0.08, 0.40))),
+        "adams_bricks": on_adams(lambda: bricks(blank(), 212, rows=4, cols=2,
+                                               tone=(0.10, 0.42))),
+        "adams_tiles": on_adams(lambda: bricks(blank(), 213, rows=16, cols=16,
+                                              tone=(0.06, 0.30), mortar=0.6)),
+        "adams_surface": on_adams(lambda: speckle(blank(), 214, (0.12, 0.38),
+                                                 accent=AMBER, accent_p=0.05)),
+        "adams_wall": on_adams(lambda: hollow(blank(), 215)),
+        "adams_grate": on_adams(lambda: grate(blank(), 216)),
+        "adams_lamp": on_adams(lambda: lamp(blank(), 217, accent=AMBER,
+                                           glow=RUST_LIT, core=WHITE)),
+        "adams_crystal": on_adams(lambda: crystal(blank(), 218, accent=AMBER,
+                                                 tint=(1.35, 1.02, 0.72))),
+        "adams_rubble": on_adams(lambda: cobble(blank(), 219)),
+        "adams_crate": on_adams(lambda: crate(blank(), 220, tint=AMBER, band=RUST_LIT)),
     }
 
 

@@ -14,7 +14,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.mcsm.extras.McsmExtrasConfig;
-import net.mcsm.extras.McsmReality;
+import net.mcsm.extras.McsmIdentity;
 
 /**
  * BUILD #434 -- THE BOTTOM LAYER OF THE SKY.
@@ -79,22 +79,24 @@ public final class McsmSkyFloorBand {
                 return;
             }
             float phase = McsmStormPhase.phase();
-            boolean decayed = McsmReality.inside(level);
-            // The band belongs to whatever owns the sky: the storm's band from
-            // its onset upward, or the decayed reality, whose sky is the mod's
-            // own purple whether or not a storm is in it.
-            if (!decayed && phase < McsmStormPhase.PHASE_MIN) {
+            // BUILD #458 -- WHOSE HORIZON IS IT. This used to know two answers:
+            // "the decayed reality, always violet" and "the storm, from its onset
+            // upward". Adams and the void were not answers at all, so the infinite
+            // dimension's amber glow and the void's cold green were painted into
+            // their skies and then contradicted by a band in the storm's colours.
+            // The dimension's identity (McsmIdentity) owns it now: our worlds wear
+            // their own horizon at every phase, the Overworld wears the storm's.
+            McsmIdentity.Skin skin = McsmIdentity.forLevel(level);
+            if (skin == null && phase < McsmStormPhase.PHASE_MIN) {
                 return;
             }
             Vec3 cam = ctx.levelState().cameraRenderState.pos;
             // The colour is whatever the sky above the horizon is wearing right
-            // now, read from the same feed the native sky and the halo use --
-            // including the decayed reality's own violet, so the wall under it is
-            // the dimension's colour and not a second, invented one.
-            float[] horizon;
-            if (decayed && phase < McsmStormPhase.PHASE_MIN) {
-                horizon = new float[]{0x4A / 255.0F, 0x2A / 255.0F, 0x6E / 255.0F};
-            } else {
+            // now: the dimension's own horizon haze where the world is ours -- the
+            // same hex its panorama is painted with -- and the storm's band in the
+            // Overworld, read from the feed the native sky and the halo use.
+            float[] horizon = McsmIdentity.horizon(skin);
+            if (horizon == null) {
                 horizon = McsmStormPhase.horizonFor(Math.max(phase, McsmStormPhase.PHASE_MIN));
             }
             if (horizon == null || horizon.length < 3) {

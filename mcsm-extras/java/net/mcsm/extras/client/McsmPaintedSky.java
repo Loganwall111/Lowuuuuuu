@@ -14,6 +14,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import net.mcsm.extras.McsmAdams;
 import net.mcsm.extras.McsmExtrasConfig;
+import net.mcsm.extras.McsmIdentity;
 import net.mcsm.extras.McsmReality;
 import net.mcsm.extras.McsmVoid;
 
@@ -88,16 +89,21 @@ public final class McsmPaintedSky {
         try {
             if (McsmReality.inside(level)) {
                 // the decayed reality: the violet is the dimension's own, so the sky
-                // carries it rather than inventing a second colour
-                return new Sky(DECAYED_SIDES, DECAYED_TOP, 1.02F, 0.94F, 1.10F, 0.0022F);
+                // carries it rather than inventing a second colour. BUILD #458 -- the
+                // grade and the turn are read from the dimension's identity, so the
+                // sky, the fog and the horizon band cannot drift apart.
+                McsmIdentity.Skin s = McsmIdentity.skin(McsmIdentity.DECAYED);
+                return new Sky(DECAYED_SIDES, DECAYED_TOP, s.tintR(), s.tintG(), s.tintB(), s.spin());
             }
             if (level.dimension().equals(McsmAdams.ADAMS)) {
-                return new Sky(ADAMS_SIDES, ADAMS_TOP, 1.06F, 0.96F, 1.04F, 0.0030F);
+                McsmIdentity.Skin s = McsmIdentity.skin(McsmIdentity.ADAMS);
+                return new Sky(ADAMS_SIDES, ADAMS_TOP, s.tintR(), s.tintG(), s.tintB(), s.spin());
             }
             if (level.dimension().equals(McsmVoid.DIMENSION)) {
                 // the void is the only one that turns: a slow revolution over the
                 // whole fall, so falling down it does not feel like standing still
-                return new Sky(VOID_SIDES, VOID_TOP, 0.96F, 0.92F, 1.08F, 0.0040F);
+                McsmIdentity.Skin s = McsmIdentity.skin(McsmIdentity.VOID);
+                return new Sky(VOID_SIDES, VOID_TOP, s.tintR(), s.tintG(), s.tintB(), s.spin());
             }
         } catch (Throwable ignored) {
         }

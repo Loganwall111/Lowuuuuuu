@@ -81,9 +81,13 @@ public final class McsmVoid {
     public static final int CATCH_Y = -70;
     /** Where it sets them down when even that fails. */
     public static final int SHELF_Y = 210;
-    /** The void's own door frame, and what stands in it. */
-    public static final String FRAME_BLOCK = "mcsm:void_core";
-    public static final String DOOR_BLOCK = "mcsm:reality_glass";
+    /**
+     * The void's own door frame, and what stands in it. BUILD #458 -- named
+     * through the identity table rather than typed out, so the arch a player
+     * walks through cannot be made of another world's block by a typo.
+     */
+    public static final String FRAME_BLOCK = McsmIdentity.material(McsmIdentity.VOID, "anchor");
+    public static final String DOOR_BLOCK = McsmIdentity.material(McsmIdentity.VOID, "glass");
     private static final int MAX_PENDING = 3;
     private static final int SHELVES_PER_REGION = 7;
 
@@ -512,20 +516,26 @@ public final class McsmVoid {
         }
         BlockState[] next = new BlockState[10];
         next[AIR] = Blocks.AIR.defaultBlockState();
-        next[STONE] = state("mcsm:decayed_stone", McsmContent.DECAYED_STONE);
-        next[TILES] = state("mcsm:city_tiles", McsmContent.CITY_TILES);
-        next[GLASS] = state("mcsm:reality_glass", McsmContent.REALITY_GLASS);
-        next[LAMP] = state("mcsm:glitch_lamp", McsmContent.GLITCH_LAMP);
+        // BUILD #458 -- THE VOID'S OWN MATERIAL. These four were decayed_stone,
+        // city_tiles, decayed_planks and decayed_stone_bricks: the decayed
+        // reality's building set, floating in another dimension. The void is made
+        // of the void now (McsmIdentity.VOID), and nothing in this palette is
+        // borrowed from another world.
+        next[STONE] = state("mcsm:void_stone", McsmContent.VOID_STONE);
+        next[TILES] = state("mcsm:void_tiles", McsmContent.VOID_TILES);
+        next[GLASS] = state("mcsm:void_glass", McsmContent.VOID_GLASS);
+        next[LAMP] = state("mcsm:void_lamp", McsmContent.VOID_LAMP);
         // the dimension's own water: plain water, coloured by the void's biome, so
         // it is purple without a new fluid and behaves like water because it is
         next[WATER] = Blocks.WATER.defaultBlockState();
         next[CORE] = state("mcsm:void_core", McsmContent.VOID_CORE);
-        next[ANCHOR] = state("mcsm:rift_anchor", McsmContent.RIFT_ANCHOR);
-        next[PLANK] = state("mcsm:decayed_planks", McsmContent.DECAYED_PLANKS);
+        next[ANCHOR] = state("mcsm:void_anchor", McsmContent.VOID_ANCHOR);
+        next[PLANK] = state("mcsm:void_planks", McsmContent.VOID_PLANKS);
         // "decayed_bone" is an ITEM in the content pack, not a block (and asking
         // the block registry for a name that is not a block hands back AIR, not
-        // null). Broken pillars are capped with the pack's bone-grey brick instead.
-        next[BONE] = state("mcsm:decayed_stone_bricks", McsmContent.DECAYED_STONE_BRICKS);
+        // null). Broken pillars are capped with the void's own bone, which is a
+        // block and reads as the material it is named for.
+        next[BONE] = state("mcsm:void_bone", McsmContent.VOID_BONE);
         palette = next;
         return next;
     }

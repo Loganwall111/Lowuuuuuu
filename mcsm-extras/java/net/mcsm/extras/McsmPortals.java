@@ -47,11 +47,14 @@ public final class McsmPortals {
     private static final Door[] DOORS = {
         new Door("decayed", "mcsm:decayed_reality", "mcsm:rift_anchor", "mcsm:reality_glass",
                 "THE RIFT"),
-        new Door("adams", "mcsm:adams_infinity", "mcsm:memory_crystal", "mcsm:city_tiles",
+        // BUILD #458 -- every doorway is built from the material of the world
+        // behind it, and from nothing else. Adams was memory crystal around city
+        // tile, i.e. two blocks belonging to other places; it is its own crystal
+        // around its own brick now, and the void's arch is its own anchor around
+        // its own glass rather than a shared rift anchor and a black-hole core.
+        new Door("adams", "mcsm:adams_infinity", "mcsm:adams_crystal", "mcsm:adams_bricks",
                 "THE INFINITE DIMENSION"),
-        // "abyss_orb" is an item, not a block: the void's doorway is its own core
-        // around the pack's black-hole glass, which is a block and looks like one.
-        new Door("void", "mcsm:void_reality", "mcsm:rift_anchor", "mcsm:black_hole_core",
+        new Door("void", "mcsm:void_reality", "mcsm:void_anchor", "mcsm:void_glass",
                 "THE VOID"),
     };
 

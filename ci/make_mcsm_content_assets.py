@@ -89,6 +89,29 @@ BLOCKS = {
     "city_crate": ("cube", "mcsm:block/city_crate"),
     "supply_crate": ("cube", "mcsm:block/supply_crate"),
     "vault_crate": ("cube", "mcsm:block/vault_crate"),
+    # ---- BUILD #458: the void's own material ---------------------------
+    # "each dimension and infinite subdimension completely unique: own blocks".
+    # These seven are what the void is built from now -- McsmVoid's palette names
+    # no other world's block anywhere.
+    "void_stone": ("cube", "mcsm:block/void_stone"),
+    "void_tiles": ("cube", "mcsm:block/void_tiles"),
+    "void_planks": ("cube", "mcsm:block/void_planks"),
+    "void_bone": ("cube", "mcsm:block/void_bone"),
+    "void_glass": ("translucent", "mcsm:block/void_glass"),
+    "void_lamp": ("cube", "mcsm:block/void_lamp"),
+    "void_anchor": ("cube", "mcsm:block/void_anchor"),
+    # ---- BUILD #458: the infinite dimension's own material -------------
+    # ... and these ten are what the infinite dimension of adams is built from.
+    "adams_stone": ("cube", "mcsm:block/adams_stone"),
+    "adams_bricks": ("cube", "mcsm:block/adams_bricks"),
+    "adams_tiles": ("cube", "mcsm:block/adams_tiles"),
+    "adams_surface": ("cube", "mcsm:block/adams_surface"),
+    "adams_wall": ("cube", "mcsm:block/adams_wall"),
+    "adams_grate": ("cube", "mcsm:block/adams_grate"),
+    "adams_lamp": ("cube", "mcsm:block/adams_lamp"),
+    "adams_crystal": ("cube", "mcsm:block/adams_crystal"),
+    "adams_rubble": ("cube", "mcsm:block/adams_rubble"),
+    "adams_crate": ("cube", "mcsm:block/adams_crate"),
 }
 
 # item name -> (kind, texture) ; kind = handheld | flat
@@ -181,6 +204,25 @@ NAMES = {
     "city_crate": "City Crate",
     "supply_crate": "Supply Crate",
     "vault_crate": "Vault Crate",
+    # BUILD #458 -- the two new material families, named for the world each of
+    # them belongs to and to nothing else.
+    "void_stone": "Void Stone",
+    "void_tiles": "Void Tiles",
+    "void_planks": "Void Planks",
+    "void_bone": "Void Bone",
+    "void_glass": "Void Glass",
+    "void_lamp": "Void Lamp",
+    "void_anchor": "Void Anchor",
+    "adams_stone": "Adams Stone",
+    "adams_bricks": "Adams Bricks",
+    "adams_tiles": "Adams Tiles",
+    "adams_surface": "Adams Surface",
+    "adams_wall": "Adams Wall",
+    "adams_grate": "Adams Grate",
+    "adams_lamp": "Adams Lamp",
+    "adams_crystal": "Adams Crystal",
+    "adams_rubble": "Adams Rubble",
+    "adams_crate": "Adams Crate",
     "tab": "Devouring Storms: Decayed Reality",
 }
 
@@ -447,6 +489,15 @@ LOOT = {
                 ("mcsm:withered_blade", 1), ("mcsm:storm_spear", 1),
                 ("mcsm:memory_fragment", 2)]),
     ],
+    # BUILD #458 -- the infinite dimension's crate: what THAT world is worth
+    # looting, kept apart from the city crates it used to reuse.
+    "adams_crate": [
+        (1, 2, [("mcsm:memory_fragment", 4), ("mcsm:glyph_cell", 3),
+                ("mcsm:decayed_steel_ingot", 3), ("mcsm:rift_shard", 2),
+                ("mcsm:echo_totem", 1)]),
+        (1, 1, [("minecraft:torch", 4), ("minecraft:bread", 2),
+                ("minecraft:iron_ingot", 2)]),
+    ],
     "vault_crate": [
         (1, 2, [("mcsm:rift_shard", 5), ("mcsm:glyph_cell", 4),
                 ("mcsm:abyss_orb", 2), ("mcsm:tentacle_hook", 2),
@@ -528,6 +579,34 @@ def emit_loot():
         write(os.path.join(DATA, "loot_table", "blocks", name + ".json"),
               {"type": "minecraft:block", "pools": written})
     return len(LOOT)
+
+
+def emit_self_drops():
+    """Every block that is not a loot crate drops ITSELF when it is mined.
+
+    FOUND WHILE BUILDING #458, and it was a real one: the pack shipped loot
+    tables for exactly three blocks -- the crates -- so mining decayed stone,
+    city tile, a void shelf or a whole doorway paid out NOTHING. A block with no
+    loot table is a block that vanishes. These are vanilla-format
+    <<type: minecraft:block>> tables saying "drop one of the block you broke",
+    the same shape (rolls / entries / survives_explosion) the crates already use,
+    so ci/check_datapack_schema.py validates them against the client jar's own
+    examples like everything else in this directory.
+    """
+    written = 0
+    for name in BLOCKS:
+        if name in LOOT:
+            continue        # the crates have hand-written salvage instead
+        write(os.path.join(DATA, "loot_table", "blocks", name + ".json"), {
+            "type": "minecraft:block",
+            "pools": [{
+                "rolls": 1,
+                "entries": [{"type": "minecraft:item", "name": "mcsm:" + name}],
+                "conditions": [{"condition": "minecraft:survives_explosion"}],
+            }],
+        })
+        written += 1
+    return written
 
 
 # BUILD #428 -- the beasts. Field names the user used, kept as they said them.
@@ -614,7 +693,7 @@ def main() -> int:
         write(os.path.join(ASSETS, "models", "item", name + ".json"), {"parent": parent})
     emit_dimension()
     emit_recipes()
-    n_loot = emit_loot()
+    n_loot = emit_loot() + emit_self_drops()
     n_defs = emit_item_definitions()
     emit_lang()
 

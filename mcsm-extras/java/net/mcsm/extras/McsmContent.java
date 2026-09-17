@@ -139,6 +139,68 @@ public final class McsmContent {
                     .requiresCorrectToolForDrops());
 
     // ---------------------------------------------------------------------
+    // Building set: THE VOID'S OWN MATERIAL (BUILD #458)
+    // ---------------------------------------------------------------------
+    // The report this fixes: "each dimension and infinite subdimension
+    // completely unique: own blocks ... no re-use, not the decay set in flat
+    // worlds." The void -- a dimension of nothing with things in it -- was
+    // floating decayed stone, city tile, decayed planks and glitch lamps, i.e.
+    // the decayed reality's set in another world. It has its own now, and
+    // McsmVoid builds out of nothing else. Cold, near-black violet with the
+    // dimension's own green underlight (see McsmIdentity.VOID).
+    public static final Block VOID_STONE = block("void_stone",
+            BlockBehaviour.Properties.of().strength(3.0F, 9.0F).sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+    public static final Block VOID_TILES = block("void_tiles",
+            BlockBehaviour.Properties.of().strength(2.6F, 8.0F).sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+    public static final Block VOID_PLANKS = block("void_planks", wood(2.4F, 4.0F));
+    public static final Block VOID_BONE = block("void_bone",
+            BlockBehaviour.Properties.of().strength(1.0F).sound(SoundType.BONE_BLOCK));
+    public static final Block VOID_GLASS = block("void_glass",
+            BlockBehaviour.Properties.of().strength(0.6F).sound(SoundType.GLASS)
+                    .noOcclusion().lightLevel(s -> 4).emissiveRendering(s -> true));
+    public static final Block VOID_LAMP = block("void_lamp",
+            BlockBehaviour.Properties.of().strength(1.2F).sound(SoundType.GLASS)
+                    .lightLevel(s -> 14).emissiveRendering(s -> true));
+    public static final Block VOID_ANCHOR = block("void_anchor",
+            BlockBehaviour.Properties.of().strength(4.5F, 30.0F).sound(SoundType.METAL)
+                    .lightLevel(s -> 12).emissiveRendering(s -> true)
+                    .requiresCorrectToolForDrops());
+
+    // ---------------------------------------------------------------------
+    // Building set: THE INFINITE DIMENSION'S OWN MATERIAL (BUILD #458)
+    // ---------------------------------------------------------------------
+    // Same report, other side of it: adams was decayed stone bricks with city
+    // tiles and glitch lamps on top -- the decayed reality's set with lamps
+    // swapped. Its ground is its own now: warm, built, endless, lit amber by
+    // the city glow that hangs over its horizon (McsmIdentity.ADAMS).
+    public static final Block ADAMS_STONE = block("adams_stone",
+            stone(2.5F, 8.0F));
+    public static final Block ADAMS_BRICKS = block("adams_bricks",
+            stone(3.0F, 9.0F));
+    public static final Block ADAMS_TILES = block("adams_tiles",
+            stone(2.6F, 8.0F));
+    public static final Block ADAMS_SURFACE = block("adams_surface",
+            BlockBehaviour.Properties.of().strength(0.8F).sound(SoundType.GRASS));
+    public static final Block ADAMS_WALL = block("adams_wall",
+            stone(2.6F, 8.0F));
+    public static final Block ADAMS_GRATE = block("adams_grate",
+            BlockBehaviour.Properties.of().strength(3.0F, 9.0F).sound(SoundType.METAL)
+                    .noOcclusion().requiresCorrectToolForDrops());
+    public static final Block ADAMS_LAMP = block("adams_lamp",
+            BlockBehaviour.Properties.of().strength(1.2F).sound(SoundType.GLASS)
+                    .lightLevel(s -> 15).emissiveRendering(s -> true));
+    public static final Block ADAMS_CRYSTAL = block("adams_crystal",
+            BlockBehaviour.Properties.of().strength(1.6F, 6.0F).sound(SoundType.GLASS)
+                    .lightLevel(s -> 10).emissiveRendering(s -> true));
+    public static final Block ADAMS_RUBBLE = block("adams_rubble",
+            BlockBehaviour.Properties.of().strength(1.0F, 4.0F).sound(SoundType.GRAVEL));
+    /** The dimension's own salvage, with its own loot table (ci/make_mcsm_content_assets.py). */
+    public static final Block ADAMS_CRATE = block("adams_crate",
+            BlockBehaviour.Properties.of().strength(1.8F, 6.0F).sound(SoundType.WOOD));
+
+    // ---------------------------------------------------------------------
     // Shapes (slab / stairs / wall / fence share the decayed palette)
     // ---------------------------------------------------------------------
     public static final Block DECAYED_SLAB = block("decayed_slab",
