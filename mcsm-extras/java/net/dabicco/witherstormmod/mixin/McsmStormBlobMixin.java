@@ -46,6 +46,14 @@ public abstract class McsmStormBlobMixin {
             // everything below the world. A sky with no clouds in it was the standing
             // "the sky is not fully the sky yet".
             net.mcsm.extras.client.McsmCloudDeck.submit(ctx);
+            // BUILD #474 -- and the ceiling those clouds sit under: the STORM'S own sky,
+            // all 360 degrees of it, from the horizon to the zenith. The cube and the deck
+            // are the dimensions' skies; the Overworld -- where the story, the cities and
+            // the storm are -- had the shader's flat gradient and one lobe of storm in one
+            // direction, which is the standing "the sky is not fully the sky yet". Its
+            // colours come from McsmStormPhase.columnFor, i.e. the same reference tables
+            // sky.fsh samples, so it deepens the phase's own palette and never fights it.
+            net.mcsm.extras.client.McsmStormCanopy.submit(ctx);
             // BUILD #434 -- the sky's bottom layer. Drawn in the world, not in
             // the shader, so it exists for players who never install the pack.
             McsmSkyFloorBand.submit(ctx);

@@ -3307,6 +3307,80 @@ def main():
           and skygen.count('"clouds_') == 4)
 
     # ------------------------------------------------------------------
+    # BUILD #474 -- THE CEILING: THE STORM'S OWN SKY, OVER THE WHOLE SKY.
+    #
+    # The cube (#457) is a dimension's AIR and the deck (#470) is its WEATHER; both are
+    # the mod's own worlds. The Overworld -- where the story, the cities and the storm
+    # are -- still had the shader's flat phase gradient plus one lobe of storm in one
+    # direction, which is the standing "the sky is not fully the sky yet": look up at a
+    # mature Wither Storm and the sky is a gradient with something in it, not a sky the
+    # storm owns.
+    #
+    # The rules this family enforces are the ones that make it the STORM'S sky rather
+    # than a lid on every world:
+    #   * it covers -- all 360 degrees of bearing, from the horizon up to a real cap,
+    #     drawn in the world so it exists for a player with no shader pack at all;
+    #   * its colours are the phase's OWN: every vertex samples
+    #     McsmStormPhase.columnFor, the same six-row reference tables sky.fsh samples,
+    #     so it can only deepen the palette the stills define, never contradict it;
+    #   * it is the storm's: nothing below SHELL_IN (that is the clear sky), full by
+    #     SHELL_FULL, released at the carrier's end (SHELL_OUT -> PHASE_MAX);
+    #   * it is denser over the mass and thinner away from it -- "a fog in the sky" is
+    #     a complaint this project already answered once, so the far side must stay
+    #     thinner than the near side, and both must stay restrained.
+    # ------------------------------------------------------------------
+    canopy = read("mcsm-extras/java/net/mcsm/extras/client/McsmStormCanopy.java") or ""
+
+    check("and the storm owns the whole sky it is standing in",
+          "public final class McsmStormCanopy" in canopy
+          # 360 degrees: one quad per segment, every segment of the circle
+          and "private static final int SEGMENTS = 24;" in canopy
+          and "2.0D * Math.PI * i / SEGMENTS + spin" in canopy
+          # horizon to a real cap, so it is a sky and not a tube with a hole
+          and "private static final double[][] BANDS" in canopy
+          and "private static final int CAP_QUADS = 12;" in canopy
+          and "private static final double CAP_ELEV = 70.0D;" in canopy
+          and "double yTop = cam.y + RADIUS;" in canopy
+          # in the world, camera-anchored, one draw, and it cannot take a frame down
+          and "ctx.levelState().cameraRenderState.pos" in canopy
+          and canopy.count("submitCustomGeometry(") == 1
+          and "GlowRenderTypes.translucent(WHITE)" in canopy
+          and "} catch (Throwable ignored) {" in canopy
+          and "a sky that throws is worse than a sky that is vanilla" in canopy
+          and canopy.count("McsmStormPhase.columnFor(") >= 4)
+
+    check("and the ceiling wears the phase's own colours, not its own",
+          # every colour it draws comes out of the reference tables, the same feed the
+          # shader, the halo and the horizon band already follow
+          "McsmStormPhase.columnFor(phase, vertical(loDeg))" in canopy
+          and "McsmStormPhase.columnFor(phase, vertical(hiDeg))" in canopy
+          and "McsmStormPhase.columnFor(phase, vertical(90.0D))" in canopy
+          and "private static float vertical(double elevDeg)" in canopy
+          # and it darkens the mass it covers instead of repainting it
+          and "float dark = 1.0F - 0.20F * near;" in canopy
+          and "McsmIdentity" not in canopy)
+
+    check("and it is the storm's sky, not a lid on every world",
+          "public static final float SHELL_IN = 4.60F;" in canopy
+          and "public static final float SHELL_FULL = 5.10F;" in canopy
+          and "public static final float SHELL_OUT = 7.90F;" in canopy
+          and "if (phase < SHELL_IN) {" in canopy
+          and "1.0F - ramp(phase, SHELL_OUT, McsmStormPhase.PHASE_MAX)" in canopy
+          and "if (!McsmExtrasConfig.paintedSky || ctx == null) {" in canopy
+          # denser over the mass, thinner away from it, and thin in absolute terms:
+          # a second "fog in the sky" would be worse than no ceiling at all
+          and "private static final float ALPHA_NEAR = 0.62F;" in canopy
+          and "private static final float ALPHA_FAR = 0.24F;" in canopy
+          and "private static final double NEAR_DEG = 55.0D;" in canopy
+          and "return 0.5F; // no bearing to favour: an even sky" in canopy
+          # the height it stands at does not fight the floor band or the cube
+          and "private static final double RADIUS = 248.0D;" in canopy
+          and "net.mcsm.extras.client.McsmStormCanopy.submit(ctx);" in boots
+          and boots.index("net.mcsm.extras.client.McsmCloudDeck.submit(ctx);")
+          < boots.index("net.mcsm.extras.client.McsmStormCanopy.submit(ctx);")
+          < boots.index("McsmSkyFloorBand.submit(ctx);"))
+
+    # ------------------------------------------------------------------
     # BUILD #471 -- AN OVERRIDE MAY CHANGE THE BODY, NEVER THE INTERFACE.
     #
     # This jar REPLACES the game's own core shaders (mcsm-core-shaders/* is overlaid onto
