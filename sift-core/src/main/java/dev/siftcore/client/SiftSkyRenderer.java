@@ -81,7 +81,7 @@ public final class SiftSkyRenderer implements DimensionRenderingRegistry.SkyRend
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
         MatrixStack matrices = context.matrixStack();
         matrices.push();

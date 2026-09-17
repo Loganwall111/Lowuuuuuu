@@ -1,6 +1,7 @@
 package dev.siftcore;
 
 import dev.siftcore.command.SiftCommands;
+import dev.siftcore.physics.SiftCurrentPhysics;
 import dev.siftcore.rift.SiftRiftEntity;
 import dev.siftcore.rift.SiftRiftSpawner;
 import net.fabricmc.api.ModInitializer;
