@@ -170,6 +170,15 @@ public final class McsmMobRenderers {
             System.err.println("[ds] the whale renderer could not be registered: " + t);
         }
         try {
+            // BUILD #484 -- and the void's own whale: the same renderer and the same
+            // body, because mcsm:void_whale IS a whale, under the id the plan gave it.
+            if (McsmEntities.VOID_WHALE != null) {
+                EntityRendererRegistry.register(McsmEntities.VOID_WHALE, WhaleRenderer::new);
+            }
+        } catch (Throwable t) {
+            System.err.println("[ds] the void whale renderer could not be registered: " + t);
+        }
+        try {
             if (McsmEntities.VOIDWALKER != null) {
                 EntityRendererRegistry.register(McsmEntities.VOIDWALKER, VoidwalkerRenderer::new);
             }

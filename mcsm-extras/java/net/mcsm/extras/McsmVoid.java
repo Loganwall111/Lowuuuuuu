@@ -234,7 +234,7 @@ public final class McsmVoid {
      */
     private static void spawnVoidWhale(ServerLevel level, ServerPlayer player) {
         try {
-            if (McsmEntities.WHALE_MONSTER == null) {
+            if (McsmEntities.WHALE_MONSTER == null && McsmEntities.VOID_WHALE == null) {
                 return;
             }
             double y = player.getY();
@@ -251,7 +251,14 @@ public final class McsmVoid {
             if (level.getEntitiesOfClass(net.mcsm.extras.entity.McsmBeast.class, box).size() >= 2) {
                 return;
             }
-            net.minecraft.world.entity.Entity spawned = McsmEntities.WHALE_MONSTER.create(level,
+            // BUILD #484 -- the plan's own id when it is there, the whale monster
+            // otherwise: either way what drifts out of the dark is a whale.
+            net.minecraft.world.entity.EntityType<net.mcsm.extras.entity.McsmBeast> type =
+                    McsmEntities.VOID_WHALE != null ? McsmEntities.VOID_WHALE : McsmEntities.WHALE_MONSTER;
+            if (type == null) {
+                return;
+            }
+            net.minecraft.world.entity.Entity spawned = type.create(level,
                     net.minecraft.world.entity.EntitySpawnReason.EVENT);
             if (!(spawned instanceof net.mcsm.extras.entity.McsmBeast whale)) {
                 return;

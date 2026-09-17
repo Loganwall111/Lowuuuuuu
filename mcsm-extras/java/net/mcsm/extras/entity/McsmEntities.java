@@ -58,10 +58,18 @@ public final class McsmEntities {
     public static final Identifier MAS_ID = Identifier.fromNamespaceAndPath("mcsm", "mas");
     public static final Identifier CREATOR_ID = Identifier.fromNamespaceAndPath("mcsm", "creator");
     public static final Identifier WHALE_ID = Identifier.fromNamespaceAndPath("mcsm", "whale_monster");
+    /**
+     * BUILD #484 -- and the void's own whale, under the name the plan uses for it:
+     * mcsm:void_whale. Same class, same whale body and the same drift as the whale
+     * monster, but its own registry entry, so the thing in the luminous cavern can
+     * be summoned, named and counted by itself.
+     */
+    public static final Identifier VOID_WHALE_ID = Identifier.fromNamespaceAndPath("mcsm", "void_whale");
 
     public static EntityType<McsmBeast> MAS;
     public static EntityType<McsmBeast> CREATOR;
     public static EntityType<McsmBeast> WHALE_MONSTER;
+    public static EntityType<McsmBeast> VOID_WHALE;
 
     /**
      * BUILD #428 -- the same type, read back out of the registry by name. The
@@ -100,6 +108,9 @@ public final class McsmEntities {
             MAS = beast(MAS_ID, 24.0F, 40.0F, 12, McsmBeast::masAttributes);
             CREATOR = beast(CREATOR_ID, 96.0F, 150.0F, 16, McsmBeast::creatorAttributes);
             WHALE_MONSTER = beast(WHALE_ID, 40.0F, 26.0F, 12, McsmBeast::whaleAttributes);
+            // BUILD #484 -- the plan's mcsm:void_whale: the same beast class and the
+            // same whale attributes, under its own id.
+            VOID_WHALE = beast(VOID_WHALE_ID, 40.0F, 26.0F, 12, McsmBeast::whaleAttributes);
             MAS_ENTRY = MAS;
             CREATOR_ENTRY = CREATOR;
             WHALE_ENTRY = WHALE_MONSTER;

@@ -174,6 +174,34 @@ public class VoidDwellerEntity extends PathfinderMob {
         this.soak++;
     }
 
+    /**
+     * BUILD #484 -- the brief: "right-clicking a Void NPC must open an overlay
+     * screen that outputs show-inspired lore texts ... using an animated fade-in
+     * typewriting effect." The click is not a second packet: it is the cue. The
+     * dweller says its next line AT the player who asked, and that line travels on
+     * the same synced channel the overlay already reads -- so the typewriter starts
+     * on the same click that caused it, wherever that player is standing.
+     *
+     * <p>Signature from the 26.2 dump (Mob): interact(Player, InteractionHand,
+     * Vec3) -- public, with a body, so the vanilla gestures (name tag, leads,
+     * whatever a mod may add later) still run through super.
+     */
+    @Override
+    public net.minecraft.world.InteractionResult interact(
+            net.minecraft.world.entity.player.Player player,
+            net.minecraft.world.InteractionHand hand,
+            net.minecraft.world.phys.Vec3 pos) {
+        try {
+            if (!this.level().isClientSide() && this.entityData.get(SAY_TICKS) <= 0) {
+                this.getLookControl().setLookAt(player, 30.0F, 30.0F);
+                this.speak(LORE[this.random.nextInt(LORE.length)], 110 + this.random.nextInt(60));
+            }
+        } catch (Throwable ignored) {
+            // a click that cannot be answered is still a click
+        }
+        return super.interact(player, hand, pos);
+    }
+
     @Override
     public boolean removeWhenFarAway(double dist) {
         return false;

@@ -1,5 +1,13 @@
 # 7000.0.0-M — the sky is the still, the storm owns it, and the switches work
 
+**Build #484 — the dweller answers, and the whale has its own name.** Right-clicking
+a Void Dweller now makes it answer: it turns, says one line of the deep's lore at the
+player who asked, and the typewriter starts on that same click — the line rides the
+same synced channel the overlay reads, so no second packet and no second system. And
+the colossal flier in the luminous cavern is now **`mcsm:void_whale`** — the plan's own
+id, the same beast class and whale body, its own registry entry and renderer, so the
+thing that drifts out of the dark can be summoned, named and counted by itself.
+
 **Build #483 — the infinite fall, the dweller, and the ghost whales.** The void has
 no floor, it has a door. A fall that reaches the pocket above the barrier
 (`y = -2029`) is carried back to **y = -251** — the top of Tier 1, the plan's own

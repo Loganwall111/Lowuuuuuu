@@ -3019,6 +3019,24 @@ def main():
           and "net.mcsm.extras.client.McsmVoidDwellerTalk.draw(g);" in (
               read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java") or ""))
 
+    check("and a right-click is a question the dweller answers",
+          "public net.minecraft.world.InteractionResult interact(" in dweller
+          and "net.minecraft.world.entity.player.Player player," in dweller
+          and "net.minecraft.world.InteractionHand hand," in dweller
+          and "net.minecraft.world.phys.Vec3 pos) {" in dweller
+          and "this.speak(LORE[this.random.nextInt(LORE.length)], 110 + this.random.nextInt(60));"
+              in dweller
+          and "return super.interact(player, hand, pos);" in dweller)
+
+    check("and the ghost whale has an id of its own, and the cavern sends that one",
+          '"mcsm", "void_whale"' in entities
+          and "VOID_WHALE = beast(VOID_WHALE_ID, 40.0F, 26.0F, 12, McsmBeast::whaleAttributes);"
+              in entities
+          and "EntityRendererRegistry.register(McsmEntities.VOID_WHALE, WhaleRenderer::new);"
+              in renderers
+          and "McsmEntities.VOID_WHALE != null ? McsmEntities.VOID_WHALE : McsmEntities.WHALE_MONSTER"
+              in void_java)
+
     check("and there are whales in the cavern, weightless and singing",
           "private static void spawnVoidWhale(ServerLevel level, ServerPlayer player) {" in void_java
           and "whale.setKind(net.mcsm.extras.entity.McsmBeast.WHALE);" in void_java
@@ -3957,7 +3975,9 @@ def main():
           # eighth: the void dweller, which is a real entity type and therefore a
           # renderer -- a type with no renderer is a mob that is in the world and
           # invisible, which is the outcome this file exists to prevent.
-          and mobrend.count("EntityRendererRegistry.register(") == 8
+          # BUILD #484 added the ninth: mcsm:void_whale, which is a type and
+          # therefore needs its own renderer, the same way every other body here does.
+          and mobrend.count("EntityRendererRegistry.register(") == 9
           and mobrend.count("} catch (Throwable t) {") >= 14
           and "the whale renderer could not be registered" in mobrend
           and "the lurker renderer could not be registered" in mobrend
