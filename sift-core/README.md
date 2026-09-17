@@ -19,7 +19,7 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 - The captured state is restored after `moveToWorld`, including `velocityModified`, so the player keeps tumbling instead of being placed at a dimension spawn point.
 - The server synchronously warms a 3x3 destination chunk window before sending the respawn packet; The Sift uses an empty flat generator, so this is a small deterministic preparation rather than a terrain-generation wait.
 - The client mixin suppresses the vanilla `DownloadingTerrainScreen` only for a Sift respawn packet and explicitly clears any already-visible copy. The required network respawn packet is still sent; this removes the cutscene/loading interruption without pretending a protocol hop does not occur.
-- `sky.fsh` receives `Depth`, `FallSpeed`, and `GameTime` uniforms. Depth is driven by the player's falling Y position and is clamped so the void-to-fog curve stays stable.
+- `sky.fsh` receives `Depth`, `FallSpeed`, and `GameTime` uniforms. Depth is driven by the player's falling Y position and is clamped so the void-to-fog curve stays stable. The sky now layers a readable green-black-to-violet vertical gradient, drifting aurora curtains, falling light shafts, and depth-scaled star dust.
 
 ### Phase 2 — rifts and cosmic window
 
@@ -31,7 +31,7 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 ### Phase 3 — fluid pass
 
 - `SiftFluidRenderer` adds purely visual, collision-free horizontal fluid sheets around the player. No fluid blocks are registered, so a player can fall through every layer.
-- `final.fsh` supplies animated refraction, teal/amethyst/magenta iridescence, and proximity-based white intersection foam. Its flow direction is driven by the same deterministic field used by server-side current physics. The current foam is a screen-space approximation; a later pass can feed a real depth/normal buffer when a post-processing backend is selected.
+- `final.fsh` supplies animated refraction, teal/amethyst/magenta iridescence, flowing caustic bands, liquid glints, and proximity-based white intersection foam. Its flow direction is driven by the same deterministic field used by server-side current physics. The current foam is a screen-space approximation; a later pass can feed a real depth/normal buffer when a post-processing backend is selected.
 
 ### Phase 4 — build and validation
 

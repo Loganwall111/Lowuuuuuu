@@ -11,7 +11,7 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Suppress only the terrain loading screen associated with the Sift respawn packet, including stale-screen clearing.
 - [x] Add `/sift fall` reproducible test command.
 - [x] Add `/sift status` diagnostics for position, velocity, and rotation preservation.
-- [x] Add a depth-aware procedural sky pass.
+- [x] Add a depth-aware procedural sky pass with vertical color gradients, aurora curtains, shafts, and star dust.
 
 ## Phase 2 — the empty abyss (implemented as a prototype)
 
@@ -29,6 +29,7 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Collision-free visual fluid sheets.
 - [x] Animated teal, amethyst, magenta, cyan, and amber color ramps.
 - [x] Refraction-like displacement and intersection foam approximation.
+- [x] Add flowing caustic bands, Fresnel-like edge light, and animated liquid glints.
 - [x] Visual flow direction shares the deterministic field used by server-side current physics.
 - [x] Horizontal current band aligned to the same mathematical sheet heights, without changing vertical velocity.
 - [ ] Add authored pool silhouettes and current/velocity volumes.

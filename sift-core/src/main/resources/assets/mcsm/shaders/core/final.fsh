@@ -11,31 +11,57 @@ in vec2 texCoord0;
 out vec4 fragColor;
 
 vec3 fluidPalette(float value) {
-    vec3 teal = vec3(0.02, 0.74, 0.68);
-    vec3 amethyst = vec3(0.32, 0.08, 0.75);
-    vec3 magenta = vec3(0.96, 0.02, 0.42);
-    vec3 amber = vec3(1.00, 0.30, 0.07);
-    vec3 first = mix(teal, amethyst, smoothstep(0.12, 0.52, value));
-    vec3 second = mix(magenta, amber, smoothstep(0.52, 0.94, value));
-    return mix(first, second, step(0.52, value));
+    float segment = fract(value) * 4.0;
+    vec3 teal = vec3(0.015, 0.62, 0.58);
+    vec3 cyan = vec3(0.02, 0.92, 0.82);
+    vec3 violet = vec3(0.34, 0.10, 0.86);
+    vec3 magenta = vec3(0.98, 0.025, 0.44);
+    vec3 amber = vec3(1.00, 0.34, 0.055);
+    if (segment < 1.0) {
+        return mix(teal, cyan, smoothstep(0.0, 1.0, segment));
+    }
+    if (segment < 2.0) {
+        return mix(cyan, violet, smoothstep(1.0, 2.0, segment));
+    }
+    if (segment < 3.0) {
+        return mix(violet, magenta, smoothstep(2.0, 3.0, segment));
+    }
+    return mix(magenta, amber, smoothstep(3.0, 4.0, segment));
 }
 
 void main() {
     vec2 uv = texCoord0;
     vec2 centered = uv * 2.0 - 1.0;
     float time = GameTime * 1.25 + Layer * 0.71;
-
-    float waveA = sin(centered.x * 17.0 + time * 1.8 + sin(centered.y * 8.0) * 1.7);
-    float waveB = cos(centered.y * 21.0 - time * 1.35 + sin(centered.x * 6.0) * 2.1);
     vec2 flow = normalize(FlowDirection + vec2(0.0001));
+    vec2 crossFlow = vec2(-flow.y, flow.x);
+
+    float along = dot(centered, flow);
+    float across = dot(centered, crossFlow);
+    float waveA = sin(along * 17.0 + time * 1.8 + sin(across * 8.0) * 1.7);
+    float waveB = cos(across * 21.0 - time * 1.35 + sin(along * 6.0) * 2.1);
     vec2 displaced = centered + vec2(waveB, waveA) * 0.045;
-    displaced += flow * sin(time * 0.92 + Layer * 1.7 + dot(centered, flow) * 4.0) * 0.028;
+    displaced += flow * sin(time * 0.92 + Layer * 1.7 + along * 4.0) * 0.028;
+
     float radial = length(displaced);
     float poolMask = 1.0 - smoothstep(0.73, 1.02, radial);
+    float flowCoordinate = dot(displaced, flow);
+    float iridescence = fract(
+            0.27 + Layer * 0.17 + displaced.x * 0.25 + displaced.y * 0.18
+            + waveA * 0.08 + time * 0.035 + flowCoordinate * 0.12
+    );
 
-    float iridescence = fract(0.32 + Layer * 0.17 + displaced.x * 0.25 + displaced.y * 0.18 + waveA * 0.08 + time * 0.035);
     vec3 color = fluidPalette(iridescence);
-    color *= 0.48 + 0.35 * (0.5 + 0.5 * waveB);
+    float lightWave = 0.5 + 0.5 * waveB;
+    color *= 0.42 + 0.40 * lightWave;
+
+    // Interlocking flow bands act like stylized caustics across the moving sheet.
+    float streamA = sin(flowCoordinate * 34.0 - time * 2.4 + sin(across * 9.0 + time) * 1.5);
+    float streamB = cos(across * 27.0 + time * 1.9 + along * 3.0);
+    float caustic = smoothstep(0.68, 0.98, 0.5 + 0.5 * streamA * streamB);
+    float currentLine = 1.0 - smoothstep(0.0, 0.12, abs(sin(flowCoordinate * 18.0 - time * 1.7 + waveA)));
+    color += fluidPalette(fract(iridescence + 0.18)) * caustic * poolMask * 0.24;
+    color += vec3(0.35, 0.88, 0.78) * currentLine * poolMask * 0.08;
 
     // Bright ripples become intersection foam when the player crosses a sheet.
     float foamWave = abs(sin(radial * 31.0 - time * 2.3 + waveA * 2.0));
@@ -43,13 +69,20 @@ void main() {
     float intersection = exp(-max(PlayerDelta, 0.0) * 3.8);
     color += vec3(1.0, 0.96, 0.86) * foam * intersection * 1.6;
 
+    // Fresnel-like edge light and narrow moving glints sell the layer as liquid
+    // without introducing a solid block, fluid collision, or sampled texture.
     float edgeGlow = smoothstep(0.48, 0.92, radial) * poolMask;
-    color += fluidPalette(fract(iridescence + 0.21)) * edgeGlow * 0.22;
-    float alpha = poolMask * (0.18 + 0.18 * (0.5 + 0.5 * waveA)) + foam * intersection * 0.38;
+    float glintWave = max(0.0, sin(flowCoordinate * 23.0 - time * 3.2 + across * 4.0));
+    float glint = pow(glintWave, 12.0) * poolMask;
+    color += fluidPalette(fract(iridescence + 0.21)) * edgeGlow * 0.26;
+    color += vec3(0.76, 1.0, 0.94) * glint * (0.20 + intersection * 0.42);
+
+    float alpha = poolMask * (0.16 + 0.18 * lightWave + caustic * 0.10);
+    alpha += foam * intersection * 0.38 + glint * 0.10;
     alpha *= vertexColor.a;
 
     if (alpha < 0.012) {
         discard;
     }
-    fragColor = vec4(color, clamp(alpha, 0.0, 0.92));
+    fragColor = vec4(color, clamp(alpha, 0.0, 0.94));
 }
