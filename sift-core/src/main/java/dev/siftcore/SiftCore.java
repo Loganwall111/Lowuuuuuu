@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 public final class SiftCore implements ModInitializer {
     public static final String MOD_ID = "sift_core";
     public static final String NAMESPACE = "mcsm";
-    public static final String VERSION = "0.4.0-SIFT";
+    public static final String VERSION = "0.4.1-SIFT";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     public static final EntityType<SiftRiftEntity> SIFT_RIFT = Registry.register(
