@@ -254,7 +254,7 @@ public final class McsmMobModels {
     // player skeleton rather than letting the throw escape into the resource reload.
     // ------------------------------------------------------------------
 
-    private static <M> M guarded(String tag, ModelPart root, ModelStage<M> stage, ModelPart spare) {
+    static <M> M guarded(String tag, ModelPart root, ModelStage<M> stage, ModelPart spare) {
         if (root != null) {
             try {
                 return stage.build(root);
@@ -273,7 +273,15 @@ public final class McsmMobModels {
         return null;
     }
 
-    /** One model constructor, as a value. */
+    /**
+     * One model constructor, as a value.
+     *
+     * <p>Package-private, and {@link #guarded}/{@link #humanoidRoot}/{@link #spareRoot}
+     * with it: {@code StoryCharacterRenderer} builds the cast through the same guards
+     * (BUILD #478), because its constructor runs in exactly the same place -- inside
+     * {@code EntityRenderers.createEntityRenderers}, inside the resource reload -- and
+     * the player's log showed what a throw in there costs the whole game.
+     */
     public interface ModelStage<M> {
         M build(ModelPart root);
     }
@@ -313,7 +321,7 @@ public final class McsmMobModels {
     }
 
     /** Vanilla's own humanoid skeleton: the last body any of them can fall back to. */
-    private static ModelPart spareRoot(EntityRendererProvider.Context ctx) {
+    static ModelPart spareRoot(EntityRendererProvider.Context ctx) {
         try {
             return ctx.bakeLayer(ModelLayers.PLAYER);
         } catch (Throwable t) {

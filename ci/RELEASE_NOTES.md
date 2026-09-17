@@ -1,5 +1,29 @@
 # 7000.0.0-M — the sky is the still, the storm owns it, and the switches work
 
+**Build #477-478 — the black frame, found in a player's own log.** The log showed the
+two reports were one bug: the client was not failing to *draw* the menu, it was failing
+to *load* it. `EntityRenderers.createEntityRenderers` runs inside the resource reload,
+and this mod's mob renderer threw in there — `HumanoidModel` reads a part called `hat`
+in its constructor, `ModelPart.getChild` throws when that part is missing, and our
+`hat` was an **empty** part, which a baker is free to drop. The reload aborted, the game
+logged `removing all selected resourcepacks`, and a pack-less client is a black frame.
+Now the hat carries a real (invisible) cube, every part lookup in this mod's bodies
+returns its parent instead of throwing, a body is only built on a skeleton that has the
+seven parts a humanoid reads — with vanilla's own player mesh as the last fallback —
+construction itself is caught model by model, and every layer and renderer registration
+stands alone with a named message. The same log's four asset bugs are repaired and are
+build failures now: doors naming eight models that did not exist, double slabs with six
+unresolved faces each, the crafting table's impossible `axis` property, and the
+furnace / lit furnace / jack o'lantern textures that did not resolve.
+
+**Build #478 — the next throw in the same queue.** Which renderer the game builds first
+is hash order, so the whale being fixed did not make the reload safe: the cast's
+renderer was still built the old way — `new Model(ctx.bakeLayer(LAYER))`, with part
+lookups in its constructor — inside that same reload. The cast goes through the same
+guarded factory as the mobs now, its layer keeps the definitions its own calls returned
+instead of looking them up by name during the bake, and its registration reports a
+failure instead of swallowing it.
+
 **Build #476 — real skies, 1:1 with the stills.** The sky's four columns (the three
 supplied sheets -- teal, purple, rose -- and the authored ember fall) are read at
 **32 stops** now, not six. Six could only ever be the artist's three anchors and a

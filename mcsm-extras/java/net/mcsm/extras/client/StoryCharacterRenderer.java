@@ -92,19 +92,23 @@ public class StoryCharacterRenderer extends HumanoidMobRenderer<StoryCharacterEn
         root.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 0)
                 .addBox(-4.0F, -8.0F, -4.0F, 8.0F, 8.0F, 8.0F, new CubeDeformation(0.0F)),
                 PartPose.offset(0.0F, 0.0F, 0.0F));
-        root.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 16)
+        // BUILD #478 -- the returns are KEPT. This layer used to create these parts and
+        // then look them up again by name (`root.getChild("body")`), and a lookup that
+        // misses throws -- during the bake, which is inside the resource reload. Holding
+        // the definition the call just returned cannot miss.
+        PartDefinition body = root.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 16)
                 .addBox(-4.0F, 0.0F, -2.0F, 8.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)),
                 PartPose.offset(0.0F, 0.0F, 0.0F));
-        root.addOrReplaceChild("right_arm", CubeListBuilder.create().texOffs(40, 16)
+        PartDefinition rightArm = root.addOrReplaceChild("right_arm", CubeListBuilder.create().texOffs(40, 16)
                 .addBox(-3.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)),
                 PartPose.offset(-5.0F, 2.0F, 0.0F));
-        root.addOrReplaceChild("left_arm", CubeListBuilder.create().texOffs(32, 48)
+        PartDefinition leftArm = root.addOrReplaceChild("left_arm", CubeListBuilder.create().texOffs(32, 48)
                 .addBox(-1.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)),
                 PartPose.offset(5.0F, 2.0F, 0.0F));
-        root.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 16)
+        PartDefinition rightLeg = root.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 16)
                 .addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)),
                 PartPose.offset(-1.9F, 12.0F, 0.0F));
-        root.addOrReplaceChild("left_leg", CubeListBuilder.create().texOffs(16, 48)
+        PartDefinition leftLeg = root.addOrReplaceChild("left_leg", CubeListBuilder.create().texOffs(16, 48)
                 .addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)),
                 PartPose.offset(1.9F, 12.0F, 0.0F));
 
@@ -117,7 +121,6 @@ public class StoryCharacterRenderer extends HumanoidMobRenderer<StoryCharacterEn
                 .addBox(-4.0F, -1.5F, 2.0F, 8.0F, 8.0F, 3.0F, new CubeDeformation(0.0F)),
                 PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        PartDefinition body = root.getChild("body");
         // the collar: sits on the shoulders, cut from the body layer
         body.addOrReplaceChild("collar", CubeListBuilder.create().texOffs(16, 32)
                 .addBox(-4.6F, -1.6F, -2.6F, 9.2F, 3.0F, 5.2F, new CubeDeformation(0.0F)),
@@ -132,19 +135,19 @@ public class StoryCharacterRenderer extends HumanoidMobRenderer<StoryCharacterEn
                 .addBox(-1.5F, 1.6F, -3.05F, 3.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)),
                 PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        root.getChild("right_arm").addOrReplaceChild("sleeve_r", CubeListBuilder.create()
+        rightArm.addOrReplaceChild("sleeve_r", CubeListBuilder.create()
                 .texOffs(40, 32)
                 .addBox(-3.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.26F)),
                 PartPose.offset(0.0F, 0.0F, 0.0F));
-        root.getChild("left_arm").addOrReplaceChild("sleeve_l", CubeListBuilder.create()
+        leftArm.addOrReplaceChild("sleeve_l", CubeListBuilder.create()
                 .texOffs(48, 32)
                 .addBox(-1.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.26F)),
                 PartPose.offset(0.0F, 0.0F, 0.0F));
-        root.getChild("right_leg").addOrReplaceChild("wrap_r", CubeListBuilder.create()
+        rightLeg.addOrReplaceChild("wrap_r", CubeListBuilder.create()
                 .texOffs(0, 32)
                 .addBox(-2.0F, 0.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.22F)),
                 PartPose.offset(0.0F, 0.0F, 0.0F));
-        root.getChild("left_leg").addOrReplaceChild("wrap_l", CubeListBuilder.create()
+        leftLeg.addOrReplaceChild("wrap_l", CubeListBuilder.create()
                 .texOffs(0, 48)
                 .addBox(-2.0F, 0.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.22F)),
                 PartPose.offset(0.0F, 0.0F, 0.0F));
@@ -162,11 +165,15 @@ public class StoryCharacterRenderer extends HumanoidMobRenderer<StoryCharacterEn
 
         public Model(ModelPart root) {
             super(root);
+            // BUILD #478 -- through the guarded lookup, like every part in the mob
+            // bodies. A missing piece animates as its parent instead of throwing, and
+            // this constructor runs inside the resource reload, where a throw is not
+            // one broken NPC: it is every pack dropped and a black frame.
             this.hood = this.hat;
-            this.hoodBack = this.hat.getChild("hood_back");
-            this.collar = this.body.getChild("collar");
-            this.coat = this.body.getChild("coat");
-            this.badge = this.body.getChild("badge");
+            this.hoodBack = McsmMobModels.part(this.hat, "hood_back");
+            this.collar = McsmMobModels.part(this.body, "collar");
+            this.coat = McsmMobModels.part(this.body, "coat");
+            this.badge = McsmMobModels.part(this.body, "badge");
         }
 
         @Override
@@ -244,7 +251,16 @@ public class StoryCharacterRenderer extends HumanoidMobRenderer<StoryCharacterEn
             "dabywitherstormmod", "textures/entity/story/jesse.png");
 
     public StoryCharacterRenderer(EntityRendererProvider.Context ctx) {
-        super(ctx, new Model(ctx.bakeLayer(LAYER)), 0.5F);
+        // BUILD #478 -- THE LAST UNGUARDED BAKE. This constructor is called by
+        // EntityRenderers.createEntityRenderers, which runs INSIDE the resource
+        // reload: a bake or a construction that throws here does not cost the cast,
+        // it drops every resource pack and the client comes up black -- the player's
+        // own log, one class over from the whale. The cast now goes through the same
+        // guarded factory as the mobs: this mod's skeleton when it is complete,
+        // vanilla's own player skeleton otherwise, and never a throw.
+        super(ctx, McsmMobModels.guarded("cast",
+                McsmMobModels.humanoidRoot(ctx, LAYER, "cast"),
+                Model::new, McsmMobModels.spareRoot(ctx)), 0.5F);
     }
 
     @Override

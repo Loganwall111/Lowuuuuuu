@@ -2916,7 +2916,10 @@ def main():
           "public static LayerDefinition createBodyLayer()" in story_code
           and "ModelLayers.PLAYER" not in story_code
           and "public static final ModelLayerLocation LAYER = new ModelLayerLocation(" in story_code
-          and "super(ctx, new Model(ctx.bakeLayer(LAYER)), 0.5F);" in story_code
+          # BUILD #478 -- the same layer, built the safe way: our own skeleton when it
+          # is complete, vanilla's player mesh only as the fallback
+          and "McsmMobModels.guarded(\"cast\"," in story_code
+          and "McsmMobModels.humanoidRoot(ctx, LAYER, \"cast\")" in story_code
           and "ModelLayerRegistry.registerModelLayer(StoryCharacterRenderer.LAYER,"
               "\n                    StoryCharacterRenderer::createBodyLayer);" in renderers
           and "StoryCharacterRenderer" in _bsh2)
@@ -3625,7 +3628,7 @@ def main():
           and "root = ctx.bakeLayer(ModelLayers.PLAYER);" in mobmodels
           and "model baked without the parts a " in mobmodels
           # and construction itself is guarded, model by model
-          and "private static <M> M guarded(String tag, ModelPart root, ModelStage<M> stage, ModelPart spare) {" in mobmodels
+          and "static <M> M guarded(String tag, ModelPart root, ModelStage<M> stage, ModelPart spare) {" in mobmodels
           and "public interface ModelStage<M> {" in mobmodels)
 
     check("and every one of the mob bodies is built through the guarded factory",
@@ -3684,6 +3687,57 @@ def main():
               read("ci/build.sh") or "")
           and "stage vanilla-ok" in (read("ci/build.sh") or "")
           and "title=vanilla overrides" in (read("ci/build.sh") or ""))
+
+    # ------------------------------------------------------------------
+    # BUILD #478 -- THE NEXT THROW IN THE SAME QUEUE.
+    #
+    # The whale was the renderer the game happened to build first; the registry is
+    # iterated out of a hash map, so which body throws first is not fixed. ONE
+    # renderer in the mod was still built the old way -- the cast's:
+    #
+    #     super(ctx, new Model(ctx.bakeLayer(LAYER)), 0.5F);
+    #     this.hoodBack = this.hat.getChild("hood_back");
+    #     this.collar = this.body.getChild("collar");
+    #
+    # both inside EntityRenderers.createEntityRenderers, both inside the resource
+    # reload, both able to drop every pack and black the game exactly the way the
+    # player's log shows. And its LAYER builder looked its own parts back up by name
+    # (`root.getChild("body")`) -- during the bake, one reload earlier.
+    #
+    # It is the guarded factory now, the same one the mobs use, and the layer holds
+    # the definitions its own calls returned.
+    # ------------------------------------------------------------------
+    cast = read("mcsm-extras/java/net/mcsm/extras/client/StoryCharacterRenderer.java") or ""
+    story = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java") or ""
+
+    check("and the cast's bodies cannot abort a reload either -- they are built the same guarded way",
+          # the last unguarded bake in the mod is gone
+          "ctx.bakeLayer(" not in cast
+          and "McsmMobModels.guarded(\"cast\"," in cast
+          and "McsmMobModels.humanoidRoot(ctx, LAYER, \"cast\")" in cast
+          and "Model::new, McsmMobModels.spareRoot(ctx)" in cast
+          # and every part the cast reads is read through the throwing-free lookup
+          and "getChild(" not in cast.replace("root.getChild(\"body\")`", "")
+          and cast.count("McsmMobModels.part(") >= 4
+          and "this.hoodBack = McsmMobModels.part(this.hat, \"hood_back\");" in cast
+          and "this.collar = McsmMobModels.part(this.body, \"collar\");" in cast
+          # and the layer keeps the definitions its own calls returned
+          and "PartDefinition body = root.addOrReplaceChild(\"body\"," in cast
+          and "PartDefinition rightArm = root.addOrReplaceChild(\"right_arm\"," in cast
+          and "PartDefinition leftLeg = root.addOrReplaceChild(\"left_leg\"," in cast
+          and "rightArm.addOrReplaceChild(\"sleeve_r\"," in cast
+          and "leftLeg.addOrReplaceChild(\"wrap_l\"," in cast
+          # and the guards are reachable from the cast: shared, not private
+          and "static <M> M guarded(String tag, ModelPart root, ModelStage<M> stage, ModelPart spare) {" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmMobModels.java") or "")
+          and "static ModelPart spareRoot(EntityRendererProvider.Context ctx) {" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmMobModels.java") or "")
+          and "static ModelPart part(ModelPart parent, String name) {" in (
+              read("mcsm-extras/java/net/mcsm/extras/client/McsmMobModels.java") or ""))
+
+    check("and the cast's registration reports instead of swallowing",
+          "the cast renderer could not be registered" in story
+          and "catch (Throwable ignored) {" not in story)
 
     # ------------------------------------------------------------------
     # BUILD #471 -- AN OVERRIDE MAY CHANGE THE BODY, NEVER THE INTERFACE.

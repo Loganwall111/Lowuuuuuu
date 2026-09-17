@@ -27,7 +27,12 @@ public abstract class McsmStoryRendererMixin {
             // packet receiver, the tick queue that opens the screen safely, and
             // the C key.
             net.mcsm.extras.client.McsmTerminalClient.register();
-        } catch (Throwable ignored) {
+        } catch (Throwable t) {
+            // BUILD #478 -- report it. This catch cannot protect the constructor (the
+            // factory is invoked later, by the game, inside the reload -- that is what
+            // the guarded factory in StoryCharacterRenderer is for), but a silent
+            // swallow here is how a broken cast would stay invisible in a log.
+            System.err.println("[ds] the cast renderer could not be registered: " + t);
         }
     }
 }
