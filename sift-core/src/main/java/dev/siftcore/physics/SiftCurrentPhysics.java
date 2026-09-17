@@ -6,9 +6,9 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * Applies a gentle horizontal current near a visual fluid sheet. The vertical
- * component is intentionally untouched: falling through a pool must retain the
- * player's tumble instead of becoming a colliding water volume.
+ * Applies a gentle horizontal current inside a visual fluid volume. The
+ * vertical component is intentionally untouched: falling through a pool must
+ * retain the player's tumble instead of becoming a colliding water volume.
  */
 public final class SiftCurrentPhysics {
     private static final double MAX_HORIZONTAL_SPEED = 0.42D;
@@ -23,12 +23,14 @@ public final class SiftCurrentPhysics {
 
         long time = world.getTime();
         for (ServerPlayerEntity player : world.getPlayers()) {
-            double falloff = SiftFluidField.currentFalloff(player.getY());
+            int layer = SiftFluidField.nearestLayerIndex(player.getY());
+            double xPosition = player.getX();
+            double zPosition = player.getZ();
+            double falloff = SiftFluidField.currentFalloff(player.getY())
+                    * SiftFluidField.currentVolume(xPosition, zPosition, layer);
             if (falloff <= 0.0D) {
                 continue;
             }
-            double xPosition = player.getX();
-            double zPosition = player.getZ();
             double strength = 0.0028D * falloff;
             Vec3d velocity = player.getVelocity();
             double x = velocity.x + SiftFluidField.currentX(time, xPosition, zPosition) * strength;

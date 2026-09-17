@@ -3,6 +3,8 @@
 uniform float GameTime;
 uniform float Layer;
 uniform float PlayerDelta;
+uniform vec2 WorldOrigin;
+uniform float SheetRadius;
 uniform vec2 FlowDirection;
 uniform vec2 ScreenSize;
 
@@ -32,6 +34,7 @@ vec3 fluidPalette(float value) {
 void main() {
     vec2 uv = texCoord0;
     vec2 centered = uv * 2.0 - 1.0;
+    vec2 worldPosition = WorldOrigin + centered * SheetRadius;
     float time = GameTime * 1.25 + Layer * 0.71;
     vec2 flow = normalize(FlowDirection + vec2(0.0001));
     vec2 crossFlow = vec2(-flow.y, flow.x);
@@ -44,7 +47,18 @@ void main() {
     displaced += flow * sin(time * 0.92 + Layer * 1.7 + along * 4.0) * 0.028;
 
     float radial = length(displaced);
-    float poolMask = 1.0 - smoothstep(0.73, 1.02, radial);
+
+    // World-anchored basin fields cut the broad sheet into irregular authored
+    // pool silhouettes. The same equations are evaluated server-side by
+    // SiftFluidField so current force exists only inside the visible volume.
+    float basinA = 0.5 + 0.5 * sin(
+            worldPosition.x * 0.018 + sin(worldPosition.y * 0.013 + Layer * 1.9) * 2.7 + Layer * 0.7
+    );
+    float basinB = 0.5 + 0.5 * cos(
+            worldPosition.y * 0.021 - sin(worldPosition.x * 0.011 - Layer * 1.3) * 2.1 - Layer * 0.41
+    );
+    float poolShape = smoothstep(0.28, 0.64, basinA * 0.62 + basinB * 0.38);
+    float poolMask = (1.0 - smoothstep(0.73, 1.02, radial)) * poolShape;
     float flowCoordinate = dot(displaced, flow);
     float iridescence = fract(
             0.27 + Layer * 0.17 + displaced.x * 0.25 + displaced.y * 0.18

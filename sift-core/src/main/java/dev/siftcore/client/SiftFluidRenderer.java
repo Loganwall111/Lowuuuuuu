@@ -46,8 +46,10 @@ public final class SiftFluidRenderer {
             double delta = Math.abs(playerY - fluidY) / SiftFluidField.LAYER_SPACING;
 
             SiftShaders.set(SiftShaders.FINAL, "GameTime", (world.getTime() + context.tickDelta()) / 20.0f);
-            SiftShaders.set(SiftShaders.FINAL, "Layer", (float) layer);
+            SiftShaders.set(SiftShaders.FINAL, "Layer", (float) (centerLayer + layer));
             SiftShaders.set(SiftShaders.FINAL, "PlayerDelta", (float) delta);
+            SiftShaders.set(SiftShaders.FINAL, "WorldOrigin", (float) camera.x, (float) camera.z);
+            SiftShaders.set(SiftShaders.FINAL, "SheetRadius", SHEET_RADIUS);
             double flowTime = world.getTime() + context.tickDelta();
             SiftShaders.set(
                     SiftShaders.FINAL,

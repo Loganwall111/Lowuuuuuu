@@ -18,6 +18,8 @@
     { "name": "GameTime", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "Layer", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "PlayerDelta", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "WorldOrigin", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+    { "name": "SheetRadius", "type": "float", "count": 1, "values": [ 112.0 ] },
     { "name": "FlowDirection", "type": "float", "count": 2, "values": [ 1.0, 0.0 ] },
     { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] }
   ]

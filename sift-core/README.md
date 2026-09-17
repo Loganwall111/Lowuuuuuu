@@ -34,8 +34,8 @@ If the game window is completely black, first remove the Sift-Core jar from the 
 ### Phase 3 — fluid pass
 
 - `SiftGroundRenderer` adds a distant procedural abyss floor above the generated custom-block floor. It is visual shader geometry only, while the actual terrain remains sparse enough for players to fall through the open route.
-- `SiftFluidRenderer` adds purely visual, collision-free horizontal fluid sheets around the player. No fluid blocks are registered, so a player can fall through every layer.
-- `final.fsh` supplies animated refraction, teal/amethyst/magenta iridescence, flowing caustic bands, liquid glints, and proximity-based white intersection foam. Its flow direction is driven by the same deterministic field used by server-side current physics. The current foam is a screen-space approximation; a later pass can feed a real depth/normal buffer when a post-processing backend is selected.
+- `SiftFluidRenderer` adds purely visual, collision-free horizontal fluid sheets around the player. World-anchored basin fields cut them into irregular pool silhouettes; no fluid blocks are registered, so a player can fall through every layer.
+- `final.fsh` supplies animated refraction, teal/amethyst/magenta iridescence, flowing caustic bands, liquid glints, and proximity-based white intersection foam. Its flow direction and current/velocity volume are driven by the same deterministic field used by server-side physics. The current foam is a screen-space approximation; a later pass can feed a real depth/normal buffer when a post-processing backend is selected.
 
 ### Phase 4 — build and validation
 

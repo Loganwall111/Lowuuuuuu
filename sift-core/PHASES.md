@@ -36,7 +36,7 @@ This file is the living acceptance checklist for the standalone sandbox. Each ph
 - [x] Add flowing caustic bands, Fresnel-like edge light, and animated liquid glints.
 - [x] Visual flow direction shares the deterministic field used by server-side current physics.
 - [x] Horizontal current band aligned to the same mathematical sheet heights, without changing vertical velocity.
-- [ ] Add authored pool silhouettes and current/velocity volumes.
+- [x] Add world-anchored pool silhouettes and deterministic current/velocity volumes.
 - [ ] Integrate depth and normal textures for physically correct intersection foam.
 
 ## Phase 4 — merge readiness
