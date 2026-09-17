@@ -3674,9 +3674,12 @@ def main():
                   for n in materials)
           # the weapons that are still owed need this version's real item surface,
           # which the runner dumps every build now: SwordItem and Tier do NOT exist
-          # in 26.2, so the recon is what the next phase is written against.
-          and "the item / weapon / block-shape API (full, uncapped)" in buildsh
-          and "net.minecraft.world.item.SwordItem" in buildsh)
+          # in 26.2, so the recon is what the next phase is written against. It
+          # lives in the API DUMP list -- asking there is a known-good path; asking
+          # it inside the classpath-probe block killed runs 579 and 580 silently.
+          and "net.minecraft.world.item.SwordItem" in buildsh
+          and "net.minecraft.world.item.ToolMaterial" in buildsh
+          and "net.minecraft.world.item.AxeItem" in buildsh)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

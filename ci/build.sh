@@ -942,6 +942,16 @@ VANILLA_OUT=out/vanilla-api.txt
     'net.minecraft.world.item.Item$Properties' \
     net.minecraft.world.item.BlockItem \
     net.minecraft.world.item.SwordItem \
+    net.minecraft.world.item.ToolMaterial \
+    net.minecraft.world.item.AxeItem \
+    net.minecraft.world.item.PickaxeItem \
+    net.minecraft.world.item.ShovelItem \
+    net.minecraft.world.item.HoeItem \
+    net.minecraft.world.item.ItemStack \
+    net.minecraft.world.item.component.ItemAttributeModifiers \
+    net.minecraft.world.entity.EquipmentSlot \
+    net.minecraft.world.entity.ai.attributes.AttributeModifier \
+    net.minecraft.world.level.block.FenceGateBlock \
     net.minecraft.world.item.Tier \
     net.minecraft.world.item.Rarity \
     net.minecraft.world.level.block.SoundType \
@@ -1086,48 +1096,18 @@ CP="$DL/client.jar:$STRIPPED:$DL/mixin.jar:$DL/jspecify.jar:$DL/fastutil.jar:$DL
     net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry \
     net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking \
     net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking \
-    io.netty.buffer.ByteBuf \
-    net.minecraft.world.item.Item\\$Properties \
-    net.minecraft.world.item.ItemStack \
-    net.minecraft.world.item.SwordItem \
-    net.minecraft.world.item.AxeItem \
-    net.minecraft.world.item.ToolMaterial \
-    net.minecraft.world.item.component.ItemAttributeModifiers \
-    net.minecraft.world.entity.ai.attributes.Attributes \
-    net.minecraft.world.entity.ai.attributes.AttributeModifier \
-    net.minecraft.world.entity.EquipmentSlot \
-    net.minecraft.world.level.block.RotatedPillarBlock \
-    net.minecraft.world.level.block.FenceGateBlock ; do
+    io.netty.buffer.ByteBuf ; do
     echo "--- ${PROBE}"
     javap -classpath "$CP" "$PROBE" 2>&1 | sed -n '1,12p'
   done
-  # BUILD #465 -- the item / weapon / block-shape API, UNCAPPED: the capped
-  # probes above answer "does this class exist", which is how SwordItem and Tier
-  # were found missing (javap: "class not found") after the plan for real weapons
-  # had already been written. This answers "what does it have" for every class a
-  # weapon, a tool or a new block shape could be made of, so the next build can be
-  # written against the real surface instead of a remembered one.
-  echo "--- the item / weapon / block-shape API (full, uncapped)"
-  for CLS in \
-    'net.minecraft.world.item.Item$Properties' \
-    'net.minecraft.world.item.ItemStack' \
-    'net.minecraft.world.item.Item$TooltipContext' \
-    'net.minecraft.world.item.SwordItem' \
-    'net.minecraft.world.item.AxeItem' \
-    'net.minecraft.world.item.PickaxeItem' \
-    'net.minecraft.world.item.ShovelItem' \
-    'net.minecraft.world.item.HoeItem' \
-    'net.minecraft.world.item.ToolMaterial' \
-    'net.minecraft.world.item.Tier' \
-    'net.minecraft.world.item.component.ItemAttributeModifiers' \
-    'net.minecraft.world.entity.ai.attributes.Attributes' \
-    'net.minecraft.world.entity.ai.attributes.AttributeModifier' \
-    'net.minecraft.world.entity.EquipmentSlot' \
-    'net.minecraft.world.level.block.RotatedPillarBlock' \
-    'net.minecraft.world.level.block.FenceGateBlock' ; do
-    echo "===== ${CLS}"
-    javap -public -classpath "$CP" "$CLS" 2>&1
-  done
+  # BUILD #465 -- the item / weapon / block-shape reconnaissance lives in the API
+  # DUMP list above, NOT here. Written here first, and runs 579 AND 580 both died
+  # in this block with no diagnostic at all: the step went from the classpath line
+  # straight to "exit code 1", with nothing in the evidence between them, and the
+  # same javac succeeded twenty minutes earlier. A build that cannot say why it
+  # stopped is worse than one that asks for the same information somewhere that
+  # has never failed a run -- so the dump list above asks instead, with -p and a
+  # cap generous enough for constructors and members.
   echo "--- fabric jars on the compile path"
   printf '%s\n' "$CP" | tr ':' '\n' | grep -i fabric || echo "(none)"
 } >> "$VANILLA_OUT" 2>&1 || true
