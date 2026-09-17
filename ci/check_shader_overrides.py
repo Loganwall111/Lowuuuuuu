@@ -275,8 +275,10 @@ def dump_interfaces(names, theirs, path, ours_by_name=None):
                 lines.append("    %s %s" % (typ, mname))
         for uname, utype in sorted(iface["uniforms"].items()):
             lines.append("  uniform %s %s" % (utype, uname))
-        for ioname, (direction, iotype) in sorted(iface["inout"].items()):
-            lines.append("  %s %s %s" % (direction, iotype, ioname))
+        for ioname, decl in sorted(iface["inout"].items()):
+            loc = "" if decl["location"] is None else " location = %d" % decl["location"]
+            lines.append("  %s %s %s%s"
+                         % (decl["direction"], decl["type"], ioname, loc))
         lines.append("")
     try:
         with open(path, "w", encoding="utf-8") as fh:
@@ -358,12 +360,20 @@ def main():
     total_checked = total_hard = total_soft = 0
 
     if args.dump_out:
-        # every program this jar replaces, in the game's own words
+        # every program this jar replaces, in the game's own words. Evidence only:
+        # if THIS breaks, the verdict below still has to run -- run 590 lost its whole
+        # file-by-file comparison (and the disable pass that goes with it) to a stale
+        # unpack in the dump helper, and a build that says "0 checked, 0 HARD" is worse
+        # than one that says nothing at all.
         assembled = args.assembled or ""
-        if assembled and os.path.isdir(assembled):
-            names = set(n for n in os.listdir(assembled)
-                        if n.endswith((".vsh", ".fsh")))
-            dump_interfaces(names, theirs, args.dump_out)
+        try:
+            if assembled and os.path.isdir(assembled):
+                names = set(n for n in os.listdir(assembled)
+                            if n.endswith((".vsh", ".fsh")))
+                dump_interfaces(names, theirs, args.dump_out)
+        except Exception as exc:  # noqa: BLE001
+            print("[shader] the interface dump could not be written (%s: %s) -- the "
+                  "comparison below is unaffected" % (type(exc).__name__, exc))
 
     if args.assembled:
         c, h, so, _u = check_dir(args.assembled, theirs, args.strip,

@@ -3359,6 +3359,18 @@ def main():
         # TOLERATED: legal, and never a reason to strip a working shader
         extra_out_ok = (not _hard(_base + "\nout vec3 mcsmCloudRay;")
                         and bool(_soft(_base + "\nout vec3 mcsmCloudRay;")))
+        # the evidence dump is part of the check, so it is exercised here too: run 590
+        # lost its whole file-by-file comparison -- and the disable pass with it -- to a
+        # stale unpack inside this helper, and reported "0 checked, 0 HARD" while a
+        # known-broken program shipped.
+        _dump = "\n".join(_sh.dump_interfaces(
+            {"block.vsh", "lightmap.fsh"},
+            {"block.vsh": "layout(location = 0) in vec3 Position;\nuniform mat4 ProjMat;\n",
+             "lightmap.fsh": "layout(std140) uniform LightmapInfo { float SkyFactor; } info;\n"},
+            "/tmp/mcsm-gate-shader-interface.txt"))
+        dump_ok = ("  in vec3 Position location = 0" in _dump
+                   and "  uniform mat4 ProjMat" in _dump
+                   and "    float SkyFactor" in _dump)
         extra_float_ok = (not _hard(_base + "\nuniform float MCSM_GLOW_WHITE;")
                           and bool(_soft(_base + "\nuniform float MCSM_GLOW_WHITE;")))
         missing_input_ok = not _hard(_base.replace("layout(location = 2) in vec2 UV0;\n", ""))
@@ -3366,7 +3378,7 @@ def main():
         body_free = parse_ok = False
         reorder_caught = member_caught = invented_block = retyped_uniform = False
         unbound_sampler = shifted_location = ghost_attribute = False
-        extra_out_ok = extra_float_ok = missing_input_ok = False
+        extra_out_ok = extra_float_ok = missing_input_ok = dump_ok = False
         print("  note  shader tool self-test could not run: %s" % _exc)
 
     check("and a replaced core shader may change the body, never the interface",
@@ -3381,9 +3393,13 @@ def main():
           and "Only HARD disables a file" in shader_tool
           and "the HARD ones are the black ones" in shader_tool
           and "a uniform of ours the game does not bind (it reads 0.0" in shader_tool
-          # and it never strips on a guess
+          # and it never strips on a guess, and its evidence dump cannot take the
+          # verdict down with it
+          and dump_ok
           and "nothing is disabled and nothing is claimed" in shader_tool
-          and "unverifiable, kept" in shader_tool)
+          and "unverifiable, kept" in shader_tool
+          and "the interface dump could not be written" in shader_tool
+          and "comparison below is unaffected" in shader_tool)
 
     check("and the build weighs every replaced core shader against the game's own copy",
           bsh.count("ci/check_shader_overrides.py --jar") == 2
