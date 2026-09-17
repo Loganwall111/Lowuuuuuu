@@ -20,6 +20,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.DoorBlock;
@@ -443,14 +444,65 @@ public final class McsmContent {
     // Items: the tools and weapons the storyline hands out
     // ---------------------------------------------------------------------
     public static final Item RIFT_KEY = item("rift_key", glinted(item(p -> p.stacksTo(1).rarity(Rarity.EPIC))));
+    // BUILD #466 -- these four were already weapons to look at (hand-held models,
+    // epic rarity, the storm's own names) and plain Items to hold: they did the
+    // damage of a bare hand. They are real tools now. The API for that in this
+    // version is Item.Properties -- sword()/axe()/pickaxe() take a ToolMaterial
+    // and the damage/speed numbers, which is how vanilla items are built here:
+    // SwordItem and Tier (the classes the earlier builds were written against)
+    // come back "class not found" from the runner, and ToolMaterial is the
+    // material record instead (ci-out/run-581/vanilla-api.txt).
     public static final Item REALITY_RIPPER = item("reality_ripper",
-            glinted(item(p -> p.stacksTo(1).rarity(Rarity.EPIC).fireResistant())));
+            glinted(props -> new Item(props.stacksTo(1).rarity(Rarity.EPIC).fireResistant()
+                    .axe(ToolMaterial.DIAMOND, 6.0F, -3.0F))));
     public static final Item WITHERED_BLADE = item("withered_blade",
-            item(p -> p.stacksTo(1).rarity(Rarity.RARE)));
+            props -> new Item(props.stacksTo(1).rarity(Rarity.RARE)
+                    .sword(ToolMaterial.DIAMOND, 4.5F, -2.4F)));
+    // The spear property exists in this version (Item.Properties.spear) but takes
+    // nine floats whose meaning is not documented anywhere this build can read,
+    // and a weapon that swings wrong is worse than one that swings like a sword:
+    // the storm spear is a sword's behaviour on the spear's model until a run
+    // dumps a vanilla user of that call to copy.
     public static final Item STORM_SPEAR = item("storm_spear",
-            item(p -> p.stacksTo(1).rarity(Rarity.RARE)));
+            props -> new Item(props.stacksTo(1).rarity(Rarity.RARE)
+                    .sword(ToolMaterial.NETHERITE, 5.0F, -2.6F)));
     public static final Item CREATORS_JUDGEMENT = item("creators_judgement",
-            glinted(item(p -> p.stacksTo(1).rarity(Rarity.EPIC).fireResistant())));
+            glinted(props -> new Item(props.stacksTo(1).rarity(Rarity.EPIC).fireResistant()
+                    .sword(ToolMaterial.NETHERITE, 7.0F, -2.6F))));
+
+    // ---------------------------------------------------------------------
+    // BUILD #466 -- the weapons pass: phase (e)'s other half. The brief was
+    // "have new trap doors, doors, items, even some weapons would be a really
+    // cool expansion" (#465 shipped the doors and the items). Every world gets a
+    // blade and a tool it could have made itself, out of its own materials, at
+    // its own strength: the decayed reality's rusted steel, the void's green
+    // shards, Adams amber and glass, the Creator's gold. Nothing is shared and
+    // nothing is borrowed -- the same rule the blocks and the mobs follow.
+    // ---------------------------------------------------------------------
+    public static final Item DECAYED_BLADE = item("decayed_blade",
+            props -> new Item(props.rarity(Rarity.UNCOMMON)
+                    .sword(ToolMaterial.IRON, 4.0F, -2.2F)));
+    public static final Item DECAYED_CLEAVER = item("decayed_cleaver",
+            props -> new Item(props.rarity(Rarity.UNCOMMON)
+                    .axe(ToolMaterial.IRON, 7.0F, -3.2F)));
+    public static final Item VOID_EDGE = item("void_edge",
+            glinted(props -> new Item(props.rarity(Rarity.RARE)
+                    .sword(ToolMaterial.DIAMOND, 5.0F, -2.4F))));
+    public static final Item VOID_RIPPER = item("void_ripper",
+            props -> new Item(props.rarity(Rarity.RARE)
+                    .pickaxe(ToolMaterial.DIAMOND, 2.5F, -2.8F)));
+    public static final Item ADAMS_GLAIVE = item("adams_glaive",
+            props -> new Item(props.rarity(Rarity.UNCOMMON)
+                    .sword(ToolMaterial.DIAMOND, 5.5F, -2.5F)));
+    public static final Item ADAMS_MIRROR_AXE = item("adams_mirror_axe",
+            props -> new Item(props.rarity(Rarity.UNCOMMON)
+                    .axe(ToolMaterial.DIAMOND, 7.5F, -3.1F)));
+    public static final Item CREATOR_EDICT = item("creator_edict",
+            glinted(props -> new Item(props.rarity(Rarity.EPIC).fireResistant()
+                    .sword(ToolMaterial.NETHERITE, 6.5F, -2.5F))));
+    public static final Item CREATOR_HAMMER = item("creator_hammer",
+            glinted(props -> new Item(props.rarity(Rarity.EPIC).fireResistant()
+                    .pickaxe(ToolMaterial.NETHERITE, 3.5F, -2.9F))));
     public static final Item ECHO_TOTEM = item("echo_totem", item(p -> p.stacksTo(1).rarity(Rarity.RARE)));
 
     // ---------------------------------------------------------------------

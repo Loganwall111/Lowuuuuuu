@@ -202,6 +202,20 @@ ITEMS = {
     "creator_dust": ("flat", "mcsm:item/creator_dust"),
     "decayed_ash_clump": ("flat", "mcsm:item/decayed_ash_clump"),
     "storm_marrow": ("flat", "mcsm:item/storm_marrow"),
+    # BUILD #466 -- the weapons. These are the items whose hand-held models
+    # exist so they are held like a tool, and whose behaviour is a real tool's:
+    # Item.Properties has sword()/axe()/pickaxe() in this version (there is no
+    # SwordItem class anymore -- SwordItem and Tier came back "class not found"
+    # from the runner and ToolMaterial is the material record), so the weapon
+    # behaviour is a property of the item like it is for vanilla items now.
+    "decayed_blade": ("handheld", "mcsm:item/decayed_blade"),
+    "decayed_cleaver": ("handheld", "mcsm:item/decayed_cleaver"),
+    "void_edge": ("handheld", "mcsm:item/void_edge"),
+    "void_ripper": ("handheld", "mcsm:item/void_ripper"),
+    "adams_glaive": ("handheld", "mcsm:item/adams_glaive"),
+    "adams_mirror_axe": ("handheld", "mcsm:item/adams_mirror_axe"),
+    "creator_edict": ("handheld", "mcsm:item/creator_edict"),
+    "creator_hammer": ("handheld", "mcsm:item/creator_hammer"),
 }
 
 NAMES = {
@@ -338,6 +352,15 @@ NAMES = {
     "creator_dust": "Creator Dust",
     "decayed_ash_clump": "Decayed Ash Clump",
     "storm_marrow": "Storm Marrow",
+    # BUILD #466 -- the weapons.
+    "decayed_blade": "Decayed Blade",
+    "decayed_cleaver": "Decayed Cleaver",
+    "void_edge": "Void Edge",
+    "void_ripper": "Void Ripper",
+    "adams_glaive": "Adams Glaive",
+    "adams_mirror_axe": "Adams Mirror Axe",
+    "creator_edict": "Creator's Edict",
+    "creator_hammer": "Creator's Hammer",
     "tab": "Devouring Storms: Decayed Reality",
 }
 
@@ -739,6 +762,33 @@ RECIPES = {
     "creator_dust": ([" G "], {"G": "mcsm:creator_glyph"}, "mcsm:creator_dust", 4),
     "decayed_ash_clump": (["D"], {"D": "mcsm:decayed_surface"}, "mcsm:decayed_ash_clump", 4),
     "storm_marrow": (["B"], {"B": "mcsm:storm_rib"}, "mcsm:storm_marrow", 4),
+    # BUILD #466 -- every weapon is made from its own world's materials, the
+    # same way the world's shapes are: the decayed blade out of decayed steel
+    # and a bone for a grip, the void edge out of void shards on a cord, Adams
+    # amber and glass, the Creator's dust and a fragment. Nothing here needs an
+    # ingredient from another world, which is the point of the identity pass.
+    "decayed_blade": ([" I ", " I ", " B "], {"I": "mcsm:decayed_steel_ingot",
+                                               "B": "mcsm:decayed_bone"},
+                      "mcsm:decayed_blade", 1),
+    "decayed_cleaver": (["AA ", "AB ", " B "], {"A": "mcsm:decayed_steel_ingot",
+                                                 "B": "mcsm:decayed_bone"},
+                        "mcsm:decayed_cleaver", 1),
+    "void_edge": ([" V ", " V ", " C "], {"V": "mcsm:void_shard", "C": "mcsm:void_cord"},
+                  "mcsm:void_edge", 1),
+    "void_ripper": (["VVV", " C ", " C "], {"V": "mcsm:void_shard", "C": "mcsm:void_cord"},
+                    "mcsm:void_ripper", 1),
+    "adams_glaive": ([" A ", " A ", " G "], {"A": "mcsm:adams_amber",
+                                             "G": "mcsm:adams_glass_shard"},
+                    "mcsm:adams_glaive", 1),
+    "adams_mirror_axe": (["AA ", "AG ", " G "], {"A": "mcsm:adams_amber",
+                                                 "G": "mcsm:adams_glass_shard"},
+                        "mcsm:adams_mirror_axe", 1),
+    "creator_edict": ([" D ", " D ", " F "], {"D": "mcsm:creator_dust",
+                                              "F": "mcsm:creator_fragment"},
+                      "mcsm:creator_edict", 1),
+    "creator_hammer": (["DDD", " F ", " F "], {"D": "mcsm:creator_dust",
+                                               "F": "mcsm:creator_fragment"},
+                       "mcsm:creator_hammer", 1),
 }
 
 

@@ -766,6 +766,43 @@ def item_spear(px, seed, shaft, tip):
 
 
 @_auto
+def item_axe(px, seed, head, haft):
+    """A 16x16 axe: a diagonal haft with the head's bit folded over at the top right.
+
+    BUILD #466 -- written for the weapons pass. Same hand-placed idiom as
+    item_sword and item_hook above; until now a sword's silhouette was the only
+    weapon shape the pack had, so every weapon in it looked like a sword."""
+    for i in range(3, 13):
+        put(px, 1 + i, 14 - i, haft)
+        put(px, 2 + i, 14 - i, shade(0.58))
+    for (x, y) in ((8, 4), (9, 4), (10, 4), (11, 4),
+                   (7, 5), (8, 5), (9, 5), (10, 5), (11, 5), (12, 5),
+                   (7, 6), (8, 6), (9, 6), (10, 6), (11, 6), (12, 6),
+                   (8, 7), (9, 7), (10, 7), (11, 7),
+                   (9, 8), (10, 8)):
+        put(px, x, y, head)
+    for (x, y) in ((12, 4), (13, 5), (13, 6), (12, 7), (11, 8)):
+        put(px, x, y, shade(0.34))          # the biting edge
+    for (x, y) in ((6, 5), (7, 4), (8, 3)):
+        put(px, x, y, shade(0.74))          # the poll
+
+
+@_auto
+def item_pick(px, seed, head, haft):
+    """A 16x16 pickaxe: the head arcs across the top right, the haft on the diagonal."""
+    for i in range(3, 13):
+        put(px, 1 + i, 14 - i, haft)
+        put(px, 2 + i, 14 - i, shade(0.58))
+    for i in range(10):
+        put(px, 4 + i, 6 - (i // 3), head)
+        put(px, 4 + i, 5 - (i // 3), shade(0.70))
+    for (x, y) in ((4, 7), (5, 7), (12, 3), (13, 3), (13, 4), (4, 8), (3, 8), (5, 8), (3, 7)):
+        put(px, x, y, head)
+    for (x, y) in ((4, 4), (5, 4)):
+        put(px, x, y, shade(0.34))
+
+
+@_auto
 def item_hook(px, seed, metal_c, rope):
     for i in range(4):
         put(px, 3 + i, 12 - i, rope)
@@ -1179,6 +1216,27 @@ def item_textures():
                                        RUST_LIT, dust=False, seed=274),
         "decayed_ash_clump": lambda: item_dust(blank(0), 275, shade(0.20), VIOLET_DIM),
         "storm_marrow": lambda: item_ingot(blank(0), 276, shade(0.42, tint=(1.3, 0.8, 0.9))),
+
+        # BUILD #466 -- the weapons. Phase (e) shipped the blocks and the
+        # materials; this is the other half of the same mandate ("even some
+        # weapons would be a really cool expansion"). Each world gets a blade it
+        # could plausibly have made, in that world's own colour: rust and ash off
+        # the decayed reality, the void's green edge, Adams glass and amber, and
+        # the Creator's gold. Drawn with the new item_axe / item_pick painters.
+        "decayed_blade": lambda: item_sword(blank(0), 281, shade(0.62, tint=(1.30, 1.02, 0.70)),
+                                            shade(0.34, tint=(1.20, 1.00, 0.78)), shade(0.18)),
+        "decayed_cleaver": lambda: item_axe(blank(0), 282, shade(0.58, tint=(1.28, 1.00, 0.72)),
+                                            shade(0.26)),
+        "void_edge": lambda: item_sword(blank(0), 283, VOID_GREEN, shade(0.24), shade(0.14)),
+        "void_ripper": lambda: item_pick(blank(0), 284, shade(0.24, tint=(0.85, 0.85, 1.45)),
+                                         shade(0.20, tint=(0.80, 0.80, 1.40))),
+        "adams_glaive": lambda: item_sword(blank(0), 285, AMBER,
+                                           shade(0.30, tint=(1.45, 1.15, 0.80)), shade(0.22)),
+        "adams_mirror_axe": lambda: item_axe(blank(0), 286, shade(0.34, tint=(1.40, 1.18, 0.78)),
+                                             shade(0.30, tint=(1.55, 1.45, 1.65))),
+        "creator_edict": lambda: item_sword(blank(0), 287, CREATOR_GOLD, WHITE, shade(0.34)),
+        "creator_hammer": lambda: item_pick(blank(0), 288, CREATOR_GOLD,
+                                            shade(0.30, tint=(1.35, 1.22, 0.78))),
     }
 
 

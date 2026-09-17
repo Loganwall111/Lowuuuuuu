@@ -1093,10 +1093,6 @@ def main():
     check("the black hole is announced and visible from a distance",
           "REVERSE_PORTAL" in hole_code and "say(" in hole_code
           and "SoundEvents.ENDER_DRAGON_GROWL" in hole_code)
-    _dbg_cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
-    _dbg_scr = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
-    print("DBG", "public static double blackHoleSeconds = 180.0;" in _dbg_cfg,
-          "black_hole_seconds" in _dbg_cfg, "Black Hole Lifetime" in _dbg_scr, len(_dbg_cfg), len(_dbg_scr))
     _cfg3 = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
     _scr3 = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
     _hole_lifetime = "public static double blackHoleSeconds = 180.0;" in _cfg3
@@ -3541,13 +3537,47 @@ def main():
     extras = read("mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java") or ""
     towns = read("mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java") or ""
 
-    check("the shared sky is the decayed reality's own, taken from the identity table",
+    # BUILD #466 -- the first version of this checkpoint asserted the RECIPE the
+    # painter used (skin.fog() among it) and so it passed the very bug the user
+    # reported twice: the menu's top half was painted #09050C. Fog is the
+    # near-black air of a torn world; it has no business being the ground of a
+    # screen. What is checked now is what the screen is painted WITH -- the three
+    # stops of the world's own cube, floored -- and then the colours themselves,
+    # arithmetically, below.
+    check("the shared sky is the world's own, and it is not painted from the fog",
           "public static void paint(GuiGraphicsExtractor g, int w, int h, float dim) {" in menusky
           and "McsmIdentity.skin(McsmIdentity.DECAYED)" in menusky
-          and "skin.sky()" in menusky and "skin.fog()" in menusky
-          and "skin.horizon()" in menusky and "skin.glow()" in menusky
+          and "skin.glow()" in menusky
+          and "skin.fog()" not in menusky and "skin.sky()" not in menusky
+          and 'private static final String ZENITH = "2A1C4E";' in menusky
+          and 'private static final String MID = "2C2A2E";' in menusky
+          and 'private static final String HORIZON = "6E3E2A";' in menusky
           and "McsmIdentity.rgb(hex)" in menusky
-          and "g.fillGradient(0, 0, w, h," in menusky)
+          and "public static final float SCALE_MIN = 0.85F;" in menusky
+          and "private static final int CHANNEL_MIN = 0x14;" in menusky)
+
+    # ... and arithmetically: the darkest thing any screen can be painted with, at
+    # the darkest dim any screen asks for, from the generator's own numbers.
+    sky_worlds = {m.group(1): [int(g, 16) for g in m.groups()[1:]]
+                  for m in re.finditer(
+                      r'"(decayed|adams|void|creator)": dict\(\s*seed=\d+,\s*'
+                      r'horizon=\((0x..), (0x..), (0x..)\),[^\n]*\n\s*'
+                      r'mid=\((0x..), (0x..), (0x..)\),[^\n]*\n\s*'
+                      r'zenith=\((0x..), (0x..), (0x..)\)',
+                      skygen)}
+    menu_row = sky_worlds.get("decayed")
+    scale = 0.85
+    painted = [max(0x14, int(c * scale)) for c in menu_row] if menu_row else []
+    check("and the menu it paints cannot be black, at any dim",
+          menu_row is not None
+          and [int(x, 16) for x in ("2A", "1C", "4E")] == menu_row[6:9]
+          and [int(x, 16) for x in ("2C", "2A", "2E")] == menu_row[3:6]
+          and [int(x, 16) for x in ("6E", "3E", "2A")] == menu_row[0:3]
+          # the zenith is the darkest of the three, and even it has to be air
+          and painted[6] + painted[7] + painted[8] >= 0x40
+          and min(painted) >= 0x14,
+          "painted: %s (from the cube's own stops %s)"
+          % ("#%02X%02X%02X" % tuple(painted[6:9]) if painted else "?", menu_row))
 
     check("every screen that used to be a black plate now wears that sky",
           'net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 1.0F);' in titles
@@ -3680,6 +3710,64 @@ def main():
           and "net.minecraft.world.item.SwordItem" in buildsh
           and "net.minecraft.world.item.ToolMaterial" in buildsh
           and "net.minecraft.world.item.AxeItem" in buildsh)
+
+    # ------------------------------------------------------------------
+    # BUILD #466 -- THE WEAPONS. Phase (e) shipped the blocks and the materials;
+    # the brief ("even some weapons would be a really cool expansion") is only
+    # answered by weapons that are weapons. Two things this family stops: a weapon
+    # that is a plain Item with a sword's model (it did a bare hand's damage, which
+    # is how tentacle_hook and the other hand-helds shipped), and a weapon made
+    # from another world's materials -- the identity rule, applied to the arsenal.
+    #
+    # It is also the reason the runner dumps the item API every build: SwordItem
+    # and Tier do NOT exist in this version (runs 578-581 all report "class not
+    # found"), ToolMaterial is the material record, and the behaviour is a property
+    # of the item. Written against a remembered API, this pass would have failed
+    # javac twice before anyone learned that.
+    # ------------------------------------------------------------------
+    weapons = {
+        "decayed_blade": "decayed", "decayed_cleaver": "decayed",
+        "void_edge": "void", "void_ripper": "void",
+        "adams_glaive": "adams", "adams_mirror_axe": "adams",
+        "creator_edict": "creator", "creator_hammer": "creator",
+    }
+    recipes_seg = gen[gen.index("RECIPES = {"):gen.index("def emit_recipes")]
+    check("the weapons pass landed: real swords, axes and pickaxes",
+          content.count(".sword(ToolMaterial.") >= 7
+          and content.count(".axe(ToolMaterial.") >= 3
+          and content.count(".pickaxe(ToolMaterial.") >= 2
+          and "import net.minecraft.world.item.ToolMaterial;" in content
+          # the four hand-helds that shipped as plain Items are tools now
+          and "glinted(props -> new Item(props.stacksTo(1).rarity(Rarity.EPIC).fireResistant()\n"
+              "                    .axe(ToolMaterial.DIAMOND, 6.0F, -3.0F))));" in content
+          and ".sword(ToolMaterial.NETHERITE, 7.0F, -2.6F)" in content,
+          "sword=%d axe=%d pickaxe=%d" % (content.count(".sword(ToolMaterial."),
+                                          content.count(".axe(ToolMaterial."),
+                                          content.count(".pickaxe(ToolMaterial.")))
+
+    check("every weapon is registered, named, held like a tool, drawn, and craftable",
+          all('item("%s"' % n in content for n in weapons)
+          and all(('"%s": ("handheld", "mcsm:item/%s")' % (n, n)) in gen for n in weapons)
+          and all(('"%s": "' % n) in names_seg for n in weapons)
+          and all(('"%s": (' % n) in recipes_seg for n in weapons)
+          and all(os.path.exists("jar-overrides/assets/mcsm/textures/item/%s.png" % n)
+                  for n in weapons)
+          and all(os.path.exists("jar-overrides/assets/mcsm/items/%s.json" % n) for n in weapons)
+          and all(os.path.exists("jar-overrides/assets/mcsm/models/item/%s.json" % n)
+                  for n in weapons),
+          "missing: %s" % [n for n in weapons if not os.path.exists(
+              "jar-overrides/assets/mcsm/models/item/%s.json" % n)])
+
+    borrowed = []
+    for n, world in weapons.items():
+        i = recipes_seg.index('"%s": (' % n)
+        j = recipes_seg.find('\n    "', i + 1)
+        row = recipes_seg[i:(j if j > 0 else i + 400)]
+        ing = [t for t in re.findall(r'"mcsm:([a-z_]+)"', row) if t != n]
+        if not all(t.startswith(world + "_") for t in ing):
+            borrowed.append((n, ing, world))
+    check("and none of them is forged out of another world's material",
+          not borrowed, "borrowed: %s" % borrowed)
 
     for c in checks:
         if c not in [f.split(" --")[0] for f in fails]:

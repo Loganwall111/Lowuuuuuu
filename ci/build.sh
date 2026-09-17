@@ -1784,7 +1784,13 @@ for want in \
   assets/mcsm/blockstates/adams_tile_wall.json \
   assets/mcsm/items/void_cord.json \
   assets/mcsm/textures/block/decayed_bricks.png \
-  assets/mcsm/textures/item/storm_marrow.png ; do
+  assets/mcsm/textures/item/storm_marrow.png \
+  assets/mcsm/items/creator_edict.json \
+  assets/mcsm/models/item/creator_edict.json \
+  assets/mcsm/textures/item/creator_edict.png \
+  assets/mcsm/items/void_edge.json \
+  assets/mcsm/models/item/void_ripper.json \
+  assets/mcsm/textures/item/decayed_cleaver.png ; do
   if [ ! -s "$FX/cls/$want" ]; then
     CONTENT_MISSING="$CONTENT_MISSING $want"
   fi
@@ -1801,11 +1807,12 @@ if [ -n "$CONTENT_MISSING" ]; then
   echo "[audit] content pack MISSING:${CONTENT_MISSING}"
   exit 1
 fi
-# BUILD #465 raised these floors: the pack is 92 blocks and 124 items now, so a
-# build that loses half of it (a generator that did not run, a directory that did
-# not copy) cannot pass as "complete" on a 30/50 floor any more.
-if [ "${N_STATES:-0}" -lt 90 ] || [ "${N_ITEM_MODELS:-0}" -lt 120 ] || [ "${N_DEFS:-0}" -lt 120 ] \
-   || [ "${N_TEX:-0}" -lt 125 ] || [ "${N_RECIPES:-0}" -lt 45 ] || [ "${N_LOOT:-0}" -lt 90 ]; then
+# BUILD #465 raised these floors (92 blocks / 124 items); BUILD #466 raised them
+# again for the weapons pass (92 / 132), so a build that loses half the pack -- a
+# generator that did not run, a directory that did not copy -- cannot pass as
+# "complete" on a floor that predates the expansion.
+if [ "${N_STATES:-0}" -lt 90 ] || [ "${N_ITEM_MODELS:-0}" -lt 130 ] || [ "${N_DEFS:-0}" -lt 130 ] \
+   || [ "${N_TEX:-0}" -lt 145 ] || [ "${N_RECIPES:-0}" -lt 55 ] || [ "${N_LOOT:-0}" -lt 90 ]; then
   echo "::error title=jar audit::the content pack is incomplete in the jar (states=${N_STATES} models=${N_ITEM_MODELS} definitions=${N_DEFS} textures=${N_TEX} recipes=${N_RECIPES} loot=${N_LOOT})"
   exit 1
 fi
@@ -1813,7 +1820,7 @@ if [ "${N_DEFS:-0}" -lt "${N_ITEM_MODELS:-0}" ]; then
   echo "::error title=jar audit::${N_ITEM_MODELS} item models but only ${N_DEFS} item definitions -- the extra items would render as glitch blocks"
   exit 1
 fi
-echo "[audit] content pack complete (92 blocks + 124 items + doors/stairs/trap doors + 92 loot tables + own art)"
+echo "[audit] content pack complete (92 blocks + 132 items + doors/stairs/trap doors + swords/axes/picks + 92 loot tables + own art)"
 
 echo "[audit] legacy schematic fallback assets available: ${SCHEMATIC_COUNT}"
 

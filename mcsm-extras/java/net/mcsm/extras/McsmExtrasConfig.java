@@ -104,10 +104,20 @@ public final class McsmExtrasConfig {
         } catch (Throwable t) {
             cinematic = "boot sequence: unknown";
         }
+        // BUILD #466 -- and the sky the screens wear, so a player who still sees a
+        // black menu can say so with the answer in hand: /ds menu prints the three
+        // stops it is painted from and the floor it cannot go under.
+        String sky;
+        try {
+            sky = net.mcsm.extras.client.McsmMenuSky.state();
+        } catch (Throwable t) {
+            sky = "sky: unknown";
+        }
         return (menuPanorama ? "backdrop: panorama cube" : "backdrop: the storm's sky")
                 + " \u00b7 lift " + menuLift
                 + " \u00b7 cinematic " + (cinematicBootEnabled ? "on" : "off")
-                + " \u00b7 " + cinematic;
+                + " \u00b7 " + cinematic
+                + " \u00b7 " + sky;
     }
 
     // ---- Build #416 (D.8): the Decayed Reality ---------------
