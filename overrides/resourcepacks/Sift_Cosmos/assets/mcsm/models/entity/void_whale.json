@@ -1,0 +1,86 @@
+{
+  "credit": "Made for Infinite Sift Cosmos Build #482 - Ghost Whale Mega-Fauna",
+  "texture_size": [128, 128],
+  "textures": {
+    "0": "mcsm:entity/void_whale/void_whale",
+    "particle": "mcsm:entity/void_whale/void_whale"
+  },
+  "elements": [
+    {
+      "name": "head",
+      "from": [0, 8, 0],
+      "to": [16, 16, 24],
+      "rotation": {"angle": 0, "axis": "y", "origin": [8, 12, 12]},
+      "faces": {
+        "north": {"uv": [0, 0, 4, 2], "texture": "#0"},
+        "east": {"uv": [4, 0, 10, 2], "texture": "#0"},
+        "south": {"uv": [10, 0, 14, 2], "texture": "#0"},
+        "west": {"uv": [14, 0, 20, 2], "texture": "#0"},
+        "up": {"uv": [0, 2, 4, 8], "texture": "#0"},
+        "down": {"uv": [4, 2, 8, 8], "texture": "#0"}
+      }
+    },
+    {
+      "name": "body_segment_1",
+      "from": [2, 6, 24],
+      "to": [14, 14, 40],
+      "faces": {
+        "north": {"uv": [0, 8, 3, 10], "texture": "#0"},
+        "east": {"uv": [3, 8, 7, 10], "texture": "#0"},
+        "south": {"uv": [7, 8, 10, 10], "texture": "#0"},
+        "west": {"uv": [10, 8, 14, 10], "texture": "#0"},
+        "up": {"uv": [0, 10, 3, 14], "texture": "#0"},
+        "down": {"uv": [3, 10, 6, 14], "texture": "#0"}
+      }
+    },
+    {
+      "name": "body_segment_2",
+      "from": [3, 7, 40],
+      "to": [13, 13, 56],
+      "faces": {
+        "north": {"uv": [0, 14, 2.5, 15.5], "texture": "#0"},
+        "east": {"uv": [2.5, 14, 6.5, 15.5], "texture": "#0"},
+        "south": {"uv": [6.5, 14, 9, 15.5], "texture": "#0"},
+        "west": {"uv": [9, 14, 13, 15.5], "texture": "#0"},
+        "up": {"uv": [0, 15.5, 2.5, 19.5], "texture": "#0"},
+        "down": {"uv": [2.5, 15.5, 5, 19.5], "texture": "#0"}
+      }
+    },
+    {
+      "name": "tail_fin",
+      "from": [0, 4, 56],
+      "to": [16, 12, 64],
+      "rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 56]},
+      "faces": {
+        "north": {"uv": [0, 20, 4, 22], "texture": "#0"},
+        "east": {"uv": [4, 20, 6, 22], "texture": "#0"},
+        "south": {"uv": [6, 20, 10, 22], "texture": "#0"},
+        "west": {"uv": [10, 20, 12, 22], "texture": "#0"},
+        "up": {"uv": [0, 22, 4, 24], "texture": "#0"},
+        "down": {"uv": [4, 22, 8, 24], "texture": "#0"}
+      }
+    },
+    {
+      "name": "side_fins",
+      "from": [-4, 6, 8],
+      "to": [20, 10, 16],
+      "rotation": {"angle": -10, "axis": "z", "origin": [8, 8, 12]},
+      "faces": {
+        "north": {"uv": [12, 0, 18, 1], "texture": "#0"},
+        "east": {"uv": [12, 1, 14, 2], "texture": "#0"},
+        "south": {"uv": [14, 1, 20, 2], "texture": "#0"},
+        "west": {"uv": [18, 0, 20, 1], "texture": "#0"},
+        "up": {"uv": [0, 24, 6, 26], "texture": "#0"},
+        "down": {"uv": [6, 24, 12, 26], "texture": "#0"}
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "void_whale",
+      "origin": [8, 8, 8],
+      "color": 0,
+      "children": [0, 1, 2, 3, 4]
+    }
+  ]
+}

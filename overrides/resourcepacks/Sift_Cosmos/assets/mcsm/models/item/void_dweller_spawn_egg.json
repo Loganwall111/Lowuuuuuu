@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mcsm:item/spawn_egg/void_dweller_spawn_egg"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "mcsm:block/fluor_plant",
+    "particle": "mcsm:block/fluor_plant"
+  }
+}

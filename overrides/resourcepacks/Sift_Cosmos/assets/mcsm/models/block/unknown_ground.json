@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "mcsm:block/unknown_ground",
+    "particle": "mcsm:block/unknown_ground"
+  }
+}
