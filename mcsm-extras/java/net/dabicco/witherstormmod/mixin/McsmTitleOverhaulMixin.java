@@ -225,7 +225,12 @@ public abstract class McsmTitleOverhaulMixin extends Screen {
         // own sky now -- the same hexes its dimension, its biome, its fog and its
         // painted cube use, through the one painter every screen of ours shares
         // (McsmMenuSky), so the menu is a place rather than a hole.
-        net.mcsm.extras.client.McsmMenuSky.paint(g, w, h, 1.0F);
+        //
+        // BUILD #472 -- and it is painted ONCE. The guarded paint above is that
+        // paint; this spot used to carry a second, unguarded call of it (left over
+        // from the #464 rewrite), which doubled the work, doubled the fault surface
+        // -- outside the try -- and made the menu's own air two passes thick. One
+        // screen, one sky: the gate counts the calls now, per file.
     }
 
     /**

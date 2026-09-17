@@ -1064,15 +1064,25 @@ VANILLA_OUT=out/vanilla-api.txt
   #
   # Bytecode, not just signatures: the call graph is the answer here.
   # --------------------------------------------------------------------------
+  # BUILD #472 -- the #469 dump ran 700 lines per class and Screen is far bigger
+  # than that: the answer to "what does extractBackground actually draw, and with
+  # which program" sits past the cut. The cap is 4000 now, and the classes that
+  # decide WHAT the menu's frame is made of are in the list: the title's panorama
+  # pass, the screen's own background/blur pass, the panorama renderer, the
+  # pipeline registry (which names the core program each pipeline uses) and the
+  # GUI renderer. This is still evidence-only -- nothing here changes a frame.
   for CLS in \
     net.minecraft.client.gui.screens.TitleScreen \
     net.minecraft.client.gui.screens.Screen \
     net.minecraft.client.gui.components.LogoRenderer \
-    net.minecraft.client.gui.Gui ; do
+    net.minecraft.client.gui.Gui \
+    net.minecraft.client.renderer.Panorama \
+    net.minecraft.client.renderer.RenderPipelines \
+    net.minecraft.client.gui.render.GuiRenderer ; do
     echo
     echo "===== ${CLS} (bytecode)"
     { javap -p -c -classpath "$DL/client.jar" "$CLS" 2>&1 \
-      || echo "(javap could not read ${CLS})"; } | sed -n '1,700p'
+      || echo "(javap could not read ${CLS})"; } | sed -n '1,4000p'
   done
   echo
   echo "===== net.minecraft.client.Minecraft (declared fields, in order)"
@@ -1984,12 +1994,24 @@ stage audit-ok
 # shader is used instead) and the verdict is written into the evidence.
 # ---------------------------------------------------------------------------
 echo "[shader] replaced core shaders: interface check against the client jar"
+SHADER_REPORT=/tmp/mcsm-shader-check.txt
+SHADER_IFACE=/tmp/mcsm-shader-interface.txt
 SHADER_CHECK="$(python3 ci/check_shader_overrides.py --jar "$DL/client.jar" \
-  --assembled "$FX/cls/assets/minecraft/shaders/core" --strip 2>&1 || true)"
-printf '%s\n' "$SHADER_CHECK" | sed -n '1,40p'
+  --assembled "$FX/cls/assets/minecraft/shaders/core" --strip \
+  --dump-out "$SHADER_IFACE" 2>&1 || true)"
+printf '%s\n' "$SHADER_CHECK" | sed -n '1,60p'
 printf '%s\n' "$SHADER_CHECK" >> "$VANILLA_OUT" 2>/dev/null || true
+{
+  echo "Devouring Storms ${JAR_ID} -- replaced core shaders weighed against the client jar"
+  echo "jar:    $DL/client.jar"
+  echo "tree:   assets/minecraft/shaders/core"
+  echo
+  printf '%s\n' "$SHADER_CHECK"
+} > "$SHADER_REPORT"
+evidence_put "$SHADER_REPORT" SHADER_CHECK.txt
+evidence_put "$SHADER_IFACE" SHADER_INTERFACE.txt
 if printf '%s\n' "$SHADER_CHECK" | grep -q "MISMATCH"; then
-  echo "::warning title=shaders::a replaced core shader did not match this build's own interface and was DISABLED in the jar -- the game's shader is used instead (see out/vanilla-api.txt)"
+  echo "::warning title=shaders::a replaced core shader did not match this build's own interface and was DISABLED in the jar -- the game's shader is used instead (see ci-out/run-*/SHADER_CHECK.txt)"
 fi
 
 OUT="out/devouringstorms-${JAR_ID}.jar"
