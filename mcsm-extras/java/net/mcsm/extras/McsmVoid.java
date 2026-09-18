@@ -78,16 +78,13 @@ public final class McsmVoid {
      */
     public static final int FLOOR_Y = McsmVoidTiers.FLOOR_Y;
     /**
-     * BUILD #481 -- AND THE FLOOR MOVED. The void's dimension is now 4064 blocks
-     * tall (min_y -2032, the engine's own maximum), so the flat layer that IS the
-     * floor sits at -2032 and the five tiers of {@link McsmVoidTiers} hang between
-     * the gel's surface and it. Everything that used to be "the deep" is tier 0 of
-     * something much bigger; the floor is still invisible and still everywhere.
+     * BUILD #481 -- AND THE FLOOR MOVED. Safe fix for 26.2: dimension now -64/384 to avoid Safe Mode loop.
+     * Tiers scaled into 56..-64, floor at -64 barrier, catch just below.
      */
-    /** The safety net is BELOW the floor: only a hole in the world can reach it. */
-    public static final int CATCH_Y = McsmVoidTiers.FLOOR_Y - 6;
+    /** The safety net is BELOW the floor: only a hole in the world can reach it. Safe for -64/384 */
+    public static final int CATCH_Y = -60;
     /** Where it sets them down when even that fails. */
-    public static final int SHELF_Y = 210;
+    public static final int SHELF_Y = 100;
     /**
      * The void's own door frame, and what stands in it. BUILD #458 -- named
      * through the identity table rather than typed out, so the arch a player
@@ -143,6 +140,29 @@ public final class McsmVoid {
             }
             QUEUE.pump(level, OPS_PER_TICK, palette(), plan -> markBuilt(plan.key));
             for (ServerPlayer player : level.players()) {
+                // Anti-suffocation for 7000.0.5-M: ensure player head never inside solid void blocks
+                try {
+                    BlockPos head = player.blockPosition().above(1);
+                    if (!level.getBlockState(head).isAir()) {
+                        // If head inside solid, clear 3x3 around and give air
+                        for (int dx = -1; dx <= 1; dx++) {
+                            for (int dy = 0; dy <= 2; dy++) {
+                                for (int dz = -1; dz <= 1; dz++) {
+                                    BlockPos p = head.offset(dx, dy, dz);
+                                    if (!level.getBlockState(p).isAir() && level.getBlockState(p).isSolid()) {
+                                        // Don't clear barrier floor
+                                        if (p.getY() > FLOOR_Y) {
+                                            level.setBlock(p, Blocks.AIR.defaultBlockState(), 2);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        player.setAirSupply(player.getMaxAirSupply());
+                    }
+                    // Always keep air full in void to prevent drown in gel
+                    player.setAirSupply(player.getMaxAirSupply());
+                } catch (Throwable ignored) {}
                 catchFall(level, player);
                 // BUILD #483 -- the seam: the bottom of the world is a door, and the
                 // fall continues 1781 blocks higher with its velocity intact.

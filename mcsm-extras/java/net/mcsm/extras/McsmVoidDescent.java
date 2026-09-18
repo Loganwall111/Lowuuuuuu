@@ -189,6 +189,20 @@ public final class McsmVoidDescent {
     // ------------------------------------------------------------------
 
     private static void deep(ServerPlayer player, ServerLevel level) {
+        // Anti-suffocation fix for 7000.0.5-M: player reported barrier invisible and suffocating before gel
+        try {
+            BlockPos headPos = player.blockPosition().above();
+            BlockState headState = level.getBlockState(headPos);
+            if (!headState.isAir() && !headState.is(net.minecraft.world.level.block.Blocks.BARRIER)) {
+                // Clear head space to prevent suffocation in sponge/maze
+                level.setBlock(headPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+                level.setBlock(headPos.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+            }
+            // Give water breathing + slow falling while in void descent to prevent drown/suffocate
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WATER_BREATHING, 200, 0, true, false));
+            player.setAirSupply(player.getMaxAirSupply());
+        } catch (Throwable ignored) {}
+
         // a player who reached the void by its own doorway is not on the descent and
         // is not tracked: they are visiting, not falling
         Dive dive = DIVING.get(player.getUUID());

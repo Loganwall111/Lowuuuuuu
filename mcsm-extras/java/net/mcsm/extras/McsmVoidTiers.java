@@ -43,10 +43,10 @@ public final class McsmVoidTiers {
     // The world the void gets. Vanilla's own limits, at their maximum.
     // ------------------------------------------------------------------
 
-    /** The deepest {@code min_y} this engine allows: the void's new floor. */
-    public static final int DIM_MIN_Y = -2032;
-    /** The tallest world the engine allows, which is what the void now is. */
-    public static final int DIM_HEIGHT = 4064;
+    /** Safe bounds for 26.2 - fixed from -2032/4064 which caused Safe Mode loop */
+    public static final int DIM_MIN_Y = -64;
+    /** Safe height for 26.2 */
+    public static final int DIM_HEIGHT = 384;
     /** The top of the void's world. */
     public static final int DIM_MAX_Y = DIM_MIN_Y + DIM_HEIGHT;
 
@@ -60,19 +60,20 @@ public final class McsmVoidTiers {
     public static final int SPEC_FLOOR = -6001;
 
     // ------------------------------------------------------------------
-    // The bands, in this world's Y.
+    // The bands, in this world's Y - scaled into safe -64/384 to fix suffocation glitch
+    // Descent: ARRIVAL 130 -> DARK 118 -> GEL 78 -> SURFACE 56 -> tiers down to -64
     // ------------------------------------------------------------------
 
     /** Tier 0 runs from the surface down to here: nothing but space. */
-    public static final int BASELINE_FLOOR = -250;
+    public static final int BASELINE_FLOOR = 20;
     /** Tier 1, the luminous cavern, ends here. */
-    public static final int LUMINOUS_FLOOR = -1100;
+    public static final int LUMINOUS_FLOOR = -10;
     /** Tier 2, the sponge of fractal tubes, ends here. */
-    public static final int SPONGE_FLOOR = -1250;
+    public static final int SPONGE_FLOOR = -25;
     /** Tier 3, the light-suppressed abyss, ends here. */
-    public static final int ABYSS_FLOOR = -1550;
+    public static final int ABYSS_FLOOR = -40;
     /** Tier 4, the fracturing reality, ends here. */
-    public static final int FRACTURE_FLOOR = -1800;
+    public static final int FRACTURE_FLOOR = -55;
     /** Tier 5, the gel, runs from there to the floor of the world. */
     public static final int GEL_FLOOR = DIM_MIN_Y;
     /** The barrier layer the dimension's own generator lays at min_y. */

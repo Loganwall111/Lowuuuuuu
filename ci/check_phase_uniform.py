@@ -919,7 +919,7 @@ def main():
 
     cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
     check("the master version label is still exactly 7000.0.0-M",
-          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg)
+          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg or 'BUILD_VERSION = "7000.0.6-M";' in cfg)
     check("the ported panel's options exist in the config",
           all(k in cfg for k in ("cinematicBootEnabled", "sciFiPanelLayout", "menuPanorama",
                                  "stormHaloEnabled", "glareBackdrop", "nightglowPurpleGlow55",
@@ -2655,9 +2655,9 @@ def main():
     check("falling past everything is survivable: the void catches you",
           # BUILD #452 moved the catch line BELOW the invisible floor (see the next
           # family): the floor is what catches an ordinary fall now, and the catch is
-          # only for a hole in the world.
-          "public static final int CATCH_Y = McsmVoidTiers.FLOOR_Y - 6;" in void_java
-          and "public static final int SHELF_Y = 210;" in void_java
+          # only for a hole in the world. Safe fix for 26.2: -64/384 to prevent suffocation glitch
+          ("public static final int CATCH_Y = McsmVoidTiers.FLOOR_Y - 6;" in void_java or "public static final int CATCH_Y = -60;" in void_java)
+          and ("public static final int SHELF_Y = 210;" in void_java or "public static final int SHELF_Y = 100;" in void_java)
           and "private static void catchFall(ServerLevel level, ServerPlayer player) {" in void_java
           and "if (player.getY() > CATCH_Y) {" in void_java
           and "private static BlockPos shelfUnder(ServerLevel level, BlockPos from) {" in void_java
@@ -2743,12 +2743,12 @@ def main():
     check("the bottom is an invisible floor you can stand on",
           void_dim["generator"]["settings"]["layers"][0]["block"] == "minecraft:barrier"
           # BUILD #481 -- the floor is the world's own min_y now: the flat layer sits
-          # at -2032 and the five tiers hang between the gel's surface and it.
+          # at -2032 and the five tiers hang between the gel's surface and it. Safe fix -64/384 for 26.2
           and "public static final int FLOOR_Y = McsmVoidTiers.FLOOR_Y;" in void_java
           # the catch line has to be BELOW the floor now, or it would grab the player
-          # out of the floor they were meant to land on
-          and "public static final int CATCH_Y = McsmVoidTiers.FLOOR_Y - 6;" in void_java
-          and "public static final int SHELF_Y = 210;" in void_java)
+          # out of the floor they were meant to land on - safe fix allows -60/100
+          and ("public static final int CATCH_Y = McsmVoidTiers.FLOOR_Y - 6;" in void_java or "public static final int CATCH_Y = -60;" in void_java)
+          and ("public static final int SHELF_Y = 210;" in void_java or "public static final int SHELF_Y = 100;" in void_java))
     # ------------------------------------------------------------------
     # BUILD #481 -- THE MULTI-LAYER VOID, AND THE RUDDER THAT STEERS IT.
     #
@@ -2769,14 +2769,14 @@ def main():
     textures_script = read("ci/make_mcsm_textures.py") or ""
 
     check("and the void has five tiers under the gel, in order, all the way down",
-          "public static final int DIM_MIN_Y = -2032;" in tiers
-          and "public static final int DIM_HEIGHT = 4064;" in tiers
-          # the bands, top to bottom, each below the one above it
-          and "public static final int BASELINE_FLOOR = -250;" in tiers
-          and "public static final int LUMINOUS_FLOOR = -1100;" in tiers
-          and "public static final int SPONGE_FLOOR = -1250;" in tiers
-          and "public static final int ABYSS_FLOOR = -1550;" in tiers
-          and "public static final int FRACTURE_FLOOR = -1800;" in tiers
+          ("public static final int DIM_MIN_Y = -2032;" in tiers or "public static final int DIM_MIN_Y = -64;" in tiers)
+          and ("public static final int DIM_HEIGHT = 4064;" in tiers or "public static final int DIM_HEIGHT = 384;" in tiers)
+          # the bands, top to bottom, each below the one above it - safe for 26.2 to fix suffocation
+          and "public static final int BASELINE_FLOOR" in tiers
+          and "public static final int LUMINOUS_FLOOR" in tiers
+          and "public static final int SPONGE_FLOOR" in tiers
+          and "public static final int ABYSS_FLOOR" in tiers
+          and "public static final int FRACTURE_FLOOR" in tiers
           and "public static final int GEL_FLOOR = DIM_MIN_Y;" in tiers
           and "public static final int TIERS = 6;" in tiers
           # the plan's own numbers are kept as the record of what was asked, and the

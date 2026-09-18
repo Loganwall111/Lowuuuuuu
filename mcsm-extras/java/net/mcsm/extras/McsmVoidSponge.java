@@ -225,6 +225,10 @@ public final class McsmVoidSponge {
                     if (dx * dx + dz * dz > r2) {
                         continue;
                     }
+                    // Fix suffocation glitch - don't generate solid blocks within 3 blocks of player
+                    if (dx * dx + dy * dy + dz * dz < 9) {
+                        continue;
+                    }
                     int x = px + dx;
                     int z = pz + dz;
                     if (!solid(x + rx, y, z + rz)) {
