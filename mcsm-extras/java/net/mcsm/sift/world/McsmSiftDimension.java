@@ -116,6 +116,10 @@ public final class McsmSiftDimension {
 
         // Generate LARGE LUSH FLOATING ISLANDS first - per chunk, not per x/z
         generateLargeLushIslands(level, chunkOrigin, rng, islandNoise);
+        // CRAZY ENHANCED: Luminescent Pools hexagon bubbles with liquid + bioluminescence
+        generateLuminescentBubbles(level, chunkOrigin, rng, nightmareNoise);
+        // CRAZY ENHANCED: Abyssal Nightmare big toys, halo boss, castles, vines going all the way down
+        generateAbyssalCastles(level, chunkOrigin, rng, nightmareNoise);
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
@@ -434,6 +438,344 @@ public final class McsmSiftDimension {
                                 if (level.getBlockState(fallPos).isAir()) {
                                     level.setBlock(fallPos, Blocks.WATER.defaultBlockState(), 2);
                                 }
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    
+                    // Vines going all the way down from island bottom - Vins, big toys at very bottom
+                    if (dist > radius * 0.5 && dist < radius * 0.8 && rng.nextFloat() < 0.015f) {
+                        int vineStartY = centerY - height;
+                        int vineLength = 15 + rng.nextInt(35); // Going all the way down 15-50 blocks
+                        for (int vy = vineStartY; vy > vineStartY - vineLength && vy >= McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM; vy--) {
+                            BlockPos vinePos = new BlockPos(wx, vy, wz);
+                            if (level.getBlockState(vinePos).isAir()) {
+                                try {
+                                    float vineType = rng.nextFloat();
+                                    if (vineType < 0.3f) {
+                                        level.setBlock(vinePos, net.mcsm.sift.block.SiftEcosystemBlocks.FABRIC_ROOTS.defaultBlockState(), 2);
+                                    } else if (vineType < 0.6f) {
+                                        level.setBlock(vinePos, net.mcsm.sift.block.SiftEcosystemBlocks.LUMINOUS_VINE.defaultBlockState(), 2);
+                                    } else if (vineType < 0.8f) {
+                                        level.setBlock(vinePos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_VINES.defaultBlockState(), 2);
+                                    } else {
+                                        level.setBlock(vinePos, Blocks.VINE.defaultBlockState(), 2);
+                                    }
+                                } catch (Exception ignored) {}
+                            }
+                        }
+                        // Big toy at very bottom of vine - small platform with chest or crystal
+                        if (rng.nextFloat() < 0.1f) {
+                            int bottomY = vineStartY - vineLength;
+                            if (bottomY >= McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM) {
+                                BlockPos toyPos = new BlockPos(wx, bottomY, wz);
+                                try {
+                                    level.setBlock(toyPos, net.mcsm.sift.block.McsmSiftContent.VOID_CRYSTAL.defaultBlockState(), 2);
+                                    level.setBlock(toyPos.above(), Blocks.CHEST.defaultBlockState(), 2);
+                                } catch (Exception ignored) {}
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Big toys at very bottom of island - large hanging crystals, fabric shards
+            if (rng.nextFloat() < 0.5f) {
+                int toyX = centerX + rng.nextInt(radius) - radius/2;
+                int toyZ = centerZ + rng.nextInt(radius) - radius/2;
+                int toyY = centerY - height - 5 - rng.nextInt(10);
+                if (toyY >= McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM) {
+                    try {
+                        level.setBlock(new BlockPos(toyX, toyY, toyZ), net.mcsm.sift.block.McsmSiftContent.FABRIC_SHARD.defaultBlockState(), 2);
+                        level.setBlock(new BlockPos(toyX, toyY-1, toyZ), net.mcsm.sift.block.SiftEcosystemBlocks.VOID_CRYSTAL_CLUSTER.defaultBlockState(), 2);
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+    }
+
+    // CRAZY ENHANCED: LUMINESCENT POOLS - HEXAGON/TRAPEZOID BUBBLES WITH LIQUID + BIOLUMINESCENCE + JELLYFISH
+    // Concept: Glowing waters and strange liquid crystals, light dances, blue rainbow sky, jellyfish creatures
+    // Hexagon bubbles = glass spheres with flat top/bottom = trapezoid, filled with rainbow_water, crystals, sea lanterns
+    private static void generateLuminescentBubbles(ServerLevel level, BlockPos chunkOrigin, RandomSource rng, PerlinNoise noise) {
+        int startX = chunkOrigin.getX();
+        int startZ = chunkOrigin.getZ();
+        
+        // 1-2 bubbles per chunk in Luminescent Pools
+        for (int i = 0; i < 2; i++) {
+            if (rng.nextFloat() > 0.35f) continue; // 35% chance per attempt
+            
+            int centerX = startX + rng.nextInt(16);
+            int centerZ = startZ + rng.nextInt(16);
+            int centerY = McsmVoidTiers.LUMINESCENT_POOLS_BOTTOM + 20 + rng.nextInt(
+                McsmVoidTiers.LUMINESCENT_POOLS_TOP - McsmVoidTiers.LUMINESCENT_POOLS_BOTTOM - 40);
+            
+            double n = noise.getValue(centerX * 0.02, centerY * 0.02, centerZ * 0.02);
+            if (n < 0.1 && rng.nextFloat() > 0.2f) continue;
+            
+            int radius = 6 + rng.nextInt(8); // 6-13 radius = 12-26 wide bubble
+            boolean isHexagon = rng.nextFloat() < 0.7f; // 70% hexagon/trapezoid shape
+            
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dz = -radius; dz <= radius; dz++) {
+                        double dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                        if (dist > radius || dist < radius - 1.5) continue; // Only shell
+                        
+                        int wx = centerX + dx;
+                        int wy = centerY + dy;
+                        int wz = centerZ + dz;
+                        if (wy < McsmVoidTiers.LUMINESCENT_POOLS_BOTTOM || wy >= McsmVoidTiers.LUMINESCENT_POOLS_TOP) continue;
+                        BlockPos pos = new BlockPos(wx, wy, wz);
+                        
+                        // Hexagon/trapezoid: flatten top/bottom, make sides more vertical
+                        if (isHexagon) {
+                            if (Math.abs(dy) > radius * 0.6 && Math.abs(dx) < radius * 0.5 && Math.abs(dz) < radius * 0.5) {
+                                // Flat top/bottom for trapezoid
+                                if (dist > radius * 0.8) continue;
+                            }
+                        }
+                        
+                        try {
+                            float glassType = rng.nextFloat();
+                            if (glassType < 0.4f) {
+                                level.setBlock(pos, Blocks.GLASS.defaultBlockState(), 2);
+                            } else if (glassType < 0.6f) {
+                                level.setBlock(pos, Blocks.LIGHT_BLUE_STAINED_GLASS.defaultBlockState(), 2);
+                            } else if (glassType < 0.8f) {
+                                level.setBlock(pos, Blocks.CYAN_STAINED_GLASS.defaultBlockState(), 2);
+                            } else {
+                                level.setBlock(pos, net.mcsm.sift.block.McsmSiftContent.GEL_HORIZON_GLASS.defaultBlockState(), 2);
+                            }
+                        } catch (Exception e) {
+                            level.setBlock(pos, Blocks.GLASS.defaultBlockState(), 2);
+                        }
+                    }
+                }
+            }
+            
+            // Fill inside bubble with liquid + bioluminescence + crystals - crazy enhanced
+            for (int dx = -radius+2; dx <= radius-2; dx++) {
+                for (int dy = -radius+2; dy <= radius-2; dy++) {
+                    for (int dz = -radius+2; dz <= radius-2; dz++) {
+                        double dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                        if (dist >= radius - 1.6) continue;
+                        
+                        int wx = centerX + dx;
+                        int wy = centerY + dy;
+                        int wz = centerZ + dz;
+                        BlockPos pos = new BlockPos(wx, wy, wz);
+                        
+                        try {
+                            // Bioluminescence - glowing waters, strange liquid crystals
+                            if (rng.nextFloat() < 0.15f) {
+                                float crystal = rng.nextFloat();
+                                if (crystal < 0.2f) {
+                                    level.setBlock(pos, Blocks.SEA_LANTERN.defaultBlockState(), 2);
+                                } else if (crystal < 0.35f) {
+                                    level.setBlock(pos, Blocks.GLOWSTONE.defaultBlockState(), 2);
+                                } else if (crystal < 0.50f) {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.GEL_CRYSTAL.defaultBlockState(), 2);
+                                } else if (crystal < 0.65f) {
+                                    level.setBlock(pos, Blocks.AMETHYST_BLOCK.defaultBlockState(), 2);
+                                } else if (crystal < 0.80f) {
+                                    level.setBlock(pos, net.mcsm.sift.block.McsmSiftContent.PRISMATIC_CRYSTAL.defaultBlockState(), 2);
+                                } else {
+                                    level.setBlock(pos, net.mcsm.sift.block.McsmSiftContent.NEBULA_BLOCK.defaultBlockState(), 2);
+                                }
+                            } else if (rng.nextFloat() < 0.40f) {
+                                // Liquid - rainbow water, water, black water
+                                float liquid = rng.nextFloat();
+                                if (liquid < 0.3f) {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.RAINBOW_WATER.defaultBlockState(), 2);
+                                } else if (liquid < 0.6f) {
+                                    level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2);
+                                } else {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.BLACK_WATER.defaultBlockState(), 2);
+                                }
+                            } else if (rng.nextFloat() < 0.08f) {
+                                // Floating crystals / void lilies inside bubble
+                                if (rng.nextFloat() < 0.5f) {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_LILY.defaultBlockState(), 2);
+                                } else {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.CYAN_MOSS.defaultBlockState(), 2);
+                                }
+                            } else {
+                                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                            }
+                        } catch (Exception ignored) {
+                            level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2);
+                        }
+                    }
+                }
+            }
+            
+            // Bioluminescent vines hanging from bubble bottom - coming down col
+            if (rng.nextFloat() < 0.6f) {
+                for (int v = 0; v < 3 + rng.nextInt(4); v++) {
+                    int vx = centerX + rng.nextInt(radius) - radius/2;
+                    int vz = centerZ + rng.nextInt(radius) - radius/2;
+                    int vyStart = centerY - radius + 1;
+                    int vineLength = 5 + rng.nextInt(15); // Coming down col
+                    for (int vy = vyStart; vy > vyStart - vineLength; vy--) {
+                        if (vy < McsmVoidTiers.LUMINESCENT_POOLS_BOTTOM) break;
+                        BlockPos vinePos = new BlockPos(vx, vy, vz);
+                        if (level.getBlockState(vinePos).isAir() || level.getBlockState(vinePos).is(Blocks.WATER)) {
+                            try {
+                                if (rng.nextFloat() < 0.6f) {
+                                    level.setBlock(vinePos, net.mcsm.sift.block.SiftEcosystemBlocks.LUMINOUS_VINE.defaultBlockState(), 2);
+                                } else {
+                                    level.setBlock(vinePos, net.mcsm.sift.block.SiftEcosystemBlocks.PRISMATIC_VINE.defaultBlockState(), 2);
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            }
+            
+            // Jellyfish-like creatures: spawn glow squid as placeholder for void_jelly in bubble water
+            // Note: actual void_jelly entities spawn naturally via spawn eggs, but we create water habitat
+            if (rng.nextFloat() < 0.4f) {
+                // Mark center with prismatic crystal for jellyfish habitat
+                try {
+                    level.setBlock(new BlockPos(centerX, centerY, centerZ), net.mcsm.sift.block.McsmSiftContent.PRISMATIC_CRYSTAL.defaultBlockState(), 2);
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    // CRAZY ENHANCED: ABYSSAL NIGHTMARE - BIG TOYS AT VERY BOTTOM GOING ALL THE WAY DOWN WITH HALO BOSS AND VINES
+    // Concept: The final realm, terror, chaos, ancient evil, reality screams, big castles, dark towers, halo boss
+    private static void generateAbyssalCastles(ServerLevel level, BlockPos chunkOrigin, RandomSource rng, PerlinNoise noise) {
+        int startX = chunkOrigin.getX();
+        int startZ = chunkOrigin.getZ();
+        
+        // Large castles/towers - big toys at very bottom
+        for (int i = 0; i < 1; i++) {
+            if (rng.nextFloat() > 0.25f) continue; // 25% chance per chunk for big structure
+            
+            int centerX = startX + rng.nextInt(16);
+            int centerZ = startZ + rng.nextInt(16);
+            int baseY = McsmVoidTiers.ABYSSAL_NIGHTMARE_BOTTOM + rng.nextInt(30); // At very bottom
+            int topY = baseY + 30 + rng.nextInt(40); // Going all the way up 30-70 blocks
+            
+            double n = noise.getValue(centerX * 0.015, baseY * 0.015, centerZ * 0.015);
+            if (n < 0.0 && rng.nextFloat() > 0.3f) continue;
+            
+            int towerRadius = 4 + rng.nextInt(5); // 4-8 radius towers
+            
+            // Generate tower from bottom going up - big toys
+            for (int y = baseY; y <= topY && y < McsmVoidTiers.ABYSSAL_NIGHTMARE_TOP; y++) {
+                for (int dx = -towerRadius; dx <= towerRadius; dx++) {
+                    for (int dz = -towerRadius; dz <= towerRadius; dz++) {
+                        double dist = Math.sqrt(dx*dx + dz*dz);
+                        if (dist > towerRadius) continue;
+                        if (dist > towerRadius - 1 && rng.nextFloat() > 0.7f) continue; // Hollow-ish
+                        
+                        int wx = centerX + dx;
+                        int wz = centerZ + dz;
+                        BlockPos pos = new BlockPos(wx, y, wz);
+                        
+                        try {
+                            // Tower walls: obsidian, crying obsidian, sculk, blackstone, deepslate bricks
+                            if (dist >= towerRadius - 0.8) {
+                                float wall = rng.nextFloat();
+                                if (wall < 0.25f) {
+                                    level.setBlock(pos, Blocks.OBSIDIAN.defaultBlockState(), 2);
+                                } else if (wall < 0.45f) {
+                                    level.setBlock(pos, Blocks.CRYING_OBSIDIAN.defaultBlockState(), 2);
+                                } else if (wall < 0.65f) {
+                                    level.setBlock(pos, Blocks.SCULK.defaultBlockState(), 2);
+                                } else if (wall < 0.80f) {
+                                    level.setBlock(pos, Blocks.DEEPSLATE_BRICKS.defaultBlockState(), 2);
+                                } else {
+                                    level.setBlock(pos, Blocks.BLACKSTONE.defaultBlockState(), 2);
+                                }
+                            } else {
+                                // Inside: air with occasional sculk catalyst, soul sand, etc
+                                if (rng.nextFloat() < 0.05f) {
+                                    level.setBlock(pos, Blocks.SCULK_CATALYST.defaultBlockState(), 2);
+                                } else if (rng.nextFloat() < 0.03f) {
+                                    level.setBlock(pos, Blocks.SOUL_LANTERN.defaultBlockState(), 2);
+                                } else {
+                                    if (!level.getBlockState(pos).is(Blocks.OBSIDIAN) && !level.getBlockState(pos).is(Blocks.CRYING_OBSIDIAN)) {
+                                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                                    }
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+            
+            // Halo boss arena at top of tower - black hole frame + event horizon
+            if (rng.nextFloat() < 0.4f) {
+                int haloY = topY + 2;
+                int haloRadius = 6;
+                for (int dx = -haloRadius; dx <= haloRadius; dx++) {
+                    for (int dz = -haloRadius; dz <= haloRadius; dz++) {
+                        double dist = Math.sqrt(dx*dx + dz*dz);
+                        if (dist > haloRadius || dist < haloRadius - 1.2) continue;
+                        BlockPos haloPos = new BlockPos(centerX + dx, haloY, centerZ + dz);
+                        try {
+                            if (rng.nextFloat() < 0.6f) {
+                                level.setBlock(haloPos, net.mcsm.sift.block.McsmSiftContent.BLACK_HOLE_FRAME.defaultBlockState(), 2);
+                            } else {
+                                level.setBlock(haloPos, net.mcsm.sift.block.McsmSiftContent.EVENT_HORIZON.defaultBlockState(), 2);
+                            }
+                        } catch (Exception e) {
+                            level.setBlock(haloPos, Blocks.CRYING_OBSIDIAN.defaultBlockState(), 2);
+                        }
+                    }
+                }
+                // Singularity shard in center - halo boss core
+                try {
+                    level.setBlock(new BlockPos(centerX, haloY, centerZ), net.mcsm.sift.block.McsmSiftContent.SINGULARITY_SHARD.defaultBlockState(), 2);
+                    level.setBlock(new BlockPos(centerX, haloY+1, centerZ), Blocks.BEACON.defaultBlockState(), 2);
+                } catch (Exception ignored) {}
+            }
+            
+            // Vines going all the way down from tower - Vins
+            for (int v = 0; v < 5 + rng.nextInt(6); v++) {
+                int vx = centerX + rng.nextInt(towerRadius*2) - towerRadius;
+                int vz = centerZ + rng.nextInt(towerRadius*2) - towerRadius;
+                int vineStartY = baseY + rng.nextInt(topY - baseY);
+                int vineLength = 10 + rng.nextInt(30); // Going all the way down
+                for (int vy = vineStartY; vy > vineStartY - vineLength && vy >= McsmVoidTiers.ABYSSAL_NIGHTMARE_BOTTOM; vy--) {
+                    BlockPos vinePos = new BlockPos(vx, vy, vz);
+                    if (level.getBlockState(vinePos).isAir()) {
+                        try {
+                            float vineType = rng.nextFloat();
+                            if (vineType < 0.4f) {
+                                level.setBlock(vinePos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_VINES.defaultBlockState(), 2);
+                            } else if (vineType < 0.7f) {
+                                level.setBlock(vinePos, net.mcsm.sift.block.SiftEcosystemBlocks.LUMINOUS_VINE.defaultBlockState(), 2);
+                            } else {
+                                level.setBlock(vinePos, Blocks.WEEPING_VINES.defaultBlockState(), 2);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+            
+            // Big toys: additional small floating platforms around castle with red grass, fungus trees
+            for (int p = 0; p < 2 + rng.nextInt(3); p++) {
+                int px = centerX + rng.nextInt(20) - 10;
+                int pz = centerZ + rng.nextInt(20) - 10;
+                int py = baseY + 10 + rng.nextInt(20);
+                int platRadius = 3 + rng.nextInt(4);
+                for (int dx = -platRadius; dx <= platRadius; dx++) {
+                    for (int dz = -platRadius; dz <= platRadius; dz++) {
+                        if (dx*dx + dz*dz > platRadius*platRadius) continue;
+                        BlockPos platPos = new BlockPos(px+dx, py, pz+dz);
+                        try {
+                            if (rng.nextFloat() < 0.5f) {
+                                level.setBlock(platPos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_GRASS_BLOCK.defaultBlockState(), 2);
+                            } else {
+                                level.setBlock(platPos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_ROCK.defaultBlockState(), 2);
+                            }
+                            // Fungus tree on platform
+                            if (dx == 0 && dz == 0 && rng.nextFloat() < 0.5f) {
+                                level.setBlock(platPos.above(), net.mcsm.sift.block.SiftEcosystemBlocks.FUNGUS_TREE.defaultBlockState(), 2);
                             }
                         } catch (Exception ignored) {}
                     }
