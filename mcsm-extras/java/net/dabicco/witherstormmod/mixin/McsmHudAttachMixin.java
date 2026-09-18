@@ -68,6 +68,11 @@ public abstract class McsmHudAttachMixin {
             // BUILD #483 -- and the dweller that is talking: its line, set down in
             // the frame letter by letter, out of its own synced data.
             net.mcsm.extras.client.McsmVoidDwellerTalk.draw(g);
+            // BUILD #486 -- epic disintegration cinematic: acid to black, volumetric disintegration,
+            // 4 planets (Dungeons, Legends, MC2, Movie + Story Mode), warp drive, white maze, glitch to first layer
+            net.mcsm.extras.client.McsmVoidCinematic.draw(g);
+            // BUILD #485 -- merged void: skybox slowly turns color when falling hundreds blocks
+            net.mcsm.extras.client.McsmVoidMerged.draw(g);
         } catch (Throwable t) {
             net.mcsm.extras.client.McsmMenuGuard.fault("hud-void-floor", t);
         }

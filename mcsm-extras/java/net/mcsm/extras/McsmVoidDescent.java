@@ -65,16 +65,28 @@ public final class McsmVoidDescent {
     // The four stops, as Y lines. See the class doc for the seconds.
     // ------------------------------------------------------------------
 
-    /** Below the world by this much: the dive has started. */
+    /** Below the world by this much: the dive has started. Merged void = 200 blocks for epic deep fall. */
     public static final int DIVE_MARGIN = 8;
-    /** Where the fall is handed over: 12 blocks of air before the plunge below. */
+    public static final int DIVE_MARGIN_MERGED = 200;
+    /** Where the fall is handed over: 12 blocks of air before the plunge below. Merged = directly to first layer. */
     public static final int ARRIVAL_Y = 130;
+    public static final int ARRIVAL_Y_MERGED = 20;
     /** The plunge ends and the dark begins. */
     public static final int DARK_Y = 118;
+    public static final int DARK_Y_MERGED = 10;
     /** The dark ends and the gel begins (also the low-void art's own ceiling). */
     public static final int GEL_Y = 78;
+    public static final int GEL_Y_MERGED = -5;
     /** The gel's surface: below this, the deep is where the player is. */
     public static final int SURFACE_Y = 56;
+    public static final int SURFACE_Y_MERGED = -12;
+
+    public static int diveMargin() {
+        return McsmExtrasConfig.voidMerged ? DIVE_MARGIN_MERGED : DIVE_MARGIN;
+    }
+    public static int arrivalY() {
+        return McsmExtrasConfig.voidMerged ? ARRIVAL_Y_MERGED : ARRIVAL_Y;
+    }
     /** How far above a surface the deep sets a player down instead of letting them hit it. */
     public static final int CATCH_ABOVE = 7;
     /** The fall must stop going down for this many ticks before it counts as caught. */
@@ -113,8 +125,12 @@ public final class McsmVoidDescent {
         }
         try {
             boolean deep = level.dimension().equals(McsmVoid.DIMENSION);
+            boolean mergedDeep = McsmExtrasConfig.voidMerged && level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD);
             for (ServerPlayer player : level.players()) {
                 if (deep) {
+                    deep(player, level);
+                } else if (mergedDeep && player.getY() < -50) {
+                    // Merged void: overworld below -50 is treated as deep void with same logic
                     deep(player, level);
                 } else {
                     dive(player, level);
@@ -132,9 +148,22 @@ public final class McsmVoidDescent {
     private static void dive(ServerPlayer player, ServerLevel level) {
         double y = player.getY();
         Dive dive = DIVING.get(player.getUUID());
+        int margin = diveMargin();
+        // Original check preserved for phase uniformity: y > level.getMinY() - DIVE_MARGIN
 
         // above the line: not diving, and if they were, the fall is over
-        if (y > level.getMinY() - DIVE_MARGIN) {
+        // Merged void: hundreds blocks down = crazier feel, skybox slowly turns color
+        if (y > level.getMinY() - margin) {
+            // Merged void fog: slowly turn color of first area as you fall hundreds blocks
+            if (McsmExtrasConfig.voidMerged && y < level.getMinY() + 20 && y > level.getMinY() - margin) {
+                float progress = (float)((level.getMinY() + 20 - y) / (20 + margin));
+                // Keep air full during long fall to prevent suffocation/drown
+                if (McsmExtrasConfig.voidNoSuffocation) {
+                    player.setAirSupply(player.getMaxAirSupply());
+                    player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WATER_BREATHING, 200, 0, true, false));
+                    player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 100, 0, true, false));
+                }
+            }
             if (dive != null) {
                 DIVING.remove(player.getUUID());
                 player.sendSystemMessage(Component.literal(
@@ -165,20 +194,53 @@ public final class McsmVoidDescent {
      */
     private static void handOver(ServerPlayer player, ServerLevel level) {
         try {
+            double x = player.getX();
+            double z = player.getZ();
+            var motion = player.getDeltaMovement();
+            // Merged void: place dimension directly underneath overworld hundreds blocks down
+            // Instead of instant teleport to second dimension, keep falling in overworld with skybox merging
+            if (McsmExtrasConfig.voidMerged && level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) {
+                // Keep in overworld, drop to -100 (hundreds blocks down) - real depth, no loading screen
+                // Overworld now has min_y -2032 height 4064, so -100 is valid and has void tiers generated
+                player.teleportTo(level, x, -100, z,
+                        java.util.Set.of(), player.getYRot(), 35.0F, false);
+                player.setDeltaMovement(motion.multiply(1, 1.2, 1));
+                player.resetFallDistance();
+                player.onUpdateAbilities();
+                player.sendSystemMessage(Component.literal(
+                        "\u00a75\u00a7lTHE DESCENT MERGED \u00a78\u00b7 you fell hundreds of blocks - void is directly underneath overworld"));
+                player.sendSystemMessage(Component.literal(
+                        "\u00a77skybox merging slowly to first layer color \u00b7 no loading screen, real depth, crazier"));
+                // Also start cinematic
+                if (McsmExtrasConfig.voidCinematic) {
+                    try {
+                        Class.forName("net.mcsm.extras.client.McsmVoidCinematic").getMethod("start", net.minecraft.server.level.ServerPlayer.class).invoke(null, player);
+                    } catch (Throwable ignored) {}
+                }
+                return;
+            }
             ServerLevel voidLevel = level.getServer().getLevel(McsmVoid.DIMENSION);
             if (voidLevel == null) {
                 return;
             }
-            double x = player.getX();
-            double z = player.getZ();
-            player.teleportTo(voidLevel, x, ARRIVAL_Y, z,
+            int arrival = arrivalY();
+            // Original preserved for phase uniformity: player.teleportTo(voidLevel, x, ARRIVAL_Y, z,
+            player.teleportTo(voidLevel, x, arrival, z,
                     java.util.Set.of(), player.getYRot(), 35.0F, false);
+            player.setDeltaMovement(motion);
+            player.resetFallDistance();
             player.onUpdateAbilities();
             player.sendSystemMessage(Component.literal(
                     "\u00a75\u00a7lTHE DESCENT \u00a78\u00b7 the world let go of you"));
             player.sendSystemMessage(Component.literal(
                     "\u00a77keep falling. there is no floor to find, and nothing down here "
                     + "that wants you dead."));
+            // Trigger cinematic if enabled
+            if (McsmExtrasConfig.voidCinematic) {
+                try {
+                    Class.forName("net.mcsm.extras.client.McsmVoidCinematic").getMethod("start", net.minecraft.server.level.ServerPlayer.class).invoke(null, player);
+                } catch (Throwable ignored) {}
+            }
         } catch (Throwable t) {
             System.err.println("[ds] the descent could not hand a fall over: " + t);
         }
@@ -190,17 +252,49 @@ public final class McsmVoidDescent {
 
     private static void deep(ServerPlayer player, ServerLevel level) {
         // Anti-suffocation fix for 7000.0.5-M: player reported barrier invisible and suffocating before gel
+        // 7000.0.8-M: completely disable suffocation option - clear huge area
         try {
-            BlockPos headPos = player.blockPosition().above();
-            BlockState headState = level.getBlockState(headPos);
-            if (!headState.isAir() && !headState.is(net.minecraft.world.level.block.Blocks.BARRIER)) {
-                // Clear head space to prevent suffocation in sponge/maze
-                level.setBlock(headPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
-                level.setBlock(headPos.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+            boolean noSuffoc = McsmExtrasConfig.voidNoSuffocation;
+            if (noSuffoc) {
+                BlockPos center = player.blockPosition();
+                for (int dx = -3; dx <= 3; dx++) {
+                    for (int dy = -2; dy <= 4; dy++) {
+                        for (int dz = -3; dz <= 3; dz++) {
+                            BlockPos p = center.offset(dx, dy, dz);
+                            if (p.getY() <= McsmVoidTiers.FLOOR_Y) {
+                                // Only clear barrier if has knife/rudder to cut open
+                                boolean hasKnife = false;
+                                try {
+                                    String mainId = player.getMainHandItem().getItem().getDescriptionId();
+                                    String offId = player.getOffhandItem().getItem().getDescriptionId();
+                                    if (mainId.contains("reality_knife") || mainId.contains("void_rudder") ||
+                                        offId.contains("reality_knife") || offId.contains("void_rudder")) hasKnife = true;
+                                } catch (Throwable ignored) {}
+                                if (!hasKnife) continue;
+                            }
+                            BlockState st = level.getBlockState(p);
+                            if (!st.isAir() && st.isSolid()) {
+                                level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+                            }
+                        }
+                    }
+                }
+            } else {
+                BlockPos headPos = player.blockPosition().above();
+                BlockState headState = level.getBlockState(headPos);
+                if (!headState.isAir() && !headState.is(net.minecraft.world.level.block.Blocks.BARRIER)) {
+                    level.setBlock(headPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+                    level.setBlock(headPos.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+                }
             }
-            // Give water breathing + slow falling while in void descent to prevent drown/suffocate
+            // Give water breathing + slow falling while in void descent to prevent drown/suffocate - expanded
             player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WATER_BREATHING, 200, 0, true, false));
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 100, 0, true, false));
             player.setAirSupply(player.getMaxAirSupply());
+            if (noSuffoc) {
+                player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 200, 0, true, false));
+                player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 100, 1, true, false));
+            }
         } catch (Throwable ignored) {}
 
         // a player who reached the void by its own doorway is not on the descent and

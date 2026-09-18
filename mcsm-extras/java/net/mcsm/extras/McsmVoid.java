@@ -123,6 +123,8 @@ public final class McsmVoid {
             ServerTickEvents.END_LEVEL_TICK.register((EndLevelTick) McsmVoid::tick);
             System.out.println("[ds] the void is listening (" + FRAME_BLOCK + " / " + DOOR_BLOCK
                     + " doors, shelves every " + REGION + " blocks)");
+            // 7000.0.8-M: completely disable suffocation guard
+            try { McsmVoidNoSuffocation.register(); } catch (Throwable ignored) {}
         } catch (Throwable t) {
             System.err.println("[ds] the void could not hook the level tick: " + t);
         }
@@ -130,7 +132,10 @@ public final class McsmVoid {
 
     public static void tick(ServerLevel level) {
         try {
-            if (!McsmExtrasConfig.voidReality || !level.dimension().equals(DIMENSION)) {
+            if (!McsmExtrasConfig.voidReality) return;
+            boolean isVoid = level.dimension().equals(DIMENSION);
+            boolean isOverworldMerged = McsmExtrasConfig.voidMerged && level.dimension().equals(Level.OVERWORLD);
+            if (!isVoid && !isOverworldMerged) {
                 return;
             }
             if (!QUEUE.full()) {
@@ -141,27 +146,52 @@ public final class McsmVoid {
             QUEUE.pump(level, OPS_PER_TICK, palette(), plan -> markBuilt(plan.key));
             for (ServerPlayer player : level.players()) {
                 // Anti-suffocation for 7000.0.5-M: ensure player head never inside solid void blocks
+                // 7000.0.8-M: completely disable suffocating option
                 try {
+                    boolean noSuffoc = McsmExtrasConfig.voidNoSuffocation;
                     BlockPos head = player.blockPosition().above(1);
-                    if (!level.getBlockState(head).isAir()) {
-                        // If head inside solid, clear 3x3 around and give air
-                        for (int dx = -1; dx <= 1; dx++) {
-                            for (int dy = 0; dy <= 2; dy++) {
-                                for (int dz = -1; dz <= 1; dz++) {
+                    int clearRadius = noSuffoc ? 3 : 1;
+                    int clearHeight = noSuffoc ? 4 : 2;
+                    // Always keep air full in void to prevent drown in gel - expanded for noSuffoc
+                    player.setAirSupply(player.getMaxAirSupply());
+                    if (noSuffoc) {
+                        // Give all breathing protections
+                        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WATER_BREATHING, 200, 0, true, false));
+                        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 200, 0, true, false));
+                        // Clear huge area around player to prevent any suffocation
+                        for (int dx = -clearRadius; dx <= clearRadius; dx++) {
+                            for (int dy = -1; dy <= clearHeight; dy++) {
+                                for (int dz = -clearRadius; dz <= clearRadius; dz++) {
                                     BlockPos p = head.offset(dx, dy, dz);
-                                    if (!level.getBlockState(p).isAir() && level.getBlockState(p).isSolid()) {
-                                        // Don't clear barrier floor
-                                        if (p.getY() > FLOOR_Y) {
-                                            level.setBlock(p, Blocks.AIR.defaultBlockState(), 2);
-                                        }
+                                    if (p.getY() <= FLOOR_Y && !hasRealityKnifeForClear(player)) {
+                                        continue; // Keep barrier unless has knife
+                                    }
+                                    BlockState st = level.getBlockState(p);
+                                    if (!st.isAir() && st.isSolid()) {
+                                        level.setBlock(p, Blocks.AIR.defaultBlockState(), 2);
                                     }
                                 }
                             }
                         }
-                        player.setAirSupply(player.getMaxAirSupply());
+                    } else {
+                        if (!level.getBlockState(head).isAir()) {
+                            // If head inside solid, clear 3x3 around and give air
+                            for (int dx = -1; dx <= 1; dx++) {
+                                for (int dy = 0; dy <= 2; dy++) {
+                                    for (int dz = -1; dz <= 1; dz++) {
+                                        BlockPos p = head.offset(dx, dy, dz);
+                                        if (!level.getBlockState(p).isAir() && level.getBlockState(p).isSolid()) {
+                                            // Don't clear barrier floor
+                                            if (p.getY() > FLOOR_Y) {
+                                                level.setBlock(p, Blocks.AIR.defaultBlockState(), 2);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            player.setAirSupply(player.getMaxAirSupply());
+                        }
                     }
-                    // Always keep air full in void to prevent drown in gel
-                    player.setAirSupply(player.getMaxAirSupply());
                 } catch (Throwable ignored) {}
                 catchFall(level, player);
                 // BUILD #483 -- the seam: the bottom of the world is a door, and the
@@ -487,6 +517,7 @@ public final class McsmVoid {
         // a region is SEVEN shelves in one plan, and one shelf can ask for ten thousand
         // blocks of its own: 26000 would have silently dropped the last four shelves
         McsmBuildQueue.Planner planner = new McsmBuildQueue.Planner(120000);
+        boolean merged = level.dimension().equals(Level.OVERWORLD) && McsmExtrasConfig.voidMerged;
         for (int i = 0; i < SHELVES_PER_REGION; i++) {
             long seed = mix(key * 0x9E3779B97F4A7C15L + i * 0x5DEECE66DL);
             int x = ox + (int) (Math.floorMod(seed, 2L * REGION) - REGION);
@@ -494,6 +525,10 @@ public final class McsmVoid {
             int z = oz + (int) (Math.floorMod(seed2, 2L * REGION) - REGION);
             long seed3 = mix(seed2 * 0x2545F491L);
             int y = 24 + (int) Math.floorMod(seed3, 220L);
+            if (merged) {
+                // Merged void: place shelves hundreds blocks down in overworld (-100 to -800) for real depth feel
+                y = -100 - (int) Math.floorMod(seed3, 700L) - i * 50;
+            }
             shelfInto(planner, key, x, y, z, false);
         }
         return planner.plan(key);
@@ -725,6 +760,21 @@ public final class McsmVoid {
     /** Called by the queue when a plan lands. */
     public static void markBuilt(long key) {
         BUILT.add(key);
+    }
+
+    private static boolean hasRealityKnifeForClear(ServerPlayer player) {
+        try {
+            String mainId = player.getMainHandItem().getItem().getDescriptionId();
+            String offId = player.getOffhandItem().getItem().getDescriptionId();
+            if (mainId.contains("reality_knife") || offId.contains("reality_knife")) return true;
+            if (mainId.contains("void_rudder") || offId.contains("void_rudder")) return true;
+            return player.getInventory().contains(stack -> {
+                try {
+                    String id = stack.getItem().getDescriptionId();
+                    return id.contains("reality_knife") || id.contains("void_rudder");
+                } catch (Throwable ignored) { return false; }
+            });
+        } catch (Throwable ignored) { return false; }
     }
 
     /** The doorway the portal builder raises for this dimension is the void's own. */
