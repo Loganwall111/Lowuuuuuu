@@ -20,32 +20,16 @@
       }
     },
     "minecraft:gameplay/bed_rule": {
-      "bed_rule": "always",
-      "message": {
-        "translate": "block.minecraft.bed.no_sleep"
-      }
+      "can_sleep": "always",
+      "can_set_spawn": "always"
     },
-    "minecraft:gameplay/nether_portal_spawns_piglin": {
-      "spawns_piglin": true
-    },
-    "minecraft:gameplay/respawn_anchor_works": {
-      "respawn_anchor_works": false
-    },
-    "minecraft:visual/ambient_light_color": {
-      "ambient_light_color": "#0a0a0a"
-    },
-    "minecraft:visual/cloud_color": {
-      "cloud_color": "#ccffffff"
-    },
-    "minecraft:visual/cloud_height": {
-      "cloud_height": 192.33
-    },
-    "minecraft:visual/fog_color": {
-      "fog_color": "#c0d8ff"
-    },
-    "minecraft:visual/sky_color": {
-      "sky_color": "#78a7ff"
-    }
+    "minecraft:gameplay/nether_portal_spawns_piglin": true,
+    "minecraft:gameplay/respawn_anchor_works": false,
+    "minecraft:visual/ambient_light_color": "#0a0a0a",
+    "minecraft:visual/cloud_color": "#ccffffff",
+    "minecraft:visual/cloud_height": 192.33,
+    "minecraft:visual/fog_color": "#c0d8ff",
+    "minecraft:visual/sky_color": "#78a7ff"
   },
   "coordinate_scale": 1.0,
   "default_clock": "minecraft:overworld",
