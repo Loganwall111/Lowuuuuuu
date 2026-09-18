@@ -1,0 +1,178 @@
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:17: error: constructor FurnitureType in enum FurnitureType cannot be applied to given types;
+        COMPUTER_90S("Computer 90s", Blocks.LOOM),
+                    ^
+  required: no arguments
+  found:    String,Block
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:18: error: constructor FurnitureType in enum FurnitureType cannot be applied to given types;
+        TERMINAL_90S("90s Terminal", Blocks.SMITHING_TABLE),
+                    ^
+  required: no arguments
+  found:    String,Block
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:19: error: constructor FurnitureType in enum FurnitureType cannot be applied to given types;
+        RADIO("Radio", Blocks.JUKEBOX),
+             ^
+  required: no arguments
+  found:    String,Block
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:20: error: constructor FurnitureType in enum FurnitureType cannot be applied to given types;
+        TV_90S("90s TV", Blocks.TARGET),
+              ^
+  required: no arguments
+  found:    String,Block
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:21: error: constructor FurnitureType in enum FurnitureType cannot be applied to given types;
+        COMPUTER_MODERN("Modern Computer", Blocks.BLAST_FURNACE),
+                       ^
+  required: no arguments
+  found:    String,Block
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:22: error: constructor FurnitureType in enum FurnitureType cannot be applied to given types;
+        SERVER_RACK("Server Rack", Blocks.IRON_BLOCK),
+                   ^
+  required: no arguments
+  found:    String,Block
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:23: error: constructor FurnitureType in enum FurnitureType cannot be applied to given types;
+        DESK("Desk", Blocks.OAK_PLANKS),
+            ^
+  required: no arguments
+  found:    String,Block
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:24: error: constructor FurnitureType in enum FurnitureType cannot be applied to given types;
+        CHAIR("Chair", Blocks.OAK_STAIRS),
+             ^
+  required: no arguments
+  found:    String,Block
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:25: error: cannot find symbol
+        FRIDGE("Fridge", Blocks.WHITE_CONCRETE),
+                               ^
+  symbol:   variable WHITE_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:26: error: constructor FurnitureType in enum FurnitureType cannot be applied to given types;
+        MICROWAVE("Microwave", Blocks.SMOKER)
+                 ^
+  required: no arguments
+  found:    String,Block
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:58: error: no suitable method found for playSound(<null>,BlockPos,Reference<SoundEvent>,SoundSource,float,float)
+                                        level.playSound(null, check, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_BIT, net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, 0.8f + (float)Math.random() * 0.4f);
+                                             ^
+    method Level.playSound(@org.jspecify.annotations.Nullable Entity,BlockPos,SoundEvent,SoundSource,float,float) is not applicable
+      (argument mismatch; Reference<SoundEvent> cannot be converted to SoundEvent)
+    method Level.playSound(@org.jspecify.annotations.Nullable Entity,double,double,double,SoundEvent,SoundSource) is not applicable
+      (argument mismatch; BlockPos cannot be converted to double)
+    method Level.playSound(@org.jspecify.annotations.Nullable Entity,Entity,SoundEvent,SoundSource,float,float) is not applicable
+      (argument mismatch; BlockPos cannot be converted to Entity)
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:60: error: no suitable method found for playSound(<null>,BlockPos,Reference<SoundEvent>,SoundSource,float,float)
+                                        level.playSound(null, check, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HARP, net.minecraft.sounds.SoundSource.BLOCKS, 0.3f, 1.2f);
+                                             ^
+    method Level.playSound(@org.jspecify.annotations.Nullable Entity,BlockPos,SoundEvent,SoundSource,float,float) is not applicable
+      (argument mismatch; Reference<SoundEvent> cannot be converted to SoundEvent)
+    method Level.playSound(@org.jspecify.annotations.Nullable Entity,double,double,double,SoundEvent,SoundSource) is not applicable
+      (argument mismatch; BlockPos cannot be converted to double)
+    method Level.playSound(@org.jspecify.annotations.Nullable Entity,Entity,SoundEvent,SoundSource,float,float) is not applicable
+      (argument mismatch; BlockPos cannot be converted to Entity)
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java:83: error: cannot find symbol
+                case FRIDGE -> level.setBlock(pos, Blocks.WHITE_CONCRETE.defaultBlockState(), 2);
+                                                         ^
+  symbol:   variable WHITE_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/client/McsmLaserBeamRenderer.java:54: error: random has protected access in Level
+                    double sx = cam.x + (Mth.nextFloat(mc.level.random, -1f, 1f)) * 400;
+                                                               ^
+mcsm-extras/java/net/mcsm/extras/client/McsmLaserBeamRenderer.java:55: error: random has protected access in Level
+                    double sz = cam.z + (Mth.nextFloat(mc.level.random, -1f, 1f)) * 400;
+                                                               ^
+mcsm-extras/java/net/mcsm/extras/client/McsmLaserBeamRenderer.java:56: error: random has protected access in Level
+                    double sy = cam.y + 150 + Mth.nextFloat(mc.level.random, 0f, 100f);
+                                                                    ^
+mcsm-extras/java/net/mcsm/extras/client/McsmLaserBeamRenderer.java:57: error: random has protected access in Level
+                    double ex = sx + (Mth.nextFloat(mc.level.random, -1f, 1f)) * 300;
+                                                            ^
+mcsm-extras/java/net/mcsm/extras/client/McsmLaserBeamRenderer.java:58: error: random has protected access in Level
+                    double ez = sz + (Mth.nextFloat(mc.level.random, -1f, 1f)) * 300;
+                                                            ^
+mcsm-extras/java/net/mcsm/extras/client/McsmLaserBeamRenderer.java:59: error: random has protected access in Level
+                    double ey = cam.y + 20 + Mth.nextFloat(mc.level.random, 0f, 50f);
+                                                                   ^
+mcsm-extras/java/net/mcsm/extras/McsmDinosaurs.java:80: error: items has private access in Inventory
+                for (ItemStack stack : player.getInventory().items) {
+                                                            ^
+mcsm-extras/java/net/mcsm/extras/McsmDinosaurs.java:129: error: cannot find symbol
+            entity.moveTo(px, py, pz, (float)(Math.random() * 360), 0);
+                  ^
+  symbol:   method moveTo(double,int,double,float,int)
+  location: variable entity of type Entity
+mcsm-extras/java/net/mcsm/extras/McsmDinosaurs.java:196: error: cannot find symbol
+                    var entity = entityType.create(level, EntitySpawnReason.EGG);
+                                                                           ^
+  symbol:   variable EGG
+  location: class EntitySpawnReason
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java:34: error: cannot find symbol
+                BlockPos spawn = new BlockPos(level.getSharedSpawnPos().getX(), level.getSharedSpawnPos().getY(), level.getSharedSpawnPos().getZ());
+                                                   ^
+  symbol:   method getSharedSpawnPos()
+  location: variable level of type ServerLevel
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java:34: error: cannot find symbol
+                BlockPos spawn = new BlockPos(level.getSharedSpawnPos().getX(), level.getSharedSpawnPos().getY(), level.getSharedSpawnPos().getZ());
+                                                                                     ^
+  symbol:   method getSharedSpawnPos()
+  location: variable level of type ServerLevel
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java:34: error: cannot find symbol
+                BlockPos spawn = new BlockPos(level.getSharedSpawnPos().getX(), level.getSharedSpawnPos().getY(), level.getSharedSpawnPos().getZ());
+                                                                                                                       ^
+  symbol:   method getSharedSpawnPos()
+  location: variable level of type ServerLevel
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java:123: error: cannot find symbol
+                                        level.setBlock(pos, Blocks.RED_CONCRETE.defaultBlockState(), 2);
+                                                                  ^
+  symbol:   variable RED_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java:125: error: cannot find symbol
+                                        level.setBlock(pos, Blocks.WHITE_CONCRETE.defaultBlockState(), 2);
+                                                                  ^
+  symbol:   variable WHITE_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java:129: error: cannot find symbol
+                                        level.setBlock(pos, Blocks.RED_CONCRETE.defaultBlockState(), 2);
+                                                                  ^
+  symbol:   variable RED_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java:131: error: cannot find symbol
+                                        level.setBlock(pos, Blocks.WHITE_CONCRETE.defaultBlockState(), 2);
+                                                                  ^
+  symbol:   variable WHITE_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java:163: error: no suitable method found for playSound(<null>,BlockPos,Reference<SoundEvent>,SoundSource,float,float)
+            level.playSound(null, base, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.BLOCKS, 2.0f, 0.5f);
+                 ^
+    method Level.playSound(@org.jspecify.annotations.Nullable Entity,BlockPos,SoundEvent,SoundSource,float,float) is not applicable
+      (argument mismatch; Reference<SoundEvent> cannot be converted to SoundEvent)
+    method Level.playSound(@org.jspecify.annotations.Nullable Entity,double,double,double,SoundEvent,SoundSource) is not applicable
+      (argument mismatch; BlockPos cannot be converted to double)
+    method Level.playSound(@org.jspecify.annotations.Nullable Entity,Entity,SoundEvent,SoundSource,float,float) is not applicable
+      (argument mismatch; BlockPos cannot be converted to Entity)
+mcsm-extras/java/net/mcsm/extras/McsmStormShips.java:76: error: cannot find symbol
+            entity.moveTo(px, py, pz, (float)(Math.random() * 360), 0);
+                  ^
+  symbol:   method moveTo(double,double,double,float,int)
+  location: variable entity of type Entity
+mcsm-extras/java/net/mcsm/extras/McsmRomanEmpire.java:120: error: cannot find symbol
+            entity.moveTo(px, py, pz, (float)(Math.random() * 360), 0);
+                  ^
+  symbol:   method moveTo(double,int,double,float,int)
+  location: variable entity of type Entity
+mcsm-extras/java/net/mcsm/extras/McsmRomanEmpire.java:176: error: cannot find symbol
+            entity.moveTo(px, py, pz, (float)(Math.random() * 360), 0);
+                  ^
+  symbol:   method moveTo(double,int,double,float,int)
+  location: variable entity of type Entity
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+33 errors
