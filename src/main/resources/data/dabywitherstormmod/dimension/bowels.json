@@ -3,7 +3,16 @@
   "generator": {
     "type": "minecraft:flat",
     "settings": {
-      "layers": [],
+      "layers": [
+        {
+          "block": "minecraft:bedrock",
+          "height": 1
+        },
+        {
+          "block": "minecraft:air",
+          "height": 383
+        }
+      ],
       "biome": "dabywitherstormmod:bowels",
       "lakes": false,
       "features": false,
