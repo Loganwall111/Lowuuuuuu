@@ -136,6 +136,9 @@ public final class McsmSiftClient {
     public static void tickClient() {
         McsmSiftSkyRenderer.INSTANCE.tick();
         SiftRiftRenderer.INSTANCE.tick();
+        FabricDistortionRenderer.INSTANCE.tick();
+        WorldReentryOverlay.INSTANCE.tick();
+        VoidEntryCinematic.INSTANCE.tick();
         // V2 - black hole backdrop growing bigger perspective
         try {
             net.mcsm.extras.client.McsmBlackHoleBackdrop.tick();
@@ -147,5 +150,40 @@ public final class McsmSiftClient {
             // V2 NEXT-GEN Phase 4 - time warp effect
             net.mcsm.extras.client.McsmTimeWarpEffect.tick();
         } catch (Throwable ignored) {}
+
+        // Auto-trigger cinematic when entering void from overworld - merged void
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) {
+                int y = (int) mc.player.getY();
+                if (y == net.mcsm.sift.McsmVoidTiers.FABRIC_BOTTOM - 1 || y == net.mcsm.sift.McsmVoidTiers.FABRIC_BOTTOM - 2) {
+                    if (!VoidEntryCinematic.INSTANCE.isActive()) {
+                        VoidEntryCinematic.INSTANCE.trigger();
+                        WorldReentryOverlay.INSTANCE.triggerBlackout(40);
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    public static void renderCinematic(net.minecraft.client.gui.GuiGraphics graphics, float partialTick) {
+        if (VoidEntryCinematic.INSTANCE.isActive()) {
+            var poseStack = graphics.pose();
+            poseStack.pushPose();
+            VoidEntryCinematic.INSTANCE.render(poseStack);
+            poseStack.popPose();
+        }
+        if (WorldReentryOverlay.INSTANCE.isInBlackout()) {
+            var poseStack = graphics.pose();
+            poseStack.pushPose();
+            WorldReentryOverlay.INSTANCE.render(poseStack);
+            poseStack.popPose();
+        }
+        if (FabricDistortionRenderer.INSTANCE.getGlobalWarp() > 0.01f) {
+            var poseStack = graphics.pose();
+            poseStack.pushPose();
+            FabricDistortionRenderer.INSTANCE.renderDistortionOverlay(poseStack, partialTick);
+            poseStack.popPose();
+        }
     }
 }

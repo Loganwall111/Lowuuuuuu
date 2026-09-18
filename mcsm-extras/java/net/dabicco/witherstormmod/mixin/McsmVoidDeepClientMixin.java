@@ -25,10 +25,6 @@ public abstract class McsmVoidDeepClientMixin {
             ClientTickEvents.END_CLIENT_TICK.register(client -> {
                 try {
                     McsmVoidDeep.tick();
-                    // BUILD #486 -- epic disintegration cinematic tick
-                    try {
-                        Class.forName("net.mcsm.extras.client.McsmVoidCinematic").getMethod("tick").invoke(null);
-                    } catch (Throwable ignore) {}
                     // BUILD #481 -- and the rudder: the tier's own current, the
                     // tool's multiplier, and the dive's trail. Reflective so jar compiles without V2 extras
                     // phase gate requires this exact string: net.mcsm.extras.client.McsmVoidRudder.tick();

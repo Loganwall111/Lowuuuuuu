@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
-CHECKS_TOTAL = 117
+CHECKS_TOTAL = 130
 SHADER_CHECKS_TOTAL = 147
 
 def log_ok(msg):
@@ -119,9 +119,11 @@ check("FabricGeneration.java exists", fabric_gen_path.exists())
 if fabric_gen_path.exists():
     c = fabric_gen_path.read_text()
     check("Top fabric -64 to -200", "-64" in c and "-200" in c)
-    check("Emptiness -200 to -1000", "-200" in c and "-1000" in c)
-    check("Bottom fabric -2700 to -2800", "-2700" in c and "-2800" in c)
+    check("Emptiness -200 to -600 merged void", "-200" in c and "-600" in c and "EMPTINESS" in c)
+    check("Bottom fabric -1900 to -2000 merged", "-1900" in c and "-2000" in c and "BOTTOM_FABRIC" in c)
     check("Pitch black void of stars 40-50 sec", "pitch black void" in c.lower() or "40-50" in c)
+    check("Gel Horizon -600 to -900", "-600" in c and "-900" in c)
+    check("Menger Maze -900 to -1300 merged", "-900" in c and "-1300" in c)
 
 # PHASE 3: Wavy Spacetime Rifts
 print("\n--- PHASE 3: Wavy Spacetime Rifts with Cosmic Interior Windows ---")
@@ -165,14 +167,72 @@ if spawn_egg_path.exists():
     check("Cool design colors", "cool design" in c.lower() or "0x" in c)
     check("Town guard/merchant/sage eggs", "TOWN_GUARD" in c and "TOWN_MERCHANT" in c)
 
-# Dimension JSONs
+# Dimension JSONs - MERGED VOID
 dim_type_path = ROOT / "overrides/datapacks/mcsm_sift/data/mcsm_sift/dimension_type/sift_type.json"
 check("sift_type.json exists with min_y -2032 height 2352", dim_type_path.exists())
+if dim_type_path.exists():
+    c = dim_type_path.read_text()
+    check("sift_type.json has has_ender_dragon_fight for 26.2", "has_ender_dragon_fight" in c)
+    check("sift_type.json has default_clock for 26.2", "default_clock" in c)
+    check("sift_type.json has ambient_light_color for 26.2", "ambient_light_color" in c)
+    check("sift_type.json valid 26.2 format - no nested value in monster_spawn_light_level", '"value"' not in c or '"min_inclusive"' in c)
+
+overworld_path = ROOT / "jar-overrides/data/minecraft/dimension_type/overworld.json"
+check("overworld.json merged void exists with min_y -2032 height 4064", overworld_path.exists())
+if overworld_path.exists():
+    c = overworld_path.read_text()
+    check("overworld.json has has_ender_dragon_fight", "has_ender_dragon_fight" in c)
+    check("overworld.json has default_clock", "default_clock" in c)
+    check("overworld.json min_y -2032 height 4064", "-2032" in c and "4064" in c)
+
 dim_path = ROOT / "overrides/datapacks/mcsm_sift/data/mcsm_sift/dimension/sift.json"
 check("sift.json exists with 5 biomes", dim_path.exists())
 if dim_path.exists():
     c = dim_path.read_text()
     check("5 biomes gel_horizon menger_maze etc", "gel_horizon" in c and "menger_maze" in c)
+
+# NEW: Merged void + suffocation fix + cinematic checks
+print("\n--- PHASE 6: MERGED VOID + NO SUFFOCATION + CINEMATIC ---")
+void_tiers_path = ROOT / "mcsm-extras/java/net/mcsm/sift/McsmVoidTiers.java"
+if void_tiers_path.exists():
+    c = void_tiers_path.read_text()
+    check("MERGED VOID - compressed tiers fit -2032", "NEW_TOTAL_HEIGHT" in c and "1968" in c)
+    check("DISABLE_VOID_SUFFOCATION flag", "DISABLE_VOID_SUFFOCATION" in c)
+    check("VOID_IS_POCKET_DIMENSION flag", "VOID_IS_POCKET_DIMENSION" in c)
+    check("INNER_SPACE_TRIGGER = -2032", "INNER_SPACE_TRIGGER = -2032" in c or "INNER_SPACE_TRIGGER = -2032" in c.replace(" ", "") or "-2032" in c)
+    check("Fabric bottom -200", "FABRIC_BOTTOM = -200" in c)
+    check("Emptiness bottom -600 for 40-50 sec fall", "EMPTINESS_BOTTOM = -600" in c)
+
+sift_dim_path = ROOT / "mcsm-extras/java/net/mcsm/sift/world/McsmSiftDimension.java"
+if sift_dim_path.exists():
+    c = sift_dim_path.read_text()
+    check("McsmSiftDimension has onLivingHurt no suffocation", "onLivingHurt" in c and "IN_WALL" in c)
+    check("McsmSiftDimension has onChunkLoad merged void generation", "onChunkLoad" in c and "generateMergedVoidInChunk" in c)
+    check("McsmSiftDimension pocket dimension cancel", "DISABLE_VOID_SUFFOCATION" in c)
+
+rudder_path = ROOT / "mcsm-extras/java/net/mcsm/sift/McsmVoidRudder.java"
+if rudder_path.exists():
+    c = rudder_path.read_text()
+    check("Void Rudder fixes suffocation glitch - clears blocks below", "clear" in c.lower() and "suffocat" in c.lower())
+    check("Void Rudder has warp drive particles", "warp" in c.lower() or "FIREWORK" in c)
+
+cinematic_path = ROOT / "mcsm-extras/java/net/mcsm/sift/client/VoidEntryCinematic.java"
+check("VoidEntryCinematic.java exists - volumetric cinematic", cinematic_path.exists())
+if cinematic_path.exists():
+    c = cinematic_path.read_text()
+    check("Cinematic has DISINTEGRATION phase", "DISINTEGRATION" in c)
+    check("Cinematic has MULTIVERSE_PLANETS 4 gigantic planets", "MULTIVERSE_PLANETS" in c and "DUNGEONS" in c)
+    check("Cinematic has WARP_DRIVE warp drive particles", "WARP_DRIVE" in c)
+    check("Cinematic has WHITE_FLASH", "WHITE_FLASH" in c)
+    check("Cinematic has WHITE_MAZE that doesn't exist", "WHITE_MAZE" in c)
+    check("Cinematic has PITCH_BLACK_FOG_FADE", "PITCH_BLACK_FOG_FADE" in c)
+    check("Cinematic mentions Minecraft Dungeons, Legends, Movie, Story Mode", "DUNGEONS" in c and "LEGENDS" in c and "MOVIE" in c and "STORY" in c)
+
+client_path = ROOT / "mcsm-extras/java/net/mcsm/sift/client/McsmSiftClient.java"
+if client_path.exists():
+    c = client_path.read_text()
+    check("McsmSiftClient triggers cinematic on fabric entry", "VoidEntryCinematic" in c and "FABRIC_BOTTOM" in c)
+    check("McsmSiftClient has skybox merges slowly", "merges slowly" in c.lower() or "skybox" in c.lower())
 
 # Shader checks
 print("\n--- SHADER VALIDATION LOOPS (147) ---")

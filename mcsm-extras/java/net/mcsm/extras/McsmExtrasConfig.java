@@ -13,7 +13,7 @@ import java.util.Properties;
  * animation controller, nightglow halo expansion, and sci-fi UI parameters.
  */
 public final class McsmExtrasConfig {
-    public static final String BUILD_VERSION = "7000.0.10-M";
+    public static final String BUILD_VERSION = "7000.0.11-M";
 
     // ---- Core Gameplay & Storm Mechanics -----------------------------------
     public static boolean enableTentacleGrab = true;
@@ -224,23 +224,6 @@ public final class McsmExtrasConfig {
      * pass is not the same place. Off = the fall ends on the floor, as it did.
      */
     public static boolean voidLoop = true;
-    /**
-     * BUILD #484 -- completely disable suffocating in void entirely.
-     * User request: make an option to completely disable suffocating in void.
-     * True = no IN_WALL damage, no drowning, air always full, blocks cleared around player.
-     */
-    public static boolean voidNoSuffocation = true;
-    /**
-     * BUILD #485 -- merged void: place dimension directly underneath overworld hundreds blocks down.
-     * Instead of instant teleport to second dimension, fall hundreds blocks and skybox slowly turns color.
-     */
-    public static boolean voidMerged = true;
-    /**
-     * BUILD #486 -- epic disintegration cinematic when jumping into void.
-     * Acid/desaturation to black, volumetric disintegration, 4 planets (Dungeons, Legends, Minecraft 2, Movie + Story Mode),
-     * warp drive, white maze, glitch, fog fade to first layer.
-     */
-    public static boolean voidCinematic = true;
     /** BUILD #451 -- walk-in portals, one per dimension. */
     public static boolean portals = true;
     /** BUILD #448 -- each district carries its own fog and sky. */
@@ -580,9 +563,6 @@ public final class McsmExtrasConfig {
             p.setProperty("void_descent", String.valueOf(voidDescent));
             p.setProperty("void_sponge", String.valueOf(voidSponge));
             p.setProperty("void_loop", String.valueOf(voidLoop));
-            p.setProperty("void_no_suffocation", String.valueOf(voidNoSuffocation));
-            p.setProperty("void_merged", String.valueOf(voidMerged));
-            p.setProperty("void_cinematic", String.valueOf(voidCinematic));
             p.setProperty("npc_dialogue", String.valueOf(npcDialogue));
             p.setProperty("decayed_reality", String.valueOf(decayedReality));
             p.setProperty("abandoned_cities", String.valueOf(abandonedCities));
@@ -757,9 +737,6 @@ public final class McsmExtrasConfig {
             voidDescent = bool(p, "void_descent", voidDescent);
             voidSponge = bool(p, "void_sponge", voidSponge);
             voidLoop = bool(p, "void_loop", voidLoop);
-            voidNoSuffocation = bool(p, "void_no_suffocation", voidNoSuffocation);
-            voidMerged = bool(p, "void_merged", voidMerged);
-            voidCinematic = bool(p, "void_cinematic", voidCinematic);
             npcDialogue = bool(p, "npc_dialogue", npcDialogue);
             portals = bool(p, "portals", portals);
             voidLight = bool(p, "void_light", voidLight);
@@ -872,7 +849,7 @@ public final class McsmExtrasConfig {
         try { return Double.parseDouble(p.getProperty(k).trim()); } catch (Throwable t) { return d; }
     }
 
-    // ---- re-added on migration from the 7000.0.7-M lineage -----------------
+    // ---- re-added on migration from the 7000.0.11-M lineage -----------------
     // Their config file is the superset (the 1.9.19x option set: cinematic UI,
     // skybox, glare backdrop, nightglow, animation controller, colour
     // overrides). These eight belong to our lineage's own code and were

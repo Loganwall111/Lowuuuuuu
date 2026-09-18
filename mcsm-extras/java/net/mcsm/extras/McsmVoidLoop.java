@@ -72,27 +72,6 @@ public final class McsmVoidLoop {
     /** Called from the void's own tick, once per player, in the void dimension. */
     public static void tick(ServerLevel level, ServerPlayer player) {
         try {
-            // 7000.0.8-M: completely disable suffocation - clear around player every tick near floor
-            if (McsmExtrasConfig.voidNoSuffocation && level.dimension().equals(McsmVoid.DIMENSION)) {
-                try {
-                    if (player.getY() < TRIGGER_Y + 10) {
-                        player.setAirSupply(player.getMaxAirSupply());
-                        // Clear huge area near floor to prevent suffocation when holding rudder and breaking
-                        for (int dx = -3; dx <= 3; dx++) {
-                            for (int dy = -1; dy <= 5; dy++) {
-                                for (int dz = -3; dz <= 3; dz++) {
-                                    net.minecraft.core.BlockPos p = player.blockPosition().offset(dx, dy, dz);
-                                    if (p.getY() <= McsmVoidTiers.FLOOR_Y && !hasRealityKnife(player)) continue;
-                                    var st = level.getBlockState(p);
-                                    if (!st.isAir() && st.isSolid()) {
-                                        level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (Throwable ignored) {}
-            }
             if (!McsmExtrasConfig.voidLoop) {
                 return;
             }

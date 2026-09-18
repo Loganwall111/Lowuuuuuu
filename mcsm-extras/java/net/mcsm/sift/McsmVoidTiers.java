@@ -36,31 +36,39 @@ public final class McsmVoidTiers {
     public static final int ABSOLUTE_FLOOR = -2032;
     public static final int TOTAL_HEIGHT = TOP_BOUNDARY - ABSOLUTE_FLOOR;
 
-    // NEW EXPANDED TIERS - Fabric of Reality flow
+    // NEW EXPANDED TIERS - Fabric of Reality flow - MERGED VOID directly under overworld
+    // Overworld min_y -2032 height 4064 => max build 2031, lowest possible -2032
+    // Compressed to fit within -2032 to -64 = 1968 blocks for continuous fall without teleport
     public static final int OVERWORLD_BOTTOM = -64;
     public static final int FABRIC_TOP = -64;
-    public static final int FABRIC_BOTTOM = -200;
+    public static final int FABRIC_BOTTOM = -200; // 136 blocks thick - infinite gigantic ground
     public static final int EMPTINESS_TOP = -200;
-    public static final int EMPTINESS_BOTTOM = -1000; // 40-50 sec fall - fireworks, pitch black void of stars
-    public static final int TIER_1_GEL_HORIZON_TOP = -1000;
-    public static final int TIER_1_GEL_HORIZON_BOTTOM = -1450;
-    public static final int TIER_2_SPONGE_MAZE_TOP = -1450;
-    public static final int TIER_2_SPONGE_MAZE_BOTTOM = -1950;
-    public static final int TIER_2_PHYSICAL_MAZE_START = -1600;
-    public static final int TIER_2_PHYSICAL_MAZE_END = -1950;
-    public static final int TIER_3_RIFT_FIELD_TOP = -1950;
-    public static final int TIER_3_RIFT_FIELD_BOTTOM = -2200;
-    public static final int TIER_4_DISPLACEMENT_TOP = -2200;
-    public static final int TIER_4_DISPLACEMENT_BOTTOM = -2450;
-    public static final int TIER_5_GEL_VOID_TOP = -2450;
-    public static final int TIER_5_GEL_VOID_BOTTOM = -2700;
-    public static final int BOTTOM_FABRIC_TOP = -2700;
-    public static final int BOTTOM_FABRIC_BOTTOM = -2800;
-    public static final int UNKNOWN_TOP = -2800;
-    public static final int UNKNOWN_BOTTOM = -3200;
-    public static final int INNER_SPACE_TRIGGER = -3200;
+    public static final int EMPTINESS_BOTTOM = -600; // 400 blocks - 40-50 sec fall with slowfall + fireworks (was -1000)
+    public static final int TIER_1_GEL_HORIZON_TOP = -600;
+    public static final int TIER_1_GEL_HORIZON_BOTTOM = -900; // 300 blocks - liquid where floats, god rays appear
+    public static final int TIER_2_SPONGE_MAZE_TOP = -900;
+    public static final int TIER_2_SPONGE_MAZE_BOTTOM = -1300; // 400 blocks - orange-to-pink + starry sponge
+    public static final int TIER_2_PHYSICAL_MAZE_START = -1000;
+    public static final int TIER_2_PHYSICAL_MAZE_END = -1300;
+    public static final int TIER_3_RIFT_FIELD_TOP = -1300;
+    public static final int TIER_3_RIFT_FIELD_BOTTOM = -1500; // 200 blocks - reality rifts
+    public static final int TIER_4_DISPLACEMENT_TOP = -1500;
+    public static final int TIER_4_DISPLACEMENT_BOTTOM = -1700; // 200 blocks - rainbow bands
+    public static final int TIER_5_GEL_VOID_TOP = -1700;
+    public static final int TIER_5_GEL_VOID_BOTTOM = -1900; // 200 blocks - rainbow water pools
+    public static final int BOTTOM_FABRIC_TOP = -1900;
+    public static final int BOTTOM_FABRIC_BOTTOM = -2000; // 100 blocks - second purple pink brown rainbow layer
+    public static final int UNKNOWN_TOP = -2000;
+    public static final int UNKNOWN_BOTTOM = -2032; // 32 blocks - bouncy distortion, then Inner Space return
+    public static final int INNER_SPACE_TRIGGER = -2032; // at absolute bottom, triggers return to overworld sky
 
-    public static final int NEW_TOTAL_HEIGHT = FABRIC_TOP - UNKNOWN_BOTTOM; // ~3136 blocks for 40-50 sec fall
+    public static final int NEW_TOTAL_HEIGHT = FABRIC_TOP - UNKNOWN_BOTTOM; // 1968 blocks continuous
+
+    // Pocket dimension flag - completely disable suffocating in void entirely
+    public static final boolean DISABLE_VOID_SUFFOCATION = true;
+    public static final boolean DISABLE_VOID_DROWN = true;
+    public static final boolean DISABLE_VOID_FALL_DAMAGE = true;
+    public static final boolean VOID_IS_POCKET_DIMENSION = true; // no suffocation, no drown, void is pocket dimension
 
     public enum Tier {
         OVERWORLD(320, 1000, "overworld"),

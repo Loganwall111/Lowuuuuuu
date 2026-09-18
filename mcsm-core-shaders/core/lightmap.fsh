@@ -1,86 +1,100 @@
-#version 330
+#version 150
 
-// MCSM_visuals lightmap override + Sift Cosmos V2 - colored lighting reflections, direct shinger, fabric cosmic purple, 40-50 sec fireworks
-// Colored lighting reflections for Sift dimension - rainbow water, god rays
-// Direct shinger - reflections and direct lighting for iridescent gel
-// Fabric cosmic purple - pitch black with stars, cosmic purple cracks glowing
-// 40-50 sec fireworks - emptiness fall with fireworks particles
+// lightmap.fsh - Colored lighting, reflections, direct shinger
+// Build #482 + Fabric expansion - shader that changes lighting reflections coloured lighting etc
+// Direct shinger - makes game lighting reflect colors from Sift tiers
 
-// MCSM_visuals lightmap override. In 26.2 this program BAKES the 16x16
-// lightmap texture on the GPU from the LightmapInfo UBO alone (no sampler);
-// terrain then samples the result. So the override keeps vanilla's exact
-// contract (same UBO instance, texCoord mapping, notGamma/parabolic maths)
-// and changes one thing only: the SKY channel gets the Story Mode time-of-day
-// cast - cool blue at night, warm at dusk/dawn - mixed by SkyFactor. Block
-// light is untouched, so torches stay vanilla. Under Sodium this program is
-// not used; no crash, just vanilla light.
+#moj_import <mcsm_visuals.glsl>
 
-layout(std140) uniform LightmapInfo {
-    float SkyFactor;
-    float BlockFactor;
-    float NightVisionFactor;
-    float DarknessScale;
-    float BossOverlayWorldDarkeningFactor;
-    float BrightnessFactor;
-    vec3 BlockLightTint;
-    vec3 SkyLightColor;
-    vec3 AmbientColor;
-    vec3 NightVisionColor;
-} lightmapInfo;
+uniform sampler2D Sampler0;
+uniform float GameTime;
+uniform vec3 PlayerPos;
+uniform float IsInSift;
+uniform float DepthFactor;
+uniform int Tier;
 
 in vec2 texCoord;
-
 out vec4 fragColor;
 
-float get_brightness(float level) {
-    return level / (4.0 - 3.0 * level);
-}
-
-vec3 notGamma(vec3 color) {
-    float maxComponent = max(max(color.x, color.y), color.z);
-    float maxInverted = 1.0f - maxComponent;
-    float maxScaled = 1.0f - maxInverted * maxInverted * maxInverted * maxInverted;
-    return color * (maxScaled / maxComponent);
-}
-
-float parabolicMixFactor(float level) {
-    return (2.0 * level - 1.0) * (2.0 * level - 1.0);
-}
-
-const vec3 LIGHT_DAY   = vec3(1.000, 0.980, 1.000);
-const vec3 LIGHT_NIGHT = vec3(0.420, 0.550, 1.000);   // deep blue nights
-const vec3 LIGHT_DUSK  = vec3(1.000, 0.720, 0.500);   // warm dusk/dawn cast
-
 void main() {
-    float block_level = floor(texCoord.x * 16.0) / 15.0;
-    float sky_level = floor(texCoord.y * 16.0) / 15.0;
-
-    float block_brightness = get_brightness(block_level) * lightmapInfo.BlockFactor;
-    float sky_brightness = get_brightness(sky_level) * lightmapInfo.SkyFactor;
-
-    vec3 nightVisionColor = lightmapInfo.NightVisionColor * lightmapInfo.NightVisionFactor;
-    vec3 color = max(lightmapInfo.AmbientColor, nightVisionColor);
-
-    // Add sky light - MCSM: Story tint rides the sky channel only.
-    float sf = clamp(lightmapInfo.SkyFactor, 0.0, 1.0);
-    float duskW = pow(1.0 - abs(2.0 * sf - 1.0), 1.4) * 1.0;
-    vec3 skyTint = mix(mix(LIGHT_NIGHT, LIGHT_DAY, sf), LIGHT_DUSK, duskW);
-    color += lightmapInfo.SkyLightColor * sky_brightness * skyTint;
-
-    // Add block light (vanilla, untouched)
-    vec3 BlockLightColor = mix(lightmapInfo.BlockLightTint, vec3(1.0), 0.9 * parabolicMixFactor(block_level));
-    color += BlockLightColor * block_brightness;
-
-    // Apply boss overlay darkening effect
-    color = mix(color, color * vec3(0.7, 0.6, 0.6), lightmapInfo.BossOverlayWorldDarkeningFactor);
-
-    // Apply darkness effect scale
-    color = color - vec3(lightmapInfo.DarknessScale);
-
-    // Apply brightness
-    color = clamp(color, 0.0, 1.0);
-    vec3 linearColor = notGamma(color);
-    color = mix(color, linearColor, lightmapInfo.BrightnessFactor);
-
-    fragColor = vec4(color, 1.0);
+    vec4 lightmap = texture(Sampler0, texCoord);
+    
+    if (IsInSift < 0.5) {
+        fragColor = lightmap;
+        return;
+    }
+    
+    float y = PlayerPos.y;
+    vec3 coloredLight = lightmap.rgb;
+    
+    // Tier-based colored lighting - reflections
+    if (y >= -200.0 && y <= -64.0) {
+        // Fabric of Reality - cosmic purple with star reflections
+        vec3 fabricColor = vec3(0.4, 0.2, 0.8); // cosmic purple
+        float starPulse = sin(GameTime * 0.02 + texCoord.x * 10.0) * 0.5 + 0.5;
+        coloredLight = mix(coloredLight, fabricColor, 0.3 + starPulse * 0.1);
+        // Direct shinger - reflections
+        coloredLight += fabricColor * 0.2 * starPulse;
+    } else if (y >= -1000.0 && y < -200.0) {
+        // Emptiness - pitch black void of stars - dim lighting with star sparkles
+        vec3 voidColor = vec3(0.05, 0.05, 0.15);
+        coloredLight = mix(coloredLight, voidColor, 0.7);
+        // Fireworks reflections during 40-50 sec fall
+        float firework = pow(sin(GameTime * 0.05 + texCoord.x * 5.0), 20.0) * 0.5;
+        coloredLight += vec3(1.0, 0.8, 0.4) * firework;
+    } else if (y >= -1450.0 && y < -1000.0) {
+        // Tier 1 Gel Horizon - cyan god rays, colored lighting
+        vec3 gelColor = vec3(0.3, 0.8, 1.0);
+        coloredLight = mix(coloredLight, gelColor, 0.2);
+        // God rays reflection
+        float godRay = pow(max(dot(normalize(vec3(texCoord - 0.5, 1.0)), normalize(vec3(0.2, 1.0, 0.1))), 0.0), 4.0);
+        coloredLight += gelColor * godRay * 0.4;
+    } else if (y >= -1950.0 && y < -1450.0) {
+        // Tier 2 Menger Maze - orange to pink emissive
+        float depth = clamp((-1450.0 - y) / 500.0, 0.0, 1.0);
+        vec3 orange = vec3(1.0, 0.5, 0.1);
+        vec3 pink = vec3(1.0, 0.4, 0.7);
+        vec3 mazeColor = mix(orange, pink, depth);
+        coloredLight = mix(coloredLight, mazeColor, 0.35);
+        // Emissive reflections
+        coloredLight += mazeColor * 0.3;
+    } else if (y >= -2200.0 && y < -1950.0) {
+        // Tier 3 Rift Field - neon purple, magenta rim reflections
+        vec3 riftColor = mix(vec3(0.8, 0.2, 1.0), vec3(1.0, 0.2, 0.6), sin(GameTime * 0.01) * 0.5 + 0.5);
+        coloredLight = mix(coloredLight, riftColor, 0.25);
+        coloredLight += riftColor * 0.25;
+    } else if (y >= -2450.0 && y < -2200.0) {
+        // Tier 4 Displacement - rainbow bands, colored lighting shifts
+        float hue = fract(GameTime * 0.005 + texCoord.x * 0.2);
+        vec3 rainbow = hsv2rgb(vec3(hue, 0.7, 1.0));
+        coloredLight = mix(coloredLight, rainbow, 0.2);
+        coloredLight += rainbow * 0.15;
+    } else if (y >= -2800.0 && y < -2450.0) {
+        // Tier 5 Iridescent Gel - teal, amethyst, magenta reflections
+        float hue = fract(atan(texCoord.x - 0.5, texCoord.y - 0.5) / 6.2831 + GameTime * 0.002);
+        vec3 irid = hsv2rgb(vec3(hue, 0.8, 1.0));
+        vec3 teal = vec3(0.15, 1.0, 0.85);
+        vec3 amethyst = vec3(0.55, 0.25, 1.0);
+        vec3 magenta = vec3(1.0, 0.15, 0.65);
+        vec3 gel = mix(mix(teal, amethyst, sin(GameTime * 0.01) * 0.5 + 0.5), magenta, cos(GameTime * 0.008) * 0.5 + 0.5);
+        gel = mix(gel, irid, 0.4);
+        coloredLight = mix(coloredLight, gel, 0.4);
+        // Full-bright reflections - glowing water pools
+        coloredLight += gel * 0.4;
+    } else if (y < -2800.0) {
+        // Unknown dimension - bouncy, distortion, ground decay effect
+        vec3 unknownColor = vec3(0.2, 0.1, 0.3) + vec3(0.3, 0.2, 0.5) * sin(GameTime * 0.02 + texCoord.x * 3.0);
+        coloredLight = mix(coloredLight, unknownColor, 0.5);
+    }
+    
+    // Global direct shinger - makes lighting reflect and shimmer
+    float shimmer = sin(GameTime * 0.03 + texCoord.x * 8.0 + texCoord.y * 6.0) * 0.05 + 0.95;
+    coloredLight *= shimmer;
+    
+    // Add subtle vignette for Pixar-VFX triple-A feel
+    vec2 vig = texCoord * 2.0 - 1.0;
+    float vignette = 1.0 - dot(vig, vig) * 0.1;
+    coloredLight *= vignette;
+    
+    fragColor = vec4(coloredLight, lightmap.a);
 }

@@ -86,36 +86,12 @@ public final class McsmVoidSponge {
             if (!McsmExtrasConfig.voidSponge) {
                 return;
             }
-            // Merged void: also work in overworld when below -5 (hundreds blocks down real depth)
-            boolean isVoid = level.dimension().equals(McsmVoid.DIMENSION);
-            boolean isOverworldMerged = McsmExtrasConfig.voidMerged && level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD);
-            if (!isVoid && !isOverworldMerged) {
-                // Check if in void via McsmVoid tick's merged handling
-                if (!McsmExtrasConfig.voidMerged) {
-                    pump(level);
-                    return;
-                }
-            }
             double y = player.getY();
             // the band, plus the window: the approach above it and the leaving below - now 15 tethered layers from -5 to -42
-            // For merged overworld, band is -5..-42 still valid (hundreds blocks down from surface, but above -2032)
-            // For void dimension, same band
-            if (isOverworldMerged) {
-                // Overworld merged: band -5..-42 is hundreds blocks down from surface (64 -> -5 = 69 blocks, but with -2032 min_y, it's still reachable)
-                // Actually for merged we want band at -100..-400 to be hundreds down, but keep -5..-42 for compatibility
-                if (y > 10 + RISE + 8 || y < -100 - DROP - 8) {
-                    // Allow wider range for overworld merged
-                    if (y > 20 + RISE + 8 || y < -500 - DROP - 8) {
-                        pump(level);
-                        return;
-                    }
-                }
-            } else {
-                if (y > McsmVoidTiers.LUMINOUS_FLOOR + RISE + 8
-                        || y < McsmVoidTiers.SPONGE_15_FLOOR - DROP - 8) {
-                    pump(level);
-                    return;
-                }
+            if (y > McsmVoidTiers.LUMINOUS_FLOOR + RISE + 8
+                    || y < McsmVoidTiers.SPONGE_15_FLOOR - DROP - 8) {
+                pump(level);
+                return;
             }
             fill(level, player);
             pump(level);
@@ -249,15 +225,9 @@ public final class McsmVoidSponge {
                     if (dx * dx + dz * dz > r2) {
                         continue;
                     }
-                    // Fix suffocation glitch - don't generate solid blocks within 5 blocks of player - 7000.0.8-M completely disable
-                    if (McsmExtrasConfig.voidNoSuffocation) {
-                        if (dx * dx + dy * dy + dz * dz < 25) {
-                            continue;
-                        }
-                    } else {
-                        if (dx * dx + dy * dy + dz * dz < 9) {
-                            continue;
-                        }
+                    // Fix suffocation glitch - don't generate solid blocks within 3 blocks of player
+                    if (dx * dx + dy * dy + dz * dz < 9) {
+                        continue;
                     }
                     int x = px + dx;
                     int z = pz + dz;
