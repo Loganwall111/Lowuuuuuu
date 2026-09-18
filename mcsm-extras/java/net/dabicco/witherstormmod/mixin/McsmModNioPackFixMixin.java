@@ -24,8 +24,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(targets = "net.fabricmc.fabric.impl.resource.pack.ModNioPackResources", remap = false)
 public abstract class McsmModNioPackFixMixin {
 
+    @SuppressWarnings({"rawtypes","unchecked"})
     @Inject(method = "getMetadataSection", at = @At("HEAD"), cancellable = true, remap = false)
-    private void mcsm$fixLfsMetadata(Object type, CallbackInfoReturnable<?> cir) {
+    private void mcsm$fixLfsMetadata(Object type, CallbackInfoReturnable cir) {
         try {
             // Try to detect LFS pointer content early via the file system.
             // We can't easily access the file here without reflection, so we rely on
@@ -35,12 +36,13 @@ public abstract class McsmModNioPackFixMixin {
             // This HEAD injection is a placeholder for future filtering.
         } catch (Throwable t) {
             System.out.println("[MCSM] ModNioPackFix: suppressed LFS metadata read: " + t.getMessage());
-            cir.setReturnValue((Object) java.util.Optional.empty());
+            cir.setReturnValue(java.util.Optional.empty());
         }
     }
 
+    @SuppressWarnings({"rawtypes","unchecked"})
     @Inject(method = "getMetadataSection", at = @At("RETURN"), cancellable = true, remap = false)
-    private void mcsm$fixLfsMetadataReturn(Object type, CallbackInfoReturnable<?> cir) {
+    private void mcsm$fixLfsMetadataReturn(Object type, CallbackInfoReturnable cir) {
         try {
             Object ret = cir.getReturnValue();
             // If return is null or empty, Fabric will try fallback; we keep it
@@ -48,7 +50,7 @@ public abstract class McsmModNioPackFixMixin {
             // So nothing to do here, but we keep hook for logging
         } catch (Throwable t) {
             System.out.println("[MCSM] ModNioPackFix RETURN suppressed: " + t.getMessage());
-            cir.setReturnValue((Object) java.util.Optional.empty());
+            cir.setReturnValue(java.util.Optional.empty());
         }
     }
 }
