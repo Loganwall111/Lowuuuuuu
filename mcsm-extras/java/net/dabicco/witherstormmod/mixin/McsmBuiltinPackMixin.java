@@ -129,5 +129,17 @@ public abstract class McsmBuiltinPackMixin {
         try { net.mcsm.extras.McsmMegaCities.boot(); } catch (Throwable t) { System.out.println("[ds] MegaCities boot failed: " + t.getMessage()); }
         // V2 NEXT-GEN Phase 4 - Time Machine: time travel era, physical elevator building, warp effect
         try { net.mcsm.extras.McsmTimeMachine.boot(); } catch (Throwable t) { System.out.println("[ds] TimeMachine boot failed: " + t.getMessage()); }
+        // V2 NEXT-GEN Phase 5 - Storm Ships: towering drivable ships to atmosphere
+        try { net.mcsm.extras.McsmStormShips.boot(); } catch (Throwable t) { System.out.println("[ds] StormShips boot failed: " + t.getMessage()); }
+        // V2 NEXT-GEN Phase 5 - Rockets: gigantic rockets to other planets
+        try { net.mcsm.extras.McsmRockets.boot(); } catch (Throwable t) { System.out.println("[ds] Rockets boot failed: " + t.getMessage()); }
+        // V2 NEXT-GEN Phase 5 - Laserbeams: shooting stars with laserbeam VFX
+        try { net.mcsm.extras.McsmLaserBeams.boot(); } catch (Throwable t) { System.out.println("[ds] LaserBeams boot failed: " + t.getMessage()); }
+        // V2 NEXT-GEN Phase 5 - Tech Furniture: computers/90s terminals/radios
+        try { net.mcsm.extras.McsmTechFurniture.boot(); } catch (Throwable t) { System.out.println("[ds] TechFurniture boot failed: " + t.getMessage()); }
+        // V2 NEXT-GEN Phase 5 - Dinosaurs: spawn eggs, real models
+        try { net.mcsm.extras.McsmDinosaurs.boot(); } catch (Throwable t) { System.out.println("[ds] Dinosaurs boot failed: " + t.getMessage()); }
+        // V2 NEXT-GEN Phase 5 - Roman Empire: kings knights medieval only during time travel
+        try { net.mcsm.extras.McsmRomanEmpire.boot(); } catch (Throwable t) { System.out.println("[ds] RomanEmpire boot failed: " + t.getMessage()); }
     }
 }
