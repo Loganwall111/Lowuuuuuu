@@ -34,6 +34,14 @@ public abstract class McsmVoidDeepClientMixin {
                             net.mcsm.extras.client.McsmNinthLayerGeometry.tick();
                         } catch (Throwable ignore2) {}
                     }
+                    // BUILD #487 -- extreme Creator skybox tick – moves around skybox in all dimensions
+                    try {
+                        Class.forName("net.mcsm.extras.client.McsmCreatorSkybox").getMethod("tick").invoke(null);
+                    } catch (Throwable ignore) {
+                        try {
+                            net.mcsm.extras.client.McsmCreatorSkybox.tick();
+                        } catch (Throwable ignore2) {}
+                    }
                     // BUILD #481 -- and the rudder: the tier's own current, the
                     // tool's multiplier, and the dive's trail. Reflective so jar compiles without V2 extras
                     // phase gate requires this exact string: net.mcsm.extras.client.McsmVoidRudder.tick();

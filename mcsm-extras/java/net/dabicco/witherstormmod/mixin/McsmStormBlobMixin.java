@@ -90,6 +90,10 @@ public abstract class McsmStormBlobMixin {
             // Photorealistic 3D geometry spire & castle mesh, gothic hanging fortresses,
             // jagged mountain ridges, colossal Creator mesh - true 3D scene-graph VertexBuffer
             net.mcsm.extras.client.McsmNinthLayerGeometry.submit(ctx);
+            // BUILD #487 -- extreme Creator skybox – Creator moves around skybox in ALL dimensions,
+            // built-in garden visible as part of skybox, entire Minecraft world on its body,
+            // world pushed up, you see you're on its body when flying extremely high, watching
+            net.mcsm.extras.client.McsmCreatorSkybox.submit(ctx);
         }
         // Intentionally no ci.cancel(): the original smooth backdrop owns this
         // pass. The custom ring/vortex generators are not submitted here.
