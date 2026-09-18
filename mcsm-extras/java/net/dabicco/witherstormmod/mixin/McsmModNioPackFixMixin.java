@@ -35,7 +35,7 @@ public abstract class McsmModNioPackFixMixin {
             // This HEAD injection is a placeholder for future filtering.
         } catch (Throwable t) {
             System.out.println("[MCSM] ModNioPackFix: suppressed LFS metadata read: " + t.getMessage());
-            cir.setReturnValue(java.util.Optional.empty());
+            cir.setReturnValue((Object) java.util.Optional.empty());
         }
     }
 
@@ -48,7 +48,7 @@ public abstract class McsmModNioPackFixMixin {
             // So nothing to do here, but we keep hook for logging
         } catch (Throwable t) {
             System.out.println("[MCSM] ModNioPackFix RETURN suppressed: " + t.getMessage());
-            cir.setReturnValue(java.util.Optional.empty());
+            cir.setReturnValue((Object) java.util.Optional.empty());
         }
     }
 }
