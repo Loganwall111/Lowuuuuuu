@@ -1,0 +1,39 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java:105: error: local variables referenced from a lambda expression must be final or effectively final
+                        emitPlanetSphere(pose, consumer, planetPos, p.radius, 18, 12, spin, p.color, (int)(220 * nightAlpha));
+                                                                                                                 ^
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java:112: error: local variables referenced from a lambda expression must be final or effectively final
+                            emitRing(pose, consumer, planetPos, p.ringInner, p.ringOuter, spin, p.color, (int)(160 * nightAlpha));
+                                                                                                                     ^
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java:124: error: local variables referenced from a lambda expression must be final or effectively final
+                            emitSphere(pose, consumer, planetPos, glowR, 12, 8, r, g, b, (int)(25 * nightAlpha), t);
+                                                                                                    ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:223: error: incompatible types: float cannot be converted to Vec3
+        Vec3 a = x0, y0, z0;
+                 ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:223: error: variable y0 is already defined in method cubeFace(Pose,VertexConsumer,float,float,float,float,float,float,int,int,int)
+        Vec3 a = x0, y0, z0;
+                     ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:223: error: variable z0 is already defined in method cubeFace(Pose,VertexConsumer,float,float,float,float,float,float,int,int,int)
+        Vec3 a = x0, y0, z0;
+                         ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:224: error: incompatible types: Vec3 cannot be converted to double
+        Vec3 bb = new Vec3(x1, y0, z1);
+                               ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:225: error: incompatible types: float cannot be converted to Vec3
+        Vec3 c = x1, y1, z1;
+                 ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:225: error: variable y1 is already defined in method cubeFace(Pose,VertexConsumer,float,float,float,float,float,float,int,int,int)
+        Vec3 c = x1, y1, z1;
+                     ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:225: error: variable z1 is already defined in method cubeFace(Pose,VertexConsumer,float,float,float,float,float,float,int,int,int)
+        Vec3 c = x1, y1, z1;
+                         ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:226: error: incompatible types: Vec3 cannot be converted to double
+        Vec3 d = new Vec3(x0, y1, z0);
+                              ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+11 errors
