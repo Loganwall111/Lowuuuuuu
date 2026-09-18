@@ -57,10 +57,6 @@
       "type": "minecraft:constant",
       "argument": 0
     },
-    "initial_density_without_jaggedness": {
-      "type": "minecraft:constant",
-      "argument": 0
-    },
     "final_density": {
       "type": "minecraft:constant",
       "argument": 0
@@ -74,6 +70,10 @@
       "argument": 0
     },
     "vein_gap": {
+      "type": "minecraft:constant",
+      "argument": 0
+    },
+    "preliminary_surface_level": {
       "type": "minecraft:constant",
       "argument": 0
     }
