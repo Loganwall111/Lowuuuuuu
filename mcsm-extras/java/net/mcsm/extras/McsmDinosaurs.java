@@ -126,7 +126,7 @@ public final class McsmDinosaurs {
             var entity = entityType.create(level, EntitySpawnReason.NATURAL);
             if (entity == null) return;
 
-            entity.moveTo(px, py, pz, (float)(Math.random() * 360), 0);
+            entity.snapTo(px, py, pz, (float)(Math.random() * 360), 0);
             entity.setCustomName(Component.literal("§a§l" + dinoName + " §7[Dinosaur Age]"));
             entity.setCustomNameVisible(true);
             entity.addTag("ds_dinosaur");
@@ -195,7 +195,7 @@ public final class McsmDinosaurs {
                 if (entityType != null) {
                     var entity = entityType.create(level, EntitySpawnReason.EGG);
                     if (entity != null) {
-                        entity.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0, 0);
+                        entity.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0, 0);
                         entity.setCustomName(Component.literal("§a§lBaby " + dinoName));
                         entity.setCustomNameVisible(true);
                         entity.addTag("ds_dinosaur");

@@ -73,7 +73,7 @@ public final class McsmStormShips {
             var entity = entityType.create(level, net.minecraft.world.entity.EntitySpawnReason.EVENT);
             if (entity == null) return;
 
-            entity.moveTo(px, py, pz, (float)(Math.random() * 360), 0);
+            entity.snapTo(px, py, pz, (float)(Math.random() * 360), 0);
             entity.setCustomName(net.minecraft.network.chat.Component.literal("§8§lStorm Ship §7- Drivable to Atmosphere"));
             entity.setCustomNameVisible(true);
             entity.addTag("ds_storm_ship");

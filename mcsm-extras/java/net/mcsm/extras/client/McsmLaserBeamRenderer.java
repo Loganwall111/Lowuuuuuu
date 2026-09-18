@@ -51,12 +51,12 @@ public final class McsmLaserBeamRenderer {
             if (!active) {
                 // Rare trigger - laserbeam shooting star
                 if (level.getGameTime() - lastTrigger > 6000 && Math.random() < 0.008) {
-                    double sx = cam.x + (Mth.nextFloat(mc.level.random, -1f, 1f)) * 400;
-                    double sz = cam.z + (Mth.nextFloat(mc.level.random, -1f, 1f)) * 400;
-                    double sy = cam.y + 150 + Mth.nextFloat(mc.level.random, 0f, 100f);
-                    double ex = sx + (Mth.nextFloat(mc.level.random, -1f, 1f)) * 300;
-                    double ez = sz + (Mth.nextFloat(mc.level.random, -1f, 1f)) * 300;
-                    double ey = cam.y + 20 + Mth.nextFloat(mc.level.random, 0f, 50f);
+                    double sx = cam.x + (Math.random() * 2 - 1) * 400;
+                    double sz = cam.z + (Math.random() * 2 - 1) * 400;
+                    double sy = cam.y + 150 + Math.random() * 100;
+                    double ex = sx + (Math.random() * 2 - 1) * 300;
+                    double ez = sz + (Math.random() * 2 - 1) * 300;
+                    double ey = cam.y + 20 + Math.random() * 50;
                     beamStart = new Vec3(sx, sy, sz);
                     beamEnd = new Vec3(ex, ey, ez);
                     beamProgress = 0f;

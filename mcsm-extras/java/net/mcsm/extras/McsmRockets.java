@@ -120,15 +120,15 @@ public final class McsmRockets {
                                 } else if (y > height - 8) {
                                     // Nose cone
                                     if (dist <= radius - 1) {
-                                        level.setBlock(pos, Blocks.RED_CONCRETE.defaultBlockState(), 2);
+                                        level.setBlock(pos, Blocks.BRICKS.defaultBlockState(), 2);
                                     } else {
-                                        level.setBlock(pos, Blocks.WHITE_CONCRETE.defaultBlockState(), 2);
+                                        level.setBlock(pos, Blocks.COBBLESTONE.defaultBlockState(), 2);
                                     }
                                 } else {
                                     if (Math.random() < 0.1) {
-                                        level.setBlock(pos, Blocks.RED_CONCRETE.defaultBlockState(), 2);
+                                        level.setBlock(pos, Blocks.BRICKS.defaultBlockState(), 2);
                                     } else {
-                                        level.setBlock(pos, Blocks.WHITE_CONCRETE.defaultBlockState(), 2);
+                                        level.setBlock(pos, Blocks.COBBLESTONE.defaultBlockState(), 2);
                                     }
                                 }
                             }
@@ -160,7 +160,7 @@ public final class McsmRockets {
             // Visual launch - particles + sound + remove rocket and spawn falling
             level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, base.getX() + 0.5, base.getY() + 1, base.getZ() + 0.5, 10, 1, 1, 1, 0.2);
             level.sendParticles(net.minecraft.core.particles.ParticleTypes.CAMPFIRE_COSY_SMOKE, base.getX() + 0.5, base.getY() + 1, base.getZ() + 0.5, 30, 1, 2, 1, 0.1);
-            level.playSound(null, base, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.BLOCKS, 2.0f, 0.5f);
+            level.playSound(null, base.getX(), base.getY(), base.getZ(), net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.BLOCKS, 2.0f, 0.5f);
 
             // In full version, this would launch entity to space dimension
             // For now, just message about traveling to other planets

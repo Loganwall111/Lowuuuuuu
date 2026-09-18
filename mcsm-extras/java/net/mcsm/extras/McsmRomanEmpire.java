@@ -117,7 +117,7 @@ public final class McsmRomanEmpire {
             var entity = entityType.create(level, EntitySpawnReason.EVENT);
             if (entity == null) return;
 
-            entity.moveTo(px, py, pz, (float)(Math.random() * 360), 0);
+            entity.snapTo(px, py, pz, (float)(Math.random() * 360), 0);
             entity.setCustomName(Component.literal("§6§l" + mobName + " §7[Roman Empire]"));
             entity.setCustomNameVisible(true);
             entity.addTag("ds_roman");
@@ -173,7 +173,7 @@ public final class McsmRomanEmpire {
             var entity = entityType.create(level, EntitySpawnReason.EVENT);
             if (entity == null) return;
 
-            entity.moveTo(px, py, pz, (float)(Math.random() * 360), 0);
+            entity.snapTo(px, py, pz, (float)(Math.random() * 360), 0);
             String color = mobName.contains("King") ? "§6" : mobName.contains("Knight") ? "§7" : "§e";
             entity.setCustomName(Component.literal(color + "§l" + mobName + " §7[Medieval]"));
             entity.setCustomNameVisible(true);

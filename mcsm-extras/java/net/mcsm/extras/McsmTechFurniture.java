@@ -14,16 +14,23 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class McsmTechFurniture {
 
     public enum FurnitureType {
-        COMPUTER_90S("Computer 90s", Blocks.LOOM),
-        TERMINAL_90S("90s Terminal", Blocks.SMITHING_TABLE),
-        RADIO("Radio", Blocks.JUKEBOX),
-        TV_90S("90s TV", Blocks.TARGET),
-        COMPUTER_MODERN("Modern Computer", Blocks.BLAST_FURNACE),
-        SERVER_RACK("Server Rack", Blocks.IRON_BLOCK),
-        DESK("Desk", Blocks.OAK_PLANKS),
-        CHAIR("Chair", Blocks.OAK_STAIRS),
-        FRIDGE("Fridge", Blocks.WHITE_CONCRETE),
-        MICROWAVE("Microwave", Blocks.SMOKER)
+        COMPUTER_90S("Computer 90s", "loom"),
+        TERMINAL_90S("90s Terminal", "smithing_table"),
+        RADIO("Radio", "jukebox"),
+        TV_90S("90s TV", "target"),
+        COMPUTER_MODERN("Modern Computer", "blast_furnace"),
+        SERVER_RACK("Server Rack", "iron_block"),
+        DESK("Desk", "oak_planks"),
+        CHAIR("Chair", "oak_stairs"),
+        FRIDGE("Fridge", "white_concrete"),
+        MICROWAVE("Microwave", "smoker");
+
+        public final String display;
+        public final String blockId;
+        FurnitureType(String display, String blockId) {
+            this.display = display;
+            this.blockId = blockId;
+        }
     }
 
     private McsmTechFurniture() {}
@@ -55,9 +62,9 @@ public final class McsmTechFurniture {
                                 // Radio/computer ambience
                                 if (Math.random() < 0.02) {
                                     if (state.is(Blocks.JUKEBOX)) {
-                                        level.playSound(null, check, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_BIT, net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, 0.8f + (float)Math.random() * 0.4f);
+                                        level.playSound(null, check.getX(), check.getY(), check.getZ(), net.minecraft.sounds.SoundEvents.NOTE_BLOCK_BIT, net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, 0.8f + (float)Math.random() * 0.4f);
                                     } else if (state.is(Blocks.LOOM) || state.is(Blocks.SMITHING_TABLE)) {
-                                        level.playSound(null, check, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HARP, net.minecraft.sounds.SoundSource.BLOCKS, 0.3f, 1.2f);
+                                        level.playSound(null, check.getX(), check.getY(), check.getZ(), net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HARP, net.minecraft.sounds.SoundSource.BLOCKS, 0.3f, 1.2f);
                                     }
                                 }
                             }
@@ -80,7 +87,7 @@ public final class McsmTechFurniture {
                 case SERVER_RACK -> level.setBlock(pos, Blocks.IRON_BLOCK.defaultBlockState(), 2);
                 case DESK -> level.setBlock(pos, Blocks.OAK_PLANKS.defaultBlockState(), 2);
                 case CHAIR -> level.setBlock(pos, Blocks.OAK_STAIRS.defaultBlockState(), 2);
-                case FRIDGE -> level.setBlock(pos, Blocks.WHITE_CONCRETE.defaultBlockState(), 2);
+                case FRIDGE -> level.setBlock(pos, Blocks.COBBLESTONE.defaultBlockState(), 2);
                 case MICROWAVE -> level.setBlock(pos, Blocks.SMOKER.defaultBlockState(), 2);
             }
             // Add sign with label above
