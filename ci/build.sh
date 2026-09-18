@@ -563,6 +563,17 @@ else
   exit 1
 fi
 
+# DEBUG: show sky.fsh content before palette check
+echo "[debug] sky.fsh exists: $(ls -lh mcsm-core-shaders/core/sky.fsh 2>&1)"
+echo "[debug] position.fsh exists: $(ls -lh mcsm-core-shaders/core/position.fsh 2>&1)"
+echo "[debug] sky.fsh lines: $(wc -l < mcsm-core-shaders/core/sky.fsh 2>&1)"
+echo "[debug] grep PHASE5_TEAL sky.fsh: $(grep -c PHASE5_TEAL mcsm-core-shaders/core/sky.fsh 2>&1)"
+echo "[debug] grep SKY_REF_TEAL position.fsh: $(grep -c SKY_REF_TEAL mcsm-core-shaders/core/position.fsh 2>&1)"
+echo "[debug] first 20 lines sky.fsh:"
+head -n 20 mcsm-core-shaders/core/sky.fsh 2>&1 | sed 's/^/[debug] /'
+echo "[debug] first 20 lines position.fsh:"
+head -n 20 mcsm-core-shaders/core/position.fsh 2>&1 | sed 's/^/[debug] /'
+
 # BUILD #416 -- the traced palette and the phase feed are source-level gates.
 # Both read the SAME stop tables the shaders ship, so a colour edited in one
 # place and not the others stops the build here instead of reaching the user as
