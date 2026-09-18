@@ -13,7 +13,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
 import java.util.Map;
@@ -77,8 +76,8 @@ public final class McsmDinosaurs {
 
                 // Check if player has dino spawn egg (use turtle egg as placeholder)
                 boolean hasEgg = false;
-                for (ItemStack stack : player.getInventory().items) {
-                    if (stack.is(Blocks.TURTLE_EGG.asItem()) || stack.is(Items.EGG) || stack.getCustomName() != null && stack.getCustomName().getString().contains("Dino")) {
+                for (ItemStack stack : player.getInventory()) {
+                    if (stack.is(Blocks.TURTLE_EGG.asItem()) || (stack.getCustomName() != null && stack.getCustomName().getString().contains("Dino"))) {
                         hasEgg = true;
                         break;
                     }
@@ -193,7 +192,7 @@ public final class McsmDinosaurs {
                 Identifier id = Identifier.fromNamespaceAndPath(entityPath.split(":")[0], entityPath.split(":")[1]);
                 var entityType = BuiltInRegistries.ENTITY_TYPE.getValue(id);
                 if (entityType != null) {
-                    var entity = entityType.create(level, EntitySpawnReason.EGG);
+                    var entity = entityType.create(level, EntitySpawnReason.NATURAL);
                     if (entity != null) {
                         entity.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0, 0);
                         entity.setCustomName(Component.literal("§a§lBaby " + dinoName));

@@ -31,7 +31,22 @@ public final class McsmRockets {
 
             if (!builtDemo && level.getGameTime() > 100) {
                 // Build demo rocket near spawn once
-                BlockPos spawn = new BlockPos(level.getSharedSpawnPos().getX(), level.getSharedSpawnPos().getY(), level.getSharedSpawnPos().getZ());
+                BlockPos spawnPos = null;
+                try {
+                    var method = level.getClass().getMethod("getSharedSpawnPos");
+                    Object sp = method.invoke(level);
+                    if (sp instanceof BlockPos bp) spawnPos = bp;
+                } catch (Throwable ignored) {
+                    try {
+                        var method2 = level.getClass().getMethod("getSpawnPos");
+                        Object sp2 = method2.invoke(level);
+                        if (sp2 instanceof BlockPos bp2) spawnPos = bp2;
+                    } catch (Throwable ignored2) {
+                        spawnPos = new BlockPos(0, 64, 0);
+                    }
+                }
+                if (spawnPos == null) spawnPos = new BlockPos(0, 64, 0);
+                BlockPos spawn = spawnPos;
                 int ground = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawn.getX() + 100, spawn.getZ() + 100);
                 buildGiganticRocket(level, new BlockPos(spawn.getX() + 100, ground, spawn.getZ() + 100));
                 builtDemo = true;
