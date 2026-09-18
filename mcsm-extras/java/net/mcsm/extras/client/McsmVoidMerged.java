@@ -24,9 +24,14 @@ public final class McsmVoidMerged {
             LocalPlayer player = mc == null ? null : mc.player;
             if (player == null) return;
             if (player.level() == null) return;
-            // Only in overworld (not in void)
-            String dim = player.level().dimension().location().toString();
-            if (dim.contains("void_reality")) return;
+            // Only in overworld (not in void) - use ResourceKey check to avoid location() API change
+            try {
+                if (player.level().dimension().equals(net.mcsm.extras.McsmVoid.DIMENSION)) return;
+                if (!player.level().dimension().equals(net.minecraft.world.level.Level.OVERWORLD)) {
+                    // Only show merged fog in overworld
+                    //return;
+                }
+            } catch (Throwable ignored) {}
 
             double y = player.getY();
             int minY = player.level().getMinY(); // usually -64

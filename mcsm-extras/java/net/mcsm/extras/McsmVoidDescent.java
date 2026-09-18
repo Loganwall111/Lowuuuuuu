@@ -293,7 +293,18 @@ public final class McsmVoidDescent {
             player.setAirSupply(player.getMaxAirSupply());
             if (noSuffoc) {
                 player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 200, 0, true, false));
-                player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 100, 1, true, false));
+                try {
+                    // 26.2 renamed DAMAGE_RESISTANCE -> RESISTANCE, try both via reflection-safe
+                    java.lang.reflect.Field f = net.minecraft.world.effect.MobEffects.class.getField("DAMAGE_RESISTANCE");
+                    Object holder = f.get(null);
+                    player.addEffect(new net.minecraft.world.effect.MobEffectInstance((net.minecraft.core.Holder)holder, 100, 1, true, false));
+                } catch (Throwable t) {
+                    try {
+                        java.lang.reflect.Field f2 = net.minecraft.world.effect.MobEffects.class.getField("RESISTANCE");
+                        Object holder2 = f2.get(null);
+                        player.addEffect(new net.minecraft.world.effect.MobEffectInstance((net.minecraft.core.Holder)holder2, 100, 1, true, false));
+                    } catch (Throwable ignored) {}
+                }
             }
         } catch (Throwable ignored) {}
 

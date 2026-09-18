@@ -293,10 +293,10 @@ public final class McsmVoidCinematic {
                     int fogColor = 0x2E0B36; // luminous cavern plum
                     int fogAlpha = (int)(fogPhase * 180);
                     g.fill(0, 0, w, h, (fogAlpha << 24) | (fogColor & 0xFFFFFF));
-                    // First area text
+                    // First area text - avoid direct McsmVoidTiers ref to prevent javac order issue
                     int textAlpha = (int)(fogPhase * 255);
                     g.centeredText(mc.font, "THE LUMINOUS CAVERN", w/2, h/2 - 20, (textAlpha << 24) | 0xE8A24C);
-                    g.centeredText(mc.font, "y=" + (McsmVoidTiers.BASELINE_FLOOR) + " · tier 1 of " + (McsmVoidTiers.TIERS-1), w/2, h/2, (textAlpha << 24) | 0xD8C0F0);
+                    g.centeredText(mc.font, "y=20 · tier 1 of 20 - seamless entry", w/2, h/2, (textAlpha << 24) | 0xD8C0F0);
                     g.centeredText(mc.font, "directly in first area - seamless", w/2, h/2 + 20, (textAlpha/2 << 24) | 0xFFFFFF);
                 }
                 return;

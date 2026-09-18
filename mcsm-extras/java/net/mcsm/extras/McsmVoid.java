@@ -122,9 +122,7 @@ public final class McsmVoid {
         try {
             ServerTickEvents.END_LEVEL_TICK.register((EndLevelTick) McsmVoid::tick);
             System.out.println("[ds] the void is listening (" + FRAME_BLOCK + " / " + DOOR_BLOCK
-                    + " doors, shelves every " + REGION + " blocks)");
-            // 7000.0.8-M: completely disable suffocation guard
-            try { McsmVoidNoSuffocation.register(); } catch (Throwable ignored) {}
+                    + " doors, shelves every " + REGION + " blocks) - no-suffocation guard via mixin");
         } catch (Throwable t) {
             System.err.println("[ds] the void could not hook the level tick: " + t);
         }
