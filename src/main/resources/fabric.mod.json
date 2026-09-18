@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
 	"id": "dabywitherstormmod",
-	"version": "7000.0.13-M",
+	"version": "7000.0.14-M",
 	"name": "Devouring Storms: The Point of No Return",
-	"description": "A Minecraft: Story Mode inspired Wither Storm experience with Devouring Storms atmosphere, story visuals, storm progression, and the Point of No Return cinematic look. 7000.0.13-M MERGED VOID - second dimension directly underneath overworld hundreds blocks down, skybox merges slowly, no loading screen, pocket dimension no suffocation, volumetric cinematic with multiverse planets.",
+	"description": "A Minecraft: Story Mode inspired Wither Storm experience with Devouring Storms atmosphere, story visuals, storm progression, and the Point of No Return cinematic look. 7000.0.14-M MERGED VOID - second dimension directly underneath overworld hundreds blocks down, skybox merges slowly, no loading screen, pocket dimension no suffocation, volumetric cinematic with multiverse planets.",
 	"authors": [
 		"Dabicco - Lead Programmer",
 		"Joeyready - Textures, Blocks, Items & Build"
