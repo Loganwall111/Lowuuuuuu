@@ -142,6 +142,8 @@ public final class McsmSiftClient {
             net.mcsm.extras.client.McsmAnimatedSkybox.tick();
             // V2 NEXT-GEN Phase 1 - shooting stars tick
             net.mcsm.extras.client.McsmShootingStars.tick();
+            // V2 NEXT-GEN Phase 2 - ambient world fireflies + bioluminescent
+            net.mcsm.extras.client.McsmAmbientWorld.tick();
         } catch (Throwable ignored) {}
     }
 }

@@ -62,6 +62,12 @@ public abstract class McsmStormBlobMixin {
             net.mcsm.extras.client.McsmOrbitalPlanets.submit(ctx);
             // V2 NEXT-GEN - Shooting stars, twinkling stars, full bright distant stars
             net.mcsm.extras.client.McsmShootingStars.submit(ctx);
+            // V2 NEXT-GEN Phase 2 - Wavy water with physics, push waves interaction
+            net.mcsm.extras.client.McsmWavyWater.submit(ctx);
+            // V2 NEXT-GEN Phase 2 - VFX Light Rays (god rays) to main overworld
+            net.mcsm.extras.client.McsmLightRays.submit(ctx);
+            // V2 NEXT-GEN Phase 2 - Ambient World: fireflies, bioluminescent water, reflections, wolf howling, crickets
+            net.mcsm.extras.client.McsmAmbientWorld.submit(ctx);
             // BUILD #474 -- and the ceiling those clouds sit under: the STORM'S own sky,
             // all 360 degrees of it, from the horizon to the zenith. The cube and the deck
             // are the dimensions' skies; the Overworld -- where the story, the cities and
