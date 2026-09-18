@@ -277,9 +277,9 @@ public final class McsmOrbitalPlanets {
                              double x2, double y2, double z2, float u2, float v2,
                              double x3, double y3, double z3, float u3, float v3,
                              int r, int g, int b, int a, float nx, float ny, float nz) {
-        vertex(pose, consumer, new Vec3(x0, y0, z0), u0, v0, r, g, b, a, nx, ny, nz);
-        vertex(pose, consumer, new Vec3(x1, y1, z1), u1, v1, r, g, b, a, nx, ny, nz);
-        vertex(pose, consumer, new Vec3(x2, y2, z2), u2, v2, r, g, b, a, nx, ny, nz);
-        vertex(pose, consumer, new Vec3(x3, y3, z3), u3, v3, r, g, b, a, nx, ny, nz);
+        vertex(pose, consumer, x0, y0, z0, u0, v0, r, g, b, a, nx, ny, nz);
+        vertex(pose, consumer, x1, y1, z1, u1, v1, r, g, b, a, nx, ny, nz);
+        vertex(pose, consumer, x2, y2, z2, u2, v2, r, g, b, a, nx, ny, nz);
+        vertex(pose, consumer, x3, y3, z3, u3, v3, r, g, b, a, nx, ny, nz);
     }
 }

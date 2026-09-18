@@ -183,7 +183,7 @@ public final class McsmTimeWarpEffect {
                         // Digits as glowing quads
                         for (int d = 0; d < 5; d++) {
                             double dx = routerX + (d - 2) * 0.6;
-                            float digitAlpha = 180 + (int)(Mth.sin(t * 2f + d) * 40);
+                            int digitAlpha = 180 + (int)(Mth.sin(t * 2f + d) * 40);
                             int digitVal = (int)((displayTime / Math.pow(10, 4 - d)) % 10);
                             // Color based on digit
                             int r = 100 + digitVal * 15;
