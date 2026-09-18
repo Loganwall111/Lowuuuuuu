@@ -4,7 +4,7 @@
 // Build #482 + Fabric expansion - shader that changes lighting reflections coloured lighting etc
 // Direct shinger - makes game lighting reflect colors from Sift tiers
 
-#moj_import <mcsm_visuals.glsl>
+#moj_import <minecraft:mcsm_visuals.glsl>
 
 uniform sampler2D Sampler0;
 uniform float GameTime;

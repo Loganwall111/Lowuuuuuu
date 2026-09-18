@@ -3,7 +3,7 @@
 // sky.fsh - Animated skyboxes for each Sift layer
 // Build #482 - God rays, colored lights, rainbow water
 
-#moj_import <mcsm_visuals.glsl>
+#moj_import <minecraft:mcsm_visuals.glsl>
 
 uniform float GameTime;
 uniform vec3 PlayerPos;

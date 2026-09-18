@@ -1,6 +1,6 @@
 #version 150
 
-#moj_import <mcsm_visuals.glsl>
+#moj_import <minecraft:mcsm_visuals.glsl>
 
 uniform vec4 ColorModulator;
 uniform float GameTime;

@@ -5,7 +5,7 @@
 // Screen-Space Cosmic Liquid for Layer 5 gel void bounds (-1801 to -2032)
 // Iridescent color shims, refraction & intersection foams
 
-#moj_import <mcsm_visuals.glsl>
+#moj_import <minecraft:mcsm_visuals.glsl>
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;

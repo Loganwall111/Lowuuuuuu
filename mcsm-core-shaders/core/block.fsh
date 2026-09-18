@@ -1,6 +1,6 @@
 #version 150
 
-#moj_import <mcsm_visuals.glsl>
+#moj_import <minecraft:mcsm_visuals.glsl>
 
 uniform sampler2D Sampler0;
 uniform vec4 ColorModulator;

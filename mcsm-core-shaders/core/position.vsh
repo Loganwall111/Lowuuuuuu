@@ -1,6 +1,6 @@
 #version 150
 
-#moj_import <mcsm_visuals.glsl>
+#moj_import <minecraft:mcsm_visuals.glsl>
 
 in vec3 Position;
 in vec4 Color;
