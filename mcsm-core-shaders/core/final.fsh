@@ -1,4 +1,5 @@
 #version 150
+#moj_import <minecraft:fog.glsl>
 
 // final.fsh - Iridescent Cosmic Fluid Shaders & Glowing Water Pools
 // Build #482 - Infinite Sift Cosmos
@@ -17,7 +18,6 @@ uniform vec2 InSize;
 uniform float GameTime;
 uniform vec3 PlayerPos;
 uniform int LoopCount;
-uniform vec3 FogColor;
 
 out vec4 fragColor;
 
@@ -159,7 +159,7 @@ void main() {
     // Global Pixar-VFX triple-A grading - make it look extremely cool, not generic minecraft
     // Slight bloom and color grading
     finalColor = pow(finalColor, vec3(0.95)); // soft lift
-    finalColor += FogColor * 0.05 * TierFactor; // fog tint
+    finalColor += FogColor.rgb * 0.05 * TierFactor; // fog tint - FogColor from fog.glsl shim is vec4
     
     // Vignette for cinematic feel
     vec2 vigUV = texCoord * 2.0 - 1.0;

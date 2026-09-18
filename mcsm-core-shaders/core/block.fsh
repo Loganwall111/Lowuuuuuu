@@ -1,4 +1,5 @@
 #version 150
+#moj_import <minecraft:fog.glsl>
 
 #moj_import <minecraft:mcsm_visuals.glsl>
 
@@ -6,7 +7,6 @@ uniform sampler2D Sampler0;
 uniform vec4 ColorModulator;
 uniform float FogStart;
 uniform float FogEnd;
-uniform vec4 FogColor;
 uniform float GameTime;
 uniform vec3 PlayerPos;
 

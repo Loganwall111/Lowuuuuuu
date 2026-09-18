@@ -1,4 +1,5 @@
 #version 150
+#moj_import <minecraft:fog.glsl>
 
 #moj_import <minecraft:mcsm_visuals.glsl>
 

@@ -1,4 +1,5 @@
 #version 150
+#moj_import <minecraft:fog.glsl>
 
 // sky.fsh - Animated skyboxes for each Sift layer
 // Build #482 - God rays, colored lights, rainbow water
@@ -7,7 +8,6 @@
 
 uniform float GameTime;
 uniform vec3 PlayerPos;
-uniform vec3 FogColor;
 uniform float DepthFactor;
 uniform int Tier;
 uniform float IsInSift;

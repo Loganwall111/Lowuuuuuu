@@ -1,4 +1,5 @@
 #version 150
+#moj_import <minecraft:fog.glsl>
 
 // lightmap.fsh - Colored lighting, reflections, direct shinger
 // Build #482 + Fabric expansion - shader that changes lighting reflections coloured lighting etc
