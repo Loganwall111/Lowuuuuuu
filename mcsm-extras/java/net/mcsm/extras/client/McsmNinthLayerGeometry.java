@@ -200,26 +200,29 @@ public final class McsmNinthLayerGeometry {
             PoseStack poseStack = ctx.poseStack();
             SubmitNodeCollector collector = ctx.submitNodeCollector();
             float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-            double time = (double)(mc.level.getGameTime() % 24000L) + partial;
+            double timeTmp = (double)(mc.level.getGameTime() % 24000L) + partial;
 
-            // Visibility based on depth: stronger deeper
-            float depthFactor = 1.0F;
+            // Visibility based on depth: stronger deeper - final for lambda capture
+            float depthFactorTmp = 1.0F;
             if (playerY > McsmVoidTiers.ABYSSAL_NIGHTMARE_FLOOR) {
                 // in gel: faint hint of nightmare below
-                depthFactor = 0.25F;
+                depthFactorTmp = 0.25F;
             } else if (playerY > McsmVoidTiers.REALITY_GLITCH_NIGHTMARE_FLOOR + 1) {
                 // abyssal nightmare: half strength
-                depthFactor = 0.65F;
+                depthFactorTmp = 0.65F;
             } else {
                 // reality-glitch nightmare / uninpossible: full
-                depthFactor = 1.0F;
+                depthFactorTmp = 1.0F;
             }
+            final float depthFactor = depthFactorTmp;
+            final double time = timeTmp;
+            final Vec3 camFinal = camera;
 
             // ---- Gothic towers: photorealistic 3D geometry via explicit buffer arrays ----
             collector.submitCustomGeometry(poseStack, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(VOID_STONE),
                     (pose, consumer) -> {
                         for (int i = 0; i < GOTHIC_TOWERS; i++) {
-                            emitGothicTower(pose, consumer, camera, i, time, depthFactor);
+                            emitGothicTower(pose, consumer, camFinal, i, time, depthFactor);
                         }
                     });
 
@@ -227,36 +230,36 @@ public final class McsmNinthLayerGeometry {
             collector.submitCustomGeometry(poseStack, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(VOID_STONE),
                     (pose, consumer) -> {
                         for (int i = 0; i < HANGING_CASTLES; i++) {
-                            emitHangingFortress(pose, consumer, camera, i, time, depthFactor);
+                            emitHangingFortress(pose, consumer, camFinal, i, time, depthFactor);
                         }
                     });
 
             // ---- Jagged mountain ridges: absolute coordinate horizons ----
             collector.submitCustomGeometry(poseStack, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(VOID_STONE),
                     (pose, consumer) -> {
-                        emitJaggedRidges(pose, consumer, camera, time, depthFactor);
+                        emitJaggedRidges(pose, consumer, camFinal, time, depthFactor);
                     });
 
             // ---- Colossal Creator mesh: crowned head, reality-tearing arms, infinitely far behind ----
             collector.submitCustomGeometry(poseStack, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(CREATOR_SKIN),
                     (pose, consumer) -> {
-                        emitCreatorHead(pose, consumer, camera, time, depthFactor);
-                        emitCreatorCrown(pose, consumer, camera, time, depthFactor);
+                        emitCreatorHead(pose, consumer, camFinal, time, depthFactor);
+                        emitCreatorCrown(pose, consumer, camFinal, time, depthFactor);
                         for (int arm = 0; arm < CREATOR_ARMS; arm++) {
-                            emitCreatorArm(pose, consumer, camera, arm, time, depthFactor);
+                            emitCreatorArm(pose, consumer, camFinal, arm, time, depthFactor);
                         }
                     });
 
             // ---- Glowing purple lenses: full-bright emissive RenderTypes.eyes with gaze tracking ----
             collector.submitCustomGeometry(poseStack, RenderTypes.eyes(EYES_TEX),
                     (pose, consumer) -> {
-                        emitCreatorEyes(pose, consumer, camera, time, depthFactor);
+                        emitCreatorEyes(pose, consumer, camFinal, time, depthFactor);
                     });
 
             // ---- Radiant aura & phase-shifting color skirts at 4.5x bloom ----
             collector.submitCustomGeometry(poseStack, net.dabicco.witherstormmod.client.GlowRenderTypes.glow(WHITE),
                     (pose, consumer) -> {
-                        emitRadiantAura(pose, consumer, camera, time, depthFactor);
+                        emitRadiantAura(pose, consumer, camFinal, time, depthFactor);
                     });
 
         } catch (Throwable ignored) {
