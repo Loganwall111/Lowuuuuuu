@@ -25,21 +25,18 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Dimension handling - 8 LAYERS OF THE VOID CONCEPT
+ * Dimension handling - 8 LAYERS OF THE VOID CONCEPT - LARGE LUSH ISLANDS
  * Build #7000.0.12-M - THE LAYERS OF THE VOID - Concept Image Implementation
  * 
  * Concept:
  * 1. OVERWORLD Y> -64
- * 2. BEDROCK LEVEL -64 to -150 - lowest solid layer, unbreakable, foundation
- * 3. FLOATING VOID ISLANDS -150 to -350 - fractured remnants of impossible worlds
- * 4. INFINITE NOTHING BARRIER -350 to -550 - surreal boundary, reality distorts
- * 5. INFINITE BLACKNESS -550 to -800 - endless pure void, no light, no sound
- * 6. SPONGE MAZE -800 to -1200 - colossal maze of ancient sponge blocks (SIFT)
- * 7. LUMINESCENT POOLS -1200 to -1600 - glowing waters, liquid crystals
- * 8. ABYSSAL NIGHTMARE -1600 to -2032 - final realm, terror, chaos, ancient evil
- * 
- * MERGED VOID: second dimension directly underneath overworld, continuous fall, skybox merges slowly
- * Pocket dimension: no suffocation
+ * 2. BEDROCK LEVEL -64 to -150
+ * 3. FLOATING VOID ISLANDS -150 to -350 - LARGE LUSH like concept art, not small footed
+ * 4. INFINITE NOTHING BARRIER -350 to -550
+ * 5. INFINITE BLACKNESS -550 to -800
+ * 6. SPONGE MAZE -800 to -1200
+ * 7. LUMINESCENT POOLS -1200 to -1600 - RAINBOW WORLD
+ * 8. ABYSSAL NIGHTMARE -1600 to -2032
  */
 @Mod.EventBusSubscriber
 public final class McsmSiftDimension {
@@ -117,12 +114,15 @@ public final class McsmSiftDimension {
         int startX = chunkOrigin.getX();
         int startZ = chunkOrigin.getZ();
 
+        // Generate LARGE LUSH FLOATING ISLANDS first - per chunk, not per x/z
+        generateLargeLushIslands(level, chunkOrigin, rng, islandNoise);
+
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 int wx = startX + x;
                 int wz = startZ + z;
 
-                // 2. BEDROCK LEVEL -64 to -150 - lowest solid layer, unbreakable, foundation
+                // 2. BEDROCK LEVEL -64 to -150
                 for (int y = McsmVoidTiers.BEDROCK_LEVEL_TOP; y >= McsmVoidTiers.BEDROCK_LEVEL_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
                     BlockState current = level.getBlockState(pos);
@@ -137,7 +137,6 @@ public final class McsmSiftDimension {
                     if (isBroken) {
                         level.setBlock(pos, McsmSiftMod.BROKEN_FABRIC.get().defaultBlockState(), 2);
                     } else {
-                        // Mix bedrock and fabric for bedrock level
                         if (rng.nextFloat() < 0.3f) {
                             level.setBlock(pos, Blocks.BEDROCK.defaultBlockState(), 2);
                         } else {
@@ -146,65 +145,10 @@ public final class McsmSiftDimension {
                     }
                 }
 
-                // 3. FLOATING VOID ISLANDS -150 to -350 - fractured remnants of impossible worlds + ecosystem
-                for (int y = McsmVoidTiers.FLOATING_VOID_ISLANDS_TOP - 1; y >= McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM; y--) {
-                    BlockPos pos = new BlockPos(wx, y, wz);
-                    double island = islandNoise.getValue(wx * 0.02, y * 0.02, wz * 0.02);
-                    boolean isIsland = island > 0.15 && rng.nextFloat() < 0.4f;
-                    if (y % 25 == 0 && rng.nextFloat() < 0.08f) isIsland = true;
-
-                    if (isIsland) {
-                        // Fractured remnants + ecosystem: blue grass, pink grass, red grass, starlit, cosmic, purple trees, etc
-                        float type = rng.nextFloat();
-                        try {
-                            if (type < 0.12f) {
-                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.BLUE_GRASS_BLOCK.defaultBlockState(), 2);
-                            } else if (type < 0.22f) {
-                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.PINK_GRASS_BLOCK.defaultBlockState(), 2);
-                            } else if (type < 0.32f) {
-                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_GRASS_BLOCK.defaultBlockState(), 2);
-                            } else if (type < 0.42f) {
-                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.STARLIT_GRASS.defaultBlockState(), 2);
-                            } else if (type < 0.52f) {
-                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.COSMIC_GRASS.defaultBlockState(), 2);
-                            } else if (type < 0.60f) {
-                                level.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
-                            } else if (type < 0.70f) {
-                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.PURPLE_TREE_LOG.defaultBlockState(), 2);
-                            } else if (type < 0.80f) {
-                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.PURPLE_TREE_LEAVES.defaultBlockState(), 2);
-                            } else if (type < 0.90f) {
-                                level.setBlock(pos, Blocks.STONE.defaultBlockState(), 2);
-                            } else {
-                                level.setBlock(pos, McsmSiftMod.FABRIC_OF_REALITY.get().defaultBlockState(), 2);
-                            }
-                        } catch (Exception e) {
-                            level.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
-                        }
-                        // Flowers/fungi on top of islands
-                        if (rng.nextFloat() < 0.08f) {
-                            BlockPos above = pos.above();
-                            if (level.getBlockState(above).isAir()) {
-                                try {
-                                    float f = rng.nextFloat();
-                                    if (f < 0.25f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.FLUOR_PLANT.defaultBlockState(), 2);
-                                    else if (f < 0.5f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_BLOSSOM.defaultBlockState(), 2);
-                                    else if (f < 0.75f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.GLOWING_MUSHROOM.defaultBlockState(), 2);
-                                    else level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_FERN.defaultBlockState(), 2);
-                                } catch (Exception ignored) {}
-                            }
-                        }
-                    } else {
-                        if (!level.getBlockState(pos).isAir()) level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
-                    }
-                }
-
-                // 4. INFINITE NOTHING BARRIER -350 to -550 - surreal boundary of absolute emptiness
+                // 4. INFINITE NOTHING BARRIER -350 to -550
                 for (int y = McsmVoidTiers.NOTHING_BARRIER_TOP - 1; y >= McsmVoidTiers.NOTHING_BARRIER_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
-                    // Surreal boundary: mostly air with reality distorting barriers
                     if (y == McsmVoidTiers.NOTHING_BARRIER_TOP - 1 || y == McsmVoidTiers.NOTHING_BARRIER_BOTTOM) {
-                        // Border walls - surreal boundary
                         if (rng.nextFloat() < 0.7f) {
                             level.setBlock(pos, Blocks.BARRIER.defaultBlockState(), 2);
                         } else {
@@ -216,7 +160,6 @@ public final class McsmSiftDimension {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                         continue;
                     }
-                    // Reality distorts - glass, crying obsidian, purple concrete
                     float t = rng.nextFloat();
                     if (t < 0.4f) {
                         level.setBlock(pos, Blocks.GLASS.defaultBlockState(), 2);
@@ -227,10 +170,9 @@ public final class McsmSiftDimension {
                     }
                 }
 
-                // 5. INFINITE BLACKNESS -550 to -800 - endless pure void, no light, no sound, only infinite depth
+                // 5. INFINITE BLACKNESS -550 to -800
                 for (int y = McsmVoidTiers.INFINITE_BLACKNESS_TOP - 1; y >= McsmVoidTiers.INFINITE_BLACKNESS_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
-                    // Pure void - 99.9% air, only occasional void particles markers
                     if (y % 30 == 0 && rng.nextFloat() < 0.02f) {
                         level.setBlock(pos, Blocks.BLACK_CONCRETE.defaultBlockState(), 2);
                         continue;
@@ -242,7 +184,7 @@ public final class McsmSiftDimension {
                     }
                 }
 
-                // 6. SPONGE MAZE -800 to -1200 - colossal maze of ancient sponge blocks - SIFT AREA
+                // 6. SPONGE MAZE -800 to -1200
                 for (int y = McsmVoidTiers.SPONGE_MAZE_TOP; y >= McsmVoidTiers.SPONGE_MAZE_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
                     if (y < McsmVoidTiers.SPONGE_MAZE_PHYSICAL_START) {
@@ -261,7 +203,6 @@ public final class McsmSiftDimension {
                             level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                         }
                     } else {
-                        // Transition zone before physical maze
                         if (rng.nextFloat() < 0.88f) {
                             level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                         } else {
@@ -270,7 +211,7 @@ public final class McsmSiftDimension {
                     }
                 }
 
-                // 7. LUMINESCENT POOLS -1200 to -1600 - glowing waters and strange liquid crystals + RAINBOW WORLD
+                // 7. LUMINESCENT POOLS -1200 to -1600 - RAINBOW WORLD
                 for (int y = McsmVoidTiers.LUMINESCENT_POOLS_TOP - 1; y >= McsmVoidTiers.LUMINESCENT_POOLS_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
                     double crystalNoise = nightmareNoise.getValue(wx * 0.04, y * 0.04, wz * 0.04);
@@ -279,7 +220,6 @@ public final class McsmSiftDimension {
                         continue;
                     }
                     if (crystalNoise > 0.2 || rng.nextFloat() < 0.20f) {
-                        // Glowing waters and liquid crystals + Rainbow World + ecosystem
                         float t = rng.nextFloat();
                         try {
                             if (t < 0.12f) {
@@ -318,26 +258,13 @@ public final class McsmSiftDimension {
                             level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2);
                         }
                     }
-                    // Flowers in luminescent pools
-                    if (rng.nextFloat() < 0.06f) {
-                        BlockPos above = pos.above();
-                        if (level.getBlockState(above).isAir()) {
-                            try {
-                                float f = rng.nextFloat();
-                                if (f < 0.3f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.FLUOR_PLANT.defaultBlockState(), 2);
-                                else if (f < 0.6f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_BLOSSOM.defaultBlockState(), 2);
-                                else level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.LUMINOUS_VINE.defaultBlockState(), 2);
-                            } catch (Exception ignored) {}
-                        }
-                    }
                 }
 
-                // 8. ABYSSAL NIGHTMARE DIMENSION -1600 to -2032 - final realm of terror + ecosystem
+                // 8. ABYSSAL NIGHTMARE DIMENSION -1600 to -2032
                 for (int y = McsmVoidTiers.ABYSSAL_NIGHTMARE_TOP - 1; y >= McsmVoidTiers.ABYSSAL_NIGHTMARE_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
                     double nightNoise = nightmareNoise.getValue(wx * 0.02, y * 0.02, wz * 0.02);
                     if (nightNoise > 0.3 && rng.nextFloat() < 0.65f) {
-                        // Terror, chaos, ancient evil + red grass, red rock, green acid, black water, fungi
                         float t = rng.nextFloat();
                         try {
                             if (t < 0.15f) {
@@ -375,6 +302,140 @@ public final class McsmSiftDimension {
                         }
                     } else {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                    }
+                }
+            }
+        }
+    }
+
+    // LARGE LUSH FLOATING ISLANDS - like in concept art, not small footed islands
+    // Each island is 20-50 blocks wide, with lush detail: grass, trees, flowers, waterfalls, etc
+    private static void generateLargeLushIslands(ServerLevel level, BlockPos chunkOrigin, RandomSource rng, PerlinNoise islandNoise) {
+        int startX = chunkOrigin.getX();
+        int startZ = chunkOrigin.getZ();
+        
+        // Check 2-3 potential island centers per chunk
+        for (int i = 0; i < 2; i++) {
+            int centerX = startX + rng.nextInt(16);
+            int centerZ = startZ + rng.nextInt(16);
+            int centerY = McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM + rng.nextInt(
+                McsmVoidTiers.FLOATING_VOID_ISLANDS_TOP - McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM);
+            
+            double noise = islandNoise.getValue(centerX * 0.01, centerY * 0.01, centerZ * 0.01);
+            // Only generate island if noise is high enough - creates sparse large islands
+            if (noise < 0.25 && rng.nextFloat() > 0.15f) continue;
+            
+            // Large island radius 12-28 blocks
+            int radius = 12 + rng.nextInt(16);
+            int height = 4 + rng.nextInt(6);
+            
+            // Island shape: circular with noise distortion for natural look
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    double dist = Math.sqrt(dx*dx + dz*dz);
+                    if (dist > radius) continue;
+                    // Edge falloff for natural circular shape
+                    double edgeFactor = 1.0 - (dist / radius);
+                    if (rng.nextFloat() > edgeFactor * 1.2f) continue;
+                    
+                    int wx = centerX + dx;
+                    int wz = centerZ + dz;
+                    
+                    // Generate island layers
+                    for (int dy = 0; dy < height; dy++) {
+                        int wy = centerY - dy;
+                        if (wy < McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM || wy > McsmVoidTiers.FLOATING_VOID_ISLANDS_TOP) continue;
+                        BlockPos pos = new BlockPos(wx, wy, wz);
+                        
+                        try {
+                            if (dy == 0) {
+                                // Top layer: lush grass - blue, pink, red, starlit, cosmic, regular
+                                float grassType = rng.nextFloat();
+                                if (grassType < 0.18f) {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.BLUE_GRASS_BLOCK.defaultBlockState(), 2);
+                                } else if (grassType < 0.32f) {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.PINK_GRASS_BLOCK.defaultBlockState(), 2);
+                                } else if (grassType < 0.44f) {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.STARLIT_GRASS.defaultBlockState(), 2);
+                                } else if (grassType < 0.54f) {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.COSMIC_GRASS.defaultBlockState(), 2);
+                                } else if (grassType < 0.62f) {
+                                    level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_GRASS_BLOCK.defaultBlockState(), 2);
+                                } else {
+                                    level.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+                                }
+                            } else if (dy == 1 || dy == 2) {
+                                // Middle: dirt
+                                level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 2);
+                            } else {
+                                // Bottom: stone/cobble
+                                if (rng.nextFloat() < 0.6f) {
+                                    level.setBlock(pos, Blocks.STONE.defaultBlockState(), 2);
+                                } else {
+                                    level.setBlock(pos, Blocks.COBBLESTONE.defaultBlockState(), 2);
+                                }
+                            }
+                        } catch (Exception e) {
+                            level.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+                        }
+                    }
+                    
+                    // Add trees and vegetation on top - lush detail like concept
+                    if (dist < radius * 0.7 && rng.nextFloat() < 0.04f) {
+                        BlockPos topPos = new BlockPos(wx, centerY + 1, wz);
+                        if (level.getBlockState(topPos).isAir()) {
+                            try {
+                                float vegType = rng.nextFloat();
+                                if (vegType < 0.15f) {
+                                    // Purple tree - 4-5 blocks tall log + leaves
+                                    for (int h = 0; h < 4 + rng.nextInt(3); h++) {
+                                        BlockPos logPos = new BlockPos(wx, centerY + 1 + h, wz);
+                                        level.setBlock(logPos, net.mcsm.sift.block.SiftEcosystemBlocks.PURPLE_TREE_LOG.defaultBlockState(), 2);
+                                    }
+                                    // Leaves canopy
+                                    for (int lx = -2; lx <= 2; lx++) {
+                                        for (int lz = -2; lz <= 2; lz++) {
+                                            for (int ly = 0; ly <= 2; ly++) {
+                                                if (Math.abs(lx) == 2 && Math.abs(lz) == 2) continue;
+                                                BlockPos leafPos = new BlockPos(wx+lx, centerY + 5 + ly, wz+lz);
+                                                if (level.getBlockState(leafPos).isAir() && rng.nextFloat() < 0.8f) {
+                                                    level.setBlock(leafPos, net.mcsm.sift.block.SiftEcosystemBlocks.PURPLE_TREE_LEAVES.defaultBlockState(), 2);
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else if (vegType < 0.30f) {
+                                    // Oak tree
+                                    BlockPos logPos = new BlockPos(wx, centerY + 1, wz);
+                                    level.setBlock(logPos, Blocks.OAK_LOG.defaultBlockState(), 2);
+                                    level.setBlock(new BlockPos(wx, centerY + 2, wz), Blocks.OAK_LOG.defaultBlockState(), 2);
+                                    level.setBlock(new BlockPos(wx, centerY + 3, wz), Blocks.OAK_LEAVES.defaultBlockState(), 2);
+                                } else if (vegType < 0.50f) {
+                                    level.setBlock(topPos, net.mcsm.sift.block.SiftEcosystemBlocks.FLUOR_PLANT.defaultBlockState(), 2);
+                                } else if (vegType < 0.70f) {
+                                    level.setBlock(topPos, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_BLOSSOM.defaultBlockState(), 2);
+                                } else if (vegType < 0.85f) {
+                                    level.setBlock(topPos, net.mcsm.sift.block.SiftEcosystemBlocks.GLOWING_MUSHROOM.defaultBlockState(), 2);
+                                } else {
+                                    level.setBlock(topPos, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_FERN.defaultBlockState(), 2);
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                    
+                    // Add small water pools / waterfalls on large islands - lush
+                    if (dist < radius * 0.3 && rng.nextFloat() < 0.008f) {
+                        BlockPos waterPos = new BlockPos(wx, centerY, wz);
+                        try {
+                            level.setBlock(waterPos, Blocks.WATER.defaultBlockState(), 2);
+                            // Waterfall down
+                            for (int wy = centerY - 1; wy >= centerY - 5; wy--) {
+                                BlockPos fallPos = new BlockPos(wx, wy, wz);
+                                if (level.getBlockState(fallPos).isAir()) {
+                                    level.setBlock(fallPos, Blocks.WATER.defaultBlockState(), 2);
+                                }
+                            }
+                        } catch (Exception ignored) {}
                     }
                 }
             }
@@ -449,7 +510,6 @@ public final class McsmSiftDimension {
             }
         }
 
-        // Generate around player when in void
         if (McsmVoidTiers.isInVoidDimension(y)) {
             if (lvl instanceof ServerLevel sLevel && lvl.dimension() == Level.OVERWORLD && player instanceof ServerPlayer sp) {
                 if (player.tickCount % 20 == 0) {
@@ -464,7 +524,6 @@ public final class McsmSiftDimension {
                 }
 
                 var tier = McsmVoidTiers.getTierForY(y);
-                // Fast fall in blackness/nothing barrier
                 if (tier == McsmVoidTiers.Tier.INFINITE_BLACKNESS || tier == McsmVoidTiers.Tier.NOTHING_BARRIER || tier == McsmVoidTiers.Tier.INFINITE_NOTHING_BARRIER) {
                     if (player.getDeltaMovement().y > -2.2) {
                         player.setDeltaMovement(player.getDeltaMovement().add(0, -0.20, 0));
@@ -477,15 +536,13 @@ public final class McsmSiftDimension {
                     }
                 }
 
-                // Action bar with 8 layers concept
                 if (player.tickCount % 40 == 0) {
-                    String tierName = tier.id.toUpperCase().replace("_", " ");
                     String msg;
                     if (tier == McsmVoidTiers.Tier.BEDROCK_LEVEL) {
                         msg = "§8[2] BEDROCK LEVEL " + y + " -> FLOATING ISLANDS at -150 | SIFT at -800";
                     } else if (tier == McsmVoidTiers.Tier.FLOATING_VOID_ISLANDS) {
                         int dist = Math.abs(y - McsmVoidTiers.SPONGE_MAZE_TOP);
-                        msg = "§a[3] FLOATING VOID ISLANDS " + y + " -> SIFT MAZE at -800 (" + dist + "b)";
+                        msg = "§a[3] FLOATING VOID ISLANDS " + y + " -> LUSH LARGE ISLANDS! SIFT MAZE at -800 (" + dist + "b)";
                     } else if (tier == McsmVoidTiers.Tier.NOTHING_BARRIER || tier == McsmVoidTiers.Tier.INFINITE_NOTHING_BARRIER) {
                         int dist = Math.abs(y - McsmVoidTiers.SPONGE_MAZE_TOP);
                         msg = "§5[4] NOTHING BARRIER " + y + " -> SIFT at -800 (" + dist + "b) | Reality distorts";
@@ -495,11 +552,11 @@ public final class McsmSiftDimension {
                     } else if (tier == McsmVoidTiers.Tier.SPONGE_MAZE) {
                         msg = "§6[6] *** SPONGE MAZE - SIFT AREA *** " + y + " - YOU ARE IN SIFT! ***";
                     } else if (tier == McsmVoidTiers.Tier.LUMINESCENT_POOLS) {
-                        msg = "§b[7] LUMINESCENT POOLS " + y + " - Glowing waters, liquid crystals";
+                        msg = "§b[7] LUMINESCENT POOLS " + y + " - Glowing waters, liquid crystals, RAINBOW WORLD";
                     } else if (tier == McsmVoidTiers.Tier.ABYSSAL_NIGHTMARE) {
                         msg = "§5[8] ABYSSAL NIGHTMARE DIMENSION " + y + " - Final realm, reality screams";
                     } else {
-                        msg = "[" + tierName + "] " + y + " | SIFT MAZE at -800 to -1200";
+                        msg = "[" + tier.id.toUpperCase().replace("_", " ") + "] " + y + " | SIFT MAZE at -800 to -1200";
                     }
                     sp.displayClientMessage(net.minecraft.network.chat.Component.literal(msg), true);
 
@@ -508,20 +565,6 @@ public final class McsmSiftDimension {
                             net.minecraft.network.chat.Component.literal("§6§l[6] THE SPONGE MAZE").withStyle(net.minecraft.ChatFormatting.BOLD)));
                         sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(
                             net.minecraft.network.chat.Component.literal("§eSIFT AREA - Ancient sponge blocks")));
-                        sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(10, 60, 20));
-                    }
-                    if (tier == McsmVoidTiers.Tier.LUMINESCENT_POOLS && player.tickCount % 200 == 0) {
-                        sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(
-                            net.minecraft.network.chat.Component.literal("§b§l[7] LUMINESCENT POOLS").withStyle(net.minecraft.ChatFormatting.BOLD)));
-                        sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(
-                            net.minecraft.network.chat.Component.literal("§3Glowing waters, liquid crystals")));
-                        sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(10, 60, 20));
-                    }
-                    if (tier == McsmVoidTiers.Tier.ABYSSAL_NIGHTMARE && player.tickCount % 200 == 0) {
-                        sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(
-                            net.minecraft.network.chat.Component.literal("§5§l[8] ABYSSAL NIGHTMARE").withStyle(net.minecraft.ChatFormatting.BOLD)));
-                        sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(
-                            net.minecraft.network.chat.Component.literal("§dFinal realm - reality screams")));
                         sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(10, 60, 20));
                     }
                 }
