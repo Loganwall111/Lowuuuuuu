@@ -58,14 +58,17 @@ public final class McsmAuroraBorealis {
             // Multiple curtains
             int curtains = 5;
             for (int c = 0; c < curtains; c++) {
-                float curtainOffset = (float)c / curtains * Mth.TWO_PI * 0.6f;
-                float hueBase = 0.35f + c * 0.15f; // green -> cyan -> blue -> purple -> pink
-                if (hueBase > 1f) hueBase -= 1f;
+                float curtainOffsetTmp = (float)c / curtains * Mth.TWO_PI * 0.6f;
+                float hueBaseTmp = 0.35f + c * 0.15f; // green -> cyan -> blue -> purple -> pink
+                if (hueBaseTmp > 1f) hueBaseTmp -= 1f;
+                final float curtainOffset = curtainOffsetTmp;
+                final float hueBase = hueBaseTmp;
+                final int finalC = c;
 
                 collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(AURORA_TEX),
                     (pose, consumer) -> {
                         int segments = 24;
-                        double width = 120.0 + Mth.sin(waveTime * 0.5f + c) * 20.0;
+                        double width = 120.0 + Mth.sin(waveTime * 0.5f + finalC) * 20.0;
                         double halfWidth = width / 2.0;
                         double centerX = cam.x + Mth.cos(curtainOffset) * auroraDist * 0.3;
                         double centerZ = cam.z + Mth.sin(curtainOffset) * auroraDist + auroraDist * 0.8; // North
@@ -77,18 +80,18 @@ public final class McsmAuroraBorealis {
                             double x1 = centerX + (u1 - 0.5) * width;
                             double z = centerZ;
                             // Wave displacement
-                            float wave0 = Mth.sin(waveTime + u0 * 6f + c * 1.2f) * 12f + Mth.cos(waveTime * 0.7f + u0 * 4f) * 8f;
-                            float wave1 = Mth.sin(waveTime + u1 * 6f + c * 1.2f) * 12f + Mth.cos(waveTime * 0.7f + u1 * 4f) * 8f;
+                            float wave0 = Mth.sin(waveTime + u0 * 6f + finalC * 1.2f) * 12f + Mth.cos(waveTime * 0.7f + u0 * 4f) * 8f;
+                            float wave1 = Mth.sin(waveTime + u1 * 6f + finalC * 1.2f) * 12f + Mth.cos(waveTime * 0.7f + u1 * 4f) * 8f;
                             double yBottom0 = cam.y + auroraHeightBase + wave0 * 0.3;
                             double yTop0 = cam.y + auroraHeightTop + wave0 + Mth.sin(waveTime * 0.8f + u0 * 5f) * 18f;
                             double yBottom1 = cam.y + auroraHeightBase + wave1 * 0.3;
                             double yTop1 = cam.y + auroraHeightTop + wave1 + Mth.sin(waveTime * 0.8f + u1 * 5f) * 18f;
 
                             // Color shift along curtain
-                            float hue = (hueBase + u0 * 0.15f + Mth.sin(waveTime * 0.3f + c) * 0.05f) % 1f;
+                            float hue = (hueBase + u0 * 0.15f + Mth.sin(waveTime * 0.3f + finalC) * 0.05f) % 1f;
                             float[] rgb = hsvToRgb(hue, 0.85f, 1f);
                             // Brightness pulse
-                            float pulse = 0.7f + 0.3f * Mth.sin(waveTime * 0.9f + u0 * 3f + c);
+                            float pulse = 0.7f + 0.3f * Mth.sin(waveTime * 0.9f + u0 * 3f + finalC);
                             int r = (int)(rgb[0] * 255 * pulse);
                             int g = (int)(rgb[1] * 255 * pulse);
                             int b = (int)(rgb[2] * 255 * pulse);

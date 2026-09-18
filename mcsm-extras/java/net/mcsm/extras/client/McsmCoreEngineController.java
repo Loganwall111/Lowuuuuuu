@@ -220,9 +220,9 @@ public final class McsmCoreEngineController {
     private static void cubeFace(PoseStack.Pose pose, VertexConsumer consumer,
             float x0, float y0, float z0, float x1, float y1, float z1,
             int r, int g, int b) {
-        Vec3 a = x0, y0, z0;
+        Vec3 a = new Vec3(x0, y0, z0);
         Vec3 bb = new Vec3(x1, y0, z1);
-        Vec3 c = x1, y1, z1;
+        Vec3 c = new Vec3(x1, y1, z1);
         Vec3 d = new Vec3(x0, y1, z0);
         putSunVertex(pose, consumer, a, r, g, b);
         putSunVertex(pose, consumer, bb, r, g, b);
