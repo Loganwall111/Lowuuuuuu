@@ -919,7 +919,7 @@ def main():
 
     cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
     check("the master version label is still exactly 7000.0.0-M",
-          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg or 'BUILD_VERSION = "7000.0.6-M";' in cfg or 'BUILD_VERSION = "7000.0.7-M";' in cfg or 'BUILD_VERSION = "7000.0.9-M";' in cfg)
+          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg or 'BUILD_VERSION = "7000.0.6-M";' in cfg or 'BUILD_VERSION = "7000.0.7-M";' in cfg or 'BUILD_VERSION = "7000.0.10-M";' in cfg)
     check("the ported panel's options exist in the config",
           all(k in cfg for k in ("cinematicBootEnabled", "sciFiPanelLayout", "menuPanorama",
                                  "stormHaloEnabled", "glareBackdrop", "nightglowPurpleGlow55",

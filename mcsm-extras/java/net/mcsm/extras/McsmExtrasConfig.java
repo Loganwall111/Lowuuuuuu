@@ -13,7 +13,7 @@ import java.util.Properties;
  * animation controller, nightglow halo expansion, and sci-fi UI parameters.
  */
 public final class McsmExtrasConfig {
-    public static final String BUILD_VERSION = "7000.0.9-M";
+    public static final String BUILD_VERSION = "7000.0.10-M";
 
     // ---- Core Gameplay & Storm Mechanics -----------------------------------
     public static boolean enableTentacleGrab = true;
