@@ -135,7 +135,7 @@ public final class McsmTimeMachine {
 
     private static void showTimeRouter(ServerPlayer player, BlockPos machinePos) {
         try {
-            long time = player.level().getDayTime() % 24000;
+            long time = player.level().getGameTime() % 24000;
             String currentEra = getEraForTime(time);
             player.sendSystemMessage(Component.literal("§b§l[TIME ROUTER] §fCurrent: " + currentEra + " §7| §eTime: " + time + " §7| §aLooking at elevator window..."));
             player.sendSystemMessage(Component.literal("§8Time rewinding... §d" + (24000 - time) + " ticks to midnight §8| §bEras: BEGINNING_EARTH, DINOSAUR_AGE, ROMAN_EMPIRE, MEDIEVAL_KINGS, CYBERPUNK_FUTURE"));
@@ -352,9 +352,9 @@ public final class McsmTimeMachine {
             p[8] = Blocks.IRON_BLOCK.defaultBlockState();
             p[9] = Blocks.REDSTONE_LAMP.defaultBlockState();
             p[10] = Blocks.STONE_BUTTON.defaultBlockState();
-            p[11] = Blocks.CLOCK.defaultBlockState();
+            p[11] = Blocks.REDSTONE_BLOCK.defaultBlockState();
             p[12] = Blocks.BONE_BLOCK.defaultBlockState();
-            p[13] = Blocks.ARMOR_STAND.defaultBlockState();
+            p[13] = Blocks.SCAFFOLDING.defaultBlockState();
             p[14] = Blocks.SEA_LANTERN.defaultBlockState();
             p[15] = Blocks.LODESTONE.defaultBlockState();
             p[16] = Blocks.RESPAWN_ANCHOR.defaultBlockState();

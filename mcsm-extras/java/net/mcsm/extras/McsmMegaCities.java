@@ -323,7 +323,7 @@ public final class McsmMegaCities {
     private static boolean isReplaceable(ServerLevel level, BlockPos pos) {
         try {
             var state = level.getBlockState(pos);
-            return state.isAir() || state.getBlock() == Blocks.GRASS || state.getBlock() == Blocks.TALL_GRASS || state.getBlock() == Blocks.FERN;
+            return state.isAir() || state.getBlock() == Blocks.SHORT_GRASS || state.getBlock() == Blocks.TALL_GRASS || state.getBlock() == Blocks.FERN;
         } catch (Throwable t) {
             return true;
         }
@@ -345,20 +345,20 @@ public final class McsmMegaCities {
             if (palette != null) return palette;
             BlockState[] p = new BlockState[32];
             p[0] = Blocks.AIR.defaultBlockState();
-            p[1] = Blocks.GRAY_CONCRETE.defaultBlockState();
+            p[1] = Blocks.GRAY_WOOL.defaultBlockState();
             p[2] = Blocks.GLASS.defaultBlockState();
             p[3] = Blocks.OAK_PLANKS.defaultBlockState();
             p[4] = Blocks.OAK_STAIRS.defaultBlockState();
             p[5] = Blocks.CRAFTING_TABLE.defaultBlockState();
             p[6] = Blocks.OAK_FENCE.defaultBlockState();
             p[7] = Blocks.LANTERN.defaultBlockState();
-            p[8] = Blocks.BLACK_CONCRETE.defaultBlockState();
+            p[8] = Blocks.BLACK_WOOL.defaultBlockState();
             p[9] = Blocks.GRASS_BLOCK.defaultBlockState();
             p[10] = Blocks.OAK_LEAVES.defaultBlockState();
             p[11] = Blocks.WATER.defaultBlockState();
             p[12] = Blocks.SAND.defaultBlockState();
             p[13] = Blocks.OAK_DOOR.defaultBlockState();
-            p[14] = Blocks.WHITE_CONCRETE.defaultBlockState();
+            p[14] = Blocks.WHITE_WOOL.defaultBlockState();
             p[15] = Blocks.CHEST.defaultBlockState();
             p[16] = Blocks.IRON_BARS.defaultBlockState();
             palette = p;

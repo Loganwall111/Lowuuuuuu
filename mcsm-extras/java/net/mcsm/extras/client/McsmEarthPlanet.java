@@ -53,7 +53,7 @@ public final class McsmEarthPlanet {
             cloudSpin += 0.012f;
 
             // Earth position - orbits slowly across sky, opposite sun
-            float dayTime = level.getTimeOfDay(partial);
+            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f);
             float earthOrbit = (dayTime * 0.3f + t * 0.0002f) % Mth.TWO_PI;
             double earthDist = 420.0;
             double earthX = cam.x + Mth.cos(earthOrbit) * earthDist * 0.7;
@@ -204,8 +204,10 @@ public final class McsmEarthPlanet {
         }
     }
 
-    private static void vertex(Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int r, int g, int b, int a, float nx, float ny, float nz) {
-        consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z)
+    private static void vertex(Pose pose, VertexConsumer consumer,
+            double x, double y, double z, float u, float v,
+            int r, int g, int b, int a, float nx, float ny, float nz) {
+        consumer.addVertex(pose, (float) x, (float) y, (float) z)
             .setColor(r, g, b, a)
             .setUv(u, v)
             .setOverlay(OverlayTexture.NO_OVERLAY)

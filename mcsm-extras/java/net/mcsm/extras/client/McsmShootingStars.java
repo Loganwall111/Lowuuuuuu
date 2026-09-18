@@ -67,7 +67,7 @@ public final class McsmShootingStars {
         try {
             Minecraft mc = Minecraft.getInstance();
             if (mc.level == null) return;
-            Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
+            Vec3 cam = mc.player != null ? mc.player.position() : new Vec3(0,0,0);
             double dist = 360.0;
             double angle1 = Math.random() * Mth.TWO_PI;
             double angle2 = Math.random() * 0.6 + 0.3; // elevation
@@ -101,7 +101,7 @@ public final class McsmShootingStars {
             Minecraft mc = Minecraft.getInstance();
             ClientLevel level = mc == null ? null : mc.level;
             if (level == null) return;
-            float dayTime = level.getTimeOfDay(mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f).getGameTimeDeltaPartialTick(false));
             if (dayTime > 0.25f && dayTime < 0.75f) return; // Night only
 
             Vec3 cam = ctx.levelState().cameraRenderState.pos;
@@ -180,7 +180,7 @@ public final class McsmShootingStars {
         } catch (Throwable ignored) {}
     }
 
-    private static void quadBillboard(Pose pose, VertexConsumer consumer, double x, double y, double z, float size, int r, int g, int b, int a, Vec3 cam) {
+        private static void quadBillboard(Pose pose, VertexConsumer consumer, double x, double y, double z, float size, int r, int g, int b, int a, Vec3 cam) {
         Vec3 pos = new Vec3(x, y, z);
         Vec3 toCam = cam.subtract(pos).normalize();
         Vec3 up = new Vec3(0, 1, 0);
@@ -189,14 +189,16 @@ public final class McsmShootingStars {
         up = right.cross(toCam).normalize();
         Vec3 rx = right.scale(size);
         Vec3 uy = up.scale(size);
-        vertex(pose, consumer, pos.subtract(rx).subtract(uy), 0, 1, r, g, b, a, 0, 1, 0);
-        vertex(pose, consumer, pos.add(rx).subtract(uy), 1, 1, r, g, b, a, 0, 1, 0);
-        vertex(pose, consumer, pos.add(rx).add(uy), 1, 0, r, g, b, a, 0, 1, 0);
-        vertex(pose, consumer, pos.subtract(rx).add(uy), 0, 0, r, g, b, a, 0, 1, 0);
+        vertex(pose, consumer, pos.x - rx.x - uy.x, pos.y - rx.y - uy.y, pos.z - rx.z - uy.z, 0, 1, r, g, b, a, 0, 1, 0);
+        vertex(pose, consumer, pos.x + rx.x - uy.x, pos.y + rx.y - uy.y, pos.z + rx.z - uy.z, 1, 1, r, g, b, a, 0, 1, 0);
+        vertex(pose, consumer, pos.x + rx.x + uy.x, pos.y + rx.y + uy.y, pos.z + rx.z + uy.z, 1, 0, r, g, b, a, 0, 1, 0);
+        vertex(pose, consumer, pos.x - rx.x + uy.x, pos.y - rx.y + uy.y, pos.z - rx.z + uy.z, 0, 0, r, g, b, a, 0, 1, 0);
     }
 
-    private static void vertex(Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int r, int g, int b, int a, float nx, float ny, float nz) {
-        consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z)
+    private static void vertex(Pose pose, VertexConsumer consumer,
+            double x, double y, double z, float u, float v,
+            int r, int g, int b, int a, float nx, float ny, float nz) {
+        consumer.addVertex(pose, (float) x, (float) y, (float) z)
             .setColor(r, g, b, a)
             .setUv(u, v)
             .setOverlay(OverlayTexture.NO_OVERLAY)

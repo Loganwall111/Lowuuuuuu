@@ -53,7 +53,7 @@ public final class McsmCabinStructure {
             if (level == null) return;
             if (!level.dimension().identifier().toString().contains("overworld") && !level.dimension().identifier().toString().equals("minecraft:overworld")) return;
             // Only at midnight - time 18000
-            long time = level.getDayTime() % 24000;
+            long time = level.getGameTime() % 24000;
             boolean isMidnight = time >= 17800 && time <= 18200;
             if (!isMidnight) {
                 // Still process queued ops, but don't start new cabins
@@ -313,7 +313,7 @@ public final class McsmCabinStructure {
     private static boolean isReplaceable(ServerLevel level, BlockPos pos) {
         try {
             var state = level.getBlockState(pos);
-            return state.isAir() || state.getBlock() == Blocks.GRASS || state.getBlock() == Blocks.TALL_GRASS || state.getBlock() == Blocks.FERN || state.getBlock() == Blocks.DEAD_BUSH || state.getBlock() == Blocks.VINE;
+            return state.isAir() || state.getBlock() == Blocks.SHORT_GRASS || state.getBlock() == Blocks.TALL_GRASS || state.getBlock() == Blocks.FERN || state.getBlock() == Blocks.DEAD_BUSH || state.getBlock() == Blocks.VINE;
         } catch (Throwable t) {
             return true;
         }

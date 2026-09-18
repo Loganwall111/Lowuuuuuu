@@ -82,7 +82,7 @@ public final class McsmAmbientWorld {
         try {
             Minecraft mc = Minecraft.getInstance();
             if (mc.level == null || mc.player == null) return;
-            Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
+            Vec3 cam = mc.player != null ? mc.player.position() : new Vec3(0,0,0);
             double angle = Math.random() * Mth.TWO_PI;
             double dist = 8 + Math.random() * 24;
             double x = cam.x + Math.cos(angle) * dist;
@@ -116,7 +116,7 @@ public final class McsmAmbientWorld {
             SubmitNodeCollector collector = ctx.submitNodeCollector();
             float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
             float t = level.getGameTime() + partial;
-            float dayTime = level.getTimeOfDay(partial);
+            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f);
 
             boolean isNight = dayTime > 0.7f || dayTime < 0.25f;
             boolean isEvening = dayTime > 0.6f && dayTime < 0.8f;
@@ -210,7 +210,7 @@ public final class McsmAmbientWorld {
     public static float getLastWolfHowl() { return lastWolfHowl; }
     public static float getLastCricket() { return lastCricket; }
 
-    private static void quadBillboard(Pose pose, VertexConsumer consumer, double x, double y, double z, float size, int r, int g, int b, int a, Vec3 cam) {
+        private static void quadBillboard(Pose pose, VertexConsumer consumer, double x, double y, double z, float size, int r, int g, int b, int a, Vec3 cam) {
         Vec3 pos = new Vec3(x, y, z);
         Vec3 toCam = cam.subtract(pos).normalize();
         Vec3 up = new Vec3(0, 1, 0);
@@ -219,14 +219,16 @@ public final class McsmAmbientWorld {
         up = right.cross(toCam).normalize();
         Vec3 rx = right.scale(size);
         Vec3 uy = up.scale(size);
-        vertex(pose, consumer, pos.subtract(rx).subtract(uy), 0, 1, r, g, b, a, 0, 1, 0);
-        vertex(pose, consumer, pos.add(rx).subtract(uy), 1, 1, r, g, b, a, 0, 1, 0);
-        vertex(pose, consumer, pos.add(rx).add(uy), 1, 0, r, g, b, a, 0, 1, 0);
-        vertex(pose, consumer, pos.subtract(rx).add(uy), 0, 0, r, g, b, a, 0, 1, 0);
+        vertex(pose, consumer, pos.x - rx.x - uy.x, pos.y - rx.y - uy.y, pos.z - rx.z - uy.z, 0, 1, r, g, b, a, 0, 1, 0);
+        vertex(pose, consumer, pos.x + rx.x - uy.x, pos.y + rx.y - uy.y, pos.z + rx.z - uy.z, 1, 1, r, g, b, a, 0, 1, 0);
+        vertex(pose, consumer, pos.x + rx.x + uy.x, pos.y + rx.y + uy.y, pos.z + rx.z + uy.z, 1, 0, r, g, b, a, 0, 1, 0);
+        vertex(pose, consumer, pos.x - rx.x + uy.x, pos.y - rx.y + uy.y, pos.z - rx.z + uy.z, 0, 0, r, g, b, a, 0, 1, 0);
     }
 
-    private static void vertex(Pose pose, VertexConsumer consumer, Vec3 at, float u, float v, int r, int g, int b, int a, float nx, float ny, float nz) {
-        consumer.addVertex(pose, (float)at.x, (float)at.y, (float)at.z)
+    private static void vertex(Pose pose, VertexConsumer consumer,
+            double x, double y, double z, float u, float v,
+            int r, int g, int b, int a, float nx, float ny, float nz) {
+        consumer.addVertex(pose, (float) x, (float) y, (float) z)
             .setColor(r, g, b, a)
             .setUv(u, v)
             .setOverlay(OverlayTexture.NO_OVERLAY)
@@ -240,10 +242,10 @@ public final class McsmAmbientWorld {
                              double x2, double y2, double z2, float u2, float v2,
                              double x3, double y3, double z3, float u3, float v3,
                              int r, int g, int b, int a, float nx, float ny, float nz) {
-        vertex(pose, consumer, x0, y0, z0, u0, v0, r, g, b, a, nx, ny, nz);
-        vertex(pose, consumer, x1, y1, z1, u1, v1, r, g, b, a, nx, ny, nz);
-        vertex(pose, consumer, x2, y2, z2, u2, v2, r, g, b, a, nx, ny, nz);
-        vertex(pose, consumer, x3, y3, z3, u3, v3, r, g, b, a, nx, ny, nz);
+        vertex(pose, consumer, new Vec3(x0, y0, z0), u0, v0, r, g, b, a, nx, ny, nz);
+        vertex(pose, consumer, new Vec3(x1, y1, z1), u1, v1, r, g, b, a, nx, ny, nz);
+        vertex(pose, consumer, new Vec3(x2, y2, z2), u2, v2, r, g, b, a, nx, ny, nz);
+        vertex(pose, consumer, new Vec3(x3, y3, z3), u3, v3, r, g, b, a, nx, ny, nz);
     }
 
     private static float[] hsvToRgb(float h, float s, float v) {
