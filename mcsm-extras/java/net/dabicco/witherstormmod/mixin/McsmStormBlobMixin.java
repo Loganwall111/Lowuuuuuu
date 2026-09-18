@@ -68,6 +68,8 @@ public abstract class McsmStormBlobMixin {
             net.mcsm.extras.client.McsmLightRays.submit(ctx);
             // V2 NEXT-GEN Phase 2 - Ambient World: fireflies, bioluminescent water, reflections, wolf howling, crickets
             net.mcsm.extras.client.McsmAmbientWorld.submit(ctx);
+            // V2 NEXT-GEN Phase 4 - Time Warp Effect: realistic warp, chromatic blur, universes passing by, time router
+            net.mcsm.extras.client.McsmTimeWarpEffect.submit(ctx);
             // BUILD #474 -- and the ceiling those clouds sit under: the STORM'S own sky,
             // all 360 degrees of it, from the horizon to the zenith. The cube and the deck
             // are the dimensions' skies; the Overworld -- where the story, the cities and

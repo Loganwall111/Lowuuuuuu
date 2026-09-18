@@ -144,6 +144,8 @@ public final class McsmSiftClient {
             net.mcsm.extras.client.McsmShootingStars.tick();
             // V2 NEXT-GEN Phase 2 - ambient world fireflies + bioluminescent
             net.mcsm.extras.client.McsmAmbientWorld.tick();
+            // V2 NEXT-GEN Phase 4 - time warp effect
+            net.mcsm.extras.client.McsmTimeWarpEffect.tick();
         } catch (Throwable ignored) {}
     }
 }

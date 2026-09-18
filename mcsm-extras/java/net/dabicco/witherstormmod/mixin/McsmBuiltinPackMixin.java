@@ -123,5 +123,11 @@ public abstract class McsmBuiltinPackMixin {
         // has existed since the port and nothing read it; this is the half that
         // turns a decoration into a grab.
         McsmTentacles.register();
+        // V2 NEXT-GEN Phase 3 - The Cabin: midnight forest cabin, locked door, stories
+        try { net.mcsm.extras.McsmCabinStructure.boot(); } catch (Throwable t) { System.out.println("[ds] Cabin boot failed: " + t.getMessage()); }
+        // V2 NEXT-GEN Phase 3 - Mega Cities: Toronto/NY tall, massive, extremely high
+        try { net.mcsm.extras.McsmMegaCities.boot(); } catch (Throwable t) { System.out.println("[ds] MegaCities boot failed: " + t.getMessage()); }
+        // V2 NEXT-GEN Phase 4 - Time Machine: time travel era, physical elevator building, warp effect
+        try { net.mcsm.extras.McsmTimeMachine.boot(); } catch (Throwable t) { System.out.println("[ds] TimeMachine boot failed: " + t.getMessage()); }
     }
 }
