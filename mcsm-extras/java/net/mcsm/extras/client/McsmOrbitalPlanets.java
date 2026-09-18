@@ -82,46 +82,51 @@ public final class McsmOrbitalPlanets {
 
             // Only visible at night / evening for realism, but faintly day too
             float dayTime = ((level.getGameTime() % 24000L) / 24000.0f);
-            float nightAlpha = 1f;
+            float nightAlphaTmp = 1f;
             if (dayTime > 0.25f && dayTime < 0.75f) {
-                nightAlpha = 0.35f; // faint during day
+                nightAlphaTmp = 0.35f; // faint during day
             }
+            final float nightAlpha = nightAlphaTmp;
 
             for (int pi = 0; pi < PLANETS.length; pi++) {
                 PlanetDef p = PLANETS[pi];
+                final PlanetDef finalP = p;
+                final int finalPi = pi;
                 // Orbit position
-                double orbitAngle = t * p.orbitSpeed + pi * 1.3;
-                double x = cam.x + Math.cos(orbitAngle) * p.orbitRadius;
-                double z = cam.z + Math.sin(orbitAngle) * p.orbitRadius * Math.cos(p.orbitTilt);
-                double y = cam.y + p.yOffset + Math.sin(orbitAngle * 0.7) * 30.0 + Math.cos(orbitAngle * 0.4 + pi) * 20.0;
+                double orbitAngle = t * finalP.orbitSpeed + finalPi * 1.3;
+                double x = cam.x + Math.cos(orbitAngle) * finalP.orbitRadius;
+                double z = cam.z + Math.sin(orbitAngle) * finalP.orbitRadius * Math.cos(finalP.orbitTilt);
+                double y = cam.y + finalP.yOffset + Math.sin(orbitAngle * 0.7) * 30.0 + Math.cos(orbitAngle * 0.4 + finalPi) * 20.0;
                 Vec3 planetPos = new Vec3(x, y, z);
 
                 // Spin
-                float spin = t * 0.008f + pi * 0.5f;
+                float spin = t * 0.008f + finalPi * 0.5f;
 
                 // Planet sphere
-                collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(p.tex),
+                final Vec3 finalPlanetPos = planetPos;
+                final float finalSpin = spin;
+                collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(finalP.tex),
                     (pose, consumer) -> {
-                        emitPlanetSphere(pose, consumer, planetPos, p.radius, 18, 12, spin, p.color, (int)(220 * nightAlpha));
+                        emitPlanetSphere(pose, consumer, finalPlanetPos, finalP.radius, 18, 12, finalSpin, finalP.color, (int)(220 * nightAlpha));
                     });
 
                 // Saturn rings
-                if (p.hasRing) {
+                if (finalP.hasRing) {
                     collector.submitCustomGeometry(poseStack, GlowRenderTypes.translucent(SATURN_RING),
                         (pose, consumer) -> {
-                            emitRing(pose, consumer, planetPos, p.ringInner, p.ringOuter, spin, p.color, (int)(160 * nightAlpha));
+                            emitRing(pose, consumer, finalPlanetPos, finalP.ringInner, finalP.ringOuter, finalSpin, finalP.color, (int)(160 * nightAlpha));
                         });
                 }
 
                 // Glow / atmosphere for gas giants
-                if (p.radius > 10) {
+                if (finalP.radius > 10) {
                     collector.submitCustomGeometry(poseStack, GlowRenderTypes.glow(WHITE),
                         (pose, consumer) -> {
-                            double glowR = p.radius * 1.25;
-                            int r = (int)(p.color[0] * 60);
-                            int g = (int)(p.color[1] * 60);
-                            int b = (int)(p.color[2] * 80);
-                            emitSphere(pose, consumer, planetPos, glowR, 12, 8, r, g, b, (int)(25 * nightAlpha), t);
+                            double glowR = finalP.radius * 1.25;
+                            int r = (int)(finalP.color[0] * 60);
+                            int g = (int)(finalP.color[1] * 60);
+                            int b = (int)(finalP.color[2] * 80);
+                            emitSphere(pose, consumer, finalPlanetPos, glowR, 12, 8, r, g, b, (int)(25 * nightAlpha), t);
                         });
                 }
             }
