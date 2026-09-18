@@ -1,0 +1,53 @@
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java:335: error: cannot find symbol
+            if (player.getMainHandItem().getDescriptionId().contains("reality_knife")
+                                        ^
+  symbol:   method getDescriptionId()
+  location: class ItemStack
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java:336: error: cannot find symbol
+                    || player.getOffhandItem().getDescriptionId().contains("reality_knife")
+                                              ^
+  symbol:   method getDescriptionId()
+  location: class ItemStack
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java:337: error: cannot find symbol
+                    || player.getMainHandItem().getDescriptionId().contains("void_rudder")
+                                               ^
+  symbol:   method getDescriptionId()
+  location: class ItemStack
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java:338: error: cannot find symbol
+                    || player.getOffhandItem().getDescriptionId().contains("void_rudder")) {
+                                              ^
+  symbol:   method getDescriptionId()
+  location: class ItemStack
+mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java:98: error: cannot find symbol
+            if (player.getMainHandItem().getDescriptionId().contains("reality_knife")) return true;
+                                        ^
+  symbol:   method getDescriptionId()
+  location: class ItemStack
+mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java:99: error: cannot find symbol
+            if (player.getOffhandItem().getDescriptionId().contains("reality_knife")) return true;
+                                       ^
+  symbol:   method getDescriptionId()
+  location: class ItemStack
+mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java:100: error: items has private access in Inventory
+            for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
+                                                                                 ^
+mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java:101: error: cannot find symbol
+                if (stack.getDescriptionId().contains("reality_knife")) return true;
+                         ^
+  symbol:   method getDescriptionId()
+  location: variable stack of type ItemStack
+mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java:104: error: cannot find symbol
+            if (player.getMainHandItem().getDescriptionId().contains("void_rudder")) return true;
+                                        ^
+  symbol:   method getDescriptionId()
+  location: class ItemStack
+mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java:105: error: cannot find symbol
+            if (player.getOffhandItem().getDescriptionId().contains("void_rudder")) return true;
+                                       ^
+  symbol:   method getDescriptionId()
+  location: class ItemStack
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+10 errors
