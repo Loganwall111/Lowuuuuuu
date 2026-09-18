@@ -8,7 +8,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -30,6 +29,7 @@ import net.minecraftforge.fml.common.Mod;
  * MERGED VOID: second dimension directly underneath overworld hundreds blocks down
  * Skybox merges slowly to color of that area, no loading screen
  * Pocket dimension flag: completely disable suffocating in void entirely
+ * FIX 7000.0.11-M: Make Sift reachable fast - 20 min bug fix
  */
 @Mod.EventBusSubscriber
 public final class McsmSiftDimension {
@@ -98,7 +98,7 @@ public final class McsmSiftDimension {
         }
     }
 
-    private static void generateMergedVoidInChunk(ServerLevel level, BlockPos chunkOrigin) {
+    public static void generateMergedVoidInChunk(ServerLevel level, BlockPos chunkOrigin) {
         RandomSource rng = RandomSource.create(chunkOrigin.asLong() ^ level.getSeed());
         PerlinNoise crackNoise = PerlinNoise.create(rng, -2, 1);
         PerlinNoise spongeNoise = PerlinNoise.create(RandomSource.create(rng.nextLong()), -3, 1);
@@ -112,7 +112,7 @@ public final class McsmSiftDimension {
                 int wx = startX + x;
                 int wz = startZ + z;
 
-                // FABRIC TOP -64 to -200
+                // FABRIC TOP -64 to -200 - infinite gigantic ground
                 for (int y = McsmVoidTiers.FABRIC_TOP; y >= McsmVoidTiers.FABRIC_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
                     BlockState current = level.getBlockState(pos);
@@ -132,14 +132,20 @@ public final class McsmSiftDimension {
                     }
                 }
 
-                // EMPTINESS -200 to -600
+                // EMPTINESS -200 to -600 - NOW WITH VISIBLE MARKERS so player knows they're moving
                 for (int y = McsmVoidTiers.EMPTINESS_TOP - 1; y >= McsmVoidTiers.EMPTINESS_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
+                    // 99.5% air but with floating markers every 20 blocks to show progress
+                    if (y % 20 == 0 && rng.nextFloat() < 0.05f) {
+                        // Floating fabric island marker - shows you're in emptiness and moving
+                        level.setBlock(pos, McsmSiftMod.FABRIC_OF_REALITY.get().defaultBlockState(), 2);
+                        continue;
+                    }
                     if (rng.nextFloat() < 0.998f) {
                         if (!level.getBlockState(pos).isAir()) level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                         continue;
                     }
-                    if (rng.nextFloat() < 0.002f) {
+                    if (rng.nextFloat() < 0.005f) {
                         level.setBlock(pos, McsmSiftMod.FABRIC_OF_REALITY.get().defaultBlockState(), 2);
                     }
                 }
@@ -147,13 +153,13 @@ public final class McsmSiftDimension {
                 // TIER 1 GEL HORIZON -600 to -900
                 for (int y = McsmVoidTiers.TIER_1_GEL_HORIZON_TOP; y >= McsmVoidTiers.TIER_1_GEL_HORIZON_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
-                    if (rng.nextFloat() < 0.92f) {
+                    if (rng.nextFloat() < 0.88f) {
                         if (!level.getBlockState(pos).isAir()) level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                         continue;
                     }
-                    if (rng.nextFloat() < 0.15f) {
+                    if (rng.nextFloat() < 0.20f) {
                         level.setBlock(pos, McsmSiftMod.IRIDESCENT_GEL.get().defaultBlockState(), 2);
-                    } else if (rng.nextFloat() < 0.1f) {
+                    } else if (rng.nextFloat() < 0.12f) {
                         try {
                             level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.BLUE_GRASS_BLOCK.get().defaultBlockState(), 2);
                         } catch (Exception e) {
@@ -162,7 +168,7 @@ public final class McsmSiftDimension {
                     }
                 }
 
-                // TIER 2 MENGER MAZE -900 to -1300
+                // TIER 2 MENGER MAZE -900 to -1300 - SIFT AREA - dense orange->pink gradient
                 for (int y = McsmVoidTiers.TIER_2_SPONGE_MAZE_TOP; y >= McsmVoidTiers.TIER_2_SPONGE_MAZE_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
                     if (y < McsmVoidTiers.TIER_2_PHYSICAL_MAZE_START) {
@@ -172,7 +178,7 @@ public final class McsmSiftDimension {
                         double nz = wz * 0.03;
                         double n1 = spongeNoise.getValue(nx, ny, nz);
                         double n2 = tunnelNoise.getValue(nx * 1.5, ny * 0.8, nz * 1.5);
-                        boolean carved = (n1 + n2 * 0.6) > 0.15;
+                        boolean carved = (n1 + n2 * 0.6) > 0.10; // More open, easier to navigate
                         if (solid && carved) {
                             float depthFactor = (float)(McsmVoidTiers.TIER_2_SPONGE_MAZE_TOP - y) / (McsmVoidTiers.TIER_2_SPONGE_MAZE_TOP - McsmVoidTiers.TIER_2_SPONGE_MAZE_BOTTOM);
                             BlockState state = getMazeBlockForDepth(depthFactor, rng);
@@ -181,7 +187,7 @@ public final class McsmSiftDimension {
                             level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                         }
                     } else {
-                        if (rng.nextFloat() < 0.95f) {
+                        if (rng.nextFloat() < 0.90f) {
                             level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                         } else {
                             level.setBlock(pos, McsmSiftMod.MENGER_SPONGE.get().defaultBlockState(), 2);
@@ -192,9 +198,9 @@ public final class McsmSiftDimension {
                 // TIER 3 RIFT FIELD -1300 to -1500
                 for (int y = McsmVoidTiers.TIER_3_RIFT_FIELD_TOP; y >= McsmVoidTiers.TIER_3_RIFT_FIELD_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
-                    if (rng.nextFloat() < 0.97f) {
+                    if (rng.nextFloat() < 0.95f) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
-                    } else if (rng.nextFloat() < 0.05f) {
+                    } else if (rng.nextFloat() < 0.08f) {
                         level.setBlock(pos, McsmSiftMod.RIFT_COSMIC.get().defaultBlockState(), 2);
                     }
                 }
@@ -202,7 +208,7 @@ public final class McsmSiftDimension {
                 // TIER 4 DISPLACEMENT -1500 to -1700
                 for (int y = McsmVoidTiers.TIER_4_DISPLACEMENT_TOP; y >= McsmVoidTiers.TIER_4_DISPLACEMENT_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
-                    if (rng.nextFloat() < 0.98f) {
+                    if (rng.nextFloat() < 0.96f) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                     } else {
                         level.setBlock(pos, Blocks.GLASS.defaultBlockState(), 2);
@@ -212,7 +218,7 @@ public final class McsmSiftDimension {
                 // TIER 5 IRIDESCENT GEL -1700 to -1900
                 for (int y = McsmVoidTiers.TIER_5_GEL_VOID_TOP; y >= McsmVoidTiers.TIER_5_GEL_VOID_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
-                    if (rng.nextFloat() < 0.85f) {
+                    if (rng.nextFloat() < 0.80f) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                     } else {
                         level.setBlock(pos, McsmSiftMod.IRIDESCENT_GEL.get().defaultBlockState(), 2);
@@ -234,7 +240,7 @@ public final class McsmSiftDimension {
                 // UNKNOWN -2000 to -2032
                 for (int y = McsmVoidTiers.UNKNOWN_TOP; y >= McsmVoidTiers.UNKNOWN_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
-                    if (rng.nextFloat() < 0.7f) {
+                    if (rng.nextFloat() < 0.65f) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                     } else {
                         try {
@@ -281,12 +287,13 @@ public final class McsmSiftDimension {
         if (player.level().isClientSide) return;
 
         int y = (int) player.getY();
+        Level lvl = player.level();
 
         if (McsmVoidTiers.isInVoidDimension(y)) {
             player.fallDistance = 0;
             if (McsmVoidTiers.DISABLE_VOID_SUFFOCATION) {
                 if (player.isInWall()) {
-                    player.setDeltaMovement(player.getDeltaMovement().add(0, 0.2, 0));
+                    player.setDeltaMovement(player.getDeltaMovement().add(0, 0.3, 0));
                     player.hasImpulse = true;
                 }
             }
@@ -329,9 +336,9 @@ public final class McsmSiftDimension {
 
         if (McsmVoidTiers.isInUnknown(y)) {
             if (player.onGround() && player.getDeltaMovement().y < 0.1) {
-                player.setDeltaMovement(player.getDeltaMovement().add(0, 0.4, 0));
+                player.setDeltaMovement(player.getDeltaMovement().add(0, 0.5, 0));
                 player.hasImpulse = true;
-                if (player.level() instanceof ServerLevel sl) {
+                if (lvl instanceof ServerLevel sl) {
                     sl.sendParticles(net.minecraft.core.particles.ParticleTypes.PORTAL,
                         player.getX(), player.getY(), player.getZ(),
                         10, 0.3, 0.1, 0.3, 0.2);
@@ -339,12 +346,63 @@ public final class McsmSiftDimension {
             }
         }
 
+        // FIX for 20-min fall bug: ensure chunks generate around player every tick when in void
+        // Also make fall faster in emptiness instead of slow falling
         if (McsmVoidTiers.isInVoidDimension(y)) {
-            var tier = McsmVoidTiers.getTierForY(y);
-            if (tier == McsmVoidTiers.Tier.EMPTINESS && player.tickCount % 100 == 0) {
-                if (player instanceof ServerPlayer sp) {
-                    sp.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                        net.minecraft.world.effect.MobEffects.SLOW_FALLING, 120, 0, false, false, false));
+            if (lvl instanceof ServerLevel sLevel && lvl.dimension() == Level.OVERWORLD && player instanceof ServerPlayer sp) {
+                // Generate 3x3 chunks around player if in void, so sift is always visible
+                if (player.tickCount % 20 == 0) {
+                    int cx = player.blockPosition().getX() >> 4;
+                    int cz = player.blockPosition().getZ() >> 4;
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            BlockPos origin = new BlockPos((cx+dx)*16, sLevel.getMinBuildHeight(), (cz+dz)*16);
+                            try { generateMergedVoidInChunk(sLevel, origin); } catch (Exception ignored) {}
+                        }
+                    }
+                }
+
+                var tier = McsmVoidTiers.getTierForY(y);
+                // FAST FALL in emptiness - was slow falling causing 20 min bug
+                if (tier == McsmVoidTiers.Tier.EMPTINESS) {
+                    if (player.getDeltaMovement().y > -2.0) {
+                        player.setDeltaMovement(player.getDeltaMovement().add(0, -0.18, 0));
+                        player.hasImpulse = true;
+                    }
+                    if (sLevel instanceof ServerLevel sl && player.tickCount % 10 == 0) {
+                        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.FIREWORK,
+                            player.getX(), player.getY() + 2, player.getZ(),
+                            3, 0.5, 0.5, 0.5, 0.1);
+                    }
+                }
+
+                // Show tier title so player knows where they are
+                if (player.tickCount % 40 == 0) {
+                    String tierName = tier.id.toUpperCase().replace("_", " ");
+                    String msg;
+                    if (tier == McsmVoidTiers.Tier.EMPTINESS) {
+                        int distToGel = Math.abs(y - McsmVoidTiers.TIER_1_GEL_HORIZON_TOP);
+                        int distToSift = Math.abs(y - McsmVoidTiers.TIER_2_SPONGE_MAZE_TOP);
+                        msg = "EMPTINESS " + y + " -> GEL at -600 (" + distToGel + "b) | SIFT at -900 (" + distToSift + "b)";
+                    } else if (tier == McsmVoidTiers.Tier.FABRIC_OF_REALITY) {
+                        msg = "FABRIC OF REALITY " + y + " -> EMPTINESS at -200 | SIFT at -900";
+                    } else if (tier == McsmVoidTiers.Tier.TIER_1_GEL_HORIZON) {
+                        int dist = Math.abs(y - McsmVoidTiers.TIER_2_SPONGE_MAZE_TOP);
+                        msg = "GEL HORIZON " + y + " -> SIFT MAZE at -900 (" + dist + "b)";
+                    } else if (tier == McsmVoidTiers.Tier.TIER_2_MENGER_SPONGE) {
+                        msg = "*** SIFT AREA - MENGER MAZE *** " + y + " - YOU ARE IN SIFT!";
+                    } else {
+                        msg = tierName + " " + y + " | SIFT MAZE at -900 to -1300";
+                    }
+                    sp.displayClientMessage(net.minecraft.network.chat.Component.literal(msg), true);
+
+                    if (tier == McsmVoidTiers.Tier.TIER_2_MENGER_SPONGE && player.tickCount % 200 == 0) {
+                        sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(
+                            net.minecraft.network.chat.Component.literal("§6§lSIFT AREA").withStyle(net.minecraft.ChatFormatting.BOLD)));
+                        sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(
+                            net.minecraft.network.chat.Component.literal("§eMenger Maze - Orange to Pink Gradient")));
+                        sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(10, 60, 20));
+                    }
                 }
             }
         }
@@ -353,7 +411,14 @@ public final class McsmSiftDimension {
     public static void ensureSiftChunkLoaded(ServerLevel level, BlockPos pos) {
         if (McsmVoidTiers.isInVoidDimension(pos.getY())) {
             if (level.dimension() == Level.OVERWORLD) {
-                generateMergedVoidInChunk(level, new BlockPos((pos.getX() >> 4) * 16, level.getMinBuildHeight(), (pos.getZ() >> 4) * 16));
+                int cx = pos.getX() >> 4;
+                int cz = pos.getZ() >> 4;
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        BlockPos origin = new BlockPos((cx+dx)*16, level.getMinBuildHeight(), (cz+dz)*16);
+                        try { generateMergedVoidInChunk(level, origin); } catch (Exception ignored) {}
+                    }
+                }
             }
         }
     }
