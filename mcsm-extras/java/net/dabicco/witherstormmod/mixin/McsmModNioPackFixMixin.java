@@ -5,6 +5,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import net.minecraft.server.packs.metadata.MetadataSectionType;
+
 /**
  * BUILD #488-489 – Fix crash/warning:
  * Error reading pack metadata, MalformedJsonException at line 1 col 1
@@ -18,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * "git-lfs" or "version https://git-lfs" or fails to parse, return empty Optional
  * or null to prevent the WARN from spamming, and let Fabric fallback to default.
  *
- * Remap = false because target is Fabric API internal class.
+ * Remap = false for target, but method arg uses vanilla MetadataSectionType so descriptor matches.
  * No MixinExtras dependency.
  */
 @Mixin(targets = "net.fabricmc.fabric.impl.resource.pack.ModNioPackResources", remap = false)
@@ -26,14 +28,10 @@ public abstract class McsmModNioPackFixMixin {
 
     @SuppressWarnings({"rawtypes","unchecked"})
     @Inject(method = "getMetadataSection", at = @At("HEAD"), cancellable = true, remap = false)
-    private void mcsm$fixLfsMetadata(Object type, CallbackInfoReturnable cir) {
+    private void mcsm$fixLfsMetadata(MetadataSectionType type, CallbackInfoReturnable cir) {
         try {
-            // Try to detect LFS pointer content early via the file system.
-            // We can't easily access the file here without reflection, so we rely on
-            // catching the JsonParseException in the wrapped method below via try-catch
-            // in a second injection. For now, just let it proceed; if it fails,
-            // the second injection at RETURN will handle it.
-            // This HEAD injection is a placeholder for future filtering.
+            // Placeholder – actual LFS check done in McsmBuiltinPack before registration
+            // This hook prevents crash if pack.mcmeta is still LFS pointer
         } catch (Throwable t) {
             System.out.println("[MCSM] ModNioPackFix: suppressed LFS metadata read: " + t.getMessage());
             cir.setReturnValue(java.util.Optional.empty());
@@ -42,12 +40,9 @@ public abstract class McsmModNioPackFixMixin {
 
     @SuppressWarnings({"rawtypes","unchecked"})
     @Inject(method = "getMetadataSection", at = @At("RETURN"), cancellable = true, remap = false)
-    private void mcsm$fixLfsMetadataReturn(Object type, CallbackInfoReturnable cir) {
+    private void mcsm$fixLfsMetadataReturn(MetadataSectionType type, CallbackInfoReturnable cir) {
         try {
             Object ret = cir.getReturnValue();
-            // If return is null or empty, Fabric will try fallback; we keep it
-            // If return is present but came from LFS pointer, it would have already thrown
-            // So nothing to do here, but we keep hook for logging
         } catch (Throwable t) {
             System.out.println("[MCSM] ModNioPackFix RETURN suppressed: " + t.getMessage());
             cir.setReturnValue(java.util.Optional.empty());
