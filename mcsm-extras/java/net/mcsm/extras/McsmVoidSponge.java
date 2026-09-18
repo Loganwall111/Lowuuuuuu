@@ -87,9 +87,9 @@ public final class McsmVoidSponge {
                 return;
             }
             double y = player.getY();
-            // the band, plus the window: the approach above it and the leaving below
+            // the band, plus the window: the approach above it and the leaving below - now 15 tethered layers from -5 to -42
             if (y > McsmVoidTiers.LUMINOUS_FLOOR + RISE + 8
-                    || y < McsmVoidTiers.SPONGE_FLOOR - DROP - 8) {
+                    || y < McsmVoidTiers.SPONGE_15_FLOOR - DROP - 8) {
                 pump(level);
                 return;
             }
@@ -217,7 +217,7 @@ public final class McsmVoidSponge {
         int r2 = REACH * REACH;
         for (int dy = -RISE; dy <= DROP; dy++) {
             int y = py + dy;
-            if (y > McsmVoidTiers.LUMINOUS_FLOOR || y < McsmVoidTiers.SPONGE_FLOOR - 1) {
+            if (y > McsmVoidTiers.LUMINOUS_FLOOR || y < McsmVoidTiers.SPONGE_15_FLOOR - 1) {
                 continue;
             }
             for (int dx = -REACH; dx <= REACH; dx++) {

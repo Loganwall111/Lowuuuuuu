@@ -67,13 +67,29 @@ public final class McsmVoidTiers {
     /** Tier 0 runs from the surface down to here: nothing but space. */
     public static final int BASELINE_FLOOR = 20;
     /** Tier 1, the luminous cavern, ends here. */
-    public static final int LUMINOUS_FLOOR = -10;
-    /** Tier 2, the sponge of fractal tubes, ends here. */
-    public static final int SPONGE_FLOOR = -25;
+    public static final int LUMINOUS_FLOOR = -5;
+    /** Tier 2, the sponge of fractal tubes, ends here - faster start per user request. */
+    public static final int SPONGE_FLOOR = -12;
+    /** 15 more tethered sponge layers underneath - per user request */
+    public static final int SPONGE_01_FLOOR = -14;
+    public static final int SPONGE_02_FLOOR = -16;
+    public static final int SPONGE_03_FLOOR = -18;
+    public static final int SPONGE_04_FLOOR = -20;
+    public static final int SPONGE_05_FLOOR = -22;
+    public static final int SPONGE_06_FLOOR = -24;
+    public static final int SPONGE_07_FLOOR = -26;
+    public static final int SPONGE_08_FLOOR = -28;
+    public static final int SPONGE_09_FLOOR = -30;
+    public static final int SPONGE_10_FLOOR = -32;
+    public static final int SPONGE_11_FLOOR = -34;
+    public static final int SPONGE_12_FLOOR = -36;
+    public static final int SPONGE_13_FLOOR = -38;
+    public static final int SPONGE_14_FLOOR = -40;
+    public static final int SPONGE_15_FLOOR = -42;
     /** Tier 3, the light-suppressed abyss, ends here. */
-    public static final int ABYSS_FLOOR = -40;
+    public static final int ABYSS_FLOOR = -50;
     /** Tier 4, the fracturing reality, ends here. */
-    public static final int FRACTURE_FLOOR = -55;
+    public static final int FRACTURE_FLOOR = -58;
     /** Tier 5, the gel, runs from there to the floor of the world. */
     public static final int GEL_FLOOR = DIM_MIN_Y;
     /** The barrier layer the dimension's own generator lays at min_y. */
@@ -82,17 +98,47 @@ public final class McsmVoidTiers {
     public static final int TIER_BASELINE = 0;
     public static final int TIER_LUMINOUS = 1;
     public static final int TIER_SPONGE = 2;
-    public static final int TIER_ABYSS = 3;
-    public static final int TIER_FRACTURE = 4;
-    public static final int TIER_GEL = 5;
-    /** How many tiers there are. */
-    public static final int TIERS = 6;
+    public static final int TIER_SPONGE_01 = 3;
+    public static final int TIER_SPONGE_02 = 4;
+    public static final int TIER_SPONGE_03 = 5;
+    public static final int TIER_SPONGE_04 = 6;
+    public static final int TIER_SPONGE_05 = 7;
+    public static final int TIER_SPONGE_06 = 8;
+    public static final int TIER_SPONGE_07 = 9;
+    public static final int TIER_SPONGE_08 = 10;
+    public static final int TIER_SPONGE_09 = 11;
+    public static final int TIER_SPONGE_10 = 12;
+    public static final int TIER_SPONGE_11 = 13;
+    public static final int TIER_SPONGE_12 = 14;
+    public static final int TIER_SPONGE_13 = 15;
+    public static final int TIER_SPONGE_14 = 16;
+    public static final int TIER_SPONGE_15 = 17;
+    public static final int TIER_ABYSS = 18;
+    public static final int TIER_FRACTURE = 19;
+    public static final int TIER_GEL = 20;
+    /** How many tiers there are - 6 + 15 sponge layers = 21. */
+    public static final int TIERS = 21;
 
     /** What the chat calls each tier when a fall crosses into it. */
     public static final String[] NAME = {
             "the baseline",
             "the luminous cavern",
             "the sponge",
+            "the sponge - depth 1",
+            "the sponge - depth 2",
+            "the sponge - depth 3",
+            "the sponge - depth 4",
+            "the sponge - depth 5",
+            "the sponge - depth 6",
+            "the sponge - depth 7",
+            "the sponge - depth 8",
+            "the sponge - depth 9",
+            "the sponge - depth 10",
+            "the sponge - depth 11",
+            "the sponge - depth 12",
+            "the sponge - depth 13",
+            "the sponge - depth 14",
+            "the sponge - depth 15",
             "the abyss",
             "the fracture",
             "the gel" };
@@ -102,6 +148,21 @@ public final class McsmVoidTiers {
             "Layer 0, the baseline void",
             "Layer 1, the luminous cavern",
             "Layer 0.5, the fractal sponge tube maze",
+            "Layer 0.5.1, sponge tether 1 - faster",
+            "Layer 0.5.2, sponge tether 2",
+            "Layer 0.5.3, sponge tether 3",
+            "Layer 0.5.4, sponge tether 4",
+            "Layer 0.5.5, sponge tether 5",
+            "Layer 0.5.6, sponge tether 6",
+            "Layer 0.5.7, sponge tether 7",
+            "Layer 0.5.8, sponge tether 8",
+            "Layer 0.5.9, sponge tether 9",
+            "Layer 0.5.10, sponge tether 10",
+            "Layer 0.5.11, sponge tether 11",
+            "Layer 0.5.12, sponge tether 12",
+            "Layer 0.5.13, sponge tether 13",
+            "Layer 0.5.14, sponge tether 14",
+            "Layer 0.5.15, sponge tether 15",
             "Layer 2, the dark abyss",
             "Layer 3, the fragmented reality",
             "Layer 4, the gaseous gel horizon" };
@@ -112,14 +173,30 @@ public final class McsmVoidTiers {
      * {@code #1C1F16}, and colours chosen for the two the plan leaves open (the
      * sponge is its own orange-to-pink gradient; the fracture has no ambient at
      * all, only the waves, so it borrows the plan's glitch violet).
+     * 15 sponge layers gradient from orange to pink.
      */
     public static final int[] FOG = {
-            0x000000,   // 0 baseline: no filter at all -- the plan says so
+            0x000000,   // 0 baseline: no filter
             0x2E0B36,   // 1 luminous cavern: plum-purple
-            0xFF5A1E,   // 2 sponge: the orange end of its own gradient
-            0x000000,   // 3 abyss: total void-black
-            0x3A0F52,   // 4 fracture: glitch violet, behind the waves
-            0x1C1F16 }; // 5 gel: cartoonish cosmic greenish-brown
+            0xFF5A1E,   // 2 sponge: orange start
+            0xFF6A2E,   // 3 sponge 1
+            0xFF7A3E,   // 4 sponge 2
+            0xFF8A4E,   // 5 sponge 3
+            0xFF9A5E,   // 6 sponge 4
+            0xFFAA6E,   // 7 sponge 5
+            0xFFBA7E,   // 8 sponge 6
+            0xFFCA8E,   // 9 sponge 7
+            0xFFDA9E,   // 10 sponge 8
+            0xFF8A9E,   // 11 sponge 9 - shifting to pink
+            0xFF7AA8,   // 12 sponge 10
+            0xFF6AB2,   // 13 sponge 11
+            0xFF5ABC,   // 14 sponge 12
+            0xFF4AC6,   // 15 sponge 13
+            0xFF3FD0,   // 16 sponge 14
+            0xFF3FA8,   // 17 sponge 15: pink end
+            0x000000,   // 18 abyss: total void-black
+            0x3A0F52,   // 19 fracture: glitch violet
+            0x1C1F16 }; // 20 gel: greenish-brown
 
     /**
      * The colour each tier's own light is. The luminous cavern's spires are the
@@ -127,26 +204,36 @@ public final class McsmVoidTiers {
      * glows green-white through its own fluid.
      */
     public static final int[] LIGHT = {
-            0x6A5ACD,
-            0x38F0E0,
-            0xFFA23A,
-            0x00FFB0,
-            0xE070FF,
-            0xBFFFC8 };
+            0x6A5ACD, // 0 baseline
+            0x38F0E0, // 1 luminous
+            0xFFA23A, // 2 sponge
+            0xFF8A3A, // 3
+            0xFF7A4A, // 4
+            0xFF6A5A, // 5
+            0xFF5A6A, // 6
+            0xFF4A7A, // 7
+            0xFF3A8A, // 8
+            0xFF2A9A, // 9
+            0xFF1AAA, // 10
+            0xFF0ABA, // 11
+            0xFF00CA, // 12
+            0xFF00B2, // 13
+            0xFF00A0, // 14
+            0xFF0090, // 15
+            0xFF0080, // 16
+            0xFF0070, // 17
+            0x00FFB0, // 18 abyss
+            0xE070FF, // 19 fracture
+            0xBFFFC8 }; // 20 gel
 
     /** How many spires / lights the tier raises, for the client art. */
-    public static final int[] LIGHTS = { 0, 14, 10, 4, 6, 8 };
+    public static final int[] LIGHTS = { 0, 14, 10, 8,8,8,8,8,8,8,8,8,8,8,8,8,8,8, 4, 6, 8 };
 
     /**
      * The tier's own speed: the terminal fall, in blocks per second.
-     *
-     * <p>The deep is 1968 blocks of air below the gel's surface, so these are not
-     * the Overworld's 3.1 -- they climb, tier by tier, from the baseline's own
-     * weight to the gel's 30. A whole fall, hand-over to the invisible floor, is
-     * about three and a half minutes at these speeds, and a bit over one with the
-     * rudder engaged; the gel's flight lets a player stop anywhere in it.
+     * Sponge now faster at start per user request: 18.0 instead of 11.0, accelerating through 15 tethered layers.
      */
-    public static final double[] SPEED = { 3.6D, 7.0D, 11.0D, 16.0D, 22.0D, 30.0D };
+    public static final double[] SPEED = { 3.6D, 7.0D, 18.0D, 19.0D,20.0D,21.0D,22.0D,23.0D,24.0D,25.0D,26.0D,27.0D,28.0D,29.0D,30.0D,31.0D,32.0D,33.0D, 35.0D,38.0D,42.0D };
 
     /**
      * What the chat says the first time a fall crosses into the tier. Each one is
@@ -158,7 +245,22 @@ public final class McsmVoidTiers {
             "\u00a7d\u00a7lTHE LUMINOUS CAVERN \u00a78\u00b7 plum air, and spires of light "
             + "standing in it \u00b7 look up: that is the bedrock, thousands of blocks of it",
             "\u00a76\u00a7lTHE SPONGE \u00a78\u00b7 a maze of tubes grown through the gel "
-            + "\u00b7 orange to pink, and none of it straight",
+            + "\u00b7 orange to pink, and none of it straight - now faster",
+            "\u00a76THE SPONGE DEPTH 1 \u00a78\u00b7 tethered layer 1 \u00b7 tighter, faster, orange still",
+            "\u00a76THE SPONGE DEPTH 2 \u00a78\u00b7 tethered layer 2 \u00b7 tubes narrowing",
+            "\u00a76THE SPONGE DEPTH 3 \u00a78\u00b7 tethered layer 3 \u00b7 pink bleeding in",
+            "\u00a76THE SPONGE DEPTH 4 \u00a78\u00b7 tethered layer 4 \u00b7 the maze winds harder",
+            "\u00a76THE SPONGE DEPTH 5 \u00a78\u00b7 tethered layer 5 \u00b7 halfway through the tether",
+            "\u00a76THE SPONGE DEPTH 6 \u00a78\u00b7 tethered layer 6 \u00b7 orange to pink shifting",
+            "\u00a76THE SPONGE DEPTH 7 \u00a78\u00b7 tethered layer 7 \u00b7 you are deep in the sponge now",
+            "\u00a76THE SPONGE DEPTH 8 \u00a78\u00b7 tethered layer 8 \u00b7 the tubes are almost solid",
+            "\u00a76THE SPONGE DEPTH 9 \u00a78\u00b7 tethered layer 9 \u00b7 pink taking over",
+            "\u00a76THE SPONGE DEPTH 10 \u00a78\u00b7 tethered layer 10 \u00b7 faster, tighter",
+            "\u00a76THE SPONGE DEPTH 11 \u00a78\u00b7 tethered layer 11 \u00b7 almost through",
+            "\u00a76THE SPONGE DEPTH 12 \u00a78\u00b7 tethered layer 12 \u00b7 pink maze",
+            "\u00a76THE SPONGE DEPTH 13 \u00a78\u00b7 tethered layer 13 \u00b7 the sponge thins",
+            "\u00a76THE SPONGE DEPTH 14 \u00a78\u00b7 tethered layer 14 \u00b7 light ahead",
+            "\u00a76THE SPONGE DEPTH 15 \u00a78\u00b7 tethered layer 15 \u00b7 last sponge layer before abyss",
             "\u00a78\u00a7lTHE ABYSS \u00a78\u00b7 the light is gone \u00b7 only the ruins "
             + "down here still glow, and they are not lit for you",
             "\u00a75\u00a7lTHE FRACTURE \u00a78\u00b7 the view is rippling \u00b7 something "
@@ -177,23 +279,28 @@ public final class McsmVoidTiers {
         return (BASELINE_FLOOR - GEL_FLOOR) / (double) (SPEC_TOP - SPEC_FLOOR);
     }
 
-    /** Which tier a Y is in. Above the baseline's floor is the baseline itself. */
+    /** Which tier a Y is in. Above the baseline's floor is the baseline itself. 21 tiers now with 15 tethered sponge layers. */
     public static int tierAt(double y) {
-        if (y > BASELINE_FLOOR) {
-            return TIER_BASELINE;
-        }
-        if (y > LUMINOUS_FLOOR) {
-            return TIER_LUMINOUS;
-        }
-        if (y > SPONGE_FLOOR) {
-            return TIER_SPONGE;
-        }
-        if (y > ABYSS_FLOOR) {
-            return TIER_ABYSS;
-        }
-        if (y > FRACTURE_FLOOR) {
-            return TIER_FRACTURE;
-        }
+        if (y > BASELINE_FLOOR) return TIER_BASELINE;
+        if (y > LUMINOUS_FLOOR) return TIER_LUMINOUS;
+        if (y > SPONGE_FLOOR) return TIER_SPONGE;
+        if (y > SPONGE_01_FLOOR) return TIER_SPONGE_01;
+        if (y > SPONGE_02_FLOOR) return TIER_SPONGE_02;
+        if (y > SPONGE_03_FLOOR) return TIER_SPONGE_03;
+        if (y > SPONGE_04_FLOOR) return TIER_SPONGE_04;
+        if (y > SPONGE_05_FLOOR) return TIER_SPONGE_05;
+        if (y > SPONGE_06_FLOOR) return TIER_SPONGE_06;
+        if (y > SPONGE_07_FLOOR) return TIER_SPONGE_07;
+        if (y > SPONGE_08_FLOOR) return TIER_SPONGE_08;
+        if (y > SPONGE_09_FLOOR) return TIER_SPONGE_09;
+        if (y > SPONGE_10_FLOOR) return TIER_SPONGE_10;
+        if (y > SPONGE_11_FLOOR) return TIER_SPONGE_11;
+        if (y > SPONGE_12_FLOOR) return TIER_SPONGE_12;
+        if (y > SPONGE_13_FLOOR) return TIER_SPONGE_13;
+        if (y > SPONGE_14_FLOOR) return TIER_SPONGE_14;
+        if (y > SPONGE_15_FLOOR) return TIER_SPONGE_15;
+        if (y > ABYSS_FLOOR) return TIER_ABYSS;
+        if (y > FRACTURE_FLOOR) return TIER_FRACTURE;
         return TIER_GEL;
     }
 

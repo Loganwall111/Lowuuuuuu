@@ -82,10 +82,63 @@ public final class McsmVoidLoop {
             if (player.getY() > TRIGGER_Y || motion.y >= 0.0D) {
                 return;
             }
+            // If player has Reality Knife, cut open the fabric instead of wrapping - go to Sift
+            if (hasRealityKnife(player)) {
+                cutOpen(level, player, motion);
+                return;
+            }
             wrap(level, player, motion);
         } catch (Throwable ignored) {
             // a seam that throws is worse than a fall that ends
         }
+    }
+
+    private static boolean hasRealityKnife(ServerPlayer player) {
+        try {
+            if (player.getMainHandItem().getDescriptionId().contains("reality_knife")) return true;
+            if (player.getOffhandItem().getDescriptionId().contains("reality_knife")) return true;
+            for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
+                if (stack.getDescriptionId().contains("reality_knife")) return true;
+            }
+            // Also allow void_rudder as cutter per user request to cut open
+            if (player.getMainHandItem().getDescriptionId().contains("void_rudder")) return true;
+            if (player.getOffhandItem().getDescriptionId().contains("void_rudder")) return true;
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    /** Cut open the fabric - Reality Knife bypasses the seam and enters Sift */
+    private static void cutOpen(ServerLevel level, ServerPlayer player, Vec3 motion) {
+        try {
+            // Break barrier at floor
+            net.minecraft.core.BlockPos floorPos = new net.minecraft.core.BlockPos((int)player.getX(), McsmVoidTiers.FLOOR_Y, (int)player.getZ());
+            if (level.getBlockState(floorPos).is(net.minecraft.world.level.block.Blocks.BARRIER)) {
+                level.setBlock(floorPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+            }
+            // Try to enter sift dimension
+            try {
+                Class<?> siftDim = Class.forName("net.mcsm.sift.world.McsmSiftDimension");
+                java.lang.reflect.Field field = siftDim.getField("SIFT_DIMENSION");
+                net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> siftKey = (net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level>) field.get(null);
+                ServerLevel siftLevel = level.getServer().getLevel(siftKey);
+                if (siftLevel != null) {
+                    player.teleportTo(siftLevel, player.getX(), 80, player.getZ(), java.util.Set.of(), player.getYRot(), player.getXRot(), false);
+                    player.setDeltaMovement(motion);
+                    player.resetFallDistance();
+                    player.sendSystemMessage(Component.literal("\u00a7d\u00a7lFABRIC CUT \u00a78\u00b7 reality knife cut open the barrier"));
+                    player.sendSystemMessage(Component.literal("\u00a77you fell through into Sift - the unknown place below all layers"));
+                    return;
+                }
+            } catch (Throwable ignored) {
+                // Sift not present, just allow staying at bottom
+            }
+            // If no sift, just place at bottom and allow digging
+            player.teleportTo(level, player.getX(), McsmVoidTiers.FLOOR_Y + 1, player.getZ(), java.util.Set.of(), player.getYRot(), player.getXRot(), false);
+            player.setDeltaMovement(motion.multiply(1, 0.5, 1));
+            player.resetFallDistance();
+            player.sendSystemMessage(Component.literal("\u00a7a\u00a7lBARRIER CUT \u00a78\u00b7 you cut the invisible floor with reality knife"));
+            player.sendSystemMessage(Component.literal("\u00a77dig down now - the dimension no longer catches you"));
+        } catch (Throwable ignored) {}
     }
 
     /** The wrap itself: same velocity, same rotation, 1781 blocks higher. */

@@ -330,6 +330,18 @@ public final class McsmVoid {
         if (player.getY() > CATCH_Y) {
             return;
         }
+        // If has Reality Knife or Void Rudder, allow cutting open - don't catch
+        try {
+            if (player.getMainHandItem().getDescriptionId().contains("reality_knife")
+                    || player.getOffhandItem().getDescriptionId().contains("reality_knife")
+                    || player.getMainHandItem().getDescriptionId().contains("void_rudder")
+                    || player.getOffhandItem().getDescriptionId().contains("void_rudder")) {
+                // Player is trying to cut open, let McsmVoidLoop handle it
+                player.sendSystemMessage(Component.literal(
+                        "\u00a7a\u00a7lFABRIC DETECTED \u00a78\u00b7 reality knife can cut this - keep falling"));
+                return;
+            }
+        } catch (Throwable ignored) {}
         long now = level.getGameTime();
         Long last = LAST_CATCH.get(player.getUUID());
         if (last != null && now - last < 40L) {
@@ -346,7 +358,7 @@ public final class McsmVoid {
         player.sendSystemMessage(Component.literal(
                 "\u00a75\u00a7lTHE VOID \u00a78\u00b7 you fell past everything, and it caught you"));
         player.sendSystemMessage(Component.literal(
-                "\u00a78there is no floor here. that is the dimension, not a bug"));
+                "\u00a78there is no floor here. that is the dimension, not a bug \u00b7 use reality knife or void rudder to cut open"));
     }
 
     /** The highest solid block under a column, or null when the column is nothing. */

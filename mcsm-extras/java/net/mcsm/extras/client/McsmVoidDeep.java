@@ -377,14 +377,19 @@ public final class McsmVoidDeep {
             specks(g, w, h, t, now);
 
             // ---- BUILD #481: and the tier the fall is in, drawn as itself -----
+            // 21 tiers now: 15 tethered sponge layers all use sponge art with varying tint
             int tier = McsmVoidTiers.tierAt(mc.player.getY());
-            switch (tier) {
-                case McsmVoidTiers.TIER_LUMINOUS -> spires(g, w, h, t, now);
-                case McsmVoidTiers.TIER_SPONGE -> sponge(g, w, h, t, now);
-                case McsmVoidTiers.TIER_ABYSS -> ruins(g, w, h, t, now);
-                case McsmVoidTiers.TIER_FRACTURE -> waves(g, w, h, t, now);
-                case McsmVoidTiers.TIER_GEL -> horizon(g, w, h, t, now);
-                default -> { }
+            if (tier == McsmVoidTiers.TIER_LUMINOUS) {
+                spires(g, w, h, t, now);
+            } else if (tier >= McsmVoidTiers.TIER_SPONGE && tier <= McsmVoidTiers.TIER_SPONGE_15) {
+                // All sponge layers - faster start, 15 tethered
+                sponge(g, w, h, t, now, tier);
+            } else if (tier == McsmVoidTiers.TIER_ABYSS) {
+                ruins(g, w, h, t, now);
+            } else if (tier == McsmVoidTiers.TIER_FRACTURE) {
+                waves(g, w, h, t, now);
+            } else if (tier == McsmVoidTiers.TIER_GEL) {
+                horizon(g, w, h, t, now);
             }
             // ---- BUILD #482: inside a rift's window, the frame becomes it ----
             double px = mc.player.getX();
@@ -538,18 +543,36 @@ public final class McsmVoidDeep {
         }
     }
 
-    /** Tier 2, the sponge: the orange-to-pink wash, and the pores it is full of. */
+    /** Tier 2, the sponge: the orange-to-pink wash, and the pores it is full of. Now 15 tethered layers faster. */
     private static void sponge(GuiGraphicsExtractor g, int w, int h, float t, long now) {
-        g.fillGradient(0, 0, w, h, (int) (54 * t) << 24 | 0xFF6A28,
-                (int) (86 * t) << 24 | 0xFF3FA8);
-        for (int i = 0; i < 46; i++) {
-            long seed = i * 6151L;
+        sponge(g, w, h, t, now, McsmVoidTiers.TIER_SPONGE);
+    }
+    private static void sponge(GuiGraphicsExtractor g, int w, int h, float t, long now, int tier) {
+        // Gradient shifts based on sponge depth tier - orange to pink across 15 layers
+        int fog = McsmVoidTiers.FOG[Math.max(0, Math.min(McsmVoidTiers.TIERS-1, tier))];
+        int topCol = 0xFF6A28;
+        int bottomCol = fog != 0 ? fog : 0xFF3FA8;
+        // Faster visual - more pores when deeper
+        int poreCount = 46 + (tier - McsmVoidTiers.TIER_SPONGE) * 3;
+        g.fillGradient(0, 0, w, h, (int) (54 * t) << 24 | topCol,
+                (int) (86 * t) << 24 | bottomCol);
+        for (int i = 0; i < poreCount; i++) {
+            long seed = i * 6151L + tier * 1000L;
             int x = (int) (((seed * 41 % 977) / 977.0D) * w + Math.sin(now / 5200.0D + i * 0.7D) * 20.0D);
             int y = (int) (((seed * 67 % 971) / 971.0D) * h + Math.cos(now / 6100.0D + i) * 16.0D);
             int r = 3 + (i % 4);
-            int alpha = (int) (72 * t);
-            g.fill(x, y, x + r, y + r, (alpha << 24) | 0x2A0A12);
+            int alpha = (int) (72 * t + (tier - McsmVoidTiers.TIER_SPONGE) * 2);
+            g.fill(x, y, x + r, y + r, (Math.min(alpha, 120) << 24) | 0x2A0A12);
             g.fill(x - 1, y - 1, x + r + 1, y, (Math.max(alpha - 30, 2) << 24) | 0xFFC07A);
+        }
+        // Speed indicator for faster start
+        if (tier >= McsmVoidTiers.TIER_SPONGE) {
+            int speed = (int)McsmVoidTiers.SPEED[tier];
+            // Visual streaks for faster fall
+            for (int i = 0; i < speed / 3; i++) {
+                int x = (w * i / (speed/3 +1));
+                g.fill(x, 0, x+1, h, (int)(10*t) << 24 | 0xFFFFFF);
+            }
         }
     }
 

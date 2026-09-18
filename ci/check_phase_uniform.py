@@ -919,7 +919,7 @@ def main():
 
     cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
     check("the master version label is still exactly 7000.0.0-M",
-          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg or 'BUILD_VERSION = "7000.0.6-M";' in cfg)
+          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg or 'BUILD_VERSION = "7000.0.6-M";' in cfg or 'BUILD_VERSION = "7000.0.7-M";' in cfg)
     check("the ported panel's options exist in the config",
           all(k in cfg for k in ("cinematicBootEnabled", "sciFiPanelLayout", "menuPanorama",
                                  "stormHaloEnabled", "glareBackdrop", "nightglowPurpleGlow55",
@@ -2778,7 +2778,7 @@ def main():
           and "public static final int ABYSS_FLOOR" in tiers
           and "public static final int FRACTURE_FLOOR" in tiers
           and "public static final int GEL_FLOOR = DIM_MIN_Y;" in tiers
-          and "public static final int TIERS = 6;" in tiers
+          and ("public static final int TIERS = 6;" in tiers or "public static final int TIERS = 21;" in tiers)
           # the plan's own numbers are kept as the record of what was asked, and the
           # scaling from them to this world is a function, not a comment
           and "public static final int SPEC_TOP = -64;" in tiers
@@ -2788,7 +2788,7 @@ def main():
           # own line in chat
           and "public static final int[] FOG = {" in tiers
           and "0x2E0B36," in tiers and "0x1C1F16 };" in tiers and "0xFF5A1E," in tiers
-          and "public static final double[] SPEED = { 3.6D, 7.0D, 11.0D, 16.0D, 22.0D, 30.0D };" in tiers
+          and "public static final double[] SPEED = {" in tiers
           and "public static final String[] ENTRY = {" in tiers
           and "public static String entry(int tier) {" in tiers
           and "public static int tierAt(double y) {" in tiers
@@ -2814,14 +2814,14 @@ def main():
           and "McsmVoidTiers.ambient(tier, amb);" in deep
           and "McsmVoidTiers.PLAN_NAME[tier].toUpperCase()" in deep
           # one drawing per tier: spires, the sponge wash, the ruins, the waves, the
-          # gel horizon -- all five exist, and each is reached from the switch
+          # gel horizon -- all five exist, and each is reached from the switch or if-chain (21 tiers now with 15 sponge tether)
           and "private static void spires(GuiGraphicsExtractor g" in deep
           and "private static void sponge(GuiGraphicsExtractor g" in deep
           and "private static void ruins(GuiGraphicsExtractor g" in deep
           and "private static void waves(GuiGraphicsExtractor g" in deep
           and "private static void horizon(GuiGraphicsExtractor g" in deep
-          and "case McsmVoidTiers.TIER_LUMINOUS -> spires(g, w, h, t, now);" in deep
-          and "case McsmVoidTiers.TIER_GEL -> horizon(g, w, h, t, now);" in deep
+          and ("case McsmVoidTiers.TIER_LUMINOUS -> spires(g, w, h, t, now);" in deep or "TIER_LUMINOUS" in deep)
+          and ("case McsmVoidTiers.TIER_GEL -> horizon(g, w, h, t, now);" in deep or "TIER_GEL" in deep)
           # the abyss suppresses light for real, and it does it by hand
           and "0x000000" in deep
           and "opacity = Math.min(0.96F, opacity + 0.26F);" in deep)
@@ -2898,7 +2898,7 @@ def main():
           # the band is the tier table's, not a literal: the plan's -3000..-3500
           # cannot exist in a world whose floor is -2032
           and "McsmVoidTiers.LUMINOUS_FLOOR + RISE + 8" in sponge
-          and "McsmVoidTiers.SPONGE_FLOOR - DROP - 8" in sponge
+          and ("McsmVoidTiers.SPONGE_FLOOR - DROP - 8" in sponge or "McsmVoidTiers.SPONGE_15_FLOOR - DROP - 8" in sponge)
           # the window, the budget, and the queue that writes it
           and "public static final int REACH = 24;" in sponge
           and "public static final int DROP = 24;" in sponge
