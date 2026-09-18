@@ -28,15 +28,15 @@ public abstract class McsmVoidNoSuffocationPatch {
             LivingEntity self = (LivingEntity)(Object)this;
             if (!(self instanceof ServerPlayer player)) return;
 
-            // Check if in void dimension or in overworld deep void when merged
+            // Check if in void dimension or in overworld deep void when merged - 26.2 ResourceKey.location() removed
             boolean inVoid = player.level().dimension().equals(McsmVoid.DIMENSION);
             boolean inOverworldDeep = false;
             if (McsmExtrasConfig.voidMerged) {
-                String dim = player.level().dimension().location().toString();
-                if (dim.equals("minecraft:overworld") && player.getY() < player.level().getMinY() + 50) {
+                boolean isOverworld = player.level().dimension().equals(net.minecraft.world.level.Level.OVERWORLD);
+                if (isOverworld && player.getY() < player.level().getMinY() + 50) {
                     inOverworldDeep = true;
                 }
-                if (dim.equals("minecraft:overworld") && McsmVoidDescent.diving(player)) {
+                if (isOverworld && McsmVoidDescent.diving(player)) {
                     inOverworldDeep = true;
                 }
             }
