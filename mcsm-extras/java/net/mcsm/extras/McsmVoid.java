@@ -332,10 +332,25 @@ public final class McsmVoid {
         }
         // If has Reality Knife or Void Rudder, allow cutting open - don't catch
         try {
-            if (player.getMainHandItem().getDescriptionId().contains("reality_knife")
-                    || player.getOffhandItem().getDescriptionId().contains("reality_knife")
-                    || player.getMainHandItem().getDescriptionId().contains("void_rudder")
-                    || player.getOffhandItem().getDescriptionId().contains("void_rudder")) {
+            boolean hasKnife = false;
+            try {
+                String mainId = player.getMainHandItem().getItem().getDescriptionId();
+                String offId = player.getOffhandItem().getItem().getDescriptionId();
+                if (mainId.contains("reality_knife") || offId.contains("reality_knife")
+                        || mainId.contains("void_rudder") || offId.contains("void_rudder")) {
+                    hasKnife = true;
+                }
+                // Also check inventory via contains predicate (safe for 26.2)
+                if (!hasKnife) {
+                    hasKnife = player.getInventory().contains(stack -> {
+                        try {
+                            return stack.getItem().getDescriptionId().contains("reality_knife")
+                                    || stack.getItem().getDescriptionId().contains("void_rudder");
+                        } catch (Throwable ignored) { return false; }
+                    });
+                }
+            } catch (Throwable ignored) {}
+            if (hasKnife) {
                 // Player is trying to cut open, let McsmVoidLoop handle it
                 player.sendSystemMessage(Component.literal(
                         "\u00a7a\u00a7lFABRIC DETECTED \u00a78\u00b7 reality knife can cut this - keep falling"));

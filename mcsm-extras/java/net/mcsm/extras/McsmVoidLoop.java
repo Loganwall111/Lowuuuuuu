@@ -95,14 +95,17 @@ public final class McsmVoidLoop {
 
     private static boolean hasRealityKnife(ServerPlayer player) {
         try {
-            if (player.getMainHandItem().getDescriptionId().contains("reality_knife")) return true;
-            if (player.getOffhandItem().getDescriptionId().contains("reality_knife")) return true;
-            for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
-                if (stack.getDescriptionId().contains("reality_knife")) return true;
-            }
-            // Also allow void_rudder as cutter per user request to cut open
-            if (player.getMainHandItem().getDescriptionId().contains("void_rudder")) return true;
-            if (player.getOffhandItem().getDescriptionId().contains("void_rudder")) return true;
+            String mainId = player.getMainHandItem().getItem().getDescriptionId();
+            String offId = player.getOffhandItem().getItem().getDescriptionId();
+            if (mainId.contains("reality_knife") || offId.contains("reality_knife")) return true;
+            if (mainId.contains("void_rudder") || offId.contains("void_rudder")) return true;
+            // Check inventory via contains predicate - safe for 26.2 (Inventory.items is private)
+            return player.getInventory().contains(stack -> {
+                try {
+                    String id = stack.getItem().getDescriptionId();
+                    return id.contains("reality_knife") || id.contains("void_rudder");
+                } catch (Throwable ignored) { return false; }
+            });
         } catch (Throwable ignored) {}
         return false;
     }
