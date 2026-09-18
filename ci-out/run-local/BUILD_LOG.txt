@@ -1,0 +1,50 @@
++ EVIDENCE_DONE=0
++ trap 'rc=$?; mkdir -p out 2>/dev/null; { echo "MCSM build FAILURE (run ${GITHUB_RUN_NUMBER:-local})"; echo "exit: $rc"; echo "line: $LINENO"; echo "cmd:  $BASH_COMMAND"; } >> out/FAILURE.txt 2>/dev/null; { echo; echo "[failure] exit ${rc} at line ${LINENO}: ${BASH_COMMAND}"; } | tee -a "$RUNLOG"; echo "::error::MCSM build failed (exit ${rc}) at line ${LINENO}: ${BASH_COMMAND}"' ERR
++ trap disclose_failure EXIT
++ EVIDENCE_DONE=0
++ EVIDENCE_DIR=
++ RUN_STAGE=/tmp/mcsm-stage.txt
++ :
+++ cat VERSION
+++ tr -d '[:space:]'
++ VER=7000.0.7-M
++ JAR_ID=7000.0.7-M
++ echo '[build] Devouring Storms 7000.0.7-M'
+[build] Devouring Storms 7000.0.7-M
++ EVIDENCE_REPO=https://github.com/Loganwall111/Lowuuuuuu.git
++ EVIDENCE_BRANCH=arena/01a071bb-lowuuuuuu
++ mkdir -p out
++ DL=/tmp/mcsm-dl
++ mkdir -p /tmp/mcsm-dl
++ BASE_VER=1.9.100
++ BASE_NAME=dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
++ BASE_SHA=6adcf07e1ad810703c12cb25d7d135aca7b8f66f7d12c273ad3f00b5abdb6599
++ BASE_LOCAL=delivery/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
++ '[' -s delivery/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar ']'
++ echo '[build] delivery/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar absent or wrong hash -- fetching the mcsm-1.9.100 release asset'
+[build] delivery/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar absent or wrong hash -- fetching the mcsm-1.9.100 release asset
++ fetch https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-1.9.100/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
+++ basename dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
++ local out=/tmp/mcsm-dl/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
++ '[' '!' -s /tmp/mcsm-dl/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar ']'
++ curl -fsSL --retry 3 --retry-delay 3 -o /tmp/mcsm-dl/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-1.9.100/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
+curl: (35) OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to release-assets.githubusercontent.com:443 
++ echo '[deps] FAILED to download https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-1.9.100/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar'
+[deps] FAILED to download https://github.com/Loganwall111/Lowuuuuuu/releases/download/mcsm-1.9.100/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
++ return 1
+++ rc=1
+++ mkdir -p out
+++ echo
+++ tee -a /tmp/mcsm-run.log
+++ echo '[failure] exit 1 at line 254: echo "[failure] exit ${rc} at line ${LINENO}: ${BASH_COMMAND}"'
+
+[failure] exit 1 at line 254: echo "[failure] exit ${rc} at line ${LINENO}: ${BASH_COMMAND}"
+
+[failure] exit 1 at line 254: echo "[failure] exit ${rc} at line ${LINENO}: ${BASH_COMMAND}"
+++ echo '::error::MCSM build failed (exit 1) at line 254: return 1'
+::error::MCSM build failed (exit 1) at line 254: return 1
++ disclose_failure
++ local rc=1
++ '[' 1 -eq 0 ']'
++ sleep 1
++ cp -f /tmp/mcsm-run.log out/BUILD_LOG.txt
