@@ -52,6 +52,16 @@ public abstract class McsmStormBlobMixin {
             net.mcsm.extras.client.McsmGroundParticles.submit(ctx);
             // V2 - Black hole 3D backdrop interactive for End and other dims
             net.mcsm.extras.client.McsmBlackHoleBackdrop.submitWorld(ctx);
+            // V2 NEXT-GEN Phase 1 - Amazing sun visual: 3D spinning sun that moves across world
+            net.mcsm.extras.client.McsmSpinningSun.submit(ctx);
+            // V2 NEXT-GEN - Earth-like planet with animated clouds spinning across world
+            net.mcsm.extras.client.McsmEarthPlanet.submit(ctx);
+            // V2 NEXT-GEN - Aurora borealis
+            net.mcsm.extras.client.McsmAuroraBorealis.submit(ctx);
+            // V2 NEXT-GEN - Orbital planets: Saturn, Mars, Jupiter, Venus, Moon + asteroid belt
+            net.mcsm.extras.client.McsmOrbitalPlanets.submit(ctx);
+            // V2 NEXT-GEN - Shooting stars, twinkling stars, full bright distant stars
+            net.mcsm.extras.client.McsmShootingStars.submit(ctx);
             // BUILD #474 -- and the ceiling those clouds sit under: the STORM'S own sky,
             // all 360 degrees of it, from the horizon to the zenith. The cube and the deck
             // are the dimensions' skies; the Overworld -- where the story, the cities and

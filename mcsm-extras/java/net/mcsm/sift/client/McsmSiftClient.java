@@ -140,6 +140,8 @@ public final class McsmSiftClient {
         try {
             net.mcsm.extras.client.McsmBlackHoleBackdrop.tick();
             net.mcsm.extras.client.McsmAnimatedSkybox.tick();
+            // V2 NEXT-GEN Phase 1 - shooting stars tick
+            net.mcsm.extras.client.McsmShootingStars.tick();
         } catch (Throwable ignored) {}
     }
 }
