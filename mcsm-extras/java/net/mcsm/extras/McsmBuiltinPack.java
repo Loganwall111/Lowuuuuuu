@@ -49,6 +49,31 @@ public final class McsmBuiltinPack {
 
     private static void registerBuiltIn(String packId, String label) {
         try {
+            // BUILD #489 – harden against LFS pointer pack.mcmeta
+            // If ogs-cem/pack.mcmeta is still LFS pointer (old jar), skip registration
+            // to prevent MalformedJsonException warning spam
+            try {
+                String[] checkPaths = new String[] {
+                    "resourcepacks/" + packId + "/pack.mcmeta",
+                    "/resourcepacks/" + packId + "/pack.mcmeta"
+                };
+                for (String cp : checkPaths) {
+                    try (java.io.InputStream is = McsmBuiltinPack.class.getClassLoader().getResourceAsStream(cp)) {
+                        if (is != null) {
+                            byte[] buf = new byte[256];
+                            int n = is.read(buf);
+                            if (n > 0) {
+                                String head = new String(buf, 0, n, java.nio.charset.StandardCharsets.UTF_8);
+                                if (head.contains("git-lfs") || head.contains("https://git-lfs")) {
+                                    System.err.println("[ds] " + label + " built-in pack " + packId + " has LFS pointer pack.mcmeta – skipping to avoid MalformedJsonException (update to 7000.0.16-M+)");
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (Throwable ignore) {}
+                }
+            } catch (Throwable ignore) {}
+
             Class<?> loaderCls = Class.forName("net.fabricmc.loader.api.FabricLoader");
             Object loader = loaderCls.getMethod("getInstance").invoke(null);
             Object opt = loaderCls.getMethod("getModContainer", String.class)
