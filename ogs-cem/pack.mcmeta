@@ -1,3 +1,8 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7ebfca3561a73bfc94414f9da550407e5d12afda05ca118fbc7d728c5e3adfc8
-size 178
+{
+  "pack": {
+    "pack_format": 88,
+    "min_format": [88, 0],
+    "max_format": [88, 0],
+    "description": "Devouring Storms: OGS CEM - Wither Storm CEM models preset"
+  }
+}

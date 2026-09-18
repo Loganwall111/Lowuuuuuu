@@ -1,3 +1,6 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:967a268f78502025ae3a99e1fbb38d948bed778b182f8eddba3ea8be82e815f9
-size 6442124
+{
+  "credit": "Fixed placeholder - original LFS file missing",
+  "texture": "witherstormmod:textures/entity/wither_storm/wither_storm.png",
+  "textureSize": [160, 160],
+  "models": []
+}
