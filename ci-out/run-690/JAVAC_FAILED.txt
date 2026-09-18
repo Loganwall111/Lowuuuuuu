@@ -1,0 +1,42 @@
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java:6: error: package com.llamalad7.mixinextras.injector.wrapoperation does not exist
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+                                                       ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java:7: error: package com.llamalad7.mixinextras.injector.wrapoperation does not exist
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+                                                       ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java:29: error: package net.fabricmc.fabric.impl.resource.pack does not exist
+    private boolean mcsm$guardIsHidden(net.fabricmc.fabric.impl.resource.pack.FabricPack instance, Operation<Boolean> original) {
+                                                                             ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java:29: error: cannot find symbol
+    private boolean mcsm$guardIsHidden(net.fabricmc.fabric.impl.resource.pack.FabricPack instance, Operation<Boolean> original) {
+                                                                                                   ^
+  symbol:   class Operation
+  location: class McsmResourcePackFixMixin
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java:46: error: cannot find symbol
+    private boolean mcsm$guardVanillaHidden(net.minecraft.server.packs.repository.Pack instance, Operation<Boolean> original) {
+                                                                                                 ^
+  symbol:   class Operation
+  location: class McsmResourcePackFixMixin
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java:28: error: cannot find symbol
+    @WrapOperation(method = "process", at = @At(value = "INVOKE", target = "Lnet/fabricmc/fabric/impl/resource/pack/FabricPack;fabric$isHidden()Z"), remap = false)
+     ^
+  symbol:   class WrapOperation
+  location: class McsmResourcePackFixMixin
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java:45: error: cannot find symbol
+    @WrapOperation(method = "process", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/repository/Pack;isHidden()Z"), remap = true)
+     ^
+  symbol:   class WrapOperation
+  location: class McsmResourcePackFixMixin
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java:37: error: Alternatives in a multi-catch statement cannot be related by subclassing
+        } catch (NullPointerException | RuntimeException e) {
+                                        ^
+  Alternative NullPointerException is a subclass of alternative RuntimeException
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java:53: error: Alternatives in a multi-catch statement cannot be related by subclassing
+        } catch (NullPointerException | RuntimeException e) {
+                                        ^
+  Alternative NullPointerException is a subclass of alternative RuntimeException
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+9 errors
