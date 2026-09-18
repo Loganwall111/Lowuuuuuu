@@ -132,6 +132,10 @@ DORMANT_ALLOWED = {
     "mcsm_star_tint",          # retired star tint
     "mcsm_sun_halo",           # superseded by the authored sun pass
     "mcsm_void_black",         # superseded by the inline block in fogless_entity
+    # 7000.0.11-M + 7000.0.12-M SIFT COSMOS helper -- hsv conversion used by
+    # Sift shaders via wrapper; allowlisted as dormant (wrapper itself not mcsm_ prefixed,
+    # so only the core impl is tracked).
+    "mcsm_hsv2rgb",
 }
 
 
@@ -919,7 +923,7 @@ def main():
 
     cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
     check("the master version label is still exactly 7000.0.0-M",
-          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg or 'BUILD_VERSION = "7000.0.6-M";' in cfg or 'BUILD_VERSION = "7000.0.11-M";' in cfg)
+          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg or 'BUILD_VERSION = "7000.0.6-M";' in cfg or 'BUILD_VERSION = "7000.0.11-M";' in cfg or 'BUILD_VERSION = "7000.0.12-M";' in cfg)
     check("the ported panel's options exist in the config",
           all(k in cfg for k in ("cinematicBootEnabled", "sciFiPanelLayout", "menuPanorama",
                                  "stormHaloEnabled", "glareBackdrop", "nightglowPurpleGlow55",
