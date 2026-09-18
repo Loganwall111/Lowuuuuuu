@@ -181,6 +181,7 @@ public final class McsmSiftMod {
         System.out.println("[MCSM Sift] Pocket dimension: DISABLE_VOID_SUFFOCATION=" + McsmVoidTiers.DISABLE_VOID_SUFFOCATION + " - no suffocation in void");
         System.out.println("[MCSM Sift] Cinematic: volumetric disintegration, 4 planets (Dungeons, Legends, Movie, Story Mode), warp drive, white maze, fog fade");
         System.out.println("[MCSM Sift] V2: Black hole backdrop lensing, animated skyboxes, 30 new blocks, 5 new creatures + 8 layers concept");
+        System.out.println("[MCSM Sift] Ecosystem: blue_grass, pink_grass, red_grass, red_rock, black_water, green_acid, purple trees, fluor plants, fungus trees, void blossoms, glowing mushrooms, rainbow water, rainbow bands - RAINBOW WORLD STILL EXISTS in Luminescent Pools");
 
         // Register ecosystem blocks
         SiftEcosystemBlocks.register();
@@ -201,7 +202,123 @@ public final class McsmSiftMod {
         } catch (Throwable t) {
             System.err.println("[sift] V2 content not yet present: " + t);
         }
+
+        // Register creative tab for Sift - so blue grass, red grass, rainbow water etc appear in inventory
+        try {
+            registerTab();
+        } catch (Throwable t) {
+            System.err.println("[sift] creative tab failed: " + t);
+        }
     }
+
+    public static void registerTab() {
+        try {
+            // Use vanilla CreativeModeTab builder via reflection like McsmContent does
+            Class<?> tabClass = Class.forName("net.minecraft.world.item.CreativeModeTab");
+            Object builder = tabClass.getMethod("builder", tabClass.getDeclaredClasses()[0], int.class)
+                .invoke(null, tabClass.getDeclaredClasses()[0].getField("TOP").get(null), 1);
+            // Actually use simpler approach via McsmContent's reflection method
+            // We'll reuse McsmContent's tab registration logic but for sift
+            net.minecraft.world.item.CreativeModeTab.Builder b = net.minecraft.world.item.CreativeModeTab.builder(net.minecraft.world.item.CreativeModeTab.Row.TOP, 1)
+                .title(net.minecraft.network.chat.Component.translatable("itemGroup.mcsm_sift.content"))
+                .icon(() -> new net.minecraft.world.item.ItemStack(FABRIC_OF_REALITY));
+            
+            Class<?> generatorType = Class.forName("net.minecraft.world.item.CreativeModeTab$DisplayItemsGenerator");
+            Object generator = java.lang.reflect.Proxy.newProxyInstance(
+                McsmSiftMod.class.getClassLoader(),
+                new Class[]{generatorType},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    if ("hashCode".equals(name)) return 0;
+                    if ("equals".equals(name)) return proxy == (args == null ? null : args[0]);
+                    if ("toString".equals(name)) return "mcsm-sift-tab-generator";
+                    if (args != null && args.length == 2 && args[1] != null) {
+                        feedTab(args[1]);
+                    }
+                    return null;
+                });
+            for (java.lang.reflect.Method m : b.getClass().getMethods()) {
+                if (m.getName().equals("displayItems") && m.getParameterCount() == 1) {
+                    m.invoke(b, generator);
+                    break;
+                }
+            }
+            net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB, 
+                SIFT_TAB, b.build());
+            System.out.println("[MCSM Sift] Sift content tab registered (" + 
+                (ALL_BLOCKS.size() + net.mcsm.sift.block.SiftEcosystemBlocks.ALL_BLOCKS.size() + net.mcsm.sift.block.McsmSiftContent.ALL_BLOCKS.size()) + " blocks)");
+        } catch (Throwable t) {
+            System.err.println("[MCSM Sift] Sift tab unavailable: " + t + " - blocks still accessible via /give");
+            t.printStackTrace();
+        }
+    }
+
+    private static void feedTab(Object output) {
+        try {
+            java.lang.reflect.Method accept = null;
+            for (java.lang.reflect.Method m : output.getClass().getMethods()) {
+                if (m.getName().equals("accept") && m.getParameterCount() == 1) {
+                    accept = m;
+                    break;
+                }
+            }
+            if (accept == null) return;
+            boolean wantsItem = accept.getParameterTypes()[0].getSimpleName().contains("ItemLike") || accept.getParameterTypes()[0].getSimpleName().contains("Item");
+            // Feed all sift blocks
+            for (net.minecraft.world.level.block.Block block : ALL_BLOCKS) {
+                if (block == null) continue;
+                try {
+                    var item = block.asItem();
+                    if (item != net.minecraft.world.item.Items.AIR) {
+                        accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+                    }
+                } catch (Throwable ignored) {}
+            }
+            for (net.minecraft.world.level.block.Block block : net.mcsm.sift.block.SiftEcosystemBlocks.ALL_BLOCKS) {
+                if (block == null) continue;
+                try {
+                    var item = block.asItem();
+                    if (item != net.minecraft.world.item.Items.AIR) {
+                        accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+                    }
+                } catch (Throwable ignored) {}
+            }
+            for (net.minecraft.world.level.block.Block block : net.mcsm.sift.block.McsmSiftContent.ALL_BLOCKS) {
+                if (block == null) continue;
+                try {
+                    var item = block.asItem();
+                    if (item != net.minecraft.world.item.Items.AIR) {
+                        accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+                    }
+                } catch (Throwable ignored) {}
+            }
+            for (net.minecraft.world.item.Item item : ALL_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+            for (net.minecraft.world.item.Item item : net.mcsm.sift.block.SiftEcosystemBlocks.ALL_BLOCK_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+            for (net.minecraft.world.item.Item item : net.mcsm.sift.block.McsmSiftContent.ALL_BLOCK_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+            for (net.minecraft.world.item.Item item : ALL_BLOCK_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+            for (net.minecraft.world.item.Item item : net.mcsm.sift.block.McsmSiftContent.ALL_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+        } catch (Throwable t) {
+            System.err.println("[MCSM Sift] Sift tab fill failed: " + t);
+        }
+    }
+
+    public static final ResourceKey<net.minecraft.world.item.CreativeModeTab> SIFT_TAB = ResourceKey.create(
+        Registries.CREATIVE_MODE_TAB, Identifier.fromNamespaceAndPath("mcsm_sift", "content"));
 
     private static Block block(String name, Function<BlockBehaviour.Properties, Block> factory, BlockBehaviour.Properties props) {
         ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("mcsm_sift", name));

@@ -146,31 +146,53 @@ public final class McsmSiftDimension {
                     }
                 }
 
-                // 3. FLOATING VOID ISLANDS -150 to -350 - fractured remnants of impossible worlds
+                // 3. FLOATING VOID ISLANDS -150 to -350 - fractured remnants of impossible worlds + ecosystem
                 for (int y = McsmVoidTiers.FLOATING_VOID_ISLANDS_TOP - 1; y >= McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
                     double island = islandNoise.getValue(wx * 0.02, y * 0.02, wz * 0.02);
-                    // Islands appear where noise > threshold, creating floating islands
                     boolean isIsland = island > 0.15 && rng.nextFloat() < 0.4f;
-                    // Add some scattered islands even in empty space
                     if (y % 25 == 0 && rng.nextFloat() < 0.08f) isIsland = true;
 
                     if (isIsland) {
-                        // Fractured remnants: grass, dirt, stone, wood, with void energy seeping
+                        // Fractured remnants + ecosystem: blue grass, pink grass, red grass, starlit, cosmic, purple trees, etc
                         float type = rng.nextFloat();
-                        if (type < 0.25f) {
+                        try {
+                            if (type < 0.12f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.BLUE_GRASS_BLOCK.defaultBlockState(), 2);
+                            } else if (type < 0.22f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.PINK_GRASS_BLOCK.defaultBlockState(), 2);
+                            } else if (type < 0.32f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_GRASS_BLOCK.defaultBlockState(), 2);
+                            } else if (type < 0.42f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.STARLIT_GRASS.defaultBlockState(), 2);
+                            } else if (type < 0.52f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.COSMIC_GRASS.defaultBlockState(), 2);
+                            } else if (type < 0.60f) {
+                                level.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+                            } else if (type < 0.70f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.PURPLE_TREE_LOG.defaultBlockState(), 2);
+                            } else if (type < 0.80f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.PURPLE_TREE_LEAVES.defaultBlockState(), 2);
+                            } else if (type < 0.90f) {
+                                level.setBlock(pos, Blocks.STONE.defaultBlockState(), 2);
+                            } else {
+                                level.setBlock(pos, McsmSiftMod.FABRIC_OF_REALITY.get().defaultBlockState(), 2);
+                            }
+                        } catch (Exception e) {
                             level.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
-                        } else if (type < 0.45f) {
-                            level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 2);
-                        } else if (type < 0.65f) {
-                            level.setBlock(pos, Blocks.STONE.defaultBlockState(), 2);
-                        } else if (type < 0.75f) {
-                            level.setBlock(pos, Blocks.OAK_LOG.defaultBlockState(), 2);
-                        } else if (type < 0.85f) {
-                            level.setBlock(pos, Blocks.COBBLESTONE.defaultBlockState(), 2);
-                        } else {
-                            // Void energy seeping
-                            level.setBlock(pos, McsmSiftMod.FABRIC_OF_REALITY.get().defaultBlockState(), 2);
+                        }
+                        // Flowers/fungi on top of islands
+                        if (rng.nextFloat() < 0.08f) {
+                            BlockPos above = pos.above();
+                            if (level.getBlockState(above).isAir()) {
+                                try {
+                                    float f = rng.nextFloat();
+                                    if (f < 0.25f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.FLUOR_PLANT.defaultBlockState(), 2);
+                                    else if (f < 0.5f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_BLOSSOM.defaultBlockState(), 2);
+                                    else if (f < 0.75f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.GLOWING_MUSHROOM.defaultBlockState(), 2);
+                                    else level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_FERN.defaultBlockState(), 2);
+                                } catch (Exception ignored) {}
+                            }
                         }
                     } else {
                         if (!level.getBlockState(pos).isAir()) level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
@@ -248,60 +270,109 @@ public final class McsmSiftDimension {
                     }
                 }
 
-                // 7. LUMINESCENT POOLS -1200 to -1600 - glowing waters and strange liquid crystals
+                // 7. LUMINESCENT POOLS -1200 to -1600 - glowing waters and strange liquid crystals + RAINBOW WORLD
                 for (int y = McsmVoidTiers.LUMINESCENT_POOLS_TOP - 1; y >= McsmVoidTiers.LUMINESCENT_POOLS_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
                     double crystalNoise = nightmareNoise.getValue(wx * 0.04, y * 0.04, wz * 0.04);
-                    if (rng.nextFloat() < 0.75f) {
+                    if (rng.nextFloat() < 0.70f) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                         continue;
                     }
-                    if (crystalNoise > 0.2 || rng.nextFloat() < 0.15f) {
-                        // Glowing waters and liquid crystals
+                    if (crystalNoise > 0.2 || rng.nextFloat() < 0.20f) {
+                        // Glowing waters and liquid crystals + Rainbow World + ecosystem
                         float t = rng.nextFloat();
-                        if (t < 0.3f) {
+                        try {
+                            if (t < 0.12f) {
+                                level.setBlock(pos, McsmSiftMod.IRIDESCENT_GEL.get().defaultBlockState(), 2);
+                            } else if (t < 0.20f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.RAINBOW_WATER.defaultBlockState(), 2);
+                            } else if (t < 0.28f) {
+                                level.setBlock(pos, net.mcsm.sift.block.McsmSiftContent.RAINBOW_BAND.defaultBlockState(), 2);
+                            } else if (t < 0.36f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.BLUE_GRASS_BLOCK.defaultBlockState(), 2);
+                            } else if (t < 0.44f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.PINK_GRASS_BLOCK.defaultBlockState(), 2);
+                            } else if (t < 0.52f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.CYAN_MOSS.defaultBlockState(), 2);
+                            } else if (t < 0.60f) {
+                                level.setBlock(pos, Blocks.SEA_LANTERN.defaultBlockState(), 2);
+                            } else if (t < 0.68f) {
+                                level.setBlock(pos, Blocks.GLOWSTONE.defaultBlockState(), 2);
+                            } else if (t < 0.76f) {
+                                level.setBlock(pos, Blocks.AMETHYST_BLOCK.defaultBlockState(), 2);
+                            } else if (t < 0.84f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.GEL_CRYSTAL.defaultBlockState(), 2);
+                            } else if (t < 0.92f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_LILY.defaultBlockState(), 2);
+                            } else {
+                                level.setBlock(pos, Blocks.PRISMARINE.defaultBlockState(), 2);
+                            }
+                        } catch (Exception e) {
                             level.setBlock(pos, McsmSiftMod.IRIDESCENT_GEL.get().defaultBlockState(), 2);
-                        } else if (t < 0.5f) {
-                            level.setBlock(pos, Blocks.SEA_LANTERN.defaultBlockState(), 2);
-                        } else if (t < 0.7f) {
-                            level.setBlock(pos, Blocks.GLOWSTONE.defaultBlockState(), 2);
-                        } else if (t < 0.85f) {
-                            level.setBlock(pos, Blocks.AMETHYST_BLOCK.defaultBlockState(), 2);
-                        } else {
-                            level.setBlock(pos, Blocks.PRISMARINE.defaultBlockState(), 2);
                         }
-                    } else if (rng.nextFloat() < 0.05f) {
-                        level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2);
+                    } else if (rng.nextFloat() < 0.08f) {
+                        try {
+                            if (rng.nextFloat() < 0.5f) level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2);
+                            else level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.BLACK_WATER.defaultBlockState(), 2);
+                        } catch (Exception e) {
+                            level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2);
+                        }
+                    }
+                    // Flowers in luminescent pools
+                    if (rng.nextFloat() < 0.06f) {
+                        BlockPos above = pos.above();
+                        if (level.getBlockState(above).isAir()) {
+                            try {
+                                float f = rng.nextFloat();
+                                if (f < 0.3f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.FLUOR_PLANT.defaultBlockState(), 2);
+                                else if (f < 0.6f) level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.VOID_BLOSSOM.defaultBlockState(), 2);
+                                else level.setBlock(above, net.mcsm.sift.block.SiftEcosystemBlocks.LUMINOUS_VINE.defaultBlockState(), 2);
+                            } catch (Exception ignored) {}
+                        }
                     }
                 }
 
-                // 8. ABYSSAL NIGHTMARE DIMENSION -1600 to -2032 - final realm of terror
+                // 8. ABYSSAL NIGHTMARE DIMENSION -1600 to -2032 - final realm of terror + ecosystem
                 for (int y = McsmVoidTiers.ABYSSAL_NIGHTMARE_TOP - 1; y >= McsmVoidTiers.ABYSSAL_NIGHTMARE_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(wx, y, wz);
                     double nightNoise = nightmareNoise.getValue(wx * 0.02, y * 0.02, wz * 0.02);
-                    if (nightNoise > 0.3 && rng.nextFloat() < 0.6f) {
-                        // Terror, chaos, ancient evil - sculk, void stone, wither blocks
+                    if (nightNoise > 0.3 && rng.nextFloat() < 0.65f) {
+                        // Terror, chaos, ancient evil + red grass, red rock, green acid, black water, fungi
                         float t = rng.nextFloat();
-                        if (t < 0.25f) {
-                            level.setBlock(pos, Blocks.SCULK.defaultBlockState(), 2);
-                        } else if (t < 0.45f) {
-                            try {
-                                level.setBlock(pos, McsmSiftMod.UNKNOWN_GROUND.get().defaultBlockState(), 2);
-                            } catch (Exception e) {
-                                level.setBlock(pos, Blocks.BLACKSTONE.defaultBlockState(), 2);
+                        try {
+                            if (t < 0.15f) {
+                                level.setBlock(pos, Blocks.SCULK.defaultBlockState(), 2);
+                            } else if (t < 0.25f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_GRASS_BLOCK.defaultBlockState(), 2);
+                            } else if (t < 0.35f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_ROCK.defaultBlockState(), 2);
+                            } else if (t < 0.45f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.GREEN_ACID.defaultBlockState(), 2);
+                            } else if (t < 0.55f) {
+                                level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.BLACK_WATER.defaultBlockState(), 2);
+                            } else if (t < 0.65f) {
+                                level.setBlock(pos, McsmSiftMod.UNKNOWN_GROUND.defaultBlockState(), 2);
+                            } else if (t < 0.75f) {
+                                level.setBlock(pos, Blocks.SOUL_SAND.defaultBlockState(), 2);
+                            } else if (t < 0.85f) {
+                                level.setBlock(pos, Blocks.CRYING_OBSIDIAN.defaultBlockState(), 2);
+                            } else if (t < 0.92f) {
+                                level.setBlock(pos, Blocks.OBSIDIAN.defaultBlockState(), 2);
+                            } else {
+                                level.setBlock(pos, McsmSiftMod.BOTTOM_FABRIC.get().defaultBlockState(), 2);
                             }
-                        } else if (t < 0.65f) {
-                            level.setBlock(pos, Blocks.SOUL_SAND.defaultBlockState(), 2);
-                        } else if (t < 0.80f) {
-                            level.setBlock(pos, Blocks.CRYING_OBSIDIAN.defaultBlockState(), 2);
-                        } else if (t < 0.90f) {
-                            level.setBlock(pos, Blocks.OBSIDIAN.defaultBlockState(), 2);
-                        } else {
-                            level.setBlock(pos, McsmSiftMod.BOTTOM_FABRIC.get().defaultBlockState(), 2);
+                        } catch (Exception e) {
+                            level.setBlock(pos, Blocks.SCULK.defaultBlockState(), 2);
                         }
-                    } else if (rng.nextFloat() < 0.15f) {
-                        // Some structure in nightmare
-                        level.setBlock(pos, Blocks.SCULK_CATALYST.defaultBlockState(), 2);
+                    } else if (rng.nextFloat() < 0.18f) {
+                        try {
+                            float f = rng.nextFloat();
+                            if (f < 0.3f) level.setBlock(pos, Blocks.SCULK_CATALYST.defaultBlockState(), 2);
+                            else if (f < 0.6f) level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.FUNGUS_TREE.defaultBlockState(), 2);
+                            else level.setBlock(pos, net.mcsm.sift.block.SiftEcosystemBlocks.RED_VINES.defaultBlockState(), 2);
+                        } catch (Exception e) {
+                            level.setBlock(pos, Blocks.SCULK_CATALYST.defaultBlockState(), 2);
+                        }
                     } else {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                     }
