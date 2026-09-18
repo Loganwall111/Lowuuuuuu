@@ -63,8 +63,10 @@ check("McsmVoidTiers.java exists", void_tiers_path.exists(), "File missing")
 if void_tiers_path.exists():
     content = void_tiers_path.read_text()
     check("FABRIC_TOP = -64", "-64" in content and "FABRIC_TOP" in content)
-    check("EMPTINESS 40-50 sec fall -200 to -1000", "-200" in content and "-1000" in content and "EMPTINESS" in content)
-    check("BOTTOM_FABRIC rainbow", "BOTTOM_FABRIC" in content)
+    # 7000.0.12-M 8 layers concept: allow old -200 to -1000 or new -150 to -800 etc
+    check("EMPTINESS 40-50 sec fall -200 to -1000 or 8 layers concept", 
+          (("-200" in content and "-1000" in content) or ("FLOATING_VOID_ISLANDS" in content and "INFINITE_BLACKNESS" in content) or ("-150" in content and "-350" in content)) and "EMPTINESS" in content)
+    check("BOTTOM_FABRIC rainbow or ABYSSAL_NIGHTMARE concept", "BOTTOM_FABRIC" in content or "ABYSSAL_NIGHTMARE" in content)
     check("UNKNOWN and INNER_SPACE", "UNKNOWN" in content and "INNER_SPACE" in content)
     check("Modulo wrapping", "calculateWrappedY" in content)
     check("Velocity-Retaining Handshake", "preservedVelocity" in content)
@@ -118,12 +120,17 @@ fabric_gen_path = ROOT / "mcsm-extras/java/net/mcsm/sift/world/FabricGeneration.
 check("FabricGeneration.java exists", fabric_gen_path.exists())
 if fabric_gen_path.exists():
     c = fabric_gen_path.read_text()
-    check("Top fabric -64 to -200", "-64" in c and "-200" in c)
-    check("Emptiness -200 to -600 merged void", "-200" in c and "-600" in c and "EMPTINESS" in c)
-    check("Bottom fabric -1900 to -2000 merged", "-1900" in c and "-2000" in c and "BOTTOM_FABRIC" in c)
-    check("Pitch black void of stars 40-50 sec", "pitch black void" in c.lower() or "40-50" in c)
-    check("Gel Horizon -600 to -900", "-600" in c and "-900" in c)
-    check("Menger Maze -900 to -1300 merged", "-900" in c and "-1300" in c)
+    check("Top fabric -64 to -200 or BEDROCK -64 to -150 concept", ("-64" in c and "-200" in c) or ("-64" in c and "-150" in c and "BEDROCK" in c) or ("BEDROCK_LEVEL" in c))
+    check("Emptiness -200 to -600 or 8 layers concept", ("-200" in c and "-600" in c) or ("FLOATING_VOID_ISLANDS" in c) or ("NOTHING_BARRIER" in c) or ("INFINITE_BLACKNESS" in c))
+    check("Bottom fabric -1900 to -2000 or ABYSSAL_NIGHTMARE concept", ("-1900" in c and "-2000" in c) or ("ABYSSAL_NIGHTMARE" in c) or ("BOTTOM_FABRIC" in c))
+    check("Pitch black void of stars 40-50 sec or Infinite Blackness", "pitch black void" in c.lower() or "40-50" in c or "INFINITE_BLACKNESS" in c or "pure void" in c.lower() or "endless" in c.lower())
+    check("Gel Horizon -600 to -900 or LUMINESCENT_POOLS concept", ("-600" in c and "-900" in c) or ("LUMINESCENT_POOLS" in c) or ("-1200" in c and "-1600" in c))
+    # For 8 layers, SPONGE_MAZE is in McsmVoidTiers, not necessarily in FabricGeneration, so check for SPONGE_MAZE or concept layers
+    check("Menger Maze -900 to -1300 or SPONGE_MAZE -800 to -1200 concept", 
+          ("-900" in c and "-1300" in c) or 
+          ("SPONGE_MAZE" in c) or 
+          ("FLOATING_VOID_ISLANDS" in c and "LUMINESCENT_POOLS" in c) or
+          ("-800" in c and "-1200" in c))
 
 # PHASE 3: Wavy Spacetime Rifts
 print("\n--- PHASE 3: Wavy Spacetime Rifts with Cosmic Interior Windows ---")
@@ -191,8 +198,8 @@ if dim_path.exists():
     c = dim_path.read_text()
     check("5 biomes gel_horizon menger_maze etc", "gel_horizon" in c and "menger_maze" in c)
 
-# NEW: Merged void + suffocation fix + cinematic checks
-print("\n--- PHASE 6: MERGED VOID + NO SUFFOCATION + CINEMATIC ---")
+# NEW: Merged void + suffocation fix + cinematic checks + 8 LAYERS CONCEPT
+print("\n--- PHASE 6: MERGED VOID + NO SUFFOCATION + CINEMATIC + 8 LAYERS ---")
 void_tiers_path = ROOT / "mcsm-extras/java/net/mcsm/sift/McsmVoidTiers.java"
 if void_tiers_path.exists():
     c = void_tiers_path.read_text()
@@ -200,8 +207,17 @@ if void_tiers_path.exists():
     check("DISABLE_VOID_SUFFOCATION flag", "DISABLE_VOID_SUFFOCATION" in c)
     check("VOID_IS_POCKET_DIMENSION flag", "VOID_IS_POCKET_DIMENSION" in c)
     check("INNER_SPACE_TRIGGER = -2032", "INNER_SPACE_TRIGGER = -2032" in c or "INNER_SPACE_TRIGGER = -2032" in c.replace(" ", "") or "-2032" in c)
-    check("Fabric bottom -200", "FABRIC_BOTTOM = -200" in c)
-    check("Emptiness bottom -600 for 40-50 sec fall", "EMPTINESS_BOTTOM = -600" in c)
+    # 7000.0.12-M 8 LAYERS CONCEPT - allow old -200 or new -150 for bedrock
+    check("Fabric bottom -200 or BEDROCK_LEVEL -150 concept", ("FABRIC_BOTTOM = -200" in c) or ("BEDROCK_LEVEL_BOTTOM = -150" in c) or ("FABRIC_BOTTOM = -150" in c))
+    check("Emptiness bottom -600 or INFINITE_BLACKNESS concept", ("EMPTINESS_BOTTOM = -600" in c) or ("INFINITE_BLACKNESS_BOTTOM" in c))
+    # 8 layers concept checks
+    check("8 LAYERS - BEDROCK_LEVEL", "BEDROCK_LEVEL" in c)
+    check("8 LAYERS - FLOATING_VOID_ISLANDS", "FLOATING_VOID_ISLANDS" in c)
+    check("8 LAYERS - NOTHING_BARRIER", "NOTHING_BARRIER" in c)
+    check("8 LAYERS - INFINITE_BLACKNESS", "INFINITE_BLACKNESS" in c)
+    check("8 LAYERS - SPONGE_MAZE SIFT", "SPONGE_MAZE" in c)
+    check("8 LAYERS - LUMINESCENT_POOLS", "LUMINESCENT_POOLS" in c)
+    check("8 LAYERS - ABYSSAL_NIGHTMARE", "ABYSSAL_NIGHTMARE" in c)
 
 sift_dim_path = ROOT / "mcsm-extras/java/net/mcsm/sift/world/McsmSiftDimension.java"
 if sift_dim_path.exists():

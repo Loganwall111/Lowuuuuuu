@@ -166,21 +166,21 @@ public final class McsmSiftMod {
     private McsmSiftMod() {}
 
     public static void register() {
-        System.out.println("[MCSM Sift] Initializing Infinite Sift Cosmos Engine - Build #7000.0.11-M MERGED VOID");
+        System.out.println("[MCSM Sift] Initializing Infinite Sift Cosmos Engine - Build #7000.0.12-M 8 LAYERS OF THE VOID CONCEPT");
+        System.out.println("[MCSM Sift] CONCEPT IMAGE: The Layers of the Void - 8 layers incredible design");
         System.out.println("[MCSM Sift] MERGED: Overworld min_y -2032 height 4064 = continuous fall, no loading screen, skybox merges slowly");
-        System.out.println("[MCSM Sift] Fabric of Reality: Y -64 to -200 - pitch black with stars, cosmic purple, 12% broken for entry");
-        System.out.println("[MCSM Sift] Emptiness: Y -200 to -600 - 400 blocks, 40-50 sec fall with fireworks, floating islands");
-        System.out.println("[MCSM Sift] Tiers: " + McsmVoidTiers.NEW_TOTAL_HEIGHT + " blocks continuous (compressed from 3136 to 1968)");
-        System.out.println("[MCSM Sift] Tier 1 Gel Horizon: " + McsmVoidTiers.TIER_1_GEL_HORIZON_TOP + " to " + McsmVoidTiers.TIER_1_GEL_HORIZON_BOTTOM + " - liquid where floats, god rays");
-        System.out.println("[MCSM Sift] Tier 2 Menger Maze: " + McsmVoidTiers.TIER_2_SPONGE_MAZE_TOP + " to " + McsmVoidTiers.TIER_2_SPONGE_MAZE_BOTTOM + " - orange-to-pink + starry sponge");
-        System.out.println("[MCSM Sift] Tier 3 Rift Field: " + McsmVoidTiers.TIER_3_RIFT_FIELD_TOP + " to " + McsmVoidTiers.TIER_3_RIFT_FIELD_BOTTOM);
-        System.out.println("[MCSM Sift] Tier 4 Displacement: " + McsmVoidTiers.TIER_4_DISPLACEMENT_TOP + " to " + McsmVoidTiers.TIER_4_DISPLACEMENT_BOTTOM);
-        System.out.println("[MCSM Sift] Tier 5 Iridescent Gel: " + McsmVoidTiers.TIER_5_GEL_VOID_TOP + " to " + McsmVoidTiers.TIER_5_GEL_VOID_BOTTOM);
-        System.out.println("[MCSM Sift] Bottom Fabric: " + McsmVoidTiers.BOTTOM_FABRIC_TOP + " to " + McsmVoidTiers.BOTTOM_FABRIC_BOTTOM + " - rainbow");
-        System.out.println("[MCSM Sift] Unknown: " + McsmVoidTiers.UNKNOWN_TOP + " to " + McsmVoidTiers.UNKNOWN_BOTTOM + " -> return to overworld sky");
+        System.out.println("[MCSM Sift] 8 LAYERS: " + McsmVoidTiers.NEW_TOTAL_HEIGHT + " blocks continuous - matches concept art");
+        System.out.println("[MCSM Sift] [1] OVERWORLD Y> -64 - familiar realm");
+        System.out.println("[MCSM Sift] [2] BEDROCK LEVEL " + McsmVoidTiers.BEDROCK_LEVEL_TOP + " to " + McsmVoidTiers.BEDROCK_LEVEL_BOTTOM + " - lowest solid layer, foundation of all that exists");
+        System.out.println("[MCSM Sift] [3] FLOATING VOID ISLANDS " + McsmVoidTiers.FLOATING_VOID_ISLANDS_TOP + " to " + McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM + " - fractured remnants of impossible worlds, drifting broken, void energy");
+        System.out.println("[MCSM Sift] [4] INFINITE NOTHING BARRIER " + McsmVoidTiers.NOTHING_BARRIER_TOP + " to " + McsmVoidTiers.NOTHING_BARRIER_BOTTOM + " - surreal boundary of absolute emptiness, reality distorts");
+        System.out.println("[MCSM Sift] [5] INFINITE BLACKNESS " + McsmVoidTiers.INFINITE_BLACKNESS_TOP + " to " + McsmVoidTiers.INFINITE_BLACKNESS_BOTTOM + " - endless pure void, no light, no sound, only infinite depth");
+        System.out.println("[MCSM Sift] [6] SPONGE MAZE " + McsmVoidTiers.SPONGE_MAZE_TOP + " to " + McsmVoidTiers.SPONGE_MAZE_BOTTOM + " - colossal maze of ancient sponge blocks, SIFT AREA orange->pink");
+        System.out.println("[MCSM Sift] [7] LUMINESCENT POOLS " + McsmVoidTiers.LUMINESCENT_POOLS_TOP + " to " + McsmVoidTiers.LUMINESCENT_POOLS_BOTTOM + " - glowing waters, liquid crystals, alien beautiful silence");
+        System.out.println("[MCSM Sift] [8] ABYSSAL NIGHTMARE DIMENSION " + McsmVoidTiers.ABYSSAL_NIGHTMARE_TOP + " to " + McsmVoidTiers.ABYSSAL_NIGHTMARE_BOTTOM + " - final realm of terror, chaos, ancient evil, reality screams");
         System.out.println("[MCSM Sift] Pocket dimension: DISABLE_VOID_SUFFOCATION=" + McsmVoidTiers.DISABLE_VOID_SUFFOCATION + " - no suffocation in void");
         System.out.println("[MCSM Sift] Cinematic: volumetric disintegration, 4 planets (Dungeons, Legends, Movie, Story Mode), warp drive, white maze, fog fade");
-        System.out.println("[MCSM Sift] V2: Black hole backdrop lensing, animated skyboxes, 30 new blocks, 5 new creatures + merged void");
+        System.out.println("[MCSM Sift] V2: Black hole backdrop lensing, animated skyboxes, 30 new blocks, 5 new creatures + 8 layers concept");
 
         // Register ecosystem blocks
         SiftEcosystemBlocks.register();

@@ -9,33 +9,34 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.synth.PerlinNoise;
 
 /**
- * Fabric of Reality generation - infinite gigantic ground at overworld bottom - MERGED VOID
- * Fabric of reality stone and broken fabric - now directly under overworld hundreds blocks down
+ * Fabric of Reality generation - 8 LAYERS OF THE VOID CONCEPT - 7000.0.12-M
  * 
- * NEW MERGED FLOW (fits within -2032):
- * Overworld Y> -64 normal
- * Fabric layer Y -64 to -200: infinite gigantic ground, animated pitch black with stars, cosmic purple, cracks glowing
- * Emptiness Y -200 to -600: pitch black void of stars, 40-50 sec fall with fireworks (compressed from -1000)
- * Tier 1 Gel Horizon Y -600 to -900: liquid where floats, god rays appear, sky changes
- * Tier 2 Menger Maze Y -900 to -1300: orange-to-pink AND pitch black starry sponge
- * Tier 3 Rift Field Y -1300 to -1500: reality rifts
- * Tier 4 Displacement Y -1500 to -1700: rainbow bands
- * Tier 5 Iridescent Gel Y -1700 to -1900: rainbow water pools
- * Bottom fabric Y -1900 to -2000: second purple pink brown rainbow layer, color of skybox, leads to Unknown
- * Unknown Y -2000 to -2032: bouncy distortion, ground decay, no bedrock -> triggers return to overworld sky
- * Inner Space: when breakthrough black fabric, fall from sky back to overworld - continuous loop
+ * Concept from user images:
+ * 1. OVERWORLD Y> -64 normal
+ * 2. BEDROCK LEVEL -64 to -150 - lowest solid layer, unbreakable, foundation
+ * 3. FLOATING VOID ISLANDS -150 to -350 - fractured remnants of impossible worlds
+ * 4. INFINITE NOTHING BARRIER -350 to -550 - surreal boundary, reality distorts
+ * 5. INFINITE BLACKNESS -550 to -800 - endless pure void, no light, no sound
+ * 6. SPONGE MAZE -800 to -1200 - colossal maze of ancient sponge blocks (SIFT)
+ * 7. LUMINESCENT POOLS -1200 to -1600 - glowing waters, liquid crystals
+ * 8. ABYSSAL NIGHTMARE -1600 to -2032 - final realm, terror, chaos, ancient evil
+ * 
+ * MERGED VOID: second dimension directly underneath overworld hundreds blocks down
  * Skybox merges slowly to color of that area as you fall
  */
 public final class FabricGeneration {
 
     private final PerlinNoise crackNoise;
     private final PerlinNoise starNoise;
+    private final PerlinNoise islandNoise;
 
     public FabricGeneration(RandomSource random) {
         this.crackNoise = PerlinNoise.create(random, -2, 1);
         this.starNoise = PerlinNoise.create(random, -1, 1);
+        this.islandNoise = PerlinNoise.create(RandomSource.create(random.nextLong()), -2, 1);
     }
 
+    // 2. BEDROCK LEVEL -64 to -150
     public void generateTopFabric(WorldGenLevel level, BlockPos chunkOrigin) {
         int startX = chunkOrigin.getX();
         int startZ = chunkOrigin.getZ();
@@ -43,7 +44,7 @@ public final class FabricGeneration {
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                for (int y = McsmVoidTiers.FABRIC_TOP; y >= McsmVoidTiers.FABRIC_BOTTOM; y--) {
+                for (int y = McsmVoidTiers.BEDROCK_LEVEL_TOP; y >= McsmVoidTiers.BEDROCK_LEVEL_BOTTOM; y--) {
                     BlockPos pos = new BlockPos(startX + x, y, startZ + z);
                     
                     var current = level.getBlockState(pos);
@@ -69,13 +70,18 @@ public final class FabricGeneration {
                     if (isBroken) {
                         level.setBlock(pos, McsmSiftMod.BROKEN_FABRIC.get().defaultBlockState(), 2);
                     } else {
-                        level.setBlock(pos, McsmSiftMod.FABRIC_OF_REALITY.get().defaultBlockState(), 2);
+                        if (rng.nextFloat() < 0.3f) {
+                            level.setBlock(pos, Blocks.BEDROCK.defaultBlockState(), 2);
+                        } else {
+                            level.setBlock(pos, McsmSiftMod.FABRIC_OF_REALITY.get().defaultBlockState(), 2);
+                        }
                     }
                 }
             }
         }
     }
 
+    // 8. ABYSSAL NIGHTMARE DIMENSION bottom fabric
     public void generateBottomFabric(WorldGenLevel level, BlockPos chunkOrigin) {
         int startX = chunkOrigin.getX();
         int startZ = chunkOrigin.getZ();
@@ -83,7 +89,7 @@ public final class FabricGeneration {
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                for (int y = McsmVoidTiers.BOTTOM_FABRIC_TOP; y >= McsmVoidTiers.BOTTOM_FABRIC_BOTTOM; y--) {
+                for (int y = McsmVoidTiers.ABYSSAL_NIGHTMARE_TOP; y >= McsmVoidTiers.ABYSSAL_NIGHTMARE_TOP - 100; y--) {
                     BlockPos pos = new BlockPos(startX + x, y, startZ + z);
                     
                     double crack = crackNoise.getValue(
@@ -104,17 +110,51 @@ public final class FabricGeneration {
         }
     }
 
+    // 3. FLOATING VOID ISLANDS -150 to -350
+    public void generateFloatingIslands(WorldGenLevel level, BlockPos chunkOrigin) {
+        RandomSource rng = level.getRandom();
+        int startX = chunkOrigin.getX();
+        int startZ = chunkOrigin.getZ();
+
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                int wx = startX + x;
+                int wz = startZ + z;
+                for (int y = McsmVoidTiers.FLOATING_VOID_ISLANDS_TOP - 1; y >= McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM; y--) {
+                    BlockPos pos = new BlockPos(wx, y, wz);
+                    double island = islandNoise.getValue(wx * 0.02, y * 0.02, wz * 0.02);
+                    boolean isIsland = island > 0.15 && rng.nextFloat() < 0.35f;
+                    if (y % 25 == 0 && rng.nextFloat() < 0.08f) isIsland = true;
+                    if (isIsland) {
+                        float type = rng.nextFloat();
+                        if (type < 0.25f) {
+                            level.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+                        } else if (type < 0.45f) {
+                            level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 2);
+                        } else if (type < 0.65f) {
+                            level.setBlock(pos, Blocks.STONE.defaultBlockState(), 2);
+                        } else if (type < 0.75f) {
+                            level.setBlock(pos, Blocks.OAK_LOG.defaultBlockState(), 2);
+                        } else {
+                            level.setBlock(pos, McsmSiftMod.FABRIC_OF_REALITY.get().defaultBlockState(), 2);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public void generateEmptinessDecoration(WorldGenLevel level, BlockPos chunkOrigin) {
         RandomSource rng = level.getRandom();
         int startX = chunkOrigin.getX();
         int startZ = chunkOrigin.getZ();
 
-        if (rng.nextFloat() < 0.05f) {
+        // Nothing Barrier markers
+        if (rng.nextFloat() < 0.08f) {
             int x = startX + rng.nextInt(16);
-            int y = McsmVoidTiers.EMPTINESS_TOP - 10 - rng.nextInt(McsmVoidTiers.EMPTINESS_TOP - McsmVoidTiers.EMPTINESS_BOTTOM - 20);
+            int y = McsmVoidTiers.NOTHING_BARRIER_TOP - 10 - rng.nextInt(150);
             int z = startZ + rng.nextInt(16);
             BlockPos pos = new BlockPos(x, y, z);
-
             for (int dx = -2; dx <= 2; dx++) {
                 for (int dz = -2; dz <= 2; dz++) {
                     if (dx*dx + dz*dz <= 4) {
@@ -125,12 +165,12 @@ public final class FabricGeneration {
             }
         }
 
-        if (rng.nextFloat() < 0.01f) {
+        if (rng.nextFloat() < 0.02f) {
             int x = startX + rng.nextInt(16);
-            int y = McsmVoidTiers.EMPTINESS_TOP - 50 - rng.nextInt(200);
+            int y = McsmVoidTiers.INFINITE_BLACKNESS_TOP - 20 - rng.nextInt(180);
             int z = startZ + rng.nextInt(16);
             BlockPos pos = new BlockPos(x, y, z);
-            level.setBlock(pos, McsmSiftMod.IRIDESCENT_GEL.get().defaultBlockState(), 2);
+            level.setBlock(pos, Blocks.BLACK_CONCRETE.defaultBlockState(), 2);
         }
     }
 
@@ -140,10 +180,14 @@ public final class FabricGeneration {
         int startZ = chunkOrigin.getZ();
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                if (rng.nextFloat() < 0.9f) continue;
-                int y = McsmVoidTiers.TIER_1_GEL_HORIZON_TOP - rng.nextInt(McsmVoidTiers.TIER_1_GEL_HORIZON_TOP - McsmVoidTiers.TIER_1_GEL_HORIZON_BOTTOM);
+                if (rng.nextFloat() < 0.85f) continue;
+                int y = McsmVoidTiers.LUMINESCENT_POOLS_TOP - rng.nextInt(300);
                 BlockPos pos = new BlockPos(startX + x, y, startZ + z);
-                level.setBlock(pos, McsmSiftMod.IRIDESCENT_GEL.get().defaultBlockState(), 2);
+                if (rng.nextFloat() < 0.5f) {
+                    level.setBlock(pos, McsmSiftMod.IRIDESCENT_GEL.get().defaultBlockState(), 2);
+                } else {
+                    level.setBlock(pos, Blocks.SEA_LANTERN.defaultBlockState(), 2);
+                }
             }
         }
     }
