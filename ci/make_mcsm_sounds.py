@@ -350,6 +350,88 @@ def ui_terminal_deny():
     return norm(np.concatenate(parts), 0.6)
 
 
+# BUILD #485 -- ninth layer: reality-glitch nightmare / uninpossible layer sounds
+def creator_stomp():
+    rng = random.Random(SEED + 30)
+    # Low-frequency structural stomp: heavy thud with sub-bass
+    thud = env(tone(28.0, 1.2, "sine", 1.0), 0.005, 0.6)
+    thud += 0.6 * env(tone(56.0, 1.2, "sine", 0.7), 0.008, 0.5)
+    thud += 0.3 * env(tone(110.0, 0.6, "saw", 0.4), 0.002, 0.3)
+    rumble = noise(1.2, rng, lp=0.01, hp=0.0) * 0.4
+    return norm(thud + rumble, 0.9)
+
+def cosmic_rumble():
+    rng = random.Random(SEED + 31)
+    x = t(8.0)
+    drone = np.zeros_like(x)
+    for f, a in ((22.0, 0.9), (33.0, 0.7), (44.0, 0.5), (67.0, 0.3), (89.0, 0.2)):
+        drone += a * np.sin(2 * math.pi * f * x + 0.3 * np.sin(2 * math.pi * 0.04 * x))
+    wind = noise(8.0, rng, lp=0.005, hp=0.01) * 0.3
+    return norm(env(drone + wind, 1.0, 1.8), 0.65)
+
+def reality_glitch_nightmare():
+    rng = random.Random(SEED + 32)
+    out = np.zeros(int(RATE * 4.5))
+    at = 0
+    while at < len(out) - 3000:
+        n = rng.randrange(400, 3200)
+        f = rng.choice([110.0, 180.0, 280.0, 440.0, 660.0, 880.0, 1200.0])
+        seg = bits(tone(f, n / RATE, rng.choice(["square", "saw", "tri"]), 0.5), 5)
+        seg = env(seg, 0.001, 0.004)
+        room = min(len(seg), len(out) - at)
+        if room > 0:
+            out[at:at + room] += seg[:room]
+        at += n + rng.randrange(0, 1200)
+    out += noise(4.5, rng, lp=0.3, hp=0.05) * 0.15
+    out += 0.3 * sweep(80.0, 20.0, 4.5, 0.4)
+    return norm(out, 0.7)
+
+def void_stomp():
+    rng = random.Random(SEED + 33)
+    # Mechanical echoing stomp
+    body = env(tone(40.0, 0.9, "sine", 0.9), 0.003, 0.4)
+    body += 0.5 * env(tone(80.0, 0.9, "sine", 0.6), 0.005, 0.35)
+    body += 0.25 * env(tone(160.0, 0.4, "square", 0.3), 0.001, 0.2)
+    echo = np.zeros(int(RATE * 1.8))
+    echo[:len(body)] += body
+    # Add delayed echoes
+    for delay, amp in ((0.22, 0.45), (0.48, 0.28), (0.85, 0.16)):
+        at = int(RATE * delay)
+        if at + len(body) < len(echo):
+            echo[at:at+len(body)] += body * amp
+    echo += noise(1.8, rng, lp=0.02, hp=0.0) * 0.15
+    return norm(env(echo, 0.01, 0.5), 0.85)
+
+def ds_creator_stomp():
+    # UI version - shorter, punchier
+    thud = env(tone(35.0, 0.6, "sine", 0.9), 0.002, 0.3)
+    thud += 0.5 * env(tone(70.0, 0.6, "sine", 0.6), 0.003, 0.25)
+    return norm(thud, 0.8)
+
+def ds_cosmic_rumble():
+    rng = random.Random(SEED + 35)
+    out = noise(1.2, rng, lp=0.008, hp=0.01) * 0.6
+    out += 0.7 * env(tone(30.0, 1.2, "sine", 0.8), 0.05, 0.4)
+    return norm(env(out, 0.08, 0.5), 0.6)
+
+def ds_reality_tear():
+    rng = random.Random(SEED + 36)
+    seg = bits(tone(440.0, 0.5, "saw", 0.6), 4)
+    seg = env(seg, 0.002, 0.05)
+    seg += 0.4 * env(sweep(880.0, 120.0, 0.5, 0.5), 0.001, 0.08)
+    return norm(seg, 0.65)
+
+def ds_void_echo():
+    rng = random.Random(SEED + 37)
+    body = env(tone(50.0, 0.8, "sine", 0.7), 0.005, 0.35)
+    echo = np.zeros(int(RATE * 1.2))
+    echo[:len(body)] += body
+    at = int(RATE * 0.18)
+    if at + len(body) < len(echo):
+        echo[at:at+len(body)] += body * 0.5
+    return norm(env(echo, 0.01, 0.4), 0.7)
+
+
 SOUNDS = {
     "radio/static": radio_static,
     "radio/carrier": radio_carrier,
@@ -364,12 +446,20 @@ SOUNDS = {
     "oblivion/drone": oblivion_drone,
     "oblivion/glitch": oblivion_glitch,
     "oblivion/warp": oblivion_warp,
+    "creator_stomp": creator_stomp,
+    "cosmic_rumble": cosmic_rumble,
+    "reality_glitch_nightmare": reality_glitch_nightmare,
+    "void_stomp": void_stomp,
+    "ds_creator_stomp": ds_creator_stomp,
+    "ds_cosmic_rumble": ds_cosmic_rumble,
+    "ds_reality_tear": ds_reality_tear,
+    "ds_void_echo": ds_void_echo,
     "ui/terminal_open": ui_terminal_open,
     "ui/terminal_key": ui_terminal_key,
     "ui/terminal_deny": ui_terminal_deny,
 }
 
-# The SoundEvents the Java registers (McsmSounds), each bound to one file.
+# The SoundEvents the Java registers (McsmSounds + McsmUiSounds), each bound to one file.
 EVENTS = {
     "radio_static": "radio/static",
     "radio_carrier": "radio/carrier",
@@ -384,6 +474,14 @@ EVENTS = {
     "oblivion_drone": "oblivion/drone",
     "oblivion_glitch": "oblivion/glitch",
     "oblivion_warp": "oblivion/warp",
+    "creator_stomp": "creator_stomp",
+    "cosmic_rumble": "cosmic_rumble",
+    "reality_glitch_nightmare": "reality_glitch_nightmare",
+    "void_stomp": "void_stomp",
+    "ds_creator_stomp": "ds_creator_stomp",
+    "ds_cosmic_rumble": "ds_cosmic_rumble",
+    "ds_reality_tear": "ds_reality_tear",
+    "ds_void_echo": "ds_void_echo",
     "terminal_open": "ui/terminal_open",
     "terminal_key": "ui/terminal_key",
     "terminal_deny": "ui/terminal_deny",
@@ -406,6 +504,14 @@ SUBTITLES = {
     "oblivion_drone": "subtitles.mcsm.oblivion_drone",
     "oblivion_glitch": "subtitles.mcsm.oblivion_glitch",
     "oblivion_warp": "subtitles.mcsm.oblivion_warp",
+    "creator_stomp": "subtitles.mcsm.creator_stomp",
+    "cosmic_rumble": "subtitles.mcsm.cosmic_rumble",
+    "reality_glitch_nightmare": "subtitles.mcsm.reality_glitch_nightmare",
+    "void_stomp": "subtitles.mcsm.void_stomp",
+    "ds_creator_stomp": "subtitles.mcsm.ds_creator_stomp",
+    "ds_cosmic_rumble": "subtitles.mcsm.ds_cosmic_rumble",
+    "ds_reality_tear": "subtitles.mcsm.ds_reality_tear",
+    "ds_void_echo": "subtitles.mcsm.ds_void_echo",
     "terminal_open": "subtitles.mcsm.terminal_open",
     "terminal_key": "subtitles.mcsm.terminal_key",
     "terminal_deny": "subtitles.mcsm.terminal_deny",
@@ -425,6 +531,14 @@ SUBTITLE_TEXT = {
     "subtitles.mcsm.oblivion_drone": "The ruined dimension hums",
     "subtitles.mcsm.oblivion_glitch": "Reality tears",
     "subtitles.mcsm.oblivion_warp": "The world folds",
+    "subtitles.mcsm.creator_stomp": "The Creator stomps - reality shudders",
+    "subtitles.mcsm.cosmic_rumble": "Cosmic rumble echoes through void",
+    "subtitles.mcsm.reality_glitch_nightmare": "Reality glitches - nightmare unfolds",
+    "subtitles.mcsm.void_stomp": "Void stomp - mechanical echo",
+    "subtitles.mcsm.ds_creator_stomp": "Creator stomp",
+    "subtitles.mcsm.ds_cosmic_rumble": "Cosmic rumble",
+    "subtitles.mcsm.ds_reality_tear": "Reality tears open",
+    "subtitles.mcsm.ds_void_echo": "Void echo",
     "subtitles.mcsm.terminal_open": "The terminal wakes",
     "subtitles.mcsm.terminal_key": "Terminal key",
     "subtitles.mcsm.terminal_deny": "Access denied",

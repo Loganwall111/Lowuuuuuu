@@ -86,6 +86,10 @@ public abstract class McsmStormBlobMixin {
             // Build #416 (D.8, phase 3) -- the Creator's arms, through the rips.
             // Drawn last so the limbs read over the backdrop they hang in front of.
             McsmCreatorArms.submit(ctx);
+            // BUILD #485 -- the ninth layer: reality-glitch nightmare / uninpossible layer
+            // Photorealistic 3D geometry spire & castle mesh, gothic hanging fortresses,
+            // jagged mountain ridges, colossal Creator mesh - true 3D scene-graph VertexBuffer
+            net.mcsm.extras.client.McsmNinthLayerGeometry.submit(ctx);
         }
         // Intentionally no ci.cancel(): the original smooth backdrop owns this
         // pass. The custom ring/vortex generators are not submitted here.

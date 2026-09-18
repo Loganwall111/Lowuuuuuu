@@ -40,6 +40,12 @@ public final class McsmSounds {
     public static final SoundEvent OBLIVION_GLITCH = register("oblivion_glitch");
     public static final SoundEvent OBLIVION_WARP = register("oblivion_warp");
 
+    // BUILD #485 -- ninth layer: reality-glitch nightmare / uninpossible layer sounds
+    public static final SoundEvent CREATOR_STOMP = register("creator_stomp");
+    public static final SoundEvent COSMIC_RUMBLE = register("cosmic_rumble");
+    public static final SoundEvent REALITY_GLITCH_NIGHTMARE = register("reality_glitch_nightmare");
+    public static final SoundEvent VOID_STOMP = register("void_stomp");
+
     public static final SoundEvent TERMINAL_OPEN = register("terminal_open");
     public static final SoundEvent TERMINAL_KEY = register("terminal_key");
     public static final SoundEvent TERMINAL_DENY = register("terminal_deny");
@@ -49,6 +55,7 @@ public final class McsmSounds {
             RADIO_STATIC, RADIO_CARRIER, RADIO_VOICE, RADIO_DISTRESS, RADIO_MORSE,
             MASSG_BREATH, MASSG_GIGGLE, MASSG_WHISPER, MASSG_ROAR, MASSG_HEART,
             OBLIVION_DRONE, OBLIVION_GLITCH, OBLIVION_WARP,
+            CREATOR_STOMP, COSMIC_RUMBLE, REALITY_GLITCH_NIGHTMARE, VOID_STOMP,
             TERMINAL_OPEN, TERMINAL_KEY, TERMINAL_DENY
     };
 

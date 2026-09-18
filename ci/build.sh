@@ -1257,7 +1257,7 @@ stage javac-compiled
   # invisible for a dozen builds. So the classes that carry new behaviour are
   # required to exist in the compiled output. find() is used instead of a fixed
   # path so a layout change can never turn this into a false failure.
-  for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations; do
+  for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid; do
     if ! find /tmp/mcsm-build -name "${cls}.class" -print -quit | grep -q .; then
       echo "::error title=build::compiled output is missing ${cls}.class -- new behaviour would silently not draw"
       exit 1
@@ -1994,6 +1994,7 @@ done
 # BUILD #425 -- the mod's own sound set (see ci/make_mcsm_sounds.py). Each one
 # has to be in the jar AND be a real Ogg container, or the radio and the
 # creature fall back to silence.
+# BUILD #485 -- 8 new reality-glitch nightmare sounds (Creator stomp, cosmic rumble, void stomp etc)
 for need in \
   assets/mcsm/sounds/radio/static.ogg \
   assets/mcsm/sounds/radio/carrier.ogg \
@@ -2010,7 +2011,15 @@ for need in \
   assets/mcsm/sounds/oblivion/warp.ogg \
   assets/mcsm/sounds/ui/terminal_open.ogg \
   assets/mcsm/sounds/ui/terminal_key.ogg \
-  assets/mcsm/sounds/ui/terminal_deny.ogg; do
+  assets/mcsm/sounds/ui/terminal_deny.ogg \
+  assets/mcsm/sounds/creator_stomp.ogg \
+  assets/mcsm/sounds/cosmic_rumble.ogg \
+  assets/mcsm/sounds/reality_glitch_nightmare.ogg \
+  assets/mcsm/sounds/void_stomp.ogg \
+  assets/mcsm/sounds/ds_creator_stomp.ogg \
+  assets/mcsm/sounds/ds_cosmic_rumble.ogg \
+  assets/mcsm/sounds/ds_reality_tear.ogg \
+  assets/mcsm/sounds/ds_void_echo.ogg; do
   if [ ! -s "$FX/cls/$need" ]; then
     echo "::error title=jar audit::custom sound missing from the jar: $need"
     AUDIT_FAIL=1
@@ -2033,7 +2042,7 @@ if [ -e "$FX/cls/assets/mcsm/sounds/ds_btn_click.wav" ] \
   AUDIT_FAIL=1
 fi
 if [ "$AUDIT_FAIL" -eq 0 ]; then
-  echo "[audit] UI audio: 3 menu one-shots + 16 custom sounds (radio, MASSG, oblivion, terminal) all present as real Ogg Vorbis containers"
+  echo "[audit] UI audio: 3 menu one-shots + 24 custom sounds (radio, MASSG, oblivion, terminal, reality-glitch nightmare) all present as real Ogg Vorbis containers"
 fi
 
 if [ "$AUDIT_FAIL" -ne 0 ]; then

@@ -1,4 +1,22 @@
 {
+  "cosmic_rumble": {
+    "sounds": [
+      {
+        "name": "mcsm:cosmic_rumble",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.cosmic_rumble"
+  },
+  "creator_stomp": {
+    "sounds": [
+      {
+        "name": "mcsm:creator_stomp",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.creator_stomp"
+  },
   "ds_btn_click": {
     "sounds": [
       "mcsm:ds_btn_click"
@@ -11,11 +29,47 @@
     ],
     "subtitle": "subtitles.mcsm.button_hover"
   },
+  "ds_cosmic_rumble": {
+    "sounds": [
+      {
+        "name": "mcsm:ds_cosmic_rumble",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.ds_cosmic_rumble"
+  },
+  "ds_creator_stomp": {
+    "sounds": [
+      {
+        "name": "mcsm:ds_creator_stomp",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.ds_creator_stomp"
+  },
   "ds_menu_open": {
     "sounds": [
       "mcsm:ds_menu_open"
     ],
     "subtitle": "subtitles.mcsm.menu_open"
+  },
+  "ds_reality_tear": {
+    "sounds": [
+      {
+        "name": "mcsm:ds_reality_tear",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.ds_reality_tear"
+  },
+  "ds_void_echo": {
+    "sounds": [
+      {
+        "name": "mcsm:ds_void_echo",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.ds_void_echo"
   },
   "massg_breath": {
     "sounds": [
@@ -134,6 +188,15 @@
     ],
     "subtitle": "subtitles.mcsm.radio_voice"
   },
+  "reality_glitch_nightmare": {
+    "sounds": [
+      {
+        "name": "mcsm:reality_glitch_nightmare",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.reality_glitch_nightmare"
+  },
   "terminal_deny": {
     "sounds": [
       {
@@ -160,5 +223,14 @@
       }
     ],
     "subtitle": "subtitles.mcsm.terminal_open"
+  },
+  "void_stomp": {
+    "sounds": [
+      {
+        "name": "mcsm:void_stomp",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.mcsm.void_stomp"
   }
 }

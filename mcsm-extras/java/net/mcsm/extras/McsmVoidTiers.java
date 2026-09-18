@@ -90,10 +90,21 @@ public final class McsmVoidTiers {
     public static final int ABYSS_FLOOR = -50;
     /** Tier 4, the fracturing reality, ends here. */
     public static final int FRACTURE_FLOOR = -58;
-    /** Tier 5, the gel, runs from there to the floor of the world. */
-    public static final int GEL_FLOOR = DIM_MIN_Y;
+    /** Tier 5, the gel, runs from there to the floor of the world - now leaves room for 9th layer. */
+    public static final int GEL_FLOOR = -60;
+    /** Tier 6, the abyssal nightmare dimension (Layer 8 from infographic - final realm of terror). */
+    public static final int ABYSSAL_NIGHTMARE_FLOOR = -62;
+    /** Tier 7/9, the reality-glitch nightmare / uninpossible layer (Layer 9 - beyond impossible). */
+    public static final int REALITY_GLITCH_NIGHTMARE_FLOOR = DIM_MIN_Y;
+    /** Alias for the uninpossible layer - made-up word for beyond-impossible where reality breaks. */
+    public static final int UNINPOSSIBLE_FLOOR = DIM_MIN_Y;
     /** The barrier layer the dimension's own generator lays at min_y. */
     public static final int FLOOR_Y = DIM_MIN_Y;
+
+    // Deep sub-bedrock coordinate handshake: extended Overworld rendering loops handle ninth layer
+    // when depth variables scale. Translation matrix so player plummets directly out of Tier 8 into Tier 9.
+    public static final int REALITY_GLITCH_HANDSHAKE_Y = -1801; // plan-space Y where Tier 8 -> Tier 9 transition
+    public static final int UNINPOSSIBLE_HANDSHAKE_Y = -2032; // absolute deepest
 
     public static final int TIER_BASELINE = 0;
     public static final int TIER_LUMINOUS = 1;
@@ -116,8 +127,11 @@ public final class McsmVoidTiers {
     public static final int TIER_ABYSS = 18;
     public static final int TIER_FRACTURE = 19;
     public static final int TIER_GEL = 20;
-    /** How many tiers there are - 6 + 15 sponge layers = 21. */
-    public static final int TIERS = 21;
+    public static final int TIER_ABYSSAL_NIGHTMARE = 21;
+    public static final int TIER_REALITY_GLITCH_NIGHTMARE = 22;
+    public static final int TIER_UNINPOSSIBLE = 22;
+    /** How many tiers there are - 6 + 15 sponge layers + 2 nightmare layers = 23. */
+    public static final int TIERS = 23;
 
     /** What the chat calls each tier when a fall crosses into it. */
     public static final String[] NAME = {
@@ -141,7 +155,9 @@ public final class McsmVoidTiers {
             "the sponge - depth 15",
             "the abyss",
             "the fracture",
-            "the gel" };
+            "the gel",
+            "the abyssal nightmare dimension",
+            "the reality-glitch nightmare / uninpossible layer" };
 
     /** What the plan called each tier, kept so the mapping is reviewable. */
     public static final String[] PLAN_NAME = {
@@ -165,7 +181,9 @@ public final class McsmVoidTiers {
             "Layer 0.5.15, sponge tether 15",
             "Layer 2, the dark abyss",
             "Layer 3, the fragmented reality",
-            "Layer 4, the gaseous gel horizon" };
+            "Layer 4, the gaseous gel horizon",
+            "Layer 8, the abyssal nightmare dimension - final realm, terror chaos ancient evil reality screams",
+            "Layer 9, the reality-glitch nightmare / decayed reality / uninpossible layer - beyond impossible where Minecraft reality completely breaks down" };
 
     /**
      * The tier's own ambient colour, as the plan gives it: the luminous cavern's
@@ -174,6 +192,7 @@ public final class McsmVoidTiers {
      * sponge is its own orange-to-pink gradient; the fracture has no ambient at
      * all, only the waves, so it borrows the plan's glitch violet).
      * 15 sponge layers gradient from orange to pink.
+     * BUILD #485 -- Tier 9: matte-black & radiant shading filters - deep navy-black #0A0E14 and void-black #000000
      */
     public static final int[] FOG = {
             0x000000,   // 0 baseline: no filter
@@ -196,12 +215,15 @@ public final class McsmVoidTiers {
             0xFF3FA8,   // 17 sponge 15: pink end
             0x000000,   // 18 abyss: total void-black
             0x3A0F52,   // 19 fracture: glitch violet
-            0x1C1F16 }; // 20 gel: greenish-brown
+            0x1C1F16,   // 20 gel: greenish-brown
+            0x0A0E14,   // 21 abyssal nightmare: deep navy-black matte #0A0E14
+            0x000000 }; // 22 reality-glitch nightmare / uninpossible: void-black #000000 with radiant aura
 
     /**
      * The colour each tier's own light is. The luminous cavern's spires are the
      * plan's cyan/emerald/amber; the abyss keeps only the ruins' neon; the gel
      * glows green-white through its own fluid.
+     * BUILD #485 -- Tier 9: glowing purple lenses #8A2BE2 full-bright emissive RenderTypes.eyes, radiant aura
      */
     public static final int[] LIGHT = {
             0x6A5ACD, // 0 baseline
@@ -224,21 +246,25 @@ public final class McsmVoidTiers {
             0xFF0070, // 17
             0x00FFB0, // 18 abyss
             0xE070FF, // 19 fracture
-            0xBFFFC8 }; // 20 gel
+            0xBFFFC8, // 20 gel
+            0x8A2BE2, // 21 abyssal nightmare: glowing purple lenses
+            0x9D00FF }; // 22 reality-glitch nightmare: radiant purple emission aura + phase-shifting skirt 4.5x bloom
 
     /** How many spires / lights the tier raises, for the client art. */
-    public static final int[] LIGHTS = { 0, 14, 10, 8,8,8,8,8,8,8,8,8,8,8,8,8,8,8, 4, 6, 8 };
+    public static final int[] LIGHTS = { 0, 14, 10, 8,8,8,8,8,8,8,8,8,8,8,8,8,8,8, 4, 6, 8, 12, 24 };
 
     /**
      * The tier's own speed: the terminal fall, in blocks per second.
      * Sponge now faster at start per user request: 18.0 instead of 11.0, accelerating through 15 tethered layers.
+     * BUILD #485 -- Tier 9: physics-defying 3D landscape, faster reality tear 45.0 and 50.0
      */
-    public static final double[] SPEED = { 3.6D, 7.0D, 18.0D, 19.0D,20.0D,21.0D,22.0D,23.0D,24.0D,25.0D,26.0D,27.0D,28.0D,29.0D,30.0D,31.0D,32.0D,33.0D, 35.0D,38.0D,42.0D };
+    public static final double[] SPEED = { 3.6D, 7.0D, 18.0D, 19.0D,20.0D,21.0D,22.0D,23.0D,24.0D,25.0D,26.0D,27.0D,28.0D,29.0D,30.0D,31.0D,32.0D,33.0D, 35.0D,38.0D,42.0D, 45.0D, 50.0D };
 
     /**
      * What the chat says the first time a fall crosses into the tier. Each one is
      * the tier's own description in the plan's words: the spires it raises, the
      * maze it is, the light it kills, the waves it runs, the gel it becomes.
+     * BUILD #485 -- Tier 9: reality-glitch nightmare / uninpossible layer entries
      */
     public static final String[] ENTRY = {
             "\u00a78the world above is out of sight \u00b7 there is nothing here yet",
@@ -266,7 +292,11 @@ public final class McsmVoidTiers {
             "\u00a75\u00a7lTHE FRACTURE \u00a78\u00b7 the view is rippling \u00b7 something "
             + "up there is running the world through a wave",
             "\u00a7a\u00a7lTHE GEL HORIZON \u00a78\u00b7 the void turns over into its own "
-            + "fluid \u00b7 fall, drift, breathe: it will not drown you" };
+            + "fluid \u00b7 fall, drift, breathe: it will not drown you",
+            "\u00a75\u00a7lTHE ABYSSAL NIGHTMARE DIMENSION \u00a78\u00b7 final realm \u00b7 terror chaos ancient evil reality screams \u00b7 "
+            + "gothic towers hanging in matte-black void, jagged ridges on absolute horizon \u00b7 you should not be here",
+            "\u00a7d\u00a7lTHE REALITY-GLITCH NIGHTMARE / UNINPOSSIBLE LAYER \u00a78\u00b7 beyond impossible where Minecraft reality completely breaks down \u00b7 "
+            + "photorealistic 3D spires, hanging castles, colossal Creator visage tearing reality \u00b7 glowing purple lenses watching you \u00b7 4.5x bloom \u00b7 matte-black #0A0E14 #000000 \u00b7 the watcher stirs" };
 
     private McsmVoidTiers() {
     }
@@ -279,7 +309,26 @@ public final class McsmVoidTiers {
         return (BASELINE_FLOOR - GEL_FLOOR) / (double) (SPEC_TOP - SPEC_FLOOR);
     }
 
-    /** Which tier a Y is in. Above the baseline's floor is the baseline itself. 21 tiers now with 15 tethered sponge layers. */
+    /** Deep sub-bedrock coordinate handshake: translation matrix for Tier 9 */
+    public static double realityGlitchTranslation(double y) {
+        // Maps plan-space -1801..-2032 into safe -60..-64 with seamless plummet from Tier 8
+        if (y > GEL_FLOOR) return y;
+        double planT = (y - REALITY_GLITCH_HANDSHAKE_Y) / (double)(UNINPOSSIBLE_HANDSHAKE_Y - REALITY_GLITCH_HANDSHAKE_Y);
+        planT = Math.max(0.0D, Math.min(1.0D, planT));
+        return GEL_FLOOR - planT * (GEL_FLOOR - REALITY_GLITCH_NIGHTMARE_FLOOR);
+    }
+
+    /** Whether Y is in the reality-glitch nightmare / uninpossible layer */
+    public static boolean isRealityGlitchNightmare(double y) {
+        return y <= ABYSSAL_NIGHTMARE_FLOOR;
+    }
+
+    /** Whether Y is in the abyssal nightmare dimension */
+    public static boolean isAbyssalNightmare(double y) {
+        return y <= GEL_FLOOR && y > ABYSSAL_NIGHTMARE_FLOOR;
+    }
+
+    /** Which tier a Y is in. Above the baseline's floor is the baseline itself. 23 tiers now with nightmare layers. */
     public static int tierAt(double y) {
         if (y > BASELINE_FLOOR) return TIER_BASELINE;
         if (y > LUMINOUS_FLOOR) return TIER_LUMINOUS;
@@ -301,7 +350,9 @@ public final class McsmVoidTiers {
         if (y > SPONGE_15_FLOOR) return TIER_SPONGE_15;
         if (y > ABYSS_FLOOR) return TIER_ABYSS;
         if (y > FRACTURE_FLOOR) return TIER_FRACTURE;
-        return TIER_GEL;
+        if (y > GEL_FLOOR) return TIER_GEL;
+        if (y > ABYSSAL_NIGHTMARE_FLOOR) return TIER_ABYSSAL_NIGHTMARE;
+        return TIER_REALITY_GLITCH_NIGHTMARE;
     }
 
     /** The tier's name, for chat and for the frame. */

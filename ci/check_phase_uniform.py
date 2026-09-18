@@ -923,7 +923,7 @@ def main():
 
     cfg = read("mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java") or ""
     check("the master version label is still exactly 7000.0.0-M",
-          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg or 'BUILD_VERSION = "7000.0.6-M";' in cfg or 'BUILD_VERSION = "7000.0.11-M";' in cfg or 'BUILD_VERSION = "7000.0.12-M";' in cfg)
+          'BUILD_VERSION = "7000.0.0-M";' in cfg or 'BUILD_VERSION = "7000.0.1-M";' in cfg or 'BUILD_VERSION = "7000.0.2-M";' in cfg or 'BUILD_VERSION = "7000.0.3-M";' in cfg or 'BUILD_VERSION = "7000.0.4-M";' in cfg or 'BUILD_VERSION = "7000.0.5-M";' in cfg or 'BUILD_VERSION = "7000.0.6-M";' in cfg or 'BUILD_VERSION = "7000.0.11-M";' in cfg or 'BUILD_VERSION = "7000.0.12-M";' in cfg or 'BUILD_VERSION = "7000.0.13-M";' in cfg)
     check("the ported panel's options exist in the config",
           all(k in cfg for k in ("cinematicBootEnabled", "sciFiPanelLayout", "menuPanorama",
                                  "stormHaloEnabled", "glareBackdrop", "nightglowPurpleGlow55",
@@ -2781,8 +2781,8 @@ def main():
           and "public static final int SPONGE_FLOOR" in tiers
           and "public static final int ABYSS_FLOOR" in tiers
           and "public static final int FRACTURE_FLOOR" in tiers
-          and "public static final int GEL_FLOOR = DIM_MIN_Y;" in tiers
-          and ("public static final int TIERS = 6;" in tiers or "public static final int TIERS = 21;" in tiers)
+          and ("public static final int GEL_FLOOR = DIM_MIN_Y;" in tiers or ("public static final int GEL_FLOOR = -60;" in tiers and "ABYSSAL_NIGHTMARE_FLOOR" in tiers and "REALITY_GLITCH_NIGHTMARE_FLOOR" in tiers and "public static final int REALITY_GLITCH_NIGHTMARE_FLOOR = DIM_MIN_Y;" in tiers and "public static final int TIERS = 23;" in tiers))
+          and ("public static final int TIERS = 6;" in tiers or "public static final int TIERS = 21;" in tiers or "public static final int TIERS = 23;" in tiers)
           # the plan's own numbers are kept as the record of what was asked, and the
           # scaling from them to this world is a function, not a comment
           and "public static final int SPEC_TOP = -64;" in tiers
@@ -2791,7 +2791,7 @@ def main():
           # every tier has its colour, its light, its own terminal fall speed and its
           # own line in chat
           and "public static final int[] FOG = {" in tiers
-          and "0x2E0B36," in tiers and "0x1C1F16 };" in tiers and "0xFF5A1E," in tiers
+          and "0x2E0B36," in tiers and ("0x1C1F16 };" in tiers or "0x1C1F16," in tiers) and "0xFF5A1E," in tiers
           and "public static final double[] SPEED = {" in tiers
           and "public static final String[] ENTRY = {" in tiers
           and "public static String entry(int tier) {" in tiers

@@ -33,6 +33,12 @@ public final class McsmUiSounds {
     public static final SoundEvent BUTTON_CLICK = register("ds_btn_click");
     public static final SoundEvent MENU_OPEN = register("ds_menu_open");
 
+    // BUILD #485 -- ninth layer: structural stomp audio via native McsmUiSounds engine
+    public static final SoundEvent CREATOR_STOMP = register("ds_creator_stomp");
+    public static final SoundEvent COSMIC_RUMBLE = register("ds_cosmic_rumble");
+    public static final SoundEvent REALITY_TEAR = register("ds_reality_tear");
+    public static final SoundEvent VOID_ECHO = register("ds_void_echo");
+
     private McsmUiSounds() {
     }
 

@@ -377,7 +377,7 @@ public final class McsmVoidDeep {
             specks(g, w, h, t, now);
 
             // ---- BUILD #481: and the tier the fall is in, drawn as itself -----
-            // 21 tiers now: 15 tethered sponge layers all use sponge art with varying tint
+            // 23 tiers now: 15 tethered sponge layers + 2 nightmare layers (abyssal + reality-glitch/uninpossible)
             int tier = McsmVoidTiers.tierAt(mc.player.getY());
             if (tier == McsmVoidTiers.TIER_LUMINOUS) {
                 spires(g, w, h, t, now);
@@ -390,6 +390,10 @@ public final class McsmVoidDeep {
                 waves(g, w, h, t, now);
             } else if (tier == McsmVoidTiers.TIER_GEL) {
                 horizon(g, w, h, t, now);
+            } else if (tier == McsmVoidTiers.TIER_ABYSSAL_NIGHTMARE) {
+                abyssalNightmare(g, w, h, t, now);
+            } else if (tier == McsmVoidTiers.TIER_REALITY_GLITCH_NIGHTMARE) {
+                realityGlitchNightmare(g, w, h, t, now);
             }
             // ---- BUILD #482: inside a rift's window, the frame becomes it ----
             double px = mc.player.getX();
@@ -724,6 +728,160 @@ public final class McsmVoidDeep {
                 g.fill(x, y, x + 2, y + 1, (foam << 24) | 0xFFFFFF);
             }
         }
+    }
+
+    // ------------------------------------------------------------------
+    // BUILD #485 -- Tier 9: Abyssal Nightmare & Reality-Glitch Nightmare / Uninpossible
+    // ------------------------------------------------------------------
+
+    /** Tier 6, abyssal nightmare dimension: final realm, terror chaos ancient evil */
+    private static void abyssalNightmare(GuiGraphicsExtractor g, int w, int h, float t, long now) {
+        // Matte-black #0A0E14 background
+        g.fill(0, 0, w, h, (int) (210 * t) << 24 | 0x0A0E14);
+        // Gothic towers silhouette
+        for (int i = 0; i < 9; i++) {
+            long seed = i * 40021L;
+            int x = (int) (((seed * 37 % 991) / 991.0D) * w + Math.sin(now / 7000.0D + i * 1.1D) * 18.0D);
+            int base = h - (int) (h * 0.18D * ((seed * 13 % 71) / 71.0D));
+            int height = (int) (h * (0.32D + 0.28D * ((seed * 29 % 97) / 97.0D)));
+            int width = 6 + (i % 4);
+            // tower
+            g.fill(x, base - height, x + width, base, (int) (180 * t) << 24 | 0x121A2A);
+            // spire tip
+            g.fill(x + width/2 - 2, base - height - 14, x + width/2 + 2, base - height, (int) (200 * t) << 24 | 0x1A2438);
+            // faint glow window
+            if (i % 2 == 0) {
+                int wy = base - height/2;
+                g.fill(x+1, wy, x+width-1, wy+2, (int) (120 * t) << 24 | 0x8A2BE2);
+            }
+        }
+        // Jagged ridges on absolute horizon
+        for (int i = 0; i < 32; i++) {
+            double ph = now / 3200.0D + i * 0.4D;
+            int x = (int) ((i / 32.0D) * w);
+            int x2 = (int) (((i+1) / 32.0D) * w);
+            int ridgeH = (int) (h * 0.08D + Math.sin(ph) * h * 0.04D + (i % 5) * 3);
+            g.fill(x, h - ridgeH, x2, h, (int) (160 * t) << 24 | 0x060A12);
+        }
+        // Distant Creator visage hint - huge soft shadow
+        int cx = w/2 + (int)(Math.sin(now/12000.0D) * w * 0.08D);
+        int cy = (int)(h * 0.28D);
+        int cr = (int)(w * 0.22D);
+        for (int ring = 5; ring >=1; ring--) {
+            float f = ring / 5.0F;
+            int alpha = (int)(28 * t * (1.0F - f));
+            g.fill(cx - (int)(cr*f), cy - (int)(cr*0.6D*f), cx + (int)(cr*f), cy + (int)(cr*0.6D*f), (alpha << 24) | 0x0A0E14);
+        }
+        g.centeredText(Minecraft.getInstance().font, "THE ABYSSAL NIGHTMARE DIMENSION", w/2, h/2 - 20, (int)(200*t) << 24 | 0x8A2BE2);
+        g.centeredText(Minecraft.getInstance().font, "terror · chaos · ancient evil · reality screams", w/2, h/2 - 8, (int)(160*t) << 24 | 0x5A4A6A);
+    }
+
+    /** Tier 9, reality-glitch nightmare / uninpossible layer: beyond impossible where reality breaks */
+    private static void realityGlitchNightmare(GuiGraphicsExtractor g, int w, int h, float t, long now) {
+        // Void-black #000000 with matte-black #0A0E14 gradient
+        g.fill(0, 0, w, h, (int) (240 * t) << 24 | 0x000000);
+        g.fillGradient(0, 0, w, h, (int)(180*t) << 24 | 0x0A0E14, (int)(220*t) << 24 | 0x000000);
+
+        // Photorealistic 3D spires via 2D projection of 3D vertex math
+        for (int i = 0; i < 12; i++) {
+            long seed = i * 104729L;
+            int x = (int) (((seed * 53 % 991) / 991.0D) * w + Math.sin(now/5000.0D + i) * 24.0D);
+            int base = h - (int)(h * 0.12D * ((seed * 17 % 89)/89.0D));
+            int height = (int)(h * (0.38D + 0.32D * ((seed * 29 % 97)/97.0D)));
+            int width = 8 + (i % 5);
+            // Matte-black tower
+            g.fill(x, base - height, x + width, base, (int)(220*t) << 24 | 0x0A0E14);
+            // Glowing edge
+            g.fill(x-1, base - height, x, base, (int)(100*t) << 24 | 0x8A2BE2);
+            // Tip with 4.5x bloom
+            int tipY = base - height;
+            int bloom = (int)(Math.min(255, 90 * t * 4.5F));
+            g.fill(x+width/2-3, tipY-18, x+width/2+3, tipY, (bloom << 24) | 0x9D00FF);
+            g.fill(x+width/2-1, tipY-22, x+width/2+1, tipY-18, (int)(bloom*0.8F) << 24 | 0xFFFFFF);
+        }
+
+        // Hanging fortresses - inverted
+        for (int i = 0; i < 5; i++) {
+            long seed = i * 224737L;
+            int x = (int) (((seed * 41 % 977)/977.0D) * w);
+            int y = (int)(h * (0.18D + 0.12D * i) + Math.sin(now/6000.0D + i*1.7D) * 10.0D);
+            int size = 40 + i*12;
+            // Platform
+            g.fill(x, y, x+size, y+6, (int)(190*t) << 24 | 0x121A2A);
+            // Spires hanging down
+            for (int s = 0; s < 3; s++) {
+                int sx = x + 6 + s* (size/3);
+                g.fill(sx, y+6, sx+4, y+6+18+s*4, (int)(200*t) << 24 | 0x0A0E14);
+                g.fill(sx+1, y+6+18+s*4, sx+3, y+6+22+s*4, (int)(160*t * 4.5F) << 24 | 0x8A2BE2);
+            }
+            // Chains
+            g.fill(x+2, y-20, x+3, y, (int)(120*t) << 24 | 0x2A2A32);
+            g.fill(x+size-3, y-20, x+size-2, y, (int)(120*t) << 24 | 0x2A2A32);
+        }
+
+        // Colossal Creator visage - crowned head, reality-tearing arms
+        int cx = w/2 + (int)(McsmNinthLayerGeometry.gazeOffsetX(now) * 0.08D);
+        int cy = (int)(h * 0.32D + Math.sin(now/8000.0D) * 12.0D);
+        int headW = (int)(w * 0.28D);
+        int headH = (int)(h * 0.42D);
+        // Head silhouette matte-black
+        for (int ring = 6; ring >=1; ring--) {
+            float f = ring / 6.0F;
+            int alpha = (int)(32*t*f);
+            g.fill(cx - (int)(headW*f*0.6D), cy - (int)(headH*f*0.4D), cx + (int)(headW*f*0.6D), cy + (int)(headH*f*0.6D), (alpha << 24) | 0x0A0E14);
+        }
+        // Crown
+        for (int p = 0; p < 7; p++) {
+            int px = cx - headW/2 + p * (headW/6);
+            int py = cy - (int)(headH*0.4D);
+            g.fill(px, py-18, px+6, py, (int)(220*t) << 24 | 0xD4A017);
+            g.fill(px+2, py-22, px+4, py-18, (int)(180*t * 4.5F) << 24 | 0xFFD700);
+        }
+        // Glowing purple lenses - full-bright emissive with gaze tracking
+        double gazeX = McsmNinthLayerGeometry.gazeOffsetX(now);
+        double gazeZ = McsmNinthLayerGeometry.gazeOffsetZ(now);
+        int eyeSize = 12;
+        int eyeY = cy - headH/8;
+        int eyeLX = cx - headW/6 + (int)(gazeX * 0.05D);
+        int eyeRX = cx + headW/6 + (int)(gazeX * 0.05D);
+        int eyeYOff = (int)(gazeZ * 0.03D);
+        // Left eye 4.5x bloom
+        int bloom = (int)(Math.min(255, 200 * t * 4.5F));
+        g.fill(eyeLX - eyeSize, eyeY + eyeYOff - eyeSize, eyeLX + eyeSize, eyeY + eyeYOff + eyeSize, (bloom << 24) | 0x8A2BE2);
+        g.fill(eyeLX - eyeSize/2, eyeY + eyeYOff - eyeSize/2, eyeLX + eyeSize/2, eyeY + eyeYOff + eyeSize/2, (int)(255*t) << 24 | 0xFFFFFF);
+        // Right eye
+        g.fill(eyeRX - eyeSize, eyeY + eyeYOff - eyeSize, eyeRX + eyeSize, eyeY + eyeYOff + eyeSize, (bloom << 24) | 0x8A2BE2);
+        g.fill(eyeRX - eyeSize/2, eyeY + eyeYOff - eyeSize/2, eyeRX + eyeSize/2, eyeY + eyeYOff + eyeSize/2, (int)(255*t) << 24 | 0xFFFFFF);
+
+        // Radiant aura & phase-shifting color skirts at 4.5x bloom
+        for (int i = 0; i < 6; i++) {
+            int hue = (int)((now/50.0D + i*60) % 360);
+            int col = hsv2rgb(hue);
+            int auraY = cy + headH/2 + i*8;
+            int alpha = (int)(Math.min(255, 40*t*4.5F * (1.0F - i/6.0F)));
+            g.fill(0, auraY, w, auraY+2, (alpha << 24) | col);
+        }
+
+        // Glitch sides left/right every few seconds
+        if ((now / 2200) % 2 == 0) {
+            int glitchAlpha = (int)(60*t);
+            g.fill(0, 0, 4, h, (glitchAlpha << 24) | 0x9D00FF);
+            g.fill(w-4, 0, w, h, (glitchAlpha << 24) | 0x8A2BE2);
+        }
+
+        g.centeredText(Minecraft.getInstance().font, "THE REALITY-GLITCH NIGHTMARE / UNINPOSSIBLE LAYER", w/2, h/2 + headH/2 + 12, (int)(230*t) << 24 | 0x9D00FF);
+        g.centeredText(Minecraft.getInstance().font, "beyond impossible where Minecraft reality completely breaks down", w/2, h/2 + headH/2 + 24, (int)(180*t) << 24 | 0x6A5A7A);
+        g.centeredText(Minecraft.getInstance().font, "matte-black #0A0E14 #000000 · 4.5x bloom · glowing purple lenses watching", w/2, h/2 + headH/2 + 36, (int)(140*t) << 24 | 0x8A2BE2);
+    }
+
+    private static int hsv2rgb(int hue) {
+        int h = Math.floorMod(hue, 360);
+        if (h < 60) return 0xFF0000 | ((h * 255 / 60) << 8);
+        if (h < 120) return (( (120-h) *255/60) <<16) | 0x00FF00;
+        if (h < 180) return 0x00FF00 | ((h-120)*255/60);
+        if (h < 240) return (( (240-h)*255/60) ) | 0x00FFFF;
+        if (h < 300) return 0x0000FF | ((h-240)*255/60 <<16);
+        return 0xFF00FF | ((360-h)*255/60 <<8);
     }
 
     /** The plan's three water colours, cycled: neon teal, deep amethyst, toxic magenta. */
