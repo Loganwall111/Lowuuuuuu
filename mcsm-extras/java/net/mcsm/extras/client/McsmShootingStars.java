@@ -101,7 +101,7 @@ public final class McsmShootingStars {
             Minecraft mc = Minecraft.getInstance();
             ClientLevel level = mc == null ? null : mc.level;
             if (level == null) return;
-            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f).getGameTimeDeltaPartialTick(false));
+            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f);
             if (dayTime > 0.25f && dayTime < 0.75f) return; // Night only
 
             Vec3 cam = ctx.levelState().cameraRenderState.pos;

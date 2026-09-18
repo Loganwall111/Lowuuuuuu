@@ -37,7 +37,7 @@ public final class McsmLightRays {
             String dim = level.dimension().identifier().toString();
             if (!dim.contains("overworld") && !dim.equals("minecraft:overworld")) return; // Overworld only
 
-            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f).getGameTimeDeltaPartialTick(false));
+            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f);
             // Light rays only during day, when sun is out
             if (dayTime > 0.55f) return;
             if (level.isRaining() || level.isThundering()) return;

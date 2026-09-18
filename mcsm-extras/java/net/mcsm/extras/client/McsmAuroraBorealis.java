@@ -38,7 +38,7 @@ public final class McsmAuroraBorealis {
             String dim = level.dimension().identifier().toString();
             if (dim.contains("end") || dim.contains("nether")) return; // Overworld + MCSM dims only
 
-            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f).getGameTimeDeltaPartialTick(false));
+            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f);
             // Only at night
             if (dayTime > 0.3f && dayTime < 0.7f) return;
 
