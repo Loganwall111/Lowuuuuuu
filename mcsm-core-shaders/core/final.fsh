@@ -2,10 +2,14 @@
 #moj_import <minecraft:fog.glsl>
 
 // final.fsh - Iridescent Cosmic Fluid Shaders & Glowing Water Pools + Reality-Glitch Nightmare
-// Build #493 / 7000.0.21-M - Procedural Void-Glitch Generator & Reality Mutation Engine
-// Phase 2: Screen-Space Refraction Waves inside final.fsh – tie chromatic aberration and glitch-scanline filters to procedural spikes,
-// flash localized white-emissive rim-light on major warp to simulate HUD breaking
-// Phase 2: Blinding Gaze Warp – sync colossal Creator face to glitch noise, flare purple emissive eyes to 6.0x bloom + glitch particles
+// BUILD #489 / 7000.0.25-M – V3 Endless Possibilities Update – Continuous Distance-Adaptive Procedural Shader Generator
+// - Eliminate static post-processing, inject live noise matrix for infinite screen distortions
+// - Backrooms Phase heavy wobbly lens desaturated VHS grain
+// - Volumetric Floating Balls Phase screen-space raymarching reflective orbs
+// - Photorealism & Space-Time Lens Phase gravitational lensing chromatic aberration DOF
+// - Psychedelic Space-Time Matrix kaleidoscopic swirl rainbow waves
+// - Distance-Adaptive LERP cross-fades based on depth and Void Rudder acceleration
+// - HUD overload sync via McsmHudTerminal forcing orange-gold vortex rings ripple and corrupted code scrawl
 
 #moj_import <minecraft:mcsm_visuals.glsl>
 
@@ -33,43 +37,288 @@ vec3 hsv2rgb_f(vec3 c) {
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
-// BUILD #493: High-frequency sine/cosine noise matrix for glitch
 float glitchNoise(vec2 uv, float time) {
     float n = 0.0;
     n += sin(uv.x * 10.0 + time * 1.3) * cos(uv.y * 7.0 + time * 0.9) * 0.5;
     n += sin(uv.x * 23.0 - uv.y * 11.0 + time * 2.3) * 0.25;
     n += sin(uv.x * 47.0 + uv.y * 23.0 - time * 4.7) * 0.125;
     n += sin(uv.x * 91.0 - uv.y * 37.0 + time * 9.1) * 0.0625;
+    // V3 extra octaves for infinite possibilities
+    n += sin(uv.x * 173.0 + uv.y * 71.0 - time * 13.7) * 0.03125;
+    n += sin(uv.x * 311.0 - uv.y * 151.0 + time * 21.3) * 0.0156;
     return n;
+}
+
+float fbmNoise(vec2 uv, float time, int octaves) {
+    float value = 0.0;
+    float amplitude = 1.0;
+    float frequency = 1.0;
+    float maxValue = 0.0;
+    for (int i = 0; i < 8; i++) {
+        if (i >= octaves) break;
+        float nx = uv.x * frequency + time * 0.01 * float(i+1);
+        float ny = uv.y * frequency + time * 0.008 * float(i+1);
+        float n = sin(nx * 1.0 + ny * 0.7) * cos(nx * 0.3 - ny * 1.1) * 0.5;
+        n += sin(nx * 2.3 - ny * 1.1) * 0.25;
+        n += sin(nx * 4.7 + ny * 2.3) * 0.125;
+        value += n * amplitude;
+        maxValue += amplitude;
+        amplitude *= 0.5;
+        frequency *= 2.0;
+    }
+    return value / maxValue;
 }
 
 float computeGlitchFactor(float playerY, float time, float fallDist) {
     float depthFactor = 0.0;
     if (playerY <= -2032.0) depthFactor = 1.0;
     else if (playerY <= -1200.0) depthFactor = 0.85 + 0.15 * ((-1200.0 - playerY) / (-1200.0 + 2032.0));
-    else if (playerY <= -500.0) depthFactor = 0.55 + 0.30 * ((-500.0 - playerY) / (-500.0 + 1200.0));
-    else if (playerY <= -180.0) depthFactor = 0.25 + 0.30 * ((-180.0 - playerY) / (-180.0 + 500.0));
-    else if (playerY <= -60.0) depthFactor = 0.05 + 0.20 * ((-60.0 - playerY) / (-60.0 + 180.0));
-    else depthFactor = 0.0;
+    else if (playerY <= -500.0) depthFactor = 0.65 + 0.35 * ((-500.0 - playerY) / (-500.0 + 1200.0));
+    else if (playerY <= -180.0) depthFactor = 0.35 + 0.35 * ((-180.0 - playerY) / (-180.0 + 500.0));
+    else if (playerY <= -60.0) depthFactor = 0.15 + 0.30 * ((-60.0 - playerY) / (-60.0 + 180.0));
+    else depthFactor = 0.05;
 
-    float fallFactor = clamp(fallDist / 100.0, 0.0, 1.0);
+    float fallFactor = clamp(fallDist / 60.0, 0.0, 1.0);
 
     float noise = 0.0;
-    noise += sin(time * 1.0) * 0.5;
-    noise += sin(time * 2.3 + fallDist * 0.01) * 0.25;
-    noise += sin(time * 4.7 + playerY * 0.005) * 0.125;
-    noise += sin(time * 9.1 + fallDist * 0.02) * 0.0625;
+    noise += sin(time * 1.0) * 0.4;
+    noise += sin(time * 2.3 + fallDist * 0.02) * 0.25;
+    noise += sin(time * 4.7 + playerY * 0.01) * 0.15;
+    noise += sin(time * 9.1 + fallDist * 0.04) * 0.1;
+    noise += sin(time * 17.3 + playerY * 0.02) * 0.05;
+    noise += sin(time * 31.1 + fallDist * 0.08) * 0.05;
     noise = (noise + 1.0) * 0.5;
 
-    float glitch = depthFactor * (0.6 + 0.4 * fallFactor) * (0.5 + 0.5 * noise);
+    float glitch = depthFactor * (0.7 + 0.5 * fallFactor) * (0.6 + 0.6 * noise);
 
-    float spikePhase = time * 0.003;
+    float spikePhase = time * 0.008;
     float spike = 0.0;
-    if (sin(spikePhase) > 0.85) {
-        spike = (sin(spikePhase) - 0.85) / 0.15;
+    if (sin(spikePhase) > 0.65) {
+        spike = (sin(spikePhase) - 0.65) / 0.35;
     }
 
-    return clamp(glitch + spike * depthFactor * 0.8, 0.0, 1.0);
+    return clamp(glitch + spike * depthFactor * 1.2, 0.0, 1.0);
+}
+
+// ---- V3 Four Phases --------------------------------------------------------
+
+// Phase 0: Backrooms Phase – heavy wobbly lens distortion, desaturated VHS film-grain
+vec3 backroomsPhase(vec2 uv, float time, float glitchFactor, vec3 baseColor, sampler2D diffuse) {
+    vec2 wobblyUV = uv;
+    // Heavy wobbly lens distortion
+    wobblyUV.x += sin(uv.y * 8.0 + time * 0.5 * (1.0 + glitchFactor * 3.0)) * 0.015 * glitchFactor;
+    wobblyUV.y += cos(uv.x * 6.0 + time * 0.4 * (1.0 + glitchFactor * 3.0)) * 0.015 * glitchFactor;
+    wobblyUV += vec2(glitchNoise(uv, time * 0.02), glitchNoise(uv + 1.0, time * 0.02)) * 0.01 * glitchFactor;
+
+    vec3 color = texture(diffuse, wobblyUV).rgb;
+
+    // Desaturated – Backrooms yellowish fluorescent
+    float lum = dot(color, vec3(0.299, 0.587, 0.114));
+    vec3 desat = mix(color, vec3(lum), 0.7 + glitchFactor * 0.2);
+    desat = mix(desat, vec3(0.9, 0.85, 0.6), 0.2); // yellowish tint
+
+    // VHS film-grain – heavy
+    float grain = fract(sin(dot(uv * time * 0.1, vec2(12.9898, 78.233))) * 43758.5453);
+    grain = grain * 0.15 - 0.075;
+    grain *= 1.0 + glitchFactor * 2.0;
+
+    // VHS tracking lines
+    float tracking = sin(uv.y * 400.0 + time * 2.0 * glitchFactor) * 0.5 + 0.5;
+    tracking = pow(tracking, 20.0) * glitchFactor * 0.3;
+    float displacement = glitchNoise(vec2(uv.y * 10.0, time * 0.01), time) * glitchFactor * 0.03;
+    vec3 displaced = texture(diffuse, vec2(wobblyUV.x + displacement, wobblyUV.y)).rgb;
+    desat = mix(desat, displaced, tracking);
+
+    // Vignette heavy for Backrooms
+    vec2 vigUV = uv * 2.0 - 1.0;
+    float vignette = 1.0 - dot(vigUV, vigUV) * 0.35;
+    vignette = pow(vignette, 1.5);
+    desat *= vignette;
+
+    return desat + grain;
+}
+
+// Phase 1: Volumetric Floating Balls – screen-space raymarching reflective orbs
+vec3 floatingBallsPhase(vec2 uv, float time, float glitchFactor, vec3 baseColor, sampler2D diffuse) {
+    vec2 p = uv - 0.5;
+    p.x *= InSize.x / InSize.y;
+
+    vec3 color = baseColor;
+
+    // Raymarch up to 5 floating reflective orbs
+    for (int i = 0; i < 5; i++) {
+        float fi = float(i);
+        // Orb position – floating, procedural via fBm
+        vec2 orbPos = vec2(
+            sin(time * 0.0005 * (fi+1.0) + fi * 1.3 + glitchNoise(vec2(fi, 0.0), time * 0.001) * glitchFactor * 2.0) * 0.6,
+            cos(time * 0.0004 * (fi+1.2) + fi * 2.1 + glitchNoise(vec2(fi, 1.0), time * 0.001) * glitchFactor * 2.0) * 0.4
+        );
+        float orbRadius = 0.08 + sin(time * 0.001 + fi) * 0.02 + glitchFactor * 0.05 + fbmNoise(vec2(fi, time * 0.0001), time, 3) * 0.03;
+
+        float dist = length(p - orbPos);
+        if (dist < orbRadius * 1.5) {
+            // Inside orb influence – distort world behind (refraction)
+            float refractionStrength = (1.0 - smoothstep(orbRadius * 0.8, orbRadius * 1.5, dist)) * 0.1 * (1.0 + glitchFactor * 2.0);
+            vec2 refractDir = normalize(p - orbPos);
+            vec2 refractedUV = uv + refractDir * refractionStrength;
+            vec3 refractedColor = texture(diffuse, refractedUV).rgb;
+
+            // Reflective orb surface – Fresnel
+            float fresnel = pow(1.0 - clamp(dist / orbRadius, 0.0, 1.0), 3.0);
+            float hue = fract(time * 0.0002 + fi * 0.15 + dist * 2.0);
+            vec3 orbColor = hsv2rgb_f(vec3(hue, 0.9, 1.0)) * (0.8 + fresnel * 1.5);
+
+            // Blend
+            float orbBlend = 1.0 - smoothstep(orbRadius * 0.9, orbRadius * 1.5, dist);
+            orbBlend *= 0.7 + glitchFactor * 0.5;
+
+            color = mix(color, mix(refractedColor, orbColor, fresnel * 0.6), orbBlend);
+
+            // Specular highlight
+            vec2 lightPos = orbPos + vec2(0.1, -0.1);
+            float spec = exp(-length(p - lightPos) * 30.0 / orbRadius) * 2.0;
+            color += vec3(1.0) * spec * orbBlend;
+        }
+    }
+
+    return color;
+}
+
+// Phase 2: Photorealism & Space-Time Lens – gravitational lensing, chromatic aberration, DOF
+vec3 photorealismPhase(vec2 uv, float time, float glitchFactor, float depth, vec3 baseColor, sampler2D diffuse) {
+    vec2 center = uv - 0.5;
+    float distToCenter = length(center);
+
+    // Gravitational lensing – bend light around center (simulating black hole / massive object)
+    float lensMass = 0.15 + glitchFactor * 0.3 + sin(time * 0.001) * 0.05;
+    float lensDist = max(distToCenter, 0.05);
+    float bend = lensMass / (lensDist * 2.0 + 0.1) * 0.02 * (1.0 + glitchFactor);
+    vec2 lensedUV = uv + normalize(center) * bend * sin(time * 0.002 + distToCenter * 10.0) * glitchFactor;
+
+    // Chromatic aberration – edge
+    float chroma = 0.003 * (1.0 + glitchFactor * 4.0) * (0.5 + distToCenter * 1.5);
+    vec3 chromaR = texture(diffuse, lensedUV + vec2(chroma, 0.0)).rgb;
+    vec3 chromaB = texture(diffuse, lensedUV - vec2(chroma, 0.0)).rgb;
+    vec3 chromaG = texture(diffuse, lensedUV).rgb;
+
+    vec3 color = vec3(chromaR.r, chromaG.g, chromaB.b);
+
+    // Dynamic depth-of-field blur – based on depth texture and glitch
+    float dofFactor = clamp(length(center) * 0.8 + depth * 0.2, 0.0, 1.0) * 0.15 * (1.0 + glitchFactor * 0.5);
+    vec3 blurColor = vec3(0.0);
+    float blurSamples = 4.0;
+    for (float x = -1.0; x <= 1.0; x += 1.0) {
+        for (float y = -1.0; y <= 1.0; y += 1.0) {
+            vec2 offset = vec2(x, y) * oneTexel * dofFactor * 100.0;
+            blurColor += texture(diffuse, lensedUV + offset).rgb;
+        }
+    }
+    blurColor /= 9.0;
+    color = mix(color, blurColor, dofFactor * 0.5);
+
+    // Photorealistic grade – slight contrast and saturation lift
+    color = pow(color, vec3(0.95));
+    float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    color = mix(vec3(lum), color, 1.15); // saturation
+    color = (color - 0.5) * 1.08 + 0.5; // contrast
+    color = clamp(color, 0.0, 1.0);
+
+    return color;
+}
+
+// Phase 3: Psychedelic Space-Time Matrix – kaleidoscopic swirl rainbow waves
+vec3 psychedelicPhase(vec2 uv, float time, float glitchFactor, vec3 baseColor, sampler2D diffuse) {
+    vec2 center = uv - 0.5;
+    float dist = length(center);
+    float angle = atan(center.y, center.x);
+
+    // Kaleidoscopic – mirror angle
+    float kaleidoSegments = 6.0 + floor(glitchFactor * 6.0); // 6-12 segments
+    float kaleidoAngle = mod(angle, 6.2831853 / kaleidoSegments);
+    kaleidoAngle = abs(kaleidoAngle - 3.14159265 / kaleidoSegments);
+    float newAngle = kaleidoAngle + time * 0.0005 * (1.0 + glitchFactor * 2.0) + glitchFactor * sin(time * 0.001 + dist * 5.0) * 0.5;
+
+    vec2 kaleidoUV = vec2(cos(newAngle), sin(newAngle)) * dist + 0.5;
+    kaleidoUV += vec2(fbmNoise(uv, time * 0.01, 4), fbmNoise(uv + 1.0, time * 0.01, 4)) * 0.02 * glitchFactor;
+
+    vec3 color = texture(diffuse, kaleidoUV).rgb;
+
+    // Fluid melting rainbow waves – warp rendering vectors
+    float wave1 = sin(uv.x * 8.0 + time * 0.05 + glitchFactor * 5.0) * cos(uv.y * 6.0 + time * 0.03) * 0.5 + 0.5;
+    float wave2 = sin(uv.x * 3.0 - time * 0.02 + uv.y * 4.0 + glitchFactor * 3.0) * 0.5 + 0.5;
+    float hueShift = fract(angle / 6.2831853 + time * 0.001 + dist * 0.5 + wave1 * 0.3 + glitchFactor * 0.2);
+    vec3 rainbow = hsv2rgb_f(vec3(hueShift, 0.9 + glitchFactor * 0.1, 1.0));
+
+    color = mix(color, rainbow, 0.5 + glitchFactor * 0.3 + wave2 * 0.2);
+    color += rainbow * 0.2 * glitchFactor;
+
+    // Melting effect – vertical smear based on glitch
+    float melt = sin(uv.x * 20.0 + time * 0.01 * glitchFactor) * 0.01 * glitchFactor;
+    vec3 meltColor = texture(diffuse, vec2(uv.x, uv.y + melt)).rgb;
+    color = mix(color, meltColor, glitchFactor * 0.2);
+
+    return color;
+}
+
+// HUD Overload Sync – orange-gold vortex rings ripple violently + corrupted code scrawl
+vec3 hudOverloadSync(vec2 uv, float time, float glitchFactor, vec3 baseColor) {
+    vec3 color = baseColor;
+    vec2 center = uv - 0.5;
+    float dist = length(center);
+    float angle = atan(center.y, center.x);
+
+    // Orange-gold vortex rings – ripple violently when chaotic
+    float rippleFactor = 1.0;
+    if (glitchFactor > 0.6) {
+        rippleFactor = 1.0 + glitchFactor * 3.0 + sin(time * 0.02 + dist * 10.0) * glitchFactor * 2.0;
+    }
+
+    int rings = 6;
+    float ringIntensity = 0.0;
+    vec3 ringColorAccum = vec3(0.0);
+    for (int i = 0; i < 6; i++) {
+        float fi = float(i);
+        float baseRadius = 0.15 + fi * 0.12;
+        float radius = baseRadius * rippleFactor + sin(time * 0.003 + fi) * 0.02 * glitchFactor;
+        float thickness = 0.015 + glitchFactor * 0.01;
+
+        float ringDist = abs(dist - radius);
+        float ring = 1.0 - smoothstep(0.0, thickness, ringDist);
+        ring *= 1.0 - smoothstep(0.8, 1.0, dist); // fade at edges
+        ring *= glitchFactor * 0.8 + 0.2;
+
+        float hue = 0.08 + fi * 0.02 + sin(time * 0.001 + fi) * 0.02; // orange-gold
+        vec3 ringCol = hsv2rgb_f(vec3(hue, 0.9, 1.0)) * ring * 1.5;
+
+        ringColorAccum += ringCol;
+        ringIntensity += ring;
+    }
+
+    color += ringColorAccum * 0.6 * glitchFactor;
+
+    // Corrupted code scrawl on borders – pseudo-code text noise
+    float border = 0.0;
+    border += step(0.97, uv.x) + step(uv.x, 0.03);
+    border += step(0.97, uv.y) + step(uv.y, 0.03);
+    border = clamp(border, 0.0, 1.0);
+
+    if (border > 0.5 && glitchFactor > 0.3) {
+        // Generate code-like scrawl – random characters via noise
+        float codeNoise = fbmNoise(uv * vec2(20.0, 5.0) + time * 0.01, time, 4);
+        float code = step(0.5, fract(codeNoise * 10.0 + time * 0.1)) * border;
+        code *= glitchFactor;
+
+        // Greenish code color like matrix, but corrupted orange-gold when high glitch
+        vec3 codeColor = mix(vec3(0.0, 1.0, 0.3), vec3(1.0, 0.6, 0.1), glitchFactor);
+        color += codeColor * code * 0.8;
+
+        // Extra glitch text displacement
+        float textDisp = glitchNoise(vec2(uv.y * 20.0, time * 0.01), time) * glitchFactor * 0.02 * border;
+        vec3 displaced = texture(DiffuseSampler, vec2(uv.x + textDisp, uv.y)).rgb;
+        color = mix(color, displaced, code * 0.3);
+    }
+
+    return color;
 }
 
 void main() {
@@ -86,12 +335,73 @@ void main() {
     float time = GameTime * 0.01;
     float timeFast = GameTime * 0.05;
     
-    // BUILD #493: Compute glitch factor from GameTime + FallDistance (simulated via LoopCount/time) + playerY
-    float fallDistSim = float(LoopCount % 1000) * 0.1 + abs(sin(GameTime * 0.01)) * 20.0;
+    float fallDistSim = float(LoopCount % 1000) * 0.1 + abs(sin(GameTime * 0.01)) * 20.0 + DepthFactor * 50.0;
     float glitchFactor = computeGlitchFactor(y, timeFast, fallDistSim);
     float isMajorWarp = step(0.75, glitchFactor);
     
-    // BUILD #485-486 + 493 -- TIER 9: Reality-Glitch Nightmare / Uninpossible Layer - PHOTOREALISTIC + PROCEDURAL GLITCH
+    // ---- V3 ENDLESS POSSIBILITIES – Continuous Distance-Adaptive Procedural Shader Generator ----
+    // For Y < -60 (void), apply infinite procedural distortions with LERP cross-fades
+    if (y <= -60.0) {
+        vec2 uv = texCoord;
+
+        // Distance-adaptive – compute depth index based on Y and fall distance (infinite)
+        float depthBelow = -60.0 - y; // 0 at -60, infinite as deeper
+        float depthIndex = floor(depthBelow / 30.0); // Using V3 spacing 30
+        float depthFrac = fract(depthBelow / 30.0);
+
+        // Phase float – continuous infinite, driven by GameTime, FallDistance, player vectors, depth
+        float phaseFloat = depthIndex * 0.7 + GameTime * 0.002 * (1.0 + DepthFactor + glitchFactor * 2.0) + fallDistSim * 0.015 + PlayerPos.x * 0.001 + PlayerPos.z * 0.001;
+        // Void Rudder acceleration simulation – faster fall = faster phase shift
+        float rudderAccel = clamp(fallDistSim / 100.0, 0.0, 1.0) * 2.0;
+        phaseFloat += rudderAccel * GameTime * 0.001;
+
+        int currentPhase = int(mod(phaseFloat, 4.0));
+        int nextPhase = (currentPhase + 1) % 4;
+        float phaseFrac = fract(phaseFloat);
+
+        // LERP cross-fade based on depth and Void Rudder acceleration – no sudden jumps
+        float lerpFactor = smoothstep(0.0, 1.0, phaseFrac);
+        // Accelerate LERP when rudder accelerating
+        lerpFactor = mix(lerpFactor, fract(phaseFloat * (1.0 + rudderAccel)), rudderAccel * 0.3);
+        lerpFactor = clamp(lerpFactor, 0.0, 1.0);
+
+        // Compute colors for current and next phase
+        vec3 currentColor = finalColor;
+        vec3 nextColor = finalColor;
+
+        // Current phase
+        if (currentPhase == 0) currentColor = backroomsPhase(uv, GameTime * 0.05, glitchFactor, finalColor, DiffuseSampler);
+        else if (currentPhase == 1) currentColor = floatingBallsPhase(uv, GameTime * 0.05, glitchFactor, finalColor, DiffuseSampler);
+        else if (currentPhase == 2) currentColor = photorealismPhase(uv, GameTime * 0.05, glitchFactor, depth, finalColor, DiffuseSampler);
+        else currentColor = psychedelicPhase(uv, GameTime * 0.05, glitchFactor, finalColor, DiffuseSampler);
+
+        // Next phase
+        if (nextPhase == 0) nextColor = backroomsPhase(uv, GameTime * 0.05, glitchFactor, finalColor, DiffuseSampler);
+        else if (nextPhase == 1) nextColor = floatingBallsPhase(uv, GameTime * 0.05, glitchFactor, finalColor, DiffuseSampler);
+        else if (nextPhase == 2) nextColor = photorealismPhase(uv, GameTime * 0.05, glitchFactor, depth, finalColor, DiffuseSampler);
+        else nextColor = psychedelicPhase(uv, GameTime * 0.05, glitchFactor, finalColor, DiffuseSampler);
+
+        // Distance-adaptive LERP
+        finalColor = mix(currentColor, nextColor, lerpFactor);
+
+        // Blend with depthFrac for extra smoothness between layers
+        float depthLerp = smoothstep(0.0, 1.0, depthFrac);
+        // Slight mix with base to avoid too harsh
+        finalColor = mix(finalColor, mix(currentColor, nextColor, depthLerp), 0.2 + glitchFactor * 0.3);
+
+        // HUD overload sync – orange-gold vortex rings ripple violently + corrupted code scrawl
+        finalColor = hudOverloadSync(uv, GameTime * 0.05, glitchFactor, finalColor);
+
+        // Extra photorealistic for F1 – when HUD hidden, we still get photorealistic but via Java mesh
+        // Here we add subtle photorealistic grade when deep
+        if (depthBelow > 100.0) {
+            float photoFactor = clamp((depthBelow - 100.0) / 500.0, 0.0, 1.0) * 0.3;
+            vec3 photo = photorealismPhase(uv, GameTime * 0.05, glitchFactor, depth, finalColor, DiffuseSampler);
+            finalColor = mix(finalColor, photo, photoFactor * glitchFactor);
+        }
+    }
+    
+    // BUILD #485-486 + 493 + 489 -- TIER 9: Reality-Glitch Nightmare / Uninpossible Layer
     if ((y >= -2032.0 && y <= -1801.0) || (y <= -60.0 && y >= -64.0)) {
         vec2 uv = texCoord;
         
@@ -108,13 +418,10 @@ void main() {
         float volumetricFog = exp(-depth * 2.5) * isUninpossible * 0.6;
         vec3 fogColor = mix(matteBlack, vec3(0.15, 0.1, 0.25), depthFog * 0.5);
         
-        float luminance = dot(finalColor, vec3(0.299, 0.587, 0.114));
         vec3 darkened = mix(finalColor * 0.15, baseNightmare, 0.85 * isUninpossible);
         finalColor = mix(finalColor, darkened, 0.7 * isUninpossible);
         finalColor = mix(finalColor, fogColor, volumetricFog * 0.4);
         
-        // ---- BUILD #493: Screen-Space Refraction Waves tied to glitch spikes ----
-        // Refraction wave intensity based on glitchFactor
         vec2 refractionWave = vec2(0.0);
         if (glitchFactor > 0.2) {
             refractionWave.x = sin(uv.y * 20.0 + GameTime * 0.1 * (1.0 + glitchFactor * 3.0)) * 0.005 * glitchFactor;
@@ -126,11 +433,9 @@ void main() {
         finalColor = mix(finalColor, refractedColor, glitchFactor * 0.3 * isUninpossible);
         
         vec2 center = uv - 0.5;
-        float distToCenter = length(center);
         float angleToCenter = atan(center.y, center.x);
         
         vec2 creatorPos = vec2(0.0 + sin(GameTime * 0.0005) * 0.08, -0.25 + cos(GameTime * 0.0004) * 0.05);
-        // Warp creator pos with glitch
         creatorPos += vec2(glitchNoise(uv, GameTime * 0.005), glitchNoise(uv + 2.0, GameTime * 0.005)) * glitchFactor * 0.05;
         float distToCreator = length(uv - creatorPos - 0.5);
         
@@ -146,7 +451,6 @@ void main() {
         float rightIris = sin(rightDist * 80.0 + GameTime * 0.1) * 0.5 + 0.5;
         eyeGlow += exp(-leftDist * 35.0) * 2.5 * (0.8 + leftIris * 0.4);
         eyeGlow += exp(-rightDist * 35.0) * 2.5 * (0.8 + rightIris * 0.4);
-        // BUILD #493: Blinding Gaze Warp – flare purple emissive eyes to 6.0x bloom + glitch particles
         float bloomFactor = mix(4.5, 6.0, clamp((glitchFactor - 0.7) / 0.3, 0.0, 1.0));
         bloomFactor += sin(GameTime * 0.1) * step(0.7, glitchFactor) * 0.5;
         eyeGlow *= bloomFactor;
@@ -160,7 +464,6 @@ void main() {
         float leftSpec = exp(-length(uv - leftEye - 0.5 - vec2(0.01, -0.01)) * 120.0) * 3.0;
         float rightSpec = exp(-length(uv - rightEye - 0.5 - vec2(0.01, -0.01)) * 120.0) * 3.0;
         eyeColor += vec3(1.0) * (leftSpec + rightSpec) * isUninpossible;
-        // Extra glitch flare on major warp
         if (glitchFactor > 0.75) {
             float flare = exp(-leftDist * 15.0) + exp(-rightDist * 15.0);
             flare *= glitchFactor * isMajorWarp * 2.0;
@@ -206,10 +509,8 @@ void main() {
         float snowCap = smoothstep(0.9, 1.0, skirtY) * ridge * isUninpossible;
         ridgeColor += vec3(0.9, 0.95, 1.0) * snowCap * 0.6;
         
-        // ---- BUILD #493: Chromatic aberration tied to procedural spikes ----
         float chromaIntensity = 0.002 * (1.0 + glitchFactor * 5.0) * isUninpossible;
         vec2 chromaOffset = vec2(chromaIntensity, 0.0);
-        // On major warp, intense chromatic aberration
         if (glitchFactor > 0.5) {
             chromaOffset *= (1.0 + glitchFactor * 2.0 + sin(GameTime * 0.1) * glitchFactor);
             vec3 chromaR = texture(DiffuseSampler, uv + chromaOffset + refractionWave).rgb;
@@ -219,22 +520,16 @@ void main() {
             finalColor.g = mix(finalColor.g, texture(DiffuseSampler, uv + refractionWave * 0.5).g, glitchFactor * 0.2);
         }
         
-        // ---- BUILD #493: Glitch-scanline filters tied to procedural spikes ----
         float scanline = 0.0;
-        float scanlineTime = fract(GameTime * 0.01 + glitchFactor * 2.0);
         if (glitchFactor > 0.3) {
-            // Horizontal scanlines that tear
             float line = sin(uv.y * 800.0 + GameTime * 0.5 * glitchFactor) * 0.5 + 0.5;
             line = pow(line, 50.0) * glitchFactor;
             scanline = line * isUninpossible;
-            
-            // Random horizontal displacement per scanline
             float displacement = glitchNoise(vec2(uv.y * 10.0, GameTime * 0.01), GameTime) * glitchFactor * 0.02;
             vec3 displaced = texture(DiffuseSampler, vec2(uv.x + displacement, uv.y)).rgb;
             finalColor = mix(finalColor, displaced, scanline * 0.5);
         }
         
-        // Glitch sides left/right every few seconds – enhanced with glitch factor
         float glitchTime = fract(GameTime * 0.0004 + glitchFactor * 0.1);
         float glitch = 0.0;
         if (glitchTime < 0.08 + glitchFactor * 0.1) {
@@ -245,19 +540,14 @@ void main() {
         vec3 glitchColor = mix(purpleLens, radiantPurple, glitchTime * 5.0) * glitch * 3.0;
         glitchColor += vec3(glitchNoise(uv, GameTime * 0.1)) * glitch * glitchFactor * 2.0;
         
-        // ---- BUILD #493: White-emissive rim-light flash on major warp – HUD breaking ----
         vec3 rimFlash = vec3(0.0);
         if (isMajorWarp > 0.5) {
-            // Localized white flash at edges and around eyes on violent mutation
             float edge = smoothstep(0.8, 1.0, abs(uv.x - 0.5) * 2.0) + smoothstep(0.8, 1.0, abs(uv.y - 0.5) * 2.0);
             edge *= isMajorWarp * glitchFactor;
             float eyeRim = exp(-leftDist * 20.0) + exp(-rightDist * 20.0);
             eyeRim *= isMajorWarp * 2.0;
-            
-            // White flash that simulates HUD breaking
             float flashPulse = sin(GameTime * 0.3 + glitchFactor * 10.0) * 0.5 + 0.5;
             flashPulse = pow(flashPulse, 3.0) * isMajorWarp;
-            
             rimFlash = vec3(1.0) * (edge * 0.6 + eyeRim * 1.2) * flashPulse;
             rimFlash += vec3(1.0, 1.0, 0.9) * scanline * isMajorWarp * 2.0;
         }
@@ -290,7 +580,6 @@ void main() {
             vec2 vigUV = texCoord * 2.0 - 1.0;
             float vignette = 1.0 - dot(vigUV, vigUV) * 0.28;
             vignette = pow(vignette, 1.2);
-            // On major warp, vignette pulses white
             if (isMajorWarp > 0.5) {
                 vignette *= 1.0 + sin(GameTime * 0.2) * glitchFactor * 0.3;
             }
@@ -307,7 +596,6 @@ void main() {
         }
     }
     
-    // TIER 5: Iridescent Cosmic Fluid with glitch refraction
     if (y >= -2032.0 && y <= -1801.0) {
         float fluidFactor = clamp(( -1801.0 - y) / (-1801.0 + 2032.0), 0.0, 1.0);
         
@@ -338,10 +626,7 @@ void main() {
         foam *= fluidFactor;
         
         vec3 foamColor = vec3(1.0, 1.0, 1.0) * foam * 2.5;
-        // On major warp, foam flashes white-emissive
         foamColor += vec3(1.0) * isMajorWarp * foam * 2.0;
-        
-        float fluidAlpha = 0.85 + 0.15 * sin(GameTime * 0.3 + uv.x * 5.0);
         
         finalColor = mix(refracted, fluidColor, 0.6 * fluidFactor);
         finalColor += foamColor;

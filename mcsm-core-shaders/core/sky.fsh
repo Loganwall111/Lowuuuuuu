@@ -456,6 +456,125 @@ void main() {
         col = mix(col, col + secondCol, secondFade * voidFactor * 0.6);
     }
 
+    // ========================================================================
+    //  BUILD #489 / 7000.0.25-M – V3 Endless Possibilities – Dynamic Mesh Interaction
+    //  Tie screen-space chromatic aberration and concentric vortex ring filters directly
+    //  to live mesh synthesis data. When generator calculates highly chaotic,
+    //  sectioned-out geometry phase, force concentric orange-gold vortex rings to
+    //  ripple violently to reflect distortion. Blinding Gaze Synch.
+    // ========================================================================
+
+    // Approximate glitch factor from phase and clock for sky – live mesh synthesis data sync
+    float v3GlitchFactor = 0.0;
+    {
+        float depthFactor = 0.0;
+        if (p > 7.0) depthFactor = 1.0;
+        else if (p > 6.0) depthFactor = 0.7 + 0.3 * (p - 6.0);
+        else if (p > 5.5) depthFactor = 0.4 + 0.3 * (p - 5.5) / 0.5;
+        else if (p > 5.0) depthFactor = 0.15 + 0.25 * (p - 5.0) / 0.5;
+        else depthFactor = 0.05;
+
+        float timeNoise = sin(clock * 0.01) * 0.5 + sin(clock * 0.023) * 0.25 + sin(clock * 0.047) * 0.125;
+        timeNoise = (timeNoise + 1.0) * 0.5;
+
+        v3GlitchFactor = depthFactor * (0.6 + 0.4 * timeNoise);
+        // Spike when chaotic
+        float spikePhase = clock * 0.0008;
+        if (sin(spikePhase) > 0.65) {
+            float spike = (sin(spikePhase) - 0.65) / 0.35;
+            v3GlitchFactor += spike * depthFactor * 0.8;
+        }
+        v3GlitchFactor = clamp(v3GlitchFactor, 0.0, 1.0);
+    }
+
+    // Chromatic aberration tied to mesh synthesis data – when chaotic, intense
+    float v3ChromaIntensity = 0.001 * (1.0 + v3GlitchFactor * 8.0);
+    if (v3GlitchFactor > 0.4) {
+        // Simulate chromatic by shifting hue based on ray and glitch
+        float chromaShift = v3ChromaIntensity * (1.0 + v3GlitchFactor * 2.0 + sin(clock * 0.005) * v3GlitchFactor);
+        vec3 chromaCol = col;
+        // Simple channel shift via fBm-like hue shift
+        float hueNoise = sin(up * 10.0 + clock * 0.001 * (1.0 + v3GlitchFactor * 3.0)) * 0.5 + 0.5;
+        chromaCol.r += hueNoise * chromaShift * 2.0;
+        chromaCol.b -= hueNoise * chromaShift * 2.0;
+        col = mix(col, chromaCol, v3GlitchFactor * 0.5);
+    }
+
+    // Concentric orange-gold vortex rings – ripple violently when chaotic geometry phase
+    {
+        float rippleFactor = 1.0;
+        if (v3GlitchFactor > 0.6) {
+            // Violent ripple – tied to mesh synthesis chaos
+            rippleFactor = 1.0 + v3GlitchFactor * 4.0 + sin(clock * 0.01 + up * 10.0) * v3GlitchFactor * 3.0 + cos(clock * 0.008 + t * 8.0) * v3GlitchFactor * 2.0;
+        } else if (v3GlitchFactor > 0.3) {
+            rippleFactor = 1.0 + v3GlitchFactor * 1.5 + sin(clock * 0.005) * v3GlitchFactor;
+        }
+
+        // Vortex center – slightly offset from zenith, like Creator gaze
+        vec3 vortexDir = normalize(vec3(sin(clock * 0.0003) * 0.2, 1.0, cos(clock * 0.0003) * 0.2));
+        float vortexDot = dot(ray, vortexDir);
+        float vortexDist = acos(clamp(vortexDot, -1.0, 1.0));
+
+        int vortexRings = 12; // More rings for V3 infinite
+        vec3 vortexAccum = vec3(0.0);
+        float vortexIntensity = 0.0;
+
+        for (int i = 0; i < 12; i++) {
+            float fi = float(i);
+            float baseRadius = 0.12 + fi * 0.14;
+            float radius = baseRadius * rippleFactor + sin(clock * 0.002 + fi * 0.7) * 0.03 * v3GlitchFactor;
+            float thickness = 0.012 + v3GlitchFactor * 0.015 + sin(clock * 0.005 + fi) * 0.005 * v3GlitchFactor;
+
+            float ringDist = abs(vortexDist - radius);
+            float ring = 1.0 - smoothstep(0.0, thickness, ringDist);
+            ring *= 1.0 - smoothstep(0.9, 1.3, vortexDist); // fade at edges
+            ring *= (0.8 - fi * 0.05) * (0.3 + v3GlitchFactor * 0.9);
+            ring *= voidFactor * 0.8 + 0.2;
+
+            // Orange-gold color – #FF8C00 to #FFD700 range
+            float hue = 0.08 + fi * 0.015 + sin(clock * 0.0005 + fi * 0.3) * 0.02;
+            vec3 ringCol = vec3(0.0);
+            // HSV to RGB approx for orange-gold
+            float hh = hue * 6.0;
+            float s = 0.9;
+            float v = 1.0;
+            int hi = int(mod(hh, 6.0));
+            float f = fract(hh);
+            float p = v * (1.0 - s);
+            float q = v * (1.0 - s * f);
+            float tt = v * (1.0 - s * (1.0 - f));
+            if (hi == 0) ringCol = vec3(v, tt, p);
+            else if (hi == 1) ringCol = vec3(q, v, p);
+            else if (hi == 2) ringCol = vec3(p, v, tt);
+            else if (hi == 3) ringCol = vec3(p, q, v);
+            else if (hi == 4) ringCol = vec3(tt, p, v);
+            else ringCol = vec3(v, p, q);
+
+            ringCol *= ring * (1.5 + v3GlitchFactor * 2.0);
+
+            vortexAccum += ringCol;
+            vortexIntensity += ring;
+        }
+
+        // Ripple violently when chaotic – add extra warping
+        if (v3GlitchFactor > 0.7) {
+            float violentWave = sin(vortexDist * 20.0 + clock * 0.02 * rippleFactor) * 0.5 + 0.5;
+            violentWave = pow(violentWave, 3.0) * v3GlitchFactor;
+            vortexAccum += vec3(1.0, 0.6, 0.1) * violentWave * 1.2;
+        }
+
+        col += vortexAccum * 0.7;
+
+        // Blinding Gaze Synch – lock emissive purple gaze loops to vertex noise frequency
+        // When vortex rings ripple violently, flash white artifact across sky margins
+        if (v3GlitchFactor > 0.75) {
+            float gazeFlash = sin(clock * 0.02 + v3GlitchFactor * 10.0) * 0.5 + 0.5;
+            gazeFlash = pow(gazeFlash, 4.0) * v3GlitchFactor;
+            float margin = max(smoothstep(0.15, 0.85, up), smoothstep(-0.10, -0.75, up));
+            col += vec3(1.0) * gazeFlash * margin * 0.15;
+        }
+    }
+
     // ---- story grade ------------------------------------------------------
     col = mcsm_story_grade(col);
 

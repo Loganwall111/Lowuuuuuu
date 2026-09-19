@@ -10,6 +10,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
 
 import net.mcsm.extras.McsmExtrasConfig;
+import net.mcsm.extras.McsmVoid;
+import net.mcsm.extras.McsmVoidTiers;
 
 /**
  * Devouring Storms: the Story Mode HUD.
@@ -228,6 +230,13 @@ public final class McsmHudTerminal {
         // --- mega-phase 6b: portal glow + the warp entry sequence -----------
         paintPortal(mc, player, g, w, h);
         paintWarp(mc, player, g, w, h);
+
+        // --- BUILD #489 V3 Endless Possibilities – HUD overload sync + meditation ---
+        try {
+            paintVoidOverload(mc, player, g, w, h);
+        } catch (Throwable ignored) {
+            // overload sync must never crash HUD
+        }
 
         // --- Build #375: the Story Mode Console is discoverable in-game -----
         // A quiet persistent chip (bottom-left) pointing at the 300-tab
@@ -538,6 +547,204 @@ public final class McsmHudTerminal {
                 net.mcsm.extras.McsmWarp.cancel(id);
             }
         }
+    }
+
+    /**
+     * BUILD #489 / 7000.0.25-M – V3 Endless Possibilities – HUD Overload Sync
+     * Tie to McsmMeshSynthesizer live mesh synthesis data. When generator calculates
+     * highly chaotic, sectioned-out geometry phase, force concentric orange-gold vortex
+     * rings to ripple violently to reflect distortion. Blinding Gaze Synch: lock emissive
+     * purple gaze loops to vertex noise frequency, flash white artifact across HUD margins.
+     * Also meditation per layer and corrupted code scrawl on borders.
+     */
+    private static void paintVoidOverload(Minecraft mc, LocalPlayer player,
+            GuiGraphicsExtractor g, int w, int h) {
+        try {
+            if (mc.level == null) return;
+            if (!mc.level.dimension().equals(McsmVoid.DIMENSION)) return;
+            double y = player.getY();
+            if (y > McsmVoidTiers.GEL_FLOOR) return;
+
+            double fallDist = player.fallDistance;
+            double time = (mc.level.getGameTime() % 240000L) + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+
+            float glitchFactor = McsmGlitchGenerator.computeGlitchFactor(fallDist, y, time);
+            glitchFactor = net.minecraft.util.Mth.clamp(glitchFactor * 1.8F, 0.0F, 1.0F);
+
+            float rippleFactor = McsmMeshSynthesizer.getVortexRippleFactor(glitchFactor, McsmMeshSynthesizer.getRecentAssets().size(), time);
+            float noiseFreq = McsmMeshSynthesizer.getNoiseFrequencyForHud(glitchFactor, time);
+
+            // Meditation per layer
+            String meditation = McsmInfiniteVoidLayers.getCurrentMeditation();
+            int medLayer = McsmInfiniteVoidLayers.getCurrentMeditationLayer();
+            if (meditation == null || meditation.isEmpty()) {
+                meditation = McsmMeshSynthesizer.getMeditationForLayer(medLayer);
+            }
+            String breathing = McsmMeshSynthesizer.getBreathingPhase(time, medLayer);
+            float[] medColor = McsmMeshSynthesizer.getMeditationColor(medLayer, time);
+
+            int medR = (int)(medColor[0] * 255);
+            int medG = (int)(medColor[1] * 255);
+            int medB = (int)(medColor[2] * 255);
+            int medCol = 0xFF000000 | (medR << 16) | (medG << 8) | medB;
+
+            // Orange-gold vortex rings – ripple violently when chaotic
+            if (glitchFactor > 0.3F) {
+                int cx = w / 2;
+                int cy = h / 2;
+                int rings = 6 + (int)(glitchFactor * 6); // 6-12 rings
+                for (int i = 0; i < rings; i++) {
+                    float baseRadius = 40.0F + i * 35.0F;
+                    float radius = baseRadius * rippleFactor + (float)Math.sin(time * 0.003 + i * 0.7) * 10.0F * glitchFactor;
+                    int alpha = (int)((80 - i * 8) * (0.3 + glitchFactor * 0.8) * medColor[3]);
+                    alpha = Math.max(0, Math.min(255, alpha));
+                    // Orange-gold: hue 35-50
+                    float hue = 0.08F + i * 0.02F + (float)Math.sin(time * 0.0005 + i * 0.3) * 0.02F;
+                    // Approximate orange-gold RGB from hue
+                    int r = 255;
+                    int gg = (int)(140 + hue * 100 + Math.sin(time * 0.001 + i) * 30);
+                    int b = (int)(10 + i * 5);
+                    gg = Math.max(0, Math.min(255, gg));
+                    b = Math.max(0, Math.min(255, b));
+                    int ringCol = (alpha << 24) | (r << 16) | (gg << 8) | b;
+
+                    // Draw ring as 4 lines approximating circle via fill with thickness
+                    int thickness = (int)(2 + glitchFactor * 3 + Math.sin(time * 0.01 + i) * glitchFactor * 2);
+                    // Top and bottom arcs – simplified as rectangles that ripple
+                    // Instead of true circle, draw horizontal bars that ripple to simulate vortex
+                    int x0 = (int)(cx - radius);
+                    int x1 = (int)(cx + radius);
+                    int y0 = (int)(cy - radius);
+                    int y1 = (int)(cy - radius + thickness);
+                    if (y0 >= 0 && y1 < h) {
+                        g.fill(x0, y0, x1, y1, ringCol);
+                    }
+                    y0 = (int)(cy + radius - thickness);
+                    y1 = (int)(cy + radius);
+                    if (y0 >= 0 && y1 < h) {
+                        g.fill(x0, y0, x1, y1, ringCol);
+                    }
+                    // Left/right
+                    x0 = (int)(cx - radius);
+                    x1 = (int)(cx - radius + thickness);
+                    y0 = (int)(cy - radius);
+                    y1 = (int)(cy + radius);
+                    if (x0 >= 0 && x1 < w) {
+                        g.fill(x0, y0, x1, y1, ringCol);
+                    }
+                    x0 = (int)(cx + radius - thickness);
+                    x1 = (int)(cx + radius);
+                    if (x0 >= 0 && x1 < w) {
+                        g.fill(x0, y0, x1, y1, ringCol);
+                    }
+                }
+            }
+
+            // Corrupted code scrawl on borders – when glitch high, show code-like text
+            if (glitchFactor > 0.4F) {
+                String[] codeSnippets = new String[]{
+                    "fBm(x*0.05,y*0.05,z*0.05,time,4)*warpStrength",
+                    "displaceVertexAdvanced(x,y,z,time,fall,glitch,playerPos,idx,seed)",
+                    "generateOrganicCave(hollow, twist, fragment separation)",
+                    "infiniteLandscape: 20+" + medLayer + " layers, meditation per layer",
+                    "assetGenerator: " + McsmMeshSynthesizer.getRecentAssets().size() + " assets instantly",
+                    "photorealisticF1: super duper landscape shader technique",
+                    "endlessCheers: unlimited infinite universe cheers",
+                    "V3 ENDLESS POSSIBILITIES – NO 20-MESH LIMIT – INFINITE",
+                    "voidRudderAccel: " + String.format("%.2f", fallDist * 0.02) + " ripple=" + String.format("%.2f", rippleFactor),
+                    "noiseFreq: " + String.format("%.2f", noiseFreq) + " glitch=" + String.format("%.2f", glitchFactor),
+                    "meditation[" + medLayer + "]: " + meditation.substring(0, Math.min(40, meditation.length())),
+                    "breathing: " + breathing,
+                    "meshSynth: " + McsmMeshSynthesizer.state().substring(0, Math.min(60, McsmMeshSynthesizer.state().length()))
+                };
+
+                int borderAlpha = (int)(120 * glitchFactor);
+                int codeCol = (borderAlpha << 24) | 0xFF8C00; // orange-gold code
+                if (glitchFactor > 0.7F) {
+                    codeCol = (borderAlpha << 24) | 0xFFD700; // gold when violent
+                }
+
+                // Left border scrawl
+                int yOff = 20;
+                for (int i = 0; i < codeSnippets.length && yOff < h - 20; i++) {
+                    if (Math.random() < 0.3 + glitchFactor * 0.5) { // random flicker
+                        String snippet = codeSnippets[(int)((time * 0.001 + i) % codeSnippets.length)];
+                        // Truncate for width
+                        if (mc.font.width(snippet) > w - 40) {
+                            snippet = snippet.substring(0, Math.min(snippet.length(), 50)) + "...";
+                        }
+                        g.text(mc.font, "§6" + snippet, 6, yOff, codeCol, false);
+                        yOff += 10 + (int)(Math.sin(time * 0.01 + i) * glitchFactor * 3);
+                    }
+                }
+
+                // Right border scrawl – mirrored
+                yOff = 30;
+                for (int i = codeSnippets.length - 1; i >= 0 && yOff < h - 20; i--) {
+                    if (Math.random() < 0.3 + glitchFactor * 0.5) {
+                        String snippet = codeSnippets[(int)((time * 0.001 + i * 1.3) % codeSnippets.length)];
+                        if (mc.font.width(snippet) > 120) {
+                            snippet = snippet.substring(0, Math.min(snippet.length(), 30)) + "...";
+                        }
+                        int x = w - 6 - mc.font.width(snippet);
+                        g.text(mc.font, "§e" + snippet, x, yOff, codeCol, false);
+                        yOff += 11;
+                    }
+                }
+
+                // Top/bottom corrupted bars
+                if (glitchFactor > 0.6F) {
+                    int flash = (int)(Math.sin(time * 0.02 + glitchFactor * 5) * 0.5 + 0.5) * 60 * (int)glitchFactor;
+                    int flashCol = (flash << 24) | 0xFFFFFF;
+                    g.fill(0, 0, w, 3, flashCol);
+                    g.fill(0, h - 3, w, h, flashCol);
+                }
+            }
+
+            // Meditation display – center bottom, glowing psychedelic
+            if (meditation != null && !meditation.isEmpty()) {
+                int cx = w / 2;
+                int cy = h - 60;
+                // Background
+                g.fill(cx - 160, cy - 8, cx + 160, cy + 32, 0x66000000);
+                g.fill(cx - 160, cy - 8, cx - 158, cy + 32, medCol);
+                g.fill(cx + 158, cy - 8, cx + 160, cy + 32, medCol);
+
+                // Truncate meditation to fit
+                String medDisplay = meditation;
+                if (mc.font.width(medDisplay) > 300) {
+                    medDisplay = medDisplay.substring(0, 45) + "...";
+                }
+                g.centeredText(mc.font, "§f§l[Meditation Layer " + medLayer + "]", cx, cy - 6, medCol);
+                g.centeredText(mc.font, "§7" + medDisplay, cx, cy + 6, 0xFFFFFFFF);
+                g.centeredText(mc.font, "§e" + breathing, cx, cy + 18, 0xFFFFD700);
+            }
+
+            // F1 dual reality indicator
+            boolean isF1 = McsmMeshSynthesizer.isF1Mode();
+            if (isF1) {
+                String f1Text = "§6§l[F1 PHOTOREALISTIC REALITY] Infinite Generator Mesh – Super Duper Photorealistic Landscape";
+                g.fill(0, 20, w, 36, 0xAA000000);
+                g.centeredText(mc.font, f1Text, w / 2, 24, 0xFFFF8C00);
+            } else {
+                if (y <= -60.0) {
+                    String mainText = "§d§l[MAIN REALITY] Endless Universe – Unlimited Infinite Cheers – " + (36 + (int)(glitchFactor * 20)) + " layers visible – Infinite Possibilities";
+                    g.fill(0, 20, w, 36, 0x66000000);
+                    g.centeredText(mc.font, mainText, w / 2, 24, 0xFF9D4EDD);
+                }
+            }
+
+            // Void Rudder acceleration indicator – ties to shader LERP
+            if (fallDist > 10.0) {
+                float accel = (float)(fallDist * 0.02);
+                int barW = (int)(accel * 50);
+                barW = Math.max(0, Math.min(200, barW));
+                g.fill(w - 210, h - 30, w - 10, h - 20, 0x44000000);
+                g.fill(w - 210, h - 30, w - 210 + barW, h - 20, 0xFFFF8C00);
+                g.text(mc.font, "§6Void Rudder Accel: " + String.format("%.1f", accel), w - 200, h - 28, 0xFFFFFFFF, false);
+            }
+
+        } catch (Throwable ignored) {}
     }
 
     /**

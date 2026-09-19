@@ -136,25 +136,43 @@ public final class McsmVoidVortexSkybox {
         } catch (Throwable ignored) {}
     }
 
-    // ---- Vortex ring – spinning like real vortex --------------------------
+    // ---- Vortex ring – spinning like real vortex – V3 ripple violently when chaotic --
     private static void emitVortexRing(Pose pose, VertexConsumer consumer, Vec3 camera, int ringIndex, double time, float glitchFactor, double playerY, double fallDist) {
         double depthT = ringIndex / (double)VORTEX_RINGS;
         double radius = Mth.lerp(depthT, VORTEX_RADIUS_START, VORTEX_RADIUS_END);
         double depth = Mth.lerp(depthT, 0.0, -VORTEX_DEPTH) + McsmVoidTiers.FLOOR_Y + 100;
 
-        // Spin like real vortex – different rings spin different speeds/directions
-        float rotation = ringRotations[ringIndex] + (float)(fallDist * 0.001 * (ringIndex % 2 == 0 ? 1 : -1));
-        double spinRadius = radius + McsmGlitchGenerator.fractalNoise(ringIndex * 0.5, time * 0.001) * glitchFactor * 100.0;
+        // V3: ripple factor from mesh synthesizer – when chaotic, ripple violently
+        float rippleFactor = McsmMeshSynthesizer.getVortexRippleFactor(glitchFactor, ringIndex, time);
+        radius *= rippleFactor;
 
-        // Color based on depth – outer rings purple, inner rings black with magenta
+        // Spin like real vortex – different rings spin different speeds/directions, plus ripple
+        float rotation = ringRotations[ringIndex] + (float)(fallDist * 0.001 * (ringIndex % 2 == 0 ? 1 : -1));
+        rotation += rippleFactor * 0.1F * glitchFactor * (float)Math.sin(time * 0.002 + ringIndex);
+        double spinRadius = radius + McsmGlitchGenerator.fractalNoise(ringIndex * 0.5, time * 0.001) * glitchFactor * 100.0 * rippleFactor
+                          + McsmMeshSynthesizer.fBm(ringIndex * 0.3, time * 0.001, 0, 3) * 50.0 * glitchFactor * rippleFactor;
+
+        // Color based on depth – outer rings purple, inner rings black with magenta, plus orange-gold when chaotic (V3)
         float hue = (float)(0.75 + depthT * 0.15 + time * 0.0001) % 1.0F;
-        float[] rgb = hsvToRgb(hue, 0.85F, 0.9F);
-        // Mix with void colors
+        if (glitchFactor > 0.6F) {
+            // Force orange-gold when chaotic – HUD overload sync
+            hue = 0.08F + (float)(depthT * 0.1 + Math.sin(time * 0.001 + ringIndex) * 0.05);
+        }
+        float[] rgb = hsvToRgb(hue, 0.85F + glitchFactor * 0.15F, 0.9F + glitchFactor * 0.1F);
+        // Mix with void colors, plus orange-gold boost when chaotic
         float voidMix = (float)depthT;
         int r = (int)((rgb[0] * (1-voidMix) + 0.1 * voidMix) * 255);
         int g = (int)((rgb[1] * (1-voidMix) + 0.05 * voidMix) * 255);
         int b = (int)((rgb[2] * (1-voidMix) + 0.25 * voidMix) * 255);
-        int a = (int)((120 - depthT * 80) * (0.5 + glitchFactor * 0.5));
+        if (glitchFactor > 0.6F) {
+            // Orange-gold override – ripple violently
+            r = 255;
+            g = (int)(140 + hue * 100 + Math.sin(time * 0.002 + ringIndex) * 30 * rippleFactor);
+            b = (int)(10 + depthT * 20);
+            g = Math.max(0, Math.min(255, g));
+            b = Math.max(0, Math.min(255, b));
+        }
+        int a = (int)((120 - depthT * 80) * (0.5 + glitchFactor * 0.8) * (0.5 + rippleFactor * 0.5));
 
         // Ring as circle of quads – 3D, not flat
         int segs = 48;

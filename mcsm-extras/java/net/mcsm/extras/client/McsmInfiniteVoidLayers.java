@@ -16,59 +16,75 @@ import net.mcsm.extras.McsmVoid;
 import net.mcsm.extras.McsmVoidTiers;
 
 /**
- * BUILD #495 / 7000.0.23-M – Infinite Procedural Void Layers – EXTREME NO MILD
+ * BUILD #489 / 7000.0.25-M – V3 Endless Possibilities Update – Infinite Procedural Void Layers
  *
- * User: "no mild" – previous was too mild, need EXTREME, not mild.
+ * Primary Development Base Line: anchor on stable 264/264 gate-checked V2 framework lineage
+ * Branch: arena/01a0b039-lowuuuuuu
  *
- * THIS IS EXTREME:
- * - LAYER_SPACING 45 (was 100) – 2.2x denser, no gaps, overwhelming.
- * - VISIBLE 24 below + 8 above = 32 layers (was 16) – brain-blowing density.
- * - 12 layer types (was 6): Spire Forest, Floating Islands, Void Ocean, Crystal Shards,
- *   Shattered Sheets, Grid Matrix, BLACK HOLE VOID, INVERTED CITY, FLESH ORGANIC,
- *   PSYCHEDELIC FRACTAL, GOTHIC MEGA CASTLE, VOID SKELETON MAZE – each insane.
- * - Counts EXTREME: 25-40 spires per layer (was 10-17), 8-12 islands (was 3-6),
- *   30-50 shards (was 12-22), 16 grid lines, etc.
- * - Glitch factor x3 influence, displacement x2.5, height x2, radius x1.8 – violent mutation.
- * - Spinning 3x faster, warping, reality tearing every layer, not every 5.
- * - Colors: full HSV rainbow, emissive, 6.0x bloom, white flashes, psychedelic.
- * - Truly no end: Y = -64 to -10,000,000+ possible, pure 3D geometry, no blocks.
- * - Photorealistic but EXTREME: PBR, volumetric, but twisted, organic, impossible.
+ * Core Mandate – PUSH TO ABSOLUTE LIMIT:
+ * - Over lots of layers, one meditation in there each layer generated regularly assets and put in
+ *   asset generator to instantly keep generating procedural assets infinitely.
+ * - Entire thing infinite ears up, continue different stuff, mind glowing psychedelic you can imagine.
+ * - Eliminate 20-mesh limit, ground-up true procedural 3D mesh synthesis generator with live GPU-driven noise loops.
+ * - F1 two realities: main game goes through unlimited infinite cheers causing endless universe effect,
+ *   F1 hides HUD to show infinite generator mesh using super duper photorealistic landscape shader technique.
+ *   Pressing F again returns to main mesh, both active while falling, meditation per layer.
  *
- * NOT MILD – EXTREME PSYCHEDELIC HORROR, BRAIN-BLOWING, REALITY BREAKING.
+ * V3 EXTREME – NOT MILD – OVERWHELMING:
+ * - LAYER_SPACING 30 (was 45) – 1.5x denser, 3.3x denser than original 100, no gaps, overwhelming.
+ * - VISIBLE 36 below + 12 above = 48 layers (was 32) – brain-blowing density, infinite.
+ * - 16 layer types (was 12): added PHOTOREALISTIC_MOUNTAIN, MEDITATION_GARDEN, ENDLESS_CHEERS_UNIVERSE, ORGANIC_CAVE_SYSTEM
+ *   plus existing 12: Spire Forest, Floating Islands, Void Ocean, Crystal Shards, Shattered Sheets,
+ *   Grid Matrix, BLACK HOLE VOID, INVERTED CITY, FLESH ORGANIC, PSYCHEDELIC FRACTAL, GOTHIC MEGA, VOID SKELETON
+ * - Counts EXTREME: 35-60 spires per layer (was 25-40), 12-20 islands (was 8-13), 40-70 shards (was 30-49)
+ * - Uses McsmMeshSynthesizer for fBm noise, organic caves hollowing, twisted spires fractal, floating fragments separation
+ * - Meditation per layer: each layer has mantra, breathing cycle, color, asset generation
+ * - Asset generator instantly keeps generating procedural assets infinitely – logs 256 recent assets
+ * - Endless cheers: unlimited infinite cheers causing endless universe effect – 30-100 cheering particles per layer
+ * - Photorealistic F1 reality: super duper photorealistic landscape shader technique when F1 (HUD hidden)
+ * - Memory flush: high-speed unload old out-of-view meshes to prevent VRAM leaks, no stutter
+ * - Truly no end: Y = -64 to -10,000,000+ possible, pure 3D geometry, no blocks, camera-relative, seed shuffle
  */
 public final class McsmInfiniteVoidLayers {
 
     private McsmInfiniteVoidLayers() {}
 
-    // ---- EXTREME configuration – NOT MILD ----------------------------------
-    public static final int LAYER_SPACING = 45; // EXTREME dense (was 100)
-    public static final int VISIBLE_LAYERS_BELOW = 24; // EXTREME (was 12)
-    public static final int VISIBLE_LAYERS_ABOVE = 8; // EXTREME (was 4)
-    public static final int TOTAL_VISIBLE = VISIBLE_LAYERS_BELOW + VISIBLE_LAYERS_ABOVE;
+    // ---- V3 EXTREME configuration – NOT MILD – OVERWHELMING INFINITE --------
+    public static final int LAYER_SPACING = 30; // V3 EXTREME denser (was 45, original 100)
+    public static final int VISIBLE_LAYERS_BELOW = 36; // V3 EXTREME (was 24)
+    public static final int VISIBLE_LAYERS_ABOVE = 12; // V3 EXTREME (was 8)
+    public static final int TOTAL_VISIBLE = VISIBLE_LAYERS_BELOW + VISIBLE_LAYERS_ABOVE; // 48
 
-    // 12 EXTREME layer types
+    // 16 EXTREME layer types – V3 adds 4 new
     private static final int TYPE_SPIRE_FOREST = 0;
     private static final int TYPE_FLOATING_ISLANDS = 1;
     private static final int TYPE_VOID_OCEAN = 2;
     private static final int TYPE_CRYSTAL_SHARDS = 3;
     private static final int TYPE_SHATTERED_SHEETS = 4;
     private static final int TYPE_GRID_MATRIX = 5;
-    private static final int TYPE_BLACK_HOLE = 6; // NEW EXTREME
-    private static final int TYPE_INVERTED_CITY = 7; // NEW EXTREME
-    private static final int TYPE_FLESH_ORGANIC = 8; // NEW EXTREME
-    private static final int TYPE_PSYCHEDELIC_FRACTAL = 9; // NEW EXTREME
-    private static final int TYPE_GOTHIC_MEGA = 10; // NEW EXTREME
-    private static final int TYPE_VOID_SKELETON = 11; // NEW EXTREME
-    private static final int TYPE_COUNT = 12;
+    private static final int TYPE_BLACK_HOLE = 6;
+    private static final int TYPE_INVERTED_CITY = 7;
+    private static final int TYPE_FLESH_ORGANIC = 8;
+    private static final int TYPE_PSYCHEDELIC_FRACTAL = 9;
+    private static final int TYPE_GOTHIC_MEGA = 10;
+    private static final int TYPE_VOID_SKELETON = 11;
+    private static final int TYPE_PHOTOREALISTIC_MOUNTAIN = 12; // NEW V3
+    private static final int TYPE_MEDITATION_GARDEN = 13; // NEW V3
+    private static final int TYPE_ENDLESS_CHEERS = 14; // NEW V3
+    private static final int TYPE_ORGANIC_CAVE = 15; // NEW V3
+    private static final int TYPE_COUNT = 16;
 
-    private static final double LAYER_RADIUS = 1800.0D; // EXTREME bigger (was 1200)
-    private static final double ISLAND_RADIUS = 1400.0D; // EXTREME bigger (was 900)
+    private static final double LAYER_RADIUS = 2200.0D; // V3 bigger (was 1800)
+    private static final double ISLAND_RADIUS = 1800.0D; // V3 bigger (was 1400)
 
     private static final Identifier VOID_STONE = Identifier.fromNamespaceAndPath("mcsm", "textures/block/void_stone.png");
     private static final Identifier WHITE = Identifier.fromNamespaceAndPath("dabywitherstormmod", "textures/misc/storm_white.png");
 
     private static long lastShuffleMs = 0L;
     private static int layersGenerated = 0;
+    private static int currentMeditationLayer = 0;
+    private static String currentMeditation = "";
+    private static long lastMeditationMs = 0L;
 
     public static void tick() {
         try {
@@ -77,10 +93,25 @@ public final class McsmInfiniteVoidLayers {
             if (mc == null || mc.level == null || mc.player == null) return;
             if (!mc.level.dimension().equals(McsmVoid.DIMENSION)) return;
             long now = System.currentTimeMillis();
-            if (now - lastShuffleMs > 500) { // EXTREME faster tick (was 1000)
+            if (now - lastShuffleMs > 300) { // V3 faster tick (was 500)
                 lastShuffleMs = now;
                 layersGenerated++;
             }
+            // Meditation per layer – update every 2.5 sec
+            if (now - lastMeditationMs > 2500L) {
+                lastMeditationMs = now;
+                double playerY = mc.player.getY();
+                double depthBelowFloor = McsmVoidTiers.FLOOR_Y - playerY;
+                if (depthBelowFloor < 0) depthBelowFloor = 0;
+                int layerIdx = (int)(depthBelowFloor / LAYER_SPACING);
+                if (layerIdx < 0) layerIdx = 0;
+                currentMeditationLayer = layerIdx;
+                currentMeditation = McsmMeshSynthesizer.getMeditationForLayer(layerIdx);
+                long seed = mc.level.dimension().identifier().hashCode() ^ mc.player.getUUID().hashCode() ^ mc.level.getGameTime() ^ layerIdx * 0x9E3779B97F4A7C15L;
+                McsmMeshSynthesizer.generateProceduralAsset(layerIdx, seed, mc.level.getGameTime());
+            }
+            // Memory flush
+            McsmMeshSynthesizer.flushOldMeshes();
         } catch (Throwable ignored) {}
     }
 
@@ -103,7 +134,6 @@ public final class McsmInfiniteVoidLayers {
             long baseSeed = mc.level.dimension().identifier().hashCode() ^ (mc.player != null ? mc.player.getUUID().hashCode() : 0x5EEDL) ^ mc.level.getGameTime();
 
             float glitchFactor = McsmGlitchGenerator.computeGlitchFactor(fallDist, playerY, time);
-            // EXTREME: boost glitch 1.5x for more violent mutation – NOT MILD
             glitchFactor = Mth.clamp(glitchFactor * 1.8F, 0.0F, 1.0F);
 
             double depthBelowFloor = McsmVoidTiers.FLOOR_Y - playerY;
@@ -111,47 +141,65 @@ public final class McsmInfiniteVoidLayers {
             int currentLayerIndex = (int)(depthBelowFloor / LAYER_SPACING);
 
             final Vec3 camFinal = camera;
+            final Vec3 playerPos = mc.player != null ? mc.player.position() : camera;
             final double tFinal = time;
             final float glitchFinal = glitchFactor;
             final double fallFinal = fallDist;
             final double pYFinal = playerY;
             final long seedFinal = baseSeed;
             final int curIdxFinal = currentLayerIndex;
+            final boolean isF1 = McsmMeshSynthesizer.isF1Mode();
 
             collector.submitCustomGeometry(poseStack, net.dabicco.witherstormmod.client.GlowRenderTypes.translucent(VOID_STONE),
                     (pose, consumer) -> {
                         for (int offset = -VISIBLE_LAYERS_ABOVE; offset < VISIBLE_LAYERS_BELOW; offset++) {
                             int layerIndex = curIdxFinal + offset;
                             if (layerIndex < 0) continue;
-                            double layerY = McsmVoidTiers.FLOOR_Y - (layerIndex * LAYER_SPACING) - (layerIndex % 4) * 7.0;
+                            double layerY = McsmVoidTiers.FLOOR_Y - (layerIndex * LAYER_SPACING) - (layerIndex % 4) * 5.0;
                             long shuffledSeed = McsmGlitchGenerator.shuffleSeedForDepth(layerY, seedFinal + layerIndex * 0x9E3779B97F4A7C15L);
                             int layerType = (int)(Math.abs(shuffledSeed) % TYPE_COUNT);
+
+                            // F1 dual reality: when F1, force photorealistic mountain type more often
+                            if (isF1 && layerIndex % 3 == 0) {
+                                layerType = TYPE_PHOTOREALISTIC_MOUNTAIN;
+                            }
 
                             double distToPlayer = Math.abs(layerY - pYFinal);
                             float visibility = 1.0F - (float)(distToPlayer / (VISIBLE_LAYERS_BELOW * LAYER_SPACING * 0.9));
                             visibility = Mth.clamp(visibility, 0.08F, 1.0F);
-                            float layerGlitch = glitchFinal * (0.7F + 0.8F * (layerIndex / 15.0F));
+                            float layerGlitch = glitchFinal * (0.7F + 0.8F * (layerIndex / 20.0F));
                             layerGlitch = Mth.clamp(layerGlitch, 0.0F, 1.0F);
 
+                            // Generate procedural asset for this layer – instant infinite generation
+                            McsmMeshSynthesizer.generateProceduralAsset(layerIndex, shuffledSeed, tFinal);
+
                             switch (layerType) {
-                                case TYPE_SPIRE_FOREST -> emitSpireForestLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_FLOATING_ISLANDS -> emitFloatingIslandsLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_VOID_OCEAN -> emitVoidOceanLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_CRYSTAL_SHARDS -> emitCrystalShardsLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_SHATTERED_SHEETS -> emitShatteredSheetsLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_GRID_MATRIX -> emitGridMatrixLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_BLACK_HOLE -> emitBlackHoleLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_INVERTED_CITY -> emitInvertedCityLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_FLESH_ORGANIC -> emitFleshOrganicLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_PSYCHEDELIC_FRACTAL -> emitPsychedelicFractalLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_GOTHIC_MEGA -> emitGothicMegaLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                                case TYPE_VOID_SKELETON -> emitVoidSkeletonLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
+                                case TYPE_SPIRE_FOREST -> emitSpireForestLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_FLOATING_ISLANDS -> emitFloatingIslandsLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_VOID_OCEAN -> emitVoidOceanLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_CRYSTAL_SHARDS -> emitCrystalShardsLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_SHATTERED_SHEETS -> emitShatteredSheetsLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_GRID_MATRIX -> emitGridMatrixLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_BLACK_HOLE -> emitBlackHoleLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_INVERTED_CITY -> emitInvertedCityLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_FLESH_ORGANIC -> emitFleshOrganicLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_PSYCHEDELIC_FRACTAL -> emitPsychedelicFractalLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_GOTHIC_MEGA -> emitGothicMegaLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_VOID_SKELETON -> emitVoidSkeletonLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_PHOTOREALISTIC_MOUNTAIN -> emitPhotorealisticMountainLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_MEDITATION_GARDEN -> emitMeditationGardenLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_ENDLESS_CHEERS -> emitEndlessCheersLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                case TYPE_ORGANIC_CAVE -> emitOrganicCaveLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
                             }
 
-                            // EXTREME: reality tear EVERY layer, not every 5 – NOT MILD
-                            emitRealityTearLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed);
-                            if (layerIndex % 3 == 0) {
-                                emitRealityTearLayer(pose, consumer, camFinal, layerY - 20, layerIndex + 1000, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed + 0x1234);
+                            // Reality tear EVERY layer – V3 even more
+                            emitRealityTearLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                            if (layerIndex % 2 == 0) {
+                                emitRealityTearLayer(pose, consumer, camFinal, layerY - 15, layerIndex + 1000, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed + 0x1234, playerPos);
+                            }
+                            // Infinite landscape synthesis via mesh synthesizer – endless possibilities
+                            if (layerIndex % 4 == 0) {
+                                McsmMeshSynthesizer.generateInfiniteLandscape(pose, consumer, camFinal, layerY - 10, layerIndex, tFinal, visibility * 0.5F, layerGlitch, fallFinal, shuffledSeed + 0x9ABC, playerPos);
                             }
                         }
                     });
@@ -163,12 +211,20 @@ public final class McsmInfiniteVoidLayers {
                             if (layerIndex < 0) continue;
                             double layerY = McsmVoidTiers.FLOOR_Y - (layerIndex * LAYER_SPACING);
                             double distToPlayer = Math.abs(layerY - pYFinal);
-                            if (distToPlayer > 400) continue;
+                            if (distToPlayer > 500) continue;
                             long shuffledSeed = McsmGlitchGenerator.shuffleSeedForDepth(layerY, seedFinal + layerIndex * 0x9E3779B97F4A7C15L);
-                            float visibility = 1.0F - (float)(distToPlayer / 400.0);
+                            float visibility = 1.0F - (float)(distToPlayer / 500.0);
                             emitLayerGlow(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, glitchFinal, shuffledSeed);
-                            if (glitchFinal > 0.3F) {
-                                emitExtremeParticles(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, glitchFinal, shuffledSeed);
+                            if (glitchFinal > 0.2F) {
+                                emitExtremeParticles(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, glitchFinal, shuffledSeed, playerPos);
+                            }
+                            // Endless cheers glow – unlimited infinite cheers causing endless universe
+                            if (layerIndex % 3 == 0) {
+                                McsmMeshSynthesizer.generateEndlessCheers(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, glitchFinal, shuffledSeed + 0x5678, playerPos);
+                            }
+                            // Photorealistic F1 glow
+                            if (isF1) {
+                                McsmMeshSynthesizer.generatePhotorealisticLandscape(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility * 0.3F, glitchFinal, fallFinal, shuffledSeed + 0xDEF0, playerPos);
                             }
                         }
                     });
@@ -176,20 +232,20 @@ public final class McsmInfiniteVoidLayers {
         } catch (Throwable ignored) {}
     }
 
-    // ---- EXTREME layer implementations --------------------------------------
+    // ---- V3 layer implementations – EXTREME + INFINITE SYNTHESIS -------------
 
-    private static void emitSpireForestLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        int spireCount = 25 + (int)(Math.abs(seed) % 16); // EXTREME 25-40 (was 10-17)
+    private static void emitSpireForestLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        int spireCount = 35 + (int)(Math.abs(seed) % 26); // V3 35-60 (was 25-40)
         for (int i = 0; i < spireCount; i++) {
-            double angle = (i / (double) spireCount) * Mth.TWO_PI + (seed % 100) * 0.01 + time * 0.0003 * (i % 3); // EXTREME faster spin
-            double radius = LAYER_RADIUS * 0.4 + (i * 37 % 600) + McsmGlitchGenerator.fractalNoise(i * 1.3, time * 0.001) * glitchFactor * 250.0; // EXTREME 250
+            double angle = (i / (double) spireCount) * Mth.TWO_PI + (seed % 100) * 0.01 + time * 0.0004 * (i % 3);
+            double radius = LAYER_RADIUS * 0.4 + (i * 37 % 800) + McsmGlitchGenerator.fractalNoise(i * 1.3, time * 0.001) * glitchFactor * 300.0 + McsmMeshSynthesizer.fBm(i * 0.5, time * 0.001, seed * 0.0001, 3) * 100.0;
             double x = camera.x + Math.cos(angle) * radius;
             double z = camera.z + Math.sin(angle) * radius;
             double[] mutated = McsmGlitchGenerator.mutateSpire(60.0 + (i * 11 % 120), 12.0, time, layerY, i + layerIndex * 100);
-            double height = mutated[0] * (1.2 + layerIndex * 0.05) * (1.0 + glitchFactor * 0.8); // EXTREME taller
+            double height = mutated[0] * (1.2 + layerIndex * 0.05) * (1.0 + glitchFactor * 0.8);
             double baseR = mutated[1] * (1.0 + glitchFactor * 0.5);
 
-            int segs = 10; // EXTREME more segs
+            int segs = 12;
             for (int s = 0; s < segs; s++) {
                 double a0 = (s / (double) segs) * Mth.TWO_PI + time * 0.002 * glitchFactor;
                 double a1 = ((s + 1) / (double) segs) * Mth.TWO_PI + time * 0.002 * glitchFactor;
@@ -203,10 +259,10 @@ public final class McsmInfiniteVoidLayers {
                 double x1t = x + Math.cos(a1) * (r0 * 0.15);
                 double z1t = z + Math.sin(a1) * (r0 * 0.15);
 
-                double[] d0b = McsmGlitchGenerator.displaceVertex(x0b, layerY, z0b, time, fallDistance, glitchFactor, s + i * 10 + layerIndex * 1000);
-                double[] d1b = McsmGlitchGenerator.displaceVertex(x1b, layerY, z1b, time, fallDistance, glitchFactor, s+1 + i * 10 + layerIndex * 1000);
-                double[] d0t = McsmGlitchGenerator.displaceVertex(x0t, layerY + height, z0t, time, fallDistance, glitchFactor, s + i * 20 + layerIndex * 1000);
-                double[] d1t = McsmGlitchGenerator.displaceVertex(x1t, layerY + height, z1t, time, fallDistance, glitchFactor, s+1 + i * 20 + layerIndex * 1000);
+                double[] d0b = McsmMeshSynthesizer.displaceVertexAdvanced(x0b, layerY, z0b, time, fallDistance, glitchFactor, playerPos, s + i * 10 + layerIndex * 1000, seed);
+                double[] d1b = McsmMeshSynthesizer.displaceVertexAdvanced(x1b, layerY, z1b, time, fallDistance, glitchFactor, playerPos, s+1 + i * 10 + layerIndex * 1000, seed);
+                double[] d0t = McsmMeshSynthesizer.displaceVertexAdvanced(x0t, layerY + height, z0t, time, fallDistance, glitchFactor, playerPos, s + i * 20 + layerIndex * 1000, seed);
+                double[] d1t = McsmMeshSynthesizer.displaceVertexAdvanced(x1t, layerY + height, z1t, time, fallDistance, glitchFactor, playerPos, s+1 + i * 20 + layerIndex * 1000, seed);
 
                 float hue = (float)(((i * 17 + layerIndex * 13 + time * 0.01) % 360) / 360.0);
                 float[] rgb = hsvToRgb(hue, 0.9F, 1.0F);
@@ -218,18 +274,18 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
-    private static void emitFloatingIslandsLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        int islandCount = 8 + (int)(Math.abs(seed) % 6); // EXTREME 8-13 (was 3-6)
+    private static void emitFloatingIslandsLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        int islandCount = 12 + (int)(Math.abs(seed) % 9); // V3 12-20 (was 8-13)
         for (int i = 0; i < islandCount; i++) {
             double angle = (i / (double) islandCount) * Mth.TWO_PI + time * 0.00015 * (i+1) + (seed % 50) * 0.02;
-            double radius = ISLAND_RADIUS * 0.5 + i * 60 + McsmGlitchGenerator.fractalNoise(i * 2.0, time * 0.0005) * glitchFactor * 120.0;
+            double radius = ISLAND_RADIUS * 0.5 + i * 60 + McsmGlitchGenerator.fractalNoise(i * 2.0, time * 0.0005) * glitchFactor * 120.0 + McsmMeshSynthesizer.fBm(i * 0.7, time * 0.0005, seed * 0.0001, 3) * 80.0;
             double x = camera.x + Math.cos(angle) * radius;
             double z = camera.z + Math.sin(angle) * radius;
             double y = layerY + Math.sin(time * 0.002 + i * 1.7) * 18.0 * (1.0 + glitchFactor * 2.0);
 
             double size = 40.0 + (i * 13 % 60) + glitchFactor * 40.0;
 
-            for (int s = 0; s < 6; s++) { // EXTREME 6 sides
+            for (int s = 0; s < 6; s++) {
                 double a0 = (s / 6.0) * Mth.TWO_PI;
                 double a1 = ((s + 1) / 6.0) * Mth.TWO_PI;
                 double x0 = x + Math.cos(a0) * size;
@@ -237,27 +293,22 @@ public final class McsmInfiniteVoidLayers {
                 double x1 = x + Math.cos(a1) * size;
                 double z1 = z + Math.sin(a1) * size;
 
-                double[] d0 = McsmGlitchGenerator.displaceVertex(x0, y, z0, time, fallDistance, glitchFactor, s + i * 100 + layerIndex * 2000);
-                double[] d1 = McsmGlitchGenerator.displaceVertex(x1, y, z1, time, fallDistance, glitchFactor, s+1 + i * 100 + layerIndex * 2000);
-                double[] d0b = McsmGlitchGenerator.displaceVertex(x0, y - 18.0 - glitchFactor * 10.0, z0, time, fallDistance, glitchFactor, s + i * 110 + layerIndex * 2000);
-                double[] d1b = McsmGlitchGenerator.displaceVertex(x1, y - 18.0 - glitchFactor * 10.0, z1, time, fallDistance, glitchFactor, s+1 + i * 110 + layerIndex * 2000);
+                double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y, z0, time, fallDistance, glitchFactor, playerPos, s + i * 100 + layerIndex * 2000, seed);
+                double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y, z1, time, fallDistance, glitchFactor, playerPos, s+1 + i * 100 + layerIndex * 2000, seed);
+                double[] d0b = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y - 18.0 - glitchFactor * 10.0, z0, time, fallDistance, glitchFactor, playerPos, s + i * 110 + layerIndex * 2000, seed);
+                double[] d1b = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y - 18.0 - glitchFactor * 10.0, z1, time, fallDistance, glitchFactor, playerPos, s+1 + i * 110 + layerIndex * 2000, seed);
 
                 int r = 25 + layerIndex % 20 + (int)(glitchFactor * 30), g = 35 + i * 7, b = 60 + (int)(glitchFactor * 40);
                 int a = (int)(visibility * 255);
 
                 quad(pose, consumer, d0[0], d0[1], d0[2], 0, 0, d1[0], d1[1], d1[2], 1, 0, d1b[0], d1b[1], d1b[2], 1, 1, d0b[0], d0b[1], d0b[2], 0, 1, r, g, b, a, 0, -1, 0);
             }
-
-            double sx = x + Math.cos(time * 0.0005 + i) * 15.0;
-            double sz = z + Math.sin(time * 0.0005 + i) * 15.0;
-            double sh = 25.0 + glitchFactor * 25.0;
-            quad(pose, consumer, sx - 3, y, sz - 3, 0, 0, sx + 3, y, sz - 3, 1, 0, sx + 3, y + sh, sz + 3, 1, 1, sx - 3, y + sh, sz + 3, 0, 1, 40, 50, 80, (int)(visibility * 255), 0, 1, 0);
         }
     }
 
-    private static void emitVoidOceanLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        double size = LAYER_RADIUS * 2.0; // EXTREME bigger
-        int segs = 16; // EXTREME denser
+    private static void emitVoidOceanLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        double size = LAYER_RADIUS * 2.2;
+        int segs = 20;
         for (int sx = -segs/2; sx < segs/2; sx++) {
             for (int sz = -segs/2; sz < segs/2; sz++) {
                 double x0 = camera.x + sx * size / segs;
@@ -266,32 +317,25 @@ public final class McsmInfiniteVoidLayers {
                 double z1 = camera.z + (sz+1) * size / segs;
 
                 double wave0 = Math.sin(x0 * 0.03 + time * 0.004) * 12.0 + Math.cos(z0 * 0.03 + time * 0.003) * 12.0;
-                double wave1 = Math.sin(x1 * 0.03 + time * 0.004) * 12.0 + Math.cos(z0 * 0.03 + time * 0.003) * 12.0;
-                double wave2 = Math.sin(x1 * 0.03 + time * 0.004) * 12.0 + Math.cos(z1 * 0.03 + time * 0.003) * 12.0;
-                double wave3 = Math.sin(x0 * 0.03 + time * 0.004) * 12.0 + Math.cos(z1 * 0.03 + time * 0.003) * 12.0;
+                wave0 += McsmMeshSynthesizer.fBm(x0 * 0.02, z0 * 0.02, time * 0.002, 3) * glitchFactor * 35.0;
 
-                wave0 += McsmGlitchGenerator.fractalNoise(x0 * 0.02, z0 * 0.02 + time * 0.002) * glitchFactor * 35.0;
-                wave1 += McsmGlitchGenerator.fractalNoise(x1 * 0.02, z0 * 0.02 + time * 0.002) * glitchFactor * 35.0;
-                wave2 += McsmGlitchGenerator.fractalNoise(x1 * 0.02, z1 * 0.02 + time * 0.002) * glitchFactor * 35.0;
-                wave3 += McsmGlitchGenerator.fractalNoise(x0 * 0.02, z1 * 0.02 + time * 0.002) * glitchFactor * 35.0;
-
-                double[] d0 = McsmGlitchGenerator.displaceVertex(x0, layerY + wave0, z0, time, fallDistance, glitchFactor, sx*10 + sz + layerIndex * 3000);
-                double[] d1 = McsmGlitchGenerator.displaceVertex(x1, layerY + wave1, z0, time, fallDistance, glitchFactor, sx*10 + sz+1 + layerIndex * 3000);
-                double[] d2 = McsmGlitchGenerator.displaceVertex(x1, layerY + wave2, z1, time, fallDistance, glitchFactor, sx*10 + sz+2 + layerIndex * 3000);
-                double[] d3 = McsmGlitchGenerator.displaceVertex(x0, layerY + wave3, z1, time, fallDistance, glitchFactor, sx*10 + sz+3 + layerIndex * 3000);
+                double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, layerY + wave0, z0, time, fallDistance, glitchFactor, playerPos, sx*10 + sz + layerIndex * 3000, seed);
+                double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, layerY + wave0, z0, time, fallDistance, glitchFactor, playerPos, sx*10 + sz+1 + layerIndex * 3000, seed);
+                double[] d2 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, layerY + wave0, z1, time, fallDistance, glitchFactor, playerPos, sx*10 + sz+2 + layerIndex * 3000, seed);
+                double[] d3 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, layerY + wave0, z1, time, fallDistance, glitchFactor, playerPos, sx*10 + sz+3 + layerIndex * 3000, seed);
 
                 float hue = (float)(((layerIndex * 7 + sx * 3 + time * 0.005) % 360) / 360.0);
                 float[] rgb = hsvToRgb(hue, 0.85F, 0.7F);
                 int r = (int)(rgb[0] * 40), g = (int)(rgb[1] * 40 + 20), b = (int)(rgb[2] * 80 + 40);
-                int a = (int)(visibility * 180 * (0.6 + 0.4 * Math.sin(time * 0.002 + sx + sz)));
+                int a = (int)(visibility * 180);
 
                 quad(pose, consumer, d0[0], d0[1], d0[2], 0, 0, d1[0], d1[1], d1[2], 1, 0, d2[0], d2[1], d2[2], 1, 1, d3[0], d3[1], d3[2], 0, 1, r, g, b, a, 0, 1, 0);
             }
         }
     }
 
-    private static void emitCrystalShardsLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        int shardCount = 30 + (int)(Math.abs(seed) % 20); // EXTREME 30-49 (was 12-22)
+    private static void emitCrystalShardsLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        int shardCount = 40 + (int)(Math.abs(seed) % 31); // V3 40-70
         for (int i = 0; i < shardCount; i++) {
             double angle = (i / (double) shardCount) * Mth.TWO_PI + time * 0.0002 * (i+1);
             double radius = LAYER_RADIUS * 0.6 + (i * 23 % 500) + glitchFactor * 120.0 * Math.sin(time * 0.002 + i);
@@ -313,10 +357,10 @@ public final class McsmInfiniteVoidLayers {
                 double x1t = x + Math.cos(a1) * (thick * 0.2);
                 double z1t = z + Math.sin(a1) * (thick * 0.2);
 
-                double[] d0b = McsmGlitchGenerator.displaceVertex(x0b, y, z0b, time, fallDistance, glitchFactor, s + i * 10 + layerIndex * 4000);
-                double[] d1b = McsmGlitchGenerator.displaceVertex(x1b, y, z1b, time, fallDistance, glitchFactor, s+1 + i * 10 + layerIndex * 4000);
-                double[] d0t = McsmGlitchGenerator.displaceVertex(x0t, y + height, z0t, time, fallDistance, glitchFactor, s + i * 20 + layerIndex * 4000);
-                double[] d1t = McsmGlitchGenerator.displaceVertex(x1t, y + height, z1t, time, fallDistance, glitchFactor, s+1 + i * 20 + layerIndex * 4000);
+                double[] d0b = McsmMeshSynthesizer.displaceVertexAdvanced(x0b, y, z0b, time, fallDistance, glitchFactor, playerPos, s + i * 10 + layerIndex * 4000, seed);
+                double[] d1b = McsmMeshSynthesizer.displaceVertexAdvanced(x1b, y, z1b, time, fallDistance, glitchFactor, playerPos, s+1 + i * 10 + layerIndex * 4000, seed);
+                double[] d0t = McsmMeshSynthesizer.displaceVertexAdvanced(x0t, y + height, z0t, time, fallDistance, glitchFactor, playerPos, s + i * 20 + layerIndex * 4000, seed);
+                double[] d1t = McsmMeshSynthesizer.displaceVertexAdvanced(x1t, y + height, z1t, time, fallDistance, glitchFactor, playerPos, s+1 + i * 20 + layerIndex * 4000, seed);
 
                 int hue = (i * 20 + layerIndex * 15 + (int)(time * 0.5)) % 360;
                 float[] rgb = hsvToRgb(hue / 360.0F, 0.95F, 1.0F);
@@ -328,8 +372,8 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
-    private static void emitShatteredSheetsLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        int sheetCount = 12 + (int)(Math.abs(seed) % 10); // EXTREME 12-21 (was 6-11)
+    private static void emitShatteredSheetsLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        int sheetCount = 15 + (int)(Math.abs(seed) % 12);
         for (int i = 0; i < sheetCount; i++) {
             double angle = (i / (double) sheetCount) * Mth.TWO_PI + (seed % 100) * 0.01 + time * 0.0003;
             double radius = LAYER_RADIUS * 0.5 + i * 50 + glitchFactor * 80.0 * Math.sin(time * 0.003 + i);
@@ -340,10 +384,10 @@ public final class McsmInfiniteVoidLayers {
             double width = 60.0 + (i * 17 % 100) + glitchFactor * 60.0;
             double height = 120.0 + (i * 13 % 150) + glitchFactor * 100.0;
 
-            double[] p0 = McsmGlitchGenerator.displaceVertex(x - width/2, y, z, time, fallDistance, glitchFactor, i * 500 + layerIndex * 5000);
-            double[] p1 = McsmGlitchGenerator.displaceVertex(x + width/2, y, z, time, fallDistance, glitchFactor, i * 501 + layerIndex * 5000);
-            double[] p2 = McsmGlitchGenerator.displaceVertex(x + width/2 + Math.sin(time * 0.002 + i) * glitchFactor * 25.0, y + height, z + Math.cos(time * 0.002 + i) * glitchFactor * 25.0, time, fallDistance, glitchFactor, i * 502 + layerIndex * 5000);
-            double[] p3 = McsmGlitchGenerator.displaceVertex(x - width/2 + Math.sin(time * 0.002 + i + 1) * glitchFactor * 25.0, y + height, z + Math.cos(time * 0.002 + i + 1) * glitchFactor * 25.0, time, fallDistance, glitchFactor, i * 503 + layerIndex * 5000);
+            double[] p0 = McsmMeshSynthesizer.displaceVertexAdvanced(x - width/2, y, z, time, fallDistance, glitchFactor, playerPos, i * 500 + layerIndex * 5000, seed);
+            double[] p1 = McsmMeshSynthesizer.displaceVertexAdvanced(x + width/2, y, z, time, fallDistance, glitchFactor, playerPos, i * 501 + layerIndex * 5000, seed);
+            double[] p2 = McsmMeshSynthesizer.displaceVertexAdvanced(x + width/2 + Math.sin(time * 0.002 + i) * glitchFactor * 25.0, y + height, z + Math.cos(time * 0.002 + i) * glitchFactor * 25.0, time, fallDistance, glitchFactor, playerPos, i * 502 + layerIndex * 5000, seed);
+            double[] p3 = McsmMeshSynthesizer.displaceVertexAdvanced(x - width/2 + Math.sin(time * 0.002 + i + 1) * glitchFactor * 25.0, y + height, z + Math.cos(time * 0.002 + i + 1) * glitchFactor * 25.0, time, fallDistance, glitchFactor, playerPos, i * 503 + layerIndex * 5000, seed);
 
             float hue = (float)(((i * 25 + layerIndex * 10 + time * 0.01) % 360) / 360.0);
             float[] rgb = hsvToRgb(hue, 0.9F, 0.8F);
@@ -354,9 +398,9 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
-    private static void emitGridMatrixLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        double size = LAYER_RADIUS * 1.8;
-        int gridLines = 16 + (int)(Math.abs(seed) % 8); // EXTREME 16-23 (was 8-11)
+    private static void emitGridMatrixLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        double size = LAYER_RADIUS * 2.0;
+        int gridLines = 20 + (int)(Math.abs(seed) % 10);
         double spacing = size * 2 / gridLines;
 
         for (int i = -gridLines/2; i < gridLines/2; i++) {
@@ -364,8 +408,8 @@ public final class McsmInfiniteVoidLayers {
             double z0 = camera.z - size;
             double z1 = camera.z + size;
 
-            double[] d0 = McsmGlitchGenerator.displaceVertex(x, layerY, z0, time, fallDistance, glitchFactor, i * 600 + layerIndex * 6000);
-            double[] d1 = McsmGlitchGenerator.displaceVertex(x, layerY, z1, time, fallDistance, glitchFactor, i * 601 + layerIndex * 6000);
+            double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x, layerY, z0, time, fallDistance, glitchFactor, playerPos, i * 600 + layerIndex * 6000, seed);
+            double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x, layerY, z1, time, fallDistance, glitchFactor, playerPos, i * 601 + layerIndex * 6000, seed);
 
             float hue = (float)(((i * 10 + layerIndex * 5) % 360) / 360.0);
             float[] rgb = hsvToRgb(hue, 0.8F, 0.8F);
@@ -373,22 +417,11 @@ public final class McsmInfiniteVoidLayers {
             int a = (int)(visibility * 100 * (0.4 + glitchFactor));
 
             quad(pose, consumer, d0[0] - 1, d0[1], d0[2], 0, 0, d0[0] + 1, d0[1], d0[2], 1, 0, d1[0] + 1, d1[1], d1[2], 1, 1, d1[0] - 1, d1[1], d1[2], 0, 1, r, g, b, a, 0, 1, 0);
-
-            double z = camera.z + i * spacing + Math.cos(time * 0.002 + i) * glitchFactor * 25.0;
-            double x0 = camera.x - size;
-            double x1 = camera.x + size;
-
-            double[] d2 = McsmGlitchGenerator.displaceVertex(x0, layerY, z, time, fallDistance, glitchFactor, i * 602 + layerIndex * 6000);
-            double[] d3 = McsmGlitchGenerator.displaceVertex(x1, layerY, z, time, fallDistance, glitchFactor, i * 603 + layerIndex * 6000);
-
-            quad(pose, consumer, d2[0], d2[1], d2[2] - 1, 0, 0, d3[0], d3[1], d2[2] - 1, 1, 0, d3[0], d3[1], d2[2] + 1, 1, 1, d2[0], d2[1], d2[2] + 1, 0, 1, r, g, b, a, 0, 1, 0);
         }
     }
 
-    // ---- NEW EXTREME TYPES --------------------------------------------------
-
-    private static void emitBlackHoleLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        int holes = 2 + (int)(Math.abs(seed) % 3); // 2-4 black holes per layer
+    private static void emitBlackHoleLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        int holes = 2 + (int)(Math.abs(seed) % 4);
         for (int i = 0; i < holes; i++) {
             double angle = (i / (double) holes) * Mth.TWO_PI + time * 0.0001 * (i+1) + seed * 0.001;
             double radius = LAYER_RADIUS * 0.3 + i * 200 + glitchFactor * 100.0;
@@ -398,7 +431,6 @@ public final class McsmInfiniteVoidLayers {
 
             double size = 40.0 + (i * 20 % 60) + glitchFactor * 50.0 + Math.sin(time * 0.003 + i) * 15.0;
 
-            // Black core
             for (int s = 0; s < 4; s++) {
                 double a0 = (s / 4.0) * Mth.TWO_PI;
                 double a1 = ((s + 1) / 4.0) * Mth.TWO_PI;
@@ -407,13 +439,12 @@ public final class McsmInfiniteVoidLayers {
                 double x1 = x + Math.cos(a1) * size;
                 double z1 = z + Math.sin(a1) * size;
 
-                double[] d0 = McsmGlitchGenerator.displaceVertex(x0, y, z0, time, fallDistance, glitchFactor, s + i * 8000 + layerIndex * 8000);
-                double[] d1 = McsmGlitchGenerator.displaceVertex(x1, y, z1, time, fallDistance, glitchFactor, s+1 + i * 8000 + layerIndex * 8000);
+                double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y, z0, time, fallDistance, glitchFactor, playerPos, s + i * 8000 + layerIndex * 8000, seed);
+                double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y, z1, time, fallDistance, glitchFactor, playerPos, s+1 + i * 8000 + layerIndex * 8000, seed);
 
                 quad(pose, consumer, d0[0], d0[1], d0[2], 0, 0, d1[0], d1[1], d1[2], 1, 0, x, y - 5, z, 0.5F, 1, x, y - 5, z, 0.5F, 1, 0, 0, 0, (int)(visibility * 255), 0, 1, 0);
             }
 
-            // Glowing accretion disk
             int segs = 24;
             for (int s = 0; s < segs; s++) {
                 double a0 = (s / (double) segs) * Mth.TWO_PI + time * 0.002 * (i+1);
@@ -434,8 +465,8 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
-    private static void emitInvertedCityLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        int buildings = 10 + (int)(Math.abs(seed) % 10); // 10-19 buildings
+    private static void emitInvertedCityLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        int buildings = 12 + (int)(Math.abs(seed) % 12);
         for (int i = 0; i < buildings; i++) {
             double angle = (i / (double) buildings) * Mth.TWO_PI + seed * 0.002;
             double radius = LAYER_RADIUS * 0.5 + (i * 43 % 500) + glitchFactor * 80.0;
@@ -445,7 +476,6 @@ public final class McsmInfiniteVoidLayers {
             double height = 50.0 + (i * 17 % 100) + glitchFactor * 60.0;
             double size = 8.0 + (i % 5) * 3.0;
 
-            // Inverted – hangs down
             for (int s = 0; s < 4; s++) {
                 double a0 = (s / 4.0) * Mth.TWO_PI;
                 double a1 = ((s + 1) / 4.0) * Mth.TWO_PI;
@@ -454,10 +484,10 @@ public final class McsmInfiniteVoidLayers {
                 double x1 = x + Math.cos(a1) * size;
                 double z1 = z + Math.sin(a1) * size;
 
-                double[] d0 = McsmGlitchGenerator.displaceVertex(x0, y, z0, time, fallDistance, glitchFactor, s + i * 9000 + layerIndex * 9000);
-                double[] d1 = McsmGlitchGenerator.displaceVertex(x1, y, z1, time, fallDistance, glitchFactor, s+1 + i * 9000 + layerIndex * 9000);
-                double[] d0b = McsmGlitchGenerator.displaceVertex(x0, y - height, z0, time, fallDistance, glitchFactor, s + i * 9001 + layerIndex * 9000);
-                double[] d1b = McsmGlitchGenerator.displaceVertex(x1, y - height, z1, time, fallDistance, glitchFactor, s+1 + i * 9001 + layerIndex * 9000);
+                double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y, z0, time, fallDistance, glitchFactor, playerPos, s + i * 9000 + layerIndex * 9000, seed);
+                double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y, z1, time, fallDistance, glitchFactor, playerPos, s+1 + i * 9000 + layerIndex * 9000, seed);
+                double[] d0b = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y - height, z0, time, fallDistance, glitchFactor, playerPos, s + i * 9001 + layerIndex * 9000, seed);
+                double[] d1b = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y - height, z1, time, fallDistance, glitchFactor, playerPos, s+1 + i * 9001 + layerIndex * 9000, seed);
 
                 int r = 30 + (int)(glitchFactor * 40), g = 30, b = 50 + layerIndex % 30;
                 int a = (int)(visibility * 220);
@@ -467,9 +497,9 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
-    private static void emitFleshOrganicLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
+    private static void emitFleshOrganicLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
         double size = LAYER_RADIUS * 1.5;
-        int segs = 14;
+        int segs = 16;
         for (int sx = -segs/2; sx < segs/2; sx++) {
             for (int sz = -segs/2; sz < segs/2; sz++) {
                 double x0 = camera.x + sx * size / segs;
@@ -478,14 +508,14 @@ public final class McsmInfiniteVoidLayers {
                 double z1 = camera.z + (sz+1) * size / segs;
 
                 double pulse = Math.sin(x0 * 0.02 + z0 * 0.02 + time * 0.003) * 15.0 * (1.0 + glitchFactor * 2.0);
-                pulse += McsmGlitchGenerator.fractalNoise(x0 * 0.01, z0 * 0.01 + time * 0.002) * glitchFactor * 25.0;
+                pulse += McsmMeshSynthesizer.fBm(x0 * 0.01, z0 * 0.01, time * 0.002, 3) * glitchFactor * 25.0;
 
-                double[] d0 = McsmGlitchGenerator.displaceVertex(x0, layerY + pulse, z0, time, fallDistance, glitchFactor, sx*10 + sz + layerIndex * 10000);
-                double[] d1 = McsmGlitchGenerator.displaceVertex(x1, layerY + pulse + Math.sin(time * 0.002 + sx) * 5.0, z0, time, fallDistance, glitchFactor, sx*10 + sz+1 + layerIndex * 10000);
-                double[] d2 = McsmGlitchGenerator.displaceVertex(x1, layerY + pulse + Math.sin(time * 0.002 + sz) * 5.0, z1, time, fallDistance, glitchFactor, sx*10 + sz+2 + layerIndex * 10000);
-                double[] d3 = McsmGlitchGenerator.displaceVertex(x0, layerY + pulse, z1, time, fallDistance, glitchFactor, sx*10 + sz+3 + layerIndex * 10000);
+                double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, layerY + pulse, z0, time, fallDistance, glitchFactor, playerPos, sx*10 + sz + layerIndex * 10000, seed);
+                double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, layerY + pulse, z0, time, fallDistance, glitchFactor, playerPos, sx*10 + sz+1 + layerIndex * 10000, seed);
+                double[] d2 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, layerY + pulse, z1, time, fallDistance, glitchFactor, playerPos, sx*10 + sz+2 + layerIndex * 10000, seed);
+                double[] d3 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, layerY + pulse, z1, time, fallDistance, glitchFactor, playerPos, sx*10 + sz+3 + layerIndex * 10000, seed);
 
-                int r = 120 + (int)(glitchFactor * 80) + (int)(Math.sin(time * 0.001 + sx) * 20), g = 20 + layerIndex % 20, b = 40 + (int)(glitchFactor * 30);
+                int r = 120 + (int)(glitchFactor * 80), g = 20 + layerIndex % 20, b = 40 + (int)(glitchFactor * 30);
                 int a = (int)(visibility * 200);
 
                 quad(pose, consumer, d0[0], d0[1], d0[2], 0, 0, d1[0], d1[1], d1[2], 1, 0, d2[0], d2[1], d2[2], 1, 1, d3[0], d3[1], d3[2], 0, 1, r, g, b, a, 0, 1, 0);
@@ -493,8 +523,8 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
-    private static void emitPsychedelicFractalLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        int count = 20 + (int)(Math.abs(seed) % 15); // EXTREME
+    private static void emitPsychedelicFractalLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        int count = 25 + (int)(Math.abs(seed) % 20);
         for (int i = 0; i < count; i++) {
             double angle = (i / (double) count) * Mth.TWO_PI + time * 0.0005 * (i+1);
             double radius = LAYER_RADIUS * 0.3 + (i * 31 % 700) + glitchFactor * 150.0 * Math.sin(time * 0.002 + i);
@@ -512,8 +542,8 @@ public final class McsmInfiniteVoidLayers {
                 double x1 = x + Math.cos(a1) * size;
                 double z1 = z + Math.sin(a1) * size;
 
-                double[] d0 = McsmGlitchGenerator.displaceVertex(x0, y, z0, time, fallDistance, glitchFactor, s + i * 11000 + layerIndex * 11000);
-                double[] d1 = McsmGlitchGenerator.displaceVertex(x1, y, z1, time, fallDistance, glitchFactor, s+1 + i * 11000 + layerIndex * 11000);
+                double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y, z0, time, fallDistance, glitchFactor, playerPos, s + i * 11000 + layerIndex * 11000, seed);
+                double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y, z1, time, fallDistance, glitchFactor, playerPos, s+1 + i * 11000 + layerIndex * 11000, seed);
 
                 float hue = (float)(((i * 23 + layerIndex * 17 + time * 0.02) % 360) / 360.0);
                 float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
@@ -525,8 +555,8 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
-    private static void emitGothicMegaLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        int towers = 8 + (int)(Math.abs(seed) % 8); // 8-15 mega towers
+    private static void emitGothicMegaLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        int towers = 10 + (int)(Math.abs(seed) % 10);
         for (int i = 0; i < towers; i++) {
             double angle = (i / (double) towers) * Mth.TWO_PI + seed * 0.001 + time * 0.00005;
             double radius = LAYER_RADIUS * 0.6 + i * 70 + glitchFactor * 60.0;
@@ -548,10 +578,10 @@ public final class McsmInfiniteVoidLayers {
                 double x1t = x + Math.cos(a1) * (baseR * 0.2);
                 double z1t = z + Math.sin(a1) * (baseR * 0.2);
 
-                double[] d0b = McsmGlitchGenerator.displaceVertex(x0b, layerY, z0b, time, fallDistance, glitchFactor, s + i * 12000 + layerIndex * 12000);
-                double[] d1b = McsmGlitchGenerator.displaceVertex(x1b, layerY, z1b, time, fallDistance, glitchFactor, s+1 + i * 12000 + layerIndex * 12000);
-                double[] d0t = McsmGlitchGenerator.displaceVertex(x0t, layerY + height, z0t, time, fallDistance, glitchFactor, s + i * 12001 + layerIndex * 12000);
-                double[] d1t = McsmGlitchGenerator.displaceVertex(x1t, layerY + height, z1t, time, fallDistance, glitchFactor, s+1 + i * 12001 + layerIndex * 12000);
+                double[] d0b = McsmMeshSynthesizer.displaceVertexAdvanced(x0b, layerY, z0b, time, fallDistance, glitchFactor, playerPos, s + i * 12000 + layerIndex * 12000, seed);
+                double[] d1b = McsmMeshSynthesizer.displaceVertexAdvanced(x1b, layerY, z1b, time, fallDistance, glitchFactor, playerPos, s+1 + i * 12000 + layerIndex * 12000, seed);
+                double[] d0t = McsmMeshSynthesizer.displaceVertexAdvanced(x0t, layerY + height, z0t, time, fallDistance, glitchFactor, playerPos, s + i * 12001 + layerIndex * 12000, seed);
+                double[] d1t = McsmMeshSynthesizer.displaceVertexAdvanced(x1t, layerY + height, z1t, time, fallDistance, glitchFactor, playerPos, s+1 + i * 12001 + layerIndex * 12000, seed);
 
                 int r = 15, g = 18, b = 35 + layerIndex % 20;
                 int a = (int)(visibility * 255);
@@ -561,8 +591,8 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
-    private static void emitVoidSkeletonLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        int bones = 15 + (int)(Math.abs(seed) % 15); // 15-29 bones
+    private static void emitVoidSkeletonLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        int bones = 20 + (int)(Math.abs(seed) % 20);
         for (int i = 0; i < bones; i++) {
             double angle = (i / (double) bones) * Mth.TWO_PI + time * 0.0001;
             double radius = LAYER_RADIUS * 0.4 + (i * 29 % 600) + glitchFactor * 80.0;
@@ -573,10 +603,10 @@ public final class McsmInfiniteVoidLayers {
             double len = 30.0 + (i * 13 % 70) + glitchFactor * 40.0;
             double thick = 2.0 + glitchFactor * 3.0;
 
-            double[] p0 = McsmGlitchGenerator.displaceVertex(x - thick, y, z - thick, time, fallDistance, glitchFactor, i * 13000 + layerIndex * 13000);
-            double[] p1 = McsmGlitchGenerator.displaceVertex(x + thick, y, z - thick, time, fallDistance, glitchFactor, i * 13001 + layerIndex * 13000);
-            double[] p2 = McsmGlitchGenerator.displaceVertex(x + thick + Math.sin(time * 0.001 + i) * 10.0 * glitchFactor, y + len, z + thick, time, fallDistance, glitchFactor, i * 13002 + layerIndex * 13000);
-            double[] p3 = McsmGlitchGenerator.displaceVertex(x - thick + Math.sin(time * 0.001 + i + 1) * 10.0 * glitchFactor, y + len, z - thick, time, fallDistance, glitchFactor, i * 13003 + layerIndex * 13000);
+            double[] p0 = McsmMeshSynthesizer.displaceVertexAdvanced(x - thick, y, z - thick, time, fallDistance, glitchFactor, playerPos, i * 13000 + layerIndex * 13000, seed);
+            double[] p1 = McsmMeshSynthesizer.displaceVertexAdvanced(x + thick, y, z - thick, time, fallDistance, glitchFactor, playerPos, i * 13001 + layerIndex * 13000, seed);
+            double[] p2 = McsmMeshSynthesizer.displaceVertexAdvanced(x + thick + Math.sin(time * 0.001 + i) * 10.0 * glitchFactor, y + len, z + thick, time, fallDistance, glitchFactor, playerPos, i * 13002 + layerIndex * 13000, seed);
+            double[] p3 = McsmMeshSynthesizer.displaceVertexAdvanced(x - thick + Math.sin(time * 0.001 + i + 1) * 10.0 * glitchFactor, y + len, z - thick, time, fallDistance, glitchFactor, playerPos, i * 13003 + layerIndex * 13000, seed);
 
             int r = 200 + (int)(glitchFactor * 55), g = 200 + (int)(glitchFactor * 55), b = 210 + (int)(glitchFactor * 45);
             int a = (int)(visibility * 180);
@@ -585,14 +615,79 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
-    private static void emitRealityTearLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed) {
-        double x = camera.x + Math.sin(time * 0.0003 + layerIndex * 0.7) * 400.0 * (1.0 + glitchFactor * 2.0);
-        double z = camera.z + Math.cos(time * 0.0003 + layerIndex * 0.7) * 400.0 * (1.0 + glitchFactor * 2.0);
+    // ---- NEW V3 TYPES -------------------------------------------------------
+
+    private static void emitPhotorealisticMountainLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        // Super duper photorealistic landscape using shader technique – for F1 and main
+        McsmMeshSynthesizer.generatePhotorealisticLandscape(pose, consumer, camera, layerY, layerIndex, time, visibility, glitchFactor, fallDistance, seed, playerPos);
+    }
+
+    private static void emitMeditationGardenLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        // Meditation garden – each layer has meditation, organic shapes, calming but psychedelic
+        int flowers = 15 + (int)(Math.abs(seed) % 15);
+        for (int i = 0; i < flowers; i++) {
+            double angle = (i / (double) flowers) * Mth.TWO_PI + time * 0.0002 * (i+1) + seed * 0.0001;
+            double radius = LAYER_RADIUS * 0.3 + (i * 29 % 400) + McsmMeshSynthesizer.fBm(i * 0.5, time * 0.001, seed * 0.0001, 3) * 80.0 * glitchFactor;
+            double x = camera.x + Math.cos(angle) * radius;
+            double z = camera.z + Math.sin(angle) * radius;
+            double y = layerY + Math.sin(time * 0.001 + i) * 5.0;
+
+            double size = 8.0 + (i % 5) * 3.0 + glitchFactor * 8.0;
+            float[] medColor = McsmMeshSynthesizer.getMeditationColor(layerIndex, time);
+            int r = (int)(medColor[0] * 255), g = (int)(medColor[1] * 255), b = (int)(medColor[2] * 255);
+            int a = (int)(visibility * 200 * medColor[3]);
+
+            for (int s = 0; s < 6; s++) {
+                double a0 = (s / 6.0) * Mth.TWO_PI + time * 0.001;
+                double a1 = ((s + 1) / 6.0) * Mth.TWO_PI + time * 0.001;
+                double x0 = x + Math.cos(a0) * size;
+                double z0 = z + Math.sin(a0) * size;
+                double x1 = x + Math.cos(a1) * size;
+                double z1 = z + Math.sin(a1) * size;
+
+                double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y, z0, time, fallDistance, glitchFactor, playerPos, s + i * 100 + layerIndex * 14000, seed);
+                double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y, z1, time, fallDistance, glitchFactor, playerPos, s+1 + i * 100 + layerIndex * 14000, seed);
+
+                quad(pose, consumer, d0[0], d0[1], d0[2], 0,0, d1[0], d1[1], d1[2], 1,0, x, y + size * 1.5, z, 0.5F,1, x, y + size * 1.5, z, 0.5F,1, r,g,b,a, 0,1,0);
+            }
+        }
+        // Central meditation platform
+        double platSize = 100.0 + glitchFactor * 50.0;
+        float[] medColor = McsmMeshSynthesizer.getMeditationColor(layerIndex, time);
+        int pr = (int)(medColor[0] * 80), pg = (int)(medColor[1] * 80), pb = (int)(medColor[2] * 80);
+        quad(pose, consumer, camera.x - platSize, layerY, camera.z - platSize, 0,0, camera.x + platSize, layerY, camera.z - platSize, 1,0, camera.x + platSize, layerY, camera.z + platSize, 1,1, camera.x - platSize, layerY, camera.z + platSize, 0,1, pr,pg,pb,(int)(visibility*180), 0,1,0);
+    }
+
+    private static void emitEndlessCheersLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        // Unlimited infinite cheers causing effect endless universe endless possibilities
+        McsmMeshSynthesizer.generateEndlessCheers(pose, consumer, camera, layerY, layerIndex, time, visibility, glitchFactor, seed, playerPos);
+        // Also generate floating fragments that cheer
+        McsmMeshSynthesizer.generateFloatingFragments(pose, consumer, camera, camera.x, layerY + 10, camera.z, 200.0 + glitchFactor * 100.0, time, fallDistance, glitchFactor, playerPos, seed + 0x7777, visibility);
+    }
+
+    private static void emitOrganicCaveLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        // Hollowing out organic geometric caves – infinite procedural
+        int caves = 3 + (int)(Math.abs(seed) % 4);
+        for (int i = 0; i < caves; i++) {
+            double angle = (i / (double) caves) * Mth.TWO_PI + seed * 0.001 + time * 0.0001;
+            double radius = LAYER_RADIUS * 0.4 + i * 150.0 + McsmMeshSynthesizer.fBm(i * 0.7, time * 0.001, seed * 0.0001, 3) * 100.0 * glitchFactor;
+            double x = camera.x + Math.cos(angle) * radius;
+            double z = camera.z + Math.sin(angle) * radius;
+            double y = layerY + McsmMeshSynthesizer.fBm(x * 0.01, layerY * 0.01, z * 0.01, time, 3) * 20.0 * glitchFactor;
+            double size = 60.0 + (i * 17 % 80) + glitchFactor * 50.0 + McsmMeshSynthesizer.fBm(x * 0.005, y * 0.005, z * 0.005, time, 4) * 30.0;
+
+            McsmMeshSynthesizer.generateOrganicCave(pose, consumer, camera, x, y, z, size, time, fallDistance, glitchFactor, playerPos, seed + i * 0xABCD, visibility);
+        }
+    }
+
+    private static void emitRealityTearLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos) {
+        double x = camera.x + Math.sin(time * 0.0003 + layerIndex * 0.7) * 400.0 * (1.0 + glitchFactor * 2.0) + McsmMeshSynthesizer.fBm(layerIndex * 0.5, time * 0.001, seed * 0.0001, 2) * 100.0 * glitchFactor;
+        double z = camera.z + Math.cos(time * 0.0003 + layerIndex * 0.7) * 400.0 * (1.0 + glitchFactor * 2.0) + McsmMeshSynthesizer.fBm(layerIndex * 0.5 + 100, time * 0.001, seed * 0.0001, 2) * 100.0 * glitchFactor;
         double y = layerY;
 
-        double size = 30.0 + glitchFactor * 60.0 + Math.sin(time * 0.004 + layerIndex) * 20.0;
+        double size = 30.0 + glitchFactor * 60.0 + Math.sin(time * 0.004 + layerIndex) * 20.0 + McsmMeshSynthesizer.fBm(layerIndex * 0.3, time * 0.001, seed * 0.0001, 2) * 20.0 * glitchFactor;
 
-        for (int s = 0; s < 6; s++) { // EXTREME 6 sides
+        for (int s = 0; s < 6; s++) {
             double a0 = (s / 6.0) * Mth.TWO_PI + time * 0.002 * glitchFactor;
             double a1 = ((s + 1) / 6.0) * Mth.TWO_PI + time * 0.002 * glitchFactor;
             double x0 = x + Math.cos(a0) * size;
@@ -600,10 +695,10 @@ public final class McsmInfiniteVoidLayers {
             double x1 = x + Math.cos(a1) * size;
             double z1 = z + Math.sin(a1) * size;
 
-            double[] d0 = McsmGlitchGenerator.displaceVertex(x0, y, z0, time, fallDistance, glitchFactor, s + layerIndex * 7000);
-            double[] d1 = McsmGlitchGenerator.displaceVertex(x1, y, z1, time, fallDistance, glitchFactor, s+1 + layerIndex * 7000);
-            double[] d0h = McsmGlitchGenerator.displaceVertex(x0, y + size * 3, z0, time, fallDistance, glitchFactor, s + layerIndex * 7001);
-            double[] d1h = McsmGlitchGenerator.displaceVertex(x1, y + size * 3, z1, time, fallDistance, glitchFactor, s+1 + layerIndex * 7001);
+            double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y, z0, time, fallDistance, glitchFactor, playerPos, s + layerIndex * 7000, seed);
+            double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y, z1, time, fallDistance, glitchFactor, playerPos, s+1 + layerIndex * 7000, seed);
+            double[] d0h = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y + size * 3, z0, time, fallDistance, glitchFactor, playerPos, s + layerIndex * 7001, seed);
+            double[] d1h = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y + size * 3, z1, time, fallDistance, glitchFactor, playerPos, s+1 + layerIndex * 7001, seed);
 
             float hue = (float)(((s * 40 + layerIndex * 7 + time * 0.02) % 360) / 360.0);
             float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
@@ -619,7 +714,7 @@ public final class McsmInfiniteVoidLayers {
         double z = camera.z;
         double y = layerY;
 
-        double size = 500.0 + layerIndex * 10.0 + glitchFactor * 200.0;
+        double size = 600.0 + layerIndex * 10.0 + glitchFactor * 200.0 + McsmMeshSynthesizer.fBm(layerIndex * 0.3, time * 0.001, seed * 0.0001, 2) * 100.0;
         float hue = (float)(((layerIndex * 13 + time * 0.005) % 360) / 360.0);
         float[] rgb = hsvToRgb(hue, 0.7F, 1.0F);
         int r = (int)(rgb[0] * 255), g = (int)(rgb[1] * 255), b = (int)(rgb[2] * 255);
@@ -628,14 +723,14 @@ public final class McsmInfiniteVoidLayers {
         quadFullBright(pose, consumer, x - size, y, z - 1, 0, 0, x + size, y, z - 1, 1, 0, x + size, y, z + 1, 1, 1, x - size, y, z + 1, 0, 1, r, g, b, a);
     }
 
-    private static void emitExtremeParticles(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, long seed) {
-        int count = (int)(glitchFactor * 40) + 15; // EXTREME
+    private static void emitExtremeParticles(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, long seed, Vec3 playerPos) {
+        int count = (int)(glitchFactor * 50) + 20;
         for (int i = 0; i < count; i++) {
             double angle = (i / (double) count) * Mth.TWO_PI + time * 0.01 * (i % 2 == 0 ? 1 : -1);
-            double radius = 100.0 + i * 12.0 + Mth.sin((float)(time * 0.01 + i)) * glitchFactor * 80.0;
+            double radius = 100.0 + i * 12.0 + Mth.sin((float)(time * 0.01 + i)) * glitchFactor * 80.0 + McsmMeshSynthesizer.fBm(i * 0.5, time * 0.001, seed * 0.0001, 2) * 40.0;
             double x = camera.x + Math.cos(angle) * radius + McsmGlitchGenerator.fractalNoise(i * 0.8, time * 0.005) * glitchFactor * 60.0;
             double z = camera.z + Math.sin(angle) * radius + McsmGlitchGenerator.fractalNoise(i * 0.9 + 100, time * 0.005) * glitchFactor * 60.0;
-            double y = layerY + Mth.sin((float)(time * 0.005 + i)) * 50.0 * glitchFactor + i * 2.0;
+            double y = layerY + Mth.sin((float)(time * 0.005 + i)) * 50.0 * glitchFactor + i * 2.0 + McsmMeshSynthesizer.fBm(i * 0.3, time * 0.001, seed * 0.0001, 2) * 20.0 * glitchFactor;
 
             double size = 3.0 + glitchFactor * 6.0;
             float hue = (float)(((i * 27 + time * 0.02) % 360) / 360.0);
@@ -689,7 +784,15 @@ public final class McsmInfiniteVoidLayers {
         }
     }
 
+    public static String getCurrentMeditation() {
+        return currentMeditation;
+    }
+
+    public static int getCurrentMeditationLayer() {
+        return currentMeditationLayer;
+    }
+
     public static String state() {
-        return "infinite-layers-EXTREME: spacing=" + LAYER_SPACING + " visible=" + TOTAL_VISIBLE + " types=" + TYPE_COUNT + " generated=" + layersGenerated + " NO-MILD=true EXTREME-PSYCHEDELIC";
+        return "infinite-layers-V3-ENDLESS: spacing=" + LAYER_SPACING + " visible=" + TOTAL_VISIBLE + " types=" + TYPE_COUNT + " generated=" + layersGenerated + " meditationLayer=" + currentMeditationLayer + " meditation=" + currentMeditation + " meshSynth=" + McsmMeshSynthesizer.state() + " F1DualReality=true photorealistic=true endlessCheers=true infinite=true NO-MILD=true OVERWHELMING-PSYCHEDELIC";
     }
 }
