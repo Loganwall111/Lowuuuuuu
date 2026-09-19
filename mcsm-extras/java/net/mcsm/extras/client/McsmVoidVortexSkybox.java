@@ -40,20 +40,20 @@ public final class McsmVoidVortexSkybox {
 
     private McsmVoidVortexSkybox() {}
 
-    // ---- Vortex parameters ------------------------------------------------
-    private static final int VORTEX_RINGS = 12;
-    private static final int PARTICLES_PER_RING = 32;
-    private static final double VORTEX_RADIUS_START = 400.0;
-    private static final double VORTEX_RADIUS_END = 2500.0;
-    private static final double VORTEX_DEPTH = 3000.0;
+    // ---- Vortex parameters – EXTREME NOT MILD ---------------------------------
+    private static final int VORTEX_RINGS = 20; // EXTREME was 12
+    private static final int PARTICLES_PER_RING = 64; // EXTREME was 32
+    private static final double VORTEX_RADIUS_START = 300.0; // EXTREME tighter start
+    private static final double VORTEX_RADIUS_END = 4000.0; // EXTREME bigger end was 2500
+    private static final double VORTEX_DEPTH = 5000.0; // EXTREME deeper was 3000
 
-    // ---- Ring spin --------------------------------------------------------
+    // ---- Ring spin – EXTREME faster ---------------------------------------
     private static float[] ringRotations = new float[VORTEX_RINGS];
     private static float[] ringSpeeds = new float[VORTEX_RINGS];
 
     static {
         for (int i = 0; i < VORTEX_RINGS; i++) {
-            ringSpeeds[i] = 0.0005F + i * 0.0003F + (i % 2 == 0 ? 0.001F : -0.0007F);
+            ringSpeeds[i] = 0.002F + i * 0.0008F + (i % 2 == 0 ? 0.003F : -0.002F); // EXTREME was 0.0005+0.0003
         }
     }
 
