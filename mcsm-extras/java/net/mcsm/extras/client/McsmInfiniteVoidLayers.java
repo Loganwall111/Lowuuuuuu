@@ -100,7 +100,7 @@ public final class McsmInfiniteVoidLayers {
             SubmitNodeCollector collector = ctx.submitNodeCollector();
             float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
             double time = (mc.level.getGameTime() % 240000L) + partial;
-            long baseSeed = mc.level.getSeed();
+            long baseSeed = mc.level.dimension().identifier().hashCode() ^ (mc.player != null ? mc.player.getUUID().hashCode() : 0x5EEDL) ^ mc.level.getGameTime();
 
             float glitchFactor = McsmGlitchGenerator.computeGlitchFactor(fallDist, playerY, time);
             // EXTREME: boost glitch 1.5x for more violent mutation – NOT MILD
@@ -208,7 +208,7 @@ public final class McsmInfiniteVoidLayers {
                 double[] d0t = McsmGlitchGenerator.displaceVertex(x0t, layerY + height, z0t, time, fallDistance, glitchFactor, s + i * 20 + layerIndex * 1000);
                 double[] d1t = McsmGlitchGenerator.displaceVertex(x1t, layerY + height, z1t, time, fallDistance, glitchFactor, s+1 + i * 20 + layerIndex * 1000);
 
-                float hue = (i * 17 + layerIndex * 13 + time * 0.01) % 360 / 360.0F;
+                float hue = (float)(((i * 17 + layerIndex * 13 + time * 0.01) % 360) / 360.0);
                 float[] rgb = hsvToRgb(hue, 0.9F, 1.0F);
                 int r = (int)(rgb[0] * 60 + 20), g = (int)(rgb[1] * 30 + 10), b = (int)(rgb[2] * 80 + 40);
                 int a = (int)(visibility * 255);
@@ -280,7 +280,7 @@ public final class McsmInfiniteVoidLayers {
                 double[] d2 = McsmGlitchGenerator.displaceVertex(x1, layerY + wave2, z1, time, fallDistance, glitchFactor, sx*10 + sz+2 + layerIndex * 3000);
                 double[] d3 = McsmGlitchGenerator.displaceVertex(x0, layerY + wave3, z1, time, fallDistance, glitchFactor, sx*10 + sz+3 + layerIndex * 3000);
 
-                float hue = (layerIndex * 7 + sx * 3 + time * 0.005) % 360 / 360.0F;
+                float hue = (float)(((layerIndex * 7 + sx * 3 + time * 0.005) % 360) / 360.0);
                 float[] rgb = hsvToRgb(hue, 0.85F, 0.7F);
                 int r = (int)(rgb[0] * 40), g = (int)(rgb[1] * 40 + 20), b = (int)(rgb[2] * 80 + 40);
                 int a = (int)(visibility * 180 * (0.6 + 0.4 * Math.sin(time * 0.002 + sx + sz)));
@@ -345,7 +345,7 @@ public final class McsmInfiniteVoidLayers {
             double[] p2 = McsmGlitchGenerator.displaceVertex(x + width/2 + Math.sin(time * 0.002 + i) * glitchFactor * 25.0, y + height, z + Math.cos(time * 0.002 + i) * glitchFactor * 25.0, time, fallDistance, glitchFactor, i * 502 + layerIndex * 5000);
             double[] p3 = McsmGlitchGenerator.displaceVertex(x - width/2 + Math.sin(time * 0.002 + i + 1) * glitchFactor * 25.0, y + height, z + Math.cos(time * 0.002 + i + 1) * glitchFactor * 25.0, time, fallDistance, glitchFactor, i * 503 + layerIndex * 5000);
 
-            float hue = (i * 25 + layerIndex * 10 + time * 0.01) % 360 / 360.0F;
+            float hue = (float)(((i * 25 + layerIndex * 10 + time * 0.01) % 360) / 360.0);
             float[] rgb = hsvToRgb(hue, 0.9F, 0.8F);
             int r = (int)(rgb[0] * 200), g = (int)(rgb[1] * 150), b = (int)(rgb[2] * 255);
             int a = (int)(visibility * 140 * (0.6 + glitchFactor * 0.8));
@@ -367,7 +367,7 @@ public final class McsmInfiniteVoidLayers {
             double[] d0 = McsmGlitchGenerator.displaceVertex(x, layerY, z0, time, fallDistance, glitchFactor, i * 600 + layerIndex * 6000);
             double[] d1 = McsmGlitchGenerator.displaceVertex(x, layerY, z1, time, fallDistance, glitchFactor, i * 601 + layerIndex * 6000);
 
-            float hue = (i * 10 + layerIndex * 5) % 360 / 360.0F;
+            float hue = (float)(((i * 10 + layerIndex * 5) % 360) / 360.0);
             float[] rgb = hsvToRgb(hue, 0.8F, 0.8F);
             int r = (int)(rgb[0] * 120), g = (int)(rgb[1] * 120), b = (int)(rgb[2] * 150 + glitchFactor * 100);
             int a = (int)(visibility * 100 * (0.4 + glitchFactor));
@@ -424,7 +424,7 @@ public final class McsmInfiniteVoidLayers {
                 double x2 = x + Math.cos(a1) * r1, z2 = z + Math.sin(a1) * r1;
                 double x3 = x + Math.cos(a0) * r1, z3 = z + Math.sin(a0) * r1;
 
-                float hue = (s * 5 + time * 0.01) % 360 / 360.0F;
+                float hue = (float)(((s * 5 + time * 0.01) % 360) / 360.0);
                 float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
                 int r = (int)(rgb[0] * 255), g = (int)(rgb[1] * 200), b = (int)(rgb[2] * 255);
                 int a = (int)(visibility * 180);
@@ -515,7 +515,7 @@ public final class McsmInfiniteVoidLayers {
                 double[] d0 = McsmGlitchGenerator.displaceVertex(x0, y, z0, time, fallDistance, glitchFactor, s + i * 11000 + layerIndex * 11000);
                 double[] d1 = McsmGlitchGenerator.displaceVertex(x1, y, z1, time, fallDistance, glitchFactor, s+1 + i * 11000 + layerIndex * 11000);
 
-                float hue = (i * 23 + layerIndex * 17 + time * 0.02) % 360 / 360.0F;
+                float hue = (float)(((i * 23 + layerIndex * 17 + time * 0.02) % 360) / 360.0);
                 float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
                 int r = (int)(rgb[0] * 255), g = (int)(rgb[1] * 255), b = (int)(rgb[2] * 255);
                 int a = (int)(visibility * 200);
@@ -605,7 +605,7 @@ public final class McsmInfiniteVoidLayers {
             double[] d0h = McsmGlitchGenerator.displaceVertex(x0, y + size * 3, z0, time, fallDistance, glitchFactor, s + layerIndex * 7001);
             double[] d1h = McsmGlitchGenerator.displaceVertex(x1, y + size * 3, z1, time, fallDistance, glitchFactor, s+1 + layerIndex * 7001);
 
-            float hue = (s * 40 + layerIndex * 7 + time * 0.02) % 360 / 360.0F;
+            float hue = (float)(((s * 40 + layerIndex * 7 + time * 0.02) % 360) / 360.0);
             float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
             int r = (int)(rgb[0] * 200 + 55), g = (int)(rgb[1] * 100 + 50), b = (int)(rgb[2] * 255);
             int a = (int)(visibility * 200 * glitchFactor);
@@ -620,7 +620,7 @@ public final class McsmInfiniteVoidLayers {
         double y = layerY;
 
         double size = 500.0 + layerIndex * 10.0 + glitchFactor * 200.0;
-        float hue = (layerIndex * 13 + time * 0.005) % 360 / 360.0F;
+        float hue = (float)(((layerIndex * 13 + time * 0.005) % 360) / 360.0);
         float[] rgb = hsvToRgb(hue, 0.7F, 1.0F);
         int r = (int)(rgb[0] * 255), g = (int)(rgb[1] * 255), b = (int)(rgb[2] * 255);
         int a = (int)(visibility * 60 * glitchFactor);
@@ -638,7 +638,7 @@ public final class McsmInfiniteVoidLayers {
             double y = layerY + Mth.sin((float)(time * 0.005 + i)) * 50.0 * glitchFactor + i * 2.0;
 
             double size = 3.0 + glitchFactor * 6.0;
-            float hue = (i * 27 + time * 0.02) % 360 / 360.0F;
+            float hue = (float)(((i * 27 + time * 0.02) % 360) / 360.0);
             float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
             int r = (int)(rgb[0] * 255), g = (int)(rgb[1] * 255), b = (int)(rgb[2] * 255);
             int a = (int)(255 * glitchFactor * visibility);

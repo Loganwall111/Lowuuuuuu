@@ -149,7 +149,7 @@ public final class McsmNinthLayerGeometry {
             float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
             double timeTmp = (double)(mc.level.getGameTime() % 240000L) + partial;
             final float glitchFactorTmp = McsmGlitchGenerator.computeGlitchFactor(fallDistTmp, playerY, timeTmp);
-            final long shuffledSeed = McsmGlitchGenerator.shuffleSeedForDepth(playerY, mc.level.getSeed());
+            final long shuffledSeed = McsmGlitchGenerator.shuffleSeedForDepth(playerY, mc.level.dimension().identifier().hashCode() ^ (mc.player != null ? mc.player.getUUID().hashCode() : 0x5EEDL) ^ mc.level.getGameTime());
             float depthFactorTmp = 1.0F;
             if (playerY > McsmVoidTiers.ABYSSAL_NIGHTMARE_FLOOR) depthFactorTmp = 0.25F;
             else if (playerY > McsmVoidTiers.REALITY_GLITCH_NIGHTMARE_FLOOR + 1) depthFactorTmp = 0.65F;
