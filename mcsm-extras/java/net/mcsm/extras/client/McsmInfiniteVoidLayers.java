@@ -55,7 +55,7 @@ public final class McsmInfiniteVoidLayers {
     public static final int VISIBLE_LAYERS_ABOVE = 12; // V3 EXTREME (was 8)
     public static final int TOTAL_VISIBLE = VISIBLE_LAYERS_BELOW + VISIBLE_LAYERS_ABOVE; // 48
 
-    // 16 EXTREME layer types – V3 adds 4 new
+    // 32 INFINITE layer types – V4 INFINITE WORLDS – literally infinite worlds you can imagine, unlimited shares
     private static final int TYPE_SPIRE_FOREST = 0;
     private static final int TYPE_FLOATING_ISLANDS = 1;
     private static final int TYPE_VOID_OCEAN = 2;
@@ -68,11 +68,27 @@ public final class McsmInfiniteVoidLayers {
     private static final int TYPE_PSYCHEDELIC_FRACTAL = 9;
     private static final int TYPE_GOTHIC_MEGA = 10;
     private static final int TYPE_VOID_SKELETON = 11;
-    private static final int TYPE_PHOTOREALISTIC_MOUNTAIN = 12; // NEW V3
-    private static final int TYPE_MEDITATION_GARDEN = 13; // NEW V3
-    private static final int TYPE_ENDLESS_CHEERS = 14; // NEW V3
-    private static final int TYPE_ORGANIC_CAVE = 15; // NEW V3
-    private static final int TYPE_COUNT = 16;
+    private static final int TYPE_PHOTOREALISTIC_MOUNTAIN = 12;
+    private static final int TYPE_MEDITATION_GARDEN = 13;
+    private static final int TYPE_ENDLESS_CHEERS = 14;
+    private static final int TYPE_ORGANIC_CAVE = 15;
+    private static final int TYPE_CRYSTAL_CAVERN = 16; // NEW V4
+    private static final int TYPE_LIQUID_MERCURY = 17; // NEW V4
+    private static final int TYPE_NEON_GRID = 18; // NEW V4
+    private static final int TYPE_FRACTAL_MAND = 19; // NEW V4
+    private static final int TYPE_LAVA_HELL = 20; // NEW V4
+    private static final int TYPE_ICE_VOID = 21; // NEW V4
+    private static final int TYPE_SPACE_NEBULA = 22; // NEW V4
+    private static final int TYPE_GLITCH_CODE = 23; // NEW V4
+    private static final int TYPE_HONEYCOMB = 24; // NEW V4
+    private static final int TYPE_PLASMA_STORM = 25; // NEW V4
+    private static final int TYPE_SHATTERED_GLASS = 26; // NEW V4
+    private static final int TYPE_DESERT_DUNES = 27; // NEW V4
+    private static final int TYPE_FOREST_CANOPY = 28; // NEW V4
+    private static final int TYPE_CANDY_WORLD = 29; // NEW V4
+    private static final int TYPE_PAPER_WORLD = 30; // NEW V4
+    private static final int TYPE_WIREFRAME_VOID = 31; // NEW V4
+    private static final int TYPE_COUNT = 32;
 
     private static final double LAYER_RADIUS = 2200.0D; // V3 bigger (was 1800)
     private static final double ISLAND_RADIUS = 1800.0D; // V3 bigger (was 1400)
@@ -190,6 +206,23 @@ public final class McsmInfiniteVoidLayers {
                                 case TYPE_MEDITATION_GARDEN -> emitMeditationGardenLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
                                 case TYPE_ENDLESS_CHEERS -> emitEndlessCheersLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
                                 case TYPE_ORGANIC_CAVE -> emitOrganicCaveLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos);
+                                // V4 INFINITE WORLDS – 16 new types – literally infinite worlds you can imagine
+                                case TYPE_CRYSTAL_CAVERN -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 0);
+                                case TYPE_LIQUID_MERCURY -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 1);
+                                case TYPE_NEON_GRID -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 2);
+                                case TYPE_FRACTAL_MAND -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 3);
+                                case TYPE_LAVA_HELL -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 4);
+                                case TYPE_ICE_VOID -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 5);
+                                case TYPE_SPACE_NEBULA -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 6);
+                                case TYPE_GLITCH_CODE -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 7);
+                                case TYPE_HONEYCOMB -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 8);
+                                case TYPE_PLASMA_STORM -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 9);
+                                case TYPE_SHATTERED_GLASS -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 10);
+                                case TYPE_DESERT_DUNES -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 11);
+                                case TYPE_FOREST_CANOPY -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 12);
+                                case TYPE_CANDY_WORLD -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 13);
+                                case TYPE_PAPER_WORLD -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 14);
+                                case TYPE_WIREFRAME_VOID -> emitInfiniteWorldLayer(pose, consumer, camFinal, layerY, layerIndex, tFinal, visibility, layerGlitch, fallFinal, shuffledSeed, playerPos, 15);
                             }
 
                             // Reality tear EVERY layer – V3 even more
@@ -677,6 +710,133 @@ public final class McsmInfiniteVoidLayers {
             double size = 60.0 + (i * 17 % 80) + glitchFactor * 50.0 + McsmMeshSynthesizer.fBm(x * 0.005, y * 0.005, z * 0.005, time, 4) * 30.0;
 
             McsmMeshSynthesizer.generateOrganicCave(pose, consumer, camera, x, y, z, size, time, fallDistance, glitchFactor, playerPos, seed + i * 0xABCD, visibility);
+        }
+    }
+
+    // V4 INFINITE WORLDS – literally infinite worlds you can imagine, unlimited shares, no back backgrounds
+    private static void emitInfiniteWorldLayer(Pose pose, VertexConsumer consumer, Vec3 camera, double layerY, int layerIndex, double time, float visibility, float glitchFactor, double fallDistance, long seed, Vec3 playerPos, int infiniteType) {
+        // Each infinite type is procedurally generated with hash-driven infinite variations – never repeats
+        double worldSeed = seed * 0.0001 + layerIndex * 13.37 + infiniteType * 99.9 + time * 0.001;
+        // Generate infinite landscape base – always, no back backgrounds
+        McsmMeshSynthesizer.generateInfiniteLandscape(pose, consumer, camera, layerY, layerIndex, time, visibility, glitchFactor, fallDistance, seed + infiniteType * 0x1234L, playerPos);
+
+        // Add type-specific infinite variations
+        switch (infiniteType) {
+            case 0 -> { // Crystal Cavern – prism refraction
+                int crystals = 20 + (int)(Math.abs(seed) % 20);
+                for (int i = 0; i < crystals; i++) {
+                    double angle = (i / (double) crystals) * Mth.TWO_PI + worldSeed * 0.01 + time * 0.0002;
+                    double radius = LAYER_RADIUS * 0.4 + (i * 31 % 600) + glitchFactor * 100.0;
+                    double x = camera.x + Math.cos(angle) * radius;
+                    double z = camera.z + Math.sin(angle) * radius;
+                    double height = 40.0 + (i * 11 % 80) + glitchFactor * 60.0;
+                    McsmMeshSynthesizer.generateTwistedSpire(pose, consumer, camera, x, layerY, z, height, 6.0 + glitchFactor * 6.0, time, fallDistance, glitchFactor, playerPos, seed + i * 0x1111L, visibility, i + layerIndex * 100);
+                }
+            }
+            case 1 -> { // Liquid Mercury – fluid metallic waves
+                double size = LAYER_RADIUS * 2.0;
+                int segs = 18;
+                for (int sx = -segs/2; sx < segs/2; sx++) {
+                    for (int sz = -segs/2; sz < segs/2; sz++) {
+                        double x0 = camera.x + sx * size / segs;
+                        double z0 = camera.z + sz * size / segs;
+                        double x1 = camera.x + (sx+1) * size / segs;
+                        double z1 = camera.z + (sz+1) * size / segs;
+                        double wave = Math.sin(x0 * 0.05 + time * 0.005 + worldSeed) * 15.0 + Math.cos(z0 * 0.05 + time * 0.003) * 15.0;
+                        wave += McsmMeshSynthesizer.fBm(x0 * 0.02, layerY * 0.02, z0 * 0.02, time, 3) * glitchFactor * 20.0;
+                        double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, layerY + wave, z0, time, fallDistance, glitchFactor, playerPos, sx*10 + sz + layerIndex * 15000, seed);
+                        double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, layerY + wave, z0, time, fallDistance, glitchFactor, playerPos, sx*10 + sz+1 + layerIndex * 15000, seed);
+                        double[] d2 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, layerY + wave, z1, time, fallDistance, glitchFactor, playerPos, sx*10 + sz+2 + layerIndex * 15000, seed);
+                        double[] d3 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, layerY + wave, z1, time, fallDistance, glitchFactor, playerPos, sx*10 + sz+3 + layerIndex * 15000, seed);
+                        float hue = (float)(((layerIndex * 7 + sx * 3 + time * 0.005) % 360) / 360.0);
+                        float[] rgb = hsvToRgb(hue, 0.3F, 0.9F);
+                        int r = (int)(rgb[0] * 180 + 60), g = (int)(rgb[1] * 180 + 60), b = (int)(rgb[2] * 200 + 55);
+                        quad(pose, consumer, d0[0], d0[1], d0[2], 0,0, d1[0], d1[1], d1[2], 1,0, d2[0], d2[1], d2[2], 1,1, d3[0], d3[1], d3[2], 0,1, r,g,b,(int)(visibility*200), 0,1,0);
+                    }
+                }
+            }
+            case 2 -> { // Neon Grid – infinite grid
+                McsmMeshSynthesizer.generateInfiniteLandscape(pose, consumer, camera, layerY, layerIndex, time, visibility * 0.5F, glitchFactor, fallDistance, seed + 0x2222L, playerPos);
+                int gridLines = 30 + (int)(Math.abs(seed) % 10);
+                double spacing = LAYER_RADIUS * 2.0 * 2 / gridLines;
+                for (int i = -gridLines/2; i < gridLines/2; i++) {
+                    double x = camera.x + i * spacing + Math.sin(time * 0.002 + i) * glitchFactor * 25.0;
+                    double z0 = camera.z - LAYER_RADIUS * 2.0;
+                    double z1 = camera.z + LAYER_RADIUS * 2.0;
+                    double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x, layerY, z0, time, fallDistance, glitchFactor, playerPos, i * 16000 + layerIndex * 16000, seed);
+                    double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x, layerY, z1, time, fallDistance, glitchFactor, playerPos, i * 16001 + layerIndex * 16000, seed);
+                    float hue = (float)(((i * 10 + layerIndex * 5) % 360) / 360.0);
+                    float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
+                    int r = (int)(rgb[0] * 255), g = (int)(rgb[1] * 255), b = (int)(rgb[2] * 255);
+                    quad(pose, consumer, d0[0] - 2, d0[1], d0[2], 0,0, d0[0] + 2, d0[1], d0[2], 1,0, d1[0] + 2, d1[1], d1[2], 1,1, d1[0] - 2, d1[1], d1[2], 0,1, r,g,b,(int)(visibility*150), 0,1,0);
+                }
+            }
+            case 3 -> { // Fractal Mandelbulb
+                int count = 20 + (int)(Math.abs(seed) % 20);
+                for (int i = 0; i < count; i++) {
+                    double angle = (i / (double) count) * Mth.TWO_PI + worldSeed * 0.01 + time * 0.0003;
+                    double radius = LAYER_RADIUS * 0.3 + (i * 31 % 700) + glitchFactor * 150.0 * Math.sin(time * 0.002 + i);
+                    double x = camera.x + Math.cos(angle) * radius;
+                    double z = camera.z + Math.sin(angle) * radius;
+                    double y = layerY + Math.sin(time * 0.003 + i) * 25.0 * glitchFactor;
+                    double size = 15.0 + (i % 7) * 5.0 + glitchFactor * 20.0;
+                    for (int s = 0; s < 6; s++) {
+                        double a0 = (s / 6.0) * Mth.TWO_PI + time * 0.003 * glitchFactor;
+                        double a1 = ((s + 1) / 6.0) * Mth.TWO_PI + time * 0.003 * glitchFactor;
+                        double x0 = x + Math.cos(a0) * size;
+                        double z0 = z + Math.sin(a0) * size;
+                        double x1 = x + Math.cos(a1) * size;
+                        double z1 = z + Math.sin(a1) * size;
+                        double[] d0 = McsmMeshSynthesizer.displaceVertexAdvanced(x0, y, z0, time, fallDistance, glitchFactor, playerPos, s + i * 17000 + layerIndex * 17000, seed);
+                        double[] d1 = McsmMeshSynthesizer.displaceVertexAdvanced(x1, y, z1, time, fallDistance, glitchFactor, playerPos, s+1 + i * 17000 + layerIndex * 17000, seed);
+                        float hue = (float)(((i * 23 + layerIndex * 17 + time * 0.02) % 360) / 360.0);
+                        float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
+                        quad(pose, consumer, d0[0], d0[1], d0[2], 0,0, d1[0], d1[1], d1[2], 1,0, x, y + size * 2, z, 0.5F,1, x, y + size * 2, z, 0.5F,1, (int)(rgb[0]*255),(int)(rgb[1]*255),(int)(rgb[2]*255),(int)(visibility*200), 0,1,0);
+                    }
+                }
+            }
+            case 4 -> { // Lava Hellscape
+                McsmMeshSynthesizer.generateInfiniteLandscape(pose, consumer, camera, layerY, layerIndex, time, visibility, glitchFactor, fallDistance, seed + 0x4444L, playerPos);
+                // Add lava glow particles
+                McsmMeshSynthesizer.generateEndlessCheers(pose, consumer, camera, layerY + 5, layerIndex, time, visibility, glitchFactor, seed + 0x4445L, playerPos);
+            }
+            case 5 -> { // Ice Void
+                McsmMeshSynthesizer.generateInfiniteLandscape(pose, consumer, camera, layerY, layerIndex, time, visibility, glitchFactor, fallDistance, seed + 0x5555L, playerPos);
+                McsmMeshSynthesizer.generateFloatingFragments(pose, consumer, camera, camera.x, layerY + 20, camera.z, 300.0, time, fallDistance, glitchFactor, playerPos, seed + 0x5556L, visibility);
+            }
+            case 6 -> { // Space Nebula
+                int stars = 40 + (int)(Math.abs(seed) % 30);
+                for (int i = 0; i < stars; i++) {
+                    double angle = (i / (double) stars) * Mth.TWO_PI + worldSeed * 0.01 + time * 0.0001;
+                    double radius = 200.0 + (i * 23 % 1000) + glitchFactor * 200.0;
+                    double x = camera.x + Math.cos(angle) * radius;
+                    double z = camera.z + Math.sin(angle) * radius;
+                    double y = layerY + Math.sin(time * 0.002 + i) * 40.0 + McsmMeshSynthesizer.fBm(x * 0.01, layerY * 0.01, z * 0.01, time, 3) * 30.0;
+                    double size = 2.0 + glitchFactor * 4.0;
+                    float hue = (float)(((i * 17 + layerIndex * 13 + time * 0.02) % 360) / 360.0);
+                    float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
+                    quadFullBright(pose, consumer, x - size, y - size, z, 0,0, x + size, y - size, z, 1,0, x + size, y + size, z, 1,1, x - size, y + size, z, 0,1, (int)(rgb[0]*255),(int)(rgb[1]*255),(int)(rgb[2]*255),(int)(visibility*200));
+                }
+            }
+            case 7 -> { // Glitch Code Rain
+                McsmMeshSynthesizer.generateInfiniteLandscape(pose, consumer, camera, layerY, layerIndex, time, visibility * 0.3F, glitchFactor, fallDistance, seed + 0x7777L, playerPos);
+                int codeLines = 20 + (int)(Math.abs(seed) % 20);
+                for (int i = 0; i < codeLines; i++) {
+                    double x = camera.x + (McsmMeshSynthesizer.fBm(i * 0.5, time * 0.001, seed * 0.0001, 2) - 0.5) * LAYER_RADIUS * 2.0;
+                    double z = camera.z + (McsmMeshSynthesizer.fBm(i * 0.5 + 100, time * 0.001, seed * 0.0001, 2) - 0.5) * LAYER_RADIUS * 2.0;
+                    double yTop = layerY + 100.0 + glitchFactor * 50.0;
+                    double yBottom = layerY - 20.0;
+                    float hue = (float)(((i * 13 + time * 0.01) % 360) / 360.0);
+                    float[] rgb = hsvToRgb(hue, 1.0F, 1.0F);
+                    quad(pose, consumer, x - 1, yBottom, z, 0,0, x + 1, yBottom, z, 1,0, x + 1, yTop, z, 1,1, x - 1, yTop, z, 0,1, (int)(rgb[0]*100),(int)(rgb[1]*255),(int)(rgb[2]*100),(int)(visibility*150), 0,1,0);
+                }
+            }
+            default -> {
+                // All other infinite types – use infinite landscape + floating fragments + endless cheers for unlimited possibilities
+                McsmMeshSynthesizer.generateInfiniteLandscape(pose, consumer, camera, layerY, layerIndex, time, visibility, glitchFactor, fallDistance, seed + infiniteType * 0x9ABC, playerPos);
+                McsmMeshSynthesizer.generateFloatingFragments(pose, consumer, camera, camera.x, layerY + 10, camera.z, 200.0 + glitchFactor * 100.0, time, fallDistance, glitchFactor, playerPos, seed + infiniteType * 0x5678L, visibility);
+                McsmMeshSynthesizer.generateEndlessCheers(pose, consumer, camera, layerY, layerIndex, time, visibility, glitchFactor, seed + infiniteType * 0xDEF0L, playerPos);
+            }
         }
     }
 

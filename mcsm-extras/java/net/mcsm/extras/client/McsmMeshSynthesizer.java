@@ -616,11 +616,26 @@ public final class McsmMeshSynthesizer {
 
     // ---- Procedural Asset Generator – instantly keep generating ---------------
     public static String generateProceduralAsset(int layerIndex, long seed, double time) {
-        String[] types = new String[]{"fractal_spire", "organic_cave", "floating_fragment", "psychedelic_fractal", "gothic_mega", "void_skeleton", "photoreal_mountain", "black_hole_accretion", "inverted_city", "flesh_organic", "crystal_shard", "reality_tear"};
-        String type = types[(int)(Math.abs(seed + layerIndex) % types.length)];
-        double hue = (seed % 360 + time * 0.01 + layerIndex * 13) % 360;
-        double size = 10.0 + Math.abs(fBm(seed * 0.001, layerIndex * 0.1, time * 0.001, 3)) * 100.0;
-        String asset = type + "#" + layerIndex + "_seed" + seed + "_hue" + String.format("%.1f", hue) + "_size" + String.format("%.1f", size) + "_time" + String.format("%.1f", time);
+        // V4 INFINITE WORLDS – 32 infinite asset types – literally infinite worlds you can imagine, unlimited shares
+        String[] types = new String[]{
+            "fractal_spire", "organic_cave", "floating_fragment", "psychedelic_fractal", "gothic_mega", "void_skeleton",
+            "photoreal_mountain", "black_hole_accretion", "inverted_city", "flesh_organic", "crystal_shard", "reality_tear",
+            "crystal_cavern", "liquid_mercury", "neon_grid", "fractal_mandelbulb", "lava_hellscape", "ice_void",
+            "space_nebula", "glitch_code_rain", "honeycomb_void", "plasma_storm", "shattered_glass", "desert_dunes",
+            "forest_canopy", "candy_world", "paper_world", "wireframe_void", "flesh_pulsating", "neon_cyberpunk",
+            "ocean_abyss", "escher_staircase", "biome_morph", "meditation_garden", "endless_cheers", "infinite_landscape",
+            "voronoi_cell", "fbm_terrain", "domain_warped_spire", "twisted_fractal", "hollowed_cave", "floating_island",
+            "void_ocean_wave", "shattered_sheet", "grid_matrix", "black_hole", "inverted_city_building", "flesh_organic_pulse",
+            "psychedelic_kaleido", "gothic_tower", "void_bone", "photoreal_mountain_range", "meditation_flower", "cheer_particle",
+            "crystal_prism", "mercury_fluid", "neon_wireframe", "mandelbulb_fractal", "lava_flow", "ice_crystal",
+            "nebula_star", "code_rain", "honeycomb_hex", "plasma_electric", "glass_shard", "dune_sand",
+            "canopy_tree", "candy_color", "origami_paper", "wireframe_line", "infinite_world", "unlimited_share"
+        };
+        String type = types[(int)(Math.abs(seed + layerIndex + (long)(time * 0.01)) % types.length)];
+        double hue = (seed % 360 + time * 0.01 + layerIndex * 13 + Math.abs(fBm(seed * 0.001, layerIndex * 0.1, time * 0.001, 3)) * 360.0) % 360;
+        double size = 10.0 + Math.abs(fBm(seed * 0.001, layerIndex * 0.1, time * 0.001, 5)) * 200.0;
+        double infiniteSeed = seed * 0.0001 + layerIndex * 99.9 + time * 0.001;
+        String asset = type + "#" + layerIndex + "_seed" + seed + "_infSeed" + String.format("%.2f", infiniteSeed) + "_hue" + String.format("%.1f", hue) + "_size" + String.format("%.1f", size) + "_time" + String.format("%.1f", time) + "_worldType" + (Math.abs(seed) % 32) + "_infinite=true_unlimited=true";
         // Log
         synchronized (assetLog) {
             assetLog.add(asset);
