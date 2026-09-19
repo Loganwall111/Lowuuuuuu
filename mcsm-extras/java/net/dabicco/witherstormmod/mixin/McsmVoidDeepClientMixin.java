@@ -50,6 +50,14 @@ public abstract class McsmVoidDeepClientMixin {
                             net.mcsm.extras.client.McsmVoidVortexSkybox.tick();
                         } catch (Throwable ignore2) {}
                     }
+                    // BUILD #494 / 7000.0.22-M -- infinite procedural void layers tick – no end, 3D geometry only
+                    try {
+                        Class.forName("net.mcsm.extras.client.McsmInfiniteVoidLayers").getMethod("tick").invoke(null);
+                    } catch (Throwable ignore) {
+                        try {
+                            net.mcsm.extras.client.McsmInfiniteVoidLayers.tick();
+                        } catch (Throwable ignore2) {}
+                    }
                     // BUILD #481 -- and the rudder: the tier's own current, the
                     // tool's multiplier, and the dive's trail. Reflective so jar compiles without V2 extras
                     // phase gate requires this exact string: net.mcsm.extras.client.McsmVoidRudder.tick();

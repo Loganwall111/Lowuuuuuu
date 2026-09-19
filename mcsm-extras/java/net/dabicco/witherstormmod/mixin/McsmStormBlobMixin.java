@@ -98,6 +98,10 @@ public abstract class McsmStormBlobMixin {
             // Gigantic vortex void skybox with spinning square rings, 3D particles, reality rip VFX,
             // movies zoom by as jump further, procedural layers never end, new reality underneath
             net.mcsm.extras.client.McsmVoidVortexSkybox.submit(ctx);
+            // BUILD #494 / 7000.0.22-M -- Infinite Procedural Void Layers – No End
+            // Procedurally generate void layers next, instead of using blocks, go down until point
+            // minecraft cannot use blocks is 3D geometry as procedurally generated layers so there's really no end
+            net.mcsm.extras.client.McsmInfiniteVoidLayers.submit(ctx);
         }
         // Intentionally no ci.cancel(): the original smooth backdrop owns this
         // pass. The custom ring/vortex generators are not submitted here.
