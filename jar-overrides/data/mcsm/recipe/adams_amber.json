@@ -1,0 +1,16 @@
+{
+  "key": {
+    "R": {
+      "item": "mcsm:adams_rubble"
+    }
+  },
+  "pattern": [
+    "RR",
+    "RR"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:adams_amber"
+  },
+  "type": "minecraft:crafting_shaped"
+}

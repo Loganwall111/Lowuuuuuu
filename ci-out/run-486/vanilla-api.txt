@@ -1,0 +1,82 @@
+++ date -u +%FT%TZ
++ echo '# vanilla API dump -- 2026-09-16T14:38:26Z MC 26.2 (javap -p, capped)'
+# vanilla API dump -- 2026-09-16T14:38:26Z MC 26.2 (javap -p, capped)
+ci/build.sh: line 718: Properties: unbound variable
+++ disclose_failure
+++ local rc=1
+++ '[' 1 -eq 0 ']'
+++ sleep 1
+++ cp -f /tmp/mcsm-run.log out/BUILD_LOG.txt
++++ cat /tmp/mcsm-stage.txt
+++ echo '::error title=build-failed::exit 1 after stage '\''backdrop-ok'\'' -- full run log in out/BUILD_LOG.txt and ci-out/run-*/ on the branch'
+::error title=build-failed::exit 1 after stage 'backdrop-ok' -- full run log in out/BUILD_LOG.txt and ci-out/run-*/ on the branch
++++ cat /tmp/mcsm-stage.txt
+++ echo '[failure] exit 1 after stage '\''backdrop-ok'\'''
+[failure] exit 1 after stage 'backdrop-ok'
+++ local line n=0
+++ tail -n 12 /tmp/mcsm-run.log
+++ IFS=
+++ read -r line
+++ n=1
+++ echo '::error title=last-1::+ local had_e=0'
+::error title=last-1::+ local had_e=0
+++ IFS=
+++ read -r line
+++ n=2
+++ echo '::error title=last-2::+ case "$-" in'
+::error title=last-2::+ case "$-" in
+++ IFS=
+++ read -r line
+++ n=3
+++ echo '::error title=last-3::+ had_e=1'
+::error title=last-3::+ had_e=1
+++ IFS=
+++ read -r line
+++ n=4
+++ echo '::error title=last-4::+ set +e'
+::error title=last-4::+ set +e
+++ IFS=
+++ read -r line
+++ n=5
+++ echo '::error title=last-5::+ echo '\''[stage] backdrop-ok'\'''
+::error title=last-5::+ echo '[stage] backdrop-ok'
+++ IFS=
+++ read -r line
+++ n=6
+++ echo '::error title=last-6::[stage] backdrop-ok'
+::error title=last-6::[stage] backdrop-ok
+++ IFS=
+++ read -r line
+++ n=7
+++ echo '::error title=last-7::+ printf '\''%s\n'\'' backdrop-ok'
+::error title=last-7::+ printf '%s\n' backdrop-ok
+++ IFS=
+++ read -r line
+++ n=8
+++ echo '::error title=last-8::+ '\''['\'' '\'''\'' = push '\'']'\'''
+::error title=last-8::+ '[' '' = push ']'
+++ IFS=
+++ read -r line
+++ n=9
+++ echo '::error title=last-9::+ '\''['\'' 1 = 1 '\'']'\'''
+::error title=last-9::+ '[' 1 = 1 ']'
+++ IFS=
+++ read -r line
+++ n=10
+++ echo '::error title=last-10::+ set -e'
+::error title=last-10::+ set -e
+++ IFS=
+++ read -r line
+++ n=11
+++ echo '::error title=last-11::+ return 0'
+::error title=last-11::+ return 0
+++ IFS=
+++ read -r line
+++ n=12
+++ echo '::error title=last-12::+ VANILLA_OUT=out/vanilla-api.txt'
+::error title=last-12::+ VANILLA_OUT=out/vanilla-api.txt
+++ IFS=
+++ read -r line
+++ '[' 0 '!=' 1 ']'
+++ command -v push_evidence_simple
+++ push_evidence_simple

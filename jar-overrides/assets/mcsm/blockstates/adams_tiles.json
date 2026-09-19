@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mcsm:block/adams_tiles"
+    }
+  }
+}

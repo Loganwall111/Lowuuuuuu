@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/door_bottom_right",
+  "textures": {
+    "bottom": "mcsm:block/withered_door_bottom",
+    "top": "mcsm:block/withered_door_top"
+  }
+}

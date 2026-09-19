@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/cube",
+  "render_type": "minecraft:translucent",
+  "textures": {
+    "down": "mcsm:block/void_spire_crystal",
+    "east": "mcsm:block/void_spire_crystal",
+    "north": "mcsm:block/void_spire_crystal",
+    "particle": "mcsm:block/void_spire_crystal",
+    "south": "mcsm:block/void_spire_crystal",
+    "up": "mcsm:block/void_spire_crystal",
+    "west": "mcsm:block/void_spire_crystal"
+  }
+}

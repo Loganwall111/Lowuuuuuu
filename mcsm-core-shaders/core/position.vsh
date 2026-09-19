@@ -1,3 +1,23 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0a69d3d2a263a2d22e4e7b76a864d95b6403df18d3b9537a97c2ed019c47d1b9
-size 1048
+#version 150
+#moj_import <minecraft:fog.glsl>
+
+#moj_import <minecraft:mcsm_visuals.glsl>
+
+in vec3 Position;
+in vec4 Color;
+
+uniform mat4 ModelViewMat;
+uniform mat4 ProjMat;
+uniform float GameTime;
+uniform vec3 PlayerPos;
+
+out vec4 vertexColor;
+out vec3 worldPos;
+out float depthFactor;
+
+void main() {
+    gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+    vertexColor = Color;
+    worldPos = Position + PlayerPos;
+    depthFactor = clamp(( -251.0 - worldPos.y) / 1781.0, 0.0, 1.0);
+}

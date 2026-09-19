@@ -1,0 +1,15 @@
+{
+  "key": {
+    "G": {
+      "item": "mcsm:adams_crystal"
+    }
+  },
+  "pattern": [
+    "G"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:adams_glass_shard"
+  },
+  "type": "minecraft:crafting_shaped"
+}

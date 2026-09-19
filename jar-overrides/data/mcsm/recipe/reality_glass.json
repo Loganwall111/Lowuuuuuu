@@ -1,0 +1,19 @@
+{
+  "key": {
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "R": {
+      "item": "mcsm:rift_shard"
+    }
+  },
+  "pattern": [
+    "RG",
+    "GR"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:reality_glass"
+  },
+  "type": "minecraft:crafting_shaped"
+}

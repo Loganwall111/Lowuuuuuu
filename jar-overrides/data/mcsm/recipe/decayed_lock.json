@@ -1,0 +1,20 @@
+{
+  "key": {
+    "D": {
+      "item": "mcsm:decayed_steel_ingot"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    " D ",
+    "DID",
+    " D "
+  ],
+  "result": {
+    "count": 1,
+    "id": "mcsm:decayed_lock"
+  },
+  "type": "minecraft:crafting_shaped"
+}

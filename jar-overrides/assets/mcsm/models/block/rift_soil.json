@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/rift_soil",
+    "east": "mcsm:block/rift_soil",
+    "north": "mcsm:block/rift_soil",
+    "particle": "mcsm:block/rift_soil",
+    "south": "mcsm:block/rift_soil",
+    "up": "mcsm:block/rift_soil",
+    "west": "mcsm:block/rift_soil"
+  }
+}

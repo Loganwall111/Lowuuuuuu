@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/void_lamp",
+    "east": "mcsm:block/void_lamp",
+    "north": "mcsm:block/void_lamp",
+    "particle": "mcsm:block/void_lamp",
+    "south": "mcsm:block/void_lamp",
+    "up": "mcsm:block/void_lamp",
+    "west": "mcsm:block/void_lamp"
+  }
+}

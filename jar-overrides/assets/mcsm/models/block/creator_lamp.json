@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/creator_lamp",
+    "east": "mcsm:block/creator_lamp",
+    "north": "mcsm:block/creator_lamp",
+    "particle": "mcsm:block/creator_lamp",
+    "south": "mcsm:block/creator_lamp",
+    "up": "mcsm:block/creator_lamp",
+    "west": "mcsm:block/creator_lamp"
+  }
+}

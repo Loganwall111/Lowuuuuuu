@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/creator_glyph",
+    "east": "mcsm:block/creator_glyph",
+    "north": "mcsm:block/creator_glyph",
+    "particle": "mcsm:block/creator_glyph",
+    "south": "mcsm:block/creator_glyph",
+    "up": "mcsm:block/creator_glyph",
+    "west": "mcsm:block/creator_glyph"
+  }
+}

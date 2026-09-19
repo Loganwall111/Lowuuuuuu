@@ -1,0 +1,48 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java:68: error: local variables referenced from a lambda expression must be final or effectively final
+                        double width = 120.0 + Mth.sin(waveTime * 0.5f + c) * 20.0;
+                                                                         ^
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java:80: error: local variables referenced from a lambda expression must be final or effectively final
+                            float wave0 = Mth.sin(waveTime + u0 * 6f + c * 1.2f) * 12f + Mth.cos(waveTime * 0.7f + u0 * 4f) * 8f;
+                                                                       ^
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java:81: error: local variables referenced from a lambda expression must be final or effectively final
+                            float wave1 = Mth.sin(waveTime + u1 * 6f + c * 1.2f) * 12f + Mth.cos(waveTime * 0.7f + u1 * 4f) * 8f;
+                                                                       ^
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java:88: error: local variables referenced from a lambda expression must be final or effectively final
+                            float hue = (hueBase + u0 * 0.15f + Mth.sin(waveTime * 0.3f + c) * 0.05f) % 1f;
+                                         ^
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java:88: error: local variables referenced from a lambda expression must be final or effectively final
+                            float hue = (hueBase + u0 * 0.15f + Mth.sin(waveTime * 0.3f + c) * 0.05f) % 1f;
+                                                                                          ^
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java:91: error: local variables referenced from a lambda expression must be final or effectively final
+                            float pulse = 0.7f + 0.3f * Mth.sin(waveTime * 0.9f + u0 * 3f + c);
+                                                                                            ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:223: error: incompatible types: float cannot be converted to Vec3
+        Vec3 a = x0, y0, z0;
+                 ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:223: error: variable y0 is already defined in method cubeFace(Pose,VertexConsumer,float,float,float,float,float,float,int,int,int)
+        Vec3 a = x0, y0, z0;
+                     ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:223: error: variable z0 is already defined in method cubeFace(Pose,VertexConsumer,float,float,float,float,float,float,int,int,int)
+        Vec3 a = x0, y0, z0;
+                         ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:224: error: incompatible types: Vec3 cannot be converted to double
+        Vec3 bb = new Vec3(x1, y0, z1);
+                               ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:225: error: incompatible types: float cannot be converted to Vec3
+        Vec3 c = x1, y1, z1;
+                 ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:225: error: variable y1 is already defined in method cubeFace(Pose,VertexConsumer,float,float,float,float,float,float,int,int,int)
+        Vec3 c = x1, y1, z1;
+                     ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:225: error: variable z1 is already defined in method cubeFace(Pose,VertexConsumer,float,float,float,float,float,float,int,int,int)
+        Vec3 c = x1, y1, z1;
+                         ^
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java:226: error: incompatible types: Vec3 cannot be converted to double
+        Vec3 d = new Vec3(x0, y1, z0);
+                              ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+14 errors

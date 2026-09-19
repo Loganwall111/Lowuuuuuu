@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "mcsm:block/city_brick_slab"
+    },
+    "type=double": {
+      "model": "mcsm:block/city_brick_slab_double"
+    },
+    "type=top": {
+      "model": "mcsm:block/city_brick_slab_top"
+    }
+  }
+}

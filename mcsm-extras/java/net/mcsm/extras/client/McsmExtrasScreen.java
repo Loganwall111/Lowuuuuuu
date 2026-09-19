@@ -1,0 +1,1023 @@
+package net.mcsm.extras.client;
+
+import net.mcsm.extras.McsmExtrasConfig;
+import net.mcsm.extras.McsmGate;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
+
+/**
+ * Devouring Storms — STORY MODE CONSOLE (Version 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338).
+ *
+ * BUILD #372 — TOTAL INTERFACE OVERHAUL (Telltale / episodic aesthetic).
+ * The generic blocky vanilla Button / AbstractSliderButton widgets are gone:
+ * everything is drawn as clean, minimal, dark translucent episodic panel
+ * boxes.
+ *
+ * Layout:
+ *   - top bar      : console title + the locked build string + close box
+ *   - left sidebar : scrolling vertical chapter navigation (I, II, III ...) —
+ *                    a data-driven registry (buildCategories) that scales to
+ *                    the 200+ future configuration tabs: add a Category, it
+ *                    appears in the sidebar with its own scroll
+ *   - content      : one translucent card per control; boolean rows get a
+ *                    sliding pill, value rows get a GEOMETRIC DOT TRACK
+ *                    (click / drag to scrub in real time) plus a value chip
+ *                    that opens a crisp text input field (EditBox) for exact
+ *                    entry
+ *   - footer       : Done + control hints
+ *
+ * No vanilla control widgets are used at all — input is handled directly
+ * (mouse click / drag / scroll), and the only widget instantiated is the
+ * transient EditBox while a value is being typed.
+ *
+ * BUILD #374 SYNC-FORWARD: the full Build #372 premium structure is intact
+ * and authoritative — the scrolling chapter rail (data-driven Category
+ * registry, chapters I-VIII), the dark translucent episodic cards, the
+ * sliding pills, the geometric diamond-dot scrub tracks and the text-input
+ * value chips. Chapters VII (SKY & BUILT-IN PACKS) and VIII (CINEMATICS)
+ * ride the same rail/framework; the base config screen's entry rows
+ * (McsmGuiExtrasRows) open this exact screen.
+ *
+ * Build #384 phase-3 lock (verified): rail + diamond-dot sliders remain
+ * fully active; glare_1/2/3 stay pinned to the moving storm origin in
+ * McsmGlareBackdrop, separate from the skybox canvas.
+ */
+public final class McsmExtrasScreen extends Screen {
+
+    // ---- palette (Telltale: warm amber accent on deep charcoal) ----------
+    // BUILD #464 -- the room's near-black was BG_TOP/BG_BOTTOM; the ground is the
+    // storm's own sky now (McsmMenuSky), so the pair is gone and cannot come back.
+    private static final int CARD        = 0xD812151C;
+    private static final int CARD_HOVER  = 0xE0171B24;
+    private static final int CARD_EDGE   = 0xFF232833;
+    private static final int CARD_EDGE_H = 0xFF3A4152;
+    private static final int SIDE_BG     = 0xE60A0C11;
+    private static final int ACCENT      = 0xFFD9A441;
+    private static final int ACCENT_SOFT = 0x55D9A441;
+    private static final int TEXT_HI     = 0xFFE8E2D0;
+    private static final int TEXT_MID    = 0xFFB8BDC9;
+    private static final int TEXT_DIM    = 0xFF6B7280;
+    private static final int VALUE_GOLD  = 0xFFE8C07A;
+    private static final int OFF_GRAY    = 0xFF555B66;
+    private static final int TRACK_OFF   = 0xFF1A1E26;
+
+    private static final int TOP_H   = 34;
+    private static final int FOOT_H  = 26;
+    private static final int SIDE_W  = 190;
+    private static final int ROW_H   = 42;
+    private static final int DOTS    = 7;
+    private static final int DOT_GAP = 14;
+
+    private final Screen parent;
+    private final List<Category> categories = new ArrayList<>();
+    private int currentCat = 0;
+    private int sidebarScroll = 0;
+    private int contentScroll = 0;
+    private int hoverRow = -1;      // index within the current category
+    private int hoverSide = -1;
+    private int scrubRow = -1;      // dot track being dragged
+    private Row editing = null;     // value row with an open EditBox
+    private EditBox editBox = null;
+    private int editBoxX = 0;
+    private int editBoxY = 0;
+    private String editText = "";
+    private int lastMouseX = 0;
+    private int lastMouseY = 0;
+
+    // ---- data model -------------------------------------------------------
+
+    private static final class Row {
+        final String label;
+        final int kind;              // 0 = toggle, 1 = value, 2 = action
+        final BooleanSupplier bGet;
+        final Consumer<Boolean> bSet;
+        final DoubleSupplier dGet;
+        final Consumer<Double> dSet;
+        final double lo;
+        final double hi;
+        final Runnable action;
+
+        Row(String label, BooleanSupplier g, Consumer<Boolean> s) {
+            this.label = label; this.kind = 0; this.bGet = g; this.bSet = s;
+            this.dGet = null; this.dSet = null; this.lo = 0; this.hi = 1; this.action = null;
+        }
+
+        Row(String label, DoubleSupplier g, Consumer<Double> s, double lo, double hi) {
+            this.label = label; this.kind = 1; this.bGet = null; this.bSet = null;
+            this.dGet = g; this.dSet = s; this.lo = lo; this.hi = hi; this.action = null;
+        }
+
+        Row(String label, Runnable action) {
+            this.label = label; this.kind = 2; this.bGet = null; this.bSet = null;
+            this.dGet = null; this.dSet = null; this.lo = 0; this.hi = 1; this.action = action;
+        }
+    }
+
+    private static final class Category {
+        final String chapter;
+        final String title;
+        final String blurb;
+        final List<Row> rows = new ArrayList<>();
+
+        Category(String chapter, String title, String blurb) {
+            this.chapter = chapter; this.title = title; this.blurb = blurb;
+        }
+
+        Category bool(String label, BooleanSupplier g, Consumer<Boolean> s) {
+            rows.add(new Row(label, g, s));
+            return this;
+        }
+
+        Category val(String label, DoubleSupplier g, Consumer<Double> s, double lo, double hi) {
+            rows.add(new Row(label, g, s, lo, hi));
+            return this;
+        }
+
+        Category act(String label, Runnable a) {
+            rows.add(new Row(label, a));
+            return this;
+        }
+    }
+
+    /**
+     * THE TAB REGISTRY — the structural framework for the 200+ future
+     * configuration tabs: every Category added here automatically gets a
+     * sidebar chapter entry, its own scroll position, and full control
+     * rendering. Add a Category below and the sidebar grows.
+     */
+    private void buildCategories() {
+        categories.clear();
+
+        Category c1 = new Category("I", "VISUALS & SKY", "Atmosphere, celestial body and the storm's skin.");
+        c1.bool("OG Traced Shading Body (Ph 4-5.5)", () -> McsmExtrasConfig.tracedShadingBody, v -> McsmExtrasConfig.tracedShadingBody = v)
+          .bool("Blockbench Custom Mesh (Preset)", () -> McsmExtrasConfig.customMeshModel, v -> McsmExtrasConfig.customMeshModel = v)
+          .bool("OG 3D Sun Slab (SAGE MCSM)", () -> McsmExtrasConfig.ogSunGlow, v -> {
+              McsmExtrasConfig.ogSunGlow = v;
+              McsmGate.clientBool("sunGlow", v);
+          })
+          .val("OG Sun Slab Strength", () -> McsmExtrasConfig.ogSunGlowStrength, v -> {
+              McsmExtrasConfig.ogSunGlowStrength = v;
+              if (McsmExtrasConfig.ogSunGlow) McsmGate.clientNum("sunGlowStrength", v);
+          }, 0.0, 3.0)
+          .bool("Cinematic Story-Mode Menu", () -> McsmExtrasConfig.storyMenuBackdrop, v -> McsmExtrasConfig.storyMenuBackdrop = v)
+          .bool("Vivid panorama backdrop (off: the storm's own sky)",
+                  () -> McsmExtrasConfig.menuPanorama, v -> McsmExtrasConfig.menuPanorama = v)
+          .bool("Multi-Layer Sky Blending", () -> McsmGate.clientBoolGet("cloudDeckLayer", true), v -> McsmGate.clientBool("cloudDeckLayer", v))
+          .val("Phase 5.5 Threshold", () -> McsmExtrasConfig.phase55Threshold, v -> McsmExtrasConfig.phase55Threshold = v, 5.0, 6.0)
+          .val("Phase 5.9 Pink Intensity", () -> McsmExtrasConfig.phase5_9PinkIntensity, v -> McsmExtrasConfig.phase5_9PinkIntensity = v, 0.2, 3.0)
+          .val("Night Navy Opacity", () -> McsmExtrasConfig.nightSkyOpacity, v -> McsmExtrasConfig.nightSkyOpacity = v, 0.0, 1.0)
+          .val("Cloud Alpha", () -> McsmExtrasConfig.cloudAlpha, v -> McsmExtrasConfig.cloudAlpha = v, 0.0, 1.0)
+          .val("Cloud Speed", () -> McsmExtrasConfig.cloudSpeed, v -> McsmExtrasConfig.cloudSpeed = v, 0.0, 3.0)
+          .bool("In-Mod Aurora", () -> McsmExtrasConfig.auroraEnabled, v -> McsmExtrasConfig.auroraEnabled = v)
+          .bool("4-Color Aurora Ribbons", () -> McsmExtrasConfig.auroraRibbons, v -> McsmExtrasConfig.auroraRibbons = v)
+          .bool("Snow Biome Blue Band", () -> McsmExtrasConfig.snowSkyBand, v -> McsmExtrasConfig.snowSkyBand = v)
+          .bool("Twinkling Multi Stars", () -> McsmExtrasConfig.twinklingStars, v -> McsmExtrasConfig.twinklingStars = v)
+          .bool("Night Comets / Streaks", () -> McsmExtrasConfig.comets, v -> McsmExtrasConfig.comets = v)
+          .val("Glare Size Multiplier", () -> McsmExtrasConfig.glareSize, v -> McsmExtrasConfig.glareSize = v, 0.25, 3.05)
+          .val("Smudge Scale", () -> McsmExtrasConfig.smudgeScale, v -> McsmExtrasConfig.smudgeScale = v, 0.1, 2.0)
+          .bool("Non-Euclidean Glare", () -> McsmExtrasConfig.glareNonEuclidean, v -> McsmExtrasConfig.glareNonEuclidean = v)
+          .bool("Magical Sparkles (W/P/P)", () -> McsmExtrasConfig.coloredSparkles, v -> McsmExtrasConfig.coloredSparkles = v)
+          .bool("Biome Mist & Fog VFX", () -> McsmExtrasConfig.biomeAtmospherics, v -> McsmExtrasConfig.biomeAtmospherics = v)
+          .bool("Nether Crimson Fog+Sparks", () -> McsmExtrasConfig.netherRedFog, v -> McsmExtrasConfig.netherRedFog = v)
+          .bool("Underwater God Rays", () -> McsmExtrasConfig.waterGodRays, v -> McsmExtrasConfig.waterGodRays = v)
+          .bool("End Sky Vortex & Rip", () -> McsmExtrasConfig.endSkyVortex, v -> McsmExtrasConfig.endSkyVortex = v)
+          .bool("Beacon Luminous Glow", () -> McsmExtrasConfig.beaconGlow, v -> McsmExtrasConfig.beaconGlow = v)
+          .bool("Nether & End Portal Lights", () -> McsmExtrasConfig.portalLights, v -> McsmExtrasConfig.portalLights = v)
+          .bool("Global Shadows & Contrast", () -> McsmExtrasConfig.globalShadows, v -> McsmExtrasConfig.globalShadows = v);
+        categories.add(c1);
+
+        Category c2 = new Category("II", "STORM PALETTE", "Eyes, teeth, beams and the body tint.");
+        c2.bool("Use Custom Colors", () -> McsmExtrasConfig.useCustomColors, v -> McsmExtrasConfig.useCustomColors = v)
+          .val("Eye Glow Red", () -> McsmExtrasConfig.customEyeR, v -> McsmExtrasConfig.customEyeR = v, 0.0, 1.0)
+          .val("Eye Glow Green", () -> McsmExtrasConfig.customEyeG, v -> McsmExtrasConfig.customEyeG = v, 0.0, 1.0)
+          .val("Eye Glow Blue", () -> McsmExtrasConfig.customEyeB, v -> McsmExtrasConfig.customEyeB = v, 0.0, 1.0)
+          .val("Teeth Glow Red", () -> McsmExtrasConfig.customTeethR, v -> McsmExtrasConfig.customTeethR = v, 0.0, 1.0)
+          .val("Teeth Glow Green", () -> McsmExtrasConfig.customTeethG, v -> McsmExtrasConfig.customTeethG = v, 0.0, 1.0)
+          .val("Teeth Glow Blue", () -> McsmExtrasConfig.customTeethB, v -> McsmExtrasConfig.customTeethB = v, 0.0, 1.0)
+          .val("Beam Color Red", () -> McsmExtrasConfig.customBeamR, v -> McsmExtrasConfig.customBeamR = v, 0.0, 1.0)
+          .val("Beam Color Green", () -> McsmExtrasConfig.customBeamG, v -> McsmExtrasConfig.customBeamG = v, 0.0, 1.0)
+          .val("Beam Color Blue", () -> McsmExtrasConfig.customBeamB, v -> McsmExtrasConfig.customBeamB = v, 0.0, 1.0)
+          .val("Skin Tint Red", () -> McsmExtrasConfig.customSkinTintR, v -> McsmExtrasConfig.customSkinTintR = v, 0.0, 1.0)
+          .val("Skin Tint Green", () -> McsmExtrasConfig.customSkinTintG, v -> McsmExtrasConfig.customSkinTintG = v, 0.0, 1.0)
+          .val("Skin Tint Blue", () -> McsmExtrasConfig.customSkinTintB, v -> McsmExtrasConfig.customSkinTintB = v, 0.0, 1.0)
+          .bool("Lock Canonical Texture Map", () -> McsmExtrasConfig.lockCanonicalTexture, v -> McsmExtrasConfig.lockCanonicalTexture = v)
+          .act("Open Storm Texture Painter (Make Your Own Texture)", () -> {
+              net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+              if (mc != null) {
+                  mc.setScreenAndShow(new net.mcsm.extras.client.McsmTexturePainterScreen(this));
+              }
+          });
+        categories.add(c2);
+
+        Category c3 = new Category("III", "DEBRIS & PHYSICS", "Native block debris, rescaling and ground behaviour.");
+        c3.bool("Force Native Block Debris", () -> McsmExtrasConfig.forceNativeBlockDebris, v -> McsmExtrasConfig.forceNativeBlockDebris = v)
+          .val("Debris Scale Multiplier", () -> McsmExtrasConfig.debrisScaleMultiplier, v -> McsmExtrasConfig.debrisScaleMultiplier = v, 1.0, 5.0)
+          .val("Ambient Purple Coil Scale", () -> McsmExtrasConfig.purpleCoilScale, v -> McsmExtrasConfig.purpleCoilScale = v, 0.1, 1.0)
+          .val("Debris Movement Direction", () -> (double) McsmExtrasConfig.debrisMovementDirection, v -> McsmExtrasConfig.debrisMovementDirection = (int) Math.round(v), 0.0, 5.0)
+          .bool("Dust Waves on Sweep", () -> McsmExtrasConfig.dustWaves, v -> McsmExtrasConfig.dustWaves = v)
+          .bool("Smoke Screen + Sparks", () -> McsmExtrasConfig.smokeScreen, v -> McsmExtrasConfig.smokeScreen = v)
+          .bool("Rise Ground FX", () -> McsmExtrasConfig.enableRiseFx, v -> McsmExtrasConfig.enableRiseFx = v)
+          .bool("Counterclockwise Spiral", () -> McsmExtrasConfig.spiralCounterClockwise, v -> McsmExtrasConfig.spiralCounterClockwise = v)
+          .bool("Command Block Wire", () -> McsmExtrasConfig.commandWire, v -> McsmExtrasConfig.commandWire = v);
+        categories.add(c3);
+
+        Category c4 = new Category("IV", "MOTION", "The storm's live animation controller.");
+        c4.val("Idle Animation Speed", () -> McsmExtrasConfig.animIdleSpeed, v -> McsmExtrasConfig.animIdleSpeed = v, 0.1, 3.0)
+          .val("Roar Intensity", () -> McsmExtrasConfig.animRoarIntensity, v -> McsmExtrasConfig.animRoarIntensity = v, 0.1, 3.0)
+          .val("Jaw Slack Factor", () -> McsmExtrasConfig.animJawSlack, v -> McsmExtrasConfig.animJawSlack = v, 0.1, 3.0)
+          .val("Tentacle Slam Force", () -> McsmExtrasConfig.animTentacleSlamForce, v -> McsmExtrasConfig.animTentacleSlamForce = v, 0.1, 3.0)
+          .val("Head Sway Gain", () -> McsmExtrasConfig.animHeadSwayGain, v -> McsmExtrasConfig.animHeadSwayGain = v, 0.1, 3.0)
+          .bool("Body Sway & Tilt", () -> McsmExtrasConfig.stormBodySway, v -> McsmExtrasConfig.stormBodySway = v)
+          .bool("NPC Walk/Speak Poses", () -> McsmExtrasConfig.npcWalkAnimations, v -> McsmExtrasConfig.npcWalkAnimations = v);
+        categories.add(c4);
+
+        Category c5 = new Category("V", "NIGHTGLOW & DEATH", "Silhouette halos and the end-game sequence.");
+        c5.bool("Outline Whole Body (Tail to Top)", () -> McsmExtrasConfig.nightglowBodyOutline, v -> McsmExtrasConfig.nightglowBodyOutline = v)
+          .bool("Bluish Glow Base", () -> McsmExtrasConfig.nightglowBluishGlow, v -> McsmExtrasConfig.nightglowBluishGlow = v)
+          .bool("Blue Storm Halo (Phase 4+, Chassis-Welded)", () -> McsmExtrasConfig.stormHaloEnabled, v -> McsmExtrasConfig.stormHaloEnabled = v)
+          .bool("Purple Glint, Late Phases (OFF by default)", () -> McsmExtrasConfig.nightglowPurpleGlow55, v -> {
+              McsmExtrasConfig.nightglowPurpleGlow55 = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Thick Black Core Glow", () -> McsmExtrasConfig.nightglowThickBlackGlow, v -> McsmExtrasConfig.nightglowThickBlackGlow = v)
+          .bool("Death Cinematic", () -> McsmExtrasConfig.deathCinematic, v -> McsmExtrasConfig.deathCinematic = v)
+          .bool("Supernova Rings", () -> McsmExtrasConfig.supernovaRings, v -> McsmExtrasConfig.supernovaRings = v)
+          .bool("Phase 6+ Giant End Flashes", () -> McsmExtrasConfig.endFlashesPhase6, v -> McsmExtrasConfig.endFlashesPhase6 = v)
+          .bool("Transparent Horizon Wings", () -> McsmExtrasConfig.transparentHorizonWings, v -> McsmExtrasConfig.transparentHorizonWings = v)
+          .bool("Post-Death Reality Tear", () -> McsmExtrasConfig.realityTear, v -> McsmExtrasConfig.realityTear = v);
+        categories.add(c5);
+
+        Category c6 = new Category("VI", "GAMEPLAY & SYSTEMS", "Storm AI, beacon relay, gates and the sun shadow.");
+        c6.bool("Enhanced Wither Storm AI (Hunts You)", () -> McsmExtrasConfig.witherStormEnhancedAi, v -> {
+            McsmExtrasConfig.witherStormEnhancedAi = v;
+            McsmExtrasConfig.save();
+        })
+          .bool("3D Storm Model in Config Menu", () -> McsmExtrasConfig.giantPreviewEnabled, v -> {
+              McsmExtrasConfig.giantPreviewEnabled = v;
+              McsmExtrasConfig.save();
+          })
+          .act("Player Model Versions — how to switch (F8 or 1/2/3)", () -> {
+              net.mcsm.extras.client.McsmClientChat.say("[ds] Player models: press  F8  in-game to cycle  vanilla -> Telltale Hero -> Scout -> Storm Guardian -> vanilla");
+              net.mcsm.extras.client.McsmClientChat.say("[ds] Or manually:  /scoreboard objectives add mcsmplyr dummy  then  /scoreboard players set @s mcsmplyr 1 | 2 | 3 | 0");
+              net.mcsm.extras.client.McsmClientChat.say("[ds]  1 = Telltale Hero (big head)  2 = Scout (slim)  3 = Storm Guardian (brawny)  0 = vanilla. (Needs the EMF/CEM mod installed.)");
+          })
+          .bool("Tentacle Grab", () -> McsmExtrasConfig.enableTentacleGrab, v -> McsmExtrasConfig.enableTentacleGrab = v)
+          .val("Grab Interval", () -> McsmExtrasConfig.grabIntervalSeconds, v -> McsmExtrasConfig.grabIntervalSeconds = v, 0.0, 30.0)
+          .bool("Lit Beacon Relay", () -> McsmExtrasConfig.enableBeaconStorm, v -> McsmExtrasConfig.enableBeaconStorm = v)
+          .val("Beacon Cooldown", () -> McsmExtrasConfig.beaconCooldownSeconds, v -> McsmExtrasConfig.beaconCooldownSeconds = v, 2.0, 120.0)
+          .bool("Storm Beacon Block", () -> McsmExtrasConfig.enableBeaconBlock, v -> McsmExtrasConfig.enableBeaconBlock = v)
+          .bool("Force MCSM Look", () -> McsmExtrasConfig.forceMcsmLook, v -> McsmExtrasConfig.forceMcsmLook = v)
+          .bool("Force MCSM World", () -> McsmExtrasConfig.forceMcsmWorld, v -> McsmExtrasConfig.forceMcsmWorld = v)
+          .bool("Silver Border Lines (Image 3)", () -> McsmExtrasConfig.uiBorderLines, v -> McsmExtrasConfig.uiBorderLines = v)
+          .bool("MCSM Instructions", () -> McsmExtrasConfig.mcsmInstructions, v -> McsmExtrasConfig.mcsmInstructions = v)
+          .bool("Cast A Sun Shadow", () -> McsmGate.clientBoolGet("stormShadow", true), v -> McsmGate.clientBool("stormShadow", v))
+          .val("Shadow Darkness", () -> McsmGate.clientNumGet("stormShadowStrength", 1.0), v -> McsmGate.clientNum("stormShadowStrength", v), 0.0, 2.0)
+          .bool("Soft Shadow Edge", () -> McsmGate.clientBoolGet("stormShadowSoftEdge", true), v -> McsmGate.clientBool("stormShadowSoftEdge", v))
+          .val("Shadow Colour Red", () -> McsmGate.clientNumGet("stormShadowR", 0.0), v -> McsmGate.clientNum("stormShadowR", v), 0.0, 1.0)
+          .val("Shadow Colour Green", () -> McsmGate.clientNumGet("stormShadowG", 0.0), v -> McsmGate.clientNum("stormShadowG", v), 0.0, 1.0)
+          .val("Shadow Colour Blue", () -> McsmGate.clientNumGet("stormShadowB", 0.0), v -> McsmGate.clientNum("stormShadowB", v), 0.0, 1.0)
+          .act("Re-apply MCSM Look now", () -> {
+              McsmExtrasConfig.save();
+              McsmGate.clearMemory();
+              McsmGate.reset();
+          });
+        categories.add(c6);
+
+        // Build #374 -- the new options: the real cube skybox and the
+        // built-in pack summoning (resource + shader packs).
+        Category c7 = new Category("VII", "SKY & BUILT-IN PACKS", "The real Story Mode skybox and the summoned packs.");
+        c7.bool("MCSM Skybox (Real Cube, Not Dome)", () -> McsmExtrasConfig.skyboxEnabled, v -> {
+            McsmExtrasConfig.skyboxEnabled = v;
+            McsmExtrasConfig.save();
+        })
+          .val("Skybox Fade (sec)", () -> McsmExtrasConfig.skyboxFadeSeconds, v -> {
+              McsmExtrasConfig.skyboxFadeSeconds = v;
+              McsmExtrasConfig.save();
+          }, 0.5, 20.0)
+          .val("Skybox Size", () -> McsmExtrasConfig.skyboxSize, v -> {
+              McsmExtrasConfig.skyboxSize = v;
+              McsmExtrasConfig.save();
+          }, 0.5, 1.5)
+          .bool("Telltale Glare Backdrops (3 Real Images)", () -> McsmExtrasConfig.glareBackdrop, v -> {
+              McsmExtrasConfig.glareBackdrop = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Glare Backdrop Size", () -> McsmExtrasConfig.glareBackdropSize, v -> {
+              McsmExtrasConfig.glareBackdropSize = v;
+              McsmExtrasConfig.save();
+          }, 0.3, 2.5)
+          .val("Glare Backdrop Strength", () -> McsmExtrasConfig.glareBackdropStrength, v -> {
+              McsmExtrasConfig.glareBackdropStrength = v;
+              McsmExtrasConfig.save();
+          }, 0.0, 2.0)
+          .bool("Embedded Shader Pack (Auto-Install)", () -> McsmExtrasConfig.embeddedShaderPack, v -> {
+              McsmExtrasConfig.embeddedShaderPack = v;
+              McsmExtrasConfig.save();
+          })
+          .act("Re-summon packs + auto-select shader now", () -> net.mcsm.extras.McsmBuiltinPack.resummon());
+        categories.add(c7);
+
+        // Build #374 -- cinematic boot + epic depth animation controls.
+        Category c8 = new Category("VIII", "CINEMATICS", "The boot cutscene, the command block burst and the world cracks.");
+        c8.bool("Cinematic Boot (Pre-Game Cutscene + Command Block Burst)", () -> McsmExtrasConfig.cinematicBootEnabled, v -> {
+            McsmExtrasConfig.cinematicBootEnabled = v;
+            McsmExtrasConfig.save();
+        })
+          .bool("World Crack Intro (World Loads Cracking Apart)", () -> McsmExtrasConfig.worldCrackIntro, v -> {
+            McsmExtrasConfig.worldCrackIntro = v;
+            McsmExtrasConfig.save();
+        });
+        categories.add(c8);
+
+        // Build #416 (D.8) -- the Decayed Reality: a real dimension, not a
+        // teleport to another corner of the overworld, plus the content,
+        // quests, creatures and reality events that live in it.
+        Category c9 = new Category("IX", "THE DECAYED REALITY",
+                "A real dimension torn open by the storm: abandoned cities, the new blocks and weapons, glitches, the black hole and the Creator.");
+        c9.bool("Decayed Reality (the new dimension + gameplay layer)", () -> McsmExtrasConfig.decayedReality, v -> {
+            McsmExtrasConfig.decayedReality = v;
+            McsmExtrasConfig.save();
+        })
+          .act("Open the Rift now (in-game, singleplayer)", () -> {
+              if (!net.mcsm.extras.McsmReality.enterFromClient()) {
+                  ChatLog("Hold the Rift Key and sneak in-game to tear the rift open.");
+              }
+          })
+          .bool("Abandoned City Generation", () -> McsmExtrasConfig.abandonedCities, v -> {
+              McsmExtrasConfig.abandonedCities = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Story Quests + Lore Log", () -> McsmExtrasConfig.storyQuests, v -> {
+              McsmExtrasConfig.storyQuests = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Reality Creatures", () -> McsmExtrasConfig.realityCreatures, v -> {
+              McsmExtrasConfig.realityCreatures = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Boss Ladder (5 rungs, one per storm band)", () -> McsmExtrasConfig.bossLadder, v -> {
+              McsmExtrasConfig.bossLadder = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("The Creator's Arms (through rips in the sky)", () -> McsmExtrasConfig.creatorArms, v -> {
+              McsmExtrasConfig.creatorArms = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Creator Arm Scale", () -> McsmExtrasConfig.creatorArmScale, v -> {
+              McsmExtrasConfig.creatorArmScale = v;
+              McsmExtrasConfig.save();
+          }, 0.5, 2.0)
+          .bool("Reality Glitches + Hallucinations", () -> McsmExtrasConfig.realityGlitches, v -> {
+              McsmExtrasConfig.realityGlitches = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Hallucination Intensity", () -> McsmExtrasConfig.hallucinationIntensity, v -> {
+              McsmExtrasConfig.hallucinationIntensity = v;
+              McsmExtrasConfig.save();
+          }, 0.0, 1.0)
+          .bool("Black Hole Event", () -> McsmExtrasConfig.blackHoleEvent, v -> {
+              McsmExtrasConfig.blackHoleEvent = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Black Hole Lifetime (seconds)", () -> McsmExtrasConfig.blackHoleSeconds, v -> {
+              McsmExtrasConfig.blackHoleSeconds = v;
+              McsmExtrasConfig.save();
+          }, 30.0, 600.0)
+          // BUILD #466 -- the hole in the sky, and the tears it leaves in the air.
+          .bool("Black Hole Opens In The Sky", () -> McsmExtrasConfig.blackHoleInSky, v -> {
+              McsmExtrasConfig.blackHoleInSky = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Reality Rifts", () -> McsmExtrasConfig.riftEvents, v -> {
+              McsmExtrasConfig.riftEvents = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Rift Lifetime (seconds)", () -> McsmExtrasConfig.riftSeconds, v -> {
+              McsmExtrasConfig.riftSeconds = v;
+              McsmExtrasConfig.save();
+          }, 10.0, 300.0)
+          .val("Storm Sky Reach (fade back to vanilla at, blocks)", () -> McsmExtrasConfig.skyFadeDistance, v -> {
+              McsmExtrasConfig.skyFadeDistance = v;
+              McsmExtrasConfig.save();
+          }, 200.0, 1500.0)
+          .bool("Mega-Tornadoes", () -> McsmExtrasConfig.megaTornadoes, v -> {
+              McsmExtrasConfig.megaTornadoes = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #433 -- "sky vortexes spawning monsters".
+          .bool("Sky Vortexes Drop Monsters", () -> McsmExtrasConfig.skyVortexes, v -> {
+              McsmExtrasConfig.skyVortexes = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #434 -- "the skies are still only the top layer".
+          .bool("Sky Bottom Layer (the wall under the world)", () -> McsmExtrasConfig.skyFloorBand, v -> {
+              McsmExtrasConfig.skyFloorBand = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #455 -- the storm's own glow, at every phase.
+          .bool("Teeth/eye/aura glow (world-space lights on the storm)",
+                  () -> McsmExtrasConfig.eyeGlow, v -> {
+              McsmExtrasConfig.eyeGlow = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Glow strength", () -> McsmExtrasConfig.eyeGlowStrength,
+                  v -> {
+              McsmExtrasConfig.eyeGlowStrength = v;
+              McsmExtrasConfig.save();
+          }, 0.0D, 2.5D)
+          .bool("Vanilla-material glow half (works with no shader pack)",
+                  () -> McsmExtrasConfig.vanillaGlow, v -> {
+              McsmExtrasConfig.vanillaGlow = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #452 -- what the bottom of the void looks like.
+          .bool("Void floor light (RGB rays and infinite white rings)",
+                  () -> McsmExtrasConfig.voidLight, v -> {
+              McsmExtrasConfig.voidLight = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #457 -- the painted sky, one per dimension.
+          .bool("Painted skies (a painted cube per dimension, no dome)",
+                  () -> McsmExtrasConfig.paintedSky, v -> {
+              McsmExtrasConfig.paintedSky = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #461 -- and the air of every dimension: its own particles,
+          // its own rate, its own ambience.
+          .bool("Dimension air (own particles and ambience per world)",
+                  () -> McsmExtrasConfig.dimensionFx, v -> {
+              McsmExtrasConfig.dimensionFx = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #463 -- and what the void does to whoever keeps going back.
+          .bool("Void aging (the void changes the body, in five stages)",
+                  () -> McsmExtrasConfig.voidAging, v -> {
+              McsmExtrasConfig.voidAging = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #462 -- the fourth dimension: the Creator's own reach.
+          .bool("The Creator's reach (the fourth dimension, built not left)",
+                  () -> McsmExtrasConfig.creatorRealm, v -> {
+              McsmExtrasConfig.creatorRealm = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #451 -- the void, and the doorways.
+          .bool("The Void (a dimension of nothing, with things in it)",
+                  () -> McsmExtrasConfig.voidReality, v -> {
+              McsmExtrasConfig.voidReality = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Portals (walk-in doorways, one per dimension)",
+                  () -> McsmExtrasConfig.portals, v -> {
+              McsmExtrasConfig.portals = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #448 -- the cities' own air, and the bigger districts.
+          .bool("Cities carry their own fog and sky (each district is different)",
+                  () -> McsmExtrasConfig.cityAtmosphere, v -> {
+              McsmExtrasConfig.cityAtmosphere = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #448 -- the main menu: no watermark by default, and a lift.
+          .bool("Title wordmark (DEVOURING STORMS over the menu)", () -> McsmExtrasConfig.titleWordmark, v -> {
+              McsmExtrasConfig.titleWordmark = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Main menu brightness lift (0 = untouched)", () -> McsmExtrasConfig.menuLift, v -> {
+              McsmExtrasConfig.menuLift = v;
+              McsmExtrasConfig.save();
+          }, 0.0D, 0.35D)
+          // BUILD #447 -- the cutscenes that happen in the world.
+          .bool("Cutscenes (eight, in world: cities, mazes, racks, rift, adams)", () -> McsmExtrasConfig.cutscenes, v -> {
+              McsmExtrasConfig.cutscenes = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #444 -- the two underground structures.
+          .bool("Storage Mazes (carved warehouses, hatches)", () -> McsmExtrasConfig.storageMazes, v -> {
+              McsmExtrasConfig.storageMazes = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Server Rooms (blinking racks, a live mainframe)", () -> McsmExtrasConfig.serverRooms, v -> {
+              McsmExtrasConfig.serverRooms = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #443 -- rituals, and the dimension one of them opens.
+          .bool("Rituals (ring + offering -> the world answers)", () -> McsmExtrasConfig.rituals, v -> {
+              McsmExtrasConfig.rituals = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("The Infinite Dimension of Adams", () -> McsmExtrasConfig.adamsReality, v -> {
+              McsmExtrasConfig.adamsReality = v;
+              McsmExtrasConfig.save();
+          })
+          // BUILD #438 -- the body stops being colourless.
+          .bool("Body Wears the Phase Colour", () -> McsmExtrasConfig.phaseTintedBody, v -> {
+              McsmExtrasConfig.phaseTintedBody = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Body Phase Tint (0 = the old grey, 1 = the sky's hue)", () -> McsmExtrasConfig.bodyPhaseTint, v -> {
+              McsmExtrasConfig.bodyPhaseTint = v;
+              McsmExtrasConfig.save();
+          }, 0.0, 1.0)
+          .act("Give the Rift Key + a starter kit", () -> net.mcsm.extras.McsmReality.giveStarterKit());
+        categories.add(c9);
+
+        Category c10 = new Category("X", "THE STORY TERMINAL",
+                "The antenna, the restricted console, the radio and the field guide -- phase 5 of the D.8 list.");
+        c10.bool("Story Terminal (antenna + C key + field guide)", () -> McsmExtrasConfig.storyTerminal, v -> {
+            McsmExtrasConfig.storyTerminal = v;
+            McsmExtrasConfig.save();
+        })
+          .act("Open the terminal now (code screen)", () ->
+                  net.mcsm.extras.client.McsmTerminalScreen.show("login",
+                          "RESTRICTED AREA\n\nEnter the admin password to continue.\n"
+                          + "It is not on this screen: it is written down in the world."))
+          .bool("Antenna Picks Up Signals", () -> McsmExtrasConfig.antennaSignals, v -> {
+              McsmExtrasConfig.antennaSignals = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Seconds Between Signals", () -> McsmExtrasConfig.antennaSignalSeconds, v -> {
+              McsmExtrasConfig.antennaSignalSeconds = v;
+              McsmExtrasConfig.save();
+          }, 5.0, 600.0)
+          .bool("Antenna On Spawn (every new player gets one)", () -> McsmExtrasConfig.antennaOnSpawn, v -> {
+              McsmExtrasConfig.antennaOnSpawn = v;
+              McsmExtrasConfig.save();
+          })
+          .act("How to release the MASSG (it is a world action, not a menu one)", () ->
+                  McsmClientChat.say("\u00a75Sneak-use the antenna in a world to release the MASSG. "
+                          + "Enter MASSG in the console first: it answers only to the operator. "
+                          + "It cannot be undone."));
+        categories.add(c10);
+
+        Category c11 = new Category("XI", "THE MASSG",
+                "The creature the console counts down to. Once it is here it never leaves: "
+                + "it cannot be killed, it cannot be deleted, and the world it walks on stays changed.");
+        c11.bool("The MASSG (its summon, its countdown, its sky terminal)", () -> McsmExtrasConfig.massgEnabled, v -> {
+            McsmExtrasConfig.massgEnabled = v;
+            McsmExtrasConfig.save();
+        })
+          .bool("It Cannot Be Killed (off = it can die, on = it cannot)", () -> McsmExtrasConfig.massgUnkillable, v -> {
+              McsmExtrasConfig.massgUnkillable = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Its Size (3 is a tower, 8 is a skyline)", () -> McsmExtrasConfig.massgScale, v -> {
+              McsmExtrasConfig.massgScale = v;
+              McsmExtrasConfig.save();
+          }, 2.0, 10.0)
+          .bool("Hallucinations (things that are not there, and things in the air)", () -> McsmExtrasConfig.massgHallucinations, v -> {
+              McsmExtrasConfig.massgHallucinations = v;
+              McsmExtrasConfig.save();
+          })
+          .val("Backdrop Bottom Stretch (1 = base, 6 = past bedrock)", () -> McsmExtrasConfig.backdropBottomStretch, v -> {
+              McsmExtrasConfig.backdropBottomStretch = v;
+              McsmExtrasConfig.save();
+          }, 1.0, 24.0)
+          .bool("Phase 5.5 upper back welded to the body (grows about its own centre)", () -> McsmExtrasConfig.hugeBackCentred, v -> {
+              McsmExtrasConfig.hugeBackCentred = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Purple glare behind the storm, never over it", () -> McsmExtrasConfig.glareBehindBody, v -> {
+              McsmExtrasConfig.glareBehindBody = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Purple ground pool under the beams (off: it was washing the body)", () -> McsmExtrasConfig.stormGroundPool, v -> {
+              McsmExtrasConfig.stormGroundPool = v;
+              McsmExtrasConfig.save();
+          })
+          .bool("Raise the ruined cities in the regular world too (384 blocks clear of spawn)", () -> McsmExtrasConfig.citiesInOverworld, v -> {
+              McsmExtrasConfig.citiesInOverworld = v;
+              McsmExtrasConfig.save();
+          })
+          .act("How to release it (sneak-use the antenna: irreversible)", () ->
+                  McsmClientChat.say("\u00a75Sneak-use the antenna. The sky starts counting the moment "
+                          + "it arrives, and nothing in this build can put it back."))
+          .act("Open the console (the code is MASSG, and it is written down in the world)", () ->
+                  net.mcsm.extras.client.McsmTerminalScreen.show("login",
+                          "RESTRICTED AREA\n\nEnter the admin password to continue.\n"
+                          + "It is not on this screen: it is written down in the world."));
+        categories.add(c11);
+    }
+
+    /** Small indirection so the panel never imports the client chat class
+     *  directly (keeps this screen usable from the console too). */
+    private static void ChatLog(String text) {
+        try {
+            net.mcsm.extras.client.McsmClientChat.say(text);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public McsmExtrasScreen(Screen parent) {
+        super(Component.literal("Devouring Storms Story Mode Console"));
+        // Build #416 -- MERGE, NEVER PING-PONG.
+        // The base config console is the thing that can open this panel, and it
+        // was also this panel's parent, so the two screens bounced off each
+        // other: closing the panel returned to the console, and the console's
+        // entry (plus its own bottom-bar overlap) reopened the panel. The user
+        // read that as "the new settings pop up but it opens the old config
+        // menu, and clicking any button there just reopens the new one".
+        // Closing the panel now always lands in gameplay; the console stays
+        // reachable through its own hotkey/command, never as a bounce target.
+        this.parent = parent instanceof net.dabicco.witherstormmod.client.gui.WitherStormConfigScreen
+                ? null
+                : parent;
+    }
+
+    // ---- layout constants -------------------------------------------------
+
+    private int contentX() { return 12 + SIDE_W; }
+    private int contentW() { return this.width - contentX() - 12; }
+    private int contentTop() { return TOP_H + 46; }
+    private int contentBottom() { return this.height - FOOT_H - 8; }
+    private int sideTop() { return TOP_H + 8; }
+    private int sideBottom() { return this.height - FOOT_H - 8; }
+
+    // ---- init -------------------------------------------------------------
+
+    @Override
+    protected void init() {
+        this.clearWidgets();
+        McsmExtrasConfig.load();
+        if (categories.isEmpty()) {
+            buildCategories();
+        }
+        if (currentCat >= categories.size()) {
+            currentCat = 0;
+        }
+        // The ONLY widget ever created: the transient text input while editing.
+        if (editing != null) {
+            Row r = editing;
+            int x = contentX() + contentW() - 128;
+            int y = rowY(categories.get(currentCat).rows.indexOf(r)) + 11;
+            editBoxX = x;
+            editBoxY = y;
+            editBox = new EditBox(this.font, x, y, 112, 20, Component.literal("value"));
+            editBox.setMaxLength(12);
+            editBox.setValue(editText);
+            editBox.setHint(Component.literal("enter value"));
+            editBox.setResponder(text -> this.editText = text);
+            editBox.setCanLoseFocus(true);
+            editBox.setFocused(true);
+            this.addWidget(editBox);
+        }
+    }
+
+    private int rowY(int rowIdx) {
+        return contentTop() + rowIdx * ROW_H - contentScroll;
+    }
+
+    // ---- editing ----------------------------------------------------------
+
+    private void startEdit(Row r) {
+        this.editing = r;
+        this.editText = String.format("%.3f", r.dGet.getAsDouble());
+        this.init();
+    }
+
+    private void commitEdit() {
+        if (editing == null) {
+            return;
+        }
+        Row r = editing;
+        editing = null;
+        try {
+            double v = Double.parseDouble(editText.trim());
+            if (v < r.lo) v = r.lo;
+            if (v > r.hi) v = r.hi;
+            r.dSet.accept(v);
+            McsmExtrasConfig.save();
+        } catch (Throwable ignored) {
+            // unparsable text: keep the previous value
+        }
+        this.init();
+    }
+
+    // ---- input ------------------------------------------------------------
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
+        int x = (int) event.x();
+        int y = (int) event.y();
+        if (event.button() != 0) {
+            return super.mouseClicked(event, doubled);
+        }
+        // open text input takes priority: a click inside it is for the box
+        if (this.editBox != null && x >= editBoxX && x < editBoxX + 112
+                && y >= editBoxY && y < editBoxY + 20) {
+            return super.mouseClicked(event, doubled);
+        }
+        if (this.editing != null) {
+            commitEdit();
+        }
+        // close box
+        if (x >= this.width - 24 && x <= this.width - 6 && y >= 8 && y <= 26) {
+            this.onClose();
+            return true;
+        }
+        // done
+        if (x >= 14 && x <= 74 && y >= this.height - FOOT_H + 3 && y <= this.height - FOOT_H + 21) {
+            this.onClose();
+            return true;
+        }
+        // sidebar
+        if (x < SIDE_W - 6) {
+            int i = (y - (sideTop() + 12) + sidebarScroll) / 26;
+            if (i >= 0 && i < categories.size()) {
+                currentCat = i;
+                contentScroll = 0;
+                hoverRow = -1;
+                this.init();
+                return true;
+            }
+        }
+        // content rows
+        Category cat = categories.get(currentCat);
+        int ri = (y - contentTop() + contentScroll) / ROW_H;
+        if (y >= contentTop() && y <= contentBottom() && ri >= 0 && ri < cat.rows.size()) {
+            Row r = cat.rows.get(ri);
+            int ry = rowY(ri);
+            if (r.kind == 0) {
+                // pill on the right
+                int px = contentX() + contentW() - 58;
+                if (x >= px && x <= px + 46 && y >= ry + 11 && y <= ry + 29) {
+                    boolean nv = !r.bGet.getAsBoolean();
+                    r.bSet.accept(nv);
+                    McsmExtrasConfig.save();
+                    return true;
+                }
+            } else if (r.kind == 1) {
+                int tx = contentX() + contentW() - 168;   // dot track origin
+                int vx = contentX() + contentW() - 74;    // value chip
+                if (x >= tx && x <= tx + DOTS * DOT_GAP && y >= ry + 10 && y <= ry + 32) {
+                    scrubTo(r, x - tx);
+                    scrubRow = ri;
+                    return true;
+                }
+                if (x >= vx && x <= contentX() + contentW() - 8 && y >= ry + 10 && y <= ry + 32) {
+                    startEdit(r);
+                    return true;
+                }
+            } else {
+                // action button: whole card
+                r.action.run();
+                this.init();
+                return true;
+            }
+        }
+        return super.mouseClicked(event, doubled);
+    }
+
+    private void scrubTo(Row r, int dx) {
+        double t = (double) dx / (DOTS * DOT_GAP);
+        if (t < 0.0) t = 0.0;
+        if (t > 1.0) t = 1.0;
+        r.dSet.accept(r.lo + (r.hi - r.lo) * t);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (scrubRow >= 0) {
+            Category cat = categories.get(currentCat);
+            if (scrubRow < cat.rows.size()) {
+                Row r = cat.rows.get(scrubRow);
+                if (r.kind == 1) {
+                    int tx = contentX() + contentW() - 168;
+                    scrubTo(r, (int) dragX - tx);
+                    return true;
+                }
+            }
+        }
+        return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (scrubRow >= 0) {
+            scrubRow = -1;
+            McsmExtrasConfig.save();
+            return true;
+        }
+        return super.mouseReleased(event);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (mouseX < SIDE_W - 6) {
+            sidebarScroll -= (int) Math.round(scrollY * 20.0);
+            int max = Math.max(0, categories.size() * 26 - (sideBottom() - sideTop()));
+            if (sidebarScroll < 0) sidebarScroll = 0;
+            if (sidebarScroll > max) sidebarScroll = max;
+        } else if (mouseX >= contentX() - 6 && mouseY > TOP_H && mouseY < this.height - FOOT_H) {
+            contentScroll -= (int) Math.round(scrollY * 22.0);
+            Category cat = categories.get(currentCat);
+            int max = Math.max(0, cat.rows.size() * ROW_H - (contentBottom() - contentTop()));
+            if (contentScroll < 0) contentScroll = 0;
+            if (contentScroll > max) contentScroll = max;
+        }
+        return true;
+    }
+
+    @Override
+    public void onClose() {
+        commitEdit();
+        McsmExtrasConfig.save();
+        Minecraft.getInstance().setScreenAndShow(this.parent);
+    }
+
+    // ---- render -----------------------------------------------------------
+
+    @Override
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        this.lastMouseX = mouseX;
+        this.lastMouseY = mouseY;
+        int w = this.width;
+        int h = this.height;
+
+        // BUILD #464 -- "fix the main menu be black".
+        //
+        // THIS screen is the one that opens from the DS button, and it painted an
+        // OPAQUE #0D1016..#07080C over the entire frame: the console read as a black
+        // screen with panels floating on it. Nothing else covered it, either -- the
+        // reskin mixin deliberately stands down for our own screens ("they bring
+        // their own"), and what this brought was black. It brings the storm's own
+        // sky now, through the shared painter the menus use, held at 0.62 so every
+        // card, chip and sidebar entry still reads on top of it.
+        McsmMenuSky.paint(g, w, h, 0.62F);
+        // faint warm glow behind the top bar
+        g.fillGradient(0, 0, w, 90, ACCENT_SOFT, 0x00D9A441);
+        // (the 0x88 black vignette bands over the top and bottom 40px are gone by
+        // decision: "no edge tint, no vignette".)
+
+        drawTopBar(g, w);
+        drawSidebar(g, mouseX, mouseY);
+        drawContent(g, w, h, mouseX, mouseY);
+        drawFooter(g, w, h);
+    }
+
+    private void drawTopBar(GuiGraphicsExtractor g, int w) {
+        // BUILD #464 -- the top bar is glass over the sky, not another black plate.
+        g.fill(0, 0, w, TOP_H, 0xE0140F28);
+        g.fill(0, TOP_H, w, TOP_H + 1, ACCENT);
+        g.text(this.font, "§6§lDEVOURING STORMS §f— §eSTORY MODE CONSOLE", 14, 10, TEXT_HI, true);
+        g.text(this.font, "§7Open Devouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338",
+                w - 30 - this.font.width("Open Devouring Storms 10000.0.0-PRE-RELEASE-ALPHA-1-DEVOURING-STORMS-338"), 12, TEXT_DIM, false);
+        // close box
+        g.fill(w - 24, 8, w - 6, 26, 0x00000000);
+        g.fill(w - 20, 12, w - 10, 13, OFF_GRAY);
+        g.fill(w - 15, 9, w - 14, 19, OFF_GRAY);
+        g.fill(w - 20, 18, w - 10, 19, OFF_GRAY);
+        g.fill(w - 16, 14, w - 13, 17, ACCENT);
+    }
+
+    private void drawSidebar(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        g.fill(0, TOP_H, SIDE_W, this.height - FOOT_H, SIDE_BG);
+        g.fill(SIDE_W, TOP_H, SIDE_W + 1, this.height - FOOT_H, CARD_EDGE);
+        g.text(this.font, "§7CHAPTERS", 12, sideTop() - 2, TEXT_DIM, false);
+        int top = sideTop() + 12;
+        for (int i = 0; i < categories.size(); i++) {
+            Category c = categories.get(i);
+            int y = top + i * 26 - sidebarScroll;
+            if (y + 26 < top || y > sideBottom()) {
+                continue;
+            }
+            boolean active = i == currentCat;
+            hoverSide = (mouseX < SIDE_W - 6 && mouseY >= y && mouseY < y + 26) ? i : hoverSide;
+            if (active) {
+                g.fill(0, y, SIDE_W - 6, y + 24, 0xCC141821);
+                g.fill(0, y, 3, y + 24, ACCENT);
+            } else if (hoverSide == i) {
+                g.fill(0, y, SIDE_W - 6, y + 24, 0x66141821);
+            }
+            g.text(this.font, (active ? "§6" : "§7") + c.chapter, 14, y + 8, active ? VALUE_GOLD : TEXT_DIM, false);
+            g.text(this.font, (active ? "§f" : "§8") + c.title, 32, y + 8, active ? TEXT_HI : TEXT_DIM, false);
+            if (active) {
+                g.text(this.font, "§7" + c.rows.size() + " controls", 32, y + 17, TEXT_DIM, false);
+            }
+        }
+    }
+
+    private void drawContent(GuiGraphicsExtractor g, int w, int h, int mouseX, int mouseY) {
+        Category cat = categories.get(currentCat);
+        int cx = contentX();
+        int cw = contentW();
+
+        // chapter header
+        g.text(this.font, "§6§lCHAPTER " + cat.chapter, cx, TOP_H + 8, VALUE_GOLD, true);
+        g.text(this.font, "§f§l" + cat.title, cx + this.font.width("CHAPTER " + cat.chapter) + this.font.width("§6§l") + 8, TOP_H + 8, TEXT_HI, true);
+        g.text(this.font, "§7" + cat.blurb, cx, TOP_H + 22, TEXT_DIM, false);
+        g.fill(cx, TOP_H + 36, cx + cw, TOP_H + 37, CARD_EDGE);
+
+        hoverRow = -1;
+        // BUILD #416 (D.8, phase 5) -- CLIPPING, not just skipping.
+        //
+        // The old test drew every row that had ANY pixel inside the content box,
+        // so the row that straddled the footer was painted straight over the
+        // Done bar and the bottom of the list was covered by the row that did not
+        // fit -- the user's "it's overlapping". A row is now drawn only when it
+        // is COMPLETELY inside the box, which leaves a clean edge above the
+        // footer and nothing overlaps anything.
+        for (int i = 0; i < cat.rows.size(); i++) {
+            Row r = cat.rows.get(i);
+            int y = rowY(i);
+            if (y < contentTop() || y + ROW_H > contentBottom()) {
+                continue;
+            }
+            boolean hov = mouseX >= cx && mouseX <= cx + cw && mouseY >= y && mouseY < y + ROW_H;
+            if (hov) {
+                hoverRow = i;
+            }
+            // translucent episodic card
+            g.fill(cx, y, cx + cw, y + ROW_H, hov ? CARD_HOVER : CARD);
+            g.fill(cx, y, cx + cw, y + 1, CARD_EDGE);
+            g.fill(cx, y + ROW_H - 1, cx + cw, y + ROW_H, CARD_EDGE);
+            g.fill(cx, y, cx + 1, y + ROW_H, hov ? CARD_EDGE_H : CARD_EDGE);
+            g.fill(cx + cw - 1, y, cx + cw, y + ROW_H, hov ? CARD_EDGE_H : CARD_EDGE);
+
+            g.text(this.font, (hov ? "§f" : "§e") + r.label, cx + 14, y + 8, hov ? TEXT_HI : TEXT_MID, false);
+            if (r.kind == 0) {
+                drawPill(g, cx + cw - 58, y + 11, r.bGet.getAsBoolean(), hov);
+            } else if (r.kind == 1) {
+                drawDotTrack(g, cx + cw - 168, y + 21, r.dGet.getAsDouble(), r.lo, r.hi);
+                int vx = cx + cw - 74;
+                String val = String.format("%.2f", r.dGet.getAsDouble());
+                boolean overVal = mouseX >= vx && mouseX <= cx + cw - 8 && mouseY >= y + 10 && mouseY < y + 32;
+                g.text(this.font, (overVal ? "§6" : "§e") + val, vx + 12 - this.font.width(val), y + 13, overVal ? VALUE_GOLD : VALUE_GOLD, false);
+                if (overVal) {
+                    g.fill(vx + 10, y + 27, cx + cw - 10, y + 28, ACCENT);
+                }
+            } else {
+                // action button
+                int bx = cx + cw - 172;
+                boolean overAct = mouseX >= bx && mouseX <= bx + 164 && mouseY >= y + 8 && mouseY < y + 34;
+                g.fill(bx, y + 8, bx + 164, y + 34, overAct ? ACCENT_SOFT : 0x00000000);
+                g.fill(bx, y + 8, bx + 164, y + 9, ACCENT);
+                g.fill(bx, y + 33, bx + 164, y + 34, ACCENT);
+                g.fill(bx, y + 8, bx + 1, y + 34, ACCENT);
+                g.fill(bx + 163, y + 8, bx + 164, y + 34, ACCENT);
+                g.text(this.font, "§6" + r.label, bx + 10, y + 16, VALUE_GOLD, true);
+            }
+        }
+    }
+
+    /** Sliding pill toggle (Telltale on/off). */
+    private void drawPill(GuiGraphicsExtractor g, int x, int y, boolean on, boolean hov) {
+        int wpx = 46;
+        int hpx = 18;
+        g.fill(x, y, x + wpx, y + hpx, TRACK_OFF);
+        g.fill(x, y, x + wpx, y + 1, on ? ACCENT : CARD_EDGE);
+        g.fill(x, y + hpx - 1, x + wpx, y + hpx, on ? ACCENT : CARD_EDGE);
+        g.fill(x, y, x + 1, y + hpx, on ? ACCENT : CARD_EDGE);
+        g.fill(x + wpx - 1, y, x + wpx, y + hpx, on ? ACCENT : CARD_EDGE);
+        if (on) {
+            g.fill(x + 2, y + 2, x + wpx - 2, y + hpx - 2, ACCENT_SOFT);
+        }
+        int kx = on ? x + wpx - 16 : x + 4;
+        g.fill(kx, y + 3, kx + 12, y + hpx - 3, on ? ACCENT : OFF_GRAY);
+        g.fill(kx + 3, y + 6, kx + 9, y + hpx - 6, on ? 0xFFF4E3B2 : 0xFF3A3F49);
+        g.text(this.font, on ? "§6ON" : "§8OFF", x + (on ? 8 : 20), y + 4, on ? 0xFFF4E3B2 : TEXT_DIM, false);
+    }
+
+    /** Geometric dot track — diamond dots, click/drag to scrub. */
+    private void drawDotTrack(GuiGraphicsExtractor g, int x, int cy, double value, double lo, double hi) {
+        double t = hi > lo ? (value - lo) / (hi - lo) : 0.0;
+        int active = (int) Math.round(t * (DOTS - 1));
+        g.fill(x, cy, x + DOTS * DOT_GAP, cy + 1, 0xFF2A2F3A);
+        for (int i = 0; i < DOTS; i++) {
+            int dx = x + i * DOT_GAP;
+            int col = i < active ? 0x88D9A441 : (i == active ? ACCENT : 0xFF3A3F49);
+            g.fill(dx, cy - 4, dx + 1, cy + 5, col);      // vertical
+            g.fill(dx - 1, cy - 2, dx + 2, cy + 3, col);  // upper band
+            g.fill(dx - 2, cy, dx + 3, cy + 1, col);      // middle
+            g.fill(dx - 1, cy + 2, dx + 2, cy + 3, col);  // lower band
+            if (i == active) {
+                g.fill(dx - 1, cy - 5, dx + 2, cy - 4, 0xFFF4E3B2);
+            }
+        }
+    }
+
+    private void drawFooter(GuiGraphicsExtractor g, int w, int h) {
+        g.fill(0, h - FOOT_H, w, h, 0xF2080A0E);
+        g.fill(0, h - FOOT_H, w, h - FOOT_H + 1, CARD_EDGE);
+        // done
+        g.fill(14, h - FOOT_H + 3, 74, h - FOOT_H + 21, 0x00000000);
+        g.fill(14, h - FOOT_H + 3, 74, h - FOOT_H + 4, ACCENT);
+        g.fill(14, h - FOOT_H + 20, 74, h - FOOT_H + 21, ACCENT);
+        g.fill(14, h - FOOT_H + 3, 15, h - FOOT_H + 21, ACCENT);
+        g.fill(73, h - FOOT_H + 3, 74, h - FOOT_H + 21, ACCENT);
+        g.text(this.font, "§6DONE", 28, h - FOOT_H + 8, VALUE_GOLD, true);
+        g.text(this.font, "§8Shift+A / Shift+C toggles console (Ctrl+C is free for copy) · click a value to type it · drag the diamond dots to scrub",
+                88, h - FOOT_H + 9, TEXT_DIM, false);
+    }
+}

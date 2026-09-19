@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/tendon_block",
+    "east": "mcsm:block/tendon_block",
+    "north": "mcsm:block/tendon_block",
+    "particle": "mcsm:block/tendon_block",
+    "south": "mcsm:block/tendon_block",
+    "up": "mcsm:block/tendon_block",
+    "west": "mcsm:block/tendon_block"
+  }
+}

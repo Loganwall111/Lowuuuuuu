@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "mcsm:block/blue_grass_block",
+    "particle": "mcsm:block/blue_grass_block"
+  }
+}

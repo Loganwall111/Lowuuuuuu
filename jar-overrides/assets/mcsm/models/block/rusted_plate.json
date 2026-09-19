@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/rusted_plate",
+    "east": "mcsm:block/rusted_plate",
+    "north": "mcsm:block/rusted_plate",
+    "particle": "mcsm:block/rusted_plate",
+    "south": "mcsm:block/rusted_plate",
+    "up": "mcsm:block/rusted_plate",
+    "west": "mcsm:block/rusted_plate"
+  }
+}

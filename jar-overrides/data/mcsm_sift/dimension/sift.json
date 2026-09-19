@@ -1,0 +1,72 @@
+{
+  "type": "mcsm_sift:sift_type",
+  "generator": {
+    "type": "minecraft:noise",
+    "biome_source": {
+      "type": "minecraft:multi_noise",
+      "biomes": [
+        {
+          "biome": "mcsm_sift:gel_horizon",
+          "parameters": {
+            "temperature": 0.0,
+            "humidity": 0.0,
+            "continentalness": 0.0,
+            "erosion": 0.0,
+            "weirdness": 0.0,
+            "depth": 0.8,
+            "offset": 0.0
+          }
+        },
+        {
+          "biome": "mcsm_sift:menger_maze",
+          "parameters": {
+            "temperature": 0.2,
+            "humidity": 0.0,
+            "continentalness": 0.0,
+            "erosion": 0.0,
+            "weirdness": 0.0,
+            "depth": 0.3,
+            "offset": 0.0
+          }
+        },
+        {
+          "biome": "mcsm_sift:rift_field",
+          "parameters": {
+            "temperature": 0.4,
+            "humidity": 0.0,
+            "continentalness": 0.0,
+            "erosion": 0.0,
+            "weirdness": 0.0,
+            "depth": -0.2,
+            "offset": 0.0
+          }
+        },
+        {
+          "biome": "mcsm_sift:displacement_bands",
+          "parameters": {
+            "temperature": 0.6,
+            "humidity": 0.0,
+            "continentalness": 0.0,
+            "erosion": 0.0,
+            "weirdness": 0.0,
+            "depth": -0.6,
+            "offset": 0.0
+          }
+        },
+        {
+          "biome": "mcsm_sift:iridescent_gel",
+          "parameters": {
+            "temperature": 0.9,
+            "humidity": 0.0,
+            "continentalness": 0.0,
+            "erosion": 0.0,
+            "weirdness": 0.0,
+            "depth": -1.0,
+            "offset": 0.0
+          }
+        }
+      ]
+    },
+    "settings": "mcsm_sift:sift_noise"
+  }
+}

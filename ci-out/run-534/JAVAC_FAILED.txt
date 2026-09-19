@@ -1,0 +1,9 @@
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java:303: error: incompatible types: Planner cannot be converted to ServerLevel
+            shelf(planner, key, x, y, z, false);
+                  ^
+Note: mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: mcsm-extras/java/net/mcsm/extras/McsmNpcs.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+1 error

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/city_tiles",
+    "east": "mcsm:block/city_tiles",
+    "north": "mcsm:block/city_tiles",
+    "particle": "mcsm:block/city_tiles",
+    "south": "mcsm:block/city_tiles",
+    "up": "mcsm:block/city_tiles",
+    "west": "mcsm:block/city_tiles"
+  }
+}

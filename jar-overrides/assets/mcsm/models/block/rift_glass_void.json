@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/cube",
+  "render_type": "minecraft:translucent",
+  "textures": {
+    "down": "mcsm:block/rift_glass_void",
+    "east": "mcsm:block/rift_glass_void",
+    "north": "mcsm:block/rift_glass_void",
+    "particle": "mcsm:block/rift_glass_void",
+    "south": "mcsm:block/rift_glass_void",
+    "up": "mcsm:block/rift_glass_void",
+    "west": "mcsm:block/rift_glass_void"
+  }
+}

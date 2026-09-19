@@ -1,0 +1,17 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:city_bricks"
+    }
+  },
+  "pattern": [
+    "A  ",
+    "AA ",
+    "AAA"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:city_brick_stairs"
+  },
+  "type": "minecraft:crafting_shaped"
+}

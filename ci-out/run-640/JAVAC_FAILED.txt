@@ -1,0 +1,52 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:183: error: cannot find symbol
+            Camera camera = ctx.levelState().cameraRenderState.camera;
+                                                              ^
+  symbol:   variable camera
+  location: variable cameraRenderState of type CameraRenderState
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:266: error: method vertex in class McsmBlackHoleBackdrop cannot be applied to given types;
+        vertex(pose, consumer, pos.subtract(rx).subtract(uy), 0, 1, r, g, b, a, 0, 1, 0);
+        ^
+  required: Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,Vec3,int,int,int,int,int,int,int,int,int
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:266: error: incompatible types: Vec3 cannot be converted to double
+        vertex(pose, consumer, pos.subtract(rx).subtract(uy), 0, 1, r, g, b, a, 0, 1, 0);
+                                                        ^
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:267: error: method vertex in class McsmBlackHoleBackdrop cannot be applied to given types;
+        vertex(pose, consumer, pos.add(rx).subtract(uy), 1, 1, r, g, b, a, 0, 1, 0);
+        ^
+  required: Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,Vec3,int,int,int,int,int,int,int,int,int
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:267: error: incompatible types: Vec3 cannot be converted to double
+        vertex(pose, consumer, pos.add(rx).subtract(uy), 1, 1, r, g, b, a, 0, 1, 0);
+                                                   ^
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:268: error: method vertex in class McsmBlackHoleBackdrop cannot be applied to given types;
+        vertex(pose, consumer, pos.add(rx).add(uy), 1, 0, r, g, b, a, 0, 1, 0);
+        ^
+  required: Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,Vec3,int,int,int,int,int,int,int,int,int
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:268: error: incompatible types: Vec3 cannot be converted to double
+        vertex(pose, consumer, pos.add(rx).add(uy), 1, 0, r, g, b, a, 0, 1, 0);
+                                              ^
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:269: error: method vertex in class McsmBlackHoleBackdrop cannot be applied to given types;
+        vertex(pose, consumer, pos.subtract(rx).add(uy), 0, 0, r, g, b, a, 0, 1, 0);
+        ^
+  required: Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,Vec3,int,int,int,int,int,int,int,int,int
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:269: error: incompatible types: Vec3 cannot be converted to double
+        vertex(pose, consumer, pos.subtract(rx).add(uy), 0, 0, r, g, b, a, 0, 1, 0);
+                                                   ^
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java:349: error: cannot find symbol
+                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§5§lEntering singularity... Reality folds §8[§dSHIFT§8]"), false);
+                         ^
+  symbol:   method displayClientMessage(MutableComponent,boolean)
+  location: variable player of type LocalPlayer
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+10 errors

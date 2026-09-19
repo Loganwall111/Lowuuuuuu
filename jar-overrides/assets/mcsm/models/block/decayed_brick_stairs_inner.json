@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "mcsm:block/decayed_brick_stairs",
+    "side": "mcsm:block/decayed_brick_stairs",
+    "top": "mcsm:block/decayed_brick_stairs"
+  }
+}

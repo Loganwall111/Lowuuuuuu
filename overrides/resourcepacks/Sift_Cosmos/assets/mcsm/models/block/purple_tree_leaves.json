@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "mcsm:block/purple_tree_leaves",
+    "particle": "mcsm:block/purple_tree_leaves"
+  }
+}

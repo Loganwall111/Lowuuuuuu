@@ -1,0 +1,6 @@
+{
+  "model": {
+    "model": "mcsm_sift:block/echo_soil",
+    "type": "minecraft:model"
+  }
+}

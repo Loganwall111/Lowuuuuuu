@@ -1,0 +1,10 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java:41: error: ';' expected
+            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f).getGameTimeDeltaPartialTick(false));
+                                                                                                          ^
+mcsm-extras/java/net/mcsm/extras/client/McsmShootingStars.java:104: error: ';' expected
+            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f).getGameTimeDeltaPartialTick(false));
+                                                                                                          ^
+mcsm-extras/java/net/mcsm/extras/client/McsmLightRays.java:40: error: ';' expected
+            float dayTime = ((level.getGameTime() % 24000L) / 24000.0f).getGameTimeDeltaPartialTick(false));
+                                                                                                          ^
+3 errors

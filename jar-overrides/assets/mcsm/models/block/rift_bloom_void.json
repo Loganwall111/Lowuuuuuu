@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/rift_bloom_void",
+    "east": "mcsm:block/rift_bloom_void",
+    "north": "mcsm:block/rift_bloom_void",
+    "particle": "mcsm:block/rift_bloom_void",
+    "south": "mcsm:block/rift_bloom_void",
+    "up": "mcsm:block/rift_bloom_void",
+    "west": "mcsm:block/rift_bloom_void"
+  }
+}

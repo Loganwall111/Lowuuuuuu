@@ -1,0 +1,371 @@
+package net.mcsm.sift;
+
+import net.mcsm.sift.block.BrokenFabricOfRealityBlock;
+import net.mcsm.sift.block.FabricOfRealityBlock;
+import net.mcsm.sift.block.SiftEcosystemBlocks;
+import net.mcsm.sift.client.McsmSiftClient;
+import net.mcsm.sift.entity.ColossalOctopusEntity;
+import net.mcsm.sift.entity.JokestCreatureEntity;
+import net.mcsm.sift.entity.VoidDwellerEntity;
+import net.mcsm.sift.entity.VoidWhaleEntity;
+import net.mcsm.sift.entity.rift.SiftRiftEntity;
+import net.mcsm.sift.item.RealityKnifeItem;
+import net.mcsm.sift.item.SiftSpawnEggs;
+import net.mcsm.sift.util.McsmSiftSounds;
+import net.mcsm.sift.world.McsmSiftDimension;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+/**
+ * MCSM Sift Mod - Infinite Sift Cosmos - Fabric version
+ * Build #484 base + V2 animated skyboxes + black hole lensing + 30 new blocks
+ * No Forge - uses BuiltInRegistries like McsmContent
+ */
+public final class McsmSiftMod {
+
+    public static final String MODID = "mcsm_sift";
+
+    public static final List<Block> ALL_BLOCKS = new ArrayList<>();
+    public static final List<Item> ALL_ITEMS = new ArrayList<>();
+    public static final List<Item> ALL_BLOCK_ITEMS = new ArrayList<>();
+    public static final List<EntityType<?>> ALL_ENTITIES = new ArrayList<>();
+
+    // Blocks - Fabric of Reality
+    public static final Block FABRIC_OF_REALITY = block("fabric_of_reality",
+        FabricOfRealityBlock::new,
+        BlockBehaviour.Properties.of()
+            .strength(-1f, 3600000f)
+            .lightLevel(s -> 8)
+    );
+    public static final Block BROKEN_FABRIC = block("broken_fabric_of_reality",
+        BrokenFabricOfRealityBlock::new,
+        BlockBehaviour.Properties.of()
+            .strength(-1f, 3600000f)
+            .lightLevel(s -> 10)
+            .noCollission()
+    );
+    public static final Block BOTTOM_FABRIC = block("bottom_fabric_of_reality",
+        FabricOfRealityBlock::new,
+        BlockBehaviour.Properties.of()
+            .strength(-1f, 3600000f)
+            .lightLevel(s -> 12)
+    );
+    public static final Block UNKNOWN_GROUND = block("unknown_ground",
+        FabricOfRealityBlock::new,
+        BlockBehaviour.Properties.of()
+            .strength(2f, 10f)
+            .lightLevel(s -> 5)
+    );
+    public static final Block MENGER_SPONGE = block("menger_sponge",
+        FabricOfRealityBlock::new,
+        BlockBehaviour.Properties.of()
+            .strength(1f, 6f)
+            .lightLevel(s -> 10)
+    );
+    public static final Block IRIDESCENT_GEL = block("iridescent_gel",
+        Block::new,
+        BlockBehaviour.Properties.of()
+            .strength(0.5f, 2f)
+            .lightLevel(s -> 12)
+            .noOcclusion()
+    );
+    public static final Block RIFT_COSMIC = block("rift_cosmic",
+        Block::new,
+        BlockBehaviour.Properties.of()
+            .strength(-1f, 3600000f)
+            .lightLevel(s -> 15)
+            .noOcclusion()
+    );
+
+    // Items
+    public static final Item VOID_RUDDER = item("void_rudder",
+        props -> new McsmVoidRudder(props.stacksTo(1).fireResistant()));
+    public static final Item REALITY_KNIFE = item("reality_knife",
+        props -> new RealityKnifeItem(props.stacksTo(1).durability(512).fireResistant()));
+
+    // Entities
+    public static final EntityType<VoidWhaleEntity> VOID_WHALE = entity("void_whale",
+        EntityType.Builder.of(VoidWhaleEntity::new, MobCategory.CREATURE)
+            .sized(8.0f, 4.0f)
+            .clientTrackingRange(128)
+            .updateInterval(1)
+            .fireImmune()
+    );
+    public static final EntityType<VoidDwellerEntity> VOID_DWELLER = entity("void_dweller",
+        EntityType.Builder.of(VoidDwellerEntity::new, MobCategory.CREATURE)
+            .sized(0.8f, 1.8f)
+            .clientTrackingRange(32)
+            .updateInterval(2)
+    );
+    public static final EntityType<ColossalOctopusEntity> COLOSSAL_OCTOPUS = entity("colossal_octopus",
+        EntityType.Builder.of(ColossalOctopusEntity::new, MobCategory.WATER_CREATURE)
+            .sized(6.0f, 4.0f)
+            .clientTrackingRange(64)
+            .updateInterval(2)
+            .fireImmune()
+    );
+    public static final EntityType<JokestCreatureEntity> JOKEST_CREATURE = entity("jokest_creature",
+        EntityType.Builder.of(JokestCreatureEntity::new, MobCategory.CREATURE)
+            .sized(0.6f, 0.8f)
+            .clientTrackingRange(32)
+            .updateInterval(2)
+    );
+    public static final EntityType<SiftRiftEntity> SIFT_RIFT = entity("sift_rift",
+        EntityType.Builder.<SiftRiftEntity>of(SiftRiftEntity::new, MobCategory.MISC)
+            .sized(8f, 12f)
+            .clientTrackingRange(64)
+            .updateInterval(2)
+    );
+
+    // V2 NEW ENTITIES - more creatures/random textures for all dimensions
+    public static final EntityType<JokestCreatureEntity> VOID_JELLY = entity("void_jelly",
+        EntityType.Builder.of(JokestCreatureEntity::new, MobCategory.WATER_CREATURE)
+            .sized(1.2f, 1.2f)
+            .clientTrackingRange(48)
+            .updateInterval(2)
+    );
+    public static final EntityType<JokestCreatureEntity> PRISMATIC_WISP = entity("prismatic_wisp",
+        EntityType.Builder.of(JokestCreatureEntity::new, MobCategory.AMBIENT)
+            .sized(0.4f, 0.4f)
+            .clientTrackingRange(32)
+            .updateInterval(1)
+    );
+    public static final EntityType<ColossalOctopusEntity> CRYSTAL_MANTA = entity("crystal_manta",
+        EntityType.Builder.of(ColossalOctopusEntity::new, MobCategory.WATER_CREATURE)
+            .sized(4.0f, 1.0f)
+            .clientTrackingRange(64)
+            .updateInterval(2)
+    );
+    public static final EntityType<VoidWhaleEntity> NEBULA_RAY = entity("nebula_ray",
+        EntityType.Builder.of(VoidWhaleEntity::new, MobCategory.WATER_CREATURE)
+            .sized(5.0f, 2.0f)
+            .clientTrackingRange(96)
+            .updateInterval(2)
+    );
+    public static final EntityType<JokestCreatureEntity> VOID_SNAIL = entity("void_snail",
+        EntityType.Builder.of(JokestCreatureEntity::new, MobCategory.CREATURE)
+            .sized(0.8f, 0.5f)
+            .clientTrackingRange(32)
+            .updateInterval(3)
+    );
+
+    private McsmSiftMod() {}
+
+    public static void register() {
+        System.out.println("[MCSM Sift] Initializing Infinite Sift Cosmos Engine - Build #7000.0.12-M 8 LAYERS OF THE VOID CONCEPT");
+        System.out.println("[MCSM Sift] CONCEPT IMAGE: The Layers of the Void - 8 layers incredible design");
+        System.out.println("[MCSM Sift] MERGED: Overworld min_y -2032 height 4064 = continuous fall, no loading screen, skybox merges slowly");
+        System.out.println("[MCSM Sift] 8 LAYERS: " + McsmVoidTiers.NEW_TOTAL_HEIGHT + " blocks continuous - matches concept art");
+        System.out.println("[MCSM Sift] [1] OVERWORLD Y> -64 - familiar realm");
+        System.out.println("[MCSM Sift] [2] BEDROCK LEVEL " + McsmVoidTiers.BEDROCK_LEVEL_TOP + " to " + McsmVoidTiers.BEDROCK_LEVEL_BOTTOM + " - lowest solid layer, foundation of all that exists");
+        System.out.println("[MCSM Sift] [3] FLOATING VOID ISLANDS " + McsmVoidTiers.FLOATING_VOID_ISLANDS_TOP + " to " + McsmVoidTiers.FLOATING_VOID_ISLANDS_BOTTOM + " - fractured remnants of impossible worlds, drifting broken, void energy");
+        System.out.println("[MCSM Sift] [4] INFINITE NOTHING BARRIER " + McsmVoidTiers.NOTHING_BARRIER_TOP + " to " + McsmVoidTiers.NOTHING_BARRIER_BOTTOM + " - surreal boundary of absolute emptiness, reality distorts");
+        System.out.println("[MCSM Sift] [5] INFINITE BLACKNESS " + McsmVoidTiers.INFINITE_BLACKNESS_TOP + " to " + McsmVoidTiers.INFINITE_BLACKNESS_BOTTOM + " - endless pure void, no light, no sound, only infinite depth");
+        System.out.println("[MCSM Sift] [6] SPONGE MAZE " + McsmVoidTiers.SPONGE_MAZE_TOP + " to " + McsmVoidTiers.SPONGE_MAZE_BOTTOM + " - colossal maze of ancient sponge blocks, SIFT AREA orange->pink");
+        System.out.println("[MCSM Sift] [7] LUMINESCENT POOLS " + McsmVoidTiers.LUMINESCENT_POOLS_TOP + " to " + McsmVoidTiers.LUMINESCENT_POOLS_BOTTOM + " - glowing waters, liquid crystals, alien beautiful silence");
+        System.out.println("[MCSM Sift] [8] ABYSSAL NIGHTMARE DIMENSION " + McsmVoidTiers.ABYSSAL_NIGHTMARE_TOP + " to " + McsmVoidTiers.ABYSSAL_NIGHTMARE_BOTTOM + " - final realm of terror, chaos, ancient evil, reality screams");
+        System.out.println("[MCSM Sift] Pocket dimension: DISABLE_VOID_SUFFOCATION=" + McsmVoidTiers.DISABLE_VOID_SUFFOCATION + " - no suffocation in void");
+        System.out.println("[MCSM Sift] Cinematic: volumetric disintegration, 4 planets (Dungeons, Legends, Movie, Story Mode), warp drive, white maze, fog fade");
+        System.out.println("[MCSM Sift] V2: Black hole backdrop lensing, animated skyboxes, 30 new blocks, 5 new creatures + 8 layers concept");
+        System.out.println("[MCSM Sift] Ecosystem: blue_grass, pink_grass, red_grass, red_rock, black_water, green_acid, purple trees, fluor plants, fungus trees, void blossoms, glowing mushrooms, rainbow water, rainbow bands - RAINBOW WORLD STILL EXISTS in Luminescent Pools");
+
+        // Register ecosystem blocks
+        SiftEcosystemBlocks.register();
+        // Register sounds
+        McsmSiftSounds.register();
+        // Register spawn eggs after entities
+        try {
+            SiftSpawnEggs.register();
+            SiftSpawnEggs.registerEggs();
+        } catch (Throwable t) {
+            System.err.println("[sift] spawn eggs failed: " + t);
+        }
+
+        // Register V2 content
+        try {
+            Class<?> v2 = Class.forName("net.mcsm.sift.block.McsmSiftContent");
+            v2.getMethod("register").invoke(null);
+        } catch (Throwable t) {
+            System.err.println("[sift] V2 content not yet present: " + t);
+        }
+
+        // Register creative tab for Sift - so blue grass, red grass, rainbow water etc appear in inventory
+        try {
+            registerTab();
+        } catch (Throwable t) {
+            System.err.println("[sift] creative tab failed: " + t);
+        }
+    }
+
+    public static void registerTab() {
+        try {
+            // Use vanilla CreativeModeTab builder via reflection like McsmContent does
+            Class<?> tabClass = Class.forName("net.minecraft.world.item.CreativeModeTab");
+            Object builder = tabClass.getMethod("builder", tabClass.getDeclaredClasses()[0], int.class)
+                .invoke(null, tabClass.getDeclaredClasses()[0].getField("TOP").get(null), 1);
+            // Actually use simpler approach via McsmContent's reflection method
+            // We'll reuse McsmContent's tab registration logic but for sift
+            net.minecraft.world.item.CreativeModeTab.Builder b = net.minecraft.world.item.CreativeModeTab.builder(net.minecraft.world.item.CreativeModeTab.Row.TOP, 1)
+                .title(net.minecraft.network.chat.Component.translatable("itemGroup.mcsm_sift.content"))
+                .icon(() -> new net.minecraft.world.item.ItemStack(FABRIC_OF_REALITY));
+            
+            Class<?> generatorType = Class.forName("net.minecraft.world.item.CreativeModeTab$DisplayItemsGenerator");
+            Object generator = java.lang.reflect.Proxy.newProxyInstance(
+                McsmSiftMod.class.getClassLoader(),
+                new Class[]{generatorType},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    if ("hashCode".equals(name)) return 0;
+                    if ("equals".equals(name)) return proxy == (args == null ? null : args[0]);
+                    if ("toString".equals(name)) return "mcsm-sift-tab-generator";
+                    if (args != null && args.length == 2 && args[1] != null) {
+                        feedTab(args[1]);
+                    }
+                    return null;
+                });
+            for (java.lang.reflect.Method m : b.getClass().getMethods()) {
+                if (m.getName().equals("displayItems") && m.getParameterCount() == 1) {
+                    m.invoke(b, generator);
+                    break;
+                }
+            }
+            net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB, 
+                SIFT_TAB, b.build());
+            System.out.println("[MCSM Sift] Sift content tab registered (" + 
+                (ALL_BLOCKS.size() + net.mcsm.sift.block.SiftEcosystemBlocks.ALL_BLOCKS.size() + net.mcsm.sift.block.McsmSiftContent.ALL_BLOCKS.size()) + " blocks)");
+        } catch (Throwable t) {
+            System.err.println("[MCSM Sift] Sift tab unavailable: " + t + " - blocks still accessible via /give");
+            t.printStackTrace();
+        }
+    }
+
+    private static void feedTab(Object output) {
+        try {
+            java.lang.reflect.Method accept = null;
+            for (java.lang.reflect.Method m : output.getClass().getMethods()) {
+                if (m.getName().equals("accept") && m.getParameterCount() == 1) {
+                    accept = m;
+                    break;
+                }
+            }
+            if (accept == null) return;
+            boolean wantsItem = accept.getParameterTypes()[0].getSimpleName().contains("ItemLike") || accept.getParameterTypes()[0].getSimpleName().contains("Item");
+            // Feed all sift blocks
+            for (net.minecraft.world.level.block.Block block : ALL_BLOCKS) {
+                if (block == null) continue;
+                try {
+                    var item = block.asItem();
+                    if (item != net.minecraft.world.item.Items.AIR) {
+                        accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+                    }
+                } catch (Throwable ignored) {}
+            }
+            for (net.minecraft.world.level.block.Block block : net.mcsm.sift.block.SiftEcosystemBlocks.ALL_BLOCKS) {
+                if (block == null) continue;
+                try {
+                    var item = block.asItem();
+                    if (item != net.minecraft.world.item.Items.AIR) {
+                        accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+                    }
+                } catch (Throwable ignored) {}
+            }
+            for (net.minecraft.world.level.block.Block block : net.mcsm.sift.block.McsmSiftContent.ALL_BLOCKS) {
+                if (block == null) continue;
+                try {
+                    var item = block.asItem();
+                    if (item != net.minecraft.world.item.Items.AIR) {
+                        accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+                    }
+                } catch (Throwable ignored) {}
+            }
+            for (net.minecraft.world.item.Item item : ALL_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+            for (net.minecraft.world.item.Item item : net.mcsm.sift.block.SiftEcosystemBlocks.ALL_BLOCK_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+            for (net.minecraft.world.item.Item item : net.mcsm.sift.block.McsmSiftContent.ALL_BLOCK_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+            for (net.minecraft.world.item.Item item : ALL_BLOCK_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+            for (net.minecraft.world.item.Item item : net.mcsm.sift.block.McsmSiftContent.ALL_ITEMS) {
+                if (item == null) continue;
+                accept.invoke(output, wantsItem ? item : new net.minecraft.world.item.ItemStack(item));
+            }
+        } catch (Throwable t) {
+            System.err.println("[MCSM Sift] Sift tab fill failed: " + t);
+        }
+    }
+
+    public static final ResourceKey<net.minecraft.world.item.CreativeModeTab> SIFT_TAB = ResourceKey.create(
+        Registries.CREATIVE_MODE_TAB, Identifier.fromNamespaceAndPath("mcsm_sift", "content"));
+
+    private static Block block(String name, Function<BlockBehaviour.Properties, Block> factory, BlockBehaviour.Properties props) {
+        ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("mcsm_sift", name));
+        Block b;
+        try {
+            b = factory.apply(props.setId(key));
+            Registry.register(BuiltInRegistries.BLOCK, key, b);
+        } catch (Throwable t) {
+            System.err.println("[sift] block mcsm_sift:" + name + " not registered: " + t);
+            return null;
+        }
+        if (b == null) return null;
+        ALL_BLOCKS.add(b);
+        try {
+            ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("mcsm_sift", name));
+            Item it = new BlockItem(b, new Item.Properties().setId(itemKey));
+            Registry.register(BuiltInRegistries.ITEM, itemKey, it);
+            ALL_BLOCK_ITEMS.add(it);
+        } catch (Throwable t) {
+            System.err.println("[sift] block item mcsm_sift:" + name + " not registered: " + t);
+        }
+        return b;
+    }
+
+    private static <T extends Item> T item(String name, Function<Item.Properties, T> factory) {
+        ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("mcsm_sift", name));
+        T it;
+        try {
+            it = factory.apply(new Item.Properties().setId(key));
+            Registry.register(BuiltInRegistries.ITEM, key, it);
+        } catch (Throwable t) {
+            System.err.println("[sift] item mcsm_sift:" + name + " not registered: " + t);
+            return null;
+        }
+        ALL_ITEMS.add(it);
+        return it;
+    }
+
+    private static <T extends net.minecraft.world.entity.Entity> EntityType<T> entity(String name, EntityType.Builder<T> builder) {
+        ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath("mcsm_sift", name));
+        EntityType<T> type = builder.build(key);
+        try {
+            Registry.register(BuiltInRegistries.ENTITY_TYPE, key, type);
+            ALL_ENTITIES.add(type);
+        } catch (Throwable t) {
+            System.err.println("[sift] entity mcsm_sift:" + name + " not registered: " + t);
+        }
+        return type;
+    }
+}

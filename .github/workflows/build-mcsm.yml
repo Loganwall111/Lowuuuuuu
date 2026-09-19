@@ -1,3 +1,139 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:48b9d7921d709924403564bc718b9cc042595989e68fda3fd75586cc6a1ae544
-size 2327
+name: Build Devouring Storms jar
+
+# ----------------------------------------------------------------------------
+# The "GitHub compiler": the sandbox has no JDK and no route to Mojang/Maven,
+# so every push to a listed arena branch builds the full jar on a runner that
+# has both. Artifacts appear on the run page; when the VERSION file bumps to a
+# version with no release yet, a release carrying the jar is created
+# automatically. MCSM 1.9.109: that now happens from any arena branch, because
+# the release tag is derived from VERSION and an existing tag is never
+# overwritten -- so branches cannot collide, and a dispatched test build no
+# longer leaves the user hunting through run pages for an artifact.
+#
+# NOTE: this file lives in .github/workflows/ so GitHub actually runs it.
+# ci/workflows/build-mcsm.yml is kept as a mirror/template of the same recipe.
+# ----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: ['arena/**', 'main']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # allow the job to publish the release with the built jar
+
+concurrency:
+  group: mcsm-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Read build identity
+        id: build_identity
+        shell: bash
+        run: echo "value=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Build the jar
+        # BUILD #416 (D.8): the build pushes its own evidence (javac log, class
+        # list, vanilla API dump) to the session branch so a compile result is
+        # readable without Actions log access. That needs the token.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash ci/build.sh
+
+      - name: Upload built jar and build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcsm-jar-${{ steps.build_identity.outputs.value }}
+          path: |
+            out/*.jar
+            out/*.sha256
+            out/*.txt
+
+      - name: Publish release when VERSION is new
+        # MCSM 1.9.109 -- publish from ANY arena branch. The tag comes from
+        # VERSION and the step already refuses to touch an existing tag, so two
+        # branches cannot collide: whichever builds a new version first owns that
+        # release and the rest leave it alone. This used to be gated to two named
+        # branches, which meant a dispatched build anywhere else produced an
+        # artifact only -- and an artifact needs a logged-in click-through on the
+        # run page, with a run-numbered name that says nothing about the version.
+        # That is part of the "which build did I actually install?" confusion this
+        # release exists to end, so the gate is now the tag check alone.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="ds-${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # A VERSION tag can already exist when a later arena branch adds
+            # fixes without bumping the player-facing version. Replace the
+            # binary assets so the stable download link always matches this
+            # successful build, rather than silently serving an older jar.
+            gh release upload "$TAG" out/*.jar out/*.sha256 --clobber
+          else
+            gh release create "$TAG" \
+              --repo Loganwall111/Lowuuuuuu \
+              --target "${GITHUB_REF#refs/heads/}" \
+              --title "Devouring Storms: The Point of No Return ${VER}-26.2-beta" \
+              --notes-file ci/RELEASE_NOTES.md \
+              out/*.jar out/*.sha256
+          fi
+          # verify-and-retry: a green run must never leave the release missing
+          for i in 1 2 3 4; do
+            if gh release view "$TAG" >/dev/null 2>&1; then break; fi
+            echo "::warning::release $TAG not visible yet, retry $i"
+            gh release create "$TAG" \
+              --repo Loganwall111/Lowuuuuuu \
+              --target "${GITHUB_REF#refs/heads/}" \
+              --title "Devouring Storms: The Point of No Return ${VER}-26.2-beta" \
+              --notes-file ci/RELEASE_NOTES.md \
+              out/*.jar out/*.sha256 || true
+            sleep 5
+          done
+          gh release view "$TAG" >/dev/null 2>&1 || { echo "::error::release $TAG still missing after retries"; exit 1; }
+
+      - name: Attach Story Look resource pack to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="ds-${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            ( cd storylook && zip -q -r "/tmp/devouringstorms-storylook-${VER}.zip" . )
+            gh release upload "$TAG" "/tmp/devouringstorms-storylook-${VER}.zip" --clobber \
+              || echo "::warning::story look pack upload failed"
+          else
+            echo "no release $TAG yet - skipping story look attach"
+          fi
+
+      - name: Attach the Devouring Storms shader pack to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          TAG="ds-${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            ( cd shaderpack-v5 && zip -q -r "/tmp/devouringstorms-shaderpack-v5-${VER}.zip" shaders )
+            gh release upload "$TAG" "/tmp/devouringstorms-shaderpack-v5-${VER}.zip" --clobber \
+              || echo "::warning::shader pack upload failed"
+            ( cd shaderpack-superduper && zip -q -r "/tmp/devouringstorms-superduper-default-${VER}.zip" shaders DEVOURING_STORMS_MERGE.md pack.mcmeta )
+            gh release upload "$TAG" "/tmp/devouringstorms-superduper-default-${VER}.zip" --clobber \
+              || echo "::warning::super duper default shader pack upload failed"
+          else
+            echo "no release $TAG yet - skipping shader pack attach"
+          fi

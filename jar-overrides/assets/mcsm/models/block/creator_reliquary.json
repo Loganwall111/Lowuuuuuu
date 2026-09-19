@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/creator_reliquary",
+    "east": "mcsm:block/creator_reliquary",
+    "north": "mcsm:block/creator_reliquary",
+    "particle": "mcsm:block/creator_reliquary",
+    "south": "mcsm:block/creator_reliquary",
+    "up": "mcsm:block/creator_reliquary",
+    "west": "mcsm:block/creator_reliquary"
+  }
+}

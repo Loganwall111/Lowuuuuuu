@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:blasting",
+  "category": "misc",
+  "ingredient": "dabywitherstormmod:wither_fragment",
+  "result": { "id": "minecraft:gunpowder" },
+  "experience": 0.3,
+  "cookingtime": 100
+}

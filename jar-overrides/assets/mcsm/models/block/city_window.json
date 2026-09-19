@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/cube",
+  "render_type": "minecraft:translucent",
+  "textures": {
+    "down": "mcsm:block/city_window",
+    "east": "mcsm:block/city_window",
+    "north": "mcsm:block/city_window",
+    "particle": "mcsm:block/city_window",
+    "south": "mcsm:block/city_window",
+    "up": "mcsm:block/city_window",
+    "west": "mcsm:block/city_window"
+  }
+}

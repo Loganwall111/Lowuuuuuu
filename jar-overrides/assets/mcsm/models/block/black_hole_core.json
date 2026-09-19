@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/black_hole_core",
+    "east": "mcsm:block/black_hole_core",
+    "north": "mcsm:block/black_hole_core",
+    "particle": "mcsm:block/black_hole_core",
+    "south": "mcsm:block/black_hole_core",
+    "up": "mcsm:block/black_hole_core",
+    "west": "mcsm:block/black_hole_core"
+  }
+}

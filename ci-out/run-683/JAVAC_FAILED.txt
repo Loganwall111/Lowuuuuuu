@@ -1,0 +1,76 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidCinematic.java:72: error: cannot find symbol
+        if (!McsmExtrasConfig.voidCinematic) return false;
+                             ^
+  symbol:   variable voidCinematic
+  location: class McsmExtrasConfig
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidCinematic.java:81: error: cannot find symbol
+            if (!McsmExtrasConfig.voidCinematic) {
+                                 ^
+  symbol:   variable voidCinematic
+  location: class McsmExtrasConfig
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidMerged.java:22: error: cannot find symbol
+            if (!McsmExtrasConfig.voidMerged) return;
+                                 ^
+  symbol:   variable voidMerged
+  location: class McsmExtrasConfig
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidNoSuffocationPatch.java:27: error: cannot find symbol
+            if (!McsmExtrasConfig.voidNoSuffocation) return;
+                                 ^
+  symbol:   variable voidNoSuffocation
+  location: class McsmExtrasConfig
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidNoSuffocationPatch.java:34: error: cannot find symbol
+            if (McsmExtrasConfig.voidMerged) {
+                                ^
+  symbol:   variable voidMerged
+  location: class McsmExtrasConfig
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidNoSuffocationPatch.java:75: error: cannot find symbol
+            if (McsmExtrasConfig.voidMerged && (lower.contains("outofworld") || lower.contains("out_of_world") || lower.contains("void") || lower.contains("fell"))) {
+                                ^
+  symbol:   variable voidMerged
+  location: class McsmExtrasConfig
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidNoSuffocationPatch.java:77: error: cannot find symbol
+                if (McsmVoidDescent.diving(player) || McsmExtrasConfig.voidNoSuffocation) {
+                                                                      ^
+  symbol:   variable voidNoSuffocation
+  location: class McsmExtrasConfig
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:70: error: package net.mcsm.sift.client does not exist
+                net.mcsm.sift.client.McsmSiftClient.tickClient();
+                                    ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:73: error: package net.mcsm.sift.client.VoidEntryCinematic does not exist
+                if (net.mcsm.sift.client.VoidEntryCinematic.INSTANCE.isActive()) {
+                                                           ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:83: error: package net.mcsm.sift.client.VoidEntryCinematic does not exist
+                    var phase = net.mcsm.sift.client.VoidEntryCinematic.INSTANCE.getPhase();
+                                                                       ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:84: error: package net.mcsm.sift.client.VoidEntryCinematic does not exist
+                    float prog = net.mcsm.sift.client.VoidEntryCinematic.INSTANCE.getProgress();
+                                                                        ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:86: error: package net.mcsm.sift.client.VoidEntryCinematic does not exist
+                    if (phase == net.mcsm.sift.client.VoidEntryCinematic.Phase.DISINTEGRATION) {
+                                                                        ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:89: error: package net.mcsm.sift.client.VoidEntryCinematic does not exist
+                    } else if (phase == net.mcsm.sift.client.VoidEntryCinematic.Phase.MULTIVERSE_PLANETS) {
+                                                                               ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:97: error: package net.mcsm.sift.client.VoidEntryCinematic does not exist
+                    } else if (phase == net.mcsm.sift.client.VoidEntryCinematic.Phase.WARP_DRIVE) {
+                                                                               ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:104: error: package net.mcsm.sift.client.VoidEntryCinematic does not exist
+                    } else if (phase == net.mcsm.sift.client.VoidEntryCinematic.Phase.WHITE_FLASH) {
+                                                                               ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:106: error: package net.mcsm.sift.client.VoidEntryCinematic does not exist
+                    } else if (phase == net.mcsm.sift.client.VoidEntryCinematic.Phase.WHITE_MAZE) {
+                                                                               ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:112: error: package net.mcsm.sift.client.VoidEntryCinematic does not exist
+                    } else if (phase == net.mcsm.sift.client.VoidEntryCinematic.Phase.PITCH_BLACK_FOG_FADE) {
+                                                                               ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:118: error: package net.mcsm.sift.client.WorldReentryOverlay does not exist
+                if (net.mcsm.sift.client.WorldReentryOverlay.INSTANCE.isInBlackout()) {
+                                                            ^
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java:119: error: package net.mcsm.sift.client.WorldReentryOverlay does not exist
+                    float blackout = net.mcsm.sift.client.WorldReentryOverlay.INSTANCE.getBlackout();
+                                                                             ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+19 errors

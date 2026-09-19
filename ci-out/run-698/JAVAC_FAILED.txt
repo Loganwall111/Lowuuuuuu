@@ -1,0 +1,16 @@
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmModNioPackFixMixin.java:38: error: incompatible types: Object cannot be converted to CAP#1
+            cir.setReturnValue((Object) java.util.Optional.empty());
+                               ^
+  where CAP#1 is a fresh type-variable:
+    CAP#1 extends Object from capture of ?
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmModNioPackFixMixin.java:51: error: incompatible types: Object cannot be converted to CAP#1
+            cir.setReturnValue((Object) java.util.Optional.empty());
+                               ^
+  where CAP#1 is a fresh type-variable:
+    CAP#1 extends Object from capture of ?
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+2 errors

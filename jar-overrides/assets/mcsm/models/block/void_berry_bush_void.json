@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/void_berry_bush_void",
+    "east": "mcsm:block/void_berry_bush_void",
+    "north": "mcsm:block/void_berry_bush_void",
+    "particle": "mcsm:block/void_berry_bush_void",
+    "south": "mcsm:block/void_berry_bush_void",
+    "up": "mcsm:block/void_berry_bush_void",
+    "west": "mcsm:block/void_berry_bush_void"
+  }
+}

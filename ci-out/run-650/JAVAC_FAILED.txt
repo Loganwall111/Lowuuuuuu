@@ -1,0 +1,219 @@
+mcsm-extras/java/net/mcsm/extras/McsmTimeMachine.java:138: error: cannot find symbol
+            long time = player.level().getDayTime() % 24000;
+                                      ^
+  symbol:   method getDayTime()
+  location: class ServerLevel
+mcsm-extras/java/net/mcsm/extras/McsmTimeMachine.java:355: error: cannot find symbol
+            p[11] = Blocks.CLOCK.defaultBlockState();
+                          ^
+  symbol:   variable CLOCK
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmTimeMachine.java:357: error: cannot find symbol
+            p[13] = Blocks.ARMOR_STAND.defaultBlockState();
+                          ^
+  symbol:   variable ARMOR_STAND
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java:84: error: cannot find symbol
+            float dayTime = level.getTimeOfDay(partial);
+                                 ^
+  symbol:   method getTimeOfDay(float)
+  location: variable level of type ClientLevel
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java:278: error: method vertex in class McsmOrbitalPlanets cannot be applied to given types;
+        vertex(pose, consumer, x0, y0, z0, u0, v0, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java:279: error: method vertex in class McsmOrbitalPlanets cannot be applied to given types;
+        vertex(pose, consumer, x1, y1, z1, u1, v1, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java:280: error: method vertex in class McsmOrbitalPlanets cannot be applied to given types;
+        vertex(pose, consumer, x2, y2, z2, u2, v2, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java:281: error: method vertex in class McsmOrbitalPlanets cannot be applied to given types;
+        vertex(pose, consumer, x3, y3, z3, u3, v3, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java:41: error: cannot find symbol
+            float dayTime = level.getTimeOfDay(mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+                                 ^
+  symbol:   method getTimeOfDay(float)
+  location: variable level of type ClientLevel
+mcsm-extras/java/net/mcsm/extras/client/McsmAmbientWorld.java:85: error: cannot find symbol
+            Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
+                                      ^
+  symbol:   method getMainCamera()
+  location: variable gameRenderer of type GameRenderer
+mcsm-extras/java/net/mcsm/extras/client/McsmAmbientWorld.java:119: error: cannot find symbol
+            float dayTime = level.getTimeOfDay(partial);
+                                 ^
+  symbol:   method getTimeOfDay(float)
+  location: variable level of type ClientLevel
+mcsm-extras/java/net/mcsm/extras/client/McsmAmbientWorld.java:243: error: method vertex in class McsmAmbientWorld cannot be applied to given types;
+        vertex(pose, consumer, x0, y0, z0, u0, v0, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmAmbientWorld.java:244: error: method vertex in class McsmAmbientWorld cannot be applied to given types;
+        vertex(pose, consumer, x1, y1, z1, u1, v1, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmAmbientWorld.java:245: error: method vertex in class McsmAmbientWorld cannot be applied to given types;
+        vertex(pose, consumer, x2, y2, z2, u2, v2, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmAmbientWorld.java:246: error: method vertex in class McsmAmbientWorld cannot be applied to given types;
+        vertex(pose, consumer, x3, y3, z3, u3, v3, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmSpinningSun.java:48: error: cannot find symbol
+            float dayTime = level.getTimeOfDay(partial); // 0-1
+                                 ^
+  symbol:   method getTimeOfDay(float)
+  location: variable level of type ClientLevel
+mcsm-extras/java/net/mcsm/extras/client/McsmSpinningSun.java:242: error: method vertex in class McsmSpinningSun cannot be applied to given types;
+        vertex(pose, consumer, x0, y0, z0, u0, v0, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmSpinningSun.java:243: error: method vertex in class McsmSpinningSun cannot be applied to given types;
+        vertex(pose, consumer, x1, y1, z1, u1, v1, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmSpinningSun.java:244: error: method vertex in class McsmSpinningSun cannot be applied to given types;
+        vertex(pose, consumer, x2, y2, z2, u2, v2, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmSpinningSun.java:245: error: method vertex in class McsmSpinningSun cannot be applied to given types;
+        vertex(pose, consumer, x3, y3, z3, u3, v3, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmShootingStars.java:70: error: cannot find symbol
+            Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
+                                      ^
+  symbol:   method getMainCamera()
+  location: variable gameRenderer of type GameRenderer
+mcsm-extras/java/net/mcsm/extras/client/McsmShootingStars.java:104: error: cannot find symbol
+            float dayTime = level.getTimeOfDay(mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+                                 ^
+  symbol:   method getTimeOfDay(float)
+  location: variable level of type ClientLevel
+mcsm-extras/java/net/mcsm/extras/client/McsmTimeWarpEffect.java:192: error: incompatible types: possible lossy conversion from float to int
+                            quadBillboard(pose, consumer, dx, routerY, routerZ, 0.35f, r, g, b, digitAlpha, cam);
+                                                                                                ^
+mcsm-extras/java/net/mcsm/extras/client/McsmTimeWarpEffect.java:299: error: method vertex in class McsmTimeWarpEffect cannot be applied to given types;
+        vertex(pose, consumer, x0, y0, z0, u0, v0, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmTimeWarpEffect.java:300: error: method vertex in class McsmTimeWarpEffect cannot be applied to given types;
+        vertex(pose, consumer, x1, y1, z1, u1, v1, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmTimeWarpEffect.java:301: error: method vertex in class McsmTimeWarpEffect cannot be applied to given types;
+        vertex(pose, consumer, x2, y2, z2, u2, v2, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmTimeWarpEffect.java:302: error: method vertex in class McsmTimeWarpEffect cannot be applied to given types;
+        vertex(pose, consumer, x3, y3, z3, u3, v3, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmEarthPlanet.java:56: error: cannot find symbol
+            float dayTime = level.getTimeOfDay(partial);
+                                 ^
+  symbol:   method getTimeOfDay(float)
+  location: variable level of type ClientLevel
+mcsm-extras/java/net/mcsm/extras/client/McsmEarthPlanet.java:222: error: method vertex in class McsmEarthPlanet cannot be applied to given types;
+        vertex(pose, consumer, x0, y0, z0, u0, v0, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmEarthPlanet.java:223: error: method vertex in class McsmEarthPlanet cannot be applied to given types;
+        vertex(pose, consumer, x1, y1, z1, u1, v1, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmEarthPlanet.java:224: error: method vertex in class McsmEarthPlanet cannot be applied to given types;
+        vertex(pose, consumer, x2, y2, z2, u2, v2, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmEarthPlanet.java:225: error: method vertex in class McsmEarthPlanet cannot be applied to given types;
+        vertex(pose, consumer, x3, y3, z3, u3, v3, r, g, b, a, nx, ny, nz);
+        ^
+  required: Pose,VertexConsumer,Vec3,float,float,int,int,int,int,float,float,float
+  found:    Pose,VertexConsumer,double,double,double,float,float,int,int,int,int,float,float,float
+  reason: actual and formal argument lists differ in length
+mcsm-extras/java/net/mcsm/extras/client/McsmLightRays.java:40: error: cannot find symbol
+            float dayTime = level.getTimeOfDay(mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+                                 ^
+  symbol:   method getTimeOfDay(float)
+  location: variable level of type ClientLevel
+mcsm-extras/java/net/mcsm/extras/McsmMegaCities.java:326: error: cannot find symbol
+            return state.isAir() || state.getBlock() == Blocks.GRASS || state.getBlock() == Blocks.TALL_GRASS || state.getBlock() == Blocks.FERN;
+                                                              ^
+  symbol:   variable GRASS
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmMegaCities.java:348: error: cannot find symbol
+            p[1] = Blocks.GRAY_CONCRETE.defaultBlockState();
+                         ^
+  symbol:   variable GRAY_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmMegaCities.java:355: error: cannot find symbol
+            p[8] = Blocks.BLACK_CONCRETE.defaultBlockState();
+                         ^
+  symbol:   variable BLACK_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmMegaCities.java:361: error: cannot find symbol
+            p[14] = Blocks.WHITE_CONCRETE.defaultBlockState();
+                          ^
+  symbol:   variable WHITE_CONCRETE
+  location: class Blocks
+mcsm-extras/java/net/mcsm/extras/McsmCabinStructure.java:56: error: cannot find symbol
+            long time = level.getDayTime() % 24000;
+                             ^
+  symbol:   method getDayTime()
+  location: variable level of type ServerLevel
+mcsm-extras/java/net/mcsm/extras/McsmCabinStructure.java:316: error: cannot find symbol
+            return state.isAir() || state.getBlock() == Blocks.GRASS || state.getBlock() == Blocks.TALL_GRASS || state.getBlock() == Blocks.FERN || state.getBlock() == Blocks.DEAD_BUSH || state.getBlock() == Blocks.VINE;
+                                                              ^
+  symbol:   variable GRASS
+  location: class Blocks
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+39 errors

@@ -1,0 +1,15 @@
+{
+  "key": {
+    "G": {
+      "item": "mcsm:creator_glyph"
+    }
+  },
+  "pattern": [
+    " G "
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:creator_dust"
+  },
+  "type": "minecraft:crafting_shaped"
+}

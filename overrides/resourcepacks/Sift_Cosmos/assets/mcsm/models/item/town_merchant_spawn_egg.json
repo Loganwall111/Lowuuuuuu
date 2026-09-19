@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mcsm:item/spawn_egg/town_merchant_spawn_egg"
+  }
+}

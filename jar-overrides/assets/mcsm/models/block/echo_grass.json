@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/echo_grass",
+    "east": "mcsm:block/echo_grass",
+    "north": "mcsm:block/echo_grass",
+    "particle": "mcsm:block/echo_grass",
+    "south": "mcsm:block/echo_grass",
+    "up": "mcsm:block/echo_grass",
+    "west": "mcsm:block/echo_grass"
+  }
+}

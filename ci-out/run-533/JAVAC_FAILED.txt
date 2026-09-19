@@ -1,0 +1,7 @@
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java:366: error: ')' or ',' expected
+        return planner.plan(key ^ 0x5F0RL);
+                                       ^
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java:366: error: ';' expected
+        return planner.plan(key ^ 0x5F0RL);
+                                         ^
+2 errors

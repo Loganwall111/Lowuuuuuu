@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "mcsm:block/bottom_fabric_of_reality",
+    "particle": "mcsm:block/bottom_fabric_of_reality"
+  }
+}

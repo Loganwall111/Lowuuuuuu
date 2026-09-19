@@ -1,0 +1,15 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:decayed_log"
+    }
+  },
+  "pattern": [
+    "A"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:decayed_planks"
+  },
+  "type": "minecraft:crafting_shaped"
+}

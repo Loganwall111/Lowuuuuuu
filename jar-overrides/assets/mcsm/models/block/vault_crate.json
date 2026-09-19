@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/vault_crate",
+    "east": "mcsm:block/vault_crate",
+    "north": "mcsm:block/vault_crate",
+    "particle": "mcsm:block/vault_crate",
+    "south": "mcsm:block/vault_crate",
+    "up": "mcsm:block/vault_crate",
+    "west": "mcsm:block/vault_crate"
+  }
+}

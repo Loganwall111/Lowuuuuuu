@@ -1,0 +1,17 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:adams_stone"
+    }
+  },
+  "pattern": [
+    "A  ",
+    "AA ",
+    "AAA"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:adams_stairs"
+  },
+  "type": "minecraft:crafting_shaped"
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/luminous_fungus",
+    "east": "mcsm:block/luminous_fungus",
+    "north": "mcsm:block/luminous_fungus",
+    "particle": "mcsm:block/luminous_fungus",
+    "south": "mcsm:block/luminous_fungus",
+    "up": "mcsm:block/luminous_fungus",
+    "west": "mcsm:block/luminous_fungus"
+  }
+}

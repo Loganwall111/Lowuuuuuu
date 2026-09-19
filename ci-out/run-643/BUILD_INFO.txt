@@ -1,0 +1,11 @@
+Devouring Storms build 7000.0.1-M
+mod version: 7000.0.1-M (fabric.mod.json)
+date:        2026-09-17T23:07:05Z
+run:         35284934159 (#643)
+base jar:    /tmp/mcsm-dl/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar (57360136 B)
+client.jar:  40896ee9f1e2bec3c934daac7e93d41e9e3d9c2f8ae0ca366d52ffbfd1afa290 (39193383 B)
+glsl gate:   PASS
+javac:       exit 0, 248 fresh classes
+VERDICT:     FULL BUILD — fresh Java classes + shaders
+output:      out/devouringstorms-7000.0.1-M.jar (74463393 B)
+sha256:      f3d5aa379c452b0d3f689ff792a00936baf4d148232c33b9584e521aa7e91307

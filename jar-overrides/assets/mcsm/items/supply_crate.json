@@ -1,0 +1,6 @@
+{
+  "model": {
+    "model": "mcsm:item/supply_crate",
+    "type": "minecraft:model"
+  }
+}

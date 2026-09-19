@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/withered_flesh_block",
+    "east": "mcsm:block/withered_flesh_block",
+    "north": "mcsm:block/withered_flesh_block",
+    "particle": "mcsm:block/withered_flesh_block",
+    "south": "mcsm:block/withered_flesh_block",
+    "up": "mcsm:block/withered_flesh_block",
+    "west": "mcsm:block/withered_flesh_block"
+  }
+}

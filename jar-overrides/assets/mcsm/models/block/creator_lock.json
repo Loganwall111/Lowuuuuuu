@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/creator_lock",
+    "east": "mcsm:block/creator_lock",
+    "north": "mcsm:block/creator_lock",
+    "particle": "mcsm:block/creator_lock",
+    "south": "mcsm:block/creator_lock",
+    "up": "mcsm:block/creator_lock",
+    "west": "mcsm:block/creator_lock"
+  }
+}

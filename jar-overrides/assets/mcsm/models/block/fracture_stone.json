@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/fracture_stone",
+    "east": "mcsm:block/fracture_stone",
+    "north": "mcsm:block/fracture_stone",
+    "particle": "mcsm:block/fracture_stone",
+    "south": "mcsm:block/fracture_stone",
+    "up": "mcsm:block/fracture_stone",
+    "west": "mcsm:block/fracture_stone"
+  }
+}

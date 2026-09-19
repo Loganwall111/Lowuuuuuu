@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/fracture_crystal",
+    "east": "mcsm:block/fracture_crystal",
+    "north": "mcsm:block/fracture_crystal",
+    "particle": "mcsm:block/fracture_crystal",
+    "south": "mcsm:block/fracture_crystal",
+    "up": "mcsm:block/fracture_crystal",
+    "west": "mcsm:block/fracture_crystal"
+  }
+}

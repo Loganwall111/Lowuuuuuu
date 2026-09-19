@@ -1,0 +1,29 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java:222: error: local variables referenced from a lambda expression must be final or effectively final
+                            emitGothicTower(pose, consumer, camera, i, time, depthFactor);
+                                                                             ^
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java:230: error: local variables referenced from a lambda expression must be final or effectively final
+                            emitHangingFortress(pose, consumer, camera, i, time, depthFactor);
+                                                                                 ^
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java:237: error: local variables referenced from a lambda expression must be final or effectively final
+                        emitJaggedRidges(pose, consumer, camera, time, depthFactor);
+                                                                       ^
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java:243: error: local variables referenced from a lambda expression must be final or effectively final
+                        emitCreatorHead(pose, consumer, camera, time, depthFactor);
+                                                                      ^
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java:244: error: local variables referenced from a lambda expression must be final or effectively final
+                        emitCreatorCrown(pose, consumer, camera, time, depthFactor);
+                                                                       ^
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java:246: error: local variables referenced from a lambda expression must be final or effectively final
+                            emitCreatorArm(pose, consumer, camera, arm, time, depthFactor);
+                                                                              ^
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java:253: error: local variables referenced from a lambda expression must be final or effectively final
+                        emitCreatorEyes(pose, consumer, camera, time, depthFactor);
+                                                                      ^
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java:259: error: local variables referenced from a lambda expression must be final or effectively final
+                        emitRadiantAura(pose, consumer, camera, time, depthFactor);
+                                                                      ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+8 errors

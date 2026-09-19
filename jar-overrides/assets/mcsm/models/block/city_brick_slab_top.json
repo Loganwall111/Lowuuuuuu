@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "mcsm:block/city_bricks",
+    "particle": "mcsm:block/city_bricks",
+    "side": "mcsm:block/city_bricks",
+    "top": "mcsm:block/city_bricks"
+  }
+}

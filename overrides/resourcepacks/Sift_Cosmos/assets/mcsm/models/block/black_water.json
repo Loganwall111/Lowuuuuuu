@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "mcsm:block/black_water",
+    "particle": "mcsm:block/black_water"
+  }
+}

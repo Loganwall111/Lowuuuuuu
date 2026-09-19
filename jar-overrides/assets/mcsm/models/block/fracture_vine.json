@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/fracture_vine",
+    "east": "mcsm:block/fracture_vine",
+    "north": "mcsm:block/fracture_vine",
+    "particle": "mcsm:block/fracture_vine",
+    "south": "mcsm:block/fracture_vine",
+    "up": "mcsm:block/fracture_vine",
+    "west": "mcsm:block/fracture_vine"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mcsm:block/gel_horizon_grass",
+    "east": "mcsm:block/gel_horizon_grass",
+    "north": "mcsm:block/gel_horizon_grass",
+    "particle": "mcsm:block/gel_horizon_grass",
+    "south": "mcsm:block/gel_horizon_grass",
+    "up": "mcsm:block/gel_horizon_grass",
+    "west": "mcsm:block/gel_horizon_grass"
+  }
+}

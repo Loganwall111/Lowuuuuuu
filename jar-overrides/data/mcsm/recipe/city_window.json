@@ -1,0 +1,20 @@
+{
+  "key": {
+    "A": {
+      "item": "mcsm:city_bricks"
+    },
+    "B": {
+      "item": "minecraft:glass"
+    }
+  },
+  "pattern": [
+    "AAA",
+    "ABA",
+    "AAA"
+  ],
+  "result": {
+    "count": 4,
+    "id": "mcsm:city_window"
+  },
+  "type": "minecraft:crafting_shaped"
+}

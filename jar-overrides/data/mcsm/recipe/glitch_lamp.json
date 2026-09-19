@@ -1,0 +1,19 @@
+{
+  "key": {
+    "G": {
+      "item": "minecraft:glowstone"
+    },
+    "R": {
+      "item": "mcsm:rift_shard"
+    }
+  },
+  "pattern": [
+    "RG",
+    "GR"
+  ],
+  "result": {
+    "count": 2,
+    "id": "mcsm:glitch_lamp"
+  },
+  "type": "minecraft:crafting_shaped"
+}

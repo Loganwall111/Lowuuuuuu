@@ -1,0 +1,96 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java:7: error: package net.fabricmc.fabric.api.client.networking.v1 does not exist
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+                                                   ^
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:7: error: package net.fabricmc.fabric.api.client.networking.v1 does not exist
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+                                                   ^
+mcsm-extras/java/net/mcsm/extras/McsmTerminal.java:11: error: package net.fabricmc.fabric.api.networking.v1 does not exist
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+                                            ^
+mcsm-extras/java/net/mcsm/extras/McsmTerminal.java:12: error: package net.fabricmc.fabric.api.networking.v1 does not exist
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+                                            ^
+/tmp/mcsm-dl/client.jar(/net/minecraft/network/FriendlyByteBuf.class): error: Cannot attach type annotations @org.jspecify.annotations.Nullable to FriendlyByteBuf.readNullable:
+  class file for io.netty.buffer.ByteBuf not found
+mcsm-extras/java/net/mcsm/extras/net/McsmTerminalS2C.java:32: error: cannot access ByteBuf
+            buf -> new McsmTerminalS2C(buf.readUtf(256), buf.readUtf(1024), buf.readUtf(8192)));
+                                                            ^
+  class file for io.netty.buffer.ByteBuf not found
+mcsm-extras/java/net/mcsm/extras/net/McsmTerminalS2C.java:32: error: cannot access ByteBuf
+            buf -> new McsmTerminalS2C(buf.readUtf(256), buf.readUtf(1024), buf.readUtf(8192)));
+                                                                               ^
+  class file for io.netty.buffer.ByteBuf not found
+mcsm-extras/java/net/mcsm/extras/net/McsmTerminalS2C.java:32: error: cannot access ByteBuf
+            buf -> new McsmTerminalS2C(buf.readUtf(256), buf.readUtf(1024), buf.readUtf(8192)));
+                                          ^
+  class file for io.netty.buffer.ByteBuf not found
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java:46: error: cannot find symbol
+            ClientPlayNetworking.registerGlobalReceiver(McsmTerminalS2C.TYPE, (payload, context) ->
+            ^
+  symbol:   variable ClientPlayNetworking
+  location: class McsmTerminalClient
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java:132: error: cannot find symbol
+            ClientPlayNetworking.send(new McsmTerminalC2S("open", "", ""));
+            ^
+  symbol:   variable ClientPlayNetworking
+  location: class McsmTerminalClient
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:369: error: cannot find symbol
+                        ClientPlayNetworking.send(new McsmTerminalC2S("guide",
+                        ^
+  symbol:   variable ClientPlayNetworking
+  location: class McsmTerminalScreen
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:381: error: cannot find symbol
+                        ClientPlayNetworking.send(new McsmTerminalC2S("open", "", ""));
+                        ^
+  symbol:   variable ClientPlayNetworking
+  location: class McsmTerminalScreen
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:388: error: cannot find symbol
+                        ClientPlayNetworking.send(new McsmTerminalC2S("guide", GUIDE_PAGES[guidePage], ""));
+                        ^
+  symbol:   variable ClientPlayNetworking
+  location: class McsmTerminalScreen
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:425: error: cannot find symbol
+            ClientPlayNetworking.send(new McsmTerminalC2S("close", "", ""));
+            ^
+  symbol:   variable ClientPlayNetworking
+  location: class McsmTerminalScreen
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:503: error: cannot find symbol
+        ClientPlayNetworking.send(new McsmTerminalC2S("code", typed, ""));
+        ^
+  symbol:   variable ClientPlayNetworking
+  location: class McsmTerminalScreen
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java:511: error: cannot find symbol
+        ClientPlayNetworking.send(new McsmTerminalC2S("hint", "", ""));
+        ^
+  symbol:   variable ClientPlayNetworking
+  location: class McsmTerminalScreen
+mcsm-extras/java/net/mcsm/extras/McsmTerminal.java:95: error: cannot find symbol
+            PayloadTypeRegistry.serverboundPlay().register(McsmTerminalC2S.TYPE, McsmTerminalC2S.CODEC);
+            ^
+  symbol:   variable PayloadTypeRegistry
+  location: class McsmTerminal
+mcsm-extras/java/net/mcsm/extras/McsmTerminal.java:96: error: cannot find symbol
+            PayloadTypeRegistry.clientboundPlay().register(McsmTerminalS2C.TYPE, McsmTerminalS2C.CODEC);
+            ^
+  symbol:   variable PayloadTypeRegistry
+  location: class McsmTerminal
+mcsm-extras/java/net/mcsm/extras/McsmTerminal.java:97: error: cannot find symbol
+            ServerPlayNetworking.registerGlobalReceiver(McsmTerminalC2S.TYPE, (payload, context) ->
+            ^
+  symbol:   variable ServerPlayNetworking
+  location: class McsmTerminal
+mcsm-extras/java/net/mcsm/extras/McsmTerminal.java:511: error: cannot find symbol
+            ServerPlayNetworking.send(player, payload);
+            ^
+  symbol:   variable ServerPlayNetworking
+  location: class McsmTerminal
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java:65: error: cannot find symbol
+        McsmTerminal.register();
+        ^
+  symbol:   variable McsmTerminal
+  location: class McsmBuiltinPackMixin
+Note: mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+21 errors

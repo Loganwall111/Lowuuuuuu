@@ -1,0 +1,1696 @@
+++ date -u +%FT%TZ
++ echo '# vanilla API dump -- 2026-09-16T14:48:14Z MC 26.2 (javap -p, capped)'
+# vanilla API dump -- 2026-09-16T14:48:14Z MC 26.2 (javap -p, capped)
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.DoorBlock'
+===== net.minecraft.world.level.block.DoorBlock
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.DoorBlock
++ sed -n 1,110p
+Compiled from "DoorBlock.java"
+public class net.minecraft.world.level.block.DoorBlock extends net.minecraft.world.level.block.Block {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.world.level.block.DoorBlock> CODEC;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.core.Direction> FACING;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.DoubleBlockHalf> HALF;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.DoorHingeSide> HINGE;
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty OPEN;
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty POWERED;
+  private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> SHAPES;
+  private final net.minecraft.world.level.block.state.properties.BlockSetType type;
+  public com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.DoorBlock> codec();
+  protected net.minecraft.world.level.block.DoorBlock(net.minecraft.world.level.block.state.properties.BlockSetType, net.minecraft.world.level.block.state.BlockBehaviour$Properties);
+  public net.minecraft.world.level.block.state.properties.BlockSetType type();
+  protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.phys.shapes.CollisionContext);
+  protected net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelReader, net.minecraft.world.level.ScheduledTickAccess, net.minecraft.core.BlockPos, net.minecraft.core.Direction, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
+  protected void onExplosionHit(net.minecraft.world.level.block.state.BlockState, net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.level.Explosion, java.util.function.BiConsumer<net.minecraft.world.item.ItemStack, net.minecraft.core.BlockPos>);
+  public net.minecraft.world.level.block.state.BlockState playerWillDestroy(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.entity.player.Player);
+  protected boolean isPathfindable(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.pathfinder.PathComputationType);
+  public net.minecraft.world.level.block.state.BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext);
+  public void setPlacedBy(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.entity.LivingEntity, net.minecraft.world.item.ItemStack);
+  private net.minecraft.world.level.block.state.properties.DoorHingeSide getHinge(net.minecraft.world.item.context.BlockPlaceContext);
+  protected net.minecraft.world.InteractionResult useWithoutItem(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.entity.player.Player, net.minecraft.world.phys.BlockHitResult);
+  public boolean isOpen(net.minecraft.world.level.block.state.BlockState);
+  public void setOpen(net.minecraft.world.entity.Entity, net.minecraft.world.level.Level, net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos, boolean);
+  protected void neighborChanged(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.block.Block, net.minecraft.world.level.redstone.Orientation, boolean);
+  protected boolean canSurvive(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelReader, net.minecraft.core.BlockPos);
+  private void playSound(net.minecraft.world.entity.Entity, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, boolean);
+  protected net.minecraft.world.level.block.state.BlockState rotate(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.Rotation);
+  protected net.minecraft.world.level.block.state.BlockState mirror(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.Mirror);
+  protected long getSeed(net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos);
+  protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition$Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
+  public static boolean isWoodenDoor(net.minecraft.world.level.Level, net.minecraft.core.BlockPos);
+  public static boolean isWoodenDoor(net.minecraft.world.level.block.state.BlockState);
+  private static com.mojang.datafixers.kinds.App lambda$static$0(com.mojang.serialization.codecs.RecordCodecBuilder$Instance);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.TrapDoorBlock'
+===== net.minecraft.world.level.block.TrapDoorBlock
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.TrapDoorBlock
++ sed -n 1,110p
+Compiled from "TrapDoorBlock.java"
+public class net.minecraft.world.level.block.TrapDoorBlock extends net.minecraft.world.level.block.HorizontalDirectionalBlock implements net.minecraft.world.level.block.SimpleWaterloggedBlock {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.world.level.block.TrapDoorBlock> CODEC;
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty OPEN;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.Half> HALF;
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty POWERED;
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED;
+  private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> SHAPES;
+  private final net.minecraft.world.level.block.state.properties.BlockSetType type;
+  public com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.TrapDoorBlock> codec();
+  protected net.minecraft.world.level.block.TrapDoorBlock(net.minecraft.world.level.block.state.properties.BlockSetType, net.minecraft.world.level.block.state.BlockBehaviour$Properties);
+  protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.phys.shapes.CollisionContext);
+  protected boolean isPathfindable(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.pathfinder.PathComputationType);
+  protected net.minecraft.world.InteractionResult useWithoutItem(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.entity.player.Player, net.minecraft.world.phys.BlockHitResult);
+  protected void onExplosionHit(net.minecraft.world.level.block.state.BlockState, net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.level.Explosion, java.util.function.BiConsumer<net.minecraft.world.item.ItemStack, net.minecraft.core.BlockPos>);
+  private void toggle(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.entity.player.Player);
+  protected void playSound(net.minecraft.world.entity.player.Player, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, boolean);
+  protected void neighborChanged(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.block.Block, net.minecraft.world.level.redstone.Orientation, boolean);
+  public net.minecraft.world.level.block.state.BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext);
+  protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition$Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
+  protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState);
+  protected net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelReader, net.minecraft.world.level.ScheduledTickAccess, net.minecraft.core.BlockPos, net.minecraft.core.Direction, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
+  protected net.minecraft.world.level.block.state.properties.BlockSetType getType();
+  private static com.mojang.datafixers.kinds.App lambda$static$0(com.mojang.serialization.codecs.RecordCodecBuilder$Instance);
+  private static net.minecraft.world.level.block.state.properties.BlockSetType lambda$static$1(net.minecraft.world.level.block.TrapDoorBlock);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.state.properties.BlockSetType'
+===== net.minecraft.world.level.block.state.properties.BlockSetType
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.state.properties.BlockSetType
++ sed -n 1,110p
+Compiled from "BlockSetType.java"
+public final class net.minecraft.world.level.block.state.properties.BlockSetType extends java.lang.Record {
+  private final java.lang.String name;
+  private final boolean canOpenByHand;
+  private final boolean canOpenByWindCharge;
+  private final boolean canButtonBeActivatedByArrows;
+  private final net.minecraft.world.level.block.state.properties.BlockSetType$PressurePlateSensitivity pressurePlateSensitivity;
+  private final net.minecraft.world.level.block.SoundType soundType;
+  private final net.minecraft.sounds.SoundEvent doorClose;
+  private final net.minecraft.sounds.SoundEvent doorOpen;
+  private final net.minecraft.sounds.SoundEvent trapdoorClose;
+  private final net.minecraft.sounds.SoundEvent trapdoorOpen;
+  private final net.minecraft.sounds.SoundEvent pressurePlateClickOff;
+  private final net.minecraft.sounds.SoundEvent pressurePlateClickOn;
+  private final net.minecraft.sounds.SoundEvent buttonClickOff;
+  private final net.minecraft.sounds.SoundEvent buttonClickOn;
+  private static final java.util.Map<java.lang.String, net.minecraft.world.level.block.state.properties.BlockSetType> TYPES;
+  public static final com.mojang.serialization.Codec<net.minecraft.world.level.block.state.properties.BlockSetType> CODEC;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType IRON;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType COPPER;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType GOLD;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType STONE;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType POLISHED_BLACKSTONE;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType OAK;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType SPRUCE;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType BIRCH;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType ACACIA;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType CHERRY;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType JUNGLE;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType DARK_OAK;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType PALE_OAK;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType CRIMSON;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType WARPED;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType MANGROVE;
+  public static final net.minecraft.world.level.block.state.properties.BlockSetType BAMBOO;
+  public net.minecraft.world.level.block.state.properties.BlockSetType(java.lang.String);
+  public net.minecraft.world.level.block.state.properties.BlockSetType(java.lang.String, boolean, boolean, boolean, net.minecraft.world.level.block.state.properties.BlockSetType$PressurePlateSensitivity, net.minecraft.world.level.block.SoundType, net.minecraft.sounds.SoundEvent, net.minecraft.sounds.SoundEvent, net.minecraft.sounds.SoundEvent, net.minecraft.sounds.SoundEvent, net.minecraft.sounds.SoundEvent, net.minecraft.sounds.SoundEvent, net.minecraft.sounds.SoundEvent, net.minecraft.sounds.SoundEvent);
+  private static net.minecraft.world.level.block.state.properties.BlockSetType register(net.minecraft.world.level.block.state.properties.BlockSetType);
+  public static java.util.stream.Stream<net.minecraft.world.level.block.state.properties.BlockSetType> values();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String name();
+  public boolean canOpenByHand();
+  public boolean canOpenByWindCharge();
+  public boolean canButtonBeActivatedByArrows();
+  public net.minecraft.world.level.block.state.properties.BlockSetType$PressurePlateSensitivity pressurePlateSensitivity();
+  public net.minecraft.world.level.block.SoundType soundType();
+  public net.minecraft.sounds.SoundEvent doorClose();
+  public net.minecraft.sounds.SoundEvent doorOpen();
+  public net.minecraft.sounds.SoundEvent trapdoorClose();
+  public net.minecraft.sounds.SoundEvent trapdoorOpen();
+  public net.minecraft.sounds.SoundEvent pressurePlateClickOff();
+  public net.minecraft.sounds.SoundEvent pressurePlateClickOn();
+  public net.minecraft.sounds.SoundEvent buttonClickOff();
+  public net.minecraft.sounds.SoundEvent buttonClickOn();
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.SlabBlock'
+===== net.minecraft.world.level.block.SlabBlock
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.SlabBlock
++ sed -n 1,110p
+Compiled from "SlabBlock.java"
+public class net.minecraft.world.level.block.SlabBlock extends net.minecraft.world.level.block.Block implements net.minecraft.world.level.block.SimpleWaterloggedBlock {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.world.level.block.SlabBlock> CODEC;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.SlabType> TYPE;
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED;
+  private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE_BOTTOM;
+  private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE_TOP;
+  public com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.SlabBlock> codec();
+  public net.minecraft.world.level.block.SlabBlock(net.minecraft.world.level.block.state.BlockBehaviour$Properties);
+  protected boolean useShapeForLightOcclusion(net.minecraft.world.level.block.state.BlockState);
+  protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition$Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
+  protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.phys.shapes.CollisionContext);
+  public net.minecraft.world.level.block.state.BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext);
+  protected boolean canBeReplaced(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.item.context.BlockPlaceContext);
+  protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState);
+  public boolean placeLiquid(net.minecraft.world.level.LevelAccessor, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.material.FluidState);
+  public boolean canPlaceLiquid(net.minecraft.world.entity.LivingEntity, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.material.Fluid);
+  protected net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelReader, net.minecraft.world.level.ScheduledTickAccess, net.minecraft.core.BlockPos, net.minecraft.core.Direction, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
+  protected boolean isPathfindable(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.pathfinder.PathComputationType);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.StairBlock'
+===== net.minecraft.world.level.block.StairBlock
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.StairBlock
++ sed -n 1,110p
+Compiled from "StairBlock.java"
+public class net.minecraft.world.level.block.StairBlock extends net.minecraft.world.level.block.Block implements net.minecraft.world.level.block.SimpleWaterloggedBlock {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.world.level.block.StairBlock> CODEC;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.core.Direction> FACING;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.Half> HALF;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.StairsShape> SHAPE;
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED;
+  private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE_OUTER;
+  private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE_STRAIGHT;
+  private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE_INNER;
+  private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> SHAPE_BOTTOM_OUTER;
+  private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> SHAPE_BOTTOM_STRAIGHT;
+  private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> SHAPE_BOTTOM_INNER;
+  private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> SHAPE_TOP_OUTER;
+  private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> SHAPE_TOP_STRAIGHT;
+  private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> SHAPE_TOP_INNER;
+  private final net.minecraft.world.level.block.Block base;
+  protected final net.minecraft.world.level.block.state.BlockState baseState;
+  public com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.StairBlock> codec();
+  protected net.minecraft.world.level.block.StairBlock(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.BlockBehaviour$Properties);
+  protected boolean useShapeForLightOcclusion(net.minecraft.world.level.block.state.BlockState);
+  protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.phys.shapes.CollisionContext);
+  public float getExplosionResistance();
+  public net.minecraft.world.level.block.state.BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext);
+  protected net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelReader, net.minecraft.world.level.ScheduledTickAccess, net.minecraft.core.BlockPos, net.minecraft.core.Direction, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
+  private static net.minecraft.world.level.block.state.properties.StairsShape getStairsShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos);
+  private static boolean canTakeShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.core.Direction);
+  public static boolean isStairs(net.minecraft.world.level.block.state.BlockState);
+  protected net.minecraft.world.level.block.state.BlockState rotate(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.Rotation);
+  protected net.minecraft.world.level.block.state.BlockState mirror(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.Mirror);
+  protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition$Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
+  protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState);
+  protected boolean isPathfindable(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.pathfinder.PathComputationType);
+  private static com.mojang.datafixers.kinds.App lambda$static$0(com.mojang.serialization.codecs.RecordCodecBuilder$Instance);
+  private static net.minecraft.world.level.block.state.BlockState lambda$static$1(net.minecraft.world.level.block.StairBlock);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.WallBlock'
+===== net.minecraft.world.level.block.WallBlock
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.WallBlock
++ sed -n 1,110p
+Compiled from "WallBlock.java"
+public class net.minecraft.world.level.block.WallBlock extends net.minecraft.world.level.block.Block implements net.minecraft.world.level.block.SimpleWaterloggedBlock {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.world.level.block.WallBlock> CODEC;
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty UP;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.WallSide> EAST;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.WallSide> NORTH;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.WallSide> SOUTH;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.WallSide> WEST;
+  public static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.world.level.block.state.properties.WallSide>> PROPERTY_BY_DIRECTION;
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED;
+  private final java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.phys.shapes.VoxelShape> shapes;
+  private final java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.phys.shapes.VoxelShape> collisionShapes;
+  private static final net.minecraft.world.phys.shapes.VoxelShape TEST_SHAPE_POST;
+  private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> TEST_SHAPES_WALL;
+  public com.mojang.serialization.MapCodec<net.minecraft.world.level.block.WallBlock> codec();
+  public net.minecraft.world.level.block.WallBlock(net.minecraft.world.level.block.state.BlockBehaviour$Properties);
+  private java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.phys.shapes.VoxelShape> makeShapes(float, float);
+  protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.phys.shapes.CollisionContext);
+  protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.phys.shapes.CollisionContext);
+  protected boolean isPathfindable(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.pathfinder.PathComputationType);
+  private boolean connectsTo(net.minecraft.world.level.block.state.BlockState, boolean, net.minecraft.core.Direction);
+  public net.minecraft.world.level.block.state.BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext);
+  protected net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelReader, net.minecraft.world.level.ScheduledTickAccess, net.minecraft.core.BlockPos, net.minecraft.core.Direction, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
+  private static boolean isConnected(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.properties.Property<net.minecraft.world.level.block.state.properties.WallSide>);
+  private static boolean isCovered(net.minecraft.world.phys.shapes.VoxelShape, net.minecraft.world.phys.shapes.VoxelShape);
+  private net.minecraft.world.level.block.state.BlockState topUpdate(net.minecraft.world.level.LevelReader, net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState);
+  private net.minecraft.world.level.block.state.BlockState sideUpdate(net.minecraft.world.level.LevelReader, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.core.Direction);
+  private net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.LevelReader, net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, boolean, boolean, boolean, boolean);
+  private boolean shouldRaisePost(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.phys.shapes.VoxelShape);
+  private net.minecraft.world.level.block.state.BlockState updateSides(net.minecraft.world.level.block.state.BlockState, boolean, boolean, boolean, boolean, net.minecraft.world.phys.shapes.VoxelShape);
+  private net.minecraft.world.level.block.state.properties.WallSide makeWallState(boolean, net.minecraft.world.phys.shapes.VoxelShape, net.minecraft.world.phys.shapes.VoxelShape);
+  protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState);
+  protected boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState);
+  protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition$Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
+  protected net.minecraft.world.level.block.state.BlockState rotate(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.Rotation);
+  protected net.minecraft.world.level.block.state.BlockState mirror(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.Mirror);
+  private static net.minecraft.world.phys.shapes.VoxelShape lambda$makeShapes$0(net.minecraft.world.phys.shapes.VoxelShape, java.util.Map, java.util.Map, net.minecraft.world.level.block.state.BlockState);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.FenceBlock'
+===== net.minecraft.world.level.block.FenceBlock
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.FenceBlock
++ sed -n 1,110p
+Compiled from "FenceBlock.java"
+public class net.minecraft.world.level.block.FenceBlock extends net.minecraft.world.level.block.CrossCollisionBlock {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.world.level.block.FenceBlock> CODEC;
+  private final java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.phys.shapes.VoxelShape> occlusionShapes;
+  public com.mojang.serialization.MapCodec<net.minecraft.world.level.block.FenceBlock> codec();
+  public net.minecraft.world.level.block.FenceBlock(net.minecraft.world.level.block.state.BlockBehaviour$Properties);
+  protected net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(net.minecraft.world.level.block.state.BlockState);
+  protected net.minecraft.world.phys.shapes.VoxelShape getVisualShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.phys.shapes.CollisionContext);
+  protected boolean isPathfindable(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.pathfinder.PathComputationType);
+  public boolean connectsTo(net.minecraft.world.level.block.state.BlockState, boolean, net.minecraft.core.Direction);
+  private boolean isSameFence(net.minecraft.world.level.block.state.BlockState);
+  protected net.minecraft.world.InteractionResult useWithoutItem(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.entity.player.Player, net.minecraft.world.phys.BlockHitResult);
+  public net.minecraft.world.level.block.state.BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext);
+  protected net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelReader, net.minecraft.world.level.ScheduledTickAccess, net.minecraft.core.BlockPos, net.minecraft.core.Direction, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
+  protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition$Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.RotatedPillarBlock'
+===== net.minecraft.world.level.block.RotatedPillarBlock
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.RotatedPillarBlock
++ sed -n 1,110p
+Compiled from "RotatedPillarBlock.java"
+public class net.minecraft.world.level.block.RotatedPillarBlock extends net.minecraft.world.level.block.Block {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.world.level.block.RotatedPillarBlock> CODEC;
+  public static final net.minecraft.world.level.block.state.properties.EnumProperty<net.minecraft.core.Direction$Axis> AXIS;
+  public com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.RotatedPillarBlock> codec();
+  public net.minecraft.world.level.block.RotatedPillarBlock(net.minecraft.world.level.block.state.BlockBehaviour$Properties);
+  protected net.minecraft.world.level.block.state.BlockState rotate(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.Rotation);
+  public static net.minecraft.world.level.block.state.BlockState rotatePillar(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.Rotation);
+  protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition$Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
+  public net.minecraft.world.level.block.state.BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.Block'
+===== net.minecraft.world.level.block.Block
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.Block
++ sed -n 1,110p
+Compiled from "Block.java"
+public class net.minecraft.world.level.block.Block extends net.minecraft.world.level.block.state.BlockBehaviour implements net.minecraft.world.level.ItemLike {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.world.level.block.Block> CODEC;
+  private static final org.slf4j.Logger LOGGER;
+  private final net.minecraft.core.Holder$Reference<net.minecraft.world.level.block.Block> builtInRegistryHolder;
+  public static final net.minecraft.core.IdMapper<net.minecraft.world.level.block.state.BlockState> BLOCK_STATE_REGISTRY;
+  private static final com.google.common.cache.LoadingCache<net.minecraft.world.phys.shapes.VoxelShape, java.lang.Boolean> SHAPE_FULL_BLOCK_CACHE;
+  public static final int UPDATE_NEIGHBORS;
+  public static final int UPDATE_CLIENTS;
+  public static final int UPDATE_INVISIBLE;
+  public static final int UPDATE_IMMEDIATE;
+  public static final int UPDATE_KNOWN_SHAPE;
+  public static final int UPDATE_SUPPRESS_DROPS;
+  public static final int UPDATE_MOVE_BY_PISTON;
+  public static final int UPDATE_SKIP_SHAPE_UPDATE_ON_WIRE;
+  public static final int UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS;
+  public static final int UPDATE_SKIP_ON_PLACE;
+  public static final int UPDATE_NONE;
+  public static final int UPDATE_ALL;
+  public static final int UPDATE_ALL_IMMEDIATE;
+  public static final int UPDATE_SKIP_ALL_SIDEEFFECTS;
+  public static final float INDESTRUCTIBLE;
+  public static final float INSTANT;
+  public static final int UPDATE_LIMIT;
+  protected final net.minecraft.world.level.block.state.StateDefinition<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> stateDefinition;
+  private net.minecraft.world.level.block.state.BlockState defaultBlockState;
+  private net.minecraft.world.item.Item item;
+  private static final int CACHE_SIZE;
+  private static final java.lang.ThreadLocal<it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap<net.minecraft.world.level.block.Block$ShapePairKey>> OCCLUSION_CACHE;
+  protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec();
+  public static int getId(net.minecraft.world.level.block.state.BlockState);
+  public static net.minecraft.world.level.block.state.BlockState stateById(int);
+  public static net.minecraft.world.level.block.Block byItem(net.minecraft.world.item.Item);
+  public static net.minecraft.world.level.block.state.BlockState pushEntitiesUp(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelAccessor, net.minecraft.core.BlockPos);
+  public static net.minecraft.world.phys.shapes.VoxelShape box(double, double, double, double, double, double);
+  public static net.minecraft.world.phys.shapes.VoxelShape[] boxes(int, java.util.function.IntFunction<net.minecraft.world.phys.shapes.VoxelShape>);
+  public static net.minecraft.world.phys.shapes.VoxelShape cube(double);
+  public static net.minecraft.world.phys.shapes.VoxelShape cube(double, double, double);
+  public static net.minecraft.world.phys.shapes.VoxelShape column(double, double, double);
+  public static net.minecraft.world.phys.shapes.VoxelShape column(double, double, double, double);
+  public static net.minecraft.world.phys.shapes.VoxelShape boxZ(double, double, double);
+  public static net.minecraft.world.phys.shapes.VoxelShape boxZ(double, double, double, double);
+  public static net.minecraft.world.phys.shapes.VoxelShape boxZ(double, double, double, double, double);
+  public static net.minecraft.world.level.block.state.BlockState updateFromNeighbourShapes(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelAccessor, net.minecraft.core.BlockPos);
+  public static void updateOrDestroy(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelAccessor, net.minecraft.core.BlockPos, int);
+  public static void updateOrDestroy(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelAccessor, net.minecraft.core.BlockPos, int, int);
+  public net.minecraft.world.level.block.Block(net.minecraft.world.level.block.state.BlockBehaviour$Properties);
+  public static boolean isExceptionForConnection(net.minecraft.world.level.block.state.BlockState);
+  protected static boolean dropFromBlockInteractLootTable(net.minecraft.server.level.ServerLevel, net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.entity.BlockEntity, net.minecraft.world.item.ItemInstance, net.minecraft.world.entity.Entity, java.util.function.BiConsumer<net.minecraft.server.level.ServerLevel, net.minecraft.world.item.ItemStack>);
+  protected static boolean dropFromLootTable(net.minecraft.server.level.ServerLevel, net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>, java.util.function.Function<net.minecraft.world.level.storage.loot.LootParams$Builder, net.minecraft.world.level.storage.loot.LootParams>, java.util.function.BiConsumer<net.minecraft.server.level.ServerLevel, net.minecraft.world.item.ItemStack>);
+  public static boolean shouldRenderFace(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.BlockState, net.minecraft.core.Direction);
+  public static boolean canSupportRigidBlock(net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos);
+  public static boolean canSupportCenter(net.minecraft.world.level.LevelReader, net.minecraft.core.BlockPos, net.minecraft.core.Direction);
+  public static boolean isFaceFull(net.minecraft.world.phys.shapes.VoxelShape, net.minecraft.core.Direction);
+  public static boolean isShapeFullBlock(net.minecraft.world.phys.shapes.VoxelShape);
+  public void animateTick(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.util.RandomSource);
+  public void destroy(net.minecraft.world.level.LevelAccessor, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState);
+  public static java.util.List<net.minecraft.world.item.ItemStack> getDrops(net.minecraft.world.level.block.state.BlockState, net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity);
+  public static java.util.List<net.minecraft.world.item.ItemStack> getDrops(net.minecraft.world.level.block.state.BlockState, net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity, net.minecraft.world.entity.Entity, net.minecraft.world.item.ItemInstance);
+  public static void dropResources(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos);
+  public static void dropResources(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.LevelAccessor, net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity);
+  public static void dropResources(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity, net.minecraft.world.entity.Entity, net.minecraft.world.item.ItemStack);
+  public static void popResource(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.item.ItemStack);
+  public static void popResourceFromFace(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.core.Direction, net.minecraft.world.item.ItemStack);
+  private static void popResource(net.minecraft.world.level.Level, java.util.function.Supplier<net.minecraft.world.entity.item.ItemEntity>, net.minecraft.world.item.ItemStack);
+  protected void popExperience(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, int);
+  public float getExplosionResistance();
+  public void wasExploded(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.level.Explosion);
+  public void stepOn(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.entity.Entity);
+  public net.minecraft.world.level.block.state.BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext);
+  public void playerDestroy(net.minecraft.world.level.Level, net.minecraft.world.entity.player.Player, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.entity.BlockEntity, net.minecraft.world.item.ItemStack);
+  public void setPlacedBy(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.entity.LivingEntity, net.minecraft.world.item.ItemStack);
+  public boolean isPossibleToRespawnInThis(net.minecraft.world.level.block.state.BlockState);
+  public net.minecraft.network.chat.MutableComponent getName();
+  public void fallOn(net.minecraft.world.level.Level, net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos, net.minecraft.world.entity.Entity, double);
+  public float getBounceRestitution();
+  public float getFriction();
+  public float getSpeedFactor();
+  public float getJumpFactor();
+  protected void spawnDestroyParticles(net.minecraft.world.level.Level, net.minecraft.world.entity.player.Player, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState);
+  public net.minecraft.world.level.block.state.BlockState playerWillDestroy(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.entity.player.Player);
+  public void handlePrecipitation(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.biome.Biome$Precipitation);
+  public boolean dropFromExplosion(net.minecraft.world.level.Explosion);
+  protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition$Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
+  public net.minecraft.world.level.block.state.StateDefinition<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> getStateDefinition();
+  protected final void registerDefaultState(net.minecraft.world.level.block.state.BlockState);
+  public final net.minecraft.world.level.block.state.BlockState defaultBlockState();
+  public final net.minecraft.world.level.block.state.BlockState withPropertiesOf(net.minecraft.world.level.block.state.BlockState);
+  private static <T extends java.lang.Comparable<T>> net.minecraft.world.level.block.state.BlockState copyProperty(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.properties.Property<T>);
+  public net.minecraft.world.item.Item asItem();
+  public boolean hasDynamicShape();
+  public java.lang.String toString();
+  protected net.minecraft.world.level.block.Block asBlock();
+  protected java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.phys.shapes.VoxelShape> getShapeForEachState(java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.phys.shapes.VoxelShape>);
+  protected java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.phys.shapes.VoxelShape> getShapeForEachState(java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.phys.shapes.VoxelShape>, net.minecraft.world.level.block.state.properties.Property<?>...);
+  private static <S extends net.minecraft.world.level.block.state.StateHolder<?, S>, T extends java.lang.Comparable<T>> S setValueHelper(S, net.minecraft.world.level.block.state.properties.Property<T>, java.lang.Object);
+  public net.minecraft.core.Holder$Reference<net.minecraft.world.level.block.Block> builtInRegistryHolder();
+  protected void tryDropExperience(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.item.ItemStack, net.minecraft.util.valueproviders.IntProvider);
+  private static net.minecraft.world.phys.shapes.VoxelShape lambda$getShapeForEachState$4(java.util.Map, com.google.common.collect.ImmutableMap, net.minecraft.world.level.block.state.BlockState);
+  private static boolean lambda$getShapeForEachState$2(java.util.Map, net.minecraft.world.level.block.state.BlockState);
+  private static boolean lambda$getShapeForEachState$3(net.minecraft.world.level.block.state.BlockState, java.util.Map$Entry);
+  private static java.lang.Object lambda$getShapeForEachState$1(net.minecraft.world.level.block.state.properties.Property);
+  private static net.minecraft.world.level.block.state.properties.Property lambda$getShapeForEachState$0(net.minecraft.world.level.block.state.properties.Property);
+  private static net.minecraft.world.entity.item.ItemEntity lambda$popResourceFromFace$0(net.minecraft.world.level.Level, double, double, double, net.minecraft.world.item.ItemStack, double, double, double);
+  private static net.minecraft.world.entity.item.ItemEntity lambda$popResource$0(net.minecraft.world.level.Level, double, double, double, net.minecraft.world.item.ItemStack);
+  private static void lambda$dropResources$2(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.item.ItemStack);
+  private static void lambda$dropResources$1(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.item.ItemStack);
+  private static void lambda$dropResources$0(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.item.ItemStack);
+  private static it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap lambda$static$0();
+  private static void lambda$dropFromLootTable$0(java.util.function.BiConsumer, net.minecraft.server.level.ServerLevel, net.minecraft.world.item.ItemStack);
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.state.BlockBehaviour$Properties'
+===== net.minecraft.world.level.block.state.BlockBehaviour$Properties
++ javap -p -classpath /tmp/mcsm-dl/client.jar 'net.minecraft.world.level.block.state.BlockBehaviour$Properties'
++ sed -n 1,110p
+Compiled from "BlockBehaviour.java"
+public class net.minecraft.world.level.block.state.BlockBehaviour$Properties {
+  public static final com.mojang.serialization.Codec<net.minecraft.world.level.block.state.BlockBehaviour$Properties> CODEC;
+  private java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.material.MapColor> mapColor;
+  private boolean hasCollision;
+  private net.minecraft.world.level.block.SoundType soundType;
+  private java.util.function.ToIntFunction<net.minecraft.world.level.block.state.BlockState> lightEmission;
+  private float explosionResistance;
+  private float destroyTime;
+  private boolean requiresCorrectToolForDrops;
+  private boolean isRandomlyTicking;
+  private float friction;
+  private float speedFactor;
+  private float jumpFactor;
+  private float bounceRestitution;
+  private net.minecraft.resources.ResourceKey<net.minecraft.world.level.block.Block> id;
+  private net.minecraft.resources.DependantName<net.minecraft.world.level.block.Block, java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>>> drops;
+  private net.minecraft.resources.DependantName<net.minecraft.world.level.block.Block, java.lang.String> descriptionId;
+  private boolean canOcclude;
+  private boolean isAir;
+  private boolean ignitedByLava;
+  private boolean liquid;
+  private boolean forceSolidOff;
+  private boolean forceSolidOn;
+  private net.minecraft.world.level.material.PushReaction pushReaction;
+  private boolean spawnTerrainParticles;
+  private net.minecraft.world.level.block.state.properties.NoteBlockInstrument instrument;
+  private boolean replaceable;
+  private net.minecraft.world.level.block.state.BlockBehaviour$StateArgumentPredicate<net.minecraft.world.entity.EntityType<?>> isValidSpawn;
+  private net.minecraft.world.level.block.state.BlockBehaviour$StatePredicate isRedstoneConductor;
+  private net.minecraft.world.level.block.state.BlockBehaviour$StatePredicate isSuffocating;
+  private net.minecraft.world.level.block.state.BlockBehaviour$StatePredicate isViewBlocking;
+  private net.minecraft.world.level.block.state.BlockBehaviour$PostProcess postProcess;
+  private java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> emissiveRendering;
+  private boolean dynamicShape;
+  private net.minecraft.world.flag.FeatureFlagSet requiredFeatures;
+  private net.minecraft.world.level.block.state.BlockBehaviour$OffsetFunction offsetFunction;
+  private net.minecraft.world.level.block.state.BlockBehaviour$Properties();
+  public static net.minecraft.world.level.block.state.BlockBehaviour$Properties of();
+  public static net.minecraft.world.level.block.state.BlockBehaviour$Properties ofFullCopy(net.minecraft.world.level.block.state.BlockBehaviour);
+  public static net.minecraft.world.level.block.state.BlockBehaviour$Properties ofLegacyCopy(net.minecraft.world.level.block.state.BlockBehaviour);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties mapColor(net.minecraft.world.item.DyeColor);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties mapColor(net.minecraft.world.level.material.MapColor);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties mapColor(java.util.function.Function<net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.material.MapColor>);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties noCollision();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties noOcclusion();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties friction(float);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties speedFactor(float);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties jumpFactor(float);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties bounceRestitution(float);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties sound(net.minecraft.world.level.block.SoundType);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties lightLevel(java.util.function.ToIntFunction<net.minecraft.world.level.block.state.BlockState>);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties strength(float, float);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties instabreak();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties strength(float);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties randomTicks();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties dynamicShape();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties noLootTable();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties overrideLootTable(java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>>);
+  protected java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> effectiveDrops();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties ignitedByLava();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties liquid();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties forceSolidOn();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties forceSolidOff();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties pushReaction(net.minecraft.world.level.material.PushReaction);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties air();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties isValidSpawn(net.minecraft.world.level.block.state.BlockBehaviour$StateArgumentPredicate<net.minecraft.world.entity.EntityType<?>>);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties isRedstoneConductor(net.minecraft.world.level.block.state.BlockBehaviour$StatePredicate);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties isSuffocating(net.minecraft.world.level.block.state.BlockBehaviour$StatePredicate);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties isViewBlocking(net.minecraft.world.level.block.state.BlockBehaviour$StatePredicate);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties postProcess(net.minecraft.world.level.block.state.BlockBehaviour$PostProcess);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties emissiveRendering(java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState>);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties requiresCorrectToolForDrops();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties destroyTime(float);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties explosionResistance(float);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties offsetType(net.minecraft.world.level.block.state.BlockBehaviour$OffsetType);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties noTerrainParticles();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties requiredFeatures(net.minecraft.world.flag.FeatureFlag...);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties instrument(net.minecraft.world.level.block.state.properties.NoteBlockInstrument);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties replaceable();
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties setId(net.minecraft.resources.ResourceKey<net.minecraft.world.level.block.Block>);
+  public net.minecraft.world.level.block.state.BlockBehaviour$Properties overrideDescription(java.lang.String);
+  protected java.lang.String effectiveDescriptionId();
+  private static net.minecraft.world.phys.Vec3 lambda$offsetType$1(net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos);
+  private static net.minecraft.world.phys.Vec3 lambda$offsetType$0(net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos);
+  private static net.minecraft.world.level.material.MapColor lambda$mapColor$1(net.minecraft.world.level.material.MapColor, net.minecraft.world.level.block.state.BlockState);
+  private static net.minecraft.world.level.material.MapColor lambda$mapColor$0(net.minecraft.world.item.DyeColor, net.minecraft.world.level.block.state.BlockState);
+  private static boolean lambda$new$7(net.minecraft.world.level.block.state.BlockState);
+  private static net.minecraft.core.BlockPos lambda$new$6(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos);
+  private static boolean lambda$new$5(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos);
+  private static boolean lambda$new$4(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.BlockGetter, net.minecraft.core.BlockPos, net.minecraft.world.entity.EntityType);
+  private static java.lang.String lambda$new$3(net.minecraft.resources.ResourceKey);
+  private static java.util.Optional lambda$new$2(net.minecraft.resources.ResourceKey);
+  private static int lambda$new$1(net.minecraft.world.level.block.state.BlockState);
+  private static net.minecraft.world.level.material.MapColor lambda$new$0(net.minecraft.world.level.block.state.BlockState);
+  private static net.minecraft.world.level.block.state.BlockBehaviour$Properties lambda$static$0();
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.item.Item'
+===== net.minecraft.world.item.Item
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.item.Item
++ sed -n 1,110p
+Compiled from "Item.java"
+public class net.minecraft.world.item.Item implements net.minecraft.world.level.ItemLike,net.minecraft.world.flag.FeatureElement {
+  public static final com.mojang.serialization.Codec<net.minecraft.core.Holder<net.minecraft.world.item.Item>> CODEC;
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, net.minecraft.core.Holder<net.minecraft.world.item.Item>> STREAM_CODEC;
+  public static final com.mojang.serialization.Codec<net.minecraft.core.Holder<net.minecraft.world.item.Item>> CODEC_WITH_BOUND_COMPONENTS;
+  private static final org.slf4j.Logger LOGGER;
+  public static final java.util.Map<net.minecraft.world.level.block.Block, net.minecraft.world.item.Item> BY_BLOCK;
+  public static final net.minecraft.resources.Identifier BASE_ATTACK_DAMAGE_ID;
+  public static final net.minecraft.resources.Identifier BASE_ATTACK_SPEED_ID;
+  public static final int DEFAULT_MAX_STACK_SIZE;
+  public static final int ABSOLUTE_MAX_STACK_SIZE;
+  public static final int MAX_BAR_WIDTH;
+  protected static final int APPROXIMATELY_INFINITE_USE_DURATION;
+  private final net.minecraft.core.Holder$Reference<net.minecraft.world.item.Item> builtInRegistryHolder;
+  private final net.minecraft.world.item.ItemStackTemplate craftingRemainingItem;
+  protected final java.lang.String descriptionId;
+  private final net.minecraft.world.flag.FeatureFlagSet requiredFeatures;
+  public static int getId(net.minecraft.world.item.Item);
+  public static net.minecraft.world.item.Item byId(int);
+  public static net.minecraft.world.item.Item byBlock(net.minecraft.world.level.block.Block);
+  public net.minecraft.world.item.Item(net.minecraft.world.item.Item$Properties);
+  public net.minecraft.core.Holder$Reference<net.minecraft.world.item.Item> builtInRegistryHolder();
+  public net.minecraft.core.component.DataComponentMap components();
+  public int getDefaultMaxStackSize();
+  public void onUseTick(net.minecraft.world.level.Level, net.minecraft.world.entity.LivingEntity, net.minecraft.world.item.ItemStack, int);
+  public void onDestroyed(net.minecraft.world.entity.item.ItemEntity);
+  public boolean canDestroyBlock(net.minecraft.world.item.ItemStack, net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.entity.LivingEntity);
+  public net.minecraft.world.item.Item asItem();
+  public net.minecraft.world.InteractionResult useOn(net.minecraft.world.item.context.UseOnContext);
+  public float getDestroySpeed(net.minecraft.world.item.ItemStack, net.minecraft.world.level.block.state.BlockState);
+  public net.minecraft.world.InteractionResult use(net.minecraft.world.level.Level, net.minecraft.world.entity.player.Player, net.minecraft.world.InteractionHand);
+  public net.minecraft.world.item.ItemStack finishUsingItem(net.minecraft.world.item.ItemStack, net.minecraft.world.level.Level, net.minecraft.world.entity.LivingEntity);
+  public boolean isBarVisible(net.minecraft.world.item.ItemStack);
+  public int getBarWidth(net.minecraft.world.item.ItemStack);
+  public int getBarColor(net.minecraft.world.item.ItemStack);
+  public boolean overrideStackedOnOther(net.minecraft.world.item.ItemStack, net.minecraft.world.inventory.Slot, net.minecraft.world.inventory.ClickAction, net.minecraft.world.entity.player.Player);
+  public boolean overrideOtherStackedOnMe(net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack, net.minecraft.world.inventory.Slot, net.minecraft.world.inventory.ClickAction, net.minecraft.world.entity.player.Player, net.minecraft.world.entity.SlotAccess);
+  public float getAttackDamageBonus(net.minecraft.world.entity.Entity, float, net.minecraft.world.damagesource.DamageSource);
+  public net.minecraft.world.damagesource.DamageSource getItemDamageSource(net.minecraft.world.entity.LivingEntity);
+  public void hurtEnemy(net.minecraft.world.item.ItemStack, net.minecraft.world.entity.LivingEntity, net.minecraft.world.entity.LivingEntity);
+  public void postHurtEnemy(net.minecraft.world.item.ItemStack, net.minecraft.world.entity.LivingEntity, net.minecraft.world.entity.LivingEntity);
+  public boolean mineBlock(net.minecraft.world.item.ItemStack, net.minecraft.world.level.Level, net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos, net.minecraft.world.entity.LivingEntity);
+  public boolean isCorrectToolForDrops(net.minecraft.world.item.ItemStack, net.minecraft.world.level.block.state.BlockState);
+  public net.minecraft.world.InteractionResult interactLivingEntity(net.minecraft.world.item.ItemStack, net.minecraft.world.entity.player.Player, net.minecraft.world.entity.LivingEntity, net.minecraft.world.InteractionHand);
+  public java.lang.String toString();
+  public final net.minecraft.world.item.ItemStackTemplate getCraftingRemainder();
+  public void inventoryTick(net.minecraft.world.item.ItemStack, net.minecraft.server.level.ServerLevel, net.minecraft.world.entity.Entity, net.minecraft.world.entity.EquipmentSlot);
+  public void onCraftedBy(net.minecraft.world.item.ItemStack, net.minecraft.world.entity.player.Player);
+  public void onCraftedPostProcess(net.minecraft.world.item.ItemStack, net.minecraft.world.level.Level);
+  public net.minecraft.world.item.ItemUseAnimation getUseAnimation(net.minecraft.world.item.ItemStack);
+  public int getUseDuration(net.minecraft.world.item.ItemStack, net.minecraft.world.entity.LivingEntity);
+  public boolean releaseUsing(net.minecraft.world.item.ItemStack, net.minecraft.world.level.Level, net.minecraft.world.entity.LivingEntity, int);
+  public void appendHoverText(net.minecraft.world.item.ItemStack, net.minecraft.world.item.Item$TooltipContext, net.minecraft.world.item.component.TooltipDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component>, net.minecraft.world.item.TooltipFlag);
+  public java.util.Optional<net.minecraft.world.inventory.tooltip.TooltipComponent> getTooltipImage(net.minecraft.world.item.ItemStack);
+  public final java.lang.String getDescriptionId();
+  public net.minecraft.network.chat.Component getName(net.minecraft.world.item.ItemStack);
+  public boolean isFoil(net.minecraft.world.item.ItemStack);
+  protected static net.minecraft.world.phys.BlockHitResult getPlayerPOVHitResult(net.minecraft.world.level.Level, net.minecraft.world.entity.player.Player, net.minecraft.world.level.ClipContext$Fluid);
+  public boolean useOnRelease(net.minecraft.world.item.ItemStack);
+  public net.minecraft.world.item.ItemStack getDefaultInstance();
+  public boolean canFitInsideContainerItems();
+  public final net.minecraft.world.flag.FeatureFlagSet requiredFeatures();
+  public boolean shouldPrintOpWarning(net.minecraft.world.item.ItemStack, net.minecraft.world.entity.player.Player);
+  private static com.mojang.serialization.DataResult lambda$static$2(net.minecraft.core.Holder);
+  private static java.lang.String lambda$static$3(net.minecraft.core.Holder);
+  private static com.mojang.serialization.DataResult lambda$static$0(net.minecraft.core.Holder);
+  private static java.lang.String lambda$static$1();
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.item.Item$Properties'
+===== net.minecraft.world.item.Item$Properties
++ javap -p -classpath /tmp/mcsm-dl/client.jar 'net.minecraft.world.item.Item$Properties'
++ sed -n 1,110p
+Compiled from "Item.java"
+public class net.minecraft.world.item.Item$Properties {
+  private static final net.minecraft.resources.DependantName<net.minecraft.world.item.Item, java.lang.String> BLOCK_DESCRIPTION_ID;
+  private static final net.minecraft.resources.DependantName<net.minecraft.world.item.Item, java.lang.String> ITEM_DESCRIPTION_ID;
+  private net.minecraft.core.component.DataComponentInitializers$Initializer<net.minecraft.world.item.Item> componentInitializer;
+  private net.minecraft.world.item.ItemStackTemplate craftingRemainingItem;
+  private net.minecraft.world.flag.FeatureFlagSet requiredFeatures;
+  private net.minecraft.resources.ResourceKey<net.minecraft.world.item.Item> id;
+  private net.minecraft.resources.DependantName<net.minecraft.world.item.Item, java.lang.String> descriptionId;
+  private final net.minecraft.resources.DependantName<net.minecraft.world.item.Item, net.minecraft.resources.Identifier> model;
+  public net.minecraft.world.item.Item$Properties();
+  public net.minecraft.world.item.Item$Properties food(net.minecraft.world.food.FoodProperties);
+  public net.minecraft.world.item.Item$Properties food(net.minecraft.world.food.FoodProperties, net.minecraft.world.item.component.Consumable);
+  public net.minecraft.world.item.Item$Properties usingConvertsTo(net.minecraft.world.item.Item);
+  public net.minecraft.world.item.Item$Properties useCooldown(float);
+  public net.minecraft.world.item.Item$Properties stacksTo(int);
+  public net.minecraft.world.item.Item$Properties durability(int);
+  public net.minecraft.world.item.Item$Properties craftRemainder(net.minecraft.world.item.Item);
+  public net.minecraft.world.item.Item$Properties craftRemainder(net.minecraft.world.item.ItemStackTemplate);
+  public net.minecraft.world.item.Item$Properties rarity(net.minecraft.world.item.Rarity);
+  public net.minecraft.world.item.Item$Properties fireResistant();
+  public net.minecraft.world.item.Item$Properties jukeboxPlayable(net.minecraft.resources.ResourceKey<net.minecraft.world.item.JukeboxSong>);
+  public net.minecraft.world.item.Item$Properties enchantable(int);
+  public net.minecraft.world.item.Item$Properties repairable(net.minecraft.world.item.Item);
+  public net.minecraft.world.item.Item$Properties repairable(net.minecraft.tags.TagKey<net.minecraft.world.item.Item>);
+  public net.minecraft.world.item.Item$Properties equippable(net.minecraft.world.entity.EquipmentSlot);
+  public net.minecraft.world.item.Item$Properties equippableUnswappable(net.minecraft.world.entity.EquipmentSlot);
+  public net.minecraft.world.item.Item$Properties tool(net.minecraft.world.item.ToolMaterial, net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block>, float, float, float);
+  public net.minecraft.world.item.Item$Properties pickaxe(net.minecraft.world.item.ToolMaterial, float, float);
+  public net.minecraft.world.item.Item$Properties axe(net.minecraft.world.item.ToolMaterial, float, float);
+  public net.minecraft.world.item.Item$Properties hoe(net.minecraft.world.item.ToolMaterial, float, float);
+  public net.minecraft.world.item.Item$Properties shovel(net.minecraft.world.item.ToolMaterial, float, float);
+  public net.minecraft.world.item.Item$Properties sword(net.minecraft.world.item.ToolMaterial, float, float);
+  public net.minecraft.world.item.Item$Properties spear(net.minecraft.world.item.ToolMaterial, float, float, float, float, float, float, float, float, float);
+  public net.minecraft.world.item.Item$Properties spawnEgg(net.minecraft.world.entity.EntityType<?>);
+  public net.minecraft.world.item.Item$Properties humanoidArmor(net.minecraft.world.item.equipment.ArmorMaterial, net.minecraft.world.item.equipment.ArmorType);
+  public net.minecraft.world.item.Item$Properties wolfArmor(net.minecraft.world.item.equipment.ArmorMaterial);
+  public net.minecraft.world.item.Item$Properties horseArmor(net.minecraft.world.item.equipment.ArmorMaterial);
+  public net.minecraft.world.item.Item$Properties nautilusArmor(net.minecraft.world.item.equipment.ArmorMaterial);
+  public net.minecraft.world.item.Item$Properties trimMaterial(net.minecraft.resources.ResourceKey<net.minecraft.world.item.equipment.trim.TrimMaterial>);
+  public net.minecraft.world.item.Item$Properties requiredFeatures(net.minecraft.world.flag.FeatureFlag...);
+  public net.minecraft.world.item.Item$Properties requiredFeatures(net.minecraft.world.flag.FeatureFlagSet);
+  public net.minecraft.world.item.Item$Properties setId(net.minecraft.resources.ResourceKey<net.minecraft.world.item.Item>);
+  public net.minecraft.world.item.Item$Properties overrideDescription(java.lang.String);
+  public net.minecraft.world.item.Item$Properties useBlockDescriptionPrefix();
+  public net.minecraft.world.item.Item$Properties useItemDescriptionPrefix();
+  private net.minecraft.resources.ResourceKey<net.minecraft.world.item.Item> itemIdOrThrow();
+  protected java.lang.String effectiveDescriptionId();
+  public net.minecraft.resources.Identifier effectiveModel();
+  public <T> net.minecraft.world.item.Item$Properties component(net.minecraft.core.component.DataComponentType<T>, T);
+  public <T> net.minecraft.world.item.Item$Properties delayedComponent(net.minecraft.core.component.DataComponentType<T>, net.minecraft.core.component.DataComponentInitializers$SingleComponentInitializer<T>);
+  public <T> net.minecraft.world.item.Item$Properties delayedHolderComponent(net.minecraft.core.component.DataComponentType<net.minecraft.core.Holder<T>>, net.minecraft.resources.ResourceKey<T>);
+  public net.minecraft.world.item.Item$Properties attributes(net.minecraft.world.item.component.ItemAttributeModifiers);
+  private net.minecraft.core.component.DataComponentInitializers$Initializer<net.minecraft.world.item.Item> finalizeInitializer(net.minecraft.network.chat.Component, net.minecraft.resources.Identifier);
+  private static void lambda$finalizeInitializer$0(net.minecraft.network.chat.Component, net.minecraft.resources.Identifier, net.minecraft.core.component.DataComponentMap$Builder, net.minecraft.core.HolderLookup$Provider, net.minecraft.resources.ResourceKey);
+  private static void lambda$finalizeInitializer$1(net.minecraft.core.component.DataComponentMap);
+  private static void lambda$delayedHolderComponent$0(net.minecraft.core.component.DataComponentType, net.minecraft.resources.ResourceKey, net.minecraft.core.component.DataComponentMap$Builder, net.minecraft.core.HolderLookup$Provider, net.minecraft.resources.ResourceKey);
+  private static net.minecraft.world.item.JukeboxPlayable lambda$jukeboxPlayable$0(net.minecraft.resources.ResourceKey, net.minecraft.core.HolderLookup$Provider);
+  private static net.minecraft.world.item.component.DamageResistant lambda$fireResistant$0(net.minecraft.core.HolderLookup$Provider);
+  private static void lambda$new$0(net.minecraft.core.component.DataComponentMap$Builder, net.minecraft.core.HolderLookup$Provider, net.minecraft.resources.ResourceKey);
+  private static java.lang.String lambda$static$1(net.minecraft.resources.ResourceKey);
+  private static java.lang.String lambda$static$0(net.minecraft.resources.ResourceKey);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.item.BlockItem'
+===== net.minecraft.world.item.BlockItem
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.item.BlockItem
++ sed -n 1,110p
+Compiled from "BlockItem.java"
+public class net.minecraft.world.item.BlockItem extends net.minecraft.world.item.Item {
+  private final net.minecraft.world.level.block.Block block;
+  public net.minecraft.world.item.BlockItem(net.minecraft.world.level.block.Block, net.minecraft.world.item.Item$Properties);
+  public net.minecraft.world.InteractionResult useOn(net.minecraft.world.item.context.UseOnContext);
+  public net.minecraft.world.InteractionResult place(net.minecraft.world.item.context.BlockPlaceContext);
+  protected net.minecraft.sounds.SoundEvent getPlaceSound(net.minecraft.world.level.block.state.BlockState);
+  public net.minecraft.world.item.context.BlockPlaceContext updatePlacementContext(net.minecraft.world.item.context.BlockPlaceContext);
+  private static void updateBlockEntityComponents(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.item.ItemStack);
+  protected boolean updateCustomBlockEntityTag(net.minecraft.core.BlockPos, net.minecraft.world.level.Level, net.minecraft.world.entity.player.Player, net.minecraft.world.item.ItemStack, net.minecraft.world.level.block.state.BlockState);
+  protected net.minecraft.world.level.block.state.BlockState getPlacementState(net.minecraft.world.item.context.BlockPlaceContext);
+  private net.minecraft.world.level.block.state.BlockState updateBlockStateFromTag(net.minecraft.core.BlockPos, net.minecraft.world.level.Level, net.minecraft.world.item.ItemStack, net.minecraft.world.level.block.state.BlockState);
+  protected boolean canPlace(net.minecraft.world.item.context.BlockPlaceContext, net.minecraft.world.level.block.state.BlockState);
+  protected boolean mustSurvive();
+  protected boolean placeBlock(net.minecraft.world.item.context.BlockPlaceContext, net.minecraft.world.level.block.state.BlockState);
+  public static boolean updateCustomBlockEntityTag(net.minecraft.world.level.Level, net.minecraft.world.entity.player.Player, net.minecraft.core.BlockPos, net.minecraft.world.item.ItemStack);
+  public boolean shouldPrintOpWarning(net.minecraft.world.item.ItemStack, net.minecraft.world.entity.player.Player);
+  public net.minecraft.world.level.block.Block getBlock();
+  public void registerBlocks(java.util.Map<net.minecraft.world.level.block.Block, net.minecraft.world.item.Item>, net.minecraft.world.item.Item);
+  public boolean canFitInsideContainerItems();
+  public void onDestroyed(net.minecraft.world.entity.item.ItemEntity);
+  public static void setBlockEntityData(net.minecraft.world.item.ItemStack, net.minecraft.world.level.block.entity.BlockEntityType<?>, net.minecraft.world.level.storage.TagValueOutput);
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.item.SwordItem'
+===== net.minecraft.world.item.SwordItem
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.item.SwordItem
++ sed -n 1,110p
+Error: class not found: net.minecraft.world.item.SwordItem
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.item.Tier'
+===== net.minecraft.world.item.Tier
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.item.Tier
++ sed -n 1,110p
+Error: class not found: net.minecraft.world.item.Tier
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.item.Rarity'
+===== net.minecraft.world.item.Rarity
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.item.Rarity
++ sed -n 1,110p
+Compiled from "Rarity.java"
+public final class net.minecraft.world.item.Rarity extends java.lang.Enum<net.minecraft.world.item.Rarity> implements net.minecraft.util.StringRepresentable {
+  public static final net.minecraft.world.item.Rarity COMMON;
+  public static final net.minecraft.world.item.Rarity UNCOMMON;
+  public static final net.minecraft.world.item.Rarity RARE;
+  public static final net.minecraft.world.item.Rarity EPIC;
+  public static final com.mojang.serialization.Codec<net.minecraft.world.item.Rarity> CODEC;
+  public static final java.util.function.IntFunction<net.minecraft.world.item.Rarity> BY_ID;
+  public static final net.minecraft.network.codec.StreamCodec<io.netty.buffer.ByteBuf, net.minecraft.world.item.Rarity> STREAM_CODEC;
+  private final int id;
+  private final java.lang.String name;
+  private final net.minecraft.ChatFormatting color;
+  private static final net.minecraft.world.item.Rarity[] $VALUES;
+  public static net.minecraft.world.item.Rarity[] values();
+  public static net.minecraft.world.item.Rarity valueOf(java.lang.String);
+  private net.minecraft.world.item.Rarity(int, java.lang.String, net.minecraft.ChatFormatting);
+  public net.minecraft.ChatFormatting color();
+  public java.lang.String getSerializedName();
+  private static net.minecraft.world.item.Rarity[] $values();
+  private static int lambda$static$1(net.minecraft.world.item.Rarity);
+  private static int lambda$static$0(net.minecraft.world.item.Rarity);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.level.block.SoundType'
+===== net.minecraft.world.level.block.SoundType
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.level.block.SoundType
++ sed -n 1,110p
+Compiled from "SoundType.java"
+public class net.minecraft.world.level.block.SoundType {
+  public static final net.minecraft.world.level.block.SoundType EMPTY;
+  public static final net.minecraft.world.level.block.SoundType WOOD;
+  public static final net.minecraft.world.level.block.SoundType GRAVEL;
+  public static final net.minecraft.world.level.block.SoundType GRASS;
+  public static final net.minecraft.world.level.block.SoundType LILY_PAD;
+  public static final net.minecraft.world.level.block.SoundType STONE;
+  public static final net.minecraft.world.level.block.SoundType METAL;
+  public static final net.minecraft.world.level.block.SoundType GLASS;
+  public static final net.minecraft.world.level.block.SoundType WOOL;
+  public static final net.minecraft.world.level.block.SoundType SAND;
+  public static final net.minecraft.world.level.block.SoundType SNOW;
+  public static final net.minecraft.world.level.block.SoundType POWDER_SNOW;
+  public static final net.minecraft.world.level.block.SoundType LADDER;
+  public static final net.minecraft.world.level.block.SoundType ANVIL;
+  public static final net.minecraft.world.level.block.SoundType SLIME_BLOCK;
+  public static final net.minecraft.world.level.block.SoundType HONEY_BLOCK;
+  public static final net.minecraft.world.level.block.SoundType WET_GRASS;
+  public static final net.minecraft.world.level.block.SoundType CORAL_BLOCK;
+  public static final net.minecraft.world.level.block.SoundType BAMBOO;
+  public static final net.minecraft.world.level.block.SoundType BAMBOO_SAPLING;
+  public static final net.minecraft.world.level.block.SoundType SCAFFOLDING;
+  public static final net.minecraft.world.level.block.SoundType SWEET_BERRY_BUSH;
+  public static final net.minecraft.world.level.block.SoundType CROP;
+  public static final net.minecraft.world.level.block.SoundType HARD_CROP;
+  public static final net.minecraft.world.level.block.SoundType VINE;
+  public static final net.minecraft.world.level.block.SoundType NETHER_WART;
+  public static final net.minecraft.world.level.block.SoundType LANTERN;
+  public static final net.minecraft.world.level.block.SoundType STEM;
+  public static final net.minecraft.world.level.block.SoundType NYLIUM;
+  public static final net.minecraft.world.level.block.SoundType FUNGUS;
+  public static final net.minecraft.world.level.block.SoundType ROOTS;
+  public static final net.minecraft.world.level.block.SoundType SHROOMLIGHT;
+  public static final net.minecraft.world.level.block.SoundType WEEPING_VINES;
+  public static final net.minecraft.world.level.block.SoundType TWISTING_VINES;
+  public static final net.minecraft.world.level.block.SoundType SOUL_SAND;
+  public static final net.minecraft.world.level.block.SoundType SOUL_SOIL;
+  public static final net.minecraft.world.level.block.SoundType BASALT;
+  public static final net.minecraft.world.level.block.SoundType WART_BLOCK;
+  public static final net.minecraft.world.level.block.SoundType NETHERRACK;
+  public static final net.minecraft.world.level.block.SoundType NETHER_BRICKS;
+  public static final net.minecraft.world.level.block.SoundType NETHER_SPROUTS;
+  public static final net.minecraft.world.level.block.SoundType NETHER_ORE;
+  public static final net.minecraft.world.level.block.SoundType BONE_BLOCK;
+  public static final net.minecraft.world.level.block.SoundType NETHERITE_BLOCK;
+  public static final net.minecraft.world.level.block.SoundType ANCIENT_DEBRIS;
+  public static final net.minecraft.world.level.block.SoundType LODESTONE;
+  public static final net.minecraft.world.level.block.SoundType CHAIN;
+  public static final net.minecraft.world.level.block.SoundType NETHER_GOLD_ORE;
+  public static final net.minecraft.world.level.block.SoundType GILDED_BLACKSTONE;
+  public static final net.minecraft.world.level.block.SoundType CANDLE;
+  public static final net.minecraft.world.level.block.SoundType AMETHYST;
+  public static final net.minecraft.world.level.block.SoundType AMETHYST_CLUSTER;
+  public static final net.minecraft.world.level.block.SoundType SMALL_AMETHYST_BUD;
+  public static final net.minecraft.world.level.block.SoundType MEDIUM_AMETHYST_BUD;
+  public static final net.minecraft.world.level.block.SoundType LARGE_AMETHYST_BUD;
+  public static final net.minecraft.world.level.block.SoundType TUFF;
+  public static final net.minecraft.world.level.block.SoundType TUFF_BRICKS;
+  public static final net.minecraft.world.level.block.SoundType POLISHED_TUFF;
+  public static final net.minecraft.world.level.block.SoundType CALCITE;
+  public static final net.minecraft.world.level.block.SoundType DRIPSTONE_BLOCK;
+  public static final net.minecraft.world.level.block.SoundType POINTED_DRIPSTONE;
+  public static final net.minecraft.world.level.block.SoundType COPPER;
+  public static final net.minecraft.world.level.block.SoundType COPPER_BULB;
+  public static final net.minecraft.world.level.block.SoundType COPPER_GRATE;
+  public static final net.minecraft.world.level.block.SoundType COPPER_GOLEM_STATUE;
+  public static final net.minecraft.world.level.block.SoundType CAVE_VINES;
+  public static final net.minecraft.world.level.block.SoundType SPORE_BLOSSOM;
+  public static final net.minecraft.world.level.block.SoundType CACTUS_FLOWER;
+  public static final net.minecraft.world.level.block.SoundType AZALEA;
+  public static final net.minecraft.world.level.block.SoundType FLOWERING_AZALEA;
+  public static final net.minecraft.world.level.block.SoundType MOSS_CARPET;
+  public static final net.minecraft.world.level.block.SoundType PINK_PETALS;
+  public static final net.minecraft.world.level.block.SoundType LEAF_LITTER;
+  public static final net.minecraft.world.level.block.SoundType MOSS;
+  public static final net.minecraft.world.level.block.SoundType BIG_DRIPLEAF;
+  public static final net.minecraft.world.level.block.SoundType SMALL_DRIPLEAF;
+  public static final net.minecraft.world.level.block.SoundType ROOTED_DIRT;
+  public static final net.minecraft.world.level.block.SoundType HANGING_ROOTS;
+  public static final net.minecraft.world.level.block.SoundType AZALEA_LEAVES;
+  public static final net.minecraft.world.level.block.SoundType SCULK_SENSOR;
+  public static final net.minecraft.world.level.block.SoundType SCULK_CATALYST;
+  public static final net.minecraft.world.level.block.SoundType SCULK;
+  public static final net.minecraft.world.level.block.SoundType SCULK_VEIN;
+  public static final net.minecraft.world.level.block.SoundType SCULK_SHRIEKER;
+  public static final net.minecraft.world.level.block.SoundType GLOW_LICHEN;
+  public static final net.minecraft.world.level.block.SoundType DEEPSLATE;
+  public static final net.minecraft.world.level.block.SoundType DEEPSLATE_BRICKS;
+  public static final net.minecraft.world.level.block.SoundType DEEPSLATE_TILES;
+  public static final net.minecraft.world.level.block.SoundType POLISHED_DEEPSLATE;
+  public static final net.minecraft.world.level.block.SoundType FROGLIGHT;
+  public static final net.minecraft.world.level.block.SoundType FROGSPAWN;
+  public static final net.minecraft.world.level.block.SoundType MANGROVE_ROOTS;
+  public static final net.minecraft.world.level.block.SoundType MUDDY_MANGROVE_ROOTS;
+  public static final net.minecraft.world.level.block.SoundType MUD;
+  public static final net.minecraft.world.level.block.SoundType MUD_BRICKS;
+  public static final net.minecraft.world.level.block.SoundType PACKED_MUD;
+  public static final net.minecraft.world.level.block.SoundType HANGING_SIGN;
+  public static final net.minecraft.world.level.block.SoundType NETHER_WOOD_HANGING_SIGN;
+  public static final net.minecraft.world.level.block.SoundType BAMBOO_WOOD_HANGING_SIGN;
+  public static final net.minecraft.world.level.block.SoundType BAMBOO_WOOD;
+  public static final net.minecraft.world.level.block.SoundType NETHER_WOOD;
+  public static final net.minecraft.world.level.block.SoundType CHERRY_WOOD;
+  public static final net.minecraft.world.level.block.SoundType CHERRY_SAPLING;
+  public static final net.minecraft.world.level.block.SoundType CHERRY_LEAVES;
+  public static final net.minecraft.world.level.block.SoundType CHERRY_WOOD_HANGING_SIGN;
+  public static final net.minecraft.world.level.block.SoundType CHISELED_BOOKSHELF;
+  public static final net.minecraft.world.level.block.SoundType SHELF;
+  public static final net.minecraft.world.level.block.SoundType SUSPICIOUS_SAND;
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.EntityType'
+===== net.minecraft.world.entity.EntityType
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.EntityType
++ sed -n 1,110p
+Compiled from "EntityType.java"
+public class net.minecraft.world.entity.EntityType<T extends net.minecraft.world.entity.Entity> implements net.minecraft.world.level.entity.EntityTypeTest<net.minecraft.world.entity.Entity, T>, net.minecraft.world.flag.FeatureElement {
+  private static final org.slf4j.Logger LOGGER;
+  private final net.minecraft.core.Holder$Reference<net.minecraft.world.entity.EntityType<?>> builtInRegistryHolder;
+  public static final com.mojang.serialization.Codec<net.minecraft.world.entity.EntityType<?>> CODEC;
+  public static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, net.minecraft.world.entity.EntityType<?>> STREAM_CODEC;
+  private final net.minecraft.world.entity.EntityType$EntityFactory<T> factory;
+  private final net.minecraft.world.entity.MobCategory category;
+  private final net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> immuneTo;
+  private final boolean serialize;
+  private final boolean summon;
+  private final boolean fireImmune;
+  private final boolean canSpawnFarFromPlayer;
+  private final int clientTrackingRange;
+  private final int updateInterval;
+  private final java.lang.String descriptionId;
+  private net.minecraft.network.chat.Component description;
+  private final java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> lootTable;
+  private final net.minecraft.world.entity.EntityDimensions dimensions;
+  private final float spawnDimensionsScale;
+  private final net.minecraft.world.flag.FeatureFlagSet requiredFeatures;
+  private final boolean allowedInPeaceful;
+  public static net.minecraft.resources.Identifier getKey(net.minecraft.world.entity.EntityType<?>);
+  public net.minecraft.world.entity.EntityType(net.minecraft.world.entity.EntityType$EntityFactory<T>, net.minecraft.world.entity.MobCategory, boolean, boolean, boolean, boolean, net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block>, net.minecraft.world.entity.EntityDimensions, float, int, int, java.lang.String, java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>>, net.minecraft.world.flag.FeatureFlagSet, boolean);
+  public T spawn(net.minecraft.server.level.ServerLevel, net.minecraft.world.item.ItemStack, net.minecraft.world.entity.LivingEntity, net.minecraft.core.BlockPos, net.minecraft.world.entity.EntitySpawnReason, boolean, boolean);
+  public static <T extends net.minecraft.world.entity.Entity> net.minecraft.world.entity.PostSpawnProcessor<T> createDefaultStackConfig(net.minecraft.world.level.Level, net.minecraft.world.item.ItemStack, net.minecraft.world.entity.LivingEntity);
+  public static <T extends net.minecraft.world.entity.Entity> net.minecraft.world.entity.PostSpawnProcessor<T> appendDefaultStackConfig(net.minecraft.world.entity.PostSpawnProcessor<T>, net.minecraft.world.level.Level, net.minecraft.world.item.ItemStack, net.minecraft.world.entity.LivingEntity);
+  public static <T extends net.minecraft.world.entity.Entity> net.minecraft.world.entity.PostSpawnProcessor<T> appendComponentsConfig(net.minecraft.world.entity.PostSpawnProcessor<T>, net.minecraft.world.item.ItemStack);
+  public static <T extends net.minecraft.world.entity.Entity> net.minecraft.world.entity.PostSpawnProcessor<T> appendCustomEntityStackConfig(net.minecraft.world.entity.PostSpawnProcessor<T>, net.minecraft.world.level.Level, net.minecraft.world.item.ItemStack, net.minecraft.world.entity.LivingEntity);
+  public T spawn(net.minecraft.server.level.ServerLevel, net.minecraft.core.BlockPos, net.minecraft.world.entity.EntitySpawnReason);
+  public T spawn(net.minecraft.server.level.ServerLevel, net.minecraft.world.entity.PostSpawnProcessor<T>, net.minecraft.core.BlockPos, net.minecraft.world.entity.EntitySpawnReason, boolean, boolean);
+  public T create(net.minecraft.server.level.ServerLevel, net.minecraft.world.entity.PostSpawnProcessor<T>, net.minecraft.core.BlockPos, net.minecraft.world.entity.EntitySpawnReason, boolean, boolean);
+  protected static double getYOffset(net.minecraft.world.level.LevelReader, net.minecraft.core.BlockPos, boolean, net.minecraft.world.phys.AABB);
+  public static void updateCustomEntityTag(net.minecraft.world.level.Level, net.minecraft.world.entity.LivingEntity, net.minecraft.world.entity.Entity, net.minecraft.world.item.component.TypedEntityData<net.minecraft.world.entity.EntityType<?>>);
+  public boolean canSerialize();
+  public boolean canSummon();
+  public boolean fireImmune();
+  public boolean canSpawnFarFromPlayer();
+  public net.minecraft.world.entity.MobCategory getCategory();
+  public java.lang.String getDescriptionId();
+  public net.minecraft.network.chat.Component getDescription();
+  public java.lang.String toString();
+  public java.lang.String toShortString();
+  public java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> getDefaultLootTable();
+  public float getWidth();
+  public float getHeight();
+  public net.minecraft.world.flag.FeatureFlagSet requiredFeatures();
+  public boolean canSpawn(net.minecraft.world.level.Level);
+  public T create(net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnReason);
+  public T create(net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnRequest);
+  public static java.util.Optional<net.minecraft.world.entity.Entity> create(net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnRequest);
+  public static java.util.Optional<net.minecraft.world.entity.Entity> create(net.minecraft.world.entity.EntityType<?>, net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnReason);
+  public net.minecraft.world.phys.AABB getSpawnAABB(double, double, double);
+  public boolean isBlockDangerous(net.minecraft.world.level.block.state.BlockState);
+  public net.minecraft.world.entity.EntityDimensions getDimensions();
+  public static java.util.Optional<net.minecraft.world.entity.EntityType<?>> by(net.minecraft.world.level.storage.ValueInput);
+  public static net.minecraft.world.entity.Entity loadEntityRecursive(net.minecraft.nbt.CompoundTag, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnRequest, net.minecraft.world.entity.EntityProcessor);
+  public static net.minecraft.world.entity.Entity loadEntityRecursive(net.minecraft.world.entity.EntityType<?>, net.minecraft.nbt.CompoundTag, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnReason, net.minecraft.world.entity.EntityProcessor);
+  public static net.minecraft.world.entity.Entity loadEntityRecursive(net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnReason, net.minecraft.world.entity.EntityProcessor);
+  public static net.minecraft.world.entity.Entity loadEntityRecursive(net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnRequest, net.minecraft.world.entity.EntityProcessor);
+  public static net.minecraft.world.entity.Entity loadEntityRecursive(net.minecraft.world.entity.EntityType<?>, net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnReason, net.minecraft.world.entity.EntityProcessor);
+  private static net.minecraft.world.entity.Entity loadPassengersRecursive(net.minecraft.world.entity.Entity, net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnRequest, net.minecraft.world.entity.EntityProcessor);
+  public static java.util.stream.Stream<net.minecraft.world.entity.Entity> loadEntitiesRecursive(net.minecraft.world.level.storage.ValueInput$ValueInputList, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnReason);
+  private static java.util.Optional<net.minecraft.world.entity.Entity> loadStaticEntity(net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnRequest);
+  private static java.util.Optional<net.minecraft.world.entity.Entity> loadStaticEntity(net.minecraft.world.entity.EntityType<?>, net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnReason);
+  public int clientTrackingRange();
+  public int updateInterval();
+  public boolean trackDeltas();
+  public T tryCast(net.minecraft.world.entity.Entity);
+  public java.lang.Class<? extends net.minecraft.world.entity.Entity> getBaseClass();
+  public net.minecraft.core.Holder$Reference<net.minecraft.world.entity.EntityType<?>> builtInRegistryHolder();
+  public boolean isAllowedInPeaceful();
+  public boolean onlyOpCanSetNbt();
+  public java.lang.Object tryCast(java.lang.Object);
+  private static void lambda$loadEntitiesRecursive$0(net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnReason, net.minecraft.world.level.storage.ValueInput, java.util.function.Consumer);
+  private static net.minecraft.world.entity.Entity lambda$loadEntitiesRecursive$1(java.util.function.Consumer, net.minecraft.world.entity.Entity);
+  private static net.minecraft.world.entity.Entity lambda$loadEntityRecursive$1(net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnReason, net.minecraft.world.entity.EntityProcessor, net.minecraft.world.entity.Entity);
+  private static net.minecraft.world.entity.Entity lambda$loadEntityRecursive$0(net.minecraft.world.level.storage.ValueInput, net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnRequest, net.minecraft.world.entity.EntityProcessor, net.minecraft.world.entity.Entity);
+  private static void lambda$create$3(net.minecraft.world.level.storage.ValueInput, net.minecraft.world.entity.Entity);
+  private static void lambda$create$2(net.minecraft.world.level.storage.ValueInput);
+  private static void lambda$create$1(net.minecraft.world.level.storage.ValueInput, net.minecraft.world.entity.Entity);
+  private static net.minecraft.world.entity.Entity lambda$create$0(net.minecraft.world.level.Level, net.minecraft.world.entity.EntitySpawnRequest, net.minecraft.world.entity.EntityType);
+  private static void lambda$appendCustomEntityStackConfig$0(net.minecraft.world.level.Level, net.minecraft.world.entity.LivingEntity, net.minecraft.world.item.component.TypedEntityData, net.minecraft.world.entity.Entity);
+  private static void lambda$appendComponentsConfig$0(net.minecraft.world.item.ItemStack, net.minecraft.world.entity.Entity);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.EntityType$Builder'
+===== net.minecraft.world.entity.EntityType$Builder
++ javap -p -classpath /tmp/mcsm-dl/client.jar 'net.minecraft.world.entity.EntityType$Builder'
++ sed -n 1,110p
+Compiled from "EntityType.java"
+public class net.minecraft.world.entity.EntityType$Builder<T extends net.minecraft.world.entity.Entity> {
+  private final net.minecraft.world.entity.EntityType$EntityFactory<T> factory;
+  private final net.minecraft.world.entity.MobCategory category;
+  private net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> immuneTo;
+  private boolean serialize;
+  private boolean summon;
+  private boolean fireImmune;
+  private boolean canSpawnFarFromPlayer;
+  private int clientTrackingRange;
+  private int updateInterval;
+  private net.minecraft.world.entity.EntityDimensions dimensions;
+  private float spawnDimensionsScale;
+  private net.minecraft.world.entity.EntityAttachments$Builder attachments;
+  private net.minecraft.world.flag.FeatureFlagSet requiredFeatures;
+  private net.minecraft.resources.DependantName<net.minecraft.world.entity.EntityType<?>, java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>>> lootTable;
+  private final net.minecraft.resources.DependantName<net.minecraft.world.entity.EntityType<?>, java.lang.String> descriptionId;
+  private boolean allowedInPeaceful;
+  private net.minecraft.world.entity.EntityType$Builder(net.minecraft.world.entity.EntityType$EntityFactory<T>, net.minecraft.world.entity.MobCategory);
+  public static <T extends net.minecraft.world.entity.Entity> net.minecraft.world.entity.EntityType$Builder<T> of(net.minecraft.world.entity.EntityType$EntityFactory<T>, net.minecraft.world.entity.MobCategory);
+  public static <T extends net.minecraft.world.entity.Entity> net.minecraft.world.entity.EntityType$Builder<T> createNothing(net.minecraft.world.entity.MobCategory);
+  public net.minecraft.world.entity.EntityType$Builder<T> sized(float, float);
+  public net.minecraft.world.entity.EntityType$Builder<T> spawnDimensionsScale(float);
+  public net.minecraft.world.entity.EntityType$Builder<T> eyeHeight(float);
+  public net.minecraft.world.entity.EntityType$Builder<T> passengerAttachments(float...);
+  public net.minecraft.world.entity.EntityType$Builder<T> passengerAttachments(net.minecraft.world.phys.Vec3...);
+  public net.minecraft.world.entity.EntityType$Builder<T> vehicleAttachment(net.minecraft.world.phys.Vec3);
+  public net.minecraft.world.entity.EntityType$Builder<T> ridingOffset(float);
+  public net.minecraft.world.entity.EntityType$Builder<T> nameTagOffset(float);
+  public net.minecraft.world.entity.EntityType$Builder<T> attach(net.minecraft.world.entity.EntityAttachment, float, float, float);
+  public net.minecraft.world.entity.EntityType$Builder<T> attach(net.minecraft.world.entity.EntityAttachment, net.minecraft.world.phys.Vec3);
+  public net.minecraft.world.entity.EntityType$Builder<T> noSummon();
+  public net.minecraft.world.entity.EntityType$Builder<T> noSave();
+  public net.minecraft.world.entity.EntityType$Builder<T> fireImmune();
+  public net.minecraft.world.entity.EntityType$Builder<T> immuneTo(net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block>);
+  public net.minecraft.world.entity.EntityType$Builder<T> canSpawnFarFromPlayer();
+  public net.minecraft.world.entity.EntityType$Builder<T> clientTrackingRange(int);
+  public net.minecraft.world.entity.EntityType$Builder<T> updateInterval(int);
+  public net.minecraft.world.entity.EntityType$Builder<T> requiredFeatures(net.minecraft.world.flag.FeatureFlag...);
+  public net.minecraft.world.entity.EntityType$Builder<T> noLootTable();
+  public net.minecraft.world.entity.EntityType$Builder<T> notInPeaceful();
+  public net.minecraft.world.entity.EntityType<T> build(net.minecraft.resources.ResourceKey<net.minecraft.world.entity.EntityType<?>>);
+  private static net.minecraft.world.entity.Entity lambda$createNothing$0(net.minecraft.world.entity.EntityType, net.minecraft.world.level.Level);
+  private static java.lang.String lambda$new$1(net.minecraft.resources.ResourceKey);
+  private static java.util.Optional lambda$new$0(net.minecraft.resources.ResourceKey);
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.MobCategory'
+===== net.minecraft.world.entity.MobCategory
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.MobCategory
++ sed -n 1,110p
+Compiled from "MobCategory.java"
+public final class net.minecraft.world.entity.MobCategory extends java.lang.Enum<net.minecraft.world.entity.MobCategory> implements net.minecraft.util.StringRepresentable {
+  public static final net.minecraft.world.entity.MobCategory MONSTER;
+  public static final net.minecraft.world.entity.MobCategory CREATURE;
+  public static final net.minecraft.world.entity.MobCategory AMBIENT;
+  public static final net.minecraft.world.entity.MobCategory AXOLOTLS;
+  public static final net.minecraft.world.entity.MobCategory UNDERGROUND_WATER_CREATURE;
+  public static final net.minecraft.world.entity.MobCategory WATER_CREATURE;
+  public static final net.minecraft.world.entity.MobCategory WATER_AMBIENT;
+  public static final net.minecraft.world.entity.MobCategory MISC;
+  public static final com.mojang.serialization.Codec<net.minecraft.world.entity.MobCategory> CODEC;
+  private final int max;
+  private final boolean isFriendly;
+  private final boolean isPersistent;
+  private final java.lang.String name;
+  private final java.lang.String debugAbbreviation;
+  private final int noDespawnDistance;
+  private final int despawnDistance;
+  private static final net.minecraft.world.entity.MobCategory[] $VALUES;
+  public static net.minecraft.world.entity.MobCategory[] values();
+  public static net.minecraft.world.entity.MobCategory valueOf(java.lang.String);
+  private net.minecraft.world.entity.MobCategory(java.lang.String, java.lang.String, int, boolean, boolean, int);
+  public java.lang.String getName();
+  public java.lang.String getDebugAbbreviation();
+  public java.lang.String getSerializedName();
+  public int getMaxInstancesPerChunk();
+  public boolean isFriendly();
+  public boolean isPersistent();
+  public int getDespawnDistance();
+  public int getNoDespawnDistance();
+  private static net.minecraft.world.entity.MobCategory[] $values();
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.Mob'
+===== net.minecraft.world.entity.Mob
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.Mob
++ sed -n 1,110p
+Compiled from "Mob.java"
+public abstract class net.minecraft.world.entity.Mob extends net.minecraft.world.entity.LivingEntity implements net.minecraft.world.entity.Targeting,net.minecraft.world.entity.EquipmentUser,net.minecraft.world.entity.Leashable {
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.lang.Byte> DATA_MOB_FLAGS_ID;
+  private static final int MOB_FLAG_NO_AI;
+  private static final int MOB_FLAG_LEFTHANDED;
+  private static final int MOB_FLAG_AGGRESSIVE;
+  protected static final int PICKUP_REACH;
+  private static final net.minecraft.core.Vec3i ITEM_PICKUP_REACH;
+  private static final java.util.List<net.minecraft.world.entity.EquipmentSlot> EQUIPMENT_POPULATION_ORDER;
+  public static final float MAX_WEARING_ARMOR_CHANCE;
+  public static final float WEARING_ARMOR_UPGRADE_MATERIAL_CHANCE;
+  public static final float WEARING_ARMOR_UPGRADE_MATERIAL_ATTEMPTS;
+  public static final float MAX_PICKUP_LOOT_CHANCE;
+  public static final float MAX_ENCHANTED_ARMOR_CHANCE;
+  public static final float MAX_ENCHANTED_WEAPON_CHANCE;
+  public static final int UPDATE_GOAL_SELECTOR_EVERY_N_TICKS;
+  private static final double DEFAULT_ATTACK_REACH;
+  private static final boolean DEFAULT_CAN_PICK_UP_LOOT;
+  private static final boolean DEFAULT_PERSISTENCE_REQUIRED;
+  private static final boolean DEFAULT_LEFT_HANDED;
+  private static final boolean DEFAULT_NO_AI;
+  protected static final net.minecraft.resources.Identifier RANDOM_SPAWN_BONUS_ID;
+  public static final java.lang.String TAG_DROP_CHANCES;
+  public static final java.lang.String TAG_LEFT_HANDED;
+  public static final java.lang.String TAG_CAN_PICK_UP_LOOT;
+  public static final java.lang.String TAG_NO_AI;
+  public static final java.lang.String TAG_PERSISTENCE_REQUIRED;
+  public int ambientSoundTime;
+  protected int xpReward;
+  protected net.minecraft.world.entity.ai.control.LookControl lookControl;
+  protected net.minecraft.world.entity.ai.control.MoveControl moveControl;
+  protected net.minecraft.world.entity.ai.control.JumpControl jumpControl;
+  private final net.minecraft.world.entity.ai.control.BodyRotationControl bodyRotationControl;
+  protected net.minecraft.world.entity.ai.navigation.PathNavigation navigation;
+  protected final net.minecraft.world.entity.ai.goal.GoalSelector goalSelector;
+  protected final net.minecraft.world.entity.ai.goal.GoalSelector targetSelector;
+  private net.minecraft.world.entity.LivingEntity target;
+  private final net.minecraft.world.entity.ai.sensing.Sensing sensing;
+  private net.minecraft.world.entity.DropChances dropChances;
+  private boolean canPickUpLoot;
+  private boolean persistenceRequired;
+  private final java.util.Map<net.minecraft.world.level.pathfinder.PathType, java.lang.Float> pathfindingMalus;
+  private java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> lootTable;
+  private long lootTableSeed;
+  private net.minecraft.world.entity.Leashable$LeashData leashData;
+  private net.minecraft.core.BlockPos homePosition;
+  private int homeRadius;
+  protected net.minecraft.world.entity.Mob(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.Mob>, net.minecraft.world.level.Level);
+  protected void registerGoals();
+  public static net.minecraft.world.entity.ai.attributes.AttributeSupplier$Builder createMobAttributes();
+  protected net.minecraft.world.entity.ai.navigation.PathNavigation createNavigation(net.minecraft.world.level.Level);
+  protected boolean shouldPassengersInheritMalus();
+  public float getPathfindingMalus(net.minecraft.world.level.pathfinder.PathType);
+  public void setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType, float);
+  public void onPathfindingStart();
+  public void onPathfindingDone();
+  protected net.minecraft.world.entity.ai.control.BodyRotationControl createBodyControl();
+  public net.minecraft.world.entity.ai.control.LookControl getLookControl();
+  public net.minecraft.world.entity.ai.control.MoveControl getMoveControl();
+  public net.minecraft.world.entity.ai.control.JumpControl getJumpControl();
+  public net.minecraft.world.entity.ai.navigation.PathNavigation getNavigation();
+  public net.minecraft.world.entity.LivingEntity getControllingPassenger();
+  public net.minecraft.world.entity.ai.sensing.Sensing getSensing();
+  public net.minecraft.world.entity.LivingEntity getTarget();
+  public net.minecraft.world.entity.LivingEntity getTargetUnchecked();
+  protected net.minecraft.world.entity.LivingEntity asValidTarget(net.minecraft.world.entity.LivingEntity);
+  protected final net.minecraft.world.entity.LivingEntity getTargetFromBrain();
+  public void setTarget(net.minecraft.world.entity.LivingEntity);
+  public boolean canAttack(net.minecraft.world.entity.LivingEntity);
+  public boolean canUseNonMeleeWeapon(net.minecraft.world.item.ItemStack);
+  public void ate();
+  protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData$Builder);
+  public int getAmbientSoundInterval();
+  public void playAmbientSound();
+  public void baseTick();
+  protected void playHurtSound(net.minecraft.world.damagesource.DamageSource);
+  private void resetAmbientSoundTime();
+  protected int getBaseExperienceReward(net.minecraft.server.level.ServerLevel);
+  public void spawnAnim();
+  public void handleEntityEvent(byte);
+  public void tick();
+  protected void updateControlFlags();
+  protected void tickHeadTurn(float);
+  protected net.minecraft.sounds.SoundEvent getAmbientSound();
+  protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput);
+  protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput);
+  protected void dropFromLootTable(net.minecraft.server.level.ServerLevel, net.minecraft.world.damagesource.DamageSource, boolean);
+  public final java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> getLootTable();
+  public long getLootTableSeed();
+  public void setZza(float);
+  public void setYya(float);
+  public void setXxa(float);
+  public void setSpeed(float);
+  public void stopInPlace();
+  public void aiStep();
+  protected net.minecraft.world.entity.EquipmentSlot sunProtectionSlot();
+  private void burnUndead();
+  private boolean isSunBurnTick();
+  protected net.minecraft.core.Vec3i getPickupReach();
+  protected void pickUpItem(net.minecraft.server.level.ServerLevel, net.minecraft.world.entity.item.ItemEntity);
+  public net.minecraft.world.item.ItemStack equipItemIfPossible(net.minecraft.server.level.ServerLevel, net.minecraft.world.item.ItemStack);
+  protected void setItemSlotAndDropWhenKilled(net.minecraft.world.entity.EquipmentSlot, net.minecraft.world.item.ItemStack);
+  protected boolean canShearEquipment(net.minecraft.world.entity.player.Player);
+  protected boolean attemptToShearEquipment(net.minecraft.world.entity.player.Player, net.minecraft.world.InteractionHand, net.minecraft.world.item.ItemStack);
+  protected void shearItem(net.minecraft.world.entity.player.Player, net.minecraft.world.InteractionHand, net.minecraft.world.item.ItemStack, net.minecraft.world.entity.EquipmentSlot, net.minecraft.world.item.ItemStack);
+  public void setGuaranteedDrop(net.minecraft.world.entity.EquipmentSlot);
+  protected boolean canReplaceCurrentItem(net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack, net.minecraft.world.entity.EquipmentSlot);
+  private boolean compareArmor(net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack, net.minecraft.world.entity.EquipmentSlot);
+  private boolean compareWeapons(net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemStack, net.minecraft.world.entity.EquipmentSlot);
+  private double getApproximateAttributeWith(net.minecraft.world.item.ItemStack, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.EquipmentSlot);
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.PathfinderMob'
+===== net.minecraft.world.entity.PathfinderMob
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.PathfinderMob
++ sed -n 1,110p
+Compiled from "PathfinderMob.java"
+public abstract class net.minecraft.world.entity.PathfinderMob extends net.minecraft.world.entity.Mob {
+  protected static final float DEFAULT_WALK_TARGET_VALUE;
+  protected net.minecraft.world.entity.PathfinderMob(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.PathfinderMob>, net.minecraft.world.level.Level);
+  public float getWalkTargetValue(net.minecraft.core.BlockPos);
+  public float getWalkTargetValue(net.minecraft.core.BlockPos, net.minecraft.world.level.LevelReader);
+  public boolean checkSpawnRules(net.minecraft.world.level.LevelAccessor, net.minecraft.world.entity.EntitySpawnReason);
+  public boolean isPathFinding();
+  public boolean isPanicking();
+  protected boolean shouldStayCloseToLeashHolder();
+  public void closeRangeLeashBehaviour(net.minecraft.world.entity.Entity);
+  public void whenLeashedTo(net.minecraft.world.entity.Entity);
+  protected double followLeashSpeed();
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.monster.Monster'
+===== net.minecraft.world.entity.monster.Monster
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.monster.Monster
++ sed -n 1,110p
+Compiled from "Monster.java"
+public abstract class net.minecraft.world.entity.monster.Monster extends net.minecraft.world.entity.PathfinderMob implements net.minecraft.world.entity.monster.Enemy {
+  protected net.minecraft.world.entity.monster.Monster(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.monster.Monster>, net.minecraft.world.level.Level);
+  public net.minecraft.sounds.SoundSource getSoundSource();
+  public void aiStep();
+  protected void updateNoActionTime();
+  protected net.minecraft.sounds.SoundEvent getSwimSound();
+  protected net.minecraft.sounds.SoundEvent getSwimSplashSound();
+  protected net.minecraft.sounds.SoundEvent getHurtSound(net.minecraft.world.damagesource.DamageSource);
+  protected net.minecraft.sounds.SoundEvent getDeathSound();
+  public net.minecraft.world.entity.LivingEntity$Fallsounds getFallSounds();
+  public float getWalkTargetValue(net.minecraft.core.BlockPos, net.minecraft.world.level.LevelReader);
+  public static boolean isDarkEnoughToSpawn(net.minecraft.world.level.ServerLevelAccessor, net.minecraft.core.BlockPos, net.minecraft.util.RandomSource);
+  public static boolean checkMonsterSpawnRules(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.Mob>, net.minecraft.world.level.ServerLevelAccessor, net.minecraft.world.entity.EntitySpawnReason, net.minecraft.core.BlockPos, net.minecraft.util.RandomSource);
+  public static boolean checkAnyLightMonsterSpawnRules(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.monster.Monster>, net.minecraft.world.level.LevelAccessor, net.minecraft.world.entity.EntitySpawnReason, net.minecraft.core.BlockPos, net.minecraft.util.RandomSource);
+  public static boolean checkSurfaceMonstersSpawnRules(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.Mob>, net.minecraft.world.level.ServerLevelAccessor, net.minecraft.world.entity.EntitySpawnReason, net.minecraft.core.BlockPos, net.minecraft.util.RandomSource);
+  public static net.minecraft.world.entity.ai.attributes.AttributeSupplier$Builder createMonsterAttributes();
+  public boolean shouldDropExperience();
+  protected boolean shouldDropLoot(net.minecraft.server.level.ServerLevel);
+  public boolean isPreventingPlayerRest(net.minecraft.server.level.ServerLevel, net.minecraft.world.entity.player.Player);
+  public net.minecraft.world.item.ItemStack getProjectile(net.minecraft.world.item.ItemStack);
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.LivingEntity'
+===== net.minecraft.world.entity.LivingEntity
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.LivingEntity
++ sed -n 1,110p
+Compiled from "LivingEntity.java"
+public abstract class net.minecraft.world.entity.LivingEntity extends net.minecraft.world.entity.Entity implements net.minecraft.world.entity.Attackable,net.minecraft.world.waypoints.WaypointTransmitter {
+  private static final org.slf4j.Logger LOGGER;
+  private static final java.lang.String TAG_ACTIVE_EFFECTS;
+  public static final java.lang.String TAG_ATTRIBUTES;
+  public static final java.lang.String TAG_SLEEPING_POS;
+  public static final java.lang.String TAG_EQUIPMENT;
+  public static final java.lang.String TAG_BRAIN;
+  public static final java.lang.String TAG_FALL_FLYING;
+  public static final java.lang.String TAG_HURT_TIME;
+  public static final java.lang.String TAG_DEATH_TIME;
+  public static final java.lang.String TAG_HEALTH;
+  private static final net.minecraft.resources.Identifier SPEED_MODIFIER_POWDER_SNOW_ID;
+  private static final net.minecraft.resources.Identifier SPRINTING_MODIFIER_ID;
+  private static final net.minecraft.world.entity.ai.attributes.AttributeModifier SPEED_MODIFIER_SPRINTING;
+  public static final int EQUIPMENT_SLOT_OFFSET;
+  public static final int ARMOR_SLOT_OFFSET;
+  public static final int BODY_ARMOR_OFFSET;
+  public static final int SADDLE_OFFSET;
+  public static final int PLAYER_HURT_EXPERIENCE_TIME;
+  private static final int DAMAGE_SOURCE_TIMEOUT;
+  public static final double MIN_MOVEMENT_DISTANCE;
+  public static final double DEFAULT_BASE_GRAVITY;
+  public static final int DEATH_DURATION;
+  protected static final float INPUT_FRICTION;
+  private static final int TICKS_PER_ELYTRA_FREE_FALL_EVENT;
+  private static final int FREE_FALL_EVENTS_PER_ELYTRA_BREAK;
+  public static final float BASE_JUMP_POWER;
+  protected static final float DEFAULT_KNOCKBACK;
+  protected static final int INVULNERABLE_DURATION;
+  protected static final int HURT_DURATION_TICKS;
+  private static final double CLIMBING_VERTICAL_SPEED;
+  private static final float SWIM_AMOUNT_PER_TICK;
+  private static final double MAX_LINE_OF_SIGHT_TEST_RANGE;
+  protected static final int LIVING_ENTITY_FLAG_IS_USING;
+  protected static final int LIVING_ENTITY_FLAG_OFF_HAND;
+  protected static final int LIVING_ENTITY_FLAG_SPIN_ATTACK;
+  protected static final net.minecraft.network.syncher.EntityDataAccessor<java.lang.Byte> DATA_LIVING_ENTITY_FLAGS;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.lang.Float> DATA_HEALTH_ID;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.util.List<net.minecraft.core.particles.ParticleOptions>> DATA_EFFECT_PARTICLES;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.lang.Boolean> DATA_EFFECT_AMBIENCE_ID;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.lang.Integer> DATA_ARROW_COUNT_ID;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.lang.Integer> DATA_STINGER_COUNT_ID;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.util.Optional<net.minecraft.core.BlockPos>> SLEEPING_POS_ID;
+  private static final int PARTICLE_FREQUENCY_WHEN_INVISIBLE;
+  protected static final net.minecraft.world.entity.EntityDimensions SLEEPING_DIMENSIONS;
+  public static final float EXTRA_RENDER_CULLING_SIZE_WITH_BIG_HAT;
+  public static final float DEFAULT_BABY_SCALE;
+  protected static final float SWIMMING_VERTICAL_SPEED;
+  private static final int CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME_TICKS;
+  private static final int DEFAULT_CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME;
+  public static final float BASE_HORIZONTAL_AIR_DRAG;
+  public static final float BASE_VERTICAL_AIR_DRAG;
+  public static final float WATER_DRAG;
+  public static final float SPRINTING_WATER_DRAG;
+  public static final float LAVA_DRAG;
+  public static final float LAVA_SHALLOW_VERTICAL_DRAG;
+  public static final float DOLPHINS_GRACE_WATER_DRAG;
+  public static final float FLYING_AIR_DRAG;
+  public static final float FLYING_VERTICAL_AIR_DRAG;
+  public static final float FLYING_LAVA_DRAG;
+  public static final float FLYING_WATER_DRAG;
+  public static final float ELYTRA_HORIZONTAL_AIR_DRAG;
+  public static final float ELYTRA_VERTICAL_AIR_DRAG;
+  public static final float BASE_SWIM_SPEED;
+  private int currentImpulseContextResetGraceTime;
+  public static final java.util.function.Predicate<net.minecraft.world.entity.LivingEntity> PLAYER_NOT_WEARING_DISGUISE_ITEM;
+  private final net.minecraft.world.entity.ai.attributes.AttributeMap attributes;
+  private final net.minecraft.world.damagesource.CombatTracker combatTracker;
+  private final java.util.Map<net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>, net.minecraft.world.effect.MobEffectInstance> activeEffects;
+  private final java.util.Map<net.minecraft.world.entity.EquipmentSlot, net.minecraft.world.item.ItemStack> lastEquipmentItems;
+  public boolean swinging;
+  private boolean discardFriction;
+  public net.minecraft.world.InteractionHand swingingArm;
+  public int swingTime;
+  public int removeArrowTime;
+  public int removeStingerTime;
+  public int hurtTime;
+  public int hurtDuration;
+  public int deathTime;
+  public float oAttackAnim;
+  public float attackAnim;
+  protected int attackStrengthTicker;
+  protected int itemSwapTicker;
+  public final net.minecraft.world.entity.WalkAnimationState walkAnimation;
+  public float yBodyRot;
+  public float yBodyRotO;
+  public float yHeadRot;
+  public float yHeadRotO;
+  public final net.minecraft.world.entity.ElytraAnimationState elytraAnimationState;
+  protected net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.player.Player> lastHurtByPlayer;
+  protected int lastHurtByPlayerMemoryTime;
+  protected boolean dead;
+  protected int noActionTime;
+  protected float lastHurt;
+  protected boolean jumping;
+  public float xxa;
+  public float yya;
+  public float zza;
+  protected final net.minecraft.world.entity.InterpolationHandler interpolation;
+  protected double lerpYHeadRot;
+  protected int lerpHeadSteps;
+  private boolean effectsDirty;
+  private net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.LivingEntity> lastHurtByMob;
+  private int lastHurtByMobTimestamp;
+  private net.minecraft.world.entity.LivingEntity lastHurtMob;
+  private int lastHurtMobTimestamp;
+  private float speed;
+  private int noJumpDelay;
+  private float absorptionAmount;
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.ai.goal.Goal'
+===== net.minecraft.world.entity.ai.goal.Goal
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.ai.goal.Goal
++ sed -n 1,110p
+Compiled from "Goal.java"
+public abstract class net.minecraft.world.entity.ai.goal.Goal {
+  private final java.util.EnumSet<net.minecraft.world.entity.ai.goal.Goal$Flag> flags;
+  public net.minecraft.world.entity.ai.goal.Goal();
+  public abstract boolean canUse();
+  public boolean canContinueToUse();
+  public boolean isInterruptable();
+  public void start();
+  public void stop();
+  public boolean requiresUpdateEveryTick();
+  public void tick();
+  public void setFlags(java.util.EnumSet<net.minecraft.world.entity.ai.goal.Goal$Flag>);
+  public java.lang.String toString();
+  public java.util.EnumSet<net.minecraft.world.entity.ai.goal.Goal$Flag> getFlags();
+  protected int adjustedTickDelay(int);
+  protected static int reducedTickDelay(int);
+  protected static net.minecraft.server.level.ServerLevel getServerLevel(net.minecraft.world.entity.Entity);
+  protected static net.minecraft.server.level.ServerLevel getServerLevel(net.minecraft.world.level.Level);
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.ai.goal.MeleeAttackGoal'
+===== net.minecraft.world.entity.ai.goal.MeleeAttackGoal
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.ai.goal.MeleeAttackGoal
++ sed -n 1,110p
+Compiled from "MeleeAttackGoal.java"
+public class net.minecraft.world.entity.ai.goal.MeleeAttackGoal extends net.minecraft.world.entity.ai.goal.Goal {
+  protected final net.minecraft.world.entity.PathfinderMob mob;
+  private final double speedModifier;
+  private final boolean followingTargetEvenIfNotSeen;
+  private net.minecraft.world.level.pathfinder.Path path;
+  private double pathedTargetX;
+  private double pathedTargetY;
+  private double pathedTargetZ;
+  private int ticksUntilNextPathRecalculation;
+  private int ticksUntilNextAttack;
+  private final int attackInterval;
+  private long lastCanUseCheck;
+  private static final long COOLDOWN_BETWEEN_CAN_USE_CHECKS;
+  public net.minecraft.world.entity.ai.goal.MeleeAttackGoal(net.minecraft.world.entity.PathfinderMob, double, boolean);
+  public boolean canUse();
+  public boolean canContinueToUse();
+  public void start();
+  public void stop();
+  public boolean requiresUpdateEveryTick();
+  public void tick();
+  protected void checkAndPerformAttack(net.minecraft.world.entity.LivingEntity);
+  protected void resetAttackCooldown();
+  protected boolean isTimeToAttack();
+  protected boolean canPerformAttack(net.minecraft.world.entity.LivingEntity);
+  protected int getTicksUntilNextAttack();
+  protected int getAttackInterval();
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.ai.attributes.Attributes'
+===== net.minecraft.world.entity.ai.attributes.Attributes
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.ai.attributes.Attributes
++ sed -n 1,110p
+Compiled from "Attributes.java"
+public class net.minecraft.world.entity.ai.attributes.Attributes {
+  public static final double DEFAULT_ATTACK_SPEED;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> AIR_DRAG_MODIFIER;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> ARMOR;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> ARMOR_TOUGHNESS;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> ATTACK_DAMAGE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> ATTACK_KNOCKBACK;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> ATTACK_SPEED;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> BELOW_NAME_DISTANCE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> BLOCK_BREAK_SPEED;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> BLOCK_INTERACTION_RANGE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> BOUNCINESS;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> BURNING_TIME;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> CAMERA_DISTANCE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> EXPLOSION_KNOCKBACK_RESISTANCE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> ENTITY_INTERACTION_RANGE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> FALL_DAMAGE_MULTIPLIER;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> FLYING_SPEED;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> FOLLOW_RANGE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> FRICTION_MODIFIER;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> GRAVITY;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> JUMP_STRENGTH;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> KNOCKBACK_RESISTANCE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> LUCK;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> MAX_ABSORPTION;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> MAX_HEALTH;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> MINING_EFFICIENCY;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> MOVEMENT_EFFICIENCY;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> MOVEMENT_SPEED;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> NAME_TAG_DISTANCE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> OXYGEN_BONUS;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> SAFE_FALL_DISTANCE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> SCALE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> SNEAKING_SPEED;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> SPAWN_REINFORCEMENTS_CHANCE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> STEP_HEIGHT;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> SUBMERGED_MINING_SPEED;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> SWEEPING_DAMAGE_RATIO;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> TEMPT_RANGE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> WATER_MOVEMENT_EFFICIENCY;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> WAYPOINT_TRANSMIT_RANGE;
+  public static final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> WAYPOINT_RECEIVE_RANGE;
+  public net.minecraft.world.entity.ai.attributes.Attributes();
+  private static net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> register(java.lang.String, net.minecraft.world.entity.ai.attributes.Attribute);
+  public static net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> bootstrap(net.minecraft.core.Registry<net.minecraft.world.entity.ai.attributes.Attribute>);
+  static {};
+}
++ for CLS in net.minecraft.world.level.block.DoorBlock net.minecraft.world.level.block.TrapDoorBlock net.minecraft.world.level.block.state.properties.BlockSetType net.minecraft.world.level.block.SlabBlock net.minecraft.world.level.block.StairBlock net.minecraft.world.level.block.WallBlock net.minecraft.world.level.block.FenceBlock net.minecraft.world.level.block.RotatedPillarBlock net.minecraft.world.level.block.Block 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' net.minecraft.world.item.Item 'net.minecraft.world.item.Item$Properties' net.minecraft.world.item.BlockItem net.minecraft.world.item.SwordItem net.minecraft.world.item.Tier net.minecraft.world.item.Rarity net.minecraft.world.level.block.SoundType net.minecraft.world.entity.EntityType 'net.minecraft.world.entity.EntityType$Builder' net.minecraft.world.entity.MobCategory net.minecraft.world.entity.Mob net.minecraft.world.entity.PathfinderMob net.minecraft.world.entity.monster.Monster net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.ai.goal.Goal net.minecraft.world.entity.ai.goal.MeleeAttackGoal net.minecraft.world.entity.ai.attributes.Attributes net.minecraft.world.entity.player.Player
++ echo
+
++ echo '===== net.minecraft.world.entity.player.Player'
+===== net.minecraft.world.entity.player.Player
++ javap -p -classpath /tmp/mcsm-dl/client.jar net.minecraft.world.entity.player.Player
++ sed -n 1,110p
+Compiled from "Player.java"
+public abstract class net.minecraft.world.entity.player.Player extends net.minecraft.world.entity.Avatar implements net.minecraft.world.entity.ContainerUser {
+  public static final int MAX_HEALTH;
+  public static final int SLEEP_DURATION;
+  public static final int WAKE_UP_DURATION;
+  public static final int ENDER_SLOT_OFFSET;
+  public static final int HELD_ITEM_SLOT;
+  public static final int CRAFTING_SLOT_OFFSET;
+  public static final float DEFAULT_BLOCK_INTERACTION_RANGE;
+  public static final float DEFAULT_ENTITY_INTERACTION_RANGE;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.lang.Float> DATA_PLAYER_ABSORPTION_ID;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.lang.Integer> DATA_SCORE_ID;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.util.OptionalInt> DATA_SHOULDER_PARROT_LEFT;
+  private static final net.minecraft.network.syncher.EntityDataAccessor<java.util.OptionalInt> DATA_SHOULDER_PARROT_RIGHT;
+  private static final short DEFAULT_SLEEP_TIMER;
+  private static final float DEFAULT_EXPERIENCE_PROGRESS;
+  private static final int DEFAULT_EXPERIENCE_LEVEL;
+  private static final int DEFAULT_TOTAL_EXPERIENCE;
+  private static final int NO_ENCHANTMENT_SEED;
+  private static final int DEFAULT_SELECTED_SLOT;
+  private static final int DEFAULT_SCORE;
+  public static final float CREATIVE_ENTITY_INTERACTION_RANGE_MODIFIER_VALUE;
+  private final net.minecraft.world.entity.player.Inventory inventory;
+  protected net.minecraft.world.inventory.PlayerEnderChestContainer enderChestInventory;
+  public final net.minecraft.world.inventory.InventoryMenu inventoryMenu;
+  public net.minecraft.world.inventory.AbstractContainerMenu containerMenu;
+  protected net.minecraft.world.food.FoodData foodData;
+  protected int jumpTriggerTime;
+  public int takeXpDelay;
+  private int sleepCounter;
+  protected boolean wasUnderwater;
+  private final net.minecraft.world.entity.player.Abilities abilities;
+  public int experienceLevel;
+  public int totalExperience;
+  public float experienceProgress;
+  protected int enchantmentSeed;
+  protected final float defaultFlySpeed;
+  private int lastLevelUpTime;
+  private final com.mojang.authlib.GameProfile gameProfile;
+  private boolean reducedDebugInfo;
+  private net.minecraft.world.item.ItemStack lastItemInMainHand;
+  private final net.minecraft.world.item.ItemCooldowns cooldowns;
+  private java.util.Optional<net.minecraft.core.GlobalPos> lastDeathLocation;
+  public net.minecraft.world.entity.projectile.FishingHook fishing;
+  protected float hurtDir;
+  public net.minecraft.world.entity.player.Player(net.minecraft.world.level.Level, com.mojang.authlib.GameProfile);
+  protected net.minecraft.world.entity.EntityEquipment createEquipment();
+  public boolean blockActionRestricted(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.world.level.GameType);
+  public static net.minecraft.world.entity.ai.attributes.AttributeSupplier$Builder createAttributes();
+  protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData$Builder);
+  public void tick();
+  protected float getMaxHeadRotationRelativeToBody();
+  public boolean isSecondaryUseActive();
+  protected boolean wantsToStopRiding();
+  protected boolean isStayingOnGroundSurface();
+  protected boolean updateIsUnderwater();
+  public void onAboveBubbleColumn(boolean, net.minecraft.core.BlockPos);
+  public void onInsideBubbleColumn(boolean);
+  private void turtleHelmetTick();
+  private boolean isEquipped(net.minecraft.world.item.Item);
+  protected net.minecraft.world.item.ItemCooldowns createItemCooldowns();
+  protected void updatePlayerPose();
+  private net.minecraft.world.entity.Pose getDesiredPose();
+  protected boolean canPlayerFitWithinBlocksAndEntitiesWhen(net.minecraft.world.entity.Pose);
+  protected net.minecraft.sounds.SoundEvent getSwimSound();
+  protected net.minecraft.sounds.SoundEvent getSwimSplashSound();
+  protected net.minecraft.sounds.SoundEvent getSwimHighSpeedSplashSound();
+  public int getDimensionChangingDelay();
+  public void playSound(net.minecraft.sounds.SoundEvent, float, float);
+  public net.minecraft.sounds.SoundSource getSoundSource();
+  protected int getFireImmuneTicks();
+  public void handleEntityEvent(byte);
+  protected void closeContainer();
+  protected void doCloseContainer();
+  public void rideTick();
+  public void aiStep();
+  protected void tickRegeneration();
+  public void handleShoulderEntities();
+  protected void removeEntitiesOnShoulder();
+  private void touch(net.minecraft.world.entity.Entity);
+  public int getScore();
+  public void setScore(int);
+  public void increaseScore(int);
+  public void startAutoSpinAttack(int, float, net.minecraft.world.item.ItemStack);
+  public net.minecraft.world.item.ItemStack getWeaponItem();
+  public void die(net.minecraft.world.damagesource.DamageSource);
+  protected void dropEquipment(net.minecraft.server.level.ServerLevel);
+  protected void destroyVanishingCursedItems();
+  protected net.minecraft.sounds.SoundEvent getHurtSound(net.minecraft.world.damagesource.DamageSource);
+  protected net.minecraft.sounds.SoundEvent getDeathSound();
+  public void handleCreativeModeItemDrop(net.minecraft.world.item.ItemStack);
+  public net.minecraft.world.entity.item.ItemEntity drop(net.minecraft.world.item.ItemStack, boolean);
+  public float getDestroySpeed(net.minecraft.world.level.block.state.BlockState);
+  public boolean hasCorrectToolForDrops(net.minecraft.world.level.block.state.BlockState);
+  protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput);
+  protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput);
+  public boolean isInvulnerableTo(net.minecraft.server.level.ServerLevel, net.minecraft.world.damagesource.DamageSource);
+  public boolean hurtServer(net.minecraft.server.level.ServerLevel, net.minecraft.world.damagesource.DamageSource, float);
+  protected void blockUsingItem(net.minecraft.server.level.ServerLevel, net.minecraft.world.entity.LivingEntity, net.minecraft.world.damagesource.DamageSource, float);
+  public boolean canBeSeenAsEnemy();
+  public boolean canHarmPlayer(net.minecraft.world.entity.player.Player);
+  protected void hurtArmor(net.minecraft.world.damagesource.DamageSource, float);
+  protected void hurtHelmet(net.minecraft.world.damagesource.DamageSource, float);
+  protected void actuallyHurt(net.minecraft.server.level.ServerLevel, net.minecraft.world.damagesource.DamageSource, float);
+  public boolean isTextFilteringEnabled();
+  public void openTextEdit(net.minecraft.world.level.block.entity.SignBlockEntity, boolean);
+  public void openMinecartCommandBlock(net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock);
+  public void openCommandBlock(net.minecraft.world.level.block.entity.CommandBlockEntity);
+  public void openStructureBlock(net.minecraft.world.level.block.entity.StructureBlockEntity);
+  public void openTestBlock(net.minecraft.world.level.block.entity.TestBlockEntity);
++ echo
+
++ echo '===== compile classpath probes (what this overlay may name)'
+===== compile classpath probes (what this overlay may name)
++ for PROBE in net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder net.minecraft.world.item.CreativeModeTab 'net.minecraft.world.item.CreativeModeTab$Builder' 'net.minecraft.world.item.CreativeModeTab$Output' 'net.minecraft.world.item.CreativeModeTab$Row' net.minecraft.world.item.CreativeModeTabs
++ echo '--- net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab'
+--- net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab
++ javap -classpath /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar: net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab
++ sed -n 1,20p
+Error: class not found: net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab
++ for PROBE in net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder net.minecraft.world.item.CreativeModeTab 'net.minecraft.world.item.CreativeModeTab$Builder' 'net.minecraft.world.item.CreativeModeTab$Output' 'net.minecraft.world.item.CreativeModeTab$Row' net.minecraft.world.item.CreativeModeTabs
++ echo '--- net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents'
+--- net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents
++ javap -classpath /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar: net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents
++ sed -n 1,20p
+Error: class not found: net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents
++ for PROBE in net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder net.minecraft.world.item.CreativeModeTab 'net.minecraft.world.item.CreativeModeTab$Builder' 'net.minecraft.world.item.CreativeModeTab$Output' 'net.minecraft.world.item.CreativeModeTab$Row' net.minecraft.world.item.CreativeModeTabs
++ echo '--- net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings'
+--- net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings
++ javap -classpath /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar: net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings
++ sed -n 1,20p
+Error: class not found: net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings
++ for PROBE in net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder net.minecraft.world.item.CreativeModeTab 'net.minecraft.world.item.CreativeModeTab$Builder' 'net.minecraft.world.item.CreativeModeTab$Output' 'net.minecraft.world.item.CreativeModeTab$Row' net.minecraft.world.item.CreativeModeTabs
++ echo '--- net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder'
+--- net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder
++ javap -classpath /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar: net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder
++ sed -n 1,20p
+Error: class not found: net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder
++ for PROBE in net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder net.minecraft.world.item.CreativeModeTab 'net.minecraft.world.item.CreativeModeTab$Builder' 'net.minecraft.world.item.CreativeModeTab$Output' 'net.minecraft.world.item.CreativeModeTab$Row' net.minecraft.world.item.CreativeModeTabs
++ echo '--- net.minecraft.world.item.CreativeModeTab'
+--- net.minecraft.world.item.CreativeModeTab
++ javap -classpath /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar: net.minecraft.world.item.CreativeModeTab
++ sed -n 1,20p
+Compiled from "CreativeModeTab.java"
+public class net.minecraft.world.item.CreativeModeTab {
+  public static net.minecraft.resources.Identifier createTextureLocation(java.lang.String);
+  public static net.minecraft.world.item.CreativeModeTab$Builder builder(net.minecraft.world.item.CreativeModeTab$Row, int);
+  public net.minecraft.network.chat.Component getDisplayName();
+  public net.minecraft.world.item.ItemStack getIconItem();
+  public net.minecraft.resources.Identifier getBackgroundTexture();
+  public boolean showTitle();
+  public boolean canScroll();
+  public int column();
+  public net.minecraft.world.item.CreativeModeTab$Row row();
+  public boolean hasAnyItems();
+  public boolean shouldDisplay();
+  public boolean isAlignedRight();
+  public net.minecraft.world.item.CreativeModeTab$Type getType();
+  public void buildContents(net.minecraft.world.item.CreativeModeTab$ItemDisplayParameters);
+  public java.util.Collection<net.minecraft.world.item.ItemStack> getDisplayItems();
+  public java.util.Collection<net.minecraft.world.item.ItemStack> getSearchTabDisplayItems();
+  public boolean contains(net.minecraft.world.item.ItemStack);
+  static {};
++ for PROBE in net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder net.minecraft.world.item.CreativeModeTab 'net.minecraft.world.item.CreativeModeTab$Builder' 'net.minecraft.world.item.CreativeModeTab$Output' 'net.minecraft.world.item.CreativeModeTab$Row' net.minecraft.world.item.CreativeModeTabs
++ echo '--- net.minecraft.world.item.CreativeModeTab$Builder'
+--- net.minecraft.world.item.CreativeModeTab$Builder
++ javap -classpath /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar: 'net.minecraft.world.item.CreativeModeTab$Builder'
++ sed -n 1,20p
+Compiled from "CreativeModeTab.java"
+public class net.minecraft.world.item.CreativeModeTab$Builder {
+  public net.minecraft.world.item.CreativeModeTab$Builder(net.minecraft.world.item.CreativeModeTab$Row, int);
+  public net.minecraft.world.item.CreativeModeTab$Builder title(net.minecraft.network.chat.Component);
+  public net.minecraft.world.item.CreativeModeTab$Builder icon(java.util.function.Supplier<net.minecraft.world.item.ItemStack>);
+  public net.minecraft.world.item.CreativeModeTab$Builder displayItems(net.minecraft.world.item.CreativeModeTab$DisplayItemsGenerator);
+  public net.minecraft.world.item.CreativeModeTab$Builder alignedRight();
+  public net.minecraft.world.item.CreativeModeTab$Builder hideTitle();
+  public net.minecraft.world.item.CreativeModeTab$Builder noScrollBar();
+  protected net.minecraft.world.item.CreativeModeTab$Builder type(net.minecraft.world.item.CreativeModeTab$Type);
+  public net.minecraft.world.item.CreativeModeTab$Builder backgroundTexture(net.minecraft.resources.Identifier);
+  public net.minecraft.world.item.CreativeModeTab build();
+  static {};
+}
++ for PROBE in net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder net.minecraft.world.item.CreativeModeTab 'net.minecraft.world.item.CreativeModeTab$Builder' 'net.minecraft.world.item.CreativeModeTab$Output' 'net.minecraft.world.item.CreativeModeTab$Row' net.minecraft.world.item.CreativeModeTabs
++ echo '--- net.minecraft.world.item.CreativeModeTab$Output'
+--- net.minecraft.world.item.CreativeModeTab$Output
++ javap -classpath /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar: 'net.minecraft.world.item.CreativeModeTab$Output'
++ sed -n 1,20p
+Compiled from "CreativeModeTab.java"
+public interface net.minecraft.world.item.CreativeModeTab$Output {
+  public abstract void accept(net.minecraft.world.item.ItemStack, net.minecraft.world.item.CreativeModeTab$TabVisibility);
+  public default void accept(net.minecraft.world.item.ItemStack);
+  public default void accept(net.minecraft.world.level.ItemLike, net.minecraft.world.item.CreativeModeTab$TabVisibility);
+  public default void accept(net.minecraft.world.level.ItemLike);
+  public default void acceptAll(java.util.Collection<net.minecraft.world.item.ItemStack>, net.minecraft.world.item.CreativeModeTab$TabVisibility);
+  public default void acceptAll(java.util.Collection<net.minecraft.world.item.ItemStack>);
+}
++ for PROBE in net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder net.minecraft.world.item.CreativeModeTab 'net.minecraft.world.item.CreativeModeTab$Builder' 'net.minecraft.world.item.CreativeModeTab$Output' 'net.minecraft.world.item.CreativeModeTab$Row' net.minecraft.world.item.CreativeModeTabs
++ echo '--- net.minecraft.world.item.CreativeModeTab$Row'
+--- net.minecraft.world.item.CreativeModeTab$Row
++ javap -classpath /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar: 'net.minecraft.world.item.CreativeModeTab$Row'
++ sed -n 1,20p
+Compiled from "CreativeModeTab.java"
+public final class net.minecraft.world.item.CreativeModeTab$Row extends java.lang.Enum<net.minecraft.world.item.CreativeModeTab$Row> {
+  public static final net.minecraft.world.item.CreativeModeTab$Row TOP;
+  public static final net.minecraft.world.item.CreativeModeTab$Row BOTTOM;
+  public static net.minecraft.world.item.CreativeModeTab$Row[] values();
+  public static net.minecraft.world.item.CreativeModeTab$Row valueOf(java.lang.String);
+  static {};
+}
++ for PROBE in net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder net.minecraft.world.item.CreativeModeTab 'net.minecraft.world.item.CreativeModeTab$Builder' 'net.minecraft.world.item.CreativeModeTab$Output' 'net.minecraft.world.item.CreativeModeTab$Row' net.minecraft.world.item.CreativeModeTabs
++ echo '--- net.minecraft.world.item.CreativeModeTabs'
+--- net.minecraft.world.item.CreativeModeTabs
++ javap -classpath /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar: net.minecraft.world.item.CreativeModeTabs
++ sed -n 1,20p
+Compiled from "CreativeModeTabs.java"
+public class net.minecraft.world.item.CreativeModeTabs {
+  public net.minecraft.world.item.CreativeModeTabs();
+  public static net.minecraft.world.item.CreativeModeTab bootstrap(net.minecraft.core.Registry<net.minecraft.world.item.CreativeModeTab>);
+  public static void validate();
+  public static net.minecraft.world.item.CreativeModeTab getDefaultTab();
+  public static java.util.List<net.minecraft.world.item.CreativeModeTab> tabs();
+  public static java.util.List<net.minecraft.world.item.CreativeModeTab> allTabs();
+  public static net.minecraft.world.item.CreativeModeTab searchTab();
+  public static boolean tryRebuildTabContents(net.minecraft.world.flag.FeatureFlagSet, boolean, net.minecraft.core.HolderLookup$Provider);
+  static {};
+}
++ echo '--- fabric jars on the compile path'
+--- fabric jars on the compile path
++ printf '%s\n' /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar:
++ tr : '\n'
++ grep -i fabric
+/tmp/mcsm-dl/fapi2/fabric-api-base.jar
+/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar
+/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar
+/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar

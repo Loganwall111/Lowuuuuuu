@@ -1,0 +1,4 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmPhaseSky.java:1: error: class, interface, annotation type, enum, record, method or field expected
+version https://git-lfs.github.com/spec/v1
+^
+1 error

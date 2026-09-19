@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mcsm:block/memory_crystal"
+    }
+  }
+}
