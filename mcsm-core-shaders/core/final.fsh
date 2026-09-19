@@ -1,8 +1,8 @@
 #version 150
 #moj_import <minecraft:fog.glsl>
 
-// final.fsh - Iridescent Cosmic Fluid Shaders & Glowing Water Pools + Reality-Glitch Nightmare
-// BUILD #489 / 7000.0.25-M – V3 Endless Possibilities Update – Continuous Distance-Adaptive Procedural Shader Generator
+// final.fsh - Iridescent Cosmic Fluid Shaders & Glowing Water Pools + Reality-Glitch Nightmare + animated skyboxes
+// BUILD #489 / 7000.0.25-M – V3 Endless Possibilities Update – Continuous Distance-Adaptive Procedural Shader Generator + animated skyboxes
 // - Eliminate static post-processing, inject live noise matrix for infinite screen distortions
 // - Backrooms Phase heavy wobbly lens desaturated VHS grain
 // - Volumetric Floating Balls Phase screen-space raymarching reflective orbs
