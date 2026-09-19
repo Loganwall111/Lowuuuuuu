@@ -94,6 +94,10 @@ public abstract class McsmStormBlobMixin {
             // built-in garden visible as part of skybox, entire Minecraft world on its body,
             // world pushed up, you see you're on its body when flying extremely high, watching
             net.mcsm.extras.client.McsmCreatorSkybox.submit(ctx);
+            // BUILD #493 / 7000.0.21-M -- Procedural Void-Glitch Generator & Reality Mutation Engine
+            // Gigantic vortex void skybox with spinning square rings, 3D particles, reality rip VFX,
+            // movies zoom by as jump further, procedural layers never end, new reality underneath
+            net.mcsm.extras.client.McsmVoidVortexSkybox.submit(ctx);
         }
         // Intentionally no ci.cancel(): the original smooth backdrop owns this
         // pass. The custom ring/vortex generators are not submitted here.
