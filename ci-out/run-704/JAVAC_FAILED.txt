@@ -1,0 +1,39 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java:103: error: cannot find symbol
+            long baseSeed = mc.level.getSeed();
+                                    ^
+  symbol:   method getSeed()
+  location: variable level of type ClientLevel
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java:211: error: incompatible types: possible lossy conversion from double to float
+                float hue = (i * 17 + layerIndex * 13 + time * 0.01) % 360 / 360.0F;
+                                                                           ^
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java:283: error: incompatible types: possible lossy conversion from double to float
+                float hue = (layerIndex * 7 + sx * 3 + time * 0.005) % 360 / 360.0F;
+                                                                           ^
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java:348: error: incompatible types: possible lossy conversion from double to float
+            float hue = (i * 25 + layerIndex * 10 + time * 0.01) % 360 / 360.0F;
+                                                                       ^
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java:427: error: incompatible types: possible lossy conversion from double to float
+                float hue = (s * 5 + time * 0.01) % 360 / 360.0F;
+                                                        ^
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java:518: error: incompatible types: possible lossy conversion from double to float
+                float hue = (i * 23 + layerIndex * 17 + time * 0.02) % 360 / 360.0F;
+                                                                           ^
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java:608: error: incompatible types: possible lossy conversion from double to float
+            float hue = (s * 40 + layerIndex * 7 + time * 0.02) % 360 / 360.0F;
+                                                                      ^
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java:623: error: incompatible types: possible lossy conversion from double to float
+        float hue = (layerIndex * 13 + time * 0.005) % 360 / 360.0F;
+                                                           ^
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java:641: error: incompatible types: possible lossy conversion from double to float
+            float hue = (i * 27 + time * 0.02) % 360 / 360.0F;
+                                                     ^
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java:152: error: cannot find symbol
+            final long shuffledSeed = McsmGlitchGenerator.shuffleSeedForDepth(playerY, mc.level.getSeed());
+                                                                                               ^
+  symbol:   method getSeed()
+  location: variable level of type ClientLevel
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+10 errors
