@@ -1,0 +1,12 @@
+SIFT Bridge — third-party credits
+
+* universal-modder (github.com/rehan-remade/universal-modder), MIT —
+  Copyright Rehan and universal-modder contributors.
+  Used as the protocol/format reference; ue/reshade/compositor.{h,cpp} and SiftBridge.fx are
+  adapted copies of its gta/src/compositor.* and gta/shaders/MCPassthrough.fx (name and
+  magic re-magicked). Mixin targets in mc/ follow its mc/ sources.
+* SkyCraft (github.com/chasmlol/SkyCraft), MIT —
+  shared-memory schema design reference (fabric link/Proto.java).
+
+Local code in this folder is MIT as well.
+No game assets from Mojang, Double Eleven, Microsoft or Rockstar are included.

@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "siftbridge",
+	"version": "${version}",
+	"name": "SIFT Bridge",
+	"description": "Passthrough guest: streams Minecraft's crosshair/camera vectors to a host game on ws://127.0.0.1:8080 and publishes frames via shared memory. External-only: writes no world, registry or save data.",
+	"authors": ["Lowuuuuuu pack team"],
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"main": ["dev.siftbridge.SiftBridgeMod"],
+		"client": ["dev.siftbridge.client.SiftBridgeClient"]
+	},
+	"mixins": [
+		"siftbridge.mixins.json",
+		{
+			"config": "siftbridge.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "26.3"
+	},
+	"custom": {
+		"siftbridge": {
+			"credit": "Architecture and mixin targets after universal-modder examples/minecraft-gta5-passthrough (MIT, Rehan and contributors)"
+		}
+	}
+}

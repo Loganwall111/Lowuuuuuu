@@ -1,0 +1,8 @@
+
+# external research clones (kept out of the pack repo)
+/research/
+passthrough/harness/__pycache__/
+
+# incoming asset payloads are never committed (external storage)
+passthrough/assets/*
+!passthrough/assets/.gitkeep

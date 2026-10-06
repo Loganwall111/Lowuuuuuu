@@ -1,0 +1,7 @@
+{
+	"required": true,
+	"package": "dev.siftbridge.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": ["ServerExplosionMixin"],
+	"injectors": { "defaultRequire": 1 }
+}
