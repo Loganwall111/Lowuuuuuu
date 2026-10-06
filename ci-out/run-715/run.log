@@ -5902,3 +5902,649 @@ mcsm content pack: 124 blocks, 165 items, 124 loot tables, 165 item definitions,
 + local DST=/tmp/mcsm-evidence/ci-out/run-715
 + mkdir -p /tmp/mcsm-evidence/ci-out/run-715
 + cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-715/run.log
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 715 run.log'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ stage oracle-ok
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] oracle-ok'
+[stage] oracle-ok
++ printf '%s\n' oracle-ok
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ echo '[javac] mcsm-extras'
+[javac] mcsm-extras
++ rm -rf /tmp/mcsm-build
++ mkdir -p /tmp/mcsm-build
++ CP=/tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/netty-buffer.jar:/tmp/mcsm-dl/netty-common.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-networking-api-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar:
++ stage classpath-probed
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] classpath-probed'
+[stage] classpath-probed
++ printf '%s\n' classpath-probed
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ JAVAC_LOG=/tmp/mcsm-javac.log
++ JAVAC_RC=0
++ mkdir -p /tmp/mcsm-emptysrc
+++ find mcsm-extras/java -name '*.java' '!' -path '*/net/mcsm/sift/*' '!' -name McsmNpcRenderer.java '!' -name McsmAnimatedSkybox.java '!' -name McsmVoidRudder.java
++ SOURCES='mcsm-extras/java/net/dabicco/witherstormmod/client/StormSkins.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/McsmSkyArtifactGuard.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/McsmWhiteGlow.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/StormSkyDome.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/StormPalettes.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/StoryModeSkyTint.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmScreenOpenSoundMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCinematicScreenMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGradientTickPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTitleOverhaulMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmSpiralPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCoreEngineLevelMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingRendererMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryCameraMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidNoSuffocationPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBeaconBlockInitPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepLoadingMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresetFixPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmEntityLightMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmItemGlowMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmAtmosphericMeshMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadPhaseSkinMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGuiExtrasRows.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBodyNeutralTintMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHotbarHideMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmExactGlowTintMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmSunGlowNightPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadEyesRenderTypeMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmButtonSoundHookMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormSkinPhaseAtlasMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepClientMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmNativeStormDebrisMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmDebrisKillPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormDebrisMeshGuard.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBodyEyesRenderTypeMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTentacleGirthMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadBodyNeutralTintMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresenceFxPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBowelsWarpMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmWorldgenPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBlobCarrierPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmEpisodeSpawnMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmLogoIntroMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepFogMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStageCloudMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmShaderGatePatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmConfigReskinMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPreviewRemoveMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/SelectWorldScreenMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmItemGroundLightMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStageChunkBoundaryMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmMobRendererMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingClientMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBeaconStormPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmScreenReskinMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmQuickConfigKeyMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmRiftMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingStateMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormSwayMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBackdropDefaultsMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormVisibilityPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormTextureHintMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCelestialExcisionMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormGrabPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackPoseMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormSkyColorPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmNativeFogMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackAttachMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmModNioPackFixMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmLoadingPauseReskinMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStickerStretchMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStorySpawnEggInitPatch.java
+mcsm-extras/java/net/mcsm/extras/McsmMazes.java
+mcsm-extras/java/net/mcsm/extras/McsmReality.java
+mcsm-extras/java/net/mcsm/extras/McsmTerminal.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidRudderItem.java
+mcsm-extras/java/net/mcsm/extras/McsmServerRooms.java
+mcsm-extras/java/net/mcsm/extras/McsmNpcs.java
+mcsm-extras/java/net/mcsm/extras/McsmTimeMachine.java
+mcsm-extras/java/net/mcsm/extras/entity/VoidDwellerEntity.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmDenizen.java
+mcsm-extras/java/net/mcsm/extras/entity/StoryCharacterEntity.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmEntities.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmVoidwalker.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmVoidLurker.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmBeast.java
+mcsm-extras/java/net/mcsm/extras/McsmLocks.java
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java
+mcsm-extras/java/net/mcsm/extras/McsmCabinStructure.java
+mcsm-extras/java/net/mcsm/extras/McsmRituals.java
+mcsm-extras/java/net/mcsm/extras/McsmDiag.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidRifts.java
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java
+mcsm-extras/java/net/mcsm/extras/McsmRomanEmpire.java
+mcsm-extras/java/net/mcsm/extras/McsmSceneTable.java
+mcsm-extras/java/net/mcsm/extras/McsmSounds.java
+mcsm-extras/java/net/mcsm/extras/McsmFxDriver.java
+mcsm-extras/java/net/mcsm/extras/McsmMassg.java
+mcsm-extras/java/net/mcsm/extras/McsmBlackHole.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java
+mcsm-extras/java/net/mcsm/extras/McsmAdams.java
+mcsm-extras/java/net/mcsm/extras/McsmStormFx.java
+mcsm-extras/java/net/mcsm/extras/McsmCommandBlockUse.java
+mcsm-extras/java/net/mcsm/extras/McsmShaderPackInstall.java
+mcsm-extras/java/net/mcsm/extras/McsmCities.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidSponge.java
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidTiers.java
+mcsm-extras/java/net/mcsm/extras/client/McsmHallucinations.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java
+mcsm-extras/java/net/mcsm/extras/client/McsmEyeGlow.java
+mcsm-extras/java/net/mcsm/extras/client/McsmLightRays.java
+mcsm-extras/java/net/mcsm/extras/client/McsmSkyFloorBand.java
+mcsm-extras/java/net/mcsm/extras/client/McsmWavyWater.java
+mcsm-extras/java/net/mcsm/extras/client/McsmGlitchGenerator.java
+mcsm-extras/java/net/mcsm/extras/client/McsmClientBlasts.java
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java
+mcsm-extras/java/net/mcsm/extras/client/McsmHugeBackCentre.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidDeep.java
+mcsm-extras/java/net/mcsm/extras/client/McsmKeyboard.java
+mcsm-extras/java/net/mcsm/extras/client/McsmNativeSkyRenderer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidMerged.java
+mcsm-extras/java/net/mcsm/extras/client/McsmGlarePalettes.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMenuSky.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVolumetricCloudMesh.java
+mcsm-extras/java/net/mcsm/extras/client/McsmPaintedSky.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMenuGuard.java
+mcsm-extras/java/net/mcsm/extras/client/McsmHudTerminal.java
+mcsm-extras/java/net/mcsm/extras/client/McsmSpinningSun.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMobModels.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTeethPhaseTint.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMenuDiag.java
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTimeWarpEffect.java
+mcsm-extras/java/net/mcsm/extras/client/McsmAmbientWorld.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingState.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormBlob.java
+mcsm-extras/java/net/mcsm/extras/client/McsmAttachedVortex.java
+mcsm-extras/java/net/mcsm/extras/client/McsmDimensionFx.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormMenuScene.java
+mcsm-extras/java/net/mcsm/extras/client/McsmEarthPlanet.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCreatorSkybox.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMeshSynthesizer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmHaloSkyRenderer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTexturePainterScreen.java
+mcsm-extras/java/net/mcsm/extras/client/McsmFutureBookScreen.java
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMobRenderers.java
+mcsm-extras/java/net/mcsm/extras/client/McsmSkyReach.java
+mcsm-extras/java/net/mcsm/extras/client/McsmButtonSounds.java
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java
+mcsm-extras/java/net/mcsm/extras/client/McsmEarlyStormBackdrop.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidCinematic.java
+mcsm-extras/java/net/mcsm/extras/client/McsmShootingStars.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormCanopy.java
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormRings.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCreatorArms.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingClient.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStoryModeSunSlab.java
+mcsm-extras/java/net/mcsm/extras/client/McsmScenes.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingPayload.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCloudDeck.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMassgSky.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidDwellerTalk.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidFloor.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVortexMesh.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java
+mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java
+mcsm-extras/java/net/mcsm/extras/client/McsmNativeStormDebris.java
+mcsm-extras/java/net/mcsm/extras/client/McsmExperimentalStoryStage.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormAtmosphere.java
+mcsm-extras/java/net/mcsm/extras/client/McsmBackdropPalette.java
+mcsm-extras/java/net/mcsm/extras/client/McsmLaserBeamRenderer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmClientChat.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidVortexSkybox.java
+mcsm-extras/java/net/mcsm/extras/client/StoryCharacterRenderer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmDungeonsPassthrough.java
+mcsm-extras/java/net/mcsm/extras/client/McsmGroundParticles.java
+mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
+mcsm-extras/java/net/mcsm/extras/McsmDynamicLights.java
+mcsm-extras/java/net/mcsm/extras/McsmMegaCities.java
+mcsm-extras/java/net/mcsm/extras/McsmCreatures.java
+mcsm-extras/java/net/mcsm/extras/McsmCreatorRealm.java
+mcsm-extras/java/net/mcsm/extras/McsmIdentity.java
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java
+mcsm-extras/java/net/mcsm/extras/McsmLaserBeams.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidAging.java
+mcsm-extras/java/net/mcsm/extras/McsmTentacles.java
+mcsm-extras/java/net/mcsm/extras/McsmPortals.java
+mcsm-extras/java/net/mcsm/extras/McsmSkyVortexes.java
+mcsm-extras/java/net/mcsm/extras/McsmStory.java
+mcsm-extras/java/net/mcsm/extras/McsmTerminalItem.java
+mcsm-extras/java/net/mcsm/extras/McsmBossBar.java
+mcsm-extras/java/net/mcsm/extras/McsmRifts.java
+mcsm-extras/java/net/mcsm/extras/McsmTornadoes.java
+mcsm-extras/java/net/mcsm/extras/McsmContent.java
+mcsm-extras/java/net/mcsm/extras/McsmTemplateSummoner.java
+mcsm-extras/java/net/mcsm/extras/McsmStormBeaconBlock.java
+mcsm-extras/java/net/mcsm/extras/McsmStructureSummonerItemTemplate.java
+mcsm-extras/java/net/mcsm/extras/McsmUiSounds.java
+mcsm-extras/java/net/mcsm/extras/McsmGate.java
+mcsm-extras/java/net/mcsm/extras/McsmWarp.java
+mcsm-extras/java/net/mcsm/extras/McsmDinosaurs.java
+mcsm-extras/java/net/mcsm/extras/McsmStoryCharacterSpawnEggItem.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidDescent.java
+mcsm-extras/java/net/mcsm/extras/McsmClientDispatch.java
+mcsm-extras/java/net/mcsm/extras/McsmFutureBook.java
+mcsm-extras/java/net/mcsm/extras/McsmStormShips.java
+mcsm-extras/java/net/mcsm/extras/McsmBuildQueue.java'
+++ grep -c .
+++ printf '%s\n' 'mcsm-extras/java/net/dabicco/witherstormmod/client/StormSkins.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/McsmSkyArtifactGuard.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/McsmWhiteGlow.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/StormSkyDome.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/StormPalettes.java
+mcsm-extras/java/net/dabicco/witherstormmod/client/StoryModeSkyTint.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmScreenOpenSoundMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCinematicScreenMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGradientTickPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTitleOverhaulMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmSpiralPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCoreEngineLevelMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingRendererMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryCameraMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidNoSuffocationPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBeaconBlockInitPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepLoadingMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresetFixPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmEntityLightMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmItemGlowMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmAtmosphericMeshMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadPhaseSkinMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGuiExtrasRows.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBodyNeutralTintMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHotbarHideMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmExactGlowTintMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmSunGlowNightPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadEyesRenderTypeMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmButtonSoundHookMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormSkinPhaseAtlasMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepClientMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmNativeStormDebrisMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmDebrisKillPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormDebrisMeshGuard.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBodyEyesRenderTypeMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTentacleGirthMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadBodyNeutralTintMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresenceFxPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBowelsWarpMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmWorldgenPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBlobCarrierPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmEpisodeSpawnMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmLogoIntroMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepFogMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStageCloudMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmShaderGatePatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmConfigReskinMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPreviewRemoveMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/SelectWorldScreenMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmItemGroundLightMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStageChunkBoundaryMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmMobRendererMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingClientMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBeaconStormPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmScreenReskinMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmQuickConfigKeyMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmRiftMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingStateMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormSwayMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBackdropDefaultsMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormVisibilityPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormTextureHintMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCelestialExcisionMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormGrabPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackPoseMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormSkyColorPatch.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmNativeFogMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackAttachMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmModNioPackFixMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmLoadingPauseReskinMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStickerStretchMixin.java
+mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStorySpawnEggInitPatch.java
+mcsm-extras/java/net/mcsm/extras/McsmMazes.java
+mcsm-extras/java/net/mcsm/extras/McsmReality.java
+mcsm-extras/java/net/mcsm/extras/McsmTerminal.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidRudderItem.java
+mcsm-extras/java/net/mcsm/extras/McsmServerRooms.java
+mcsm-extras/java/net/mcsm/extras/McsmNpcs.java
+mcsm-extras/java/net/mcsm/extras/McsmTimeMachine.java
+mcsm-extras/java/net/mcsm/extras/entity/VoidDwellerEntity.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmDenizen.java
+mcsm-extras/java/net/mcsm/extras/entity/StoryCharacterEntity.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmEntities.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmVoidwalker.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmVoidLurker.java
+mcsm-extras/java/net/mcsm/extras/entity/McsmBeast.java
+mcsm-extras/java/net/mcsm/extras/McsmLocks.java
+mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java
+mcsm-extras/java/net/mcsm/extras/McsmCabinStructure.java
+mcsm-extras/java/net/mcsm/extras/McsmRituals.java
+mcsm-extras/java/net/mcsm/extras/McsmDiag.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidRifts.java
+mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java
+mcsm-extras/java/net/mcsm/extras/McsmRomanEmpire.java
+mcsm-extras/java/net/mcsm/extras/McsmSceneTable.java
+mcsm-extras/java/net/mcsm/extras/McsmSounds.java
+mcsm-extras/java/net/mcsm/extras/McsmFxDriver.java
+mcsm-extras/java/net/mcsm/extras/McsmMassg.java
+mcsm-extras/java/net/mcsm/extras/McsmBlackHole.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java
+mcsm-extras/java/net/mcsm/extras/McsmAdams.java
+mcsm-extras/java/net/mcsm/extras/McsmStormFx.java
+mcsm-extras/java/net/mcsm/extras/McsmCommandBlockUse.java
+mcsm-extras/java/net/mcsm/extras/McsmShaderPackInstall.java
+mcsm-extras/java/net/mcsm/extras/McsmCities.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidSponge.java
+mcsm-extras/java/net/mcsm/extras/McsmRockets.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidTiers.java
+mcsm-extras/java/net/mcsm/extras/client/McsmHallucinations.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java
+mcsm-extras/java/net/mcsm/extras/client/McsmEyeGlow.java
+mcsm-extras/java/net/mcsm/extras/client/McsmLightRays.java
+mcsm-extras/java/net/mcsm/extras/client/McsmSkyFloorBand.java
+mcsm-extras/java/net/mcsm/extras/client/McsmWavyWater.java
+mcsm-extras/java/net/mcsm/extras/client/McsmGlitchGenerator.java
+mcsm-extras/java/net/mcsm/extras/client/McsmClientBlasts.java
+mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java
+mcsm-extras/java/net/mcsm/extras/client/McsmHugeBackCentre.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidDeep.java
+mcsm-extras/java/net/mcsm/extras/client/McsmKeyboard.java
+mcsm-extras/java/net/mcsm/extras/client/McsmNativeSkyRenderer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidMerged.java
+mcsm-extras/java/net/mcsm/extras/client/McsmGlarePalettes.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMenuSky.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVolumetricCloudMesh.java
+mcsm-extras/java/net/mcsm/extras/client/McsmPaintedSky.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMenuGuard.java
+mcsm-extras/java/net/mcsm/extras/client/McsmHudTerminal.java
+mcsm-extras/java/net/mcsm/extras/client/McsmSpinningSun.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMobModels.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTeethPhaseTint.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMenuDiag.java
+mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTimeWarpEffect.java
+mcsm-extras/java/net/mcsm/extras/client/McsmAmbientWorld.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingState.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormBlob.java
+mcsm-extras/java/net/mcsm/extras/client/McsmAttachedVortex.java
+mcsm-extras/java/net/mcsm/extras/client/McsmDimensionFx.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormMenuScene.java
+mcsm-extras/java/net/mcsm/extras/client/McsmEarthPlanet.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCreatorSkybox.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMeshSynthesizer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmHaloSkyRenderer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTexturePainterScreen.java
+mcsm-extras/java/net/mcsm/extras/client/McsmFutureBookScreen.java
+mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMobRenderers.java
+mcsm-extras/java/net/mcsm/extras/client/McsmSkyReach.java
+mcsm-extras/java/net/mcsm/extras/client/McsmButtonSounds.java
+mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java
+mcsm-extras/java/net/mcsm/extras/client/McsmEarlyStormBackdrop.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidCinematic.java
+mcsm-extras/java/net/mcsm/extras/client/McsmShootingStars.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormCanopy.java
+mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java
+mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormRings.java
+mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCreatorArms.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingClient.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStoryModeSunSlab.java
+mcsm-extras/java/net/mcsm/extras/client/McsmScenes.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingPayload.java
+mcsm-extras/java/net/mcsm/extras/client/McsmCloudDeck.java
+mcsm-extras/java/net/mcsm/extras/client/McsmMassgSky.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidDwellerTalk.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidFloor.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVortexMesh.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java
+mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java
+mcsm-extras/java/net/mcsm/extras/client/McsmNativeStormDebris.java
+mcsm-extras/java/net/mcsm/extras/client/McsmExperimentalStoryStage.java
+mcsm-extras/java/net/mcsm/extras/client/McsmStormAtmosphere.java
+mcsm-extras/java/net/mcsm/extras/client/McsmBackdropPalette.java
+mcsm-extras/java/net/mcsm/extras/client/McsmLaserBeamRenderer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmClientChat.java
+mcsm-extras/java/net/mcsm/extras/client/McsmVoidVortexSkybox.java
+mcsm-extras/java/net/mcsm/extras/client/StoryCharacterRenderer.java
+mcsm-extras/java/net/mcsm/extras/client/McsmDungeonsPassthrough.java
+mcsm-extras/java/net/mcsm/extras/client/McsmGroundParticles.java
+mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
+mcsm-extras/java/net/mcsm/extras/McsmDynamicLights.java
+mcsm-extras/java/net/mcsm/extras/McsmMegaCities.java
+mcsm-extras/java/net/mcsm/extras/McsmCreatures.java
+mcsm-extras/java/net/mcsm/extras/McsmCreatorRealm.java
+mcsm-extras/java/net/mcsm/extras/McsmIdentity.java
+mcsm-extras/java/net/mcsm/extras/McsmVoid.java
+mcsm-extras/java/net/mcsm/extras/McsmLaserBeams.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidAging.java
+mcsm-extras/java/net/mcsm/extras/McsmTentacles.java
+mcsm-extras/java/net/mcsm/extras/McsmPortals.java
+mcsm-extras/java/net/mcsm/extras/McsmSkyVortexes.java
+mcsm-extras/java/net/mcsm/extras/McsmStory.java
+mcsm-extras/java/net/mcsm/extras/McsmTerminalItem.java
+mcsm-extras/java/net/mcsm/extras/McsmBossBar.java
+mcsm-extras/java/net/mcsm/extras/McsmRifts.java
+mcsm-extras/java/net/mcsm/extras/McsmTornadoes.java
+mcsm-extras/java/net/mcsm/extras/McsmContent.java
+mcsm-extras/java/net/mcsm/extras/McsmTemplateSummoner.java
+mcsm-extras/java/net/mcsm/extras/McsmStormBeaconBlock.java
+mcsm-extras/java/net/mcsm/extras/McsmStructureSummonerItemTemplate.java
+mcsm-extras/java/net/mcsm/extras/McsmUiSounds.java
+mcsm-extras/java/net/mcsm/extras/McsmGate.java
+mcsm-extras/java/net/mcsm/extras/McsmWarp.java
+mcsm-extras/java/net/mcsm/extras/McsmDinosaurs.java
+mcsm-extras/java/net/mcsm/extras/McsmStoryCharacterSpawnEggItem.java
+mcsm-extras/java/net/mcsm/extras/McsmVoidDescent.java
+mcsm-extras/java/net/mcsm/extras/McsmClientDispatch.java
+mcsm-extras/java/net/mcsm/extras/McsmFutureBook.java
+mcsm-extras/java/net/mcsm/extras/McsmStormShips.java
+mcsm-extras/java/net/mcsm/extras/McsmBuildQueue.java'
++ N_SOURCES=220
++ echo '[javac] 220 sources, 5 fabric modules'
+[javac] 220 sources, 5 fabric modules
+++ free -m
+++ awk '/^Mem:/ {print $3" used / "$2" MB"}'
++ echo '[javac] memory before: 1116 used / 15989 MB'
+[javac] memory before: 1116 used / 15989 MB
+++ df -h /tmp
+++ awk 'NR==2 {print $4}'
++ echo '[javac] /tmp free: 85G'
+[javac] /tmp free: 85G
++ javac -J-Xmx1500m -nowarn -implicit:none -sourcepath /tmp/mcsm-emptysrc --release 25 -proc:none -cp /tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/base-nomcsm.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/netty-buffer.jar:/tmp/mcsm-dl/netty-common.jar:/tmp/mcsm-dl/fapi2/fabric-object-builder-api-v1.jar:/tmp/mcsm-dl/fapi2/fabric-api-base.jar:/tmp/mcsm-dl/fapi2/fabric-networking-api-v1.jar:/tmp/mcsm-dl/fapi2/fabric-rendering-v1.jar:/tmp/mcsm-dl/fapi2/fabric-lifecycle-events-v1.jar: -d /tmp/mcsm-build mcsm-extras/java/net/dabicco/witherstormmod/client/StormSkins.java mcsm-extras/java/net/dabicco/witherstormmod/client/McsmSkyArtifactGuard.java mcsm-extras/java/net/dabicco/witherstormmod/client/McsmWhiteGlow.java mcsm-extras/java/net/dabicco/witherstormmod/client/StormSkyDome.java mcsm-extras/java/net/dabicco/witherstormmod/client/StormPalettes.java mcsm-extras/java/net/dabicco/witherstormmod/client/StoryModeSkyTint.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmScreenOpenSoundMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCinematicScreenMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGradientTickPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTitleOverhaulMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmSpiralPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBuiltinPackMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCoreEngineLevelMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingRendererMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryCameraMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidNoSuffocationPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBeaconBlockInitPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHudAttachMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepLoadingMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresetFixPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmEntityLightMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmItemGlowMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmAtmosphericMeshMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadPhaseSkinMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmGuiExtrasRows.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBodyNeutralTintMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHotbarHideMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmExactGlowTintMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmResourcePackFixMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmSunGlowNightPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTownCommandPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadEyesRenderTypeMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmButtonSoundHookMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormSkinPhaseAtlasMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepClientMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmNativeStormDebrisMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmDebrisKillPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormDebrisMeshGuard.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBodyEyesRenderTypeMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmTentacleGirthMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHeadBodyNeutralTintMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPresenceFxPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBowelsWarpMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmWorldgenPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBlobCarrierPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmEpisodeSpawnMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmLogoIntroMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepFogMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStageCloudMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStoryRendererMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmShaderGatePatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmConfigReskinMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmPreviewRemoveMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/SelectWorldScreenMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmItemGroundLightMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStageChunkBoundaryMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmMobRendererMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingClientMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBeaconStormPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmScreenReskinMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmQuickConfigKeyMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmRiftMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidAgingStateMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormSwayMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmBackdropDefaultsMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormVisibilityPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormTextureHintMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmCelestialExcisionMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormGrabPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackPoseMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormSkyColorPatch.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmNativeFogMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmHugeBackAttachMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmModNioPackFixMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmLoadingPauseReskinMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStickerStretchMixin.java mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStorySpawnEggInitPatch.java mcsm-extras/java/net/mcsm/extras/McsmMazes.java mcsm-extras/java/net/mcsm/extras/McsmReality.java mcsm-extras/java/net/mcsm/extras/McsmTerminal.java mcsm-extras/java/net/mcsm/extras/McsmVoidRudderItem.java mcsm-extras/java/net/mcsm/extras/McsmServerRooms.java mcsm-extras/java/net/mcsm/extras/McsmNpcs.java mcsm-extras/java/net/mcsm/extras/McsmTimeMachine.java mcsm-extras/java/net/mcsm/extras/entity/VoidDwellerEntity.java mcsm-extras/java/net/mcsm/extras/entity/McsmDenizen.java mcsm-extras/java/net/mcsm/extras/entity/StoryCharacterEntity.java mcsm-extras/java/net/mcsm/extras/entity/McsmEntities.java mcsm-extras/java/net/mcsm/extras/entity/McsmVoidwalker.java mcsm-extras/java/net/mcsm/extras/entity/McsmVoidLurker.java mcsm-extras/java/net/mcsm/extras/entity/McsmBeast.java mcsm-extras/java/net/mcsm/extras/McsmLocks.java mcsm-extras/java/net/mcsm/extras/McsmTechFurniture.java mcsm-extras/java/net/mcsm/extras/McsmCabinStructure.java mcsm-extras/java/net/mcsm/extras/McsmRituals.java mcsm-extras/java/net/mcsm/extras/McsmDiag.java mcsm-extras/java/net/mcsm/extras/McsmVoidRifts.java mcsm-extras/java/net/mcsm/extras/McsmBuiltinPack.java mcsm-extras/java/net/mcsm/extras/McsmRomanEmpire.java mcsm-extras/java/net/mcsm/extras/McsmSceneTable.java mcsm-extras/java/net/mcsm/extras/McsmSounds.java mcsm-extras/java/net/mcsm/extras/McsmFxDriver.java mcsm-extras/java/net/mcsm/extras/McsmMassg.java mcsm-extras/java/net/mcsm/extras/McsmBlackHole.java mcsm-extras/java/net/mcsm/extras/McsmVoidLoop.java mcsm-extras/java/net/mcsm/extras/McsmAdams.java mcsm-extras/java/net/mcsm/extras/McsmStormFx.java mcsm-extras/java/net/mcsm/extras/McsmCommandBlockUse.java mcsm-extras/java/net/mcsm/extras/McsmShaderPackInstall.java mcsm-extras/java/net/mcsm/extras/McsmCities.java mcsm-extras/java/net/mcsm/extras/McsmVoidSponge.java mcsm-extras/java/net/mcsm/extras/McsmRockets.java mcsm-extras/java/net/mcsm/extras/McsmVoidTiers.java mcsm-extras/java/net/mcsm/extras/client/McsmHallucinations.java mcsm-extras/java/net/mcsm/extras/client/McsmTerminalScreen.java mcsm-extras/java/net/mcsm/extras/client/McsmEyeGlow.java mcsm-extras/java/net/mcsm/extras/client/McsmLightRays.java mcsm-extras/java/net/mcsm/extras/client/McsmSkyFloorBand.java mcsm-extras/java/net/mcsm/extras/client/McsmWavyWater.java mcsm-extras/java/net/mcsm/extras/client/McsmGlitchGenerator.java mcsm-extras/java/net/mcsm/extras/client/McsmClientBlasts.java mcsm-extras/java/net/mcsm/extras/client/McsmOrbitalPlanets.java mcsm-extras/java/net/mcsm/extras/client/McsmHugeBackCentre.java mcsm-extras/java/net/mcsm/extras/client/McsmVoidDeep.java mcsm-extras/java/net/mcsm/extras/client/McsmKeyboard.java mcsm-extras/java/net/mcsm/extras/client/McsmNativeSkyRenderer.java mcsm-extras/java/net/mcsm/extras/client/McsmVoidMerged.java mcsm-extras/java/net/mcsm/extras/client/McsmGlarePalettes.java mcsm-extras/java/net/mcsm/extras/client/McsmMenuSky.java mcsm-extras/java/net/mcsm/extras/client/McsmVolumetricCloudMesh.java mcsm-extras/java/net/mcsm/extras/client/McsmPaintedSky.java mcsm-extras/java/net/mcsm/extras/client/McsmMenuGuard.java mcsm-extras/java/net/mcsm/extras/client/McsmHudTerminal.java mcsm-extras/java/net/mcsm/extras/client/McsmSpinningSun.java mcsm-extras/java/net/mcsm/extras/client/McsmMobModels.java mcsm-extras/java/net/mcsm/extras/client/McsmTeethPhaseTint.java mcsm-extras/java/net/mcsm/extras/client/McsmMenuDiag.java mcsm-extras/java/net/mcsm/extras/client/McsmNinthLayerGeometry.java mcsm-extras/java/net/mcsm/extras/client/McsmCinematic.java mcsm-extras/java/net/mcsm/extras/client/McsmTimeWarpEffect.java mcsm-extras/java/net/mcsm/extras/client/McsmAmbientWorld.java mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingState.java mcsm-extras/java/net/mcsm/extras/client/McsmStormBlob.java mcsm-extras/java/net/mcsm/extras/client/McsmAttachedVortex.java mcsm-extras/java/net/mcsm/extras/client/McsmDimensionFx.java mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java mcsm-extras/java/net/mcsm/extras/client/McsmStormMenuScene.java mcsm-extras/java/net/mcsm/extras/client/McsmEarthPlanet.java mcsm-extras/java/net/mcsm/extras/client/McsmCreatorSkybox.java mcsm-extras/java/net/mcsm/extras/client/McsmMeshSynthesizer.java mcsm-extras/java/net/mcsm/extras/client/McsmHaloSkyRenderer.java mcsm-extras/java/net/mcsm/extras/client/McsmTexturePainterScreen.java mcsm-extras/java/net/mcsm/extras/client/McsmFutureBookScreen.java mcsm-extras/java/net/mcsm/extras/client/McsmAtmosphericMeshComponent.java mcsm-extras/java/net/mcsm/extras/client/McsmMobRenderers.java mcsm-extras/java/net/mcsm/extras/client/McsmSkyReach.java mcsm-extras/java/net/mcsm/extras/client/McsmButtonSounds.java mcsm-extras/java/net/mcsm/extras/client/McsmInfiniteVoidLayers.java mcsm-extras/java/net/mcsm/extras/client/McsmEarlyStormBackdrop.java mcsm-extras/java/net/mcsm/extras/client/McsmVoidCinematic.java mcsm-extras/java/net/mcsm/extras/client/McsmShootingStars.java mcsm-extras/java/net/mcsm/extras/client/McsmStormCanopy.java mcsm-extras/java/net/mcsm/extras/client/McsmBlackHoleBackdrop.java mcsm-extras/java/net/mcsm/extras/client/McsmAuroraBorealis.java mcsm-extras/java/net/mcsm/extras/client/McsmStormRings.java mcsm-extras/java/net/mcsm/extras/client/McsmTerminalClient.java mcsm-extras/java/net/mcsm/extras/client/McsmCreatorArms.java mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingClient.java mcsm-extras/java/net/mcsm/extras/client/McsmStoryModeSunSlab.java mcsm-extras/java/net/mcsm/extras/client/McsmScenes.java mcsm-extras/java/net/mcsm/extras/client/McsmVoidAgingPayload.java mcsm-extras/java/net/mcsm/extras/client/McsmCloudDeck.java mcsm-extras/java/net/mcsm/extras/client/McsmMassgSky.java mcsm-extras/java/net/mcsm/extras/client/McsmVoidDwellerTalk.java mcsm-extras/java/net/mcsm/extras/client/McsmVoidFloor.java mcsm-extras/java/net/mcsm/extras/client/McsmVortexMesh.java mcsm-extras/java/net/mcsm/extras/client/McsmStormPhase.java mcsm-extras/java/net/mcsm/extras/client/McsmExtrasScreen.java mcsm-extras/java/net/mcsm/extras/client/McsmNativeStormDebris.java mcsm-extras/java/net/mcsm/extras/client/McsmExperimentalStoryStage.java mcsm-extras/java/net/mcsm/extras/client/McsmStormAtmosphere.java mcsm-extras/java/net/mcsm/extras/client/McsmBackdropPalette.java mcsm-extras/java/net/mcsm/extras/client/McsmLaserBeamRenderer.java mcsm-extras/java/net/mcsm/extras/client/McsmClientChat.java mcsm-extras/java/net/mcsm/extras/client/McsmVoidVortexSkybox.java mcsm-extras/java/net/mcsm/extras/client/StoryCharacterRenderer.java mcsm-extras/java/net/mcsm/extras/client/McsmDungeonsPassthrough.java mcsm-extras/java/net/mcsm/extras/client/McsmGroundParticles.java mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java mcsm-extras/java/net/mcsm/extras/McsmDynamicLights.java mcsm-extras/java/net/mcsm/extras/McsmMegaCities.java mcsm-extras/java/net/mcsm/extras/McsmCreatures.java mcsm-extras/java/net/mcsm/extras/McsmCreatorRealm.java mcsm-extras/java/net/mcsm/extras/McsmIdentity.java mcsm-extras/java/net/mcsm/extras/McsmVoid.java mcsm-extras/java/net/mcsm/extras/McsmLaserBeams.java mcsm-extras/java/net/mcsm/extras/McsmVoidAging.java mcsm-extras/java/net/mcsm/extras/McsmTentacles.java mcsm-extras/java/net/mcsm/extras/McsmPortals.java mcsm-extras/java/net/mcsm/extras/McsmSkyVortexes.java mcsm-extras/java/net/mcsm/extras/McsmStory.java mcsm-extras/java/net/mcsm/extras/McsmTerminalItem.java mcsm-extras/java/net/mcsm/extras/McsmBossBar.java mcsm-extras/java/net/mcsm/extras/McsmRifts.java mcsm-extras/java/net/mcsm/extras/McsmTornadoes.java mcsm-extras/java/net/mcsm/extras/McsmContent.java mcsm-extras/java/net/mcsm/extras/McsmTemplateSummoner.java mcsm-extras/java/net/mcsm/extras/McsmStormBeaconBlock.java mcsm-extras/java/net/mcsm/extras/McsmStructureSummonerItemTemplate.java mcsm-extras/java/net/mcsm/extras/McsmUiSounds.java mcsm-extras/java/net/mcsm/extras/McsmGate.java mcsm-extras/java/net/mcsm/extras/McsmWarp.java mcsm-extras/java/net/mcsm/extras/McsmDinosaurs.java mcsm-extras/java/net/mcsm/extras/McsmStoryCharacterSpawnEggItem.java mcsm-extras/java/net/mcsm/extras/McsmVoidDescent.java mcsm-extras/java/net/mcsm/extras/McsmClientDispatch.java mcsm-extras/java/net/mcsm/extras/McsmFutureBook.java mcsm-extras/java/net/mcsm/extras/McsmStormShips.java mcsm-extras/java/net/mcsm/extras/McsmBuildQueue.java
++ echo '[javac] exit 0; log tail:'
+[javac] exit 0; log tail:
++ tail -12 /tmp/mcsm-javac.log
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+++ find /tmp/mcsm-build -name '*.class'
+++ wc -l
++ N_CLASSES=284
++ '[' 0 -eq 0 ']'
++ echo '[javac] OK: 284 classes'
+[javac] OK: 284 classes
++ stage javac-compiled
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] javac-compiled'
+[stage] javac-compiled
++ printf '%s\n' javac-compiled
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ rm -f out/JAVAC_FAILED.txt
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmWhiteGlow.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmHaloSkyRenderer.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmStormPhase.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmPresenceFxPatch.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmCreatures.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmCreatorArms.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmBossBar.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmBlackHole.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmRifts.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmTornadoes.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name StoryCharacterRenderer.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmTerminal.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmTerminalItem.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmClientDispatch.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmTerminalScreen.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmTerminalClient.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmMassg.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmMassgSky.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmMenuGuard.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmMenuDiag.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmStormCanopy.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmHallucinations.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmNinthLayerGeometry.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmCreatorSkybox.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmResourcePackFixMixin.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmModNioPackFixMixin.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmVoidDeep.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmVoidTiers.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmVoidDescent.class -print -quit
++ grep -q .
++ for cls in McsmWhiteGlow McsmHaloSkyRenderer McsmStormPhase McsmPresenceFxPatch McsmCreatures McsmCreatorArms McsmBossBar McsmBlackHole McsmRifts McsmTornadoes StoryCharacterRenderer McsmTerminal McsmTerminalItem McsmClientDispatch McsmTerminalScreen McsmTerminalClient McsmMassg McsmMassgSky McsmMenuGuard McsmMenuDiag McsmStormCanopy McsmHallucinations McsmNinthLayerGeometry McsmCreatorSkybox McsmResourcePackFixMixin McsmModNioPackFixMixin McsmVoidDeep McsmVoidTiers McsmVoidDescent McsmVoid
++ find /tmp/mcsm-build -name McsmVoid.class -print -quit
++ grep -q .
++ echo '[javac] new-behaviour classes present (white column, conic renderer, phase model, presence pass, terminal)'
+[javac] new-behaviour classes present (white column, conic renderer, phase model, presence pass, terminal)
++ stage javac-ok push
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] javac-ok'
+[stage] javac-ok
++ printf '%s\n' javac-ok
++ '[' push = push ']'
++ evidence_put /tmp/mcsm-stage.txt stage.txt
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-715
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-715
++ cp -f /tmp/mcsm-stage.txt /tmp/mcsm-evidence/ci-out/run-715/stage.txt
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 715 stage.txt'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ evidence_put /tmp/mcsm-run.log run.log
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-715
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-715
++ cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-715/run.log
