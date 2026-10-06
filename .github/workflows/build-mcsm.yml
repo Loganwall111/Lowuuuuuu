@@ -75,6 +75,7 @@ jobs:
           GIT_LFS_SKIP_SMUDGE=1 git -c filter.lfs.smudge= -c filter.lfs.required=false \
             archive FETCH_HEAD \
             .gitattributes .gitignore BUILD_VERSION LICENSE NOTICE.md README.md SIFT_COSMOS_README.md VERSION \
+            "Screenshot*.png" wither_storm_stage_b.png \
             branding build.gradle ci creature_concepts docs glslcheck gradle.properties jar-overrides \
             mcsm-core-shaders mcsm-extras net ogs-cem overrides/datapacks refs settings.gradle \
             shaderpack-superduper shaderpack-v4 shaderpack-v5 src src-recon storylook tools \
