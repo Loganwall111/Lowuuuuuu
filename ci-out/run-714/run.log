@@ -5451,3 +5451,454 @@ ok   gbuffers_water.vsh [nodefs]
 + local DST=/tmp/mcsm-evidence/ci-out/run-714
 + mkdir -p /tmp/mcsm-evidence/ci-out/run-714
 + cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-714/run.log
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 714 run.log'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ python3 ci/make_backdrop_sheets.py
+[sheet] src/main/resources/assets/dabywitherstormmod/textures/misc/backdrop_sheet_purple_canvas.png canvas      803 B
+[sheet] jar-overrides/assets/dabywitherstormmod/textures/misc/backdrop_sheet_purple_canvas.png canvas      803 B
+[sheet] src/main/resources/assets/dabywitherstormmod/textures/misc/backdrop_sheet_teal_filter.png filter    10581 B
+[sheet] jar-overrides/assets/dabywitherstormmod/textures/misc/backdrop_sheet_teal_filter.png filter    10581 B
+[sheet] src/main/resources/assets/dabywitherstormmod/textures/misc/backdrop_sheet_salmon_filter.png filter    11572 B
+[sheet] jar-overrides/assets/dabywitherstormmod/textures/misc/backdrop_sheet_salmon_filter.png filter    11572 B
+[sheet] src/main/resources/assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase5_teal.png deck       8392 B
+[sheet] jar-overrides/assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase5_teal.png deck       8392 B
+[sheet] src/main/resources/assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase55_violet.png deck       9027 B
+[sheet] jar-overrides/assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase55_violet.png deck       9027 B
+[sheet] src/main/resources/assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase6_plum.png smudge    52504 B
+[sheet] jar-overrides/assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase6_plum.png smudge    52504 B
+[done] 12 sheet files, 181.4 KiB total -- colours read from the traced tables
++ echo '[backdrop] six phase sheets regenerated from the traced palette'
+[backdrop] six phase sheets regenerated from the traced palette
++ echo '[stage] supplied stage-sheet palettes (the storm'\''s material)'
+[stage] supplied stage-sheet palettes (the storm's material)
+++ python3 ci/apply_stage_palette.py
++ STAGE_OUT='[stage] applied the supplied stage palettes to the storm body atlases
+  phase_4_assets.png                 via wither_storm_stage_a.png   #060B18 x103337
+  phase_4_assets_og.png              via wither_storm_stage_a.png   #060B18 x102418
+  phase_4_assets_p55.png             via wither_storm_stage_a.png   #050A16 x88267
+  phase_4_assets_og_p55.png          via wither_storm_stage_a.png   #050A16 x88267
+  phase_4_assets_p6.png              via wither_storm_stage_b.png   #050914 x150045
+  phase_4_assets_og_p6.png           via wither_storm_stage_b.png   #050914 x150045
+  phase_4_assets_p7.png              via wither_storm_stage_b.png   #050914 x142379
+  phase_4_assets_og_p7.png           via wither_storm_stage_b.png   #050914 x142379
+[stage] wrote jar-overrides/assets/dabywitherstormmod/textures/entity/stage_palette.json'
++ printf '%s\n' '[stage] applied the supplied stage palettes to the storm body atlases
+  phase_4_assets.png                 via wither_storm_stage_a.png   #060B18 x103337
+  phase_4_assets_og.png              via wither_storm_stage_a.png   #060B18 x102418
+  phase_4_assets_p55.png             via wither_storm_stage_a.png   #050A16 x88267
+  phase_4_assets_og_p55.png          via wither_storm_stage_a.png   #050A16 x88267
+  phase_4_assets_p6.png              via wither_storm_stage_b.png   #050914 x150045
+  phase_4_assets_og_p6.png           via wither_storm_stage_b.png   #050914 x150045
+  phase_4_assets_p7.png              via wither_storm_stage_b.png   #050914 x142379
+  phase_4_assets_og_p7.png           via wither_storm_stage_b.png   #050914 x142379
+[stage] wrote jar-overrides/assets/dabywitherstormmod/textures/entity/stage_palette.json'
++ tail -3
+  phase_4_assets_p7.png              via wither_storm_stage_b.png   #050914 x142379
+  phase_4_assets_og_p7.png           via wither_storm_stage_b.png   #050914 x142379
+[stage] wrote jar-overrides/assets/dabywitherstormmod/textures/entity/stage_palette.json
++ echo '[stage] verify the atlases against the sheets'
+[stage] verify the atlases against the sheets
+++ python3 ci/apply_stage_palette.py --check
++ STAGE_CHECK='[stage] OK -- 8 storm body atlases wear the supplied stage-sheet palettes (worst channel distance 0)'
++ STAGE_RC=0
++ grep -E '^\[stage\]|^  FAIL'
++ tail -4
++ printf '%s\n' '[stage] OK -- 8 storm body atlases wear the supplied stage-sheet palettes (worst channel distance 0)'
+[stage] OK -- 8 storm body atlases wear the supplied stage-sheet palettes (worst channel distance 0)
++ printf '%s\n' '[stage] OK -- 8 storm body atlases wear the supplied stage-sheet palettes (worst channel distance 0)'
++ '[' 0 -ne 0 ']'
++ stage stage-palette-ok
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] stage-palette-ok'
+[stage] stage-palette-ok
++ printf '%s\n' stage-palette-ok
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ stage backdrop-ok
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] backdrop-ok'
+[stage] backdrop-ok
++ printf '%s\n' backdrop-ok
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ echo '[content] generate the pack'\''s own textures + item definitions'
+[content] generate the pack's own textures + item definitions
++ python3 ci/make_mcsm_sounds.py
++ tail -1
+[sounds] no Ogg encoder here (numpy/soundfile missing) -- keeping the committed files; run this on a machine with soundfile to regenerate them
++ python3 ci/make_emissive_whites.py --two-way
++ tail -1
+[emissive] OK -- every phase >= 4 emissive atlas is a pure white mask that clears the glow floor
++ python3 ci/make_mcsm_textures.py
++ tail -1
+[textures] wrote 94 block + 41 item + 7 mob textures from the supplied stage palette and the mob UV tables
++ python3 ci/make_skybox_textures.py
++ tail -1
+[sky] wrote 12 painted sky faces for 4 dimensions (512x128 sides, 256x256 zenith, 128x128 cloud deck)
++ python3 ci/make_mcsm_content_assets.py
++ tail -1
+mcsm content pack: 124 blocks, 165 items, 124 loot tables, 165 item definitions, 981 asset files, 198 data files
++ set +e
+++ python3 ci/make_mcsm_sounds.py --check
++ SOUND_CHECK='[sounds] OK -- 24 custom Ogg files (367993 bytes) bound by 24 SoundEvents'
++ SOUND_RC=0
++ set -e
++ printf '%s\n' '[sounds] OK -- 24 custom Ogg files (367993 bytes) bound by 24 SoundEvents'
++ tail -3
+[sounds] OK -- 24 custom Ogg files (367993 bytes) bound by 24 SoundEvents
++ '[' 0 -ne 0 ']'
++ set +e
+++ python3 ci/make_skybox_textures.py --check
++ SKY_CHECK='[sky] all 12 painted sky faces present (4 dimensions: sides + zenith + cloud deck)'
++ SKY_RC=0
++ set -e
++ tail -3
++ printf '%s\n' '[sky] all 12 painted sky faces present (4 dimensions: sides + zenith + cloud deck)'
+[sky] all 12 painted sky faces present (4 dimensions: sides + zenith + cloud deck)
++ '[' 0 -ne 0 ']'
++ set +e
+++ python3 ci/make_emissive_whites.py --check
++ EMISSIVE_CHECK='[emissive] phase_4_assets_e.png               union mask, 30 lit lens pixels
+[emissive] wither_storm_e.png                 pure white, 953 lit pixels
+[emissive] wither_storm_no_teeth_glow_e.png   intentionally empty (phase < 4)
+[emissive] wither_storm_og_e.png              pure white, 953 lit pixels
+[emissive] wither_storm_og_p51_e.png          pure white, 1198 lit pixels
+[emissive] wither_storm_og_p55_e.png          pure white, 1598 lit pixels
+[emissive] wither_storm_og_p5_e.png           pure white, 1198 lit pixels
+[emissive] wither_storm_og_p6_e.png           pure white, 1598 lit pixels
+[emissive] wither_storm_og_p7_e.png           pure white, 1598 lit pixels
+[emissive] wither_storm_p51_e.png             pure white, 1198 lit pixels
+[emissive] wither_storm_p55_e.png             pure white, 1598 lit pixels
+[emissive] wither_storm_p5_e.png              pure white, 1198 lit pixels
+[emissive] wither_storm_p6_e.png              pure white, 1598 lit pixels
+[emissive] wither_storm_p7_e.png              pure white, 1598 lit pixels
+[emissive] wither_storm_e.png                 pure white, 953 lit pixels
+[emissive] wither_storm_no_teeth_glow_e.png   intentionally empty (phase < 4)
+[emissive] wither_storm_og_e.png              pure white, 953 lit pixels
+[emissive] wither_storm_og_p51_e.png          pure white, 1198 lit pixels
+[emissive] wither_storm_og_p55_e.png          pure white, 1598 lit pixels
+[emissive] wither_storm_og_p5_e.png           pure white, 1198 lit pixels
+[emissive] wither_storm_og_p6_e.png           pure white, 1598 lit pixels
+[emissive] wither_storm_og_p7_e.png           pure white, 1598 lit pixels
+[emissive] wither_storm_p51_e.png             pure white, 1198 lit pixels
+[emissive] wither_storm_p55_e.png             pure white, 1598 lit pixels
+[emissive] wither_storm_p5_e.png              pure white, 1198 lit pixels
+[emissive] wither_storm_p6_e.png              pure white, 1598 lit pixels
+[emissive] wither_storm_p7_e.png              pure white, 1598 lit pixels
+[emissive] OK -- every phase >= 4 emissive atlas is a pure white mask that clears the glow floor'
++ EMISSIVE_RC=0
++ set -e
++ printf '%s\n' '[emissive] phase_4_assets_e.png               union mask, 30 lit lens pixels
+[emissive] wither_storm_e.png                 pure white, 953 lit pixels
+[emissive] wither_storm_no_teeth_glow_e.png   intentionally empty (phase < 4)
+[emissive] wither_storm_og_e.png              pure white, 953 lit pixels
+[emissive] wither_storm_og_p51_e.png          pure white, 1198 lit pixels
+[emissive] wither_storm_og_p55_e.png          pure white, 1598 lit pixels
+[emissive] wither_storm_og_p5_e.png           pure white, 1198 lit pixels
+[emissive] wither_storm_og_p6_e.png           pure white, 1598 lit pixels
+[emissive] wither_storm_og_p7_e.png           pure white, 1598 lit pixels
+[emissive] wither_storm_p51_e.png             pure white, 1198 lit pixels
+[emissive] wither_storm_p55_e.png             pure white, 1598 lit pixels
+[emissive] wither_storm_p5_e.png              pure white, 1198 lit pixels
+[emissive] wither_storm_p6_e.png              pure white, 1598 lit pixels
+[emissive] wither_storm_p7_e.png              pure white, 1598 lit pixels
+[emissive] wither_storm_e.png                 pure white, 953 lit pixels
+[emissive] wither_storm_no_teeth_glow_e.png   intentionally empty (phase < 4)
+[emissive] wither_storm_og_e.png              pure white, 953 lit pixels
+[emissive] wither_storm_og_p51_e.png          pure white, 1198 lit pixels
+[emissive] wither_storm_og_p55_e.png          pure white, 1598 lit pixels
+[emissive] wither_storm_og_p5_e.png           pure white, 1198 lit pixels
+[emissive] wither_storm_og_p6_e.png           pure white, 1598 lit pixels
+[emissive] wither_storm_og_p7_e.png           pure white, 1598 lit pixels
+[emissive] wither_storm_p51_e.png             pure white, 1198 lit pixels
+[emissive] wither_storm_p55_e.png             pure white, 1598 lit pixels
+[emissive] wither_storm_p5_e.png              pure white, 1198 lit pixels
+[emissive] wither_storm_p6_e.png              pure white, 1598 lit pixels
+[emissive] wither_storm_p7_e.png              pure white, 1598 lit pixels
+[emissive] OK -- every phase >= 4 emissive atlas is a pure white mask that clears the glow floor'
++ tail -4
+[emissive] wither_storm_p5_e.png              pure white, 1198 lit pixels
+[emissive] wither_storm_p6_e.png              pure white, 1598 lit pixels
+[emissive] wither_storm_p7_e.png              pure white, 1598 lit pixels
+[emissive] OK -- every phase >= 4 emissive atlas is a pure white mask that clears the glow floor
++ '[' 0 -ne 0 ']'
+++ python3 ci/measure_stills.py --check
++ STILLS_CHECK='[stills] OK -- 6 supplied frames, 5 bands each, table in sync'
++ STILLS_RC=0
++ printf '%s\n' '[stills] OK -- 6 supplied frames, 5 bands each, table in sync'
++ tail -2
+[stills] OK -- 6 supplied frames, 5 bands each, table in sync
++ '[' 0 -ne 0 ']'
+++ python3 ci/sync_backdrop_palette.py --check
++ BACKDROP_CHECK='[backdrop] OK -- both backdrops wear the supplied sheets'\'' traced columns (4 columns x 32 stops, routing 3 pairs, sweep worst channel 1)'
++ BACKDROP_RC=0
++ printf '%s\n' '[backdrop] OK -- both backdrops wear the supplied sheets'\'' traced columns (4 columns x 32 stops, routing 3 pairs, sweep worst channel 1)'
++ tail -2
+[backdrop] OK -- both backdrops wear the supplied sheets' traced columns (4 columns x 32 stops, routing 3 pairs, sweep worst channel 1)
++ '[' 0 -ne 0 ']'
+++ python3 ci/check_content_textures.py
++ CONTENT_CHECK='[content] 261 textures, 375 models, 124 blockstates, 165 item definitions
+[content] every texture, model, blockstate and item definition resolves'
++ CONTENT_RC=0
++ printf '%s\n' '[content] 261 textures, 375 models, 124 blockstates, 165 item definitions
+[content] every texture, model, blockstate and item definition resolves'
++ tail -4
+[content] 261 textures, 375 models, 124 blockstates, 165 item definitions
+[content] every texture, model, blockstate and item definition resolves
++ printf '%s\n' '[content] 261 textures, 375 models, 124 blockstates, 165 item definitions
+[content] every texture, model, blockstate and item definition resolves'
++ '[' 0 -ne 0 ']'
++ git rev-parse --git-dir
++ git diff --quiet -- jar-overrides/assets/mcsm
++ echo '[content] assets, models, blockstates and item definitions all resolve and are in sync'
+[content] assets, models, blockstates and item definitions all resolve and are in sync
+++ python3 ci/check_vanilla_overrides.py --jar /tmp/mcsm-dl/client.jar
++ VANILLA_CHECK='[vanilla] the game'\''s own assets/minecraft: 11173 files read
+[vanilla] 1 blockstates and 4 models of ours weighed against the game'\''s own copies: 0 problems'
++ VANILLA_RC=0
++ printf '%s\n' '[vanilla] the game'\''s own assets/minecraft: 11173 files read
+[vanilla] 1 blockstates and 4 models of ours weighed against the game'\''s own copies: 0 problems'
++ tail -6
+[vanilla] the game's own assets/minecraft: 11173 files read
+[vanilla] 1 blockstates and 4 models of ours weighed against the game's own copies: 0 problems
++ '[' 0 -ne 0 ']'
++ stage vanilla-ok
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] vanilla-ok'
+[stage] vanilla-ok
++ printf '%s\n' vanilla-ok
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ VANILLA_OUT=out/vanilla-api.txt
+++ wc -l
++ echo '[api] vanilla dump: 12821 lines -> out/vanilla-api.txt'
+[api] vanilla dump: 12821 lines -> out/vanilla-api.txt
++ echo '[schema] datapack schema gate (checked against vanilla'\''s own JSON)'
+[schema] datapack schema gate (checked against vanilla's own JSON)
+++ python3 ci/check_datapack_schema.py --jar /tmp/mcsm-dl/client.jar
++ SCHEMA_OUT='[schema] vanilla reference: 80 recipes, 80 loot tables, 4 dimension types, 0 dimensions
+[schema] vanilla recipe result keys: ['\''count'\'', '\''id'\'']
+[schema] vanilla loot item-entry keys: ['\''name'\'']
+[schema] example recipe (data/minecraft/recipe/acacia_boat.json):
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "boat",
+  "key": {
+    "#": "minecraft:acacia_planks"
+  },
+  "pattern": [
+    "# #",
+    "###"
+  ],
+  "result": {
+    "id": "minecraft:acacia_boat"
+  }
+}
+[schema] example loot table (data/minecraft/loot_table/archaeology/desert_pyramid.json):
+{
+  "type": "minecraft:archaeology",
+  "pools": [
+    {
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:archer_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:miner_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:prize_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:skull_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:diamond"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:tnt"
+        },
+        {
+
+[schema] vanilla dimension_type data/minecraft/dimension_type/overworld.json keys: ['\''ambient_light'\'', '\''attributes'\'', '\''coordinate_scale'\'', '\''default_clock'\'', '\''has_ceiling'\'', '\''has_ender_dragon_fight'\'', '\''has_skylight'\'', '\''height'\'', '\''infiniburn'\'', '\''logical_height'\'', '\''min_y'\'', '\''monster_spawn_block_light_limit'\'', '\''monster_spawn_light_level'\'', '\''timelines'\'']
+[schema] registered mcsm ids: 165, vanilla item/block names: 1789
+[schema] OK -- 124 loot tables and 62 recipes match this build'\''s own JSON shapes'
++ SCHEMA_RC=0
++ printf '%s\n' '[schema] vanilla reference: 80 recipes, 80 loot tables, 4 dimension types, 0 dimensions
+[schema] vanilla recipe result keys: ['\''count'\'', '\''id'\'']
+[schema] vanilla loot item-entry keys: ['\''name'\'']
+[schema] example recipe (data/minecraft/recipe/acacia_boat.json):
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "boat",
+  "key": {
+    "#": "minecraft:acacia_planks"
+  },
+  "pattern": [
+    "# #",
+    "###"
+  ],
+  "result": {
+    "id": "minecraft:acacia_boat"
+  }
+}
+[schema] example loot table (data/minecraft/loot_table/archaeology/desert_pyramid.json):
+{
+  "type": "minecraft:archaeology",
+  "pools": [
+    {
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:archer_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:miner_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:prize_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:skull_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:diamond"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:tnt"
+        },
+        {
+
+[schema] vanilla dimension_type data/minecraft/dimension_type/overworld.json keys: ['\''ambient_light'\'', '\''attributes'\'', '\''coordinate_scale'\'', '\''default_clock'\'', '\''has_ceiling'\'', '\''has_ender_dragon_fight'\'', '\''has_skylight'\'', '\''height'\'', '\''infiniburn'\'', '\''logical_height'\'', '\''min_y'\'', '\''monster_spawn_block_light_limit'\'', '\''monster_spawn_light_level'\'', '\''timelines'\'']
+[schema] registered mcsm ids: 165, vanilla item/block names: 1789
+[schema] OK -- 124 loot tables and 62 recipes match this build'\''s own JSON shapes'
++ printf '%s\n' '[schema] vanilla reference: 80 recipes, 80 loot tables, 4 dimension types, 0 dimensions
+[schema] vanilla recipe result keys: ['\''count'\'', '\''id'\'']
+[schema] vanilla loot item-entry keys: ['\''name'\'']
+[schema] example recipe (data/minecraft/recipe/acacia_boat.json):
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "boat",
+  "key": {
+    "#": "minecraft:acacia_planks"
+  },
+  "pattern": [
+    "# #",
+    "###"
+  ],
+  "result": {
+    "id": "minecraft:acacia_boat"
+  }
+}
+[schema] example loot table (data/minecraft/loot_table/archaeology/desert_pyramid.json):
+{
+  "type": "minecraft:archaeology",
+  "pools": [
+    {
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:archer_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:miner_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:prize_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:skull_pottery_sherd"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:diamond"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:tnt"
+        },
+        {
+
+[schema] vanilla dimension_type data/minecraft/dimension_type/overworld.json keys: ['\''ambient_light'\'', '\''attributes'\'', '\''coordinate_scale'\'', '\''default_clock'\'', '\''has_ceiling'\'', '\''has_ender_dragon_fight'\'', '\''has_skylight'\'', '\''height'\'', '\''infiniburn'\'', '\''logical_height'\'', '\''min_y'\'', '\''monster_spawn_block_light_limit'\'', '\''monster_spawn_light_level'\'', '\''timelines'\'']
+[schema] registered mcsm ids: 165, vanilla item/block names: 1789
+[schema] OK -- 124 loot tables and 62 recipes match this build'\''s own JSON shapes'
++ grep -E '^\[schema\]|^  FAIL|^  note'
++ tail -8
+[schema] vanilla reference: 80 recipes, 80 loot tables, 4 dimension types, 0 dimensions
+[schema] vanilla recipe result keys: ['count', 'id']
+[schema] vanilla loot item-entry keys: ['name']
+[schema] example recipe (data/minecraft/recipe/acacia_boat.json):
+[schema] example loot table (data/minecraft/loot_table/archaeology/desert_pyramid.json):
+[schema] vanilla dimension_type data/minecraft/dimension_type/overworld.json keys: ['ambient_light', 'attributes', 'coordinate_scale', 'default_clock', 'has_ceiling', 'has_ender_dragon_fight', 'has_skylight', 'height', 'infiniburn', 'logical_height', 'min_y', 'monster_spawn_block_light_limit', 'monster_spawn_light_level', 'timelines']
+[schema] registered mcsm ids: 165, vanilla item/block names: 1789
+[schema] OK -- 124 loot tables and 62 recipes match this build's own JSON shapes
++ '[' 0 -ne 0 ']'
++ stage schema-ok push
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] schema-ok'
+[stage] schema-ok
++ printf '%s\n' schema-ok
++ '[' push = push ']'
++ evidence_put /tmp/mcsm-stage.txt stage.txt
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-714
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-714
++ cp -f /tmp/mcsm-stage.txt /tmp/mcsm-evidence/ci-out/run-714/stage.txt
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 714 stage.txt'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ evidence_put /tmp/mcsm-run.log run.log
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-714
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-714
++ cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-714/run.log
