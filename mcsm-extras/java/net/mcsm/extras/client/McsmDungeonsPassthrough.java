@@ -31,7 +31,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.mcsm.extras.McsmExtrasConfig;
-import net.mcsm.extras.McsmStormPhase;
 import net.mcsm.extras.McsmVoid;
 import net.mcsm.extras.McsmVoidTiers;
 
@@ -145,7 +144,7 @@ public final class McsmDungeonsPassthrough {
             float pitch = mc.player != null ? mc.player.getViewXRot(partial) : 0.0F;
             float yaw = mc.player != null ? mc.player.getViewYRot(partial) : 0.0F;
             float fov = 70.0F;
-            double phase = mc.level != null ? McsmStormPhase.effectivePhase(mc.level) : 0.0D;
+            double phase = McsmStormPhase.resolve();
             int voidLayer = McsmInfiniteVoidLayers.getCurrentMeditationLayer();
             long seq = FRAME_SEQ.incrementAndGet();
 
@@ -180,7 +179,7 @@ public final class McsmDungeonsPassthrough {
             }
 
             boolean inVoid = mc.level.dimension().equals(McsmVoid.DIMENSION);
-            double phase = McsmStormPhase.effectivePhase(mc.level);
+            double phase = McsmStormPhase.resolve();
             if (!inVoid && phase < 4.0D && !ueConnected) {
                 return;
             }
