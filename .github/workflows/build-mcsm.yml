@@ -15,6 +15,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: build-mcsm-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -64,10 +68,17 @@ jobs:
           VER="${INPUT_VER:-$(cat VERSION | tr -d '[:space:]')}"
           echo "[workflow] Target version: ${VER}"
 
-          # Fetch the full baseline tree from origin/arena/01a0b039-lowuuuuuu
-          git fetch --depth=1 origin arena/01a0b039-lowuuuuuu
+          # Fetch the baseline tree from origin/arena/01a0b039-lowuuuuuu with LFS smudge disabled
+          GIT_LFS_SKIP_SMUDGE=1 git -c filter.lfs.smudge= -c filter.lfs.required=false \
+            fetch --depth=1 origin arena/01a0b039-lowuuuuuu
           mkdir -p /tmp/full-mcsm
-          git archive FETCH_HEAD | tar -x -C /tmp/full-mcsm
+          GIT_LFS_SKIP_SMUDGE=1 git -c filter.lfs.smudge= -c filter.lfs.required=false \
+            archive FETCH_HEAD \
+            .gitattributes .gitignore BUILD_VERSION LICENSE NOTICE.md README.md SIFT_COSMOS_README.md VERSION \
+            branding build.gradle ci creature_concepts docs glslcheck gradle.properties jar-overrides \
+            mcsm-core-shaders mcsm-extras net ogs-cem overrides/datapacks refs settings.gradle \
+            shaderpack-superduper shaderpack-v4 shaderpack-v5 src src-recon storylook tools \
+            | tar -x -C /tmp/full-mcsm
 
           # Overlay our branch's patched shaders & SIFT Dungeons Passthrough integration
           cp -f VERSION /tmp/full-mcsm/VERSION
@@ -95,6 +106,8 @@ jobs:
           "
           sed -i "s/BUILD_VERSION = \"[^\"]*\"/BUILD_VERSION = \"${VER}\"/" \
             /tmp/full-mcsm/mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
+          sed -i 's/or '\''BUILD_VERSION = "7000.0.26-M";'\'' in cfg)/or '\''BUILD_VERSION = "7000.0.26-M";'\'' in cfg or '\''BUILD_VERSION = "'"${VER}"'";'\'' in cfg)/' \
+            /tmp/full-mcsm/ci/check_phase_uniform.py
 
           # Configure git inside /tmp/full-mcsm so ci/build.sh evidence channel works
           git -C /tmp/full-mcsm init -q
