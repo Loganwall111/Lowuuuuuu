@@ -5286,3 +5286,168 @@ shimcheck: 174/174 pass
 + local DST=/tmp/mcsm-evidence/ci-out/run-715
 + mkdir -p /tmp/mcsm-evidence/ci-out/run-715
 + cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-715/run.log
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 715 run.log'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ for SL in storylook/assets/minecraft/shaders/core/*
++ case "$SL" in
++ continue
++ echo '[glsl] story look shaders validate'
+[glsl] story look shaders validate
++ python3 ci/iris_tu.py shaderpack-v5/shaders
+ok   final.fsh [asdefault]
+ok   final.fsh [all_on]
+ok   final.fsh [all_off]
+ok   final.fsh [flip_BLOOM]
+ok   final.fsh [flip_SSAO]
+ok   final.fsh [flip_TONEMAP]
+ok   final.fsh [flip_STORM_PURPLE_ON]
+ok   final.fsh [flip_STORM_VIGNETTE_ON]
+ok   final.vsh [nodefs]
+ok   gbuffers_basic.fsh [nodefs]
+ok   gbuffers_basic.vsh [nodefs]
+ok   gbuffers_clouds.fsh [asdefault]
+ok   gbuffers_clouds.fsh [all_on]
+ok   gbuffers_clouds.fsh [all_off]
+ok   gbuffers_clouds.fsh [flip_STORY_CLOUDS]
+ok   gbuffers_clouds.vsh [nodefs]
+ok   gbuffers_terrain.fsh [asdefault]
+ok   gbuffers_terrain.fsh [all_on]
+ok   gbuffers_terrain.fsh [all_off]
+ok   gbuffers_terrain.fsh [flip_COLORED_LIGHT]
+ok   gbuffers_terrain.vsh [nodefs]
+ok   gbuffers_textured.fsh [nodefs]
+ok   gbuffers_textured.vsh [nodefs]
+ok   gbuffers_water.fsh [asdefault]
+ok   gbuffers_water.fsh [all_on]
+ok   gbuffers_water.fsh [all_off]
+ok   gbuffers_water.fsh [flip_MCSM_DARK_WATER]
+ok   gbuffers_water.vsh [nodefs]
+[iris] 28 translation units, 0 failures
++ echo '[glsl] shaderpack-v5 validates'
+[glsl] shaderpack-v5 validates
++ stage glsl-ok
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] glsl-ok'
+[stage] glsl-ok
++ printf '%s\n' glsl-ok
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ MODEL_FAIL=0
+++ find src-recon/net/dabicco/witherstormmod/entity/model -name 'WitherStormP*.java'
+++ sort
+++ tr '\n' ' '
++ MODEL_FILES='src-recon/net/dabicco/witherstormmod/entity/model/WitherStormP4.java '
++ '[' -n src-recon/net/dabicco/witherstormmod/entity/model/WitherStormP4.java ']'
++ python3 ci/split_p4_model.py --check src-recon/net/dabicco/witherstormmod/entity/model/WitherStormP4.java
++ tail -1 /tmp/mcsm-model.log
+[p4] OK -- every method is inside the budget
++ '[' 0 -ne 0 ']'
++ echo '[model] method budget OK (no recovered model method is near the 64 KB bytecode limit)'
+[model] method budget OK (no recovered model method is near the 64 KB bytecode limit)
++ python3 ci/measure_hugeback.py --check
++ tail -3
+[hugeback]   centre (model blocks): [0.7, -11.7, 2.4]
+[hugeback]   1.72x about the ORIGIN moves it: model=[0.5, -8.4, 1.7] world=[-2.0, 33.8, 6.9] blocks
+[hugeback] OK -- the phase-5.5 upper back is flung 34 world blocks off its body when the 1.72x enlargement is taken about the model origin; #423 scales it about its own centre instead
++ stage model-ok
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] model-ok'
+[stage] model-ok
++ printf '%s\n' model-ok
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ CFG=mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
++ sed -i 's/BUILD_VERSION = "[^"]*"/BUILD_VERSION = "7000.0.27-M"/' mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
++ echo '[version] BUILD_VERSION synced to 7000.0.27-M'
+[version] BUILD_VERSION synced to 7000.0.27-M
++ printf %s 7000.0.27-M
++ echo '[version] BUILD_VERSION file stamped to 7000.0.27-M'
+[version] BUILD_VERSION file stamped to 7000.0.27-M
+++ grep -E '^mod_version=' gradle.properties
+++ head -1
+++ cut -d= -f2-
+++ tr -d '[:space:]'
++ VP_GRADLE=7000.0.27-M
+++ python3 -c 'import json,sys; print(json.load(open("src/main/resources/fabric.mod.json"))["version"].strip())'
++ VP_FABRIC=7000.0.27-M
+++ grep -oE 'BUILD_VERSION = "[^"]*"' mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
+++ head -1
+++ sed -E 's/.*"(.*)"/\1/'
++ VP_CONFIG=7000.0.27-M
++ VSTAMP_FAIL=0
++ for pair in "BUILD_VERSION file:$VER" "gradle.properties:${VP_GRADLE}" "fabric.mod.json:${VP_FABRIC}" "McsmExtrasConfig:${VP_CONFIG}"
++ name='BUILD_VERSION file'
++ got=7000.0.27-M
++ '[' 7000.0.27-M '!=' 7000.0.27-M ']'
++ for pair in "BUILD_VERSION file:$VER" "gradle.properties:${VP_GRADLE}" "fabric.mod.json:${VP_FABRIC}" "McsmExtrasConfig:${VP_CONFIG}"
++ name=gradle.properties
++ got=7000.0.27-M
++ '[' 7000.0.27-M '!=' 7000.0.27-M ']'
++ for pair in "BUILD_VERSION file:$VER" "gradle.properties:${VP_GRADLE}" "fabric.mod.json:${VP_FABRIC}" "McsmExtrasConfig:${VP_CONFIG}"
++ name=fabric.mod.json
++ got=7000.0.27-M
++ '[' 7000.0.27-M '!=' 7000.0.27-M ']'
++ for pair in "BUILD_VERSION file:$VER" "gradle.properties:${VP_GRADLE}" "fabric.mod.json:${VP_FABRIC}" "McsmExtrasConfig:${VP_CONFIG}"
++ name=McsmExtrasConfig
++ got=7000.0.27-M
++ '[' 7000.0.27-M '!=' 7000.0.27-M ']'
++ '[' 0 -ne 0 ']'
++ echo '[version] stamp gate OK (VERSION, BUILD_VERSION, gradle.properties, fabric.mod.json, McsmExtrasConfig = 7000.0.27-M)'
+[version] stamp gate OK (VERSION, BUILD_VERSION, gradle.properties, fabric.mod.json, McsmExtrasConfig = 7000.0.27-M)
+++ grep -rn '"[^"]*1\.9\.[0-9]' '--include=*.java' mcsm-extras/java
+++ grep -v 'BUILD_VERSION = '
+++ true
++ DRIFT=
++ '[' -n '' ']'
++ echo '[version] drift gate OK (no hardcoded version literals)'
+[version] drift gate OK (no hardcoded version literals)
++ stage version-ok push
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] version-ok'
+[stage] version-ok
++ printf '%s\n' version-ok
++ '[' push = push ']'
++ evidence_put /tmp/mcsm-stage.txt stage.txt
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-715
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-715
++ cp -f /tmp/mcsm-stage.txt /tmp/mcsm-evidence/ci-out/run-715/stage.txt
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 715 stage.txt'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ evidence_put /tmp/mcsm-run.log run.log
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-715
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-715
++ cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-715/run.log
