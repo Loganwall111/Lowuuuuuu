@@ -6548,3 +6548,2375 @@ Note: Recompile with -Xlint:unchecked for details.
 + local DST=/tmp/mcsm-evidence/ci-out/run-715
 + mkdir -p /tmp/mcsm-evidence/ci-out/run-715
 + cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-715/run.log
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 715 run.log'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ echo '[assemble] overlay onto base (unzip base jar, overlay shaders + jar-overrides + fresh classes)'
+[assemble] overlay onto base (unzip base jar, overlay shaders + jar-overrides + fresh classes)
++ stage assemble-start
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] assemble-start'
+[stage] assemble-start
++ printf '%s\n' assemble-start
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ FX=/tmp/mcsm-fx
++ rm -rf /tmp/mcsm-fx
++ mkdir -p /tmp/mcsm-fx/cls
++ cd /tmp/mcsm-fx/cls
++ unzip -o -q /tmp/mcsm-dl/dabywitherstormmod-1.9.100-26.2-beta-mcsm.jar
++ cp -r mcsm-core-shaders/core mcsm-core-shaders/include /tmp/mcsm-fx/cls/assets/minecraft/shaders/
++ CS=/tmp/mcsm-fx/cls/assets/minecraft/shaders/core
++ '[' -f /tmp/mcsm-fx/cls/assets/minecraft/shaders/core/terrain.fsh ']'
++ cp -f /tmp/mcsm-fx/cls/assets/minecraft/shaders/core/terrain.fsh /tmp/mcsm-fx/cls/assets/minecraft/shaders/core/block.fsh
++ cp -f /tmp/mcsm-fx/cls/assets/minecraft/shaders/core/terrain.vsh /tmp/mcsm-fx/cls/assets/minecraft/shaders/core/block.vsh
++ '[' -f /tmp/mcsm-fx/cls/assets/minecraft/shaders/core/position.fsh ']'
++ '[' -f /tmp/mcsm-fx/cls/assets/minecraft/shaders/core/position.vsh ']'
++ echo '[build] 26.2 shader aliases: block<-terrain (when present); position.* is authored, not copied'
+[build] 26.2 shader aliases: block<-terrain (when present); position.* is authored, not copied
++ cp -r jar-overrides/assets jar-overrides/data /tmp/mcsm-fx/cls/
+++ find jar-overrides -type f
+++ wc -l
++ echo '[assemble] jar-overrides overlaid (1628 files available)'
+[assemble] jar-overrides overlaid (1628 files available)
++ '[' -d src/main/resources/assets ']'
++ N_SRC=0
++ IFS=
++ read -r -d '' f
+++ find src/main/resources/assets -type f -print0
++ rel=assets/dabywitherstormmod/icon.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/icon.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_stone.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_stone.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/stripped_withered_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/stripped_withered_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_cobblestone.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_cobblestone.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_button.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_button.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_tnt_4.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_tnt_4.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/Rocket_Retreiver.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/Rocket_Retreiver.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_fence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_fence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/stripped_withered_button.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/stripped_withered_button.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_rocket_3.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_rocket_3.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/command_essence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/command_essence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_tnt_2.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_tnt_2.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_rocket_2.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_rocket_2.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/furnace_filter.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/furnace_filter.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_netherbrick_wall.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_netherbrick_wall.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_netherbrick_fence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_netherbrick_fence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_sand.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_sand.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/wither_fragment.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/wither_fragment.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_stone_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_stone_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_cobblestone_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_cobblestone_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/grapple.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/grapple.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_bedrock.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_bedrock.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/stripped_withered_fence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/stripped_withered_fence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/amulet_bridges.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/amulet_bridges.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/command_circuit.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/command_circuit.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/stripped_withered_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/stripped_withered_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/control_panel.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/control_panel.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_netherbrick_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_netherbrick_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/super-tnt.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/super-tnt.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/amulet_wussmode.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/amulet_wussmode.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/story_character_spawn_egg.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/story_character_spawn_egg.json ']'
+++ dirname assets/dabywitherstormmod/models/item/story_character_spawn_egg.json
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item
++ cp src/main/resources/assets/dabywitherstormmod/models/item/story_character_spawn_egg.json /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/story_character_spawn_egg.json
++ N_SRC=1
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_rocket_4.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_rocket_4.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_base.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_base.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_netherbrick_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_netherbrick_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_cobblestone_wall.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_cobblestone_wall.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/wither_heart.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/wither_heart.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/super-tnt_plain.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/super-tnt_plain.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_netherbrick.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_netherbrick.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_cobblestone_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_cobblestone_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_log.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_log.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_stone_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_stone_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_tnt_3.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_tnt_3.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/stripped_withered_planks.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/stripped_withered_planks.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_nether_star.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_nether_star.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/formidibomb.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/formidibomb.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_mushroom.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_mushroom.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/stripped_withered_log.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/stripped_withered_log.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/torn_withered_flesh.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/torn_withered_flesh.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_empty.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_empty.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_planks.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_planks.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_rocket_1.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_rocket_1.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_flesh_block.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_flesh_block.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/rr_tnt_1.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/rr_tnt_1.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/item/withered_dust.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/item/withered_dust.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_button_inventory.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_button_inventory.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_stone.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_stone.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_button.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_button.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_stairs_outer.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_stairs_outer.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/super_tnt.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/super_tnt.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone_wall_side.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone_wall_side.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone_wall_post.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone_wall_post.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_stairs_outer.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_stairs_outer.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_button.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_button.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_slab_top.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_slab_top.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone_wall_inventory.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone_wall_inventory.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_fence_post.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_fence_post.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_wall_post.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_wall_post.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_wall_inventory.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_wall_inventory.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone_stairs_inner.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone_stairs_inner.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_stairs_inner.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_stairs_inner.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_wall_side_tall.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_wall_side_tall.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/furnace_filter.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/furnace_filter.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_stairs_outer.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_stairs_outer.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_sand.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_sand.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_stone_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_stone_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_fence_inventory.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_fence_inventory.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_bedrock.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_bedrock.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_fence_post.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_fence_post.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_bedrock_mirrored.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_bedrock_mirrored.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_wall_side.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_wall_side.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_fence_post.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_fence_post.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone_wall_side_tall.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone_wall_side_tall.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_stone_slab_top.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_stone_slab_top.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_fence_side.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_fence_side.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_stone_stairs_inner.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_stone_stairs_inner.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_stairs_inner.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_stairs_inner.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_stairs_inner.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_stairs_inner.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/furnace_filter_on.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/furnace_filter_on.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_fence_side.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_fence_side.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_button_pressed.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_button_pressed.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_fence_inventory.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_fence_inventory.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_slab_top.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_slab_top.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone_slab_top.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone_slab_top.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_slab_top.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_slab_top.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_netherbrick.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_netherbrick.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_log.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_log.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_stone_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_stone_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_fence_inventory.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_fence_inventory.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_planks.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_planks.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/formidibomb.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/formidibomb.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_mushroom.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_mushroom.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_log.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_log.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/torn_withered_flesh.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/torn_withered_flesh.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_button_pressed.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_button_pressed.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_planks.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_planks.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_stone_stairs_outer.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_stone_stairs_outer.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_fence_side.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_fence_side.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/stripped_withered_button_inventory.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/stripped_withered_button_inventory.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_flesh_block.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_flesh_block.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/models/block/withered_cobblestone_stairs_outer.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/models/block/withered_cobblestone_stairs_outer.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/config/colors.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/config/colors.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_stone.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_stone.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/stripped_withered_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/stripped_withered_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_cobblestone.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_cobblestone.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_button.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_button.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/super_tnt.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/super_tnt.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_fence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_fence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/rocket_retriever.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/rocket_retriever.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/stripped_withered_button.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/stripped_withered_button.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/command_essence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/command_essence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/furnace_filter.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/furnace_filter.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_netherbrick_wall.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_netherbrick_wall.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_netherbrick_fence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_netherbrick_fence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_sand.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_sand.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/wither_fragment.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/wither_fragment.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_stone_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_stone_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_cobblestone_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_cobblestone_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/grapple.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/grapple.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_bedrock.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_bedrock.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/stripped_withered_fence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/stripped_withered_fence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/amulet_bridges.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/amulet_bridges.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/command_circuit.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/command_circuit.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/stripped_withered_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/stripped_withered_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/control_panel.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/control_panel.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_netherbrick_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_netherbrick_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/amulet_wussmode.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/amulet_wussmode.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_netherbrick_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_netherbrick_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_cobblestone_wall.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_cobblestone_wall.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/wither_heart.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/wither_heart.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_netherbrick.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_netherbrick.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_cobblestone_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_cobblestone_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_log.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_log.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_stone_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_stone_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/stripped_withered_planks.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/stripped_withered_planks.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_nether_star.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_nether_star.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/formidibomb.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/formidibomb.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_mushroom.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_mushroom.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/stripped_withered_log.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/stripped_withered_log.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/torn_withered_flesh.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/torn_withered_flesh.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_planks.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_planks.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_flesh_block.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_flesh_block.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/items/withered_dust.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/items/withered_dust.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_stone.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_stone.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/stripped_withered_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/stripped_withered_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_cobblestone.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_cobblestone.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_button.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_button.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/super_tnt.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/super_tnt.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_fence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_fence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/stripped_withered_button.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/stripped_withered_button.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/furnace_filter.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/furnace_filter.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_netherbrick_wall.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_netherbrick_wall.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_netherbrick_fence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_netherbrick_fence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_sand.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_sand.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_stone_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_stone_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_cobblestone_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_cobblestone_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_bedrock.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_bedrock.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/stripped_withered_fence.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/stripped_withered_fence.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/stripped_withered_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/stripped_withered_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_netherbrick_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_netherbrick_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_netherbrick_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_netherbrick_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_cobblestone_wall.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_cobblestone_wall.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_netherbrick.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_netherbrick.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_cobblestone_slab.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_cobblestone_slab.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_log.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_log.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_stone_stairs.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_stone_stairs.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/stripped_withered_planks.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/stripped_withered_planks.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_mushroom.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_mushroom.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/stripped_withered_log.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/stripped_withered_log.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/torn_withered_flesh.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/torn_withered_flesh.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_planks.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_planks.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_flesh_block.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_flesh_block.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/blockstates/withered_dust.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/blockstates/withered_dust.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/shoot_2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/shoot_2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_9.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_9.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/shoot_5.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/shoot_5.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_11.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_11.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/shoot_1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/shoot_1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/chomp3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/chomp3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/short-growl_2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/short-growl_2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/snarl_7.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/snarl_7.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_6.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_6.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/beam-snap_3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/beam-snap_3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/chomp2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/chomp2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/roar_4.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/roar_4.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/short-growl_4.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/short-growl_4.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/roar_2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/roar_2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/chomp1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/chomp1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_5.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_5.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/stab-eye_3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/stab-eye_3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/short-growl_3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/short-growl_3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/powerful_roar2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/powerful_roar2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/shoot_3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/shoot_3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_7.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_7.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/shoot_4.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/shoot_4.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_4.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_4.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/activate-beam-5.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/activate-beam-5.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_10.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_10.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/activate-beam-6.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/activate-beam-6.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/activate-beam-3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/activate-beam-3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/snarl_3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/snarl_3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/snarl_4.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/snarl_4.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/shoot_6.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/shoot_6.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/stab-eye_2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/stab-eye_2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/snarl_1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/snarl_1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/activate-beam-4.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/activate-beam-4.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/short-growl_1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/short-growl_1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/powerful_roar1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/powerful_roar1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/roar_3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/roar_3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/beam_loop.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/beam_loop.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/snarl_2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/snarl_2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/activate-beam-1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/activate-beam-1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/activate-beam-2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/activate-beam-2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/hurt_1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/hurt_1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/powerful_roar3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/powerful_roar3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/roar_1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/roar_1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/hurt_2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/hurt_2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/snarl_5.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/snarl_5.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/beam-snap_2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/beam-snap_2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/beam_deactivate.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/beam_deactivate.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/snarl_6.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/snarl_6.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/growl_8.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/growl_8.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/beam-snap_1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/beam-snap_1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/head/stab-eye_1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/head/stab-eye_1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-damage-a.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-damage-a.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-damage-b.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-damage-b.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-powerup-fx.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-powerup-fx.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-reactivate.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-reactivate.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-hit-b.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-hit-b.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-unpower.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-unpower.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-damage-final.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-damage-final.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-pulse-loop.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-pulse-loop.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-hit-a.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-hit-a.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-destruct.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-destruct.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/commandblock/cb-power.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/commandblock/cb-power.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/cluster/cluster-fx-c.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/cluster/cluster-fx-c.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/cluster/cluster-fx-e.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/cluster/cluster-fx-e.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/cluster/cluster-fx-d.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/cluster/cluster-fx-d.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/cluster/cluster-fx-f.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/cluster/cluster-fx-f.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/cluster/cluster-fx-a.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/cluster/cluster-fx-a.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/cluster/cluster-fx-b.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/cluster/cluster-fx-b.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/witherstorm/thump-c.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/witherstorm/thump-c.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/witherstorm/grow_4.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/witherstorm/grow_4.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/witherstorm/large-thump.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/witherstorm/large-thump.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/witherstorm/thump-a.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/witherstorm/thump-a.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/witherstorm/thump-b.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/witherstorm/thump-b.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/witherstorm/tornado-loop.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/witherstorm/tornado-loop.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/witherstorm/grow_2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/witherstorm/grow_2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/witherstorm/grow_3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/witherstorm/grow_3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/witherstorm/grow_1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/witherstorm/grow_1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/finaltheme.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/finaltheme.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/bowels-loop-overlay.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/bowels-loop-overlay.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/withergloop.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/withergloop.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/finalalt.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/finalalt.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-distant-a.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-distant-a.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-mini-a.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-mini-a.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-aftr-b.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-aftr-b.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/ivor.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/ivor.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-aftr-c.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-aftr-c.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/bowels-loop.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/bowels-loop.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-aftr-a.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-aftr-a.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-main-b.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-main-b.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-distant-b.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-distant-b.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-main-c.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-main-c.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-main-a.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-main-a.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-mini-c.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-mini-c.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/music/wither-mini-b.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/music/wither-mini-b.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/ambience-loop.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/ambience-loop.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/tractor-beam/tractor-disable2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/tractor-beam/tractor-disable2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop5.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop5.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop4.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop4.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop6.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop6.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop2.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop2.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop3.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop3.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/tractor-beam/tractor-loop1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/tractor-beam/tractor-disable1.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/tractor-beam/tractor-disable1.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/formidibomb/explosion.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/formidibomb/explosion.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/formidibomb/distant_explosion.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/formidibomb/distant_explosion.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds/formidibomb/creation.ogg
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds/formidibomb/creation.ogg ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/particles/beam_mote.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/particles/beam_mote.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/structures/README.md
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/structures/README.md ']'
+++ dirname assets/dabywitherstormmod/structures/README.md
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/structures
++ cp src/main/resources/assets/dabywitherstormmod/structures/README.md /tmp/mcsm-fx/cls/assets/dabywitherstormmod/structures/README.md
++ N_SRC=2
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/lang/en_us.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/lang/en_us.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_t2.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_t2.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_strong.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_strong.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_t1.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_t1.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_all.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_all.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t3.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t3.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_t4.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_t4.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t2.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t2.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_subtle_all.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_subtle_all.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t4.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t4.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t0.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t0.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t0.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t0.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t2.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t2.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_subtle.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_subtle.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_t3.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_t3.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t4.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t4.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t1.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_strong_t1.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t1.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t1.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t3.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_subtle_t3.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_strong_all.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_strong_all.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/post_effect/storm_bloom_entity_t0.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/post_effect/storm_bloom_entity_t0.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase55_violet.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase55_violet.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_sheet_purple_canvas.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_sheet_purple_canvas.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase6_plum.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase6_plum.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_purple.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_purple.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/body_palette_key.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/body_palette_key.png ']'
+++ dirname assets/dabywitherstormmod/textures/misc/body_palette_key.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc
++ cp src/main/resources/assets/dabywitherstormmod/textures/misc/body_palette_key.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/body_palette_key.png
++ N_SRC=3
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_purple_pink.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_purple_pink.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/storm_white.png.mcmeta
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/storm_white.png.mcmeta ']'
+++ dirname assets/dabywitherstormmod/textures/misc/storm_white.png.mcmeta
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc
++ cp src/main/resources/assets/dabywitherstormmod/textures/misc/storm_white.png.mcmeta /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/storm_white.png.mcmeta
++ N_SRC=4
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_ember.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_ember.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/storm_white.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/storm_white.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_phase4_blue.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_phase4_blue.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase5_teal.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_sheet_phase5_teal.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_black.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_black.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_sheet_teal_filter.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_sheet_teal_filter.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_sheet_salmon_filter.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_sheet_salmon_filter.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/backdrop_turquoise.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/backdrop_turquoise.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/misc/storm_glare.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/misc/storm_glare.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/devourer_assets_p55.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/devourer_assets_p55.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/phase_4_assets_og.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/phase_4_assets_og.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_p7_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_p7_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/tentacle/tentacle.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/tentacle/tentacle.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_p55_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_p55_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_p51_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_p51_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/devourer_assets_og_p55.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/devourer_assets_og_p55.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_p6_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_p6_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/devourer_assets_og_p7.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/devourer_assets_og_p7.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_og.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_og.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/lukas.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/lukas.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/lukas.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/lukas.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/lukas.png
++ N_SRC=5
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/soren.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/soren.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/soren.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/soren.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/soren.png
++ N_SRC=6
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/otto.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/otto.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/otto.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/otto.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/otto.png
++ N_SRC=7
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/ellegaard.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/ellegaard.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/ellegaard.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/ellegaard.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/ellegaard.png
++ N_SRC=8
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/magnus.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/magnus.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/magnus.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/magnus.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/magnus.png
++ N_SRC=9
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/ivor.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/ivor.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/ivor.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/ivor.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/ivor.png
++ N_SRC=10
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/aiden.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/aiden.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/aiden.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/aiden.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/aiden.png
++ N_SRC=11
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/maya.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/maya.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/maya.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/maya.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/maya.png
++ N_SRC=12
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/gabriel.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/gabriel.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/gabriel.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/gabriel.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/gabriel.png
++ N_SRC=13
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/jesse.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/jesse.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/jesse.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/jesse.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/jesse.png
++ N_SRC=14
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/radar.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/radar.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/radar.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/radar.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/radar.png
++ N_SRC=15
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/harper.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/harper.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/harper.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/harper.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/harper.png
++ N_SRC=16
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/binta.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/binta.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/binta.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/binta.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/binta.png
++ N_SRC=17
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/hadrian.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/hadrian.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/hadrian.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/hadrian.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/hadrian.png
++ N_SRC=18
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/axel.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/axel.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/axel.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/axel.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/axel.png
++ N_SRC=19
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/petra.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/petra.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/petra.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/petra.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/petra.png
++ N_SRC=20
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/jack.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/jack.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/jack.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/jack.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/jack.png
++ N_SRC=21
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/stella.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/stella.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/stella.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/stella.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/stella.png
++ N_SRC=22
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/olivia.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/olivia.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/olivia.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/olivia.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/olivia.png
++ N_SRC=23
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/stampy.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/stampy.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/stampy.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/stampy.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/stampy.png
++ N_SRC=24
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/nurm.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/nurm.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/nurm.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/nurm.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/nurm.png
++ N_SRC=25
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/story/reuben.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/reuben.png ']'
+++ dirname assets/dabywitherstormmod/textures/entity/story/reuben.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story
++ cp src/main/resources/assets/dabywitherstormmod/textures/entity/story/reuben.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/story/reuben.png
++ N_SRC=26
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/phase_4_assets_og_p7.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/phase_4_assets_og_p7.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/phase_4_assets_og_p6.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/phase_4_assets_og_p6.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_og_p6_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_og_p6_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_og_p55_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_og_p55_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/devourer_assets.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/devourer_assets.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/phase_4_assets_p6.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/phase_4_assets_p6.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/devourer_assets_og.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/devourer_assets_og.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/tractor_beam.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/tractor_beam.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/super_skull.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/super_skull.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/devourer_assets_p7.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/devourer_assets_p7.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/phase_4_assets.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/phase_4_assets.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/phase_4_assets_og_p55.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/phase_4_assets_og_p55.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_og_p51_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_og_p51_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_exploding.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_exploding.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_hurt_overlay.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_hurt_overlay.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_invulnerable.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_invulnerable.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm/main_no_tent.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm/main_no_tent.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_head_emissive_hurt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_head_emissive_hurt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_pulse.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_pulse.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_emissive_decal_hurt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_emissive_decal_hurt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_emissive_decal.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm_emissive_decal.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/phase_4_assets_p7.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/phase_4_assets_p7.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/devourer_assets_p6.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/devourer_assets_p6.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_p5_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_p5_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_head/wither_storm_head.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_head/wither_storm_head.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_head/wither_storm_head_emissive_hurt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_head/wither_storm_head_emissive_hurt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_head/wither_storm_head_hurt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_head/wither_storm_head_hurt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_head/wither_storm_head_emissive.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_head/wither_storm_head_emissive.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_no_teeth_glow_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_no_teeth_glow_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_veins.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_veins.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_og_p5_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_og_p5_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/phase_4_assets_p55.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/phase_4_assets_p55.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/phase_4_assets_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/phase_4_assets_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_og_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_og_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/devourer_assets_og_p6.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/devourer_assets_og_p6.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/entity/wither_storm_og_p7_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/entity/wither_storm_og_p7_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/mob_effect/hyper_invisibility.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mob_effect/hyper_invisibility.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/wither_heart.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/wither_heart.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/command_essence.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/command_essence.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/amulet_bridges.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/amulet_bridges.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/grapple.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/grapple.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/rocket_retriever.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/rocket_retriever.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/tnt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/tnt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/Command_Circuit_Stage_3.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/Command_Circuit_Stage_3.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/tnt_bottom.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/tnt_bottom.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/amulet_wussmode.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/amulet_wussmode.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/command_circuit.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/command_circuit.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/control_panel.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/control_panel.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/Command_Circuit_Stage_1.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/Command_Circuit_Stage_1.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/Command_Circuit_Stage_0.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/Command_Circuit_Stage_0.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/story_character_spawn_egg.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/story_character_spawn_egg.png ']'
+++ dirname assets/dabywitherstormmod/textures/item/story_character_spawn_egg.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item
++ cp src/main/resources/assets/dabywitherstormmod/textures/item/story_character_spawn_egg.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/story_character_spawn_egg.png
++ N_SRC=27
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/wither_fragment.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/wither_fragment.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/control_panel.png.mcmeta
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/control_panel.png.mcmeta ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/Command_Circuit_Stage_2.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/Command_Circuit_Stage_2.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/withered_dust_item.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/withered_dust_item.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/tnt_top.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/tnt_top.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/super_tnt_lava.png.mcmeta
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/super_tnt_lava.png.mcmeta ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/command_circuit.png.mcmeta
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/command_circuit.png.mcmeta ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/withered_nether_star.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/withered_nether_star.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/super-tnt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/super-tnt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/item/super_tnt_lava.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/item/super_tnt_lava.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/gui/furnace_filter.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/gui/furnace_filter.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/gui/action_button.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/gui/action_button.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase89.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase89.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase54.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase54.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase55.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase55.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase6.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase6.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase4.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase4.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase5.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/glare/phase5.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_d_split.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_d_split.png ']'
+++ dirname assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_d_split.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere
++ cp src/main/resources/assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_d_split.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_d_split.png
++ N_SRC=28
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_c_debris.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_c_debris.png ']'
+++ dirname assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_c_debris.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere
++ cp src/main/resources/assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_c_debris.png /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/stage_c_debris.png
++ N_SRC=29
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/particle/tractor_beam.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/particle/tractor_beam.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/particle/beam_mote.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/particle/beam_mote.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/withered_netherbrick.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/withered_netherbrick.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/withered_flesh_block.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/withered_flesh_block.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/stripped_withered_log_side.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/stripped_withered_log_side.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/withered_bedrock.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/withered_bedrock.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/mushroom_withered.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/mushroom_withered.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/withered_log_top.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/withered_log_top.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/stripped_withered_log_top.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/stripped_withered_log_top.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/withered_stone.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/withered_stone.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/formidibomb-emissives.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/formidibomb-emissives.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/formidibomb.png.mcmeta
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/formidibomb.png.mcmeta ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/stripped_withered_planks.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/stripped_withered_planks.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/furnace_filter/on.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/furnace_filter/on.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/furnace_filter/off.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/furnace_filter/off.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/torn_withered_flesh.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/torn_withered_flesh.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/super_tnt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/super_tnt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/formidibomb.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/formidibomb.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/withered_sand.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/withered_sand.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/withered_cobblestone.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/withered_cobblestone.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/withered_log_side.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/withered_log_side.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/textures/block/withered_planks.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/block/withered_planks.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_bloom_blur.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_bloom_blur.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_bloom_add.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_bloom_add.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_hdr_debug.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_hdr_debug.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_shadow.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_shadow.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_impact_light.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_impact_light.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_bloom_extract.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_bloom_extract.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_sun_glow.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_bloom_combine.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_bloom_combine.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/mcsm_core.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/mcsm_core.fsh ']'
+++ dirname assets/dabywitherstormmod/shaders/post/mcsm_core.fsh
++ mkdir -p /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post
++ cp src/main/resources/assets/dabywitherstormmod/shaders/post/mcsm_core.fsh /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/mcsm_core.fsh
++ N_SRC=30
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_hdr_mask.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_hdr_mask.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_hdr_composite.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_hdr_composite.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/post/storm_hdr_blur.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/post/storm_hdr_blur.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/core/storm_shadow_depth.vsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/core/storm_shadow_depth.vsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/core/storm_glow.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/core/storm_glow.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/core/fogless_entity.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/core/fogless_entity.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/core/storm_shadow_depth.fsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/core/storm_shadow_depth.fsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/shaders/core/fogless_entity.vsh
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/shaders/core/fogless_entity.vsh ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/dabywitherstormmod/sounds.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/dabywitherstormmod/sounds.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/optifine/emissive.properties
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/optifine/emissive.properties ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/environment/sun.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/environment/sun.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/environment/moon_phases.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/environment/moon_phases.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/entity/villager/villager.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/entity/villager/villager.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/entity/villager/type/taiga.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/entity/villager/type/taiga.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/entity/villager/type/plains.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/entity/villager/type/plains.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/entity/villager/type/desert.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/entity/villager/type/desert.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/entity/villager/type/swamp.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/entity/villager/type/swamp.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/entity/villager/type/snow.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/entity/villager/type/snow.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/entity/villager/type/jungle.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/entity/villager/type/jungle.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/minecraft/textures/entity/villager/type/savanna.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/minecraft/textures/entity/villager/type/savanna.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/config/colors.json
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/config/colors.json ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/tentacle/tentacle.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/tentacle/tentacle.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_p55_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_p55_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_p51_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_p51_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_p6_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_p6_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_og.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_og.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_og_p6_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_og_p6_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_og_p55_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_og_p55_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/tractor_beam.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/tractor_beam.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_og_p51_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_og_p51_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/phase_endgame_skin.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/phase_endgame_skin.png ']'
+++ dirname assets/witherstormmod/textures/entity/wither_storm/phase_endgame_skin.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm
++ cp src/main/resources/assets/witherstormmod/textures/entity/wither_storm/phase_endgame_skin.png /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/phase_endgame_skin.png
++ N_SRC=31
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/wither_storm_exploding.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/wither_storm_exploding.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/wither_storm_hurt_overlay.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/wither_storm_hurt_overlay.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/wither_storm_invulnerable.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/wither_storm_invulnerable.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/main_no_tent.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/main_no_tent.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/wither_storm.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/wither_storm.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/wither_storm_head_emissive_hurt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/wither_storm_head_emissive_hurt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/phase_late_skin.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/phase_late_skin.png ']'
+++ dirname assets/witherstormmod/textures/entity/wither_storm/phase_late_skin.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm
++ cp src/main/resources/assets/witherstormmod/textures/entity/wither_storm/phase_late_skin.png /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/phase_late_skin.png
++ N_SRC=32
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/phase_mid_skin.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/phase_mid_skin.png ']'
+++ dirname assets/witherstormmod/textures/entity/wither_storm/phase_mid_skin.png
++ mkdir -p /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm
++ cp src/main/resources/assets/witherstormmod/textures/entity/wither_storm/phase_mid_skin.png /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/phase_mid_skin.png
++ N_SRC=33
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/wither_storm_pulse.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/wither_storm_pulse.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/wither_storm_emissive_decal_hurt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/wither_storm_emissive_decal_hurt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm/wither_storm_emissive_decal.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm/wither_storm_emissive_decal.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_p5_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_p5_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_head/wither_storm_head.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_head/wither_storm_head.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_head/wither_storm_head_emissive_hurt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_head/wither_storm_head_emissive_hurt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_head/wither_storm_head_hurt.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_head/wither_storm_head_hurt.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_head/wither_storm_head_emissive.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_head/wither_storm_head_emissive.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_og_p5_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_og_p5_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/entity/wither_storm_og_e.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/entity/wither_storm_og_e.png ']'
++ IFS=
++ read -r -d '' f
++ rel=assets/witherstormmod/textures/particle/tractor_beam.png
++ '[' '!' -e /tmp/mcsm-fx/cls/assets/witherstormmod/textures/particle/tractor_beam.png ']'
++ IFS=
++ read -r -d '' f
++ echo '[build] overlaid 33 new files from src/main/resources/assets'
+[build] overlaid 33 new files from src/main/resources/assets
++ shopt -s nullglob
++ FRESH_CLASSES=(/tmp/mcsm-build/*)
++ shopt -u nullglob
++ '[' 1 -gt 0 ']'
++ cp -r /tmp/mcsm-build/net /tmp/mcsm-fx/cls/
++ rm -rf /tmp/mcsm-fx/cls/assets/fabricskyboxes /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/sky /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/mcsm_atmosphere/sky
++ find /tmp/mcsm-fx/cls/assets/dabywitherstormmod/textures/environment -maxdepth 1 -type f -name 'storymode_sky_*.png' -delete
++ rm -f /tmp/mcsm-fx/cls/net/mcsm/extras/client/McsmBlobOval.class /tmp/mcsm-fx/cls/net/mcsm/extras/client/McsmBlobShape.class /tmp/mcsm-fx/cls/net/mcsm/extras/client/McsmSkyDome.class /tmp/mcsm-fx/cls/net/mcsm/extras/client/McsmStormSkyLayer.class /tmp/mcsm-fx/cls/net/dabicco/witherstormmod/mixin/StormSkyGradientMixin.class /tmp/mcsm-fx/cls/net/dabicco/witherstormmod/mixin/StoryModeSkyDomeMixin.class
++ find /tmp/mcsm-fx/cls/net/mcsm/extras/client -type f '(' -name 'McsmBlobOval$*.class' -o -name 'McsmBlobShape$*.class' ')' -delete
++ sed -i 's/"version": "[0-9.]*-26.2-beta[a-z-]*"/"version": "7000.0.27-M"/' /tmp/mcsm-fx/cls/fabric.mod.json
++ python3 - /tmp/mcsm-fx/cls/fabric.mod.json 7000.0.27-M
+[build] fabric.mod.json version: 7000.0.27-M -> 7000.0.27-M
++ echo '::notice title=jar version::fabric.mod.json version = 7000.0.27-M (mods screen shows this)'
+::notice title=jar version::fabric.mod.json version = 7000.0.27-M (mods screen shows this)
++ python3 - /tmp/mcsm-fx/cls/fabric.mod.json
+++ python3 -c 'import json;print(json.load(open('\''/tmp/mcsm-fx/cls/fabric.mod.json'\''))['\''name'\''])'
++ echo '[build] fabric.mod.json name: Devouring Storms: The Point of No Return'
+[build] fabric.mod.json name: Devouring Storms: The Point of No Return
++ stage manifest-ok push
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] manifest-ok'
+[stage] manifest-ok
++ printf '%s\n' manifest-ok
++ '[' push = push ']'
++ evidence_put /tmp/mcsm-stage.txt stage.txt
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-715
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-715
++ cp -f /tmp/mcsm-stage.txt /tmp/mcsm-evidence/ci-out/run-715/stage.txt
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 715 stage.txt'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ evidence_put /tmp/mcsm-run.log run.log
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-715
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-715
++ cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-715/run.log
