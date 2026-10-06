@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "sift_passthrough",
+  "version": "1.0.0+26.3",
+  "name": "SIFT Overhaul x Minecraft Dungeons Passthrough Bridge",
+  "description": "Real-time cross-engine camera/depth passthrough streamer (Port 8080 TCP/NDJSON + MCPT 3-slot seqlock shared memory) with Escape-key kill switch for Minecraft Dungeons / Unreal Engine.",
+  "authors": [
+    "Loganwall111",
+    "SIFT Overhaul Team"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.sift.passthrough.SiftPassthroughMod"
+    ]
+  },
+  "mixins": [
+    "sift_passthrough.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": ">=26.2-"
+  }
+}

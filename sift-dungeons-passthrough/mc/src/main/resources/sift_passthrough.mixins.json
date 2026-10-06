@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.sift.passthrough.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "SiftDataStreamerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

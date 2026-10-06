@@ -1,3 +1,188 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:48b9d7921d709924403564bc718b9cc042595989e68fda3fd75586cc6a1ae544
-size 2327
+name: Build Devouring Storms & SIFT Passthrough Jar
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (defaults to ./VERSION)"
+        required: false
+        default: ""
+  push:
+    branches:
+      - 'arena/**'
+      - 'main'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout session branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: false
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Install GLSL validator & MinGW-w64 cross-compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq glslang-tools python3-pil g++-mingw-w64-x86-64 zip unzip jq
+          glslangValidator --version | head -1
+          x86_64-w64-mingw32-g++ --version | head -1
+
+      - name: Compile native Unreal Engine / Minecraft Dungeons hooks (.dll & .so) + run self-test
+        run: |
+          mkdir -p out compiled
+          g++ -std=c++17 -shared -fPIC -O2 -Wall -Wextra \
+            sift-dungeons-passthrough/native/UEDungeonsPassthroughHook.cpp \
+            -o out/libuedungeons_passthrough_hook.so -lpthread
+          x86_64-w64-mingw32-g++ -std=c++17 -shared -O2 -Wall -Wextra \
+            -static-libgcc -static-libstdc++ \
+            sift-dungeons-passthrough/native/UEDungeonsPassthroughHook.cpp \
+            -o out/UEDungeonsPassthroughHook.dll -lws2_32
+          python3 sift-dungeons-passthrough/native/ue_dungeons_passthrough_hook.py
+          cp -f out/libuedungeons_passthrough_hook.so compiled/
+          cp -f out/UEDungeonsPassthroughHook.dll compiled/
+          ls -lh out/libuedungeons_passthrough_hook.so out/UEDungeonsPassthroughHook.dll
+
+      - name: Hydrate full MCSM workspace & build devouringstorms + standalone sift-dungeons-passthrough jars
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_VER: ${{ inputs.version }}
+          SESSION_WORKSPACE: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          VER="${INPUT_VER:-$(cat VERSION | tr -d '[:space:]')}"
+          echo "[workflow] Target version: ${VER}"
+
+          # Fetch the full baseline tree from origin/arena/01a0b039-lowuuuuuu
+          git fetch --depth=1 origin arena/01a0b039-lowuuuuuu
+          mkdir -p /tmp/full-mcsm
+          git archive FETCH_HEAD | tar -x -C /tmp/full-mcsm
+
+          # Overlay our branch's patched shaders & SIFT Dungeons Passthrough integration
+          cp -f VERSION /tmp/full-mcsm/VERSION
+          cp -f BUILD_VERSION /tmp/full-mcsm/BUILD_VERSION
+          cp -f mcsm-core-shaders/core/final.fsh /tmp/full-mcsm/mcsm-core-shaders/core/final.fsh
+          cp -f mcsm-extras/java/net/mcsm/extras/client/McsmDungeonsPassthrough.java \
+                /tmp/full-mcsm/mcsm-extras/java/net/mcsm/extras/client/McsmDungeonsPassthrough.java
+          cp -f mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java \
+                /tmp/full-mcsm/mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmStormBlobMixin.java
+          cp -f mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepClientMixin.java \
+                /tmp/full-mcsm/mcsm-extras/java/net/dabicco/witherstormmod/mixin/McsmVoidDeepClientMixin.java
+          cp -f mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java \
+                /tmp/full-mcsm/mcsm-extras/java/net/mcsm/extras/client/McsmCoreEngineController.java
+
+          # Sync all 5 version stamp locations required by ci/build.sh
+          printf '%s\n' "${VER}" > /tmp/full-mcsm/VERSION
+          printf '%s' "${VER}" > /tmp/full-mcsm/BUILD_VERSION
+          sed -i "s/^mod_version=.*/mod_version=${VER}/" /tmp/full-mcsm/gradle.properties
+          python3 -c "
+          import json
+          p = '/tmp/full-mcsm/src/main/resources/fabric.mod.json'
+          d = json.load(open(p))
+          d['version'] = '${VER}'
+          json.dump(d, open(p, 'w'), indent=2)
+          "
+          sed -i "s/BUILD_VERSION = \"[^\"]*\"/BUILD_VERSION = \"${VER}\"/" \
+            /tmp/full-mcsm/mcsm-extras/java/net/mcsm/extras/McsmExtrasConfig.java
+
+          # Configure git inside /tmp/full-mcsm so ci/build.sh evidence channel works
+          git -C /tmp/full-mcsm init -q
+          git -C /tmp/full-mcsm remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" || true
+
+          # Run the full MCSM build pipeline
+          pushd /tmp/full-mcsm
+          EVIDENCE_BRANCH="${GITHUB_REF_NAME}" bash ci/build.sh "${VER}"
+          popd
+
+          # Copy devouringstorms build outputs to workflow out/
+          mkdir -p out compiled
+          cp -f /tmp/full-mcsm/out/* out/
+
+          # Compile the standalone sift-dungeons-passthrough-1.0.0+26.3.jar against the verified MC 26.2/26.3 + Fabric classpath
+          mkdir -p /tmp/sift-standalone-classes
+          curl -fsSL --retry 3 -o /tmp/mcsm-dl/fabric-loader.jar \
+            "https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.19.5/fabric-loader-0.19.5.jar"
+          FAPI_CP="$(find /tmp/mcsm-dl/fapi2 -name '*.jar' | paste -sd: -)"
+          STANDALONE_CP="/tmp/mcsm-dl/client.jar:/tmp/mcsm-dl/fabric-loader.jar:/tmp/mcsm-dl/mixin.jar:/tmp/mcsm-dl/jspecify.jar:/tmp/mcsm-dl/fastutil.jar:/tmp/mcsm-dl/dfu.jar:/tmp/mcsm-dl/joml.jar:/tmp/mcsm-dl/brigadier.jar:/tmp/mcsm-dl/netty-buffer.jar:/tmp/mcsm-dl/netty-common.jar:${FAPI_CP}"
+          find sift-dungeons-passthrough/mc/src/main/java -name '*.java' > /tmp/sift-sources.txt
+          javac --release 25 -proc:none -g \
+            -cp "${STANDALONE_CP}" \
+            -d /tmp/sift-standalone-classes \
+            @/tmp/sift-sources.txt
+          cp -rf sift-dungeons-passthrough/mc/src/main/resources/* /tmp/sift-standalone-classes/
+          jar --create --file out/sift-dungeons-passthrough-1.0.0+26.3.jar -C /tmp/sift-standalone-classes .
+          ( cd out && sha256sum sift-dungeons-passthrough-1.0.0+26.3.jar > sift-dungeons-passthrough-1.0.0+26.3.jar.sha256 )
+          cp -f out/sift-dungeons-passthrough-1.0.0+26.3.jar compiled/
+          cp -f out/sift-dungeons-passthrough-1.0.0+26.3.jar.sha256 compiled/
+
+          # Create complete cross-game passthrough bundle zip
+          mkdir -p /tmp/sift-bundle
+          cp -f out/sift-dungeons-passthrough-1.0.0+26.3.jar /tmp/sift-bundle/
+          cp -f out/UEDungeonsPassthroughHook.dll /tmp/sift-bundle/
+          cp -f out/libuedungeons_passthrough_hook.so /tmp/sift-bundle/
+          cp -f sift-dungeons-passthrough/native/UEDungeonsPassthroughHook.cpp /tmp/sift-bundle/
+          cp -f sift-dungeons-passthrough/native/ue_dungeons_passthrough_hook.py /tmp/sift-bundle/
+          cp -f sift-dungeons-passthrough/shaders/SiftDungeonsPassthrough.fx /tmp/sift-bundle/
+          ( cd /tmp/sift-bundle && zip -q -r "${SESSION_WORKSPACE}/out/sift-dungeons-passthrough-bundle-${VER}.zip" . )
+          ( cd out && sha256sum "sift-dungeons-passthrough-bundle-${VER}.zip" > "sift-dungeons-passthrough-bundle-${VER}.zip.sha256" )
+          cp -f "out/sift-dungeons-passthrough-bundle-${VER}.zip" compiled/
+
+          # Commit lightweight compiled standalone jar & native hooks back to session branch compiled/ via /tmp/mcsm-evidence
+          if [ -d /tmp/mcsm-evidence/.git ]; then
+            git -C /tmp/mcsm-evidence pull -q --rebase origin "${GITHUB_REF_NAME}" || true
+            mkdir -p /tmp/mcsm-evidence/compiled
+            cp -f out/sift-dungeons-passthrough-1.0.0+26.3.jar /tmp/mcsm-evidence/compiled/
+            cp -f out/sift-dungeons-passthrough-1.0.0+26.3.jar.sha256 /tmp/mcsm-evidence/compiled/
+            cp -f out/UEDungeonsPassthroughHook.dll /tmp/mcsm-evidence/compiled/
+            cp -f out/libuedungeons_passthrough_hook.so /tmp/mcsm-evidence/compiled/
+            cp -f "out/sift-dungeons-passthrough-bundle-${VER}.zip" /tmp/mcsm-evidence/compiled/
+            cp -f out/BUILD_INFO.txt /tmp/mcsm-evidence/compiled/ 2>/dev/null || true
+            git -C /tmp/mcsm-evidence add compiled
+            if git -C /tmp/mcsm-evidence commit -qm "compiled: sift-dungeons-passthrough-1.0.0+26.3.jar + UEDungeonsPassthroughHook (${VER})"; then
+              git -C /tmp/mcsm-evidence push -q origin "HEAD:${GITHUB_REF_NAME}" || true
+            fi
+          fi
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devouringstorms-${{ github.run_number }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Publish release asset
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_VER: ${{ inputs.version }}
+        run: |
+          VER="${INPUT_VER:-$(cat VERSION | tr -d '[:space:]')}"
+          TAG="ds-${VER}"
+          JAR="$(ls out/devouringstorms-*.jar | head -1)"
+          SHA="${JAR}.sha256"
+          SIFT_JAR="out/sift-dungeons-passthrough-1.0.0+26.3.jar"
+          SIFT_SHA="out/sift-dungeons-passthrough-1.0.0+26.3.jar.sha256"
+          SIFT_ZIP="out/sift-dungeons-passthrough-bundle-${VER}.zip"
+          SIFT_DLL="out/UEDungeonsPassthroughHook.dll"
+          SIFT_SO="out/libuedungeons_passthrough_hook.so"
+          NOTES="Devouring Storms ${VER} + SIFT Overhaul x Minecraft Dungeons Passthrough Bridge (CI build #${GITHUB_RUN_NUMBER} from ${GITHUB_SHA::7})."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$JAR" "$SHA" "$SIFT_JAR" "$SIFT_SHA" "$SIFT_ZIP" "$SIFT_DLL" "$SIFT_SO" out/BUILD_INFO.txt --clobber
+          else
+            gh release create "$TAG" "$JAR" "$SHA" "$SIFT_JAR" "$SIFT_SHA" "$SIFT_ZIP" "$SIFT_DLL" "$SIFT_SO" out/BUILD_INFO.txt \
+              --title "Devouring Storms ${VER} + SIFT Dungeons Passthrough" \
+              --notes "$NOTES"
+          fi
