@@ -1,0 +1,20 @@
+mcsm-extras/java/net/mcsm/extras/client/McsmDungeonsPassthrough.java:34: error: cannot find symbol
+import net.mcsm.extras.McsmStormPhase;
+                      ^
+  symbol:   class McsmStormPhase
+  location: package net.mcsm.extras
+mcsm-extras/java/net/mcsm/extras/client/McsmDungeonsPassthrough.java:148: error: cannot find symbol
+            double phase = mc.level != null ? McsmStormPhase.effectivePhase(mc.level) : 0.0D;
+                                                            ^
+  symbol:   method effectivePhase(ClientLevel)
+  location: class McsmStormPhase
+mcsm-extras/java/net/mcsm/extras/client/McsmDungeonsPassthrough.java:183: error: cannot find symbol
+            double phase = McsmStormPhase.effectivePhase(mc.level);
+                                         ^
+  symbol:   method effectivePhase(ClientLevel)
+  location: class McsmStormPhase
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+3 errors
