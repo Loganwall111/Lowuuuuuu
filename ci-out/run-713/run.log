@@ -4009,3 +4009,1280 @@ shimcheck: 174/174 pass
 + local DST=/tmp/mcsm-evidence/ci-out/run-713
 + mkdir -p /tmp/mcsm-evidence/ci-out/run-713
 + cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-713/run.log
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 713 run.log'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ echo '[hex] supplied sky-anchor ingestion gate'
+[hex] supplied sky-anchor ingestion gate
+++ python3 ci/trace_sky_sheets.py --from-hex --check
++ HEX_OUT='/tmp/full-mcsm/ci/trace_sky_sheets.py:225: SyntaxWarning: invalid escape sequence '\''\s'\''
+  """Rewrite one array declaration in place.
+[hex] the sky'\''s source tables (ceiling / middle / horizon, or authored):
+  teal    #0C1216  #172228  #202E34 -> #0C1216 ... #202E34
+  purple  #160A21  #3A184E  #5A2474 -> #160A21 ... #5A2474
+  rose    #1D1519  #422D37  #644354 -> #1D1519 ... #644354
+  ember   authored                 -> #1E545E ... #8C2908
+[hex] --check: OK -- 11 table sites + the derived constants already match the supplied anchors'
+++ printf '%s\n' '/tmp/full-mcsm/ci/trace_sky_sheets.py:225: SyntaxWarning: invalid escape sequence '\''\s'\''
+  """Rewrite one array declaration in place.
+[hex] the sky'\''s source tables (ceiling / middle / horizon, or authored):
+  teal    #0C1216  #172228  #202E34 -> #0C1216 ... #202E34
+  purple  #160A21  #3A184E  #5A2474 -> #160A21 ... #5A2474
+  rose    #1D1519  #422D37  #644354 -> #1D1519 ... #644354
+  ember   authored                 -> #1E545E ... #8C2908
+[hex] --check: OK -- 11 table sites + the derived constants already match the supplied anchors'
+++ grep -F '[hex] --check:'
+++ tail -1
++ HEX_LINE='[hex] --check: OK -- 11 table sites + the derived constants already match the supplied anchors'
++ echo '[hex] --check: OK -- 11 table sites + the derived constants already match the supplied anchors'
+[hex] --check: OK -- 11 table sites + the derived constants already match the supplied anchors
++ echo '::notice title=hex::[hex] --check: OK -- 11 table sites + the derived constants already match the supplied anchors'
+::notice title=hex::[hex] --check: OK -- 11 table sites + the derived constants already match the supplied anchors
++ stage hex-ok
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] hex-ok'
+[stage] hex-ok
++ printf '%s\n' hex-ok
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ echo '[stills] the sky'\''s columns as shipped images (1 pixel wide, 1 row per stop)'
+[stills] the sky's columns as shipped images (1 pixel wide, 1 row per stop)
+++ python3 ci/make_still_strips.py --check
++ STILLS_OUT='[stills] teal    32 stops: #0C1216 ... #202E34
+  ok jar-overrides/assets/mcsm/textures/sky/stills_teal.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_teal.png
+[stills] purple  32 stops: #160A21 ... #5A2474
+  ok jar-overrides/assets/mcsm/textures/sky/stills_purple.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_purple.png
+[stills] rose    32 stops: #1D1519 ... #644354
+  ok jar-overrides/assets/mcsm/textures/sky/stills_rose.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_rose.png
+[stills] the shipped strips ARE the traced columns, 1:1'
++ printf '%s\n' '[stills] teal    32 stops: #0C1216 ... #202E34
+  ok jar-overrides/assets/mcsm/textures/sky/stills_teal.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_teal.png
+[stills] purple  32 stops: #160A21 ... #5A2474
+  ok jar-overrides/assets/mcsm/textures/sky/stills_purple.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_purple.png
+[stills] rose    32 stops: #1D1519 ... #644354
+  ok jar-overrides/assets/mcsm/textures/sky/stills_rose.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_rose.png
+[stills] the shipped strips ARE the traced columns, 1:1'
++ grep -E 'stops:|the shipped strips'
++ tail -4
+[stills] teal    32 stops: #0C1216 ... #202E34
+[stills] purple  32 stops: #160A21 ... #5A2474
+[stills] rose    32 stops: #1D1519 ... #644354
+[stills] the shipped strips ARE the traced columns, 1:1
++ printf '%s\n' '[stills] teal    32 stops: #0C1216 ... #202E34
+  ok jar-overrides/assets/mcsm/textures/sky/stills_teal.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_teal.png
+[stills] purple  32 stops: #160A21 ... #5A2474
+  ok jar-overrides/assets/mcsm/textures/sky/stills_purple.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_purple.png
+[stills] rose    32 stops: #1D1519 ... #644354
+  ok jar-overrides/assets/mcsm/textures/sky/stills_rose.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_rose.png
+[stills] the shipped strips ARE the traced columns, 1:1'
+++ printf '%s\n' '[stills] teal    32 stops: #0C1216 ... #202E34
+  ok jar-overrides/assets/mcsm/textures/sky/stills_teal.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_teal.png
+[stills] purple  32 stops: #160A21 ... #5A2474
+  ok jar-overrides/assets/mcsm/textures/sky/stills_purple.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_purple.png
+[stills] rose    32 stops: #1D1519 ... #644354
+  ok jar-overrides/assets/mcsm/textures/sky/stills_rose.png
+  ok storylook/assets/minecraft/textures/environment/mcsm_stills_rose.png
+[stills] the shipped strips ARE the traced columns, 1:1'
+++ tail -1
++ echo '::notice title=stills::[stills] the shipped strips ARE the traced columns, 1:1'
+::notice title=stills::[stills] the shipped strips ARE the traced columns, 1:1
++ stage stills-ok
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] stills-ok'
+[stage] stills-ok
++ printf '%s\n' stills-ok
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ echo '[report] shipped sky-column report gate'
+[report] shipped sky-column report gate
+++ python3 ci/make_report_sky_columns.py --check
++ REPORT_OUT='[column] teal    phase 5.0-5.1 phase 5 turquoise sky.png    #0C1216 -> #202E34
+         stops: #0C1216 #0D1317 #0D1418 #0E1519 #0F161B #10171C #10181D #11191E #121A1F #121B20 #131C22 #141D23 #151E24 #151F25 #162026 #172127 #172228 #182329 #18242A #19252B #1A252B #1A262C #1B272D #1B282E #1C292F #1D292F #1D2A30 #1E2B31 #1E2C32 #1F2C32 #1F2D33 #202E34
+[column] purple  phase 5.5-5.9 phase5sky0purple sky.png     #160A21 -> #5A2474
+         stops: #160A21 #180B24 #1B0C27 #1D0D2A #1F0E2D #220F30 #240F32 #261035 #291138 #2B123B #2D133E #301441 #321544 #341647 #37174A #39184D #3B184F #3D1952 #3F1A54 #411B57 #431B59 #451C5B #471D5E #491E60 #4C1F63 #4E1F65 #502068 #52216A #54226D #56226F #582372 #5A2474
+[column] rose    phase 6.0-7.0 phase6sky 6 witherstorm.png  #1D1519 -> #644354
+         stops: #1D1519 #1F171B #22181D #241A1F #271B21 #291D23 #2B1E25 #2E2027 #302128 #32232A #35242C #37262E #3A2830 #3C2932 #3E2B34 #412C36 #432E38 #452F3A #47313C #4A323E #4C333F #4E3541 #503643 #523845 #553947 #573A49 #593C4B #5B3D4D #5D3F4E #604050 #624252 #644354
+[report] OK -- ci/REPORT_sky_columns_shipped.png matches the supplied-anchor columns'
++ printf '%s\n' '[column] teal    phase 5.0-5.1 phase 5 turquoise sky.png    #0C1216 -> #202E34
+         stops: #0C1216 #0D1317 #0D1418 #0E1519 #0F161B #10171C #10181D #11191E #121A1F #121B20 #131C22 #141D23 #151E24 #151F25 #162026 #172127 #172228 #182329 #18242A #19252B #1A252B #1A262C #1B272D #1B282E #1C292F #1D292F #1D2A30 #1E2B31 #1E2C32 #1F2C32 #1F2D33 #202E34
+[column] purple  phase 5.5-5.9 phase5sky0purple sky.png     #160A21 -> #5A2474
+         stops: #160A21 #180B24 #1B0C27 #1D0D2A #1F0E2D #220F30 #240F32 #261035 #291138 #2B123B #2D133E #301441 #321544 #341647 #37174A #39184D #3B184F #3D1952 #3F1A54 #411B57 #431B59 #451C5B #471D5E #491E60 #4C1F63 #4E1F65 #502068 #52216A #54226D #56226F #582372 #5A2474
+[column] rose    phase 6.0-7.0 phase6sky 6 witherstorm.png  #1D1519 -> #644354
+         stops: #1D1519 #1F171B #22181D #241A1F #271B21 #291D23 #2B1E25 #2E2027 #302128 #32232A #35242C #37262E #3A2830 #3C2932 #3E2B34 #412C36 #432E38 #452F3A #47313C #4A323E #4C333F #4E3541 #503643 #523845 #553947 #573A49 #593C4B #5B3D4D #5D3F4E #604050 #624252 #644354
+[report] OK -- ci/REPORT_sky_columns_shipped.png matches the supplied-anchor columns'
++ grep -F '[report]'
++ tail -1
+[report] OK -- ci/REPORT_sky_columns_shipped.png matches the supplied-anchor columns
++ echo '[trace] reference-sheet trace gate'
+[trace] reference-sheet trace gate
+++ python3 ci/trace_sky_sheets.py --verify
++ TRACE_OUT='/tmp/full-mcsm/ci/trace_sky_sheets.py:225: SyntaxWarning: invalid escape sequence '\''\s'\''
+  """Rewrite one array declaration in place.
+::notice title=sky-sheets::the CURRENT sky sheets are not in the repo (looked in /tmp/full-mcsm/ci/sky_sheets, /tmp/full-mcsm/uploads, /home/user/uploads, /tmp/full-mcsm/reference) -- the SUPPLIED HEX ANCHORS are the authority, and the superseded set is verified instead
+[trace] reference sheets NOT found: teal, purple, rose
+[trace] looked in: /tmp/full-mcsm/ci/sky_sheets, /tmp/full-mcsm/uploads, /home/user/uploads, /tmp/full-mcsm/reference
+[trace] the CURRENT sheets are not in ci/sky_sheets/ yet; the supplied hex anchors are the authority until they are
+  ok   superseded purple  #3D1642 -> #A64CB5 (replaced by the supplied anchors, 0.0047)
+  ok   superseded rose    #564153 -> #BE929E (replaced by the supplied anchors, 0.0016)
+  ok   superseded teal    #1E2C2D -> #8D9687 (replaced by the supplied anchors, 0.0039)
+[trace] superseded set intact: 3 sheets -- evidence of what the anchors replace, NOT the authority
+  ok   hex teal    matches the supplied anchors (0.0005)
+  ok   hex purple  matches the supplied anchors (0.0005)
+  ok   hex rose    matches the supplied anchors (0.0005)
+[trace] the shipped tables ARE the supplied hexes'
++ printf '%s\n' '/tmp/full-mcsm/ci/trace_sky_sheets.py:225: SyntaxWarning: invalid escape sequence '\''\s'\''
+  """Rewrite one array declaration in place.
+::notice title=sky-sheets::the CURRENT sky sheets are not in the repo (looked in /tmp/full-mcsm/ci/sky_sheets, /tmp/full-mcsm/uploads, /home/user/uploads, /tmp/full-mcsm/reference) -- the SUPPLIED HEX ANCHORS are the authority, and the superseded set is verified instead
+[trace] reference sheets NOT found: teal, purple, rose
+[trace] looked in: /tmp/full-mcsm/ci/sky_sheets, /tmp/full-mcsm/uploads, /home/user/uploads, /tmp/full-mcsm/reference
+[trace] the CURRENT sheets are not in ci/sky_sheets/ yet; the supplied hex anchors are the authority until they are
+  ok   superseded purple  #3D1642 -> #A64CB5 (replaced by the supplied anchors, 0.0047)
+  ok   superseded rose    #564153 -> #BE929E (replaced by the supplied anchors, 0.0016)
+  ok   superseded teal    #1E2C2D -> #8D9687 (replaced by the supplied anchors, 0.0039)
+[trace] superseded set intact: 3 sheets -- evidence of what the anchors replace, NOT the authority
+  ok   hex teal    matches the supplied anchors (0.0005)
+  ok   hex purple  matches the supplied anchors (0.0005)
+  ok   hex rose    matches the supplied anchors (0.0005)
+[trace] the shipped tables ARE the supplied hexes'
++ grep -E '^\[trace\]|^  (ok|FAIL)|sky-sheets::'
++ tail -6
+  ok   superseded teal    #1E2C2D -> #8D9687 (replaced by the supplied anchors, 0.0039)
+[trace] superseded set intact: 3 sheets -- evidence of what the anchors replace, NOT the authority
+  ok   hex teal    matches the supplied anchors (0.0005)
+  ok   hex purple  matches the supplied anchors (0.0005)
+  ok   hex rose    matches the supplied anchors (0.0005)
+[trace] the shipped tables ARE the supplied hexes
++ stage trace-ok
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] trace-ok'
+[stage] trace-ok
++ printf '%s\n' trace-ok
++ '[' '' = push ']'
++ '[' 1 = 1 ']'
++ set -e
++ return 0
++ echo '[phase] WitherStormPhase plumbing gate'
+[phase] WitherStormPhase plumbing gate
+++ python3 ci/check_phase_uniform.py
++ PHASE_OUT='  note storm_sun_glow.fsh declares its phase source: // MCSM_PHASE_SOURCE: SunGlowConfig (Java). This is a full-screen post pass on its own
+  note 2 base class(es) mcsm-extras uses are not in the javap dump yet (checked next run): CubeReveal, PendingWorldConfig
+  note 95 base-jar call(s) verified against ci/api/mod.txt
+[shader] the game'\''s own interfaces written to /tmp/mcsm-gate-shader-interface.txt (2 programs)
+  ok   WitherStormPhase :: accessor file present
+  ok   WitherStormPhase :: exactly one accessor definition
+  ok   WitherStormPhase :: accessor decodes the FogSkyEnd carrier
+  ok   WitherStormPhase :: accessor introduces no new uniform
+  ok   WitherStormPhase :: Iris custom uniform `witherstorm_Phase` declared
+  ok   WitherStormPhase :: no core shader declares a phase uniform
+  ok   WitherStormPhase :: consumer sky.fsh resolves the phase
+  ok   WitherStormPhase :: consumer entity.fsh resolves the phase
+  ok   WitherStormPhase :: consumer terrain.fsh resolves the phase
+  ok   WitherStormPhase :: consumer position.fsh resolves the phase
+  ok   WitherStormPhase :: consumer rendertype_entity_cutout.fsh resolves the phase
+  ok   WitherStormPhase :: consumer storm_glow.fsh resolves the phase
+  ok   WitherStormPhase :: consumer storm_sun_glow.fsh resolves the phase
+  ok   WitherStormPhase :: consumer fogless_entity.fsh resolves the phase
+  ok   WitherStormPhase :: teeth track exists and is white from phase 4
+  ok   WitherStormPhase :: aura track exists in the shared include
+  ok   WitherStormPhase :: aura ramp 4.92 present
+  ok   WitherStormPhase :: aura ramp 5.15 present
+  ok   WitherStormPhase :: aura ramp 5.85 present
+  ok   WitherStormPhase :: aura ramp 6.90 present
+  ok   WitherStormPhase :: aura ramp 7.90 present
+  ok   WitherStormPhase :: aura reaches mcsm_visuals.glsl
+  ok   WitherStormPhase :: aura reaches sky.fsh
+  ok   WitherStormPhase :: aura reaches storm_glow.fsh
+  ok   WitherStormPhase :: aura reaches fogless_entity.fsh
+  ok   WitherStormPhase :: teeth are not multiplied by a phase colour
+  ok   WitherStormPhase :: the tint feed is present
+  ok   WitherStormPhase :: an explicit eye track exists (separate from the teeth)
+  ok   WitherStormPhase :: eyeTintArgb uses the eye track, not the teeth track
+  ok   WitherStormPhase :: the pupil stays magenta in every phase
+  ok   WitherStormPhase :: the eye hood does not snap coloured emitters onto the teeth band
+  ok   WitherStormPhase :: every McsmTeethPhaseTint symbol used elsewhere is declared
+  ok   WitherStormPhase :: Java resolver present
+  ok   WitherStormPhase :: Java resolver exposes phase()
+  ok   WitherStormPhase :: Java resolver publishes the horizon colour
+  ok   WitherStormPhase :: Java resolver keys the three reference sheets
+  ok   WitherStormPhase :: Java resolver uses the 1000 + phase*100 carrier
+  ok   WitherStormPhase :: sky hook publishes the phase
+  ok   WitherStormPhase :: sky hook clears the dark disc
+  ok   WitherStormPhase :: sky hook matches the disc colour to the horizon
+  ok   WitherStormPhase :: death driver stamps the 1906..2906 band
+  ok   WitherStormPhase :: death driver releases the band at the end
+  ok   WitherStormPhase :: death driver keeps the aim alive after the entity is gone
+  ok   WitherStormPhase :: sky pass CALLS the death stack
+  ok   WitherStormPhase :: sky pass uses mcsm_death_dir(
+  ok   WitherStormPhase :: sky pass uses mcsm_death_cracks(
+  ok   WitherStormPhase :: sky pass uses mcsm_death_implosion(
+  ok   WitherStormPhase :: sky pass uses mcsm_supernova(
+  ok   WitherStormPhase :: sky pass uses mcsm_death_flash(
+  ok   WitherStormPhase :: death stack is aimable without a camera position
+  ok   WitherStormPhase :: death finale is COOL white, not warm white
+  ok   WitherStormPhase :: death rings are the cool ramp, not the rainbow
+  ok   WitherStormPhase :: dome shell is present but inert
+  ok   WitherStormPhase :: dome shell submits no geometry
+  ok   WitherStormPhase :: dome shell keeps no entry point that could paint anything
+  ok   WitherStormPhase :: the dome is no longer even named to the mixin system
+  ok   WitherStormPhase :: shader include analysed for reachability
+  ok   WitherStormPhase :: the infinite-skybox port'\''s live entry point is still wired
+  ok   WitherStormPhase :: the death stack is reachable from a shipped shader
+  ok   WitherStormPhase :: no NEW unreachable helper in the shader include
+  ok   WitherStormPhase :: the dormant list is accurate (entries that came back to life)
+  ok   WitherStormPhase :: teeth are white at EVERY storm phase
+  ok   WitherStormPhase :: the aura is the track that carries the phase colour
+  ok   WitherStormPhase :: the eyes keep their OWN track
+  ok   WitherStormPhase :: eyeTintArgb does not read the teeth track
+  ok   WitherStormPhase :: the pupil stays magenta
+  ok   WitherStormPhase :: aura and eye boundaries match the user'\''s phase specs
+  ok   WitherStormPhase :: the shader teeth track is white too
+  ok   WitherStormPhase :: the shader aura track follows the same six boundaries
+  ok   WitherStormPhase :: the mouth skirt is amplified 4.0x
+  ok   WitherStormPhase :: the eye is NOT hue-snapped onto the teeth
+  ok   WitherStormPhase :: head teeth/eyes go through RenderTypes.eyes
+  ok   WitherStormPhase :: head mixin stays fail-soft (require = 0 is not '\''require = 2'\'')
+  ok   WitherStormPhase :: body teeth/eyes go through RenderTypes.eyes
+  ok   WitherStormPhase :: body mixin stays fail-soft (require = 0 is not '\''require = 2'\'')
+  ok   WitherStormPhase :: base-jar API dump present
+  ok   WitherStormPhase :: mcsm-extras only calls base-jar symbols it really declares
+  ok   WitherStormPhase :: the column reads the shared body radius
+  ok   WitherStormPhase :: the column reads the shared height
+  ok   WitherStormPhase :: the column reads the entity scale multiplier
+  ok   WitherStormPhase :: the multiplier is fed the LIVE attached-head count
+  ok   WitherStormPhase :: the cone'\''s spread angle comes from the phase too
+  ok   WitherStormPhase :: the column carries NO private body-radius curve
+  ok   WitherStormPhase :: the column is drawn through the white pipeline
+  ok   WitherStormPhase :: the column has no cap, disc or ring geometry
+  ok   WitherStormPhase :: the column'\''s bands overlap (welded into one volume, not beads)
+  ok   WitherStormPhase :: the white pipeline is built in a COMPILED tree (mcsm-extras)
+  ok   WitherStormPhase :: the white pool is pinned by the shader define
+  ok   WitherStormPhase :: the white pool keeps the additive blend
+  ok   WitherStormPhase :: the white pool uses the same shader as the aura pool
+  ok   WitherStormPhase :: the shader really pins the pool white under MCSM_GLOW_WHITE
+  ok   WitherStormPhase :: the aura path is untouched beside it
+  ok   WitherStormPhase :: the flat white under-halo no longer draws
+  ok   WitherStormPhase :: every glare layer is a blob cluster now
+  ok   WitherStormPhase :: the blob cluster drifts on the world clock (not a static card)
+  ok   WitherStormPhase :: every ported UI file is present
+  ok   WitherStormPhase :: the ported UI is substantial (not a stub)
+  ok   WitherStormPhase :: the main-menu panorama is NOT deleted any more
+  ok   WitherStormPhase :: the background hook only cancels for the explicit opt-out
+  ok   WitherStormPhase :: the panorama is NOT covered by a tint any more
+  ok   WitherStormPhase :: button animations are serialised (press owns the hover layer)
+  ok   WitherStormPhase :: the menu assembles with a staggered entrance
+  ok   WitherStormPhase :: UI sound events are declared in a COMMON class
+  ok   WitherStormPhase :: the UI sounds are registered at mod init, not on first click
+  ok   WitherStormPhase :: the playback helper no longer registers the events itself
+  ok   WitherStormPhase :: button audio covers every widget, not just the title screen
+  ok   WitherStormPhase :: a menu-open whoosh covers every screen
+  ok   WitherStormPhase :: no undecodable .wav ships as a sound
+  ok   WitherStormPhase :: every shipped sound is a real Ogg Vorbis container
+  ok   WitherStormPhase :: sounds.json keys are plain paths in the mcsm namespace
+  ok   WitherStormPhase :: every declared sound points at an existing shipped file
+  ok   WitherStormPhase :: the master version label is still exactly 7000.0.0-M
+  ok   WitherStormPhase :: the ported panel'\''s options exist in the config
+  ok   WitherStormPhase :: the per-field pass-throughs the panel drives exist
+  ok   WitherStormPhase :: the panel cannot bounce back into the base console
+  ok   WitherStormPhase :: the console entry is chrome in a reserved slot, not a scrollable row
+  ok   WitherStormPhase :: the console entry refuses to stack a second panel
+  ok   WitherStormPhase :: the console layout is table-driven and cannot overlap
+  ok   WitherStormPhase :: the content pack registers a real block set (>= 30)
+  ok   WitherStormPhase :: the content pack registers a real item set (>= 40)
+  ok   WitherStormPhase :: doors AND trap doors are part of it (asked for by name)
+  ok   WitherStormPhase :: the pack has its own creative tab on the vanilla builder
+  ok   WitherStormPhase :: doors and stairs build through exposed subclasses (their vanilla ctors are protected)
+  ok   WitherStormPhase :: registration happens at mod init (registries still open)
+  ok   WitherStormPhase :: the decayed reality is a REAL dimension key, not a teleport
+  ok   WitherStormPhase :: the dimension datapack ships (type + level stem)
+  ok   WitherStormPhase :: the level stem points at our own dimension type
+  ok   WitherStormPhase :: the dimension has its own sky/light identity (not the overworld'\''s)
+  ok   WitherStormPhase :: its terrain is built out of the NEW mcsm blocks
+  ok   WitherStormPhase :: the rift gesture is server-side and fail-soft
+  ok   WitherStormPhase :: the new gameplay layers each have a persisted switch
+  ok   WitherStormPhase :: the console exposes the new chapter (enter / kit / toggles)
+  ok   WitherStormPhase :: every registered block has a blockstate + model
+  ok   WitherStormPhase :: every registered item has an item model
+  ok   WitherStormPhase :: every new block/item has a display name
+  ok   WitherStormPhase :: the new content is craftable (recipes parse as JSON)
+  ok   WitherStormPhase :: districts are deterministic (a pure hash of the region, not a dice roll)
+  ok   WitherStormPhase :: district building is time-sliced, so it cannot stall a tick
+  ok   WitherStormPhase :: a district is only raised near a player
+  ok   WitherStormPhase :: a standing district is recognised from the world, not a counter
+  ok   WitherStormPhase :: the tick hook is the base mod'\''s own proven event (no mixin needed)
+  ok   WitherStormPhase :: the district palette is built from the NEW blocks
+  ok   WitherStormPhase :: all six archetypes exist (tower, warehouse, house, hospital, radio, crater)
+  ok   WitherStormPhase :: arrival points the player at the nearest ruins
+  ok   WitherStormPhase :: the cities are worth looting (>= 3 crate loot tables)
+  ok   WitherStormPhase :: every crate has its own loot table
+  ok   WitherStormPhase :: the datapack JSON is validated against vanilla'\''s own files
+  ok   WitherStormPhase :: the jar audit requires the content pack inside the jar
+  ok   WitherStormPhase :: the mod owns its own storm glow under a shader pack (teeth + aura)
+  ok   WitherStormPhase :: no sun glow in the night sky (and none in the decayed reality)
+  ok   WitherStormPhase :: the decayed reality owns its sky unconditionally (no vanilla dome there)
+  ok   WitherStormPhase :: no sun / moon / stars painted into the decayed reality
+  ok   WitherStormPhase :: the glare is a small soft aura, not a huge dish
+  ok   WitherStormPhase :: the body glint is the smooth reference sheen (not the striped one)
+  ok   WitherStormPhase :: the wordmark has its own band and cannot overlap the menu
+  ok   WitherStormPhase :: the settings console has its own backdrop, not a black plate
+  ok   WitherStormPhase :: the storm'\''s sky has a distance term (it used to have none)
+  ok   WitherStormPhase :: the fade distance is the 500 blocks the user asked for, and configurable
+  ok   WitherStormPhase :: far from a storm the native sky is handed back to vanilla
+  ok   WitherStormPhase :: the decayed-reality sky branch does not borrow the storm branch'\''s locals
+  ok   WitherStormPhase :: the supplied stage sheets are applied as the storm'\''s palette
+  ok   WitherStormPhase :: emissive atlases are never relit (they are the glow)
+  ok   WitherStormPhase :: the stage palette is verified, not just applied
+  ok   WitherStormPhase :: the relight normalises against the atlas'\''s own range
+  ok   WitherStormPhase :: the bestiary is armed from the mod'\''s own init and ticks on the level
+  ok   WitherStormPhase :: every creature is a vanilla type re-kitted, so no new registry is needed
+  ok   WitherStormPhase :: the bestiary grows with the storm'\''s own phase
+  ok   WitherStormPhase :: the ladder has five rungs, one per storm band, summoned once per storm
+  ok   WitherStormPhase :: a boss is fought in stages, not just ground down
+  ok   WitherStormPhase :: breaking a rung pays out a weapon from the content pack
+  ok   WitherStormPhase :: the boss bar is resolved reflectively with chat as the fallback
+  ok   WitherStormPhase :: the Creator reaches down with seven arms, out of rips in the sky
+  ok   WitherStormPhase :: the arms are world geometry, not a dome or a skybox
+  ok   WitherStormPhase :: the arms come out of the storm'\''s own live phase, radius and height
+  ok   WitherStormPhase :: the arms end in the storm'\''s own violet, and fade back with distance
+  ok   WitherStormPhase :: the arms are submitted by the storm'\''s own render pass
+  ok   WitherStormPhase :: an arm that lands is felt: it tears the air and hurts whoever is under it
+  ok   WitherStormPhase :: the ladder and the arms are switchable and persisted
+  ok   WitherStormPhase :: the new switches have console rows
+  ok   WitherStormPhase :: the build refuses to ship without the phase-3 behaviour classes
+  ok   WitherStormPhase :: the black hole event uses the base mod'\''s own black hole, not a new one
+  ok   WitherStormPhase :: the event only opens where the world is already broken
+  ok   WitherStormPhase :: every hole this build opens is closed by this build
+  ok   WitherStormPhase :: the black hole is announced and visible from a distance
+  ok   WitherStormPhase :: the black hole lifetime is configurable and persisted
+  ok   WitherStormPhase :: reality tears open: a rift grows, pulls, and seals itself on its own timer
+  ok   WitherStormPhase :: and only where the world is already broken, next to the hole that tore it
+  ok   WitherStormPhase :: when the hole collapses it takes its tears with it
+  ok   WitherStormPhase :: the hole hangs in the sky, and both are switchable, persisted and reachable
+  ok   WitherStormPhase :: a tornado is a real funnel in the world, one per level, on a timer
+  ok   WitherStormPhase :: the funnel is a helix of dust that grows to a gigantic radius
+  ok   WitherStormPhase :: it throws what it catches and hurts what it touches
+  ok   WitherStormPhase :: it scours a track, only under open sky, with the content pack'\''s own blocks
+  ok   WitherStormPhase :: it walks, and it chases the nearest player
+  ok   WitherStormPhase :: both phase-4 systems are switchable and persisted
+  ok   WitherStormPhase :: the build refuses to ship without the phase-4 behaviour classes
+  ok   WitherStormPhase :: the admin code exists exactly once in the whole build
+  ok   WitherStormPhase :: the code is only reachable through the lore, not the console'\''s own screen
+  ok   WitherStormPhase :: the antenna and the field guide are real items that open the terminal
+  ok   WitherStormPhase :: the antenna is handed out on spawn, with the line that explains it
+  ok   WitherStormPhase :: the antenna picks up sparse radio signals while it is carried
+  ok   WitherStormPhase :: the locked screen is the user'\''s own: restricted area, admin password
+  ok   WitherStormPhase :: the console'\''s four screens exist and the text field is a real widget
+  ok   WitherStormPhase :: the world'\''s half is the server'\''s: the code unlocks it, and verify() is real
+  ok   WitherStormPhase :: the item opens the screen on the client, through the one client door
+  ok   WitherStormPhase :: the config is reachable from inside the terminal (the menu path)
+  ok   WitherStormPhase :: the menu'\''s config entry is the bottom-right logo button, and nothing else
+  ok   WitherStormPhase :: the purple glint is off by default and still an option
+  ok   WitherStormPhase :: the screen-wide menu tint and the mid-screen wordmark are gone
+  ok   WitherStormPhase :: the settings screen clips its rows instead of drawing over the Done bar
+  ok   WitherStormPhase :: the build refuses to ship without the phase-5 classes
+  ok   WitherStormPhase :: the terminal'\''s own text methods are player-free, so the menu can draw them
+  ok   WitherStormPhase :: the MASSG is a real creature with its own rules, not a renamed mob
+  ok   WitherStormPhase :: it cannot be killed and it cannot be deleted
+  ok   WitherStormPhase :: the world stays changed: it scars the ground with permanent blocks
+  ok   WitherStormPhase :: it attacks and corrupts whoever is in its reach
+  ok   WitherStormPhase :: it hallucinates things that are not there
+  ok   WitherStormPhase :: and gigantic things swim in the air
+  ok   WitherStormPhase :: it imitates the player, in the player'\''s own name
+  ok   WitherStormPhase :: its voice is the mod'\''s own, not the game'\''s
+  ok   WitherStormPhase :: the counter runs 99 down to 1 February 2027 and is time-based
+  ok   WitherStormPhase :: the sky terminal is the user'\''s: gigantic, in the sky, counting, flickering
+  ok   WitherStormPhase :: the countdown travels in the creature'\''s own synced name, with no packet
+  ok   WitherStormPhase :: the sky terminal is drawn by the HUD, so it works in every world
+  ok   WitherStormPhase :: the release is a WORLD action: the server summons it, on the operator'\''s sneak-use
+  ok   WitherStormPhase :: every MASSG switch is configurable, persisted and in the panel
+  ok   WitherStormPhase :: the creature is registered on the level tick, last in the list
+  ok   WitherStormPhase :: the build refuses to ship without the phase-6 classes
+  ok   WitherStormPhase :: the sky'\''s bottom is stretched past bedrock: one wall, no second edge
+  ok   WitherStormPhase :: the floor takes the colour of the band that owns the sky above it
+  ok   WitherStormPhase :: the ambient time scalar reacts to the world clock without overwriting the storm
+  ok   WitherStormPhase :: the time scalar is subtle by day and keeps the storm band in the middle
+  ok   WitherStormPhase :: the 2D backdrop sticker'\''s bottom half is stretched, not cut
+  ok   WitherStormPhase :: the early backdrop pass has the same floor
+  ok   WitherStormPhase :: the purple glint mask is GONE from the entity program
+  ok   WitherStormPhase :: the traced charcoal shows through instead of a flat plate
+  ok   WitherStormPhase :: the emissive face glow is kept: white teeth, phase aura, 4.0x
+  ok   WitherStormPhase :: the glow is guaranteed from phase 4 up, at 4.0x, on every tick
+  ok   WitherStormPhase :: every phase >= 4 emissive atlas is a pure white mask the glow can reach
+  ok   WitherStormPhase :: the stretch is configurable and persisted
+  ok   WitherStormPhase :: the huge back'\''s centre is published for the whole of submitGrowth5
+  ok   WitherStormPhase :: the renderer measures the huge back the way its own submitScaled does
+  ok   WitherStormPhase :: the published centre is taken back down at RETURN
+  ok   WitherStormPhase :: the 1.72x enlargement is re-pivoted onto the model'\''s own centre
+  ok   WitherStormPhase :: the re-pivot is scoped to the huge back and cannot affect another scale
+  ok   WitherStormPhase :: both halves are require = 0, so a different renderer cannot break launch
+  ok   WitherStormPhase :: the correction is a user switch with a saved property
+  ok   WitherStormPhase :: the 34-block displacement is measured from the model, not asserted
+  ok   WitherStormPhase :: the login page has an ENTER button, drawn and clickable
+  ok   WitherStormPhase :: the chip row is live on the login page too (CONFIG was unreachable without it)
+  ok   WitherStormPhase :: the keyboard is read straight off the window, per frame
+  ok   WitherStormPhase :: the keys that matter are all handled
+  ok   WitherStormPhase :: the field and our own copy are kept in step
+  ok   WitherStormPhase :: the C key has a direct fallback as well as the registered binding
+  ok   WitherStormPhase :: the mod registers its OWN SoundEvents in its own namespace
+  ok   WitherStormPhase :: sixteen events, each backed by a file the generator writes
+  ok   WitherStormPhase :: the radio, the creature and the tears play those events, not vanilla ones
+  ok   WitherStormPhase :: the generator merges the sound map instead of muting the menus
+  ok   WitherStormPhase :: the build generates and gates the sound set, and the jar audit proves it ships
+  ok   WitherStormPhase :: the phase glare is drawn BEHIND the storm, never over it
+  ok   WitherStormPhase :: the purple ground pool is off by default and switchable
+  ok   WitherStormPhase :: the tentacle grab exists and is wired to the switch that had nothing behind it
+  ok   WitherStormPhase :: the grab snatches, holds, and ends in a throw or an eat
+  ok   WitherStormPhase :: only survival players are taken, and the pull is physical
+  ok   WitherStormPhase :: the ending has the white scene, the ripping cracks and the colour waves
+  ok   WitherStormPhase :: the ending rides the same proven per-frame HUD hook
+  ok   WitherStormPhase :: Mas, the Creator and the whale are REAL registered entities
+  ok   WitherStormPhase :: Mas cannot be hurt, the other two can
+  ok   WitherStormPhase :: the storm'\''s own summon now spawns Mas, and the Creator above it
+  ok   WitherStormPhase :: the beasts have names in the lang file
+  ok   WitherStormPhase :: the city generator runs in the overworld, not only in the decayed reality
+  ok   WitherStormPhase :: it never raises a district on top of world spawn
+  ok   WitherStormPhase :: world spawn is read by name, because the field call does not exist in this API
+  ok   WitherStormPhase :: every plot is furnished inside, not just shelled
+  ok   WitherStormPhase :: buildings wear a banner made of blocks
+  ok   WitherStormPhase :: the design set is real placeable blocks in the palette
+  ok   WitherStormPhase :: the design blocks are resolved from the block registry, not from field names
+  ok   WitherStormPhase :: there are people in the city when the player walks in
+  ok   WitherStormPhase :: both backdrops read the one generated palette and keep no colour of their own
+  ok   WitherStormPhase :: the wall keeps EVERY helper it calls (a range-slice edit took two out twice)
+  ok   WitherStormPhase :: the atmosphere wall'\''s own hand-typed decks are gone
+  ok   WitherStormPhase :: the story stage shell'\''s own hand-typed decks are gone
+  ok   WitherStormPhase :: the generated block carries the sheets'\'' four columns and the sky'\''s routing
+  ok   WitherStormPhase :: the sky eases through the bands instead of jumping a sixth of a phase early
+  ok   WitherStormPhase :: the pack'\''s position program and the Java sky feed keep the same three ramps
+  ok   WitherStormPhase :: a hospital actually builds the secret room
+  ok   WitherStormPhase :: the room is a basement, three under the ward, with a stairwell both ways
+  ok   WitherStormPhase :: the code is inlaid in the floor in the storm'\''s purple
+  ok   WitherStormPhase :: the five inlaid glyphs decode to M A S S G and nothing else
+  ok   WitherStormPhase :: IVOR is the one standing in the room, and he carries the name
+  ok   WitherStormPhase :: the locked screen still sends the player to that room
+  ok   WitherStormPhase :: the storm opens a mouth in the sky and drops things out of it
+  ok   WitherStormPhase :: what falls survives the fall, so a corpse is never the threat
+  ok   WitherStormPhase :: it only opens over a storm that is far enough along
+  ok   WitherStormPhase :: it cannot run away: one mouth, a life timer, and a cap on the drops
+  ok   WitherStormPhase :: it is switchable, saved, and reachable from the panel
+  ok   WitherStormPhase :: the field wraps the whole body instead of being half a card
+  ok   WitherStormPhase :: its centre is an empty, light-impenetrable black core
+  ok   WitherStormPhase :: the core is a penumbra, not a disc: the supplied frames have no rim
+  ok   WitherStormPhase :: the aura lives only in the annulus, and wears the sheets'\'' own column
+  ok   WitherStormPhase :: the field still turns with the entity, on both axes
+  ok   WitherStormPhase :: there is a bottom layer of sky at all, drawn in the world
+  ok   WitherStormPhase :: the wall carries the live horizon colour down and deepens as it falls
+  ok   WitherStormPhase :: the bottom layer is switchable, saved, panel-reachable and drawn in the backdrop pass
+  ok   WitherStormPhase :: every class the bootstrap boots is imported where it boots it
+  ok   WitherStormPhase :: the body'\''s tint carries the live phase'\''s hue, not a fixed grey
+  ok   WitherStormPhase :: it keeps #404'\''s brightness, and the neutral stands below the storm'\''s onset
+  ok   WitherStormPhase :: it is switchable and tunable from the panel
+  ok   WitherStormPhase :: the upper-back weld names the method the jar declares
+  ok   WitherStormPhase :: the huge-back pose names the method the jar declares
+  ok   WitherStormPhase :: the API oracle records the signatures those two welds depend on
+  ok   WitherStormPhase :: the oracle cannot be cut short by one unreadable class
+  ok   WitherStormPhase :: the head'\''s glow passes draw the dedicated emissive atlas
+  ok   WitherStormPhase :: the redirect that could never fire is gone, not left lying
+  ok   WitherStormPhase :: the oracle records the call sites this rests on
+  ok   WitherStormPhase :: a ritual is a shape, a price and a condition -- not a block
+  ok   WitherStormPhase :: all six rites are registered with a ring, a core, an offering and an effect
+  ok   WitherStormPhase :: the effects are the mod'\''s own systems, called through public doors
+  ok   WitherStormPhase :: a ritual cannot be farmed at one spot
+  ok   WitherStormPhase :: the scan is bounded: one ritual per player per pass, on a period
+  ok   WitherStormPhase :: adams is a real dimension with its own type, layers and sky
+  ok   WitherStormPhase :: the surface the generator builds on matches its own layer stack
+  ok   WitherStormPhase :: adams has no end state: it plans, writes and never completes
+  ok   WitherStormPhase :: a chamber always holds salvage and sometimes holds something else
+  ok   WitherStormPhase :: both systems are booted, and booted with their imports
+  ok   WitherStormPhase :: the panel and /ds can both reach them
+  ok   WitherStormPhase :: the maze is CARVED by a depth-first walk, not painted as corridors
+  ok   WitherStormPhase :: the maze is sealed, ceilinged and lamped like a warehouse
+  ok   WitherStormPhase :: the dead ends are the treasure, and the salvage is reachable
+  ok   WitherStormPhase :: the shaft to the hatch stops at the terrain, never through a base
+  ok   WitherStormPhase :: the server room is a machine: rack lights it remembers
+  ok   WitherStormPhase :: the racks blink, and the room has a power failure
+  ok   WitherStormPhase :: the mainframe is its own tag, and it answers with the keycard in hand
+  ok   WitherStormPhase :: both structures are booted, imported, switchable and findable
+  ok   WitherStormPhase :: both are written through the shared queue at a fixed budget per tick
+  ok   WitherStormPhase :: adams hands its salvage over in a container too (the crate blocks are not)
+  ok   WitherStormPhase :: the book counts to the terminal'\''s own end date, not to a second one
+  ok   WitherStormPhase :: the pages are dated from the clock, and they move when it does
+  ok   WitherStormPhase :: the book opens on the page that has come due, and the reader'\''s is last
+  ok   WitherStormPhase :: it is a book: chapters, titles, dated pages, spans, and omens
+  ok   WitherStormPhase :: the last page is the reader'\''s, and their ink is kept
+  ok   WitherStormPhase :: the book'\''s keys are POLLED, like the terminal'\''s, not hooked
+  ok   WitherStormPhase :: B opens it, and typing a B into the last page does not shut it
+  ok   WitherStormPhase :: the book draws no edge tint (the standing rule) and wraps with the real font
+  ok   WitherStormPhase :: the terminal and the commands both know about it
+  ok   WitherStormPhase :: the ritual cooldown map is keyed by the strings it is written with
+  ok   WitherStormPhase :: every helper that reads the heightmap is handed the level
+  ok   WitherStormPhase :: the book screen'\''s constructor passes its title to Screen
+  ok   WitherStormPhase :: there are eight in-world cutscenes, and every one is a real scene
+  ok   WitherStormPhase :: every scene in the catalogue has a trigger in the runtime, and no orphan triggers
+  ok   WitherStormPhase :: the catalogue is server-safe: no client class in it, so /ds scene can list it
+  ok   WitherStormPhase :: the scenes ride the proven hooks, not a new render path
+  ok   WitherStormPhase :: the camera turns the player reflectively, and puts them back afterwards
+  ok   WitherStormPhase :: the frame is a cutscene: bars, a title card, typed lines, and any key skips
+  ok   WitherStormPhase :: the scenes know their own distance shapes (the two probes differ)
+  ok   WitherStormPhase :: the big two are found by the entity scan the HUD already proves
+  ok   WitherStormPhase :: cutscenes can be switched off, and N plays the next one you have not seen
+  ok   WitherStormPhase :: the scenes are once each, and never while a screen is open
+  ok   WitherStormPhase :: no click and no key can end the game any more: every door is guarded
+  ok   WitherStormPhase :: the widget rebuild is DEFERRED out of the frame that asked for it
+  ok   WitherStormPhase :: and the rebuild happens at the top of the next frame, before any input
+  ok   WitherStormPhase :: the throwable is SHOWN, not swallowed silently
+  ok   WitherStormPhase :: the menu watermark is off by default, and switchable back on
+  ok   WitherStormPhase :: the menu is not a black bar any more
+  ok   WitherStormPhase :: the cities are BIGGER, per district, from the district'\''s own key
+  ok   WitherStormPhase :: the district'\''s own size and air can be read off in game
+  ok   WitherStormPhase :: and each one wears its own air: six atmospheres, six skylines
+  ok   WitherStormPhase :: the client wears the district'\''s air on the proven sky and fog hooks
+  ok   WitherStormPhase :: the void is really empty: one layer, and it is an INVISIBLE floor
+  ok   WitherStormPhase :: and it is tall enough to fall through, with nothing to hit
+  ok   WitherStormPhase :: the void has its own purple water and its own violet air
+  ok   WitherStormPhase :: and the decayed reality finally has the purple water it never had
+  ok   WitherStormPhase :: falling past everything is survivable: the void catches you
+  ok   WitherStormPhase :: the nothing has things in it: shelves, houses, rivers, glitch walls, vortex ribs
+  ok   WitherStormPhase :: the content generator reproduces the dimension the pack ships
+  ok   WitherStormPhase :: the void walkers live here, and the void is booted, switched and reachable
+  ok   WitherStormPhase :: one doorway per dimension, and every one of them distinct
+  ok   WitherStormPhase :: a doorway is a shape, checked where the player is standing
+  ok   WitherStormPhase :: walking in is the whole interaction, and /ds builds the same shape
+  ok   WitherStormPhase :: a real block or nothing: neither file can accept AIR as a door
+  ok   WitherStormPhase :: the bottom is an invisible floor you can stand on
+  ok   WitherStormPhase :: and the void has five tiers under the gel, in order, all the way down
+  ok   WitherStormPhase :: and the fall names each tier it crosses, once, in the plan'\''s words
+  ok   WitherStormPhase :: and every tier is drawn as itself, and the fog reports it
+  ok   WitherStormPhase :: the Void Rudder is a real, registered, craftable, textured tool
+  ok   WitherStormPhase :: and holding it in the void actually multiplies the fall -- and cannot kill
+  ok   WitherStormPhase :: and the sponge is a real fractal, built where the fall is
+  ok   WitherStormPhase :: and the sponge'\''s own two blocks exist, named, painted and defined
+  ok   WitherStormPhase :: and the rifts are a function of position -- no packet, nothing late
+  ok   WitherStormPhase :: and falling through one turns the frame into its window, with the pools below
+  ok   WitherStormPhase :: and the bottom of the void is a door, and the fall keeps everything it had
+  ok   WitherStormPhase :: and the thing in the gel talks, out of its own synced data
+  ok   WitherStormPhase :: and its line is set down in the frame letter by letter, in amethyst
+  ok   WitherStormPhase :: and a right-click is a question the dweller answers
+  ok   WitherStormPhase :: and the ghost whale has an id of its own, and the cavern sends that one
+  ok   WitherStormPhase :: and there are whales in the cavern, weightless and singing
+  ok   WitherStormPhase :: one shelf builder: regions and landings both carve through shelfInto
+  ok   WitherStormPhase :: the bottom is RGB rays: a full spectrum, rotating, brightest at the floor
+  ok   WitherStormPhase :: and infinite white rings: three alive, born for ever
+  ok   WitherStormPhase :: it is switchable, it rides the proven hook, and it never covers a screen
+  ok   WitherStormPhase :: every numeric literal in the tree is a literal (no 0x5F0RL class of typo)
+  ok   WitherStormPhase :: the glow is drawn by us: eyes, teeth and a haze on the storm'\''s own coordinates
+  ok   WitherStormPhase :: the glow pass is registered, switchable and says so when it cannot place itself
+  ok   WitherStormPhase :: the aura no longer waits for phase 4.45, and has a vanilla half
+  ok   WitherStormPhase :: the presence pass lights the teeth from phase 0.5 and fades the big aura in
+  ok   WitherStormPhase :: no emissive atlas may be entirely transparent (the hole #455 closed)
+  ok   WitherStormPhase :: the head emissive atlas has its eye lenses lit
+  ok   WitherStormPhase :: every monster has its own mesh, and every mesh is built from real cuboids
+  ok   WitherStormPhase :: the giants stand on the ground at any scale (the 24-unit shift)
+  ok   WitherStormPhase :: each body is animated in its own right
+  ok   WitherStormPhase :: a layer and a renderer for every body, registered on the client
+  ok   WitherStormPhase :: the cast has a body of its own instead of Minecraft'\''s player mesh
+  ok   WitherStormPhase :: and every pixel of the new geometry is the character'\''s own second layer
+  ok   WitherStormPhase :: and the storm corrupts them in the model, once it is far enough along
+  ok   WitherStormPhase :: and every cast member has a skin to wear, or is wearing jesse'\''s
+  ok   WitherStormPhase :: the void walkers are real entities of their own, not re-kitted vanilla
+  ok   WitherStormPhase :: the lurker reaches, pulls and swallows -- the three verbs of the mini-boss
+  ok   WitherStormPhase :: the walker falls at you across the nothing
+  ok   WitherStormPhase :: every one of them can be put in front of you by name
+  ok   WitherStormPhase :: the black warden'\''s skin exists at its own size, with the red lit
+  ok   WitherStormPhase :: the walker'\''s slits and the lurker'\''s lit tips are on their skins
+  ok   WitherStormPhase :: the colossal wears a starfield, a gold crown and white-hot eyes
+  ok   WitherStormPhase :: the skins and the models are drawn from the same numbers
+  ok   WitherStormPhase :: the decayed reality and the infinite dimension have creatures of their own
+  ok   WitherStormPhase :: each of them fights like its own world, and not like the other one
+  ok   WitherStormPhase :: the drifter drifts and the keeper keeps -- each with its own verbs
+  ok   WitherStormPhase :: and both of them have a body, a layer and a renderer of their own
+  ok   WitherStormPhase :: the two new creatures stand in the worlds they belong to, and nowhere else
+  ok   WitherStormPhase :: both of them can be put in front of you by name
+  ok   WitherStormPhase :: the two new skins exist at their own sizes, with their own light on them
+  ok   WitherStormPhase :: every world breathes something of its own, and no two breathe the same
+  ok   WitherStormPhase :: the air is only for the mod'\''s own worlds, and the Overworld is left alone
+  ok   WitherStormPhase :: the air steps once a game tick, never once a frame
+  ok   WitherStormPhase :: and it is a real switch, on the panel and in the config file
+  ok   WitherStormPhase :: the hook that drives it is the hook the blasts already use
+  ok   WitherStormPhase :: the sky is a CUBE: four walls and a lid, and no dome anywhere
+  ok   WitherStormPhase :: every dimension has a different sky, and the Overworld keeps the vanilla one
+  ok   WitherStormPhase :: the painted sky is submitted, switched, generated and gated
+  ok   WitherStormPhase :: every painted wall exists at its size, with its haze at the horizon
+  ok   WitherStormPhase :: and every lid is painted with a starfield over its zenith
+  ok   WitherStormPhase :: the sky has real cloud decks now: three layers, drifting, per dimension
+  ok   WitherStormPhase :: and every dimension'\''s cloud deck is a cloud, not a lid
+  ok   WitherStormPhase :: and the four decks are four different paintings
+  ok   WitherStormPhase :: and the storm owns the whole sky it is standing in
+  ok   WitherStormPhase :: and the ceiling wears the phase'\''s own colours, not its own
+  ok   WitherStormPhase :: and it is the storm'\''s sky, not a lid on every world
+  ok   WitherStormPhase :: and the two hallucination switches finally do something
+  ok   WitherStormPhase :: and it fires only when the world is wrong, and never in creative
+  ok   WitherStormPhase :: and it paints, and never puts anything into the world
+  ok   WitherStormPhase :: and the sky'\''s columns are the stills'\'' own rows, not six-stop approximations
+  ok   WitherStormPhase :: and that column ships as an image, so the claim is checkable
+  ok   WitherStormPhase :: and a mob body can never be the reason a resource reload dies
+  ok   WitherStormPhase :: and every one of the mob bodies is built through the guarded factory
+  ok   WitherStormPhase :: and the two asset bugs in that same log are build failures now
+  ok   WitherStormPhase :: and our files in the game'\''s own namespace are weighed against the game'\''s
+  ok   WitherStormPhase :: and the cast'\''s bodies cannot abort a reload either -- they are built the same guarded way
+  ok   WitherStormPhase :: and the cast'\''s registration reports instead of swallowing
+  ok   WitherStormPhase :: and the way into the void is the world'\''s own floor
+  ok   WitherStormPhase :: and the deep is drawn by the mod itself, with no shader pack in the way
+  ok   WitherStormPhase :: and the cast notices a player, walks over, and talks
+  ok   WitherStormPhase :: and no loading screen is left on the way into the fall
+  ok   WitherStormPhase :: and a replaced core shader may change the body, never the interface
+  ok   WitherStormPhase :: and only the differences that can blacken a frame are a reason to disable one
+  ok   WitherStormPhase :: and the build weighs every replaced core shader against the game'\''s own copy
+  ok   WitherStormPhase :: there is ONE identity per dimension, and the Overworld is deliberately not one
+  ok   WitherStormPhase :: every dimension has a material family of its own, and no two share a block
+  ok   WitherStormPhase :: no world is built out of another world'\''s blocks
+  ok   WitherStormPhase :: and the ground under each of them is its own too
+  ok   WitherStormPhase :: and every doorway is built from the material of the world behind it
+  ok   WitherStormPhase :: the identity table holds a full set of hexes for each of the worlds
+  ok   WitherStormPhase :: the biomes, the dimension types and the identities are the same numbers
+  ok   WitherStormPhase :: the horizon the band paints is the horizon the sky was painted with
+  ok   WitherStormPhase :: every one of them ships art, a state, an item and a drop
+  ok   WitherStormPhase :: each world'\''s lock belongs to that world, and no two keys are the same
+  ok   WitherStormPhase :: the lock is a real block with a real hook, and it refuses without the key
+  ok   WitherStormPhase :: the seals stand in the worlds, not only in the creative tab
+  ok   WitherStormPhase :: each world'\''s key is found inside that world and nowhere else
+  ok   WitherStormPhase :: and /ds lock raises any of the three in front of you
+  ok   WitherStormPhase :: no recipe turns one world'\''s key into another'\''s -- they are not interchangeable
+  ok   WitherStormPhase :: the two worlds'\'' own materials and keys are real items with their own art
+  ok   WitherStormPhase :: a block you mine is a block you get
+  ok   WitherStormPhase :: the fourth world exists, it has its own keys, and it is booted with the others
+  ok   WitherStormPhase :: and the reach is built out of nothing but the reach'\''s own material
+  ok   WitherStormPhase :: its ground, its biome and its light are its own, and it shares none with the three
+  ok   WitherStormPhase :: walking in is walk-in: the doorway, the switch, the flag and the panel row
+  ok   WitherStormPhase :: the arrival is a place: a plaza, the plinth, the reliquary -- and a floor
+  ok   WitherStormPhase :: the reach'\''s key is in the reach, and the reliquary is where a player sees it
+  ok   WitherStormPhase :: its lock and its key are real blocks and items, and its recipes use only its own
+  ok   WitherStormPhase :: and the fourth sky and the fourth air are the fourth of each, not a copy
+  ok   WitherStormPhase :: the void ages a player in five stages, and the clock is the mod'\''s own
+  ok   WitherStormPhase :: it grows in the void, less in the decay, and comes back outside them
+  ok   WitherStormPhase :: the lines start kind, then stop being kind -- the whole point of ageing
+  ok   WitherStormPhase :: the body changes: the state carries the value and the renderer grades the tint
+  ok   WitherStormPhase :: the client is told, over the payload arrangement the base mod already runs
+  ok   WitherStormPhase :: and logging out is not an escape: the ledger is saved and read back
+  ok   WitherStormPhase :: it is switchable, listed, and testable without waiting 25 minutes
+  ok   WitherStormPhase :: the shared sky is the world'\''s own, and it is not painted from the fog
+  ok   WitherStormPhase :: and the menu it paints cannot be black, at any dim
+  ok   WitherStormPhase :: every screen that used to be a black plate now wears that sky
+  ok   WitherStormPhase :: the boot sequence is short, translucent, and can never hold the frame
+  ok   WitherStormPhase :: no screen of the mod'\''s paints the whole frame an opaque near-black
+  ok   WitherStormPhase :: the console the DS button opens is not a black room
+  ok   WitherStormPhase :: and the future-book, the terminal and the settings console are not black
+  ok   WitherStormPhase :: and no other source in mcsm-extras can paint one either
+  ok   WitherStormPhase :: and a player can ask what the menu is wearing
+  ok   WitherStormPhase :: and a fault in the mod'\''s own chrome can no longer leave an empty frame
+  ok   WitherStormPhase :: and the title cancels the game'\''s own background only for a frame it painted
+  ok   WitherStormPhase :: and one screen paints one sky
+  ok   WitherStormPhase :: and no class reads a screen member it does not have
+  ok   WitherStormPhase :: and every other screen and HUD hook of this build is wrapped too
+  ok   WitherStormPhase :: and a player can ask the game who is painting the black menu
+  ok   WitherStormPhase :: and a player can read the render guard, and clear it, from the console entry
+  ok   WitherStormPhase :: and the base mod'\''s dark side buttons are taken off the title by their own words
+  ok   WitherStormPhase :: the shape set landed, world by world, and every one of them is crafted
+  ok   WitherStormPhase :: no world'\''s shape set is built out of another world'\''s material
+  ok   WitherStormPhase :: every one of those shapes ships art under its own name
+  ok   WitherStormPhase :: and the expansion'\''s materials are items with names and art
+  ok   WitherStormPhase :: the weapons pass landed: real swords, axes and pickaxes
+  ok   WitherStormPhase :: every weapon is registered, named, held like a tool, drawn, and craftable
+  ok   WitherStormPhase :: and none of them is forged out of another world'\''s material
+  note 41 shader helpers reachable, 20 dormant by design (allowlisted)
+[phase] 520/520 WitherStormPhase checkpoints pass'
+++ printf '%s\n' '  note storm_sun_glow.fsh declares its phase source: // MCSM_PHASE_SOURCE: SunGlowConfig (Java). This is a full-screen post pass on its own
+  note 2 base class(es) mcsm-extras uses are not in the javap dump yet (checked next run): CubeReveal, PendingWorldConfig
+  note 95 base-jar call(s) verified against ci/api/mod.txt
+[shader] the game'\''s own interfaces written to /tmp/mcsm-gate-shader-interface.txt (2 programs)
+  ok   WitherStormPhase :: accessor file present
+  ok   WitherStormPhase :: exactly one accessor definition
+  ok   WitherStormPhase :: accessor decodes the FogSkyEnd carrier
+  ok   WitherStormPhase :: accessor introduces no new uniform
+  ok   WitherStormPhase :: Iris custom uniform `witherstorm_Phase` declared
+  ok   WitherStormPhase :: no core shader declares a phase uniform
+  ok   WitherStormPhase :: consumer sky.fsh resolves the phase
+  ok   WitherStormPhase :: consumer entity.fsh resolves the phase
+  ok   WitherStormPhase :: consumer terrain.fsh resolves the phase
+  ok   WitherStormPhase :: consumer position.fsh resolves the phase
+  ok   WitherStormPhase :: consumer rendertype_entity_cutout.fsh resolves the phase
+  ok   WitherStormPhase :: consumer storm_glow.fsh resolves the phase
+  ok   WitherStormPhase :: consumer storm_sun_glow.fsh resolves the phase
+  ok   WitherStormPhase :: consumer fogless_entity.fsh resolves the phase
+  ok   WitherStormPhase :: teeth track exists and is white from phase 4
+  ok   WitherStormPhase :: aura track exists in the shared include
+  ok   WitherStormPhase :: aura ramp 4.92 present
+  ok   WitherStormPhase :: aura ramp 5.15 present
+  ok   WitherStormPhase :: aura ramp 5.85 present
+  ok   WitherStormPhase :: aura ramp 6.90 present
+  ok   WitherStormPhase :: aura ramp 7.90 present
+  ok   WitherStormPhase :: aura reaches mcsm_visuals.glsl
+  ok   WitherStormPhase :: aura reaches sky.fsh
+  ok   WitherStormPhase :: aura reaches storm_glow.fsh
+  ok   WitherStormPhase :: aura reaches fogless_entity.fsh
+  ok   WitherStormPhase :: teeth are not multiplied by a phase colour
+  ok   WitherStormPhase :: the tint feed is present
+  ok   WitherStormPhase :: an explicit eye track exists (separate from the teeth)
+  ok   WitherStormPhase :: eyeTintArgb uses the eye track, not the teeth track
+  ok   WitherStormPhase :: the pupil stays magenta in every phase
+  ok   WitherStormPhase :: the eye hood does not snap coloured emitters onto the teeth band
+  ok   WitherStormPhase :: every McsmTeethPhaseTint symbol used elsewhere is declared
+  ok   WitherStormPhase :: Java resolver present
+  ok   WitherStormPhase :: Java resolver exposes phase()
+  ok   WitherStormPhase :: Java resolver publishes the horizon colour
+  ok   WitherStormPhase :: Java resolver keys the three reference sheets
+  ok   WitherStormPhase :: Java resolver uses the 1000 + phase*100 carrier
+  ok   WitherStormPhase :: sky hook publishes the phase
+  ok   WitherStormPhase :: sky hook clears the dark disc
+  ok   WitherStormPhase :: sky hook matches the disc colour to the horizon
+  ok   WitherStormPhase :: death driver stamps the 1906..2906 band
+  ok   WitherStormPhase :: death driver releases the band at the end
+  ok   WitherStormPhase :: death driver keeps the aim alive after the entity is gone
+  ok   WitherStormPhase :: sky pass CALLS the death stack
+  ok   WitherStormPhase :: sky pass uses mcsm_death_dir(
+  ok   WitherStormPhase :: sky pass uses mcsm_death_cracks(
+  ok   WitherStormPhase :: sky pass uses mcsm_death_implosion(
+  ok   WitherStormPhase :: sky pass uses mcsm_supernova(
+  ok   WitherStormPhase :: sky pass uses mcsm_death_flash(
+  ok   WitherStormPhase :: death stack is aimable without a camera position
+  ok   WitherStormPhase :: death finale is COOL white, not warm white
+  ok   WitherStormPhase :: death rings are the cool ramp, not the rainbow
+  ok   WitherStormPhase :: dome shell is present but inert
+  ok   WitherStormPhase :: dome shell submits no geometry
+  ok   WitherStormPhase :: dome shell keeps no entry point that could paint anything
+  ok   WitherStormPhase :: the dome is no longer even named to the mixin system
+  ok   WitherStormPhase :: shader include analysed for reachability
+  ok   WitherStormPhase :: the infinite-skybox port'\''s live entry point is still wired
+  ok   WitherStormPhase :: the death stack is reachable from a shipped shader
+  ok   WitherStormPhase :: no NEW unreachable helper in the shader include
+  ok   WitherStormPhase :: the dormant list is accurate (entries that came back to life)
+  ok   WitherStormPhase :: teeth are white at EVERY storm phase
+  ok   WitherStormPhase :: the aura is the track that carries the phase colour
+  ok   WitherStormPhase :: the eyes keep their OWN track
+  ok   WitherStormPhase :: eyeTintArgb does not read the teeth track
+  ok   WitherStormPhase :: the pupil stays magenta
+  ok   WitherStormPhase :: aura and eye boundaries match the user'\''s phase specs
+  ok   WitherStormPhase :: the shader teeth track is white too
+  ok   WitherStormPhase :: the shader aura track follows the same six boundaries
+  ok   WitherStormPhase :: the mouth skirt is amplified 4.0x
+  ok   WitherStormPhase :: the eye is NOT hue-snapped onto the teeth
+  ok   WitherStormPhase :: head teeth/eyes go through RenderTypes.eyes
+  ok   WitherStormPhase :: head mixin stays fail-soft (require = 0 is not '\''require = 2'\'')
+  ok   WitherStormPhase :: body teeth/eyes go through RenderTypes.eyes
+  ok   WitherStormPhase :: body mixin stays fail-soft (require = 0 is not '\''require = 2'\'')
+  ok   WitherStormPhase :: base-jar API dump present
+  ok   WitherStormPhase :: mcsm-extras only calls base-jar symbols it really declares
+  ok   WitherStormPhase :: the column reads the shared body radius
+  ok   WitherStormPhase :: the column reads the shared height
+  ok   WitherStormPhase :: the column reads the entity scale multiplier
+  ok   WitherStormPhase :: the multiplier is fed the LIVE attached-head count
+  ok   WitherStormPhase :: the cone'\''s spread angle comes from the phase too
+  ok   WitherStormPhase :: the column carries NO private body-radius curve
+  ok   WitherStormPhase :: the column is drawn through the white pipeline
+  ok   WitherStormPhase :: the column has no cap, disc or ring geometry
+  ok   WitherStormPhase :: the column'\''s bands overlap (welded into one volume, not beads)
+  ok   WitherStormPhase :: the white pipeline is built in a COMPILED tree (mcsm-extras)
+  ok   WitherStormPhase :: the white pool is pinned by the shader define
+  ok   WitherStormPhase :: the white pool keeps the additive blend
+  ok   WitherStormPhase :: the white pool uses the same shader as the aura pool
+  ok   WitherStormPhase :: the shader really pins the pool white under MCSM_GLOW_WHITE
+  ok   WitherStormPhase :: the aura path is untouched beside it
+  ok   WitherStormPhase :: the flat white under-halo no longer draws
+  ok   WitherStormPhase :: every glare layer is a blob cluster now
+  ok   WitherStormPhase :: the blob cluster drifts on the world clock (not a static card)
+  ok   WitherStormPhase :: every ported UI file is present
+  ok   WitherStormPhase :: the ported UI is substantial (not a stub)
+  ok   WitherStormPhase :: the main-menu panorama is NOT deleted any more
+  ok   WitherStormPhase :: the background hook only cancels for the explicit opt-out
+  ok   WitherStormPhase :: the panorama is NOT covered by a tint any more
+  ok   WitherStormPhase :: button animations are serialised (press owns the hover layer)
+  ok   WitherStormPhase :: the menu assembles with a staggered entrance
+  ok   WitherStormPhase :: UI sound events are declared in a COMMON class
+  ok   WitherStormPhase :: the UI sounds are registered at mod init, not on first click
+  ok   WitherStormPhase :: the playback helper no longer registers the events itself
+  ok   WitherStormPhase :: button audio covers every widget, not just the title screen
+  ok   WitherStormPhase :: a menu-open whoosh covers every screen
+  ok   WitherStormPhase :: no undecodable .wav ships as a sound
+  ok   WitherStormPhase :: every shipped sound is a real Ogg Vorbis container
+++ grep -F '[phase]'
+++ tail -1
+  ok   WitherStormPhase :: sounds.json keys are plain paths in the mcsm namespace
+  ok   WitherStormPhase :: every declared sound points at an existing shipped file
+  ok   WitherStormPhase :: the master version label is still exactly 7000.0.0-M
+  ok   WitherStormPhase :: the ported panel'\''s options exist in the config
+  ok   WitherStormPhase :: the per-field pass-throughs the panel drives exist
+  ok   WitherStormPhase :: the panel cannot bounce back into the base console
+  ok   WitherStormPhase :: the console entry is chrome in a reserved slot, not a scrollable row
+  ok   WitherStormPhase :: the console entry refuses to stack a second panel
+  ok   WitherStormPhase :: the console layout is table-driven and cannot overlap
+  ok   WitherStormPhase :: the content pack registers a real block set (>= 30)
+  ok   WitherStormPhase :: the content pack registers a real item set (>= 40)
+  ok   WitherStormPhase :: doors AND trap doors are part of it (asked for by name)
+  ok   WitherStormPhase :: the pack has its own creative tab on the vanilla builder
+  ok   WitherStormPhase :: doors and stairs build through exposed subclasses (their vanilla ctors are protected)
+  ok   WitherStormPhase :: registration happens at mod init (registries still open)
+  ok   WitherStormPhase :: the decayed reality is a REAL dimension key, not a teleport
+  ok   WitherStormPhase :: the dimension datapack ships (type + level stem)
+  ok   WitherStormPhase :: the level stem points at our own dimension type
+  ok   WitherStormPhase :: the dimension has its own sky/light identity (not the overworld'\''s)
+  ok   WitherStormPhase :: its terrain is built out of the NEW mcsm blocks
+  ok   WitherStormPhase :: the rift gesture is server-side and fail-soft
+  ok   WitherStormPhase :: the new gameplay layers each have a persisted switch
+  ok   WitherStormPhase :: the console exposes the new chapter (enter / kit / toggles)
+  ok   WitherStormPhase :: every registered block has a blockstate + model
+  ok   WitherStormPhase :: every registered item has an item model
+  ok   WitherStormPhase :: every new block/item has a display name
+  ok   WitherStormPhase :: the new content is craftable (recipes parse as JSON)
+  ok   WitherStormPhase :: districts are deterministic (a pure hash of the region, not a dice roll)
+  ok   WitherStormPhase :: district building is time-sliced, so it cannot stall a tick
+  ok   WitherStormPhase :: a district is only raised near a player
+  ok   WitherStormPhase :: a standing district is recognised from the world, not a counter
+  ok   WitherStormPhase :: the tick hook is the base mod'\''s own proven event (no mixin needed)
+  ok   WitherStormPhase :: the district palette is built from the NEW blocks
+  ok   WitherStormPhase :: all six archetypes exist (tower, warehouse, house, hospital, radio, crater)
+  ok   WitherStormPhase :: arrival points the player at the nearest ruins
+  ok   WitherStormPhase :: the cities are worth looting (>= 3 crate loot tables)
+  ok   WitherStormPhase :: every crate has its own loot table
+  ok   WitherStormPhase :: the datapack JSON is validated against vanilla'\''s own files
+  ok   WitherStormPhase :: the jar audit requires the content pack inside the jar
+  ok   WitherStormPhase :: the mod owns its own storm glow under a shader pack (teeth + aura)
+  ok   WitherStormPhase :: no sun glow in the night sky (and none in the decayed reality)
+  ok   WitherStormPhase :: the decayed reality owns its sky unconditionally (no vanilla dome there)
+  ok   WitherStormPhase :: no sun / moon / stars painted into the decayed reality
+  ok   WitherStormPhase :: the glare is a small soft aura, not a huge dish
+  ok   WitherStormPhase :: the body glint is the smooth reference sheen (not the striped one)
+  ok   WitherStormPhase :: the wordmark has its own band and cannot overlap the menu
+  ok   WitherStormPhase :: the settings console has its own backdrop, not a black plate
+  ok   WitherStormPhase :: the storm'\''s sky has a distance term (it used to have none)
+  ok   WitherStormPhase :: the fade distance is the 500 blocks the user asked for, and configurable
+  ok   WitherStormPhase :: far from a storm the native sky is handed back to vanilla
+  ok   WitherStormPhase :: the decayed-reality sky branch does not borrow the storm branch'\''s locals
+  ok   WitherStormPhase :: the supplied stage sheets are applied as the storm'\''s palette
+  ok   WitherStormPhase :: emissive atlases are never relit (they are the glow)
+  ok   WitherStormPhase :: the stage palette is verified, not just applied
+  ok   WitherStormPhase :: the relight normalises against the atlas'\''s own range
+  ok   WitherStormPhase :: the bestiary is armed from the mod'\''s own init and ticks on the level
+  ok   WitherStormPhase :: every creature is a vanilla type re-kitted, so no new registry is needed
+  ok   WitherStormPhase :: the bestiary grows with the storm'\''s own phase
+  ok   WitherStormPhase :: the ladder has five rungs, one per storm band, summoned once per storm
+  ok   WitherStormPhase :: a boss is fought in stages, not just ground down
+  ok   WitherStormPhase :: breaking a rung pays out a weapon from the content pack
+  ok   WitherStormPhase :: the boss bar is resolved reflectively with chat as the fallback
+  ok   WitherStormPhase :: the Creator reaches down with seven arms, out of rips in the sky
+  ok   WitherStormPhase :: the arms are world geometry, not a dome or a skybox
+  ok   WitherStormPhase :: the arms come out of the storm'\''s own live phase, radius and height
+  ok   WitherStormPhase :: the arms end in the storm'\''s own violet, and fade back with distance
+  ok   WitherStormPhase :: the arms are submitted by the storm'\''s own render pass
+  ok   WitherStormPhase :: an arm that lands is felt: it tears the air and hurts whoever is under it
+  ok   WitherStormPhase :: the ladder and the arms are switchable and persisted
+  ok   WitherStormPhase :: the new switches have console rows
+  ok   WitherStormPhase :: the build refuses to ship without the phase-3 behaviour classes
+  ok   WitherStormPhase :: the black hole event uses the base mod'\''s own black hole, not a new one
+  ok   WitherStormPhase :: the event only opens where the world is already broken
+  ok   WitherStormPhase :: every hole this build opens is closed by this build
+  ok   WitherStormPhase :: the black hole is announced and visible from a distance
+  ok   WitherStormPhase :: the black hole lifetime is configurable and persisted
+  ok   WitherStormPhase :: reality tears open: a rift grows, pulls, and seals itself on its own timer
+  ok   WitherStormPhase :: and only where the world is already broken, next to the hole that tore it
+  ok   WitherStormPhase :: when the hole collapses it takes its tears with it
+  ok   WitherStormPhase :: the hole hangs in the sky, and both are switchable, persisted and reachable
+  ok   WitherStormPhase :: a tornado is a real funnel in the world, one per level, on a timer
+  ok   WitherStormPhase :: the funnel is a helix of dust that grows to a gigantic radius
+  ok   WitherStormPhase :: it throws what it catches and hurts what it touches
+  ok   WitherStormPhase :: it scours a track, only under open sky, with the content pack'\''s own blocks
+  ok   WitherStormPhase :: it walks, and it chases the nearest player
+  ok   WitherStormPhase :: both phase-4 systems are switchable and persisted
+  ok   WitherStormPhase :: the build refuses to ship without the phase-4 behaviour classes
+  ok   WitherStormPhase :: the admin code exists exactly once in the whole build
+  ok   WitherStormPhase :: the code is only reachable through the lore, not the console'\''s own screen
+  ok   WitherStormPhase :: the antenna and the field guide are real items that open the terminal
+  ok   WitherStormPhase :: the antenna is handed out on spawn, with the line that explains it
+  ok   WitherStormPhase :: the antenna picks up sparse radio signals while it is carried
+  ok   WitherStormPhase :: the locked screen is the user'\''s own: restricted area, admin password
+  ok   WitherStormPhase :: the console'\''s four screens exist and the text field is a real widget
+  ok   WitherStormPhase :: the world'\''s half is the server'\''s: the code unlocks it, and verify() is real
+  ok   WitherStormPhase :: the item opens the screen on the client, through the one client door
+  ok   WitherStormPhase :: the config is reachable from inside the terminal (the menu path)
+  ok   WitherStormPhase :: the menu'\''s config entry is the bottom-right logo button, and nothing else
+  ok   WitherStormPhase :: the purple glint is off by default and still an option
+  ok   WitherStormPhase :: the screen-wide menu tint and the mid-screen wordmark are gone
+  ok   WitherStormPhase :: the settings screen clips its rows instead of drawing over the Done bar
+  ok   WitherStormPhase :: the build refuses to ship without the phase-5 classes
+  ok   WitherStormPhase :: the terminal'\''s own text methods are player-free, so the menu can draw them
+  ok   WitherStormPhase :: the MASSG is a real creature with its own rules, not a renamed mob
+  ok   WitherStormPhase :: it cannot be killed and it cannot be deleted
+  ok   WitherStormPhase :: the world stays changed: it scars the ground with permanent blocks
+  ok   WitherStormPhase :: it attacks and corrupts whoever is in its reach
+  ok   WitherStormPhase :: it hallucinates things that are not there
+  ok   WitherStormPhase :: and gigantic things swim in the air
+  ok   WitherStormPhase :: it imitates the player, in the player'\''s own name
+  ok   WitherStormPhase :: its voice is the mod'\''s own, not the game'\''s
+  ok   WitherStormPhase :: the counter runs 99 down to 1 February 2027 and is time-based
+  ok   WitherStormPhase :: the sky terminal is the user'\''s: gigantic, in the sky, counting, flickering
+  ok   WitherStormPhase :: the countdown travels in the creature'\''s own synced name, with no packet
+  ok   WitherStormPhase :: the sky terminal is drawn by the HUD, so it works in every world
+  ok   WitherStormPhase :: the release is a WORLD action: the server summons it, on the operator'\''s sneak-use
+  ok   WitherStormPhase :: every MASSG switch is configurable, persisted and in the panel
+  ok   WitherStormPhase :: the creature is registered on the level tick, last in the list
+  ok   WitherStormPhase :: the build refuses to ship without the phase-6 classes
+  ok   WitherStormPhase :: the sky'\''s bottom is stretched past bedrock: one wall, no second edge
+  ok   WitherStormPhase :: the floor takes the colour of the band that owns the sky above it
+  ok   WitherStormPhase :: the ambient time scalar reacts to the world clock without overwriting the storm
+  ok   WitherStormPhase :: the time scalar is subtle by day and keeps the storm band in the middle
+  ok   WitherStormPhase :: the 2D backdrop sticker'\''s bottom half is stretched, not cut
+  ok   WitherStormPhase :: the early backdrop pass has the same floor
+  ok   WitherStormPhase :: the purple glint mask is GONE from the entity program
+  ok   WitherStormPhase :: the traced charcoal shows through instead of a flat plate
+  ok   WitherStormPhase :: the emissive face glow is kept: white teeth, phase aura, 4.0x
+  ok   WitherStormPhase :: the glow is guaranteed from phase 4 up, at 4.0x, on every tick
+  ok   WitherStormPhase :: every phase >= 4 emissive atlas is a pure white mask the glow can reach
+  ok   WitherStormPhase :: the stretch is configurable and persisted
+  ok   WitherStormPhase :: the huge back'\''s centre is published for the whole of submitGrowth5
+  ok   WitherStormPhase :: the renderer measures the huge back the way its own submitScaled does
+  ok   WitherStormPhase :: the published centre is taken back down at RETURN
+  ok   WitherStormPhase :: the 1.72x enlargement is re-pivoted onto the model'\''s own centre
+  ok   WitherStormPhase :: the re-pivot is scoped to the huge back and cannot affect another scale
+  ok   WitherStormPhase :: both halves are require = 0, so a different renderer cannot break launch
+  ok   WitherStormPhase :: the correction is a user switch with a saved property
+  ok   WitherStormPhase :: the 34-block displacement is measured from the model, not asserted
+  ok   WitherStormPhase :: the login page has an ENTER button, drawn and clickable
+  ok   WitherStormPhase :: the chip row is live on the login page too (CONFIG was unreachable without it)
+  ok   WitherStormPhase :: the keyboard is read straight off the window, per frame
+  ok   WitherStormPhase :: the keys that matter are all handled
+  ok   WitherStormPhase :: the field and our own copy are kept in step
+  ok   WitherStormPhase :: the C key has a direct fallback as well as the registered binding
+  ok   WitherStormPhase :: the mod registers its OWN SoundEvents in its own namespace
+  ok   WitherStormPhase :: sixteen events, each backed by a file the generator writes
+  ok   WitherStormPhase :: the radio, the creature and the tears play those events, not vanilla ones
+  ok   WitherStormPhase :: the generator merges the sound map instead of muting the menus
+  ok   WitherStormPhase :: the build generates and gates the sound set, and the jar audit proves it ships
+  ok   WitherStormPhase :: the phase glare is drawn BEHIND the storm, never over it
+  ok   WitherStormPhase :: the purple ground pool is off by default and switchable
+  ok   WitherStormPhase :: the tentacle grab exists and is wired to the switch that had nothing behind it
+  ok   WitherStormPhase :: the grab snatches, holds, and ends in a throw or an eat
+  ok   WitherStormPhase :: only survival players are taken, and the pull is physical
+  ok   WitherStormPhase :: the ending has the white scene, the ripping cracks and the colour waves
+  ok   WitherStormPhase :: the ending rides the same proven per-frame HUD hook
+  ok   WitherStormPhase :: Mas, the Creator and the whale are REAL registered entities
+  ok   WitherStormPhase :: Mas cannot be hurt, the other two can
+  ok   WitherStormPhase :: the storm'\''s own summon now spawns Mas, and the Creator above it
+  ok   WitherStormPhase :: the beasts have names in the lang file
+  ok   WitherStormPhase :: the city generator runs in the overworld, not only in the decayed reality
+  ok   WitherStormPhase :: it never raises a district on top of world spawn
+  ok   WitherStormPhase :: world spawn is read by name, because the field call does not exist in this API
+  ok   WitherStormPhase :: every plot is furnished inside, not just shelled
+  ok   WitherStormPhase :: buildings wear a banner made of blocks
+  ok   WitherStormPhase :: the design set is real placeable blocks in the palette
+  ok   WitherStormPhase :: the design blocks are resolved from the block registry, not from field names
+  ok   WitherStormPhase :: there are people in the city when the player walks in
+  ok   WitherStormPhase :: both backdrops read the one generated palette and keep no colour of their own
+  ok   WitherStormPhase :: the wall keeps EVERY helper it calls (a range-slice edit took two out twice)
+  ok   WitherStormPhase :: the atmosphere wall'\''s own hand-typed decks are gone
+  ok   WitherStormPhase :: the story stage shell'\''s own hand-typed decks are gone
+  ok   WitherStormPhase :: the generated block carries the sheets'\'' four columns and the sky'\''s routing
+  ok   WitherStormPhase :: the sky eases through the bands instead of jumping a sixth of a phase early
+  ok   WitherStormPhase :: the pack'\''s position program and the Java sky feed keep the same three ramps
+  ok   WitherStormPhase :: a hospital actually builds the secret room
+  ok   WitherStormPhase :: the room is a basement, three under the ward, with a stairwell both ways
+  ok   WitherStormPhase :: the code is inlaid in the floor in the storm'\''s purple
+  ok   WitherStormPhase :: the five inlaid glyphs decode to M A S S G and nothing else
+  ok   WitherStormPhase :: IVOR is the one standing in the room, and he carries the name
+  ok   WitherStormPhase :: the locked screen still sends the player to that room
+  ok   WitherStormPhase :: the storm opens a mouth in the sky and drops things out of it
+  ok   WitherStormPhase :: what falls survives the fall, so a corpse is never the threat
+  ok   WitherStormPhase :: it only opens over a storm that is far enough along
+  ok   WitherStormPhase :: it cannot run away: one mouth, a life timer, and a cap on the drops
+  ok   WitherStormPhase :: it is switchable, saved, and reachable from the panel
+  ok   WitherStormPhase :: the field wraps the whole body instead of being half a card
+  ok   WitherStormPhase :: its centre is an empty, light-impenetrable black core
+  ok   WitherStormPhase :: the core is a penumbra, not a disc: the supplied frames have no rim
+  ok   WitherStormPhase :: the aura lives only in the annulus, and wears the sheets'\'' own column
+  ok   WitherStormPhase :: the field still turns with the entity, on both axes
+  ok   WitherStormPhase :: there is a bottom layer of sky at all, drawn in the world
+  ok   WitherStormPhase :: the wall carries the live horizon colour down and deepens as it falls
+  ok   WitherStormPhase :: the bottom layer is switchable, saved, panel-reachable and drawn in the backdrop pass
+  ok   WitherStormPhase :: every class the bootstrap boots is imported where it boots it
+  ok   WitherStormPhase :: the body'\''s tint carries the live phase'\''s hue, not a fixed grey
+  ok   WitherStormPhase :: it keeps #404'\''s brightness, and the neutral stands below the storm'\''s onset
+  ok   WitherStormPhase :: it is switchable and tunable from the panel
+  ok   WitherStormPhase :: the upper-back weld names the method the jar declares
+  ok   WitherStormPhase :: the huge-back pose names the method the jar declares
+  ok   WitherStormPhase :: the API oracle records the signatures those two welds depend on
+  ok   WitherStormPhase :: the oracle cannot be cut short by one unreadable class
+  ok   WitherStormPhase :: the head'\''s glow passes draw the dedicated emissive atlas
+  ok   WitherStormPhase :: the redirect that could never fire is gone, not left lying
+  ok   WitherStormPhase :: the oracle records the call sites this rests on
+  ok   WitherStormPhase :: a ritual is a shape, a price and a condition -- not a block
+  ok   WitherStormPhase :: all six rites are registered with a ring, a core, an offering and an effect
+  ok   WitherStormPhase :: the effects are the mod'\''s own systems, called through public doors
+  ok   WitherStormPhase :: a ritual cannot be farmed at one spot
+  ok   WitherStormPhase :: the scan is bounded: one ritual per player per pass, on a period
+  ok   WitherStormPhase :: adams is a real dimension with its own type, layers and sky
+  ok   WitherStormPhase :: the surface the generator builds on matches its own layer stack
+  ok   WitherStormPhase :: adams has no end state: it plans, writes and never completes
+  ok   WitherStormPhase :: a chamber always holds salvage and sometimes holds something else
+  ok   WitherStormPhase :: both systems are booted, and booted with their imports
+  ok   WitherStormPhase :: the panel and /ds can both reach them
+  ok   WitherStormPhase :: the maze is CARVED by a depth-first walk, not painted as corridors
+  ok   WitherStormPhase :: the maze is sealed, ceilinged and lamped like a warehouse
+  ok   WitherStormPhase :: the dead ends are the treasure, and the salvage is reachable
+  ok   WitherStormPhase :: the shaft to the hatch stops at the terrain, never through a base
+  ok   WitherStormPhase :: the server room is a machine: rack lights it remembers
+  ok   WitherStormPhase :: the racks blink, and the room has a power failure
+  ok   WitherStormPhase :: the mainframe is its own tag, and it answers with the keycard in hand
+  ok   WitherStormPhase :: both structures are booted, imported, switchable and findable
+  ok   WitherStormPhase :: both are written through the shared queue at a fixed budget per tick
+  ok   WitherStormPhase :: adams hands its salvage over in a container too (the crate blocks are not)
+  ok   WitherStormPhase :: the book counts to the terminal'\''s own end date, not to a second one
+  ok   WitherStormPhase :: the pages are dated from the clock, and they move when it does
+  ok   WitherStormPhase :: the book opens on the page that has come due, and the reader'\''s is last
+  ok   WitherStormPhase :: it is a book: chapters, titles, dated pages, spans, and omens
+  ok   WitherStormPhase :: the last page is the reader'\''s, and their ink is kept
+  ok   WitherStormPhase :: the book'\''s keys are POLLED, like the terminal'\''s, not hooked
+  ok   WitherStormPhase :: B opens it, and typing a B into the last page does not shut it
+  ok   WitherStormPhase :: the book draws no edge tint (the standing rule) and wraps with the real font
+  ok   WitherStormPhase :: the terminal and the commands both know about it
+  ok   WitherStormPhase :: the ritual cooldown map is keyed by the strings it is written with
+  ok   WitherStormPhase :: every helper that reads the heightmap is handed the level
+  ok   WitherStormPhase :: the book screen'\''s constructor passes its title to Screen
+  ok   WitherStormPhase :: there are eight in-world cutscenes, and every one is a real scene
+  ok   WitherStormPhase :: every scene in the catalogue has a trigger in the runtime, and no orphan triggers
+  ok   WitherStormPhase :: the catalogue is server-safe: no client class in it, so /ds scene can list it
+  ok   WitherStormPhase :: the scenes ride the proven hooks, not a new render path
+  ok   WitherStormPhase :: the camera turns the player reflectively, and puts them back afterwards
+  ok   WitherStormPhase :: the frame is a cutscene: bars, a title card, typed lines, and any key skips
+  ok   WitherStormPhase :: the scenes know their own distance shapes (the two probes differ)
+  ok   WitherStormPhase :: the big two are found by the entity scan the HUD already proves
+  ok   WitherStormPhase :: cutscenes can be switched off, and N plays the next one you have not seen
+  ok   WitherStormPhase :: the scenes are once each, and never while a screen is open
+  ok   WitherStormPhase :: no click and no key can end the game any more: every door is guarded
+  ok   WitherStormPhase :: the widget rebuild is DEFERRED out of the frame that asked for it
+  ok   WitherStormPhase :: and the rebuild happens at the top of the next frame, before any input
+  ok   WitherStormPhase :: the throwable is SHOWN, not swallowed silently
+  ok   WitherStormPhase :: the menu watermark is off by default, and switchable back on
+  ok   WitherStormPhase :: the menu is not a black bar any more
+  ok   WitherStormPhase :: the cities are BIGGER, per district, from the district'\''s own key
+  ok   WitherStormPhase :: the district'\''s own size and air can be read off in game
+  ok   WitherStormPhase :: and each one wears its own air: six atmospheres, six skylines
+  ok   WitherStormPhase :: the client wears the district'\''s air on the proven sky and fog hooks
+  ok   WitherStormPhase :: the void is really empty: one layer, and it is an INVISIBLE floor
+  ok   WitherStormPhase :: and it is tall enough to fall through, with nothing to hit
+  ok   WitherStormPhase :: the void has its own purple water and its own violet air
+  ok   WitherStormPhase :: and the decayed reality finally has the purple water it never had
+  ok   WitherStormPhase :: falling past everything is survivable: the void catches you
+  ok   WitherStormPhase :: the nothing has things in it: shelves, houses, rivers, glitch walls, vortex ribs
+  ok   WitherStormPhase :: the content generator reproduces the dimension the pack ships
+  ok   WitherStormPhase :: the void walkers live here, and the void is booted, switched and reachable
+  ok   WitherStormPhase :: one doorway per dimension, and every one of them distinct
+  ok   WitherStormPhase :: a doorway is a shape, checked where the player is standing
+  ok   WitherStormPhase :: walking in is the whole interaction, and /ds builds the same shape
+  ok   WitherStormPhase :: a real block or nothing: neither file can accept AIR as a door
+  ok   WitherStormPhase :: the bottom is an invisible floor you can stand on
+  ok   WitherStormPhase :: and the void has five tiers under the gel, in order, all the way down
+  ok   WitherStormPhase :: and the fall names each tier it crosses, once, in the plan'\''s words
+  ok   WitherStormPhase :: and every tier is drawn as itself, and the fog reports it
+  ok   WitherStormPhase :: the Void Rudder is a real, registered, craftable, textured tool
+  ok   WitherStormPhase :: and holding it in the void actually multiplies the fall -- and cannot kill
+  ok   WitherStormPhase :: and the sponge is a real fractal, built where the fall is
+  ok   WitherStormPhase :: and the sponge'\''s own two blocks exist, named, painted and defined
+  ok   WitherStormPhase :: and the rifts are a function of position -- no packet, nothing late
+  ok   WitherStormPhase :: and falling through one turns the frame into its window, with the pools below
+  ok   WitherStormPhase :: and the bottom of the void is a door, and the fall keeps everything it had
+  ok   WitherStormPhase :: and the thing in the gel talks, out of its own synced data
+  ok   WitherStormPhase :: and its line is set down in the frame letter by letter, in amethyst
+  ok   WitherStormPhase :: and a right-click is a question the dweller answers
+  ok   WitherStormPhase :: and the ghost whale has an id of its own, and the cavern sends that one
+  ok   WitherStormPhase :: and there are whales in the cavern, weightless and singing
+  ok   WitherStormPhase :: one shelf builder: regions and landings both carve through shelfInto
+  ok   WitherStormPhase :: the bottom is RGB rays: a full spectrum, rotating, brightest at the floor
+  ok   WitherStormPhase :: and infinite white rings: three alive, born for ever
+  ok   WitherStormPhase :: it is switchable, it rides the proven hook, and it never covers a screen
+  ok   WitherStormPhase :: every numeric literal in the tree is a literal (no 0x5F0RL class of typo)
+  ok   WitherStormPhase :: the glow is drawn by us: eyes, teeth and a haze on the storm'\''s own coordinates
+  ok   WitherStormPhase :: the glow pass is registered, switchable and says so when it cannot place itself
+  ok   WitherStormPhase :: the aura no longer waits for phase 4.45, and has a vanilla half
+  ok   WitherStormPhase :: the presence pass lights the teeth from phase 0.5 and fades the big aura in
+  ok   WitherStormPhase :: no emissive atlas may be entirely transparent (the hole #455 closed)
+  ok   WitherStormPhase :: the head emissive atlas has its eye lenses lit
+  ok   WitherStormPhase :: every monster has its own mesh, and every mesh is built from real cuboids
+  ok   WitherStormPhase :: the giants stand on the ground at any scale (the 24-unit shift)
+  ok   WitherStormPhase :: each body is animated in its own right
+  ok   WitherStormPhase :: a layer and a renderer for every body, registered on the client
+  ok   WitherStormPhase :: the cast has a body of its own instead of Minecraft'\''s player mesh
+  ok   WitherStormPhase :: and every pixel of the new geometry is the character'\''s own second layer
+  ok   WitherStormPhase :: and the storm corrupts them in the model, once it is far enough along
+  ok   WitherStormPhase :: and every cast member has a skin to wear, or is wearing jesse'\''s
+  ok   WitherStormPhase :: the void walkers are real entities of their own, not re-kitted vanilla
+  ok   WitherStormPhase :: the lurker reaches, pulls and swallows -- the three verbs of the mini-boss
+  ok   WitherStormPhase :: the walker falls at you across the nothing
+  ok   WitherStormPhase :: every one of them can be put in front of you by name
+  ok   WitherStormPhase :: the black warden'\''s skin exists at its own size, with the red lit
+  ok   WitherStormPhase :: the walker'\''s slits and the lurker'\''s lit tips are on their skins
+  ok   WitherStormPhase :: the colossal wears a starfield, a gold crown and white-hot eyes
+  ok   WitherStormPhase :: the skins and the models are drawn from the same numbers
+  ok   WitherStormPhase :: the decayed reality and the infinite dimension have creatures of their own
+  ok   WitherStormPhase :: each of them fights like its own world, and not like the other one
+  ok   WitherStormPhase :: the drifter drifts and the keeper keeps -- each with its own verbs
+  ok   WitherStormPhase :: and both of them have a body, a layer and a renderer of their own
+  ok   WitherStormPhase :: the two new creatures stand in the worlds they belong to, and nowhere else
+  ok   WitherStormPhase :: both of them can be put in front of you by name
+  ok   WitherStormPhase :: the two new skins exist at their own sizes, with their own light on them
+  ok   WitherStormPhase :: every world breathes something of its own, and no two breathe the same
+  ok   WitherStormPhase :: the air is only for the mod'\''s own worlds, and the Overworld is left alone
+  ok   WitherStormPhase :: the air steps once a game tick, never once a frame
+  ok   WitherStormPhase :: and it is a real switch, on the panel and in the config file
+  ok   WitherStormPhase :: the hook that drives it is the hook the blasts already use
+  ok   WitherStormPhase :: the sky is a CUBE: four walls and a lid, and no dome anywhere
+  ok   WitherStormPhase :: every dimension has a different sky, and the Overworld keeps the vanilla one
+  ok   WitherStormPhase :: the painted sky is submitted, switched, generated and gated
+  ok   WitherStormPhase :: every painted wall exists at its size, with its haze at the horizon
+  ok   WitherStormPhase :: and every lid is painted with a starfield over its zenith
+  ok   WitherStormPhase :: the sky has real cloud decks now: three layers, drifting, per dimension
+  ok   WitherStormPhase :: and every dimension'\''s cloud deck is a cloud, not a lid
+  ok   WitherStormPhase :: and the four decks are four different paintings
+  ok   WitherStormPhase :: and the storm owns the whole sky it is standing in
+  ok   WitherStormPhase :: and the ceiling wears the phase'\''s own colours, not its own
+  ok   WitherStormPhase :: and it is the storm'\''s sky, not a lid on every world
+  ok   WitherStormPhase :: and the two hallucination switches finally do something
+  ok   WitherStormPhase :: and it fires only when the world is wrong, and never in creative
+  ok   WitherStormPhase :: and it paints, and never puts anything into the world
+  ok   WitherStormPhase :: and the sky'\''s columns are the stills'\'' own rows, not six-stop approximations
+  ok   WitherStormPhase :: and that column ships as an image, so the claim is checkable
+  ok   WitherStormPhase :: and a mob body can never be the reason a resource reload dies
+  ok   WitherStormPhase :: and every one of the mob bodies is built through the guarded factory
+  ok   WitherStormPhase :: and the two asset bugs in that same log are build failures now
+  ok   WitherStormPhase :: and our files in the game'\''s own namespace are weighed against the game'\''s
+  ok   WitherStormPhase :: and the cast'\''s bodies cannot abort a reload either -- they are built the same guarded way
+  ok   WitherStormPhase :: and the cast'\''s registration reports instead of swallowing
+  ok   WitherStormPhase :: and the way into the void is the world'\''s own floor
+  ok   WitherStormPhase :: and the deep is drawn by the mod itself, with no shader pack in the way
+  ok   WitherStormPhase :: and the cast notices a player, walks over, and talks
+  ok   WitherStormPhase :: and no loading screen is left on the way into the fall
+  ok   WitherStormPhase :: and a replaced core shader may change the body, never the interface
+  ok   WitherStormPhase :: and only the differences that can blacken a frame are a reason to disable one
+  ok   WitherStormPhase :: and the build weighs every replaced core shader against the game'\''s own copy
+  ok   WitherStormPhase :: there is ONE identity per dimension, and the Overworld is deliberately not one
+  ok   WitherStormPhase :: every dimension has a material family of its own, and no two share a block
+  ok   WitherStormPhase :: no world is built out of another world'\''s blocks
+  ok   WitherStormPhase :: and the ground under each of them is its own too
+  ok   WitherStormPhase :: and every doorway is built from the material of the world behind it
+  ok   WitherStormPhase :: the identity table holds a full set of hexes for each of the worlds
+  ok   WitherStormPhase :: the biomes, the dimension types and the identities are the same numbers
+  ok   WitherStormPhase :: the horizon the band paints is the horizon the sky was painted with
+  ok   WitherStormPhase :: every one of them ships art, a state, an item and a drop
+  ok   WitherStormPhase :: each world'\''s lock belongs to that world, and no two keys are the same
+  ok   WitherStormPhase :: the lock is a real block with a real hook, and it refuses without the key
+  ok   WitherStormPhase :: the seals stand in the worlds, not only in the creative tab
+  ok   WitherStormPhase :: each world'\''s key is found inside that world and nowhere else
+  ok   WitherStormPhase :: and /ds lock raises any of the three in front of you
+  ok   WitherStormPhase :: no recipe turns one world'\''s key into another'\''s -- they are not interchangeable
+  ok   WitherStormPhase :: the two worlds'\'' own materials and keys are real items with their own art
+  ok   WitherStormPhase :: a block you mine is a block you get
+  ok   WitherStormPhase :: the fourth world exists, it has its own keys, and it is booted with the others
+  ok   WitherStormPhase :: and the reach is built out of nothing but the reach'\''s own material
+  ok   WitherStormPhase :: its ground, its biome and its light are its own, and it shares none with the three
+  ok   WitherStormPhase :: walking in is walk-in: the doorway, the switch, the flag and the panel row
+  ok   WitherStormPhase :: the arrival is a place: a plaza, the plinth, the reliquary -- and a floor
+  ok   WitherStormPhase :: the reach'\''s key is in the reach, and the reliquary is where a player sees it
+  ok   WitherStormPhase :: its lock and its key are real blocks and items, and its recipes use only its own
+  ok   WitherStormPhase :: and the fourth sky and the fourth air are the fourth of each, not a copy
+  ok   WitherStormPhase :: the void ages a player in five stages, and the clock is the mod'\''s own
+  ok   WitherStormPhase :: it grows in the void, less in the decay, and comes back outside them
+  ok   WitherStormPhase :: the lines start kind, then stop being kind -- the whole point of ageing
+  ok   WitherStormPhase :: the body changes: the state carries the value and the renderer grades the tint
+  ok   WitherStormPhase :: the client is told, over the payload arrangement the base mod already runs
+  ok   WitherStormPhase :: and logging out is not an escape: the ledger is saved and read back
+  ok   WitherStormPhase :: it is switchable, listed, and testable without waiting 25 minutes
+  ok   WitherStormPhase :: the shared sky is the world'\''s own, and it is not painted from the fog
+  ok   WitherStormPhase :: and the menu it paints cannot be black, at any dim
+  ok   WitherStormPhase :: every screen that used to be a black plate now wears that sky
+  ok   WitherStormPhase :: the boot sequence is short, translucent, and can never hold the frame
+  ok   WitherStormPhase :: no screen of the mod'\''s paints the whole frame an opaque near-black
+  ok   WitherStormPhase :: the console the DS button opens is not a black room
+  ok   WitherStormPhase :: and the future-book, the terminal and the settings console are not black
+  ok   WitherStormPhase :: and no other source in mcsm-extras can paint one either
+  ok   WitherStormPhase :: and a player can ask what the menu is wearing
+  ok   WitherStormPhase :: and a fault in the mod'\''s own chrome can no longer leave an empty frame
+  ok   WitherStormPhase :: and the title cancels the game'\''s own background only for a frame it painted
+  ok   WitherStormPhase :: and one screen paints one sky
+  ok   WitherStormPhase :: and no class reads a screen member it does not have
+  ok   WitherStormPhase :: and every other screen and HUD hook of this build is wrapped too
+  ok   WitherStormPhase :: and a player can ask the game who is painting the black menu
+  ok   WitherStormPhase :: and a player can read the render guard, and clear it, from the console entry
+  ok   WitherStormPhase :: and the base mod'\''s dark side buttons are taken off the title by their own words
+  ok   WitherStormPhase :: the shape set landed, world by world, and every one of them is crafted
+  ok   WitherStormPhase :: no world'\''s shape set is built out of another world'\''s material
+  ok   WitherStormPhase :: every one of those shapes ships art under its own name
+  ok   WitherStormPhase :: and the expansion'\''s materials are items with names and art
+  ok   WitherStormPhase :: the weapons pass landed: real swords, axes and pickaxes
+  ok   WitherStormPhase :: every weapon is registered, named, held like a tool, drawn, and craftable
+  ok   WitherStormPhase :: and none of them is forged out of another world'\''s material
+  note 41 shader helpers reachable, 20 dormant by design (allowlisted)
+[phase] 520/520 WitherStormPhase checkpoints pass'
++ PHASE_LINE='[phase] 520/520 WitherStormPhase checkpoints pass'
++ echo '[phase] 520/520 WitherStormPhase checkpoints pass'
+[phase] 520/520 WitherStormPhase checkpoints pass
++ echo '::notice title=phase::[phase] 520/520 WitherStormPhase checkpoints pass'
+::notice title=phase::[phase] 520/520 WitherStormPhase checkpoints pass
++ stage phase-ok push
++ local had_e=0
++ case "$-" in
++ had_e=1
++ set +e
++ echo '[stage] phase-ok'
+[stage] phase-ok
++ printf '%s\n' phase-ok
++ '[' push = push ']'
++ evidence_put /tmp/mcsm-stage.txt stage.txt
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-713
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-713
++ cp -f /tmp/mcsm-stage.txt /tmp/mcsm-evidence/ci-out/run-713/stage.txt
++ git -C /tmp/mcsm-evidence add ci-out
++ git -C /tmp/mcsm-evidence commit -qm 'ci evidence: run 713 stage.txt'
++ git -C /tmp/mcsm-evidence push -q origin HEAD:arena/d0c8bb27-lowuuuuuu
++ '[' 0 = 1 ']'
++ return 0
++ evidence_put /tmp/mcsm-run.log run.log
++ local had_e=0
++ case "$-" in
++ set +e
++ evidence_clone
++ '[' -n /tmp/mcsm-evidence ']'
++ return 0
++ local DST=/tmp/mcsm-evidence/ci-out/run-713
++ mkdir -p /tmp/mcsm-evidence/ci-out/run-713
++ cp -f /tmp/mcsm-run.log /tmp/mcsm-evidence/ci-out/run-713/run.log
