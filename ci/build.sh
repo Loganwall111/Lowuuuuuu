@@ -358,7 +358,11 @@ cp -r jar-overrides/* "$FX/cls/"
 # potatoes, and the tractor_beam override even repaints the BASE halo
 # sprites (wireframe orb mesh). Deleting the staged copy leaves the base
 # jar's own entity textures untouched.
-rm -rf "$FX/cls/assets/dabywitherstormmod/textures/entity" 
+E="$FX/cls/assets/dabywitherstormmod/textures/entity"
+mkdir -p "$E/wither_storm"
+find "$E" -mindepth 1 -maxdepth 1 ! -name wither_storm.png ! -name wither_storm -exec rm -rf {} +
+find "$E/wither_storm" -mindepth 1 ! -name wither_storm.png -exec rm -rf {} +
+echo "[build] #413: entity overrides reduced to the traced wither_storm maps; base art fills every other name" 
 # nullglob guard: on a failed javac the class dir is empty and a bare
 # `cp -r /tmp/mcsm-build/*` would die under set -e (that bug ate the jar).
 shopt -s nullglob

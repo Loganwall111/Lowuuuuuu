@@ -32,16 +32,22 @@ public final class StormSkins {
         return CANONICAL_TEXTURE;
     }
 
+    // #413: mirror the BASE mod's own identifiers exactly. Returning the
+    // wither-storm map for the devourer / phase-4 models was the brown-UV
+    // potato: wrong atlas per model group.
     public static Identifier legacy() {
-        return CANONICAL_TEXTURE;
+        return Identifier.fromNamespaceAndPath(
+                "dabywitherstormmod", "textures/entity/wither_storm_og.png");
     }
 
     public static Identifier phase4() {
-        return CANONICAL_TEXTURE;
+        return Identifier.fromNamespaceAndPath(
+                "dabywitherstormmod", "textures/entity/phase_4_assets.png");
     }
 
     public static Identifier devourer() {
-        return CANONICAL_TEXTURE;
+        return Identifier.fromNamespaceAndPath(
+                "dabywitherstormmod", "textures/entity/devourer_assets.png");
     }
 
     public static Identifier teethGlow(double phase) {
