@@ -97,11 +97,11 @@ public final class McsmStormAtmosphere {
         if (tot < 0.02F) {
             return 0.0F;
         }
-        float[] teal = {0.02F, 0.28F, 0.25F};
-        float[] purp = {0.26F, 0.10F, 0.36F};
-        float[] pink = {0.48F, 0.16F, 0.40F};
-        float[] late = {0.34F, 0.12F, 0.48F};
-        float[] six  = {0.32F, 0.16F, 0.26F};
+        float[] teal = {0.02F, 0.34F, 0.32F};
+        float[] purp = {0.32F, 0.12F, 0.42F};
+        float[] pink = {0.62F, 0.18F, 0.48F};
+        float[] late = {0.42F, 0.14F, 0.58F};
+        float[] six  = {0.40F, 0.18F, 0.30F};
         out[0] = (teal[0] * wTeal + purp[0] * wPurp + pink[0] * wPink + late[0] * wLate + six[0] * wSix) / tot;
         out[1] = (teal[1] * wTeal + purp[1] * wPurp + pink[1] * wPink + late[1] * wLate + six[1] * wSix) / tot;
         out[2] = (teal[2] * wTeal + purp[2] * wPurp + pink[2] * wPink + late[2] * wLate + six[2] * wSix) / tot;
@@ -111,7 +111,7 @@ public final class McsmStormAtmosphere {
         float blend = Mth.clamp(tot, 0.0F, 1.0F) * distanceInfluence();
         // Keep purple/pink as storm atmosphere only; do not repaint the entire
         // normal night sky purple when the player is merely nearby.
-        return blend * 0.46F;
+        return blend * 0.86F;
     }
 
     public static void tick() {

@@ -119,7 +119,7 @@ public final class StoryModeSkyTint {
 
    public static float fogStrength() {
       float base = DabyWSClientConfig.storyModeSky
-            ? Mth.clamp((float)DabyWSClientConfig.storyModeFogStrength * 0.42F, 0.0F, 0.42F) : 0.0F;
+            ? Mth.clamp((float)DabyWSClientConfig.storyModeFogStrength * 0.42F, 0.0F, 0.42F) : 0.16F;
       try {
          float b = McsmStormAtmosphere.skyBlend(TMP);
          float skyCity = skyCityBlend();
@@ -131,8 +131,11 @@ public final class StoryModeSkyTint {
    }
 
    public static float strength() {
-      return DabyWSClientConfig.storyModeSky
+      // The Story Look sky is a core part of the pack; keep a visible baseline
+      // even when the base config failed to migrate/enable its toggle.
+      float cfg = DabyWSClientConfig.storyModeSky
             ? Mth.clamp((float)DabyWSClientConfig.storyModeSkyStrength, 0.0F, 1.0F) : 0.0F;
+      return Math.max(0.72F, cfg);
    }
 
    public static float lightStrength() {

@@ -252,6 +252,11 @@ public final class McsmNpcs {
             mob.setCustomName(Component.literal(who));
             mob.setCustomNameVisible(true);
             mob.setPersistenceRequired();
+            try {
+                mob.getClass().getMethod("setCanPickUpLoot", boolean.class).invoke(mob, Boolean.FALSE);
+                mob.getClass().getMethod("setBaby", boolean.class).invoke(mob, Boolean.FALSE);
+            } catch (Throwable ignored) {
+            }
             mob.snapTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, level.getRandom().nextFloat() * 360.0F, 0.0F);
             try {
                 mob.setNoAi(false);
@@ -270,9 +275,10 @@ public final class McsmNpcs {
         if (n.contains("reuben") || n.contains("lluna") || n.contains("pig")) {
             return "minecraft:pig";
         }
-        // Human story cast should look human; renderer/resource overrides turn
-        // villager bodies into Story Mode people while preserving vanilla AI.
-        return "minecraft:villager";
+        // Human story cast should not be long-nosed villagers. Use the human
+        // body fallback and Story Look skin so the spawn egg creates a visible
+        // separate cast NPC instead of another villager variant.
+        return "minecraft:zombie";
     }
 
     private static boolean isNearStoryTown(BlockPos pos) {
@@ -296,6 +302,7 @@ public final class McsmNpcs {
                     if (!isManagedCast(mob)) {
                         continue;
                     }
+                    keepStoryNpcSafe(mob);
                     BlockPos bp = mob.blockPosition();
                     String town = nearestStoryTown(bp);
                     if (town == null || !isNearStoryTown(bp)) {
@@ -313,6 +320,17 @@ public final class McsmNpcs {
             }
         } catch (Throwable ignored) {
             // population cleanup must never break the server tick
+        }
+    }
+
+    private static void keepStoryNpcSafe(Mob mob) {
+        try {
+            mob.getClass().getMethod("clearFire").invoke(mob);
+        } catch (Throwable ignored) {
+            try {
+                mob.getClass().getMethod("setRemainingFireTicks", int.class).invoke(mob, 0);
+            } catch (Throwable ignoredToo) {
+            }
         }
     }
 

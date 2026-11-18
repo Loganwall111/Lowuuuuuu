@@ -145,19 +145,34 @@ public final class McsmStormBlob {
         final float rr = (0.05F*wEarly + 0.02F*wP5 + 0.42F*w55 + 0.30F*w59 + 0.34F*w6) / sum;
         final float gg = (0.10F*wEarly + 0.34F*wP5 + 0.13F*w55 + 0.10F*w59 + 0.15F*w6) / sum;
         final float bb = (0.30F*wEarly + 0.30F*wP5 + 0.36F*w55 + 0.44F*w59 + 0.28F*w6) / sum;
-        final float aa = Math.min(1.0F, amp * 1.55F);
+        final float aa = Math.min(1.0F, amp * 2.10F);
         final Vec3 bearing = dir;
+        Vec3 upHint = Math.abs(bearing.y) > 0.96D ? new Vec3(1.0D, 0.0D, 0.0D) : new Vec3(0.0D, 1.0D, 0.0D);
+        final Vec3 haloRight = bearing.cross(upHint).normalize();
+        final Vec3 haloUp = haloRight.cross(bearing).normalize();
+        final float lowOrange = Math.max(w55 * 0.55F, w6 * 0.35F);
         ctx.submitNodeCollector().submitCustomGeometry(ctx.poseStack(), RenderTypes.entityTranslucentEmissive(WHITE),
                 (pose, consumer) -> {
-            // Main thick oval: top/sides around the storm, not a horizon strip.
-            emitDomePatch(pose, consumer, cam, bearing.add(new Vec3(0.0D, 0.20D, 0.0D)).normalize(),
-                    535.0D, 46.0D, 40.0D, rr, gg, bb, aa * 155.0F, 0.12F);
-            // Deep black upper cap like the references: darkness curls over the body.
-            emitDomePatch(pose, consumer, cam, bearing.add(new Vec3(0.0D, 0.38D, 0.0D)).normalize(),
-                    548.0D, 42.0D, 24.0D, 0.010F, 0.010F, 0.022F, aa * 185.0F, 0.22F);
-            // Saturated colour core behind the heads/tractor beams.
-            emitDomePatch(pose, consumer, cam, bearing.add(new Vec3(0.0D, 0.06D, 0.0D)).normalize(),
-                    520.0D, 30.0D, 26.0D, Math.min(1.0F, rr * 1.35F), Math.min(1.0F, gg * 1.20F), Math.min(1.0F, bb * 1.45F), aa * 92.0F, -0.02F);
+            // Huge multi-colour backdrop, like the older good builds: not one
+            // flat circle, but overlapping MCSM sky wash lobes behind/top/sides.
+            emitDomePatch(pose, consumer, cam, bearing.add(haloUp.scale(0.12D)).normalize(),
+                    555.0D, 78.0D, 58.0D, rr * 0.70F, gg * 0.70F, bb * 0.78F, aa * 122.0F, 0.02F);
+            emitDomePatch(pose, consumer, cam, bearing.add(haloRight.scale(-0.24D)).add(haloUp.scale(0.18D)).normalize(),
+                    560.0D, 45.0D, 38.0D, Math.min(1.0F, rr * 1.35F), gg * 0.74F, Math.min(1.0F, bb * 1.25F), aa * 112.0F, 0.05F);
+            emitDomePatch(pose, consumer, cam, bearing.add(haloRight.scale(0.26D)).add(haloUp.scale(0.10D)).normalize(),
+                    558.0D, 44.0D, 36.0D, Math.min(1.0F, rr * 1.10F + lowOrange * 0.22F), Math.min(1.0F, gg * 0.70F + lowOrange * 0.10F), Math.min(1.0F, bb * 1.34F), aa * 105.0F, -0.02F);
+            // Peach/orange lower transition from the sunset and 5.5/6 references.
+            if (lowOrange > 0.01F) {
+                emitDomePatch(pose, consumer, cam, bearing.add(haloUp.scale(-0.22D)).normalize(),
+                        552.0D, 64.0D, 30.0D, 0.90F, 0.38F, 0.24F, aa * lowOrange * 72.0F, -0.20F);
+            }
+            // Deep black upper cap/cavity: the colour wraps around it instead
+            // of washing the storm into a grey silhouette.
+            emitDomePatch(pose, consumer, cam, bearing.add(haloUp.scale(0.34D)).normalize(),
+                    570.0D, 58.0D, 36.0D, 0.006F, 0.005F, 0.016F, aa * 210.0F, 0.12F);
+            // Saturated core behind the heads/tractor beams.
+            emitDomePatch(pose, consumer, cam, bearing.add(haloUp.scale(0.02D)).normalize(),
+                    522.0D, 36.0D, 30.0D, Math.min(1.0F, rr * 1.55F), Math.min(1.0F, gg * 1.20F), Math.min(1.0F, bb * 1.70F), aa * 120.0F, -0.02F);
         });
     }
 

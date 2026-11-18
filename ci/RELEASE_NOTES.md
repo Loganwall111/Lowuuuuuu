@@ -1,3 +1,12 @@
+# 1.9.201 — visible sky/OG packs, larger multi-colour glare, phase-correct teeth
+
+- Installs Story Look and OGS CEM as visible resource-pack zips on launch, in addition to registering them as built-in default packs, so skies/OG textures are not hidden behind built-in pack UI failures.
+- Re-enabled the Story Mode sky/fog/light mixins from the reconstructed client and keeps a visible baseline sky tint even when an old client config failed to migrate its sky toggle.
+- Enlarged the storm glare into layered, multi-colour MCSM-style sky lobes: broad purple/pink/blue/orange side/top washes plus a black upper cap instead of one small flat colour spot.
+- Corrected teeth phase logic: phase 5 is flat white with no glow; phase 5.5+ switches to bluish/cyan glow.
+- Added an original command-block core patch to the phase-zero/mini storm atlases and standalone command-block core texture.
+- Changed Story Mode character spawn fallback away from villager bodies toward a human-shaped no-long-nose NPC skin path and added the Story Look zombie/human texture.
+
 # 1.9.200 — Sky City haze included in verified build
 
 - Includes the high-altitude Sky City blue haze blend in the published jar, ramping in above tall build heights without changing normal ground-level play.

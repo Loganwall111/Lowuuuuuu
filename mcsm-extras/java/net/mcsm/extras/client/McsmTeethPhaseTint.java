@@ -43,9 +43,9 @@ public final class McsmTeethPhaseTint {
             } else if (phase >= 6.0F) {
                 r = 0.18F; g = 0.92F; b = 1.00F; inten = 2.45F; glow = true;   // stronger blue/cyan split teeth
             } else if (phase >= 5.5F) {
-                r = 0.82F; g = 1.00F; b = 1.00F; inten = 2.05F; glow = true;   // white-cyan teeth, glowing
+                r = 0.78F; g = 0.96F; b = 1.00F; inten = 2.35F; glow = true;   // 5.5+: bluish/cyan glow like Story Mode
             } else if (phase >= 5.0F) {
-                r = 0.92F; g = 1.00F; b = 0.96F; inten = 0.70F; glow = true;   // phase 5: readable flat white with cyan edge, low bloom
+                r = 1.00F; g = 1.00F; b = 0.94F; inten = 0.0F; glow = false;  // phase 5: completely white teeth, no glow
             } else if (phase >= 4.0F) {
                 r = 0.72F; g = 0.98F; b = 1.00F; inten = 1.25F; glow = true;   // slight phase-4 cyan-white glow
             } else {
