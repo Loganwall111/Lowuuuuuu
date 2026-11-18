@@ -13,13 +13,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
- * Devouring Storms quick menu hotkey.
+ * Devouring Storms quick menu hotkey (Control + C and Shift + C).
  *
- * The release notes promised Shift+C, but no class was actually polling that
- * combo, so players could be on a new jar and still think it was old because
- * the Control Panel never opened. This tiny client mixin polls GLFW by
- * reflection on Minecraft.tick(): no registration bootstrap required, and if a
- * future LWJGL/window API changes it quietly disables only the shortcut.
+ * Allows opening the Devouring Storms Control Panel directly from gameplay or screens.
  */
 @Mixin(Minecraft.class)
 public abstract class McsmQuickConfigKeyMixin {
@@ -28,12 +24,12 @@ public abstract class McsmQuickConfigKeyMixin {
     @Unique private static long mcsm$lastOpenMs = 0L;
 
     @Inject(method = "tick", at = @At("TAIL"))
-    private void mcsm$shiftCQuickPanel(CallbackInfo ci) {
+    private void mcsm$quickPanelHotkey(CallbackInfo ci) {
         try {
             Minecraft mc = Minecraft.getInstance();
             if (mc == null) return;
 
-            boolean down = mcsm$isShiftCDown(mc);
+            boolean down = mcsm$isConfigHotkeyDown(mc);
             if (!down) {
                 mcsm$keyWasDown = false;
                 return;
@@ -45,16 +41,13 @@ public abstract class McsmQuickConfigKeyMixin {
             if (now - mcsm$lastOpenMs < 350L) return;
             mcsm$lastOpenMs = now;
 
-            // 1.9.182: open from gameplay OR from the old config screen. The
-            // earlier guard made Shift+C appear dead whenever a menu was open,
-            // exactly where players were testing it.
             Screen parent = mcsm$currentScreen(mc);
             if (parent instanceof McsmExtrasScreen) return;
 
             mc.setScreenAndShow(new McsmExtrasScreen(parent));
-            System.err.println("[MCSM] Shift+C opened Devouring Storms Control Panel");
+            System.out.println("[MCSM] Control+C / Shift+C opened Devouring Storms Control Panel");
         } catch (Throwable t) {
-            System.err.println("[MCSM] Shift+C quick panel failed: " + t);
+            System.err.println("[MCSM] Quick panel hotkey check failed: " + t);
         }
     }
 
@@ -72,7 +65,7 @@ public abstract class McsmQuickConfigKeyMixin {
     }
 
     @Unique
-    private static boolean mcsm$isShiftCDown(Minecraft mc) {
+    private static boolean mcsm$isConfigHotkeyDown(Minecraft mc) {
         try {
             Object windowObj = null;
             for (Method m : Minecraft.class.getMethods()) {
@@ -101,11 +94,16 @@ public abstract class McsmQuickConfigKeyMixin {
             int keyC = ((Number) glfw.getField("GLFW_KEY_C").get(null)).intValue();
             int leftShift = ((Number) glfw.getField("GLFW_KEY_LEFT_SHIFT").get(null)).intValue();
             int rightShift = ((Number) glfw.getField("GLFW_KEY_RIGHT_SHIFT").get(null)).intValue();
+            int leftCtrl = ((Number) glfw.getField("GLFW_KEY_LEFT_CONTROL").get(null)).intValue();
+            int rightCtrl = ((Number) glfw.getField("GLFW_KEY_RIGHT_CONTROL").get(null)).intValue();
 
-            boolean c = ((Number) getKey.invoke(null, handle, keyC)).intValue() == press;
-            boolean shift = ((Number) getKey.invoke(null, handle, leftShift)).intValue() == press
+            boolean cPressed = ((Number) getKey.invoke(null, handle, keyC)).intValue() == press;
+            boolean shiftPressed = ((Number) getKey.invoke(null, handle, leftShift)).intValue() == press
                     || ((Number) getKey.invoke(null, handle, rightShift)).intValue() == press;
-            return c && shift;
+            boolean ctrlPressed = ((Number) getKey.invoke(null, handle, leftCtrl)).intValue() == press
+                    || ((Number) getKey.invoke(null, handle, rightCtrl)).intValue() == press;
+
+            return cPressed && (shiftPressed || ctrlPressed);
         } catch (Throwable ignored) {
             return false;
         }

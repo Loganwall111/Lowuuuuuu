@@ -147,9 +147,73 @@ public abstract class McsmBlobCarrierPatch {
 
             data.cloudEnd = mcsm$pack(yaw, pitch, sizeIdx);
             McsmDiag.carrier(data.cloudEnd, Math.round(yaw) + 180, Math.round(pitch) + 90);
+
+            // BUILD #390 PHASE 3 -- the storm-approach signal.
+            //
+            // The sky pass now folds the dome into the gradient sheets
+            // (mcsm_sheet_storm / mcsm_sheet_vanilla). Most of that weight is
+            // phase-driven, but the user asked for the blend to come in "as the
+            // storm evolves OR APPROACHES", and the phase slot cannot express
+            // distance. So the same 1395..1855 slot the base mod already uses as
+            // a phase carrier gets a distance fraction added:
+            //
+            //     skyEnd = 1000 + phase*100 + 0.008 * approach      approach 0..1
+            //
+            // The base mod writes the integer part at HEAD (1000 + phase*100);
+            // this runs at TAIL so the fraction survives. It is +0..0.008 on a
+            // value float32 resolves to ~1e-4 there, and the shader divides the
+            // fraction back down (see mcsm_approach). An old jar-side writer
+            // leaves the fraction at 0, which the shader clamps to "no approach"
+            // -- the fold then rides the phase alone instead of misbehaving.
+            //
+            // Skipped while the death cinematic owns the slot: that sequence has
+            // its own 1906..2906 band and must not be overwritten.
+            if (mcsm$deathStartNs == 0L) {
+                mcsm$stampSkyEnd(data, 1000.0F + p * 100.0F
+                                       + 0.008F * mcsm$stormApproach());
+            }
         }
 
         mcsm$driveDeathCinematic(data, gradient, sizeIdx);
+    }
+
+    /**
+     * BUILD #390 PHASE 3 -- how close the nearest tracked storm is, 0..1.
+     *
+     * 0 at the edge of the sky gradient's 1400-block selection radius, 1 by the
+     * time it is 700 blocks out, so the sheet fold is already complete when the
+     * storm fills the sky. Client-side only and best-effort: any failure (no
+     * level, no storm, a renamed manager) returns 0, i.e. phase-driven folding.
+     */
+    private static float mcsm$stormApproach() {
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            LocalPlayer pl = mc.player;
+            if (pl == null || mc.level == null) {
+                return 0.0F;
+            }
+            double best = Double.MAX_VALUE;
+            for (net.dabicco.witherstormmod.client.ClientDistantStormManager.StormData d
+                    : net.dabicco.witherstormmod.client.ClientDistantStormManager.all()) {
+                if (d.phase < 4.42F) {
+                    continue;
+                }
+                double dx = d.dispX - pl.getX();
+                double dy = d.dispY - pl.getY();
+                double dz = d.dispZ - pl.getZ();
+                double dd = dx * dx + dy * dy + dz * dz;
+                if (dd < best) {
+                    best = dd;
+                }
+            }
+            if (best == Double.MAX_VALUE) {
+                return 0.0F;
+            }
+            float dist = (float) Math.sqrt(best);
+            return Math.max(0.0F, Math.min(1.0F, (1400.0F - dist) / 700.0F));
+        } catch (Throwable ignored) {
+            return 0.0F;
+        }
     }
 
     /** Latch, advance and stamp the dying sequence. Never throws. */

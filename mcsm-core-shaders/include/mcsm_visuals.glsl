@@ -311,6 +311,24 @@ float mcsm_glare_size() {
     return 0.58;
 }
 
+// ============================================================================
+//  BUILD #390 PHASE 3 -- storm-approach carrier + sheet fold weights.
+//
+//  Implemented in the GENERATED block at the bottom of this file (the same
+//  block is baked into the standalone Story Look position.fsh, which cannot
+//  include this one):
+//     mcsm_approach(fogSkyEnd)        -> 0..1 "the storm is closing in"
+//     mcsm_sheet_w_storm(p, approach) -> fold weight for the storm rows
+//     mcsm_sheet_w_vanilla(approach)  -> fold weight for the overworld rows
+//  The 1395..1855 slot carries phase only (written by base-mod code), so our
+//  carrier patch (McsmBlobCarrierPatch, TAIL of FogRenderer.updateBuffer, which
+//  already re-stamps this slot for the death cinematic) adds the approach as a
+//  +0..0.008 fraction:
+//      skyEnd = 1000 + phase*100 + 0.008 * approach
+//  A legacy writer leaves the fraction at 0, which decodes to approach 0 -- the
+//  sheets then fold on phase alone instead of breaking.
+// ============================================================================
+
 // ------------------------------------------------------------- helpers
 vec3 mcsm_kill_teal(vec3 c, float p) {
     float teal = max(0.0, min(c.g, c.b) - c.r);
@@ -568,6 +586,11 @@ float mcsm_mass_cover(vec3 wd, vec3 bd, float p) {
     return clamp(0.82 * core + 0.62 * skirt + 0.25 * rim, 0.0, 0.93);
 }
 
+// BUILD #394 -- forward prototype: the baked sheet tables are generated at the
+// bottom of this include (MCSM_SKY_SHEETS block), but mcsm_blob below already
+// colours the 5.5 blur from them. GLSL needs the declaration first.
+vec3 mcsm_sheet_row_storm(int row, float up);
+
 vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     vec3 wd = normalize(worldDir);
     vec3 bd = normalize(bossDir);
@@ -585,12 +608,21 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
 
     // Radial structure, measured to match the supplied references: strongest
     // in the middle, coloured shoulder, dark falloff at the silhouette edge.
-    float core  = 1.0 - smoothstep(0.03, 0.58, u);
+    // BUILD #394 -- the BLACK CORE is sized up to the very top of the storm:
+    // the core plateau now reaches u~0.85 (was 0.58), same oval field/geometry,
+    // so the occluded black mass covers the whole silhouette while the purple
+    // blur keeps its shoulder+rim shape exactly where it was.
+    float core  = 1.0 - smoothstep(0.10, 0.88, u);
     float mid   = smoothstep(0.22, 0.66, u) * (1.0 - smoothstep(0.72, 0.98, u));
     float rim   = smoothstep(0.66, 0.90, u) * (1.0 - smoothstep(0.94, 1.0, u));
     float fade  = 1.0 - smoothstep(0.92, 1.0, u);
 
     vec3 grad = mcsm_measured_halo_gradient(p, u);
+    // BUILD #394 -- the 5.5 blur takes the packed sheet purple (row 3 of the
+    // storm table) instead of the old measured violet, so halo and sky fold
+    // from the same colours.
+    grad = mix(grad, mcsm_sheet_row_storm(3, 0.45),
+               0.60 * mcsm_ramp(p, 5.30, 5.55) * (1.0 - mcsm_ramp(p, 5.92, 6.05)));
 
     // Adapt gently to the dome underneath. Bright day skies get slightly more
     // occlusion/contrast; dark storm skies let the measured glow colour carry.
@@ -603,9 +635,13 @@ vec4 mcsm_blob(vec3 worldDir, vec3 bossDir, float p, float clock, vec3 dome) {
     // Use the sampled colours directly instead of hue-normalising them; this is
     // what preserves the blue centre / navy edge and the purple phase-4/5.3
     // falloff exactly instead of washing every phase into the same brightness.
-    float strength = (0.98 * core + 0.74 * mid + 0.50 * rim) * fade;
+    // BUILD #394 -- the widened core contributes OCCLUSION (the black mass,
+    // via occl above) but almost no emission: the blur lives on the shoulder
+    // and rim, the core stays black like the references.
+    float strength = (0.22 * core + 0.74 * mid + 0.50 * rim) * fade;
     strength *= mix(1.08, 0.86, dk);
     vec3 emis = grad * strength;
+    emis *= 1.0 - 0.70 * core;
     emis *= 0.94 + 0.06 * sin(clock * 3.0);   // slow roar pulse (~2.1 s)
     return vec4(emis, occl);
 }
@@ -650,10 +686,17 @@ vec3 mcsm_star_tint(float p) {
 }
 
 vec3 mcsm_sky_body_tint(float p, vec3 body) {
+    // BUILD #394 -- the storm body reads FULLY BLACK with its gloss kept.
+    // The old per-phase multipliers (magenta 5.2-6.0, salmon 6-6.9, ember 7+)
+    // are the purple/colour hue the references do NOT have: image 5's mass is
+    // glossy black blocks with cyan teeth, image 1's a black silhouette. The
+    // small scalar keeps the block-shading variation (the glossiness) while
+    // crushing the hue; the split storm (6+) stays a touch lifted so its two
+    // halves separate against the salmon sky.
     if (p < 5.19) return body * 0.22;
-    if (p < 6.00) return body * vec3(0.95, 0.45, 0.80) * 0.5;
-    if (p < 6.90) return body * vec3(1.00, 0.55, 0.60);
-    return body * vec3(1.25, 0.45, 0.25);
+    if (p < 6.00) return body * 0.14;
+    if (p < 6.90) return body * 0.18;
+    return body * 0.20;
 }
 
 // ------------------------------------------------------------- attachments
@@ -829,3 +872,225 @@ vec3 mcsm_supernova(vec3 worldDir, vec3 bossDir, float dt, float clock) {
 float mcsm_death_flash(float dt) {
     return exp(-pow((dt - 0.55) * 20.0, 2.0)) * 1.35;
 }
+
+// ============================================================================
+//  BUILD #390 PHASE 3 -- the gradient-sheet LUT.
+//  Generated block: the sheets in textures/sky and textures/mcsm_atmosphere/sky
+//  baked to GLSL tables + the folding LERP helpers. Regenerate with
+//  `python3 ci/make_sky_lut.py` after replacing any sheet PNG.
+// ============================================================================
+// >>> MCSM_SKY_SHEETS:BEGIN
+// GENERATED by ci/make_sky_lut.py from the gradient sheets in
+//   src/main/resources/assets/dabywitherstormmod/textures/mcsm_atmosphere/sky
+//   src/main/resources/assets/dabywitherstormmod/textures/sky
+// Replace those PNGs (your image_*.png maps to the same targets -- see
+// ci/SKY_SHEETS.md) and re-run the script; never edit this block by hand.
+// Storm rows: 4.45 green glare | 5.00 TEAL | 5.20 violet | 5.50 PURPLE | 5.90 pink-lavender | 6.00 SALMON | 7.00 dark red | 8.00 near-black
+// Vanilla rows: day PERIWINKLE | night MIDNIGHT BLUE | dusk SUNSET SPLIT | void spare
+const vec3 MCSM_SHEET_STORM[64] = vec3[64](
+    vec3(0.0120, 0.0200, 0.0160),
+    vec3(0.0193, 0.0486, 0.0348),
+    vec3(0.0267, 0.0771, 0.0536),
+    vec3(0.0390, 0.1147, 0.0773),
+    vec3(0.0553, 0.1596, 0.1050),
+    vec3(0.0724, 0.2048, 0.1324),
+    vec3(0.0962, 0.2524, 0.1562),
+    vec3(0.1200, 0.3000, 0.1800),
+    vec3(0.0745, 0.1451, 0.1569),
+    vec3(0.1412, 0.2196, 0.2157),
+    vec3(0.2196, 0.2941, 0.2863),
+    vec3(0.2941, 0.3647, 0.3529),
+    vec3(0.3804, 0.4471, 0.4275),
+    vec3(0.4667, 0.5255, 0.5020),
+    vec3(0.5529, 0.6118, 0.5725),
+    vec3(0.6196, 0.6745, 0.6235),
+    vec3(0.0300, 0.0120, 0.0580),
+    vec3(0.0545, 0.0214, 0.0874),
+    vec3(0.0790, 0.0308, 0.1168),
+    vec3(0.1102, 0.0440, 0.1502),
+    vec3(0.1469, 0.0603, 0.1869),
+    vec3(0.1848, 0.0776, 0.2238),
+    vec3(0.2324, 0.1038, 0.2619),
+    vec3(0.2800, 0.1300, 0.3000),
+    vec3(0.1647, 0.0588, 0.1922),
+    vec3(0.2314, 0.0941, 0.2627),
+    vec3(0.2941, 0.1294, 0.3294),
+    vec3(0.3569, 0.1608, 0.3961),
+    vec3(0.4314, 0.2118, 0.4706),
+    vec3(0.5098, 0.2667, 0.5451),
+    vec3(0.5961, 0.3176, 0.6392),
+    vec3(0.6588, 0.3608, 0.7059),
+    vec3(0.0700, 0.0300, 0.1200),
+    vec3(0.1149, 0.0524, 0.1649),
+    vec3(0.1598, 0.0749, 0.2098),
+    vec3(0.2204, 0.1086, 0.2592),
+    vec3(0.2939, 0.1514, 0.3122),
+    vec3(0.3724, 0.1990, 0.3667),
+    vec3(0.4962, 0.2895, 0.4333),
+    vec3(0.6200, 0.3800, 0.5000),
+    vec3(0.3255, 0.2784, 0.3255),
+    vec3(0.3961, 0.3373, 0.3765),
+    vec3(0.4392, 0.3647, 0.4078),
+    vec3(0.4784, 0.3922, 0.4392),
+    vec3(0.5451, 0.4510, 0.4863),
+    vec3(0.6078, 0.5059, 0.5294),
+    vec3(0.7137, 0.5725, 0.6078),
+    vec3(0.7843, 0.6118, 0.6510),
+    vec3(0.0180, 0.0020, 0.0090),
+    vec3(0.0482, 0.0049, 0.0147),
+    vec3(0.0784, 0.0077, 0.0204),
+    vec3(0.1189, 0.0121, 0.0250),
+    vec3(0.1679, 0.0179, 0.0287),
+    vec3(0.2171, 0.0252, 0.0326),
+    vec3(0.2686, 0.0476, 0.0388),
+    vec3(0.3200, 0.0700, 0.0450),
+    vec3(0.0060, 0.0020, 0.0080),
+    vec3(0.0158, 0.0044, 0.0129),
+    vec3(0.0256, 0.0069, 0.0178),
+    vec3(0.0412, 0.0093, 0.0222),
+    vec3(0.0616, 0.0118, 0.0263),
+    vec3(0.0829, 0.0148, 0.0305),
+    vec3(0.1114, 0.0224, 0.0352),
+    vec3(0.1400, 0.0300, 0.0400));
+
+const vec3 MCSM_SHEET_VANILLA[32] = vec3[32](
+    vec3(0.4784, 0.4784, 0.8745),
+    vec3(0.5255, 0.5137, 0.9020),
+    vec3(0.5647, 0.5333, 0.9137),
+    vec3(0.6000, 0.5569, 0.9255),
+    vec3(0.6627, 0.5961, 0.9373),
+    vec3(0.7294, 0.6392, 0.9451),
+    vec3(0.8000, 0.6824, 0.9529),
+    vec3(0.8667, 0.7373, 0.9686),
+    vec3(0.0510, 0.0510, 0.1569),
+    vec3(0.0941, 0.1059, 0.2706),
+    vec3(0.1137, 0.1333, 0.3373),
+    vec3(0.1333, 0.1569, 0.4039),
+    vec3(0.1647, 0.1922, 0.5020),
+    vec3(0.1961, 0.2275, 0.6039),
+    vec3(0.2510, 0.3059, 0.7451),
+    vec3(0.2314, 0.2588, 0.6392),
+    vec3(0.1176, 0.3255, 0.3686),
+    vec3(0.2392, 0.3647, 0.3804),
+    vec3(0.3255, 0.3961, 0.3922),
+    vec3(0.6039, 0.3765, 0.2275),
+    vec3(0.9569, 0.3725, 0.0353),
+    vec3(0.7843, 0.2745, 0.1490),
+    vec3(0.6000, 0.2039, 0.2078),
+    vec3(0.4314, 0.1569, 0.2118),
+    vec3(0.0100, 0.0080, 0.0220),
+    vec3(0.0182, 0.0145, 0.0375),
+    vec3(0.0263, 0.0211, 0.0530),
+    vec3(0.0390, 0.0310, 0.0735),
+    vec3(0.0553, 0.0436, 0.0980),
+    vec3(0.0729, 0.0571, 0.1238),
+    vec3(0.1014, 0.0786, 0.1619),
+    vec3(0.1300, 0.1000, 0.2000));
+
+
+// Self-contained on purpose: this block is also baked into the standalone Story
+// Look `position.fsh`, which has no include of mcsm_visuals.glsl.
+float mcsm_sheet_ramp(float v, float lo, float hi) {
+    if (hi <= lo) return v >= hi ? 1.0 : 0.0;
+    float t = clamp((v - lo) / (hi - lo), 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+
+// ---- baked sheet tables, 8 storm rows / 4 vanilla rows,
+// 8 stops per row (index 0 = zenith, last = horizon). -----------------
+#define MCSM_SHEET_COLS 8
+
+vec3 mcsm_sheet_grad(const vec3 c[MCSM_SHEET_COLS], float up) {
+    // up: 0 horizon .. 1 zenith (the same convention the sky arrays use), so the
+    // table is read from the zenith end downwards.
+    float t = clamp(1.0 - up, 0.0, 1.0) * float(MCSM_SHEET_COLS - 1);
+    int i = int(floor(t));
+    float f = t - floor(t);
+    if (i >= MCSM_SHEET_COLS - 1) return c[MCSM_SHEET_COLS - 1];
+    return mix(c[i], c[i + 1], f);
+}
+
+vec3 mcsm_sheet_row_storm(int row, float up) {
+    vec3 c[MCSM_SHEET_COLS];
+    for (int i = 0; i < MCSM_SHEET_COLS; i++) c[i] = MCSM_SHEET_STORM[row * MCSM_SHEET_COLS + i];
+    return mcsm_sheet_grad(c, up);
+}
+
+vec3 mcsm_sheet_row_vanilla(int row, float up) {
+    vec3 c[MCSM_SHEET_COLS];
+    for (int i = 0; i < MCSM_SHEET_COLS; i++) c[i] = MCSM_SHEET_VANILLA[row * MCSM_SHEET_COLS + i];
+    return mcsm_sheet_grad(c, up);
+}
+
+// Phase -> fractional row in the storm table. The knots are the phases the
+// sheets are keyed to, so crossing a knot IS the cross-fade.
+float mcsm_sheet_storm_row(float p) {
+    if (p < 5.00) return 0.0 + mcsm_sheet_ramp(p, 4.45, 5.00);
+    if (p < 5.20) return 1.0 + mcsm_sheet_ramp(p, 5.00, 5.20);
+    if (p < 5.50) return 2.0 + mcsm_sheet_ramp(p, 5.20, 5.50);
+    if (p < 5.90) return 3.0 + mcsm_sheet_ramp(p, 5.50, 5.90);
+    if (p < 6.00) return 4.0 + mcsm_sheet_ramp(p, 5.90, 6.00);
+    if (p < 7.00) return 5.0 + mcsm_sheet_ramp(p, 6.00, 7.00);
+    return 6.0 + mcsm_sheet_ramp(p, 7.00, 8.00);
+}
+
+// The storm backdrop the build is specified around: teal at phase 5, purple
+// through 5.5-5.9, salmon from 6.0. Adjacent rows are LERPed, so the sky folds
+// from one sheet into the next as the storm grows instead of snapping.
+vec3 mcsm_sheet_storm(float up, float p) {
+    float v = mcsm_sheet_storm_row(p);
+    int a = int(floor(v));
+    int b = a + 1;
+    if (b > 7) b = 7;
+    float f = v - floor(v);
+    return mix(mcsm_sheet_row_storm(a, up), mcsm_sheet_row_storm(b, up), f);
+}
+
+// Vanilla cycle: row 0 blue (day), 1 lavender (night), 2 sunset split (dusk).
+// The weights vanilla already computes pick the position in that row triangle.
+vec3 mcsm_sheet_vanilla(float up, float dayW, float nightW, float duskW) {
+    float v = (0.0 * dayW + 1.0 * nightW + 2.0 * duskW) / max(dayW + nightW + duskW, 0.0001);
+    int a = int(floor(v));
+    int b = a + 1;
+    if (a > 1) a = 1;
+    if (b > 2) b = 2;
+    float f = clamp(v - floor(v), 0.0, 1.0);
+    return mix(mcsm_sheet_row_vanilla(a, up), mcsm_sheet_row_vanilla(b, up), f);
+}
+
+// The folding blend itself: one LERP, driven by w (0 = untouched sky,
+// 1 = the sheet is the sky).
+vec3 mcsm_sheet_fold(vec3 base, vec3 sheet, float w) {
+    return mix(base, sheet, clamp(w, 0.0, 1.0));
+}
+
+// ---- storm-approach carrier -------------------------------------------------
+// The 1395..1855 slot carries PHASE only (a base-mod writer owns the integer
+// part). McsmBlobCarrierPatch re-stamps the same slot at TAIL with
+//     skyEnd = 1000 + phase*100 + 0.008 * approach        (approach 0..1)
+// which is +0..0.008 on a value that is exact in float32 to ~1e-4, so the
+// fraction survives the round trip. A legacy writer leaves the fraction at 0,
+// which decodes to approach 0 -- the sheets then fold on phase alone.
+float mcsm_approach(float fogSkyEnd) {
+    if (!(fogSkyEnd > 1395.0 && fogSkyEnd < 1855.0)) return 0.0;
+    float raw = (fogSkyEnd - 1000.0) * 100.0;
+    return clamp((raw - floor(raw)) / 0.8, 0.0, 1.0);
+}
+
+// Storm fold weight: the teal sheet IS the phase-5 sky, so this reaches 1.0 by
+// 5.02 and stays there -- later phases cross-fade between ROWS instead of
+// changing the weight. A closing storm pulls the fold in early.
+float mcsm_sheet_w_storm(float p, float approach) {
+    return clamp(mcsm_sheet_ramp(p, 4.45, 5.02) * (1.0 + 0.25 * approach), 0.0, 1.0);
+}
+
+// Vanilla fold weight: the three overworld sheets ARE the calm sky. Raise
+// MCSM_SHEET_VANILLA_BASE to 1.0 for "sheets only" -- the sampled
+// SKY_DAY/NIGHT/DUSK arrays then no longer show through.
+#define MCSM_SHEET_VANILLA_BASE 0.65
+float mcsm_sheet_w_vanilla(float approach) {
+    return clamp(MCSM_SHEET_VANILLA_BASE + (1.0 - MCSM_SHEET_VANILLA_BASE) * approach,
+                 0.0, 1.0);
+}
+
+// <<< MCSM_SKY_SHEETS:END

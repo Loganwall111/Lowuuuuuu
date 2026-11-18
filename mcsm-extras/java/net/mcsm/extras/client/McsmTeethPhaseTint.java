@@ -8,13 +8,39 @@ import net.minecraft.client.Minecraft;
  * Drives model teeth/eye glow colours from the nearest storm phase so the
  * base-mod teethBoost pass matches the MCSM frames without Iris:
  *   phase 3          no teeth glow
- *   phase 4          small cool-white/cyan glow on the three heads
- *   phase 5          flat white teeth, no big glow
- *   phase 5.5        white teeth with glow
- *   phase 6          blue/cyan glowing teeth after the split
- *   phase 7+         green-blue glowing teeth
+ *   phase 4          cyan-white glow on the three heads
+ *   phase 5          whitish teeth with glow
+ *   phase 5.5        cyan-blue glowing teeth
+ *   phase 6          blue glowing teeth after the split
+ *   phase 7          toxic green glowing teeth
+ *   phase 8          white glowing teeth
  */
 public final class McsmTeethPhaseTint {
+
+    /**
+     * BUILD #390 PHASE 2 -- the cosmic blue both the beam lasers and the lower
+     * spotlight nodes are pinned to. #4D4DFF, i.e. 77/255, 77/255, 255/255: a
+     * vibrant blue-violet that reads as "show-accurate" against the Story Mode
+     * frames without tipping into the purple the halo rings already own.
+     */
+    public static final float COSMIC_BLUE_R = 0.302F;
+    public static final float COSMIC_BLUE_G = 0.302F;
+    public static final float COSMIC_BLUE_B = 1.000F;
+
+    /** #4D4DFF as the 0..255 triple the glow pass wants. */
+    public static int[] cosmicBlue() {
+        return new int[] {(int) (COSMIC_BLUE_R * 255.0F + 0.5F),
+                          (int) (COSMIC_BLUE_G * 255.0F + 0.5F),
+                          (int) (COSMIC_BLUE_B * 255.0F + 0.5F)};
+    }
+
+    /** The same colour at a fraction of the intensity, for falloff layers. */
+    public static int[] cosmicBlue(float mul) {
+        int[] c = cosmicBlue();
+        return new int[] {Math.min(255, (int) (c[0] * mul + 0.5F)),
+                          Math.min(255, (int) (c[1] * mul + 0.5F)),
+                          Math.min(255, (int) (c[2] * mul + 0.5F))};
+    }
 
     private McsmTeethPhaseTint() {
     }
@@ -36,36 +62,40 @@ public final class McsmTeethPhaseTint {
             if (phase < 0.5F) {
                 return;
             }
+
             float r, g, b, inten;
             boolean glow;
-            if (phase >= 7.0F) {
-                r = 0.44F; g = 1.00F; b = 0.92F; inten = 2.35F; glow = true;   // bright green-blue late storm
+            if (phase >= 8.0F) {
+                r = 1.00F; g = 1.00F; b = 1.00F; inten = 2.20F; glow = true;   // phase 8: blinding white
+            } else if (phase >= 7.0F) {
+                r = 0.55F; g = 1.00F; b = 0.20F; inten = 2.35F; glow = true;   // phase 7: toxic green
             } else if (phase >= 6.0F) {
-                r = 0.18F; g = 0.92F; b = 1.00F; inten = 2.45F; glow = true;   // stronger blue/cyan split teeth
+                r = 0.20F; g = 0.45F; b = 1.00F; inten = 2.45F; glow = true;   // phase 6: cinematic blue
             } else if (phase >= 5.5F) {
-                r = 0.82F; g = 1.00F; b = 1.00F; inten = 2.05F; glow = true;   // white-cyan teeth, glowing
+                r = 0.35F; g = 0.90F; b = 1.00F; inten = 2.05F; glow = true;   // phase 5.5: cyan-blue
             } else if (phase >= 5.0F) {
-                r = 0.92F; g = 1.00F; b = 0.96F; inten = 0.70F; glow = true;   // phase 5: readable flat white with cyan edge, low bloom
+                r = 0.92F; g = 1.00F; b = 0.96F; inten = 1.10F; glow = true;   // phase 5: pure white with glow
             } else if (phase >= 4.0F) {
-                r = 0.72F; g = 0.98F; b = 1.00F; inten = 1.25F; glow = true;   // slight phase-4 cyan-white glow
+                r = 0.72F; g = 0.98F; b = 1.00F; inten = 1.25F; glow = true;   // phase 4: cyan-white
             } else {
                 r = 0.98F; g = 0.98F; b = 0.86F; inten = 0.0F; glow = false;  // phase 3: no glowing teeth
             }
+
             DabyWSClientConfig.eyeColorR = r;
             DabyWSClientConfig.eyeColorG = g;
             DabyWSClientConfig.eyeColorB = b;
             DabyWSClientConfig.turquoiseTeethIntensity = inten;
             DabyWSClientConfig.turquoiseTeeth = glow;
 
-            // Tractor beams should follow the same sky/storm family instead of
-            // staying solid pink-purple all day. Keep them soft but phase-aware.
-            float day = 0.55F + 0.45F * (float)Math.sin((mc.level.getGameTime() % 24000L) / 24000.0D * Math.PI * 2.0D);
-            float br = phase >= 7.0F ? 0.42F : (phase >= 6.0F ? 0.30F : (phase >= 5.5F ? 0.78F : 0.62F));
-            float bg = phase >= 7.0F ? 0.96F : (phase >= 6.0F ? 0.64F : (phase >= 5.5F ? 0.52F : 0.30F));
-            float bb = phase >= 7.0F ? 0.86F : (phase >= 6.0F ? 1.00F : (phase >= 5.5F ? 1.00F : 0.95F));
-            DabyWSClientConfig.beamColorR = br * (0.82F + 0.18F * day);
-            DabyWSClientConfig.beamColorG = bg * (0.82F + 0.18F * day);
-            DabyWSClientConfig.beamColorB = bb;
+            // BUILD #393 (master migration) -- THE PRIMARY TRACTOR BEAMS STAY
+            // PURPLE. The target frames (DS 7000.0.0 master) show thick
+            // purple-to-blue conic beams; the build note keeps them exactly as
+            // the base config preset renders them, so this tick writes NO beam
+            // colour at all any more (the #4D4DFF pin of build #390 and the
+            // master's phase-cyan/green beams are both gone). Cosmic blue
+            // #4D4DFF now lives ONLY on the lower auxiliary spotlight nodes
+            // and beam emitters, drawn by McsmStormBlob.submitSpotlights.
+            // The upper halo rings remain untouched, as always.
         } catch (Throwable ignored) {
         }
     }

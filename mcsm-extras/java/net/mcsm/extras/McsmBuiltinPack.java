@@ -30,7 +30,10 @@ public final class McsmBuiltinPack {
         McsmShaderPackInstall.install();
         McsmCommandBlockUse.register();
         registerBuiltIn("storylook", "Story Look");
-        registerBuiltIn("ogs-cem", "OGS CEM preset/model pack");
+        // #413: ogs-cem CEM model pack no longer registered. The .jem phase
+        // ladder mangles the base 1.9.16x model (detached groups, brown UV
+        // potatoes). Base models ship as-is; storylook stays.
+        // registerBuiltIn("ogs-cem", "OGS CEM preset/model pack");
     }
 
     private static void registerBuiltIn(String packId, String label) {

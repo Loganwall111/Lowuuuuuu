@@ -257,6 +257,18 @@ for SL in storylook/assets/minecraft/shaders/core/*; do
 done
 echo "[glsl] story look shaders validate"
 
+# BUILD #390 -- the baked sky-sheet LUT tables must match the shipped PNGs.
+# ci/make_sky_lut.py bakes const-vec3 gradient tables out of the six sheet
+# PNGs into mcsm_visuals.glsl and both Story Look position.fsh copies; --check
+# re-derives them and fails if any target drifted (edited table by hand,
+# replaced a sheet without re-running the generator, ...).
+if ! python3 ci/make_sky_lut.py --check > /tmp/sky-lut-check.log 2>&1; then
+  cat /tmp/sky-lut-check.log
+  echo "[glsl] sky sheet LUT gate FAILED — run python3 ci/make_sky_lut.py and commit"
+  exit 1
+fi
+echo "[glsl] sky sheet LUT tables match the shipped sheets"
+
 # Mega-phase 5b: the embedded Iris shader pack must validate too - every
 # program, in every [0 1] toggle combination, through the glslcheck shim.
 if ! python3 ci/iris_tu.py shaderpack-v5/shaders; then
@@ -341,6 +353,12 @@ if [ -f "$CS/terrain.fsh" ]; then cp -f "$CS/terrain.fsh" "$CS/block.fsh"; cp -f
 if [ -f "$CS/sky.fsh" ]; then cp -f "$CS/sky.fsh" "$CS/position.fsh"; cp -f "$CS/sky.vsh" "$CS/position.vsh"; fi
 echo "[build] 26.2 shader aliases: block<-terrain position<-sky"
 cp -r jar-overrides/* "$FX/cls/"
+# #413: base entity art ships as-is. Our traced skin/beam overrides were
+# traced against older base UVs; on 1.9.16x they read as mangled brown
+# potatoes, and the tractor_beam override even repaints the BASE halo
+# sprites (wireframe orb mesh). Deleting the staged copy leaves the base
+# jar's own entity textures untouched.
+rm -rf "$FX/cls/assets/dabywitherstormmod/textures/entity" 
 # nullglob guard: on a failed javac the class dir is empty and a bare
 # `cp -r /tmp/mcsm-build/*` would die under set -e (that bug ate the jar).
 shopt -s nullglob
@@ -648,22 +666,11 @@ echo "[build] extractable Story Look pack embedded at assets/dabywitherstormmod/
 # 1.9.151: Totally Accurate / MCSM OG CEM models (from Loganwall111/ogs-stuff)
 # ship as a second DEFAULT_ENABLED built-in pack. EMF / OptiFine CEM reads
 # assets/minecraft/optifine/cem/dabywitherstormmod/*.jem with Phase NBT ladder.
-if [ -d ogs-cem/assets ] && [ -f ogs-cem/pack.mcmeta ]; then
-  mkdir -p "$FX/cls/resourcepacks/ogs-cem"
-  cp -f ogs-cem/pack.mcmeta "$FX/cls/resourcepacks/ogs-cem/"
-  [ -f ogs-cem/pack.png ] && cp -f ogs-cem/pack.png "$FX/cls/resourcepacks/ogs-cem/"
-  cp -r ogs-cem/assets "$FX/cls/resourcepacks/ogs-cem/"
-  rm -f "$FX/cls/assets/dabywitherstormmod/resourcepacks/ogs-cem.zip"
-  if [ -f "$FX/cls/resourcepacks/ogs-cem/pack.png" ]; then
-    ( cd "$FX/cls/resourcepacks/ogs-cem" && zip -q -r -X "$FX/cls/assets/dabywitherstormmod/resourcepacks/ogs-cem.zip" pack.mcmeta pack.png assets )
-  else
-    ( cd "$FX/cls/resourcepacks/ogs-cem" && zip -q -r -X "$FX/cls/assets/dabywitherstormmod/resourcepacks/ogs-cem.zip" pack.mcmeta assets )
-  fi
-  echo "[build] built-in OG CEM pack embedded at resourcepacks/ogs-cem ($(du -sh ogs-cem | cut -f1))"
-  echo "[build] extractable OG CEM pack embedded at assets/dabywitherstormmod/resourcepacks/ogs-cem.zip"
-else
-  echo "::warning title=build::ogs-cem pack missing — Totally Accurate models will not ship"
-fi
+# #413: the OGS CEM .jem phase ladder no longer ships. On base 1.9.16x it
+# detaches model groups and browns out UVs ("potato tops", "EMGs not even
+# put together properly"). Base models render as-is; the pack stays in the
+# repo for reference only.
+echo "[build] ogs-cem CEM pack NOT shipped (#413: base models as-is)" 
 
 # Mega-phase 5b / 1.9.176: the managed Iris/Oculus pack rides inside the mod jar.
 # The default managed pack is now the user-supplied Super Duper Vanilla shader
@@ -703,21 +710,13 @@ if [ -d "$FX/cls/resourcepacks/storylook/assets/minecraft/shaders" ]; then
   AUDIT_FAIL=1
 fi
 
-if [ ! -f "$FX/cls/resourcepacks/ogs-cem/pack.mcmeta" ] \
-   || [ ! -f "$FX/cls/resourcepacks/ogs-cem/assets/minecraft/optifine/cem/dabywitherstormmod/wither_storm.jem" ]; then
-  echo "::error title=jar audit::built-in OG CEM pack missing from the jar"
-  AUDIT_FAIL=1
-fi
 
 # 1.9.181: prove the restored OGS assets and live labels survived assembly.
 for need in \
   assets/dabywitherstormmod/textures/entity/wither_storm.png \
   assets/dabywitherstormmod/textures/entity/wither_storm/wither_storm.png \
   assets/witherstormmod/textures/entity/wither_storm/wither_storm.png \
-  resourcepacks/ogs-cem/assets/minecraft/optifine/cem/dabywitherstormmod/wither_storm_phase5.jem \
-  resourcepacks/ogs-cem/assets/minecraft/optifine/cem/witherstormmod/wither_storm_phase5.jem \
-  assets/dabywitherstormmod/resourcepacks/storylook.zip \
-  assets/dabywitherstormmod/resourcepacks/ogs-cem.zip; do
+  assets/dabywitherstormmod/resourcepacks/storylook.zip; do
   if [ ! -s "$FX/cls/$need" ]; then
     echo "::error title=jar audit::restored OGS asset missing from jar: $need"
     AUDIT_FAIL=1

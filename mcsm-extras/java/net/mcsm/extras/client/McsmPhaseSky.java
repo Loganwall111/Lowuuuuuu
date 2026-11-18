@@ -84,12 +84,24 @@ public final class McsmPhaseSky {
     }
 
     public static void submit(LevelRenderContext ctx) {
-        // 1.9.197: the old world-space phase sky card fought with the newer
-        // StormBlob sky halo, making two or three stacked glare billboards and
-        // obvious rectangular/line artifacts in the sky. The atmospheric glare
-        // now comes from McsmStormBlob only, using cleaned radial textures and a
-        // single camera-space halo attached to the nearest storm.
-        return;
+        // BUILD #390 addenda -- the big purple ring is BACK. The 1.9.197
+        // shutdown was right about the rectangular card artifacts but wrong
+        // to kill the ring: the glare disc is centred on the storm and the
+        // glow pipeline depth-tests (GREATER_THAN_OR_EQUAL, no depth write),
+        // so the storm's own body silhouette occludes the disc centre and
+        // what survives is exactly the halo ring hugging the silhouette --
+        // the DS 7000.0.0 look from the reference shots.
+        // The fix the user asked for instead of the shutdown: the giant
+        // CIRCLES become the wide soft blobs of the last reference images --
+        // every quad here is an ellipse (roughly 2:1), the old lateral circle
+        // stack and the circular skirt are gone, and the additive-black core
+        // plate (a no-op under additive blending, and an artifact source) is
+        // dropped. try/ignored like every other overlay render hook.
+        try {
+            submitInner(ctx);
+        } catch (Throwable ignored) {
+            // overlay render pass must never take the frame down
+        }
     }
 
     private static void submitInner(LevelRenderContext ctx) {
@@ -166,54 +178,40 @@ public final class McsmPhaseSky {
 
             Identifier tex = glareTex(phase);
 
-            // Dark core silhouette plate behind glare
-            if (phase >= 4.5F) {
-                int ca = Mth.clamp((int) (amp * 70.0F), 0, 255);
-                quad(poseStack, collector, GlowRenderTypes.glow(BLACK),
-                        centre, view, baseR * 0.72, 4, 3, 6, ca);
-            }
-
-            // MAIN glare: multi-color soft gradient disc
+            // BUILD #390 addenda -- blob-shaped glare stack (no circles):
+            //  1. wide soft backdrop wash, the blurry 2:1 blob of the
+            //     reference sheets, low alpha so the sky sheet reads through;
+            //  2. the main glare ellipse -- the storm body occludes its
+            //     centre, leaving the big phase-coloured ring;
+            //  3. a wider, flatter skirt ellipse for the atmospheric bleed.
             quad(poseStack, collector, GlowRenderTypes.glow(tex),
-                    centre, view, baseR, 255, 255, 255, aa);
+                    centre, view, baseR * 2.15, baseR * 0.90, 255, 255, 255,
+                    Mth.clamp((int) (aa * 0.50F), 0, 255));
 
-            // Outer soft atmospheric skirt
-            int aa2 = Mth.clamp((int) (aa * 0.45F), 0, 255);
+            quad(poseStack, collector, GlowRenderTypes.glow(tex),
+                    centre, view, baseR * 1.05, baseR * 0.98, 255, 255, 255, aa);
+
+            int aa2 = Mth.clamp((int) (aa * 0.32F), 0, 255);
             if (aa2 > 4) {
                 quad(poseStack, collector, GlowRenderTypes.glow(tex),
                         centre.add(view.scale(-bodyR * 0.08)), view,
-                        baseR * 1.28, 255, 255, 255, aa2);
-            }
-
-            // Volumetric lateral fill
-            if (amp > 0.12F && baseR > 8.0) {
-                Vec3 upHint = Math.abs(view.y) > 0.95 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
-                Vec3 right = view.cross(upHint).normalize();
-                int sa = Mth.clamp((int) (aa * 0.28F), 0, 255);
-                if (sa > 4) {
-                    quad(poseStack, collector, GlowRenderTypes.glow(tex),
-                            centre.add(right.scale(bodyR * 0.4)), view,
-                            baseR * 0.95, 255, 255, 255, sa);
-                    quad(poseStack, collector, GlowRenderTypes.glow(tex),
-                            centre.add(right.scale(-bodyR * 0.4)), view,
-                            baseR * 0.95, 255, 255, 255, sa);
-                }
+                        baseR * 1.45, baseR * 0.70, 255, 255, 255, aa2);
             }
         }
     }
 
     private static void quad(PoseStack poseStack, SubmitNodeCollector collector,
             net.minecraft.client.renderer.rendertype.RenderType type,
-            Vec3 at, Vec3 view, double radius, int r, int g, int b, int alpha) {
-        if (alpha <= 2 || radius < 0.5) {
+            Vec3 at, Vec3 view, double radiusX, double radiusY, int r, int g, int b, int alpha) {
+        if (alpha <= 2 || radiusX < 0.5 || radiusY < 0.5) {
             return;
         }
         collector.submitCustomGeometry(poseStack, type, (pose, consumer) -> {
             Vec3 upHint = Math.abs(view.y) > 0.98 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
             Vec3 right = view.cross(upHint).normalize();
             Vec3 up = right.cross(view).normalize();
-            Vec3 rx = right.scale(radius * 1.10);
-            Vec3 uy = up.scale(radius * 0.95);
+            Vec3 rx = right.scale(radiusX);
+            Vec3 uy = up.scale(radiusY);
             int fa = Math.min(Math.max(alpha, 0), 255);
             vtx(pose, consumer, at.subtract(rx).subtract(uy), 0.0F, 1.0F, r, g, b, fa);
             vtx(pose, consumer, at.add(rx).subtract(uy), 1.0F, 1.0F, r, g, b, fa);

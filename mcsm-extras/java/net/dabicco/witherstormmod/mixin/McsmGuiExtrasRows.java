@@ -54,6 +54,14 @@ public abstract class McsmGuiExtrasRows {
     @Unique private int mcsm$lastMouseX = 0;
     @Unique private int mcsm$lastMouseY = 0;
 
+    // 7000.0.0-MCSM-CINEMATIC-FINAL.396: the reference build has NO tabbed
+    // config screen at all -- every config entry point lands straight on the
+    // revamped rail panel. So the base screen now hands off to our panel on
+    // its first drawn frame. The 800 ms guard keeps "close the panel" from
+    // re-triggering the handoff (the panel returns to this screen as parent).
+    @Unique private boolean mcsm$wantHandoff = false;
+    @Unique private static long mcsm$lastHandoffMs = 0L;
+
     @Unique
     private static int mcsm$buttonX() { return 8; }
 
@@ -87,9 +95,28 @@ public abstract class McsmGuiExtrasRows {
         // single row button below or Shift+C.
     }
 
+    // .396: first drawn frame of the base tabbed screen -> hand off to the
+    // rail panel, so players never see the tabbed screen (reference build
+    // has no config screen at all; the UI is the revamped rail panel).
+    @Inject(method = "extractRenderState", at = @At("HEAD"), remap = false)
+    private void mcsm$handoffToPanel(GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float partialTick, CallbackInfo ci) {
+        try {
+            if (!mcsm$wantHandoff) return;
+            mcsm$wantHandoff = false;
+            long now = System.currentTimeMillis();
+            if (now - mcsm$lastHandoffMs < 800L) return;
+            mcsm$lastHandoffMs = now;
+            mcsm$openPanel(this);
+        } catch (Throwable t) {
+            System.err.println("[MCSM] config handoff failed: " + t);
+        }
+    }
+
     @Inject(method = {"init"}, at = @At("TAIL"))
     private void mcsm$extrasRows(CallbackInfo ci) {
         try {
+            mcsm$wantHandoff = true;
             McsmExtrasConfig.load();
             final Object self = this;
             mcsm$addDirectButton(self);

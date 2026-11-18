@@ -325,11 +325,12 @@ public final class McsmFxDriver {
         double x = self.getX(), y = self.getY(), z = self.getZ();
         double r = self.getBoundingBox().getXsize() * 0.5 + 14.0;
         long seed = gt * 2654435761L;
+        float coilScale = (float) (1.4f * McsmExtrasConfig.purpleCoilScale);
         for (int i = 0; i < 10; i++) {
             double a = ((seed >>> (i * 3)) % 360) / 360.0 * Math.PI * 2.0;
             double rr = r + ((seed >>> (i * 5)) % 24);
             double py = y + ((seed >>> (i * 7)) % 40) - 12.0;
-            spawn(srv, dust(0x9d6bff, 1.4f), x + Math.cos(a) * rr, py, z + Math.sin(a) * rr, 3, 0.6, 1.4, 0.6, 0.02);
+            spawn(srv, dust(0x9d6bff, coilScale), x + Math.cos(a) * rr, py, z + Math.sin(a) * rr, 3, 0.6, 1.4, 0.6, 0.02);
         }
     }
 
@@ -353,16 +354,14 @@ public final class McsmFxDriver {
             int bx = (int)Math.floor(x + Math.cos(a) * rr);
             int bz = (int)Math.floor(z + Math.sin(a) * rr);
             int by = srv.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
-            BlockPos bp = new BlockPos(bx, by, bz);
-            BlockState state = srv.getBlockState(bp);
-            if (state.isAir() || state.is(Blocks.WATER) || state.is(Blocks.LAVA)) {
-                continue;
-            }
-            // block particle options are actual Minecraft block fragments: the
-            // little square/cube pieces seen lifting off the ground in MCSM.
+            BlockState state = rnd.nextBoolean()
+                    ? Blocks.OBSIDIAN.defaultBlockState()
+                    : Blocks.CRYING_OBSIDIAN.defaultBlockState();
+            // RESCALE NATIVE BLOCKS: Increase physical scale multiplier by 300% (1.5F to 4.0F)
+            float scale = 1.5F + rnd.nextFloat() * 2.5F;
             srv.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
-                    bx + 0.5, by + 1.05, bz + 0.5, 8,
-                    0.25, 0.35 + rnd.nextDouble() * 0.35, 0.25, 0.12);
+                    bx + 0.5, by + 1.05, bz + 0.5, 10,
+                    0.35 * scale, 0.45 + rnd.nextDouble() * 0.55 * scale, 0.35 * scale, 0.18);
             if (self.getPhase() >= 5.5 && rnd.nextBoolean()) {
                 spawn(srv, dust(0xff78d8, 1.0F), bx + 0.5, by + 1.2, bz + 0.5,
                         3, 0.15, 0.35, 0.15, 0.05);

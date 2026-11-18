@@ -1,3 +1,103 @@
+# 7000.0.0-MCSM-CINEMATIC-FINAL.413 — Build #413: the retreat-to-base-art build
+
+The Sept-8/12 mess shots (1.9.158/1.9.160 = our own old numbering) triaged in
+docs/TRIAGE_413_MESS.md. Every floating/mangled complaint traced to OUR
+added layers, so .413 removes them and lets the base mod's art be the picture:
+
+- McsmStormBlob stack OFF (sky volume, inner heart, cosmic spotlights,
+  McsmPhaseSky purple ring): kills the floating spheres/faces and the
+  phase-6/8 "tater-top" orbs (radius 40+30*(p-6)).
+- tractor_beam.png override DELETED from the jar: it was repainting the
+  BASE halo sprites (wireframe orb mesh) and the beams; base cone + base
+  halo art are exactly what the reference stills show.
+- ALL traced entity skin overrides deleted at build time: base skins ship
+  as-is, ending the brown/mangled UV potatoes on 1.9.16x.
+- ogs-cem CEM .jem pack no longer embedded nor registered: base model
+  geometry as-is, ending detached groups / "EMGs not put together".
+- Base halo (night layers), base particles, base beams: untouched.
+- Kept: letterbox/hotbar/console UI, shader pack sky+clouds+water+bloom,
+  backdrop/vignette/black-glare force-offs, storylook pack.
+
+OPEN: GUI overlap (needs one fresh .413 menu shot to lay out).
+
+# 7000.0.0-MCSM-CINEMATIC-FINAL.396 — Build #396: build-string repair + no-screen config handoff
+
+- ROOT CAUSE of "duplicates of the exact same build": the in-game build string
+  (McsmExtrasConfig.BUILD_VERSION, shown on the title screen, config footer and
+  HUD banner) was never bumped past .393 — the .394/.395 version sed patterns
+  missed the line, so three different jars all announced themselves as
+  "...FINAL.393". .396 fixes the string with a suffix-independent replacement.
+  KEEP ONLY ONE Devouring Storms jar in your mods folder: delete every
+  ds-1.9.39x / ds-7000.0.0...393 / ...395 / plain-7000.0.0 jar before installing.
+- The reference build has NO tabbed config screen: every config entry point now
+  hands off on its first drawn frame to the revamped rail panel
+  (McsmGuiExtrasRows handoff with an 800 ms re-entry guard, so closing the panel
+  still lands on a usable screen instead of looping).
+- Shading/sky/beam/teeth content identical to #395 (black glossy body, enlarged
+  black halo core, phase-true skies, extreme-distance blend-back).
+
+# 7000.0.0-MCSM-CINEMATIC-FINAL.395 — Build #395: re-issue of the #394 shading pass
+
+Identical content to build #394 (black glossy storm body, enlarged black halo core on the same oval geometry, sheet-purple 5.5 blur, phase-true skies for 5 / 5.5-5.9 / split-6, extreme-distance blend-back into the story sky). The #394 tag never materialised — the runner's release-publish step no-oped on both of its runs without leaving a tag or release, and runner artifacts are unreachable from the build sandbox — so the same tree ships under a fresh version to get a clean release with all five assets.
+
+# 7000.0.0-MCSM-CINEMATIC-FINAL.394 — Build #394: black glossy storm, bigger black halo core, phase-true skies, distance blend-back
+
+Shading pass on the migrated master, matched frame-by-frame to the reference set:
+
+- **The purple hue on the storm body is gone.** `mcsm_sky_body_tint` multiplied the silhouette magenta at 5.2-6.0, salmon at 6-6.9 and ember at 7+ — that is the colouration the references do not have. The body now renders fully black at every phase with a small scalar that keeps the block-shading variation, i.e. the glossiness of the close-up reference (glossy black blocks, cyan teeth) survives.
+- **Bigger black halo core, same halo geometry.** The 5.5 blob's black core plateau now reaches u≈0.85 (was 0.58) — the occluded black mass covers the silhouette up to the very top of the storm — while the oval field, shoulder and rim keep their exact shape. The core contributes occlusion but almost no emission, so it stays black; the purple blur lives on the shoulder/rim and is now recoloured from the packed sheet purple (storm row 3), so halo and sky fold from the same colours.
+- **Phase skies matched to their frames:** phase 5 teal keeps the slate zenith but gets the pale-sage horizon of the teal frame; 5.5-5.9 gets the pink-magenta horizon plus the rosy horizon band under the purple blur; phase 6 (the split storm — a different family on purpose) gets the lighter mauve zenith and pale-peach horizon of its frame. The sheet fold cap rises 0.55 → 0.70 so the traced sheets dominate the blend.
+- **Extreme distance blends back to the story sky.** The approach carrier now gates the storm dome AND the sheet fold (`smoothstep(0.02, 0.40, approach)`), so flying away melts the storm sky into the regular vanilla/story gradient instead of popping at the tracking boundary.
+- Shader gates: shimcheck 56/56 (a forward prototype was needed — the blob now calls the generated sheet tables), LUT `--check` ok, Story Look position pipeline validates.
+
+# 7000.0.0-MCSM-CINEMATIC-FINAL.393 — Build #393: emergency migration onto the true DS 7000.0.0 master framework
+
+The 1.9.39x line was building on the wrong skeleton — the in-game frames proved it (banded black/magenta sky, thin blue beams). This build hard-migrates the branch onto the authentic `DS 7000.0.0-MCSM-CINEMATIC-FINAL` master commit (`f96894f`, the same ancestor our branch was cut from, cherry-picked and conflict-resolved by hand), then re-ports everything verified from the 390-line on top:
+
+- **Real skies, no dome, no band.** Master's `sky.fsh` is a procedural multi-layer blend with smoothstep Y interpolation — a generated-style gradient sky like the mod-dev skyboxes, not a dome card or a horizon band. The 1.9.39x banded fold is gone: both Story Look `position.fsh` copies are now byte-identical to master's marker-free core pipeline, and the baked sheet tables live in the shared `mcsm_visuals.glsl` include only.
+- **The sheets still drive the sky.** Master's procedural phase constants ARE the traced sheets (#1D2B2B→#6E7873 teal, #1A0A2A→#7F3AA6 purple, #422E3B→#A0757E salmon, periwinkle/midnight/sunset vanilla); on top of them `sky.fsh` now folds into the baked sheet rows with one smooth LERP (`mcsm_sheet_fold`, 0.55 storm / 0.45 vanilla cap), adjacent rows cross-fading as the storm evolves or the clock turns.
+- **Locked master defaults:** solid charcoal block models with the heavy tentacle animation trees, native debris block physics, and the thick purple-to-blue conic tractor beams — the primary beams stay purple exactly as the target frames show; cosmic blue `#4D4DFF` now lives ONLY on the lower auxiliary spotlight nodes/emitters (`McsmStormBlob.submitSpotlights`), the old unconditional beam pin is removed.
+- **Ported straight over:** the crash-free `McsmExtrasScreen` (vertical chapter rail + diamond-dot sliders), the show-spec teeth/eye table (4 cyan-white, 5 pure white, 5.5 cyan-blue, 6 cinematic blue, 7 toxic green, 8 blinding white, all emissive), the six packed gradient sheets + aliases, the blob-shaped purple ring glare pass, and every config key from both lines (master's debris/nightglow set merged with the overlay's).
+- CI gates: story-look glslang, `make_sky_lut.py --check` (now include-only), mixin merge audit and the version-drift grep all pass; jar assembled and published by the remote runner.
+
+# 1.9.392 — Build #392: teeth/eye glow tuned to the show spec
+
+- Emissive teeth and eyes now follow the phase table exactly as specified: phase 4 cyan-white, phase 5 whitish with glow, phase 5.5 cyan-blue, phase 6 blue, phase 7 toxic green, phase 8 white — every phase glowing, phase 3 dark. The tractor beams stay pinned to cosmic blue `#4D4DFF` regardless (that pin is a separate write in the same tick).
+
+# 1.9.391 — Build #391: model layer restored, purple ring back as soft blobs, LUT gate wired
+
+- **Original mod model code re-initialized (Phase 1 close-out).** The live source tree was missing the base mod's whole model/render layer: `WitherStormP4` and 11 more models, all 12 `entity/renderer` classes (incl. `WitherStormRenderer`), 10 render-state/animation support classes and `ModelPartAccessor` are restored from the reconstructed sources, import-closure checked against the live tree. Solid block physics and the blocky keyframe animation come back with them; textures still resolve through `StormSkins`, whose OG default keeps the traced charcoal sheets wrapped on the blocks.
+- **The big purple ring is back — as blobs, not circles (Phase 3 addenda).** `McsmPhaseSky` re-submits its glare pass (dead since 1.9.197): the glare ellipse centred on the storm is centre-occluded by the storm's own body under the glow pipeline's depth test, which is exactly the halo ring hugging the silhouette in the DS 7000.0.0 reference shots. The giant circles are gone: every quad is now a wide ~2:1 soft ellipse matching the last reference images (backdrop wash + ring ellipse + flat skirt), the lateral circle stack and the additive-black core plate (a no-op under additive blending) are deleted. Drawn after the sky volume and cosmic-blue spotlights, try/ignored like every overlay pass.
+- **Sky-sheet LUT gate wired into CI.** `ci/build.sh` now runs `ci/make_sky_lut.py --check` in the shader gate: a baked table that drifts from the shipped sheet PNGs fails the build instead of shipping stale gradients.
+
+# 1.9.390 — Build #390: cosmic-blue beams, gradient-sheet sky LERP, premium panel
+
+(Build #390 ships as **1.9.390** — the version number is the build number. Tags `ds-1.9.201`/`ds-1.9.202` were already claimed on 2026-09-10 by an earlier branch's builds, and the release step never touches an existing tag, so this milestone takes the free 1.9.390 slot. Content is Build #390 as described below, plus the 26.2 GUI-signature fix and the sheet re-trace from the attached artist PNGs.)
+
+Build #390 lands the first two of the three sequenced phases on top of the stable DS 7000.0.0 baseline, plus the requested sky assets. Phase 1's model re-initialization is staged next: the panel and slider work is in this jar, the `WitherStormP4` model port follows in its own build so a bad model constant can never take the shader and UI work down with it.
+
+**Phase 2 — cosmic blue spotlights + tractor beams**
+- Tractor beams are pinned to a single vibrant cosmic blue `#4D4DFF` (77,77,255) instead of the old per-phase pink/cyan/green ramp. The table is re-written every client tick, so the mod's own config presets can no longer drag the beams back to purple.
+- The lower spotlight nodes under the storm body are re-drawn in the same cosmic blue by the overlay (`McsmStormBlob`): a four-disc camera-facing stack down the underside plus the pooled light where the beams land, on the base mod's own radii (26 + 9·(phase−4)) and its own soft glow sprite. They now read day and night (0.34 floor, 1.0 at night) because the sampled frames show the nodes lit in daylight too.
+- The upper halo rings are untouched, as specified.
+
+**Phase 3 — native skybox gradient LERP**
+- All six gradient sheets are generated into both asset roots (mod resources and jar overrides) and re-traced stop-by-stop from the attached artist sheets: storm `phase5_teal` (teal dome → sage horizon), `phase55` (deep violet → orchid), `phase6` (plum → dusty rose), side-by-side with vanilla `day` (periwinkle → lilac), `night` (midnight blue), `sunset` (teal → orange band → maroon). Aliases (`p55_purple`, `p6_salmon`, `vanilla_day_blue`, `vanilla_night_lavender`, `vanilla_sunset_split`) point at the same bytes, so either naming resolves.
+- The sky pass now folds into those sheets with a single smooth LERP. `mcsm_visuals.glsl` (and the standalone Story Look `position.fsh`, which cannot include it) carry a baked 8-row × 8-stop table generated from the PNGs by `ci/make_sky_lut.py` — drop a replacement `image_*.png` on the target path, re-run the script, and the tables follow. No new sampler is declared: the `position` pipeline's bind group has no spare slot, and a sampler the pipeline does not bind is a hard Vulkan crash.
+- Storm timeline rows: 4.45 green glare, **5.00 teal**, 5.20 violet, **5.50 purple**, 5.90 pink-lavender, **6.00 salmon**, 7.00 dark red, 8.00 near-black. Adjacent rows cross-fade, so the sky folds sheet-to-sheet as the storm evolves instead of snapping.
+- Vanilla rows follow the same day/night/dusk weight triangle the calm sky already computes, so the overworld cycle slides through blue → lavender → sunset split continuously.
+- A storm-approach term rides the existing 1395..1855 phase carrier slot as a sub-unit fraction, so a closing storm pulls the fold in from 1400 blocks out. An older jar-side writer leaves the fraction at zero and the fold simply rides the phase.
+- Skin: new `cosmic_spotlights` toggle in the control panel, `McsmExtrasConfig` migration unchanged.
+
+**Phase 1 — premium panel controls (model pass pending)**
+- `McsmExtrasScreen` gains the vertical chapter rail: diamond nodes on a hairline track down the left edge, hover and active states, click-to-jump to Visuals / Atmosphere / Lighting / Story VFX / AI & World, labels shown for the active and hovered node.
+- Every slider handle is now a rotated diamond with a hot white core, drawn through the extractor's pose stack; the track is recessed with a cosmic-blue fill to the handle. Value/drag plumbing is untouched. The custom paint rides `AbstractSliderButton.extractWidgetRenderState` — 26.2 made `AbstractWidget.extractRenderState` final — and the rail's click hook uses the 26.2 `mouseClicked(MouseButtonEvent, boolean)` input signature, so the panel compiles clean against the stable engine jar.
+- A `Cosmic Blue Spotlights` switch joins the Visuals group.
+
+**Notes**
+- CI: shimcheck 56/56 on `mcsm-core-shaders`; Story Look `position.fsh` expands and compiles clean under glslang in both pack copies; `ci/make_sky_lut.py --check` gates the baked tables against the shipped sheets.
+- Previous sheets are backed up under `ci/legacy_sky_sheets/` (outside the shipped trees) so the pre-390 look is one copy away.
+
 # 1.9.200 — Sky City haze included in verified build
 
 - Includes the high-altitude Sky City blue haze blend in the published jar, ramping in above tall build heights without changing normal ground-level play.
